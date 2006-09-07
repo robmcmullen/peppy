@@ -1,0 +1,68 @@
+$prog $version
+$release_date
+Copyright (c) $yearrange $author ($author_email)
+
+$url
+
+
+
+ABSTRACT
+========
+
+peppy - (ap)Proximated (X)Emacs Powered by Python.
+
+This is a wxPython/Scintilla-based editor written in and extensible
+through Python. It attempts to provide an XEmacs-like multi-window,
+multi-tabbed interface.
+
+
+
+PREREQUISITES
+=============
+
+python (tested under 2.4 only, but might work with others)
+wxPython 2.6.3.2
+
+
+
+FEATURES
+========
+
+Erm.  It probably won't crash, but I don't think it's going to
+contribute to your productivity right now. :)
+
+
+
+DOCUMENTATION
+=============
+
+Erm again.  Not much yet, either.
+
+
+
+KNOWN ISSUES
+============
+
+Probably causes hairballs.  Keep cats away.
+
+
+
+CREDITS
+=======
+
+Thanks to:
+
+* Robin Dunn for the omnipresence on the wxPython mailing list
+* Mark James for the amazing and free silk icons:
+    http://www.famfamfam.com/lab/icons/silk/
+
+
+
+DISCLAIMER
+==========
+
+$prog, Copyright (c) $yearrange $author ($author_email)
+
+$prog comes with ABSOLUTELY NO WARRANTY; for details see the
+file COPYING included in the source distribution, or see the web site
+http://www.gnu.org/copyleft/lesser.html for more information.
