@@ -611,7 +611,7 @@ class BufferFrame(MenuFrame):
     def KeyPressed(self, evt):
         keycode = evt.GetKeyCode()
         print "here in BufferFrame: %d" % keycode
-        self.enableMenu()
+        wx.CallAfter(self.enableMenu)
         evt.Skip()
 
     def getCurrentViewer(self):
