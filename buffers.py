@@ -132,15 +132,54 @@ def getIconStorage(icon=None):
         return _iconStorage
 
 
+
+#### STC Interface
+
+class STCInterface(object):
+    def CanPaste(self):
+        return 0
+
+    def Clear(self):
+        pass
+
+    def Copy(self):
+        pass
+
+    def Cut(self):
+        pass
+
+    def Paste(self):
+        pass
+
+    def EmptyUndoBuffer(self):
+        pass
+
+    def CanUndo(self):
+        return 0
+
+    def Undo(self):
+        pass
+
+    def CanRedo(self):
+        return 0
+
+    def Redo(self):
+        pass
+
+# Global default STC interface for user interface purposes
+BlankSTC=STCInterface()
+
+
 #### View base class
 
 class View(object):
     pluginkey = '-none-'
-    icon='icons/blank.ico'
+    icon='icons/page_white.png'
     keyword='Unknown'
     
     def __init__(self,buffer,frame):
         self.win=None
+        self.stc=BlankSTC
         self.buffer=buffer
         self.frame=frame
         self.popup=None
@@ -305,11 +344,19 @@ class ViewerChangedEvent(wx.PyCommandEvent):
         return self._viewer
 
 class TabbedViewer(wx.Notebook):
-    def __init__(self, parent):
+    def __init__(self, parent, frame=None):
         wx.Notebook.__init__(self,parent,-1,style=wx.NO_BORDER)
+
+        # if the frame is specified, chances are we're inside a
+        # HideOneTabViewer.
+        if frame is not None:
+            self.frame=frame
+        else:
+            self.frame=parent
+        
         getIconStorage().assign(self)
         
-        self.managed=[] # dict with keys 'viewer','frame','box'
+        self.managed=[] # dict with keys 'viewer','panel','box'
 
         self.updating=False
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChanged)
@@ -337,7 +384,7 @@ class TabbedViewer(wx.Notebook):
             managed=self.managed[index]
             managed['box'].Detach(managed['viewer'].win)
             managed['viewer'].win.Destroy()
-            viewer.createWindow(managed['frame'])
+            viewer.createWindow(managed['panel'])
             managed['box'].Add(viewer.win, 1, wx.EXPAND)
             managed['box'].Layout()
             managed['viewer']=viewer
@@ -352,22 +399,22 @@ class TabbedViewer(wx.Notebook):
     def addViewer(self, viewer):
         self.updating=True
         index=self.GetPageCount()
-        frame=wx.Panel(self, style=wx.NO_BORDER)
+        panel=wx.Panel(self, style=wx.NO_BORDER)
         box=wx.BoxSizer(wx.HORIZONTAL)
-        frame.SetAutoLayout(True)
-        frame.SetSizer(box)
+        panel.SetAutoLayout(True)
+        panel.SetSizer(box)
 
         # if the window doesn't exist, create it; otherwise reparent it
         if not viewer.win:
-            viewer.createWindow(frame)
+            viewer.createWindow(panel)
             viewer.open()
         else:
-            viewer.reparent(frame)
+            viewer.reparent(panel)
             viewer.win.Show()
         box.Add(viewer.win, 1, wx.EXPAND)
-        frame.Layout()
-        if self.AddPage(frame, viewer.keyword):
-            managed={'frame': frame,
+        panel.Layout()
+        if self.AddPage(panel, viewer.keyword):
+            managed={'panel': panel,
                      'box': box,
                      'viewer': viewer,
                      }
@@ -424,8 +471,10 @@ class TabbedViewer(wx.Notebook):
 class HideOneTabViewer(wx.Panel):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER)
+        self.frame=parent
+        
         self.mainsizer=wx.BoxSizer(wx.VERTICAL)
-        self.tabs=TabbedViewer(self)
+        self.tabs=TabbedViewer(self,self.frame)
         self.mainsizer.Add(self.tabs,1,wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.mainsizer)
@@ -556,6 +605,19 @@ class BufferFrame(MenuFrame):
         #self.toolbarvisible=False
         self.resetMenu()
 
+        self.Bind(wx.EVT_KEY_DOWN, self.KeyPressed)
+
+
+    def KeyPressed(self, evt):
+        keycode = evt.GetKeyCode()
+        print "here in BufferFrame: %d" % keycode
+        self.enableMenu()
+        evt.Skip()
+
+    def getCurrentViewer(self):
+        viewer=self.tabs.getCurrentViewer()
+        return viewer
+    
     def resetMenu(self):
         self.setMenuPlugins('main',self.proxy.menu_plugins)
         self.setToolbarPlugins('main',self.proxy.toolbar_plugins)
@@ -566,7 +628,7 @@ class BufferFrame(MenuFrame):
 
     def addMenu(self,viewer=None):
         if not viewer:
-            viewer=self.tabs.getCurrentViewer()
+            viewer=self.getCurrentViewer()
         print "menu from viewer %s" % viewer
         if viewer:
             print "  from page %d" % self.tabs.getCurrentIndex()
@@ -583,12 +645,12 @@ class BufferFrame(MenuFrame):
         self.enableMenu()
 
     def isOpen(self):
-        viewer=self.tabs.getCurrentViewer()
+        viewer=self.getCurrentViewer()
             #print "viewer=%s isOpen=%s" % (str(viewer),str(viewer!=None))
         return viewer!=None
 
     def close(self):
-        viewer=self.tabs.getCurrentViewer()
+        viewer=self.getCurrentViewer()
         if viewer:
             buffer=viewer.buffer
             if self.proxy.close(buffer):
@@ -622,7 +684,7 @@ class BufferFrame(MenuFrame):
         ev.Skip()
         
     def openFileDialog(self):        
-        viewer=self.tabs.getCurrentViewer()
+        viewer=self.getCurrentViewer()
         wildcard="*.*"
         cwd=os.getcwd()
         dlg = wx.FileDialog(

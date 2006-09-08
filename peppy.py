@@ -40,10 +40,16 @@ class NewTab(Command):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.newTab(self.frame)
 
+class New(Command):
+    name = "&New File..."
+    tooltip = "New file"
+    icon = "icons/page.png"
+
+
 class OpenFile(Command):
     name = "&Open File..."
     tooltip = "Open a file"
-    icon = wx.ART_FILE_OPEN
+    icon = "icons/folder_page.png"
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
@@ -70,7 +76,7 @@ class OpenBravo(Command):
 class Close(Command):
     name = "&Close"
     tooltip = "Close current file"
-    icon = wx.ART_QUIT
+    icon = "icons/cross.png"
 
     def isEnabled(self, state=None):
         return self.frame.isOpen()
@@ -82,7 +88,7 @@ class Close(Command):
 class Save(Command):
     name = "&Save..."
     tooltip = "Save the current file"
-    icon = wx.ART_FILE_SAVE
+    icon = "icons/disk.png"
 
     def isEnabled(self, state=None):
         return self.frame.isOpen()
@@ -90,38 +96,77 @@ class Save(Command):
 class SaveAs(Command):
     name = "Save &As..."
     tooltip = "Save as a new file"
-    icon = wx.ART_FILE_SAVE_AS
+    icon = "icons/disk_edit.png"
     
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
 
 
-class PrevBand(Command):
-    name = "Prev"
-    tooltip = "Previous Band"
-    icon = wx.ART_GO_BACK
+class Undo(Command):
+    name = "Undo"
+    tooltip = "Undo"
+    icon = "icons/arrow_turn_left.png"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
 
-class NextBand(Command):
-    name = "Next"
-    tooltip = "Next Band"
-    icon = wx.ART_GO_FORWARD
+    def isEnabled(self, state=None):
+        viewer=self.frame.getCurrentViewer()
+        if viewer: return viewer.stc.CanUndo()
+        return False
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        viewer=self.frame.getCurrentViewer()
+        if viewer: return viewer.stc.Undo()
+
+
+class Redo(Command):
+    name = "Redo"
+    tooltip = "Redo"
+    icon = "icons/arrow_turn_right.png"
+    
+    def __init__(self, frame):
+        Command.__init__(self, frame)
+        
+    def isEnabled(self, state=None):
+        viewer=self.frame.getCurrentViewer()
+        if viewer: return viewer.stc.CanRedo()
+        return False
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        viewer=self.frame.getCurrentViewer()
+        if viewer: return viewer.stc.Redo()
+
+
+
+class Cut(Command):
+    name = "Cut"
+    tooltip = "Cut"
+    icon = "icons/cut.png"
+    
+    def __init__(self, frame):
+        Command.__init__(self, frame)
+
+class Copy(Command):
+    name = "Copy"
+    tooltip = "Copy"
+    icon = "icons/page_copy.png"
+    
+    def __init__(self, frame):
+        Command.__init__(self, frame)
+
+class Paste(Command):
+    name = "Paste"
+    tooltip = "Paste"
+    icon = "icons/paste_plain.png"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
 
 
-class TestImage(Command):
-    name = "Open Test Image"
-    tooltip = "Open a 128x128x16 test image"
-    
-    def run(self, state=None, pos=None):
-        print "TestImage: id=%x name=%s" % (id(self),self.name)
-        cube=self.frame.proxy.createTestCube()
-        self.frame.setCube(cube)
 
 
 
@@ -190,17 +235,21 @@ menu_plugins=[
 
 toolbar_plugins=[
     # toolbar plugins here...
-    ['main',OpenFile,0.05],
+    ['main',New,0.05],
+    [OpenFile],
     [None],
     [OpenAlpha,0.1],
     [OpenBravo],
-    [Close,0.2],
-    [Save],
+    [Save,0.2],
     [SaveAs],
+    [Close],
     [None],
-    ['alpha',PrevBand,0.3],
-    [NextBand],
-    ['bravo',TestRadioList,0.3],
+    [Cut],
+    [Copy],
+    [Paste],
+    [None],
+    [Undo],
+    [Redo],
     [None],
     [ToggleList],
     ]

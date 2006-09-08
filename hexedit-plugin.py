@@ -329,7 +329,7 @@ class HugeTableGrid(Grid.Grid):
 class HexEditView(FundamentalView):
     pluginkey = 'hexedit'
     keyword='HexEdit'
-    icon='icons/page_white_tux.png'
+    icon='icons/tux.png'
     regex="\.(hex|bin|so|dat|ico|emf)"
 
     def createWindow(self,parent):

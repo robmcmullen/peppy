@@ -31,8 +31,10 @@ toolbar_plugins=[
 
 
 class MySTC(stc.StyledTextCtrl):
-    def __init__(self, parent, ID, log=sys.stdout):
+    def __init__(self, parent, frame, ID=-1, log=sys.stdout):
         stc.StyledTextCtrl.__init__(self, parent, ID)
+        self.tabs=parent # this is the tabbed frame
+        self.frame=frame # this is the BufferFrame
         self.log = log
 
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
@@ -41,6 +43,16 @@ class MySTC(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+
+        print self.tabs
+        self.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
+
+
+    def KeyPressed(self, evt):
+        keycode = evt.GetKeyCode()
+        print "here in MySTC: %d" % keycode
+        #self.enableMenu()
+        evt.Skip()
 
     def OnDestroy(self, evt):
         # This is how the clipboard contents can be preserved after
@@ -149,7 +161,7 @@ class FundamentalView(View):
             self.open()
 
     def createSTC(self,parent,style=False):
-        self.stc=MySTC(parent, -1)
+        self.stc=MySTC(parent, self.frame)
         if style:
             self.styleSTC()
 
@@ -189,6 +201,7 @@ class FundamentalView(View):
             fh=self.buffer.getFileObject()
             self.readFromBuffer(fh)
             self.documents[filename]=newdoc
+        self.stc.EmptyUndoBuffer()
 
     def readFromBuffer(self,fh):
         txt=fh.read()

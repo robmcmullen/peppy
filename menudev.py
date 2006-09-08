@@ -34,6 +34,7 @@ class Command(object):
     def run(self, state=None, pos=-1):
         print "exec: id=%s name=%s" % (id(self),self.name)
         self.runthis(state,pos)
+        self.frame.enableMenu()
 
     # If you override runthis(), all the housekeeping is done for you
     # and you just supply the command to run after the housekeeping is
@@ -1007,7 +1008,11 @@ class PluginToolBarItem(PluginMenuItem):
         self.size=size
 
     def insertInto(self, parentWidget, index):
-        bitmap=wx.ArtProvider.GetBitmap(self.icon, wx.ART_TOOLBAR, self.size)
+        if self.icon.startswith("wxART"):
+            bitmap=wx.ArtProvider.GetBitmap(self.icon, wx.ART_TOOLBAR, self.size)
+        else:
+            print "loading icon %s" % self.icon
+            bitmap=wx.Bitmap(self.icon)
         parentWidget.InsertLabelTool(index,self.id,self.name,bitmap,shortHelp=self.name,longHelp=self.command.tooltip,kind=self.type)
 
     def enableInMenu(self, parentWidget, state):
