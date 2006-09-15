@@ -45,14 +45,6 @@ class MySTC(stc.StyledTextCtrl):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         print self.tabs
-        self.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
-
-
-    def KeyPressed(self, evt):
-        keycode = evt.GetKeyCode()
-        print "here in MySTC: %d" % keycode
-        #self.enableMenu()
-        evt.Skip()
 
     def OnDestroy(self, evt):
         # This is how the clipboard contents can be preserved after
@@ -138,8 +130,6 @@ class MySTC(stc.StyledTextCtrl):
 
 
 
-
-
 class FundamentalView(View):
     pluginkey = 'fundamental'
     keyword='Fundamental'
@@ -156,6 +146,7 @@ class FundamentalView(View):
 
         self.createSTC(parent,style=True)
         self.win=self.stc
+        self.win.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
 
         if clone:
             self.open()
@@ -179,7 +170,23 @@ class FundamentalView(View):
         self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.stc.SetMarginWidth(0, 22)
         self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
+
+        # turn off symbol margin
+        self.stc.SetMarginWidth(1, 0)
+
+        # turn off folding margin
+        self.stc.SetMarginWidth(2, 0)
+
+
+    def afterOpenInitSTC(self):
+        self.stc.EmptyUndoBuffer()
         
+        # SetIndent must be called whenever a new document is loaded
+        # into the STC
+        self.stc.SetIndent(4)
+        #print "indention=%d" % self.stc.GetIndent()
+
+        self.stc.SetIndentationGuides(1)
 
     def open(self):
         filename=self.buffer.getFilename()
@@ -201,7 +208,8 @@ class FundamentalView(View):
             fh=self.buffer.getFileObject()
             self.readFromBuffer(fh)
             self.documents[filename]=newdoc
-        self.stc.EmptyUndoBuffer()
+
+        self.afterOpenInitSTC()
 
     def readFromBuffer(self,fh):
         txt=fh.read()

@@ -4,6 +4,7 @@ import wx
 
 from menudev import *
 from singletonmixin import *
+from wxemacskeybindings import *
 
 from cStringIO import StringIO
 
@@ -602,18 +603,25 @@ class BufferFrame(MenuFrame):
         self.setMainWindow(self.tabs)
         self.tabs.addUserChangedCallback(self.onViewerChanged)
 
-        #self.toolbarvisible=False
         self.resetMenu()
 
-        self.Bind(wx.EVT_KEY_DOWN, self.KeyPressed)
+        self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
 
 
-    def KeyPressed(self, evt):
-        keycode = evt.GetKeyCode()
-        print "here in BufferFrame: %d" % keycode
-        wx.CallAfter(self.enableMenu)
-        evt.Skip()
+    def OnActivate(self, evt):
+        # When the frame is made the current active frame, update the
+        # UI to make sure all the menu items/toolbar items reflect the
+        # correct state.
+        print "OnActivate: %s" % self.name
+        self.enableMenu()
+        self.getCurrentViewer().win.SetFocus()
 
+    def getCurrentSTC(self):
+        viewer=self.tabs.getCurrentViewer()
+        if viewer:
+            return viewer.stc
+        return BlankSTC
+    
     def getCurrentViewer(self):
         viewer=self.tabs.getCurrentViewer()
         return viewer
@@ -621,10 +629,6 @@ class BufferFrame(MenuFrame):
     def resetMenu(self):
         self.setMenuPlugins('main',self.proxy.menu_plugins)
         self.setToolbarPlugins('main',self.proxy.toolbar_plugins)
-
-    def enableMenu(self):
-        self.menuplugins.enable(self)
-        self.toolbarplugins.enable(self)
 
     def addMenu(self,viewer=None):
         if not viewer:
@@ -667,6 +671,7 @@ class BufferFrame(MenuFrame):
         #viewer.open()
         self.addMenu()
         self.menuplugins.widget.Thaw()
+        self.getCurrentViewer().win.SetFocus()
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
@@ -681,6 +686,7 @@ class BufferFrame(MenuFrame):
         self.resetMenu()
         self.addMenu(ev.GetViewer())
         self.menuplugins.widget.Thaw()
+        self.getCurrentViewer().win.SetFocus()
         ev.Skip()
         
     def openFileDialog(self):        
@@ -717,6 +723,8 @@ class BufferProxy(Singleton):
         
         self.frames=FrameList(self) # master frame list
         self.buffers=BufferList(None) # master buffer list
+
+        self.globalKeys=KeyMap()
 
     def registerViewer(self,cls):
         self.buffers.registerViewer(cls)

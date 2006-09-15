@@ -50,6 +50,7 @@ class OpenFile(Command):
     name = "&Open File..."
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
+    keyboard = "C-X C-F"
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
@@ -89,6 +90,7 @@ class Save(Command):
     name = "&Save..."
     tooltip = "Save the current file"
     icon = "icons/disk.png"
+    keyboard = "C-X C-S"
 
     def isEnabled(self, state=None):
         return self.frame.isOpen()
@@ -97,6 +99,7 @@ class SaveAs(Command):
     name = "Save &As..."
     tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
+    keyboard = "C-X C-W"
     
     def isEnabled(self, state=None):
         return self.frame.isOpen()
@@ -107,6 +110,7 @@ class Undo(Command):
     name = "Undo"
     tooltip = "Undo"
     icon = "icons/arrow_turn_left.png"
+    keyboard = "C-/"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
@@ -126,6 +130,7 @@ class Redo(Command):
     name = "Redo"
     tooltip = "Redo"
     icon = "icons/arrow_turn_right.png"
+    keyboard = "C-S-/"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
@@ -166,36 +171,6 @@ class Paste(Command):
     def __init__(self, frame):
         Command.__init__(self, frame)
 
-
-
-
-
-class ToggleList(CommandList):
-    name = "ToggleList"
-    tooltip = "Some help for this group of toggle buttons"
-    toggle = True
-
-    # radio list shared
-    itemlist = [
-        {'item':1,'name':'toggle 1','icon':wx.ART_HARDDISK,'checked':False},
-        {'item':2,'name':'toggle 2','icon':wx.ART_FLOPPY,'checked':True},
-        {'item':3,'name':'toggle 3','icon':wx.ART_CDROM,'checked':True},
-        ]
-    
-    def __init__(self, frame):
-        CommandList.__init__(self, frame)
-        self.itemlist = ToggleList.itemlist
-
-        # initialize checked/unchecked status from defaults
-        self.checked = [item['checked'] for item in self.itemlist]
-
-    def isChecked(self, index):
-        return self.checked[index]
-    
-    def run(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%d" % (id(self),self.name,pos)
-        self.checked[pos] = not self.checked[pos]
-
    
     
 class HelpAbout(Command):
@@ -223,13 +198,19 @@ menu_plugins=[
     [None], # separator
     [Quit,1.0],
     ['main',[('&Edit',0.1)],ShowToolbar,0.1],
-    ['main',[('&Buffers',0.8)],BufferList,0.0],
-    ['main',[('&Windows',0.9)],NewWindow,0.0],
+    [Undo],
+    [Redo],
+    [None],
+    [Cut],
+    [Copy],
+    [Paste],
+    ['main',[('&Buffers',0.2)],BufferList,0.0],
+    ['main',[('&Windows',0.3)],NewWindow,0.0],
     [DeleteWindow,0.1],
     [None],
     [FrameList,0.2],
     ['main',[('&Help',1.0)],HelpAbout,1.0],
-    ['alpha',[('&Bands',0.5)],PrevBand,0.0],
+    ['alpha',[('&Bands',0.25)],PrevBand,0.0],
     [NextBand],
 ]
 
@@ -251,7 +232,6 @@ toolbar_plugins=[
     [Undo],
     [Redo],
     [None],
-    [ToggleList],
     ]
 
 
@@ -261,7 +241,7 @@ toolbar_plugins=[
 class AlphaView(View):
     pluginkey = 'alpha'
     keyword='Alpha'
-    icon = 'icons/py.ico'
+    icon = 'icons/world.png'
     regex = "alpha"
 
     def createWindow(self,parent):
@@ -290,7 +270,7 @@ class testapp(BufferApp):
         self.main.registerViewer(AlphaView)
         self.main.registerViewer(BravoView)
 
-        plugins=['test-plugin1','hexedit-plugin','fundamental']
+        plugins=['test-plugin1','hexedit-plugin','python-plugin','fundamental']
         try:
             for plugin in plugins:
                 mod=__import__(plugin)

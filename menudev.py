@@ -8,6 +8,7 @@ from optparse import OptionParser
 
 
 import wx
+from wxemacskeybindings import *
 
 
 
@@ -19,6 +20,7 @@ class Command(object):
     help = "Help string"
     tooltip = "some tooltip help"
     icon = None
+    keyboard = None
     dynamic = False
     categories = False
     radio = False
@@ -41,6 +43,10 @@ class Command(object):
     # complete.
     def runthis(self, state=None, pos=-1):
         pass
+
+    def __call__(self, evt, number=None):
+        print "%s called by keybindings" % self
+        self.runthis()
 
     # pass the state onto the frame without activating the user
     # interface action.
@@ -257,11 +263,12 @@ class RadioList(CommandList):
 class NewWindow(Command):
     name = "&New Window"
     tooltip = "Open a new window"
+    keyboard = "C-X 5 2"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
 
-    def runthis(self, state, pos=-1):
+    def runthis(self, state=None, pos=-1):
         frame=self.frame.proxy.newFrame(callingFrame=self.frame)
         frame.Show(True)
 
@@ -291,7 +298,7 @@ class DeleteWindow(Command):
         Command.__init__(self, frame)
         self.itemlist = FrameList.itemlist
 
-    def runthis(self, state, pos=-1):
+    def runthis(self, state=None, pos=-1):
         self.frame.closeWindow(None)
 
     def isEnabled(self, state=None):
@@ -305,6 +312,7 @@ class Open(Command):
     name = "&Open Image..."
     tooltip = "Open an image or hypercube"
     icon = wx.ART_FILE_OPEN
+    keyboard = "C-X C-F"
 
 class OpenRecent(Command):
     name = "<no recent files>"
@@ -330,6 +338,7 @@ class Save(Command):
     name = "&Save Image..."
     tooltip = "Save the current image"
     icon = wx.ART_FILE_SAVE
+    keyboard = "C-X C-S"
 
     def isEnabled(self, state=None):
         return False
@@ -338,6 +347,7 @@ class SaveAs(Command):
     name = "Save &As..."
     tooltip = "Save the image as a new file"
     icon = wx.ART_FILE_SAVE_AS
+    keyboard = "C-X C-W"
     
     def isEnabled(self, state=None):
         return False
@@ -345,11 +355,12 @@ class SaveAs(Command):
 class Quit(Command):
     name = "E&xit"
     tooltip = "Quit the program."
+    keyboard = "C-X C-C"
     
     def __init__(self, frame):
         Command.__init__(self, frame)
 
-    def runthis(self, state, pos=-1):
+    def runthis(self, state=None, pos=-1):
         self.frame.proxy.quit()
 
 
@@ -447,9 +458,12 @@ class ShowToolbar(Toggle):
     def isEnabled(self, state=None):
         return True
     
+    def isChecked(self, index):
+        return self.frame.toolbarvisible
+    
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s" % (id(self),self.name)
-        self.frame.showToolbar(self.checked)
+        self.frame.showToolbar(not self.frame.toolbarvisible)
     
 
 
@@ -494,6 +508,31 @@ toolbar_plugins=[
     [None],
     [ToggleList],
     ]
+
+
+def parsePluginEntry(entry):
+    if isinstance(entry,list):
+        if len(entry)==1:
+            menuclass=None
+            menubar=None
+            command=entry[0]
+            weight=None
+        elif len(entry)==2:
+            menuclass=None
+            menubar=None
+            command=entry[0]
+            weight=entry[1]
+        else:
+            menuclass=entry[0]
+            menubar=entry[1]
+            command=entry[2]
+            weight=entry[3]
+    else:
+        menuclass=entry['menuclass']
+        menubar=entry['menubar']
+        command=entry['command']
+        weight=entry['weight']
+    return (menuclass,menubar,command,weight)
 
 class PluginMenuItemBase(object):
     debuglevel=0
@@ -798,28 +837,8 @@ class PluginMenu(PluginMenuItemBase):
         lastweight=0.5
         
         for plugin in plugins:
-            if isinstance(plugin,list):
-                if len(plugin)==1:
-                    menuclass=None
-                    menubar=None
-                    command=plugin[0]
-                    weight=None
-                elif len(plugin)==2:
-                    menuclass=None
-                    menubar=None
-                    command=plugin[0]
-                    weight=plugin[1]
-                else:
-                    menuclass=plugin[0]
-                    menubar=plugin[1]
-                    command=plugin[2]
-                    weight=plugin[3]
-            else:
-                menuclass=plugin['menuclass']
-                menubar=plugin['menubar']
-                command=plugin['command']
-                weight=plugin['weight']
-                
+            menuclass,menubar,command,weight=parsePluginEntry(plugin)
+
             if menuclass==None:
                 menuclass=lastclass
 
@@ -1168,6 +1187,7 @@ class PluginToolBar(PluginMenu):
             lastweight=weight
             
 
+
 class MenuFrame(wx.Frame):
 
     frameid = 0
@@ -1219,9 +1239,32 @@ class MenuFrame(wx.Frame):
         elif self.toolbar:
             self.mainsizer.Hide(self.toolbar)
 
+        self.keys=KeyProcessor(self)
+        self.keys.setGlobalKeyMap(self.proxy.globalKeys)
+        self.Bind(wx.EVT_KEY_DOWN, self.KeyPressed)
+
         self.popup=self.getDummyMenu(popup=True)
         self.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
 
+    def KeyPressed(self, evt):
+        self.keys.process(evt)
+##        if function:
+##            print "num=%d function=%s" % (num,function)
+##        else:
+##            print "unprocessed by KeyProcessor"
+        wx.CallAfter(self.enableMenu)
+
+    def setGlobalKeys(self,name,plugins):
+        keymap=self.proxy.globalKeys
+        try:
+            for plugin in plugins:
+                menuclass,menubar,command,weight=parsePluginEntry(plugin)
+                if command and command.keyboard:
+                    print "found key=%s for %s" % (command.keyboard,command)
+                    keymap.define(command.keyboard,command(self))
+        except:
+            print "apparently already defined the keys."
+            
     def popupMenu(self,ev):
         print "popping up menu for %s" % ev.GetEventObject()
         item=self.mainsizer.GetItem(1)
@@ -1281,6 +1324,8 @@ class MenuFrame(wx.Frame):
 
         self.rebuildMenus()
         self.menuplugins.finishInit()
+        self.setGlobalKeys(name,plugins)
+            
 
     def setToolbarPlugins(self, name, plugins=None, size=None):
         if len(toolbar_plugins)>0:
@@ -1318,6 +1363,10 @@ class MenuFrame(wx.Frame):
     def getState(self):
         return self
         
+    def enableMenu(self):
+        self.menuplugins.enable(self)
+        self.toolbarplugins.enable(self)
+
     def rebuildMenus(self):
         if self.menuplugins:
             self.menuplugins.buildDynamic()
