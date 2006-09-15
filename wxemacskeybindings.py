@@ -166,6 +166,10 @@ class KeyProcessor(object):
         self.debug=False
         
         self.keymaps=[]
+        self.minorKeymaps=[]
+        self.globalKeymap=KeyMap()
+        self.localKeymap=KeyMap()
+        
         self.num=0
         self.status=status
 
@@ -205,17 +209,45 @@ class KeyProcessor(object):
                 # have platform-specific code
                 self.wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
 
+    def fixmaps(self):
+        self.keymaps=self.minorKeymaps+[self.localKeymap,self.globalKeymap]
+        self.num=len(self.keymaps)
+        self.reset()
+
     ##
     # Add the keymap to the list of keymaps recognized by this
     # processor.  Keymaps are processed in the order that they are
     # added, so local keymaps should go first, then global keymaps.
-    def addKeyMap(self,keymap):
+    def addMinorKeyMap(self,keymap):
+        self.minorKeymaps.append(keymap)
+        self.fixmaps()
+
+    def clearMinorKeyMaps(self):
+        self.minorKeymaps=[]
+        self.fixmaps()
+
+    def setGlobalKeyMap(self,keymap):
         # Always add the ESC-ESC-ESC quit key sequence
         keymap.define("M-"+self.stickyMeta+" "+self.stickyMeta,None)
-        self.keymaps.append(keymap)
-        self.num=len(self.keymaps)
-        self.reset()
+        self.globalKeymap=keymap
+        self.fixmaps()
 
+    def clearGlobalKeyMap(self):
+        keymap=KeyMap()
+        self.setGlobalKeyMap(keymap)
+
+    def setLocalKeyMap(self,keymap):
+        self.localKeymap=keymap
+        self.fixmaps()
+
+    def clearLocalKeyMap(self):
+        keymap=KeyMap()
+        self.setLocalKeyMap(keymap)
+
+    ##
+    # Raw event processor that takes the keycode and produces a string
+    # that describes the key pressed.  The modifier keys are always
+    # returned in the order C-, S-, A-, M-
     def decode(self,evt):
         keycode = evt.GetKeyCode()
         raw = evt.GetRawKeyCode()
@@ -406,6 +438,22 @@ if __name__ == '__main__':
             else:
                 self.frame.SetStatusText(self.message)
 
+    class RemoveLocal:
+        def __init__(self, frame, message):
+            self.frame = frame
+            self.message = message
+        def __call__(self, evt, number=None):
+            self.frame.keys.clearLocalKeyMap()
+            self.frame.SetStatusText(self.message)
+
+    class ApplyLocal:
+        def __init__(self, frame, message):
+            self.frame = frame
+            self.message = message
+        def __call__(self, evt, number=None):
+            self.frame.keys.setLocalKeyMap(self.frame.localKeyMap)
+            self.frame.SetStatusText(self.message)
+
     #The frame with hotkey chaining.
 
     class MainFrame(wx.Frame):
@@ -419,8 +467,8 @@ if __name__ == '__main__':
             self.globalKeyMap=KeyMap()
             self.localKeyMap=KeyMap()
             self.keys=KeyProcessor(status=self)
-            self.keys.addKeyMap(self.localKeyMap)
-            self.keys.addKeyMap(self.globalKeyMap)
+            self.keys.setGlobalKeyMap(self.globalKeyMap)
+            self.keys.setLocalKeyMap(self.localKeyMap)
 
             menuBar = wx.MenuBar()
             self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
@@ -441,6 +489,8 @@ if __name__ == '__main__':
             lmap = wx.Menu()
             self.whichkeymap[lmap]=self.localKeyMap
             self.menuAddM(menuBar, lmap, "Local", "Local key map")
+            self.menuAdd(lmap, "Turn Off Local Keymap", "Turn off local keymap", RemoveLocal(self, "local keymap removed"))
+            self.menuAdd(lmap, "Turn On Local Keymap", "Turn off local keymap", ApplyLocal(self, "local keymap added"))
             self.menuAdd(lmap, "Comment Region\tC-C C-C", "testdesc", StatusUpdater(self, "comment region"))
             self.menuAdd(lmap, "Stay \tC-S C-X C-S", "Stay", StatusUpdater(self, "stay..."))
             self.menuAdd(lmap, "Multi-Modifier \tC-S-a S-C-m", "Shift-Control test", StatusUpdater(self, "pressed Shift-Control-A, Shift-Control-M"))
@@ -482,22 +532,24 @@ if __name__ == '__main__':
                     keymap=self.localKeyMap
                 keymap.define(acc, fcn)
 
-            acc=acc.replace('\t',' ')
-            #print "acc=%s" % acc
-            if wx.Platform == '__WXMSW__':
-                # If windows recognizes the accelerator (e.g. "Ctrl+A") OR
-                # it doesn't recognize the whole accererator text but does
-                # recognize the last part (e.g. "C-A" where it doesn't
-                # know what the "C-" is but does see the "A", it will
-                # automatically process the accelerator before we even see
-                # it.  So, append an ascii zero to the end.
-                menu.SetLabel(id, '%s\t%s\00'%(ns,acc))
+                acc=acc.replace('\t',' ')
+                #print "acc=%s" % acc
+                if wx.Platform == '__WXMSW__':
+                    # If windows recognizes the accelerator (e.g. "Ctrl+A") OR
+                    # it doesn't recognize the whole accererator text but does
+                    # recognize the last part (e.g. "C-A" where it doesn't
+                    # know what the "C-" is but does see the "A", it will
+                    # automatically process the accelerator before we even see
+                    # it.  So, append an ascii zero to the end.
+                    menu.SetLabel(id, '%s\t%s\00'%(ns,acc))
+                else:
+                    # unix doesn't allow displaying arbitrary text as the
+                    # accelerator, so we have to just put it in the menu
+                    # itself.  This doesn't look very nice, but that's about
+                    # all we can do.
+                    menu.SetLabel(id, '%s (%s)'%(ns,acc))
             else:
-                # unix doesn't allow displaying arbitrary text as the
-                # accelerator, so we have to just put it in the menu
-                # itself.  This doesn't look very nice, but that's about
-                # all we can do.
-                menu.SetLabel(id, '%s (%s)'%(ns,acc))
+                menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
 
         def menuAddM(self, parent, menu, name, help=''):
