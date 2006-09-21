@@ -139,17 +139,10 @@ class FundamentalView(View):
 
     def createWindow(self,parent):
         print "creating new Fundamental window"
-        clone=False
-        if self.win:
-            print "Fundamental: clone=True"
-            clone=True
 
         self.createSTC(parent,style=True)
         self.win=self.stc
         self.win.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
-
-        if clone:
-            self.open()
 
     def createSTC(self,parent,style=False):
         self.stc=MySTC(parent, self.frame)
@@ -178,7 +171,7 @@ class FundamentalView(View):
         self.stc.SetMarginWidth(2, 0)
 
 
-    def afterOpenInitSTC(self):
+    def readySTC(self):
         self.stc.EmptyUndoBuffer()
         
         # SetIndent must be called whenever a new document is loaded
@@ -188,37 +181,6 @@ class FundamentalView(View):
 
         self.stc.SetIndentationGuides(1)
 
-    def open(self):
-        filename=self.buffer.getFilename()
-
-        # save the reference count for the old document
-        olddoc=self.stc.GetDocPointer()
-        self.stc.AddRefDocument(olddoc)
-        print "Fundamental: olddoc=%s" % olddoc
-        
-        if filename in self.documents:
-            docptr=self.documents[filename]
-            self.stc.SetDocPointer(docptr)
-            print "  found existing document %s" % docptr
-            self.setupExistingBuffer()
-        else:
-            newdoc=self.stc.CreateDocument()
-            self.stc.SetDocPointer(newdoc)
-            print "  creating new document %s" % newdoc
-            fh=self.buffer.getFileObject()
-            self.readFromBuffer(fh)
-            self.documents[filename]=newdoc
-
-        self.afterOpenInitSTC()
-
-    def readFromBuffer(self,fh):
-        txt=fh.read()
-        print "Fundamental readFromBuffer: reading %d bytes" % len(txt)
-        self.stc.SetText(txt)
-        self.txt=txt
-       
-    def setupExistingBuffer(self):
-        pass
 
 
 

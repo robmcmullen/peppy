@@ -331,6 +331,7 @@ class HexEditView(FundamentalView):
     keyword='HexEdit'
     icon='icons/tux.png'
     regex="\.(hex|bin|so|dat|ico|emf)"
+    loader=BinaryLoader
 
     def createWindow(self,parent):
         FundamentalView.createWindow(self,parent)
@@ -342,45 +343,11 @@ class HexEditView(FundamentalView):
         self.stc.Show(False)
         self.stc.SetStyleBits(7)
 
-
     def reparent(self,parent):
         self.win.Reparent(parent)
         self.stc.Reparent(parent)
 
-    def readFromBuffer(self,fh):
-        txt=fh.read()
-        print "HexEditView open: reading %d bytes" % len(txt)
-        self.txt=txt
-
-        # Now, need to convert it to two bytes per character
-        styledtxt='\0'.join(txt)+'\0'
-        print "styledtxt: length=%d" % len(styledtxt)
-
-        self.stc.ClearAll()
-        self.stc.AddStyledText(styledtxt)
-
-        length=self.stc.GetTextLength()
-        #wx.StaticText(self.win, -1, str(length), (0, 25))
-
-        txt=self.stc.GetStyledText(0,length)
-        out=" ".join(["%02x" % ord(i) for i in txt])
-        print out
-        #wx.StaticText(self.win, -1, out, (20, 45))
-
-        errors=0
-        for i in range(len(self.txt)):
-            if self.txt[i]!=txt[i*2]:
-                print "error at: %d (%02x != %02x)" % (i,ord(self.txt[i]),ord(txt[i]))
-                errors+=1
-            if errors>50: break
-        print "errors=%d" % errors
-
-        self.win.Update(self.stc)
-
-    def setupExistingBuffer(self):
-        # stc is already loaded with the document object
-        length=self.stc.GetTextLength()
-        print "existing document of %d bytes" % length
+    def readySTC(self):
         self.win.Update(self.stc)
         
 

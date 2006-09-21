@@ -9,7 +9,7 @@ $url
 ABSTRACT
 ========
 
-peppy - (ap)Proximated (X)Emacs Powered by Python.
+$prog - $description
 
 This is a wxPython/Scintilla-based editor written in and extensible
 through Python. It attempts to provide an XEmacs-like multi-window,
@@ -20,8 +20,11 @@ multi-tabbed interface.
 PREREQUISITES
 =============
 
-python (tested under 2.4 only, but might work with others)
-wxPython 2.6.3.2
+python 2.4 or later
+wxPython 2.6.3.2 or later
+
+(Currently developed on python 2.4.3 and wxPython 2.6.3.3 on Linux and
+Windows.)
 
 
 
@@ -53,16 +56,33 @@ CREDITS
 Thanks to:
 
 * Robin Dunn for the omnipresence on the wxPython mailing list
-* Mark James for the amazing and free silk icons:
-    http://www.famfamfam.com/lab/icons/silk/
+
+* Josiah Carlson for PyPE (http://pype.sourceforge.net) and various
+  contributions on the wxPython wiki
+
+* Stani Michiels for SPE (http://www.stani.be/python/spe)
+
+* Mark James for the amazing and free silk icons
+  (http://www.famfamfam.com/lab/icons/silk/)
 
 
 
 DISCLAIMER
 ==========
 
-$prog, Copyright (c) $yearrange $author ($author_email)
+$prog, $description
+Copyright (c) $yearrange $author ($author_email)
 
-$prog comes with ABSOLUTELY NO WARRANTY; for details see the
-file COPYING included in the source distribution, or see the web site
-http://www.gnu.org/copyleft/lesser.html for more information.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.

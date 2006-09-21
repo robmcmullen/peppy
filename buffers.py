@@ -1,6 +1,7 @@
 import os,re
 
 import wx
+import wx.stc as stc
 
 from menudev import *
 from singletonmixin import *
@@ -73,21 +74,21 @@ class BufferList(CategoryList):
 
     def getDefaultViewer(self, filename):
         choices=[]
-        for handler in self.viewers:
-            print "checking viewer %s regex=%s" % (str(handler),handler.regex)
-            match=re.search(handler.regex,filename)
+        for viewer in self.viewers:
+            print "checking viewer %s regex=%s" % (str(viewer),viewer.regex)
+            match=re.search(viewer.regex,filename)
             if match:
-                choices.append(handler)
+                choices.append(viewer)
         if len(choices)==0:
-            handler=View
+            viewer=View
         elif len(choices)>1:
-            handler=choices[0]
-            print "chosing %s out of %d viewers" % (str(handler),len(choices))
+            viewer=choices[0]
+            print "chosing %s out of %d viewers" % (str(viewer),len(choices))
         else:
-            handler=choices[0]
+            viewer=choices[0]
 
-        print "loading buffer %s with %s" % (filename,str(handler))
-        return handler
+        print "loading buffer %s with %s" % (filename,str(viewer))
+        return viewer
 
     def registerViewer(self,viewer):
         self.viewers.append(viewer)
@@ -167,8 +168,72 @@ class STCInterface(object):
     def Redo(self):
         pass
 
+    def CreateDocument(self):
+        return "notarealdoc"
+
+    def SetDocPointer(self,ptr):
+        pass
+
+    def ReleaseDocument(self,ptr):
+        pass
+
+    def AddRefDocument(self,ptr):
+        pass
+
 # Global default STC interface for user interface purposes
 BlankSTC=STCInterface()
+
+
+
+#### Loaders for reading files and populating the STC interface
+
+class Loader(object):
+    def __init__(self,buffer):
+        buffer.docptr=buffer.stc.CreateDocument()
+        buffer.stc.SetDocPointer(buffer.docptr)
+        print "Loader: creating new document %s" % buffer.docptr
+        self.read(buffer)
+
+    def read(self,buffer):
+        pass
+
+class TextLoader(Loader):
+    def read(self,buffer):
+        fh=buffer.getFileObject()
+        txt=fh.read()
+        print "TextLoader: reading %d bytes" % len(txt)
+        buffer.stc.SetText(txt)
+
+class BinaryLoader(Loader):
+    def read(self,buffer):
+        fh=buffer.getFileObject()
+        txt=fh.read()
+        print "BinaryLoader: reading %d bytes" % len(txt)
+
+        # Now, need to convert it to two bytes per character
+        styledtxt='\0'.join(txt)+'\0'
+        print "styledtxt: length=%d" % len(styledtxt)
+
+        buffer.stc.ClearAll()
+        buffer.stc.AddStyledText(styledtxt)
+
+        length=buffer.stc.GetTextLength()
+        #wx.StaticText(self.win, -1, str(length), (0, 25))
+
+        newtxt=buffer.stc.GetStyledText(0,length)
+        out=" ".join(["%02x" % ord(i) for i in txt])
+        print out
+        #wx.StaticText(self.win, -1, out, (20, 45))
+
+        errors=0
+        for i in range(len(newtxt)):
+            if newtxt[i]!=txt[i*2]:
+                print "error at: %d (%02x != %02x)" % (i,ord(newtxt[i]),ord(txt[i]))
+                errors+=1
+            if errors>50: break
+        print "errors=%d" % errors
+    
+
 
 
 #### View base class
@@ -177,6 +242,7 @@ class View(object):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
+    loader=TextLoader
     
     def __init__(self,buffer,frame):
         self.win=None
@@ -195,6 +261,8 @@ class View(object):
     def createWindow(self,parent):
         self.win=wx.Window(parent, -1)
         self.win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
+        self.stc=stc.StyledTextCtrl(parent,-1)
+        self.stc.Show(False)
         #wx.StaticText(self.win, -1, self.buffer.name, (10,10))
 
     def reparent(self,parent):
@@ -213,14 +281,18 @@ class View(object):
         self.win.PopupMenu(self.popup)
         ev.Skip()
 
-    def open(self):
-        fh=self.buffer.getFileObject()
-        self.load(fh)
+    def readySTC(self):
+        pass
 
-    def load(self,fh):
-        print "loading %s" % (self.keyword)
+    def open(self):
+        print "View: open docptr=%s" % self.buffer.docptr
+        if self.buffer.docptr:
+            self.stc.AddRefDocument(self.buffer.docptr)
+            self.stc.SetDocPointer(self.buffer.docptr)
+        self.readySTC()
 
     def close(self):
+        #self.stc.ReleaseDocument(self.buffer.docptr)
         pass
 
 
@@ -259,12 +331,13 @@ text works, as well as virtually unlimited Undo and Redo
 capabilities, (right click to try it out.)
 """
 
+
 class Buffer(object):
     count=0
 
     filenames={}
     
-    def __init__(self,filename=None,viewer=View,fh=None):
+    def __init__(self,parent,filename=None,viewer=View,fh=None):
         Buffer.count+=1
         self.fh=fh
         self.defaultviewer=viewer
@@ -273,6 +346,10 @@ class Buffer(object):
         self.name="Buffer #%d: %s.  Default viewer=%s" % (self.count,str(self.filename),self.defaultviewer.keyword)
 
         self.viewer=None
+
+        # always one STC per buffer
+        self.stc=stc.StyledTextCtrl(parent,-1)
+        self.docptr=None
 
     def getView(self,frame):
         return self.defaultviewer(self,frame) # create new view
@@ -298,26 +375,58 @@ class Buffer(object):
     def getFileObject(self):
         if not self.fh:
             try:
-                self.fh=open(self.filename,"rb")
+                fh=open(self.filename,"rb")
             except:
                 print "Couldn't open %s" % self.filename
                 if self.filename in fakefiles:
-                    self.fh=StringIO()
-                    self.fh.write(fakefiles[self.filename])
-                    self.fh.seek(0)
+                    fh=StringIO()
+                    fh.write(fakefiles[self.filename])
+                    fh.seek(0)
                 else:
-                    self.fh=StringIO()
-                    self.fh.write("sample text for %s" % self.filename)
-                    self.fh.seek(0)
+                    fh=StringIO()
+                    fh.write("sample text for %s" % self.filename)
+                    fh.seek(0)
+            return fh
         return self.fh
+    
+    def open(self):
+        self.defaultviewer.loader(self)
+
+    def newstc(self):
+        # save the reference count for the old document
+        olddoc=self.stc.GetDocPointer()
+        self.stc.AddRefDocument(olddoc)
+        print "Fundamental: olddoc=%s" % olddoc
+        
+        if filename in self.documents:
+            docptr=self.documents[filename]
+            self.stc.SetDocPointer(docptr)
+            print "  found existing document %s" % docptr
+            self.setupExistingBuffer()
+        else:
+            newdoc=self.stc.CreateDocument()
+            self.stc.SetDocPointer(newdoc)
+            print "  creating new document %s" % newdoc
+            fh=self.buffer.getFileObject()
+            self.readFromBuffer(fh)
+            self.documents[filename]=newdoc
+
+        self.afterOpenInitSTC()
+
+    def setupExistingBuffer(self):
+        pass
         
 
 class Empty(Buffer):
-    def __init__(self,filename=None,viewer=View,fh=None):
+    def __init__(self,parent,filename=None,viewer=View,fh=None):
         self.filename=filename
         self.fh=fh
         self.defaultviewer=viewer
         self.name="(Empty)"
+
+        # always one STC per buffer
+        self.stc=BlankSTC
+        self.docptr=None
 
 
 ##class BufferList(object):
@@ -510,8 +619,11 @@ class HideOneTabViewer(wx.Panel):
         if self.count<=1:
             self.viewer=viewer
             viewer.createWindow(self)
+            print "setViewer: viewer.win=%s" % viewer.win
             self.setWindow(viewer.win)
+            print "setViewer: after setWindow"
             viewer.open()
+            print "setViewer: after viewer.open"
             self.count=1
         else:
             self.tabs.setViewer(viewer)
@@ -675,9 +787,12 @@ class BufferFrame(MenuFrame):
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
+        print "newBuffer: viewer=%s" % viewer
         self.menuplugins.widget.Freeze()
         self.resetMenu()
+        print "newBuffer: after resetMenu"
         self.tabs.addViewer(viewer)
+        print "newBuffer: after addViewer"
         self.addMenu()
         self.menuplugins.widget.Thaw()
 
@@ -726,6 +841,12 @@ class BufferProxy(Singleton):
 
         self.globalKeys=KeyMap()
 
+        # the Buffer objects have an stc as the base, and they need a
+        # frame in which to work.  So, we create a dummy frame here
+        # that is never shown.
+        self.dummyframe=wx.Frame(None)
+        self.dummyframe.Show(False)
+
     def registerViewer(self,cls):
         self.buffers.registerViewer(cls)
 
@@ -762,12 +883,18 @@ class BufferProxy(Singleton):
 
     def open(self,frame,filename):
         viewer=self.buffers.getDefaultViewer(filename)
-        buffer=Buffer(filename,viewer)
+        buffer=Buffer(self.dummyframe,filename,viewer)
+        # probably should load the file here, and if it fails for some
+        # reason, don't add to the buffer list.
+        buffer.open()
+        
         self.addBuffer(buffer)
         frame.setBuffer(buffer)
 
     def newTab(self,frame):
-        buffer=Empty()
+        print "newTab: frame=%s" % frame
+        buffer=Empty(self.dummyframe)
+        print "newTab: buffer=%s" % buffer
         frame.newBuffer(buffer)
 
     def close(self,buffer):
