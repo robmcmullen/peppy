@@ -287,6 +287,8 @@ class View(object):
     def open(self):
         print "View: open docptr=%s" % self.buffer.docptr
         if self.buffer.docptr:
+            # the docptr is a real STC, so use it as the base document
+            # for the new view
             self.stc.AddRefDocument(self.buffer.docptr)
             self.stc.SetDocPointer(self.buffer.docptr)
         self.readySTC()
@@ -391,30 +393,6 @@ class Buffer(object):
     
     def open(self):
         self.defaultviewer.loader(self)
-
-    def newstc(self):
-        # save the reference count for the old document
-        olddoc=self.stc.GetDocPointer()
-        self.stc.AddRefDocument(olddoc)
-        print "Fundamental: olddoc=%s" % olddoc
-        
-        if filename in self.documents:
-            docptr=self.documents[filename]
-            self.stc.SetDocPointer(docptr)
-            print "  found existing document %s" % docptr
-            self.setupExistingBuffer()
-        else:
-            newdoc=self.stc.CreateDocument()
-            self.stc.SetDocPointer(newdoc)
-            print "  creating new document %s" % newdoc
-            fh=self.buffer.getFileObject()
-            self.readFromBuffer(fh)
-            self.documents[filename]=newdoc
-
-        self.afterOpenInitSTC()
-
-    def setupExistingBuffer(self):
-        pass
         
 
 class Empty(Buffer):
@@ -773,10 +751,7 @@ class BufferFrame(MenuFrame):
                 self.tabs.closeViewer(viewer)
                 self.resetMenu()
 
-    def setBuffer(self,buffer):
-        # this gets a default view for the selected buffer
-        viewer=buffer.getView(self)
-        print "setting buffer to new view %s" % viewer
+    def setViewer(self,viewer):
         self.menuplugins.widget.Freeze()
         self.resetMenu()
         self.tabs.setViewer(viewer)
@@ -784,6 +759,20 @@ class BufferFrame(MenuFrame):
         self.addMenu()
         self.menuplugins.widget.Thaw()
         self.getCurrentViewer().win.SetFocus()
+
+    def setBuffer(self,buffer):
+        # this gets a default view for the selected buffer
+        viewer=buffer.getView(self)
+        print "setting buffer to new view %s" % viewer
+        self.setViewer(viewer)
+
+    def changeMajorMode(self,newmode):
+        viewer=self.getCurrentViewer()
+        if viewer:
+            buffer=viewer.buffer
+            newview=newmode(buffer,self)
+            print "changeMajorMode: new view=%s" % newview
+            self.setViewer(newview)
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
@@ -795,6 +784,7 @@ class BufferFrame(MenuFrame):
         print "newBuffer: after addViewer"
         self.addMenu()
         self.menuplugins.widget.Thaw()
+        self.getCurrentViewer().win.SetFocus()
 
     def onViewerChanged(self,ev):
         self.menuplugins.widget.Freeze()

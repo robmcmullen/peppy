@@ -19,17 +19,28 @@ class OpenHexEditor(Command):
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"hexedit")
+        self.frame.proxy.open(self.frame,"icons/py.ico")
+
+class HexEditMajorMode(Command):
+    name = "Change to HexEdit Major Mode"
+    tooltip = "Change to binary editor"
+    icon = "icons/folder_page.png"
+    keyboard = "C-X C-H"
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.frame.changeMajorMode(HexEditView)
 
 
 menu_plugins=[
     ['main',[('&File',0.0)],OpenHexEditor,0.2],
+    ['main',[('&Edit',0.1)],HexEditMajorMode,0.9],
 ]
 
-toolbar_plugins=[
-    # toolbar plugins here...
-    ['main',OpenHexEditor,0.1],
-    ]
+##toolbar_plugins=[
+##    # toolbar plugins here...
+##    ['main',OpenHexEditor,0.1],
+##    ]
 
 
 class HugeTable(Grid.PyGridTableBase):

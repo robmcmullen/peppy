@@ -43,7 +43,7 @@ menu_plugins=[
 
 toolbar_plugins=[
     # toolbar plugins here...
-    ['main',OpenCharlie,0.1],
+#    ['main',OpenCharlie,0.1],
     ['charlie',Stuff,0.3],
     [Things],
     ]

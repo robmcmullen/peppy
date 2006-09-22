@@ -43,6 +43,8 @@ class KeyMap(object):
 
         self.function=None
 
+        self.exceptionsWhenDuplicate=False
+
     def reset(self):
         self.cur=self.lookup
         self.function=None
@@ -148,12 +150,12 @@ class KeyMap(object):
         if keystrokes:
             for keystroke in keystrokes[:-1]:
                 if keystroke in hotkeys:
-                    if not isinstance(hotkeys[keystroke], dict):
+                    if self.exceptionsWhenDuplicate and not isinstance(hotkeys[keystroke], dict):
                         raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
                 else:
                     hotkeys[keystroke] = {}
                 hotkeys = hotkeys[keystroke]
-            if keystrokes[-1] in hotkeys:
+            if self.exceptionsWhenDuplicate and keystrokes[-1] in hotkeys:
                 raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
             hotkeys[keystrokes[-1]] = fcn
         return " ".join(keystrokes)

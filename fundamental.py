@@ -7,8 +7,8 @@ from menudev import *
 from buffers import *
 
 class OpenFundamental(Command):
-    name = "&Open File..."
-    tooltip = "Open a File"
+    name = "&Open Sample Text"
+    tooltip = "Open some sample text"
     icon = wx.ART_FILE_OPEN
 
 ##    def isEnabled(self, state=None):
@@ -22,11 +22,6 @@ class OpenFundamental(Command):
 menu_plugins=[
     ['main',[('&File',0.0)],OpenFundamental,0.2],
 ]
-
-toolbar_plugins=[
-    # toolbar plugins here...
-    ['main',OpenFundamental,0.05],
-    ]
 
 
 

@@ -27,10 +27,21 @@ class ShiftRight(Command):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.getCurrentViewer().indentSelection(1)
 
+class PythonMajorMode(Command):
+    name = "Change to Python Major Mode"
+    tooltip = "Change to python editor"
+    icon = "icons/folder_page.png"
+    keyboard = "C-X C-P"
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.frame.changeMajorMode(PythonView)
+
 
 menu_plugins=[
     ['python',[('&Python',0.5)],ShiftLeft,0.2],
     [ShiftRight],
+    ['main',[('&Edit',0.1)],PythonMajorMode,0.9],
 ]
 
 toolbar_plugins=[

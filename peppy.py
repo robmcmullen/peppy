@@ -20,7 +20,7 @@ from buffers import *
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"
@@ -219,8 +219,8 @@ toolbar_plugins=[
     ['main',New,0.05],
     [OpenFile],
     [None],
-    [OpenAlpha,0.1],
-    [OpenBravo],
+#    [OpenAlpha,0.1],
+#    [OpenBravo],
     [Save,0.2],
     [SaveAs],
     [Close],
@@ -260,6 +260,28 @@ class BravoView(View):
         wx.StaticText(self.win, -1, self.buffer.name, (100,100))
 
 
+class TitleView(View):
+    pluginkey = 'title'
+    keyword='Title'
+    icon='icons/application.png'
+    regex="title"
+
+    def createWindow(self,parent):
+        self.win=wx.Window(parent, -1)
+        wx.StaticText(self.win, -1, self.buffer.name, (10,10))
+
+
+class TitleBuffer(Buffer):
+    def __init__(self,parent,filename=None,viewer=TitleView,fh=None):
+        self.filename=filename
+        self.fh=fh
+        self.defaultviewer=viewer
+        self.name="%s %s\n%s" % ("peppy",__version__,__description__)
+
+        # always one STC per buffer
+        self.stc=BlankSTC
+        self.docptr=None
+
 
 
 class testapp(BufferApp):
@@ -270,7 +292,7 @@ class testapp(BufferApp):
         self.main.registerViewer(AlphaView)
         self.main.registerViewer(BravoView)
 
-        plugins=['test-plugin1','hexedit-plugin','python-plugin','fundamental']
+        plugins=['test-plugin','hexedit-plugin','python-plugin','fundamental']
         try:
             for plugin in plugins:
                 mod=__import__(plugin)
@@ -286,17 +308,6 @@ if __name__ == "__main__":
 
     usage="usage: %prog file [files...]"
     parser=OptionParser(usage=usage)
-    parser.add_option("-c", action="store", type="float", dest="stretch",
-                      default=0.0)
-    parser.add_option("-s", action="store", type="float", dest="filter",
-                      default=.65)
-    parser.add_option("-r", action="store", type="float", dest="red",
-                      default=676.0)
-    parser.add_option("-n", action="store", type="float", dest="nir",
-                      default=788.0)
-    parser.add_option("-b", action="store", type="float", dest="bluerange",
-                      nargs=2, default=[400.0,500.0])
-    parser.add_option("-o", action="store", dest="outputfile")
     (options, args) = parser.parse_args()
     print options
 
@@ -307,6 +318,9 @@ if __name__ == "__main__":
     if args:
         for filename in args:
             proxy.open(frame,filename)
+    else:
+        buffer=TitleBuffer(frame)
+        frame.newBuffer(buffer)
         
     app.MainLoop()
 
