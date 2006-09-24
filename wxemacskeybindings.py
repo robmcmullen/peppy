@@ -3,7 +3,7 @@
 import sys
 import wx
 
-# Based on demo program from
+# Based on demo program by Josiah Carlson found at
 # http://wiki.wxpython.org/index.cgi/Using_Multi-key_Shortcuts
 
 wxkeynames = (
@@ -26,7 +26,11 @@ wxkeynames = (
     "NUMPAD_DIVIDE",
     )
 
-
+##
+# This class represents a group of key mappings.  The KeyProcessor
+# class below uses multiple groups, one to represent global keymaps,
+# one for local keymaps, and an arbitrary number of other keymaps for
+# any additional minor modes that need other keymappings.
 class KeyMap(object):
     def __init__(self):
         self.debug=False
@@ -35,14 +39,25 @@ class KeyMap(object):
         self.reset()
         
         self.modifiers=['C-','S-','A-','M-']
+        self.modaliases={'Ctrl-':'C-',
+                         'Shift-':'S-',
+                         'Alt-':'A-',
+                         'Meta-':'M-',
+                         'Ctrl+':'C-',
+                         'Shift+':'S-',
+                         'Alt+':'A-',
+                         'Meta+':'M-',
+                         }
         self.keyaliases={'RET':'RETURN',
                          'SPC':'SPACE',
-                         'TAB':'TAB',
                          'ESC':'ESCAPE',
                          }
 
         self.function=None
 
+        # if this is true, it will throw an exception when finding a
+        # duplicate keystroke.  If false, it silently overwrites any
+        # previously defined keystroke with the new one.
         self.exceptionsWhenDuplicate=False
 
     def reset(self):
@@ -54,15 +69,17 @@ class KeyMap(object):
     def add(self, key):
         if self.cur:
             if key in self.cur:
+                # get next item, either a dict of more possible
+                # choices or a function to execute
                 self.cur=self.cur[key]
                 if not isinstance(self.cur, dict):
                     self.function = self.cur
                     self.cur=None
                 return True
             elif self.cur is not self.lookup:
-                # if we get here, we're processing a key string but
-                # the new key doesn't exist.  Flag as unknown
-                # keystroke combo
+                # if we get here, we have processed a partial match,
+                # but the most recent keystroke doesn't match
+                # anything.  Flag as unknown keystroke combo
                 self.cur=None
                 return True
             else:
@@ -73,6 +90,9 @@ class KeyMap(object):
                 self.cur=None
         return False
 
+    ##
+    # Convience function to check whether the keystroke combo is an
+    # unknown combo.
     def isUnknown(self):
         return self.cur==None and self.function==None
 
@@ -81,8 +101,11 @@ class KeyMap(object):
     def matchModifier(self,str):
         for m in self.modifiers:
             if str.startswith(m):
-                return m
-        return None
+                return len(m),m
+        for m in self.modaliases.keys():
+            if str.startswith(m):
+                return len(m),self.modaliases[m]
+        return 0,None
 
     ##
     # Find a keyname (not modifier name) in the accelerator string,
@@ -107,21 +130,26 @@ class KeyMap(object):
     # of modifier keys
     def split(self,acc):
         if acc.find('\t')>=0:
+            # match the original format from the wxpython wiki, where
+            # keystrokes are delimited by tab characters
             keystrokes = [i for i in acc.split('\t') if i]
         else:
+            # find the individual keystrokes from a more emacs style
+            # list, where the keystrokes are separated by whitespace.
             keystrokes=[]
             i=0
             flags={}
             while i<len(acc):
                 while acc[i].isspace() and i<len(acc): i+=1
 
-                # check all modifiers in any order
+                # check all modifiers in any order.  C-S-key and
+                # S-C-key mean the same thing.
                 j=i
                 for m in self.modifiers: flags[m]=False
                 while j<len(acc):
-                    m=self.matchModifier(acc[j:])
+                    chars,m=self.matchModifier(acc[j:])
                     if m:
-                        j+=len(m)
+                        j+=chars
                         flags[m]=True
                     else:
                         break
@@ -148,13 +176,21 @@ class KeyMap(object):
         keystrokes = self.split(acc)
         if self.debug: print "define: keystrokes=%s" % str(keystrokes)
         if keystrokes:
+            # create the nested dicts for everything but the last keystroke
             for keystroke in keystrokes[:-1]:
                 if keystroke in hotkeys:
                     if self.exceptionsWhenDuplicate and not isinstance(hotkeys[keystroke], dict):
                         raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
+                    if not isinstance(hotkeys[keystroke],dict):
+                        # if we're overwriting a function, we need to
+                        # replace the function call with a dict so
+                        # that the remaining keystrokes can be parsed.
+                        hotkeys[keystroke] = {}
                 else:
                     hotkeys[keystroke] = {}
                 hotkeys = hotkeys[keystroke]
+
+            # the last keystroke maps to the function to execute
             if self.exceptionsWhenDuplicate and keystrokes[-1] in hotkeys:
                 raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
             hotkeys[keystrokes[-1]] = fcn
@@ -162,7 +198,10 @@ class KeyMap(object):
 
 
 
-
+##
+# Driver class for key processing.  Takes multiple keymaps and looks
+# at them in order, first the minor modes, then the local, and finally
+# if nothing matches, the global key maps.
 class KeyProcessor(object):
     def __init__(self,status=None):
         self.debug=False
@@ -175,13 +214,19 @@ class KeyProcessor(object):
         self.num=0
         self.status=status
 
+        # I'm guessing here; I don't know what the Mac should default
+        # to.
         if wx.Platform == '__WXMAC__':
             self.remapMeta="Cmd" # or Cmd
         else:
             self.remapMeta="Alt" # or Cmd
 
+        # XEmacs defaults to the Ctrl-G to abort keystroke processing
         self.abortKey="C-G"
 
+        # Probably should create a standard way to process sticky
+        # keys, but for now ESC corresponds to a sticky meta key just
+        # like XEmacs
         self.stickyMeta="ESCAPE"
         self.metaNext=False
         self.nextStickyMetaCancel=False
@@ -195,7 +240,9 @@ class KeyProcessor(object):
         self.hasshown=False
         self.reset()
 
+        # Mapping of wx keystroke numbers to keystroke names
         self.wxkeys={}
+        # set up the wxkeys{} dict
         self.wxkeymap()
 
     def wxkeymap(self):
@@ -211,6 +258,8 @@ class KeyProcessor(object):
                 # have platform-specific code
                 self.wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
 
+    ##
+    # set up the search order of keymaps
     def fixmaps(self):
         self.keymaps=self.minorKeymaps+[self.localKeymap,self.globalKeymap]
         self.num=len(self.keymaps)
@@ -218,8 +267,8 @@ class KeyProcessor(object):
 
     ##
     # Add the keymap to the list of keymaps recognized by this
-    # processor.  Keymaps are processed in the order that they are
-    # added, so local keymaps should go first, then global keymaps.
+    # processor.  Minor mode keymaps are processed in the order that
+    # they are added.
     def addMinorKeyMap(self,keymap):
         self.minorKeymaps.append(keymap)
         self.fixmaps()
@@ -255,6 +304,10 @@ class KeyProcessor(object):
         raw = evt.GetRawKeyCode()
         keyname = self.wxkeys.get(keycode, None)
         modifiers = ""
+
+        # handle remapping of some modifier keys.  Should probably be
+        # written to be more general so that all modifier keys could
+        # be remapped.
         if self.remapMeta=="Alt":
             metadown=evt.AltDown()
             altdown=False
@@ -264,6 +317,8 @@ class KeyProcessor(object):
                 metadown=evt.CmdDown()
             else:
                 metadown=evt.MetaDown()
+
+        # Get the modifier string in order C-, S-, A-, M-
         for mod, ch in ((evt.ControlDown(), 'C-'),
                         (evt.ShiftDown(), 'S-'),
                         (altdown, 'A-'),
@@ -271,17 +326,25 @@ class KeyProcessor(object):
                         ):
             if mod:
                 modifiers += ch
+
+        # Check the sticky-meta
         if self.metaNext:
             if not metadown:
-                # if it's not already pressed, add the Meta modifier
+                # if the actual meta modifier is not pressed, add it.  We don't want to end up with M-M-key
                 modifiers += 'M-'
             self.metaNext=False
+
+            # if this is the second consecutive ESC, flag the next one
+            # to cancel the keystroke input
             if keyname==self.stickyMeta:
                 self.nextStickyMetaCancel=True
         else:
+            # ESC hasn't been pressed before, so flag it for next
+            # time.
             if keyname==self.stickyMeta:
                 self.metaNext=True
-                
+
+        # check for printable character
         if keyname is None:
             if 27 < keycode < 256:
                 keyname = chr(keycode)
@@ -290,12 +353,16 @@ class KeyProcessor(object):
         if self.debug: print "keycode=%d raw=%d key=%s" % (keycode,raw,modifiers+keyname)
         return modifiers + keyname
 
+    ##
+    # reset the lookup table to the root in each keymap.
     def reset(self):
         if self.debug: print "reset"
         self.sofar = ''
         for keymap in self.keymaps:
             keymap.reset()
         if self.hasshown:
+            # If we've displayed some stuff in the status area, clear
+            # it.
             self.show('')
             self.hasshown=False
             
@@ -305,11 +372,21 @@ class KeyProcessor(object):
         self.processingArgument=0
         self.args=''
 
+    ##
+    # Display the current keystroke processing in the status area
     def show(self,text):
         if self.status:
             self.status.SetStatusText(text)
             self.hasshown=True
 
+    ##
+    # Attempt to add this keystroke by processing all keymaps in
+    # parallel and stop at the first complete match.  The other way
+    # that processing stops is if the new keystroke is unknown in all
+    # keymaps.  Returns a tuple (skip,unknown,function), where skip is
+    # true if the keystroke should be skipped up to the next event
+    # handler, unknown is true if the partial keymap doesn't match
+    # anything, and function is either None or the function to execute.
     def add(self, key):
         unknown=0
         processed=0
@@ -324,14 +401,22 @@ class KeyProcessor(object):
             if keymap.isUnknown():
                 unknown+=1
         if processed>0:
+            # at least one keymap is still matching, so continue processing
             self.sofar += key + ' '
             if self.debug: print "add: sofar=%s processed=%d unknown=%d function=%s" % (self.sofar,processed,unknown,function)
         else:
             if unknown==self.num and self.sofar=='':
+                # if the keystroke doesn't match the first character
+                # in any of the keymaps, don't flag it as unknown.  It
+                # is a key that should be processed by the
+                # application, not us.
                 unknown=0
             if self.debug: print "add: sofar=%s processed=%d unknown=%d skipping %s" % (self.sofar,processed,unknown,key)
         return (processed==0,unknown==self.num,function)
 
+    ##
+    # This starts the emacs-style numeric arguments that are ended by
+    # the first non-numeric keystroke
     def startArgument(self, key=None):
         self.number=None
         self.scale=1
@@ -339,6 +424,11 @@ class KeyProcessor(object):
             self.args=key + ' '
         self.processingArgument=1
 
+    ##
+    # Helper function to decode a numeric argument keystroke.  It can
+    # be a number or, if the first keystroke, the '-' sign.  If C-U is
+    # used to start the argumen processing, the numbers don't have to
+    # have the Ctrl modifier pressed.
     def getNumber(self, key, musthavectrl=False):
         ctrl=False
         if key[0:2]=='C-':
@@ -353,11 +443,15 @@ class KeyProcessor(object):
         elif key>='0' and key<='9':
             return ord(key)-ord('0')
         return None
-    
+
+    ##
+    # Process a numeric keystroke
     def argument(self, key):
         # allow control and a number to work as well
         num=self.getNumber(key)
         if num is None:
+            # this keystroke isn't a number, so calculate the final
+            # value of the numeric argument and flag that we're done
             if self.number is None:
                 self.number=self.defaultNumber
             else:
@@ -365,6 +459,7 @@ class KeyProcessor(object):
             if self.debug: print "number = %d" % self.number
             self.processingArgument=0
         else:
+            # this keystroke IS a number, so process it.
             if num==-1:
                 self.scale=-1
             else:
@@ -374,7 +469,10 @@ class KeyProcessor(object):
                     self.number=10*self.number+num
             self.args+=key + ' '
             self.processingArgument+=1
-        
+
+    ##
+    # The main driver routine.  Get a keystroke and run through the
+    # processing chain.
     def process(self, evt):
         key = self.decode(evt)
 
@@ -382,22 +480,34 @@ class KeyProcessor(object):
             self.reset()
             self.show("Quit")
         elif self.nextStickyMetaCancel and key==self.stickyMeta:
+            # this must be processed before the check for metaNext,
+            # otherwise we'll never be able to process the ESC-ESC-ESC
+            # quit sequence
             self.reset()
             self.show("Quit")
         elif self.metaNext:
+            # OK, the meta sticky key is down, but it's not a quit
+            # sequence
             self.show(self.args+self.sofar+" "+self.stickyMeta)
         elif key.endswith('-') and len(key) > 1 and not key.endswith('--'):
             #modifiers only, if we don't skip these events, then when people
             #hold down modifier keys, things get ugly
             evt.Skip()
         elif key==self.universalArgument:
+            # signal the start of a numeric argument
             self.startArgument(key)
             self.show(self.args)
         elif not self.processingArgument and self.getNumber(key,musthavectrl=True) is not None:
+            # allow Ctrl plus number keys to also start a numeric argument
             self.startArgument()
             self.argument(key)
         else:
+            # OK, not one of those special cases.
+
             if self.processingArgument:
+                # if we're inside a numeric argument chain, show it.
+                # Note that processingArgument may get reset inside
+                # the call to argument()
                 self.argument(key)
                 self.show(self.args)
 
@@ -407,8 +517,12 @@ class KeyProcessor(object):
             # want to lose that keystroke if it isn't a number so
             # process it as a potential hotkey.
             if not self.processingArgument:
+                # So, we're not processing a numeric argument now.
+                # Check to see where we are in the processing chain.
                 skip,unknown,function=self.add(key)
                 if function:
+                    # Found a function in one of the keymaps, so
+                    # execute it.
                     save=self.number
                     self.reset()
                     if save is not None:
@@ -416,10 +530,14 @@ class KeyProcessor(object):
                     else:
                         function(evt)
                 elif unknown:
+                    # This is an unknown keystroke combo
                     sf = "%s not defined."%(self.sofar)
                     self.reset()
                     self.show(sf)
                 elif skip:
+                    # this is the first keystroke and it doesn't match
+                    # anything.  Skip it up to the next event handler
+                    # to get processed elsewhere.
                     self.reset()
                     evt.Skip()
                 else:
@@ -483,8 +601,10 @@ if __name__ == '__main__':
             self.menuAdd(gmap, "Save File\tC-X\tC-S", "Save Current File", StatusUpdater(self, "saved..."))
             self.menuAdd(gmap, "Sit \tC-X\tC-X\tC-S", "Sit", StatusUpdater(self, "sit..."))
             self.menuAdd(gmap, "Stay \tC-S\tC-X\tC-S", "Stay", StatusUpdater(self, "stay..."))
-            self.menuAdd(gmap, "Execute \tC-C C-C", "Execute Buffer", StatusUpdater(self, "execute buffer..."))
+            self.menuAdd(gmap, "Execute \tCtrl-C Ctrl-C", "Execute Buffer", StatusUpdater(self, "execute buffer..."))
             self.menuAdd(gmap, "New Frame\tC-x 5 2", "New Frame", StatusUpdater(self, "open new frame"))
+            self.menuAdd(gmap, "Help\tCtrl-H", "Help", StatusUpdater(self, "show help"))
+            self.menuAdd(gmap, "Help\tShift+Z", "Shift Z", StatusUpdater(self, "Shift Z"))
             self.menuAdd(gmap, "Exit\tC-X C-C", "Exit", sys.exit)
 
             lmap = wx.Menu()
