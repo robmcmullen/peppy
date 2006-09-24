@@ -234,7 +234,7 @@ toolbar_plugins=[
     [None],
     ]
 
-
+keyboard_plugins=[]
 
 
 
@@ -289,6 +289,7 @@ class testapp(BufferApp):
         BufferApp.OnInit(self)
         self.main.addMenuPlugins(menu_plugins)
         self.main.addToolbarPlugins(toolbar_plugins)
+        self.main.addKeyboardPlugins(keyboard_plugins)
         self.main.registerViewer(AlphaView)
         self.main.registerViewer(BravoView)
 

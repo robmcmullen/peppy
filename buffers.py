@@ -251,6 +251,9 @@ class View(object):
         self.frame=frame
         self.popup=None
 
+        # View settings.
+        self.settings={}
+
     # If there is no title, return the keyword
     def getTitle(self):
         return self.keyword
@@ -719,6 +722,7 @@ class BufferFrame(MenuFrame):
     def resetMenu(self):
         self.setMenuPlugins('main',self.proxy.menu_plugins)
         self.setToolbarPlugins('main',self.proxy.toolbar_plugins)
+        self.setKeyboardPlugins('main',self.proxy.keyboard_plugins)
 
     def addMenu(self,viewer=None):
         if not viewer:
@@ -824,6 +828,7 @@ class BufferProxy(Singleton):
         self.app=app
         self.menu_plugins=[]
         self.toolbar_plugins=[]
+        self.keyboard_plugins=[]
         self.bufferhandlers=[]
         
         self.frames=FrameList(self) # master frame list
@@ -853,6 +858,9 @@ class BufferProxy(Singleton):
         
     def addToolbarPlugins(self,plugins):
         self.toolbar_plugins.extend(plugins)
+        
+    def addKeyboardPlugins(self,plugins):
+        self.keyboard_plugins.extend(plugins)
         
     def deleteFrame(self,frame):
         #self.pendingframes.append((self.frames.getid(frame),frame))
@@ -916,6 +924,9 @@ class BufferApp(wx.App):
         if 'toolbar_plugins' in mod.__dict__:
             print "found toolbar plugins: %s" % mod.toolbar_plugins
             self.main.addToolbarPlugins(mod.toolbar_plugins)
+        if 'keyboard_plugins' in mod.__dict__:
+            print "found keyboard plugins: %s" % mod.keyboard_plugins
+            self.main.addKeyboardPlugins(mod.keyboard_plugins)
 
 if __name__ == "__main__":
     pass

@@ -509,6 +509,18 @@ toolbar_plugins=[
     [ToggleList],
     ]
 
+def parseKeyboardPluginEntry(entry):
+    if isinstance(entry,list):
+        if len(entry)==1:
+            menuclass=None
+            command=entry[0]
+        else:
+            menuclass=entry[0]
+            command=entry[1]
+    else:
+        menuclass=entry['menuclass']
+        command=entry['command']
+    return (menuclass,command)
 
 def parsePluginEntry(entry):
     if isinstance(entry,list):
@@ -1200,6 +1212,7 @@ class MenuFrame(wx.Frame):
         self.proxy=proxy
         self.menuplugins=None
         self.toolbarplugins=None
+        self.keyboardplugins=None
 
         # This is how to create a statusbar with more than one
         # division, but the automatic menubar help text always appears
@@ -1263,7 +1276,19 @@ class MenuFrame(wx.Frame):
                     print "found key=%s for %s" % (command.keyboard,command)
                     keymap.define(command.keyboard,command(self))
         except:
-            print "apparently already defined the keys."
+            print "apparently already defined the menubar shortcut keys."
+
+    def setKeyboardPlugins(self,name,plugins):
+        keymap=self.proxy.globalKeys
+        try:
+            for plugin in plugins:
+                menuclass,command=parseKeyboardPluginEntry(plugin)
+                if command and command.keyboard:
+                    print "found key=%s for %s" % (command.keyboard,command)
+                    keymap.define(command.keyboard,command(self))
+        except:
+            print "apparently already defined the keyboard shortcut keys."
+            raise
             
     def popupMenu(self,ev):
         print "popping up menu for %s" % ev.GetEventObject()

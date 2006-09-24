@@ -13,6 +13,7 @@ class ShiftLeft(Command):
     name = "Shift &Left"
     tooltip = "Unindent a line region"
     icon = 'icons/text_indent_remove_rob.png'
+    keyboard = 'S-TAB'
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
@@ -22,6 +23,7 @@ class ShiftRight(Command):
     name = "Shift &Right"
     tooltip = "Indent a line or region"
     icon = 'icons/text_indent_rob.png'
+    keyboard = 'TAB'
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
@@ -49,7 +51,6 @@ toolbar_plugins=[
     ['python',ShiftLeft,0.5],
     [ShiftRight],
     ]
-
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',

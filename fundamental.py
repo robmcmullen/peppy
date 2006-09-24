@@ -18,9 +18,63 @@ class OpenFundamental(Command):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"demo.txt")
 
+class WordWrap(Toggle):
+    name = "&Word Wrap"
+    tooltip = "Toggle word wrap in this view"
+    icon = wx.ART_TOOLBAR
+
+    def isEnabled(self, state=None):
+        return True
+    
+    def isChecked(self, index):
+        viewer=self.frame.getCurrentViewer()
+        if viewer and 'wordwrap' in viewer.settings:
+            return viewer.settings['wordwrap']
+        return False
+    
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s" % (id(self),self.name)
+        viewer=self.frame.getCurrentViewer()
+        if viewer:
+            viewer.setWordWrap(not viewer.settings['wordwrap'])
+    
+class BeginningOfLine(Command):
+    name = "Cursor to Start of Line"
+    tooltip = "Move the cursor to the start of the current line."
+    keyboard = 'C-A'
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        viewer=self.frame.getCurrentViewer()
+        if viewer:
+            s=viewer.stc
+            pos = s.GetCurrentPos()
+            col = s.GetColumn(pos)
+            s.GotoPos(pos-col)
+        
+
+class EndOfLine(Command):
+    name = "Cursor to End of Line"
+    tooltip = "Move the cursor to the end of the current line."
+    keyboard = 'C-E'
+
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        viewer=self.frame.getCurrentViewer()
+        if viewer:
+            s=viewer.stc
+            line = s.GetCurrentLine()
+            s.GotoPos(s.GetLineEndPosition(line))
+
 
 menu_plugins=[
     ['main',[('&File',0.0)],OpenFundamental,0.2],
+    ['main',[('&Edit',0.1)],WordWrap,0.1],
+]
+
+keyboard_plugins=[
+    ['main',BeginningOfLine],
+    [EndOfLine],
 ]
 
 
@@ -132,6 +186,16 @@ class FundamentalView(View):
 
     documents={}
 
+    def __init__(self,buffer,frame):
+        View.__init__(self,buffer,frame)
+        self.initSettings()
+
+    def initSettings(self):
+        self.settings['linenumbers']=True
+        self.settings['wordwrap']=False
+        self.settings['folding']=False
+        self.settings['symbols']=False
+
     def createWindow(self,parent):
         print "creating new Fundamental window"
 
@@ -141,10 +205,11 @@ class FundamentalView(View):
 
     def createSTC(self,parent,style=False):
         self.stc=MySTC(parent, self.frame)
+        self.applyDefaultStyle()
         if style:
             self.styleSTC()
 
-    def styleSTC(self):
+    def applyDefaultStyle(self):
         face1 = 'Arial'
         face2 = 'Times New Roman'
         face3 = 'Courier New'
@@ -155,16 +220,39 @@ class FundamentalView(View):
         self.stc.StyleClearAll()
 
         # line numbers in the margin
-        self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-        self.stc.SetMarginWidth(0, 22)
-        self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
-
+        if self.settings['linenumbers']:
+            self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+            self.stc.SetMarginWidth(0, 22)
+            self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
+        else:
+            self.stc.SetMarginWidth(0,0)
+            
         # turn off symbol margin
-        self.stc.SetMarginWidth(1, 0)
+        if self.settings['symbols']:
+            self.stc.SetMarginWidth(1, 0)
+        else:
+            self.stc.SetMarginWidth(1, 16)
 
         # turn off folding margin
-        self.stc.SetMarginWidth(2, 0)
+        if self.settings['folding']:
+            self.stc.SetMarginWidth(2, 16)
+        else:
+            self.stc.SetMarginWidth(2, 0)
 
+        self.setWordWrap()
+
+    def setWordWrap(self,enable=None):
+        if enable is not None:
+            self.settings['wordwrap']=enable
+        if self.settings['wordwrap']:
+            self.stc.SetWrapMode(stc.STC_WRAP_CHAR)
+            self.stc.SetWrapVisualFlags(stc.STC_WRAPVISUALFLAG_END)
+        else:
+            self.stc.SetWrapMode(stc.STC_WRAP_NONE)
+            
+
+    def styleSTC(self):
+        pass
 
     def readySTC(self):
         self.stc.EmptyUndoBuffer()
