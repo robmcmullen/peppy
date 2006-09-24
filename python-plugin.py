@@ -12,7 +12,7 @@ from fundamental import FundamentalView
 class ShiftLeft(Command):
     name = "Shift &Left"
     tooltip = "Unindent a line region"
-    icon = 'icons/text_indent_remove.png'
+    icon = 'icons/text_indent_remove_rob.png'
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
@@ -21,7 +21,7 @@ class ShiftLeft(Command):
 class ShiftRight(Command):
     name = "Shift &Right"
     tooltip = "Indent a line or region"
-    icon = 'icons/text_indent.png'
+    icon = 'icons/text_indent_rob.png'
 
     def runthis(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
