@@ -3,6 +3,7 @@ import os,struct
 import wx
 import wx.stc as stc
 import wx.grid as Grid
+from wx.lib.evtmgr import eventManager
 
 from menudev import *
 from buffers import *
@@ -126,6 +127,18 @@ class HugeTable(Grid.PyGridTableBase):
     def getNumberTextCols(self):
         return self._textcols
     
+    def getCursorPosition(self, loc, refcol=0):
+        """Get cursor position from byte offset from start of file.
+        Optionally take a column parameter that tells us which side of
+        the grid we're on, the hex side or the calculated side.
+        """
+        row=loc/self.nbytes
+        col=loc%self.nbytes
+        if col>=self._hexcols:
+            # convert col to the correct column in the text representation
+            pass
+        return (row,col)
+   
     def getNextCursorPosition(self, row, col):
         if col<self._hexcols:
             col+=1
@@ -302,6 +315,20 @@ class HugeTableGrid(Grid.Grid):
         print "Need to update grid"
         self.table.ResetView(self,stc,format)
 
+    def underlyingUpdate(self,stc,loc=None):
+        """Data has changed in some other view, so we need to update
+        the grid and reset the grid's cursor to the updated position
+        if the location is given.
+        """
+        print "underlyingUpdate: slow way of updating the grid -- updating the whole thing."
+
+        self.table.ResetView(self,stc) # FIXME: this is slow.  Put it in a thread or something.
+
+        if loc is not None:
+            (row,col)=self.GetTable().getCursorPosition(loc,self.GetGridCursorCol())
+            self.SetGridCursor(row,col)
+            self.MakeCellVisible(row,col)
+
     def OnRightDown(self, ev):
         print "hello"
         print self.GetSelectedRows()
@@ -352,7 +379,12 @@ class HexEditView(FundamentalView):
         #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
 
         self.stc.Show(False)
-        self.stc.SetStyleBits(7)
+
+        # Multiple binds to the same handler, ie multiple HexEditViews
+        # trying to do self.buffer.stc.Bind(stc.EVT_STC_MODIFIED,
+        # self.underlyingSTCChanged) don't work.  Need to use the
+        # event manager for multiple bindings.
+        eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
 
     def reparent(self,parent):
         self.win.Reparent(parent)
@@ -361,8 +393,42 @@ class HexEditView(FundamentalView):
     def readySTC(self):
         self.win.Update(self.stc)
         
+    def transModType(self, modType):
+        st = ""
+        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
+                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
+                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                 (stc.STC_PERFORMED_USER, "UserFlag"),
+                 (stc.STC_PERFORMED_UNDO, "Undo"),
+                 (stc.STC_PERFORMED_REDO, "Redo"),
+                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+                 ]
 
-        
+        for flag,text in table:
+            if flag & modType:
+                st = st + text + " "
+
+        if not st:
+            st = 'UNKNOWN'
+
+        return st
+
+    def underlyingSTCChanged(self,evt):
+        sys.stdout.write("""UnderlyingSTCChanged
+        Mod type:     %s
+        At position:  %d
+        Lines added:  %d
+        Text Length:  %d
+        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
+                                  evt.GetPosition(),
+                                  evt.GetLinesAdded(),
+                                  evt.GetLength(),
+                                  repr(evt.GetText()) ))
+        self.win.underlyingUpdate(self.stc,evt.GetPosition())
         
 
 
