@@ -4,6 +4,7 @@ import wx
 import wx.stc as stc
 import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
+import wx.lib.newevent
 
 from menudev import *
 from buffers import *
@@ -293,6 +294,33 @@ class HugeTable(Grid.PyGridTableBase):
 
 
 
+
+
+
+
+
+# This creates a new Event class and a EVT binder function
+(WaitUpdateEvent, EVT_WAIT_UPDATE) = wx.lib.newevent.NewEvent()
+
+from threading import Thread
+class WaitThread(Thread):
+    def __init__(self, notify_window, delay=0.2):
+        Thread.__init__(self)
+        self._notify_window = notify_window
+        self._wait=1
+        self._delay=delay
+
+    def waitMore(self):
+        self._wait=2
+
+    def run(self):
+        while self._wait>0:
+            time.sleep(self._delay)
+            self._wait-=1
+        wx.PostEvent(self._notify_window,WaitUpdateEvent())
+
+
+
 class HugeTableGrid(Grid.Grid):
     def __init__(self, parent, stc, format="@4f"):
         Grid.Grid.__init__(self, parent, -1)
@@ -309,20 +337,22 @@ class HugeTableGrid(Grid.Grid):
 
         self.Bind(Grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(EVT_WAIT_UPDATE,self.underlyingUpdate)
         self.Show(True)
 
     def Update(self,stc,format=None):
         print "Need to update grid"
         self.table.ResetView(self,stc,format)
 
-    def underlyingUpdate(self,stc,loc=None):
+    def underlyingUpdate(self, ev, loc=None):
         """Data has changed in some other view, so we need to update
         the grid and reset the grid's cursor to the updated position
         if the location is given.
         """
         print "underlyingUpdate: slow way of updating the grid -- updating the whole thing."
+        print ev
 
-        self.table.ResetView(self,stc) # FIXME: this is slow.  Put it in a thread or something.
+        self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
         if loc is not None:
             (row,col)=self.GetTable().getCursorPosition(loc,self.GetGridCursorCol())
@@ -364,6 +394,8 @@ class HugeTableGrid(Grid.Grid):
             return
 
 
+
+
 class HexEditView(FundamentalView):
     pluginkey = 'hexedit'
     keyword='HexEdit'
@@ -380,11 +412,21 @@ class HexEditView(FundamentalView):
 
         self.stc.Show(False)
 
+        # Can't use self.stc.SetModEventMask, because we're really
+        # interested in the events from buffer.stc not from self.stc.
+        # We also can't set the buffer's event flags, because other
+        # views may be interested in them.  So, we have to screen
+        # events in the callback itself.
+        ## self.stc.SetModEventMask(stc.STC_MOD_INSERTTEXT|stc.STC_MOD_DELETETEXT|stc.STC_PERFORMED_USER|stc.STC_PERFORMED_UNDO|stc.STC_PERFORMED_REDO)
+        
         # Multiple binds to the same handler, ie multiple HexEditViews
         # trying to do self.buffer.stc.Bind(stc.EVT_STC_MODIFIED,
         # self.underlyingSTCChanged) don't work.  Need to use the
         # event manager for multiple bindings.
         eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
+
+        # Thread stuff for the underlying change callback
+        self.waiting=None
 
     def reparent(self,parent):
         self.win.Reparent(parent)
@@ -418,17 +460,39 @@ class HexEditView(FundamentalView):
         return st
 
     def underlyingSTCChanged(self,evt):
-        sys.stdout.write("""UnderlyingSTCChanged
-        Mod type:     %s
-        At position:  %d
-        Lines added:  %d
-        Text Length:  %d
-        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
-                                  evt.GetPosition(),
-                                  evt.GetLinesAdded(),
-                                  evt.GetLength(),
-                                  repr(evt.GetText()) ))
-        self.win.underlyingUpdate(self.stc,evt.GetPosition())
+        # As the comment in the createWindow method noted, we have to
+        # screen for the events we're interested in because we're not
+        # allowed to change the events that self.buffer.stc sees.
+        etype=evt.GetModificationType()
+        if etype&stc.STC_MOD_INSERTTEXT or etype&stc.STC_MOD_DELETETEXT:
+            sys.stdout.write("""UnderlyingSTCChanged
+            Mod type:     %s
+            At position:  %d
+            Lines added:  %d
+            Text Length:  %d
+            Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
+                                      evt.GetPosition(),
+                                      evt.GetLinesAdded(),
+                                      evt.GetLength(),
+                                      repr(evt.GetText()) ))
+
+            #self.win.underlyingUpdate(self.stc,evt.GetPosition())
+            if self.waiting:
+                if self.waiting.isAlive():
+                    print "underlyingSTCChanged: found active wait thread"
+                    self.waiting.waitMore()
+                else:
+                    self.waiting.join()
+                    self.waiting=None
+                    print "underlyingSTCChanged: wait thread destroyed"
+                    # start a new thread below
+
+            # don't use an else here so that a new thread will be
+            # started if we just destroyed the old thread.
+            if not self.waiting:
+                print "underlyingSTCChanged: starting wait thread"
+                self.waiting=WaitThread(self.win)
+                self.waiting.start()
         
 
 
