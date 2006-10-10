@@ -168,6 +168,9 @@ class STCInterface(object):
     def Redo(self):
         pass
 
+    def GetModify(self):
+        return False
+
     def CreateDocument(self):
         return "notarealdoc"
 
@@ -181,7 +184,11 @@ class STCInterface(object):
         pass
 
 # Global default STC interface for user interface purposes
-BlankSTC=STCInterface()
+class NullSTC(STCInterface):
+    def Bind(self,evt,obj):
+        pass
+    
+BlankSTC=NullSTC()
 
 
 
@@ -258,6 +265,9 @@ class View(object):
     def getTitle(self):
         return self.keyword
 
+    def getTabName(self):
+        return self.buffer.getTabName()
+
     def getIcon(self):
         return getIconStorage(self.icon)
     
@@ -297,10 +307,18 @@ class View(object):
         self.readySTC()
 
     def close(self):
+        print "View: closing view of buffer %s" % self.buffer
         #self.stc.ReleaseDocument(self.buffer.docptr)
+        self.win.Destroy()
+        # remove reference to this view in the buffer's listeners
+        self.buffer.remove(self)
         pass
 
+    def focus(self):
+        self.win.SetFocus()
 
+    def showModified(self,modified):
+        self.frame.showModified(self)
 
 
 
@@ -342,7 +360,7 @@ class Buffer(object):
 
     filenames={}
     
-    def __init__(self,parent,filename=None,viewer=View,fh=None):
+    def __init__(self,parent,filename=None,viewer=View,fh=None,mystc=None):
         Buffer.count+=1
         self.fh=fh
         self.defaultviewer=viewer
@@ -351,13 +369,29 @@ class Buffer(object):
         self.name="Buffer #%d: %s.  Default viewer=%s" % (self.count,str(self.filename),self.defaultviewer.keyword)
 
         self.viewer=None
+        self.viewers=[]
+
+        self.modified=False
 
         # always one STC per buffer
-        self.stc=stc.StyledTextCtrl(parent,-1)
+        if mystc==None:
+            ID=wx.NewId()
+            self.stc=stc.StyledTextCtrl(parent,ID)
+        else:
+            self.stc=mystc
+        self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
         self.docptr=None
 
     def getView(self,frame):
-        return self.defaultviewer(self,frame) # create new view
+        viewer=self.defaultviewer(self,frame) # create new view
+        self.viewers.append(viewer) # keep track of views
+        return viewer
+
+    def remove(self,view):
+        if view in self.viewers:
+            self.viewers.remove(view)
+        else:
+            raise ValueError("Bug somewhere.  View %s not found in Buffer %s" % (view,self))
 
     def setFilename(self,filename):
         if not filename:
@@ -374,7 +408,9 @@ class Buffer(object):
     def getFilename(self):
         return self.filename
 
-    def getDisplayname(self):
+    def getTabName(self):
+        if self.modified:
+            return "*"+self.displayname
         return self.displayname
 
     def getFileObject(self):
@@ -396,18 +432,26 @@ class Buffer(object):
     
     def open(self):
         self.defaultviewer.loader(self)
+        self.modified=False
+
+    def OnChanged(self, evt):
+        if self.stc.GetModify():
+            print "modified!"
+            changed=True
+        else:
+            print "clean!"
+            changed=False
+        if changed!=self.modified:
+            self.modified=changed
+            for view in self.viewers:
+                print "OnChanged: should notifing: %s" % view
+                view.showModified(self.modified)
         
 
 class Empty(Buffer):
     def __init__(self,parent,filename=None,viewer=View,fh=None):
-        self.filename=filename
-        self.fh=fh
-        self.defaultviewer=viewer
+        Buffer.__init__(self,parent,filename,viewer,fh,BlankSTC)
         self.name="(Empty)"
-
-        # always one STC per buffer
-        self.stc=BlankSTC
-        self.docptr=None
 
 
 ##class BufferList(object):
@@ -465,6 +509,11 @@ class TabbedViewer(wx.Notebook):
         else:
             print "Skipping tab changed event for %d" % ev.GetSelection()
         ev.Skip()
+    
+    def showModified(self,viewer):
+        index=self.findIndex(viewer)
+        if index>=0:
+            self.SetPageText(index,viewer.getTabName())            
 
     # Replace the current tab contents with this viewer, or create if
     # doesn't exist.
@@ -474,12 +523,12 @@ class TabbedViewer(wx.Notebook):
             self.updating=True
             managed=self.managed[index]
             managed['box'].Detach(managed['viewer'].win)
-            managed['viewer'].win.Destroy()
+            managed['viewer'].close()
             viewer.createWindow(managed['panel'])
             managed['box'].Add(viewer.win, 1, wx.EXPAND)
             managed['box'].Layout()
             managed['viewer']=viewer
-            self.SetPageText(index,viewer.keyword)
+            self.SetPageText(index,viewer.getTabName())
             self.SetPageImage(index,viewer.getIcon())
             self.updating=False
         else:
@@ -504,7 +553,7 @@ class TabbedViewer(wx.Notebook):
             viewer.win.Show()
         box.Add(viewer.win, 1, wx.EXPAND)
         panel.Layout()
-        if self.AddPage(panel, viewer.keyword):
+        if self.AddPage(panel, viewer.getTabName()):
             managed={'panel': panel,
                      'box': box,
                      'viewer': viewer,
@@ -570,6 +619,8 @@ class HideOneTabViewer(wx.Panel):
         self.SetAutoLayout(True)
         self.SetSizer(self.mainsizer)
         self.mainsizer.Hide(self.tabs)
+
+        # This is the wxWindow that is being managed, not the View
         self.managed=None
 
         self.count=0
@@ -579,6 +630,11 @@ class HideOneTabViewer(wx.Panel):
         self.tabs.addUserChangedCallback(func)
 
     def setWindow(self, win):
+        """Set the wxWindow that is managed by this notebook, not the
+        Viewer.  The viewer is managed by setViewer; this is a
+        lower-level function.
+        """
+        
         # GetItem throws an exception on Windows if no item exists at
         # that position.  On unix it just returns None as according to
         # the docs.  So, keep track of any managed window ourselves.
@@ -587,6 +643,7 @@ class HideOneTabViewer(wx.Panel):
             # the old view is destroyed here.  Should I save the state
             # somehow so the next view of this buffer sees the same
             # location in the file?
+            print "setWindow: closing old self.managed=%s" % str(self.managed)
             self.managed.Destroy()
             self.managed=None
         if win:
@@ -624,7 +681,7 @@ class HideOneTabViewer(wx.Panel):
             # clean up old stuff, but don't delete old window till
             # after the new one is created so the viewer can clone
             # itself.  ACTUALLY, now don't delete at all but reparent.
-            #self.managed.Destroy()
+            #self.managed.close()
             self.managed=None
             self.viewer=None
             # add new viewer as tab 2
@@ -684,6 +741,10 @@ class HideOneTabViewer(wx.Panel):
         else:
             return self.tabs.findIndex(viewer)
 
+    def showModified(self,viewer):
+        self.tabs.showModified(viewer)
+            
+
 class BufferFrame(MenuFrame):
     def __init__(self, proxy):
         self.framelist=FrameList(self)
@@ -707,7 +768,9 @@ class BufferFrame(MenuFrame):
         # correct state.
         print "OnActivate: %s" % self.name
         self.enableMenu()
-        self.getCurrentViewer().win.SetFocus()
+        viewer=self.getCurrentViewer()
+        if viewer:
+            viewer.focus()
 
     def getCurrentSTC(self):
         viewer=self.tabs.getCurrentViewer()
@@ -755,6 +818,21 @@ class BufferFrame(MenuFrame):
                 self.tabs.closeViewer(viewer)
                 self.resetMenu()
 
+    def setTitle(self):
+        viewer=self.getCurrentViewer()
+        if viewer:
+            self.SetTitle("peppy: %s" % viewer.getTabName())
+        else:
+            self.SetTitle("peppy")
+
+    def showModified(self,viewer):
+        current=self.getCurrentViewer()
+        if current:
+            self.setTitle()
+        self.tabs.showModified(viewer)
+        
+    
+
     def setViewer(self,viewer):
         self.menuplugins.widget.Freeze()
         self.resetMenu()
@@ -762,7 +840,8 @@ class BufferFrame(MenuFrame):
         #viewer.open()
         self.addMenu()
         self.menuplugins.widget.Thaw()
-        self.getCurrentViewer().win.SetFocus()
+        self.getCurrentViewer().focus()
+        self.setTitle()
 
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
@@ -788,14 +867,16 @@ class BufferFrame(MenuFrame):
         print "newBuffer: after addViewer"
         self.addMenu()
         self.menuplugins.widget.Thaw()
-        self.getCurrentViewer().win.SetFocus()
+        self.getCurrentViewer().focus()
+        self.setTitle()
 
     def onViewerChanged(self,ev):
         self.menuplugins.widget.Freeze()
         self.resetMenu()
         self.addMenu(ev.GetViewer())
         self.menuplugins.widget.Thaw()
-        self.getCurrentViewer().win.SetFocus()
+        self.getCurrentViewer().focus()
+        self.setTitle()
         ev.Skip()
         
     def openFileDialog(self):        
@@ -879,7 +960,7 @@ class BufferProxy(Singleton):
     def showFrame(self,frame):
         frame.Show(True)
 
-    def open(self,frame,filename):
+    def open(self,frame,filename,newTab=True):
         viewer=self.buffers.getDefaultViewer(filename)
         buffer=Buffer(self.dummyframe,filename,viewer)
         # probably should load the file here, and if it fails for some
@@ -887,7 +968,10 @@ class BufferProxy(Singleton):
         buffer.open()
         
         self.addBuffer(buffer)
-        frame.setBuffer(buffer)
+        if newTab:
+            frame.newBuffer(buffer)
+        else:
+            frame.setBuffer(buffer)
 
     def newTab(self,frame):
         print "newTab: frame=%s" % frame

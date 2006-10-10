@@ -273,14 +273,8 @@ class TitleView(View):
 
 class TitleBuffer(Buffer):
     def __init__(self,parent,filename=None,viewer=TitleView,fh=None):
-        self.filename=filename
-        self.fh=fh
-        self.defaultviewer=viewer
+        Buffer.__init__(self,parent,filename,viewer,fh,BlankSTC)
         self.name="%s %s\n%s" % ("peppy",__version__,__description__)
-
-        # always one STC per buffer
-        self.stc=BlankSTC
-        self.docptr=None
 
 
 
