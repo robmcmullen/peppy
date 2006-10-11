@@ -432,7 +432,7 @@ class HexEditView(FundamentalView):
         self.win.Reparent(parent)
         self.stc.Reparent(parent)
 
-    def readySTC(self):
+    def openPostHook(self):
         self.win.Update(self.stc)
         
     def transModType(self, modType):

@@ -254,9 +254,7 @@ class FundamentalView(View):
     def styleSTC(self):
         pass
 
-    def readySTC(self):
-        self.stc.EmptyUndoBuffer()
-        
+    def openPostHook(self):
         # SetIndent must be called whenever a new document is loaded
         # into the STC
         self.stc.SetIndent(4)

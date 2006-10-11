@@ -294,7 +294,7 @@ class View(object):
         self.win.PopupMenu(self.popup)
         ev.Skip()
 
-    def readySTC(self):
+    def openPostHook(self):
         pass
 
     def open(self):
@@ -304,7 +304,7 @@ class View(object):
             # for the new view
             self.stc.AddRefDocument(self.buffer.docptr)
             self.stc.SetDocPointer(self.buffer.docptr)
-        self.readySTC()
+        self.openPostHook()
 
     def close(self):
         print "View: closing view of buffer %s" % self.buffer
@@ -433,6 +433,7 @@ class Buffer(object):
     def open(self):
         self.defaultviewer.loader(self)
         self.modified=False
+        self.stc.EmptyUndoBuffer()
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
