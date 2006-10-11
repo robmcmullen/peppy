@@ -95,6 +95,10 @@ class Save(Command):
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.frame.save()
+
 class SaveAs(Command):
     name = "Save &As..."
     tooltip = "Save as a new file"
@@ -104,6 +108,9 @@ class SaveAs(Command):
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
+    def runthis(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.frame.saveFileDialog()
 
 
 class Undo(Command):

@@ -194,28 +194,42 @@ BlankSTC=NullSTC()
 
 #### Loaders for reading files and populating the STC interface
 
-class Loader(object):
-    def __init__(self,buffer):
-        buffer.docptr=buffer.stc.CreateDocument()
-        buffer.stc.SetDocPointer(buffer.docptr)
-        print "Loader: creating new document %s" % buffer.docptr
-        self.read(buffer)
+class Filter(object):
+    def __init__(self):
+        pass
 
     def read(self,buffer):
         pass
 
-class TextLoader(Loader):
+    def write(self,buffer):
+        return False
+
+class TextFilter(Filter):
     def read(self,buffer):
-        fh=buffer.getFileObject()
+        fh=buffer.getReadFileObject()
         txt=fh.read()
-        print "TextLoader: reading %d bytes" % len(txt)
+        print "TextFilter: reading %d bytes" % len(txt)
         buffer.stc.SetText(txt)
 
-class BinaryLoader(Loader):
+    def write(self,buffer,filename):
+        fh=buffer.getWriteFileObject(filename)
+        if fh:
+            txt=buffer.stc.GetText()
+            print "TextFilter: writing %d bytes" % len(txt)
+            try:
+                fh.write(txt)
+            except:
+                print "TextFilter: something went wrong writing to %s" % filename
+                raise
+                
+            return True
+        return False
+
+class BinaryFilter(Filter):
     def read(self,buffer):
-        fh=buffer.getFileObject()
+        fh=buffer.getReadFileObject()
         txt=fh.read()
-        print "BinaryLoader: reading %d bytes" % len(txt)
+        print "BinaryFilter: reading %d bytes" % len(txt)
 
         # Now, need to convert it to two bytes per character
         styledtxt='\0'.join(txt)+'\0'
@@ -249,7 +263,7 @@ class View(object):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
-    loader=TextLoader
+    filter=TextFilter()
     
     def __init__(self,buffer,frame):
         self.win=None
@@ -397,13 +411,14 @@ class Buffer(object):
         if not filename:
             filename="untitled"
         self.filename=filename
-        if filename in self.filenames:
-            count=self.filenames[filename]+1
-            self.filenames[filename]=count
-            self.displayname=filename+"<%d>"%count
+        basename=os.path.basename(self.filename)
+        if basename in self.filenames:
+            count=self.filenames[basename]+1
+            self.filenames[basename]=count
+            self.displayname=basename+"<%d>"%count
         else:
-            self.filenames[filename]=1
-            self.displayname=filename
+            self.filenames[basename]=1
+            self.displayname=basename
         
     def getFilename(self):
         return self.filename
@@ -413,7 +428,10 @@ class Buffer(object):
             return "*"+self.displayname
         return self.displayname
 
-    def getFileObject(self):
+    def getReadFileObject(self):
+        self.docptr=self.stc.CreateDocument()
+        self.stc.SetDocPointer(self.docptr)
+        print "getReadFileObject: creating new document %s" % self.docptr
         if not self.fh:
             try:
                 fh=open(self.filename,"rb")
@@ -431,9 +449,33 @@ class Buffer(object):
         return self.fh
     
     def open(self):
-        self.defaultviewer.loader(self)
+        self.defaultviewer.filter.read(self)
         self.modified=False
         self.stc.EmptyUndoBuffer()
+
+    def getWriteFileObject(self,filename):
+        if filename is None:
+            filename=self.filename
+        else:
+            # FIXME: need to handle the case when we would be
+            # overwriting an existing file with our new filename
+            pass
+        print "getWriteFileObject: saving to %s" % filename
+        try:
+            fh=open(filename,"wb")
+        except:
+            print "Couldn't open %s" % filename
+            return None
+        return fh
+    
+    def save(self,filename=None):
+        print "Buffer: should save the file here..."
+        success=self.defaultviewer.filter.write(self,filename)
+        if success:
+            self.stc.SetSavePoint()
+            if filename is not None:
+                self.setFilename(filename)
+            self.OnChanged(None)
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
@@ -831,8 +873,6 @@ class BufferFrame(MenuFrame):
         if current:
             self.setTitle()
         self.tabs.showModified(viewer)
-        
-    
 
     def setViewer(self,viewer):
         self.menuplugins.widget.Freeze()
@@ -901,6 +941,35 @@ class BufferFrame(MenuFrame):
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
         dlg.Destroy()
+       
+    def save(self):        
+        viewer=self.getCurrentViewer()
+        if viewer and viewer.buffer:
+            viewer.buffer.save()
+            
+    def saveFileDialog(self):        
+        viewer=self.getCurrentViewer()
+        if viewer and viewer.buffer:
+            wildcard="*.*"
+            cwd=os.getcwd()
+            dlg = wx.FileDialog(
+                self, message="Save File", defaultDir=cwd, 
+                defaultFile="", wildcard=wildcard, style=wx.SAVE)
+
+            # Show the dialog and retrieve the user response. If it is the
+            # OK response, process the data.
+            if dlg.ShowModal() == wx.ID_OK:
+                # This returns a Python list of files that were selected.
+                paths = dlg.GetPaths()
+                if len(paths)==1:
+                    print "save file %s:" % paths[0]
+                    viewer.buffer.save(paths[0])
+                else:
+                    raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
+
+            # Destroy the dialog. Don't do this until you are done with it!
+            # BAD things can happen otherwise!
+            dlg.Destroy()
        
 
 

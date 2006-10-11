@@ -401,7 +401,7 @@ class HexEditView(FundamentalView):
     keyword='HexEdit'
     icon='icons/tux.png'
     regex="\.(hex|bin|so|dat|ico|emf)"
-    loader=BinaryLoader
+    filter=BinaryFilter()
 
     def createWindow(self,parent):
         FundamentalView.createWindow(self,parent)
