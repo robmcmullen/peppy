@@ -9,146 +9,10 @@ from buffers import *
 
 from fundamental import FundamentalView
 
-class ShiftLeft(Command):
-    name = "Shift &Left"
-    tooltip = "Unindent a line region"
-    icon = 'icons/text_indent_remove_rob.png'
-    keyboard = 'S-TAB'
+class IndentMixin(object):
+    def indent(self, view, incr):
+        s=view.stc
 
-    def runthis(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.getCurrentViewer().indentSelection(-1)
-
-class ShiftRight(Command):
-    name = "Shift &Right"
-    tooltip = "Indent a line or region"
-    icon = 'icons/text_indent_rob.png'
-    keyboard = 'TAB'
-
-    def runthis(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.getCurrentViewer().indentSelection(1)
-
-class PythonMajorMode(Command):
-    name = "Change to Python Major Mode"
-    tooltip = "Change to python editor"
-    icon = "icons/folder_page.png"
-    keyboard = "C-X C-P"
-
-    def runthis(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.changeMajorMode(PythonView)
-
-
-menu_plugins=[
-    ['python',[('&Python',0.5)],ShiftLeft,0.2],
-    [ShiftRight],
-    ['main',[('&Edit',0.1)],PythonMajorMode,0.9],
-]
-
-toolbar_plugins=[
-    # toolbar plugins here...
-    ['python',ShiftLeft,0.5],
-    [ShiftRight],
-    ]
-
-if wx.Platform == '__WXMSW__':
-    faces = { 'times': 'Times New Roman',
-              'mono' : 'Courier New',
-              'helv' : 'Arial',
-              'other': 'Comic Sans MS',
-              'size' : 10,
-              'size2': 8,
-             }
-else:
-    faces = { 'times': 'Times',
-              'mono' : 'Courier',
-              'helv' : 'Helvetica',
-              'other': 'new century schoolbook',
-              'size' : 12,
-              'size2': 10,
-             }
-
-class PythonView(FundamentalView):
-    pluginkey = 'python'
-    keyword='Python'
-    icon='icons/py.ico'
-    regex="\.(py|pyx)$"
-
-    def styleSTC(self):
-        s=self.stc
-
-        face1 = 'Arial'
-        face2 = 'Times New Roman'
-        face3 = 'Courier New'
-        pb = 10
-
-        # Set the Lexer
-        s.SetLexer(stc.STC_LEX_PYTHON)
-        s.SetKeyWords(0, " ".join(keyword.kwlist))
-        s.SetProperty("tab.timmy.whinge.level", "1")
-        
-
-        # make some styles
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
-        s.StyleClearAll()
-
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(helv)s,size:%(size)d" % faces)
-        s.StyleClearAll()  # Reset all to be like the default
-
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(helv)s,size:%(size)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0,face:%(helv)s,size:%(size2)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  "fore:#FFFFFF,back:#0000FF,bold")
-        s.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FF0000,bold")
-
-        # Python styles
-        # Default 
-        s.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        # Comments
-        s.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(other)s,size:%(size)d" % faces)
-        # Number
-        s.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
-        # String
-        s.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        # Single quoted string
-        s.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(helv)s,size:%(size)d" % faces)
-        # Keyword
-        s.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
-        # Triple quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Triple double quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Class name definition
-        s.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
-        # Function or method name definition
-        s.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
-        # Operators
-        s.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
-        # Identifiers
-        s.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(helv)s,size:%(size)d" % faces)
-        # Comment-blocks
-        s.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,size:%(size)d" % faces)
-        # End of line where string is not closed
-        s.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
-
-
-        # line numbers in the margin
-        s.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-        s.SetMarginWidth(0, 30)
-        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
-
-        # turn off symbol margin
-        s.SetMarginWidth(1, 0)
-
-        # turn off folding margin
-        s.SetMarginWidth(2, 0)
-
-    def indentSelection(self, incr):
-        s=self.stc
-        
         # from pype.PythonSTC.Dent()
         print "indenting by %d" % incr
         incr *= s.GetIndent()
@@ -182,29 +46,39 @@ class PythonView(FundamentalView):
             else:
                 p = 0
                 if lnstart != 0:
-                    p = s.GetLineEndPosition(lnstart-1) + len(s.format)
+                    p = s.GetLineEndPosition(lnstart-1) + len(view.format)
                 s.SetSelection(p, s.GetLineEndPosition(lnend))
         finally:
             s.EndUndoAction()
 
-    ##
-    # tab the line to the correct indent (matching the line above)
-    def electricTab(self):
-        s=self.stc
-        
-        # From PyPE:
-        #get information about the current cursor position
-        linenum = s.GetCurrentLine()
-        pos = s.GetCurrentPos()
-        col = s.GetColumn(pos)
-        linestart = s.PositionFromLine(linenum)
-        line = s.GetLine(linenum)[:pos-linestart]
-    
-        #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)                    
 
-    def electricReturn(self):
-        s=self.stc
+class ShiftLeft(ViewAction,IndentMixin):
+    name = "Shift &Left"
+    tooltip = "Unindent a line region"
+    icon = 'icons/text_indent_remove_rob.png'
+    keyboard = 'S-TAB'
+
+    def action(self, viewer, state=None, pos=-1):
+        self.indent(viewer,-1)
+
+class ShiftRight(ViewAction,IndentMixin):
+    name = "Shift &Right"
+    tooltip = "Indent a line or region"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'TAB'
+
+    def action(self, viewer, state=None, pos=-1):
+        self.indent(viewer,1)
+
+
+class ElectricReturn(ViewAction):
+    name = "Electric Return"
+    tooltip = "Indent the next line following a return"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'RET'
+
+    def action(self, viewer, state=None, pos=-1):
+        s=viewer.stc
         
         # From PyPE: indent the new line to the correct indent
         # (matching the line above or indented further based on syntax)
@@ -219,19 +93,17 @@ class PythonView(FundamentalView):
         #get info about the current line's indentation
         ind = s.GetLineIndentation(linenum)                    
 
-        s.format=os.linesep
-        
         xtra = 0
 
         if col <= ind:
             xtra = None
             if s.GetUseTabs():
-                s.ReplaceSelection(s.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
+                s.ReplaceSelection(viewer.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
             else:
-                s.ReplaceSelection(s.format+(col*' '))
+                s.ReplaceSelection(viewer.format+(col*' '))
         elif not pos:
             xtra = None
-            s.ReplaceSelection(s.format)
+            s.ReplaceSelection(viewer.format)
 
         else:
             colon = ord(':')
@@ -334,9 +206,140 @@ class PythonView(FundamentalView):
             
             if s.GetUseTabs():
                 a = a.replace(s.GetTabWidth()*' ', '\t')
-            ## s._tdisable(s.ReplaceSelection, s.format+a)
-            s.ReplaceSelection(s.format+a)
+            ## s._tdisable(s.ReplaceSelection, viewer.format+a)
+            s.ReplaceSelection(viewer.format+a)
         
+
+class PythonMajorMode(FrameAction):
+    name = "Change to Python Major Mode"
+    tooltip = "Change to python editor"
+    icon = "icons/folder_page.png"
+    keyboard = "C-X C-P"
+
+    def action(self, state=None, pos=-1):
+        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.frame.changeMajorMode(PythonView)
+
+
+menu_plugins=[
+    ['python',[('&Python',0.5)],ShiftLeft,0.2],
+    [ShiftRight],
+    ['main',[('&Edit',0.1)],PythonMajorMode,0.9],
+]
+
+toolbar_plugins=[
+    # toolbar plugins here...
+    ['python',ShiftLeft,0.5],
+    [ShiftRight],
+    ]
+
+if wx.Platform == '__WXMSW__':
+    faces = { 'times': 'Times New Roman',
+              'mono' : 'Courier New',
+              'helv' : 'Arial',
+              'other': 'Comic Sans MS',
+              'size' : 10,
+              'size2': 8,
+             }
+else:
+    faces = { 'times': 'Times',
+              'mono' : 'Courier',
+              'helv' : 'Helvetica',
+              'other': 'new century schoolbook',
+              'size' : 10,
+              'size2': 8,
+             }
+
+class PythonView(FundamentalView):
+    pluginkey = 'python'
+    keyword='Python'
+    icon='icons/py.ico'
+    regex="\.(py|pyx)$"
+
+    def styleSTC(self):
+        self.format=os.linesep
+        
+        s=self.stc
+
+        face1 = 'Arial'
+        face2 = 'Times New Roman'
+        face3 = 'Courier New'
+        pb = 10
+
+        # Set the Lexer
+        s.SetLexer(stc.STC_LEX_PYTHON)
+        s.SetKeyWords(0, " ".join(keyword.kwlist))
+        s.SetProperty("tab.timmy.whinge.level", "1")
+        
+       # Global default styles for all languages
+        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
+        s.StyleClearAll()  # Reset all to be like the default
+
+        # Global default styles for all languages
+        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
+        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0,face:%(mono)s,size:%(size2)d" % faces)
+        s.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
+        s.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  "fore:#FFFFFF,back:#0000FF,bold")
+        s.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FF0000,bold")
+
+        # Python styles
+        # Default 
+        s.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
+        # Comments
+        s.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(mono)s,size:%(size)d" % faces)
+        # Number
+        s.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
+        # String
+        s.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
+        # Single quoted string
+        s.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
+        # Keyword
+        s.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
+        # Triple quotes
+        s.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Triple double quotes
+        s.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
+        # Class name definition
+        s.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
+        # Function or method name definition
+        s.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
+        # Operators
+        s.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
+        # Identifiers
+        s.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
+        # Comment-blocks
+        s.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,face:%(mono)s,size:%(size)d" % faces)
+        # End of line where string is not closed
+        s.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+
+
+        # line numbers in the margin
+        s.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+        s.SetMarginWidth(0, 30)
+        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
+
+        # turn off symbol margin
+        s.SetMarginWidth(1, 0)
+
+        # turn off folding margin
+        s.SetMarginWidth(2, 0)
+
+    ##
+    # tab the line to the correct indent (matching the line above)
+    def electricTab(self):
+        s=self.stc
+        
+        # From PyPE:
+        #get information about the current cursor position
+        linenum = s.GetCurrentLine()
+        pos = s.GetCurrentPos()
+        col = s.GetColumn(pos)
+        linestart = s.PositionFromLine(linenum)
+        line = s.GetLine(linenum)[:pos-linestart]
+    
+        #get info about the current line's indentation
+        ind = s.GetLineIndentation(linenum)                    
+
 
 
 viewers=[

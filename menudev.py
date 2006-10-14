@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-
+This is an overly-complicated attempt at dynamic menus and toolbars.
+Check out ulipad's makemenu.py and maketoolbar.py for more ideas on
+how to make this easier to understand.
 """
 
 import os,os.path,sys,re,time,commands,glob,bisect
@@ -15,8 +17,8 @@ from wxemacskeybindings import *
 
 
 # is each command a new instance?
-class Command(object):
-    name = "Command"
+class FrameAction(object):
+    name = "FrameAction"
     help = "Help string"
     tooltip = "some tooltip help"
     icon = None
@@ -35,18 +37,18 @@ class Command(object):
     # If you override run(), you have to do all the housekeeping.
     def run(self, state=None, pos=-1):
         print "exec: id=%s name=%s" % (id(self),self.name)
-        self.runthis(state,pos)
+        self.action(state,pos)
         self.frame.enableMenu()
 
-    # If you override runthis(), all the housekeeping is done for you
+    # If you override action(), all the housekeeping is done for you
     # and you just supply the command to run after the housekeeping is
     # complete.
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         pass
 
     def __call__(self, evt, number=None):
         print "%s called by keybindings" % self
-        self.runthis()
+        self.action()
 
     # pass the state onto the frame without activating the user
     # interface action.
@@ -68,13 +70,13 @@ class Command(object):
     def getToolbarIcon(self, pos=-1):
         return self.icon
         
-class Toggle(Command):
-    name = "Toggle"
-    tooltip = "Toggle button"
+class FrameToggle(FrameAction):
+    name = "FrameToggle"
+    tooltip = "FrameToggle button"
     toggle = True
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
         self.checked=False
 
     def isChecked(self, index=None):
@@ -83,17 +85,17 @@ class Toggle(Command):
     def run(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,pos)
         self.checked = not self.checked
-        self.runthis(state,pos)
+        self.action(state,pos)
 
 
-class CommandList(Command):
-    name = "CommandList"
+class FrameActionList(FrameAction):
+    name = "FrameActionList"
     empty = "< empty list >"
     tooltip = "some help for this list"
     dynamic = True
 
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
         # list of {'item':item,'name':name, and optional stuff like
         # 'icon':icon,...}
@@ -143,10 +145,10 @@ class CommandList(Command):
     
     def run(self, state=None, pos=-1):
         print "exec: id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos])
-        self.runthis(state,pos)
+        self.action(state,pos)
 
 
-class CategoryList(CommandList):
+class CategoryList(FrameActionList):
     name = "CategoryList"
     empty = "< empty list >"
     tooltip = "some help for this list"
@@ -156,7 +158,7 @@ class CategoryList(CommandList):
     itemdict = {}
 
     def __init__(self, frame):
-        CommandList.__init__(self, frame)
+        FrameActionList.__init__(self, frame)
 
         # list of {'item':item,'name':name, and optional stuff like
         # 'icon':icon,...}
@@ -214,7 +216,8 @@ class CategoryList(CommandList):
             cats=self.itemdict.keys()
             cats.sort()
             for category in cats:
-                entries.extend(self.itemdict[category]['item'])
+                for item in self.itemdict[category]:
+                    entries.append(item['item'])
             return entries
         elif category not in self.itemdict or len(self.itemdict[category])<1:
             return []
@@ -233,16 +236,16 @@ class CategoryList(CommandList):
     
     def run(self, state=None, pos=-1):
         print "exec: id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos])
-        self.runthis(state,pos)
+        self.action(state,pos)
 
 
-class RadioList(CommandList):
+class RadioList(FrameActionList):
     name = "RadioList"
     tooltip = "Some help for this group of radio items"
     radio = True
 
     def __init__(self, frame):
-        CommandList.__init__(self, frame)
+        FrameActionList.__init__(self, frame)
         self.itemlist = []
         self.selected = 0 # zero-based list, so we're selecting 'item 3'
 
@@ -254,26 +257,26 @@ class RadioList(CommandList):
     def run(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%d" % (id(self),self.name,pos)
         self.selected = pos
-        self.runthis(state,pos)
+        self.action(state,pos)
 
 
 
 
 
-class NewWindow(Command):
+class NewWindow(FrameAction):
     name = "&New Window"
     tooltip = "Open a new window"
     keyboard = "C-X 5 2"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         frame=self.frame.proxy.newFrame(callingFrame=self.frame)
         frame.Show(True)
 
 
-class FrameList(CommandList):
+class FrameList(FrameActionList):
     name = "FrameList"
     empty = "< list of frames >"
     tooltip = "Bring the frame to the front"
@@ -282,23 +285,23 @@ class FrameList(CommandList):
     itemlist = []
     
     def __init__(self, frame):
-        CommandList.__init__(self, frame)
+        FrameActionList.__init__(self, frame)
         self.itemlist = FrameList.itemlist
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "FrameList.run: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist))
         print "FrameList.run: raising frame name=%s pos=%d" % (self.name,pos)
         self.itemlist[pos]['item'].Raise()
     
-class DeleteWindow(Command):
+class DeleteWindow(FrameAction):
     name = "&Delete Window"
     tooltip = "Delete current window"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
         self.itemlist = FrameList.itemlist
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         self.frame.closeWindow(None)
 
     def isEnabled(self, state=None):
@@ -308,13 +311,13 @@ class DeleteWindow(Command):
 
 
 
-class Open(Command):
+class Open(FrameAction):
     name = "&Open Image..."
     tooltip = "Open an image or hypercube"
     icon = wx.ART_FILE_OPEN
     keyboard = "C-X C-F"
 
-class OpenRecent(Command):
+class OpenRecent(FrameAction):
     name = "<no recent files>"
     tooltip = "Open a previously loaded image or hypercube"
     dynamic = True
@@ -323,18 +326,18 @@ class OpenRecent(Command):
     files = ['/blah/stuff.img','/blah/stuff2.img','/blah/stuff3.bil']
 
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
         
-    def getEntries(self):
+    def getEntries(self,category=None):
         return self.files
 
     def getNumEntries(self):
         return len(self.files)
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%d files=%x" % (id(self),self.name,pos,id(self.files))
 
-class Save(Command):
+class Save(FrameAction):
     name = "&Save Image..."
     tooltip = "Save the current image"
     icon = wx.ART_FILE_SAVE
@@ -343,7 +346,7 @@ class Save(Command):
     def isEnabled(self, state=None):
         return False
 
-class SaveAs(Command):
+class SaveAs(FrameAction):
     name = "Save &As..."
     tooltip = "Save the image as a new file"
     icon = wx.ART_FILE_SAVE_AS
@@ -352,58 +355,58 @@ class SaveAs(Command):
     def isEnabled(self, state=None):
         return False
 
-class Quit(Command):
+class Quit(FrameAction):
     name = "E&xit"
     tooltip = "Quit the program."
     keyboard = "C-X C-C"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         self.frame.proxy.quit()
 
 
 
 
-class LinearContrastOff(Command):
+class LinearContrastOff(FrameAction):
     name = "&No Contrast Stretching"
     tooltip = "No Contrast Stretching"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
 
-class LinearContrastDefault(Command):
+class LinearContrastDefault(FrameAction):
     name = "2% &Contrast Stretched"
     tooltip = "2% Linear Contrast Stretch"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
 
-class LinearContrastUser(Command):
+class LinearContrastUser(FrameAction):
     name = "&User-defined Contrast Stretch"
     tooltip = "User-defined Linear Contrast Stretch"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-class PrevBand(Command):
+class PrevBand(FrameAction):
     name = "Prev"
     tooltip = "Previous Band"
     icon = wx.ART_GO_BACK
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-class NextBand(Command):
+class NextBand(FrameAction):
     name = "Next"
     tooltip = "Next Band"
     icon = wx.ART_GO_FORWARD
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
 
 class TestRadioList(RadioList):
@@ -423,8 +426,8 @@ class TestRadioList(RadioList):
         self.selected = 2 # zero-based list, so we're selecting 'item 3'
 
 
-class ToggleList(CommandList):
-    name = "ToggleList"
+class FrameToggleList(FrameActionList):
+    name = "FrameToggleList"
     tooltip = "Some help for this group of toggle buttons"
     toggle = True
 
@@ -436,8 +439,8 @@ class ToggleList(CommandList):
         ]
     
     def __init__(self, frame):
-        CommandList.__init__(self, frame)
-        self.itemlist = ToggleList.itemlist
+        FrameActionList.__init__(self, frame)
+        self.itemlist = FrameToggleList.itemlist
 
         # initialize checked/unchecked status from defaults
         self.checked = [item['checked'] for item in self.itemlist]
@@ -448,9 +451,9 @@ class ToggleList(CommandList):
     def run(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%d" % (id(self),self.name,pos)
         self.checked[pos] = not self.checked[pos]
-        self.runthis(state,pos)
+        self.action(state,pos)
     
-class ShowToolbar(Toggle):
+class ShowToolbar(FrameToggle):
     name = "&Show Toolbar"
     tooltip = "Toggle the toolbar on and off"
     icon = wx.ART_TOOLBAR
@@ -461,7 +464,7 @@ class ShowToolbar(Toggle):
     def isChecked(self, index):
         return self.frame.toolbarvisible
     
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s" % (id(self),self.name)
         self.frame.showToolbar(not self.frame.toolbarvisible)
     
@@ -489,7 +492,7 @@ all_plugins=[
     [None],
     [TestRadioList],
     [None],
-    [ToggleList],
+    [FrameToggleList],
     ['mainmenu',[('&Windows',0.9)],NewWindow,0.0],
     [DeleteWindow,0.1],
     [None],
@@ -506,7 +509,7 @@ toolbar_plugins=[
     [None],
     [TestRadioList],
     [None],
-    [ToggleList],
+    [FrameToggleList],
     ]
 
 def parseKeyboardPluginEntry(entry):
@@ -534,11 +537,13 @@ def parsePluginEntry(entry):
             menubar=None
             command=entry[0]
             weight=entry[1]
-        else:
+        elif len(entry)==4:
             menuclass=entry[0]
             menubar=entry[1]
             command=entry[2]
             weight=entry[3]
+        else:
+            print entry
     else:
         menuclass=entry['menuclass']
         menubar=entry['menubar']
@@ -547,7 +552,7 @@ def parsePluginEntry(entry):
     return (menuclass,menubar,command,weight)
 
 class PluginMenuItemBase(object):
-    debuglevel=0
+    debuglevel=1
     
     def __init__(self):
         self.command=None
@@ -965,7 +970,7 @@ class PluginMenu(PluginMenuItemBase):
         for menu in self.menus:
             menu.proxyValue(state)
 
-    def findItemByCommand(self, instance):
+    def findItemByFrameAction(self, instance):
         item=None
         for item in self.items:
             self.DPRINT("searching %s" % item.name)
@@ -974,7 +979,7 @@ class PluginMenu(PluginMenuItemBase):
                 return item
         item=None
         for menu in self.menus:
-            item=menu.findItemByCommand(instance)
+            item=menu.findItemByFrameAction(instance)
             if item: return item
             item=None
         return item
@@ -1206,7 +1211,7 @@ class MenuFrame(wx.Frame):
     
     def __init__(self, proxy, framelist, size=(500,500), plugins=None, toolbar=None):
         MenuFrame.frameid+=1
-        self.name="Frame #%d" % MenuFrame.frameid
+        self.name="peppy: Frame #%d" % MenuFrame.frameid
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=(500,500), style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
 
         self.proxy=proxy
@@ -1345,6 +1350,7 @@ class MenuFrame(wx.Frame):
             self.toolbar=toolbar
 
     def setMenuPlugins(self, name, plugins=None):
+        print plugins
         self.menuplugins=PluginMenuBar(self,name,plugins)
 
         self.rebuildMenus()
@@ -1423,6 +1429,9 @@ class MyApp(wx.App):
         #self.frame = ImageFrame(None, -1, "Hello from wxPython")
         #self.frame.Show(True)
         # self.SetTopWindow(self.frame)
+        
+        self.globalKeys=KeyMap()
+
         return True
 
     def quit(self):
@@ -1439,7 +1448,7 @@ class MyApp(wx.App):
             frame.rebuildMenus()
         
     def newFrame(self,callingFrame=None):
-        frame=MenuFrame(self,self.frames,all_plugins,toolbar_plugins)
+        frame=MenuFrame(self,self.frames,plugins=all_plugins,toolbar=toolbar_plugins)
         self.rebuildMenus()
         return frame
         

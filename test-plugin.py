@@ -5,7 +5,7 @@ import wx
 from menudev import *
 from buffers import *
 
-class OpenCharlie(Command):
+class OpenCharlie(FrameAction):
     name = "&Open Charlie..."
     tooltip = "Open a Charlie object"
     icon = wx.ART_FILE_OPEN
@@ -13,25 +13,25 @@ class OpenCharlie(Command):
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"charlie")
 
-class Stuff(Command):
+class Stuff(FrameAction):
     name = "Stuff"
     tooltip = "Do Stuff"
     icon = wx.ART_HELP_SETTINGS
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-class Things(Command):
+class Things(FrameAction):
     name = "Things"
     tooltip = "Do Things"
     icon = wx.ART_HELP_BOOK
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
 
 menu_plugins=[

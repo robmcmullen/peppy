@@ -6,7 +6,7 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 
-class OpenFundamental(Command):
+class OpenFundamental(FrameAction):
     name = "&Open Sample Text"
     tooltip = "Open some sample text"
     icon = wx.ART_FILE_OPEN
@@ -14,11 +14,11 @@ class OpenFundamental(Command):
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"demo.txt")
 
-class WordWrap(Toggle):
+class WordWrap(FrameToggle):
     name = "&Word Wrap"
     tooltip = "Toggle word wrap in this view"
     icon = wx.ART_TOOLBAR
@@ -32,18 +32,18 @@ class WordWrap(Toggle):
             return viewer.settings['wordwrap']
         return False
     
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s" % (id(self),self.name)
         viewer=self.frame.getCurrentViewer()
         if viewer:
             viewer.setWordWrap(not viewer.settings['wordwrap'])
     
-class BeginningOfLine(Command):
+class BeginningOfLine(FrameAction):
     name = "Cursor to Start of Line"
     tooltip = "Move the cursor to the start of the current line."
     keyboard = 'C-A'
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         viewer=self.frame.getCurrentViewer()
         if viewer:
@@ -53,12 +53,12 @@ class BeginningOfLine(Command):
             s.GotoPos(pos-col)
         
 
-class EndOfLine(Command):
+class EndOfLine(FrameAction):
     name = "Cursor to End of Line"
     tooltip = "Move the cursor to the end of the current line."
     keyboard = 'C-E'
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         viewer=self.frame.getCurrentViewer()
         if viewer:

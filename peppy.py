@@ -31,50 +31,50 @@ __license__ = "Python"
 
 
 
-class NewTab(Command):
+class NewTab(FrameAction):
     name = "New &Tab"
     tooltip = "Open a new Tab"
     icon = wx.ART_FILE_OPEN
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.newTab(self.frame)
 
-class New(Command):
+class New(FrameAction):
     name = "&New File..."
     tooltip = "New file"
     icon = "icons/page.png"
 
 
-class OpenFile(Command):
+class OpenFile(FrameAction):
     name = "&Open File..."
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
     keyboard = "C-X C-F"
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.openFileDialog()
 
-class OpenAlpha(Command):
+class OpenAlpha(FrameAction):
     name = "&Open Alpha..."
     tooltip = "Open an Alpha object"
     icon = wx.ART_FILE_OPEN
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"alpha")
 
-class OpenBravo(Command):
+class OpenBravo(FrameAction):
     name = "&Open Bravo..."
     tooltip = "Open a Bravo object"
     icon = wx.ART_FILE_OPEN
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"bravo")
 
-class Close(Command):
+class Close(FrameAction):
     name = "&Close"
     tooltip = "Close current file"
     icon = "icons/cross.png"
@@ -82,11 +82,11 @@ class Close(Command):
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.close()
 
-class Save(Command):
+class Save(FrameAction):
     name = "&Save..."
     tooltip = "Save the current file"
     icon = "icons/disk.png"
@@ -95,11 +95,11 @@ class Save(Command):
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.save()
 
-class SaveAs(Command):
+class SaveAs(FrameAction):
     name = "Save &As..."
     tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
@@ -108,79 +108,79 @@ class SaveAs(Command):
     def isEnabled(self, state=None):
         return self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.saveFileDialog()
 
 
-class Undo(Command):
+class Undo(FrameAction):
     name = "Undo"
     tooltip = "Undo"
     icon = "icons/arrow_turn_left.png"
     keyboard = "C-/"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
     def isEnabled(self, state=None):
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.CanUndo()
         return False
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.Undo()
 
 
-class Redo(Command):
+class Redo(FrameAction):
     name = "Redo"
     tooltip = "Redo"
     icon = "icons/arrow_turn_right.png"
     keyboard = "C-S-/"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
         
     def isEnabled(self, state=None):
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.CanRedo()
         return False
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.Redo()
 
 
 
-class Cut(Command):
+class Cut(FrameAction):
     name = "Cut"
     tooltip = "Cut"
     icon = "icons/cut.png"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-class Copy(Command):
+class Copy(FrameAction):
     name = "Copy"
     tooltip = "Copy"
     icon = "icons/page_copy.png"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
-class Paste(Command):
+class Paste(FrameAction):
     name = "Paste"
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
     
     def __init__(self, frame):
-        Command.__init__(self, frame)
+        FrameAction.__init__(self, frame)
 
    
     
-class HelpAbout(Command):
+class HelpAbout(FrameAction):
     name = "&About..."
     tooltip = "About this program"
 
@@ -285,7 +285,7 @@ class TitleBuffer(Buffer):
 
 
 
-class testapp(BufferApp):
+class Peppy(BufferApp):
     def OnInit(self):
         BufferApp.OnInit(self)
         self.main.addMenuPlugins(menu_plugins)
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
     print options
 
-    app=testapp(0)
+    app=Peppy(0)
     proxy=app.getProxy()
     frame=BufferFrame(proxy)
     frame.Show(True)

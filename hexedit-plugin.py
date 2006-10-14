@@ -11,7 +11,7 @@ from buffers import *
 
 from fundamental import FundamentalView
 
-class OpenHexEditor(Command):
+class OpenHexEditor(FrameAction):
     name = "&Open Hex Editor..."
     tooltip = "Open a Hex Editor"
     icon = wx.ART_FILE_OPEN
@@ -19,17 +19,17 @@ class OpenHexEditor(Command):
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.proxy.open(self.frame,"icons/py.ico")
 
-class HexEditMajorMode(Command):
+class HexEditMajorMode(FrameAction):
     name = "Change to HexEdit Major Mode"
     tooltip = "Change to binary editor"
     icon = "icons/folder_page.png"
     keyboard = "C-X C-H"
 
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
         self.frame.changeMajorMode(HexEditView)
 

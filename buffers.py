@@ -11,6 +11,19 @@ from cStringIO import StringIO
 
 
 
+class ViewAction(FrameAction):
+    # Set up a new run() method to pass the viewer
+    def run(self, state=None, pos=-1):
+        print "exec: id=%s name=%s" % (id(self),self.name)
+        self.action(self.frame.getCurrentViewer(),state,pos)
+        self.frame.enableMenu()
+
+    # Set up a new keyboard callback to also pass the viewer
+    def __call__(self, evt, number=None):
+        print "%s called by keybindings" % self
+        self.action(self.frame.getCurrentViewer())
+
+
 class BufferList(CategoryList):
     name = "BufferListMenu"
     empty = "< list of buffers >"
@@ -26,7 +39,7 @@ class BufferList(CategoryList):
     viewers=[]
     
     def __init__(self, frame):
-        CommandList.__init__(self, frame)
+        FrameActionList.__init__(self, frame)
         self.itemdict = BufferList.itemdict
         self.itemlist = BufferList.itemlist
         self.categories = False
@@ -66,7 +79,7 @@ class BufferList(CategoryList):
                         del self.itemdict[cat]
         self.regenList()
         
-    def runthis(self, state=None, pos=-1):
+    def action(self, state=None, pos=-1):
         print "BufferList.run: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist))
         print "BufferList.run: changing frame name=%s to buffer=%s" % (self.name,self.itemlist[pos])
         self.frame.setBuffer(self.itemlist[pos]['item'])
@@ -213,17 +226,13 @@ class TextFilter(Filter):
 
     def write(self,buffer,filename):
         fh=buffer.getWriteFileObject(filename)
-        if fh:
-            txt=buffer.stc.GetText()
-            print "TextFilter: writing %d bytes" % len(txt)
-            try:
-                fh.write(txt)
-            except:
-                print "TextFilter: something went wrong writing to %s" % filename
-                raise
-                
-            return True
-        return False
+        txt=buffer.stc.GetText()
+        print "TextFilter: writing %d bytes" % len(txt)
+        try:
+            fh.write(txt)
+        except:
+            print "TextFilter: something went wrong writing to %s" % filename
+            raise
 
 class BinaryFilter(Filter):
     def read(self,buffer):
@@ -254,6 +263,20 @@ class BinaryFilter(Filter):
             if errors>50: break
         print "errors=%d" % errors
     
+    def write(self,buffer,filename):
+        fh=buffer.getWriteFileObject(filename)
+        numchars=buffer.stc.GetTextLength()
+        # Have to use GetStyledText because GetText will truncate the
+        # string at the first zero character.
+        txt=buffer.stc.GetStyledText(0,numchars)[0:numchars*2:2]
+        print "BinaryFilter: writing %d bytes" % len(txt)
+        print repr(txt)
+        try:
+            fh.write(txt)
+        except:
+            print "BinaryFilter: something went wrong writing to %s" % filename
+            raise
+
 
 
 
@@ -461,21 +484,20 @@ class Buffer(object):
             # overwriting an existing file with our new filename
             pass
         print "getWriteFileObject: saving to %s" % filename
-        try:
-            fh=open(filename,"wb")
-        except:
-            print "Couldn't open %s" % filename
-            return None
+        fh=open(filename,"wb")
         return fh
     
     def save(self,filename=None):
-        print "Buffer: should save the file here..."
-        success=self.defaultviewer.filter.write(self,filename)
-        if success:
+        print "Buffer: saving buffer %s" % (self.filename)
+        try:
+            self.defaultviewer.filter.write(self,filename)
             self.stc.SetSavePoint()
             if filename is not None:
                 self.setFilename(filename)
             self.OnChanged(None)
+        except:
+            print "Buffer: failed writing!"
+            raise
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
@@ -487,7 +509,7 @@ class Buffer(object):
         if changed!=self.modified:
             self.modified=changed
             for view in self.viewers:
-                print "OnChanged: should notifing: %s" % view
+                print "OnChanged: notifing: %s" % view
                 view.showModified(self.modified)
         
 
@@ -814,6 +836,7 @@ class BufferFrame(MenuFrame):
         viewer=self.getCurrentViewer()
         if viewer:
             viewer.focus()
+        self.proxy.app.SetTopWindow(self)
 
     def getCurrentSTC(self):
         viewer=self.tabs.getCurrentViewer()
@@ -1025,6 +1048,7 @@ class BufferProxy(Singleton):
     def newFrame(self,callingFrame=None):
         frame=BufferFrame(self)
         self.rebuildMenus()
+        self.app.SetTopWindow(frame)
         return frame
         
     def showFrame(self,frame):
@@ -1055,7 +1079,21 @@ class BufferProxy(Singleton):
 
     def quit(self):
         print "prompt for unsaved changes..."
-        sys.exit()
+        unsaved=[]
+        buffers=self.buffers.getItems()
+        for buf in buffers:
+            print "buf=%s modified=%s" % (buf,buf.modified)
+            if buf.modified:
+                unsaved.append(buf)
+        if len(unsaved)>0:
+            dlg = wx.MessageDialog(self.app.GetTopWindow(), "The following files have unsaved changes:\n%s\n\nExit anyway?" % "\n".join([buf.displayname for buf in unsaved]), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            retval=wx.ID_YES
+
+        if retval==wx.ID_YES:
+            sys.exit()
 
 
 class BufferApp(wx.App):
