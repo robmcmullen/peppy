@@ -256,9 +256,9 @@ class BinaryFilter(Filter):
         #wx.StaticText(self.win, -1, out, (20, 45))
 
         errors=0
-        for i in range(len(newtxt)):
-            if newtxt[i]!=txt[i*2]:
-                print "error at: %d (%02x != %02x)" % (i,ord(newtxt[i]),ord(txt[i]))
+        for i in range(len(txt)):
+            if newtxt[i*2]!=txt[i]:
+                print "error at: %d (%02x != %02x)" % (i,ord(newtxt[i*2]),ord(txt[i]))
                 errors+=1
             if errors>50: break
         print "errors=%d" % errors
