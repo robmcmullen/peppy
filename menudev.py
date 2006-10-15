@@ -1295,15 +1295,15 @@ class MenuFrame(wx.Frame):
             print "apparently already defined the keyboard shortcut keys."
             raise
             
-    def popupMenu(self,ev):
-        print "popping up menu for %s" % ev.GetEventObject()
+    def popupMenu(self,evt):
+        print "popping up menu for %s" % evt.GetEventObject()
         item=self.mainsizer.GetItem(1)
         if item:
             win=item.GetWindow()
             if not self.popup:
                 self.popup=self.getDummyMenu(popup=True)
-            win.PopupMenu(self.popup,ev.GetPosition())
-        ev.Skip()
+            win.PopupMenu(self.popup,evt.GetPosition())
+        evt.Skip()
 
     def getDummyMenu(self,popup=False):
         file_menu = wx.Menu()

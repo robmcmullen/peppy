@@ -363,14 +363,14 @@ class HugeTableGrid(Grid.Grid):
         print "hello"
         print self.GetSelectedRows()
 
-    def OnKeyDown(self, ev):
-        if ev.KeyCode() == wx.WXK_RETURN or ev.KeyCode()==wx.WXK_TAB:
-            if ev.ControlDown():   # the edit control needs this key
-                ev.Skip()
+    def OnKeyDown(self, evt):
+        if evt.KeyCode() == wx.WXK_RETURN or evt.KeyCode()==wx.WXK_TAB:
+            if evt.ControlDown():   # the edit control needs this key
+                evt.Skip()
                 return
 
             self.DisableCellEditControl()
-            if ev.ShiftDown():
+            if evt.ShiftDown():
                 (row,col)=self.GetTable().getPrevCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
             else:
                 (row,col)=self.GetTable().getNextCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
@@ -378,7 +378,7 @@ class HugeTableGrid(Grid.Grid):
             self.MakeCellVisible(row,col)
 ##            newCol=self.GetGridCursorCol() + 1
 ##            if (newCol<col):
-##                success = self.MoveCursorRight(ev.ShiftDown())
+##                success = self.MoveCursorRight(evt.ShiftDown())
 ##            else:
 ##                newRow = self.GetGridCursorRow() + 1
 ##                if newRow < self.GetTable().GetNumberRows():
@@ -390,7 +390,7 @@ class HugeTableGrid(Grid.Grid):
 ##                    pass
 
         else:
-            ev.Skip()
+            evt.Skip()
             return
 
 

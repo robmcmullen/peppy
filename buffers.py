@@ -322,14 +322,14 @@ class View(object):
         self.popup=popup
         self.win.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
 
-    def popupMenu(self,ev):
+    def popupMenu(self,evt):
         # popups generate menu events as normal menus, so the
         # callbacks to the command objects should still work if the
         # popup is generated in the same way that the regular menu and
         # toolbars are.
-        print "popping up menu for %s" % ev.GetEventObject()
+        print "popping up menu for %s" % evt.GetEventObject()
         self.win.PopupMenu(self.popup)
-        ev.Skip()
+        evt.Skip()
 
     def openPostHook(self):
         pass
@@ -352,6 +352,7 @@ class View(object):
         pass
 
     def focus(self):
+        print "View: setting focus to %s" % self
         self.win.SetFocus()
 
     def showModified(self,modified):
@@ -494,10 +495,15 @@ class Buffer(object):
             self.stc.SetSavePoint()
             if filename is not None:
                 self.setFilename(filename)
-            self.OnChanged(None)
+            self.showModifiedAll()
         except:
             print "Buffer: failed writing!"
             raise
+
+    def showModifiedAll(self):
+        for view in self.viewers:
+            print "showModifiedAll: notifing: %s" % view
+            view.showModified(self.modified)
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
@@ -508,9 +514,7 @@ class Buffer(object):
             changed=False
         if changed!=self.modified:
             self.modified=changed
-            for view in self.viewers:
-                print "OnChanged: notifing: %s" % view
-                view.showModified(self.modified)
+            self.showModifiedAll()
         
 
 class Empty(Buffer):
@@ -559,21 +563,22 @@ class TabbedViewer(wx.Notebook):
         self.managed=[] # dict with keys 'viewer','panel','box'
 
         self.updating=False
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChanged)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.userChangedCallbacks=[]
 
     def addUserChangedCallback(self, func):
         self.userChangedCallbacks.append(func)
 
-    def onTabChanged(self,ev):
+    def OnTabChanged(self,evt):
+        print "OnTabChanged: changing to %s" % evt.GetSelection()
         if not self.updating:
-            viewer=self.getViewer(ev.GetSelection())
+            viewer=self.getViewer(evt.GetSelection())
             out=ViewerChangedEvent(viewer)
             for func in self.userChangedCallbacks:
                 func(out)
         else:
-            print "Skipping tab changed event for %d" % ev.GetSelection()
-        ev.Skip()
+            print "Skipping tab changed event for %d" % evt.GetSelection()
+        evt.Skip()
     
     def showModified(self,viewer):
         index=self.findIndex(viewer)
@@ -820,7 +825,7 @@ class BufferFrame(MenuFrame):
         self.tabs=HideOneTabViewer(self)
 ##        self.tabs=TabbedViewer(self)
         self.setMainWindow(self.tabs)
-        self.tabs.addUserChangedCallback(self.onViewerChanged)
+        self.tabs.addUserChangedCallback(self.OnViewerChanged)
 
         self.resetMenu()
 
@@ -835,9 +840,20 @@ class BufferFrame(MenuFrame):
         self.enableMenu()
         viewer=self.getCurrentViewer()
         if viewer:
-            viewer.focus()
+            wx.CallAfter(viewer.focus)
         self.app.SetTopWindow(self)
 
+    def OnViewerChanged(self,evt):
+        print "OnViewerChanged: to viewer %s" % evt.GetViewer()
+        self.menuplugins.widget.Freeze()
+        self.resetMenu()
+        viewer=evt.GetViewer()
+        self.addMenu(viewer)
+        self.menuplugins.widget.Thaw()
+        wx.CallAfter(viewer.focus)
+        self.setTitle()
+        evt.Skip()
+        
     def getCurrentSTC(self):
         viewer=self.tabs.getCurrentViewer()
         if viewer:
@@ -934,15 +950,6 @@ class BufferFrame(MenuFrame):
         self.getCurrentViewer().focus()
         self.setTitle()
 
-    def onViewerChanged(self,ev):
-        self.menuplugins.widget.Freeze()
-        self.resetMenu()
-        self.addMenu(ev.GetViewer())
-        self.menuplugins.widget.Thaw()
-        self.getCurrentViewer().focus()
-        self.setTitle()
-        ev.Skip()
-        
     def open(self,filename,newTab=True):
         viewer=self.app.getDefaultViewer(filename)
         buffer=Buffer(self.app.dummyframe,filename,viewer)
@@ -985,27 +992,48 @@ class BufferFrame(MenuFrame):
             
     def saveFileDialog(self):        
         viewer=self.getCurrentViewer()
+        paths=None
         if viewer and viewer.buffer:
-            wildcard="*.*"
-            cwd=os.getcwd()
-            dlg = wx.FileDialog(
-                self, message="Save File", defaultDir=cwd, 
-                defaultFile="", wildcard=wildcard, style=wx.SAVE)
+            saveas=viewer.buffer.getFilename()
 
-            # Show the dialog and retrieve the user response. If it is the
-            # OK response, process the data.
-            if dlg.ShowModal() == wx.ID_OK:
-                # This returns a Python list of files that were selected.
-                paths = dlg.GetPaths()
-                if len(paths)==1:
-                    print "save file %s:" % paths[0]
-                    viewer.buffer.save(paths[0])
-                else:
+            # Do this in a loop so that the user can get a chance to
+            # change the filename if the specified file exists.
+            while True:
+                # If we come through this loop again, saveas will hold
+                # a complete pathname.  Shorten it.
+                saveas=os.path.basename(saveas)
+                
+                wildcard="*.*"
+                cwd=os.getcwd()
+                dlg = wx.FileDialog(
+                    self, message="Save File", defaultDir=cwd, 
+                    defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)
+
+                retval=dlg.ShowModal()
+                if retval==wx.ID_OK:
+                    # This returns a Python list of files that were selected.
+                    paths = dlg.GetPaths()
+                dlg.Destroy()
+
+                if retval!=wx.ID_OK:
+                    break
+                elif len(paths)==1:
+                    saveas=paths[0]
+                    print "save file %s:" % saveas
+
+                    # If new filename exists, make user confirm to
+                    # overwrite
+                    if os.path.exists(saveas):
+                        dlg = wx.MessageDialog(self, "%s\n\nexists.  Overwrite?" % saveas, "Overwrite?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                        retval=dlg.ShowModal()
+                        dlg.Destroy()
+                    else:
+                        retval=wx.ID_YES
+                    if retval==wx.ID_YES:
+                        viewer.buffer.save(saveas)
+                        break
+                elif paths!=None:
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
-
-            # Destroy the dialog. Don't do this until you are done with it!
-            # BAD things can happen otherwise!
-            dlg.Destroy()
        
     def newTab(self):
         print "newTab: frame=%s" % self
