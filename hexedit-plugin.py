@@ -21,7 +21,7 @@ class OpenHexEditor(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"icons/py.ico")
+        self.frame.open("icons/py.ico")
 
 class HexEditMajorMode(FrameAction):
     name = "Change to HexEdit Major Mode"

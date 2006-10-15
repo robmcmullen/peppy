@@ -272,7 +272,7 @@ class NewWindow(FrameAction):
         FrameAction.__init__(self, frame)
 
     def action(self, state=None, pos=-1):
-        frame=self.frame.proxy.newFrame(callingFrame=self.frame)
+        frame=self.frame.app.newFrame(callingFrame=self.frame)
         frame.Show(True)
 
 
@@ -364,7 +364,7 @@ class Quit(FrameAction):
         FrameAction.__init__(self, frame)
 
     def action(self, state=None, pos=-1):
-        self.frame.proxy.quit()
+        self.frame.app.quit()
 
 
 
@@ -1209,12 +1209,12 @@ class MenuFrame(wx.Frame):
 
     frameid = 0
     
-    def __init__(self, proxy, framelist, size=(500,500), plugins=None, toolbar=None):
+    def __init__(self, app, framelist, size=(500,500), plugins=None, toolbar=None):
         MenuFrame.frameid+=1
         self.name="peppy: Frame #%d" % MenuFrame.frameid
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=(500,500), style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
 
-        self.proxy=proxy
+        self.app=app
         self.menuplugins=None
         self.toolbarplugins=None
         self.keyboardplugins=None
@@ -1258,7 +1258,7 @@ class MenuFrame(wx.Frame):
             self.mainsizer.Hide(self.toolbar)
 
         self.keys=KeyProcessor(self)
-        self.keys.setGlobalKeyMap(self.proxy.globalKeys)
+        self.keys.setGlobalKeyMap(self.app.globalKeys)
         self.Bind(wx.EVT_KEY_DOWN, self.KeyPressed)
 
         self.popup=self.getDummyMenu(popup=True)
@@ -1273,7 +1273,7 @@ class MenuFrame(wx.Frame):
         wx.CallAfter(self.enableMenu)
 
     def setGlobalKeys(self,name,plugins):
-        keymap=self.proxy.globalKeys
+        keymap=self.app.globalKeys
         try:
             for plugin in plugins:
                 menuclass,menubar,command,weight=parsePluginEntry(plugin)
@@ -1284,7 +1284,7 @@ class MenuFrame(wx.Frame):
             print "apparently already defined the menubar shortcut keys."
 
     def setKeyboardPlugins(self,name,plugins):
-        keymap=self.proxy.globalKeys
+        keymap=self.app.globalKeys
         try:
             for plugin in plugins:
                 menuclass,command=parseKeyboardPluginEntry(plugin)
@@ -1411,9 +1411,9 @@ class MenuFrame(wx.Frame):
         self.statusbar.SetStatusText(text)
 
     def closeWindow(self, ev):
-        self.proxy.deleteFrame(self)
+        self.app.deleteFrame(self)
         self.framelist.remove(self)
-        self.proxy.rebuildMenus()
+        self.app.rebuildMenus()
         self.Destroy()
 
     def showModalDialog(self,message,title,style=wx.OK | wx.ICON_INFORMATION):

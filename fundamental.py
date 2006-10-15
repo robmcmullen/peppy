@@ -16,7 +16,7 @@ class OpenFundamental(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"demo.txt")
+        self.frame.open("demo.txt")
 
 class WordWrap(FrameToggle):
     name = "&Word Wrap"

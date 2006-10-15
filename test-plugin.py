@@ -15,7 +15,7 @@ class OpenCharlie(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"charlie")
+        self.frame.open("charlie")
 
 class Stuff(FrameAction):
     name = "Stuff"

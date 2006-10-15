@@ -38,7 +38,7 @@ class NewTab(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.newTab(self.frame)
+        self.frame.newTab()
 
 class New(FrameAction):
     name = "&New File..."
@@ -63,7 +63,7 @@ class OpenAlpha(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"alpha")
+        self.frame.open("alpha")
 
 class OpenBravo(FrameAction):
     name = "&Open Bravo..."
@@ -72,7 +72,7 @@ class OpenBravo(FrameAction):
 
     def action(self, state=None, pos=-1):
         print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
-        self.frame.proxy.open(self.frame,"bravo")
+        self.frame.open("bravo")
 
 class Close(FrameAction):
     name = "&Close"
@@ -288,11 +288,11 @@ class TitleBuffer(Buffer):
 class Peppy(BufferApp):
     def OnInit(self):
         BufferApp.OnInit(self)
-        self.main.addMenuPlugins(menu_plugins)
-        self.main.addToolbarPlugins(toolbar_plugins)
-        self.main.addKeyboardPlugins(keyboard_plugins)
-        self.main.registerViewer(AlphaView)
-        self.main.registerViewer(BravoView)
+        self.addMenuPlugins(menu_plugins)
+        self.addToolbarPlugins(toolbar_plugins)
+        self.addKeyboardPlugins(keyboard_plugins)
+        self.registerViewer(AlphaView)
+        self.registerViewer(BravoView)
 
         plugins=['test-plugin','hexedit-plugin','python-plugin','fundamental']
         try:
@@ -313,13 +313,12 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
     print options
 
-    app=Peppy(0)
-    proxy=app.getProxy()
-    frame=BufferFrame(proxy)
+    app=Peppy()
+    frame=BufferFrame(app)
     frame.Show(True)
     if args:
         for filename in args:
-            proxy.open(frame,filename)
+            frame.open(filename)
     else:
         buffer=TitleBuffer(frame)
         frame.newBuffer(buffer)

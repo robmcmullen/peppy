@@ -4,7 +4,7 @@ import wx
 import wx.stc as stc
 
 from menudev import *
-from singletonmixin import *
+#from singletonmixin import *
 from wxemacskeybindings import *
 
 from cStringIO import StringIO
@@ -811,11 +811,11 @@ class HideOneTabViewer(wx.Panel):
             
 
 class BufferFrame(MenuFrame):
-    def __init__(self, proxy):
+    def __init__(self, app):
         self.framelist=FrameList(self)
-        MenuFrame.__init__(self, proxy, self.framelist)
+        MenuFrame.__init__(self, app, self.framelist)
 
-        self.proxy=proxy
+        self.app=app
 
         self.tabs=HideOneTabViewer(self)
 ##        self.tabs=TabbedViewer(self)
@@ -836,7 +836,7 @@ class BufferFrame(MenuFrame):
         viewer=self.getCurrentViewer()
         if viewer:
             viewer.focus()
-        self.proxy.app.SetTopWindow(self)
+        self.app.SetTopWindow(self)
 
     def getCurrentSTC(self):
         viewer=self.tabs.getCurrentViewer()
@@ -849,9 +849,9 @@ class BufferFrame(MenuFrame):
         return viewer
     
     def resetMenu(self):
-        self.setMenuPlugins('main',self.proxy.menu_plugins)
-        self.setToolbarPlugins('main',self.proxy.toolbar_plugins)
-        self.setKeyboardPlugins('main',self.proxy.keyboard_plugins)
+        self.setMenuPlugins('main',self.app.menu_plugins)
+        self.setToolbarPlugins('main',self.app.toolbar_plugins)
+        self.setKeyboardPlugins('main',self.app.keyboard_plugins)
 
     def addMenu(self,viewer=None):
         if not viewer:
@@ -860,10 +860,10 @@ class BufferFrame(MenuFrame):
         if viewer:
             print "  from page %d" % self.tabs.getCurrentIndex()
             keyword=viewer.pluginkey
-            self.menuplugins.addMenu(keyword,self.proxy.menu_plugins)
+            self.menuplugins.addMenu(keyword,self.app.menu_plugins)
             self.menuplugins.proxyValue(self)
             
-            self.toolbarplugins.addTools(keyword,self.proxy.toolbar_plugins)
+            self.toolbarplugins.addTools(keyword,self.app.toolbar_plugins)
             self.toolbarplugins.proxyValue(self)
 
             if self.popup:
@@ -880,7 +880,7 @@ class BufferFrame(MenuFrame):
         viewer=self.getCurrentViewer()
         if viewer:
             buffer=viewer.buffer
-            if self.proxy.close(buffer):
+            if self.app.close(buffer):
                 self.tabs.closeViewer(viewer)
                 self.resetMenu()
 
@@ -943,6 +943,19 @@ class BufferFrame(MenuFrame):
         self.setTitle()
         ev.Skip()
         
+    def open(self,filename,newTab=True):
+        viewer=self.app.getDefaultViewer(filename)
+        buffer=Buffer(self.app.dummyframe,filename,viewer)
+        # probably should load the file here, and if it fails for some
+        # reason, don't add to the buffer list.
+        buffer.open()
+        
+        self.app.addBuffer(buffer)
+        if newTab:
+            self.newBuffer(buffer)
+        else:
+            self.setBuffer(buffer)
+
     def openFileDialog(self):        
         viewer=self.getCurrentViewer()
         wildcard="*.*"
@@ -959,7 +972,7 @@ class BufferFrame(MenuFrame):
 
             for path in paths:
                 print "open file %s:" % path
-                self.proxy.open(self,path)
+                self.open(path)
 
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
@@ -994,12 +1007,21 @@ class BufferFrame(MenuFrame):
             # BAD things can happen otherwise!
             dlg.Destroy()
        
+    def newTab(self):
+        print "newTab: frame=%s" % self
+        buffer=Empty(self.app.dummyframe)
+        print "newTab: buffer=%s" % buffer
+        self.newBuffer(buffer)
+
+    def close(self,buffer):
+        self.app.removeBuffer(buffer)
+        return True
 
 
 
-class BufferProxy(Singleton):
-    def __init__(self, app):
-        self.app=app
+
+class BufferApp(wx.App):
+    def OnInit(self):
         self.menu_plugins=[]
         self.toolbar_plugins=[]
         self.keyboard_plugins=[]
@@ -1015,6 +1037,9 @@ class BufferProxy(Singleton):
         # that is never shown.
         self.dummyframe=wx.Frame(None)
         self.dummyframe.Show(False)
+
+    def getDefaultViewer(self,filename):
+        return self.buffers.getDefaultViewer(filename)
 
     def registerViewer(self,cls):
         self.buffers.registerViewer(cls)
@@ -1048,34 +1073,11 @@ class BufferProxy(Singleton):
     def newFrame(self,callingFrame=None):
         frame=BufferFrame(self)
         self.rebuildMenus()
-        self.app.SetTopWindow(frame)
+        self.SetTopWindow(frame)
         return frame
         
     def showFrame(self,frame):
         frame.Show(True)
-
-    def open(self,frame,filename,newTab=True):
-        viewer=self.buffers.getDefaultViewer(filename)
-        buffer=Buffer(self.dummyframe,filename,viewer)
-        # probably should load the file here, and if it fails for some
-        # reason, don't add to the buffer list.
-        buffer.open()
-        
-        self.addBuffer(buffer)
-        if newTab:
-            frame.newBuffer(buffer)
-        else:
-            frame.setBuffer(buffer)
-
-    def newTab(self,frame):
-        print "newTab: frame=%s" % frame
-        buffer=Empty(self.dummyframe)
-        print "newTab: buffer=%s" % buffer
-        frame.newBuffer(buffer)
-
-    def close(self,buffer):
-        self.removeBuffer(buffer)
-        return True
 
     def quit(self):
         print "prompt for unsaved changes..."
@@ -1086,7 +1088,7 @@ class BufferProxy(Singleton):
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
-            dlg = wx.MessageDialog(self.app.GetTopWindow(), "The following files have unsaved changes:\n%s\n\nExit anyway?" % "\n".join([buf.displayname for buf in unsaved]), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+            dlg = wx.MessageDialog(self.GetTopWindow(), "The following files have unsaved changes:\n\n%s\n\nExit anyway?" % "\n".join([buf.displayname for buf in unsaved]), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
             retval=dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -1095,30 +1097,21 @@ class BufferProxy(Singleton):
         if retval==wx.ID_YES:
             sys.exit()
 
-
-class BufferApp(wx.App):
-    def OnInit(self):
-        self.main=BufferProxy.getInstance(self)
-        return True
-
-    def getProxy(self):
-        return self.main
-
     def loadPlugin(self, mod):
         print "loading plugins from module=%s" % str(mod)
         if 'viewers' in mod.__dict__:
             print "found viewers: %s" % mod.viewers
             for viewer in mod.viewers:
-                self.main.registerViewer(viewer)
+                self.registerViewer(viewer)
         if 'menu_plugins' in mod.__dict__:
             print "found menu plugins: %s" % mod.menu_plugins
-            self.main.addMenuPlugins(mod.menu_plugins)
+            self.addMenuPlugins(mod.menu_plugins)
         if 'toolbar_plugins' in mod.__dict__:
             print "found toolbar plugins: %s" % mod.toolbar_plugins
-            self.main.addToolbarPlugins(mod.toolbar_plugins)
+            self.addToolbarPlugins(mod.toolbar_plugins)
         if 'keyboard_plugins' in mod.__dict__:
             print "found keyboard plugins: %s" % mod.keyboard_plugins
-            self.main.addKeyboardPlugins(mod.keyboard_plugins)
+            self.addKeyboardPlugins(mod.keyboard_plugins)
 
 if __name__ == "__main__":
     pass
