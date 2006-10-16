@@ -16,11 +16,13 @@ import wx
 from menudev import *
 from buffers import *
 
+from debug import *
+
 # setup.py requires that these be defined, and the OnceAndOnlyOnce
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"
@@ -37,7 +39,7 @@ class NewTab(FrameAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.newTab()
 
 class New(FrameAction):
@@ -53,7 +55,7 @@ class OpenFile(FrameAction):
     keyboard = "C-X C-F"
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.openFileDialog()
 
 class OpenAlpha(FrameAction):
@@ -62,7 +64,7 @@ class OpenAlpha(FrameAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("alpha")
 
 class OpenBravo(FrameAction):
@@ -71,7 +73,7 @@ class OpenBravo(FrameAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("bravo")
 
 class Close(FrameAction):
@@ -83,7 +85,7 @@ class Close(FrameAction):
         return self.frame.isOpen()
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.close()
 
 class Save(FrameAction):
@@ -96,7 +98,7 @@ class Save(FrameAction):
         return self.frame.isOpen()
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.save()
 
 class SaveAs(FrameAction):
@@ -109,7 +111,7 @@ class SaveAs(FrameAction):
         return self.frame.isOpen()
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.saveFileDialog()
 
 
@@ -128,7 +130,7 @@ class Undo(FrameAction):
         return False
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.Undo()
 
@@ -148,7 +150,7 @@ class Redo(FrameAction):
         return False
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getCurrentViewer()
         if viewer: return viewer.stc.Redo()
 
@@ -188,14 +190,13 @@ class HelpAbout(FrameAction):
     title = "Test program title"
     
     def run(self, state=None, pos=None):
-        print "HelpAbout: id=%x name=%s" % (id(self),self.name)
         cube=self.frame.showModalDialog(self.about,self.title)
 
 
 menu_plugins=[
-    ['main',[('&File',0.0)],NewTab,0.1],
-    [OpenFile,0.1],
-    [None,0.20],
+    ['main',[('&File',0.0)],OpenFile,0.0],
+    ['main',[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
+    ['main',[('&File',0.0)],None,0.2], # separator
     [OpenAlpha],
     [OpenBravo],
     [None,0.21], # separator
@@ -211,11 +212,12 @@ menu_plugins=[
     [Cut],
     [Copy],
     [Paste],
-    ['main',[('&Buffers',0.2)],BufferList,0.0],
-    ['main',[('&Windows',0.3)],NewWindow,0.0],
-    [DeleteWindow,0.1],
+    ['main',[('&View',0.2)],NewTab,0.0],
+    [NewWindow,0.1],
+    [DeleteWindow],
     [None],
     [FrameList,0.2],
+    ['main',[('&Buffers',0.3)],BufferList,0.0],
     ['main',[('&Help',1.0)],HelpAbout,1.0],
     ['alpha',[('&Bands',0.25)],PrevBand,0.0],
     [NextBand],
@@ -286,23 +288,45 @@ class TitleBuffer(Buffer):
 
 
 class Peppy(BufferApp):
+    debuglevel=1
+    
     def OnInit(self):
         BufferApp.OnInit(self)
+
+        self.setConfigDir("peppy")
+        self.setInitialConfig({'frame':{'width':200,
+                                        'height':200,
+                                        },
+                               })
+        self.loadConfig("peppy.cfg")
+        
         self.addMenuPlugins(menu_plugins)
         self.addToolbarPlugins(toolbar_plugins)
         self.addKeyboardPlugins(keyboard_plugins)
         self.registerViewer(AlphaView)
         self.registerViewer(BravoView)
 
-        plugins=['test-plugin','hexedit-plugin','python-plugin','fundamental']
-        try:
-            for plugin in plugins:
-                mod=__import__(plugin)
-                self.loadPlugin(mod)
-        except:
-            print "couldn't load plugins"
-            raise
+        defaultplugins=['hexedit-plugin','python-plugin','fundamental']
+        self.loadPlugins(defaultplugins)
+
+        self.parseConfig()
+        
         return True
+
+    def parseConfig(self):
+        cfg=self.cfg
+
+        if cfg.has_section('plugins'):
+            self.parseConfigPlugins('plugins',cfg)
+##        if cfg.has_section('debug'):
+##            self.parseConfigDebug('debug',cfg)
+
+    def parseConfigPlugins(self,section,cfg):
+        if cfg.has_option(section,'modules'):
+            mods=cfg.get(section,'modules').split(', ')
+            self.dprint(mods)
+            self.loadPlugins(mods)
+
 
 
 if __name__ == "__main__":
@@ -311,7 +335,7 @@ if __name__ == "__main__":
     usage="usage: %prog file [files...]"
     parser=OptionParser(usage=usage)
     (options, args) = parser.parse_args()
-    print options
+    #print options
 
     app=Peppy()
     frame=BufferFrame(app)

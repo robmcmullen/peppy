@@ -12,12 +12,12 @@ from optparse import OptionParser
 import wx
 from wxemacskeybindings import *
 
-
+from debug import dprint,debugmixin
 
 
 
 # is each command a new instance?
-class FrameAction(object):
+class FrameAction(debugmixin):
     name = "FrameAction"
     help = "Help string"
     tooltip = "some tooltip help"
@@ -36,7 +36,7 @@ class FrameAction(object):
 
     # If you override run(), you have to do all the housekeeping.
     def run(self, state=None, pos=-1):
-        print "exec: id=%s name=%s" % (id(self),self.name)
+        self.dprint("id=%s name=%s" % (id(self),self.name))
         self.action(state,pos)
         self.frame.enableMenu()
 
@@ -47,7 +47,7 @@ class FrameAction(object):
         pass
 
     def __call__(self, evt, number=None):
-        print "%s called by keybindings" % self
+        self.dprint("%s called by keybindings" % self)
         self.action()
 
     # pass the state onto the frame without activating the user
@@ -83,7 +83,7 @@ class FrameToggle(FrameAction):
         return self.checked
 
     def run(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,pos)
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,pos))
         self.checked = not self.checked
         self.action(state,pos)
 
@@ -144,7 +144,7 @@ class FrameActionList(FrameAction):
         return None
     
     def run(self, state=None, pos=-1):
-        print "exec: id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos])
+        self.dprint("id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos]))
         self.action(state,pos)
 
 
@@ -235,7 +235,7 @@ class CategoryList(FrameActionList):
         return None
     
     def run(self, state=None, pos=-1):
-        print "exec: id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos])
+        self.dprint("id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos]))
         self.action(state,pos)
 
 
@@ -255,7 +255,7 @@ class RadioList(FrameActionList):
         return False
 
     def run(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%d" % (id(self),self.name,pos)
+        self.dprint("id=%x name=%s pos=%d" % (id(self),self.name,pos))
         self.selected = pos
         self.action(state,pos)
 
@@ -289,8 +289,8 @@ class FrameList(FrameActionList):
         self.itemlist = FrameList.itemlist
 
     def action(self, state=None, pos=-1):
-        print "FrameList.run: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist))
-        print "FrameList.run: raising frame name=%s pos=%d" % (self.name,pos)
+        self.dprint("id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist)))
+        self.dprint("  raising frame name=%s pos=%d" % (self.name,pos))
         self.itemlist[pos]['item'].Raise()
     
 class DeleteWindow(FrameAction):
@@ -317,25 +317,50 @@ class Open(FrameAction):
     icon = wx.ART_FILE_OPEN
     keyboard = "C-X C-F"
 
-class OpenRecent(FrameAction):
-    name = "<no recent files>"
-    tooltip = "Open a previously loaded image or hypercube"
-    dynamic = True
+
+class OpenRecent(FrameActionList):
+    name = "< no recent files >"
+    tooltip = "Open a previously loaded file"
+    debug = False
 
     # File list is shared among all windows, so it's a class attribute
-    files = ['/blah/stuff.img','/blah/stuff2.img','/blah/stuff3.bil']
+    itemlist = []
+    truncate = 10
 
     def __init__(self, frame):
         FrameAction.__init__(self, frame)
+        self.itemlist=OpenRecent.itemlist
+
+    def setFiles(self,filelist):
+        # initial population of the list
+        if filelist is not None:
+            names=self.getItems()
+            for name in filelist:
+                if name not in names:
+                    self.itemlist.append({'item':name,'name':name})
+        if len(self.itemlist)>OpenRecent.truncate:
+            self.itemlist[OpenRecent.truncate:]=[]
+        self.dprint("itemlist=%s" % self.itemlist)
+
+    # have to subclass append because in this case we add new stuff to
+    # the beginning of the array.
+    def append(self, item, text=None):
+        # if name already exists, move it to the top of the list
+        names=self.getItems()
+        if item in names:
+            index=names.index(item)
+            if self.debug: print "found %s at %d.  Removing" % (item,index)
+            del self.itemlist[index]
+        newitem={'item':item,'name':item}
+        self.itemlist[0:0]=[newitem]
+        if len(self.itemlist)>OpenRecent.truncate:
+            self.itemlist[OpenRecent.truncate:]=[]
+        self.dprint("itemlist=%s" % self.itemlist)
         
-    def getEntries(self,category=None):
-        return self.files
+    def action(self, state=None, pos=None):
+        self.dprint("id=%x pos=%d name=%s" % (id(self),pos,self.itemlist[pos]['item']))
+        self.frame.open(self.itemlist[pos]['item'])
 
-    def getNumEntries(self):
-        return len(self.files)
-
-    def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%d files=%x" % (id(self),self.name,pos,id(self.files))
 
 class Save(FrameAction):
     name = "&Save Image..."
@@ -449,7 +474,7 @@ class FrameToggleList(FrameActionList):
         return self.checked[index]
     
     def run(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%d" % (id(self),self.name,pos)
+        self.dprint("id=%x name=%s pos=%d" % (id(self),self.name,pos))
         self.checked[pos] = not self.checked[pos]
         self.action(state,pos)
     
@@ -465,7 +490,7 @@ class ShowToolbar(FrameToggle):
         return self.frame.toolbarvisible
     
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s" % (id(self),self.name)
+        self.dprint("id=%x name=%s" % (id(self),self.name))
         self.frame.showToolbar(not self.frame.toolbarvisible)
     
 
@@ -543,7 +568,7 @@ def parsePluginEntry(entry):
             command=entry[2]
             weight=entry[3]
         else:
-            print entry
+            dprint(entry)
     else:
         menuclass=entry['menuclass']
         menubar=entry['menubar']
@@ -551,18 +576,14 @@ def parsePluginEntry(entry):
         weight=entry['weight']
     return (menuclass,menubar,command,weight)
 
-class PluginMenuItemBase(object):
-    debuglevel=1
+class PluginMenuItemBase(debugmixin):
+    debuglevel=0
     
     def __init__(self):
         self.command=None
         self.name='--none--'
         self.id = -1
         self.listpos = None # position in dynamic list
-
-    def DPRINT(self, str):
-        if self.debuglevel>0:
-            print str
 
     def insertInto(self, parent, index):
         pass
@@ -617,7 +638,7 @@ class PluginMenuItem(PluginMenuItemBase):
     def insertInto(self, parentWidget, index):
         parentWidget.Insert(index,self.id,self.name,self.command.tooltip,self.type)
         self.widget=parentWidget.FindItemByPosition(index)
-        self.DPRINT("insertInto self=%s widget=%s" % (self,self.widget))
+        self.dprint("self=%s widget=%s" % (self,self.widget))
 
     def removeFrom(self, parentWidget):
         parentWidget.Remove(self.id)
@@ -626,7 +647,7 @@ class PluginMenuItem(PluginMenuItemBase):
         frameWidget.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,self.callback)
         
     def callback(self, ev):
-        print "got event '%s' for frame '%s'" % (self.name,self.frame.name)
+        self.dprint("got event '%s' for frame '%s'" % (self.name,self.frame.name))
         self.command.run(self.frame.getState(),self.listpos)
         
     def enableInMenu(self, parentWidget, state):
@@ -670,8 +691,8 @@ class PluginMenuList(PluginMenuItem):
         contained in the command instance."""
         
         entries=self.command.getEntries(self.category)
-        self.DPRINT("inserting entries %s" % entries)
-        self.DPRINT("  command=%s" % self.command)
+        self.dprint("inserting entries %s" % entries)
+        self.dprint("  command=%s" % self.command)
         i=0
         for entry in entries:
             item=PluginMenuItem(self.frame,None,self.command,entry,i)
@@ -689,12 +710,12 @@ class PluginMenuList(PluginMenuItem):
         entries=self.command.getEntries(self.category)
         old=len(self.items)
         current=len(entries)
-        self.DPRINT("rebuildList %s: old entries=%d, new entries=%d" % (self.name,old,current))
+        self.dprint("name %s: old entries=%d, new entries=%d" % (self.name,old,current))
 
         fewer=min(old,current)
         for i in range(fewer):
             item=self.items[i]
-            self.DPRINT("  item=%s, entries[%d]=%s" % (item,i,entries[i]))
+            self.dprint("  item=%s, entries[%d]=%s" % (item,i,entries[i]))
 
             # replace the item info with the new details
             item.name=entries[i]
@@ -707,7 +728,7 @@ class PluginMenuList(PluginMenuItem):
             # need to add menu entries
             lastitem=self.items[i]
             for i in range (fewer,current):
-                self.DPRINT("rebuildList %s: adding %s" % (self.name,entries[i]))
+                self.dprint("name %s: adding %s" % (self.name,entries[i]))
                 item=PluginMenuItem(self.frame,None,self.command,entries[i],i)
                 # item.parentList=self
                 self.items.append(item)
@@ -717,7 +738,7 @@ class PluginMenuList(PluginMenuItem):
             # need to remove menu entries
             for i in range (fewer,old):
                 item=self.items[i]
-                self.DPRINT("rebuildList %s: removing %s" % (self.name,item.name))
+                self.dprint("name %s: removing %s" % (self.name,item.name))
                 self.parentMenu.remove(item)
             self.items[fewer:old]=[]
 
@@ -760,7 +781,7 @@ class PluginMenuCategoryList(PluginMenuItem):
         
         cats=self.command.getCategories()
         for category in cats:
-            self.DPRINT("getList: inserting entries in category=%s" % category)
+            self.dprint("inserting entries in category=%s" % category)
             menu=self.newMenu(category)
         return self.menus
 
@@ -771,19 +792,19 @@ class PluginMenuCategoryList(PluginMenuItem):
         renamed when possible."""
         
         cats=self.command.getCategories()
-        print cats
+        self.dprint("categories=%s" % cats)
         old=len(self.menus)
         current=len(cats)
-        self.DPRINT("rebuildList %s: old entries=%d, new entries=%d" % (self.name,old,current))
+        self.dprint("name %s: old entries=%d, new entries=%d" % (self.name,old,current))
 
         fewer=min(old,current)
         for i in range(fewer):
             item=self.menus[i]
-            self.DPRINT("  menu=%s, category[%d]=%s" % (item,i,cats[i]))
+            self.dprint("  menu=%s, category[%d]=%s" % (item,i,cats[i]))
 
             # replace the wx widget with the new details
             widget=self.parentMenu.widget.FindItemById(item.id)
-            self.DPRINT("  parent=%s parent.widget=%s widget=%s id=%d" % (str(self.parentMenu),str(self.parentMenu.widget),str(widget),item.id))
+            self.dprint("  parent=%s parent.widget=%s widget=%s id=%d" % (str(self.parentMenu),str(self.parentMenu.widget),str(widget),item.id))
             widget.SetText(cats[i])
             item.rebuildList() # rebuild sub menu
 
@@ -791,7 +812,7 @@ class PluginMenuCategoryList(PluginMenuItem):
             # need to add menu entries
             lastitem=self.menus[i]
             for i in range (fewer,current):
-                self.DPRINT("rebuildList %s: adding %s" % (self.name,cats[i]))
+                self.dprint("name %s: adding %s" % (self.name,cats[i]))
                 item=self.newMenu(cats[i])
                 self.parentMenu.insertAfter(item,lastitem)
                 lastitem=item
@@ -799,7 +820,7 @@ class PluginMenuCategoryList(PluginMenuItem):
             # need to remove menu cats
             for i in range (fewer,old):
                 item=self.menus[i]
-                self.DPRINT("rebuildList %s: removing %s" % (self.name,item.name))
+                self.dprint("name %s: removing %s" % (self.name,item.name))
                 self.parentMenu.remove(item)
             self.menus[fewer:old]=[]
 
@@ -844,7 +865,7 @@ class PluginMenu(PluginMenuItemBase):
 
         self.insertMenu(menu, menuindex, weight)
 
-        self.DPRINT(self.menunames)
+        self.dprint(self.menunames)
 
         return menu
 
@@ -865,12 +886,12 @@ class PluginMenu(PluginMenuItemBase):
                 if weight==None:
                     weight=lastweight
                 
-                self.DPRINT("found menuclass=%s menubar=%s command=%s weight=%f" % (menuclass,str(menubar),command,weight))
+                self.dprint("found menuclass=%s menubar=%s command=%s weight=%f" % (menuclass,str(menubar),command,weight))
                 parent=self
                 for name,menuweight in menubar:
                     menu=parent.getMenu(name,menuweight)
                     parent=menu
-                self.DPRINT("inserting command=%s into menu %s" % (command,menu.name))
+                self.dprint("inserting command=%s into menu %s" % (command,menu.name))
 
                 if command:
                     if command.dynamic:
@@ -894,11 +915,11 @@ class PluginMenu(PluginMenuItemBase):
             lastweight=weight
             
     def remove(self, item):
-        self.DPRINT("remove: self=%s" % self)
-        self.DPRINT("remove: self.items=%s" % self.items)
-        self.DPRINT("remove: item=%s" % item)
+        self.dprint("self=%s" % self)
+        self.dprint("self.items=%s" % self.items)
+        self.dprint("item=%s" % item)
         index=self.items.index(item)
-        self.DPRINT("remove: index=%d" % index)
+        self.dprint("index=%d" % index)
         del self.items[index]
         del self.itemweights[index]
         item.removeFrom(self.widget)
@@ -914,22 +935,22 @@ class PluginMenu(PluginMenuItemBase):
         return index
 
     def insertAfter(self, item, after):
-        self.DPRINT("insertAfter: self=%s" % self)
-        self.DPRINT("insertAfter: self.items=%s" % self.items)
-        self.DPRINT("insertAfter: after=%s" % after)
+        self.dprint("self=%s" % self)
+        self.dprint("self.items=%s" % self.items)
+        self.dprint("after=%s" % after)
         index=self.items.index(after)
-        self.DPRINT("insertAfter: index=%d" % index)
+        self.dprint("index=%d" % index)
         weight=self.itemweights[index]
         index+=1 # insert after this item
         self.items.insert(index,item)
         self.itemweights.insert(index,weight)
         item.insertInto(self.widget,index)
         item.connectEvent(self.frame)
-        self.DPRINT("inserted %s (weight=%f) at position %d" % (item.name,weight,index))
+        self.dprint("inserted %s (weight=%f) at position %d" % (item.name,weight,index))
 
     def insertMenu(self, menu, menuindex, weight):
         index=self.insertIndex(menu,weight)
-        self.DPRINT("inserting menu %s in submenu %s at index=%d" % (menu.name,self.name,index))
+        self.dprint("inserting menu %s in submenu %s at index=%d" % (menu.name,self.name,index))
         self.widget.InsertMenu(index,menu.id,menu.name,menu.widget)
 
     def insertItem(self, item, weight):
@@ -937,12 +958,12 @@ class PluginMenu(PluginMenuItemBase):
             index=self.insertIndex(entry,weight)
             entry.insertInto(self.widget,index)
             entry.connectEvent(self.frame)
-            self.DPRINT("inserted id=%d %s (weight=%f) at position %d" % (entry.id,entry.name,weight,index))
+            self.dprint("inserted id=%d %s (weight=%f) at position %d" % (entry.id,entry.name,weight,index))
 
     # insert this menu into another menu
     def insertInto(self, parentWidget, index):
         parentWidget.InsertMenu(index,self.id,self.name,self.widget)
-        self.DPRINT("insertInto self=%s widget=%s" % (self,self.widget))
+        self.dprint("self=%s widget=%s" % (self,self.widget))
 
     def rebuildList(self):
         return
@@ -953,7 +974,7 @@ class PluginMenu(PluginMenuItemBase):
             dynamic.rebuildList()
 
     def enableInMenu(self, parent, state):
-        print "currently, whole menus aren't greyed out."
+        dprint("currently, whole menus aren't greyed out.")
         pass
 
     def enable(self, state):
@@ -973,9 +994,9 @@ class PluginMenu(PluginMenuItemBase):
     def findItemByFrameAction(self, instance):
         item=None
         for item in self.items:
-            self.DPRINT("searching %s" % item.name)
+            self.dprint("searching %s" % item.name)
             if isinstance(item.command,instance):
-                self.DPRINT("found %s in %s" % (item.command.name,item.name))
+                self.dprint("found %s in %s" % (item.command.name,item.name))
                 return item
         item=None
         for menu in self.menus:
@@ -1023,7 +1044,7 @@ class PluginMenuBar(PluginMenu):
     # wx commands to insert a menu in a menu bar is different than
     # inserting into a menu, so this method has to be overridden.
     def insertMenu(self, menu, menuindex, weight):
-        # print "inserting menu %s at %d" % (menu.name,menuindex)
+        self.dprint("inserting menu %s at %d" % (menu.name,menuindex))
         if menuindex<self.oldcount:
             self.widget.Replace(menuindex,menu.widget,menu.name)
         else:
@@ -1047,7 +1068,7 @@ class PluginToolBarItem(PluginMenuItem):
         if self.icon.startswith("wxART"):
             bitmap=wx.ArtProvider.GetBitmap(self.icon, wx.ART_TOOLBAR, self.size)
         else:
-            print "loading icon %s" % self.icon
+            self.dprint("loading icon %s" % self.icon)
             bitmap=wx.Bitmap(self.icon)
         parentWidget.InsertLabelTool(index,self.id,self.name,bitmap,shortHelp=self.name,longHelp=self.command.tooltip,kind=self.type)
 
@@ -1101,7 +1122,7 @@ class PluginToolBar(PluginMenu):
 
         # If we're using the same toolbar, delete all the existing tools
         if reuse:
-            print "Clearing toolbar!"
+            self.dprint("Clearing toolbar!")
             # FIXME!  Platforms seem to work differently
             if wx.Platform == '__WXMSW__':
                 # Works on windows, crashes on linux.
@@ -1139,7 +1160,7 @@ class PluginToolBar(PluginMenu):
         self.widget.Thaw()
 
     def show(self, visible):
-        print "Showing toolbar=%s" % visible
+        self.dprint("Showing toolbar=%s" % visible)
         self.widget.Realize()
         self.widget.SetMinSize(self.widget.GetSize())
         self.widget.Show(visible)
@@ -1186,7 +1207,7 @@ class PluginToolBar(PluginMenu):
                 if weight==None:
                     weight=lastweight
                 
-                self.DPRINT("found menuclass=%s command=%s weight=%f" % (menuclass,command,weight))
+                self.dprint("found menuclass=%s command=%s weight=%f" % (menuclass,command,weight))
 
                 if command:
                     if command.dynamic:
@@ -1205,14 +1226,16 @@ class PluginToolBar(PluginMenu):
             
 
 
-class MenuFrame(wx.Frame):
-
+class MenuFrame(wx.Frame,debugmixin):
+    debuglevel=0
     frameid = 0
     
     def __init__(self, app, framelist, size=(500,500), plugins=None, toolbar=None):
         MenuFrame.frameid+=1
         self.name="peppy: Frame #%d" % MenuFrame.frameid
-        wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=(500,500), style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
+        wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
+
+        self.debuglevel=0
 
         self.app=app
         self.menuplugins=None
@@ -1233,7 +1256,7 @@ class MenuFrame(wx.Frame):
 
         self.framelist=framelist
         self.framelist.append(self)
-        print "framelist = %x" % id(self.framelist)
+        self.dprint("framelist = %x" % id(self.framelist))
         
         if plugins:
             self.setMenuPlugins('mainmenu', plugins)
@@ -1264,6 +1287,9 @@ class MenuFrame(wx.Frame):
         self.popup=self.getDummyMenu(popup=True)
         self.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
 
+    def __str__(self):
+        return self.name
+
     def KeyPressed(self, evt):
         self.keys.process(evt)
 ##        if function:
@@ -1278,10 +1304,10 @@ class MenuFrame(wx.Frame):
             for plugin in plugins:
                 menuclass,menubar,command,weight=parsePluginEntry(plugin)
                 if command and command.keyboard:
-                    print "found key=%s for %s" % (command.keyboard,command)
+                    self.dprint("found key=%s for %s" % (command.keyboard,command))
                     keymap.define(command.keyboard,command(self))
         except:
-            print "apparently already defined the menubar shortcut keys."
+            dprint("apparently already defined the menubar shortcut keys.")
 
     def setKeyboardPlugins(self,name,plugins):
         keymap=self.app.globalKeys
@@ -1289,14 +1315,14 @@ class MenuFrame(wx.Frame):
             for plugin in plugins:
                 menuclass,command=parseKeyboardPluginEntry(plugin)
                 if command and command.keyboard:
-                    print "found key=%s for %s" % (command.keyboard,command)
+                    self.dprint("found key=%s for %s" % (command.keyboard,command))
                     keymap.define(command.keyboard,command(self))
         except:
-            print "apparently already defined the keyboard shortcut keys."
+            dprint("apparently already defined the keyboard shortcut keys.")
             raise
             
     def popupMenu(self,evt):
-        print "popping up menu for %s" % evt.GetEventObject()
+        self.dprint("popping up menu for %s" % evt.GetEventObject())
         item=self.mainsizer.GetItem(1)
         if item:
             win=item.GetWindow()
@@ -1350,7 +1376,7 @@ class MenuFrame(wx.Frame):
             self.toolbar=toolbar
 
     def setMenuPlugins(self, name, plugins=None):
-        print plugins
+        self.dprint(plugins)
         self.menuplugins=PluginMenuBar(self,name,plugins)
 
         self.rebuildMenus()
@@ -1388,9 +1414,6 @@ class MenuFrame(wx.Frame):
             self.toolbarplugins.show(state)
             self.Layout()
         
-    def __str__(self):
-        return self.name
-
     def getState(self):
         return self
         
@@ -1421,6 +1444,11 @@ class MenuFrame(wx.Frame):
         dlg.ShowModal()
         dlg.Destroy()
 
+    def open(self,filename):
+        pass
+
+    def save(self,filename):
+        pass
 
 
 class MyApp(wx.App):

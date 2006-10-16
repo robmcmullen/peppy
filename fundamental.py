@@ -6,6 +6,9 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 
+from debug import *
+
+
 class OpenFundamental(FrameAction):
     name = "&Open Sample Text"
     tooltip = "Open some sample text"
@@ -15,7 +18,7 @@ class OpenFundamental(FrameAction):
 ##        return not self.frame.isOpen()
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("demo.txt")
 
 class WordWrap(FrameToggle):
@@ -33,7 +36,7 @@ class WordWrap(FrameToggle):
         return False
     
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s" % (id(self),self.name)
+        self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getCurrentViewer()
         if viewer:
             viewer.setWordWrap(not viewer.settings['wordwrap'])
@@ -44,7 +47,7 @@ class BeginningOfLine(FrameAction):
     keyboard = 'C-A'
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getCurrentViewer()
         if viewer:
             s=viewer.stc
@@ -59,7 +62,7 @@ class EndOfLine(FrameAction):
     keyboard = 'C-E'
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getCurrentViewer()
         if viewer:
             s=viewer.stc
@@ -79,12 +82,11 @@ keyboard_plugins=[
 
 
 
-class MySTC(stc.StyledTextCtrl):
-    def __init__(self, parent, frame, ID=-1, log=sys.stdout):
+class MySTC(stc.StyledTextCtrl,debugmixin):
+    def __init__(self, parent, frame, ID=-1):
         stc.StyledTextCtrl.__init__(self, parent, ID)
         self.tabs=parent # this is the tabbed frame
         self.frame=frame # this is the BufferFrame
-        self.log = log
 
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
         self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
@@ -93,7 +95,7 @@ class MySTC(stc.StyledTextCtrl):
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
-        print self.tabs
+        self.debug_dnd=False
 
     def OnDestroy(self, evt):
         # This is how the clipboard contents can be preserved after
@@ -103,32 +105,32 @@ class MySTC(stc.StyledTextCtrl):
 
 
     def OnStartDrag(self, evt):
-        self.log.write("OnStartDrag: %d, %s\n"
+        self.dprint("OnStartDrag: %d, %s\n"
                        % (evt.GetDragAllowMove(), evt.GetDragText()))
 
-        if debug and evt.GetPosition() < 250:
+        if self.debug_dnd and evt.GetPosition() < 250:
             evt.SetDragAllowMove(False)     # you can prevent moving of text (only copy)
             evt.SetDragText("DRAGGED TEXT") # you can change what is dragged
             #evt.SetDragText("")             # or prevent the drag with empty text
 
 
     def OnDragOver(self, evt):
-        self.log.write(
+        self.dprint(
             "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
             % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
             )
 
-        if debug and evt.GetPosition() < 250:
+        if self.debug_dnd and evt.GetPosition() < 250:
             evt.SetDragResult(wx.DragNone)   # prevent dropping at the beginning of the buffer
 
 
     def OnDoDrop(self, evt):
-        self.log.write("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
+        self.dprint("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
                        "\ttext: %s\n"
                        % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
                           evt.GetDragText()))
 
-        if debug and evt.GetPosition() < 500:
+        if self.debug_dnd and evt.GetPosition() < 500:
             evt.SetDragText("DROPPED TEXT")  # Can change text if needed
             #evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
                                              # is probably better to do it in OnDragOver so
@@ -141,7 +143,7 @@ class MySTC(stc.StyledTextCtrl):
 
 
     def OnModified(self, evt):
-        self.log.write("""OnModified
+        self.dprint("""OnModified
         Mod type:     %s
         At position:  %d
         Lines added:  %d
@@ -197,7 +199,7 @@ class FundamentalView(View):
         self.settings['symbols']=False
 
     def createWindow(self,parent):
-        print "creating new Fundamental window"
+        self.dprint("creating new Fundamental window")
 
         self.createSTC(parent,style=True)
         self.win=self.stc
@@ -258,7 +260,7 @@ class FundamentalView(View):
         # SetIndent must be called whenever a new document is loaded
         # into the STC
         self.stc.SetIndent(4)
-        #print "indention=%d" % self.stc.GetIndent()
+        #self.dprint("indention=%d" % self.stc.GetIndent())
 
         self.stc.SetIndentationGuides(1)
 

@@ -9,18 +9,23 @@ from wxemacskeybindings import *
 
 from cStringIO import StringIO
 
+from configprefs import *
+from ConfigParser import ConfigParser
+
+from debug import *
+
 
 
 class ViewAction(FrameAction):
     # Set up a new run() method to pass the viewer
     def run(self, state=None, pos=-1):
-        print "exec: id=%s name=%s" % (id(self),self.name)
+        self.dprint("id=%s name=%s" % (id(self),self.name))
         self.action(self.frame.getCurrentViewer(),state,pos)
         self.frame.enableMenu()
 
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
-        print "%s called by keybindings" % self
+        self.dprint("%s called by keybindings" % self)
         self.action(self.frame.getCurrentViewer())
 
 
@@ -50,7 +55,7 @@ class BufferList(CategoryList):
         del self.itemlist[:]
         cats=self.itemdict.keys()
         cats.sort()
-        print cats
+        self.dprint("categories=%s" % cats)
         for category in cats:
             items=self.itemdict[category]
             self.itemlist.extend(items)
@@ -68,27 +73,27 @@ class BufferList(CategoryList):
     def remove(self,buffer):
         #index=self.findIndex(item)
         #del self.itemlist[index]
-        print "trying to remove buffer %s" % buffer
+        self.dprint("trying to remove buffer %s" % buffer)
         for cat in self.itemdict.keys():
-            print "checking %s; list=%s" % (cat,str(self.itemdict[cat]))
+            self.dprint("checking %s; list=%s" % (cat,str(self.itemdict[cat])))
             for entry in self.itemdict[cat]:
                 if entry['item']==buffer:
                     self.itemdict[cat].remove(entry)
-                    print "removed buffer %s" % buffer
+                    self.dprint("removed buffer %s" % buffer)
                     if len(self.itemdict[cat])==0:
                         del self.itemdict[cat]
         self.regenList()
         
     def action(self, state=None, pos=-1):
-        print "BufferList.run: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist))
-        print "BufferList.run: changing frame name=%s to buffer=%s" % (self.name,self.itemlist[pos])
+        self.dprint("BufferList.run: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist)))
+        self.dprint("BufferList.run: changing frame name=%s to buffer=%s" % (self.name,self.itemlist[pos]))
         self.frame.setBuffer(self.itemlist[pos]['item'])
 
 
     def getDefaultViewer(self, filename):
         choices=[]
         for viewer in self.viewers:
-            print "checking viewer %s regex=%s" % (str(viewer),viewer.regex)
+            self.dprint("checking viewer %s regex=%s" % (str(viewer),viewer.regex))
             match=re.search(viewer.regex,filename)
             if match:
                 choices.append(viewer)
@@ -96,16 +101,16 @@ class BufferList(CategoryList):
             viewer=View
         elif len(choices)>1:
             viewer=choices[0]
-            print "chosing %s out of %d viewers" % (str(viewer),len(choices))
+            self.dprint("chosing %s out of %d viewers" % (str(viewer),len(choices)))
         else:
             viewer=choices[0]
 
-        print "loading buffer %s with %s" % (filename,str(viewer))
+        self.dprint("loading buffer %s with %s" % (filename,str(viewer)))
         return viewer
 
     def registerViewer(self,viewer):
         self.viewers.append(viewer)
-        print self.viewers
+        self.dprint(self.viewers)
 
 
 
@@ -115,7 +120,7 @@ class BufferList(CategoryList):
 
 #### Icons
 
-class IconStorage(object):
+class IconStorage(debugmixin):
     def __init__(self):
         self.il=wx.ImageList(16,16)
         self.map={}
@@ -126,11 +131,11 @@ class IconStorage(object):
             img.Rescale(16,16)
             bitmap=wx.BitmapFromImage(img)
             icon=self.il.Add(bitmap)
-            print "ICON=%s" % str(icon)
-            print img
+            self.dprint("ICON=%s" % str(icon))
+            self.dprint(img)
             self.map[filename]=icon
         else:
-            print "ICON: found icon for %s = %d" % (filename,self.map[filename])
+            self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
         return self.map[filename]
 
     def assign(self,notebook):
@@ -207,7 +212,7 @@ BlankSTC=NullSTC()
 
 #### Loaders for reading files and populating the STC interface
 
-class Filter(object):
+class Filter(debugmixin):
     def __init__(self):
         pass
 
@@ -221,13 +226,13 @@ class TextFilter(Filter):
     def read(self,buffer):
         fh=buffer.getReadFileObject()
         txt=fh.read()
-        print "TextFilter: reading %d bytes" % len(txt)
+        self.dprint("TextFilter: reading %d bytes" % len(txt))
         buffer.stc.SetText(txt)
 
     def write(self,buffer,filename):
         fh=buffer.getWriteFileObject(filename)
         txt=buffer.stc.GetText()
-        print "TextFilter: writing %d bytes" % len(txt)
+        self.dprint("TextFilter: writing %d bytes" % len(txt))
         try:
             fh.write(txt)
         except:
@@ -238,11 +243,11 @@ class BinaryFilter(Filter):
     def read(self,buffer):
         fh=buffer.getReadFileObject()
         txt=fh.read()
-        print "BinaryFilter: reading %d bytes" % len(txt)
+        self.dprint("BinaryFilter: reading %d bytes" % len(txt))
 
         # Now, need to convert it to two bytes per character
         styledtxt='\0'.join(txt)+'\0'
-        print "styledtxt: length=%d" % len(styledtxt)
+        self.dprint("styledtxt: length=%d" % len(styledtxt))
 
         buffer.stc.ClearAll()
         buffer.stc.AddStyledText(styledtxt)
@@ -252,16 +257,16 @@ class BinaryFilter(Filter):
 
         newtxt=buffer.stc.GetStyledText(0,length)
         out=" ".join(["%02x" % ord(i) for i in txt])
-        print out
+        self.dprint(out)
         #wx.StaticText(self.win, -1, out, (20, 45))
 
         errors=0
         for i in range(len(txt)):
             if newtxt[i*2]!=txt[i]:
-                print "error at: %d (%02x != %02x)" % (i,ord(newtxt[i*2]),ord(txt[i]))
+                self.dprint("error at: %d (%02x != %02x)" % (i,ord(newtxt[i*2]),ord(txt[i])))
                 errors+=1
             if errors>50: break
-        print "errors=%d" % errors
+        self.dprint("errors=%d" % errors)
     
     def write(self,buffer,filename):
         fh=buffer.getWriteFileObject(filename)
@@ -269,8 +274,8 @@ class BinaryFilter(Filter):
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
         txt=buffer.stc.GetStyledText(0,numchars)[0:numchars*2:2]
-        print "BinaryFilter: writing %d bytes" % len(txt)
-        print repr(txt)
+        self.dprint("BinaryFilter: writing %d bytes" % len(txt))
+        self.dprint(repr(txt))
         try:
             fh.write(txt)
         except:
@@ -282,7 +287,7 @@ class BinaryFilter(Filter):
 
 #### View base class
 
-class View(object):
+class View(debugmixin):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
@@ -327,7 +332,7 @@ class View(object):
         # callbacks to the command objects should still work if the
         # popup is generated in the same way that the regular menu and
         # toolbars are.
-        print "popping up menu for %s" % evt.GetEventObject()
+        self.dprint("popping up menu for %s" % evt.GetEventObject())
         self.win.PopupMenu(self.popup)
         evt.Skip()
 
@@ -335,7 +340,7 @@ class View(object):
         pass
 
     def open(self):
-        print "View: open docptr=%s" % self.buffer.docptr
+        self.dprint("View: open docptr=%s" % self.buffer.docptr)
         if self.buffer.docptr:
             # the docptr is a real STC, so use it as the base document
             # for the new view
@@ -344,7 +349,7 @@ class View(object):
         self.openPostHook()
 
     def close(self):
-        print "View: closing view of buffer %s" % self.buffer
+        self.dprint("View: closing view of buffer %s" % self.buffer)
         #self.stc.ReleaseDocument(self.buffer.docptr)
         self.win.Destroy()
         # remove reference to this view in the buffer's listeners
@@ -352,7 +357,7 @@ class View(object):
         pass
 
     def focus(self):
-        print "View: setting focus to %s" % self
+        #self.dprint("View: setting focus to %s" % self)
         self.win.SetFocus()
 
     def showModified(self,modified):
@@ -393,7 +398,7 @@ capabilities, (right click to try it out.)
 """
 
 
-class Buffer(object):
+class Buffer(debugmixin):
     count=0
 
     filenames={}
@@ -455,12 +460,12 @@ class Buffer(object):
     def getReadFileObject(self):
         self.docptr=self.stc.CreateDocument()
         self.stc.SetDocPointer(self.docptr)
-        print "getReadFileObject: creating new document %s" % self.docptr
+        self.dprint("getReadFileObject: creating new document %s" % self.docptr)
         if not self.fh:
             try:
                 fh=open(self.filename,"rb")
             except:
-                print "Couldn't open %s" % self.filename
+                self.dprint("Couldn't open %s" % self.filename)
                 if self.filename in fakefiles:
                     fh=StringIO()
                     fh.write(fakefiles[self.filename])
@@ -484,12 +489,12 @@ class Buffer(object):
             # FIXME: need to handle the case when we would be
             # overwriting an existing file with our new filename
             pass
-        print "getWriteFileObject: saving to %s" % filename
+        self.dprint("getWriteFileObject: saving to %s" % filename)
         fh=open(filename,"wb")
         return fh
     
     def save(self,filename=None):
-        print "Buffer: saving buffer %s" % (self.filename)
+        self.dprint("Buffer: saving buffer %s" % (self.filename))
         try:
             self.defaultviewer.filter.write(self,filename)
             self.stc.SetSavePoint()
@@ -502,15 +507,15 @@ class Buffer(object):
 
     def showModifiedAll(self):
         for view in self.viewers:
-            print "showModifiedAll: notifing: %s" % view
+            self.dprint("notifing: %s" % view)
             view.showModified(self.modified)
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
-            print "modified!"
+            self.dprint("modified!")
             changed=True
         else:
-            print "clean!"
+            self.dprint("clean!")
             changed=False
         if changed!=self.modified:
             self.modified=changed
@@ -547,7 +552,7 @@ class ViewerChangedEvent(wx.PyCommandEvent):
     def GetViewer(self):
         return self._viewer
 
-class TabbedViewer(wx.Notebook):
+class TabbedViewer(wx.Notebook,debugmixin):
     def __init__(self, parent, frame=None):
         wx.Notebook.__init__(self,parent,-1,style=wx.NO_BORDER)
 
@@ -570,14 +575,14 @@ class TabbedViewer(wx.Notebook):
         self.userChangedCallbacks.append(func)
 
     def OnTabChanged(self,evt):
-        print "OnTabChanged: changing to %s" % evt.GetSelection()
+        self.dprint("changing to %s" % evt.GetSelection())
         if not self.updating:
             viewer=self.getViewer(evt.GetSelection())
             out=ViewerChangedEvent(viewer)
             for func in self.userChangedCallbacks:
                 func(out)
         else:
-            print "Skipping tab changed event for %d" % evt.GetSelection()
+            self.dprint("ignoring tab changed event for %d" % evt.GetSelection())
         evt.Skip()
     
     def showModified(self,viewer):
@@ -631,8 +636,8 @@ class TabbedViewer(wx.Notebook):
             self.managed.append(managed)
             self.SetPageImage(index,viewer.getIcon())
             self.SetSelection(index)
-            print "added page=%d" % index
-            print "managed=%s" % str(self.managed)
+            self.dprint("added page=%d" % index)
+            self.dprint("managed=%s" % str(self.managed))
         else:
             print "FIXME: error adding page #%d" % index
         self.updating=False
@@ -643,7 +648,7 @@ class TabbedViewer(wx.Notebook):
             index=self.findIndex(viewer)
         else:
             index=self.GetSelection()
-        print "closing page %d" % index
+        self.dprint("closing page %d" % index)
         if index>=0:
             self.DeletePage(index)
 
@@ -652,8 +657,8 @@ class TabbedViewer(wx.Notebook):
             if close: viewer.close() # don't close if we are reparenting!
                 
             index=self.GetSelection()
-            print "new current page=%d" % index
-            print "managed=%s" % str(self.managed)
+            self.dprint("new current page=%d" % index)
+            self.dprint("managed=%s" % str(self.managed))
         self.updating=False
         return index
 
@@ -678,7 +683,7 @@ class TabbedViewer(wx.Notebook):
         return -1
         
 
-class HideOneTabViewer(wx.Panel):
+class HideOneTabViewer(wx.Panel,debugmixin):
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER)
         self.frame=parent
@@ -713,7 +718,7 @@ class HideOneTabViewer(wx.Panel):
             # the old view is destroyed here.  Should I save the state
             # somehow so the next view of this buffer sees the same
             # location in the file?
-            print "setWindow: closing old self.managed=%s" % str(self.managed)
+            self.dprint("closing old self.managed=%s" % str(self.managed))
             self.managed.Destroy()
             self.managed=None
         if win:
@@ -727,11 +732,11 @@ class HideOneTabViewer(wx.Panel):
         if self.count<=1:
             self.viewer=viewer
             viewer.createWindow(self)
-            print "setViewer: viewer.win=%s" % viewer.win
+            self.dprint("viewer.win=%s" % viewer.win)
             self.setWindow(viewer.win)
-            print "setViewer: after setWindow"
+            self.dprint("after setWindow")
             viewer.open()
-            print "setViewer: after viewer.open"
+            self.dprint("after viewer.open")
             self.count=1
         else:
             self.tabs.setViewer(viewer)
@@ -818,7 +823,15 @@ class HideOneTabViewer(wx.Panel):
 class BufferFrame(MenuFrame):
     def __init__(self, app):
         self.framelist=FrameList(self)
-        MenuFrame.__init__(self, app, self.framelist)
+
+        # FIXME: temporary hack to get window size from application
+        # config
+        cfg=app.cfg
+        size=(cfg.getint('frame','width'),
+              cfg.getint('frame','height'))
+        dprint(size)
+        
+        MenuFrame.__init__(self, app, self.framelist, size=size)
 
         self.app=app
 
@@ -836,7 +849,7 @@ class BufferFrame(MenuFrame):
         # When the frame is made the current active frame, update the
         # UI to make sure all the menu items/toolbar items reflect the
         # correct state.
-        print "OnActivate: %s" % self.name
+        self.dprint("%s to front" % self.name)
         self.enableMenu()
         viewer=self.getCurrentViewer()
         if viewer:
@@ -844,7 +857,7 @@ class BufferFrame(MenuFrame):
         self.app.SetTopWindow(self)
 
     def OnViewerChanged(self,evt):
-        print "OnViewerChanged: to viewer %s" % evt.GetViewer()
+        self.dprint("to viewer %s" % evt.GetViewer())
         self.menuplugins.widget.Freeze()
         self.resetMenu()
         viewer=evt.GetViewer()
@@ -872,9 +885,9 @@ class BufferFrame(MenuFrame):
     def addMenu(self,viewer=None):
         if not viewer:
             viewer=self.getCurrentViewer()
-        print "menu from viewer %s" % viewer
+        self.dprint("menu from viewer %s" % viewer)
         if viewer:
-            print "  from page %d" % self.tabs.getCurrentIndex()
+            self.dprint("  from page %d" % self.tabs.getCurrentIndex())
             keyword=viewer.pluginkey
             self.menuplugins.addMenu(keyword,self.app.menu_plugins)
             self.menuplugins.proxyValue(self)
@@ -889,7 +902,7 @@ class BufferFrame(MenuFrame):
 
     def isOpen(self):
         viewer=self.getCurrentViewer()
-            #print "viewer=%s isOpen=%s" % (str(viewer),str(viewer!=None))
+            #self.dprint("viewer=%s isOpen=%s" % (str(viewer),str(viewer!=None)))
         return viewer!=None
 
     def close(self):
@@ -926,7 +939,7 @@ class BufferFrame(MenuFrame):
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
         viewer=buffer.getView(self)
-        print "setting buffer to new view %s" % viewer
+        self.dprint("setting buffer to new view %s" % viewer)
         self.setViewer(viewer)
 
     def changeMajorMode(self,newmode):
@@ -934,17 +947,17 @@ class BufferFrame(MenuFrame):
         if viewer:
             buffer=viewer.buffer
             newview=newmode(buffer,self)
-            print "changeMajorMode: new view=%s" % newview
+            self.dprint("new view=%s" % newview)
             self.setViewer(newview)
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
-        print "newBuffer: viewer=%s" % viewer
+        self.dprint("viewer=%s" % viewer)
         self.menuplugins.widget.Freeze()
         self.resetMenu()
-        print "newBuffer: after resetMenu"
+        self.dprint("after resetMenu")
         self.tabs.addViewer(viewer)
-        print "newBuffer: after addViewer"
+        self.dprint("after addViewer")
         self.addMenu()
         self.menuplugins.widget.Thaw()
         self.getCurrentViewer().focus()
@@ -978,7 +991,7 @@ class BufferFrame(MenuFrame):
             paths = dlg.GetPaths()
 
             for path in paths:
-                print "open file %s:" % path
+                self.dprint("open file %s:" % path)
                 self.open(path)
 
         # Destroy the dialog. Don't do this until you are done with it!
@@ -1019,7 +1032,7 @@ class BufferFrame(MenuFrame):
                     break
                 elif len(paths)==1:
                     saveas=paths[0]
-                    print "save file %s:" % saveas
+                    self.dprint("save file %s:" % saveas)
 
                     # If new filename exists, make user confirm to
                     # overwrite
@@ -1036,9 +1049,9 @@ class BufferFrame(MenuFrame):
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
        
     def newTab(self):
-        print "newTab: frame=%s" % self
+        self.dprint("frame=%s" % self)
         buffer=Empty(self.app.dummyframe)
-        print "newTab: buffer=%s" % buffer
+        self.dprint("buffer=%s" % buffer)
         self.newBuffer(buffer)
 
     def close(self,buffer):
@@ -1048,7 +1061,7 @@ class BufferFrame(MenuFrame):
 
 
 
-class BufferApp(wx.App):
+class BufferApp(wx.App,debugmixin):
     def OnInit(self):
         self.menu_plugins=[]
         self.toolbar_plugins=[]
@@ -1058,6 +1071,8 @@ class BufferApp(wx.App):
         self.frames=FrameList(self) # master frame list
         self.buffers=BufferList(None) # master buffer list
 
+        self.confdir=None
+
         self.globalKeys=KeyMap()
 
         # the Buffer objects have an stc as the base, and they need a
@@ -1065,6 +1080,8 @@ class BufferApp(wx.App):
         # that is never shown.
         self.dummyframe=wx.Frame(None)
         self.dummyframe.Show(False)
+
+        self.errors=[]
 
     def getDefaultViewer(self,filename):
         return self.buffers.getDefaultViewer(filename)
@@ -1108,11 +1125,11 @@ class BufferApp(wx.App):
         frame.Show(True)
 
     def quit(self):
-        print "prompt for unsaved changes..."
+        self.dprint("prompt for unsaved changes...")
         unsaved=[]
         buffers=self.buffers.getItems()
         for buf in buffers:
-            print "buf=%s modified=%s" % (buf,buf.modified)
+            self.dprint("buf=%s modified=%s" % (buf,buf.modified))
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
@@ -1126,20 +1143,61 @@ class BufferApp(wx.App):
             sys.exit()
 
     def loadPlugin(self, mod):
-        print "loading plugins from module=%s" % str(mod)
+        self.dprint("loading plugins from module=%s" % str(mod))
         if 'viewers' in mod.__dict__:
-            print "found viewers: %s" % mod.viewers
+            self.dprint("found viewers: %s" % mod.viewers)
             for viewer in mod.viewers:
                 self.registerViewer(viewer)
         if 'menu_plugins' in mod.__dict__:
-            print "found menu plugins: %s" % mod.menu_plugins
+            self.dprint("found menu plugins: %s" % mod.menu_plugins)
             self.addMenuPlugins(mod.menu_plugins)
         if 'toolbar_plugins' in mod.__dict__:
-            print "found toolbar plugins: %s" % mod.toolbar_plugins
+            self.dprint("found toolbar plugins: %s" % mod.toolbar_plugins)
             self.addToolbarPlugins(mod.toolbar_plugins)
         if 'keyboard_plugins' in mod.__dict__:
-            print "found keyboard plugins: %s" % mod.keyboard_plugins
+            self.dprint("found keyboard plugins: %s" % mod.keyboard_plugins)
             self.addKeyboardPlugins(mod.keyboard_plugins)
+
+    def loadPlugins(self,plugins):
+        for plugin in plugins:
+            try:
+                mod=__import__(plugin)
+                self.loadPlugin(mod)
+            except:
+                print "couldn't load plugin %s" % plugin
+                self.errors.append("couldn't load plugin %s" % plugin)
+
+    def setConfigDir(self,dirname):
+        self.confdir=dirname
+        self.cfg=None
+
+    def setInitialConfig(self,defaults={'frame':{'width':400,
+                                                  'height':400,
+                                                  }
+                                         }):
+        self.cfg=ConfigParser()
+        for section,values in defaults.iteritems():
+            self.cfg.add_section(section)
+            for option,value in values.iteritems():
+                self.cfg.set(section,option,str(value))
+        self.cfg.optionxform=str
+
+    def loadConfig(self,filename):
+        c=HomeConfigDir(self.confdir)
+        self.dprint("found home dir=%s" % c.dir)
+        if not self.cfg:
+            self.setConfigDefaults()
+        processed=self.cfg.read(os.path.join(c.dir,filename))
+        self.dprint("config files processed: %s" % str(processed))
+        self.dprint("  defaults: %s" % self.cfg.defaults())
+        self.dprint("  sections: %s" % self.cfg.sections())
+        for section in self.cfg.sections():
+            self.dprint("  items in %s: %s" % (section,self.cfg.items(section)))
+
+    def saveConfig(self):
+        c=HomeConfigDir(self.confdir)
+        self.dprint("found home dir=%s" % c.dir)
+
 
 if __name__ == "__main__":
     pass

@@ -11,6 +11,9 @@ from buffers import *
 
 from fundamental import FundamentalView
 
+from debug import *
+
+
 class OpenHexEditor(FrameAction):
     name = "&Open Hex Editor..."
     tooltip = "Open a Hex Editor"
@@ -20,7 +23,7 @@ class OpenHexEditor(FrameAction):
 ##        return not self.frame.isOpen()
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("icons/py.ico")
 
 class HexEditMajorMode(FrameAction):
@@ -30,7 +33,7 @@ class HexEditMajorMode(FrameAction):
     keyboard = "C-X C-H"
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.changeMajorMode(HexEditView)
 
 
@@ -45,7 +48,7 @@ menu_plugins=[
 ##    ]
 
 
-class HugeTable(Grid.PyGridTableBase):
+class HugeTable(Grid.PyGridTableBase,debugmixin):
 
     def __init__(self,stc,format="16c"):
         Grid.PyGridTableBase.__init__(self)
@@ -73,7 +76,7 @@ class HugeTable(Grid.PyGridTableBase):
         mult=None
         endian='='
         for c in format:
-            print "checking %s" % c
+            self.dprint("checking %s" % c)
             if c>='0' and c<='9':
                 if mult==None:
                     mult=0
@@ -86,7 +89,7 @@ class HugeTable(Grid.PyGridTableBase):
             elif c in ['@','=','<','>','!']:
                 endian=c
             else:
-                print "ignoring %s" % c
+                self.dprint("ignoring %s" % c)
         self.sizes=[]
         self.offsets=[]
         offset=0
@@ -97,15 +100,15 @@ class HugeTable(Grid.PyGridTableBase):
             offset+=size
             
         self._textcols=len(self.types)
-        print "format = %s" % self.types
-        print "sizes = %s" % self.sizes
-        print "offsets = %s" % self.offsets
+        self.dprint("format = %s" % self.types)
+        self.dprint("sizes = %s" % self.sizes)
+        self.dprint("offsets = %s" % self.offsets)
         
     def setSTC(self, stc):
         self.stc=stc
-        print "stc = %s" % self.stc        
+        self.dprint("stc = %s" % self.stc        )
         self._rows=((self.stc.GetTextLength()-1)/self.nbytes)+1
-        print " rows=%d cols=%d" % (self._rows,self._cols)
+        self.dprint(" rows=%d cols=%d" % (self._rows,self._cols))
 
 ##    def GetAttr(self, row, col, kind):
 ##        attr = [self.even, self.odd][row % 2]
@@ -179,18 +182,18 @@ class HugeTable(Grid.PyGridTableBase):
         return (row,col)
    
     def GetNumberRows(self):
-        if self._debug: print "GetNumberRows = %d" % self._rows
+        self.dprint("rows = %d" % self._rows)
         return self._rows
 
     def GetRowLabelValue(self, row):
         return "%04x" % (row*self.nbytes)
 
     def GetNumberCols(self):
-        if self._debug: print "GetNumberCols = %d" % self._cols
+        self.dprint("cols = %d" % self._cols)
         return self._cols
 
     def GetColLabelValue(self, col):
-        if self._debug: print "GetColLabelValue: %x" % col
+        self.dprint("col=%x" % col)
         if col<self._hexcols:
             return "%x" % col
         else:
@@ -209,14 +212,14 @@ class HugeTable(Grid.PyGridTableBase):
         if col<self._hexcols:
             loc = self.getLoc(row,col)
             s = "%02x" % self.stc.GetCharAt(loc)
-            if self._debug: print s
+            self.dprint(s)
             return s
         else:
             startpos = self.getLoc(row,col)
             textcol = self.getTextCol(col)
             endpos = startpos+self.sizes[textcol]
             data = self.stc.GetStyledText(startpos,endpos)[::2]
-            if self._debug: print "row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes)
+            self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
             s = struct.unpack(self.types[textcol],data)
             return str(s[0])
 
@@ -230,9 +233,9 @@ class HugeTable(Grid.PyGridTableBase):
                 self.stc.ReplaceSelection('')
                 self.stc.AddStyledText(c+'\0')
             else:
-                print 'SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val)
+                self.dprint('SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val))
         else:
-            print 'SetValue(%d, %d, "%s") ignored.' % (row, col, value)
+            self.dprint('SetValue(%d, %d, "%s") ignored.' % (row, col, value))
 
     def ResetView(self, grid, stc, format=None):
         """
@@ -266,7 +269,7 @@ class HugeTable(Grid.PyGridTableBase):
         dc=wx.MemoryDC()
         dc.SetFont(font)
         (width,height)=dc.GetTextExtent("MM")
-        print "font extents=(%d,%d)" % (width,height)
+        self.dprint("font extents=(%d,%d)" % (width,height))
         for col in range(self._hexcols):
             grid.SetColMinimalWidth(col,10)
             grid.SetColSize(col,width)
@@ -293,6 +296,244 @@ class HugeTable(Grid.PyGridTableBase):
         grid.ProcessTableMessage(msg)
 
 
+# TextCtrl validator based on Validator.py from the wxPython demo
+class HexValidator(wx.PyValidator):
+    keypad=[ wx.WXK_NUMPAD0, wx.WXK_NUMPAD1, wx.WXK_NUMPAD2, wx.WXK_NUMPAD3, 
+             wx.WXK_NUMPAD4, wx.WXK_NUMPAD5, wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, 
+             wx.WXK_NUMPAD8, wx.WXK_NUMPAD9
+             ]
+    
+    def __init__(self):
+        wx.PyValidator.__init__(self)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def Clone(self):
+        return HexValidator()
+
+    def OnChar(self, event):
+        key = event.KeyCode()
+
+        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
+            event.Skip()
+            return
+
+        if key in HexValidator.keypad or (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f')):
+            event.Skip()
+            return
+
+        # Returning without calling even.Skip eats the event before it
+        # gets to the text control
+        return
+
+class HexTextCtrl(wx.TextCtrl,debugmixin):
+    debuglevel=1
+    
+    def __init__(self,parent,id,evtHandler=None,editor=None):
+        wx.TextCtrl.__init__(self,parent, id, validator = HexValidator(),
+                             style=wx.TE_PROCESS_TAB|wx.TE_PROCESS_ENTER)
+        self.SetInsertionPoint(0)
+        self.SetMaxLength(2)
+        self.Bind(wx.EVT_TEXT, self.OnText)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+
+        self.retevent=None
+        self.evtHandler=evtHandler
+        if evtHandler:
+            self.dprint("event handler=%s" % evtHandler)
+            self.PushEventHandler(evtHandler)
+        self.editor=editor
+
+    def OnKeyDown(self, evt):
+        self.dprint("HexTextCtrl: key down before evt=%s" % evt.GetKeyCode())
+        self.retevent=evt.Clone()
+        self.retevent.m_keyCode=wx.WXK_RETURN
+        self.dprint("HexTextCtrl: key down after evt=%s" % evt.GetKeyCode())
+        evt.Skip()
+        
+    def OnText(self, evt):
+        self.dprint("HexTextCtrl: evt=%s" % evt.GetString())
+        if len(evt.GetString())>=2 and self.retevent!=None:
+            self.dprint("HexTextCtrl: simulate a return keypress here")
+            evt2=wx.KeyEvent()
+            evt2.m_keyCode=wx.WXK_RETURN
+            self.EmulateKeyPress(evt2)
+            wx.CallAfter(self.editor.HandleReturn,evt2)
+            self.EmulateKeyPress(self.retevent)
+        
+
+# cell editor for the hex portion, based on GridCustEditor.py from the
+# wxPython demo
+class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
+    """
+    This is a sample GridCellEditor that shows you how to make your own custom
+    grid editors.  All the methods that can be overridden are shown here.  The
+    ones that must be overridden are marked with "*Must Override*" in the
+    docstring.
+
+    Notice that in order to call the base class version of these special
+    methods we use the method name preceded by "base_".  This is because these
+    methods are "virtual" in C++ so if we try to call wx.GridCellEditor.Create
+    for example, then when the wxPython extension module tries to call
+    ptr->Create(...) then it actually calls the derived class version which
+    looks up the method in this class and calls it, causing a recursion loop.
+    If you don't understand any of this, don't worry, just call the "base_"
+    version instead.
+    """
+    def __init__(self):
+        Grid.PyGridCellEditor.__init__(self)
+
+
+    def Create(self, parent, id, evtHandler):
+        """
+        Called to create the control, which must derive from wx.Control.
+        *Must Override*
+        """
+        self.dprint("")
+        self._tc = HexTextCtrl(parent, id, evtHandler, self)
+        self.SetControl(self._tc)
+
+
+    def SetSize(self, rect):
+        """
+        Called to position/size the edit control within the cell rectangle.
+        If you don't fill the cell (the rect) then be sure to override
+        PaintBackground and do something meaningful there.
+        """
+        self.dprint("rect=%s\n" % rect)
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+
+    def Show(self, show, attr):
+        """
+        Show or hide the edit control.  You can use the attr (if not None)
+        to set colours or fonts for the control.
+        """
+        self.dprint("show=%s, attr=%s" % (show, attr))
+        self.base_Show(show, attr)
+
+
+    def PaintBackground(self, rect, attr):
+        """
+        Draws the part of the cell not occupied by the edit control.  The
+        base  class version just fills it with background colour from the
+        attribute.  In this class the edit control fills the whole cell so
+        don't do anything at all in order to reduce flicker.
+        """
+        self.dprint("MyCellEditor: PaintBackground\n")
+
+
+    def BeginEdit(self, row, col, grid):
+        """
+        Fetch the value from the table and prepare the edit control
+        to begin editing.  Set the focus to the edit control.
+        *Must Override*
+        """
+        self.dprint("row,col=(%d,%d)" % (row, col))
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetValue(self.startValue)
+        self._tc.SetInsertionPointEnd()
+        self._tc.SetFocus()
+
+        # For this example, select the text
+        self._tc.SetSelection(0, self._tc.GetLastPosition())
+
+
+    def EndEdit(self, row, col, grid):
+        """
+        Complete the editing of the current cell. Returns True if the value
+        has changed.  If necessary, the control may be destroyed.
+        *Must Override*
+        """
+        self.dprint("row,col=(%d,%d)" % (row, col))
+        changed = False
+
+        val = self._tc.GetValue()
+        
+        if val != self.startValue:
+            changed = True
+            grid.GetTable().SetValue(row, col, val) # update the table
+
+        self.startValue = ''
+        self._tc.SetValue('')
+        return changed
+
+
+    def Reset(self):
+        """
+        Reset the value in the control back to its starting value.
+        *Must Override*
+        """
+        self.dprint("")
+        self._tc.SetValue(self.startValue)
+        self._tc.SetInsertionPointEnd()
+
+
+    def IsAcceptedKey(self, evt):
+        """
+        Return True to allow the given key to start editing: the base class
+        version only checks that the event has no modifiers.  F2 is special
+        and will always start the editor.
+        """
+        self.dprint("keycode=%d" % (evt.GetKeyCode()))
+
+        ## We can ask the base class to do it
+        #return self.base_IsAcceptedKey(evt)
+
+        # or do it ourselves
+        return (not (evt.ControlDown() or evt.AltDown()) and
+                evt.GetKeyCode() != wx.WXK_SHIFT)
+
+
+    def StartingKey(self, evt):
+        """
+        If the editor is enabled by pressing keys on the grid, this will be
+        called to let the editor do something about that first key if desired.
+        """
+        self.dprint("keycode=%d" % evt.GetKeyCode())
+        key = evt.GetKeyCode()
+        ch = None
+        if key in [ wx.WXK_NUMPAD0, wx.WXK_NUMPAD1, wx.WXK_NUMPAD2, wx.WXK_NUMPAD3, 
+                    wx.WXK_NUMPAD4, wx.WXK_NUMPAD5, wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, 
+                    wx.WXK_NUMPAD8, wx.WXK_NUMPAD9
+                    ]:
+
+            ch = chr(ord('0') + key - wx.WXK_NUMPAD0)
+
+        elif (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f')):
+            ch = chr(key)
+
+        if ch is not None:
+            # For this example, replace the text.  Normally we would append it.
+            #self._tc.AppendText(ch)
+            self._tc.SetValue(ch)
+            self._tc.SetInsertionPointEnd()
+        else:
+            evt.Skip()
+
+
+    def StartingClick(self):
+        """
+        If the editor is enabled by clicking on the cell, this method will be
+        called to allow the editor to simulate the click on the control if
+        needed.
+        """
+        self.dprint("")
+
+
+    def Destroy(self):
+        """final cleanup"""
+        self.dprint("")
+        self.base_Destroy()
+
+
+    def Clone(self):
+        """
+        Create a new object which is the copy of this one
+        *Must Override*
+        """
+        self.dprint("")
+        return HexCellEditor()
 
 
 
@@ -321,36 +562,40 @@ class WaitThread(Thread):
 
 
 
-class HugeTableGrid(Grid.Grid):
+class HugeTableGrid(Grid.Grid,debugmixin):
     def __init__(self, parent, stc, format="@4f"):
         Grid.Grid.__init__(self, parent, -1)
 
         self.table = HugeTable(stc, format)
 
-        # The second parameter means that the grid is to take ownership of the
-        # table and will destroy it when done.  Otherwise you would need to keep
-        # a reference to it and call it's Destroy method later.
+        # The second parameter means that the grid is to take
+        # ownership of the table and will destroy it when done.
+        # Otherwise you would need to keep a reference to it and call
+        # its Destroy method later.
         self.SetTable(self.table, True)
         self.SetMargins(0,0)
         self.SetColMinimalAcceptableWidth(10)
         self.EnableDragGridSize(False)
 
+        self.RegisterDataType(Grid.GRID_VALUE_STRING, None, None)
+        self.SetDefaultEditor(HexCellEditor())
+
         self.Bind(Grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.Bind(EVT_WAIT_UPDATE,self.underlyingUpdate)
+        self.Bind(EVT_WAIT_UPDATE,self.OnUnderlyingUpdate)
         self.Show(True)
 
     def Update(self,stc,format=None):
-        print "Need to update grid"
+        self.dprint("Need to update grid")
         self.table.ResetView(self,stc,format)
 
-    def underlyingUpdate(self, ev, loc=None):
+    def OnUnderlyingUpdate(self, ev, loc=None):
         """Data has changed in some other view, so we need to update
         the grid and reset the grid's cursor to the updated position
         if the location is given.
         """
-        print "underlyingUpdate: slow way of updating the grid -- updating the whole thing."
-        print ev
+        self.dprint("OnUnderlyingUpdate: slow way of updating the grid -- updating the whole thing.")
+        self.dprint(ev)
 
         self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
@@ -360,8 +605,7 @@ class HugeTableGrid(Grid.Grid):
             self.MakeCellVisible(row,col)
 
     def OnRightDown(self, ev):
-        print "hello"
-        print self.GetSelectedRows()
+        self.dprint(self.GetSelectedRows())
 
     def OnKeyDown(self, evt):
         if evt.KeyCode() == wx.WXK_RETURN or evt.KeyCode()==wx.WXK_TAB:
@@ -376,18 +620,6 @@ class HugeTableGrid(Grid.Grid):
                 (row,col)=self.GetTable().getNextCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
             self.SetGridCursor(row,col)
             self.MakeCellVisible(row,col)
-##            newCol=self.GetGridCursorCol() + 1
-##            if (newCol<col):
-##                success = self.MoveCursorRight(evt.ShiftDown())
-##            else:
-##                newRow = self.GetGridCursorRow() + 1
-##                if newRow < self.GetTable().GetNumberRows():
-##                    self.SetGridCursor(newRow, 0)
-##                    self.MakeCellVisible(newRow, 0)
-##                else:
-##                    # this would be a good place to add a new row if your app
-##                    # needs to do that
-##                    pass
 
         else:
             evt.Skip()
@@ -405,9 +637,9 @@ class HexEditView(FundamentalView):
 
     def createWindow(self,parent):
         FundamentalView.createWindow(self,parent)
-        print "creating new HexEditView window"
+        self.dprint("creating new HexEditView window")
 
-        self.win=HugeTableGrid(parent,self.stc)        
+        self.win=HugeTableGrid(parent,self.stc,"16c")        
         #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
 
         self.stc.Show(False)
@@ -465,7 +697,7 @@ class HexEditView(FundamentalView):
         # allowed to change the events that self.buffer.stc sees.
         etype=evt.GetModificationType()
         if etype&stc.STC_MOD_INSERTTEXT or etype&stc.STC_MOD_DELETETEXT:
-            sys.stdout.write("""UnderlyingSTCChanged
+            self.dprint("""UnderlyingSTCChanged
             Mod type:     %s
             At position:  %d
             Lines added:  %d
@@ -479,18 +711,18 @@ class HexEditView(FundamentalView):
             #self.win.underlyingUpdate(self.stc,evt.GetPosition())
             if self.waiting:
                 if self.waiting.isAlive():
-                    print "underlyingSTCChanged: found active wait thread"
+                    self.dprint("found active wait thread")
                     self.waiting.waitMore()
                 else:
                     self.waiting.join()
                     self.waiting=None
-                    print "underlyingSTCChanged: wait thread destroyed"
+                    self.dprint("wait thread destroyed")
                     # start a new thread below
 
             # don't use an else here so that a new thread will be
             # started if we just destroyed the old thread.
             if not self.waiting:
-                print "underlyingSTCChanged: starting wait thread"
+                self.dprint("starting wait thread")
                 self.waiting=WaitThread(self.win)
                 self.waiting.start()
         

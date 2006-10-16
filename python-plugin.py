@@ -9,14 +9,16 @@ from buffers import *
 
 from fundamental import FundamentalView
 
+from debug import *
+
 class IndentMixin(object):
     def indent(self, view, incr):
         s=view.stc
 
         # from pype.PythonSTC.Dent()
-        print "indenting by %d" % incr
+        self.dprint("indenting by %d" % incr)
         incr *= s.GetIndent()
-        print "indenting by %d" % incr
+        self.dprint("indenting by %d" % incr)
         x,y = s.GetSelection()
         if x==y:
             lnstart = s.GetCurrentLine()
@@ -111,7 +113,7 @@ class ElectricReturn(ViewAction):
             if (line.find(':')>-1):
                 for i in xrange(linestart, min(pos, s.GetTextLength())):
                     styl = s.GetStyleAt(i)
-                    #print styl, s.GetCharAt(i)
+                    #self.dprint(styl, s.GetCharAt(i))
                     if not xtra:
                         if (styl==10) and (s.GetCharAt(i) == colon):
                             xtra = 1
@@ -138,7 +140,7 @@ class ElectricReturn(ViewAction):
                             a = line.find(i)
                             if (a > -1):
                                 found.append(a)
-                        #print 'fnd', found
+                        #self.dprint('fnd', found)
                         if found: found = min(found)
                         else:     found = -1
                         if (found > -1) and\
@@ -158,7 +160,7 @@ class ElectricReturn(ViewAction):
                         break
                 if fnd:
                     seq = []
-                    #print "finding stuff"
+                    #self.dprint("finding stuff")
                     for i in "(){}[]":
                         a = line.find(i)
                         start = 0
@@ -171,9 +173,9 @@ class ElectricReturn(ViewAction):
                     cl = {')':'(', ']': '[', '}': '{',
                         '(':'',  '[': '',  '{': ''}
                     stk = []
-                    #print "making tree"
+                    #self.dprint("making tree")
                     for po, ch in seq:
-                        #print ch,
+                        #self.dprint(ch,)
                         if not cl[ch]:
                             #standard opening
                             stk.append((po, ch))
@@ -194,7 +196,7 @@ class ElectricReturn(ViewAction):
                             stk = []
                             break
                     if stk:
-                        #print "stack remaining", stk
+                        #self.dprint("stack remaining", stk)
                         ind = stk[-1][0]
             if not xtra:
                 ls = line.lstrip()
@@ -217,7 +219,7 @@ class PythonMajorMode(FrameAction):
     keyboard = "C-X C-P"
 
     def action(self, state=None, pos=-1):
-        print "exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.changeMajorMode(PythonView)
 
 
