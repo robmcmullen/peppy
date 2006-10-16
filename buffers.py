@@ -905,6 +905,9 @@ class BufferFrame(MenuFrame):
             #self.dprint("viewer=%s isOpen=%s" % (str(viewer),str(viewer!=None)))
         return viewer!=None
 
+    def isTopWindow(self):
+        return self.app.GetTopWindow()==self
+
     def close(self):
         viewer=self.getCurrentViewer()
         if viewer:
@@ -1163,8 +1166,9 @@ class BufferApp(wx.App,debugmixin):
             try:
                 mod=__import__(plugin)
                 self.loadPlugin(mod)
-            except:
+            except Exception,ex:
                 print "couldn't load plugin %s" % plugin
+                print ex
                 self.errors.append("couldn't load plugin %s" % plugin)
 
     def setConfigDir(self,dirname):

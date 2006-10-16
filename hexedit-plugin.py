@@ -296,13 +296,25 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         grid.ProcessTableMessage(msg)
 
 
-# TextCtrl validator based on Validator.py from the wxPython demo
-class HexValidator(wx.PyValidator):
+class HexDigitMixin(object):
     keypad=[ wx.WXK_NUMPAD0, wx.WXK_NUMPAD1, wx.WXK_NUMPAD2, wx.WXK_NUMPAD3, 
              wx.WXK_NUMPAD4, wx.WXK_NUMPAD5, wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, 
              wx.WXK_NUMPAD8, wx.WXK_NUMPAD9
              ]
     
+    def isValidHexDigit(self,key):
+        return key in HexDigitMixin.keypad or (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f'))
+
+    def getValidHexDigit(self,key):
+        if key in HexDigitMixin.keypad:
+            return chr(ord('0') + key - wx.WXK_NUMPAD0)
+        elif (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f')):
+            return chr(key)
+        else:
+            return None
+        
+# TextCtrl validator based on Validator.py from the wxPython demo
+class HexValidator(wx.PyValidator,HexDigitMixin):
     def __init__(self):
         wx.PyValidator.__init__(self)
         self.Bind(wx.EVT_CHAR, self.OnChar)
@@ -317,7 +329,7 @@ class HexValidator(wx.PyValidator):
             event.Skip()
             return
 
-        if key in HexValidator.keypad or (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f')):
+        if self.isValidHexDigit(key):
             event.Skip()
             return
 
@@ -325,45 +337,42 @@ class HexValidator(wx.PyValidator):
         # gets to the text control
         return
 
-class HexTextCtrl(wx.TextCtrl,debugmixin):
+class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
     debuglevel=1
     
-    def __init__(self,parent,id,evtHandler=None,editor=None):
+    def __init__(self,parent,id,parentgrid):
         wx.TextCtrl.__init__(self,parent, id, validator = HexValidator(),
                              style=wx.TE_PROCESS_TAB|wx.TE_PROCESS_ENTER)
+        self.dprint("parent=%s" % parent)
         self.SetInsertionPoint(0)
         self.SetMaxLength(2)
         self.Bind(wx.EVT_TEXT, self.OnText)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-        self.retevent=None
-        self.evtHandler=evtHandler
-        if evtHandler:
-            self.dprint("event handler=%s" % evtHandler)
-            self.PushEventHandler(evtHandler)
-        self.editor=editor
+        self.parentgrid=parentgrid
+        self.userpressed=False
 
     def OnKeyDown(self, evt):
-        self.dprint("HexTextCtrl: key down before evt=%s" % evt.GetKeyCode())
-        self.retevent=evt.Clone()
-        self.retevent.m_keyCode=wx.WXK_RETURN
-        self.dprint("HexTextCtrl: key down after evt=%s" % evt.GetKeyCode())
+        self.dprint("key down before evt=%s" % evt.GetKeyCode())
+        if self.isValidHexDigit(evt.GetKeyCode()):
+            self.userpressed=True
         evt.Skip()
         
     def OnText(self, evt):
-        self.dprint("HexTextCtrl: evt=%s" % evt.GetString())
-        if len(evt.GetString())>=2 and self.retevent!=None:
-            self.dprint("HexTextCtrl: simulate a return keypress here")
-            evt2=wx.KeyEvent()
-            evt2.m_keyCode=wx.WXK_RETURN
-            self.EmulateKeyPress(evt2)
-            wx.CallAfter(self.editor.HandleReturn,evt2)
-            self.EmulateKeyPress(self.retevent)
+        self.dprint("evt=%s" % evt.GetString())
+        if len(evt.GetString())>=2 and self.userpressed:
+            self.userpressed=False
+            # FIXME: problem here with a bunch of really quick
+            # keystrokes -- the interaction with the
+            # underlyingSTCChanged callback causes a cell's changes to
+            # be skipped over.  Need some flag in grid to see if we're
+            # editing, or to delay updates until a certain period of
+            # calmness, or something.
+            wx.CallAfter(self.parentgrid.advanceCursor)
         
 
 # cell editor for the hex portion, based on GridCustEditor.py from the
 # wxPython demo
-class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
+class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
     """
     This is a sample GridCellEditor that shows you how to make your own custom
     grid editors.  All the methods that can be overridden are shown here.  The
@@ -379,8 +388,9 @@ class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
     If you don't understand any of this, don't worry, just call the "base_"
     version instead.
     """
-    def __init__(self):
+    def __init__(self,grid):
         Grid.PyGridCellEditor.__init__(self)
+        self.parentgrid=grid
 
 
     def Create(self, parent, id, evtHandler):
@@ -389,7 +399,7 @@ class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
         *Must Override*
         """
         self.dprint("")
-        self._tc = HexTextCtrl(parent, id, evtHandler, self)
+        self._tc = HexTextCtrl(parent, id, self.parentgrid)
         self.SetControl(self._tc)
 
 
@@ -492,16 +502,7 @@ class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
         """
         self.dprint("keycode=%d" % evt.GetKeyCode())
         key = evt.GetKeyCode()
-        ch = None
-        if key in [ wx.WXK_NUMPAD0, wx.WXK_NUMPAD1, wx.WXK_NUMPAD2, wx.WXK_NUMPAD3, 
-                    wx.WXK_NUMPAD4, wx.WXK_NUMPAD5, wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, 
-                    wx.WXK_NUMPAD8, wx.WXK_NUMPAD9
-                    ]:
-
-            ch = chr(ord('0') + key - wx.WXK_NUMPAD0)
-
-        elif (key>=ord('0') and key<=ord('9')) or (key>=ord('A') and key<=ord('F')) or (key>=ord('a') and key<=ord('f')):
-            ch = chr(key)
+        ch = self.getValidHexDigit(key)
 
         if ch is not None:
             # For this example, replace the text.  Normally we would append it.
@@ -533,7 +534,7 @@ class HexCellEditor(Grid.PyGridCellEditor,debugmixin):
         *Must Override*
         """
         self.dprint("")
-        return HexCellEditor()
+        return HexCellEditor(self.parentgrid)
 
 
 
@@ -563,6 +564,8 @@ class WaitThread(Thread):
 
 
 class HugeTableGrid(Grid.Grid,debugmixin):
+    debuglevel=1
+    
     def __init__(self, parent, stc, format="@4f"):
         Grid.Grid.__init__(self, parent, -1)
 
@@ -578,7 +581,7 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.EnableDragGridSize(False)
 
         self.RegisterDataType(Grid.GRID_VALUE_STRING, None, None)
-        self.SetDefaultEditor(HexCellEditor())
+        self.SetDefaultEditor(HexCellEditor(self))
 
         self.Bind(Grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
@@ -625,6 +628,14 @@ class HugeTableGrid(Grid.Grid,debugmixin):
             evt.Skip()
             return
 
+    def advanceCursor(self):
+        self.DisableCellEditControl()
+        # FIXME: moving from the hex region to the value region using
+        # self.MoveCursorRight(False) causes a segfault, so make sure
+        # to stay in the same region
+        (row,col)=self.GetTable().getNextCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
+        self.SetGridCursor(row,col)
+        self.EnableCellEditControl()
 
 
 
@@ -634,6 +645,8 @@ class HexEditView(FundamentalView):
     icon='icons/tux.png'
     regex="\.(hex|bin|so|dat|ico|emf)"
     filter=BinaryFilter()
+
+    debuglevel=1
 
     def createWindow(self,parent):
         FundamentalView.createWindow(self,parent)
@@ -692,6 +705,15 @@ class HexEditView(FundamentalView):
         return st
 
     def underlyingSTCChanged(self,evt):
+        # Short-circuit this callback when we are editing this grid.
+        # The event is fired regardless of how the data is changed, so
+        # without some sort of check, the grid ends up getting
+        # modified twice.  If the current view is the active window,
+        # we know that we are editing this grid by hand.
+        if self.frame.isTopWindow():
+            self.dprint("TopWindow!  Skipping underlyingSTCChanged!")
+            return
+        
         # As the comment in the createWindow method noted, we have to
         # screen for the events we're interested in because we're not
         # allowed to change the events that self.buffer.stc sees.
