@@ -21,7 +21,7 @@ top_builddir = .
 distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
-DISTSRC = peppy.py buffers.py fundamental.py fundamental.py *-plugin.py menudev.py singletonmixin.py wxemacskeybindings.py icons
+DISTSRC = peppy.py buffers.py fundamental.py fundamental.py *-plugin.py menudev.py singletonmixin.py wxemacskeybindings.py configprefs.py debug.py icons
 DISTDOCS = README ChangeLog gpl.txt
 DISTFILES = $(DISTSRC) $(DISTDOCS)
 DISTFILE_TESTS = 

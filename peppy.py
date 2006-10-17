@@ -288,14 +288,14 @@ class TitleBuffer(Buffer):
 
 
 class Peppy(BufferApp):
-    debuglevel=1
+    debuglevel=0
     
     def OnInit(self):
         BufferApp.OnInit(self)
 
         self.setConfigDir("peppy")
-        self.setInitialConfig({'frame':{'width':200,
-                                        'height':200,
+        self.setInitialConfig({'frame':{'width':600,
+                                        'height':500,
                                         },
                                })
         self.loadConfig("peppy.cfg")

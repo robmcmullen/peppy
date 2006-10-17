@@ -338,7 +338,7 @@ class HexValidator(wx.PyValidator,HexDigitMixin):
         return
 
 class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
-    debuglevel=1
+    debuglevel=0
     
     def __init__(self,parent,id,parentgrid):
         wx.TextCtrl.__init__(self,parent, id, validator = HexValidator(),
@@ -383,7 +383,7 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
 # cell editor for the hex portion, based on GridCustEditor.py from the
 # wxPython demo
 class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
-    debuglevel=1
+    debuglevel=0
 
     def __init__(self,grid):
         Grid.PyGridCellEditor.__init__(self)
@@ -556,7 +556,7 @@ class WaitThread(Thread):
 
 
 class HugeTableGrid(Grid.Grid,debugmixin):
-    debuglevel=1
+    debuglevel=0
     
     def __init__(self, parent, stc, format="@4f"):
         Grid.Grid.__init__(self, parent, -1)
@@ -638,7 +638,7 @@ class HexEditView(FundamentalView):
     regex="\.(hex|bin|so|dat|ico|emf)"
     filter=BinaryFilter()
 
-    debuglevel=1
+    debuglevel=0
 
     def createWindow(self,parent):
         FundamentalView.createWindow(self,parent)

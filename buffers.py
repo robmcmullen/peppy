@@ -829,7 +829,7 @@ class BufferFrame(MenuFrame):
         cfg=app.cfg
         size=(cfg.getint('frame','width'),
               cfg.getint('frame','height'))
-        dprint(size)
+        self.dprint(size)
         
         MenuFrame.__init__(self, app, self.framelist, size=size)
 

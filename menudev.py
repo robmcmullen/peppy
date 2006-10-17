@@ -765,8 +765,6 @@ class PluginMenuCategoryList(PluginMenuItem):
 
         self.parentMenu=parent
 
-        self.debuglevel=1
-
     def newMenu(self,category):
         menu=PluginMenu(self.frame,category)
         self.menus.append(menu)
@@ -974,7 +972,7 @@ class PluginMenu(PluginMenuItemBase):
             dynamic.rebuildList()
 
     def enableInMenu(self, parent, state):
-        dprint("currently, whole menus aren't greyed out.")
+        self.dprint("currently, whole menus aren't greyed out.")
         pass
 
     def enable(self, state):
