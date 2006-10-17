@@ -351,6 +351,13 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
         self.parentgrid=parentgrid
         self.userpressed=False
 
+    def editingNewCell(self,value):
+        self.SetValue(value)
+        self.SetFocus()
+        self.SetInsertionPoint(0)
+        self.SetSelection(0,2) # select the text
+        self.userpressed=False
+
     def OnKeyDown(self, evt):
         self.dprint("key down before evt=%s" % evt.GetKeyCode())
         if self.isValidHexDigit(evt.GetKeyCode()):
@@ -358,9 +365,12 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
         evt.Skip()
         
     def OnText(self, evt):
-        self.dprint("evt=%s" % evt.GetString())
-        if len(evt.GetString())>=2 and self.userpressed:
-            self.userpressed=False
+        self.dprint("evt=%s cursor=%d" % (evt.GetString(),self.GetInsertionPoint()))
+        
+        # NOTE: we check that GetInsertionPoint returns 1 because the
+        # insertion point hasn't been updated yet and won't be until
+        # after this event handler returns.
+        if self.userpressed and len(evt.GetString())>=2 and self.GetInsertionPoint()>=1:
             # FIXME: problem here with a bunch of really quick
             # keystrokes -- the interaction with the
             # underlyingSTCChanged callback causes a cell's changes to
@@ -373,21 +383,8 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
 # cell editor for the hex portion, based on GridCustEditor.py from the
 # wxPython demo
 class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
-    """
-    This is a sample GridCellEditor that shows you how to make your own custom
-    grid editors.  All the methods that can be overridden are shown here.  The
-    ones that must be overridden are marked with "*Must Override*" in the
-    docstring.
+    debuglevel=1
 
-    Notice that in order to call the base class version of these special
-    methods we use the method name preceded by "base_".  This is because these
-    methods are "virtual" in C++ so if we try to call wx.GridCellEditor.Create
-    for example, then when the wxPython extension module tries to call
-    ptr->Create(...) then it actually calls the derived class version which
-    looks up the method in this class and calls it, causing a recursion loop.
-    If you don't understand any of this, don't worry, just call the "base_"
-    version instead.
-    """
     def __init__(self,grid):
         Grid.PyGridCellEditor.__init__(self)
         self.parentgrid=grid
@@ -441,12 +438,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         """
         self.dprint("row,col=(%d,%d)" % (row, col))
         self.startValue = grid.GetTable().GetValue(row, col)
-        self._tc.SetValue(self.startValue)
-        self._tc.SetInsertionPointEnd()
-        self._tc.SetFocus()
-
-        # For this example, select the text
-        self._tc.SetSelection(0, self._tc.GetLastPosition())
+        self._tc.editingNewCell(self.startValue)
 
 
     def EndEdit(self, row, col, grid):
