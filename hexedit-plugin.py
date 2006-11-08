@@ -323,7 +323,7 @@ class HexValidator(wx.PyValidator,HexDigitMixin):
         return HexValidator()
 
     def OnChar(self, event):
-        key = event.KeyCode()
+        key = event.GetKeyCode()
 
         if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
             event.Skip()
@@ -603,7 +603,8 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.dprint(self.GetSelectedRows())
 
     def OnKeyDown(self, evt):
-        if evt.KeyCode() == wx.WXK_RETURN or evt.KeyCode()==wx.WXK_TAB:
+        self.dprint("evt=%s" % evt)
+        if evt.GetKeyCode() == wx.WXK_RETURN or evt.GetKeyCode()==wx.WXK_TAB:
             if evt.ControlDown():   # the edit control needs this key
                 evt.Skip()
                 return
