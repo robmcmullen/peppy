@@ -23,10 +23,10 @@ class FrameAction(debugmixin):
     tooltip = "some tooltip help"
     icon = None
     keyboard = None
-    dynamic = False
+    dynamic = False # menu items can change
+    dynamictools = False # toolbar items can change
     categories = False
-    radio = False
-    toggle = False
+    menutype = wx.ITEM_NORMAL
     
     def __init__(self, frame):
         self.frame=frame
@@ -67,13 +67,39 @@ class FrameAction(debugmixin):
     def getNumEntries(self):
         return 1
 
+    # Regular menu item stuff
+
+    def connectMenu(self,widget,id,callback):
+        widget.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,callback)
+
+    # Toolbar stuff
+
     def getToolbarIcon(self, pos=-1):
         return self.icon
+
+    def getToolbarBitmap(self, pos=-1, size=(16,16)):
+        icon=self.getToolbarIcon(pos)
+        if icon is None:
+            bitmap=wx.NullBitmap()
+        elif icon.startswith("wxART"):
+            bitmap=wx.ArtProvider.GetBitmap(icon, wx.ART_TOOLBAR,size)
+        else:
+            self.dprint("loading icon %s" % icon)
+            bitmap=wx.Bitmap(icon)
+        return bitmap
+
+    def insertIntoToolbar(self,parentWidget,index,id,size,pos=-1):
+        bitmap=self.getToolbarBitmap(pos,size)
+        parentWidget.InsertLabelTool(index,id,self.name,bitmap,shortHelp=self.name,longHelp=self.tooltip,kind=self.menutype)
+
+    def connectToolbar(self,widget,id,callback):
+        widget.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,callback)
+
         
 class FrameToggle(FrameAction):
     name = "FrameToggle"
     tooltip = "FrameToggle button"
-    toggle = True
+    menutype = wx.ITEM_CHECK
     
     def __init__(self, frame):
         FrameAction.__init__(self, frame)
@@ -137,16 +163,17 @@ class FrameActionList(FrameAction):
             return 1
         return len(self.itemlist)
 
-    def getToolbarIcon(self, index):
-        item=self.itemlist[index]
-        if 'icon' in item:
-            return item['icon']
-        return None
-    
     def run(self, state=None, pos=-1):
-        self.dprint("id(self)=%x name=%s pos=%d item=%s" % (id(self),self.name,pos,self.itemlist[pos]))
+        self.dprint("id(self)=%x name=%s pos=%s item=%s" % (id(self),self.name,str(pos),self.itemlist[pos]))
         self.action(state,pos)
 
+    def insertIntoToolbar(self,parentWidget,index,id,size,pos=-1):
+        control=wx.ComboBox(parentWidget,id,"",choices=self.getEntries(),size=(150,-1),style=wx.CB_DROPDOWN)
+        parentWidget.InsertControl(index,control)
+
+    def connectToolbar(self,widget,id,callback):
+        widget.Connect(id,-1,wx.wxEVT_COMMAND_COMBOBOX_SELECTED,callback)
+        widget.Connect(id,-1,wx.wxEVT_COMMAND_TEXT_ENTER,callback)
 
 class CategoryList(FrameActionList):
     name = "CategoryList"
@@ -242,7 +269,7 @@ class CategoryList(FrameActionList):
 class RadioList(FrameActionList):
     name = "RadioList"
     tooltip = "Some help for this group of radio items"
-    radio = True
+    menutype = wx.ITEM_RADIO
 
     def __init__(self, frame):
         FrameActionList.__init__(self, frame)
@@ -255,7 +282,7 @@ class RadioList(FrameActionList):
         return False
 
     def run(self, state=None, pos=-1):
-        self.dprint("id=%x name=%s pos=%d" % (id(self),self.name,pos))
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.selected = pos
         self.action(state,pos)
 
@@ -454,7 +481,8 @@ class TestRadioList(RadioList):
 class FrameToggleList(FrameActionList):
     name = "FrameToggleList"
     tooltip = "Some help for this group of toggle buttons"
-    toggle = True
+    menutype = wx.ITEM_CHECK
+    dynamictools = True
 
     # radio list shared
     itemlist = [
@@ -473,6 +501,16 @@ class FrameToggleList(FrameActionList):
     def isChecked(self, index):
         return self.checked[index]
     
+    def getToolbarIcon(self, index):
+        item=self.itemlist[index]
+        if 'icon' in item:
+            return item['icon']
+        return None
+    
+    def insertIntoToolbar(self,parentWidget,index,id,size,pos=-1):
+        self.dprint("calling FrameAction parent method to create toolbar icons")
+        FrameAction.insertIntoToolbar(self,parentWidget,index,id,size,pos)
+
     def run(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%d" % (id(self),self.name,pos))
         self.checked[pos] = not self.checked[pos]
@@ -503,38 +541,38 @@ all_plugins=[
      },
     ['mainmenu',[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
     ['mainmenu',[('&File',0.0)],None,None], # separator
-    [Save],
-    [SaveAs],
-    [None], # separator
+    Save,
+    SaveAs,
+    None, # separator
     {'menuclass':'mainmenu',
      'menubar':[('&File',0.0)],
      'command':Quit,
      'weight':1.0,
      },
     ['mainmenu',[('&Image',0.5)],LinearContrastOff,0.1],
-    [LinearContrastDefault],
-    [LinearContrastUser],
-    [None],
-    [TestRadioList],
-    [None],
-    [FrameToggleList],
+    LinearContrastDefault,
+    LinearContrastUser,
+    None,
+    TestRadioList,
+    None,
+    FrameToggleList,
     ['mainmenu',[('&Windows',0.9)],NewWindow,0.0],
     [DeleteWindow,0.1],
-    [None],
+    None,
     [FrameList,0.2],
     ]
 
 toolbar_plugins=[
     ['maintoolbar',Open,0.0],
-    [Save],
-    [SaveAs],
-    [None],
-    [PrevBand],
-    [NextBand],
-    [None],
-    [TestRadioList],
-    [None],
-    [FrameToggleList],
+    Save,
+    SaveAs,
+    None,
+    PrevBand,
+    NextBand,
+    None,
+    TestRadioList,
+    None,
+    FrameToggleList,
     ]
 
 def parseKeyboardPluginEntry(entry):
@@ -545,9 +583,12 @@ def parseKeyboardPluginEntry(entry):
         else:
             menuclass=entry[0]
             command=entry[1]
-    else:
+    elif isinstance(entry,dict):
         menuclass=entry['menuclass']
         command=entry['command']
+    else:
+        menuclass=None
+        command=entry
     return (menuclass,command)
 
 def parsePluginEntry(entry):
@@ -569,11 +610,16 @@ def parsePluginEntry(entry):
             weight=entry[3]
         else:
             dprint(entry)
-    else:
+    elif isinstance(entry,dict):
         menuclass=entry['menuclass']
         menubar=entry['menubar']
         command=entry['command']
         weight=entry['weight']
+    else:
+        menuclass=None
+        menubar=None
+        command=entry
+        weight=None
     return (menuclass,menubar,command,weight)
 
 class PluginMenuItemBase(debugmixin):
@@ -619,12 +665,6 @@ class PluginMenuItem(PluginMenuItemBase):
             self.command=commandInstance
         else:
             self.command=command(self.frame)
-        if self.command.radio:
-            self.type=wx.ITEM_RADIO
-        elif self.command.toggle:
-            self.type=wx.ITEM_CHECK
-        else:
-            self.type=wx.ITEM_NORMAL
         if name:
             self.name=name
         else:
@@ -636,7 +676,7 @@ class PluginMenuItem(PluginMenuItemBase):
         self.parentList = None # for list of items managed
 
     def insertInto(self, parentWidget, index):
-        parentWidget.Insert(index,self.id,self.name,self.command.tooltip,self.type)
+        parentWidget.Insert(index,self.id,self.name,self.command.tooltip,self.command.menutype)
         self.widget=parentWidget.FindItemByPosition(index)
         self.dprint("self=%s widget=%s" % (self,self.widget))
 
@@ -644,7 +684,8 @@ class PluginMenuItem(PluginMenuItemBase):
         parentWidget.Remove(self.id)
 
     def connectEvent(self, frameWidget):
-        frameWidget.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,self.callback)
+        self.command.connectMenu(frameWidget,self.id,self.callback)
+        #frameWidget.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,self.callback)
         
     def callback(self, ev):
         self.dprint("got event '%s' for frame '%s'" % (self.name,self.frame.name))
@@ -1054,28 +1095,23 @@ class PluginMenuBar(PluginMenu):
 
 
 class PluginToolBarItem(PluginMenuItem):
-    def __init__(self, frame, command, commandInstance=None, name=None, listpos=None, icon=None, size=(-1,-1)):
+    def __init__(self, frame, command, commandInstance=None, name=None, listpos=None, size=(-1,-1)):
         PluginMenuItem.__init__(self, frame, command, commandInstance, name, listpos)
-        if icon:
-            self.icon=icon
-        else:
-            self.icon=self.command.getToolbarIcon(listpos)
         self.size=size
 
+    def connectEvent(self, frameWidget):
+        self.command.connectToolbar(frameWidget,self.id,self.callback)
+        
     def insertInto(self, parentWidget, index):
-        if self.icon.startswith("wxART"):
-            bitmap=wx.ArtProvider.GetBitmap(self.icon, wx.ART_TOOLBAR, self.size)
-        else:
-            self.dprint("loading icon %s" % self.icon)
-            bitmap=wx.Bitmap(self.icon)
-        parentWidget.InsertLabelTool(index,self.id,self.name,bitmap,shortHelp=self.name,longHelp=self.command.tooltip,kind=self.type)
+        self.command.insertIntoToolbar(parentWidget,index,self.id,self.size,self.listpos)
 
     def enableInMenu(self, parentWidget, state):
+        self.dprint("enabling %s in menu %s (listpos=%s)" % (self.name,self,self.listpos))
         enable=self.command.isEnabled(state)
         parentWidget.EnableTool(self.id,enable)
 
         # this works for both radio and toggle items in a toolbar.
-        if type!=wx.ITEM_NORMAL:
+        if self.command.menutype in [wx.ITEM_NORMAL,wx.ITEM_CHECK]:
             checked=self.command.isChecked(self.listpos)
             parentWidget.ToggleTool(self.id,checked)
 
@@ -1105,7 +1141,7 @@ class PluginToolBarList(PluginToolBarItem):
         entries=self.command.getEntries()
         i=0
         for entry in entries:
-            item=PluginToolBarItem(self.frame,None,self.command,entry,i,size=self.size)
+            item=PluginToolBarItem(self.frame,None,commandInstance=self.command,name=entry,listpos=i,size=self.size)
             # item.parentList=self
             self.items.append(item)
             i+=1
@@ -1121,16 +1157,17 @@ class PluginToolBar(PluginMenu):
         # If we're using the same toolbar, delete all the existing tools
         if reuse:
             self.dprint("Clearing toolbar!")
-            # FIXME!  Platforms seem to work differently
-            if wx.Platform == '__WXMSW__':
-                # Works on windows, crashes on linux.
-                toolbar.ClearTools()
-            else:
-                # Works on linux, crashes on windows.  But, I don't
-                # like not being able to find out how many tools there
-                # are...
-                while toolbar.DeleteToolByPos(0):
-                    pass
+            toolbar.ClearTools()
+##            # FIXME!  Platforms seem to work differently
+##            if wx.Platform == '__WXMSW__':
+##                # Works on windows, crashes on linux.
+##                toolbar.ClearTools()
+##            else:
+##                # Works on linux, crashes on windows.  But, I don't
+##                # like not being able to find out how many tools there
+##                # are...
+##                while toolbar.DeleteToolByPos(0):
+##                    pass
             
         self.widget=toolbar
         self.oldcount=0
@@ -1193,10 +1230,14 @@ class PluginToolBar(PluginMenu):
                     menuclass=plugin[0]
                     command=plugin[1]
                     weight=plugin[2]
-            else:
+            elif isinstance(plugin,dict):
                 menuclass=plugin['menuclass']
                 command=plugin['command']
                 weight=plugin['weight']
+            else:
+                menuclass=None
+                command=plugin
+                weight=None
                 
             if menuclass==None:
                 menuclass=lastclass
@@ -1208,7 +1249,7 @@ class PluginToolBar(PluginMenu):
                 self.dprint("found menuclass=%s command=%s weight=%f" % (menuclass,command,weight))
 
                 if command:
-                    if command.dynamic:
+                    if command.dynamictools:
                         item=PluginToolBarList(self.frame,command,self,size=self.size)
                         self.dynamics.append(item)
                     else:
@@ -1432,10 +1473,17 @@ class MenuFrame(wx.Frame,debugmixin):
         self.statusbar.SetStatusText(text)
 
     def closeWindow(self, ev):
-        self.app.deleteFrame(self)
-        self.framelist.remove(self)
-        self.app.rebuildMenus()
-        self.Destroy()
+        if self.framelist.getNumEntries()==1:
+            self.app.quit()
+        else:
+            self.closeWindowHook()
+            self.app.deleteFrame(self)
+            self.framelist.remove(self)
+            self.Destroy()
+            self.app.rebuildMenus()
+
+    def closeWindowHook(self):
+        return True
 
     def showModalDialog(self,message,title,style=wx.OK | wx.ICON_INFORMATION):
         dlg = wx.MessageDialog(self, message, title, style)
