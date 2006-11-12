@@ -10,7 +10,6 @@ from wxemacskeybindings import *
 from cStringIO import StringIO
 
 from configprefs import *
-from ConfigParser import ConfigParser
 
 from debug import *
 
@@ -139,7 +138,12 @@ class IconStorage(debugmixin):
         return self.map[filename]
 
     def assign(self,notebook):
-        notebook.AssignImageList(self.il)
+        # Don't use AssignImageList because the notebook takes
+        # ownership of the image list and will delete it when the
+        # notebook is deleted.  We're sharing the list, so we don't
+        # want the notebook to delete it if the notebook itself
+        # deletes it.
+        notebook.SetImageList(self.il)
 
 _iconStorage=None
 def getIconStorage(icon=None):
@@ -574,6 +578,9 @@ class TabbedViewer(wx.Notebook,debugmixin):
     def addUserChangedCallback(self, func):
         self.userChangedCallbacks.append(func)
 
+    def clearUserChangedCallbacks(self):
+        self.userChangedCallbacks=[]
+
     def OnTabChanged(self,evt):
         self.dprint("changing to %s" % evt.GetSelection())
         if not self.updating:
@@ -704,6 +711,9 @@ class HideOneTabViewer(wx.Panel,debugmixin):
     def addUserChangedCallback(self, func):
         self.tabs.addUserChangedCallback(func)
 
+    def clearUserChangedCallbacks(self):
+        self.tabs.clearUserChangedCallbacks()
+
     def setWindow(self, win):
         """Set the wxWindow that is managed by this notebook, not the
         Viewer.  The viewer is managed by setViewer; this is a
@@ -822,17 +832,16 @@ class HideOneTabViewer(wx.Panel,debugmixin):
 
 class BufferFrame(MenuFrame):
     def __init__(self, app):
-        self.framelist=FrameList(self)
+        self.framelist=app.frames
 
         # FIXME: temporary hack to get window size from application
         # config
         cfg=app.cfg
-        size=(cfg.getint('frame','width'),
-              cfg.getint('frame','height'))
+        size=(cfg.getint(self,'width'),
+              cfg.getint(self,'height'))
         self.dprint(size)
         
         MenuFrame.__init__(self, app, self.framelist, size=size)
-
         self.app=app
 
         self.tabs=HideOneTabViewer(self)
@@ -844,6 +853,11 @@ class BufferFrame(MenuFrame):
 
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
 
+
+    def closeWindowHook(self):
+        # prevent a PyDeadObjectError when the window is closed by
+        # removing this callback.
+        self.tabs.clearUserChangedCallbacks()
 
     def OnActivate(self, evt):
         # When the frame is made the current active frame, update the
@@ -857,7 +871,7 @@ class BufferFrame(MenuFrame):
         self.app.SetTopWindow(self)
 
     def OnViewerChanged(self,evt):
-        self.dprint("to viewer %s" % evt.GetViewer())
+        self.dprint("%s to viewer %s" % (self.name,evt.GetViewer()))
         self.menuplugins.widget.Freeze()
         self.resetMenu()
         viewer=evt.GetViewer()
@@ -1057,12 +1071,6 @@ class BufferFrame(MenuFrame):
         self.dprint("buffer=%s" % buffer)
         self.newBuffer(buffer)
 
-    def close(self,buffer):
-        self.app.removeBuffer(buffer)
-        return True
-
-
-
 
 class BufferApp(wx.App,debugmixin):
     def OnInit(self):
@@ -1075,6 +1083,8 @@ class BufferApp(wx.App,debugmixin):
         self.buffers=BufferList(None) # master buffer list
 
         self.confdir=None
+        self.cfg=None
+        self.cfgfile=None
 
         self.globalKeys=KeyMap()
 
@@ -1143,7 +1153,12 @@ class BufferApp(wx.App,debugmixin):
             retval=wx.ID_YES
 
         if retval==wx.ID_YES:
-            sys.exit()
+            doit=self.quitHook()
+            if doit:
+                sys.exit()
+
+    def quitHook(self):
+        return True
 
     def loadPlugin(self, mod):
         self.dprint("loading plugins from module=%s" % str(mod))
@@ -1162,6 +1177,8 @@ class BufferApp(wx.App,debugmixin):
             self.addKeyboardPlugins(mod.keyboard_plugins)
 
     def loadPlugins(self,plugins):
+        if not isinstance(plugins,list):
+            plugins=[p.strip() for p in plugins.split(',')]
         for plugin in plugins:
             try:
                 mod=__import__(plugin)
@@ -1175,32 +1192,25 @@ class BufferApp(wx.App,debugmixin):
         self.confdir=dirname
         self.cfg=None
 
-    def setInitialConfig(self,defaults={'frame':{'width':400,
-                                                  'height':400,
-                                                  }
-                                         }):
-        self.cfg=ConfigParser()
-        for section,values in defaults.iteritems():
-            self.cfg.add_section(section)
-            for option,value in values.iteritems():
-                self.cfg.set(section,option,str(value))
-        self.cfg.optionxform=str
+    def getConfigFilePath(self,filename):
+        c=HomeConfigDir(self.confdir)
+        self.dprint("found home dir=%s" % c.dir)
+        return os.path.join(c.dir,filename)
+
+    def setInitialConfig(self,defaults={'Frame':{'width':400,
+                                                 'height':400,
+                                                 }
+                                        }):
+        self.cfg=HierarchalConfig(classdefs=defaults)
 
     def loadConfig(self,filename):
-        c=HomeConfigDir(self.confdir)
-        self.dprint("found home dir=%s" % c.dir)
         if not self.cfg:
-            self.setConfigDefaults()
-        processed=self.cfg.read(os.path.join(c.dir,filename))
-        self.dprint("config files processed: %s" % str(processed))
-        self.dprint("  defaults: %s" % self.cfg.defaults())
-        self.dprint("  sections: %s" % self.cfg.sections())
-        for section in self.cfg.sections():
-            self.dprint("  items in %s: %s" % (section,self.cfg.items(section)))
+            self.setInitialConfig()
+        filename=self.getConfigFilePath(filename)
+        self.cfg.loadConfig(filename)
 
-    def saveConfig(self):
-        c=HomeConfigDir(self.confdir)
-        self.dprint("found home dir=%s" % c.dir)
+    def saveConfig(self,filename):
+        self.cfg.saveConfig(filename)
 
 
 if __name__ == "__main__":

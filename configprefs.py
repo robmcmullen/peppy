@@ -3,10 +3,12 @@
 Managing user config files and directories.
 """
 
-import os, ConfigParser
+import os,types
+from ConfigParser import ConfigParser
 import cPickle as pickle
+from debug import *
 
-__all__ = [ 'HomeConfigDir' ]
+__all__ = [ 'HomeConfigDir', 'HierarchalConfig' ]
 
 def getHomeDir(debug=False):
     """
@@ -99,6 +101,87 @@ class HomeConfigDir:
         fd=self.open(name,'wb')
         pickle.dump(item,fd)
         fd.close()
+
+
+def parents(c, seen=None):
+    """Python class base-finder from
+    http://mail.python.org/pipermail/python-list/2002-November/132750.html
+    """
+    if type( c ) == types.ClassType:
+        # It's an old-style class that doesn't descend from
+        # object.  Make a list of parents ourselves.
+        if seen is None:
+            seen = {}
+        seen[c] = None
+        items = [c]
+        for base in c.__bases__:
+            if not seen.has_key(base):
+                items.extend( parents(base, seen))
+        return items
+    else:
+        # It's a new-style class.  Easy.
+        return list(c.__mro__)
+    
+class HierarchalConfig(debugmixin,ConfigParser):
+    """Subclass of the standard ConfigParser to march up the class
+    hierarchy of the calling class to find defaults.  Classes are
+    searched in method resolution order by the string name of the
+    class, which, on one hand, means that classes of the name name in
+    different namespaces will map to the same config string; but on
+    the other hand means that you get nice short names in the config
+    file.
+
+    
+    """
+    def __init__(self,defaults={},classdefs={}):
+        ConfigParser.__init__(self,defaults)
+        self.parentclasses={}
+        self.setHierarchalConfig(classdefs)
+
+    def setHierarchalConfig(self,defaults):
+        for section,values in defaults.iteritems():
+            self.add_section(section)
+            for option,value in values.iteritems():
+                self.set(section,option,str(value))
+
+        # Make the config parser case sensitive
+        self.optionxform=str
+
+    def loadConfig(self,filename):
+        processed=self.read(filename)
+        self.dprint("config files processed: %s" % str(processed))
+        self.dprint("  defaults: %s" % self.defaults())
+        self.dprint("  sections: %s" % self.sections())
+        for section in self.sections():
+            self.dprint("  items in %s: %s" % (section,self.items(section)))
+
+    def saveConfig(self,filename):
+        self.dprint("saving configuration to %s" % filename)
+        from cStringIO import StringIO
+        fh=StringIO()
+        self.write(fh)
+        print fh.getvalue()
+
+
+    def get(self,obj,option):
+        # lookup section based on the calling class
+        klass=obj.__class__
+        if klass in self.parentclasses:
+            names=self.parentclasses[klass]
+        else:
+            names=[k.__name__ for k in parents(klass)][:-2]
+            self.parentclasses[klass]=names
+        for name in names:
+            self.dprint("checking %s for %s" % (name,option))
+            if self.has_option(name,option):
+                return ConfigParser.get(self,name,option)
+        return None
+    
+    def getint(self,obj,option):
+        val=self.get(obj,option)
+        return int(val)
+        
+
 
 if __name__=='__main__':
     print "for platform %s:" % os.sys.platform

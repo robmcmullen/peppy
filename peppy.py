@@ -289,15 +289,18 @@ class TitleBuffer(Buffer):
 
 class Peppy(BufferApp):
     debuglevel=0
+    initialconfig={'MenuFrame':{'width':600,
+                                'height':500,
+                                },
+                   'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
+                            },
+                   }
     
     def OnInit(self):
         BufferApp.OnInit(self)
 
         self.setConfigDir("peppy")
-        self.setInitialConfig({'frame':{'width':600,
-                                        'height':500,
-                                        },
-                               })
+        self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")
         
         self.addMenuPlugins(menu_plugins)
@@ -306,7 +309,7 @@ class Peppy(BufferApp):
         self.registerViewer(AlphaView)
         self.registerViewer(BravoView)
 
-        defaultplugins=['hexedit-plugin','python-plugin','fundamental']
+        defaultplugins=self.cfg.get(self,'plugins')
         self.loadPlugins(defaultplugins)
 
         self.parseConfig()
@@ -327,6 +330,9 @@ class Peppy(BufferApp):
             self.dprint(mods)
             self.loadPlugins(mods)
 
+    def quitHook(self):
+        self.cfg.saveConfig("peppy.cfg")
+        return True
 
 
 if __name__ == "__main__":
