@@ -22,7 +22,7 @@ from debug import *
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"
@@ -274,6 +274,7 @@ class TitleView(View):
     keyword='Title'
     icon='icons/application.png'
     regex="title"
+    temporary=True
 
     def createWindow(self,parent):
         self.win=wx.Window(parent, -1)
@@ -281,8 +282,8 @@ class TitleView(View):
 
 
 class TitleBuffer(Buffer):
-    def __init__(self,parent,filename=None,viewer=TitleView,fh=None):
-        Buffer.__init__(self,parent,filename,viewer,fh,BlankSTC)
+    def __init__(self,filename=None,viewer=TitleView,fh=None):
+        Buffer.__init__(self,filename,viewer,fh,BlankSTC)
         self.name="%s %s\n%s" % ("peppy",__version__,__description__)
 
 
@@ -313,6 +314,8 @@ class Peppy(BufferApp):
         self.loadPlugins(defaultplugins)
 
         self.parseConfig()
+
+        self.titlebuffer=TitleBuffer()
         
         return True
 
@@ -349,9 +352,6 @@ if __name__ == "__main__":
     if args:
         for filename in args:
             frame.open(filename)
-    else:
-        buffer=TitleBuffer(frame)
-        frame.newBuffer(buffer)
         
     app.MainLoop()
 
