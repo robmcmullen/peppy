@@ -197,30 +197,31 @@ menu_plugins=[
     ['main',[('&File',0.0)],OpenFile,0.0],
     ['main',[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
     ['main',[('&File',0.0)],None,0.2], # separator
-    [OpenAlpha],
-    [OpenBravo],
+    OpenAlpha,
+    OpenBravo,
     [None,0.21], # separator
     [Save,0.8],
-    [SaveAs],
-    [Close],
-    [None], # separator
+    SaveAs,
+    Close,
+    None, # separator
     [Quit,1.0],
-    ['main',[('&Edit',0.1)],ShowToolbar,0.1],
-    [Undo],
-    [Redo],
-    [None],
-    [Cut],
-    [Copy],
-    [Paste],
+    ['main',[('&Edit',0.1)],Undo,0.1],
+    Redo,
+    None,
+    Cut,
+    Copy,
+    Paste,
     ['main',[('&View',0.2)],NewTab,0.0],
     [NewWindow,0.1],
-    [DeleteWindow],
-    [None],
+    DeleteWindow,
+    None,
     [FrameList,0.2],
+    None,
+    [ShowToolbar,0.3],
     ['main',[('&Buffers',0.3)],BufferList,0.0],
     ['main',[('&Help',1.0)],HelpAbout,1.0],
     ['alpha',[('&Bands',0.25)],PrevBand,0.0],
-    [NextBand],
+    NextBand,
 ]
 
 toolbar_plugins=[
@@ -288,13 +289,18 @@ class TitleBuffer(Buffer):
 
 
 
-class Peppy(BufferApp):
+class Peppy(BufferApp,ConfigMixin):
     debuglevel=0
     initialconfig={'MenuFrame':{'width':600,
                                 'height':500,
                                 },
                    'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
                             },
+                   'View':{'linenumbers':'True',
+                           'wordwrap':'False',
+                           },
+                   'PythonView':{'wordwrap':'True',
+                                 },
                    }
     
     def OnInit(self):
@@ -310,9 +316,6 @@ class Peppy(BufferApp):
         self.registerViewer(AlphaView)
         self.registerViewer(BravoView)
 
-        defaultplugins=self.cfg.get(self,'plugins')
-        self.loadPlugins(defaultplugins)
-
         self.parseConfig()
 
         self.titlebuffer=TitleBuffer()
@@ -322,16 +325,17 @@ class Peppy(BufferApp):
     def parseConfig(self):
         cfg=self.cfg
 
-        if cfg.has_section('plugins'):
-            self.parseConfigPlugins('plugins',cfg)
+        self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 
-    def parseConfigPlugins(self,section,cfg):
-        if cfg.has_option(section,'modules'):
-            mods=cfg.get(section,'modules').split(', ')
-            self.dprint(mods)
+    def parseConfigPlugins(self):
+        cfg=self.cfg
+        mods=cfg.get(self,'plugins')
+        self.dprint(mods)
+        if mods is not None:
             self.loadPlugins(mods)
+
 
     def quitHook(self):
         self.cfg.saveConfig("peppy.cfg")

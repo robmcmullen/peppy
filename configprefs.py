@@ -8,7 +8,7 @@ from ConfigParser import ConfigParser
 import cPickle as pickle
 from debug import *
 
-__all__ = [ 'HomeConfigDir', 'HierarchalConfig' ]
+__all__ = [ 'HomeConfigDir', 'HierarchalConfig', 'ConfigMixin' ]
 
 def getHomeDir(debug=False):
     """
@@ -121,8 +121,25 @@ def parents(c, seen=None):
     else:
         # It's a new-style class.  Easy.
         return list(c.__mro__)
+
+
+parentclasses={}
+
+def getHierarchy(obj):
+    global parentclasses
     
-class HierarchalConfig(debugmixin,ConfigParser):
+    klass=obj.__class__
+    if klass in parentclasses:
+        names=parentclasses[klass]
+        print "Found class hierarchy: %s" % names
+    else:
+        names=[k.__name__ for k in parents(klass) if k.__name__ not in ['debugmixin','ConfigMixin','object']]
+        print "Created class hierarchy: %s" % names
+        parentclasses[klass]=names
+    return names
+
+    
+class HierarchalConfig(debugmixin):
     """Subclass of the standard ConfigParser to march up the class
     hierarchy of the calling class to find defaults.  Classes are
     searched in method resolution order by the string name of the
@@ -133,54 +150,80 @@ class HierarchalConfig(debugmixin,ConfigParser):
 
     
     """
-    def __init__(self,defaults={},classdefs={}):
-        ConfigParser.__init__(self,defaults)
-        self.parentclasses={}
-        self.setHierarchalConfig(classdefs)
+    def __init__(self,defaults={},appdefs={},userdefs={}):
+        self.appcfg=ConfigParser(defaults)
+        self.usercfg=ConfigParser()
+        self.setAppDefaults(appdefs)
+        self.debuglevel=1
 
-    def setHierarchalConfig(self,defaults):
+    def setAppDefaults(self,defaults):
         for section,values in defaults.iteritems():
-            self.add_section(section)
+            self.appcfg.add_section(section)
             for option,value in values.iteritems():
-                self.set(section,option,str(value))
+                self.appcfg.set(section,option,str(value))
 
         # Make the config parser case sensitive
-        self.optionxform=str
+        self.appcfg.optionxform=str
 
     def loadConfig(self,filename):
-        processed=self.read(filename)
+        processed=self.usercfg.read(filename)
         self.dprint("config files processed: %s" % str(processed))
-        self.dprint("  defaults: %s" % self.defaults())
-        self.dprint("  sections: %s" % self.sections())
-        for section in self.sections():
-            self.dprint("  items in %s: %s" % (section,self.items(section)))
+        self.dprint("  defaults: %s" % self.usercfg.defaults())
+        self.dprint("  sections: %s" % self.usercfg.sections())
+        for section in self.usercfg.sections():
+            self.dprint("  items in %s: %s" % (section,self.usercfg.items(section)))
 
     def saveConfig(self,filename):
         self.dprint("saving configuration to %s" % filename)
         from cStringIO import StringIO
         fh=StringIO()
-        self.write(fh)
+        self.usercfg.write(fh)
         print fh.getvalue()
 
-
     def get(self,obj,option):
-        # lookup section based on the calling class
-        klass=obj.__class__
-        if klass in self.parentclasses:
-            names=self.parentclasses[klass]
-        else:
-            names=[k.__name__ for k in parents(klass)][:-2]
-            self.parentclasses[klass]=names
+        print "debuglevel=%s" % self.debuglevel
+        names=getHierarchy(obj)
         for name in names:
-            self.dprint("checking %s for %s" % (name,option))
-            if self.has_option(name,option):
-                return ConfigParser.get(self,name,option)
+            self.dprint("checking %s for %s in usercfg" % (name,option))
+            if self.usercfg.has_section(name) and self.usercfg.has_option(name,option):
+                return ConfigParser.get(self.usercfg,name,option)
+        for name in names:
+            self.dprint("checking %s for %s in appcfg" % (name,option))
+            if self.appcfg.has_section(name) and self.appcfg.has_option(name,option):
+                return ConfigParser.get(self.appcfg,name,option)
         return None
     
     def getint(self,obj,option):
         val=self.get(obj,option)
         return int(val)
-        
+
+    def setoption(self,obj,param,value):
+        names=getHierarchy(obj)
+        # Use the first name we find; that's the calling object
+        section=names[0]
+        if not self.usercfg.has_section(section):
+            self.usercfg.add_section(section)
+        self.usercfg.set(section,param,str(value))
+
+class ConfigMixin(object):
+    def __init__(self,cfg):
+        self._hierarchalconfig=cfg
+        self._hierarchalconfig.debuglevel=1
+
+    def get(self,param):
+        return self._hierarchalconfig.get(self,param)
+
+    def getint(self,param):
+        return self._hierarchalconfig.getint(self,param)
+
+    def getboolean(self,param):
+        val=self._hierarchalconfig.get(self,param)
+        if val is not None and val.lower() in ['1','yes','true','on']:
+            return True
+        return False
+
+    def setoption(self,param,value):
+        self._hierarchalconfig.setoption(self,param,str(value))
 
 
 if __name__=='__main__':

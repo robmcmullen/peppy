@@ -67,7 +67,7 @@ def getIconStorage(icon=None):
 
 #### View base class
 
-class View(debugmixin):
+class View(debugmixin,ConfigMixin):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
@@ -82,7 +82,7 @@ class View(debugmixin):
         self.popup=None
 
         # View settings.
-        self.settings={}
+        ConfigMixin.__init__(self,frame.app.cfg)
 
     # If there is no title, return the keyword
     def getTitle(self):

@@ -291,15 +291,14 @@ class Empty(Buffer):
 
 
 
-class BufferFrame(MenuFrame):
+class BufferFrame(MenuFrame,ConfigMixin):
     def __init__(self, app):
         self.framelist=app.frames
 
         # FIXME: temporary hack to get window size from application
         # config
-        cfg=app.cfg
-        size=(cfg.getint(self,'width'),
-              cfg.getint(self,'height'))
+        ConfigMixin.__init__(self,app.cfg)
+        size=(self.getint('width'),self.getint('height'))
         self.dprint(size)
         
         MenuFrame.__init__(self, app, self.framelist, size=size)
@@ -682,7 +681,7 @@ class BufferApp(wx.App,debugmixin):
                                                  'height':400,
                                                  }
                                         }):
-        self.cfg=HierarchalConfig(classdefs=defaults)
+        self.cfg=HierarchalConfig(appdefs=defaults)
 
     def loadConfig(self,filename):
         if not self.cfg:

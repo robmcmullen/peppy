@@ -5,6 +5,7 @@ import wx.stc as stc
 
 from menudev import *
 from buffers import *
+from views import *
 
 from debug import *
 
@@ -31,15 +32,35 @@ class WordWrap(FrameToggle):
     
     def isChecked(self, index):
         viewer=self.frame.getCurrentViewer()
-        if viewer and 'wordwrap' in viewer.settings:
-            return viewer.settings['wordwrap']
+        if viewer:
+            return viewer.getboolean('wordwrap')
         return False
     
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getCurrentViewer()
         if viewer:
-            viewer.setWordWrap(not viewer.settings['wordwrap'])
+            viewer.setWordWrap(not viewer.getboolean('wordwrap'))
+    
+class LineNumbers(FrameToggle):
+    name = "&Line Numbers"
+    tooltip = "Toggle line numbers in this view"
+    icon = wx.ART_TOOLBAR
+
+    def isEnabled(self, state=None):
+        return True
+    
+    def isChecked(self, index):
+        viewer=self.frame.getCurrentViewer()
+        if viewer:
+            return viewer.getboolean('linenumbers')
+        return False
+    
+    def action(self, state=None, pos=-1):
+        self.dprint("id=%x name=%s" % (id(self),self.name))
+        viewer=self.frame.getCurrentViewer()
+        if viewer:
+            viewer.setWordWrap(not viewer.getboolean('linenumbers'))
     
 class BeginningOfLine(FrameAction):
     name = "Cursor to Start of Line"
@@ -73,11 +94,12 @@ class EndOfLine(FrameAction):
 menu_plugins=[
     ['main',[('&File',0.0)],OpenFundamental,0.2],
     ['main',[('&Edit',0.1)],WordWrap,0.1],
+    LineNumbers,
 ]
 
 keyboard_plugins=[
     ['main',BeginningOfLine],
-    [EndOfLine],
+    EndOfLine,
 ]
 
 
@@ -190,13 +212,6 @@ class FundamentalView(View):
 
     def __init__(self,buffer,frame):
         View.__init__(self,buffer,frame)
-        self.initSettings()
-
-    def initSettings(self):
-        self.settings['linenumbers']=True
-        self.settings['wordwrap']=False
-        self.settings['folding']=False
-        self.settings['symbols']=False
 
     def createWindow(self,parent):
         self.dprint("creating new Fundamental window")
@@ -222,21 +237,21 @@ class FundamentalView(View):
         self.stc.StyleClearAll()
 
         # line numbers in the margin
-        if self.settings['linenumbers']:
+        self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
+        if self.getboolean('linenumbers'):
             self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
             self.stc.SetMarginWidth(0, 22)
-            self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
         else:
             self.stc.SetMarginWidth(0,0)
             
         # turn off symbol margin
-        if self.settings['symbols']:
+        if self.getboolean('symbols'):
             self.stc.SetMarginWidth(1, 0)
         else:
             self.stc.SetMarginWidth(1, 16)
 
         # turn off folding margin
-        if self.settings['folding']:
+        if self.getboolean('folding'):
             self.stc.SetMarginWidth(2, 16)
         else:
             self.stc.SetMarginWidth(2, 0)
@@ -245,13 +260,21 @@ class FundamentalView(View):
 
     def setWordWrap(self,enable=None):
         if enable is not None:
-            self.settings['wordwrap']=enable
-        if self.settings['wordwrap']:
+            self.setoption('wordwrap',enable)
+        if self.getboolean('wordwrap'):
             self.stc.SetWrapMode(stc.STC_WRAP_CHAR)
             self.stc.SetWrapVisualFlags(stc.STC_WRAPVISUALFLAG_END)
         else:
             self.stc.SetWrapMode(stc.STC_WRAP_NONE)
-            
+
+    def setLineNumbers(self,enable=None):
+        if enable is not None:
+            self.setoption('linenumbers',enable)
+        if self.getboolean('linenumbers'):
+            self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+            self.stc.SetMarginWidth(0, 22)
+        else:
+            self.stc.SetMarginWidth(0,0)
 
     def styleSTC(self):
         pass
