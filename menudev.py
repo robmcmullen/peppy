@@ -1335,7 +1335,6 @@ class MenuFrame(wx.Frame,debugmixin):
 ##            print "num=%d function=%s" % (num,function)
 ##        else:
 ##            print "unprocessed by KeyProcessor"
-        wx.CallAfter(self.enableMenu)
 
     def setGlobalKeys(self,name,plugins):
         keymap=self.app.globalKeys

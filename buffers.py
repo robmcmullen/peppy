@@ -272,7 +272,7 @@ class Buffer(debugmixin):
             changed=False
         if changed!=self.modified:
             self.modified=changed
-            self.showModifiedAll()
+            wx.CallAfter(self.showModifiedAll)
         
 
 class Empty(Buffer):

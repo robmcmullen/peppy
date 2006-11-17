@@ -143,7 +143,7 @@ class View(debugmixin,ConfigMixin):
 
     def showModified(self,modified):
         self.frame.showModified(self)
-
+        self.frame.enableMenu()
 
 
 if __name__ == "__main__":
