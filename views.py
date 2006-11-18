@@ -67,22 +67,26 @@ def getIconStorage(icon=None):
 
 #### View base class
 
-class View(debugmixin,ConfigMixin):
+class View(debugmixin,ClassSettingsMixin):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
     filter=TextFilter()
     temporary=False # True if it is a temporary view
+    defaultsettings={
+        'menu_actions':[],
+        'toolbar_actions':[],
+        'keyboard_actions':[],
+        }
+    localKeyMap=None
     
     def __init__(self,buffer,frame):
+        ClassSettingsMixin.__init__(self)
         self.win=None
         self.stc=BlankSTC
         self.buffer=buffer
         self.frame=frame
         self.popup=None
-
-        # View settings.
-        ConfigMixin.__init__(self,frame.app.cfg)
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -103,6 +107,23 @@ class View(debugmixin,ConfigMixin):
 
     def reparent(self,parent):
         self.win.Reparent(parent)
+
+    def getMenuActions(self):
+        actions=self.settings._getList('menu_actions')
+        self.dprint("getMenuActions: %s %s" % (self,actions))
+        return actions
+
+    def getToolbarActions(self):
+        actions=self.settings._getList('toolbar_actions')
+        self.dprint("getToolbarActions: %s %s" % (self,actions))
+        return actions
+
+    def getLocalKeyMap(self):
+        if self.localKeyMap==None:
+            actions=self.settings._getList('keyboard_actions')
+            self.dprint("keyboard actions=%s" % actions)
+            self.localKeyMap=self.frame.createKeyMap(actions)
+        return self.localKeyMap
 
     def addPopup(self,popup):
         self.popup=popup

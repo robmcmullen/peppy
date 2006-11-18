@@ -1201,6 +1201,7 @@ class PluginToolBar(PluginMenu):
         self.widget.Show(visible)
 
     def addTools(self, menuclass, plugins):
+        self.dprint("Adding plugins %s" % plugins)
         self.menuclass=menuclass # new menuclass!
         self.widget.Freeze()
         self.populateTools(plugins)
@@ -1346,6 +1347,15 @@ class MenuFrame(wx.Frame,debugmixin):
                     keymap.define(command.keyboard,command(self))
         except:
             dprint("apparently already defined the menubar shortcut keys.")
+
+    def createKeyMap(self,actions):
+        keymap=KeyMap()
+        for plugin in actions:
+            menuclass,command=parseKeyboardPluginEntry(plugin)
+            if command and command.keyboard:
+                self.dprint("found key=%s for %s" % (command.keyboard,command))
+                keymap.define(command.keyboard,command(self))
+        return keymap
 
     def setKeyboardPlugins(self,name,plugins):
         keymap=self.app.globalKeys

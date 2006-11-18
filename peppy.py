@@ -289,23 +289,24 @@ class TitleBuffer(Buffer):
 
 
 
-class Peppy(BufferApp,ConfigMixin):
+class Peppy(BufferApp,ClassSettingsMixin):
     debuglevel=0
     initialconfig={'MenuFrame':{'width':600,
                                 'height':500,
                                 },
                    'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
                             },
-                   'View':{'linenumbers':'True',
-                           'wordwrap':'False',
+                   'View':{'linenumbers':True,
+                           'wordwrap':False,
                            },
-                   'PythonView':{'wordwrap':'True',
+                   'PythonView':{'wordwrap':True,
                                  },
                    }
     
     def OnInit(self):
         BufferApp.OnInit(self)
 
+        ClassSettingsMixin.__init__(self)
         self.setConfigDir("peppy")
         self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")
@@ -323,33 +324,23 @@ class Peppy(BufferApp,ConfigMixin):
         return True
 
     def parseConfig(self):
-        cfg=self.cfg
-
         self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 
     def parseConfigPlugins(self):
-        cfg=self.cfg
-        mods=cfg.get(self,'plugins')
+        mods=self.settings.plugins
         self.dprint(mods)
         if mods is not None:
             self.loadPlugins(mods)
 
 
     def quitHook(self):
-        self.cfg.saveConfig("peppy.cfg")
+        GlobalSettings.saveConfig("peppy.cfg")
         return True
 
 
-if __name__ == "__main__":
-    from optparse import OptionParser
-
-    usage="usage: %prog file [files...]"
-    parser=OptionParser(usage=usage)
-    (options, args) = parser.parse_args()
-    #print options
-
+def run(options={},args=None):
     app=Peppy()
     frame=BufferFrame(app)
     frame.Show(True)
@@ -358,4 +349,19 @@ if __name__ == "__main__":
             frame.open(filename)
         
     app.MainLoop()
+
+if __name__ == "__main__":
+    from optparse import OptionParser
+
+    usage="usage: %prog file [files...]"
+    parser=OptionParser(usage=usage)
+    parser.add_option("-p", action="store_true", dest="profile", default=False)
+    (options, args) = parser.parse_args()
+    #print options
+
+    if options.profile:
+        import profile
+        profile.run('run()','profile.out')
+    else:
+        run(options,args)
 

@@ -8,7 +8,7 @@ from ConfigParser import ConfigParser
 import cPickle as pickle
 from debug import *
 
-__all__ = [ 'HomeConfigDir', 'HierarchalConfig', 'ConfigMixin' ]
+__all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin' ]
 
 def getHomeDir(debug=False):
     """
@@ -124,109 +124,172 @@ def parents(c, seen=None):
 
 
 parentclasses={}
+skipclasses=['debugmixin','ClassSettingsMixin','object']
 
-def getHierarchy(obj):
+def getHierarchy(obj,debug=0):
     global parentclasses
     
     klass=obj.__class__
     if klass in parentclasses:
-        names=parentclasses[klass]
-        print "Found class hierarchy: %s" % names
+        hierarchy=parentclasses[klass]
+        if debug: print "Found class hierarchy: %s" % hierarchy
     else:
-        names=[k.__name__ for k in parents(klass) if k.__name__ not in ['debugmixin','ConfigMixin','object']]
-        print "Created class hierarchy: %s" % names
-        parentclasses[klass]=names
+        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses]
+        if debug: print "Created class hierarchy: %s" % hierarchy
+        parentclasses[klass]=hierarchy
+    return hierarchy
+
+def getNameHierarchy(obj,debug=0):
+    hierarchy=getHierarchy(obj,debug)
+    names=[k.__name__ for k in hierarchy]
+    if debug: print "name hierarchy: %s" % names
     return names
 
     
-class HierarchalConfig(debugmixin):
-    """Subclass of the standard ConfigParser to march up the class
-    hierarchy of the calling class to find defaults.  Classes are
-    searched in method resolution order by the string name of the
-    class, which, on one hand, means that classes of the name name in
-    different namespaces will map to the same config string; but on
-    the other hand means that you get nice short names in the config
-    file.
 
+class GlobalSettings(object):
+    debug=False
     
-    """
-    def __init__(self,defaults={},appdefs={},userdefs={}):
-        self.appcfg=ConfigParser(defaults)
-        self.usercfg=ConfigParser()
-        self.setAppDefaults(appdefs)
-        self.debuglevel=1
+    default={}
+    user={}
+    hierarchy={}
+    magic_conversion=True
+    
+    @staticmethod
+    def setDefaults(defs):
+        GlobalSettings.default.update(defs)
 
-    def setAppDefaults(self,defaults):
-        for section,values in defaults.iteritems():
-            self.appcfg.add_section(section)
-            for option,value in values.iteritems():
-                self.appcfg.set(section,option,str(value))
+    @staticmethod
+    def addHierarchy(leaf,hier):
+        GlobalSettings.hierarchy[leaf]=hier
 
-        # Make the config parser case sensitive
-        self.appcfg.optionxform=str
+    @staticmethod
+    def setupHierarchyDefaults(klasshier):
+        for klass in klasshier:
+            if klass.__name__ not in GlobalSettings.default:
+                if hasattr(klass,'defaultsettings'):
+                    defs=klass.defaultsettings.copy()
+                else:
+                    defs={}
+                GlobalSettings.default[klass.__name__]=defs
+            else:
+                # we've loaded application-specified defaults for this
+                # class before, but haven't actually checked the
+                # class.  Merge them in without overwriting the
+                # existing settings.
+                #print "!!!!! missed %s" % klass
+                if hasattr(klass,'defaultsettings'):
+                    defs=klass.defaultsettings
+                    g=GlobalSettings.default[klass.__name__]
+                    for k,v in defs.iteritems():
+                        if k not in g:
+                            g[k]=v
+                    
+            if klass.__name__ not in GlobalSettings.user:
+                GlobalSettings.user[klass.__name__]={}
+        if GlobalSettings.debug: print "default: %s" % GlobalSettings.default
+        if GlobalSettings.debug: print "user: %s" % GlobalSettings.user
 
-    def loadConfig(self,filename):
-        processed=self.usercfg.read(filename)
-        self.dprint("config files processed: %s" % str(processed))
-        self.dprint("  defaults: %s" % self.usercfg.defaults())
-        self.dprint("  sections: %s" % self.usercfg.sections())
-        for section in self.usercfg.sections():
-            self.dprint("  items in %s: %s" % (section,self.usercfg.items(section)))
+    @staticmethod
+    def convertValue(section,option,value):
+        """Convert a string value to boolean or int if it seems like
+        it is a text representation of one of those types."""
+        lcval=value.lower()
+        if lcval in ['true','on','yes']:
+            result=True
+        elif lcval in ['false','off','no']:
+            result=False
+        elif value.isdigit():
+            result=int(value)
+        else:
+            result=value
+        return result
 
-    def saveConfig(self,filename):
-        self.dprint("saving configuration to %s" % filename)
-        from cStringIO import StringIO
-        fh=StringIO()
-        self.usercfg.write(fh)
-        print fh.getvalue()
+    @staticmethod
+    def loadConfig(filename):
+        cfg=ConfigParser()
+        cfg.optionxform=str
+        cfg.read(filename)
+        for section in cfg.sections():
+            d={}
+            for option,value in cfg.items(section):
+                if GlobalSettings.magic_conversion:
+                    d[option]=convertValue(section,option,value)
+                else:
+                    d[option]=value
+            GlobalSettings.user[section]=d
 
-    def get(self,obj,option):
-        print "debuglevel=%s" % self.debuglevel
-        names=getHierarchy(obj)
-        for name in names:
-            self.dprint("checking %s for %s in usercfg" % (name,option))
-            if self.usercfg.has_section(name) and self.usercfg.has_option(name,option):
-                return ConfigParser.get(self.usercfg,name,option)
-        for name in names:
-            self.dprint("checking %s for %s in appcfg" % (name,option))
-            if self.appcfg.has_section(name) and self.appcfg.has_option(name,option):
-                return ConfigParser.get(self.appcfg,name,option)
+    @staticmethod
+    def saveConfig(filename):
+        print "Saving user configuration: %s" % GlobalSettings.user
+
+class SettingsProxy(debugmixin):
+    debuglevel=0
+    
+    def __init__(self,hier):
+        names=[k.__name__ for k in hier]
+        self.__dict__['_startSearch']=names[0]
+        GlobalSettings.addHierarchy(names[0],names)
+        GlobalSettings.setupHierarchyDefaults(hier)
+
+    def __getattr__(self,name):
+        klasses=GlobalSettings.hierarchy[self.__dict__['_startSearch']]
+        d=GlobalSettings.user
+        for klass in klasses:
+            self.dprint("checking %s for %s in user" % (klass,name))
+            if klass in d and name in d[klass]:
+                return d[klass][name]
+        d=GlobalSettings.default
+        for klass in klasses:
+            self.dprint("checking %s for %s in default" % (klass,name))
+            if klass in d and name in d[klass]:
+                return d[klass][name]
+        return None
+
+    def __setattr__(self,name,value):
+        GlobalSettings.user[self.__dict__['_startSearch']][name]=value
+
+    def _getValue(self,klass,name):
+        d=GlobalSettings.user
+        if klass in d and name in d[klass]:
+            return d[klass][name]
+        d=GlobalSettings.default
+        if klass in d and name in d[klass]:
+            return d[klass][name]
         return None
     
-    def getint(self,obj,option):
-        val=self.get(obj,option)
-        return int(val)
+    def _getDefaults(self):
+        return GlobalSettings.default[self.__dict__['_startSearch']]
 
-    def setoption(self,obj,param,value):
-        names=getHierarchy(obj)
-        # Use the first name we find; that's the calling object
-        section=names[0]
-        if not self.usercfg.has_section(section):
-            self.usercfg.add_section(section)
-        self.usercfg.set(section,param,str(value))
+    def _getUser(self):
+        return GlobalSettings.user[self.__dict__['_startSearch']]
 
-class ConfigMixin(object):
-    def __init__(self,cfg):
-        self._hierarchalconfig=cfg
-        self._hierarchalconfig.debuglevel=1
+    def _getAll(self):
+        d=GlobalSettings.default[self.__dict__['_startSearch']].copy()
+        d.update(GlobalSettings.user[self.__dict__['_startSearch']])
+        return d
 
-    def get(self,param):
-        return self._hierarchalconfig.get(self,param)
-
-    def getint(self,param):
-        return self._hierarchalconfig.getint(self,param)
-
-    def getboolean(self,param):
-        val=self._hierarchalconfig.get(self,param)
-        if val is not None and val.lower() in ['1','yes','true','on']:
-            return True
-        return False
-
-    def setoption(self,param,value):
-        self._hierarchalconfig.setoption(self,param,str(value))
+    def _getList(self,name):
+        vals=[]
+        klasses=GlobalSettings.hierarchy[self.__dict__['_startSearch']]
+        for klass in klasses:
+            val=self._getValue(klass,name)
+            if val is not None:
+                if isinstance(val,list) or isinstance(val,tuple):
+                    vals.extend(val)
+                else:
+                    vals.append(val)
+        return vals
+        
+        
+class ClassSettingsMixin(object):
+    def __init__(self,defaults=None):
+        hier=[klass for klass in getHierarchy(self) if klass!=ClassSettingsMixin]
+        self.settings=SettingsProxy(hier)
 
 
-if __name__=='__main__':
+##### Testing stuff
+def testHomeDir():
     print "for platform %s:" % os.sys.platform
     print getHomeDir()
     c=HomeConfigDir(".configprefs",debug=True)
@@ -237,3 +300,90 @@ if __name__=='__main__':
     nums=[0,1,2,4,6,99]
     c.saveObject("stuff.bin",nums)
     print c.loadObject("stuff.bin")
+
+class Vehicle(ClassSettingsMixin):
+    defaultsettings={'wheels':0,
+                     'doors':0,
+                     'wings':'no wings on this puppy',
+                     'primes':[2,3,5,7],
+                     }
+
+class Truck(Vehicle):
+    defaultsettings={'wheels':True,
+                     'doors':True,
+                     'primes':[11,13,17,19],
+                     }
+
+class PickupTruck(Truck):
+    defaultsettings={'wheels':4,
+                     'doors':2,
+                     'primes':[23,29],
+                     }
+
+class ShortBedPickupTruck(Truck):
+    pass
+
+def testHierarchy():
+    GlobalSettings.setDefaults({
+        'MenuFrame':{'width':600,
+                     'height':500,
+                     },
+        'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
+                 },
+        'View':{'linenumbers':'True',
+                'wordwrap':'False',
+                },
+        'PythonView':{'wordwrap':'True',
+                      },
+        })
+    vehicle=ShortBedPickupTruck()
+    print getHierarchy(vehicle,debug=True)
+    print getNameHierarchy(vehicle,debug=True)
+    print vehicle.settings.wheels
+    vehicle.settings.mudflaps=True
+    vehicle.settings.wheels=6
+    print vehicle.settings._getDefaults()
+    print vehicle.settings._getUser()
+    print vehicle.settings._getAll()
+    print vehicle.settings.wings
+    print vehicle.settings.primes
+    print vehicle.settings._getList('primes')
+    print vehicle.settings._getList('wheels')
+    
+class SettingsMixin(object):
+    def __init__(self):
+        pass
+
+class Plant(SettingsMixin):
+    settings=['roots','branches','leaves','fruit']
+    roots=True
+
+    def __init__(self):
+        self.branches=False
+        self.leaves=False
+        self.fruit=False
+        
+class Tree(Plant):
+    def __init__(self):
+        self.branches=True
+        self.leaves=True
+
+class OrangeTree(Tree):
+    settings=['company']
+    fruit="tangerines"
+    
+    def __init__(self):
+        self.fruit="oranges"
+        self.company="Tropicana"
+
+def testSettingMixin():
+    tree=OrangeTree()
+    print tree.fruit
+    print tree.__class__.fruit
+    print tree.settings
+    print tree.company
+
+
+if __name__=='__main__':
+    testHierarchy()
+    #testSettingMixin()

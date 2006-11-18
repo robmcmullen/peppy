@@ -224,8 +224,6 @@ class PythonMajorMode(FrameAction):
 
 
 menu_plugins=[
-    ['python',[('&Python',0.5)],ShiftLeft,0.2],
-    [ShiftRight],
     ['main',[('&Edit',0.1)],PythonMajorMode,0.9],
 ]
 
@@ -257,6 +255,21 @@ class PythonView(FundamentalView):
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
+
+    defaultsettings={
+        'menu_actions':[
+            ['main',[('&Python',0.5)],ShiftLeft,0.2],
+            [ShiftRight],
+            ],
+        'toolbar_actions':[
+            ['main',ShiftLeft,0.5],
+            [ShiftRight],
+            ],
+        'keyboard_actions':[
+            ShiftLeft,
+            ShiftRight,
+            ],
+        }
 
     def styleSTC(self):
         self.format=os.linesep

@@ -138,6 +138,7 @@ capabilities, (right click to try it out.)
 
 class Buffer(debugmixin):
     count=0
+    debuglevel=0
 
     filenames={}
     
@@ -166,16 +167,16 @@ class Buffer(debugmixin):
     def getView(self,frame):
         viewer=self.defaultviewer(self,frame) # create new view
         self.viewers.append(viewer) # keep track of views
-        print "views of %s: %s" % (self,self.viewers)
+        self.dprint("views of %s: %s" % (self,self.viewers))
         return viewer
 
     def remove(self,view):
-        print "removing view %s of %s" % (view,self)
+        self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
         else:
             raise ValueError("Bug somewhere.  View %s not found in Buffer %s" % (view,self))
-        print "views of %s: %s" % (self,self.viewers)
+        self.dprint("views of %s: %s" % (self,self.viewers))
 
     def removeAllViews(self):
         # Have to make a copy of self.viewers, because when the viewer
@@ -184,10 +185,10 @@ class Buffer(debugmixin):
         # a changing list.
         viewers=self.viewers[:]
         for viewer in viewers:
-            print "count=%d" % len(self.viewers)
-            print "removing view %s of %s" % (viewer,buffer)
+            self.dprint("count=%d" % len(self.viewers))
+            self.dprint("removing view %s of %s" % (viewer,buffer))
             viewer.frame.closeViewer(viewer)
-        print "final count=%d" % len(self.viewers)
+        self.dprint("final count=%d" % len(self.viewers))
 
     def setFilename(self,filename):
         if not filename:
@@ -291,14 +292,14 @@ class Empty(Buffer):
 
 
 
-class BufferFrame(MenuFrame,ConfigMixin):
+class BufferFrame(MenuFrame,ClassSettingsMixin):
     def __init__(self, app):
         self.framelist=app.frames
 
         # FIXME: temporary hack to get window size from application
         # config
-        ConfigMixin.__init__(self,app.cfg)
-        size=(self.getint('width'),self.getint('height'))
+        ClassSettingsMixin.__init__(self)
+        size=(int(self.settings.width),int(self.settings.height))
         self.dprint(size)
         
         MenuFrame.__init__(self, app, self.framelist, size=size)
@@ -363,12 +364,13 @@ class BufferFrame(MenuFrame,ConfigMixin):
         self.dprint("menu from viewer %s" % viewer)
         if viewer:
             self.dprint("  from page %d" % self.tabs.getCurrentIndex())
-            keyword=viewer.pluginkey
-            self.menuplugins.addMenu(keyword,self.app.menu_plugins)
+            self.menuplugins.addMenu('main',viewer.getMenuActions())
             self.menuplugins.proxyValue(self)
             
-            self.toolbarplugins.addTools(keyword,self.app.toolbar_plugins)
+            self.toolbarplugins.addTools('main',viewer.getToolbarActions())
             self.toolbarplugins.proxyValue(self)
+
+            self.keys.setLocalKeyMap(viewer.getLocalKeyMap())
 
             if self.popup:
                 viewer.addPopup(self.popup)
@@ -551,7 +553,6 @@ class BufferApp(wx.App,debugmixin):
         self.buffers=BufferList(None) # master buffer list
 
         self.confdir=None
-        self.cfg=None
         self.cfgfile=None
 
         self.globalKeys=KeyMap()
@@ -635,7 +636,7 @@ class BufferApp(wx.App,debugmixin):
         if retval==wx.ID_YES:
             doit=self.quitHook()
             if doit:
-                sys.exit()
+                self.ExitMainLoop()
 
     def quitHook(self):
         return True
@@ -670,7 +671,6 @@ class BufferApp(wx.App,debugmixin):
 
     def setConfigDir(self,dirname):
         self.confdir=dirname
-        self.cfg=None
 
     def getConfigFilePath(self,filename):
         c=HomeConfigDir(self.confdir)
@@ -681,16 +681,15 @@ class BufferApp(wx.App,debugmixin):
                                                  'height':400,
                                                  }
                                         }):
-        self.cfg=HierarchalConfig(appdefs=defaults)
+        GlobalSettings.setDefaults(defaults)
 
     def loadConfig(self,filename):
-        if not self.cfg:
-            self.setInitialConfig()
+        self.setInitialConfig()
         filename=self.getConfigFilePath(filename)
-        self.cfg.loadConfig(filename)
+        GlobalSettings.loadConfig(filename)
 
     def saveConfig(self,filename):
-        self.cfg.saveConfig(filename)
+        GlobalSettings.saveConfig(filename)
 
 
 if __name__ == "__main__":
