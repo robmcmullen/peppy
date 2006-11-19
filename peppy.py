@@ -193,58 +193,6 @@ class HelpAbout(FrameAction):
         cube=self.frame.showModalDialog(self.about,self.title)
 
 
-menu_plugins=[
-    ['main',[('&File',0.0)],OpenFile,0.0],
-    ['main',[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
-    ['main',[('&File',0.0)],None,0.2], # separator
-    OpenAlpha,
-    OpenBravo,
-    [None,0.21], # separator
-    [Save,0.8],
-    SaveAs,
-    Close,
-    None, # separator
-    [Quit,1.0],
-    ['main',[('&Edit',0.1)],Undo,0.1],
-    Redo,
-    None,
-    Cut,
-    Copy,
-    Paste,
-    ['main',[('&View',0.2)],NewTab,0.0],
-    [NewWindow,0.1],
-    DeleteWindow,
-    None,
-    [FrameList,0.2],
-    None,
-    [ShowToolbar,0.3],
-    ['main',[('&Buffers',0.3)],BufferList,0.0],
-    ['main',[('&Help',1.0)],HelpAbout,1.0],
-    ['alpha',[('&Bands',0.25)],PrevBand,0.0],
-    NextBand,
-]
-
-toolbar_plugins=[
-    # toolbar plugins here...
-    ['main',New,0.05],
-    [OpenFile],
-    [None],
-#    [OpenAlpha,0.1],
-#    [OpenBravo],
-    [Save,0.2],
-    [SaveAs],
-    [Close],
-    [None],
-    [Cut],
-    [Copy],
-    [Paste],
-    [None],
-    [Undo],
-    [Redo],
-    [None],
-    ]
-
-keyboard_plugins=[]
 
 
 
@@ -253,6 +201,12 @@ class AlphaView(View):
     keyword='Alpha'
     icon = 'icons/world.png'
     regex = "alpha"
+    defaultsettings={
+        'menu_actions':[
+            [[('&Bands',0.25)],PrevBand,0.0],
+            NextBand,
+            ]
+        }
 
     def createWindow(self,parent):
         self.win=wx.Window(parent, -1)
@@ -311,9 +265,9 @@ class Peppy(BufferApp,ClassSettingsMixin):
         self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")
         
-        self.addMenuPlugins(menu_plugins)
-        self.addToolbarPlugins(toolbar_plugins)
-        self.addKeyboardPlugins(keyboard_plugins)
+        self.addGlobalMenu(global_menu_actions)
+        self.addGlobalToolbar(global_toolbar_actions)
+        self.addGlobalKeys(global_keyboard_actions)
         self.registerViewer(AlphaView)
         self.registerViewer(BravoView)
 
@@ -349,6 +303,61 @@ def run(options={},args=None):
             frame.open(filename)
         
     app.MainLoop()
+
+
+global_menu_actions=[
+    [[('&File',0.0)],OpenFile,0.0],
+    [[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
+    [[('&File',0.0)],None,0.2], # separator
+    OpenAlpha,
+    OpenBravo,
+    [None,0.21], # separator
+    [Save,0.8],
+    SaveAs,
+    Close,
+    None, # separator
+    [Quit,1.0],
+    [[('&Edit',0.1)],Undo,0.1],
+    Redo,
+    None,
+    Cut,
+    Copy,
+    Paste,
+    [[('&View',0.2)],NewTab,0.0],
+    [NewWindow,0.1],
+    DeleteWindow,
+    None,
+    [FrameList,0.2],
+    None,
+    [ShowToolbar,0.3],
+    [[('&Buffers',0.3)],BufferList,0.0],
+    [[('&Help',1.0)],HelpAbout,1.0],
+]
+
+global_toolbar_actions=[
+    # toolbar plugins here...
+    [New,0.05],
+    OpenFile,
+    None,
+#    [OpenAlpha,0.1],
+#    [OpenBravo,
+    [Save,0.2],
+    SaveAs,
+    Close,
+    None,
+    Cut,
+    Copy,
+    Paste,
+    None,
+    Undo,
+    Redo,
+    None,
+    ]
+
+global_keyboard_actions=[]
+
+
+
 
 if __name__ == "__main__":
     from optparse import OptionParser

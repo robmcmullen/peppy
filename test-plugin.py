@@ -34,21 +34,6 @@ class Things(FrameAction):
         FrameAction.__init__(self, frame)
 
 
-menu_plugins=[
-    ['main',[('&File',0.0)],OpenCharlie,0.2],
-    ['charlie',[('&File',0.0)],Stuff,0.7],
-    [Things],
-    [None],
-]
-
-toolbar_plugins=[
-    # toolbar plugins here...
-#    ['main',OpenCharlie,0.1],
-    ['charlie',Stuff,0.3],
-    [Things],
-    ]
-
-
 
 
 class CharlieView(View):
@@ -57,10 +42,26 @@ class CharlieView(View):
     icon='icons/map_magnify.png'
     regex="charlie"
 
+    defaultsettings={
+        'menu_actions':[
+            [[('&File',0.0)],Stuff,0.7],
+            Things,
+            None,
+            ],
+        'toolbar_actions':[
+            [Stuff,0.3],
+            Things,
+            ]
+        }
+
     def createWindow(self,parent):
         self.win=wx.Window(parent, -1)
         wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
    
+
+global_menu_actions=[
+    [[('&File',0.0)],OpenCharlie,0.2],
+]
 
 viewers=[
     CharlieView,

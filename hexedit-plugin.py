@@ -37,15 +37,6 @@ class HexEditMajorMode(FrameAction):
         self.frame.changeMajorMode(HexEditView)
 
 
-menu_plugins=[
-    ['main',[('&File',0.0)],OpenHexEditor,0.2],
-    ['main',[('&Edit',0.1)],HexEditMajorMode,0.9],
-]
-
-##toolbar_plugins=[
-##    # toolbar plugins here...
-##    ['main',OpenHexEditor,0.1],
-##    ]
 
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
@@ -742,6 +733,16 @@ class HexEditView(FundamentalView):
                 self.waiting.start()
         
 
+
+global_menu_actions=[
+    [[('&File',0.0)],OpenHexEditor,0.2],
+    [[('&Edit',0.1)],HexEditMajorMode,0.9],
+]
+
+##global_toolbar_actions=[
+##    # toolbar plugins here...
+##    [OpenHexEditor,0.1],
+##    ]
 
 viewers=[
     HexEditView,

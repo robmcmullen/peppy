@@ -26,6 +26,9 @@ wxkeynames = (
     "NUMPAD_DIVIDE",
     )
 
+class DuplicateKeyError(Exception):
+    pass
+
 ##
 # This class represents a group of key mappings.  The KeyProcessor
 # class below uses multiple groups, one to represent global keymaps,
@@ -180,7 +183,7 @@ class KeyMap(object):
             for keystroke in keystrokes[:-1]:
                 if keystroke in hotkeys:
                     if self.exceptionsWhenDuplicate and not isinstance(hotkeys[keystroke], dict):
-                        raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
+                        raise DuplicateKeyError("Some other hotkey shares a prefix with this hotkey: %s"%acc)
                     if not isinstance(hotkeys[keystroke],dict):
                         # if we're overwriting a function, we need to
                         # replace the function call with a dict so
@@ -192,7 +195,7 @@ class KeyMap(object):
 
             # the last keystroke maps to the function to execute
             if self.exceptionsWhenDuplicate and keystrokes[-1] in hotkeys:
-                raise Exception("Some other hotkey shares a prefix with this hotkey: %s"%acc)
+                raise DuplicateKeyError("Some other hotkey shares a prefix with this hotkey: %s"%acc)
             hotkeys[keystrokes[-1]] = fcn
         return " ".join(keystrokes)
 

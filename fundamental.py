@@ -90,10 +90,6 @@ class EndOfLine(FrameAction):
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
 
-menu_plugins=[
-    ['main',[('&File',0.0)],OpenFundamental,0.2],
-]
-
 
 
 class MySTC(stc.StyledTextCtrl,debugmixin):
@@ -202,11 +198,11 @@ class FundamentalView(View):
 
     defaultsettings={
         'menu_actions':[
-            ['main',[('&Edit',0.1)],WordWrap,0.1],
+            [[('&Edit',0.1)],WordWrap,0.1],
             LineNumbers,
             ],
         'keyboard_actions':[
-            ['main',BeginningOfLine],
+            BeginningOfLine,
             EndOfLine,
             ]
         }
@@ -293,6 +289,9 @@ class FundamentalView(View):
 
 
 
+global_menu_actions=[
+    [[('&File',0.0)],OpenFundamental,0.2],
+]
 
 viewers=[
     FundamentalView,

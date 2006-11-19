@@ -334,11 +334,11 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
     def OnViewerChanged(self,evt):
         self.dprint("%s to viewer %s" % (self.name,evt.GetViewer()))
-        self.menuplugins.widget.Freeze()
+        self.menuactions.widget.Freeze()
         self.resetMenu()
         viewer=evt.GetViewer()
         self.addMenu(viewer)
-        self.menuplugins.widget.Thaw()
+        self.menuactions.widget.Thaw()
         wx.CallAfter(viewer.focus)
         self.setTitle()
         evt.Skip()
@@ -354,9 +354,9 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         return viewer
     
     def resetMenu(self):
-        self.setMenuPlugins('main',self.app.menu_plugins)
-        self.setToolbarPlugins('main',self.app.toolbar_plugins)
-        self.setKeyboardPlugins('main',self.app.keyboard_plugins)
+        self.setMenuActions(self.app.menu_actions,self.app.globalKeys)
+        self.setToolbarActions(self.app.toolbar_actions,self.app.globalKeys)
+        self.setKeyboardActions(self.app.keyboard_actions,self.app.globalKeys)
 
     def addMenu(self,viewer=None):
         if not viewer:
@@ -364,13 +364,16 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.dprint("menu from viewer %s" % viewer)
         if viewer:
             self.dprint("  from page %d" % self.tabs.getCurrentIndex())
-            self.menuplugins.addMenu('main',viewer.getMenuActions())
-            self.menuplugins.proxyValue(self)
-            
-            self.toolbarplugins.addTools('main',viewer.getToolbarActions())
-            self.toolbarplugins.proxyValue(self)
 
-            self.keys.setLocalKeyMap(viewer.getLocalKeyMap())
+            keymap=viewer.getLocalKeyMap()
+            
+            self.menuactions.addMenu(viewer.getMenuActions(),keymap)
+            self.menuactions.proxyValue(self)
+            
+            self.toolbaractions.addTools(viewer.getToolbarActions(),keymap)
+            self.toolbaractions.proxyValue(self)
+
+            self.keys.setLocalKeyMap(keymap)
 
             if self.popup:
                 viewer.addPopup(self.popup)
@@ -411,12 +414,12 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.tabs.showModified(viewer)
 
     def setViewer(self,viewer):
-        self.menuplugins.widget.Freeze()
+        self.menuactions.widget.Freeze()
         self.resetMenu()
         self.tabs.setViewer(viewer)
         #viewer.open()
         self.addMenu()
-        self.menuplugins.widget.Thaw()
+        self.menuactions.widget.Thaw()
         self.getCurrentViewer().focus()
         self.setTitle()
 
@@ -440,13 +443,13 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
         self.dprint("viewer=%s" % viewer)
-        self.menuplugins.widget.Freeze()
+        self.menuactions.widget.Freeze()
         self.resetMenu()
         self.dprint("after resetMenu")
         self.tabs.addViewer(viewer)
         self.dprint("after addViewer")
         self.addMenu()
-        self.menuplugins.widget.Thaw()
+        self.menuactions.widget.Thaw()
         self.getCurrentViewer().focus()
         self.setTitle()
 
@@ -544,9 +547,9 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
 class BufferApp(wx.App,debugmixin):
     def OnInit(self):
-        self.menu_plugins=[]
-        self.toolbar_plugins=[]
-        self.keyboard_plugins=[]
+        self.menu_actions=[]
+        self.toolbar_actions=[]
+        self.keyboard_actions=[]
         self.bufferhandlers=[]
         
         self.frames=FrameList(self) # master frame list
@@ -579,14 +582,14 @@ class BufferApp(wx.App,debugmixin):
         self.buffers.remove(buffer)
         self.rebuildMenus()
 
-    def addMenuPlugins(self,plugins):
-        self.menu_plugins.extend(plugins)
+    def addGlobalMenu(self,actions):
+        self.menu_actions.extend(actions)
         
-    def addToolbarPlugins(self,plugins):
-        self.toolbar_plugins.extend(plugins)
+    def addGlobalToolbar(self,actions):
+        self.toolbar_actions.extend(actions)
         
-    def addKeyboardPlugins(self,plugins):
-        self.keyboard_plugins.extend(plugins)
+    def addGlobalKeys(self,actions):
+        self.keyboard_actions.extend(actions)
         
     def deleteFrame(self,frame):
         #self.pendingframes.append((self.frames.getid(frame),frame))
@@ -647,15 +650,15 @@ class BufferApp(wx.App,debugmixin):
             self.dprint("found viewers: %s" % mod.viewers)
             for viewer in mod.viewers:
                 self.registerViewer(viewer)
-        if 'menu_plugins' in mod.__dict__:
-            self.dprint("found menu plugins: %s" % mod.menu_plugins)
-            self.addMenuPlugins(mod.menu_plugins)
-        if 'toolbar_plugins' in mod.__dict__:
-            self.dprint("found toolbar plugins: %s" % mod.toolbar_plugins)
-            self.addToolbarPlugins(mod.toolbar_plugins)
-        if 'keyboard_plugins' in mod.__dict__:
-            self.dprint("found keyboard plugins: %s" % mod.keyboard_plugins)
-            self.addKeyboardPlugins(mod.keyboard_plugins)
+        if 'global_menu_actions' in mod.__dict__:
+            self.dprint("found menu actions: %s" % mod.global_menu_actions)
+            self.addGlobalMenu(mod.global_menu_actions)
+        if 'global_toolbar_actions' in mod.__dict__:
+            self.dprint("found toolbar actions: %s" % mod.global_toolbar_actions)
+            self.addGlobalToolbar(mod.global_toolbar_actions)
+        if 'global_keyboard_actions' in mod.__dict__:
+            self.dprint("found keyboard actions: %s" % mod.global_keyboard_actions)
+            self.addGlobalKeys(mod.global_keyboard_actions)
 
     def loadPlugins(self,plugins):
         if not isinstance(plugins,list):

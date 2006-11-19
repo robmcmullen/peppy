@@ -223,15 +223,6 @@ class PythonMajorMode(FrameAction):
         self.frame.changeMajorMode(PythonView)
 
 
-menu_plugins=[
-    ['main',[('&Edit',0.1)],PythonMajorMode,0.9],
-]
-
-toolbar_plugins=[
-    # toolbar plugins here...
-    ['python',ShiftLeft,0.5],
-    [ShiftRight],
-    ]
 
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
@@ -258,16 +249,12 @@ class PythonView(FundamentalView):
 
     defaultsettings={
         'menu_actions':[
-            ['main',[('&Python',0.5)],ShiftLeft,0.2],
+            [[('&Python',0.5)],ShiftLeft,0.2],
             [ShiftRight],
             ],
         'toolbar_actions':[
-            ['main',ShiftLeft,0.5],
+            [ShiftLeft,0.5],
             [ShiftRight],
-            ],
-        'keyboard_actions':[
-            ShiftLeft,
-            ShiftRight,
             ],
         }
 
@@ -356,6 +343,9 @@ class PythonView(FundamentalView):
         ind = s.GetLineIndentation(linenum)                    
 
 
+global_menu_actions=[
+    [[('&Edit',0.1)],PythonMajorMode,0.9],
+]
 
 viewers=[
     PythonView,

@@ -78,7 +78,11 @@ class View(debugmixin,ClassSettingsMixin):
         'toolbar_actions':[],
         'keyboard_actions':[],
         }
-    localKeyMap=None
+
+    # Need one keymap per subclass, so we can't use the settings.
+    # Settings would propogate up the class hierachy and find a keymap
+    # of a superclass.  This is a dict based on the class name.
+    localkeymaps={}
     
     def __init__(self,buffer,frame):
         ClassSettingsMixin.__init__(self)
@@ -119,11 +123,14 @@ class View(debugmixin,ClassSettingsMixin):
         return actions
 
     def getLocalKeyMap(self):
-        if self.localKeyMap==None:
+        if self.__class__.__name__ not in self.localkeymaps:
             actions=self.settings._getList('keyboard_actions')
             self.dprint("keyboard actions=%s" % actions)
-            self.localKeyMap=self.frame.createKeyMap(actions)
-        return self.localKeyMap
+            self.localkeymaps[self.__class__.__name__]=self.frame.createKeyMap(actions)
+            self.dprint("created keymap %s for class %s" % (self.localkeymaps[self.__class__.__name__],self.__class__.__name__))
+        else:
+            self.dprint("found keymap %s for class %s" % (self.localkeymaps[self.__class__.__name__],self.__class__.__name__))
+        return self.localkeymaps[self.__class__.__name__]
 
     def addPopup(self,popup):
         self.popup=popup

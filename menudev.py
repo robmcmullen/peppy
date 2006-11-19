@@ -534,36 +534,34 @@ class ShowToolbar(FrameToggle):
 
 
 all_plugins=[
-    {'menuclass':'mainmenu',
-     'menubar':[('&File',0.0)],
+    {'menubar':[('&File',0.0)],
      'command':Open,
      'weight':0.0,
      },
-    ['mainmenu',[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
-    ['mainmenu',[('&File',0.0)],None,None], # separator
+    [[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
+    [[('&File',0.0)],None,None], # separator
     Save,
     SaveAs,
     None, # separator
-    {'menuclass':'mainmenu',
-     'menubar':[('&File',0.0)],
+    {'menubar':[('&File',0.0)],
      'command':Quit,
      'weight':1.0,
      },
-    ['mainmenu',[('&Image',0.5)],LinearContrastOff,0.1],
+    [[('&Image',0.5)],LinearContrastOff,0.1],
     LinearContrastDefault,
     LinearContrastUser,
     None,
     TestRadioList,
     None,
     FrameToggleList,
-    ['mainmenu',[('&Windows',0.9)],NewWindow,0.0],
+    [[('&Windows',0.9)],NewWindow,0.0],
     [DeleteWindow,0.1],
     None,
     [FrameList,0.2],
     ]
 
 toolbar_plugins=[
-    ['maintoolbar',Open,0.0],
+    [Open,0.0],
     Save,
     SaveAs,
     None,
@@ -575,54 +573,34 @@ toolbar_plugins=[
     FrameToggleList,
     ]
 
-def parseKeyboardPluginEntry(entry):
-    if isinstance(entry,list):
-        if len(entry)==1:
-            menuclass=None
-            command=entry[0]
-        else:
-            menuclass=entry[0]
-            command=entry[1]
-    elif isinstance(entry,dict):
-        menuclass=entry['menuclass']
-        command=entry['command']
-    else:
-        menuclass=None
-        command=entry
-    return (menuclass,command)
 
-def parsePluginEntry(entry):
+def parseActionEntry(entry):
     if isinstance(entry,list):
         if len(entry)==1:
-            menuclass=None
             menubar=None
             command=entry[0]
             weight=None
         elif len(entry)==2:
-            menuclass=None
             menubar=None
             command=entry[0]
             weight=entry[1]
-        elif len(entry)==4:
-            menuclass=entry[0]
-            menubar=entry[1]
-            command=entry[2]
-            weight=entry[3]
+        elif len(entry)==3:
+            menubar=entry[0]
+            command=entry[1]
+            weight=entry[2]
         else:
             dprint(entry)
     elif isinstance(entry,dict):
-        menuclass=entry['menuclass']
         menubar=entry['menubar']
         command=entry['command']
         weight=entry['weight']
     else:
-        menuclass=None
         menubar=None
         command=entry
         weight=None
-    return (menuclass,menubar,command,weight)
+    return (menubar,command,weight)
 
-class PluginMenuItemBase(debugmixin):
+class ActionMenuItemBase(debugmixin):
     debuglevel=0
     
     def __init__(self):
@@ -647,19 +625,19 @@ class PluginMenuItemBase(debugmixin):
         return [self]
 
 
-class _PluginMenuSeparator(PluginMenuItemBase):
+class _ActionMenuSeparator(ActionMenuItemBase):
     def __init__(self):
-        PluginMenuItemBase.__init__(self)
+        ActionMenuItemBase.__init__(self)
         self.name='--separator--'
 
     def insertInto(self, parent, index):
         parent.InsertSeparator(index)
 
-PluginMenuSeparator=_PluginMenuSeparator()
+ActionMenuSeparator=_ActionMenuSeparator()
         
-class PluginMenuItem(PluginMenuItemBase):
+class ActionMenuItem(ActionMenuItemBase):
     def __init__(self, frame, command, commandInstance=None, name=None, listpos=None):
-        PluginMenuItemBase.__init__(self)
+        ActionMenuItemBase.__init__(self)
         self.frame=frame
         if commandInstance:
             self.command=commandInstance
@@ -707,13 +685,13 @@ class PluginMenuItem(PluginMenuItemBase):
     def proxyValue(self, state):
         self.command.setProxyValue(state)
 
-class PluginMenuList(PluginMenuItem):
+class ActionMenuList(ActionMenuItem):
     """Container class for a group of menu items that are maintained
     together.  This can be a dynamic list or maybe later will include
     a radio list."""
     
     def __init__(self, frame, command, commandInstance=None, parent=None, category=None):
-        PluginMenuItemBase.__init__(self)
+        ActionMenuItemBase.__init__(self)
         self.frame=frame
         if commandInstance:
             self.command=commandInstance
@@ -723,12 +701,12 @@ class PluginMenuList(PluginMenuItem):
         self.category=category
 
         self.id = -1 # ids are stored in a list now
-        self.items = [] # PluginMenuItems associated with this list
+        self.items = [] # ActionMenuItems associated with this list
 
         self.parentMenu=parent
     
     def getList(self):
-        """Generate list of PluginMenuItems based on the text strings
+        """Generate list of ActionMenuItems based on the text strings
         contained in the command instance."""
         
         entries=self.command.getEntries(self.category)
@@ -736,14 +714,14 @@ class PluginMenuList(PluginMenuItem):
         self.dprint("  command=%s" % self.command)
         i=0
         for entry in entries:
-            item=PluginMenuItem(self.frame,None,self.command,entry,i)
+            item=ActionMenuItem(self.frame,None,self.command,entry,i)
             # item.parentList=self
             self.items.append(item)
             i+=1
         return self.items
 
     def rebuildList(self):
-        """Rebuild the list of PluginMenuItems in the parent Menu
+        """Rebuild the list of ActionMenuItems in the parent Menu
         object.  When the list changes, menu items are created or
         destroyed only when necessary; the text of the widgets are
         renamed when possible."""
@@ -770,7 +748,7 @@ class PluginMenuList(PluginMenuItem):
             lastitem=self.items[i]
             for i in range (fewer,current):
                 self.dprint("name %s: adding %s" % (self.name,entries[i]))
-                item=PluginMenuItem(self.frame,None,self.command,entries[i],i)
+                item=ActionMenuItem(self.frame,None,self.command,entries[i],i)
                 # item.parentList=self
                 self.items.append(item)
                 self.parentMenu.insertAfter(item,lastitem)
@@ -784,13 +762,13 @@ class PluginMenuList(PluginMenuItem):
             self.items[fewer:old]=[]
 
 
-class PluginMenuCategoryList(PluginMenuItem):
+class ActionMenuCategoryList(ActionMenuItem):
     """Container class for a group of menu items that are maintained
     together.  This can be a dynamic list or maybe later will include
     a radio list."""
     
     def __init__(self, frame, command, commandInstance=None, parent=None):
-        PluginMenuItemBase.__init__(self)
+        ActionMenuItemBase.__init__(self)
         self.frame=frame
         if commandInstance:
             self.command=commandInstance
@@ -799,23 +777,23 @@ class PluginMenuCategoryList(PluginMenuItem):
         self.name=command.name
 
         self.id = -1 # ids are stored in a list now
-        self.items = [] # PluginMenuItems associated with this list
+        self.items = [] # ActionMenuItems associated with this list
 
-        self.menus = [] # PluginMenus associated with this list
+        self.menus = [] # ActionMenus associated with this list
         self.menutolist = {}
 
         self.parentMenu=parent
 
     def newMenu(self,category):
-        menu=PluginMenu(self.frame,category)
+        menu=ActionMenu(self.frame,category)
         self.menus.append(menu)
-        menulist=PluginMenuList(self.frame,None,self.command,menu,category)
+        menulist=ActionMenuList(self.frame,None,self.command,menu,category)
         self.menutolist[menu]=menulist
         menu.insertItem(menulist,0.5)
         return menu
     
     def getList(self):
-        """Generate list of PluginMenuItems based on the text strings
+        """Generate list of ActionMenuItems based on the text strings
         contained in the command instance."""
         
         cats=self.command.getCategories()
@@ -825,7 +803,7 @@ class PluginMenuCategoryList(PluginMenuItem):
         return self.menus
 
     def rebuildList(self):
-        """Rebuild the list of PluginMenuItems in the parent Menu
+        """Rebuild the list of ActionMenuItems in the parent Menu
         object.  When the list changes, menu items are created or
         destroyed only when necessary; the text of the widgets are
         renamed when possible."""
@@ -864,13 +842,12 @@ class PluginMenuCategoryList(PluginMenuItem):
             self.menus[fewer:old]=[]
 
 
-class PluginMenu(PluginMenuItemBase):
+class ActionMenu(ActionMenuItemBase):
     def __init__(self, frame, name):
         self.frame=frame
         self.command=None
         self.name=name
 
-        self.menuclass = None        
         self.menus = []
         self.menunames = []
         self.menuweights = []
@@ -884,15 +861,15 @@ class PluginMenu(PluginMenuItemBase):
         self.widget = wx.Menu()
 
     def getMenu(self, name, weight):
-        """Get the PluginMenu that is a child of this menu.  If the
+        """Get the ActionMenu that is a child of this menu.  If the
         menu already exists, simply return the pointer to it.  If it
-        doesn't, create the PluginMenu and the wx component and return
-        the PluginMenu."""
+        doesn't, create the ActionMenu and the wx component and return
+        the ActionMenu."""
         
         if name in self.menunames:
             return self.menus[self.menunames.index(name)]
 
-        menu=PluginMenu(self.frame, name)
+        menu=ActionMenu(self.frame, name)
 
         if weight<0.0:
             menuindex=0
@@ -908,49 +885,51 @@ class PluginMenu(PluginMenuItemBase):
 
         return menu
 
-    def populateMenu(self, plugins):
+    def populateMenu(self, plugins, keymap=None):
         lastclass=None
         lastbar=None
         lastweight=0.5
         
         for plugin in plugins:
-            menuclass,menubar,command,weight=parsePluginEntry(plugin)
+            menubar,command,weight=parseActionEntry(plugin)
 
-            if menuclass==None:
-                menuclass=lastclass
+            if menubar==None:
+                menubar=lastbar
+            if weight==None:
+                weight=lastweight
 
-            if menuclass==self.menuclass:
-                if menubar==None:
-                    menubar=lastbar
-                if weight==None:
-                    weight=lastweight
-                
-                self.dprint("found menuclass=%s menubar=%s command=%s weight=%f" % (menuclass,str(menubar),command,weight))
-                parent=self
-                for name,menuweight in menubar:
-                    menu=parent.getMenu(name,menuweight)
-                    parent=menu
-                self.dprint("inserting command=%s into menu %s" % (command,menu.name))
+            self.dprint("found menubar=%s command=%s weight=%f" % (str(menubar),command,weight))
+            parent=self
+            for name,menuweight in menubar:
+                menu=parent.getMenu(name,menuweight)
+                parent=menu
+            self.dprint("inserting command=%s into menu %s" % (command,menu.name))
 
-                if command:
-                    if command.dynamic:
-                        if command.categories:
-                            item=PluginMenuCategoryList(self.frame,command,None,menu)
-                            self.dynamics.append(item)
-                        else:
-                            item=PluginMenuList(self.frame,command,None,menu)
-                            self.dynamics.append(item)
+            if command:
+                if command.dynamic:
+                    if command.categories:
+                        item=ActionMenuCategoryList(self.frame,command,None,menu)
+                        self.dynamics.append(item)
                     else:
-                        item=PluginMenuItem(self.frame,command)
+                        item=ActionMenuList(self.frame,command,None,menu)
+                        self.dynamics.append(item)
                 else:
-                    item=PluginMenuSeparator
-                menu.insertItem(item,weight)
+                    item=ActionMenuItem(self.frame,command)
 
-                lastbar=menubar
+                # Add keyboard command to the specified keymap
+                if keymap and command.keyboard:
+                    try:
+                        self.dprint("found key=%s for %s" % (command.keyboard,command))
+                        keymap.define(command.keyboard,item.command)
+                    except DuplicateKeyError:
+                        dprint("apparently already defined the keyboard shortcut key for %s in keymap %s." % (command,keymap))
+
+                        
             else:
-                lastbar=None
+                item=ActionMenuSeparator
+            menu.insertItem(item,weight)
 
-            lastclass=menuclass
+            lastbar=menubar
             lastweight=weight
             
     def remove(self, item):
@@ -1008,7 +987,7 @@ class PluginMenu(PluginMenuItemBase):
         return
 
     def updateDynamic(self):
-        # look at each PluginMenuList object
+        # look at each ActionMenuList object
         for dynamic in self.dynamics:
             dynamic.rebuildList()
 
@@ -1045,10 +1024,9 @@ class PluginMenu(PluginMenuItemBase):
         return item
 
 
-class PluginMenuBar(PluginMenu):
-    def __init__(self, frame, menuclass, plugins):
-        PluginMenu.__init__(self,frame,None)
-        self.menuclass=menuclass
+class ActionMenuBar(ActionMenu):
+    def __init__(self, frame, plugins, keymap):
+        ActionMenu.__init__(self,frame,None)
 
         # Apparently some platforms can only use SetMenuBar once, so
         # this new menu creation routine replaces menus if there is an
@@ -1064,7 +1042,7 @@ class PluginMenuBar(PluginMenu):
             frame.SetMenuBar(self.widget)
         self.count=0
         
-        self.populateMenu(plugins)
+        self.populateMenu(plugins,keymap)
 
     def finishInit(self):
         while self.oldcount>self.count:
@@ -1075,9 +1053,8 @@ class PluginMenuBar(PluginMenu):
         # finish the initial population of the menu.
         self.oldcount=0
 
-    def addMenu(self, menuclass, plugins):
-        self.menuclass=menuclass # new menuclass!
-        self.populateMenu(plugins)
+    def addMenu(self,plugins,keymap=None):
+        self.populateMenu(plugins,keymap)
 
 
     # wx commands to insert a menu in a menu bar is different than
@@ -1094,9 +1071,9 @@ class PluginMenuBar(PluginMenu):
         self.updateDynamic()
 
 
-class PluginToolBarItem(PluginMenuItem):
+class ActionToolBarItem(ActionMenuItem):
     def __init__(self, frame, command, commandInstance=None, name=None, listpos=None, size=(-1,-1)):
-        PluginMenuItem.__init__(self, frame, command, commandInstance, name, listpos)
+        ActionMenuItem.__init__(self, frame, command, commandInstance, name, listpos)
         self.size=size
 
     def connectEvent(self, frameWidget):
@@ -1116,40 +1093,40 @@ class PluginToolBarItem(PluginMenuItem):
             parentWidget.ToggleTool(self.id,checked)
 
 
-PluginToolBarSeparator = PluginMenuSeparator
+ActionToolBarSeparator = ActionMenuSeparator
 
-class PluginToolBarList(PluginToolBarItem):
+class ActionToolBarList(ActionToolBarItem):
     """Container class for a group of toolbar items that are
     maintained together.  Currently this is not a dynamic list."""
     
     def __init__(self, frame, command, parent, size=(-1,-1)):
-        PluginMenuItemBase.__init__(self)
+        ActionMenuItemBase.__init__(self)
         self.frame=frame
         self.command=command(self.frame)
         self.name=command.name
         self.size=size
 
         self.id = -1 # ids are stored in a list now
-        self.items = [] # PluginToolBarItems associated with this list
+        self.items = [] # ActionToolBarItems associated with this list
 
         self.parentToolBar=parent
     
     def getList(self):
-        """Generate list of PluginToolBarItems based on the text strings
+        """Generate list of ActionToolBarItems based on the text strings
         contained in the command instance."""
         
         entries=self.command.getEntries()
         i=0
         for entry in entries:
-            item=PluginToolBarItem(self.frame,None,commandInstance=self.command,name=entry,listpos=i,size=self.size)
+            item=ActionToolBarItem(self.frame,None,commandInstance=self.command,name=entry,listpos=i,size=self.size)
             # item.parentList=self
             self.items.append(item)
             i+=1
         return self.items
             
-class PluginToolBar(PluginMenu):
-    def __init__(self, frame, menuclass, plugins, size=None, reuse=True):
-        PluginMenu.__init__(self,frame,None)
+class ActionToolBar(ActionMenu):
+    def __init__(self, frame, plugins, keymap=None, size=None, reuse=True):
+        ActionMenu.__init__(self,frame,None)
 
         # Reusing the same toolbar cures the flicker on GTK
         toolbar=frame.GetToolBar()
@@ -1180,7 +1157,7 @@ class PluginToolBar(PluginMenu):
                 size=(-1,-1)
         self.size = size
 
-        self.addTools(menuclass,plugins)
+        self.addTools(plugins,keymap)
 
     def finishInit(self,visible=True):
         while self.oldcount>self.count:
@@ -1200,11 +1177,10 @@ class PluginToolBar(PluginMenu):
         self.widget.SetMinSize(self.widget.GetSize())
         self.widget.Show(visible)
 
-    def addTools(self, menuclass, plugins):
+    def addTools(self, plugins, keymap=None):
         self.dprint("Adding plugins %s" % plugins)
-        self.menuclass=menuclass # new menuclass!
         self.widget.Freeze()
-        self.populateTools(plugins)
+        self.populateTools(plugins,keymap)
         self.widget.Realize() # WXMSW: without this, updates won't appear
 
         # WXMSW toolbar height hack; necessary after adding tools.
@@ -1213,55 +1189,50 @@ class PluginToolBar(PluginMenu):
         
         self.widget.Thaw()
 
-    def populateTools(self, plugins):
-        lastclass=None
+    def populateTools(self, plugins, keymap=None):
         lastweight=0.5
         
         for plugin in plugins:
             if isinstance(plugin,list):
                 if len(plugin)==1:
-                    menuclass=None
                     command=plugin[0]
                     weight=None
                 elif len(plugin)==2:
-                    menuclass=None
                     command=plugin[0]
                     weight=plugin[1]
                 else:
-                    menuclass=plugin[0]
                     command=plugin[1]
                     weight=plugin[2]
             elif isinstance(plugin,dict):
-                menuclass=plugin['menuclass']
                 command=plugin['command']
                 weight=plugin['weight']
             else:
-                menuclass=None
                 command=plugin
                 weight=None
                 
-            if menuclass==None:
-                menuclass=lastclass
+            if weight==None:
+                weight=lastweight
 
-            if menuclass==self.menuclass:
-                if weight==None:
-                    weight=lastweight
-                
-                self.dprint("found menuclass=%s command=%s weight=%f" % (menuclass,command,weight))
+            self.dprint("found command=%s weight=%f" % (command,weight))
 
-                if command:
-                    if command.dynamictools:
-                        item=PluginToolBarList(self.frame,command,self,size=self.size)
-                        self.dynamics.append(item)
-                    else:
-                        item=PluginToolBarItem(self.frame,command,size=self.size)
+            if command:
+                if command.dynamictools:
+                    item=ActionToolBarList(self.frame,command,self,size=self.size)
+                    self.dynamics.append(item)
                 else:
-                    item=PluginToolBarSeparator
-                self.insertItem(item,weight)
+                    item=ActionToolBarItem(self.frame,command,size=self.size)
+                    
+                # Add keyboard command to the specified keymap
+                if keymap and command.keyboard:
+                    try:
+                        self.dprint("found key=%s for %s" % (command.keyboard,command))
+                        keymap.define(command.keyboard,item.command)
+                    except DuplicateKeyError:
+                        dprint("apparently already defined the keyboard shortcut key for %s in keymap %s." % (command,keymap))
+                        
             else:
-                lastbar=None
-
-            lastclass=menuclass
+                item=ActionToolBarSeparator
+            self.insertItem(item,weight)
             lastweight=weight
             
 
@@ -1270,7 +1241,7 @@ class MenuFrame(wx.Frame,debugmixin):
     debuglevel=0
     frameid = 0
     
-    def __init__(self, app, framelist, size=(500,500), plugins=None, toolbar=None):
+    def __init__(self, app, framelist, size=(500,500), actions=None, toolbar=None):
         MenuFrame.frameid+=1
         self.name="peppy: Frame #%d" % MenuFrame.frameid
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
@@ -1278,9 +1249,9 @@ class MenuFrame(wx.Frame,debugmixin):
         self.debuglevel=0
 
         self.app=app
-        self.menuplugins=None
-        self.toolbarplugins=None
-        self.keyboardplugins=None
+        self.menuactions=None
+        self.toolbaractions=None
+        self.keyboardactions=None
 
         # This is how to create a statusbar with more than one
         # division, but the automatic menubar help text always appears
@@ -1298,8 +1269,8 @@ class MenuFrame(wx.Frame,debugmixin):
         self.framelist.append(self)
         self.dprint("framelist = %x" % id(self.framelist))
         
-        if plugins:
-            self.setMenuPlugins('mainmenu', plugins)
+        if actions:
+            self.setMenuActions(actions)
 
         self.mainsizer=wx.BoxSizer(wx.VERTICAL)
         self.SetAutoLayout(True)
@@ -1315,7 +1286,7 @@ class MenuFrame(wx.Frame,debugmixin):
 
         self.toolbarvisible=True
         if toolbar:
-            self.setToolbarPlugins('maintoolbar', toolbar)
+            self.setToolbarActions(toolbar)
             self.mainsizer.Show(self.toolbar)
         elif self.toolbar:
             self.mainsizer.Hide(self.toolbar)
@@ -1337,34 +1308,22 @@ class MenuFrame(wx.Frame,debugmixin):
 ##        else:
 ##            print "unprocessed by KeyProcessor"
 
-    def setGlobalKeys(self,name,plugins):
-        keymap=self.app.globalKeys
-        try:
-            for plugin in plugins:
-                menuclass,menubar,command,weight=parsePluginEntry(plugin)
-                if command and command.keyboard:
-                    self.dprint("found key=%s for %s" % (command.keyboard,command))
-                    keymap.define(command.keyboard,command(self))
-        except:
-            dprint("apparently already defined the menubar shortcut keys.")
-
     def createKeyMap(self,actions):
         keymap=KeyMap()
-        for plugin in actions:
-            menuclass,command=parseKeyboardPluginEntry(plugin)
-            if command and command.keyboard:
-                self.dprint("found key=%s for %s" % (command.keyboard,command))
-                keymap.define(command.keyboard,command(self))
+        dprint(str(actions))
+        for action in actions:
+            if action and action.keyboard:
+                self.dprint("found key=%s for %s" % (action.keyboard,action))
+                keymap.define(action.keyboard,action(self))
         return keymap
 
-    def setKeyboardPlugins(self,name,plugins):
-        keymap=self.app.globalKeys
+    def setKeyboardActions(self,actions,keymap):
         try:
-            for plugin in plugins:
-                menuclass,command=parseKeyboardPluginEntry(plugin)
-                if command and command.keyboard:
-                    self.dprint("found key=%s for %s" % (command.keyboard,command))
-                    keymap.define(command.keyboard,command(self))
+            for action in actions:
+                action=parseKeyboardActionEntry(action)
+                if action and action.keyboard:
+                    self.dprint("found key=%s for %s" % (action.keyboard,action))
+                    keymap.define(action.keyboard,action(self))
         except:
             dprint("apparently already defined the keyboard shortcut keys.")
             raise
@@ -1423,22 +1382,21 @@ class MenuFrame(wx.Frame,debugmixin):
                 self.Layout()
             self.toolbar=toolbar
 
-    def setMenuPlugins(self, name, plugins=None):
-        self.dprint(plugins)
-        self.menuplugins=PluginMenuBar(self,name,plugins)
+    def setMenuActions(self, actions, keymap=None):
+        self.dprint(actions)
+        self.menuactions=ActionMenuBar(self,actions,keymap)
 
         self.rebuildMenus()
-        self.menuplugins.finishInit()
-        self.setGlobalKeys(name,plugins)
+        self.menuactions.finishInit()
             
 
-    def setToolbarPlugins(self, name, plugins=None, size=None):
-        if len(toolbar_plugins)>0:
-            self.toolbarplugins=PluginToolBar(self, name, plugins ,size, reuse=not self._recreateToolbar)
-##            self.toolbarplugins.widget.Realize()
-##            self.SetToolBar(self.toolbarplugins.widget)
-            self.toolbarplugins.finishInit(self.toolbarvisible)
-            self.toolbarplugins.enable(self)
+    def setToolbarActions(self, actions, keymap=None, size=None):
+        if len(actions)>0:
+            self.toolbaractions=ActionToolBar(self,actions,keymap,size,reuse=not self._recreateToolbar)
+##            self.toolbaractions.widget.Realize()
+##            self.SetToolBar(self.toolbaractions.widget)
+            self.toolbaractions.finishInit(self.toolbarvisible)
+            self.toolbaractions.enable(self)
 
     def setMainWindow(self, win, destroy=True):
         # GetItem fails on Windows if no item exists at that position.
@@ -1457,26 +1415,26 @@ class MenuFrame(wx.Frame,debugmixin):
         return oldwin
 
     def showToolbar(self, state):
-        if self.toolbarplugins:
+        if self.toolbaractions:
             self.toolbarvisible=state
-            self.toolbarplugins.show(state)
+            self.toolbaractions.show(state)
             self.Layout()
         
     def getState(self):
         return self
         
     def enableMenu(self):
-        self.menuplugins.enable(self)
-        self.toolbarplugins.enable(self)
+        self.menuactions.enable(self)
+        self.toolbaractions.enable(self)
 
     def rebuildMenus(self):
-        if self.menuplugins:
-            self.menuplugins.buildDynamic()
-            self.menuplugins.enable(self)
-            self.menuplugins.proxyValue(self)
-        if self.toolbarplugins:
-            self.toolbarplugins.enable(self)
-            self.toolbarplugins.proxyValue(self)
+        if self.menuactions:
+            self.menuactions.buildDynamic()
+            self.menuactions.enable(self)
+            self.menuactions.proxyValue(self)
+        if self.toolbaractions:
+            self.toolbaractions.enable(self)
+            self.toolbaractions.proxyValue(self)
 
     def setStatusBarText(self,text):
         self.statusbar.SetStatusText(text)
@@ -1531,7 +1489,7 @@ class MyApp(wx.App):
             frame.rebuildMenus()
         
     def newFrame(self,callingFrame=None):
-        frame=MenuFrame(self,self.frames,plugins=all_plugins,toolbar=toolbar_plugins)
+        frame=MenuFrame(self,self.frames,actions=all_actions,toolbar=toolbar_actions)
         self.rebuildMenus()
         return frame
         
