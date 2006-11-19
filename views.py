@@ -68,6 +68,8 @@ def getIconStorage(icon=None):
 #### View base class
 
 class View(debugmixin,ClassSettingsMixin):
+    debuglevel=0
+    
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
@@ -91,6 +93,9 @@ class View(debugmixin,ClassSettingsMixin):
         self.buffer=buffer
         self.frame=frame
         self.popup=None
+
+    def __del__(self):
+        print "deleting %s %s" % (self.__class__.__name__,self.getTabName())
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -158,7 +163,7 @@ class View(debugmixin,ClassSettingsMixin):
         self.openPostHook()
 
     def close(self):
-        self.dprint("View: closing view of buffer %s" % self.buffer)
+        self.dprint("View: closing view %s of buffer %s" % (self,self.buffer))
         #self.stc.ReleaseDocument(self.buffer.docptr)
         self.win.Destroy()
         # remove reference to this view in the buffer's listeners

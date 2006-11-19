@@ -1310,7 +1310,6 @@ class MenuFrame(wx.Frame,debugmixin):
 
     def createKeyMap(self,actions):
         keymap=KeyMap()
-        dprint(str(actions))
         for action in actions:
             if action and action.keyboard:
                 self.dprint("found key=%s for %s" % (action.keyboard,action))

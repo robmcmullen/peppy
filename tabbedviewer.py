@@ -22,6 +22,8 @@ class ViewerChangedEvent(wx.PyCommandEvent):
         return self._viewer
 
 class TabbedViewer(wx.Notebook,debugmixin):
+    debuglevel=0
+    
     def __init__(self, parent, frame=None):
         wx.Notebook.__init__(self,parent,-1,style=wx.NO_BORDER)
 
@@ -156,6 +158,8 @@ class TabbedViewer(wx.Notebook,debugmixin):
         
 
 class HideOneTabViewer(wx.Panel,debugmixin):
+    debuglevel=0
+    
     def __init__(self, parent):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER)
         self.frame=parent
@@ -179,7 +183,7 @@ class HideOneTabViewer(wx.Panel,debugmixin):
     def clearUserChangedCallbacks(self):
         self.tabs.clearUserChangedCallbacks()
 
-    def setWindow(self, win):
+    def setWindow(self, viewer):
         """Set the wxWindow that is managed by this notebook, not the
         Viewer.  The viewer is managed by setViewer; this is a
         lower-level function.
@@ -189,26 +193,26 @@ class HideOneTabViewer(wx.Panel,debugmixin):
         # that position.  On unix it just returns None as according to
         # the docs.  So, keep track of any managed window ourselves.
         if self.managed:
-            self.mainsizer.Detach(1)
+            self.dprint("closing old self.managed=%s, win=%s" % (str(self.managed),str(self.managed.win)))
+            self.mainsizer.Detach(self.managed.win)
             # the old view is destroyed here.  Should I save the state
             # somehow so the next view of this buffer sees the same
             # location in the file?
-            self.dprint("closing old self.managed=%s" % str(self.managed))
-            #self.managed.Destroy()
+            self.managed.close()
             self.managed=None
-        if win:
-            self.mainsizer.Add(win,1,wx.EXPAND)
+        if viewer:
+            self.managed=viewer
+            self.mainsizer.Add(self.managed.win,1,wx.EXPAND)
             self.mainsizer.Hide(self.tabs)
-            self.mainsizer.Show(win)
-            self.managed=win
+            self.mainsizer.Show(self.managed.win)
         self.Layout()
 
     def setViewer(self, viewer):
         if self.count<=1:
             self.viewer=viewer
             viewer.createWindow(self)
-            self.dprint("viewer.win=%s" % viewer.win)
-            self.setWindow(viewer.win)
+            self.dprint("viewer=%s win=%s" % (viewer,viewer.win))
+            self.setWindow(viewer)
             self.dprint("after setWindow")
             viewer.open()
             self.dprint("after viewer.open")
@@ -222,14 +226,14 @@ class HideOneTabViewer(wx.Panel,debugmixin):
             self.count=1
         elif self.count==1:
             if self.viewer.temporary:
-                self.viewer.close()
+                #self.viewer.close()
                 self.setViewer(viewer)
             else:
                 # reparent!
                 self.Freeze()
-                self.mainsizer.Hide(self.managed)
+                self.mainsizer.Hide(self.managed.win)
                 self.mainsizer.Show(self.tabs)
-                self.mainsizer.Detach(self.managed)
+                self.mainsizer.Detach(self.managed.win)
                 # add old viewer as tab 1 (new window is created)
                 self.tabs.addViewer(self.viewer)
                 # clean up old stuff, but don't delete old window till
@@ -254,16 +258,11 @@ class HideOneTabViewer(wx.Panel,debugmixin):
             if self.count==1:
                 # reparent from tabs
                 viewer=self.tabs.getViewer(0)
-                self.tabs.closeViewer(self.viewer,close=False)
+                self.tabs.closeViewer(viewer,close=False)
                 self.setViewer(viewer)
         elif self.count==1:
             if viewer==self.viewer:
-##                win=wx.Window(self,-1)
-##                self.setWindow(win)
-                self.viewer.close()
-                self.viewer=None
-                self.count=0
-                self.frame.titleBuffer()
+                self.setViewer(self.frame.app.titlebuffer.getView(self.frame))
 
     def getCurrentIndex(self):
         if self.count==0:

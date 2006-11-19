@@ -164,8 +164,11 @@ class Buffer(debugmixin):
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
         self.docptr=None
 
-    def getView(self,frame):
-        viewer=self.defaultviewer(self,frame) # create new view
+    def getView(self,frame,viewerclass=None):
+        if viewerclass:
+            viewer=viewerclass(self,frame)
+        else:
+            viewer=self.defaultviewer(self,frame) # create new view
         self.viewers.append(viewer) # keep track of views
         self.dprint("views of %s: %s" % (self,self.viewers))
         return viewer
@@ -186,7 +189,7 @@ class Buffer(debugmixin):
         viewers=self.viewers[:]
         for viewer in viewers:
             self.dprint("count=%d" % len(self.viewers))
-            self.dprint("removing view %s of %s" % (viewer,buffer))
+            self.dprint("removing view %s of %s" % (viewer,self))
             viewer.frame.closeViewer(viewer)
         self.dprint("final count=%d" % len(self.viewers))
 
@@ -432,8 +435,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
     def changeMajorMode(self,newmode):
         viewer=self.getCurrentViewer()
         if viewer:
-            buffer=viewer.buffer
-            newview=newmode(buffer,self)
+            newview=viewer.buffer.getView(self,newmode)
             self.dprint("new view=%s" % newview)
             self.setViewer(newview)
 
