@@ -632,11 +632,11 @@ class HexEditView(FundamentalView):
 
     debuglevel=0
 
-    def createWindow(self,parent):
-        FundamentalView.createWindow(self,parent)
+    def createEditWindow(self,parent):
+        FundamentalView.createEditWindow(self,parent)
         self.dprint("creating new HexEditView window")
 
-        self.win=HugeTableGrid(parent,self.stc,"16c")        
+        win=HugeTableGrid(parent,self.stc,"16c")        
         #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
 
         self.stc.Show(False)
@@ -657,12 +657,10 @@ class HexEditView(FundamentalView):
         # Thread stuff for the underlying change callback
         self.waiting=None
 
-    def reparent(self,parent):
-        self.win.Reparent(parent)
-        self.stc.Reparent(parent)
+        return win
 
     def openPostHook(self):
-        self.win.Update(self.stc)
+        self.editwin.Update(self.stc)
         
     def transModType(self, modType):
         st = ""

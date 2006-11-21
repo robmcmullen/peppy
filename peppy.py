@@ -208,9 +208,10 @@ class AlphaView(View):
             ]
         }
 
-    def createWindow(self,parent):
-        self.win=wx.Window(parent, -1)
-        wx.StaticText(self.win, -1, self.buffer.name, (45, 45))
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        wx.StaticText(win, -1, self.buffer.name, (45, 45))
+        return win
 
 
 class BravoView(View):
@@ -219,9 +220,10 @@ class BravoView(View):
     icon='icons/bug_add.png'
     regex="bravo"
 
-    def createWindow(self,parent):
-        self.win=wx.Window(parent, -1)
-        wx.StaticText(self.win, -1, self.buffer.name, (100,100))
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        wx.StaticText(win, -1, self.buffer.name, (100,100))
+        return win
 
 
 class TitleView(View):
@@ -231,9 +233,10 @@ class TitleView(View):
     regex="title"
     temporary=True
 
-    def createWindow(self,parent):
-        self.win=wx.Window(parent, -1)
-        wx.StaticText(self.win, -1, self.buffer.name, (10,10))
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        wx.StaticText(win, -1, self.buffer.name, (10,10))
+        return win
 
 
 class TitleBuffer(Buffer):

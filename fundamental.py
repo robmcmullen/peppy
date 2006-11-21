@@ -90,6 +90,17 @@ class EndOfLine(FrameAction):
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
 
+class FindText(ViewAction):
+    name = "Find..."
+    tooltip = "Search for a string in the text."
+    keyboard = 'C-S'
+
+    def action(self, viewer, state=None, pos=-1):
+        from pype import findbar
+        win=findbar.FindBar(viewer.win,viewer,viewer.stc)
+        viewer.showBottomWindow(win)
+
+
 
 
 class MySTC(stc.StyledTextCtrl,debugmixin):
@@ -200,6 +211,7 @@ class FundamentalView(View):
         'menu_actions':[
             [[('&Edit',0.1)],WordWrap,0.1],
             LineNumbers,
+            FindText,
             ],
         'keyboard_actions':[
             BeginningOfLine,
@@ -213,12 +225,12 @@ class FundamentalView(View):
     def __init__(self,buffer,frame):
         View.__init__(self,buffer,frame)
 
-    def createWindow(self,parent):
+    def createEditWindow(self,parent):
         self.dprint("creating new Fundamental window")
-
         self.createSTC(parent,style=True)
-        self.win=self.stc
-        self.win.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
+        win=self.stc
+        win.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
+        return win
 
     def createSTC(self,parent,style=False):
         self.stc=MySTC(parent, self.frame)

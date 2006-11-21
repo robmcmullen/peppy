@@ -547,6 +547,11 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.newBuffer(buffer)
 
 
+    #### PyPE Compatability
+
+    def getglobal(self,param):
+        return None
+
 class BufferApp(wx.App,debugmixin):
     def OnInit(self):
         self.menu_actions=[]

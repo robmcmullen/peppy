@@ -54,10 +54,10 @@ class CharlieView(View):
             ]
         }
 
-    def createWindow(self,parent):
-        self.win=wx.Window(parent, -1)
-        wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
-   
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        wx.StaticText(win, -1, self.buffer.name, (145, 145))
+        return win
 
 global_menu_actions=[
     [[('&File',0.0)],OpenCharlie,0.2],

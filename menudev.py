@@ -1435,7 +1435,7 @@ class MenuFrame(wx.Frame,debugmixin):
             self.toolbaractions.enable(self)
             self.toolbaractions.proxyValue(self)
 
-    def setStatusBarText(self,text):
+    def SetStatusText(self,text,log=None): # log for pype compat
         self.statusbar.SetStatusText(text)
 
     def closeWindow(self, ev):

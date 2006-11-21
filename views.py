@@ -89,6 +89,10 @@ class View(debugmixin,ClassSettingsMixin):
     def __init__(self,buffer,frame):
         ClassSettingsMixin.__init__(self)
         self.win=None
+        self.splitter=None
+        self.editwin=None
+        self.bottomwin=None
+        self.sidebar=None
         self.stc=BlankSTC
         self.buffer=buffer
         self.frame=frame
@@ -108,11 +112,49 @@ class View(debugmixin,ClassSettingsMixin):
         return getIconStorage(self.icon)
     
     def createWindow(self,parent):
-        self.win=wx.Window(parent, -1)
-        self.win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
-        self.stc=stc.StyledTextCtrl(parent,-1)
+        self.win=wx.Panel(parent, -1, style=wx.NO_BORDER)
+        box=wx.BoxSizer(wx.VERTICAL)
+        self.win.SetAutoLayout(True)
+        self.win.SetSizer(box)
+        self.splitter=wx.SplitterWindow(self.win)
+        self.splitter.SetSplitMode(wx.SPLIT_VERTICAL)
+        box.Add(self.splitter,1,wx.EXPAND)
+        self.editwin=self.createEditWindow(self.splitter)
+        self.splitter.Initialize(self.editwin)
+        self.splitter.SetMinimumPaneSize(10)
+
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
+        self.stc=stc.StyledTextCtrl(self.win,-1)
         self.stc.Show(False)
-        #wx.StaticText(self.win, -1, self.buffer.name, (10,10))
+        return win
+
+    def addBottomWindow(self,win):
+        self.bottomwin=win
+        if self.bottomwin:
+            box=self.win.GetSizer()
+            box.Add(self.bottomwin,0,wx.EXPAND)
+            self.win.Layout()
+
+    def removeBottomWindow(self):
+        if self.bottomwin:
+            box=self.win.GetSizer()
+            box.Detach(self.bottomwin)
+            self.win.Layout()
+            self.bottomwin=None
+            self.focus()
+
+    def showBottomWindow(self,win=None,show=True):
+        if win is not None:
+            if self.bottomwin!=win:
+                self.removeBottomWindow()
+                self.addBottomWindow(win)
+        if self.bottomwin:
+            # some views will not allow a search window by overriding
+            # createBottomWindow to return None, so only show a search
+            # window if it exists.
+            self.bottomwin.Show(show)
 
     def reparent(self,parent):
         self.win.Reparent(parent)
@@ -172,7 +214,7 @@ class View(debugmixin,ClassSettingsMixin):
 
     def focus(self):
         #self.dprint("View: setting focus to %s" % self)
-        self.win.SetFocus()
+        self.editwin.SetFocus()
 
     def showModified(self,modified):
         self.frame.showModified(self)
