@@ -90,15 +90,38 @@ class EndOfLine(FrameAction):
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
 
-class FindText(ViewAction):
+class FindMinibuffer(Minibuffer):
+    def minibuffer(self, viewer):
+        from pype import findbar
+        self.win=findbar.FindBar(viewer.win,viewer,viewer.stc)
+        print "findbar=%s" % self.win
+
+    def focus(self):
+        self.win.box1.SetFocus()
+    
+class ReplaceMinibuffer(FindMinibuffer):
+    def minibuffer(self, viewer):
+        from pype import findbar
+        self.win=findbar.ReplaceBar(viewer.win,viewer,viewer.stc)
+    
+
+class FindText(MinibufferAction):
     name = "Find..."
     tooltip = "Search for a string in the text."
     keyboard = 'C-S'
+    minibuffer = FindMinibuffer
 
-    def action(self, viewer, state=None, pos=-1):
-        from pype import findbar
-        win=findbar.FindBar(viewer.win,viewer,viewer.stc)
-        viewer.showBottomWindow(win)
+class ReplaceText(MinibufferAction):
+    name = "Replace..."
+    tooltip = "Replace a string in the text."
+    keyboard = 'F6'
+    minibuffer = ReplaceMinibuffer
+
+class GotoLine(MinibufferAction):
+    name = "Goto Line..."
+    tooltip = "Goto a line in the text."
+    keyboard = 'M-G'
+    minibuffer = FindMinibuffer
 
 
 
@@ -117,6 +140,10 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         self.debug_dnd=False
+
+    def CanEdit(self):
+        """PyPE compat"""
+        return True
 
     def OnDestroy(self, evt):
         # This is how the clipboard contents can be preserved after
@@ -212,6 +239,8 @@ class FundamentalView(View):
             [[('&Edit',0.1)],WordWrap,0.1],
             LineNumbers,
             FindText,
+            ReplaceText,
+            GotoLine,
             ],
         'keyboard_actions':[
             BeginningOfLine,

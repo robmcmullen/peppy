@@ -24,6 +24,30 @@ class ViewAction(FrameAction):
         self.action(self.frame.getCurrentViewer())
 
 
+class Minibuffer(object):
+    def __init__(self,viewer):
+        self.viewer=viewer
+        self.minibuffer(viewer)
+        
+    def minibuffer(self,viewer):
+        # set self.win to the minibuffer window
+        pass
+
+    def focus(self):
+        print "focus!!!"
+        self.win.SetFocus()
+    
+    def close(self):
+        self.win.Destroy()
+        self.win=None
+
+
+class MinibufferAction(ViewAction):
+    def action(self, viewer, state=None, pos=-1):
+        minibuffer=self.minibuffer(viewer)
+        print minibuffer.win
+        viewer.setMinibuffer(minibuffer)
+
 #### Icons
 
 class IconStorage(debugmixin):
@@ -91,7 +115,7 @@ class View(debugmixin,ClassSettingsMixin):
         self.win=None
         self.splitter=None
         self.editwin=None
-        self.bottomwin=None
+        self.minibuffer=None
         self.sidebar=None
         self.stc=BlankSTC
         self.buffer=buffer
@@ -130,31 +154,23 @@ class View(debugmixin,ClassSettingsMixin):
         self.stc.Show(False)
         return win
 
-    def addBottomWindow(self,win):
-        self.bottomwin=win
-        if self.bottomwin:
+    def setMinibuffer(self,minibuffer=None):
+        self.removeMinibuffer()
+        if minibuffer is not None:
+            self.minibuffer=minibuffer
             box=self.win.GetSizer()
-            box.Add(self.bottomwin,0,wx.EXPAND)
+            box.Add(self.minibuffer.win,0,wx.EXPAND)
             self.win.Layout()
+            self.minibuffer.win.Show()
+            self.minibuffer.focus()
 
-    def removeBottomWindow(self):
-        if self.bottomwin:
+    def removeMinibuffer(self):
+        if self.minibuffer is not None:
             box=self.win.GetSizer()
-            box.Detach(self.bottomwin)
+            box.Detach(self.minibuffer.win)
+            self.minibuffer.close()
+            self.minibuffer=None
             self.win.Layout()
-            self.bottomwin=None
-            self.focus()
-
-    def showBottomWindow(self,win=None,show=True):
-        if win is not None:
-            if self.bottomwin!=win:
-                self.removeBottomWindow()
-                self.addBottomWindow(win)
-        if self.bottomwin:
-            # some views will not allow a search window by overriding
-            # createBottomWindow to return None, so only show a search
-            # window if it exists.
-            self.bottomwin.Show(show)
 
     def reparent(self,parent):
         self.win.Reparent(parent)

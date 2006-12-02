@@ -12,6 +12,10 @@ from debug import *
 #### STC Interface
 
 class STCInterface(object):
+    def CanEdit(self):
+        # PyPE compat to show read-only status
+        return True
+    
     def CanPaste(self):
         return 0
 

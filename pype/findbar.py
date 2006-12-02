@@ -18,8 +18,8 @@ class OnCloseBar: #embedded callback to destroy the findbar on removal
         self.c = control
     def __call__(self, *args):
         self.c.savePreferences()
-        self.c.viewer.removeBottomWindow()
-        self.c.Destroy()
+        self.c.viewer.removeMinibuffer()
+        #self.c.Destroy()
         del self.c
 
 word = dict.fromkeys(map(ord, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'))
@@ -62,7 +62,7 @@ class ReplaceBar(wx.Panel):
             self.box1 = box1 = wx.ComboBox(self, -1, choices=prefs['find'], size=(125, -1), style=wx.TE_PROCESS_ENTER)
             if prefs['find']:
                 box1.SetStringSelection(prefs['find'][0])
-            box1.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         #box1.SetInsertionPoint(0)
         box1.Bind(wx.EVT_TEXT, self.OnChar)
         box1.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
@@ -316,6 +316,8 @@ class ReplaceBar(wx.Panel):
             evt.Skip()
     
     def OnSetFocus(self, evt):
+        print "OnSetFocus"
+        self.box1.SetFocus()
         self.box1.SetMark(0, self.box1.GetLastPosition())
         if evt:
             evt.Skip()
