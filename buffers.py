@@ -234,8 +234,8 @@ class Buffer(debugmixin):
         
 
 class Empty(Buffer):
-    def __init__(self,filename=None,viewer=View,fh=None):
-        Buffer.__init__(self,filename,viewer,fh,BlankSTC)
+    def __init__(self,filename=None,fh=None):
+        Buffer.__init__(self,filename,fh,BlankSTC,defaultviewer=View)
         self.name="(Empty)"
 
 

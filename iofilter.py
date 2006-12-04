@@ -2,6 +2,7 @@ import os
 
 from cStringIO import StringIO
 
+from trac.core import *
 from debug import *
 
 __all__ = [ 'GetIOFilter', 'SetAbout' ]
@@ -39,7 +40,16 @@ def SetAbout(filename,text):
 
 #### Loaders for reading files and populating the STC interface
 
-class Protocol(debugmixin):
+class IProtocol(Interface):
+    def getReader(filename):
+        """Returns a file-like object that can be used to read the
+        data using the given protocol."""
+
+    def getWriter(filename):
+        """Returns a file-like object that can be used to write the
+        data using the given protocol."""
+
+class Protocol(Component,debugmixin):
     debuglevel=0
     identifier=None
     
@@ -55,6 +65,7 @@ class Protocol(debugmixin):
         return filename
 
 class FileProtocol(Protocol):
+    implements(IProtocol)
     identifier='file'
     
     def getReader(self,filename):
@@ -68,6 +79,7 @@ class FileProtocol(Protocol):
         return fh
 
 class AboutProtocol(Protocol):
+    implements(IProtocol)
     identifier='about'
     
     def getReader(self,filename):
@@ -82,6 +94,7 @@ class AboutProtocol(Protocol):
         raise NotImplementedError
 
 class HTTPProtocol(Protocol):
+    implements(IProtocol)
     identifier='http'
     
     def getReader(self,filename):
@@ -90,13 +103,15 @@ class HTTPProtocol(Protocol):
     def getWriter(self,filename):
         raise NotImplementedError
 
-protocols=[AboutProtocol,HTTPProtocol,FileProtocol]
 
-def GetProtocolHandler(filename):
-    for protocol in protocols:
-        if protocol.isFilename(filename):
-            return protocol()
-    return FileProtocol()
+class ProtocolHandler(Component):
+    protocols=ExtensionPoint(IProtocol)
+
+    def find(self,filename):
+        for protocol in self.protocols:
+            if protocol.isFilename(filename):
+                return protocol
+        return FileProtocol(self.compmgr)
 
 
 
@@ -187,7 +202,9 @@ class FilterWrapper(debugmixin):
 
 
 def GetIOFilter(stc,filename):
-    protocol=GetProtocolHandler(filename)
+    comp_mgr=ComponentManager()
+    handler=ProtocolHandler(comp_mgr)
+    protocol=handler.find(filename)
     filter=BinaryFilter()
     return FilterWrapper(protocol,filter,filename,stc)
 
