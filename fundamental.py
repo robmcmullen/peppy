@@ -20,7 +20,7 @@ class OpenFundamental(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("demo.txt")
+        self.frame.open("about:demo.txt")
 
 class WordWrap(FrameToggle):
     name = "&Word Wrap"
@@ -126,109 +126,6 @@ class GotoLine(MinibufferAction):
 
 
 
-class MySTC(stc.StyledTextCtrl,debugmixin):
-    def __init__(self, parent, frame, ID=-1):
-        stc.StyledTextCtrl.__init__(self, parent, ID)
-        self.tabs=parent # this is the tabbed frame
-        self.frame=frame # this is the BufferFrame
-
-        self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
-        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
-        self.Bind(stc.EVT_STC_START_DRAG, self.OnStartDrag)
-        self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
-
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-
-        self.debug_dnd=False
-
-    def CanEdit(self):
-        """PyPE compat"""
-        return True
-
-    def OnDestroy(self, evt):
-        # This is how the clipboard contents can be preserved after
-        # the app has exited.
-        wx.TheClipboard.Flush()
-        evt.Skip()
-
-
-    def OnStartDrag(self, evt):
-        self.dprint("OnStartDrag: %d, %s\n"
-                       % (evt.GetDragAllowMove(), evt.GetDragText()))
-
-        if self.debug_dnd and evt.GetPosition() < 250:
-            evt.SetDragAllowMove(False)     # you can prevent moving of text (only copy)
-            evt.SetDragText("DRAGGED TEXT") # you can change what is dragged
-            #evt.SetDragText("")             # or prevent the drag with empty text
-
-
-    def OnDragOver(self, evt):
-        self.dprint(
-            "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
-            % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
-            )
-
-        if self.debug_dnd and evt.GetPosition() < 250:
-            evt.SetDragResult(wx.DragNone)   # prevent dropping at the beginning of the buffer
-
-
-    def OnDoDrop(self, evt):
-        self.dprint("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
-                       "\ttext: %s\n"
-                       % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
-                          evt.GetDragText()))
-
-        if self.debug_dnd and evt.GetPosition() < 500:
-            evt.SetDragText("DROPPED TEXT")  # Can change text if needed
-            #evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
-                                             # is probably better to do it in OnDragOver so
-                                             # there is visual feedback
-
-            #evt.SetPosition(25)             # Can also change position, but I'm not sure why
-                                             # you would want to...
-
-
-
-
-    def OnModified(self, evt):
-        self.dprint("""OnModified
-        Mod type:     %s
-        At position:  %d
-        Lines added:  %d
-        Text Length:  %d
-        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
-                                  evt.GetPosition(),
-                                  evt.GetLinesAdded(),
-                                  evt.GetLength(),
-                                  repr(evt.GetText()) ))
-
-
-    def transModType(self, modType):
-        st = ""
-        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
-                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
-                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
-                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
-                 (stc.STC_PERFORMED_USER, "UserFlag"),
-                 (stc.STC_PERFORMED_UNDO, "Undo"),
-                 (stc.STC_PERFORMED_REDO, "Redo"),
-                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
-                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
-                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
-                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
-                 ]
-
-        for flag,text in table:
-            if flag & modType:
-                st = st + text + " "
-
-        if not st:
-            st = 'UNKNOWN'
-
-        return st
-
-
-
 class FundamentalView(View):
     pluginkey = 'fundamental'
     keyword='Fundamental'
@@ -262,7 +159,7 @@ class FundamentalView(View):
         return win
 
     def createSTC(self,parent,style=False):
-        self.stc=MySTC(parent, self.frame)
+        self.stc=MySTC(parent)
         self.applyDefaultStyle()
         if style:
             self.styleSTC()

@@ -15,7 +15,7 @@ import wx
 
 from menudev import *
 from buffers import *
-
+from iofilter import SetAbout
 from debug import *
 
 # setup.py requires that these be defined, and the OnceAndOnlyOnce
@@ -31,7 +31,9 @@ __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "Python"
 
-
+SetAbout('title.txt',"%s %s\n%s" % ("peppy",__version__,__description__))
+SetAbout('alpha','')
+SetAbout('bravo','')
 
 class NewTab(FrameAction):
     name = "New &Tab"
@@ -65,7 +67,7 @@ class OpenAlpha(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("alpha")
+        self.frame.open("about:alpha")
 
 class OpenBravo(FrameAction):
     name = "&Open Bravo..."
@@ -74,7 +76,7 @@ class OpenBravo(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("bravo")
+        self.frame.open("about:bravo")
 
 class Close(FrameAction):
     name = "&Close"
@@ -230,19 +232,15 @@ class TitleView(View):
     pluginkey = 'title'
     keyword='Title'
     icon='icons/application.png'
-    regex="title"
+    regex="about:title.txt"
     temporary=True
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)
-        wx.StaticText(win, -1, self.buffer.name, (10,10))
+        text=self.buffer.stc.GetText()
+        wx.StaticText(win, -1, text, (10,10))
         return win
 
-
-class TitleBuffer(Buffer):
-    def __init__(self,filename=None,viewer=TitleView,fh=None):
-        Buffer.__init__(self,filename,viewer,fh,BlankSTC)
-        self.name="%s %s\n%s" % ("peppy",__version__,__description__)
 
 
 
@@ -273,11 +271,10 @@ class Peppy(BufferApp,ClassSettingsMixin):
         self.addGlobalKeys(global_keyboard_actions)
         self.registerViewer(AlphaView)
         self.registerViewer(BravoView)
+        self.registerViewer(TitleView)
 
         self.parseConfig()
 
-        self.titlebuffer=TitleBuffer()
-        
         return True
 
     def parseConfig(self):

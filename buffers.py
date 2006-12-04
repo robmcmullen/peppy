@@ -10,6 +10,7 @@ from cStringIO import StringIO
 
 from configprefs import *
 from stcinterface import *
+from iofilter import *
 from views import *
 from tabbedviewer import *
 from debug import *
@@ -17,6 +18,8 @@ from debug import *
 
 
 class BufferList(CategoryList):
+    debuglevel=0
+    
     name = "BufferListMenu"
     empty = "< list of buffers >"
     tooltip = "Show the buffer in the current frame"
@@ -107,48 +110,19 @@ class BufferList(CategoryList):
 
 
 
-fakefiles={}
-fakefiles['demo.txt'] = """\
-This editor is provided by a class named wx.StyledTextCtrl.  As
-the name suggests, you can define styles that can be applied to
-sections of text.  This will typically be used for things like
-syntax highlighting code editors, but I'm sure that there are other
-applications as well.  A style is a combination of font, point size,
-foreground and background colours.  The editor can handle
-proportional fonts just as easily as monospaced fonts, and various
-styles can use different sized fonts.
-
-There are a few canned language lexers and colourizers included,
-(see the next demo) or you can handle the colourization yourself.
-If you do you can simply register an event handler and the editor
-will let you know when the visible portion of the text needs
-styling.
-
-wx.StyledTextEditor also supports setting markers in the margin...
-
-
-
-
-...and indicators within the text.  You can use these for whatever
-you want in your application.  Cut, Copy, Paste, Drag and Drop of
-text works, as well as virtually unlimited Undo and Redo
-capabilities, (right click to try it out.)
-"""
-
-
 class Buffer(debugmixin):
     count=0
     debuglevel=0
 
     filenames={}
     
-    def __init__(self,filename=None,viewer=View,fh=None,mystc=None,stcparent=None):
+    def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultviewer=None):
         Buffer.count+=1
         self.fh=fh
-        self.defaultviewer=viewer
+        self.defaultviewer=defaultviewer
         self.setFilename(filename)
 
-        self.name="Buffer #%d: %s.  Default viewer=%s" % (self.count,str(self.filename),self.defaultviewer.keyword)
+        self.name="Buffer #%d: %s" % (self.count,str(self.filename))
 
         self.viewer=None
         self.viewers=[]
@@ -157,8 +131,7 @@ class Buffer(debugmixin):
 
         # always one STC per buffer
         if mystc==None:
-            ID=wx.NewId()
-            self.stc=stc.StyledTextCtrl(stcparent,ID)
+            self.stc=MySTC(stcparent)
         else:
             self.stc=mystc
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
@@ -214,46 +187,27 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def getReadFileObject(self):
+    def open(self,app):
         self.docptr=self.stc.CreateDocument()
         self.stc.SetDocPointer(self.docptr)
-        self.dprint("getReadFileObject: creating new document %s" % self.docptr)
-        if not self.fh:
-            try:
-                fh=open(self.filename,"rb")
-            except:
-                self.dprint("Couldn't open %s" % self.filename)
-                if self.filename in fakefiles:
-                    fh=StringIO()
-                    fh.write(fakefiles[self.filename])
-                    fh.seek(0)
-                else:
-                    fh=StringIO()
-                    fh.write("sample text for %s" % self.filename)
-                    fh.seek(0)
-            return fh
-        return self.fh
-    
-    def open(self):
-        self.defaultviewer.filter.read(self)
+        self.dprint("open: creating new document %s" % self.docptr)
+        filter=GetIOFilter(self.stc,self.filename)
+        filter.read()
+        # if no exceptions, it must have worked.
         self.modified=False
         self.stc.EmptyUndoBuffer()
 
-    def getWriteFileObject(self,filename):
-        if filename is None:
-            filename=self.filename
-        else:
-            # FIXME: need to handle the case when we would be
-            # overwriting an existing file with our new filename
-            pass
-        self.dprint("getWriteFileObject: saving to %s" % filename)
-        fh=open(filename,"wb")
-        return fh
-    
+        # FIXME: fix this so the app isn't necessary
+        if self.defaultviewer is None:
+            self.defaultviewer=app.getDefaultViewer(self.filename)
+
     def save(self,filename=None):
         self.dprint("Buffer: saving buffer %s" % (self.filename))
         try:
-            self.defaultviewer.filter.write(self,filename)
+            if filename is None:
+                filename=self.filename
+            filter=GetIOFilter(self.stc,filename)
+            filter.write()
             self.stc.SetSavePoint()
             if filename is not None:
                 self.setFilename(filename)
@@ -440,7 +394,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
             self.setViewer(newview)
 
     def titleBuffer(self):
-        self.newBuffer(self.app.titlebuffer)
+        self.open('about:title.txt')
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
@@ -456,11 +410,10 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.setTitle()
 
     def open(self,filename,newTab=True):
-        viewer=self.app.getDefaultViewer(filename)
-        buffer=Buffer(filename,viewer,stcparent=self.app.dummyframe)
+        buffer=Buffer(filename,stcparent=self.app.dummyframe)
         # probably should load the file here, and if it fails for some
         # reason, don't add to the buffer list.
-        buffer.open()
+        buffer.open(self.app)
         
         self.app.addBuffer(buffer)
         if newTab:

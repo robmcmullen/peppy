@@ -97,7 +97,6 @@ class View(debugmixin,ClassSettingsMixin):
     pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Unknown'
-    filter=TextFilter()
     temporary=False # True if it is a temporary view
     defaultsettings={
         'menu_actions':[],

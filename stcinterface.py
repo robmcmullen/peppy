@@ -70,78 +70,110 @@ BlankSTC=NullSTC()
 
 
 
-#### Loaders for reading files and populating the STC interface
 
-class Filter(debugmixin):
-    def __init__(self):
-        pass
+# FIXME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# remove all the Text/BinaryFilter stuff and put them as MySTC methods.  Load the file first, then determine the view based on the file info as well as the file name.
 
-    def read(self,buffer):
-        pass
 
-    def write(self,buffer):
-        return False
 
-class TextFilter(Filter):
-    def read(self,buffer):
-        fh=buffer.getReadFileObject()
-        txt=fh.read()
-        self.dprint("TextFilter: reading %d bytes" % len(txt))
-        buffer.stc.SetText(txt)
+class MySTC(stc.StyledTextCtrl,debugmixin):
+    def __init__(self, parent, ID=-1):
+        stc.StyledTextCtrl.__init__(self, parent, ID)
 
-    def write(self,buffer,filename):
-        fh=buffer.getWriteFileObject(filename)
-        txt=buffer.stc.GetText()
-        self.dprint("TextFilter: writing %d bytes" % len(txt))
-        try:
-            fh.write(txt)
-        except:
-            print "TextFilter: something went wrong writing to %s" % filename
-            raise
+        self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
+        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
+        self.Bind(stc.EVT_STC_START_DRAG, self.OnStartDrag)
+        self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
 
-class BinaryFilter(Filter):
-    def read(self,buffer):
-        fh=buffer.getReadFileObject()
-        txt=fh.read()
-        self.dprint("BinaryFilter: reading %d bytes" % len(txt))
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
-        # Now, need to convert it to two bytes per character
-        styledtxt='\0'.join(txt)+'\0'
-        self.dprint("styledtxt: length=%d" % len(styledtxt))
+        self.debug_dnd=False
 
-        buffer.stc.ClearAll()
-        buffer.stc.AddStyledText(styledtxt)
+    def CanEdit(self):
+        """PyPE compat"""
+        return True
 
-        length=buffer.stc.GetTextLength()
-        #wx.StaticText(self.win, -1, str(length), (0, 25))
+    def OnDestroy(self, evt):
+        # This is how the clipboard contents can be preserved after
+        # the app has exited.
+        wx.TheClipboard.Flush()
+        evt.Skip()
 
-        newtxt=buffer.stc.GetStyledText(0,length)
-        out=" ".join(["%02x" % ord(i) for i in txt])
-        self.dprint(out)
-        #wx.StaticText(self.win, -1, out, (20, 45))
 
-        errors=0
-        for i in range(len(txt)):
-            if newtxt[i*2]!=txt[i]:
-                self.dprint("error at: %d (%02x != %02x)" % (i,ord(newtxt[i*2]),ord(txt[i])))
-                errors+=1
-            if errors>50: break
-        self.dprint("errors=%d" % errors)
-    
-    def write(self,buffer,filename):
-        fh=buffer.getWriteFileObject(filename)
-        numchars=buffer.stc.GetTextLength()
-        # Have to use GetStyledText because GetText will truncate the
-        # string at the first zero character.
-        txt=buffer.stc.GetStyledText(0,numchars)[0:numchars*2:2]
-        self.dprint("BinaryFilter: writing %d bytes" % len(txt))
-        self.dprint(repr(txt))
-        try:
-            fh.write(txt)
-        except:
-            print "BinaryFilter: something went wrong writing to %s" % filename
-            raise
+    def OnStartDrag(self, evt):
+        self.dprint("OnStartDrag: %d, %s\n"
+                       % (evt.GetDragAllowMove(), evt.GetDragText()))
 
+        if self.debug_dnd and evt.GetPosition() < 250:
+            evt.SetDragAllowMove(False)     # you can prevent moving of text (only copy)
+            evt.SetDragText("DRAGGED TEXT") # you can change what is dragged
+            #evt.SetDragText("")             # or prevent the drag with empty text
+
+
+    def OnDragOver(self, evt):
+        self.dprint(
+            "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
+            % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
+            )
+
+        if self.debug_dnd and evt.GetPosition() < 250:
+            evt.SetDragResult(wx.DragNone)   # prevent dropping at the beginning of the buffer
+
+
+    def OnDoDrop(self, evt):
+        self.dprint("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
+                       "\ttext: %s\n"
+                       % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
+                          evt.GetDragText()))
+
+        if self.debug_dnd and evt.GetPosition() < 500:
+            evt.SetDragText("DROPPED TEXT")  # Can change text if needed
+            #evt.SetDragResult(wx.DragNone)  # Can also change the drag operation, but it
+                                             # is probably better to do it in OnDragOver so
+                                             # there is visual feedback
+
+            #evt.SetPosition(25)             # Can also change position, but I'm not sure why
+                                             # you would want to...
+
+
+
+
+    def OnModified(self, evt):
+        self.dprint("""OnModified
+        Mod type:     %s
+        At position:  %d
+        Lines added:  %d
+        Text Length:  %d
+        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
+                                  evt.GetPosition(),
+                                  evt.GetLinesAdded(),
+                                  evt.GetLength(),
+                                  repr(evt.GetText()) ))
+
+
+    def transModType(self, modType):
+        st = ""
+        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
+                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
+                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                 (stc.STC_PERFORMED_USER, "UserFlag"),
+                 (stc.STC_PERFORMED_UNDO, "Undo"),
+                 (stc.STC_PERFORMED_REDO, "Redo"),
+                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+                 ]
+
+        for flag,text in table:
+            if flag & modType:
+                st = st + text + " "
+
+        if not st:
+            st = 'UNKNOWN'
+
+        return st
 
 
 
