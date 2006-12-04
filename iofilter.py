@@ -43,9 +43,6 @@ class Protocol(debugmixin):
     debuglevel=0
     identifier=None
     
-    def __init__(self,filename):
-        self.filename=self.splitFilename(filename)
-
     @classmethod
     def isFilename(cls,filename):
         if filename.startswith(cls.identifier+':'):
@@ -60,37 +57,37 @@ class Protocol(debugmixin):
 class FileProtocol(Protocol):
     identifier='file'
     
-    def getReader(self):
-        self.dprint("getReader: trying to open %s" % self.filename)
-        fh=open(self.filename,"rb")
+    def getReader(self,filename):
+        self.dprint("getReader: trying to open %s" % filename)
+        fh=open(filename,"rb")
         return fh
 
-    def getWriter(self):
-        self.dprint("getWriter: trying to open %s" % self.filename)
+    def getWriter(self,filename):
+        self.dprint("getWriter: trying to open %s" % filename)
         fh=open(filename,"wb")
         return fh
 
 class AboutProtocol(Protocol):
     identifier='about'
     
-    def getReader(self):
-        if self.filename in aboutfiles:
+    def getReader(self,filename):
+        if filename in aboutfiles:
             fh=StringIO()
-            fh.write(aboutfiles[self.filename])
+            fh.write(aboutfiles[filename])
             fh.seek(0)
             return fh
         raise IOError
 
-    def getWriter(self):
+    def getWriter(self,filename):
         raise NotImplementedError
 
 class HTTPProtocol(Protocol):
     identifier='http'
     
-    def getReader(self):
+    def getReader(self,filename):
         raise NotImplementedError
         
-    def getWriter(self):
+    def getWriter(self,filename):
         raise NotImplementedError
 
 protocols=[AboutProtocol,HTTPProtocol,FileProtocol]
@@ -98,8 +95,8 @@ protocols=[AboutProtocol,HTTPProtocol,FileProtocol]
 def GetProtocolHandler(filename):
     for protocol in protocols:
         if protocol.isFilename(filename):
-            return protocol(filename)
-    return FileProtocol(filename)
+            return protocol()
+    return FileProtocol()
 
 
 
@@ -107,36 +104,32 @@ def GetProtocolHandler(filename):
 class IOFilter(debugmixin):
     debuglevel=0
     
-    def __init__(self,stc,protocol):
-        self.stc=stc
-        self.protocol=protocol
-
-    def read(self):
+    def read(self,protocol,filename):
         raise NotImplementedError
 
-    def write(self):
+    def write(self,protocol,filename):
         raise NotImplementedError
 
 class TextFilter(IOFilter):
-    def read(self):
-        fh=self.protocol.getReader()
+    def read(self,protocol,filename,stc):
+        fh=protocol.getReader(filename)
         txt=fh.read()
         self.dprint("TextFilter: reading %d bytes" % len(txt))
-        self.stc.SetText(txt)
+        stc.SetText(txt)
 
-    def write(self):
-        fh=self.protocol.getWriter()
-        txt=self.stc.GetText()
+    def write(self,protocol,filename,stc):
+        fh=protocol.getWriter(filename)
+        txt=stc.GetText()
         self.dprint("TextFilter: writing %d bytes" % len(txt))
         try:
             fh.write(txt)
         except:
-            print "TextFilter: something went wrong writing to %s" % self.protocol.filename
+            print "TextFilter: something went wrong writing to %s" % filename
             raise
 
 class BinaryFilter(IOFilter):
-    def read(self):
-        fh=self.protocol.getReader()
+    def read(self,protocol,filename,stc):
+        fh=protocol.getReader(filename)
         txt=fh.read()
         self.dprint("BinaryFilter: reading %d bytes" % len(txt))
 
@@ -144,16 +137,14 @@ class BinaryFilter(IOFilter):
         styledtxt='\0'.join(txt)+'\0'
         self.dprint("styledtxt: length=%d" % len(styledtxt))
 
-        self.stc.ClearAll()
-        self.stc.AddStyledText(styledtxt)
+        stc.ClearAll()
+        stc.AddStyledText(styledtxt)
 
-        length=self.stc.GetTextLength()
-        #wx.StaticText(self.win, -1, str(length), (0, 25))
+        length=stc.GetTextLength()
 
-        newtxt=self.stc.GetStyledText(0,length)
+        newtxt=stc.GetStyledText(0,length)
         out=" ".join(["%02x" % ord(i) for i in txt])
         self.dprint(out)
-        #wx.StaticText(self.win, -1, out, (20, 45))
 
         errors=0
         for i in range(len(txt)):
@@ -163,27 +154,42 @@ class BinaryFilter(IOFilter):
             if errors>50: break
         self.dprint("errors=%d" % errors)
     
-    def write(self):
-        fh=self.protocol.getWriter()
-        numchars=self.stc.GetTextLength()
+    def write(self,protocol,filename,stc):
+        fh=protocol.getWriter(filename)
+        numchars=stc.GetTextLength()
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
-        txt=self.stc.GetStyledText(0,numchars)[0:numchars*2:2]
+        txt=stc.GetStyledText(0,numchars)[0:numchars*2:2]
         self.dprint("BinaryFilter: writing %d bytes" % len(txt))
         self.dprint(repr(txt))
         try:
             fh.write(txt)
         except:
-            print "BinaryFilter: something went wrong writing to %s" % self.protocol.filename
+            print "BinaryFilter: something went wrong writing to %s" % filename
             raise
 
 
 
+#### Filter wrappers that combine Protocols and Filters
+
+class FilterWrapper(debugmixin):
+    def __init__(self,protocol,filter,filename,stc):
+        self.protocol=protocol
+        self.filter=filter
+        self.filename=protocol.splitFilename(filename)
+        self.stc=stc
+
+    def read(self):
+        return self.filter.read(self.protocol,self.filename,self.stc)
+
+    def write(self):
+        return self.filter.write(self.protocol,self.filename,self.stc)
+
 
 def GetIOFilter(stc,filename):
     protocol=GetProtocolHandler(filename)
-    filter=BinaryFilter(stc,protocol)
-    return filter
+    filter=BinaryFilter()
+    return FilterWrapper(protocol,filter,filename,stc)
 
 
 if __name__ == "__main__":

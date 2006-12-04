@@ -122,7 +122,7 @@ class View(debugmixin,ClassSettingsMixin):
         self.popup=None
 
     def __del__(self):
-        print "deleting %s %s" % (self.__class__.__name__,self.getTabName())
+        dprint("deleting %s %s" % (self.__class__.__name__,self.getTabName()))
 
     # If there is no title, return the keyword
     def getTitle(self):
