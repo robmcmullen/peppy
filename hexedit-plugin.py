@@ -627,7 +627,7 @@ class HexEditView(FundamentalView):
     pluginkey = 'hexedit'
     keyword='HexEdit'
     icon='icons/tux.png'
-    regex="\.(hex|bin|so|dat|ico|emf)"
+    regex="\.(hex|bin|so|dat|ico|emf|png)"
 
     debuglevel=0
 
@@ -741,6 +741,14 @@ global_menu_actions=[
 ##    [OpenHexEditor,0.1],
 ##    ]
 
-viewers=[
-    HexEditView,
-    ]
+class ViewFactory(Component,debugmixin):
+    implements(IViewFactory)
+
+    def viewScore(self,buffer):
+        match=re.search(HexEditView.regex,buffer.filename)
+        if match:
+            return 100
+        return 1
+
+    def getView(self,buffer):
+        return HexEditView

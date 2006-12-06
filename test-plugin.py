@@ -63,14 +63,15 @@ global_menu_actions=[
     [[('&File',0.0)],OpenCharlie,0.2],
 ]
 
-viewers=[
-    CharlieView,
-    ]
 
+class ViewFactory(Component,debugmixin):
+    implements(IViewFactory)
 
-if __name__ == "__main__":
-    app=testapp(0)
-    frame=RootFrame(app.main)
-    frame.Show(True)
-    app.MainLoop()
+    def viewScore(self,buffer):
+        match=re.search(CharlieView.regex,buffer.filename)
+        if match:
+            return 100
+        return 1
 
+    def getView(self,buffer):
+        return CharlieView

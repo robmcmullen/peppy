@@ -80,29 +80,6 @@ class BufferList(CategoryList):
         self.frame.setBuffer(self.itemlist[pos]['item'])
 
 
-    def getDefaultViewer(self, filename):
-        choices=[]
-        for viewer in self.viewers:
-            self.dprint("checking viewer %s regex=%s" % (str(viewer),viewer.regex))
-            match=re.search(viewer.regex,filename)
-            if match:
-                choices.append(viewer)
-        if len(choices)==0:
-            viewer=View
-        elif len(choices)>1:
-            viewer=choices[0]
-            self.dprint("chosing %s out of %d viewers" % (str(viewer),len(choices)))
-        else:
-            viewer=choices[0]
-
-        self.dprint("loading buffer %s with %s" % (filename,str(viewer)))
-        return viewer
-
-    def registerViewer(self,viewer):
-        self.viewers.append(viewer)
-        self.dprint(self.viewers)
-
-
 
 
 
@@ -187,7 +164,7 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self,app):
+    def open(self):
         self.docptr=self.stc.CreateDocument()
         self.stc.SetDocPointer(self.docptr)
         self.dprint("open: creating new document %s" % self.docptr)
@@ -197,9 +174,8 @@ class Buffer(debugmixin):
         self.modified=False
         self.stc.EmptyUndoBuffer()
 
-        # FIXME: fix this so the app isn't necessary
         if self.defaultviewer is None:
-            self.defaultviewer=app.getDefaultViewer(self.filename)
+            self.defaultviewer=GetView(self)
 
     def save(self,filename=None):
         self.dprint("Buffer: saving buffer %s" % (self.filename))
@@ -394,7 +370,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
             self.setViewer(newview)
 
     def titleBuffer(self):
-        self.open('about:title.txt')
+        self.open('about:title.txt',viewer=View)
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)
@@ -409,11 +385,11 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.getCurrentViewer().focus()
         self.setTitle()
 
-    def open(self,filename,newTab=True):
-        buffer=Buffer(filename,stcparent=self.app.dummyframe)
+    def open(self,filename,newTab=True,viewer=None):
+        buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultviewer=viewer)
         # probably should load the file here, and if it fails for some
         # reason, don't add to the buffer list.
-        buffer.open(self.app)
+        buffer.open()
         
         self.app.addBuffer(buffer)
         if newTab:
@@ -528,12 +504,6 @@ class BufferApp(wx.App,debugmixin):
 
         self.errors=[]
 
-    def getDefaultViewer(self,filename):
-        return self.buffers.getDefaultViewer(filename)
-
-    def registerViewer(self,cls):
-        self.buffers.registerViewer(cls)
-
     def addBuffer(self,buffer):
         self.buffers.append(buffer)
         self.rebuildMenus()
@@ -606,10 +576,6 @@ class BufferApp(wx.App,debugmixin):
 
     def loadPlugin(self, mod):
         self.dprint("loading plugins from module=%s" % str(mod))
-        if 'viewers' in mod.__dict__:
-            self.dprint("found viewers: %s" % mod.viewers)
-            for viewer in mod.viewers:
-                self.registerViewer(viewer)
         if 'global_menu_actions' in mod.__dict__:
             self.dprint("found menu actions: %s" % mod.global_menu_actions)
             self.addGlobalMenu(mod.global_menu_actions)

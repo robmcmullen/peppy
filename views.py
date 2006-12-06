@@ -6,7 +6,7 @@ import wx.stc as stc
 from menudev import FrameAction
 from stcinterface import *
 from configprefs import *
-
+from trac.core import *
 from debug import *
 
 
@@ -149,8 +149,8 @@ class View(debugmixin,ClassSettingsMixin):
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)
         win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
-        self.stc=stc.StyledTextCtrl(self.win,-1)
-        self.stc.Show(False)
+        text=self.buffer.stc.GetText()
+        wx.StaticText(win, -1, text, (10,10))
         return win
 
     def setMinibuffer(self,minibuffer=None):
@@ -234,6 +234,53 @@ class View(debugmixin,ClassSettingsMixin):
     def showModified(self,modified):
         self.frame.showModified(self)
         self.frame.enableMenu()
+
+
+
+class IViewFactory(Interface):
+    def viewScore(buffer):
+        """Return a number between 0 and 100 that represents the
+        ability of the view to render the information in the buffer.
+        0 = incapable of rendering, 100 = don't look any further
+        because this is the one.  The greater the number, the more
+        specific the renderer.  So, a renderer that just shows
+        information about the file might have a score of 1; a generic
+        text renderer might have a score of 10; and a python renderer
+        for python text has a score of 100."""
+
+    def getView(buffer):
+        """Return the class that represents this view."""
+
+class ViewFactory(Component):
+    implements(IViewFactory)
+
+    def viewScore(self,buffer):
+        return 1
+
+    def getView(self,buffer):
+        return View
+
+class ViewFinder(Component,debugmixin):
+    debuglevel=1
+    factories=ExtensionPoint(IViewFactory)
+
+    def find(self,buffer):
+        best=None
+        bestscore=0
+        for factory in self.factories:
+            score=factory.viewScore(buffer)
+            self.dprint("factory %s: score=%d" % (factory,score))
+            if score>bestscore:
+                best=factory.getView(buffer)
+                bestscore=score
+        return best
+
+def GetView(buffer):
+    comp_mgr=ComponentManager()
+    finder=ViewFinder(comp_mgr)
+    view=finder.find(buffer)
+    return view
+
 
 
 if __name__ == "__main__":

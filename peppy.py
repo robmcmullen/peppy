@@ -269,9 +269,6 @@ class Peppy(BufferApp,ClassSettingsMixin):
         self.addGlobalMenu(global_menu_actions)
         self.addGlobalToolbar(global_toolbar_actions)
         self.addGlobalKeys(global_keyboard_actions)
-        self.registerViewer(AlphaView)
-        self.registerViewer(BravoView)
-        self.registerViewer(TitleView)
 
         self.parseConfig()
 
@@ -356,6 +353,21 @@ global_toolbar_actions=[
 
 global_keyboard_actions=[]
 
+
+class ViewFactory(Component):
+    implements(IViewFactory)
+
+    def viewScore(self,buffer):
+        if buffer.filename in ['about:alpha','about:bravo','about:title.txt']:
+            return 100
+        return 1
+
+    def getView(self,buffer):
+        if buffer.filename=='about:title.txt':
+            return TitleView
+        if buffer.filename=='about:alpha':
+            return AlphaView
+        return BravoView
 
 
 

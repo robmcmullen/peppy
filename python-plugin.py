@@ -7,6 +7,8 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 
+from views import *
+from trac.core import *
 from fundamental import FundamentalView
 
 from debug import *
@@ -347,6 +349,13 @@ global_menu_actions=[
     [[('&Edit',0.1)],PythonMajorMode,0.9],
 ]
 
-viewers=[
-    PythonView,
-    ]
+class ViewFactory(Component,debugmixin):
+    implements(IViewFactory)
+
+    def viewScore(self,buffer):
+        if buffer.filename.endswith('.py'):
+            return 100
+        return 0
+
+    def getView(self,buffer):
+        return PythonView

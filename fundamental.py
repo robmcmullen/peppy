@@ -6,7 +6,7 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 from views import *
-
+from trac.core import *
 from debug import *
 
 
@@ -231,9 +231,15 @@ global_menu_actions=[
     [[('&File',0.0)],OpenFundamental,0.2],
 ]
 
-viewers=[
-    FundamentalView,
-    ]
+
+class ViewFactory(Component,debugmixin):
+    implements(IViewFactory)
+
+    def viewScore(self,buffer):
+        return 2
+
+    def getView(self,buffer):
+        return FundamentalView
 
 
 if __name__ == "__main__":
