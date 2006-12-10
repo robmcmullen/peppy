@@ -1,8 +1,9 @@
-import os
+import os,re
 
 from cStringIO import StringIO
 
 from trac.core import *
+from plugin import *
 from debug import *
 
 __all__ = [ 'GetIOFilter', 'SetAbout' ]
@@ -38,79 +39,79 @@ capabilities, (right click to try it out.)
 def SetAbout(filename,text):
     aboutfiles[filename]=text
 
+class URLInfo(object):
+    def __init__(self,url):
+        self.url=url
+        match=re.match(r'([a-zA-Z\+]+):(//)?(.+)',url)
+        if match:
+            self.protocol=match.group(1)
+            self.filename=match.group(3)
+        else:
+            self.protocol=None
+            self.filename=self.url
+
+    def __str__(self):
+        return "%s (protocol=%s file=%s)" % (self.url,self.protocol,self.filename)
+            
+
 #### Loaders for reading files and populating the STC interface
 
-class IProtocol(Interface):
-    def getReader(filename):
-        """Returns a file-like object that can be used to read the
-        data using the given protocol."""
+class FileProtocol(Component,debugmixin):
+    implements(ProtocolPlugin)
 
-    def getWriter(filename):
-        """Returns a file-like object that can be used to write the
-        data using the given protocol."""
-
-class Protocol(Component,debugmixin):
-    debuglevel=0
-    identifier=None
+    def supportedProtocols(self):
+        return ['file']
     
-    @classmethod
-    def isFilename(cls,filename):
-        if filename.startswith(cls.identifier+':'):
-            return True
-        return False
-
-    def splitFilename(self,filename):
-        if self.isFilename(filename):
-            return filename[len(self.identifier)+1:]
-        return filename
-
-class FileProtocol(Protocol):
-    implements(IProtocol)
-    identifier='file'
-    
-    def getReader(self,filename):
-        self.dprint("getReader: trying to open %s" % filename)
-        fh=open(filename,"rb")
+    def getReader(self,urlinfo):
+        self.dprint("getReader: trying to open %s" % urlinfo.filename)
+        fh=open(urlinfo.filename,"rb")
         return fh
 
-    def getWriter(self,filename):
-        self.dprint("getWriter: trying to open %s" % filename)
-        fh=open(filename,"wb")
+    def getWriter(self,urlinfo):
+        self.dprint("getWriter: trying to open %s" % urlinfo.filename)
+        fh=open(urlinfo.filename,"wb")
         return fh
 
-class AboutProtocol(Protocol):
-    implements(IProtocol)
-    identifier='about'
+class AboutProtocol(Component,debugmixin):
+    implements(ProtocolPlugin)
+
+    def supportedProtocols(self):
+        return ['about']
     
-    def getReader(self,filename):
-        if filename in aboutfiles:
+    def getReader(self,urlinfo):
+        if urlinfo.filename in aboutfiles:
             fh=StringIO()
-            fh.write(aboutfiles[filename])
+            fh.write(aboutfiles[urlinfo.filename])
             fh.seek(0)
             return fh
         raise IOError
 
-    def getWriter(self,filename):
+    def getWriter(self,urlinfo):
         raise NotImplementedError
 
-class HTTPProtocol(Protocol):
-    implements(IProtocol)
-    identifier='http'
+class HTTPProtocol(Component,debugmixin):
+    implements(ProtocolPlugin)
+
+    def supportedProtocols(self):
+        return ['http','https']
     
-    def getReader(self,filename):
-        raise NotImplementedError
+    def getReader(self,urlinfo):
+        import urllib2
+
+        fh=urllib2.urlopen(urlinfo.url)
+        return fh
         
-    def getWriter(self,filename):
+    def getWriter(self,urlinfo):
         raise NotImplementedError
 
 
 class ProtocolHandler(Component):
-    protocols=ExtensionPoint(IProtocol)
+    handlers=ExtensionPoint(ProtocolPlugin)
 
-    def find(self,filename):
-        for protocol in self.protocols:
-            if protocol.isFilename(filename):
-                return protocol
+    def find(self,protoidentifier):
+        for handler in self.handlers:
+            if protoidentifier in handler.supportedProtocols():
+                return handler
         return FileProtocol(self.compmgr)
 
 
@@ -129,13 +130,13 @@ class TextFilter(IOFilter):
     def read(self,protocol,filename,stc):
         fh=protocol.getReader(filename)
         txt=fh.read()
-        self.dprint("TextFilter: reading %d bytes" % len(txt))
+        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt),filename))
         stc.SetText(txt)
 
     def write(self,protocol,filename,stc):
         fh=protocol.getWriter(filename)
         txt=stc.GetText()
-        self.dprint("TextFilter: writing %d bytes" % len(txt))
+        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt),filename))
         try:
             fh.write(txt)
         except:
@@ -143,10 +144,10 @@ class TextFilter(IOFilter):
             raise
 
 class BinaryFilter(IOFilter):
-    def read(self,protocol,filename,stc):
-        fh=protocol.getReader(filename)
+    def read(self,protocol,urlinfo,stc):
+        fh=protocol.getReader(urlinfo)
         txt=fh.read()
-        self.dprint("BinaryFilter: reading %d bytes" % len(txt))
+        self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt),urlinfo))
 
         # Now, need to convert it to two bytes per character
         styledtxt='\0'.join(txt)+'\0'
@@ -169,18 +170,18 @@ class BinaryFilter(IOFilter):
             if errors>50: break
         self.dprint("errors=%d" % errors)
     
-    def write(self,protocol,filename,stc):
-        fh=protocol.getWriter(filename)
+    def write(self,protocol,urlinfo,stc):
+        fh=protocol.getWriter(urlinfo)
         numchars=stc.GetTextLength()
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
         txt=stc.GetStyledText(0,numchars)[0:numchars*2:2]
-        self.dprint("BinaryFilter: writing %d bytes" % len(txt))
+        self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt),urlinfo))
         self.dprint(repr(txt))
         try:
             fh.write(txt)
         except:
-            print "BinaryFilter: something went wrong writing to %s" % filename
+            print "BinaryFilter: something went wrong writing to %s" % urlinfo
             raise
 
 
@@ -188,25 +189,26 @@ class BinaryFilter(IOFilter):
 #### Filter wrappers that combine Protocols and Filters
 
 class FilterWrapper(debugmixin):
-    def __init__(self,protocol,filter,filename,stc):
+    def __init__(self,protocol,filter,info,stc):
         self.protocol=protocol
         self.filter=filter
-        self.filename=protocol.splitFilename(filename)
+        self.urlinfo=info
         self.stc=stc
 
     def read(self):
-        return self.filter.read(self.protocol,self.filename,self.stc)
+        return self.filter.read(self.protocol,self.urlinfo,self.stc)
 
     def write(self):
-        return self.filter.write(self.protocol,self.filename,self.stc)
+        return self.filter.write(self.protocol,self.urlinfo,self.stc)
 
 
 def GetIOFilter(stc,filename):
     comp_mgr=ComponentManager()
     handler=ProtocolHandler(comp_mgr)
-    protocol=handler.find(filename)
+    info=URLInfo(filename)
+    protocol=handler.find(info.protocol)
     filter=BinaryFilter()
-    return FilterWrapper(protocol,filter,filename,stc)
+    return FilterWrapper(protocol,filter,info,stc)
 
 
 if __name__ == "__main__":

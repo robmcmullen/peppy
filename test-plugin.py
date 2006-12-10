@@ -64,14 +64,20 @@ global_menu_actions=[
 ]
 
 
-class ViewFactory(Component,debugmixin):
-    implements(IViewFactory)
+class CharliePlugin(Component,debugmixin):
+    implements(ViewPlugin)
 
-    def viewScore(self,buffer):
-        match=re.search(CharlieView.regex,buffer.filename)
+    def scanEmacs(self,emacsmode,vars):
+        return None
+
+    def scanShell(self,bangpath):
+        return None
+
+    def scanFilename(self,filename):
+        match=re.search(CharlieView.regex,filename)
         if match:
-            return 100
-        return 1
-
-    def getView(self,buffer):
-        return CharlieView
+            return ViewMatch(CharlieView,exact=True)
+        return None
+    
+    def scanMagic(self,buffer):
+        return None

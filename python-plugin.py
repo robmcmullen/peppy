@@ -8,7 +8,7 @@ from menudev import *
 from buffers import *
 
 from views import *
-from trac.core import *
+from plugin import *
 from fundamental import FundamentalView
 
 from debug import *
@@ -349,13 +349,23 @@ global_menu_actions=[
     [[('&Edit',0.1)],PythonMajorMode,0.9],
 ]
 
-class ViewFactory(Component,debugmixin):
-    implements(IViewFactory)
+class PythonPlugin(Component,debugmixin):
+    implements(ViewPlugin)
 
-    def viewScore(self,buffer):
-        if buffer.filename.endswith('.py'):
-            return 100
-        return 0
+    def scanEmacs(self,emacsmode,vars):
+        if emacsmode in ['python',PythonView.keyword]:
+            return ViewMatch(PythonView,exact=True)
+        return None
 
-    def getView(self,buffer):
-        return PythonView
+    def scanShell(self,bangpath):
+        if bangpath.find('python')>-1:
+            return ViewMatch(PythonView,exact=True)
+        return None
+
+    def scanFilename(self,filename):
+        if filename.endswith('.py'):
+            return ViewMatch(PythonView,exact=True)
+        return None
+    
+    def scanMagic(self,buffer):
+        return None

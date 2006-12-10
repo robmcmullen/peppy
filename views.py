@@ -1,4 +1,4 @@
-import os,re
+import os,sys,re
 
 import wx
 import wx.stc as stc
@@ -6,7 +6,7 @@ import wx.stc as stc
 from menudev import FrameAction
 from stcinterface import *
 from configprefs import *
-from trac.core import *
+from plugin import *
 from debug import *
 
 
@@ -122,7 +122,8 @@ class View(debugmixin,ClassSettingsMixin):
         self.popup=None
 
     def __del__(self):
-        dprint("deleting %s %s" % (self.__class__.__name__,self.getTabName()))
+        dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
+        dprint("deleting %s: %s" % (self.__class__.__name__,self.getTabName()))
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -237,52 +238,197 @@ class View(debugmixin,ClassSettingsMixin):
 
 
 
-class IViewFactory(Interface):
-    def viewScore(buffer):
-        """Return a number between 0 and 100 that represents the
-        ability of the view to render the information in the buffer.
-        0 = incapable of rendering, 100 = don't look any further
-        because this is the one.  The greater the number, the more
-        specific the renderer.  So, a renderer that just shows
-        information about the file might have a score of 1; a generic
-        text renderer might have a score of 10; and a python renderer
-        for python text has a score of 100."""
 
-    def getView(buffer):
-        """Return the class that represents this view."""
 
-class ViewFactory(Component):
-    implements(IViewFactory)
+class ViewPluginDriver(Component,debugmixin):
+    debuglevel=0
+    plugins=ExtensionPoint(ViewPlugin)
 
-    def viewScore(self,buffer):
-        return 1
+    def parseEmacs(self,line):
+        """
+        Parse a potential emacs major mode specifier line into the
+        mode and the optional variables.  The mode may appears as any
+        of::
 
-    def getView(self,buffer):
-        return View
+          -*-C++-*-
+          -*- mode: Python; -*-
+          -*- mode: Ksh; var1:value1; var3:value9; -*-
 
-class ViewFinder(Component,debugmixin):
-    debuglevel=1
-    factories=ExtensionPoint(IViewFactory)
+        @param line: first or second line in text file
+        @type line: string
+        @return: two-tuple of the mode and a dict of the name/value pairs.
+        @rtype: tuple
+        """
+        match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
+        if match:
+            vars={}
+            varstring=match.group(5)
+            if varstring:
+                try:
+                    for nameval in varstring.split(';'):
+                        s=nameval.strip()
+                        if s:
+                            name,val=s.split(':')
+                            vars[name.strip()]=val.strip()
+                except:
+                    pass
+            if match.group(2):
+                return (match.group(2),vars)
+            elif match.group(3):
+                return (match.group(3),vars)
+        return None
 
     def find(self,buffer):
+        """
+        Determine the best possible L{View} subclass for the given
+        buffer.  See L{ViewPlugin} for more information on designing
+        plugins that this method uses.
+
+        Emacs-style major mode strings are searched for first, and if
+        a match is found, immediately returns that View.  Bangpath
+        lines are then searched, also returning immediately if
+        identified.
+
+        If neither of those cases match, a more complicated search
+        procedure is used.  If a filename match is determined to be an
+        exact match, that View is used.  But, if the filename match is
+        only a generic match, searching continues.  Magic values
+        within the file are checked, and again if an exact match is
+        found the View is returned.
+
+        If only generic matches are left, 
+
+        """
+        
+        bangpath=buffer.stc.GetLine(0)
+        if bangpath.startswith('#!'):
+            emacs=self.parseEmacs(bangpath + buffer.stc.GetLine(1))
+        else:
+            emacs=self.parseEmacs(bangpath)
+            bangpath=None
+        self.dprint("bangpath=%s" % bangpath)
+        self.dprint("emacs=%s" % emacs)
         best=None
-        bestscore=0
-        for factory in self.factories:
-            score=factory.viewScore(buffer)
-            self.dprint("factory %s: score=%d" % (factory,score))
-            if score>bestscore:
-                best=factory.getView(buffer)
-                bestscore=score
-        return best
+        generics=[]
+        if emacs is not None:
+            for plugin in self.plugins:
+                best=plugin.scanEmacs(*emacs)
+                if best is not None:
+                    if best.exact:
+                        return best.view
+                    else:
+                        self.dprint("scanEmacs: appending generic %s" % best.view)
+                        generics.append(best)
+        if bangpath is not None:
+            for plugin in self.plugins:
+                best=plugin.scanShell(bangpath)
+                if best is not None:
+                    if best.exact:
+                        return best.view
+                    else:
+                        self.dprint("scanShell: appending generic %s" % best.view)
+                        generics.append(best)
+        for plugin in self.plugins:
+            best=plugin.scanFilename(buffer.filename)
+            if best is not None:
+                if best.exact:
+                    return best.view
+                else:
+                    self.dprint("scanFilename: appending generic %s" % best.view)
+                    generics.append(best)
+        for plugin in self.plugins:
+            best=plugin.scanMagic(buffer)
+            if best is not None:
+                if best.exact:
+                    return best.view
+                else:
+                    self.dprint("scanMagic: appending generic %s" % best.view)
+                    generics.append(best)
+        if generics:
+            self.dprint("Choosing from generics: %s" % [g.view for g in generics])
+            return generics[0].view
+        else:
+            return FundamentalView
 
 def GetView(buffer):
     comp_mgr=ComponentManager()
-    finder=ViewFinder(comp_mgr)
-    view=finder.find(buffer)
+    driver=ViewPluginDriver(comp_mgr)
+    view=driver.find(buffer)
     return view
 
 
 
 if __name__ == "__main__":
-    pass
+    import unittest
 
+    class TestEmacsMode(unittest.TestCase):
+        def setUp(self):
+            comp_mgr=ComponentManager()
+            self.driver=ViewPluginDriver(comp_mgr)
+
+        def testMode(self):
+            test=self.driver.parseEmacs
+            self.assertEquals(None,test('#!/nothing/here'))
+            self.assertEquals('C++',test('-*-C++-*-')[0])
+            self.assertEquals('C++',test('-*- C++ -*-')[0])
+            self.assertEquals('C++',test('-*-C++ -*-')[0])
+            self.assertEquals('C++',test('-*-  C++-*-')[0])
+            self.assertEquals('C++',test('#!/nothing/here -*-C++-*-')[0])
+            self.assertEquals('C++',test('#!/nothing/here\n-*-C++-*-')[0])
+            self.assertEquals('Python',test('#!/nothing/here\n-*-Python-*-')[0])
+            
+        def testModeNoVars(self):
+            test=self.driver.parseEmacs
+            self.assertEquals(None,test('#!/nothing/here'))
+            self.assertEquals('C++',test('-*-mode:C++-*-')[0])
+            self.assertEquals('C++',test('-*- mode:C++-*-')[0])
+            self.assertEquals('C++',test('-*- mode:C++  -*-')[0])
+            self.assertEquals('C++',test('#!/nothing/here -*-mode:C++-*-')[0])
+            self.assertEquals('C++',test('#!/nothing/here\n  -*-   mode:C++  -*-')[0])
+            self.assertEquals('Python',test('-*- mode:Python-*-')[0])
+            
+        def testModeVars(self):
+            test=self.driver.parseEmacs
+            self.assertEquals(None,test('#!/nothing/here'))
+            modestring='-*-mode:C++; var1:val1-*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            modestring='-*-mode:C++; var1:val1; var2:val2;-*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            modestring='-*- mode:C++; var1:val1; var2:val2-*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            modestring='-*- mode:C++ ; var1:val1; var2:val2 -*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            modestring='#!/nothing/here -*-mode:C++; var1:val1; var2:val2-*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            modestring='#!/nothing/here -*-   mode:C++  ; var1:val1; var2:val2;  -*-'
+            self.assertEquals('C++',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            modestring='-*- mode:Python; var1:val1; var2:val2; -*-'
+            self.assertEquals('Python',test(modestring)[0])
+            self.assertEquals('val1',test(modestring)[1]['var1'])
+            self.assertEquals('val2',test(modestring)[1]['var2'])
+            
+            
+    suite=[]
+    for clsname in dir():
+        try:
+            cls=eval("%s" % clsname)
+            #print clsname,cls,issubclass(cls,unittest.TestCase)
+            if issubclass(cls,unittest.TestCase):
+                suite.append(unittest.makeSuite(cls))
+        except TypeError:
+            #print "not a test class."
+            pass
+    runner=unittest.TextTestRunner()
+    result = runner.run(unittest.TestSuite(suite))
+    sys.exit(not result.wasSuccessful())

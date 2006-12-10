@@ -741,14 +741,28 @@ global_menu_actions=[
 ##    [OpenHexEditor,0.1],
 ##    ]
 
-class ViewFactory(Component,debugmixin):
-    implements(IViewFactory)
+class HexEditPlugin(Component,debugmixin):
+    implements(ViewPlugin)
+    
+    def scanEmacs(self,emacsmode,vars):
+        if emacsmode in ['hexl',HexEditView.keyword]:
+            return ViewMatch(HexEditView,exact=True)
+        return None
 
-    def viewScore(self,buffer):
-        match=re.search(HexEditView.regex,buffer.filename)
+    def scanShell(self,bangpath):
+        return None
+
+    def scanFilename(self,filename):
+        match=re.search(HexEditView.regex,filename)
         if match:
-            return 100
-        return 1
-
-    def getView(self,buffer):
-        return HexEditView
+            return ViewMatch(HexEditView,exact=True)
+        return None
+    
+    def scanMagic(self,buffer):
+        """
+        If the buffer looks like it is a binary file, flag it as a
+        potential HexEditView.
+        """
+        if buffer.guessBinary:
+            return ViewMatch(HexEditView,generic=True)
+        return None

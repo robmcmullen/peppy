@@ -119,7 +119,7 @@ def parsedocstring(infile):
         if line.find('"""')>=0: count+=1
         doc.write(line)
     unparsed=fh.read()
-    t=Template(txt)
+    t=Template(doc.getvalue())
     out=t.safe_substitute(namespace)
     return out+unparsed
 

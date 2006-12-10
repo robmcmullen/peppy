@@ -7,6 +7,15 @@ This is a wxPython/Scintilla-based editor written in and extensible
 through Python. It attempts to provide an XEmacs-like multi-window,
 multi-tabbed interface.
 
+Plugins
+=======
+
+There are currently two plugin types that can be used to extend peppy:
+L{ProtocolPlugin<plugin.ProtocolPlugin>}s and
+L{ViewPlugin<plugin.ViewPlugin>}s.
+
+@author: $author
+@version: $version
 """
 
 import os,os.path,sys,re,time,commands,glob,random
@@ -354,20 +363,28 @@ global_toolbar_actions=[
 global_keyboard_actions=[]
 
 
-class ViewFactory(Component):
-    implements(IViewFactory)
+class AboutPlugin(Component):
+    implements(ViewPlugin)
 
-    def viewScore(self,buffer):
-        if buffer.filename in ['about:alpha','about:bravo','about:title.txt']:
-            return 100
-        return 1
+    def scanEmacs(self,emacsmode,vars):
+        return None
 
-    def getView(self,buffer):
-        if buffer.filename=='about:title.txt':
-            return TitleView
-        if buffer.filename=='about:alpha':
-            return AlphaView
-        return BravoView
+    def scanShell(self,bangpath):
+        return None
+
+    def scanFilename(self,filename):
+        if filename=='about:alpha':
+            return ViewMatch(AlphaView,exact=True)
+        elif filename=='about:bravo':
+            return ViewMatch(BravoView,exact=True)
+        elif filename=='about:title.txt':
+            return ViewMatch(TitleView,exact=True)
+        else:
+            return None
+
+    def scanMagic(self,buffer):
+        return None
+
 
 
 

@@ -14,6 +14,8 @@ COMPRESS = bzip2 -f
 PACKAGE := peppy
 VERSION := $(shell grep __version__ $(PACKAGE).py|head -n1|cut -d \" -f 2)
 
+EPYDOC = epydoc -v -v -v
+
 srcdir = .
 top_srcdir = .
 top_builddir = .
@@ -21,9 +23,11 @@ top_builddir = .
 distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
-DISTSRC = peppy.py buffers.py fundamental.py fundamental.py *-plugin.py menudev.py singletonmixin.py wxemacskeybindings.py configprefs.py debug.py icons
+DISTMAIN = peppy.py
+DISTMODS = buffers.py configprefs.py debug.py fundamental.py hexedit-plugin.py iofilter.py menudev.py plugin.py python-plugin.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py trac/core.py
+DISTSRC = $(DISTMAIN) $(DISTMODS)
 DISTDOCS = README ChangeLog gpl.txt
-DISTFILES = $(DISTSRC) $(DISTDOCS)
+DISTFILES = $(DISTSRC) $(DISTDOCS) icons
 DISTFILE_TESTS = 
 
 
@@ -41,9 +45,9 @@ DISTFILE_TESTS =
 
 all: doc
 
-api/index.html: peppy.py
+api/index.html: $(DISTSRC)
 	./Makedoc.py -m peppy -d -o /tmp/peppy.py peppy.py
-	epydoc -o api --no-private -u 'http://www.flipturn.org/peppy/' /tmp/peppy.py
+	$(EPYDOC) -o api --no-private --url 'http://www.flipturn.org/peppy/' /tmp/peppy.py $(DISTMODS)
 
 README: README.pre.in
 	./Makedoc.py -m peppy -o README README.pre.in

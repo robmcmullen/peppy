@@ -6,7 +6,7 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 from views import *
-from trac.core import *
+from plugin import *
 from debug import *
 
 
@@ -232,14 +232,26 @@ global_menu_actions=[
 ]
 
 
-class ViewFactory(Component,debugmixin):
-    implements(IViewFactory)
+class FundamentalPlugin(Component,debugmixin):
+    implements(ViewPlugin)
 
-    def viewScore(self,buffer):
-        return 2
+    def scanEmacs(self,emacsmode,vars):
+        return None
 
-    def getView(self,buffer):
-        return FundamentalView
+    def scanShell(self,bangpath):
+        return None
+
+    def scanFilename(self,filename):
+        return None
+
+    def scanMagic(self,buffer):
+        """
+        If the buffer looks like it is a text file, flag it as a
+        potential Fundamental.
+        """
+        if not buffer.guessBinary:
+            return ViewMatch(FundamentalView,generic=True)
+        return None
 
 
 if __name__ == "__main__":

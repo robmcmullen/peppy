@@ -101,6 +101,10 @@ class Buffer(debugmixin):
 
         self.name="Buffer #%d: %s" % (self.count,str(self.filename))
 
+        self.guessBinary=False
+        self.guessLength=1024
+        self.guessPercentage=10
+
         self.viewer=None
         self.viewers=[]
 
@@ -171,6 +175,7 @@ class Buffer(debugmixin):
         filter=GetIOFilter(self.stc,self.filename)
         filter.read()
         # if no exceptions, it must have worked.
+        self.guessBinary=self.stc.GuessBinary(self.guessLength,self.guessPercentage)
         self.modified=False
         self.stc.EmptyUndoBuffer()
 

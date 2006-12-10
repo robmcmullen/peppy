@@ -61,6 +61,12 @@ class STCInterface(object):
     def AddRefDocument(self,ptr):
         pass
 
+    def GetBinaryData(self,start,end):
+        return []
+
+    def GuessBinary(self,amount,percentage):
+        return False
+
 # Global default STC interface for user interface purposes
 class NullSTC(STCInterface):
     def Bind(self,evt,obj):
@@ -93,6 +99,45 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         """PyPE compat"""
         return True
 
+    def GetBinaryData(self,start,end):
+        return self.GetStyledText(start,end)[::2]
+
+    def GuessBinary(self,amount,percentage):
+        """
+        Guess if the text in this file is binary or text by scanning
+        through the first C{amount} characters in the file and
+        checking if some C{percentage} is out of the printable ascii
+        range.
+
+        Obviously this is a poor check for unicode files, so this is
+        just a bit of a hack.
+
+        @param amount: number of characters to check at the beginning
+        of the file
+
+        @type amount: int
+        
+        @param percentage: percentage of characters that must be in
+        the printable ASCII range
+
+        @type percentage: number
+
+        @rtype: boolean
+        """
+        endpos=self.GetLength()
+        if endpos>amount: endpos=amount
+        bin=self.GetBinaryData(0,endpos)
+        data = [ord(i) for i in bin]
+        binary=0
+        for ch in data:
+            if (ch<8) or (ch>13 and ch<32) or (ch>126):
+                binary+=1
+        if binary>(endpos/percentage):
+            return True
+        return False
+        
+        
+        
     def OnDestroy(self, evt):
         # This is how the clipboard contents can be preserved after
         # the app has exited.
