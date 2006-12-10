@@ -404,7 +404,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
     def openFileDialog(self):        
         viewer=self.getCurrentViewer()
-        wildcard="*.*"
+        wildcard="*"
         cwd=os.getcwd()
         dlg = wx.FileDialog(
             self, message="Open File", defaultDir=cwd, 
