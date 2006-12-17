@@ -38,9 +38,25 @@ __url__ = "http://www.flipturn.org/peppy/"
 __download_url__ = "http://www.flipturn.org/peppy/archive/"
 __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
-__license__ = "Python"
+__license__ = "GPL"
 
-SetAbout('title.txt',"%s %s\n%s" % ("peppy",__version__,__description__))
+gpl_text="""
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+"""
+
+SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006 %s (%s)" % ("peppy",__version__,__description__,__author__,__author_email__))
 SetAbout('alpha','')
 SetAbout('bravo','')
 
@@ -201,7 +217,33 @@ class HelpAbout(FrameAction):
     title = "Test program title"
     
     def run(self, state=None, pos=None):
-        cube=self.frame.showModalDialog(self.about,self.title)
+        from wx.lib.wordwrap import wordwrap
+        
+        info = wx.AboutDialogInfo()
+        info.Name = "peppy"
+        info.Version = __version__
+        info.Copyright = "Copyright (c) 2006 %s (%s)" % (__author__,__author_email__)
+        info.Description = wordwrap(
+            "This program is a wxPython/Scintilla-based editor written "
+            "in and extensible through Python.  Its aim to provide "
+            "the user with an XEmacs-like multi-window, multi-tabbed "
+            "interface while providing the developer easy ways to "
+            "extend the capabilities of the editor using Python "
+            "instead of Emacs lisp.\n",
+            350, wx.ClientDC(self.frame))
+        info.WebSite = (__url__, "peppy home page")
+        info.Developers = [ "Rob McMullen",
+                            "",
+                            "Contributions by:",
+                            "Robin Dunn (for wxPython)",
+                            "Josiah Carlson (for ideas borrowed from PyPE)",
+                            "Stani Michiels (for ideas borrodew from SPE)",
+                            "Mark James (for the silk icon library)"]
+
+        info.License = wordwrap(gpl_text, 500, wx.ClientDC(self.frame))
+
+        # Then we call wx.AboutBox giving it that info object
+        wx.AboutBox(info)
 
 
 
