@@ -8,7 +8,7 @@ WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
 
 # Distribution stuff
 TAR = tar
-TAROPTS = --exclude=.svn
+TAROPTS = --exclude=.svn --exclude='*.pyc'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
@@ -27,7 +27,7 @@ DISTMAIN = peppy.py
 DISTMODS = buffers.py configprefs.py debug.py fundamental.py hexedit-plugin.py iofilter.py menudev.py plugin.py python-plugin.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py trac/core.py
 DISTSRC = $(DISTMAIN) $(DISTMODS)
 DISTDOCS = README ChangeLog gpl.txt
-DISTFILES = $(DISTSRC) $(DISTDOCS) icons
+DISTFILES = $(DISTSRC) $(DISTDOCS) icons trac
 DISTFILE_TESTS = 
 
 
