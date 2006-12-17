@@ -232,17 +232,8 @@ global_menu_actions=[
 ]
 
 
-class FundamentalPlugin(Component,debugmixin):
+class FundamentalPlugin(ViewPluginBase,debugmixin):
     implements(ViewPlugin)
-
-    def scanEmacs(self,emacsmode,vars):
-        return None
-
-    def scanShell(self,bangpath):
-        return None
-
-    def scanFilename(self,filename):
-        return None
 
     def scanMagic(self,buffer):
         """

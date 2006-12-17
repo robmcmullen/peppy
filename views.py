@@ -8,7 +8,7 @@ from stcinterface import *
 from configprefs import *
 from plugin import *
 from debug import *
-
+from buffers import *
 
 
 class ViewAction(FrameAction):
@@ -296,8 +296,14 @@ class ViewPluginDriver(Component,debugmixin):
         within the file are checked, and again if an exact match is
         found the View is returned.
 
-        If only generic matches are left, 
+        If only generic matches are left ... figure out some way to
+        choose the best one.
 
+        @param buffer: the buffer of interest
+        @type buffer: L{Buffer<buffers.Buffer>}
+
+        @returns: the best view for the buffer
+        @rtype: L{View} subclass
         """
         
         bangpath=buffer.stc.GetLine(0)
@@ -346,11 +352,20 @@ class ViewPluginDriver(Component,debugmixin):
                     generics.append(best)
         if generics:
             self.dprint("Choosing from generics: %s" % [g.view for g in generics])
+            # FIXME: don't just use the first one, do something smarter!
             return generics[0].view
         else:
             return FundamentalView
 
 def GetView(buffer):
+    """
+    Application-wide entry point used to find the best view for the
+    given buffer.
+
+    @param buffer: the newly loaded buffer
+    @type buffer: L{Buffer<buffers.Buffer>}
+    """
+    
     comp_mgr=ComponentManager()
     driver=ViewPluginDriver(comp_mgr)
     view=driver.find(buffer)

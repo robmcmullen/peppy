@@ -14,7 +14,7 @@ COMPRESS = bzip2 -f
 PACKAGE := peppy
 VERSION := $(shell grep __version__ $(PACKAGE).py|head -n1|cut -d \" -f 2)
 
-EPYDOC = epydoc -v -v -v
+EPYDOC = epydoc -v -v -v --no-sourcecode
 
 srcdir = .
 top_srcdir = .

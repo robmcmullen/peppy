@@ -51,11 +51,11 @@ class ViewMatch(object):
 
 class ViewPlugin(Interface):
     """
-    Interface that L{views.ViewPluginDriver} uses to determine if a
-    View represented by this plugin is capable of viewing the data in
-    the buffer.  (Note that a ViewPlugin may represent more than one
-    View.)  Several methods are used in an attempt to pick the best
-    match for the data in the buffer.
+    Interface that L{ViewPluginDriver<views.ViewPluginDriver>} uses to
+    determine if a View represented by this plugin is capable of
+    viewing the data in the buffer.  (Note that a ViewPlugin may
+    represent more than one View.)  Several methods are used in an
+    attempt to pick the best match for the data in the buffer.
 
     First, if the first non-blank line in the buffer (or second line
     if the first contains the shell string C{#!}) contains the emacs
@@ -90,16 +90,23 @@ class ViewPlugin(Interface):
           -*- mode: Ksh; var1:value1; var3:value9; -*-
       
         The text within the delimiters is parsed by the
-        L{ViewPluginDriver}, and two parameters are passed to this
-        method.  The emacs mode string is passed in as C{emacsmode},
-        and any name/value pairs are passed in the C{vars} dict (which
-        could be empty).  It is not required that your plugin
-        understand and process the variables.
+        L{ViewPluginDriver<views.ViewPluginDriver>}, and two
+        parameters are passed to this method.  The emacs mode string
+        is passed in as C{emacsmode}, and any name/value pairs are
+        passed in the C{vars} dict (which could be empty).  It is not
+        required that your plugin understand and process the
+        variables.
 
         If your plugin recognizes the emacs major mode string, return
         a L{ViewMatch} object that contains the View class.
-        Otherwise, return None and the L{ViewPluginDriver} will
-        continue processing.
+        Otherwise, return None and the
+        L{ViewPluginDriver<views.ViewPluginDriver>} will continue
+        processing.
+
+        @param emacsmode: text string of the Emacs major mode
+        @type emacsmode: string
+        @param vars: name:value pairs, can be the empty list
+        @type vars: list
         """
 
     def scanShell(bangpath):
@@ -110,34 +117,68 @@ class ViewPlugin(Interface):
 
         If your plugin recognizes something in the shell string,
         return a L{ViewMatch} object that contains the View class and
-        the L{ViewPluginDriver} will stop looking and use than View.
-        If not, return None and the L{ViewPluginDriver} will continue
+        the L{ViewPluginDriver<views.ViewPluginDriver>} will stop
+        looking and use than View.  If not, return None and the
+        L{ViewPluginDriver<views.ViewPluginDriver>} will continue
         processing.
+
+        @param bangpath: characters after the C{#!}
+        @type bangpath: string
         """
 
     def scanFilename(filename):
         """
         Called to see if a pattern in the filename can be identified
-        that determines the file type and therefore the L{View} that
-        should be used.
+        that determines the file type and therefore the
+        L{View<views.View>} that should be used.
 
         If your plugin recognizes something, return a L{ViewMatch}
         object with the optional indicators filled in.  If not, return
-        None and the L{ViewPluginDriver} will continue processing.
+        None and the L{ViewPluginDriver<views.ViewPluginDriver>} will
+        continue processing.
+
+        @param filename: filename, can be in URL form
+        @type filename: string
         """
     
     def scanMagic(buffer):
         """
         Called to see if a pattern in the text can be identified that
-        determines the file type and therefore the L{View} that should
-        be used.
+        determines the file type and therefore the L{View<views.View>}
+        that should be used.
 
         If your plugin recognizes something, return a L{ViewMatch}
         object with the optional indicators filled in.  If not, return
-        None and the L{ViewPluginDriver} will continue processing.
+        None and the L{ViewPluginDriver<views.ViewPluginDriver>} will
+        continue processing.
+
+        @param buffer: buffer of already loaded file
+        @type buffer: L{Buffer<buffers.Buffer>}
         """
 
+class ViewPluginBase(Component):
+    """
+    Simple do-nothing base class for L{ViewPlugin} implementations so
+    that you don't have to provide null methods for scans you don't
+    want to implement.
 
+    @see: L{ViewPlugin} for the interface description
+
+    @see: L{FundamentalPlugin<fundamental.FundamentalPlugin>} or
+    L{PythonPlugin} for examples.
+    """
+    def scanEmacs(self,emacsmode,vars):
+        return None
+
+    def scanShell(self,bangpath):
+        return None
+
+    def scanFilename(self,filename):
+        return None
+    
+    def scanMagic(self,buffer):
+        return None
+    
 
 
 if __name__ == "__main__":

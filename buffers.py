@@ -375,7 +375,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
             self.setViewer(newview)
 
     def titleBuffer(self):
-        self.open('about:title.txt',viewer=View)
+        self.open('about:title.txt')
         
     def newBuffer(self,buffer):
         viewer=buffer.getView(self)

@@ -741,7 +741,7 @@ global_menu_actions=[
 ##    [OpenHexEditor,0.1],
 ##    ]
 
-class HexEditPlugin(Component,debugmixin):
+class HexEditPlugin(ViewPluginBase,debugmixin):
     implements(ViewPlugin)
     
     def scanEmacs(self,emacsmode,vars):

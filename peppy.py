@@ -363,14 +363,8 @@ global_toolbar_actions=[
 global_keyboard_actions=[]
 
 
-class AboutPlugin(Component):
+class AboutPlugin(ViewPluginBase):
     implements(ViewPlugin)
-
-    def scanEmacs(self,emacsmode,vars):
-        return None
-
-    def scanShell(self,bangpath):
-        return None
 
     def scanFilename(self,filename):
         if filename=='about:alpha':
@@ -381,9 +375,6 @@ class AboutPlugin(Component):
             return ViewMatch(TitleView,exact=True)
         else:
             return None
-
-    def scanMagic(self,buffer):
-        return None
 
 
 

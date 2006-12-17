@@ -64,20 +64,11 @@ global_menu_actions=[
 ]
 
 
-class CharliePlugin(Component,debugmixin):
+class CharliePlugin(ViewPluginBase,debugmixin):
     implements(ViewPlugin)
-
-    def scanEmacs(self,emacsmode,vars):
-        return None
-
-    def scanShell(self,bangpath):
-        return None
 
     def scanFilename(self,filename):
         match=re.search(CharlieView.regex,filename)
         if match:
             return ViewMatch(CharlieView,exact=True)
-        return None
-    
-    def scanMagic(self,buffer):
         return None

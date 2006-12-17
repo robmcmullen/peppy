@@ -349,7 +349,7 @@ global_menu_actions=[
     [[('&Edit',0.1)],PythonMajorMode,0.9],
 ]
 
-class PythonPlugin(Component,debugmixin):
+class PythonPlugin(ViewPluginBase,debugmixin):
     implements(ViewPlugin)
 
     def scanEmacs(self,emacsmode,vars):
@@ -365,7 +365,4 @@ class PythonPlugin(Component,debugmixin):
     def scanFilename(self,filename):
         if filename.endswith('.py'):
             return ViewMatch(PythonView,exact=True)
-        return None
-    
-    def scanMagic(self,buffer):
         return None
