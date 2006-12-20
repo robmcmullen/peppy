@@ -236,8 +236,8 @@ class HelpAbout(FrameAction):
                             "",
                             "Contributions by:",
                             "Robin Dunn (for wxPython)",
-                            "Josiah Carlson (for ideas borrowed from PyPE)",
-                            "Stani Michiels (for ideas borrodew from SPE)",
+                            "Josiah Carlson (for ideas & code from PyPE)",
+                            "Stani Michiels (for ideas & code from SPE)",
                             "Mark James (for the silk icon library)"]
 
         info.License = wordwrap(gpl_text, 500, wx.ClientDC(self.frame))
