@@ -9,6 +9,7 @@ from views import *
 from plugin import *
 from debug import *
 
+from gotoline import *
 
 class OpenFundamental(FrameAction):
     name = "&Open Sample Text"
@@ -116,12 +117,6 @@ class ReplaceText(MinibufferAction):
     tooltip = "Replace a string in the text."
     keyboard = 'F6'
     minibuffer = ReplaceMinibuffer
-
-class GotoLine(MinibufferAction):
-    name = "Goto Line..."
-    tooltip = "Goto a line in the text."
-    keyboard = 'M-G'
-    minibuffer = FindMinibuffer
 
 
 

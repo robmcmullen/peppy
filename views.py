@@ -24,29 +24,6 @@ class ViewAction(FrameAction):
         self.action(self.frame.getCurrentViewer())
 
 
-class Minibuffer(object):
-    def __init__(self,viewer):
-        self.viewer=viewer
-        self.minibuffer(viewer)
-        
-    def minibuffer(self,viewer):
-        # set self.win to the minibuffer window
-        pass
-
-    def focus(self):
-        print "focus!!!"
-        self.win.SetFocus()
-    
-    def close(self):
-        self.win.Destroy()
-        self.win=None
-
-
-class MinibufferAction(ViewAction):
-    def action(self, viewer, state=None, pos=-1):
-        minibuffer=self.minibuffer(viewer)
-        print minibuffer.win
-        viewer.setMinibuffer(minibuffer)
 
 #### Icons
 
@@ -171,6 +148,7 @@ class View(debugmixin,ClassSettingsMixin):
             self.minibuffer.close()
             self.minibuffer=None
             self.win.Layout()
+            self.focus()
 
     def reparent(self,parent):
         self.win.Reparent(parent)
