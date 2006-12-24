@@ -24,7 +24,7 @@ distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
 DISTMAIN = peppy.py
-DISTMODS = buffers.py configprefs.py debug.py fundamental.py hexedit-plugin.py iofilter.py menudev.py plugin.py python-plugin.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py trac/core.py
+DISTMODS = buffers.py configprefs.py debug.py fundamental.py gotoline.py hexedit-plugin.py iofilter.py menudev.py minibuffer.py plugin.py python-plugin.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py trac/core.py
 DISTSRC = $(DISTMAIN) $(DISTMODS)
 DISTDOCS = README ChangeLog gpl.txt
 DISTFILES = $(DISTSRC) $(DISTDOCS) icons trac

@@ -11,11 +11,11 @@ from debug import *
 class MinibufferAction(ViewAction):
     def action(self, viewer, state=None, pos=-1):
         minibuffer=self.minibuffer(viewer)
-        print minibuffer.win
+        #print minibuffer.win
         viewer.setMinibuffer(minibuffer)
 
 
-class Minibuffer(object):
+class Minibuffer(debugmixin):
     def __init__(self,viewer):
         self.win=None
         self.viewer=viewer
@@ -29,7 +29,7 @@ class Minibuffer(object):
         raise NotImplementedError
 
     def focus(self):
-        print "focus!!!"
+        self.dprint("focus!!!")
         self.win.SetFocus()
     
     def close(self):
@@ -60,7 +60,7 @@ class IntMinibuffer(Minibuffer):
     def OnEnter(self, evt):
         try:
             number=int(self.text.GetValue())
-            dprint("number=%s" % number)
+            self.dprint("number=%s" % number)
             pos=self.OnInt(number)
         except:
             self.viewer.frame.SetStatusText("Not an integer.")
