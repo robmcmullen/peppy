@@ -9,7 +9,7 @@ import wx.lib.newevent
 from menudev import *
 from buffers import *
 
-from fundamental import FundamentalView
+from views import View
 
 from debug import *
 
@@ -623,7 +623,11 @@ class HugeTableGrid(Grid.Grid,debugmixin):
 
 
 
-class HexEditView(FundamentalView):
+class HexEditView(View):
+    """
+    View for editing in hexidecimal notation.
+    """
+    
     pluginkey = 'hexedit'
     keyword='HexEdit'
     icon='icons/tux.png'
@@ -632,13 +636,10 @@ class HexEditView(FundamentalView):
     debuglevel=0
 
     def createEditWindow(self,parent):
-        FundamentalView.createEditWindow(self,parent)
         self.dprint("creating new HexEditView window")
 
-        win=HugeTableGrid(parent,self.stc,"16c")        
+        win=HugeTableGrid(parent,self.buffer.stc,"16c")        
         #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
-
-        self.stc.Show(False)
 
         # Can't use self.stc.SetModEventMask, because we're really
         # interested in the events from buffer.stc not from self.stc.
@@ -659,7 +660,7 @@ class HexEditView(FundamentalView):
         return win
 
     def openPostHook(self):
-        self.editwin.Update(self.stc)
+        self.editwin.Update(self.buffer.stc)
         
     def transModType(self, modType):
         st = ""
@@ -726,7 +727,7 @@ class HexEditView(FundamentalView):
             # started if we just destroyed the old thread.
             if not self.waiting:
                 self.dprint("starting wait thread")
-                self.waiting=WaitThread(self.win)
+                self.waiting=WaitThread(self.editwin)
                 self.waiting.start()
         
 
