@@ -69,6 +69,11 @@ def getIconStorage(icon=None):
 #### View base class
 
 class View(debugmixin,ClassSettingsMixin):
+    """
+    Base class for all Views.  Subclasses need to implement at least
+    createEditWindow that will return the main user interaction
+    window.
+    """
     debuglevel=0
     
     pluginkey = '-none-'

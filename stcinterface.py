@@ -71,6 +71,9 @@ class STCInterface(object):
 class NullSTC(STCInterface):
     def Bind(self,evt,obj):
         pass
+
+    def GetText(self):
+        return ""
     
 BlankSTC=NullSTC()
 

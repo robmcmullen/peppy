@@ -64,7 +64,7 @@ publish_html: html
 api: api/index.html
 
 publish_api: api
-	rsync -avuz api robm@peppy.sourceforge.net:/home/groups/p/py/peppy/htdocs
+	rsync -avuz api robm351@www.flipturn.org:flipturn.org/peppy/
 
 publish: publish_api publish_html
 

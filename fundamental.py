@@ -122,6 +122,12 @@ class ReplaceText(MinibufferAction):
 
 
 class FundamentalView(View):
+    """
+    The base view of most (if not all) of the views that use the STC
+    to directly edit the text.  Views (like the HexEdit view or an
+    image viewer) that only use the STC as the backend storage are
+    probably not based on this view.
+    """
     pluginkey = 'fundamental'
     keyword='Fundamental'
     regex=".*"
@@ -142,9 +148,6 @@ class FundamentalView(View):
 
 
     documents={}
-
-    def __init__(self,buffer,frame):
-        View.__init__(self,buffer,frame)
 
     def createEditWindow(self,parent):
         self.dprint("creating new Fundamental window")
