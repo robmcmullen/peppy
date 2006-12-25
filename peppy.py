@@ -31,7 +31,7 @@ from debug import *
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "0.3.0"
+__version__ = "0.4.0-pre"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"
@@ -256,8 +256,8 @@ class AlphaView(View):
     regex = "alpha"
     defaultsettings={
         'menu_actions':[
-            [[('&Bands',0.25)],PrevBand,0.0],
-            NextBand,
+            [[('&Alpha',0.25)],TestRadioList,0.0],
+            FrameToggleList,
             ]
         }
 
@@ -295,8 +295,77 @@ class TitleView(View):
 
 
 
-class Peppy(BufferApp,ClassSettingsMixin):
+class DebugClass(FrameToggleList):
+    """
+    A multi-entry menu list that allows individual toggling of debug
+    printing for classes.
+
+    All frames will share the same list, which makes sense since the
+    debugging is controlled by class attributes.
+    """
     debuglevel=0
+    
+    name = "DebugClassMenu"
+    empty = "< list of classes >"
+    tooltip = "Turn on/off debugging for listed classes"
+    categories = False
+
+    # File list is shared among all windows
+    itemlist = []
+    
+    def __init__(self, frame):
+        FrameToggleList.__init__(self, frame)
+        self.itemlist = DebugClass.itemlist
+        
+    def append(self,kls,text=None):
+        """
+        Add a class to the list of entries
+
+        @param kls: class
+        @type kls: class
+        @param text: (optional) name of class
+        @type text: text
+        """
+        if not text:
+            text=kls.__name__
+        self.itemlist.append({'item':kls,'name':text,'icon':None,'checked':kls.debuglevel>0})
+        
+    def action(self, state=None, pos=-1):
+        """
+        Turn on or off the debug logging for the selected class
+        """
+        self.dprint("DebugClass.action: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist)))
+        kls=self.itemlist[pos]['item']
+        if state:
+            kls.debuglevel=1
+        else:
+            kls.debuglevel=0
+        self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
+
+
+
+
+class Peppy(BufferApp,ClassSettingsMixin):
+    """
+    Main application object.  This handles the initialization of the
+    debug parameters for objects and loads the configuration file,
+    plugins, configures the initial keyboard mapping, and other lower
+    level initialization from the BufferApp superclass.
+    """
+    debuglevel=0
+    verbose=0
+
+    ##
+    # This mapping controls the verbosity level required for debug
+    # printing to be shown from the class names that match these
+    # regular expressions.  Everything not listed here will get turned
+    # on with a verbosity level of 1.
+    verboselevel={'.*Frame':2,
+                  'ActionMenu.*':4,
+                  'ActionTool.*':4,
+                  '.*Filter':3,
+                  }
+    
     initialconfig={'MenuFrame':{'width':600,
                                 'height':500,
                                 },
@@ -310,6 +379,13 @@ class Peppy(BufferApp,ClassSettingsMixin):
                    }
     
     def OnInit(self):
+        """
+        Main application initialization.  Called by the wx framework.
+        """
+        self.debugmenu=DebugClass(None)
+        
+        if self.verbose:
+            self.setVerbosity()
         BufferApp.OnInit(self)
 
         ClassSettingsMixin.__init__(self)
@@ -323,14 +399,93 @@ class Peppy(BufferApp,ClassSettingsMixin):
 
         self.parseConfig()
 
+        # set verbosity on any new plugins that may have been loaded
+        # and set up the debug menu
+        self.setVerbosity(menu=self.debugmenu)
+
         return True
 
+    def getSubclasses(self,parent=debugmixin,subclassof=None):
+        """
+        Recursive call to get all classes that have a specified class
+        in their ancestry.  The call to __subclasses__ only finds the
+        direct, child subclasses of an object, so to find
+        grandchildren and objects further down the tree, we have to go
+        recursively down each subclasses hierarchy to see if the
+        subclasses are of the type we want.
+
+        @param parent: class used to find subclasses
+        @type parent: class
+        @param subclassof: class used to verify type during recursive calls
+        @type subclassof: class
+        @returns: list of classes
+        """
+        if subclassof is None:
+            subclassof=parent
+        subclasses=[]
+
+        # this call only returns immediate (child) subclasses, not
+        # grandchild subclasses where there is an intermediate class
+        # between the two.
+        classes=parent.__subclasses__()
+        for kls in classes:
+            if issubclass(kls,subclassof):
+                subclasses.append(kls)
+            # for each subclass, recurse through its subclasses to
+            # make sure we're not missing any descendants.
+            subs=self.getSubclasses(parent=kls)
+            if len(subs)>0:
+                subclasses.extend(subs)
+        return subclasses
+
+    def setVerboseLevel(self,kls):
+        """
+        Set the class's debuglevel if the verbosity level is high
+        enough.  Matches the class name against list of regular
+        expressions in verboselevel to see if extra verbosity is
+        needed to turn on debugging output for that class.
+
+        @param kls: class
+        @param type: subclass of debugmixin
+        """
+        level=self.verbose
+        for regex,lev in self.verboselevel.iteritems():
+            match=re.match(regex,kls.__name__)
+            if match:
+                if self.verbose<self.verboselevel[regex]:
+                    level=0
+                break
+        kls.debuglevel=level
+
+    def setVerbosity(self,menu=None):
+        """
+        Find all classes that use the debugmixin and set the logging
+        level to the value of verbose.
+
+        @param menu: if set, the value of the menu to populate
+        @type menu: DebugClass instance, or None
+        """
+        debuggable=self.getSubclasses()
+        debuggable.sort(key=lambda s:s.__name__)
+        for kls in debuggable:
+            self.setVerboseLevel(kls)
+            self.dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
+            if menu:
+                menu.append(kls)
+        #sys.exit()
+
     def parseConfig(self):
+        """
+        Main driver for any functions that need to look in the config file.
+        """
         self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 
     def parseConfigPlugins(self):
+        """
+        Load plugins specified in the config file.
+        """
         mods=self.settings.plugins
         self.dprint(mods)
         if mods is not None:
@@ -343,6 +498,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
 
 
 def run(options={},args=None):
+    Peppy.verbose=options.verbose
     app=Peppy()
     frame=BufferFrame(app)
     frame.Show(True)
@@ -379,6 +535,7 @@ global_menu_actions=[
     None,
     [ShowToolbar,0.3],
     [[('&Buffers',0.3)],BufferList,0.0],
+    [[('&Debug',1.0)],DebugClass,0.99],
     [[('&Help',1.0)],HelpAbout,1.0],
 ]
 
@@ -427,6 +584,7 @@ if __name__ == "__main__":
     usage="usage: %prog file [files...]"
     parser=OptionParser(usage=usage)
     parser.add_option("-p", action="store_true", dest="profile", default=False)
+    parser.add_option("-v", action="count", dest="verbose", default=0)
     (options, args) = parser.parse_args()
     #print options
 

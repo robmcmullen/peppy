@@ -420,47 +420,6 @@ class Quit(FrameAction):
 
 
 
-
-class LinearContrastOff(FrameAction):
-    name = "&No Contrast Stretching"
-    tooltip = "No Contrast Stretching"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-
-class LinearContrastDefault(FrameAction):
-    name = "2% &Contrast Stretched"
-    tooltip = "2% Linear Contrast Stretch"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-
-class LinearContrastUser(FrameAction):
-    name = "&User-defined Contrast Stretch"
-    tooltip = "User-defined Linear Contrast Stretch"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-class PrevBand(FrameAction):
-    name = "Prev"
-    tooltip = "Previous Band"
-    icon = wx.ART_GO_BACK
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-class NextBand(FrameAction):
-    name = "Next"
-    tooltip = "Next Band"
-    icon = wx.ART_GO_FORWARD
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-
 class TestRadioList(RadioList):
     name = "TestRadioList"
     tooltip = "Some help for this group of radio items"
@@ -495,11 +454,15 @@ class FrameToggleList(FrameActionList):
         FrameActionList.__init__(self, frame)
         self.itemlist = FrameToggleList.itemlist
 
-        # initialize checked/unchecked status from defaults
-        self.checked = [item['checked'] for item in self.itemlist]
+    def append(self,item,text=None):
+        if not text:
+            text=str(item)
+        self.itemlist.append({'item':item,'name':text,'icon':None,'checked':False})
 
     def isChecked(self, index):
-        return self.checked[index]
+        if index>=0 and index<len(self.itemlist):
+            return self.itemlist[index]['checked']
+        return False
     
     def getToolbarIcon(self, index):
         item=self.itemlist[index]
@@ -513,7 +476,8 @@ class FrameToggleList(FrameActionList):
 
     def run(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%d" % (id(self),self.name,pos))
-        self.checked[pos] = not self.checked[pos]
+        self.itemlist[pos]['checked'] = not self.itemlist[pos]['checked']
+        state=self.itemlist[pos]['checked']
         self.action(state,pos)
     
 class ShowToolbar(FrameToggle):
@@ -547,26 +511,20 @@ all_plugins=[
      'command':Quit,
      'weight':1.0,
      },
-    [[('&Image',0.5)],LinearContrastOff,0.1],
-    LinearContrastDefault,
-    LinearContrastUser,
-    None,
-    TestRadioList,
-    None,
-    FrameToggleList,
     [[('&Windows',0.9)],NewWindow,0.0],
     [DeleteWindow,0.1],
     None,
     [FrameList,0.2],
+    None,
+    TestRadioList,
+    None,
+    FrameToggleList,
     ]
 
 toolbar_plugins=[
     [Open,0.0],
     Save,
     SaveAs,
-    None,
-    PrevBand,
-    NextBand,
     None,
     TestRadioList,
     None,
@@ -1245,8 +1203,6 @@ class MenuFrame(wx.Frame,debugmixin):
         MenuFrame.frameid+=1
         self.name="peppy: Frame #%d" % MenuFrame.frameid
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
-
-        self.debuglevel=0
 
         self.app=app
         self.menuactions=None
