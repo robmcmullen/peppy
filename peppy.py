@@ -401,7 +401,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
 
         # set verbosity on any new plugins that may have been loaded
         # and set up the debug menu
-        self.setVerbosity(menu=self.debugmenu)
+        self.setVerbosity(menu=self.debugmenu,reset=self.verbose)
 
         return True
 
@@ -457,7 +457,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
                 break
         kls.debuglevel=level
 
-    def setVerbosity(self,menu=None):
+    def setVerbosity(self,menu=None,reset=False):
         """
         Find all classes that use the debugmixin and set the logging
         level to the value of verbose.
@@ -468,7 +468,8 @@ class Peppy(BufferApp,ClassSettingsMixin):
         debuggable=self.getSubclasses()
         debuggable.sort(key=lambda s:s.__name__)
         for kls in debuggable:
-            self.setVerboseLevel(kls)
+            if reset:
+                self.setVerboseLevel(kls)
             self.dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
             if menu:
                 menu.append(kls)
