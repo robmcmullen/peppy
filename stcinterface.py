@@ -86,7 +86,7 @@ BlankSTC=NullSTC()
 
 
 class MySTC(stc.StyledTextCtrl,debugmixin):
-    def __init__(self, parent, ID=-1):
+    def __init__(self, parent, ID=-1, refstc=None):
         stc.StyledTextCtrl.__init__(self, parent, ID)
 
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
@@ -97,6 +97,36 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         self.debug_dnd=False
+
+        if refstc is not None:
+            self.refstc=refstc
+            self.docptr=self.refstc.docptr
+            self.AddRefDocument(self.docptr)
+            self.SetDocPointer(self.docptr)
+            self.refstc.addSubordinate(self)
+            self.dprint("referencing document %s" % self.docptr)
+        else:
+            self.refstc=None
+            self.docptr=self.CreateDocument()
+            self.SetDocPointer(self.docptr)
+            self.dprint("creating new document %s" % self.docptr)
+            self.subordinates=[]
+
+    def addSubordinate(self,otherstc):
+        self.subordinates.append(otherstc)
+
+    def removeSubordinate(self,otherstc):
+        self.subordinates.remove(otherstc)
+
+    def openPostHook(self,filter):
+        """
+        Hook here for subclasses of STC to do whatever they need with
+        the FilterWrapper object used to load the file.  In some cases it
+        might be useful to keep a reference to the filter.
+        @param filter: filter used to load the file
+        @type filter: iofilter.FilterWrapper
+        """
+        pass
 
     def CanEdit(self):
         """PyPE compat"""

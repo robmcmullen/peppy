@@ -8,7 +8,6 @@ from stcinterface import *
 from configprefs import *
 from plugin import *
 from debug import *
-from buffers import *
 
 
 class ViewAction(FrameAction):
@@ -195,12 +194,6 @@ class View(debugmixin,ClassSettingsMixin):
         pass
 
     def open(self):
-        self.dprint("View: open docptr=%s" % self.buffer.docptr)
-        if self.buffer.docptr:
-            # the docptr is a real STC, so use it as the base document
-            # for the new view
-            self.stc.AddRefDocument(self.buffer.docptr)
-            self.stc.SetDocPointer(self.buffer.docptr)
         self.openPostHook()
 
     def close(self):

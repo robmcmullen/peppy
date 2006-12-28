@@ -110,13 +110,20 @@ class Buffer(debugmixin):
 
         self.modified=False
 
-        # always one STC per buffer
+        if mystc:
+            self.initSTC(mystc,stcparent)
+        else:
+            # defer STC initialization until we know the subclass
+            self.stc=None
+
+        self.open(stcparent)
+
+    def initSTC(self,mystc,stcparent=None):
         if mystc==None:
             self.stc=MySTC(stcparent)
         else:
             self.stc=mystc
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
-        self.docptr=None
 
     def getView(self,frame,viewerclass=None):
         if viewerclass:
@@ -168,13 +175,13 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self):
-        self.docptr=self.stc.CreateDocument()
-        self.stc.SetDocPointer(self.docptr)
-        self.dprint("open: creating new document %s" % self.docptr)
-        filter=GetIOFilter(self.stc,self.filename)
-        filter.read()
+    def open(self,stcparent):
+        filter=GetIOFilter(self.filename)
+        if self.stc==None:
+            self.initSTC(filter.getSTC(stcparent))
+        filter.read(self.stc)
         # if no exceptions, it must have worked.
+        self.stc.openPostHook(filter)
         self.guessBinary=self.stc.GuessBinary(self.guessLength,self.guessPercentage)
         self.modified=False
         self.stc.EmptyUndoBuffer()
@@ -187,8 +194,8 @@ class Buffer(debugmixin):
         try:
             if filename is None:
                 filename=self.filename
-            filter=GetIOFilter(self.stc,filename)
-            filter.write()
+            filter=GetIOFilter(filename)
+            filter.write(self.stc)
             self.stc.SetSavePoint()
             if filename is not None:
                 self.setFilename(filename)
@@ -392,9 +399,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
     def open(self,filename,newTab=True,viewer=None):
         buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultviewer=viewer)
-        # probably should load the file here, and if it fails for some
-        # reason, don't add to the buffer list.
-        buffer.open()
+        # If we get an exception, it won't get added to the buffer list
         
         self.app.addBuffer(buffer)
         if newTab:

@@ -369,7 +369,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
     initialconfig={'MenuFrame':{'width':600,
                                 'height':500,
                                 },
-                   'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
+                   'Peppy':{'plugins':'hexedit-plugin,python-plugin,shell',
                             },
                    'View':{'linenumbers':True,
                            'wordwrap':False,

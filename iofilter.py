@@ -56,7 +56,7 @@ class URLInfo(object):
 
 #### Loaders for reading files and populating the STC interface
 
-class FileProtocol(Component,debugmixin):
+class FileProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)
 
     def supportedProtocols(self):
@@ -72,7 +72,7 @@ class FileProtocol(Component,debugmixin):
         fh=open(urlinfo.filename,"wb")
         return fh
 
-class AboutProtocol(Component,debugmixin):
+class AboutProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)
 
     def supportedProtocols(self):
@@ -86,10 +86,7 @@ class AboutProtocol(Component,debugmixin):
             return fh
         raise IOError
 
-    def getWriter(self,urlinfo):
-        raise NotImplementedError
-
-class HTTPProtocol(Component,debugmixin):
+class HTTPProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)
 
     def supportedProtocols(self):
@@ -100,9 +97,6 @@ class HTTPProtocol(Component,debugmixin):
 
         fh=urllib2.urlopen(urlinfo.url)
         return fh
-        
-    def getWriter(self,urlinfo):
-        raise NotImplementedError
 
 
 class ProtocolHandler(Component):
@@ -132,6 +126,7 @@ class TextFilter(IOFilter):
         txt=fh.read()
         self.dprint("TextFilter: reading %d bytes from %s" % (len(txt),filename))
         stc.SetText(txt)
+        return fh
 
     def write(self,protocol,filename,stc):
         fh=protocol.getWriter(filename)
@@ -142,6 +137,7 @@ class TextFilter(IOFilter):
         except:
             print "TextFilter: something went wrong writing to %s" % filename
             raise
+        return fh
 
 class BinaryFilter(IOFilter):
     def read(self,protocol,urlinfo,stc):
@@ -169,6 +165,7 @@ class BinaryFilter(IOFilter):
                 errors+=1
             if errors>50: break
         self.dprint("errors=%d" % errors)
+        return fh
     
     def write(self,protocol,urlinfo,stc):
         fh=protocol.getWriter(urlinfo)
@@ -183,32 +180,35 @@ class BinaryFilter(IOFilter):
         except:
             print "BinaryFilter: something went wrong writing to %s" % urlinfo
             raise
-
+        return fh
 
 
 #### Filter wrappers that combine Protocols and Filters
 
 class FilterWrapper(debugmixin):
-    def __init__(self,protocol,filter,info,stc):
+    def __init__(self,protocol,filter,info):
         self.protocol=protocol
         self.filter=filter
         self.urlinfo=info
-        self.stc=stc
+        self.fh=None
 
-    def read(self):
-        return self.filter.read(self.protocol,self.urlinfo,self.stc)
+    def read(self,stc):
+        self.fh=self.filter.read(self.protocol,self.urlinfo,stc)
 
-    def write(self):
-        return self.filter.write(self.protocol,self.urlinfo,self.stc)
+    def write(self,stc):
+        self.fh=self.filter.write(self.protocol,self.urlinfo,stc)
+
+    def getSTC(self,parent):
+        return self.protocol.getSTC(parent)
 
 
-def GetIOFilter(stc,filename):
+def GetIOFilter(filename):
     comp_mgr=ComponentManager()
     handler=ProtocolHandler(comp_mgr)
     info=URLInfo(filename)
     protocol=handler.find(info.protocol)
     filter=BinaryFilter()
-    return FilterWrapper(protocol,filter,info,stc)
+    return FilterWrapper(protocol,filter,info)
 
 
 if __name__ == "__main__":

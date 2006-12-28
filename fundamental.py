@@ -157,7 +157,7 @@ class FundamentalView(View):
         return win
 
     def createSTC(self,parent,style=False):
-        self.stc=MySTC(parent)
+        self.stc=MySTC(parent,refstc=self.buffer.stc)
         self.applyDefaultStyle()
         if style:
             self.styleSTC()

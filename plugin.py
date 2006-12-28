@@ -4,6 +4,7 @@ Central repository for the main set of plugins for peppy.
 
 import os,re
 
+from stcinterface import MySTC
 from trac.core import *
 
 class ProtocolPlugin(Interface):
@@ -28,6 +29,23 @@ class ProtocolPlugin(Interface):
         """Returns a file-like object that can be used to write the
         data using the given protocol."""
 
+    def getSTC(parent):
+        """
+        Get an STC instance that supports this protocol.
+        """
+
+class ProtocolPluginBase(Component):
+    def supportedProtocels(self):
+        return NotImplementedError
+    
+    def getReader(self):
+        return NotImplementedError
+    
+    def getWriter(self):
+        return NotImplementedError
+    
+    def getSTC(self,parent):
+        return MySTC(parent)
 
 
 class ViewMatch(object):
