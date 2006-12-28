@@ -138,6 +138,8 @@ class Buffer(debugmixin):
         self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
+            if issubclass(view.stc.__class__,MySTC):
+                self.stc.removeSubordinate(view.stc)
         else:
             raise ValueError("Bug somewhere.  View %s not found in Buffer %s" % (view,self))
         self.dprint("views of %s: %s" % (self,self.viewers))

@@ -118,6 +118,9 @@ class ShellSTC(MySTC):
             self.AddText('\n')
             self.prompt()
             self.waiting=False
+            # Send ShellUpdate event to viewer STCs to tell them to
+            # update their cursor positions.
+            self.sendEvents(ShellUpdateEvent)
 
     def process(self,viewer):
         startpos = self.promptPosEnd
@@ -163,6 +166,12 @@ class ShellView(FundamentalView):
         self.dprint("In shell.")
         self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
 
+        #Use an event listener to update the cursor position when the
+        #underlying shell has changed.
+        self.stc.Bind(EVT_SHELL_UPDATE, self.OnUpdateCursorPos)
+        self.OnUpdateCursorPos()
+
+    def OnUpdateCursorPos(self,evt=None):
         self.stc.GotoPos(self.buffer.stc.GetCurrentPos())
         self.stc.EnsureCaretVisible()
         self.stc.ScrollToColumn(0)

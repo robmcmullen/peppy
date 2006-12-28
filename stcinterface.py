@@ -118,6 +118,13 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
     def removeSubordinate(self,otherstc):
         self.subordinates.remove(otherstc)
 
+    def sendEvents(self,evt):
+        """
+        Send an event to all subordinate STCs
+        """
+        for otherstc in self.subordinates:
+            wx.PostEvent(otherstc,evt())
+
     def openPostHook(self,filter):
         """
         Hook here for subclasses of STC to do whatever they need with
