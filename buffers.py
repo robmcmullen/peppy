@@ -272,12 +272,15 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         # When the frame is made the current active frame, update the
         # UI to make sure all the menu items/toolbar items reflect the
         # correct state.
-        self.dprint("%s to front" % self.name)
-        self.enableMenu()
-        viewer=self.getCurrentViewer()
-        if viewer:
-            wx.CallAfter(viewer.focus)
-        self.app.SetTopWindow(self)
+        if evt.GetActive():
+            self.dprint("%s to front" % self.name)
+            self.enableMenu()
+            viewer=self.getCurrentViewer()
+            if viewer:
+                wx.CallAfter(viewer.focus)
+            self.app.SetTopWindow(self)
+        else:
+            self.dprint("%s not current frame anymore" % self.name)
 
     def OnViewerChanged(self,evt):
         self.dprint("%s to viewer %s" % (self.name,evt.GetViewer()))
