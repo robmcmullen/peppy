@@ -250,6 +250,10 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
         self.titleBuffer()
 
+    def CreateStatusBar(self):
+        MenuFrame.CreateStatusBar(self,number=2)
+        self.statusbar.SetStatusWidths([-1,100])
+
     def closeWindowHook(self):
         # prevent a PyDeadObjectError when the window is closed by
         # removing this callback.

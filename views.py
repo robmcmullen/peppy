@@ -125,8 +125,17 @@ class View(debugmixin,ClassSettingsMixin):
         self.splitter.SetSplitMode(wx.SPLIT_VERTICAL)
         box.Add(self.splitter,1,wx.EXPAND)
         self.editwin=self.createEditWindow(self.splitter)
+        if isinstance(self.editwin,MySTC):
+            self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
         self.splitter.Initialize(self.editwin)
         self.splitter.SetMinimumPaneSize(10)
+
+    def OnUpdateUI(self,evt):
+        dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
+        linenum = self.editwin.GetCurrentLine()
+        pos = self.editwin.GetCurrentPos()
+        col = self.editwin.GetColumn(pos)
+        self.frame.SetStatusText("L%d C%d" % (linenum+1,col+1),1)
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)

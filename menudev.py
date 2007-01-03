@@ -1209,15 +1209,7 @@ class MenuFrame(wx.Frame,debugmixin):
         self.toolbaractions=None
         self.keyboardactions=None
 
-        # This is how to create a statusbar with more than one
-        # division, but the automatic menubar help text always appears
-        # in the first field.  Dunno how to change that.
-##        self.statusbar=self.CreateStatusBar(3,wx.ST_SIZEGRIP)
-##        self.statusbar.SetStatusWidths([50,50,-1])
-##        self.statusbar.SetStatusText("x=0",0)
-##        self.statusbar.SetStatusText("y=0",1)
-##        self.statusbar.SetStatusText("255x640x256 BIL",2)
-        self.statusbar=self.CreateStatusBar(1,wx.ST_SIZEGRIP)
+        self.CreateStatusBar()
         
         wx.EVT_CLOSE(self, self.closeWindow)
 
@@ -1391,8 +1383,11 @@ class MenuFrame(wx.Frame,debugmixin):
             self.toolbaractions.enable(self)
             self.toolbaractions.proxyValue(self)
 
-    def SetStatusText(self,text,log=None): # log for pype compat
-        self.statusbar.SetStatusText(text)
+    def CreateStatusBar(self,number=1,style=wx.ST_SIZEGRIP):
+        self.statusbar=wx.Frame.CreateStatusBar(self,number,style)
+
+    def SetStatusText(self,text,number=0,log=None): # log for pype compat
+        self.statusbar.SetStatusText(text,number)
 
     def closeWindow(self, ev):
         if self.framelist.getNumEntries()==1:
