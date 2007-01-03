@@ -346,7 +346,7 @@ class PythonView(FundamentalView):
 
 
 global_menu_actions=[
-    [[('&Edit',0.1)],PythonMajorMode,0.9],
+    [[('&Test',0.1)],PythonMajorMode,0.9],
 ]
 
 class PythonPlugin(ViewPluginBase,debugmixin):

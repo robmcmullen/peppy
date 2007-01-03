@@ -522,9 +522,6 @@ global_menu_actions=[
     [[('&File',0.0)],OpenFile,0.0],
     [[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
     [[('&File',0.0)],None,0.2], # separator
-    OpenAlpha,
-    OpenBravo,
-    [None,0.21], # separator
     [Save,0.8],
     SaveAs,
     Close,
@@ -544,6 +541,9 @@ global_menu_actions=[
     None,
     [ShowToolbar,0.3],
     [[('&Buffers',0.3)],BufferList,0.0],
+    [[('&Test',1.0)],OpenAlpha,0.1],
+    OpenBravo,
+    [None,0.2], # separator
     [[('&Debug',1.0)],DebugClass,0.99],
     [[('&Help',1.0)],HelpAbout,1.0],
 ]

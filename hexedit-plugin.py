@@ -733,8 +733,8 @@ class HexEditView(View):
 
 
 global_menu_actions=[
-    [[('&File',0.0)],OpenHexEditor,0.2],
-    [[('&Edit',0.1)],HexEditMajorMode,0.9],
+    [[('&Test',1.0)],OpenHexEditor,0.19],
+    [HexEditMajorMode,0.9],
 ]
 
 ##global_toolbar_actions=[
