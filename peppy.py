@@ -499,6 +499,8 @@ class Peppy(BufferApp,ClassSettingsMixin):
 
 
 def run(options={},args=None):
+    if options.logfile:
+        debuglog(options.logfile)
     Peppy.verbose=options.verbose
     app=Peppy()
     frame=BufferFrame(app)
@@ -586,6 +588,7 @@ if __name__ == "__main__":
     parser=OptionParser(usage=usage)
     parser.add_option("-p", action="store_true", dest="profile", default=False)
     parser.add_option("-v", action="count", dest="verbose", default=0)
+    parser.add_option("-l", action="store", dest="logfile", default=None)
     (options, args) = parser.parse_args()
     #print options
 
