@@ -59,6 +59,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006 %s (%s)" % ("peppy",__version__,__description__,__author__,__author_email__))
 SetAbout('alpha','')
 SetAbout('bravo','')
+SetAbout('blank','')
 
 class NewTab(FrameAction):
     name = "New &Tab"
@@ -67,7 +68,7 @@ class NewTab(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.newTab()
+        self.frame.open("about:blank")
 
 class New(FrameAction):
     name = "&New File..."
@@ -279,18 +280,23 @@ class BravoView(View):
         return win
 
 
-class TitleView(View):
-    pluginkey = 'title'
-    keyword='Title'
+class BlankView(View):
+    pluginkey = 'blank'
+    keyword='Blank'
     icon='icons/application.png'
-    regex="about:title.txt"
-    temporary=True
+    regex="about:blank"
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)
         text=self.buffer.stc.GetText()
         wx.StaticText(win, -1, text, (10,10))
         return win
+
+class TitleView(BlankView):
+    pluginkey = 'title'
+    keyword='Title'
+    regex="about:title.txt"
+    temporary=True
 
 
 
@@ -575,6 +581,8 @@ class AboutPlugin(ViewPluginBase):
             return ViewMatch(BravoView,exact=True)
         elif filename=='about:title.txt':
             return ViewMatch(TitleView,exact=True)
+        elif filename=='about:blank':
+            return ViewMatch(BlankView,exact=True)
         else:
             return None
 

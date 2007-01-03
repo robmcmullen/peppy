@@ -223,19 +223,6 @@ class Buffer(debugmixin):
             wx.CallAfter(self.showModifiedAll)
         
 
-class Empty(Buffer):
-    def __init__(self,filename=None,fh=None):
-        Buffer.__init__(self,filename,fh,BlankSTC,defaultviewer=View)
-        self.name="(Empty)"
-
-
-##class BufferList(object):
-##    def __init__(self):
-##        self.files={}
-##        self.modes={}
-
-##    def registerMajorMode(self,mode):
-##        self.modes[mode.keyword]=mode
 
 
 
@@ -483,12 +470,6 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
                         break
                 elif paths!=None:
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
-       
-    def newTab(self):
-        self.dprint("frame=%s" % self)
-        buffer=Empty()
-        self.dprint("buffer=%s" % buffer)
-        self.newBuffer(buffer)
 
 
     #### PyPE Compatability
