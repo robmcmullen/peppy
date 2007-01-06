@@ -419,7 +419,8 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
             for path in paths:
                 self.dprint("open file %s:" % path)
-                self.open(path)
+                # Force the loader to use the file: protocol
+                self.open("file:%s" % path)
 
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!

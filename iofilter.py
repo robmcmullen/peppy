@@ -56,6 +56,9 @@ class URLInfo(object):
 
 #### Loaders for reading files and populating the STC interface
 
+class UnknownProtocolError(ValueError):
+    pass
+
 class FileProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)
 
@@ -106,7 +109,7 @@ class ProtocolHandler(Component):
         for handler in self.handlers:
             if protoidentifier in handler.supportedProtocols():
                 return handler
-        return FileProtocol(self.compmgr)
+        raise UnknownProtocolError("no handler for %s protocol" % protoidentifier)
 
 
 
