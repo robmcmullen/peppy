@@ -23,6 +23,35 @@ class ViewAction(FrameAction):
         self.action(self.frame.getCurrentViewer())
 
 
+class ShiftLeft(ViewAction):
+    name = "Shift &Left"
+    tooltip = "Unindent a line region"
+    icon = 'icons/text_indent_remove_rob.png'
+    keyboard = 'S-TAB'
+
+    def action(self, viewer, state=None, pos=-1):
+        viewer.indent(-1)
+
+class ShiftRight(ViewAction):
+    name = "Shift &Right"
+    tooltip = "Indent a line or region"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'TAB'
+
+    def action(self, viewer, state=None, pos=-1):
+        dprint("HERE!!!")
+        viewer.indent(1)
+
+class ElectricReturn(ViewAction):
+    name = "Electric Return"
+    tooltip = "Indent the next line following a return"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'RET'
+
+    def action(self, viewer, state=None, pos=-1):
+        viewer.electricReturn()
+
+
 
 #### Icons
 
@@ -237,6 +266,24 @@ class View(debugmixin,ClassSettingsMixin):
         class, a function, a todo item, etc.
         '''
         return ([], [], {}, [])
+
+    def indent(self, direction):
+        """
+        Indent (or unindent) a region.  The absolute value of the
+        direction parameter is the number of tab stops to indent (or
+        unindent).
+
+        @param direction: positive to indent, negative to unindent;
+        @type direction: int
+        """
+        pass
+
+    def electricReturn(self):
+        """
+        Indent the next line to the appropriate level.  This is called
+        instead of letting the STC handle a return press on its own.
+        """
+        pass
 
     def getNumWin(self, evt=None):
         """PyPE compat"""

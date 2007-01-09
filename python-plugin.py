@@ -13,9 +13,9 @@ from fundamental import FundamentalView
 
 from debug import *
 
-class IndentMixin(object):
-    def indent(self, view, incr):
-        s=view.stc
+class PythonIndentMixin(object):
+    def indent(self, incr):
+        s=self.stc
 
         # from pype.PythonSTC.Dent()
         self.dprint("indenting by %d" % incr)
@@ -50,39 +50,16 @@ class IndentMixin(object):
             else:
                 p = 0
                 if lnstart != 0:
-                    p = s.GetLineEndPosition(lnstart-1) + len(view.format)
+                    p = s.GetLineEndPosition(lnstart-1) + len(s.format)
                 s.SetSelection(p, s.GetLineEndPosition(lnend))
         finally:
             s.EndUndoAction()
 
 
-class ShiftLeft(ViewAction,IndentMixin):
-    name = "Shift &Left"
-    tooltip = "Unindent a line region"
-    icon = 'icons/text_indent_remove_rob.png'
-    keyboard = 'S-TAB'
 
-    def action(self, viewer, state=None, pos=-1):
-        self.indent(viewer,-1)
-
-class ShiftRight(ViewAction,IndentMixin):
-    name = "Shift &Right"
-    tooltip = "Indent a line or region"
-    icon = 'icons/text_indent_rob.png'
-    keyboard = 'TAB'
-
-    def action(self, viewer, state=None, pos=-1):
-        self.indent(viewer,1)
-
-
-class ElectricReturn(ViewAction):
-    name = "Electric Return"
-    tooltip = "Indent the next line following a return"
-    icon = 'icons/text_indent_rob.png'
-    keyboard = 'RET'
-
-    def action(self, viewer, state=None, pos=-1):
-        s=viewer.stc
+class PythonElectricReturnMixin(object):
+    def electricReturn(self):
+        s=self.stc
         
         # From PyPE: indent the new line to the correct indent
         # (matching the line above or indented further based on syntax)
@@ -243,7 +220,7 @@ else:
               'size2': 8,
              }
 
-class PythonView(FundamentalView):
+class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
     pluginkey = 'python'
     keyword='Python'
     icon='icons/py.ico'
