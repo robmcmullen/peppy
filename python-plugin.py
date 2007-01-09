@@ -342,7 +342,13 @@ class PythonView(FundamentalView):
         line = s.GetLine(linenum)[:pos-linestart]
     
         #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)                    
+        ind = s.GetLineIndentation(linenum)
+
+    def getFunctionList(self):
+        import pype.parsers
+        flist=pype.parsers.slower_parser(self.stc.GetText(),'\n',3,lambda:None)
+        self.dprint(flist)
+        return flist
 
 
 global_menu_actions=[

@@ -127,8 +127,17 @@ class View(debugmixin,ClassSettingsMixin):
         self.editwin=self.createEditWindow(self.splitter)
         if isinstance(self.editwin,MySTC):
             self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
-        self.splitter.Initialize(self.editwin)
-        self.splitter.SetMinimumPaneSize(10)
+
+        from pype.codetree import hierCodeTreePanel
+        self.funclist=hierCodeTreePanel(self,self.splitter,False)
+        fl=self.getFunctionList()
+        self.funclist.new_hierarchy(fl[0])
+        ## self.splitter.Initialize(self.editwin)
+        self.splitter.SplitVertically(self.editwin,self.funclist,-200)
+        self.splitter.SetMinimumPaneSize(0)
+        self.splitter.SetSashGravity(0.75)
+        if not fl[0]:
+            self.splitter.Unsplit(self.funclist)
 
     def OnUpdateUI(self,evt):
         dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
@@ -221,6 +230,17 @@ class View(debugmixin,ClassSettingsMixin):
         self.frame.showModified(self)
         self.frame.enableMenu()
 
+    def getFunctionList(self):
+        '''
+        Return a list of tuples, where each tuple contains information
+        about a notable line in the source code corresponding to a
+        class, a function, a todo item, etc.
+        '''
+        return ([], [], {}, [])
+
+    def getNumWin(self, evt=None):
+        """PyPE compat"""
+        return 1,self.editwin
 
 
 

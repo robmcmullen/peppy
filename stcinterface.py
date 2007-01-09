@@ -112,6 +112,12 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
             self.dprint("creating new document %s" % self.docptr)
             self.subordinates=[]
 
+        ## PyPE compat
+
+        # assume unix line endings for now; will be changed after file
+        # is loaded
+        self.format='\n'
+
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
 

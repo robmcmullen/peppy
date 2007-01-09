@@ -129,7 +129,7 @@ class TextFilter(IOFilter):
         txt=fh.read()
         self.dprint("TextFilter: reading %d bytes from %s" % (len(txt),filename))
         stc.SetText(txt)
-        return fh
+        return fh,txt
 
     def write(self,protocol,filename,stc):
         fh=protocol.getWriter(filename)
@@ -168,7 +168,7 @@ class BinaryFilter(IOFilter):
                 errors+=1
             if errors>50: break
         self.dprint("errors=%d" % errors)
-        return fh
+        return fh,txt
     
     def write(self,protocol,urlinfo,stc):
         fh=protocol.getWriter(urlinfo)
@@ -196,7 +196,10 @@ class FilterWrapper(debugmixin):
         self.fh=None
 
     def read(self,stc):
-        self.fh=self.filter.read(self.protocol,self.urlinfo,stc)
+        self.fh,raw=self.filter.read(self.protocol,self.urlinfo,stc)
+
+        from pype.parsers import detectLineEndings
+        stc.format=detectLineEndings(raw)
 
     def write(self,stc):
         self.fh=self.filter.write(self.protocol,self.urlinfo,stc)
