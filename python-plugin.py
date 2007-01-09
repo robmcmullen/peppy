@@ -225,6 +225,7 @@ class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
+    lexer=stc.STC_LEX_PYTHON
 
     defaultsettings={
         'menu_actions':[
@@ -237,6 +238,9 @@ class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
             ],
         }
 
+    def getKeyWords(self):
+        return [(0," ".join(keyword.kwlist))]
+
     def styleSTC(self):
         self.format=os.linesep
         
@@ -247,12 +251,10 @@ class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
         face3 = 'Courier New'
         pb = 10
 
-        # Set the Lexer
-        s.SetLexer(stc.STC_LEX_PYTHON)
-        s.SetKeyWords(0, " ".join(keyword.kwlist))
+        # Show mixed tabs/spaces
         s.SetProperty("tab.timmy.whinge.level", "1")
         
-       # Global default styles for all languages
+        # Global default styles for all languages
         s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
         s.StyleClearAll()  # Reset all to be like the default
 

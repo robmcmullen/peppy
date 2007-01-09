@@ -131,6 +131,7 @@ class FundamentalView(View):
     pluginkey = 'fundamental'
     keyword='Fundamental'
     regex=".*"
+    lexer=stc.STC_LEX_NULL
 
     defaultsettings={
         'menu_actions':[
@@ -159,8 +160,29 @@ class FundamentalView(View):
     def createSTC(self,parent,style=False):
         self.stc=MySTC(parent,refstc=self.buffer.stc)
         self.applyDefaultStyle()
+        self.setLexer()
         if style:
             self.styleSTC()
+
+    def setLexer(self):
+        self.stc.SetLexer(self.lexer)
+        keylist=self.getKeyWords()
+        for keyset,keywords in keylist:
+            self.stc.SetKeyWords(keyset, keywords)
+
+    def getKeyWords(self):
+        """
+        Return a list of tuples that specify the keyword set and the
+        list of keywords for that set.  The STC can handle multiple
+        sets of keywords in certain cases (HTML, CPP, others: see
+        L{http://www.yellowbrain.com/stc/lexing.html#setkw})
+
+        Keywords should be space separated.
+
+        @return: list of tuples
+        @rtype: list of (int, keywords)
+        """
+        return [(0,"")]
 
     def applyDefaultStyle(self):
         face1 = 'Arial'
