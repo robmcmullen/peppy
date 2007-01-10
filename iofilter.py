@@ -208,10 +208,12 @@ class FilterWrapper(debugmixin):
         return self.protocol.getSTC(parent)
 
 
-def GetIOFilter(filename):
+def GetIOFilter(filename,default="file"):
     comp_mgr=ComponentManager()
     handler=ProtocolHandler(comp_mgr)
     info=URLInfo(filename)
+    if info.protocol is None:
+        info.protocol=default
     protocol=handler.find(info.protocol)
     filter=BinaryFilter()
     return FilterWrapper(protocol,filter,info)
