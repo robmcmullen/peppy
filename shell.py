@@ -12,9 +12,6 @@ from fundamental import FundamentalView
 from stcinterface import MySTC
 from menudev import FrameAction
 
-from plugins.eliza import *
-
-
 class ShellPipePlugin(Interface):
     """
     Interface for shells that take a line of input and return a response.
@@ -151,7 +148,7 @@ class ProcessShellLine(FrameAction):
             viewer.buffer.stc.process(viewer)
 
 class ShellView(FundamentalView):
-    debuglevel=1
+    debuglevel=0
     
     icon='icons/application_xp_terminal.png'
     regex="shell:.*$"
@@ -191,24 +188,41 @@ class ShellPlugin(ViewPluginBase,debugmixin):
         return None
 
 
-class ElizaShell(Component):
+import nltk_lite.chat.eliza
+import nltk_lite.chat.zen
+import nltk_lite.chat.iesha
+import nltk_lite.chat.rude
+
+class ChatShell(Component):
     implements(ShellPipePlugin)
 
+    def __init__(self):
+        self.modules={'eliza':[nltk_lite.chat.eliza.eliza,
+                               "Hello.  How are you feeling today?"],
+                      'zen':[nltk_lite.chat.zen.zen,
+                             "Welcome, my child."],
+                      'iesha':[nltk_lite.chat.iesha.iesha,
+                               "hi!! i'm iesha! who r u??!"],
+                      'rude':[nltk_lite.chat.rude.rude,
+                              "I suppose I should say hello."],
+                      }
+
     def supportedShells(self):
-        return ['eliza']
+        return self.modules.keys()
 
     def getPipe(self,filename):
-        return ElizaWrapper()
+        if filename in self.modules.keys():
+            return ChatWrapper(*self.modules[filename])
 
 
-class ElizaWrapper(debugmixin):
+class ChatWrapper(debugmixin):
     debuglevel=1
     ps1="> "
     ps2=">> "
     
-    def __init__(self):
-        self.therapist=eliza()
-        self.greeting="Hello.  How are you feeling today?"
+    def __init__(self,chatbot,greeting):
+        self.therapist=chatbot
+        self.greeting=greeting
         self.pending=StringIO()
         self.pending.write(self.greeting)
         self._notify_window=None
@@ -224,7 +238,7 @@ class ElizaWrapper(debugmixin):
     def write(self,s):
         while s[-1] in "!.": s = s[:-1]
         response=self.therapist.respond(s)
-        self.dprint(response)
+        self.dprint("'%s' -> '%s'" % (s,response))
         self.pending.write(response)
         wx.PostEvent(self._notify_window,ShellUpdateEvent())
     
