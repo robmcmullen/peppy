@@ -121,7 +121,7 @@ class ReplaceText(MinibufferAction):
 
 
 
-class FundamentalView(View):
+class FundamentalMode(MajorMode):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -252,8 +252,8 @@ global_menu_actions=[
 ]
 
 
-class FundamentalPlugin(ViewPluginBase,debugmixin):
-    implements(ViewPlugin)
+class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
+    implements(IMajorModeMatcher)
 
     def scanMagic(self,buffer):
         """
@@ -261,7 +261,7 @@ class FundamentalPlugin(ViewPluginBase,debugmixin):
         potential Fundamental.
         """
         if not buffer.guessBinary:
-            return ViewMatch(FundamentalView,generic=True)
+            return MajorModeMatch(FundamentalMode,generic=True)
         return None
 
 

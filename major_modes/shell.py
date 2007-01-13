@@ -9,7 +9,7 @@ from cStringIO import StringIO
 from trac.core import *
 from plugin import *
 from debug import *
-from major_modes.fundamental import FundamentalView
+from major_modes.fundamental import FundamentalMode
 from stcinterface import MySTC
 from menudev import FrameAction
 
@@ -148,7 +148,7 @@ class ProcessShellLine(FrameAction):
         if viewer:
             viewer.buffer.stc.process(viewer)
 
-class ShellView(FundamentalView):
+class ShellMode(FundamentalMode):
     debuglevel=0
     
     icon='icons/application_xp_terminal.png'
@@ -179,11 +179,11 @@ class ShellView(FundamentalView):
         
 
 
-class ShellPlugin(ViewPluginBase,debugmixin):
-    implements(ViewPlugin)
+class ShellPlugin(MajorModeMatcherBase,debugmixin):
+    implements(IMajorModeMatcher)
     
     def scanFilename(self,filename):
-        match=re.search(ShellView.regex,filename)
+        match=re.search(ShellMode.regex,filename)
         if match:
-            return ViewMatch(ShellView,exact=True)
+            return MajorModeMatch(ShellMode,exact=True)
         return None

@@ -9,7 +9,7 @@ import wx.lib.newevent
 from menudev import *
 from buffers import *
 
-from views import View
+from views import MajorMode
 
 from debug import *
 
@@ -26,7 +26,7 @@ class OpenHexEditor(FrameAction):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("icons/py.ico")
 
-class HexEditMajorMode(FrameAction):
+class UseHexEditMajorMode(FrameAction):
     name = "Change to HexEdit Major Mode"
     tooltip = "Change to binary editor"
     icon = "icons/folder_page.png"
@@ -34,7 +34,7 @@ class HexEditMajorMode(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.changeMajorMode(HexEditView)
+        self.frame.changeMajorMode(HexEditMode)
 
 
 
@@ -623,7 +623,7 @@ class HugeTableGrid(Grid.Grid,debugmixin):
 
 
 
-class HexEditView(View):
+class HexEditMode(MajorMode):
     """
     View for editing in hexidecimal notation.
     """
@@ -636,7 +636,7 @@ class HexEditView(View):
     debuglevel=0
 
     def createEditWindow(self,parent):
-        self.dprint("creating new HexEditView window")
+        self.dprint("creating new HexEditMode window")
 
         win=HugeTableGrid(parent,self.buffer.stc,"16c")        
         #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
@@ -648,7 +648,7 @@ class HexEditView(View):
         # events in the callback itself.
         ## self.stc.SetModEventMask(stc.STC_MOD_INSERTTEXT|stc.STC_MOD_DELETETEXT|stc.STC_PERFORMED_USER|stc.STC_PERFORMED_UNDO|stc.STC_PERFORMED_REDO)
         
-        # Multiple binds to the same handler, ie multiple HexEditViews
+        # Multiple binds to the same handler, ie multiple HexEditModes
         # trying to do self.buffer.stc.Bind(stc.EVT_STC_MODIFIED,
         # self.underlyingSTCChanged) don't work.  Need to use the
         # event manager for multiple bindings.
@@ -734,7 +734,7 @@ class HexEditView(View):
 
 global_menu_actions=[
     [[('&Test',1.0)],OpenHexEditor,0.19],
-    [HexEditMajorMode,0.9],
+    [UseHexEditMajorMode,0.9],
 ]
 
 ##global_toolbar_actions=[
@@ -742,28 +742,28 @@ global_menu_actions=[
 ##    [OpenHexEditor,0.1],
 ##    ]
 
-class HexEditPlugin(ViewPluginBase,debugmixin):
-    implements(ViewPlugin)
+class HexEditPlugin(MajorModeMatcherBase,debugmixin):
+    implements(IMajorModeMatcher)
     
     def scanEmacs(self,emacsmode,vars):
-        if emacsmode in ['hexl',HexEditView.keyword]:
-            return ViewMatch(HexEditView,exact=True)
+        if emacsmode in ['hexl',HexEditMode.keyword]:
+            return MajorModeMatch(HexEditMode,exact=True)
         return None
 
     def scanShell(self,bangpath):
         return None
 
     def scanFilename(self,filename):
-        match=re.search(HexEditView.regex,filename)
+        match=re.search(HexEditMode.regex,filename)
         if match:
-            return ViewMatch(HexEditView,exact=True)
+            return MajorModeMatch(HexEditMode,exact=True)
         return None
     
     def scanMagic(self,buffer):
         """
         If the buffer looks like it is a binary file, flag it as a
-        potential HexEditView.
+        potential HexEditMode.
         """
         if buffer.guessBinary:
-            return ViewMatch(HexEditView,generic=True)
+            return MajorModeMatch(HexEditMode,generic=True)
         return None

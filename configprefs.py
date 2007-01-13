@@ -330,10 +330,10 @@ def testHierarchy():
                      },
         'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
                  },
-        'View':{'linenumbers':'True',
-                'wordwrap':'False',
-                },
-        'PythonView':{'wordwrap':'True',
+        'MajorMode':{'linenumbers':'True',
+                     'wordwrap':'False',
+                     },
+        'PythonMode':{'wordwrap':'True',
                       },
         })
     vehicle=ShortBedPickupTruck()

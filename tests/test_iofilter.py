@@ -82,8 +82,8 @@ class TestGetIOFilter:
         text=stc.GetText()
         eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
         
-    def testShell(self):
-        import shell
+    def testChatbots(self):
+        import plugins.chatbots
         filter=GetIOFilter("shell:eliza")
         eq_(filter.urlinfo.protocol,'shell')
         eq_(filter.urlinfo.path,'eliza')

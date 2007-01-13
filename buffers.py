@@ -189,7 +189,7 @@ class Buffer(debugmixin):
         self.stc.EmptyUndoBuffer()
 
         if self.defaultviewer is None:
-            self.defaultviewer=GetView(self)
+            self.defaultviewer=GetMajorMode(self)
 
     def save(self,filename=None):
         self.dprint("Buffer: saving buffer %s" % (self.filename))

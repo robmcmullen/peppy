@@ -94,12 +94,12 @@ def getIconStorage(icon=None):
 
 
 
-#### View base class
+#### MajorMode base class
 
-class View(debugmixin,ClassSettingsMixin):
+class MajorMode(debugmixin,ClassSettingsMixin):
     """
-    Base class for all Views.  Subclasses need to implement at least
-    createEditWindow that will return the main user interaction
+    Base class for all major modes.  Subclasses need to implement at
+    least createEditWindow that will return the main user interaction
     window.
     """
     debuglevel=0
@@ -292,9 +292,9 @@ class View(debugmixin,ClassSettingsMixin):
 
 
 
-class ViewPluginDriver(Component,debugmixin):
+class MajorModeMatcherDriver(Component,debugmixin):
     debuglevel=0
-    plugins=ExtensionPoint(ViewPlugin)
+    plugins=ExtensionPoint(IMajorModeMatcher)
 
     def parseEmacs(self,line):
         """
@@ -333,7 +333,7 @@ class ViewPluginDriver(Component,debugmixin):
     def find(self,buffer):
         """
         Determine the best possible L{View} subclass for the given
-        buffer.  See L{ViewPlugin} for more information on designing
+        buffer.  See L{IMajorModeMatcher} for more information on designing
         plugins that this method uses.
 
         Emacs-style major mode strings are searched for first, and if
@@ -407,9 +407,13 @@ class ViewPluginDriver(Component,debugmixin):
             # FIXME: don't just use the first one, do something smarter!
             return generics[0].view
         else:
-            return FundamentalView
+            # FIXME: need to specify the global default mode, but not
+            # like this.  The plugins should manage it.  Maybe add a
+            # method to the IMajorModeMatcher to see if this mode is
+            # the default mode.
+            return FundamentalMode
 
-def GetView(buffer):
+def GetMajorMode(buffer):
     """
     Application-wide entry point used to find the best view for the
     given buffer.
@@ -419,6 +423,6 @@ def GetView(buffer):
     """
     
     comp_mgr=ComponentManager()
-    driver=ViewPluginDriver(comp_mgr)
+    driver=MajorModeMatcherDriver(comp_mgr)
     view=driver.find(buffer)
     return view

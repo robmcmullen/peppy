@@ -636,6 +636,7 @@ class ActionMenuItem(ActionMenuItemBase):
             if self.widget.IsCheckable(): # this is necessary under windows
                 checked=self.command.isChecked(self.listpos)
 ##            parentWidget.Check(self.id,checked)
+                self.dprint("name=%s, setting checked to %s" % (self.name,checked))
                 self.widget.Check(checked)
 
     # propogate toggle and radio values up into the frame so that the

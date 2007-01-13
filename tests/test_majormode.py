@@ -9,7 +9,7 @@ from nose.tools import *
 class TestEmacsMode:
     def setUp(self):
         comp_mgr=ComponentManager()
-        self.driver=ViewPluginDriver(comp_mgr)
+        self.driver=MajorModeMatcherDriver(comp_mgr)
 
     def testMode(self):
         test=self.driver.parseEmacs

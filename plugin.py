@@ -48,12 +48,12 @@ class ProtocolPluginBase(Component):
         return MySTC(parent)
 
 
-class ViewMatch(object):
+class MajorModeMatch(object):
     """
-    Return type of a L{ViewPlugin} when a successful match is made.
-    In addition of the View class, any name/value pairs specific to
-    this file can be passed back to the caller, as well as an
-    indicator if the match is exact or generic.
+    Return type of a L{IMajorModeMatcher} when a successful match is
+    made.  In addition of the View class, any name/value pairs
+    specific to this file can be passed back to the caller, as well as
+    an indicator if the match is exact or generic.
 
     """
     
@@ -67,12 +67,13 @@ class ViewMatch(object):
         self.editable=True
 
 
-class ViewPlugin(Interface):
+class IMajorModeMatcher(Interface):
     """
-    Interface that L{ViewPluginDriver<views.ViewPluginDriver>} uses to
+    Interface that
+    L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} uses to
     determine if a View represented by this plugin is capable of
-    viewing the data in the buffer.  (Note that a ViewPlugin may
-    represent more than one View.)  Several methods are used in an
+    viewing the data in the buffer.  (Note that one IMajorModeMatcher
+    may represent more than one View.)  Several methods are used in an
     attempt to pick the best match for the data in the buffer.
 
     First, if the first non-blank line in the buffer (or second line
@@ -108,18 +109,18 @@ class ViewPlugin(Interface):
           -*- mode: Ksh; var1:value1; var3:value9; -*-
       
         The text within the delimiters is parsed by the
-        L{ViewPluginDriver<views.ViewPluginDriver>}, and two
-        parameters are passed to this method.  The emacs mode string
-        is passed in as C{emacsmode}, and any name/value pairs are
-        passed in the C{vars} dict (which could be empty).  It is not
-        required that your plugin understand and process the
+        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}, and
+        two parameters are passed to this method.  The emacs mode
+        string is passed in as C{emacsmode}, and any name/value pairs
+        are passed in the C{vars} dict (which could be empty).  It is
+        not required that your plugin understand and process the
         variables.
 
         If your plugin recognizes the emacs major mode string, return
-        a L{ViewMatch} object that contains the View class.
+        a L{MajorModeMatch} object that contains the View class.
         Otherwise, return None and the
-        L{ViewPluginDriver<views.ViewPluginDriver>} will continue
-        processing.
+        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
+        continue processing.
 
         @param emacsmode: text string of the Emacs major mode
         @type emacsmode: string
@@ -134,11 +135,11 @@ class ViewPlugin(Interface):
         passed in as C{bangpath}.
 
         If your plugin recognizes something in the shell string,
-        return a L{ViewMatch} object that contains the View class and
-        the L{ViewPluginDriver<views.ViewPluginDriver>} will stop
-        looking and use than View.  If not, return None and the
-        L{ViewPluginDriver<views.ViewPluginDriver>} will continue
-        processing.
+        return a L{MajorModeMatch} object that contains the View class and
+        the L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}
+        will stop looking and use than View.  If not, return None and
+        the L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}
+        will continue processing.
 
         @param bangpath: characters after the C{#!}
         @type bangpath: string
@@ -150,9 +151,10 @@ class ViewPlugin(Interface):
         that determines the file type and therefore the
         L{View<views.View>} that should be used.
 
-        If your plugin recognizes something, return a L{ViewMatch}
+        If your plugin recognizes something, return a L{MajorModeMatch}
         object with the optional indicators filled in.  If not, return
-        None and the L{ViewPluginDriver<views.ViewPluginDriver>} will
+        None and the
+        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
         continue processing.
 
         @param filename: filename, can be in URL form
@@ -165,22 +167,23 @@ class ViewPlugin(Interface):
         determines the file type and therefore the L{View<views.View>}
         that should be used.
 
-        If your plugin recognizes something, return a L{ViewMatch}
+        If your plugin recognizes something, return a L{MajorModeMatch}
         object with the optional indicators filled in.  If not, return
-        None and the L{ViewPluginDriver<views.ViewPluginDriver>} will
+        None and the
+        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
         continue processing.
 
         @param buffer: buffer of already loaded file
         @type buffer: L{Buffer<buffers.Buffer>}
         """
 
-class ViewPluginBase(Component):
+class MajorModeMatcherBase(Component):
     """
-    Simple do-nothing base class for L{ViewPlugin} implementations so
-    that you don't have to provide null methods for scans you don't
-    want to implement.
+    Simple do-nothing base class for L{IMajorModeMatcher}
+    implementations so that you don't have to provide null methods for
+    scans you don't want to implement.
 
-    @see: L{ViewPlugin} for the interface description
+    @see: L{IMajorModeMatcher} for the interface description
 
     @see: L{FundamentalPlugin<fundamental.FundamentalPlugin>} or
     L{PythonPlugin} for examples.

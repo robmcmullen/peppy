@@ -12,7 +12,7 @@ Plugins
 
 There are currently two plugin types that can be used to extend peppy:
 L{ProtocolPlugin<plugin.ProtocolPlugin>}s and
-L{ViewPlugin<plugin.ViewPlugin>}s.
+L{IMajorModeMatcher<plugin.IMajorModeMatcher>}s.
 
 @author: $author
 @version: $version
@@ -250,7 +250,7 @@ class HelpAbout(FrameAction):
 
 
 
-class AlphaView(View):
+class AlphaMode(MajorMode):
     pluginkey = 'alpha'
     keyword='Alpha'
     icon = 'icons/world.png'
@@ -268,7 +268,7 @@ class AlphaView(View):
         return win
 
 
-class BravoView(View):
+class BravoMode(MajorMode):
     pluginkey = 'bravo'
     keyword='Bravo'
     icon='icons/bug_add.png'
@@ -280,7 +280,7 @@ class BravoView(View):
         return win
 
 
-class BlankView(View):
+class BlankMode(MajorMode):
     pluginkey = 'blank'
     keyword='Blank'
     icon='icons/application.png'
@@ -292,7 +292,7 @@ class BlankView(View):
         wx.StaticText(win, -1, text, (10,10))
         return win
 
-class TitleView(BlankView):
+class TitleMode(BlankMode):
     pluginkey = 'title'
     keyword='Title'
     regex="about:title.txt"
@@ -377,10 +377,10 @@ class Peppy(BufferApp,ClassSettingsMixin):
                                 },
                    'Peppy':{'plugins':'major_modes.hexedit,major_modes.python,major_modes.shell,plugins.chatbots',
                             },
-                   'View':{'linenumbers':True,
-                           'wordwrap':False,
-                           },
-                   'PythonView':{'wordwrap':True,
+                   'MajorMode':{'linenumbers':True,
+                                'wordwrap':False,
+                                },
+                   'PythonMode':{'wordwrap':True,
                                  },
                    }
     
@@ -581,18 +581,18 @@ global_toolbar_actions=[
 global_keyboard_actions=[]
 
 
-class AboutPlugin(ViewPluginBase):
-    implements(ViewPlugin)
+class AboutPlugin(MajorModeMatcherBase):
+    implements(IMajorModeMatcher)
 
     def scanFilename(self,filename):
         if filename=='about:alpha':
-            return ViewMatch(AlphaView,exact=True)
+            return MajorModeMatch(AlphaMode,exact=True)
         elif filename=='about:bravo':
-            return ViewMatch(BravoView,exact=True)
+            return MajorModeMatch(BravoMode,exact=True)
         elif filename=='about:title.txt':
-            return ViewMatch(TitleView,exact=True)
+            return MajorModeMatch(TitleMode,exact=True)
         elif filename=='about:blank':
-            return ViewMatch(BlankView,exact=True)
+            return MajorModeMatch(BlankMode,exact=True)
         else:
             return None
 

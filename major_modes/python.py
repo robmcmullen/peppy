@@ -9,7 +9,7 @@ from buffers import *
 
 from views import *
 from plugin import *
-from major_modes.fundamental import FundamentalView
+from major_modes.fundamental import FundamentalMode
 
 from debug import *
 
@@ -191,7 +191,7 @@ class PythonElectricReturnMixin(object):
             s.ReplaceSelection(viewer.format+a)
         
 
-class PythonMajorMode(FrameAction):
+class UsePythonMajorMode(FrameAction):
     name = "Change to Python Major Mode"
     tooltip = "Change to python editor"
     icon = "icons/folder_page.png"
@@ -199,7 +199,7 @@ class PythonMajorMode(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.changeMajorMode(PythonView)
+        self.frame.changeMajorMode(PythonMode)
 
 
 
@@ -220,7 +220,7 @@ else:
               'size2': 8,
              }
 
-class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
+class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
     pluginkey = 'python'
     keyword='Python'
     icon='icons/py.ico'
@@ -331,23 +331,23 @@ class PythonView(PythonIndentMixin,PythonElectricReturnMixin,FundamentalView):
 
 
 global_menu_actions=[
-    [[('&Test',0.1)],PythonMajorMode,0.9],
+    [[('&Test',0.1)],UsePythonMajorMode,0.9],
 ]
 
-class PythonPlugin(ViewPluginBase,debugmixin):
-    implements(ViewPlugin)
+class PythonPlugin(MajorModeMatcherBase,debugmixin):
+    implements(IMajorModeMatcher)
 
     def scanEmacs(self,emacsmode,vars):
-        if emacsmode in ['python',PythonView.keyword]:
-            return ViewMatch(PythonView,exact=True)
+        if emacsmode in ['python',PythonMode.keyword]:
+            return MajorModeMatch(PythonMode,exact=True)
         return None
 
     def scanShell(self,bangpath):
         if bangpath.find('python')>-1:
-            return ViewMatch(PythonView,exact=True)
+            return MajorModeMatch(PythonMode,exact=True)
         return None
 
     def scanFilename(self,filename):
         if filename.endswith('.py'):
-            return ViewMatch(PythonView,exact=True)
+            return MajorModeMatch(PythonMode,exact=True)
         return None
