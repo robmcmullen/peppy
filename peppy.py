@@ -31,7 +31,7 @@ from debug import *
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "0.4.0-pre"
+__version__ = "svn-devel"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"

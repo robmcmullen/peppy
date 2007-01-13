@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os,sys,re,os.path
+import os,sys,re,os.path,time
 from cStringIO import StringIO
 from datetime import date
 from optparse import OptionParser
@@ -26,6 +26,24 @@ namespace={
     'preBody':'',
     }
 
+def findChangeLogVersion():
+    fh=open("ChangeLog")
+    release_date=date.today().strftime("%d %B %Y")
+    version="0.0.0"
+    for line in fh:
+        match=re.match('(\d+-\d+-\d+).*',line)
+        if match:
+            print 'found date %s' % match.group(1)
+            release_date=date.fromtimestamp(time.mktime(time.strptime(match.group(1),'%Y-%m-%d'))).strftime('%d %B %Y')
+        match=re.match('\s+\*\s*[Rr]eleased peppy-([\d\.]+)',line)
+        if match:
+            print 'found version %s' % match.group(1)
+            version=match.group(1)
+            break
+    namespace['release_date']=release_date
+    namespace['version']=version
+    #print namespace
+
 def findlatest():
     files=os.listdir('archive')
     timestamp=0
@@ -49,15 +67,6 @@ def findlatest():
     else:
         namespace['version']=namespace['cvs_version']
 
-##filename=namespace['prog']+'-'+namespace['version']+'.tar.gz'
-##if os.path.exists(filename):
-##    namespace['release_date']=date.fromtimestamp(os.path.getmtime(filename)).strftime("%d %B %Y")
-##elif os.path.exists('archive/'+filename):
-##    namespace['release_date']=date.fromtimestamp(os.path.getmtime('archive/'+filename)).strftime("%d %B %Y")
-##else:
-##    namespace['release_date']='... er, soon'
-
-
 def setnamespace():
     if module:
         defaults={
@@ -66,15 +75,15 @@ def setnamespace():
             'author_email':module.__author_email__,
             'url':module.__url__,
             'description':module.__description__,
-            'cvs_version':module.__version__,
             }
         
         for key,val in defaults.iteritems():
             namespace[key]=val
             # print "%s=%s" % (key,val)
     
-    findlatest()
-
+    # findlatest()
+    findChangeLogVersion()
+    
     if int(namespace['yearstart'])<int(namespace['year']):
         namespace['yearrange']=namespace['yearstart']+'-'+namespace['year']
     else:

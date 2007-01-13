@@ -8,11 +8,11 @@ WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
 
 # Distribution stuff
 TAR = tar
-TAROPTS = --exclude=.svn --exclude='*.pyc'
+TAROPTS = --exclude=.svn --exclude='*.pyc' --exclude='*~'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
-VERSION := $(shell grep __version__ $(PACKAGE).py|head -n1|cut -d \" -f 2)
+VERSION := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2)
 
 EPYDOC = epydoc -v -v -v --no-sourcecode
 
@@ -24,10 +24,10 @@ distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
 DISTMAIN = peppy.py
-DISTMODS = buffers.py configprefs.py debug.py fundamental.py gotoline.py hexedit-plugin.py iofilter.py menudev.py minibuffer.py plugin.py python-plugin.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py trac/core.py
+DISTMODS = buffers.py configprefs.py debug.py fundamental.py gotoline.py hexedit-plugin.py iofilter.py menudev.py minibuffer.py plugin.py python-plugin.py shell.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py
 DISTSRC = $(DISTMAIN) $(DISTMODS)
-DISTDOCS = README ChangeLog gpl.txt
-DISTFILES = $(DISTSRC) $(DISTDOCS) icons trac
+DISTDOCS = README ChangeLog LICENSE
+DISTFILES = $(DISTSRC) $(DISTDOCS) icons trac tests nltk_lite pype
 DISTFILE_TESTS = 
 
 
@@ -52,8 +52,6 @@ api/index.html: $(DISTSRC)
 README: README.pre.in
 	./Makedoc.py -m peppy -o README README.pre.in
 
-
-
 doc: README
 
 html: $(HTML) $(PRE)
@@ -66,12 +64,13 @@ api: api/index.html
 publish_api: api
 	rsync -avuz api robm351@www.flipturn.org:flipturn.org/peppy/
 
-publish: publish_api publish_html
-
-
 release: dist
 	-mkdir -p archive
-	cp $(distdir).tar.bz2 archive
+	mv $(distdir).tar.bz2 archive
+
+publish: api release
+	rsync -avuz api archive robm351@www.flipturn.org:flipturn.org/peppy/
+
 
 dist: distdir
 	-chmod -R a+r $(distdir)
@@ -94,11 +93,11 @@ distdir: $(DISTFILES)
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
-#	mkdir $(distdir)/website
-#	./Makedoc.py -m peppy -r version cvs_version -d -o /tmp/peppy.py peppy.py
-#	epydoc -o $(distdir)/website/api --no-private -u '../index.html' /tmp/peppy.py
-#	mkdir $(distdir)/examples
-#	cp $(DISTFILE_TESTS) $(distdir)/examples
+	echo $(distdir)
+# remove the hard link to $(DISTMAIN) and create a file with the
+# updated version number
+	rm $(distdir)/$(DISTMAIN)
+	sed -e "s/svn-devel/$(VERSION)/" $(DISTMAIN)>$(distdir)/$(DISTMAIN)
 
 
 
