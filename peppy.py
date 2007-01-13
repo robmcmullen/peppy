@@ -375,7 +375,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
     initialconfig={'MenuFrame':{'width':600,
                                 'height':500,
                                 },
-                   'Peppy':{'plugins':'hexedit-plugin,python-plugin,shell',
+                   'Peppy':{'plugins':'major_modes.hexedit,major_modes.python,major_modes.shell,plugins.chatbots',
                             },
                    'View':{'linenumbers':True,
                            'wordwrap':False,
@@ -485,9 +485,19 @@ class Peppy(BufferApp,ClassSettingsMixin):
         """
         Main driver for any functions that need to look in the config file.
         """
+        self.parseConfigMajorModes()
         self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
+
+    def parseConfigMajorModes(self):
+        """
+        Placeholder for future method to automatically import major
+        modes in the major_modes subdirectory.  An even better way
+        would be to import the modules only on request when they are
+        first needed.
+        """
+        pass
 
     def parseConfigPlugins(self):
         """

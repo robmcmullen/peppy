@@ -3,7 +3,7 @@ import os
 import wx
 import wx.stc as stc
 
-from minibuffer import *
+from actions.minibuffer import *
 from views import *
 from plugin import *
 from debug import *

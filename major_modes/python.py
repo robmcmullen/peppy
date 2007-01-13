@@ -9,7 +9,7 @@ from buffers import *
 
 from views import *
 from plugin import *
-from fundamental import FundamentalView
+from major_modes.fundamental import FundamentalView
 
 from debug import *
 

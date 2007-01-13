@@ -9,7 +9,7 @@ from views import *
 from plugin import *
 from debug import *
 
-from gotoline import *
+from actions.gotoline import *
 
 class OpenFundamental(FrameAction):
     name = "&Open Sample Text"
