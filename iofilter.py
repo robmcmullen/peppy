@@ -1,4 +1,4 @@
-import os,re
+import os,re,urlparse
 
 from cStringIO import StringIO
 
@@ -36,22 +36,29 @@ text works, as well as virtually unlimited Undo and Redo
 capabilities, (right click to try it out.)
 """
 
-def SetAbout(filename,text):
-    aboutfiles[filename]=text
+def SetAbout(path,text):
+    aboutfiles[path]=text
 
 class URLInfo(object):
-    def __init__(self,url):
+    def __init__(self,url,default="file",usewin=False):
         self.url=url
-        match=re.match(r'([a-zA-Z\+]+):(//)?(.+)',url)
-        if match:
-            self.protocol=match.group(1)
-            self.filename=match.group(3)
-        else:
-            self.protocol=None
-            self.filename=self.url
+        (self.protocol, self.netloc, self.path, self.parameters,
+         self.query_string, self.fragment)=urlparse.urlparse(self.url,default)
+
+        # special handling for windows filenames with drive letters
+        if os.name in ['nt','ce','os2'] or usewin:
+            print self
+            if len(self.protocol)==1:
+                self.path="%s:%s" % (self.protocol,self.path)
+                self.protocol="file"
 
     def __str__(self):
-        return "%s (protocol=%s file=%s)" % (self.url,self.protocol,self.filename)
+        return "%s %s" % (self.url, (self.protocol,
+                                                        self.netloc,
+                                                        self.path,
+                                                        self.parameters,
+                                                        self.query_string,
+                                                        self.fragment))
             
 
 #### Loaders for reading files and populating the STC interface
@@ -64,15 +71,28 @@ class FileProtocol(ProtocolPluginBase,debugmixin):
 
     def supportedProtocols(self):
         return ['file']
+
+    def getFilename(self,urlinfo):
+        # urlparse makes a distinction between file://name and
+        # file:///name:
+        # >>> urlparse("file://LICENSE")
+        # ('file', 'LICENSE', '', '', '', '')
+        # >>> urlparse("file:///LICENSE")
+        # ('file', '', '/LICENSE', '', '', '')
+        
+        # but, I don't need that distinction, so just cat them.
+        return urlinfo.netloc+urlinfo.path
     
     def getReader(self,urlinfo):
-        self.dprint("getReader: trying to open %s" % urlinfo.filename)
-        fh=open(urlinfo.filename,"rb")
+        filename=self.getFilename(urlinfo)
+        self.dprint("getReader: trying to open %s" % filename)
+        fh=open(filename,"rb")
         return fh
 
     def getWriter(self,urlinfo):
-        self.dprint("getWriter: trying to open %s" % urlinfo.filename)
-        fh=open(urlinfo.filename,"wb")
+        filename=self.getFilename(urlinfo)
+        self.dprint("getWriter: trying to open %s" % filename)
+        fh=open(filename,"wb")
         return fh
 
 class AboutProtocol(ProtocolPluginBase,debugmixin):
@@ -82,9 +102,9 @@ class AboutProtocol(ProtocolPluginBase,debugmixin):
         return ['about']
     
     def getReader(self,urlinfo):
-        if urlinfo.filename in aboutfiles:
+        if urlinfo.path in aboutfiles:
             fh=StringIO()
-            fh.write(aboutfiles[urlinfo.filename])
+            fh.write(aboutfiles[urlinfo.path])
             fh.seek(0)
             return fh
         raise IOError
@@ -117,28 +137,28 @@ class ProtocolHandler(Component):
 class IOFilter(debugmixin):
     debuglevel=0
     
-    def read(self,protocol,filename):
+    def read(self,protocol,path):
         raise NotImplementedError
 
-    def write(self,protocol,filename):
+    def write(self,protocol,path):
         raise NotImplementedError
 
 class TextFilter(IOFilter):
-    def read(self,protocol,filename,stc):
-        fh=protocol.getReader(filename)
+    def read(self,protocol,path,stc):
+        fh=protocol.getReader(path)
         txt=fh.read()
-        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt),filename))
+        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt),path))
         stc.SetText(txt)
         return fh,txt
 
-    def write(self,protocol,filename,stc):
-        fh=protocol.getWriter(filename)
+    def write(self,protocol,path,stc):
+        fh=protocol.getWriter(path)
         txt=stc.GetText()
-        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt),filename))
+        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt),path))
         try:
             fh.write(txt)
         except:
-            print "TextFilter: something went wrong writing to %s" % filename
+            print "TextFilter: something went wrong writing to %s" % path
             raise
         return fh
 
@@ -208,10 +228,10 @@ class FilterWrapper(debugmixin):
         return self.protocol.getSTC(parent)
 
 
-def GetIOFilter(filename,default="file"):
+def GetIOFilter(path,default="file",usewin=False):
     comp_mgr=ComponentManager()
     handler=ProtocolHandler(comp_mgr)
-    info=URLInfo(filename)
+    info=URLInfo(path,default,usewin)
     if info.protocol is None:
         info.protocol=default
     protocol=handler.find(info.protocol)

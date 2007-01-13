@@ -2,6 +2,7 @@ import os,re
 
 import wx
 import wx.stc as stc
+import wx.lib.newevent
 
 from cStringIO import StringIO
 

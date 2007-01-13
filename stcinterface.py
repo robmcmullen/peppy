@@ -67,13 +67,35 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-# Global default STC interface for user interface purposes
+# Global default STC interface for user interface purposes with a few
+# methods to support testing of the STC without using wx
 class NullSTC(STCInterface):
+    def __init__(self):
+        self.styledtext=""
+        
     def Bind(self,evt,obj):
         pass
 
+    def ClearAll(self):
+        self.styledtext=""
+
+    def SetText(self,text):
+        self.styledtext='\0'.join(text)+'\0'
+
     def GetText(self):
-        return ""
+        return self.styledtext[::2]
+
+    def GetTextLength(self):
+        return len(self.styledtext)/2
+
+    def SetStyledText(self,text):
+        self.styledtext=text
+
+    def AddStyledText(self,text):
+        self.styledtext+=text
+
+    def GetStyledText(self,start=0,length=0):
+        return self.styledtext[start*2:start*2+length*2]
     
 BlankSTC=NullSTC()
 
