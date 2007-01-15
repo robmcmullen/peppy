@@ -153,13 +153,13 @@ class Undo(FrameAction):
         FrameAction.__init__(self, frame)
 
     def isEnabled(self, state=None):
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.CanUndo()
         return False
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Undo()
 
 
@@ -173,13 +173,13 @@ class Redo(FrameAction):
         FrameAction.__init__(self, frame)
         
     def isEnabled(self, state=None):
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.CanRedo()
         return False
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Redo()
 
 

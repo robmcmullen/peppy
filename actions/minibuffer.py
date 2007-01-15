@@ -3,12 +3,12 @@ import os
 import wx
 import wx.stc as stc
 
-from views import *
+from major import *
 from plugin import *
 from debug import *
 
 
-class MinibufferAction(ViewAction):
+class MinibufferAction(MajorAction):
     def action(self, viewer, state=None, pos=-1):
         minibuffer=self.minibuffer(viewer)
         #print minibuffer.win

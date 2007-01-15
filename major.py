@@ -8,22 +8,26 @@ from stcinterface import *
 from configprefs import *
 from plugin import *
 from debug import *
+from iconstorage import *
 
 
-class ViewAction(FrameAction):
+class MajorAction(FrameAction):
     # Set up a new run() method to pass the viewer
     def run(self, state=None, pos=-1):
         self.dprint("id=%s name=%s" % (id(self),self.name))
-        self.action(self.frame.getCurrentViewer(),state,pos)
+        self.action(self.frame.getActiveMajorMode(),state,pos)
         self.frame.enableMenu()
+
+    def action(self, viewer, state=None, pos=-1):
+        raise NotImplementedError
 
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
         self.dprint("%s called by keybindings" % self)
-        self.action(self.frame.getCurrentViewer())
+        self.action(self.frame.getActiveMajorMode())
 
 
-class ShiftLeft(ViewAction):
+class ShiftLeft(MajorAction):
     name = "Shift &Left"
     tooltip = "Unindent a line region"
     icon = 'icons/text_indent_remove_rob.png'
@@ -32,7 +36,7 @@ class ShiftLeft(ViewAction):
     def action(self, viewer, state=None, pos=-1):
         viewer.indent(-1)
 
-class ShiftRight(ViewAction):
+class ShiftRight(MajorAction):
     name = "Shift &Right"
     tooltip = "Indent a line or region"
     icon = 'icons/text_indent_rob.png'
@@ -42,7 +46,7 @@ class ShiftRight(ViewAction):
         dprint("HERE!!!")
         viewer.indent(1)
 
-class ElectricReturn(ViewAction):
+class ElectricReturn(MajorAction):
     name = "Electric Return"
     tooltip = "Indent the next line following a return"
     icon = 'icons/text_indent_rob.png'
@@ -50,48 +54,6 @@ class ElectricReturn(ViewAction):
 
     def action(self, viewer, state=None, pos=-1):
         viewer.electricReturn()
-
-
-
-#### Icons
-
-class IconStorage(debugmixin):
-    def __init__(self):
-        self.il=wx.ImageList(16,16)
-        self.map={}
-
-    def get(self,filename):
-        if filename not in self.map:
-            img=wx.ImageFromBitmap(wx.Bitmap(filename))
-            img.Rescale(16,16)
-            bitmap=wx.BitmapFromImage(img)
-            icon=self.il.Add(bitmap)
-            self.dprint("ICON=%s" % str(icon))
-            self.dprint(img)
-            self.map[filename]=icon
-        else:
-            self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
-        return self.map[filename]
-
-    def assign(self,notebook):
-        # Don't use AssignImageList because the notebook takes
-        # ownership of the image list and will delete it when the
-        # notebook is deleted.  We're sharing the list, so we don't
-        # want the notebook to delete it if the notebook itself
-        # deletes it.
-        notebook.SetImageList(self.il)
-
-_iconStorage=None
-def getIconStorage(icon=None):
-    global _iconStorage
-    if _iconStorage==None:
-        _iconStorage=IconStorage()
-    if icon:
-        return _iconStorage.get(icon)
-    else:
-        return _iconStorage
-
-
 
 
 #### MajorMode base class

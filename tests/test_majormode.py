@@ -1,6 +1,6 @@
 import os,sys,re
 
-from views import *
+from major import *
 from plugin import *
 from debug import *
 

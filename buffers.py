@@ -11,7 +11,7 @@ from cStringIO import StringIO
 from configprefs import *
 from stcinterface import *
 from iofilter import *
-from views import *
+from major import *
 from tabbedviewer import *
 from debug import *
 
@@ -53,7 +53,7 @@ class BufferList(CategoryList):
     # have to subclass append because we maintain order by groups
     def append(self,buffer):
         newitem={'item':buffer,'name':buffer.name,'icon':None}
-        category=buffer.defaultviewer.keyword
+        category=buffer.defaultmode.keyword
         if category in self.itemdict:
             self.itemdict[category].append(newitem)
         else:
@@ -93,10 +93,10 @@ class Buffer(debugmixin):
 
     filenames={}
     
-    def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultviewer=None):
+    def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
         Buffer.count+=1
         self.fh=fh
-        self.defaultviewer=defaultviewer
+        self.defaultmode=defaultmode
         self.setFilename(filename)
 
         self.name="Buffer #%d: %s" % (self.count,str(self.filename))
@@ -125,11 +125,11 @@ class Buffer(debugmixin):
             self.stc=mystc
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
 
-    def getView(self,frame,viewerclass=None):
-        if viewerclass:
-            viewer=viewerclass(self,frame)
+    def createMajorMode(self,frame,modeclass=None):
+        if modeclass:
+            viewer=modeclass(self,frame)
         else:
-            viewer=self.defaultviewer(self,frame) # create new view
+            viewer=self.defaultmode(self,frame) # create new view
         self.viewers.append(viewer) # keep track of views
         self.dprint("views of %s: %s" % (self,self.viewers))
         return viewer
@@ -141,8 +141,8 @@ class Buffer(debugmixin):
             if issubclass(view.stc.__class__,MySTC):
                 self.stc.removeSubordinate(view.stc)
         else:
-            raise ValueError("Bug somewhere.  View %s not found in Buffer %s" % (view,self))
-        self.dprint("views of %s: %s" % (self,self.viewers))
+            raise ValueError("Bug somewhere.  Major mode %s not found in Buffer %s" % (view,self))
+        self.dprint("views remaining of %s: %s" % (self,self.viewers))
 
     def removeAllViews(self):
         # Have to make a copy of self.viewers, because when the viewer
@@ -188,8 +188,8 @@ class Buffer(debugmixin):
         self.modified=False
         self.stc.EmptyUndoBuffer()
 
-        if self.defaultviewer is None:
-            self.defaultviewer=GetMajorMode(self)
+        if self.defaultmode is None:
+            self.defaultmode=GetMajorMode(self)
 
     def save(self,filename=None):
         self.dprint("Buffer: saving buffer %s" % (self.filename))
@@ -266,7 +266,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         if evt.GetActive():
             self.dprint("%s to front" % self.name)
             self.enableMenu()
-            viewer=self.getCurrentViewer()
+            viewer=self.getActiveMajorMode()
             if viewer:
                 wx.CallAfter(viewer.focus)
             self.app.SetTopWindow(self)
@@ -284,13 +284,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.setTitle()
         evt.Skip()
         
-    def getCurrentSTC(self):
-        viewer=self.tabs.getCurrentViewer()
-        if viewer:
-            return viewer.stc
-        return BlankSTC
-    
-    def getCurrentViewer(self):
+    def getActiveMajorMode(self):
         viewer=self.tabs.getCurrentViewer()
         return viewer
     
@@ -301,7 +295,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
 
     def addMenu(self,viewer=None):
         if not viewer:
-            viewer=self.getCurrentViewer()
+            viewer=self.getActiveMajorMode()
         self.dprint("menu from viewer %s" % viewer)
         if viewer:
             self.dprint("  from page %d" % self.tabs.getCurrentIndex())
@@ -322,7 +316,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.enableMenu()
 
     def isOpen(self):
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
             #self.dprint("viewer=%s isOpen=%s" % (str(viewer),str(viewer!=None)))
         return viewer!=None
 
@@ -330,7 +324,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         return self.app.GetTopWindow()==self
 
     def close(self):
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         if viewer:
             buffer=viewer.buffer
             if self.app.close(buffer):
@@ -342,14 +336,14 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.resetMenu()
 
     def setTitle(self):
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         if viewer:
             self.SetTitle("peppy: %s" % viewer.getTabName())
         else:
             self.SetTitle("peppy")
 
     def showModified(self,viewer):
-        current=self.getCurrentViewer()
+        current=self.getActiveMajorMode()
         if current:
             self.setTitle()
         self.tabs.showModified(viewer)
@@ -361,19 +355,19 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         #viewer.open()
         self.addMenu()
         self.menuactions.widget.Thaw()
-        self.getCurrentViewer().focus()
+        self.getActiveMajorMode().focus()
         self.setTitle()
 
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
-        viewer=buffer.getView(self)
+        viewer=buffer.createMajorMode(self)
         self.dprint("setting buffer to new view %s" % viewer)
         self.setViewer(viewer)
 
     def changeMajorMode(self,newmode):
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         if viewer:
-            newview=viewer.buffer.getView(self,newmode)
+            newview=viewer.buffer.createMajorMode(self,newmode)
             self.dprint("new view=%s" % newview)
             self.setViewer(newview)
 
@@ -381,7 +375,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.open('about:title.txt')
         
     def newBuffer(self,buffer):
-        viewer=buffer.getView(self)
+        viewer=buffer.createMajorMode(self)
         self.dprint("viewer=%s" % viewer)
         self.menuactions.widget.Freeze()
         self.resetMenu()
@@ -390,11 +384,11 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         self.dprint("after addViewer")
         self.addMenu()
         self.menuactions.widget.Thaw()
-        self.getCurrentViewer().focus()
+        self.getActiveMajorMode().focus()
         self.setTitle()
 
-    def open(self,filename,newTab=True,viewer=None):
-        buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultviewer=viewer)
+    def open(self,filename,newTab=True,mode=None):
+        buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultmode=mode)
         # If we get an exception, it won't get added to the buffer list
         
         self.app.addBuffer(buffer)
@@ -404,7 +398,7 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
             self.setBuffer(buffer)
 
     def openFileDialog(self):        
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         wildcard="*"
         cwd=os.getcwd()
         dlg = wx.FileDialog(
@@ -427,12 +421,12 @@ class BufferFrame(MenuFrame,ClassSettingsMixin):
         dlg.Destroy()
        
     def save(self):        
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         if viewer and viewer.buffer:
             viewer.buffer.save()
             
     def saveFileDialog(self):        
-        viewer=self.getCurrentViewer()
+        viewer=self.getActiveMajorMode()
         paths=None
         if viewer and viewer.buffer:
             saveas=viewer.buffer.getFilename()

@@ -7,7 +7,7 @@ import wx.stc as stc
 from menudev import *
 from buffers import *
 
-from views import *
+from major import *
 from plugin import *
 from major_modes.fundamental import FundamentalMode
 

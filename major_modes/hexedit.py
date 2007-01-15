@@ -9,7 +9,7 @@ import wx.lib.newevent
 from menudev import *
 from buffers import *
 
-from views import MajorMode
+from major import MajorMode
 
 from debug import *
 

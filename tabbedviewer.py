@@ -3,7 +3,7 @@ import os,re
 import wx
 from debug import *
 
-from views import getIconStorage
+from iconstorage import getIconStorage
 
 
 

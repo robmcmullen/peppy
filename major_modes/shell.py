@@ -144,7 +144,7 @@ class ProcessShellLine(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.buffer.stc.process(viewer)
 

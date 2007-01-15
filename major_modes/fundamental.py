@@ -5,7 +5,7 @@ import wx.stc as stc
 
 from menudev import *
 from buffers import *
-from views import *
+from major import *
 from plugin import *
 from debug import *
 
@@ -32,14 +32,14 @@ class WordWrap(FrameToggle):
         return True
     
     def isChecked(self, index):
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             return viewer.settings.wordwrap
         return False
     
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setWordWrap(not viewer.settings.wordwrap)
     
@@ -52,14 +52,14 @@ class LineNumbers(FrameToggle):
         return True
     
     def isChecked(self, index):
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             return viewer.settings.linenumbers
         return False
     
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setWordWrap(not viewer.settings.linenumbers)
     
@@ -70,7 +70,7 @@ class BeginningOfLine(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             s=viewer.stc
             pos = s.GetCurrentPos()
@@ -85,7 +85,7 @@ class EndOfLine(FrameAction):
 
     def action(self, state=None, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getCurrentViewer()
+        viewer=self.frame.getActiveMajorMode()
         if viewer:
             s=viewer.stc
             line = s.GetCurrentLine()
