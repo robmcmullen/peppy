@@ -169,21 +169,3 @@ class Orderer(debugmixin):
         self.sorted=[a for a in self.items]
         self.sorted.sort(self.sorter)
         return self.sorted
-
-
-if __name__=='__main__':
-    menus=[Menu('File').first(),
-           Menu('Edit').first().before('Major Mode'),
-           Menu('Help').last(),
-           Menu('View').before('Major Mode'),
-           Menu('Zippy').after('Minor Mode'),
-           Menu('Stuff').after('Zippy'),
-           Menu('Buffers').before('Major Mode').after('View'),
-           Menu('Python').after('Major Mode').before('Minor Mode'),
-           Menu('Functions').after('Minor Mode'),
-           Menu('Major Mode').before('Minor Mode'),
-           Menu('Minor Mode').after('Major Mode'),
-           ]
-    print menus
-    order=Orderer(menus)
-    print [a.name for a in order.sort()]

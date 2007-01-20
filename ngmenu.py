@@ -198,27 +198,56 @@ class ElementsMenu(Component):
         return Menu("Elements").after("Planets")
 
 class NobleGasses(ListAction):
+    submenu='Inert'
+    
     def getItems(self):
         return ['Helium','Neon','Argon']
+
+class Alkalis(ListAction):
+    submenu=['Metals','Alkalis']
+    
+    def getItems(self):
+        return ['Lithium','Sodium','Potassium']
+
+class AlkaliEarth(ListAction):
+    submenu=['Metals','Alkali Earth']
+    
+    def getItems(self):
+        return ['Beryllium','Magnesium','Calcium']
 
 class ElementsMenuItems(Component):
     implements(IGlobalMenuItems)
     menu="Elements"
 
     def getMenuItems(self):
-        return MenuItemGroup("noble",NobleGasses)
+        return MenuItemGroup("noble",NobleGasses,Alkalis,AlkaliEarth)
 
-class ShellsMenu(Component):
+class ListMenu(Component):
     implements(IMenuBarProvider)
 
     def getMenuBar(self):
-        return Menu("Shells").after("Planets")
+        return Menu("Lists").after("Planets")
 
-class CheckMenu(Component):
-    implements(IMenuBarProvider)
+class SmallList(ListAction):
+    def getItems(self):
+        items=[]
+        for i in range(10):
+            items.append("Number %d" % i)
+        return items
 
-    def getMenuBar(self):
-        return Menu("Check").after("Planets")
+class BigList(ListAction):
+    def getItems(self):
+        items=[]
+        for i in range(100):
+            items.append("Number %d" % i)
+        return items
+
+class ListMenuItems(Component):
+    implements(IGlobalMenuItems)
+    menu="Lists"
+
+    def getMenuItems(self):
+        return MenuItemGroup("lists",SmallList,None,BigList)
 
 class FunMenu(Component):
     implements(IMenuBarProvider)
@@ -257,32 +286,6 @@ check the source for this sample to see how to implement them.
         self.SetMenuBar(wx.MenuBar())
         self.setMenumap()
         
-        # 2nd menu from left
-        menu2 = self.menumap.find("Elements")
-        menu2.Append(201, "Hydrogen")
-        menu2.Append(202, "Helium")
-        # a submenu in the 2nd menu
-        submenu = wx.Menu()
-        submenu.Append(2031,"Lanthanium")
-        submenu.Append(2032,"Cerium")
-        submenu.Append(2033,"Praseodymium")
-        menu2.AppendMenu(203, "Lanthanides", submenu)
-
-        menu3 = self.menumap.find("&Shells")
-        # Radio items
-        menu3.Append(301, "IDLE", "a Python shell using tcl/tk as GUI", wx.ITEM_RADIO)
-        menu3.Append(302, "PyCrust", "a Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.Append(303, "psi", "a simple Python shell using wxPython as GUI", wx.ITEM_RADIO)
-        menu3.AppendSeparator()
-        menu3.Append(304, "project1", "", wx.ITEM_NORMAL)
-        menu3.Append(305, "project2", "", wx.ITEM_NORMAL)
-
-        menu4 = self.menumap.find("Chec&k")
-        # Check menu items
-        menu4.Append(401, "letters", "abcde...", wx.ITEM_CHECK)
-        menu4.Append(402, "digits", "123...", wx.ITEM_CHECK)
-        menu4.Append(403, "letters and digits", "abcd... + 123...", wx.ITEM_CHECK)
-
         menu5 = self.menumap.find("&Fun")
         # Show how to put an icon in the menu
         item = wx.MenuItem(menu5, 500, "&Smile!\tCtrl+S", "This one has an icon")
@@ -306,25 +309,6 @@ check the source for this sample to see how to implement them.
 
         # Menu events
         self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
-
-        self.Bind(wx.EVT_MENU, self.Menu101, id=101)
-        self.Bind(wx.EVT_MENU, self.Menu102, id=102)
-        self.Bind(wx.EVT_MENU, self.Menu103, id=103)
-
-        self.Bind(wx.EVT_MENU, self.Menu201, id=201)
-        self.Bind(wx.EVT_MENU, self.Menu202, id=202)
-        self.Bind(wx.EVT_MENU, self.Menu2031, id=2031)
-        self.Bind(wx.EVT_MENU, self.Menu2032, id=2032)
-        self.Bind(wx.EVT_MENU, self.Menu2033, id=2033)
-
-        self.Bind(wx.EVT_MENU, self.Menu301To303, id=301)
-        self.Bind(wx.EVT_MENU, self.Menu301To303, id=302)
-        self.Bind(wx.EVT_MENU, self.Menu301To303, id=303)
-        self.Bind(wx.EVT_MENU, self.Menu304, id=304)
-        self.Bind(wx.EVT_MENU, self.Menu305, id=305)
-
-        # Range of menu items
-        self.Bind(wx.EVT_MENU_RANGE, self.Menu401To403, id=401, id2=403)
 
         self.Bind(wx.EVT_MENU, self.Menu500, id=500)
         self.Bind(wx.EVT_MENU, self.Menu501, id=501)
@@ -357,47 +341,8 @@ check the source for this sample to see how to implement them.
         dprint("Switching to mode %s" % mode)
         self.setMenumap(mode)
 
-        
-
-    def Menu101(self, event):
-        dprint('Welcome to Mercury\n')
-
-    def Menu102(self, event):
-        dprint('Welcome to Venus\n')
-
-    def Menu103(self, event):
-        dprint('Welcome to the Earth\n')
-
     def CloseWindow(self, event):
         self.Close()
-
-    def Menu201(self, event):
-        dprint('Chemical element number 1\n')
-
-    def Menu202(self, event):
-        dprint('Chemical element number 2\n')
-
-    def Menu2031(self, event):
-        dprint('Element number 57\n')
-
-    def Menu2032(self, event):
-        dprint('Element number 58\n')
-
-    def Menu2033(self, event):
-        dprint('Element number 59\n')
-
-    def Menu301To303(self, event):
-        id = event.GetId()
-        dprint('Event id: %d\n' % id)
-
-    def Menu304(self, event):
-        dprint('Not yet available\n')
-
-    def Menu305(self, event):
-        dprint('Still vapour\n')
-
-    def Menu401To403(self, event):
-        dprint('From a EVT_MENU_RANGE event\n')
 
     def Menu500(self, event):
         dprint('Have a happy day!\n')

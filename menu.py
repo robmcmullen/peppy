@@ -14,11 +14,18 @@ class SelectAction(debugmixin):
     icon=None
     tooltip=""
     keyboard=None
-
-    def __init__(self, frame, menu, extrinsic=None):
-        self.frame=frame
+    submenu=None
+    
+    def __init__(self, menumap, menu, extrinsic=None):
+        self.menumap=menumap
+        self.frame=menumap.frame
         self.state=extrinsic
         self.insertIntoMenu(menu)
+
+    def getSubMenu(self,menu):
+        if self.submenu is not None:
+            menu=self.menumap.findSubmenu(menu,self.submenu)
+        return menu
 
     def insertIntoMenu(self,menu):
         self.id=wx.NewId()
@@ -31,7 +38,7 @@ class SelectAction(debugmixin):
         self.action()
         self.frame.menumap.enable()
 
-    def action(self, state=None, pos=-1):
+    def action(self, state=None, index=-1):
         pass
 
     def __call__(self, evt, number=None):
@@ -66,27 +73,46 @@ class ToggleAction(SelectAction):
         self.widget.Check(self.isChecked())
     
 class ListAction(SelectAction):
+    menumax=20
+    
     def insertIntoMenu(self,menu):
+        menu=self.getSubMenu(menu)
+        
         self.widgetmap={}
-        for name in self.getItems():
-            id=wx.NewId()
-            widget=menu.Append(id, name, self.tooltip)
-            self.widgetmap[id]=widget
-            self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
+        items=self.getItems()
+        self.count=0
+        if len(items)>self.menumax:
+            for group in range(0,len(items),self.menumax):
+                last=min(group+self.menumax,len(items))
+                groupname="%s ... %s" % (items[group],items[last-1])
+                child=wx.Menu()
+                for name in items[group:last]:
+                    self._insert(child,name)
+                menu.AppendMenu(-1,groupname,child)
+        else:
+            for name in items:
+                self._insert(menu,name)
+
+    def _insert(self,menu,name):
+        id=wx.NewId()
+        widget=menu.Append(id, name, self.tooltip)
+        self.widgetmap[id]={'widget':widget,'index':self.count}
+        self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
+        self.count+=1
 
     def OnMenuSelected(self,evt):
         self.id=evt.GetId()
-        self.widget=self.widgetmap[self.id]
-        dprint("list item %s (widget id=%s) selected on frame=%s" % (self.name,self.id,self.frame))
-        self.action()
+        dprint("list item %s (widget id=%s) selected on frame=%s" % (self.widgetmap[self.id]['index'],self.id,self.frame))
+        self.action(index=self.widgetmap[self.id]['index'])
         self.frame.menumap.enable()
 
     def getItems(self):
         raise NotImplementedError
 
     def Enable(self):
-        for menuid,widget in self.widgetmap.iteritems():
+        for menuid,wmap in self.widgetmap.iteritems():
+            widget=wmap['widget']
             self.dprint("menu item %s (widget id=%s) enabled=%s" % (self.name,menuid,self.isEnabled()))
             widget.Enable(self.isEnabled())
 
@@ -106,6 +132,7 @@ class MenuBarActionMap(object):
         self.frame=frame
         self.actions=[]
         self.dirty=False
+        self.submenus={}
 
         # Create order of menu titles
         order=Orderer(menus)
@@ -174,7 +201,7 @@ class MenuBarActionMap(object):
                             # Don't allow multiple separators or the
                             # menu to end on a separator
                             menu.AppendSeparator()
-                        a=action(self.frame,menu)
+                        a=action(self,menu)
                         self.actions.append(a)
                         addsep=False
             index+=1
@@ -196,6 +223,33 @@ class MenuBarActionMap(object):
             raise IndexError("Menu %s not found" % menuname)
         menu=menubar.GetMenu(index)
         return menu
+
+    def findSubmenu(self,menu,title):
+        if isinstance(title,list) or isinstance(title,tuple):
+            searchkey=str(title)
+        else:
+            searchkey=title
+            title=[title]
+            
+        if menu in self.submenus:
+            if searchkey in self.submenus[menu]:
+                return self.submenus[menu][searchkey]
+        else:
+            self.submenus[menu]={}
+
+        parent=menu
+        sofar=[]
+        for name in title:
+            sofar.append(name)
+            if str(sofar) in self.submenus[menu]:
+                submenu=self.submenus[menu][str(sofar)]
+            else:
+                submenu=wx.Menu()
+                dprint("submenu=%s name=%s" % (submenu,name))
+                parent.AppendMenu(-1,name,submenu)
+                self.submenus[menu][str(sofar)]=submenu
+            parent=submenu
+        return submenu
 
 
 class GlobalActionLoader(Component):
