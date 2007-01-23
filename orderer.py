@@ -5,17 +5,26 @@ from debug import *
 from cStringIO import StringIO
 
 class DelayedOrderer(debugmixin):
-    def __init__(self,name=None):
+    def __init__(self,name=None,hidden=False):
         self.items=[]
         self.constrainlist=[]
         self.name=name
+        self.hidden=hidden
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
     def hasConstraints(self):
         return len(self.constraintlist)>0
         
+    def hide(self):
+        self.hidden=True
+        return self
+
+    def show(self):
+        self.hidden=False
+        return self
+
     def before(self,name):
         self.constrainlist.append(('before',name))
         return self
@@ -40,13 +49,28 @@ class DelayedOrderer(debugmixin):
             else:
                 method(self.name)
                 
+class Separator(DelayedOrderer):
+    def __init__(self,name="-separator-",mode=None):
+        DelayedOrderer.__init__(self,name)
+        self.mode=mode
+        self.actions=(None,)
+
 class Menu(DelayedOrderer):
     def __init__(self,name,mode=None):
         DelayedOrderer.__init__(self,name)
         self.mode=mode
+        self.actions=None
 
 class MenuItem(DelayedOrderer):
-    pass
+    def __init__(self,action):
+        if action is None:
+            name="-separator-"
+        else:
+            name=action.name
+        DelayedOrderer.__init__(self,name)
+            
+        self.actions=(action,)
+        dprint(self.actions)
 
 class MenuItemGroup(DelayedOrderer):
     def __init__(self,name,*actions):

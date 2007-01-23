@@ -15,19 +15,32 @@ import os,sys,time
 import wx
 #import  images
 from orderer import *
-from plugin import *
 from trac.core import *
 from debug import *
 
 from menu import *
 
 
+class NewFrame(SelectAction):
+    name="New Frame"
+    tooltip="Open a new window."
+
+    def action(self, pos=-1):
+        self.frame.app.NewFrame()
+
+class CloseFrame(SelectAction):
+    name="Close Frame"
+    tooltip="Quit the program."
+
+    def action(self, pos=-1):
+        self.frame.app.CloseFrame(self.frame)
+
 class Exit(SelectAction):
     name="Exit"
     tooltip="Quit the program."
 
     def action(self, pos=-1):
-        self.frame.CloseWindow(None)
+        self.frame.app.Exit()
 
 class NoMode(SelectAction):
     name="No Mode"
@@ -56,28 +69,27 @@ class PythonShiftRight(SelectAction):
 class PythonShiftLeft(SelectAction):
     name="Shift Region Left"
 
-class PythonMenu(Component):
-    implements(IMenuBarProvider)
-    mode="Python"
-
-    def getMenuBar(self):
-        return Menu("Python")
-
 class PythonMenuItems(Component):
-    implements(IModeMenuItems)
-    menu="Python"
+    implements(IMenuItemProvider)
     
     def getMenuItems(self):
-        return ("Python",MenuItemGroup("shift",PythonShiftRight,PythonShiftLeft,None))
+        yield ("Python",None,Menu("Python"))
+        for action in PythonShiftRight,PythonShiftLeft,None:
+            yield ("Python","Python",MenuItem(action))
 
 
 
 class MenuSwitchers(Component):
-    implements(IGlobalMenuItems)
-    menu="File"
+    implements(IMenuItemProvider)
 
+    default_items=(("File",MenuItem(NoMode).after("save")),
+                   ("File",MenuItem(Python).after("save")),
+                   ("File",MenuItem(CPlusPlus).after("save")),
+                   ("File",Separator("mode switching")),
+                   )
     def getMenuItems(self):
-        return MenuItemGroup("switchers",NoMode,Python,CPlusPlus,None)
+        for menu,item in self.default_items:
+            yield (None,menu,item)
 
 class Mercury(SelectAction):
     name="Mercury"
@@ -142,93 +154,153 @@ class PlanetTen(OuterPlanet):
         return False
 
 class InnerPlanets(Component):
-    implements(IGlobalMenuItems)
-    implements(IMenuBarProvider)
-    menu="Planets"
+    implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        return MenuItemGroup("inner",Mercury,Venus,Earth,Mars,None).first()
-
-    def getMenuBar(self):
-        return Menu("Planets")
+        yield (None,None,Menu("Planets").before("Elements"))
+        yield (None,"Planets",MenuItemGroup("inner",Mercury,Venus,Earth,Mars,None).first())
 
 class Asteroids(Component):
-    implements(IGlobalMenuItems)
-    menu="Planets"
+    implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        return MenuItemGroup("asteroids",ShowAsteroids,Ceres,None).after("inner")
+        yield (None,"Planets",MenuItemGroup("asteroids",ShowAsteroids,Ceres,None).after("inner"))
 
 class OuterPlanets(Component):
-    implements(IGlobalMenuItems)
-    menu="Planets"
+    implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        return MenuItemGroup("outer",ShowOuterPlanets,Jupiter,Saturn,Uranus,Neptune,Pluto,None,PlanetTen,None).after("asteroids")
+        yield (None,"Planets",MenuItemGroup("outer",ShowOuterPlanets,Jupiter,Saturn,Uranus,Neptune,Pluto,None,PlanetTen,None).after("asteroids"))
 
-class HelpMenu(Component):
-    implements(IMenuBarProvider)
 
-    def getMenuBar(self):
-        return Menu("Help").last()
 
-class FileMenu(Component):
-    implements(IMenuBarProvider)
 
-    def getMenuBar(self):
-        return Menu("File").first()
+class OpenRecent(ListAction):
+    name="Open Recent"
+    
+    def getItems(self):
+        return ['file1.txt','file2.txt','file3.txt']
 
-class ProgramControl(Component):
-    implements(IGlobalMenuItems)
-    menu="File"
+class FrameList(ListAction):
+    name="Frames"
 
+    frames=[]
+    others=[]
+    
+    def __init__(self, menumap, menu):
+        ListAction.__init__(self,menumap,menu)
+        FrameList.others.append(self)
+
+    @staticmethod
+    def append(frame):
+        FrameList.frames.append(frame)
+        for actions in FrameList.others:
+            actions.dynamic()
+        
+    @staticmethod
+    def remove(frame):
+        FrameList.frames.remove(frame)
+        for actions in FrameList.others:
+            actions.dynamic()
+        
+    def getHash(self):
+        temp=tuple(self.frames)
+        dprint("hash=%s" % hash(temp))
+        return hash(temp)
+
+    def getItems(self):
+        return [frame.getTitle() for frame in self.frames]
+
+class FrameList2(FrameList):
+    name="Frames"
+    inline=True
+
+class GlobalMenu(Component):
+    implements(IMenuItemProvider)
+
+    default_items=((None,Menu("File").first()),
+                   ("File",Separator("open")),
+                   ("File",MenuItem(NewFrame).after("open")),
+                   ("File",MenuItem(FrameList).after("New Frame")),
+                   ("File",MenuItem(FrameList2).after("New Frame")),
+                   ("File",MenuItem(OpenRecent).after("New Frame")),
+                   ("File",Separator("save").after("Open Recent")),
+                   ("File",Separator("quit").after("save")),
+                   ("File",MenuItem(CloseFrame).after("quit")),
+                   ("File",MenuItem(Exit).last()),
+                   (None,Menu("Edit").after("File").first()),
+                   ("Edit",Menu("More Edits").first()),
+                   (("Edit","More Edits"),MenuItem(OpenRecent).first()),
+                   (None,Menu("Elements").before("Major Mode")),
+                   ("Elements",Menu("Metals")),
+                   (None,Menu("Major Mode").hide()),
+                   (None,Menu("Lists").after("Major Mode")),
+                   (None,Menu("Minor Mode").hide().after("Major Mode")),
+                   (None,Menu("Fun").after("Minor Mode")),
+                   (None,Menu("Help").last()),
+                   )
     def getMenuItems(self):
-        return MenuItemGroup("exit",None,Exit).last()
+        for menu,item in self.default_items:
+            yield (None,menu,item)
 
-class EditMenu(Component):
-    implements(IMenuBarProvider)
+class ShowElements(ToggleAction):
+    name="Show Elements"
 
-    def getMenuBar(self):
-        return Menu("Edit").after("File").first()
+    def isChecked(self):
+        return self.frame.app.settings['elements']
 
-class ElementsMenu(Component):
-    implements(IMenuBarProvider)
+    def action(self):
+        self.frame.app.settings['elements']=not self.frame.app.settings['elements']
 
-    def getMenuBar(self):
-        return Menu("Elements").after("Planets")
+class Hydrogen(SelectAction):
+    name="Hydrogen"
+    
+    def isEnabled(self):
+        return self.frame.app.settings['elements']
 
 class NobleGasses(ListAction):
-    submenu='Inert'
+    name='Inert'
+
+    def isEnabled(self):
+        return self.frame.app.settings['elements']
     
     def getItems(self):
         return ['Helium','Neon','Argon']
 
 class Alkalis(ListAction):
-    submenu=['Metals','Alkalis']
+    name='Alkalis'
+    
+    def isEnabled(self):
+        return self.frame.app.settings['elements']
     
     def getItems(self):
         return ['Lithium','Sodium','Potassium']
 
 class AlkaliEarth(ListAction):
-    submenu=['Metals','Alkali Earth']
+    name='Alkali Earth'
+    
+    def isEnabled(self):
+        return self.frame.app.settings['elements']
     
     def getItems(self):
         return ['Beryllium','Magnesium','Calcium']
 
 class ElementsMenuItems(Component):
-    implements(IGlobalMenuItems)
-    menu="Elements"
+    implements(IMenuItemProvider)
 
+    default_items=((None,"Elements",MenuItem(ShowElements).first()),
+                   (None,"Elements",Separator("element list")),
+                   (None,"Elements",MenuItem(Hydrogen)),
+                   (None,"Elements",MenuItem(NobleGasses)),
+                   (None,("Elements","Metals"),MenuItemGroup("alkalis",Alkalis,AlkaliEarth)),
+                   )
     def getMenuItems(self):
-        return MenuItemGroup("noble",NobleGasses,Alkalis,AlkaliEarth)
-
-class ListMenu(Component):
-    implements(IMenuBarProvider)
-
-    def getMenuBar(self):
-        return Menu("Lists").after("Planets")
+        for i in self.default_items:
+            yield i
 
 class SmallList(ListAction):
+    inline=True
+    
     def getItems(self):
         items=[]
         for i in range(10):
@@ -236,6 +308,8 @@ class SmallList(ListAction):
         return items
 
 class BigList(ListAction):
+    inline=True
+    
     def getItems(self):
         items=[]
         for i in range(100):
@@ -243,28 +317,25 @@ class BigList(ListAction):
         return items
 
 class ListMenuItems(Component):
-    implements(IGlobalMenuItems)
-    menu="Lists"
+    implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        return MenuItemGroup("lists",SmallList,None,BigList)
-
-class FunMenu(Component):
-    implements(IMenuBarProvider)
-
-    def getMenuBar(self):
-        return Menu("Fun").after("Planets")
+        yield (None,"Lists",MenuItemGroup("lists",SmallList,None,BigList))
 
 
 
 
 #-------------------------------------------------------------------
 
-class MyFrame(wx.Frame):
-
+class MyFrame(wx.Frame,debugmixin):
+    count=0
+    
     def __init__(self, app, id=-1):
         wx.Frame.__init__(self, None, id, 'Playing with menus', size=(400, 200))
         self.app=app
+        MyFrame.count+=1
+        self.count=MyFrame.count
+        FrameList.append(self)
         
         self.CenterOnScreen()
 
@@ -286,42 +357,16 @@ check the source for this sample to see how to implement them.
         self.SetMenuBar(wx.MenuBar())
         self.setMenumap()
         
-        menu5 = self.menumap.find("&Fun")
-        # Show how to put an icon in the menu
-        item = wx.MenuItem(menu5, 500, "&Smile!\tCtrl+S", "This one has an icon")
-        #item.SetBitmap(images.getSmilesBitmap())
-        menu5.AppendItem(item)
-
-        # Shortcuts
-        menu5.Append(501, "Interesting thing\tCtrl+A", "Note the shortcut!")
-        menu5.AppendSeparator()
-        menu5.Append(502, "Hello\tShift+H")
-        menu5.AppendSeparator()
-        menu5.Append(503, "remove the submenu")
-        menu6 = wx.Menu()
-        menu6.Append(601, "Submenu Item")
-        menu5.AppendMenu(504, "submenu", menu6)
-        menu5.Append(505, "remove this menu")
-        menu5.Append(506, "this is updated")
-        menu5.Append(507, "insert after this...")
-        menu5.Append(508, "...and before this")
-
-
         # Menu events
         self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
 
-        self.Bind(wx.EVT_MENU, self.Menu500, id=500)
-        self.Bind(wx.EVT_MENU, self.Menu501, id=501)
-        self.Bind(wx.EVT_MENU, self.Menu502, id=502)
-        self.Bind(wx.EVT_MENU, self.TestRemove, id=503)
-        self.Bind(wx.EVT_MENU, self.TestRemove2, id=505)
-        self.Bind(wx.EVT_MENU, self.TestInsert, id=507)
-        self.Bind(wx.EVT_MENU, self.TestInsert, id=508)
-
-        wx.GetApp().Bind(wx.EVT_UPDATE_UI, self.TestUpdateUI, id=506)
-
     # Methods
+    def Close(self):
+        FrameList.remove(self)
+        wx.Frame.Close(self)
+        
     def OnMenuHighlight(self, event):
+        dprint("stuff")
         # Show how to get menu item info from this event handler
         id = event.GetMenuId()
         item = self.GetMenuBar().FindItemById(id)
@@ -334,25 +379,15 @@ check the source for this sample to see how to implement them.
 
     def setMenumap(self,majormode=None,minormodes=[]):
         comp_mgr=ComponentManager()
-        menuloader=MenuBarLoader(comp_mgr)
+        menuloader=MenuItemLoader(comp_mgr)
         self.menumap=menuloader.load(self,majormode,minormodes)
         
     def switchMode(self,mode):
         dprint("Switching to mode %s" % mode)
         self.setMenumap(mode)
 
-    def CloseWindow(self, event):
-        self.Close()
-
-    def Menu500(self, event):
-        dprint('Have a happy day!\n')
-
-    def Menu501(self, event):
-        dprint('Look in the code how the shortcut has been realized\n')
-
-    def Menu502(self, event):
-        dprint('Hello from Jean-Michel\n')
-
+    def getTitle(self):
+        return "Frame #%d" % self.count
 
     def TestRemove(self, evt):
         mb = self.GetMenuBar()
@@ -372,17 +407,6 @@ check the source for this sample to see how to implement them.
 
         # This doesn't work, as expected since submenuItem is not on menu        
         #menu.RemoveItem(submenuItem)   
-
-
-    def TestRemove2(self, evt):
-        mb = self.GetMenuBar()
-        mb.Remove(4)
-
-
-    def TestUpdateUI(self, evt):
-        text = time.ctime()
-        evt.SetText(text)
-
 
     def TestInsert(self, evt):
         theID = 508
@@ -412,15 +436,28 @@ check the source for this sample to see how to implement them.
 
 class TestApp(wx.App,debugmixin):
     def OnInit(self):
+        self.settings={'elements':True,
+                       }
         return True
+
+    def NewFrame(self):
+        frame=MyFrame(self)
+        frame.Show(True)
     
+    def CloseFrame(self, frame):
+        frame.Close()
+
+    def Exit(self):
+        frames=[f for f in FrameList.frames]
+        for frame in frames:
+            frame.Close()
+
 def run(options=None,args=None):
     if options is not None:
         if options.logfile:
             debuglog(options.logfile)
     app=TestApp(redirect=False)
-    frame=MyFrame(app)
-    frame.Show(True)
+    app.NewFrame()
     app.MainLoop()
 
 
