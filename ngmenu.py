@@ -1,19 +1,8 @@
-#-------------------------------------------------------------------
-# essaimenu.py
-#
-# menus in wxPython 2.3.3
-#
-#-------------------------------------------------------------------
-#
-# o Debug message when adding a menu item (see last menu):
-#
-#   Debug: ..\..\src\msw\menuitem.cpp(370): 'GetMenuState' failed with 
-#   error 0x00000002 (the system cannot find the file specified.). 
-#
+#!/usr/bin/env python
 
 import os,sys,time
 import wx
-#import  images
+
 from orderer import *
 from trac.core import *
 from debug import *
@@ -33,7 +22,7 @@ class CloseFrame(SelectAction):
     tooltip="Quit the program."
 
     def action(self, pos=-1):
-        self.frame.app.CloseFrame(self.frame)
+        self.frame.OnClose()
 
 class Exit(SelectAction):
     name="Exit"
@@ -62,6 +51,28 @@ class CPlusPlus(SelectAction):
 
     def action(self,  pos=-1):
         self.frame.switchMode('C++')
+
+class MajorModeSelect(RadioAction):
+    name="Major Mode"
+    inline=False
+    tooltip="Switch major mode"
+
+    items=['Fundamental','C++','Python']
+
+    def saveIndex(self,index):
+        self.frame.settings['major mode']=MajorModeSelect.items[index]
+
+    def getIndex(self):
+        return MajorModeSelect.items.index(self.frame.settings['major mode'])
+                                           
+    def getItems(self):
+        return MajorModeSelect.items
+
+    def action(self, index=0):
+        self.frame.switchMode(MajorModeSelect.items[index])
+
+class MajorModeSelect2(MajorModeSelect):
+    inline=True
 
 class PythonShiftRight(SelectAction):
     name="Shift Region Right"
@@ -199,17 +210,39 @@ class FrameList(ListAction):
         
     @staticmethod
     def remove(frame):
+        dprint("BEFORE: frames: %s" % FrameList.frames)
+        dprint("BEFORE: others: %s" % FrameList.others)
         FrameList.frames.remove(frame)
+
+        # can't delete from a list that you're iterating on, so make a
+        # new list.
+        newlist=[]
+        for other in FrameList.others:
+            # Search through all related actions and remove references
+            # to them. There may be more than one reference, so search
+            # them all.
+            if other.frame != frame:
+                newlist.append(other)
+        FrameList.others=newlist
+
+        dprint("AFTER: frames: %s" % FrameList.frames)
+        dprint("AFTER: others: %s" % FrameList.others)
+        
         for actions in FrameList.others:
             actions.dynamic()
         
     def getHash(self):
         temp=tuple(self.frames)
-        dprint("hash=%s" % hash(temp))
+        self.dprint("hash=%s" % hash(temp))
         return hash(temp)
 
     def getItems(self):
         return [frame.getTitle() for frame in self.frames]
+
+    def action(self,state=None,index=0):
+        self.dprint("top window to %d: %s" % (index,FrameList.frames[index]))
+        self.frame.app.SetTopWindow(FrameList.frames[index])
+        wx.CallAfter(FrameList.frames[index].Raise)
 
 class FrameList2(FrameList):
     name="Frames"
@@ -231,6 +264,8 @@ class GlobalMenu(Component):
                    (None,Menu("Edit").after("File").first()),
                    ("Edit",Menu("More Edits").first()),
                    (("Edit","More Edits"),MenuItem(OpenRecent).first()),
+                   ("Edit",MenuItem(MajorModeSelect).first()),
+                   ("Edit",MenuItem(MajorModeSelect2).first()),
                    (None,Menu("Elements").before("Major Mode")),
                    ("Elements",Menu("Metals")),
                    (None,Menu("Major Mode").hide()),
@@ -328,21 +363,24 @@ class ListMenuItems(Component):
 #-------------------------------------------------------------------
 
 class MyFrame(wx.Frame,debugmixin):
+    debuglevel=0
     count=0
     
     def __init__(self, app, id=-1):
-        wx.Frame.__init__(self, None, id, 'Playing with menus', size=(400, 200))
-        self.app=app
         MyFrame.count+=1
         self.count=MyFrame.count
+        self.title="Frame #%d" % self.count
+        wx.Frame.__init__(self, None, id, self.title, size=(600, 400))
+
+        self.Bind(wx.EVT_CLOSE,self.OnClose)
+
+        self.app=app
         FrameList.append(self)
         
-        self.CenterOnScreen()
-
         self.CreateStatusBar()
         self.SetStatusText("This is the statusbar")
 
-        tc = wx.TextCtrl(self, -1, """
+        self.win = wx.TextCtrl(self, -1, """
 A bunch of bogus menus have been created for this frame.  You
 can play around with them to see how they behave and then
 check the source for this sample to see how to implement them.
@@ -352,86 +390,35 @@ check the source for this sample to see how to implement them.
         self.settings={'asteroids':False,
                        'inner planets':True,
                        'outer planets':True,
+                       'major mode':'C++',
                        }
         
         self.SetMenuBar(wx.MenuBar())
         self.setMenumap()
-        
-        # Menu events
-        self.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, self.OnMenuHighlight)
 
     # Methods
-    def Close(self):
+    def OnClose(self, evt=None):
+        dprint(evt)
         FrameList.remove(self)
-        wx.Frame.Close(self)
+        self.Destroy()
+
+    def Raise(self):
+        wx.Frame.Raise(self)
+        self.win.SetFocus()
         
-    def OnMenuHighlight(self, event):
-        dprint("stuff")
-        # Show how to get menu item info from this event handler
-        id = event.GetMenuId()
-        item = self.GetMenuBar().FindItemById(id)
-        if item:
-            text = item.GetText()
-            help = item.GetHelp()
-
-        # but in this case just call Skip so the default is done
-        event.Skip() 
-
     def setMenumap(self,majormode=None,minormodes=[]):
         comp_mgr=ComponentManager()
         menuloader=MenuItemLoader(comp_mgr)
         self.menumap=menuloader.load(self,majormode,minormodes)
         
     def switchMode(self,mode):
-        dprint("Switching to mode %s" % mode)
+        self.dprint("Switching to mode %s" % mode)
+        self.settings['major mode']=mode
         self.setMenumap(mode)
 
     def getTitle(self):
-        return "Frame #%d" % self.count
+        return self.title
 
-    def TestRemove(self, evt):
-        mb = self.GetMenuBar()
-        submenuItem = mb.FindItemById(601)
-
-        if not submenuItem:
-            return
-
-        submenu = submenuItem.GetMenu()
-        menu = submenu.GetParent()
-
-        # This works
-        #menu.Remove(504)
-
-        # this also works
-        menu.RemoveItem(mb.FindItemById(504))  
-
-        # This doesn't work, as expected since submenuItem is not on menu        
-        #menu.RemoveItem(submenuItem)   
-
-    def TestInsert(self, evt):
-        theID = 508
-        # get the menu
-        mb = self.GetMenuBar()
-        menuItem = mb.FindItemById(theID)
-        menu = menuItem.GetMenu()
-
-        # figure out the position to insert at
-        pos = 0
-
-        for i in menu.GetMenuItems():
-            if i.GetId() == theID:
-                break
-
-            pos += 1
-
-        # now insert the new item
-        ID = wx.NewId()
-        menu.Insert(pos, ID, "NewItem " + str(ID))
-        # following doesn't work with 2.7?
-##        item = wx.MenuItem(menu,ID)
-##        item.SetId(ID)
-##        item.SetText("NewItem " + str(ID))
-##        menu.InsertItem(pos, item)
 
 
 class TestApp(wx.App,debugmixin):
@@ -448,9 +435,7 @@ class TestApp(wx.App,debugmixin):
         frame.Close()
 
     def Exit(self):
-        frames=[f for f in FrameList.frames]
-        for frame in frames:
-            frame.Close()
+        self.ExitMainLoop()
 
 def run(options=None,args=None):
     if options is not None:
