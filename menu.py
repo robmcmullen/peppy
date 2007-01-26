@@ -62,6 +62,12 @@ class MenuItemGroup(DelayedOrderer):
 
 
 
+def getIcon(icon):
+    if icon is None:
+        return wx.ArtProvider_GetBitmap(wx.ART_INFORMATION, wx.ART_OTHER, wx.Size(16, 16))
+    else:
+        return wx.ArtProvider_GetBitmap(icon, wx.ART_OTHER, wx.Size(16, 16))
+
 
 class SelectAction(debugmixin):
     debuglevel=0
@@ -72,10 +78,15 @@ class SelectAction(debugmixin):
     keyboard=None
     submenu=None
     
-    def __init__(self, menumap, menu):
+    def __init__(self, menumap, menu=None, toolbar=None):
+        self.widget=None
+        self.tool=None
         self.menumap=menumap
         self.frame=menumap.frame
-        self.insertIntoMenu(menu)
+        if menu is not None:
+            self.insertIntoMenu(menu)
+        if toolbar is not None:
+            self.insertIntoToolBar(toolbar)
         self.userinit()
 
     def userinit(self):
@@ -84,6 +95,15 @@ class SelectAction(debugmixin):
     def insertIntoMenu(self,menu):
         self.id=wx.NewId()
         self.widget=menu.Append(self.id, self.name, self.tooltip)
+        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
+                           self.OnMenuSelected)
+        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
+                           self.OnUpdateUI)
+        
+    def insertIntoToolBar(self,toolbar):
+        self.id=wx.NewId()
+        self.tool=toolbar
+        toolbar.AddLabelTool(self.id, self.name, getIcon(self.icon), shortHelp=self.name, longHelp=self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -106,7 +126,10 @@ class SelectAction(debugmixin):
 
     def Enable(self):
         self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))
-        self.widget.Enable(self.isEnabled())
+        if self.widget is not None:
+            self.widget.Enable(self.isEnabled())
+        if self.tool is not None:
+            self.tool.EnableTool(self.id,self.isEnabled())
 
     def isEnabled(self):
         return True
@@ -121,6 +144,16 @@ class ToggleAction(SelectAction):
                            self.OnUpdateUI)
         self.Check()
 
+    def insertIntoToolBar(self,toolbar):
+        self.id=wx.NewId()
+        self.tool=toolbar
+        toolbar.AddCheckTool(self.id, getIcon(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.tooltip)
+        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
+                           self.OnMenuSelected)
+        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
+                           self.OnUpdateUI)
+        self.Check()
+        
     def OnMenuSelected(self,evt):
         self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
         self.action()
@@ -135,27 +168,38 @@ class ToggleAction(SelectAction):
         raise NotImplementedError
 
     def Check(self):
-        self.widget.Check(self.isChecked())
+        if self.widget is not None:
+            self.widget.Check(self.isChecked())
+        if self.tool is not None:
+            self.tool.ToggleTool(self.id,self.isChecked())
     
 class ListAction(SelectAction):
     menumax=20
     inline=False
     
+    def __init__(self, menumap, menu=None, toolbar=None):
+        # a record of all menu entries at the main level of the menu
+        self.toplevel=[]
+
+        # mapping of menu id to position in menu
+        self.id2index={}
+
+        # save the top menu
+        self.menu=None
+
+        SelectAction.__init__(self,menumap,menu,toolbar)
+
     def insertIntoMenu(self,menu,pos=None):
         self.menu=menu
         self.id=-1
 
-        # keep a record all menu entries at the main level of the menu
+        # start off adding entries to the top level menu
         is_toplevel=True
-        self.toplevel=[]
 
         # Unless specified, add menu items to the end of the menu
         if pos is None:
             pos=menu.GetMenuItemCount()
 
-        # mapping of menu id to position in menu
-        self.id2index={}
-        
         if not self.inline:
             # This is a named list, which means that all the items in
             # the list will be placed in a pop-right menu
@@ -251,21 +295,28 @@ class ListAction(SelectAction):
     def getItems(self):
         raise NotImplementedError
 
+    def getIcons(self):
+        raise NotImplementedError
+
     def Enable(self):
-        self.dprint("Enabling all items: %s" % str(self.toplevel))
-        for id in self.toplevel:
-            self.menu.Enable(id,self.isEnabled())
+        if self.toplevel:
+            self.dprint("Enabling all items: %s" % str(self.toplevel))
+            for id in self.toplevel:
+                self.menu.Enable(id,self.isEnabled())
 
 class RadioAction(ListAction):
     menumax=-1
     inline=False
 
-    def __init__(self, menumap, menu):
-        ListAction.__init__(self,menumap,menu)
+    def __init__(self, menumap, menu=None, toolbar=None):
+        # mapping of index (that is, position in menu starting from
+        # zero) to the wx widget id
+        self.index2id={}
+        
+        ListAction.__init__(self,menumap,menu,toolbar)
 
     def insertIntoMenu(self,menu,pos=None):
         ListAction.insertIntoMenu(self,menu,pos)
-        self.index2id={}
         for id,index in self.id2index.iteritems():
             self.index2id[index]=id
         self.Check()
@@ -281,11 +332,12 @@ class RadioAction(ListAction):
         self.count+=1
 
     def OnMenuSelected(self,evt):
+        old=self.getIndex()
         self.id=evt.GetId()
         index=self.id2index[self.id]
         self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
         self.saveIndex(index)
-        self.action(index=index)
+        self.action(index=index,old=old)
 
     def OnUpdateUI(self,evt):
         self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
@@ -293,9 +345,10 @@ class RadioAction(ListAction):
         self.Check()
 
     def Check(self):
-        index=self.getIndex()
-        self.dprint("checking %d" % (index))
-        self.menu.Check(self.index2id[index],True)
+        if self.index2id:
+            index=self.getIndex()
+            self.dprint("checking %d" % (index))
+            self.menu.Check(self.index2id[index],True)
 
     def saveIndex(self,index):
         raise NotImplementedError
@@ -325,8 +378,11 @@ class MenuBarActionMap(debugmixin):
         self.submenus={}
         self.rootmenus=[]
 
+        self.toolbars=[]
+
         # Create order of menu titles
         self.hier={}
+        self.gethier(('root',))
 
         # each menu title has a list of menu items below it
         self.menumap={}
@@ -357,10 +413,10 @@ class MenuBarActionMap(debugmixin):
         hier=self.hier
         for name in menukey[:-1]:
             if name not in hier:
-                hier[name]={'submenus':{}, 'items':[]}
+                hier[name]={'submenus':{}, 'items':[], 'sorted':[]}
             hier=hier[name]['submenus']
         if menukey[-1] not in hier:
-            hier[menukey[-1]]={'submenus':{}, 'items':[]}
+            hier[menukey[-1]]={'submenus':{}, 'items':[], 'sorted':[]}
         return hier[menukey[-1]]
 
     def setorderer(self,menukey,menu):
@@ -450,14 +506,14 @@ class MenuBarActionMap(debugmixin):
                                     # Don't allow multiple separators or the
                                     # menu to end on a separator
                                     widget.AppendSeparator()
-                                a=action(self,widget)
+                                a=action(self,menu=widget)
                                 self.actions.append(a)
                                 addsep=False
             if len(hier[menu]['submenus'])>0:
                 self.populateMenu(self.getkey(parent,menu),hier[menu]['submenus'])
 
 
-    def populate(self):
+    def populateMenuBar(self):
         """Populates the frame's menubar with the current definition.
         This replaces the current menubar in the frame.
         """
@@ -491,6 +547,62 @@ class MenuBarActionMap(debugmixin):
             menubar.Remove(index)
             index+=1
         self.dprint("count=%d" % menubar.GetMenuCount())
+
+
+    def populateTools(self,parent,hier):
+        for menu in hier.keys():
+            currentkey=self.getkey(parent,menu)
+            order=hier[menu]['sorted']
+            dprint("populating: %s with %s" % (menu,order))
+            dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
+            if 'widget' in hier[menu]:
+                widget=hier[menu]['widget']
+                addsep=False
+                for itemgroup in hier[menu]['sorted']:
+                    dprint("  processing itemgroup %s" % itemgroup)
+                    if itemgroup.actions is None:
+                        # Currently, submenus are ignored it toolbars!
+                        pass
+                    else:
+                        for action in itemgroup.actions:
+                            if action is None:
+                                addsep=True
+                            else:
+                                if addsep:
+                                    # Don't allow multiple separators or the
+                                    # menu to end on a separator
+                                    widget.AddSeparator()
+                                a=action(self,toolbar=widget)
+                                self.actions.append(a)
+                                addsep=False
+
+    def populateToolBars(self):
+        """Populates the frame's menubar with the current definition.
+        This replaces the current menubar in the frame.
+        """
+        self.sort()
+        hier=self.hier['root']
+        parent=None
+        self.toolbars=[]
+        for menu in hier['sorted']:
+            label=menu.name
+            if menu.hidden:
+                dprint("  skipping hidden toolbar %s" % label)
+                continue
+            dprint("  processing toolbar %s" % label)
+            tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
+                            wx.TB_FLAT | wx.TB_NODIVIDER)
+            tb.label=label
+            
+            tb.SetToolBitmapSize(wx.Size(16,16))
+            self.toolbars.append(tb)
+            
+            menukey=self.getkey(parent,label)
+            h=self.gethier(menukey)
+            h['widget']=tb
+           
+        dprint(hier)
+        self.populateTools('root',hier['submenus'])
             
 
 
@@ -526,7 +638,47 @@ class MenuItemLoader(Component,debugmixin):
             menumap.addMenuItems(menu,group)
 
         # create the menubar
-        menumap.populate()
+        menumap.populateMenuBar()
         #menumap.enable()
 
         return menumap
+
+
+
+
+class ToolBarItemLoader(Component,debugmixin):
+    debuglevel=0
+    extensions=ExtensionPoint(IToolBarItemProvider)
+
+    def load(self,frame,major=None,minors=[]):
+        """Load the global actions into the menu system.  Any
+        L{Component} that implements the L{IGlobalMenuItems} interface
+        will be loaded here and stuffed into the GUI.
+
+        @param app: the main application object
+        @type app: L{BufferApp<buffers.BufferApp>}
+        """
+        # Generate the menu bar mapper
+        toolmap=MenuBarActionMap(frame)
+
+        self.dprint(self.extensions)
+        later=[]
+        for extension in self.extensions:
+            self.dprint("collecting from extension %s" % extension)
+            for mode,menu,group in extension.getToolBarItems():
+                if mode is None:
+                    self.dprint("global menu %s: processing group %s" % (menu,group))
+                    toolmap.addMenuItems(menu,group)
+                elif mode==major or mode in minors:
+                    # save the major mode & minor mode until the
+                    # global menu is populated
+                    later.append((menu,group))
+        for menu,group in later:
+            self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
+            toolmap.addMenuItems(menu,group)
+
+        # create the menubar
+        toolmap.populateToolBars()
+        #toolmap.enable()
+
+        return toolmap

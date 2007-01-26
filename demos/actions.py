@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
 import os,sys,time
+up_one=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(up_one)
+
+from cStringIO import StringIO
 import wx
+import wx.aui
 
 from orderer import *
 from trac.core import *
@@ -57,7 +62,7 @@ class MajorModeSelect(RadioAction):
     inline=False
     tooltip="Switch major mode"
 
-    items=['Fundamental','C++','Python']
+    items=['none','Fundamental','C++','Python']
 
     def saveIndex(self,index):
         self.frame.settings['major mode']=MajorModeSelect.items[index]
@@ -68,22 +73,34 @@ class MajorModeSelect(RadioAction):
     def getItems(self):
         return MajorModeSelect.items
 
-    def action(self, index=0):
-        self.frame.switchMode(MajorModeSelect.items[index])
+    def getIcons(self):
+        return MajorModeSelect.items
+
+    def action(self, index=0, old=-1):
+        self.frame.switchMode(MajorModeSelect.items[index],
+                              MajorModeSelect.items[old])
 
 class MajorModeSelect2(MajorModeSelect):
     inline=True
 
 class PythonShiftRight(SelectAction):
     name="Shift Region Right"
+    icon=wx.ART_WARNING
 
 class PythonShiftLeft(SelectAction):
     name="Shift Region Left"
+    icon=wx.ART_QUESTION
 
 class PythonMenuItems(Component):
     implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
     
     def getMenuItems(self):
+        yield ("Python",None,Menu("Python"))
+        for action in PythonShiftRight,PythonShiftLeft,None:
+            yield ("Python","Python",MenuItem(action))
+
+    def getToolBarItems(self):
         yield ("Python",None,Menu("Python"))
         for action in PythonShiftRight,PythonShiftLeft,None:
             yield ("Python","Python",MenuItem(action))
@@ -117,6 +134,7 @@ class Mars(SelectAction):
 
 class ShowAsteroids(ToggleAction):
     name="Asteroids"
+    tooltip="Enable display of asteroids"
 
     def isChecked(self):
         return self.frame.settings['asteroids']
@@ -132,6 +150,7 @@ class Ceres(SelectAction):
 
 class ShowOuterPlanets(ToggleAction):
     name="Outer Planets"
+    tooltip="Enable display of outer planets"
 
     def isChecked(self):
         return self.frame.settings['outer planets']
@@ -250,32 +269,51 @@ class FrameList2(FrameList):
 
 class GlobalMenu(Component):
     implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
 
-    default_items=((None,Menu("File").first()),
-                   ("File",Separator("open")),
-                   ("File",MenuItem(NewFrame).after("open")),
-                   ("File",MenuItem(FrameList).after("New Frame")),
-                   ("File",MenuItem(FrameList2).after("New Frame")),
-                   ("File",MenuItem(OpenRecent).after("New Frame")),
-                   ("File",Separator("save").after("Open Recent")),
-                   ("File",Separator("quit").after("save")),
-                   ("File",MenuItem(CloseFrame).after("quit")),
-                   ("File",MenuItem(Exit).last()),
-                   (None,Menu("Edit").after("File").first()),
-                   ("Edit",Menu("More Edits").first()),
-                   (("Edit","More Edits"),MenuItem(OpenRecent).first()),
-                   ("Edit",MenuItem(MajorModeSelect).first()),
-                   ("Edit",MenuItem(MajorModeSelect2).first()),
-                   (None,Menu("Elements").before("Major Mode")),
-                   ("Elements",Menu("Metals")),
-                   (None,Menu("Major Mode").hide()),
-                   (None,Menu("Lists").after("Major Mode")),
-                   (None,Menu("Minor Mode").hide().after("Major Mode")),
-                   (None,Menu("Fun").after("Minor Mode")),
-                   (None,Menu("Help").last()),
-                   )
+    default_menu=((None,Menu("File").first()),
+                  ("File",Separator("open")),
+                  ("File",MenuItem(NewFrame).after("open")),
+                  ("File",MenuItem(FrameList).after("New Frame")),
+                  ("File",MenuItem(FrameList2).after("New Frame")),
+                  ("File",MenuItem(OpenRecent).after("New Frame")),
+                  ("File",Separator("save").after("Open Recent")),
+                  ("File",Separator("quit").after("save")),
+                  ("File",MenuItem(CloseFrame).after("quit")),
+                  ("File",MenuItem(Exit).last()),
+                  (None,Menu("Edit").after("File").first()),
+                  ("Edit",Menu("More Edits").first()),
+                  (("Edit","More Edits"),MenuItem(OpenRecent).first()),
+                  ("Edit",MenuItem(MajorModeSelect).first()),
+                  ("Edit",MenuItem(MajorModeSelect2).first()),
+                  (None,Menu("Elements").before("Major Mode")),
+                  ("Elements",Menu("Metals")),
+                  (None,Menu("Major Mode").hide()),
+                  (None,Menu("Lists").after("Major Mode")),
+                  (None,Menu("Minor Mode").hide().after("Major Mode")),
+                  (None,Menu("Fun").after("Minor Mode")),
+                  (None,Menu("Help").last()),
+                  )
     def getMenuItems(self):
-        for menu,item in self.default_items:
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
+
+    default_tools=((None,Menu("File").first()),
+                  ("File",Separator("open")),
+                  ("File",MenuItem(NewFrame).after("open")),
+                  ("File",Separator("save").after("open")),
+                  ("File",Separator("quit").after("save")),
+                  ("File",MenuItem(CloseFrame).after("quit")),
+                  ("File",MenuItem(Exit).last()),
+                  (None,Menu("Edit").after("File").first()),
+                  ("Edit",MenuItem(MajorModeSelect).first()),
+                  ("Edit",MenuItem(MajorModeSelect2).first()),
+                  (None,Menu("Planets").after("Edit").first()),
+                  ("Planets",MenuItem(ShowAsteroids).first()),
+                  ("Planets",MenuItem(ShowOuterPlanets).first()),
+                  )
+    def getToolBarItems(self):
+        for menu,item in self.default_tools:
             yield (None,menu,item)
 
 class ShowElements(ToggleAction):
@@ -357,104 +395,4 @@ class ListMenuItems(Component):
     def getMenuItems(self):
         yield (None,"Lists",MenuItemGroup("lists",SmallList,None,BigList))
 
-
-
-
-#-------------------------------------------------------------------
-
-class MyFrame(wx.Frame,debugmixin):
-    debuglevel=0
-    count=0
-    
-    def __init__(self, app, id=-1):
-        MyFrame.count+=1
-        self.count=MyFrame.count
-        self.title="Frame #%d" % self.count
-        wx.Frame.__init__(self, None, id, self.title, size=(600, 400))
-
-        self.Bind(wx.EVT_CLOSE,self.OnClose)
-
-        self.app=app
-        FrameList.append(self)
-        
-        self.CreateStatusBar()
-        self.SetStatusText("This is the statusbar")
-
-        self.win = wx.TextCtrl(self, -1, """
-A bunch of bogus menus have been created for this frame.  You
-can play around with them to see how they behave and then
-check the source for this sample to see how to implement them.
-""", style=wx.TE_READONLY|wx.TE_MULTILINE)
-
-        # Prepare the menu bar
-        self.settings={'asteroids':False,
-                       'inner planets':True,
-                       'outer planets':True,
-                       'major mode':'C++',
-                       }
-        
-        self.SetMenuBar(wx.MenuBar())
-        self.setMenumap()
-
-    # Methods
-    def OnClose(self, evt=None):
-        dprint(evt)
-        FrameList.remove(self)
-        self.Destroy()
-
-    def Raise(self):
-        wx.Frame.Raise(self)
-        self.win.SetFocus()
-        
-    def setMenumap(self,majormode=None,minormodes=[]):
-        comp_mgr=ComponentManager()
-        menuloader=MenuItemLoader(comp_mgr)
-        self.menumap=menuloader.load(self,majormode,minormodes)
-        
-    def switchMode(self,mode):
-        self.dprint("Switching to mode %s" % mode)
-        self.settings['major mode']=mode
-        self.setMenumap(mode)
-
-    def getTitle(self):
-        return self.title
-
-
-
-class TestApp(wx.App,debugmixin):
-    def OnInit(self):
-        self.settings={'elements':True,
-                       }
-        return True
-
-    def NewFrame(self):
-        frame=MyFrame(self)
-        frame.Show(True)
-    
-    def CloseFrame(self, frame):
-        frame.Close()
-
-    def Exit(self):
-        self.ExitMainLoop()
-
-def run(options=None,args=None):
-    if options is not None:
-        if options.logfile:
-            debuglog(options.logfile)
-    app=TestApp(redirect=False)
-    app.NewFrame()
-    app.MainLoop()
-
-
-if __name__ == '__main__':
-    from optparse import OptionParser
-
-    usage="usage: %prog file [files...]"
-    parser=OptionParser(usage=usage)
-    parser.add_option("-p", action="store_true", dest="profile", default=False)
-    parser.add_option("-v", action="count", dest="verbose", default=0)
-    parser.add_option("-l", action="store", dest="logfile", default=None)
-    (options, args) = parser.parse_args()
-    
-    run(options)
 
