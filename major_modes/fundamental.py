@@ -3,72 +3,67 @@ import os
 import wx
 import wx.stc as stc
 
-from menudev import *
+from menu import *
 from buffers import *
 from major import *
 from plugin import *
 from debug import *
 
+from actions.minibuffer import *
 from actions.gotoline import *
 
-class OpenFundamental(FrameAction):
+class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
     tooltip = "Open some sample text"
     icon = wx.ART_FILE_OPEN
 
-##    def isEnabled(self, state=None):
+##    def isEnabled(self):
 ##        return not self.frame.isOpen()
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:demo.txt")
 
-class WordWrap(FrameToggle):
+class WordWrap(ToggleAction):
     name = "&Word Wrap"
     tooltip = "Toggle word wrap in this view"
     icon = wx.ART_TOOLBAR
 
-    def isEnabled(self, state=None):
-        return True
-    
-    def isChecked(self, index):
+    def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             return viewer.settings.wordwrap
         return False
     
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setWordWrap(not viewer.settings.wordwrap)
     
-class LineNumbers(FrameToggle):
+class LineNumbers(ToggleAction):
     name = "&Line Numbers"
     tooltip = "Toggle line numbers in this view"
     icon = wx.ART_TOOLBAR
 
-    def isEnabled(self, state=None):
-        return True
-    
-    def isChecked(self, index):
+    def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             return viewer.settings.linenumbers
         return False
     
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setWordWrap(not viewer.settings.linenumbers)
     
-class BeginningOfLine(FrameAction):
+class BeginningOfLine(SelectAction):
     name = "Cursor to Start of Line"
     tooltip = "Move the cursor to the start of the current line."
     keyboard = 'C-A'
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
@@ -78,12 +73,12 @@ class BeginningOfLine(FrameAction):
             s.GotoPos(pos-col)
         
 
-class EndOfLine(FrameAction):
+class EndOfLine(SelectAction):
     name = "Cursor to End of Line"
     tooltip = "Move the cursor to the end of the current line."
     keyboard = 'C-E'
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
@@ -133,28 +128,11 @@ class FundamentalMode(MajorMode):
     regex=".*"
     lexer=stc.STC_LEX_NULL
 
-    defaultsettings={
-        'menu_actions':[
-            [[('&Edit',0.1)],WordWrap,0.1],
-            LineNumbers,
-            FindText,
-            ReplaceText,
-            GotoLine,
-            ],
-        'keyboard_actions':[
-            BeginningOfLine,
-            EndOfLine,
-            ]
-        }
-
-
-    documents={}
-
     def createEditWindow(self,parent):
         self.dprint("creating new Fundamental window")
         self.createSTC(parent,style=True)
         win=self.stc
-        win.Bind(wx.EVT_KEY_DOWN, self.frame.KeyPressed)
+        win.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
         return win
 
     def createSTC(self,parent,style=False):
@@ -163,6 +141,14 @@ class FundamentalMode(MajorMode):
         self.setLexer()
         if style:
             self.styleSTC()
+
+    def createWindowPostHook(self):
+        # SetIndent must be called whenever a new document is loaded
+        # into the STC
+        self.stc.SetIndent(4)
+        #self.dprint("indention=%d" % self.stc.GetIndent())
+
+        self.stc.SetIndentationGuides(1)
 
     def setLexer(self):
         self.stc.SetLexer(self.lexer)
@@ -237,24 +223,13 @@ class FundamentalMode(MajorMode):
     def styleSTC(self):
         pass
 
-    def openPostHook(self):
-        # SetIndent must be called whenever a new document is loaded
-        # into the STC
-        self.stc.SetIndent(4)
-        #self.dprint("indention=%d" % self.stc.GetIndent())
-
-        self.stc.SetIndentationGuides(1)
-
-
-
-global_menu_actions=[
-    [[('&File',0.0)],OpenFundamental,0.2],
-]
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
-
+    implements(IMenuItemProvider)
+    implements(IKeyboardItemProvider)
+    
     def scanMagic(self,buffer):
         """
         If the buffer looks like it is a text file, flag it as a
@@ -263,6 +238,25 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
         if not buffer.guessBinary:
             return MajorModeMatch(FundamentalMode,generic=True)
         return None
+
+    default_menu=((None,None,Menu("Test").after("Minor Mode")),
+                  (None,"Test",MenuItem(OpenFundamental).first()),
+                  ("Fundamental","Edit",MenuItem(WordWrap)),
+                  ("Fundamental","Edit",MenuItem(LineNumbers)),
+                  ("Fundamental","Edit",MenuItem(FindText)),
+                  ("Fundamental","Edit",MenuItem(ReplaceText)),
+                  ("Fundamental","Edit",MenuItem(GotoLine)),
+                  )
+    def getMenuItems(self):
+        for mode,menu,item in self.default_menu:
+            yield (mode,menu,item)
+
+    default_keys=(("Fundamental",BeginningOfLine),
+                  ("Fundamental",EndOfLine),
+                  )
+    def getKeyboardItems(self):
+        for mode,action in self.default_keys:
+            yield (mode,action)
 
 
 if __name__ == "__main__":

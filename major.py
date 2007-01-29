@@ -3,7 +3,7 @@ import os,sys,re
 import wx
 import wx.stc as stc
 
-from menudev import FrameAction
+from menu import SelectAction
 from stcinterface import *
 from configprefs import *
 from plugin import *
@@ -11,20 +11,19 @@ from debug import *
 from iconstorage import *
 
 
-class MajorAction(FrameAction):
+class MajorAction(SelectAction):
     # Set up a new run() method to pass the viewer
-    def run(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%s name=%s" % (id(self),self.name))
-        self.action(self.frame.getActiveMajorMode(),state,pos)
-        self.frame.enableMenu()
+        self.majoraction(self.frame.getActiveMajorMode(),pos)
 
-    def action(self, viewer, state=None, pos=-1):
+    def majoraction(self, viewer, pos=-1):
         raise NotImplementedError
 
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
         self.dprint("%s called by keybindings" % self)
-        self.action(self.frame.getActiveMajorMode())
+        self.majoraction(self.frame.getActiveMajorMode())
 
 
 class ShiftLeft(MajorAction):
@@ -33,7 +32,7 @@ class ShiftLeft(MajorAction):
     icon = 'icons/text_indent_remove_rob.png'
     keyboard = 'S-TAB'
 
-    def action(self, viewer, state=None, pos=-1):
+    def majoraction(self, viewer, pos=-1):
         viewer.indent(-1)
 
 class ShiftRight(MajorAction):
@@ -42,7 +41,7 @@ class ShiftRight(MajorAction):
     icon = 'icons/text_indent_rob.png'
     keyboard = 'TAB'
 
-    def action(self, viewer, state=None, pos=-1):
+    def majoraction(self, viewer, pos=-1):
         dprint("HERE!!!")
         viewer.indent(1)
 
@@ -52,13 +51,13 @@ class ElectricReturn(MajorAction):
     icon = 'icons/text_indent_rob.png'
     keyboard = 'RET'
 
-    def action(self, viewer, state=None, pos=-1):
+    def majoraction(self, viewer, pos=-1):
         viewer.electricReturn()
 
 
 #### MajorMode base class
 
-class MajorMode(debugmixin,ClassSettingsMixin):
+class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     """
     Base class for all major modes.  Subclasses need to implement at
     least createEditWindow that will return the main user interaction
@@ -68,13 +67,8 @@ class MajorMode(debugmixin,ClassSettingsMixin):
     
     pluginkey = '-none-'
     icon='icons/page_white.png'
-    keyword='Unknown'
+    keyword='Abstract Major Mode'
     temporary=False # True if it is a temporary view
-    defaultsettings={
-        'menu_actions':[],
-        'toolbar_actions':[],
-        'keyboard_actions':[],
-        }
 
     # Need one keymap per subclass, so we can't use the settings.
     # Settings would propogate up the class hierachy and find a keymap
@@ -92,6 +86,11 @@ class MajorMode(debugmixin,ClassSettingsMixin):
         self.buffer=buffer
         self.frame=frame
         self.popup=None
+        
+        wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
+        self.win=self
+        self.createWindow()
+        self.createWindowPostHook()
 
     def __del__(self):
         dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
@@ -107,8 +106,7 @@ class MajorMode(debugmixin,ClassSettingsMixin):
     def getIcon(self):
         return getIconStorage(self.icon)
     
-    def createWindow(self,parent):
-        self.win=wx.Panel(parent, -1, style=wx.NO_BORDER)
+    def createWindow(self):
         box=wx.BoxSizer(wx.VERTICAL)
         self.win.SetAutoLayout(True)
         self.win.SetSizer(box)
@@ -129,6 +127,9 @@ class MajorMode(debugmixin,ClassSettingsMixin):
         self.splitter.SetSashGravity(0.75)
         if not fl[0]:
             self.splitter.Unsplit(self.funclist)
+
+    def createWindowPostHook(self):
+        pass
 
     def OnUpdateUI(self,evt):
         dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
@@ -166,26 +167,6 @@ class MajorMode(debugmixin,ClassSettingsMixin):
     def reparent(self,parent):
         self.win.Reparent(parent)
 
-    def getMenuActions(self):
-        actions=self.settings._getList('menu_actions')
-        self.dprint("getMenuActions: %s %s" % (self,actions))
-        return actions
-
-    def getToolbarActions(self):
-        actions=self.settings._getList('toolbar_actions')
-        self.dprint("getToolbarActions: %s %s" % (self,actions))
-        return actions
-
-    def getLocalKeyMap(self):
-        if self.__class__.__name__ not in self.localkeymaps:
-            actions=self.settings._getList('keyboard_actions')
-            self.dprint("keyboard actions=%s" % actions)
-            self.localkeymaps[self.__class__.__name__]=self.frame.createKeyMap(actions)
-            self.dprint("created keymap %s for class %s" % (self.localkeymaps[self.__class__.__name__],self.__class__.__name__))
-        else:
-            self.dprint("found keymap %s for class %s" % (self.localkeymaps[self.__class__.__name__],self.__class__.__name__))
-        return self.localkeymaps[self.__class__.__name__]
-
     def addPopup(self,popup):
         self.popup=popup
         self.win.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
@@ -198,12 +179,6 @@ class MajorMode(debugmixin,ClassSettingsMixin):
         self.dprint("popping up menu for %s" % evt.GetEventObject())
         self.win.PopupMenu(self.popup)
         evt.Skip()
-
-    def openPostHook(self):
-        pass
-
-    def open(self):
-        self.openPostHook()
 
     def close(self):
         self.dprint("View: closing view %s of buffer %s" % (self,self.buffer))
@@ -219,7 +194,6 @@ class MajorMode(debugmixin,ClassSettingsMixin):
 
     def showModified(self,modified):
         self.frame.showModified(self)
-        self.frame.enableMenu()
 
     def getFunctionList(self):
         '''

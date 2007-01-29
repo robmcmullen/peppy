@@ -8,7 +8,8 @@ from ConfigParser import ConfigParser
 import cPickle as pickle
 from debug import *
 
-__all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin' ]
+__all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
+            'getSubclassHierarchy']
 
 def getHomeDir(debug=False):
     """
@@ -145,6 +146,13 @@ def getNameHierarchy(obj,debug=0):
     if debug: print "name hierarchy: %s" % names
     return names
 
+def getSubclassHierarchy(obj,subclass,debug=0):
+    klasses=getHierarchy(obj)
+    subclasses=[]
+    for klass in klasses:
+        if issubclass(klass,subclass):
+            subclasses.append(klass)
+    return subclasses
     
 
 class GlobalSettings(object):
@@ -280,6 +288,9 @@ class SettingsProxy(debugmixin):
                 else:
                     vals.append(val)
         return vals
+
+    def _getMRO(self):
+        return [cls for cls in GlobalSettings.hierarchy[self.__dict__['_startSearch']]]
         
         
 class ClassSettingsMixin(object):

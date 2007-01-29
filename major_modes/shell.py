@@ -11,7 +11,7 @@ from plugin import *
 from debug import *
 from major_modes.fundamental import FundamentalMode
 from stcinterface import MySTC
-from menudev import FrameAction
+from menu import *
 
 class ShellPipePlugin(Interface):
     """
@@ -137,12 +137,12 @@ class ShellSTC(MySTC):
         MySTC.OnModified(self,evt)
 
 
-class ProcessShellLine(FrameAction):
+class ProcessShellLine(SelectAction):
     name = "Process a shell command"
     tooltip = "Process a shell command."
     keyboard = 'RET'
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
@@ -151,15 +151,10 @@ class ProcessShellLine(FrameAction):
 class ShellMode(FundamentalMode):
     debuglevel=0
     
+    keyword='Shell'
     icon='icons/application_xp_terminal.png'
     regex="shell:.*$"
 
-    defaultsettings={
-        'keyboard_actions':[
-            ProcessShellLine,
-            ]
-        }
-    
     def openPostHook(self):
         self.dprint("In shell.")
         self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
@@ -181,9 +176,16 @@ class ShellMode(FundamentalMode):
 
 class ShellPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
+    implements(IKeyboardItemProvider)
     
     def scanFilename(self,filename):
         match=re.search(ShellMode.regex,filename)
         if match:
             return MajorModeMatch(ShellMode,exact=True)
         return None
+    
+    default_keys=(("Shell",ProcessShellLine),
+                  )
+    def getKeyboardItems(self):
+        for mode,action in self.default_keys:
+            yield (mode,action)

@@ -4,7 +4,7 @@ import keyword
 import wx
 import wx.stc as stc
 
-from menudev import *
+from menu import *
 from buffers import *
 
 from major import *
@@ -12,6 +12,16 @@ from plugin import *
 from major_modes.fundamental import FundamentalMode
 
 from debug import *
+
+class SamplePython(SelectAction):
+    name = "&Open Sample Python"
+    tooltip = "Open a sample Python file"
+    icon = wx.ART_FILE_OPEN
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        self.frame.open("about:sample.py")
+
 
 class PythonIndentMixin(object):
     def indent(self, incr):
@@ -191,18 +201,6 @@ class PythonElectricReturnMixin(object):
             s.ReplaceSelection(viewer.format+a)
         
 
-class UsePythonMajorMode(FrameAction):
-    name = "Change to Python Major Mode"
-    tooltip = "Change to python editor"
-    icon = "icons/folder_page.png"
-    keyboard = "C-X C-P"
-
-    def action(self, state=None, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.changeMajorMode(PythonMode)
-
-
-
 if wx.Platform == '__WXMSW__':
     faces = { 'times': 'Times New Roman',
               'mono' : 'Courier New',
@@ -226,17 +224,6 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
     lexer=stc.STC_LEX_PYTHON
-
-    defaultsettings={
-        'menu_actions':[
-            [[('&Python',0.5)],ShiftLeft,0.2],
-            [ShiftRight],
-            ],
-        'toolbar_actions':[
-            [ShiftLeft,0.5],
-            [ShiftRight],
-            ],
-        }
 
     def getKeyWords(self):
         return [(0," ".join(keyword.kwlist))]
@@ -330,12 +317,10 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
         return flist
 
 
-global_menu_actions=[
-    [[('&Test',0.1)],UsePythonMajorMode,0.9],
-]
-
 class PythonPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
+    implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
 
     def scanEmacs(self,emacsmode,vars):
         if emacsmode in ['python',PythonMode.keyword]:
@@ -351,3 +336,21 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
         if filename.endswith('.py'):
             return MajorModeMatch(PythonMode,exact=True)
         return None
+    
+    default_menu=((None,None,Menu("Test").after("Minor Mode")),
+                  (None,"Test",MenuItem(SamplePython)),
+                  ("Python",None,Menu("Python").after("Major Mode")),
+                  ("Python","Python",MenuItem(ShiftLeft)),
+                  ("Python","Python",MenuItem(ShiftRight)),
+                  )
+    def getMenuItems(self):
+        for mode,menu,item in self.default_menu:
+            yield (mode,menu,item)
+
+    default_tools=(("Python",None,Menu("Python").after("Major Mode")),
+                   ("Python","Python",MenuItem(ShiftLeft)),
+                   ("Python","Python",MenuItem(ShiftRight)),
+                   )
+    def getToolBarItems(self):
+        for mode,menu,item in self.default_tools:
+            yield (mode,menu,item)

@@ -6,38 +6,7 @@ from trac.core import *
 from plugin import *
 from debug import *
 
-__all__ = [ 'GetIOFilter', 'SetAbout' ]
-
-aboutfiles={}
-aboutfiles['demo.txt'] = """\
-This editor is provided by a class named wx.StyledTextCtrl.  As
-the name suggests, you can define styles that can be applied to
-sections of text.  This will typically be used for things like
-syntax highlighting code editors, but I'm sure that there are other
-applications as well.  A style is a combination of font, point size,
-foreground and background colours.  The editor can handle
-proportional fonts just as easily as monospaced fonts, and various
-styles can use different sized fonts.
-
-There are a few canned language lexers and colourizers included,
-(see the next demo) or you can handle the colourization yourself.
-If you do you can simply register an event handler and the editor
-will let you know when the visible portion of the text needs
-styling.
-
-wx.StyledTextEditor also supports setting markers in the margin...
-
-
-
-
-...and indicators within the text.  You can use these for whatever
-you want in your application.  Cut, Copy, Paste, Drag and Drop of
-text works, as well as virtually unlimited Undo and Redo
-capabilities, (right click to try it out.)
-"""
-
-def SetAbout(path,text):
-    aboutfiles[path]=text
+__all__ = [ 'GetIOFilter' ]
 
 class URLInfo(object):
     def __init__(self,url,default="file",usewin=False):
@@ -94,20 +63,6 @@ class FileProtocol(ProtocolPluginBase,debugmixin):
         self.dprint("getWriter: trying to open %s" % filename)
         fh=open(filename,"wb")
         return fh
-
-class AboutProtocol(ProtocolPluginBase,debugmixin):
-    implements(ProtocolPlugin)
-
-    def supportedProtocols(self):
-        return ['about']
-    
-    def getReader(self,urlinfo):
-        if urlinfo.path in aboutfiles:
-            fh=StringIO()
-            fh.write(aboutfiles[urlinfo.path])
-            fh.seek(0)
-            return fh
-        raise IOError
 
 class HTTPProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)

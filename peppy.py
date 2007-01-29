@@ -22,10 +22,11 @@ import os,os.path,sys,re,time,commands,glob,random
 
 import wx
 
-from menudev import *
+from menu import *
 from buffers import *
-from iofilter import SetAbout
 from debug import *
+from trac.core import *
+from plugin import *
 
 # setup.py requires that these be defined, and the OnceAndOnlyOnce
 # principle is used here.  This is the only place where these values
@@ -40,268 +41,194 @@ __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
 
-gpl_text="""
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-"""
-
-SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006 %s (%s)" % ("peppy",__version__,__description__,__author__,__author_email__))
-SetAbout('alpha','')
-SetAbout('bravo','')
-SetAbout('blank','')
-
-class NewTab(FrameAction):
+class NewTab(SelectAction):
     name = "New &Tab"
     tooltip = "Open a new Tab"
     icon = wx.ART_FILE_OPEN
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:blank")
 
-class New(FrameAction):
+class New(SelectAction):
     name = "&New File..."
     tooltip = "New file"
     icon = "icons/page.png"
 
-
-class OpenFile(FrameAction):
+class OpenFile(SelectAction):
     name = "&Open File..."
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
     keyboard = "C-X C-F"
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.openFileDialog()
 
-class OpenAlpha(FrameAction):
-    name = "&Open Alpha..."
-    tooltip = "Open an Alpha object"
-    icon = wx.ART_FILE_OPEN
+class OpenRecent(ListAction):
+    name="Open Recent"
+    
+    def getItems(self):
+        return ['file1.txt','file2.txt','file3.txt']
 
-    def action(self, state=None, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("about:alpha")
+class Exit(SelectAction):
+    name = "E&xit"
+    tooltip = "Quit the program."
+    keyboard = "C-X C-C"
+    
+    def action(self, pos=-1):
+        self.frame.app.quit()
 
-class OpenBravo(FrameAction):
-    name = "&Open Bravo..."
-    tooltip = "Open a Bravo object"
-    icon = wx.ART_FILE_OPEN
-
-    def action(self, state=None, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("about:bravo")
-
-class Close(FrameAction):
+class Close(SelectAction):
     name = "&Close"
     tooltip = "Close current file"
     icon = "icons/cross.png"
 
-    def isEnabled(self, state=None):
+    def isEnabled(self):
         return self.frame.isOpen()
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.close()
 
-class Save(FrameAction):
+class Save(SelectAction):
     name = "&Save..."
     tooltip = "Save the current file"
     icon = "icons/disk.png"
     keyboard = "C-X C-S"
 
-    def isEnabled(self, state=None):
+    def isEnabled(self):
         return self.frame.isOpen()
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.save()
 
-class SaveAs(FrameAction):
+class SaveAs(SelectAction):
     name = "Save &As..."
     tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     keyboard = "C-X C-W"
     
-    def isEnabled(self, state=None):
+    def isEnabled(self):
         return self.frame.isOpen()
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.saveFileDialog()
 
 
-class Undo(FrameAction):
+
+class Undo(SelectAction):
     name = "Undo"
     tooltip = "Undo"
     icon = "icons/arrow_turn_left.png"
     keyboard = "C-/"
     
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-
-    def isEnabled(self, state=None):
+    def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.CanUndo()
         return False
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Undo()
 
 
-class Redo(FrameAction):
+class Redo(SelectAction):
     name = "Redo"
     tooltip = "Redo"
     icon = "icons/arrow_turn_right.png"
     keyboard = "C-S-/"
     
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
-        
-    def isEnabled(self, state=None):
+    def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.CanRedo()
         return False
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Redo()
 
-
-
-class Cut(FrameAction):
+class Cut(SelectAction):
     name = "Cut"
     tooltip = "Cut"
     icon = "icons/cut.png"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
 
-class Copy(FrameAction):
+class Copy(SelectAction):
     name = "Copy"
     tooltip = "Copy"
     icon = "icons/page_copy.png"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
 
-class Paste(FrameAction):
+class Paste(SelectAction):
     name = "Paste"
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
-    
-    def __init__(self, frame):
-        FrameAction.__init__(self, frame)
 
-   
-    
-class HelpAbout(FrameAction):
-    name = "&About..."
-    tooltip = "About this program"
+class GlobalMenu(Component):
+    implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
 
-    about = "Test program"
-    title = "Test program title"
-    
-    def run(self, state=None, pos=None):
-        from wx.lib.wordwrap import wordwrap
-        
-        info = wx.AboutDialogInfo()
-        info.Name = "peppy"
-        info.Version = __version__
-        info.Copyright = "Copyright (c) 2006 %s (%s)" % (__author__,__author_email__)
-        info.Description = wordwrap(
-            "This program is a wxPython/Scintilla-based editor written "
-            "in and extensible through Python.  Its aim to provide "
-            "the user with an XEmacs-like multi-window, multi-tabbed "
-            "interface while providing the developer easy ways to "
-            "extend the capabilities of the editor using Python "
-            "instead of Emacs lisp.\n",
-            350, wx.ClientDC(self.frame))
-        info.WebSite = (__url__, "peppy home page")
-        info.Developers = [ "Rob McMullen",
-                            "",
-                            "Contributions by:",
-                            "Robin Dunn (for wxPython)",
-                            "Josiah Carlson (for ideas & code from PyPE)",
-                            "Stani Michiels (for ideas & code from SPE)",
-                            "Mark James (for the silk icon library)"]
+    default_menu=((None,Menu("File").first()),
+                  ("File",MenuItem(New).first()),
+                  ("File",MenuItem(OpenFile).after("&New File...")),
+                  ("File",MenuItem(OpenRecent).after("&Open File...")),
+                  ("File",Separator("save").after("Open Recent")),
+                  ("File",MenuItem(Save).after("save")),
+                  ("File",MenuItem(SaveAs).after("save")),
+                  ("File",MenuItem(Close).after("save")),
+                  ("File",Separator("quit").after("save")),
+                  ("File",MenuItem(Exit).last()),
+                  (None,Menu("Edit").after("File").first()),
+                  ("Edit",MenuItem(Undo).first()),
+                  ("Edit",MenuItem(Redo).first()),
+                  ("Edit",Separator("cut").first()),
+                  ("Edit",MenuItem(Cut).first()),
+                  ("Edit",MenuItem(Copy).first()),
+                  ("Edit",MenuItem(Paste).first()),
+                  ("Edit",Separator("paste").first()),
+                  (None,Menu("View").before("Major Mode")),
+                  ("View",MenuItem(NewFrame).first()),
+                  ("View",MenuItem(DeleteFrame).first()),
+                  ("View",Separator("begin").first()),
+                  ("View",MenuItem(FrameList).last()),
+                  ("View",Separator("end").last()),
+                  (None,Menu("Buffers").before("Major Mode")),
+                  ("Buffers",MenuItem(BufferList).first()),
+                  (None,Menu("Major Mode").hide()),
+                  (None,Menu("Minor Mode").hide().after("Major Mode")),
+                  (None,Menu("Help").last()),
+                  )
+    def getMenuItems(self):
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
 
-        info.License = wordwrap(gpl_text, 500, wx.ClientDC(self.frame))
-
-        # Then we call wx.AboutBox giving it that info object
-        wx.AboutBox(info)
-
-
-
-
-
-class AlphaMode(MajorMode):
-    pluginkey = 'alpha'
-    keyword='Alpha'
-    icon = 'icons/world.png'
-    regex = "alpha"
-    defaultsettings={
-        'menu_actions':[
-            [[('&Alpha',0.25)],TestRadioList,0.0],
-            FrameToggleList,
-            ]
-        }
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        wx.StaticText(win, -1, self.buffer.name, (45, 45))
-        return win
-
-
-class BravoMode(MajorMode):
-    pluginkey = 'bravo'
-    keyword='Bravo'
-    icon='icons/bug_add.png'
-    regex="bravo"
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        wx.StaticText(win, -1, self.buffer.name, (100,100))
-        return win
-
-
-class BlankMode(MajorMode):
-    pluginkey = 'blank'
-    keyword='Blank'
-    icon='icons/application.png'
-    regex="about:blank"
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        text=self.buffer.stc.GetText()
-        wx.StaticText(win, -1, text, (10,10))
-        return win
-
-class TitleMode(BlankMode):
-    pluginkey = 'title'
-    keyword='Title'
-    regex="about:title.txt"
-    temporary=True
+    default_tools=((None,Menu("File").first()),
+                  ("File",MenuItem(New).first()),
+                  ("File",MenuItem(OpenFile).first()),
+                  ("File",Separator("save").first()),
+                  ("File",MenuItem(Save).first()),
+                  ("File",MenuItem(SaveAs).first()),
+                  ("File",MenuItem(Close).first()),
+                  (None,Menu("Edit").after("File").first()),
+                  ("Edit",MenuItem(Cut).first()),
+                  ("Edit",MenuItem(Copy).first()),
+                  ("Edit",MenuItem(Paste).first()),
+                  ("Edit",Separator("cut").first()),
+                  ("Edit",MenuItem(Undo).first()),
+                  ("Edit",MenuItem(Redo).first()),
+                  )
+    def getToolBarItems(self):
+        for menu,item in self.default_tools:
+            yield (None,menu,item)
 
 
 
-
-class DebugClass(FrameToggleList):
+class DebugClass(ToggleListAction):
     """
     A multi-entry menu list that allows individual toggling of debug
     printing for classes.
@@ -315,15 +242,13 @@ class DebugClass(FrameToggleList):
     empty = "< list of classes >"
     tooltip = "Turn on/off debugging for listed classes"
     categories = False
+    inline = True
 
     # File list is shared among all windows
     itemlist = []
-    
-    def __init__(self, frame):
-        FrameToggleList.__init__(self, frame)
-        self.itemlist = DebugClass.itemlist
-        
-    def append(self,kls,text=None):
+
+    @staticmethod
+    def append(kls,text=None):
         """
         Add a class to the list of entries
 
@@ -334,20 +259,39 @@ class DebugClass(FrameToggleList):
         """
         if not text:
             text=kls.__name__
-        self.itemlist.append({'item':kls,'name':text,'icon':None,'checked':kls.debuglevel>0})
+        DebugClass.itemlist.append({'item':kls,'name':text,'icon':None,'checked':kls.debuglevel>0})
         
-    def action(self, state=None, pos=-1):
+    def getHash(self):
+        return len(DebugClass.itemlist)
+
+    def getItems(self):
+        return [item['name'] for item in DebugClass.itemlist]
+
+    def isChecked(self, index):
+        return DebugClass.itemlist[index]['checked']
+
+    def action(self, index=-1):
         """
         Turn on or off the debug logging for the selected class
         """
-        self.dprint("DebugClass.action: id(self)=%x name=%s pos=%d id(itemlist)=%x" % (id(self),self.name,pos,id(self.itemlist)))
-        kls=self.itemlist[pos]['item']
-        if state:
+        self.dprint("DebugClass.action: id(self)=%x name=%s index=%d id(itemlist)=%x" % (id(self),self.name,index,id(DebugClass.itemlist)))
+        kls=DebugClass.itemlist[index]['item']
+        DebugClass.itemlist[index]['checked']=not DebugClass.itemlist[index]['checked']
+        if DebugClass.itemlist[index]['checked']:
             kls.debuglevel=1
         else:
             kls.debuglevel=0
         self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
 
+class DebugGlobalActions(Component):
+    implements(IMenuItemProvider)
+
+    default_menu=((None,Menu("Debug").after("Minor Mode").before("Help")),
+                  ("Debug",MenuItem(DebugClass).first()),
+                  )
+    def getMenuItems(self):
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
 
 
 
@@ -372,15 +316,16 @@ class Peppy(BufferApp,ClassSettingsMixin):
                   '.*Filter':3,
                   }
     
-    initialconfig={'MenuFrame':{'width':600,
+    initialconfig={'BufferFrame':{'width':600,
                                 'height':500,
                                 },
-                   'Peppy':{'plugins':'major_modes.hexedit,major_modes.python,major_modes.shell,plugins.chatbots',
+                   'Peppy':{'plugins':'plugins.about,major_modes.fundamental,major_modes.python,major_modes.hexedit,major_modes.shell,plugins.chatbots',
                             },
                    'MajorMode':{'linenumbers':True,
                                 'wordwrap':False,
                                 },
                    'PythonMode':{'wordwrap':True,
+                                 'minor modes':'funclist,funcmenu',
                                  },
                    }
     
@@ -388,8 +333,6 @@ class Peppy(BufferApp,ClassSettingsMixin):
         """
         Main application initialization.  Called by the wx framework.
         """
-        self.debugmenu=DebugClass(None)
-        
         if self.verbose:
             self.setVerbosity()
         BufferApp.OnInit(self)
@@ -399,15 +342,11 @@ class Peppy(BufferApp,ClassSettingsMixin):
         self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")
         
-        self.addGlobalMenu(global_menu_actions)
-        self.addGlobalToolbar(global_toolbar_actions)
-        self.addGlobalKeys(global_keyboard_actions)
-
         self.parseConfig()
 
         # set verbosity on any new plugins that may have been loaded
         # and set up the debug menu
-        self.setVerbosity(menu=self.debugmenu,reset=self.verbose)
+        self.setVerbosity(menu=DebugClass,reset=self.verbose)
 
         return True
 
@@ -508,7 +447,6 @@ class Peppy(BufferApp,ClassSettingsMixin):
         if mods is not None:
             self.loadPlugins(mods)
 
-
     def quitHook(self):
         GlobalSettings.saveConfig("peppy.cfg")
         return True
@@ -526,75 +464,6 @@ def run(options={},args=None):
             frame.open(filename)
         
     app.MainLoop()
-
-
-global_menu_actions=[
-    [[('&File',0.0)],OpenFile,0.0],
-    [[('&File',0.0),('Open Recent',0.1)],OpenRecent,0.1],
-    [[('&File',0.0)],None,0.2], # separator
-    [Save,0.8],
-    SaveAs,
-    Close,
-    None, # separator
-    [Quit,1.0],
-    [[('&Edit',0.1)],Undo,0.1],
-    Redo,
-    None,
-    Cut,
-    Copy,
-    Paste,
-    [[('&View',0.2)],NewTab,0.0],
-    [NewWindow,0.1],
-    DeleteWindow,
-    None,
-    [FrameList,0.2],
-    None,
-    [ShowToolbar,0.3],
-    [[('&Buffers',0.3)],BufferList,0.0],
-    [[('&Test',1.0)],OpenAlpha,0.1],
-    OpenBravo,
-    [None,0.2], # separator
-    [[('&Debug',1.0)],DebugClass,0.99],
-    [[('&Help',1.0)],HelpAbout,1.0],
-]
-
-global_toolbar_actions=[
-    # toolbar plugins here...
-    [New,0.05],
-    OpenFile,
-    None,
-#    [OpenAlpha,0.1],
-#    [OpenBravo,
-    [Save,0.2],
-    SaveAs,
-    Close,
-    None,
-    Cut,
-    Copy,
-    Paste,
-    None,
-    Undo,
-    Redo,
-    None,
-    ]
-
-global_keyboard_actions=[]
-
-
-class AboutPlugin(MajorModeMatcherBase):
-    implements(IMajorModeMatcher)
-
-    def scanFilename(self,filename):
-        if filename=='about:alpha':
-            return MajorModeMatch(AlphaMode,exact=True)
-        elif filename=='about:bravo':
-            return MajorModeMatch(BravoMode,exact=True)
-        elif filename=='about:title.txt':
-            return MajorModeMatch(TitleMode,exact=True)
-        elif filename=='about:blank':
-            return MajorModeMatch(BlankMode,exact=True)
-        else:
-            return None
 
 
 

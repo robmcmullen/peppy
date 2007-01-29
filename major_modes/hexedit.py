@@ -6,7 +6,7 @@ import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from menudev import *
+from menu import *
 from buffers import *
 
 from major import MajorMode
@@ -14,7 +14,7 @@ from major import MajorMode
 from debug import *
 
 
-class OpenHexEditor(FrameAction):
+class OpenHexEditor(SelectAction):
     name = "&Open Hex Editor..."
     tooltip = "Open a Hex Editor"
     icon = wx.ART_FILE_OPEN
@@ -22,17 +22,17 @@ class OpenHexEditor(FrameAction):
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("icons/py.ico")
 
-class UseHexEditMajorMode(FrameAction):
+class UseHexEditMajorMode(SelectAction):
     name = "Change to HexEdit Major Mode"
     tooltip = "Change to binary editor"
     icon = "icons/folder_page.png"
     keyboard = "C-X C-H"
 
-    def action(self, state=None, pos=-1):
+    def action(self, pos=-1):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.changeMajorMode(HexEditMode)
 
@@ -659,7 +659,7 @@ class HexEditMode(MajorMode):
 
         return win
 
-    def openPostHook(self):
+    def createWindowPostHook(self):
         self.editwin.Update(self.buffer.stc)
         
     def transModType(self, modType):
@@ -732,18 +732,10 @@ class HexEditMode(MajorMode):
         
 
 
-global_menu_actions=[
-    [[('&Test',1.0)],OpenHexEditor,0.19],
-    [UseHexEditMajorMode,0.9],
-]
-
-##global_toolbar_actions=[
-##    # toolbar plugins here...
-##    [OpenHexEditor,0.1],
-##    ]
 
 class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
+    implements(IMenuItemProvider)
     
     def scanEmacs(self,emacsmode,vars):
         if emacsmode in ['hexl',HexEditMode.keyword]:
@@ -767,3 +759,12 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
         if buffer.guessBinary:
             return MajorModeMatch(HexEditMode,generic=True)
         return None
+
+    default_menu=((None,None,Menu("Test").after("Minor Mode")),
+                  (None,"Test",MenuItem(OpenHexEditor)),
+                  (None,"View",MenuItem(UseHexEditMajorMode)),
+                  )
+    def getMenuItems(self):
+        for mode,menu,item in self.default_menu:
+            yield (mode,menu,item)
+

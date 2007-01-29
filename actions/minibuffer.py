@@ -9,7 +9,7 @@ from debug import *
 
 
 class MinibufferAction(MajorAction):
-    def action(self, viewer, state=None, pos=-1):
+    def majoraction(self, viewer, pos=-1):
         minibuffer=self.minibuffer(viewer)
         #print minibuffer.win
         viewer.setMinibuffer(minibuffer)
