@@ -88,40 +88,68 @@ class Orderer(debugmixin):
         self.dprint(self)
         
     def before(self,a,b,store=True):
-        a=self.namemap[a]
-        b=self.namemap[b]
-        self.dprint("%s before %s" % (a,b))
-        self.orderer[a][b]=-1
-        self.orderer[b][a]=1
-        if store:
-            self.constraints.append((a,b))
+        try:
+            a=self.namemap[a]
+            b=self.namemap[b]
+            self.dprint("%s before %s" % (a,b))
+            self.orderer[a][b]=-1
+            self.orderer[b][a]=1
+            if store:
+                self.constraints.append((a,b))
+        except KeyError:
+            if a not in self.namemap:
+                dprint("bad constraint: %s" % a)
+            if b not in self.namemap:
+                dprint("bad constraint: %s" % b)
+            pass
 
     def after(self,a,b,store=True):
-        a=self.namemap[a]
-        b=self.namemap[b]
-        self.dprint("%s after %s" % (a,b))
-        self.orderer[a][b]=1
-        self.orderer[b][a]=-1
-        if store:
-            self.constraints.append((b,a))
+        try:
+            a=self.namemap[a]
+            b=self.namemap[b]
+            self.dprint("%s after %s" % (a,b))
+            self.orderer[a][b]=1
+            self.orderer[b][a]=-1
+            if store:
+                self.constraints.append((b,a))
+        except KeyError:
+            if a not in self.namemap:
+                dprint("bad constraint: %s" % a)
+            if b not in self.namemap:
+                dprint("bad constraint: %s" % b)
+            pass
 
     def first(self,a):
-        a=self.namemap[a]
-        self.dprint("%s before everything" % a)
-        for b in self.items:
-            if a!=b and self.orderer[a][b]==0:
-                # don't need to store this result because we are
-                # setting all possible values
-                self.before(str(a),str(b),store=False)
+        try:
+            a=self.namemap[a]
+            self.dprint("%s before everything" % a)
+            for b in self.items:
+                if a!=b and self.orderer[a][b]==0:
+                    # don't need to store this result because we are
+                    # setting all possible values
+                    self.before(str(a),str(b),store=False)
+        except KeyError:
+            if a not in self.namemap:
+                dprint("bad constraint: %s" % a)
+            if b not in self.namemap:
+                dprint("bad constraint: %s" % b)
+            pass
 
     def last(self,b):
-        b=self.namemap[b]
-        self.dprint("%s after everything" % b)
-        for a in self.items:
-            if a!=b and self.orderer[a][b]==0:
-                # don't need to store this result because we are
-                # setting all possible values
-                self.after(str(b),str(a),store=False)
+        try:
+            b=self.namemap[b]
+            self.dprint("%s after everything" % b)
+            for a in self.items:
+                if a!=b and self.orderer[a][b]==0:
+                    # don't need to store this result because we are
+                    # setting all possible values
+                    self.after(str(b),str(a),store=False)
+        except KeyError:
+            if a not in self.namemap:
+                dprint("bad constraint: %s" % a)
+            if b not in self.namemap:
+                dprint("bad constraint: %s" % b)
+            pass
 
     def fixconstraints(self):
         self.dprint("fixing constraints:")

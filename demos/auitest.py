@@ -66,6 +66,7 @@ class DemoTree(wx.TreeCtrl):
         
         root = self.AddRoot("AUI Project")
         items = []
+        self.SetFont(wx.Font(8, wx.SWISS, wx.NORMAL, wx.NORMAL))
 
         imglist = wx.ImageList(16, 16, True, 2)
         imglist.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, wx.Size(16,16)))

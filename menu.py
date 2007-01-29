@@ -4,7 +4,8 @@ import wx
 from orderer import *
 from trac.core import *
 from debug import *
-
+from iconstorage import *
+from wxemacskeybindings import *
 
 class IMenuItemProvider(Interface):
     """Interface used to add user actions to the menu bar."""
@@ -27,6 +28,13 @@ class IToolBarItemProvider(Interface):
     """Interface for a group of actions that are always available
     through the user interface regardless of the L{MajorMode}."""
     def getToolBarItems():
+        """Return the list of actions that are grouped together in the
+        user interface."""
+
+class IKeyboardItemProvider(Interface):
+    """Interface for keyboard actions that don't have equivalents
+    through the menu or toolbar interfaces."""
+    def getKeyboardItems():
         """Return the list of actions that are grouped together in the
         user interface."""
 
@@ -62,13 +70,6 @@ class MenuItemGroup(DelayedOrderer):
 
 
 
-def getIcon(icon):
-    if icon is None:
-        return wx.ArtProvider_GetBitmap(wx.ART_INFORMATION, wx.ART_OTHER, wx.Size(16, 16))
-    else:
-        return wx.ArtProvider_GetBitmap(icon, wx.ART_OTHER, wx.Size(16, 16))
-
-
 class SelectAction(debugmixin):
     debuglevel=0
     name=None
@@ -78,11 +79,10 @@ class SelectAction(debugmixin):
     keyboard=None
     submenu=None
     
-    def __init__(self, menumap, menu=None, toolbar=None):
+    def __init__(self, frame, menu=None, toolbar=None):
         self.widget=None
         self.tool=None
-        self.menumap=menumap
-        self.frame=menumap.frame
+        self.frame=frame
         if menu is not None:
             self.insertIntoMenu(menu)
         if toolbar is not None:
@@ -103,7 +103,7 @@ class SelectAction(debugmixin):
     def insertIntoToolBar(self,toolbar):
         self.id=wx.NewId()
         self.tool=toolbar
-        toolbar.AddLabelTool(self.id, self.name, getIcon(self.icon), shortHelp=self.name, longHelp=self.tooltip)
+        toolbar.AddLabelTool(self.id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -147,7 +147,7 @@ class ToggleAction(SelectAction):
     def insertIntoToolBar(self,toolbar):
         self.id=wx.NewId()
         self.tool=toolbar
-        toolbar.AddCheckTool(self.id, getIcon(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.tooltip)
+        toolbar.AddCheckTool(self.id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -177,7 +177,7 @@ class ListAction(SelectAction):
     menumax=20
     inline=False
     
-    def __init__(self, menumap, menu=None, toolbar=None):
+    def __init__(self, frame, menu=None, toolbar=None):
         # a record of all menu entries at the main level of the menu
         self.toplevel=[]
 
@@ -187,7 +187,7 @@ class ListAction(SelectAction):
         # save the top menu
         self.menu=None
 
-        SelectAction.__init__(self,menumap,menu,toolbar)
+        SelectAction.__init__(self,frame,menu,toolbar)
 
     def insertIntoMenu(self,menu,pos=None):
         self.menu=menu
@@ -308,12 +308,12 @@ class RadioAction(ListAction):
     menumax=-1
     inline=False
 
-    def __init__(self, menumap, menu=None, toolbar=None):
+    def __init__(self, frame, menu=None, toolbar=None):
         # mapping of index (that is, position in menu starting from
         # zero) to the wx widget id
         self.index2id={}
         
-        ListAction.__init__(self,menumap,menu,toolbar)
+        ListAction.__init__(self,frame,menu,toolbar)
 
     def insertIntoMenu(self,menu,pos=None):
         ListAction.insertIntoMenu(self,menu,pos)
@@ -356,6 +356,42 @@ class RadioAction(ListAction):
     def getIndex(self):
         raise NotImplementedError
     
+class ToggleListAction(ListAction):
+    def __init__(self, frame, menu=None, toolbar=None):
+        # list of all toggles so we can switch 'em on and off
+        self.toggles=[]
+        
+        ListAction.__init__(self,frame,menu,toolbar)
+
+    def _insert(self,menu,pos,name,is_toplevel=False):
+        id=wx.NewId()
+        widget=menu.InsertCheckItem(pos,id,name,self.tooltip)
+        self.id2index[id]=self.count
+        if is_toplevel:
+            self.toplevel.append(id)
+        self.toggles.append(id)
+        self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
+                           self.OnMenuSelected)
+        self.count+=1
+
+    def OnMenuSelected(self,evt):
+        self.id=evt.GetId()
+        self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
+        self.action(index=self.id2index[self.id])
+
+    def OnUpdateUI(self,evt):
+        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        self.Enable()
+        self.Check()
+
+    def Check(self):
+        if self.toplevel:
+            self.dprint("Checking all items: %s" % str(self.toplevel))
+            for id in self.toggles:
+                self.menu.Check(id,self.isChecked(self.id2index[id]))
+
+    def isChecked(self,index):
+        raise NotImplementedError
 
 
 class MenuBarActionMap(debugmixin):
@@ -379,6 +415,8 @@ class MenuBarActionMap(debugmixin):
         self.rootmenus=[]
 
         self.toolbars=[]
+
+        self.keymap=KeyMap()
 
         # Create order of menu titles
         self.hier={}
@@ -506,9 +544,14 @@ class MenuBarActionMap(debugmixin):
                                     # Don't allow multiple separators or the
                                     # menu to end on a separator
                                     widget.AppendSeparator()
-                                a=action(self,menu=widget)
+                                a=action(self.frame,menu=widget)
                                 self.actions.append(a)
                                 addsep=False
+
+                                # define keyboard equivalent
+                                if action.keyboard is not None:
+                                    self.keymap.define(action.keyboard,
+                                                       action(self.frame))
             if len(hier[menu]['submenus'])>0:
                 self.populateMenu(self.getkey(parent,menu),hier[menu]['submenus'])
 
@@ -553,13 +596,13 @@ class MenuBarActionMap(debugmixin):
         for menu in hier.keys():
             currentkey=self.getkey(parent,menu)
             order=hier[menu]['sorted']
-            dprint("populating: %s with %s" % (menu,order))
-            dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
+            self.dprint("populating: %s with %s" % (menu,order))
+            self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
             if 'widget' in hier[menu]:
                 widget=hier[menu]['widget']
                 addsep=False
                 for itemgroup in hier[menu]['sorted']:
-                    dprint("  processing itemgroup %s" % itemgroup)
+                    self.dprint("  processing itemgroup %s" % itemgroup)
                     if itemgroup.actions is None:
                         # Currently, submenus are ignored it toolbars!
                         pass
@@ -572,9 +615,14 @@ class MenuBarActionMap(debugmixin):
                                     # Don't allow multiple separators or the
                                     # menu to end on a separator
                                     widget.AddSeparator()
-                                a=action(self,toolbar=widget)
+                                a=action(self.frame,toolbar=widget)
                                 self.actions.append(a)
                                 addsep=False
+
+                                # define keyboard equivalent
+                                if action.keyboard is not None:
+                                    self.keymap.define(action.keyboard,
+                                                       action(self.frame))
 
     def populateToolBars(self):
         """Populates the frame's menubar with the current definition.
@@ -587,9 +635,9 @@ class MenuBarActionMap(debugmixin):
         for menu in hier['sorted']:
             label=menu.name
             if menu.hidden:
-                dprint("  skipping hidden toolbar %s" % label)
+                self.dprint("  skipping hidden toolbar %s" % label)
                 continue
-            dprint("  processing toolbar %s" % label)
+            self.dprint("  processing toolbar %s" % label)
             tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
                             wx.TB_FLAT | wx.TB_NODIVIDER)
             tb.label=label
@@ -601,7 +649,7 @@ class MenuBarActionMap(debugmixin):
             h=self.gethier(menukey)
             h['widget']=tb
            
-        dprint(hier)
+        self.dprint(hier)
         self.populateTools('root',hier['submenus'])
             
 
@@ -610,7 +658,7 @@ class MenuItemLoader(Component,debugmixin):
     debuglevel=0
     extensions=ExtensionPoint(IMenuItemProvider)
 
-    def load(self,frame,major=None,minors=[]):
+    def load(self,frame,majors=[],minors=[]):
         """Load the global actions into the menu system.  Any
         L{Component} that implements the L{IGlobalMenuItems} interface
         will be loaded here and stuffed into the GUI.
@@ -629,7 +677,7 @@ class MenuItemLoader(Component,debugmixin):
                 if mode is None:
                     self.dprint("global menu %s: processing group %s" % (menu,group))
                     menumap.addMenuItems(menu,group)
-                elif mode==major or mode in minors:
+                elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
@@ -639,7 +687,6 @@ class MenuItemLoader(Component,debugmixin):
 
         # create the menubar
         menumap.populateMenuBar()
-        #menumap.enable()
 
         return menumap
 
@@ -650,7 +697,7 @@ class ToolBarItemLoader(Component,debugmixin):
     debuglevel=0
     extensions=ExtensionPoint(IToolBarItemProvider)
 
-    def load(self,frame,major=None,minors=[]):
+    def load(self,frame,majors=[],minors=[]):
         """Load the global actions into the menu system.  Any
         L{Component} that implements the L{IGlobalMenuItems} interface
         will be loaded here and stuffed into the GUI.
@@ -669,7 +716,7 @@ class ToolBarItemLoader(Component,debugmixin):
                 if mode is None:
                     self.dprint("global menu %s: processing group %s" % (menu,group))
                     toolmap.addMenuItems(menu,group)
-                elif mode==major or mode in minors:
+                elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
@@ -679,6 +726,61 @@ class ToolBarItemLoader(Component,debugmixin):
 
         # create the menubar
         toolmap.populateToolBars()
-        #toolmap.enable()
 
         return toolmap
+    
+class KeyboardItemLoader(Component,debugmixin):
+    debuglevel=0
+    extensions=ExtensionPoint(IKeyboardItemProvider)
+
+    def __init__(self):
+        # Only call this once.
+        if hasattr(KeyboardItemLoader,'globalkeys'):
+            return self
+        
+        KeyboardItemLoader.globalkeys=[]
+        KeyboardItemLoader.modekeys={}
+        
+        for extension in self.extensions:
+            self.dprint("collecting from extension %s" % extension)
+            for mode,action in extension.getKeyboardItems():
+                if action.keyboard is None:
+                    continue
+                
+                if mode is None:
+                    self.dprint("found global key %s" % (action.keyboard))
+                    KeyboardItemLoader.globalkeys.append(action)
+                else:
+                    if mode not in KeyboardItemLoader.modekeys:
+                        KeyboardItemLoader.modekeys[mode]=[]
+                    self.dprint("found mode %s, key %s" % (mode,action.keyboard))
+                    KeyboardItemLoader.modekeys[mode].append(action)
+
+    def load(self,frame,majors=[],minors=[]):
+        """Load the global actions into the menu system.  Any
+        L{Component} that implements the L{IGlobalMenuItems} interface
+        will be loaded here and stuffed into the GUI.
+
+        @param app: the main application object
+        @type app: L{BufferApp<buffers.BufferApp>}
+        """
+        # Generate the keyboard mapping
+        keymap=KeyMap()
+
+        # Global keymappings first
+        for action in KeyboardItemLoader.globalkeys:
+             keymap.define(action.keyboard,action(frame))
+
+        # loop through major modes
+        for mode in majors:
+            if mode in KeyboardItemLoader.modekeys:
+                for action in KeyboardItemLoader.modekeys[mode]:
+                    keymap.define(action.keyboard,action(frame))
+
+        # loop through minor modes
+        for mode in minors:
+            if mode in KeyboardItemLoader.modekeys:
+                for action in KeyboardItemLoader.modekeys[mode]:
+                    keymap.define(action.keyboard,action(frame))
+
+        return keymap
