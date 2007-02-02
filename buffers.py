@@ -19,112 +19,35 @@ from trac.core import *
 from plugin import *
 
 
-
-class BufferList(ListAction):
+class BufferList(GlobalList):
+    debuglevel=1
     name="Buffers"
-    inline=True
 
-    buffers=[]
+    storage=[]
     others=[]
     
-    def __init__(self, menumap, menu):
-        ListAction.__init__(self,menumap,menu)
-        BufferList.others.append(self)
-
-    @staticmethod
-    def append(frame):
-        BufferList.buffers.append(frame)
-        for actions in BufferList.others:
-            actions.dynamic()
-        
-    @staticmethod
-    def remove(frame):
-        dprint("BEFORE: buffers: %s" % BufferList.buffers)
-        dprint("BEFORE: others: %s" % BufferList.others)
-        BufferList.buffers.remove(frame)
-
-        # can't delete from a list that you're iterating on, so make a
-        # new list.
-        newlist=[]
-        for other in BufferList.others:
-            # Search through all related actions and remove references
-            # to them. There may be more than one reference, so search
-            # them all.
-            if other.frame != frame:
-                newlist.append(other)
-        BufferList.others=newlist
-
-        dprint("AFTER: buffers: %s" % BufferList.buffers)
-        dprint("AFTER: others: %s" % BufferList.others)
-        
-        for actions in BufferList.others:
-            actions.dynamic()
-        
-    def getHash(self):
-        temp=tuple(self.buffers)
-        self.dprint("hash=%s" % hash(temp))
-        return hash(temp)
-
     def getItems(self):
-        return [buf.name for buf in self.buffers]
+        return [buf.name for buf in BufferList.storage]
 
     def action(self,state=None,index=0):
-        self.dprint("top window to %d: %s" % (index,BufferList.buffers[index]))
-        self.frame.app.SetTopWindow(BufferList.buffers[index])
-        wx.CallAfter(BufferList.buffers[index].Raise)
-
-class FrameList(ListAction):
+        self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
+        self.frame.setBuffer(BufferList.storage[index])
+    
+class FrameList(GlobalList):
+    debuglevel=1
     name="Frames"
-    inline=True
 
-    frames=[]
+    storage=[]
     others=[]
     
-    def __init__(self, menumap, menu):
-        ListAction.__init__(self,menumap,menu)
-        FrameList.others.append(self)
-
-    @staticmethod
-    def append(frame):
-        FrameList.frames.append(frame)
-        for actions in FrameList.others:
-            actions.dynamic()
-        
-    @staticmethod
-    def remove(frame):
-        dprint("BEFORE: frames: %s" % FrameList.frames)
-        dprint("BEFORE: others: %s" % FrameList.others)
-        FrameList.frames.remove(frame)
-
-        # can't delete from a list that you're iterating on, so make a
-        # new list.
-        newlist=[]
-        for other in FrameList.others:
-            # Search through all related actions and remove references
-            # to them. There may be more than one reference, so search
-            # them all.
-            if other.frame != frame:
-                newlist.append(other)
-        FrameList.others=newlist
-
-        dprint("AFTER: frames: %s" % FrameList.frames)
-        dprint("AFTER: others: %s" % FrameList.others)
-        
-        for actions in FrameList.others:
-            actions.dynamic()
-        
-    def getHash(self):
-        temp=tuple(self.frames)
-        self.dprint("hash=%s" % hash(temp))
-        return hash(temp)
-
     def getItems(self):
-        return [frame.getTitle() for frame in self.frames]
+        return [frame.getTitle() for frame in FrameList.storage]
 
     def action(self,state=None,index=0):
-        self.dprint("top window to %d: %s" % (index,FrameList.frames[index]))
-        self.frame.app.SetTopWindow(FrameList.frames[index])
-        wx.CallAfter(FrameList.frames[index].Raise)
+        self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
+        self.frame.app.SetTopWindow(FrameList.storage[index])
+        wx.CallAfter(FrameList.storage[index].Raise)
+    
 
 
 class DeleteFrame(SelectAction):
@@ -135,7 +58,7 @@ class DeleteFrame(SelectAction):
         self.frame.closeWindow(None)
 
     def isEnabled(self):
-        if len(FrameList.frames)>1:
+        if len(FrameList.storage)>1:
             return True
         return False
 
@@ -152,6 +75,15 @@ class NewFrame(SelectAction):
 
 
 
+class BufferHooks(Component):
+    openPostHooks=ExtensionPoint(IBufferOpenPostHook)
+
+    def openPostHook(self,buffer):
+        for hook in self.openPostHooks:
+            hook.openPostHook(buffer)
+
+
+
 class Buffer(debugmixin):
     count=0
     debuglevel=0
@@ -163,8 +95,6 @@ class Buffer(debugmixin):
         self.fh=fh
         self.defaultmode=defaultmode
         self.setFilename(filename)
-
-        self.name="Buffer #%d: %s" % (self.count,str(self.filename))
 
         self.guessBinary=False
         self.guessLength=1024
@@ -233,6 +163,11 @@ class Buffer(debugmixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
+        self.name="Buffer #%d: %s" % (self.count,str(self.filename))
+
+        # Update UI because the filename associated with this buffer
+        # may have changed and that needs to be reflected in the menu.
+        BufferList.update()
         
     def getFilename(self):
         return self.filename
@@ -256,15 +191,20 @@ class Buffer(debugmixin):
         if self.defaultmode is None:
             self.defaultmode=GetMajorMode(self)
 
+        BufferHooks(ComponentManager()).openPostHook(self)
+        
     def save(self,filename=None):
         self.dprint("Buffer: saving buffer %s" % (self.filename))
         try:
             if filename is None:
-                filename=self.filename
-            filter=GetIOFilter(filename)
+                saveas=self.filename
+            else:
+                saveas=filename
+            filter=GetIOFilter(saveas)
             filter.write(self.stc)
             self.stc.SetSavePoint()
-            if filename is not None:
+            self.modified=False
+            if filename is not None and filename!=self.filename:
                 self.setFilename(filename)
             self.showModifiedAll()
         except:
@@ -558,11 +498,41 @@ class oldBufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
 
 
 
+import wx.lib.customtreectrl as ct
 
+class DemoCustomTree(ct.CustomTreeCtrl):
+    def __init__(self, parent, size=wx.DefaultSize):
+        ct.CustomTreeCtrl.__init__(self, parent, -1, wx.Point(0, 0), size=size, style=wx.TR_DEFAULT_STYLE | wx.NO_BORDER, ctstyle=ct.TR_HAS_BUTTONS|ct.TR_HAS_VARIABLE_ROW_HEIGHT|ct.TR_HIDE_ROOT)
+        #ctstyle=ct.TR_NO_BUTTONS|ct.TR_TWIST_BUTTONS|ct.TR_HAS_VARIABLE_ROW_HEIGHT|ct.TR_HIDE_ROOT|ct.TR_NO_LINES
+        root = self.AddRoot("AUI Project")
+        items = []
+        self.SetFont(wx.Font(7, wx.SWISS, wx.NORMAL, wx.NORMAL))
+
+        imglist = wx.ImageList(12,12, True, 2)
+        imglist.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, wx.Size(16,16)))
+        imglist.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16,16)))
+        self.AssignImageList(imglist)
+
+        items.append(self.AppendItem(root, "Item 1", image=0))
+        items.append(self.AppendItem(root, "Item 2", image=0))
+        items.append(self.AppendItem(root, "Item 3", image=0))
+        items.append(self.AppendItem(root, "Item 4", image=0))
+        items.append(self.AppendItem(root, "Item 5", image=0))
+
+        for ii in xrange(len(items)):
+        
+            id = items[ii]
+            self.AppendItem(id, "Subitem 1", image=1)
+            self.AppendItem(id, "Subitem 2", image=1)
+            self.AppendItem(id, "Subitem 3", image=1)
+            self.AppendItem(id, "Subitem 4", image=1)
+            self.AppendItem(id, "Subitem 5", image=1)
+        
+        #self.Expand(root)
 
 class DemoTree(wx.TreeCtrl):
     def __init__(self, parent, size=wx.DefaultSize):
-        wx.TreeCtrl.__init__(self, parent, -1, wx.Point(0, 0), size=size, style=wx.TR_DEFAULT_STYLE | wx.NO_BORDER)
+        wx.TreeCtrl.__init__(self, parent, -1, wx.Point(0, 0), size=size, style=wx.TR_DEFAULT_STYLE | wx.NO_BORDER | wx.TR_HIDE_ROOT)
         
         root = self.AddRoot("AUI Project")
         items = []
@@ -573,22 +543,22 @@ class DemoTree(wx.TreeCtrl):
         imglist.Add(wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, wx.Size(16,16)))
         self.AssignImageList(imglist)
 
-        items.append(self.AppendItem(root, "Item 1", 0))
-        items.append(self.AppendItem(root, "Item 2", 0))
-        items.append(self.AppendItem(root, "Item 3", 0))
-        items.append(self.AppendItem(root, "Item 4", 0))
-        items.append(self.AppendItem(root, "Item 5", 0))
+        items.append(self.AppendItem(root, "Item 1", image=0))
+        items.append(self.AppendItem(root, "Item 2", image=0))
+        items.append(self.AppendItem(root, "Item 3", image=0))
+        items.append(self.AppendItem(root, "Item 4", image=0))
+        items.append(self.AppendItem(root, "Item 5", image=0))
 
         for ii in xrange(len(items)):
         
             id = items[ii]
-            self.AppendItem(id, "Subitem 1", 1)
-            self.AppendItem(id, "Subitem 2", 1)
-            self.AppendItem(id, "Subitem 3", 1)
-            self.AppendItem(id, "Subitem 4", 1)
-            self.AppendItem(id, "Subitem 5", 1)
+            self.AppendItem(id, "Subitem 1", image=1)
+            self.AppendItem(id, "Subitem 2", image=1)
+            self.AppendItem(id, "Subitem 3", image=1)
+            self.AppendItem(id, "Subitem 4", image=1)
+            self.AppendItem(id, "Subitem 5", image=1)
         
-        self.Expand(root)
+        #self.Expand(root)
 
 class MinorNotebook(wx.aui.AuiNotebook,debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
@@ -641,8 +611,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabChanged(self, evt):
         newpage=evt.GetSelection()
         self.lastActivePage=self.GetPage(evt.GetOldSelection())
-        dprint("changing from %s to %s" % (self.lastActivePage,newpage))
         page=self.GetPage(newpage)
+        dprint("changing from tab %s to %s; mode %s to %s" % (evt.GetOldSelection(), newpage, self.lastActivePage, page))
         dprint("page: %s" % page)
         wx.CallAfter(self.frame.switchMode)
         evt.Skip()
@@ -651,6 +621,15 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
         index=self.GetPageIndex(mode)
         self.SetSelection(index)
+        
+    def replaceTab(self,mode):
+        self.Freeze()
+        index=self.GetSelection()
+        dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
+        self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
+        self.RemovePage(index+1)
+        self.SetSelection(index)
+        self.Thaw()
         
     def getCurrent(self):
         return self.GetPage(self.GetSelection())
@@ -664,11 +643,28 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index,mode.getTabName())
 
 
+class FramePluginLoader(Component):
+    extensions=ExtensionPoint(IFramePluginProvider)
 
+    def __init__(self):
+        # Only call this once.
+        if hasattr(FramePluginLoader,'pluginmap'):
+            return self
+        
+        FramePluginLoader.pluginmap={}
+        
+        for ext in self.extensions:
+            for plugin in ext.getFramePlugins():
+                dprint("Registering frame plugin %s" % plugin.keyword)
+                FramePluginLoader.pluginmap[plugin.keyword]=plugin
 
-
-
-
+    def load(self,frame,pluginlist=[]):
+        dprint("Loading plugins %s for %s" % (str(pluginlist),frame))
+        for keyword in pluginlist:
+            if keyword in FramePluginLoader.pluginmap:
+                dprint("found %s" % keyword)
+                plugin=FramePluginLoader.pluginmap[keyword]
+                frame.createFramePlugin(plugin)
 
 class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     debuglevel=0
@@ -700,20 +696,20 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.tabs = MyNotebook(self)
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
-        self.minortabs = MinorNotebook(self,size=(100,400))
-        self._mgr.AddPane(self.minortabs, wx.aui.AuiPaneInfo().Name("minor").
-                          Caption("Stuff").Right())
-        self.tree = DemoTree(self,size=(100,400))
-        self._mgr.AddPane(self.tree, wx.aui.AuiPaneInfo().Name("funclist").
-                          Caption("Function List").Right())
+##        self.minortabs = MinorNotebook(self,size=(100,400))
+##        self._mgr.AddPane(self.minortabs, wx.aui.AuiPaneInfo().Name("minor").
+##                          Caption("Stuff").Right())
+##        self.tree = DemoCustomTree(self,size=(100,400))
+##        self._mgr.AddPane(self.tree, wx.aui.AuiPaneInfo().Name("funclist").
+##                          Caption("Function List").Right())
         
 
         # Prepare the menu bar
-        self.settings={'asteroids':False,
-                       'inner planets':True,
-                       'outer planets':True,
-                       'major mode':'C++',
-                       }
+        self.tempsettings={'asteroids':False,
+                           'inner planets':True,
+                           'outer planets':True,
+                           'major mode':'C++',
+                           }
         
         self.SetMenuBar(wx.MenuBar())
         self.menumap=None
@@ -722,8 +718,21 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.keys=KeyProcessor(self)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
 
-        self.titleBuffer()
+        self.loadFramePlugins()
         
+    def addPane(self, win, paneinfo):
+        self._mgr.AddPane(win, paneinfo)
+
+    def loadFramePlugins(self):
+        plugins=self.settings.plugins
+        dprint(plugins)
+        if plugins is not None:
+            pluginlist=plugins.split(',')
+            dprint("loading %s" % pluginlist)
+            FramePluginLoader(ComponentManager()).load(self,pluginlist)
+
+    def createFramePlugin(self,plugincls):
+        plugin=plugincls(self)
 
 
     # Overrides of wx methods
@@ -765,6 +774,8 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         #MenuBarActionMap.debuglevel=1
         self.menumap=menuloader.load(self,majormodes,minormodes)
         self.keys.addMinorKeyMap(self.menumap.keymap)
+        #get_all_referrers(SelectAction)
+
         
     def setToolmap(self,majormodes=[],minormodes=[]):
         if self.toolmap is not None:
@@ -826,7 +837,7 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     def changeMajorMode(self,requested):
         mode=self.getActiveMajorMode()
         if mode:
-            newmode=viewer.buffer.createMajorMode(self,requested)
+            newmode=mode.buffer.createMajorMode(self,requested)
             self.dprint("new mode=%s" % newmode)
             self.tabs.replaceTab(newmode)
             self.switchMode()
@@ -851,47 +862,119 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         else:
             self.setBuffer(buffer)
 
+    def openFileDialog(self):        
+        wildcard="*"
+        cwd=os.getcwd()
+        dlg = wx.FileDialog(
+            self, message="Open File", defaultDir=cwd, 
+            defaultFile="", wildcard=wildcard, style=wx.OPEN)
+
+        # Show the dialog and retrieve the user response. If it is the
+        # OK response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+
+            for path in paths:
+                self.dprint("open file %s:" % path)
+                # Force the loader to use the file: protocol
+                self.open("file:%s" % path)
+
+        # Destroy the dialog. Don't do this until you are done with it!
+        # BAD things can happen otherwise!
+        dlg.Destroy()
+
+    def save(self):        
+        mode=self.getActiveMajorMode()
+        if mode and mode.buffer:
+            mode.buffer.save()
+            
+    def saveFileDialog(self):        
+        mode=self.getActiveMajorMode()
+        paths=None
+        if mode and mode.buffer:
+            saveas=mode.buffer.getFilename()
+
+            # Do this in a loop so that the user can get a chance to
+            # change the filename if the specified file exists.
+            while True:
+                # If we come through this loop again, saveas will hold
+                # a complete pathname.  Shorten it.
+                saveas=os.path.basename(saveas)
+                
+                wildcard="*.*"
+                cwd=os.getcwd()
+                dlg = wx.FileDialog(
+                    self, message="Save File", defaultDir=cwd, 
+                    defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)
+
+                retval=dlg.ShowModal()
+                if retval==wx.ID_OK:
+                    # This returns a Python list of files that were selected.
+                    paths = dlg.GetPaths()
+                dlg.Destroy()
+
+                if retval!=wx.ID_OK:
+                    break
+                elif len(paths)==1:
+                    saveas=paths[0]
+                    self.dprint("save file %s:" % saveas)
+
+                    # If new filename exists, make user confirm to
+                    # overwrite
+                    if os.path.exists(saveas):
+                        dlg = wx.MessageDialog(self, "%s\n\nexists.  Overwrite?" % saveas, "Overwrite?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                        retval=dlg.ShowModal()
+                        dlg.Destroy()
+                    else:
+                        retval=wx.ID_YES
+                    if retval==wx.ID_YES:
+                        mode.buffer.save(saveas)
+                        break
+                elif paths!=None:
+                    raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
+
     def switchMode(self):
         last=self.tabs.getPrevious()
         mode=self.getActiveMajorMode()
-        dprint("Switching from mode %s to mode %s" % (last,mode))
+        self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
         hierarchy=getSubclassHierarchy(mode,MajorMode)
-        dprint("Mode hierarchy: %s" % hierarchy)
+        self.dprint("Mode hierarchy: %s" % hierarchy)
         # Get the major mode names for the hierarchy (but don't
         # include the last one which is the abstract MajorMode)
         majors=[m.keyword for m in hierarchy[:-1]]
-        dprint("Major mode names: %s" % majors)
+        self.dprint("Major mode names: %s" % majors)
         
         if last:
-            dprint("saving settings for mode %s" % last)
+            self.dprint("saving settings for mode %s" % last)
             BufferFrame.perspectives[last.buffer.filename] = self._mgr.SavePerspective()
         
         mode.focus()
         self.setTitle()
-        self.settings['major mode']=mode
+        self.tempsettings['major mode']=mode
         self.setKeys(majors)
         self.setMenumap(majors)
         self.setToolmap(majors)
 
         if mode.buffer.filename in BufferFrame.perspectives:
             self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])
-            dprint(BufferFrame.perspectives[mode.buffer.filename])
+            self.dprint(BufferFrame.perspectives[mode.buffer.filename])
         else:
-            if 'default perspective' in self.settings:
+            if 'default perspective' in self.tempsettings:
                 # This doesn't exactly work because anything not named in
                 # the default perspective listing won't be shown.  Need to
                 # find a way to determine which panes are new and show
                 # them.
-                self._mgr.LoadPerspective(self.settings['default perspective'])
+                self._mgr.LoadPerspective(self.tempsettings['default perspective'])
                 all_panes = self._mgr.GetAllPanes()
                 for pane in xrange(len(all_panes)):
                     all_panes[pane].Show()
             else:
-                self.settings['default perspective'] = self._mgr.SavePerspective()
+                self.tempsettings['default perspective'] = self._mgr.SavePerspective()
         
-            # "commit" all changes made to FrameManager   
-            self._mgr.Update()
+        # "commit" all changes made to FrameManager   
+        self._mgr.Update()
 
     def getTitle(self):
         return self.name
@@ -921,10 +1004,10 @@ class BufferApp(wx.App,debugmixin):
         self.errors=[]
 
     def addBuffer(self,buffer):
-        BufferList.buffers.append(buffer)
+        BufferList.append(buffer)
 
     def removeBuffer(self,buffer):
-        BufferList.buffers.remove(buffer)
+        BufferList.remove(buffer)
 
     def deleteFrame(self,frame):
         #self.pendingframes.append((self.frames.getid(frame),frame))
@@ -954,7 +1037,7 @@ class BufferApp(wx.App,debugmixin):
     def quit(self):
         self.dprint("prompt for unsaved changes...")
         unsaved=[]
-        for buf in BufferList.buffers:
+        for buf in BufferList.storage:
             self.dprint("buf=%s modified=%s" % (buf,buf.modified))
             if buf.modified:
                 unsaved.append(buf)
@@ -1008,7 +1091,21 @@ class BufferApp(wx.App,debugmixin):
         filename=self.getConfigFilePath(filename)
         GlobalSettings.loadConfig(filename)
 
+        self.loadConfigPostHook()
+        
+        ConfigurationExtender(ComponentManager()).load(self)
+
+    def loadConfigPostHook(self):
+        pass
+
+    def saveConfigPreHook(self):
+        pass
+
     def saveConfig(self,filename):
+        self.saveConfigPreHook()
+        
+        ConfigurationExtender(ComponentManager()).save(self)
+
         GlobalSettings.saveConfig(filename)
 
 

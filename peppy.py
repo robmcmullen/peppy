@@ -67,12 +67,6 @@ class OpenFile(SelectAction):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.openFileDialog()
 
-class OpenRecent(ListAction):
-    name="Open Recent"
-    
-    def getItems(self):
-        return ['file1.txt','file2.txt','file3.txt']
-
 class Exit(SelectAction):
     name = "E&xit"
     tooltip = "Quit the program."
@@ -159,6 +153,9 @@ class Cut(SelectAction):
     tooltip = "Cut"
     icon = "icons/cut.png"
 
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+
 class Copy(SelectAction):
     name = "Copy"
     tooltip = "Copy"
@@ -176,12 +173,11 @@ class GlobalMenu(Component):
     default_menu=((None,Menu("File").first()),
                   ("File",MenuItem(New).first()),
                   ("File",MenuItem(OpenFile).after("&New File...")),
-                  ("File",MenuItem(OpenRecent).after("&Open File...")),
-                  ("File",Separator("save").after("Open Recent")),
-                  ("File",MenuItem(Save).after("save")),
-                  ("File",MenuItem(SaveAs).after("save")),
-                  ("File",MenuItem(Close).after("save")),
-                  ("File",Separator("quit").after("save")),
+                  ("File",Separator("opensep").after("&Open File...")),
+                  ("File",MenuItem(Save).after("opensep")),
+                  ("File",MenuItem(SaveAs).after("opensep")),
+                  ("File",MenuItem(Close).after("opensep")),
+                  ("File",Separator("quit").after("opensep")),
                   ("File",MenuItem(Exit).last()),
                   (None,Menu("Edit").after("File").first()),
                   ("Edit",MenuItem(Undo).first()),
@@ -317,15 +313,17 @@ class Peppy(BufferApp,ClassSettingsMixin):
                   }
     
     initialconfig={'BufferFrame':{'width':600,
-                                'height':500,
-                                },
-                   'Peppy':{'plugins':'plugins.about,major_modes.fundamental,major_modes.python,major_modes.hexedit,major_modes.shell,plugins.chatbots',
+                                  'height':500,
+                                  'plugins':'filebrowser',
+                                  },
+                   'Peppy':{'plugins':'plugins.about,major_modes.fundamental,major_modes.python,major_modes.hexedit,major_modes.shell,plugins.chatbots,plugins.openrecent,minor_modes.funclist,plugins.filebrowser',
+                            'recentfiles':'recentfiles.txt',
                             },
                    'MajorMode':{'linenumbers':True,
                                 'wordwrap':False,
                                 },
                    'PythonMode':{'wordwrap':True,
-                                 'minor modes':'funclist,funcmenu',
+                                 'minor_modes':'funclist,funcmenu',
                                  },
                    }
     
@@ -341,8 +339,6 @@ class Peppy(BufferApp,ClassSettingsMixin):
         self.setConfigDir("peppy")
         self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")
-        
-        self.parseConfig()
 
         # set verbosity on any new plugins that may have been loaded
         # and set up the debug menu
@@ -420,7 +416,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
                 menu.append(kls)
         #sys.exit()
 
-    def parseConfig(self):
+    def loadConfigPostHook(self):
         """
         Main driver for any functions that need to look in the config file.
         """
@@ -448,7 +444,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
             self.loadPlugins(mods)
 
     def quitHook(self):
-        GlobalSettings.saveConfig("peppy.cfg")
+        self.saveConfig("peppy.cfg")
         return True
 
 
@@ -456,12 +452,14 @@ def run(options={},args=None):
     if options.logfile:
         debuglog(options.logfile)
     Peppy.verbose=options.verbose
-    app=Peppy()
+    app=Peppy(redirect=False)
     frame=BufferFrame(app)
     frame.Show(True)
     if args:
         for filename in args:
             frame.open(filename)
+    else:
+        frame.titleBuffer()
         
     app.MainLoop()
 

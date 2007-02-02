@@ -9,6 +9,7 @@ from configprefs import *
 from plugin import *
 from debug import *
 from iconstorage import *
+from minor import *
 
 
 class MajorAction(SelectAction):
@@ -110,26 +111,40 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         box=wx.BoxSizer(wx.VERTICAL)
         self.win.SetAutoLayout(True)
         self.win.SetSizer(box)
-        self.splitter=wx.SplitterWindow(self.win)
-        self.splitter.SetSplitMode(wx.SPLIT_VERTICAL)
+        self.splitter=wx.Panel(self.win)
         box.Add(self.splitter,1,wx.EXPAND)
+        self._mgr = wx.aui.AuiManager()
+        self._mgr.SetManagedWindow(self.splitter)
         self.editwin=self.createEditWindow(self.splitter)
+        self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
+                          CenterPane())
         if isinstance(self.editwin,MySTC):
             self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
 
-        from pype.codetree import hierCodeTreePanel
-        self.funclist=hierCodeTreePanel(self,self.splitter,False)
-        fl=self.getFunctionList()
-        self.funclist.new_hierarchy(fl[0])
-        ## self.splitter.Initialize(self.editwin)
-        self.splitter.SplitVertically(self.editwin,self.funclist,-200)
-        self.splitter.SetMinimumPaneSize(0)
-        self.splitter.SetSashGravity(0.75)
-        if not fl[0]:
-            self.splitter.Unsplit(self.funclist)
+        self.loadMinorModes()
+        
+        self._mgr.Update()
 
     def createWindowPostHook(self):
         pass
+
+    def addPane(self, win, paneinfo):
+        self._mgr.AddPane(win, paneinfo)
+
+    def loadMinorModes(self):
+        minors=self.settings.minor_modes
+        dprint(minors)
+        if minors is not None:
+            minorlist=minors.split(',')
+            dprint("loading %s" % minorlist)
+            MinorModeLoader(ComponentManager()).load(self,minorlist)
+
+    def createMinorMode(self,minorcls):
+        try:
+            minor=minorcls(self,self.splitter)
+            # register minor mode here
+        except MinorModeIncompatibilityError:
+            pass
 
     def OnUpdateUI(self,evt):
         dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))

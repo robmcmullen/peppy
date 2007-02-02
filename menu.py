@@ -1,6 +1,8 @@
 import os,sys,time
 import wx
 
+import weakref
+
 from orderer import *
 from trac.core import *
 from debug import *
@@ -88,6 +90,9 @@ class SelectAction(debugmixin):
         if toolbar is not None:
             self.insertIntoToolBar(toolbar)
         self.userinit()
+
+    def __del__(self):
+        self.dprint("DELETING action %s" % self.name)
 
     def userinit(self):
         pass
@@ -288,6 +293,7 @@ class ListAction(SelectAction):
             self.frame.Disconnect(id,-1,wx.wxEVT_UPDATE_UI)
             self.dprint("deleting widget %d" % id)
             self.menu.Delete(id)
+        self.toplevel=[]
         self.id2index={}
         self.dprint("inserting new widgets at %d" % pos)
         self.insertIntoMenu(self.menu,pos)
@@ -394,6 +400,87 @@ class ToggleListAction(ListAction):
         raise NotImplementedError
 
 
+class GlobalList(ListAction):
+    debuglevel=1
+    inline=True
+
+    # storage and others must be defined in the subclass
+    #storage=[]
+    #others=[]
+    
+    def __init__(self, frame, menu):
+        ListAction.__init__(self, frame, menu)
+        self.__class__.others.append(weakref.ref(self))
+        dprint("others: %s" % self.__class__.others)
+        import gc
+        reference=self.__class__.others[0]
+        action=reference()
+        dprint(gc.get_referrers(action))
+
+    def createClassReferences(self):
+        raise NotImplementedError
+    
+    @classmethod
+    def append(cls,item):
+        dprint("BEFORE: storage: %s" % cls.storage)
+        dprint("BEFORE: others: %s" % cls.others)
+        cls.storage.append(item)
+        cls.update()
+        dprint("AFTER: storage: %s" % cls.storage)
+        dprint("AFTER: others: %s" % cls.others)
+        
+    @classmethod
+    def extend(cls,items):
+        dprint("BEFORE: storage: %s" % cls.storage)
+        dprint("BEFORE: others: %s" % cls.others)
+        cls.storage.extend(items)
+        cls.update()
+        dprint("AFTER: storage: %s" % cls.storage)
+        dprint("AFTER: others: %s" % cls.others)
+        
+    @classmethod
+    def remove(cls,item):
+        dprint("BEFORE: storage: %s" % cls.storage)
+        dprint("BEFORE: others: %s" % cls.others)
+        cls.storage.remove(item)
+
+        # can't delete from a list that you're iterating on, so make a
+        # new list.
+        newlist=[]
+        for reference in cls.others:
+            action=reference()
+            if action is not None:
+                # Search through all related actions and remove references
+                # to them. There may be more than one reference, so search
+                # them all.
+                if action.item != item:
+                    newlist.append(weakref.ref(action))
+        cls.others=newlist
+
+        dprint("AFTER: storage: %s" % cls.storage)
+        dprint("AFTER: others: %s" % cls.others)
+
+        cls.update()
+
+    @classmethod
+    def update(cls):
+        newlist=[]
+        for reference in cls.others:
+            action=reference()
+            if action is not None:
+                newlist.append(reference)
+                action.dynamic()
+        cls.others=newlist
+        
+    def getHash(self):
+        temp=tuple(self.getItems())
+        self.dprint("hash=%s" % hash(temp))
+        return hash(temp)
+
+    def getItems(self):
+        return self.__class__.storage
+
+
 class MenuBarActionMap(debugmixin):
     debuglevel=0
     
@@ -424,6 +511,9 @@ class MenuBarActionMap(debugmixin):
 
         # each menu title has a list of menu items below it
         self.menumap={}
+
+    def __del__(self):
+        dprint("DELETING %s" % self)
 
     def getkey(self,parent,name=None):
         if parent is None:

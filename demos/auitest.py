@@ -29,37 +29,6 @@ positions.  Finally, try dragg ing a tab to an existing tab ctrl.
 You'll soon see that very complex tab layout s may be achieved.
 """
 
-
-class MyNotebook(wx.aui.AuiNotebook,debugmixin):
-    def __init__(self, parent, size=wx.DefaultSize):
-        wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS)
-        
-        page = wx.TextCtrl(self, -1, text, style=wx.TE_MULTILINE)
-        self.AddPage(page, "Welcome", bitmap=self.getBitmap())
-
-        for num in range(1, 8):
-            page = wx.TextCtrl(self, -1, "This is page %d" % num ,
-                               style=wx.TE_MULTILINE)
-            self.addTab(page, "Page %d" % num)
-            
-        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
-
-    def getBitmap(self):
-        img=wx.ImageFromBitmap(wx.Bitmap("icons/py.ico"))
-        img.Rescale(16,16)
-        bitmap=wx.BitmapFromImage(img)
-        return bitmap
-
-    def addTab(self,win,title):
-        self.AddPage(win, title, bitmap=self.getBitmap())
-
-    def OnTabChanged(self, evt):
-        newpage=evt.GetSelection()
-        dprint("changing to %s" % newpage)
-        page=self.GetPage(newpage)
-        dprint("page: %s" % page)
-        evt.Skip()
-
 class DemoTree(wx.TreeCtrl):
     def __init__(self, parent, size=wx.DefaultSize):
         wx.TreeCtrl.__init__(self, parent, -1, wx.Point(0, 0), size=size, style=wx.TR_DEFAULT_STYLE | wx.NO_BORDER)
@@ -89,6 +58,56 @@ class DemoTree(wx.TreeCtrl):
             self.AppendItem(id, "Subitem 5", 1)
         
         self.Expand(root)
+
+
+class MyMajorMode(wx.Panel):
+    def __init__(self,parent):
+        wx.Panel.__init__(self, parent, -1, style=wx.NO_BORDER)
+        self._mgr = wx.aui.AuiManager()
+        self._mgr.SetManagedWindow(self)
+        
+        self.win = wx.TextCtrl(self, -1, text, style=wx.TE_MULTILINE)
+        self._mgr.AddPane(self.win, wx.aui.AuiPaneInfo().Name("text").
+                          CenterPane())
+        self.minortabs = MinorNotebook(self,size=(100,400))
+        self._mgr.AddPane(self.minortabs, wx.aui.AuiPaneInfo().Name("minor").
+                          Caption("Stuff").Right())
+        self.tree = DemoTree(self,size=(100,400))
+        self._mgr.AddPane(self.tree, wx.aui.AuiPaneInfo().Name("funclist").
+                          Caption("Function List").Right())
+        # "commit" all changes made to FrameManager   
+        self._mgr.Update()
+
+
+class MyNotebook(wx.aui.AuiNotebook,debugmixin):
+    def __init__(self, parent, size=wx.DefaultSize):
+        wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS)
+        
+        page = MyMajorMode(self)
+        self.AddPage(page, "Welcome", bitmap=self.getBitmap())
+
+        for num in range(1, 8):
+            page = wx.TextCtrl(self, -1, "This is page %d" % num ,
+                               style=wx.TE_MULTILINE)
+            self.addTab(page, "Page %d" % num)
+            
+        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+
+    def getBitmap(self):
+        img=wx.ImageFromBitmap(wx.Bitmap("icons/py.ico"))
+        img.Rescale(16,16)
+        bitmap=wx.BitmapFromImage(img)
+        return bitmap
+
+    def addTab(self,win,title):
+        self.AddPage(win, title, bitmap=self.getBitmap())
+
+    def OnTabChanged(self, evt):
+        newpage=evt.GetSelection()
+        dprint("changing to %s" % newpage)
+        page=self.GetPage(newpage)
+        dprint("page: %s" % page)
+        evt.Skip()
 
 class MinorNotebook(wx.aui.AuiNotebook,debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
@@ -184,12 +203,12 @@ class MyFrame(wx.Frame,debugmixin):
         wx.Frame.Raise(self)
         self.win.SetFocus()
         
-    def setMenumap(self,majormode=None,minormodes=[]):
+    def setMenumap(self,majormode=[],minormodes=[]):
         comp_mgr=ComponentManager()
         menuloader=MenuItemLoader(comp_mgr)
         self.menumap=menuloader.load(self,majormode,minormodes)
 
-    def setToolmap(self,majormode=None,minormodes=[]):
+    def setToolmap(self,majormode=[],minormodes=[]):
         if self.toolmap is not None:
             for tb in self.toolmap.toolbars:
                 self._mgr.DetachPane(tb)
@@ -213,8 +232,8 @@ class MyFrame(wx.Frame,debugmixin):
         
         self.dprint("Switching to mode %s" % mode)
         self.settings['major mode']=mode
-        self.setMenumap(mode)
-        self.setToolmap(mode)
+        self.setMenumap([mode])
+        self.setToolmap([mode])
 
         if mode in self.settings['perspectives']:
             self._mgr.LoadPerspective(self.settings['perspectives'][mode])

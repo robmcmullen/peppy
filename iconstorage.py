@@ -57,5 +57,5 @@ def getIconBitmap(icon=None):
     if icon:
         return _iconStorage.getBitmap(icon)
     else:
-        return wx.NullBitmap
+        return wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16))
 
