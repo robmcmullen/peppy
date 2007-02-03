@@ -106,6 +106,9 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
 
     def getIcon(self):
         return getIconStorage(self.icon)
+
+    def getWelcomeMessage(self):
+        return "%s major mode" % self.keyword
     
     def createWindow(self):
         box=wx.BoxSizer(wx.VERTICAL)

@@ -861,79 +861,15 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
             self.newBuffer(buffer)
         else:
             self.setBuffer(buffer)
-
-    def openFileDialog(self):        
-        wildcard="*"
-        cwd=os.getcwd()
-        dlg = wx.FileDialog(
-            self, message="Open File", defaultDir=cwd, 
-            defaultFile="", wildcard=wildcard, style=wx.OPEN)
-
-        # Show the dialog and retrieve the user response. If it is the
-        # OK response, process the data.
-        if dlg.ShowModal() == wx.ID_OK:
-            # This returns a Python list of files that were selected.
-            paths = dlg.GetPaths()
-
-            for path in paths:
-                self.dprint("open file %s:" % path)
-                # Force the loader to use the file: protocol
-                self.open("file:%s" % path)
-
-        # Destroy the dialog. Don't do this until you are done with it!
-        # BAD things can happen otherwise!
-        dlg.Destroy()
+        mode=self.getActiveMajorMode()
+        msg=mode.getWelcomeMessage()
+        self.SetStatusText(msg)
 
     def save(self):        
         mode=self.getActiveMajorMode()
         if mode and mode.buffer:
             mode.buffer.save()
             
-    def saveFileDialog(self):        
-        mode=self.getActiveMajorMode()
-        paths=None
-        if mode and mode.buffer:
-            saveas=mode.buffer.getFilename()
-
-            # Do this in a loop so that the user can get a chance to
-            # change the filename if the specified file exists.
-            while True:
-                # If we come through this loop again, saveas will hold
-                # a complete pathname.  Shorten it.
-                saveas=os.path.basename(saveas)
-                
-                wildcard="*.*"
-                cwd=os.getcwd()
-                dlg = wx.FileDialog(
-                    self, message="Save File", defaultDir=cwd, 
-                    defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)
-
-                retval=dlg.ShowModal()
-                if retval==wx.ID_OK:
-                    # This returns a Python list of files that were selected.
-                    paths = dlg.GetPaths()
-                dlg.Destroy()
-
-                if retval!=wx.ID_OK:
-                    break
-                elif len(paths)==1:
-                    saveas=paths[0]
-                    self.dprint("save file %s:" % saveas)
-
-                    # If new filename exists, make user confirm to
-                    # overwrite
-                    if os.path.exists(saveas):
-                        dlg = wx.MessageDialog(self, "%s\n\nexists.  Overwrite?" % saveas, "Overwrite?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-                        retval=dlg.ShowModal()
-                        dlg.Destroy()
-                    else:
-                        retval=wx.ID_YES
-                    if retval==wx.ID_YES:
-                        mode.buffer.save(saveas)
-                        break
-                elif paths!=None:
-                    raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
-
     def switchMode(self):
         last=self.tabs.getPrevious()
         mode=self.getActiveMajorMode()
