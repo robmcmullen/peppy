@@ -69,6 +69,7 @@ class NewFrame(SelectAction):
     
     def action(self, pos=-1):
         frame=self.frame.app.newFrame(callingFrame=self.frame)
+        frame.titleBuffer()
         frame.Show(True)
 
 #### Buffers
