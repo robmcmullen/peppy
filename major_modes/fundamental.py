@@ -184,19 +184,19 @@ class FundamentalMode(MajorMode):
         self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
         if self.settings.linenumbers:
             self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0, 22)
+            self.stc.SetMarginWidth(0, self.settings.linenumber_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
             
         # turn off symbol margin
         if self.settings.symbols:
-            self.stc.SetMarginWidth(1, 0)
+            self.stc.SetMarginWidth(1, self.settings.symbols_margin_width)
         else:
-            self.stc.SetMarginWidth(1, 16)
+            self.stc.SetMarginWidth(1, 0)
 
         # turn off folding margin
         if self.settings.folding:
-            self.stc.SetMarginWidth(2, 16)
+            self.stc.SetMarginWidth(2, self.settings.folding_margin_width)
         else:
             self.stc.SetMarginWidth(2, 0)
 
@@ -216,7 +216,7 @@ class FundamentalMode(MajorMode):
             self.settings.linenumbers=enable
         if self.settings.linenumbers:
             self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0, 22)
+            self.stc.SetMarginWidth(0,  self.settings.linenumber_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
 

@@ -282,18 +282,6 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
         # End of line where string is not closed
         s.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
 
-
-        # line numbers in the margin
-        s.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-        s.SetMarginWidth(0, 30)
-        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
-
-        # turn off symbol margin
-        s.SetMarginWidth(1, 0)
-
-        # turn off folding margin
-        s.SetMarginWidth(2, 0)
-
     ##
     # tab the line to the correct indent (matching the line above)
     def electricTab(self):
