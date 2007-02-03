@@ -65,7 +65,56 @@ class OpenFile(SelectAction):
 
     def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.openFileDialog()
+
+        wildcard="*"
+        cwd=os.getcwd()
+        dlg = wx.FileDialog(
+            self.frame, message="Open File", defaultDir=cwd, 
+            defaultFile="", wildcard=wildcard, style=wx.OPEN)
+
+        # Show the dialog and retrieve the user response. If it is the
+        # OK response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+
+            for path in paths:
+                self.dprint("open file %s:" % path)
+                # Force the loader to use the file: protocol
+                self.frame.open("file:%s" % path)
+
+        # Destroy the dialog. Don't do this until you are done with it!
+        # BAD things can happen otherwise!
+        dlg.Destroy()
+
+class OpenURL(SelectAction):
+    name = "Open URL..."
+    tooltip = "Open a file through a URL"
+    icon = "icons/folder_page.png"
+    keyboard = "C-X C-A"
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+
+        wildcard="*"
+        cwd=os.getcwd()
+        dlg = wx.TextEntryDialog(
+            self.frame, message="Open URL", defaultValue="",
+            style=wx.OK|wx.CANCEL)
+
+        # Show the dialog and retrieve the user response. If it is the
+        # OK response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            url = dlg.GetValue()
+
+            self.dprint("open url %s:" % url)
+            self.frame.open(url)
+
+        # Destroy the dialog. Don't do this until you are done with it!
+        # BAD things can happen otherwise!
+        dlg.Destroy()
+
 
 class Exit(SelectAction):
     name = "E&xit"
@@ -111,7 +160,50 @@ class SaveAs(SelectAction):
 
     def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.saveFileDialog()
+
+        mode=self.frame.getActiveMajorMode()
+        paths=None
+        if mode and mode.buffer:
+            saveas=mode.buffer.getFilename()
+
+            # Do this in a loop so that the user can get a chance to
+            # change the filename if the specified file exists.
+            while True:
+                # If we come through this loop again, saveas will hold
+                # a complete pathname.  Shorten it.
+                saveas=os.path.basename(saveas)
+                
+                wildcard="*.*"
+                cwd=os.getcwd()
+                dlg = wx.FileDialog(
+                    self.frame, message="Save File", defaultDir=cwd, 
+                    defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)
+
+                retval=dlg.ShowModal()
+                if retval==wx.ID_OK:
+                    # This returns a Python list of files that were selected.
+                    paths = dlg.GetPaths()
+                dlg.Destroy()
+
+                if retval!=wx.ID_OK:
+                    break
+                elif len(paths)==1:
+                    saveas=paths[0]
+                    self.dprint("save file %s:" % saveas)
+
+                    # If new filename exists, make user confirm to
+                    # overwrite
+                    if os.path.exists(saveas):
+                        dlg = wx.MessageDialog(self.frame, "%s\n\nexists.  Overwrite?" % saveas, "Overwrite?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                        retval=dlg.ShowModal()
+                        dlg.Destroy()
+                    else:
+                        retval=wx.ID_YES
+                    if retval==wx.ID_YES:
+                        mode.buffer.save(saveas)
+                        break
+                elif paths!=None:
+                    raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
 
 
 
@@ -173,7 +265,8 @@ class GlobalMenu(Component):
     default_menu=((None,Menu("File").first()),
                   ("File",MenuItem(New).first()),
                   ("File",MenuItem(OpenFile).after("&New File...")),
-                  ("File",Separator("opensep").after("&Open File...")),
+                  ("File",MenuItem(OpenURL).after("&Open File...")),
+                  ("File",Separator("opensep").after("Open URL...")),
                   ("File",MenuItem(Save).after("opensep")),
                   ("File",MenuItem(SaveAs).after("opensep")),
                   ("File",MenuItem(Close).after("opensep")),
