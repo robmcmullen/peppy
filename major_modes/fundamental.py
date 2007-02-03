@@ -56,7 +56,7 @@ class LineNumbers(ToggleAction):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setWordWrap(not viewer.settings.linenumbers)
+            viewer.setLineNumbers(not viewer.settings.linenumbers)
     
 class BeginningOfLine(SelectAction):
     name = "Cursor to Start of Line"
