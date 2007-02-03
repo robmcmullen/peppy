@@ -1,13 +1,3 @@
-# Changes to get to work with peppy:
-
-# 1. change calls to parent.GetWindow1() to self.stc
-
-# 2. pass STC into constructor
-
-# 3. root is equivalent to the BufferFrame object; it uses the
-# preference method getglobal that must be changed.
-
-# 4. change OnCloseBar to use the view's remove method instead of Unsplit
 
 import wx
 import wx.stc
@@ -18,21 +8,21 @@ class OnCloseBar: #embedded callback to destroy the findbar on removal
         self.c = control
     def __call__(self, *args):
         self.c.savePreferences()
-        self.c.viewer.removeMinibuffer()
-        #self.c.Destroy()
+        self.c.parent.Unsplit()
+        self.c.Destroy()
         del self.c
 
 word = dict.fromkeys(map(ord, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'))
 non_word = dict.fromkeys([chr(i) for i in xrange(256) if i not in word])
 
+MEM_LEAK_TEST = 0
+
 class ReplaceBar(wx.Panel):
-    def __init__(self, parent, viewer, stcwidget):
+    def __init__(self, parent, root):
         #init the object
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         self.parent = parent
-        self.viewer = viewer
-        self.root = viewer.frame # equivalent to BufferFrame object
-        self.stc = stcwidget
+        self.root = root
         
         #state variables
         self._lastcall = self.OnFindN
@@ -42,6 +32,10 @@ class ReplaceBar(wx.Panel):
         self.buttons = []
         self.replacing = 0
         self.wholeword = 0
+        
+        self.replace_t = wx.Timer(self, wx.NewId())
+        self.Bind(wx.EVT_TIMER, self._replace_again1)
+        self._replace_args = None
         
         prefs = self.readPreferences()
         self.setup()
@@ -62,7 +56,7 @@ class ReplaceBar(wx.Panel):
             self.box1 = box1 = wx.ComboBox(self, -1, choices=prefs['find'], size=(125, -1), style=wx.TE_PROCESS_ENTER)
             if prefs['find']:
                 box1.SetStringSelection(prefs['find'][0])
-        self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+            box1.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
         #box1.SetInsertionPoint(0)
         box1.Bind(wx.EVT_TEXT, self.OnChar)
         box1.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
@@ -180,7 +174,7 @@ class ReplaceBar(wx.Panel):
                 raise cancelled
             return "", None, None
         
-        win = self.stc
+        win = self.parent.GetWindow1()
         return findTxt, matchcase, win
 
     def sel(self, posns, posne, msg, win):
@@ -284,7 +278,7 @@ class ReplaceBar(wx.Panel):
             self.wholeword = 0
         kc = evt.GetKeyCode()
         if kc == wx.WXK_ESCAPE:
-            p = self.stc
+            p = self.parent.GetWindow1()
             self.close()
             p.SetFocus()
             return
@@ -316,8 +310,6 @@ class ReplaceBar(wx.Panel):
             evt.Skip()
     
     def OnSetFocus(self, evt):
-        print "OnSetFocus"
-        self.box1.SetFocus()
         self.box1.SetMark(0, self.box1.GetLastPosition())
         if evt:
             evt.Skip()
@@ -376,7 +368,7 @@ class ReplaceBar(wx.Panel):
             return (max(sel), max(sel)), 0
     
     def _replaceAll(self, evt, ris):
-        win = self.stc
+        win = self.parent.GetWindow1()
         ostart, oend = win.GetSelection()
         
         #ris = self.replinsel.GetValue()
@@ -422,11 +414,11 @@ class ReplaceBar(wx.Panel):
             win.EndUndoAction()
     
     def replaceAll(self, evt, ris):
-        win = self.stc
+        win = self.parent.GetWindow1()
         ostart, oend = win.GetSelection()
         
         #ris = self.replinsel.GetValue()
-        win.BeginUndoAction()
+        if not MEM_LEAK_TEST: win.BeginUndoAction()
         if ris:
             win.SetSelection(ostart, ostart)
         else:
@@ -476,16 +468,31 @@ class ReplaceBar(wx.Panel):
         else:
             cont = 0
         
+        if MEM_LEAK_TEST:
+            win.EmptyUndoBuffer()
+        
         if cont:
-            wx.FutureCall(1, self.ReentrantReplace, (ostart, oend, ris, win))
+            if MEM_LEAK_TEST:
+                wx.FutureCall(1, self.ReentrantReplace, (ostart, oend, ris, win))
+            else:
+                self._replace_again2((ostart, oend, ris, win))
         else:
             self.replacing = 0
             self.sel(ostart, oend, '', win)
             if self.root.control.GetPageCount() and \
                self.root.control.GetCurrentPage() == self.parent:
                 win.SetFocus()
-            win.EndUndoAction()
-
+            if not MEM_LEAK_TEST:
+                win.EndUndoAction()
+    
+    def _replace_again1(self, evt):
+        self._replace_args, args = None, self._replace_args
+        self.ReentrantReplace(args)
+    
+    def _replace_again2(self, args):
+        self._replace_args = args
+        self.replace_t.Start(1, wx.TIMER_ONE_SHOT)
+    
     def OnReplaceAll(self, evt):
         if self.replacing:
             return
@@ -500,9 +507,9 @@ class ReplaceBar(wx.Panel):
 
     def readPreferences(self):
         try:
-            prefs = self.stc.findbarprefs
+            prefs = self.parent.GetWindow1().findbarprefs
         except:
-            prefs = self.stc.findbarprefs = {}
+            prefs = self.parent.GetWindow1().findbarprefs = {}
         # Set the defaults individually so that adding options works
         # as expected.
         prefs.setdefault('prefs_version', 1)
@@ -558,7 +565,7 @@ class ReplaceBar(wx.Panel):
             prefs['replace'] = getlist(self.box2)
             prefs['smartcase'] = self.smartcase.IsChecked()
         
-        self.stc.findbarprefs.update(prefs)
+        self.parent.GetWindow1().findbarprefs.update(prefs)
 
 #-----------------------------------------------------------------------------
 

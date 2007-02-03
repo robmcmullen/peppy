@@ -11,6 +11,7 @@ from debug import *
 
 from actions.minibuffer import *
 from actions.gotoline import *
+from actions.pypefind import *
 
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
@@ -85,33 +86,6 @@ class EndOfLine(SelectAction):
             s=viewer.stc
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
-
-class FindMinibuffer(Minibuffer):
-    def minibuffer(self, viewer):
-        from pype import findbar
-        self.win=findbar.FindBar(viewer.win,viewer,viewer.stc)
-        print "findbar=%s" % self.win
-
-    def focus(self):
-        self.win.box1.SetFocus()
-    
-class ReplaceMinibuffer(FindMinibuffer):
-    def minibuffer(self, viewer):
-        from pype import findbar
-        self.win=findbar.ReplaceBar(viewer.win,viewer,viewer.stc)
-    
-
-class FindText(MinibufferAction):
-    name = "Find..."
-    tooltip = "Search for a string in the text."
-    keyboard = 'C-S'
-    minibuffer = FindMinibuffer
-
-class ReplaceText(MinibufferAction):
-    name = "Replace..."
-    tooltip = "Replace a string in the text."
-    keyboard = 'F6'
-    minibuffer = ReplaceMinibuffer
 
 
 
@@ -222,7 +196,6 @@ class FundamentalMode(MajorMode):
 
     def styleSTC(self):
         pass
-
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):

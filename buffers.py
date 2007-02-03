@@ -648,11 +648,6 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     def getTitle(self):
         return self.name
 
-    #### PyPE Compatability
-
-    def getglobal(self,param):
-        return None
-
 
 
 
