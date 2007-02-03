@@ -17,7 +17,7 @@ from iconstorage import *
 from debug import *
 from trac.core import *
 from plugin import *
-
+from dialogs import *
 
 class BufferList(GlobalList):
     debuglevel=1
@@ -716,13 +716,13 @@ class BufferApp(wx.App,debugmixin):
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
-            dlg = wx.MessageDialog(self.GetTopWindow(), "The following files have unsaved changes:\n\n%s\n\nExit anyway?" % "\n".join([buf.displayname for buf in unsaved]), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+            dlg = QuitDialog(self.GetTopWindow(), unsaved)
             retval=dlg.ShowModal()
             dlg.Destroy()
         else:
-            retval=wx.ID_YES
+            retval=wx.ID_OK
 
-        if retval==wx.ID_YES:
+        if retval==wx.ID_OK:
             doit=self.quitHook()
             if doit:
                 self.ExitMainLoop()
