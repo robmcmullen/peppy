@@ -405,7 +405,13 @@ class GlobalList(ListAction):
     inline=True
 
     # storage and others must be defined in the subclass
+
+    # storage holds the list of objects to be managed
     #storage=[]
+
+    # others holds the list of currently active global lists that will
+    # be used to update other menubars or toolbars when this object
+    # changes.
     #others=[]
     
     def __init__(self, frame, menu):
@@ -419,7 +425,7 @@ class GlobalList(ListAction):
 
     def createClassReferences(self):
         raise NotImplementedError
-    
+
     @classmethod
     def append(cls,item):
         dprint("BEFORE: storage: %s" % cls.storage)
@@ -444,18 +450,18 @@ class GlobalList(ListAction):
         dprint("BEFORE: others: %s" % cls.others)
         cls.storage.remove(item)
 
-        # can't delete from a list that you're iterating on, so make a
-        # new list.
-        newlist=[]
-        for reference in cls.others:
-            action=reference()
-            if action is not None:
-                # Search through all related actions and remove references
-                # to them. There may be more than one reference, so search
-                # them all.
-                if action.item != item:
-                    newlist.append(weakref.ref(action))
-        cls.others=newlist
+##        # can't delete from a list that you're iterating on, so make a
+##        # new list.
+##        newlist=[]
+##        for reference in cls.others:
+##            action=reference()
+##            if action is not None:
+##                # Search through all related actions and remove references
+##                # to them. There may be more than one reference, so search
+##                # them all.
+##                if action != item:
+##                    newlist.append(weakref.ref(action))
+##        cls.others=newlist
 
         dprint("AFTER: storage: %s" % cls.storage)
         dprint("AFTER: others: %s" % cls.others)

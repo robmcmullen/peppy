@@ -318,6 +318,8 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
 
         FrameList.append(self)
         
+        self.Bind(wx.EVT_CLOSE,self.OnClose)
+        
         self.CreateStatusBar()
         self.SetStatusText("This is the statusbar")
 
@@ -370,8 +372,11 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     # Overrides of wx methods
     def OnClose(self, evt=None):
         dprint(evt)
-        FrameList.remove(self)
-        self.Destroy()
+        if len(FrameList.storage)==1:
+            wx.CallAfter(self.app.quit)
+        else:
+            FrameList.remove(self)
+            self.Destroy()
 
     def OnKeyPressed(self, evt):
         self.keys.process(evt)
