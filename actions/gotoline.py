@@ -1,3 +1,8 @@
+"""
+Includable file that is used to provide a Goto Line function for a
+major mode.
+"""
+
 import os
 
 import wx
@@ -10,13 +15,26 @@ from debug import *
 
 
 class GotoMinibuffer(IntMinibuffer):
-    def minibuffer(self, viewer):
-        #super(GotoMinibuffer,self).minibuffer(viewer,label="Goto Line:")
-        IntMinibuffer.minibuffer(self,viewer,label="Goto Line:")
+    """
+    Use minibuffer to request a line number, then go to that line in
+    the stc.
+    """
+    
+    def minibuffer(self, mode):
+        """
+        Create the minibuffer with the Goto Line label.
 
-    def OnInt(self,line):
+        @param mode: the current major mode
+        """
+        IntMinibuffer.minibuffer(self, mode, label="Goto Line:")
+
+    def OnInt(self, line):
+        """
+        Callback function used to set the stc to the correct line.
+        """
+        
         # stc counts lines from zero, but displayed starting at 1.
-        self.viewer.stc.GotoLine(line-1)
+        self.mode.stc.GotoLine(line-1)
         
 
 
@@ -26,10 +44,3 @@ class GotoLine(MinibufferAction):
     keyboard = 'M-G'
     minibuffer = GotoMinibuffer
 
-
-
-
-
-if __name__ == "__main__":
-    # tests go here
-    pass
