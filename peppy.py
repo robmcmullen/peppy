@@ -568,12 +568,20 @@ def run(options={},args=None):
     app=Peppy(redirect=False)
     frame=BufferFrame(app)
     frame.Show(True)
+    bad=[]
     if args:
         for filename in args:
-            frame.open(filename)
-    else:
+            try:
+                frame.open(filename)
+            except IOError:
+                bad.append(filename)
+
+    if len(BufferList.storage)==0:
         frame.titleBuffer()
         
+    if len(bad)>0:
+        frame.SetStatusText("Failed loading %s" % ", ".join([f for f in bad]))
+    
     app.MainLoop()
 
 
