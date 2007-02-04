@@ -64,6 +64,11 @@ class ShellProtocol(ProtocolPluginBase,debugmixin):
 
 
 class ShellSTC(MySTC):
+    """
+    Specialized STC used as the buffer of a shell mode.  Note, setting
+    the cursor position on this STC doesn't affect the views directly.
+    This is the data storage STC, not the viewing STC.
+    """
     debuglevel=1
 
     def __init__(self, parent, ID=-1):
@@ -155,7 +160,7 @@ class ShellMode(FundamentalMode):
     icon='icons/application_xp_terminal.png'
     regex="shell:.*$"
 
-    def openPostHook(self):
+    def createWindowPostHook(self):
         self.dprint("In shell.")
         self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
 
@@ -165,6 +170,7 @@ class ShellMode(FundamentalMode):
         self.OnUpdateCursorPos()
 
     def OnUpdateCursorPos(self,evt=None):
+        self.dprint("cursor position = %d" % self.buffer.stc.GetCurrentPos())
         self.stc.GotoPos(self.buffer.stc.GetCurrentPos())
         self.stc.EnsureCaretVisible()
         self.stc.ScrollToColumn(0)
