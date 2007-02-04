@@ -4,6 +4,7 @@ Central repository for the main set of plugins for peppy.
 
 import os,re
 
+from configprefs import *
 from stcinterface import MySTC
 from trac.core import *
 
@@ -256,7 +257,7 @@ class IFramePluginProvider(Interface):
         Return iterator containing list of frame plugins.
         """
 
-class FramePlugin(object):
+class FramePlugin(ClassSettingsMixin):
     """
     Base class for all frame plugins.  A frame plugin is generally
     used to create a new UI window in a frame that is outside the
@@ -266,6 +267,7 @@ class FramePlugin(object):
     keyword=None
 
     def __init__(self, frame):
+        ClassSettingsMixin.__init__(self)
         self.frame=frame
         if self.keyword is None:
             raise ValueError("keyword class attribute must be defined.")

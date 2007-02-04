@@ -6,8 +6,11 @@ which are in other directories.
 
 import os,re
 
+import wx
+
 from trac.core import *
 
+from configprefs import *
 from debug import *
 
 class MinorModeIncompatibilityError(Exception):
@@ -51,7 +54,7 @@ class MinorModeLoader(Component):
                 major.createMinorMode(minor)
 
 
-class MinorMode(debugmixin):
+class MinorMode(ClassSettingsMixin,debugmixin):
     """
     Base class for all minor modes.  A minor mode doesn't have to
     create any of the following, but it can:
@@ -68,6 +71,7 @@ class MinorMode(debugmixin):
     """
 
     def __init__(self, major, parent):
+        ClassSettingsMixin.__init__(self)
         self.major=major
         self.parent=parent
 
@@ -80,4 +84,12 @@ class MinorMode(debugmixin):
 
     def createWindows(self,parent):
         pass
+
+    def getDefaultPaneInfo(self,caption):
+        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
+        paneinfo.BestSize(wx.Size(self.settings.best_width,
+                                  self.settings.best_height))
+        paneinfo.MinSize(wx.Size(self.settings.min_width,
+                                 self.settings.min_height))
+        return paneinfo
     
