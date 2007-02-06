@@ -39,10 +39,10 @@ class ProtocolPluginBase(Component):
     def supportedProtocels(self):
         return NotImplementedError
     
-    def getReader(self):
+    def getReader(self,filename):
         return NotImplementedError
     
-    def getWriter(self):
+    def getWriter(self,filename):
         return NotImplementedError
     
     def getSTC(self,parent):

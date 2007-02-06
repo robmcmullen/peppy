@@ -4,6 +4,7 @@ import wx
 
 from menu import *
 from major import *
+from major_modes.fundamental import FundamentalMode
 from debug import *
 from trac.core import *
 from plugin import *
@@ -59,6 +60,7 @@ capabilities, (right click to try it out.)
 def SetAbout(path,text):
     aboutfiles[path]=text
 
+SetAbout('untitled','')
 SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
@@ -220,6 +222,8 @@ class AboutPlugin(MajorModeMatcherBase):
             return MajorModeMatch(TitleMode,exact=True)
         elif filename=='about:blank':
             return MajorModeMatch(BlankMode,exact=True)
+        elif filename=='about:untitled':
+            return MajorModeMatch(FundamentalMode,exact=True)
         else:
             return None
 

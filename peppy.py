@@ -3,9 +3,22 @@
 """
 peppy - (ap)Proximated (X)Emacs Powered by Python.
 
+An experiment using the modern software development process.
+
 This is a wxPython/Scintilla-based editor written in and extensible
 through Python. It attempts to provide an XEmacs-like multi-window,
-multi-tabbed interface.
+multi-tabbed interface using the Advanced User Interface (wx.aui)
+framework of wxPython.
+
+The program is designed around the emacs idea of major modes and minor
+modes, and further extends this with global plugins.  In writing the
+editor, I also borrowed quite a lot from emacs terminology, including
+frames and buffers, the minibuffer concept, and the keyboard bindings.
+
+I did not borrow emacs lisp, however; that being the primary reason
+for me wanting to move away from emacs.  I find it easy to think in
+Python, unlike lisp which my brain can't seem to flush fast enough
+after learning just enough to hack XEmacs.
 
 Plugins
 =======
@@ -57,6 +70,9 @@ class New(SelectAction):
     tooltip = "New file"
     icon = "icons/page.png"
 
+    def action(self, pos=-1):
+        self.frame.open("about:untitled")
+        
 class OpenFile(SelectAction):
     name = "&Open File..."
     tooltip = "Open a file"
