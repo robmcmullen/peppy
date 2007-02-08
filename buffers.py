@@ -259,7 +259,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         index=self.GetSelection()
         dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
         self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
-        self.RemovePage(index+1)
+        self.DeletePage(index+1)
         self.SetSelection(index)
         self.Thaw()
         
