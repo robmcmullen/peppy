@@ -12,8 +12,17 @@ from debug import *
 #### STC Interface
 
 class STCInterface(object):
+    """
+    Methods that a data source object must implement in order to be
+    compatible with the real STC used as the data source for
+    text-based files.
+
+    See U{the Yellowbrain guide to the
+    STC<http://www.yellowbrain.com/stc/index.html>} for more info on
+    the rest of the STC methods.
+    """
     def CanEdit(self):
-        # PyPE compat to show read-only status
+        """PyPE compat to show read-only status"""
         return True
     
     def CanPaste(self):
@@ -67,9 +76,13 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-# Global default STC interface for user interface purposes with a few
-# methods to support testing of the STC without using wx
+
 class NullSTC(STCInterface):
+    """
+    Bare-bones STC implementation (without any user interface)
+    interface for testing purposes.  A few methods are implemented to
+    support testing of the STC without using wx
+    """
     def __init__(self):
         self.styledtext=""
         
@@ -97,8 +110,6 @@ class NullSTC(STCInterface):
     def GetStyledText(self,start=0,length=0):
         return self.styledtext[start*2:start*2+length*2]
     
-BlankSTC=NullSTC()
-
 
 
 
@@ -108,6 +119,12 @@ BlankSTC=NullSTC()
 
 
 class MySTC(stc.StyledTextCtrl,debugmixin):
+    """
+    Base version of the STC that most major modes will use as the STC
+    implementation.
+    """
+    debuglevel=1
+    
     def __init__(self, parent, ID=-1, refstc=None):
         stc.StyledTextCtrl.__init__(self, parent, ID)
 
@@ -151,6 +168,7 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         Send an event to all subordinate STCs
         """
         for otherstc in self.subordinates:
+            self.dprint("sending event %s to %s" % (evt,otherstc))
             wx.PostEvent(otherstc,evt())
 
     def openPostHook(self,filter):
@@ -168,6 +186,18 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         return True
 
     def GetBinaryData(self,start,end):
+        """
+        Convenience function to get binary data out of the STC.  The
+        only way to get binary data out of the STC is to use the
+        GetStyledText method and chop out every other byte.  Using the
+        regular GetText method will stop at the first nul character.
+
+        @param start: first text position
+        @param end: last text position
+        
+        @returns: binary data between start and end-1, inclusive (just
+        like standard python array slicing)
+        """
         return self.GetStyledText(start,end)[::2]
 
     def GuessBinary(self,amount,percentage):
@@ -207,8 +237,13 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         
         
     def OnDestroy(self, evt):
-        # This is how the clipboard contents can be preserved after
-        # the app has exited.
+        """
+        Event handler for EVT_WINDOW_DESTROY. Preserve the clipboard
+        contents can be preserved after the window is destroyed so
+        that other apps can still grab it.
+
+        @param evt: event
+        """
         wx.TheClipboard.Flush()
         evt.Skip()
 
@@ -252,16 +287,18 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
 
 
     def OnModified(self, evt):
-        self.dprint("""OnModified
-        Mod type:     %s
-        At position:  %d
-        Lines added:  %d
-        Text Length:  %d
-        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
-                                  evt.GetPosition(),
-                                  evt.GetLinesAdded(),
-                                  evt.GetLength(),
-                                  repr(evt.GetText()) ))
+##        self.dprint("""OnModified
+##        Mod type:     %s
+##        At position:  %d
+##        Lines added:  %d
+##        Text Length:  %d
+##        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
+##                                  evt.GetPosition(),
+##                                  evt.GetLinesAdded(),
+##                                  evt.GetLength(),
+##                                  repr(evt.GetText()) ))
+        self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+        evt.Skip()
 
 
     def transModType(self, modType):
@@ -287,9 +324,4 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
             st = 'UNKNOWN'
 
         return st
-
-
-
-if __name__ == "__main__":
-    pass
 
