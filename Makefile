@@ -36,6 +36,7 @@ SVN_FILTER_OUT := README.pre.in Makedoc.py %/
 SVN_FILTERED := $(filter-out $(SVN_FILTER_OUT),$(SVN_LIST))
 DISTSRC := $(filter %.py,$(SVN_FILTERED))
 DISTFILES := README $(SVN_FILTERED)
+DISTMODS := $(filter-out peppy.py,$(DISTSRC))
 
 
 .SUFFIXES:      .html.in .pre.in .html

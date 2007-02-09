@@ -29,10 +29,11 @@ class IMinorModeProvider(Interface):
         associated with this plugin.
         """
 
-class MinorModeLoader(Component):
+class MinorModeLoader(Component,debugmixin):
     """
     Trac component that handles minor mode loading.
     """
+    debuglevel=0
     extensions=ExtensionPoint(IMinorModeProvider)
 
     def __init__(self):
@@ -44,14 +45,14 @@ class MinorModeLoader(Component):
         
         for ext in self.extensions:
             for minor in ext.getMinorModes():
-                dprint("Registering minor mode %s" % minor.keyword)
+                self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
 
     def load(self,major,minorlist=[]):
-        dprint("Loading minor modes %s for %s" % (str(minorlist),major))
+        self.dprint("Loading minor modes %s for %s" % (str(minorlist),major))
         for keyword in minorlist:
             if keyword in MinorModeLoader.modekeys:
-                dprint("found %s" % keyword)
+                self.dprint("found %s" % keyword)
                 minor=MinorModeLoader.modekeys[keyword]
                 major.createMinorMode(minor)
 

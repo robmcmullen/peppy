@@ -45,7 +45,6 @@ class ShiftRight(MajorAction):
     keyboard = 'TAB'
 
     def majoraction(self, viewer, pos=-1):
-        dprint("HERE!!!")
         viewer.indent(1)
 
 class ElectricReturn(MajorAction):
@@ -147,10 +146,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
 
     def loadMinorModes(self):
         minors=self.settings.minor_modes
-        dprint(minors)
+        self.dprint(minors)
         if minors is not None:
             minorlist=minors.split(',')
-            dprint("loading %s" % minorlist)
+            self.dprint("loading %s" % minorlist)
             MinorModeLoader(ComponentManager()).load(self,minorlist)
 
     def createMinorMode(self,minorcls):
@@ -161,7 +160,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
             pass
 
     def OnUpdateUI(self,evt):
-        dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
+        self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)

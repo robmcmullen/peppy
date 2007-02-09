@@ -25,8 +25,8 @@ class OpenRecent(GlobalList):
 
     @classmethod
     def append(cls,item):
-        dprint("BEFORE: storage: %s" % cls.storage)
-        dprint("BEFORE: others: %s" % cls.others)
+##        dprint("BEFORE: storage: %s" % cls.storage)
+##        dprint("BEFORE: others: %s" % cls.others)
         # New items are added at the top of this list
         if item in cls.storage:
             newlist=[item]
@@ -39,8 +39,8 @@ class OpenRecent(GlobalList):
         if len(cls.storage)>cls.maxlen:
             cls.storage[cls.maxlen:]=[]
         cls.update()
-        dprint("AFTER: storage: %s" % cls.storage)
-        dprint("AFTER: others: %s" % cls.others)
+##        dprint("AFTER: storage: %s" % cls.storage)
+##        dprint("AFTER: others: %s" % cls.others)
         
     @classmethod
     def load(cls,pathname):

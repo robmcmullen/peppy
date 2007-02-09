@@ -23,30 +23,36 @@ PREREQUISITES
 python 2.4 or later
 wxPython 2.6.3.2 or later
 
-(Currently developed on python 2.4.3 and wxPython 2.6.3.3 on Linux and
-Windows.)
+(Currently developed on Python 2.4.3 and wxPython 2.8.1.1 on Linux, and
+Python 2.5 and wxPython 2.8.1.1 on Windows.)
 
 
 
 FEATURES
 ========
 
-Erm.  It probably won't crash, but I don't think it's going to
-contribute to your productivity right now. :)
+* XEmacs feel
+* Multiple top-level windows
+* AUI widgets for an awesomely awesome, cutting-edge GUI
+
+Many more features are available or planned.  See the roadmap on the
+web at http://trac.flipturn.org/roadmap
 
 
 
 DOCUMENTATION
 =============
 
-Erm again.  Not much yet, either.
+See the web at http://www.flipturn.org/peppy
 
 
 
 KNOWN ISSUES
 ============
 
-Probably causes hairballs.  Keep cats away.
+This editor is still in heavy development, so I wouldn't recommend
+that you do anything mission critical with it.  Don't expect it to
+actually save your files, although it might if it's in a good mood.
 
 
 
@@ -62,8 +68,11 @@ Thanks to:
 
 * Stani Michiels for SPE (http://www.stani.be/python/spe)
 
-* Mark James for the amazing and free silk icons
+* Mark James for the free silk icon set
   (http://www.famfamfam.com/lab/icons/silk/)
+
+* The Natural Language Toolkit project (http://nltk.sourceforge.net)
+  for the chatbot implementations
 
 
 

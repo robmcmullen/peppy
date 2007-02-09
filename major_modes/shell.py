@@ -71,7 +71,7 @@ class ShellSTC(MySTC):
     the cursor position on this STC doesn't affect the views directly.
     This is the data storage STC, not the viewing STC.
     """
-    debuglevel=1
+    debuglevel=0
 
     def __init__(self, parent, ID=-1):
         MySTC.__init__(self,parent,ID)

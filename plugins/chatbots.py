@@ -42,7 +42,7 @@ class ChatShell(Component):
 
 
 class ChatWrapper(debugmixin):
-    debuglevel=1
+    debuglevel=0
     ps1="> "
     ps2=">> "
     

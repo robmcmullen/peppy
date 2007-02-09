@@ -118,7 +118,7 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
     Base version of the STC that most major modes will use as the STC
     implementation.
     """
-    debuglevel=1
+    debuglevel=0
     
     def __init__(self, parent, ID=-1, refstc=None):
         stc.StyledTextCtrl.__init__(self, parent, ID)

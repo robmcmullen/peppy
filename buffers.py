@@ -22,7 +22,7 @@ from plugin import *
 from dialogs import *
 
 class BufferList(GlobalList):
-    debuglevel=1
+    debuglevel=0
     name="Buffers"
 
     storage=[]
@@ -36,7 +36,7 @@ class BufferList(GlobalList):
         self.frame.setBuffer(BufferList.storage[index])
     
 class FrameList(GlobalList):
-    debuglevel=1
+    debuglevel=0
     name="Frames"
 
     storage=[]
@@ -246,7 +246,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabChanged(self, evt):
         newpage = evt.GetSelection()
         oldpage = evt.GetOldSelection()
-        dprint("changing from tab %s to %s" % (oldpage, newpage))
+        self.dprint("changing from tab %s to %s" % (oldpage, newpage))
         if oldpage>0:
             self.lastActivePage=self.GetPage(oldpage)
         else:
@@ -258,10 +258,10 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabClosed(self, evt):
         index = evt.GetSelection()
         mode = self.GetPage(index)
-        dprint("closing tab %d: mode %s" % (index,mode))
+        self.dprint("closing tab %d: mode %s" % (index,mode))
 
     def addTab(self,mode):
-        dprint("Adding tab %s" % mode)
+        self.dprint("Adding tab %s" % mode)
         self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
         index=self.GetPageIndex(mode)
         self.SetSelection(index)
@@ -272,7 +272,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.addTab(mode)
         else:
             self.Freeze()
-            dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
+            self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
             self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
             oldmode=self.GetPage(index+1)
             self.RemovePage(index+1)
@@ -296,7 +296,9 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index,mode.getTabName())
 
 
-class FramePluginLoader(Component):
+class FramePluginLoader(Component,debugmixin):
+    debuglevel=0
+    
     extensions=ExtensionPoint(IFramePluginProvider)
 
     def __init__(self):
@@ -308,14 +310,14 @@ class FramePluginLoader(Component):
         
         for ext in self.extensions:
             for plugin in ext.getFramePlugins():
-                dprint("Registering frame plugin %s" % plugin.keyword)
+                self.dprint("Registering frame plugin %s" % plugin.keyword)
                 FramePluginLoader.pluginmap[plugin.keyword]=plugin
 
     def load(self,frame,pluginlist=[]):
-        dprint("Loading plugins %s for %s" % (str(pluginlist),frame))
+        self.dprint("Loading plugins %s for %s" % (str(pluginlist),frame))
         for keyword in pluginlist:
             if keyword in FramePluginLoader.pluginmap:
-                dprint("found %s" % keyword)
+                self.dprint("found %s" % keyword)
                 plugin=FramePluginLoader.pluginmap[keyword]
                 frame.createFramePlugin(plugin)
 
@@ -382,10 +384,10 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
 
     def loadFramePlugins(self):
         plugins=self.settings.plugins
-        dprint(plugins)
+        self.dprint(plugins)
         if plugins is not None:
             pluginlist=plugins.split(',')
-            dprint("loading %s" % pluginlist)
+            self.dprint("loading %s" % pluginlist)
             FramePluginLoader(ComponentManager()).load(self,pluginlist)
 
     def createFramePlugin(self,plugincls):
@@ -394,7 +396,7 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
 
     # Overrides of wx methods
     def OnClose(self, evt=None):
-        dprint(evt)
+        self.dprint(evt)
         if len(FrameList.storage)==1:
             wx.CallAfter(self.app.quit)
         else:

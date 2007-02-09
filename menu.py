@@ -403,7 +403,7 @@ class ToggleListAction(ListAction):
 
 
 class GlobalList(ListAction):
-    debuglevel=1
+    debuglevel=0
     inline=True
 
     # storage and others must be defined in the subclass
@@ -419,37 +419,37 @@ class GlobalList(ListAction):
     def __init__(self, frame, menu):
         ListAction.__init__(self, frame, menu)
         self.__class__.others.append(weakref.ref(self))
-        dprint("others: %s" % self.__class__.others)
+        self.dprint("others: %s" % self.__class__.others)
         import gc
         reference=self.__class__.others[0]
         action=reference()
-        dprint(gc.get_referrers(action))
+        self.dprint(gc.get_referrers(action))
 
     def createClassReferences(self):
         raise NotImplementedError
 
     @classmethod
     def append(cls,item):
-        dprint("BEFORE: storage: %s" % cls.storage)
-        dprint("BEFORE: others: %s" % cls.others)
+##        dprint("BEFORE: storage: %s" % cls.storage)
+##        dprint("BEFORE: others: %s" % cls.others)
         cls.storage.append(item)
         cls.update()
-        dprint("AFTER: storage: %s" % cls.storage)
-        dprint("AFTER: others: %s" % cls.others)
+##        dprint("AFTER: storage: %s" % cls.storage)
+##        dprint("AFTER: others: %s" % cls.others)
         
     @classmethod
     def extend(cls,items):
-        dprint("BEFORE: storage: %s" % cls.storage)
-        dprint("BEFORE: others: %s" % cls.others)
+##        dprint("BEFORE: storage: %s" % cls.storage)
+##        dprint("BEFORE: others: %s" % cls.others)
         cls.storage.extend(items)
         cls.update()
-        dprint("AFTER: storage: %s" % cls.storage)
-        dprint("AFTER: others: %s" % cls.others)
+##        dprint("AFTER: storage: %s" % cls.storage)
+##        dprint("AFTER: others: %s" % cls.others)
         
     @classmethod
     def remove(cls,item):
-        dprint("BEFORE: storage: %s" % cls.storage)
-        dprint("BEFORE: others: %s" % cls.others)
+##        dprint("BEFORE: storage: %s" % cls.storage)
+##        dprint("BEFORE: others: %s" % cls.others)
         cls.storage.remove(item)
 
 ##        # can't delete from a list that you're iterating on, so make a
@@ -465,8 +465,8 @@ class GlobalList(ListAction):
 ##                    newlist.append(weakref.ref(action))
 ##        cls.others=newlist
 
-        dprint("AFTER: storage: %s" % cls.storage)
-        dprint("AFTER: others: %s" % cls.others)
+##        dprint("AFTER: storage: %s" % cls.storage)
+##        dprint("AFTER: others: %s" % cls.others)
 
         cls.update()
 
@@ -521,7 +521,7 @@ class MenuBarActionMap(debugmixin):
         self.menumap={}
 
     def __del__(self):
-        dprint("DELETING %s" % self)
+        self.dprint("DELETING %s" % self)
 
     def getkey(self,parent,name=None):
         if parent is None:
