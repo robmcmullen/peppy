@@ -739,30 +739,24 @@ class HexEditMode(MajorMode):
 
     def createEditWindow(self,parent):
         self.dprint("creating new HexEditMode window")
-
         win=HugeTableGrid(parent,self.buffer.stc,"16c")        
-        #wx.StaticText(self.win, -1, self.buffer.name, (145, 145))
+        return win
 
-        # Can't use self.stc.SetModEventMask, because we're really
-        # interested in the events from buffer.stc not from self.stc.
-        # We also can't set the buffer's event flags, because other
-        # views may be interested in them.  So, we have to screen
-        # events in the callback itself.
-        ## self.stc.SetModEventMask(stc.STC_MOD_INSERTTEXT|stc.STC_MOD_DELETETEXT|stc.STC_PERFORMED_USER|stc.STC_PERFORMED_UNDO|stc.STC_PERFORMED_REDO)
-        
+    def createWindowPostHook(self):
+        # Thread stuff for the underlying change callback
+        self.waiting=None
+
         # Multiple binds to the same handler, ie multiple HexEditModes
         # trying to do self.buffer.stc.Bind(stc.EVT_STC_MODIFIED,
         # self.underlyingSTCChanged) don't work.  Need to use the
         # event manager for multiple bindings.
         eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
 
-        # Thread stuff for the underlying change callback
-        self.waiting=None
-
-        return win
-
-    def createWindowPostHook(self):
         self.editwin.Update(self.buffer.stc)
+        
+    def deleteWindowPostHook(self):
+        self.dprint("unregistering %s" % self.underlyingSTCChanged)
+        eventManager.DeregisterListener(self.underlyingSTCChanged)        
         
     def transModType(self, modType):
         st = ""

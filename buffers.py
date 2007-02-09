@@ -239,32 +239,51 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         self.lastActivePage=None
         
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
 
     def OnTabChanged(self, evt):
-        newpage=evt.GetSelection()
-        self.lastActivePage=self.GetPage(evt.GetOldSelection())
+        newpage = evt.GetSelection()
+        oldpage = evt.GetOldSelection()
+        dprint("changing from tab %s to %s" % (oldpage, newpage))
+        if oldpage>0:
+            self.lastActivePage=self.GetPage(oldpage)
+        else:
+            self.lastActivePage=None
         page=self.GetPage(newpage)
-        dprint("changing from tab %s to %s; mode %s to %s" % (evt.GetOldSelection(), newpage, self.lastActivePage, page))
-        dprint("page: %s" % page)
         wx.CallAfter(self.frame.switchMode)
         evt.Skip()
 
+    def OnTabClosed(self, evt):
+        index = evt.GetSelection()
+        mode = self.GetPage(index)
+        dprint("closing tab %d: mode %s" % (index,mode))
+
     def addTab(self,mode):
+        dprint("Adding tab %s" % mode)
         self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
         index=self.GetPageIndex(mode)
         self.SetSelection(index)
         
     def replaceTab(self,mode):
-        self.Freeze()
         index=self.GetSelection()
-        dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
-        self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
-        self.DeletePage(index+1)
-        self.SetSelection(index)
-        self.Thaw()
+        if index<0:
+            self.addTab(mode)
+        else:
+            self.Freeze()
+            dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
+            self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
+            oldmode=self.GetPage(index+1)
+            self.RemovePage(index+1)
+            oldmode.deleteWindow()
+            del oldmode
+            self.SetSelection(index)
+            self.Thaw()
         
     def getCurrent(self):
-        return self.GetPage(self.GetSelection())
+        index = self.GetSelection()
+        if index<0:
+            return None
+        return self.GetPage(index)
 
     def getPrevious(self):
         return self.lastActivePage
@@ -353,6 +372,8 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
 
         self.loadFramePlugins()
+        
+        self.app.SetTopWindow(self)
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
@@ -589,7 +610,6 @@ class BufferApp(wx.App,debugmixin):
     
     def newFrame(self,callingFrame=None):
         frame=BufferFrame(self)
-        self.SetTopWindow(frame)
         return frame
         
     def showFrame(self,frame):

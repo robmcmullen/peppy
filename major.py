@@ -83,7 +83,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self.editwin=None
         self.minibuffer=None
         self.sidebar=None
-        self.stc=BlankSTC
+        self.stc=NullSTC()
         self.buffer=buffer
         self.frame=frame
         self.popup=None
@@ -96,6 +96,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     def __del__(self):
         dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
         dprint("deleting %s: %s" % (self.__class__.__name__,self.getTabName()))
+        self.deleteWindowPostHook()
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -129,6 +130,15 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self._mgr.Update()
 
     def createWindowPostHook(self):
+        pass
+
+    def deleteWindow(self):
+        self.dprint("closing view %s of buffer %s" % (self,self.buffer))
+        # remove reference to this view in the buffer's listeners
+        self.buffer.remove(self)
+        self.Destroy()
+
+    def deleteWindowPostHook(self):
         pass
 
     def addPane(self, win, paneinfo):
@@ -197,14 +207,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self.dprint("popping up menu for %s" % evt.GetEventObject())
         self.win.PopupMenu(self.popup)
         evt.Skip()
-
-    def close(self):
-        self.dprint("View: closing view %s of buffer %s" % (self,self.buffer))
-        #self.stc.ReleaseDocument(self.buffer.docptr)
-        self.win.Destroy()
-        # remove reference to this view in the buffer's listeners
-        self.buffer.remove(self)
-        pass
 
     def focus(self):
         #self.dprint("View: setting focus to %s" % self)
@@ -286,21 +288,21 @@ class MajorModeMatcherDriver(Component,debugmixin):
 
     def find(self,buffer):
         """
-        Determine the best possible L{View} subclass for the given
-        buffer.  See L{IMajorModeMatcher} for more information on designing
-        plugins that this method uses.
+        Determine the best possible L{MajorMode} subclass for the
+        given buffer.  See L{IMajorModeMatcher} for more information
+        on designing plugins that this method uses.
 
         Emacs-style major mode strings are searched for first, and if
-        a match is found, immediately returns that View.  Bangpath
-        lines are then searched, also returning immediately if
-        identified.
+        a match is found, immediately returns that MajorMode.
+        Bangpath lines are then searched, also returning immediately
+        if identified.
 
         If neither of those cases match, a more complicated search
         procedure is used.  If a filename match is determined to be an
-        exact match, that View is used.  But, if the filename match is
-        only a generic match, searching continues.  Magic values
-        within the file are checked, and again if an exact match is
-        found the View is returned.
+        exact match, that MajorMode is used.  But, if the filename
+        match is only a generic match, searching continues.  Magic
+        values within the file are checked, and again if an exact
+        match is found the MajorMode is returned.
 
         If only generic matches are left ... figure out some way to
         choose the best one.
@@ -309,7 +311,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
         @type buffer: L{Buffer<buffers.Buffer>}
 
         @returns: the best view for the buffer
-        @rtype: L{View} subclass
+        @rtype: L{MajorMode} subclass
         """
         
         bangpath=buffer.stc.GetLine(0)
