@@ -1,3 +1,9 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""
+Shell plugin and wrapper around the nltk_lite chatbots.
+"""
+
 import os,re
 
 import wx

@@ -1,3 +1,9 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""
+Debug mixin and debug printing based on class hierarchy.
+"""
+
 import os,sys,inspect
 
 logfh=sys.stderr

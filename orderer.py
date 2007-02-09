@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""
+Mini-constraint-solver to attempt to order menu items by their
+relative positions.
+"""
 
 import os,sys
 from debug import *

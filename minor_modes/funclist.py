@@ -1,3 +1,11 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+
+"""
+Function list minor mode.  Any major mode that supplies information in
+its getFunctionList method will be able to work with this minor mode.
+"""
+
 import os
 
 from menu import *

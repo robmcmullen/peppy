@@ -1,3 +1,5 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re
 
 import wx
@@ -110,13 +112,6 @@ class NullSTC(STCInterface):
     def GetStyledText(self,start=0,length=0):
         return self.styledtext[start*2:start*2+length*2]
     
-
-
-
-# FIXME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# remove all the Text/BinaryFilter stuff and put them as MySTC methods.  Load the file first, then determine the view based on the file info as well as the file name.
-
-
 
 class MySTC(stc.StyledTextCtrl,debugmixin):
     """

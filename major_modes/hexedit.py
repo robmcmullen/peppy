@@ -1,3 +1,5 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,struct
 
 import wx

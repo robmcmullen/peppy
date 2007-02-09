@@ -1,3 +1,12 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""
+Recently-loaded files plugin.  This plugin demonstrates many features
+of plugins, including bundling of many interfaces into one class,
+OpenRecentConfExtender.  It adds an item to the menu bar, hooks into
+the buffer load routine, and hooks into the configuration file load
+and save process.
+"""
 import os
 
 from menu import *

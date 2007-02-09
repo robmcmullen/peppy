@@ -1,7 +1,9 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
-Your one-stop shop for minor modes.  Base class, interface, loader,
-all you could need to define a new minor mode.  Except for examples,
-which are in other directories.
+Your one-stop shop for minor mode building blocks.  Base class,
+interface, loader, all you could need to define a new minor mode.
+Except for examples, which are in other directories.
 """
 
 import os,re
