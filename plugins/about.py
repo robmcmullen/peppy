@@ -88,6 +88,7 @@ class Foo(Bar):
             raise TypeError("stuff")
         return
 ''')
+SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
 
 
 

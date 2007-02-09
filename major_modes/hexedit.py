@@ -24,7 +24,7 @@ class OpenHexEditor(SelectAction):
 
     def action(self, pos=-1):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("icons/py.ico")
+        self.frame.open("about:0x00-0xff")
 
 class UseHexEditMajorMode(SelectAction):
     name = "Change to HexEdit Major Mode"
@@ -40,6 +40,7 @@ class UseHexEditMajorMode(SelectAction):
 
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
+    debuglevel=0
 
     def __init__(self,stc,format="16c"):
         Grid.PyGridTableBase.__init__(self)
@@ -47,11 +48,6 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         self.setFormat(format)
         self.setSTC(stc)
         
-        self.odd=Grid.GridCellAttr()
-        self.odd.SetBackgroundColour("sky blue")
-        self.even=Grid.GridCellAttr()
-        self.even.SetBackgroundColour("sea green")
-
         self._debug=False
 
     def setFormat(self,format):
@@ -63,6 +59,14 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             self._cols=self._hexcols+self._textcols
 
     def parseFormat(self,format):
+        """
+        Given a format specifier, parse the string into individual
+        cell formats.  A format specifier may have a repeat count, but
+        we have to break this down into the format specifiers for each
+        cell on the value side.
+
+        @param format: text string specifying the format characters
+        """
         self.types=[]
         mult=None
         endian='='
@@ -77,6 +81,8 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
                     self.types.append(endian+c)
                 elif mult>0:
                     self.types.extend([endian+c]*mult)
+                mult=None
+                endian='='
             elif c in ['@','=','<','>','!']:
                 endian=c
             else:
@@ -84,7 +90,11 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         self.sizes=[]
         self.offsets=[]
         offset=0
+        last=self.types[0]
+        self.uniform=True
         for c in self.types:
+            if c!=last:
+                self.uniform=False
             size=struct.calcsize(c)
             self.sizes.append(size)
             self.offsets.append(offset)
@@ -110,6 +120,9 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         return col-self._hexcols
     
     def getLoc(self, row, col):
+        """Get the byte offset from start of file given row, col
+        position.
+        """
         if col<self._hexcols:
             loc = row*self.nbytes + col
         else:
@@ -188,7 +201,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if col<self._hexcols:
             return "%x" % col
         else:
-            return "Values"
+            return "%x" % self.offsets[self.getTextCol(col)]
 
     def IsEmptyCell(self, row, col):
         if col<self._hexcols:
@@ -226,7 +239,16 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             else:
                 self.dprint('SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val))
         else:
-            self.dprint('SetValue(%d, %d, "%s") ignored.' % (row, col, value))
+            textcol = self.getTextCol(col)
+            fmt = self.types[textcol]
+            self.dprint('SetValue(%d, %d, "%s") packing with fmt %s.' % (row, col, value, fmt))
+            bytes = struct.pack(fmt, value)
+            self.dprint('bytes = %s' % repr(bytes))
+            loc=self.getLoc(row,col)
+            self.stc.SetSelection(loc,loc+1)
+            self.stc.ReplaceSelection('')
+            styled='\0'.join(bytes)+'\0'
+            self.stc.AddStyledText(styled)
 
     def ResetView(self, grid, stc, format=None):
         """
@@ -255,19 +277,29 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
                 self.UpdateValues(grid)
 
         # update the scrollbars and the displayed part of the grid
-        grid.SetMargins(0,0)
-        font=grid.GetDefaultCellFont()
+        grid.SetColMinimalAcceptableWidth(6)
+        font=wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL)
+        hexattr=Grid.GridCellAttr()
+        hexattr.SetFont(font)
+        hexattr.SetBackgroundColour("white")
+        textattr=Grid.GridCellAttr()
+        textattr.SetFont(font)
+        textattr.SetBackgroundColour(wx.Color(240,240,240))
         dc=wx.MemoryDC()
         dc.SetFont(font)
         (width,height)=dc.GetTextExtent("MM")
-        self.dprint("font extents=(%d,%d)" % (width,height))
+        grid.SetDefaultRowSize(height)
         for col in range(self._hexcols):
+            self.dprint("col %d width=%d" % (col,width))
             grid.SetColMinimalWidth(col,10)
-            grid.SetColSize(col,width)
-        (width,height)=dc.GetTextExtent("MMMMMMMMMM")
+            grid.SetColSize(col,width+4)
+            grid.SetColAttr(col,hexattr)
+        (width,height)=dc.GetTextExtent("M")
         for col in range(self._hexcols,self._cols,1):
-            grid.SetColMinimalWidth(col,10)
-            grid.SetColSize(col,width)
+            self.dprint("col %d width=%d" % (col,width))
+            grid.SetColMinimalWidth(col,4)
+            grid.SetColSize(col,width+4)
+            grid.SetColAttr(col,textattr)
 
         grid.EndBatch()
 
@@ -303,77 +335,138 @@ class HexDigitMixin(object):
             return chr(key)
         else:
             return None
-        
-# TextCtrl validator based on Validator.py from the wxPython demo
-class HexValidator(wx.PyValidator,HexDigitMixin):
-    def __init__(self):
-        wx.PyValidator.__init__(self)
-        self.Bind(wx.EVT_CHAR, self.OnChar)
-
-    def Clone(self):
-        return HexValidator()
-
-    def OnChar(self, event):
-        key = event.GetKeyCode()
-
-        if key < wx.WXK_SPACE or key == wx.WXK_DELETE or key > 255:
-            event.Skip()
-            return
-
-        if self.isValidHexDigit(key):
-            event.Skip()
-            return
-
-        # Returning without calling even.Skip eats the event before it
-        # gets to the text control
-        return
 
 class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
     debuglevel=0
     
     def __init__(self,parent,id,parentgrid):
-        wx.TextCtrl.__init__(self,parent, id, validator = HexValidator(),
+        # Don't use the validator here, because apparently we can't
+        # reset the validator based on the columns.  We have to do the
+        # validation ourselves using EVT_KEY_DOWN.
+        wx.TextCtrl.__init__(self,parent, id,
                              style=wx.TE_PROCESS_TAB|wx.TE_PROCESS_ENTER)
         self.dprint("parent=%s" % parent)
         self.SetInsertionPoint(0)
-        self.SetMaxLength(2)
         self.Bind(wx.EVT_TEXT, self.OnText)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.parentgrid=parentgrid
+        self.setMode('hex')
+        self.startValue=None
+
+    def setMode(self, mode):
+        self.mode=mode
+        if mode=='hex':
+            self.SetMaxLength(2)
+            self.autoadvance=2
+        elif mode=='char':
+            self.SetMaxLength(1)
+            self.autoadvance=1
+        else:
+            self.SetMaxLength(0)
+            self.autoadvance=0
         self.userpressed=False
 
-    def editingNewCell(self,value):
+    def editingNewCell(self, value, mode='hex'):
+        """
+        Begin editing a new cell by determining the edit mode and
+        setting the initial value.
+        """
+        # Set the mode before setting the value, otherwise OnText gets
+        # triggered before self.userpressed is set to false.  When
+        # operating in char mode (i.e. autoadvance=1), this causes the
+        # editor to skip every other cell.
+        self.setMode(mode)
+        self.startValue=value
         self.SetValue(value)
         self.SetFocus()
         self.SetInsertionPoint(0)
-        self.SetSelection(0,2) # select the text
-        self.userpressed=False
+        self.SetSelection(-1, -1) # select the text
+
+    def insertFirstKey(self, key):
+        """
+        Check for a valid initial keystroke, and insert it into the
+        text ctrl if it is one.
+
+        @param key: keystroke
+        @type key: int
+
+        @returns: True if keystroke was valid, False if not.
+        """
+        ch=None
+        if self.mode=='hex':
+            ch=self.getValidHexDigit(key)
+        elif key>=wx.WXK_SPACE and key<=255:
+            ch=chr(key)
+
+        if ch is not None:
+            # set self.userpressed before SetValue, because it appears
+            # that the OnText callback happens immediately and the
+            # keystroke won't be flagged as one that the user caused.
+            self.userpressed=True
+            self.SetValue(ch)
+            self.SetInsertionPointEnd()
+            return True
+
+        return False
 
     def OnKeyDown(self, evt):
+        """
+        Keyboard handler to process command keys before they are
+        inserted.  Tabs, arrows, ESC, return, etc. should be handled
+        here.  If the key is to be processed normally, evt.Skip must
+        be called.  Otherwise, the event is eaten here.
+
+        @param evt: key event to process
+        """
         self.dprint("key down before evt=%s" % evt.GetKeyCode())
-        if self.isValidHexDigit(evt.GetKeyCode()):
+        key=evt.GetKeyCode()
+        
+        if key==wx.WXK_TAB:
+            wx.CallAfter(self.parentgrid.advanceCursor)
+            return
+        if key==wx.WXK_ESCAPE:
+            self.SetValue(self.startValue)
+            wx.CallAfter(self.parentgrid.abortEdit)
+            return
+        elif self.mode=='hex':
+            if self.isValidHexDigit(key):
+                self.userpressed=True
+        elif self.mode!='hex':
             self.userpressed=True
         evt.Skip()
         
     def OnText(self, evt):
-        self.dprint("evt=%s cursor=%d" % (evt.GetString(),self.GetInsertionPoint()))
+        """
+        Callback used to automatically advance to the next edit field.
+        If self.autoadvance > 0, this number is used as the max number
+        of characters in the field.  Once the text string hits this
+        number, the field is processed and advanced to the next
+        position.
         
-        # NOTE: we check that GetInsertionPoint returns 1 because the
-        # insertion point hasn't been updated yet and won't be until
-        # after this event handler returns.
-        if self.userpressed and len(evt.GetString())>=2 and self.GetInsertionPoint()>=1:
-            # FIXME: problem here with a bunch of really quick
-            # keystrokes -- the interaction with the
-            # underlyingSTCChanged callback causes a cell's changes to
-            # be skipped over.  Need some flag in grid to see if we're
-            # editing, or to delay updates until a certain period of
-            # calmness, or something.
-            wx.CallAfter(self.parentgrid.advanceCursor)
+        @param evt: CommandEvent
+        """
+        self.dprint("evt=%s str=%s cursor=%d" % (evt,evt.GetString(),self.GetInsertionPoint()))
+        
+        # NOTE: we check that GetInsertionPoint returns 1 less than
+        # the desired number because the insertion point hasn't been
+        # updated yet and won't be until after this event handler
+        # returns.
+        if self.autoadvance and self.userpressed:
+            if len(evt.GetString())>=self.autoadvance and self.GetInsertionPoint()>=self.autoadvance-1:
+                # FIXME: problem here with a bunch of really quick
+                # keystrokes -- the interaction with the
+                # underlyingSTCChanged callback causes a cell's
+                # changes to be skipped over.  Need some flag in grid
+                # to see if we're editing, or to delay updates until a
+                # certain period of calmness, or something.
+                wx.CallAfter(self.parentgrid.advanceCursor)
         
 
-# cell editor for the hex portion, based on GridCustEditor.py from the
-# wxPython demo
 class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
+    """
+    Cell editor for the grid, based on GridCustEditor.py from the
+    wxPython demo.
+    """
     debuglevel=0
 
     def __init__(self,grid):
@@ -429,7 +522,20 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         """
         self.dprint("row,col=(%d,%d)" % (row, col))
         self.startValue = grid.GetTable().GetValue(row, col)
-        self._tc.editingNewCell(self.startValue)
+        mode='hex'
+        table=self.parentgrid.table
+        textcol=table.getTextCol(col)
+        if textcol>=0:
+            textfmt=table.types[textcol]
+            if textfmt.endswith('s') or textfmt.endswith('c'):
+                if table.sizes[textcol]==1:
+                    mode='char'
+                else:
+                    mode='str'
+            else:
+                mode='text'
+            self.dprint("In value area! mode=%s" % mode)
+        self._tc.editingNewCell(self.startValue,mode)
 
 
     def EndEdit(self, row, col, grid):
@@ -485,14 +591,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         """
         self.dprint("keycode=%d" % evt.GetKeyCode())
         key = evt.GetKeyCode()
-        ch = self.getValidHexDigit(key)
-
-        if ch is not None:
-            # For this example, replace the text.  Normally we would append it.
-            #self._tc.AppendText(ch)
-            self._tc.SetValue(ch)
-            self._tc.SetInsertionPointEnd()
-        else:
+        if not self._tc.insertFirstKey(key):
             evt.Skip()
 
 
@@ -612,6 +711,9 @@ class HugeTableGrid(Grid.Grid,debugmixin):
             evt.Skip()
             return
 
+    def abortEdit(self):
+        self.DisableCellEditControl()
+
     def advanceCursor(self):
         self.DisableCellEditControl()
         # FIXME: moving from the hex region to the value region using
@@ -690,9 +792,10 @@ class HexEditMode(MajorMode):
         # Short-circuit this callback when we are editing this grid.
         # The event is fired regardless of how the data is changed, so
         # without some sort of check, the grid ends up getting
-        # modified twice.  If the current view is the active window,
-        # we know that we are editing this grid by hand.
-        if self.frame.isTopWindow():
+        # modified twice.  If the current mode is in the active frame
+        # and it is the active major mode, we know that we are editing
+        # this grid by hand.
+        if self.frame.isTopWindow() and self.frame.getActiveMajorMode()==self:
             self.dprint("TopWindow!  Skipping underlyingSTCChanged!")
             return
         
