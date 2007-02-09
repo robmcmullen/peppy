@@ -25,24 +25,35 @@ class Minibuffer(debugmixin):
     def __init__(self, mode):
         self.win=None
         self.mode=mode
-        self.minibuffer(mode)
+        self.create(mode)
         
-    def minibuffer(self, mode):
+    def create(self, mode):
         """
-        set create a window that represents the minibuffer, and set
+        Create a window that represents the minibuffer, and set
         self.win to that window.
         """
         raise NotImplementedError
 
     def focus(self):
+        """
+        Set the focus to the component in the menubar that should get
+        the text focus.
+        """
         self.dprint("focus!!!")
         self.win.SetFocus()
     
     def close(self):
+        """
+        Destroy the minibuffer widgets.
+        """
         self.win.Destroy()
         self.win=None
 
     def done(self):
+        """
+        Convenience routine to destroy minibuffer after the event loop
+        exits.
+        """
         wx.CallAfter(self.mode.removeMinibuffer)
         
 
@@ -53,7 +64,7 @@ class IntMinibuffer(Minibuffer):
     Dedicated subclass of Minibuffer that prompts for an integer.
     """
     
-    def minibuffer(self, mode, label="Integer"):
+    def create(self, mode, label="Integer"):
         self.win=wx.Panel(mode.win, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         sizer=wx.BoxSizer(wx.HORIZONTAL)
         label=wx.StaticText(self.win, -1, label)

@@ -20,13 +20,13 @@ class GotoMinibuffer(IntMinibuffer):
     the stc.
     """
     
-    def minibuffer(self, mode):
+    def create(self, mode):
         """
         Create the minibuffer with the Goto Line label.
 
         @param mode: the current major mode
         """
-        IntMinibuffer.minibuffer(self, mode, label="Goto Line:")
+        IntMinibuffer.create(self, mode, label="Goto Line:")
 
     def OnInt(self, line):
         """

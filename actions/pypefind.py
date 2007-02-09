@@ -70,7 +70,7 @@ class FindMinibuffer(Minibuffer):
     """
     Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
     """
-    def minibuffer(self, mode):
+    def create(self, mode):
         # Create the find bar widget.
         self.win=PypeFindBar(mode.win, self)
         #print "findbar=%s" % self.win
@@ -114,7 +114,7 @@ class ReplaceMinibuffer(FindMinibuffer):
     Adapter for PyPE replacebar.  Adds stuff specific to the replace
     features to the stuff already in the FindMinibuffer parent class.
     """
-    def minibuffer(self, mode):
+    def create(self, mode):
         self.win=PypeReplaceBar(mode.win, self)
         self.control=self
 
