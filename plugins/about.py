@@ -150,7 +150,6 @@ class HelpAbout(SelectAction):
 
 
 class AlphaMode(MajorMode):
-    pluginkey = 'alpha'
     keyword='Alpha'
     icon = 'icons/world.png'
     regex = "alpha"
@@ -162,7 +161,6 @@ class AlphaMode(MajorMode):
 
 
 class BravoMode(MajorMode):
-    pluginkey = 'bravo'
     keyword='Bravo'
     icon='icons/bug_add.png'
     regex="bravo"
@@ -174,7 +172,6 @@ class BravoMode(MajorMode):
 
 
 class BlankMode(MajorMode):
-    pluginkey = 'blank'
     keyword='Blank'
     icon='icons/application.png'
     regex="about:blank"
@@ -186,7 +183,6 @@ class BlankMode(MajorMode):
         return win
 
 class TitleMode(BlankMode):
-    pluginkey = 'title'
     keyword='Title'
     regex="about:title.txt"
     temporary=True

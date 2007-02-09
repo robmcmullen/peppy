@@ -99,7 +99,6 @@ class FundamentalMode(MajorMode):
     image viewer) that only use the STC as the backend storage are
     probably not based on this view.
     """
-    pluginkey = 'fundamental'
     keyword='Fundamental'
     regex=".*"
     lexer=stc.STC_LEX_NULL

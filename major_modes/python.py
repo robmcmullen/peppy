@@ -225,7 +225,6 @@ else:
              }
 
 class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
-    pluginkey = 'python'
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"

@@ -732,7 +732,6 @@ class HexEditMode(MajorMode):
     View for editing in hexidecimal notation.
     """
     
-    pluginkey = 'hexedit'
     keyword='HexEdit'
     icon='icons/tux.png'
     regex="\.(hex|bin|so|dat|ico|emf|png)"

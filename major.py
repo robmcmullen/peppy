@@ -68,7 +68,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     """
     debuglevel=0
     
-    pluginkey = '-none-'
     icon='icons/page_white.png'
     keyword='Abstract Major Mode'
     temporary=False # True if it is a temporary view
