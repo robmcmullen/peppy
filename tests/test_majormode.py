@@ -1,8 +1,6 @@
 import os,sys,re
 
-from major import *
-from plugin import *
-from debug import *
+from peppy.major import *
 
 from nose.tools import *
 

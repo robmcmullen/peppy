@@ -7,7 +7,6 @@ import wx.stc as stc
 
 from peppy import *
 from peppy.menu import *
-from peppy.plugin import *
 
 from peppy.actions.minibuffer import *
 from peppy.actions.gotoline import *

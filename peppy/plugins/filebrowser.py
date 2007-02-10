@@ -10,7 +10,7 @@ import os
 from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
-from peppy.plugin import *
+from peppy.buffers import *
 
 from peppy.pype.browser import FilesystemBrowser
 

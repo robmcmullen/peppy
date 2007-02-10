@@ -11,7 +11,7 @@ from cStringIO import StringIO
 from peppy import *
 from peppy.major import *
 from peppy.menu import *
-from peppy.plugin import *
+from peppy.iofilter import ProtocolPlugin, ProtocolPluginBase
 from peppy.trac.core import *
 from peppy.major_modes.fundamental import FundamentalMode
 from peppy.stcinterface import MySTC

@@ -18,7 +18,6 @@ from major import *
 from iconstorage import *
 from debug import *
 from trac.core import *
-from plugin import *
 from dialogs import *
 
 class BufferList(GlobalList):
@@ -77,6 +76,17 @@ class NewFrame(SelectAction):
 #### Buffers
 
 
+class IBufferOpenPostHook(Interface):
+    """
+    Used to add new hook after a buffer has been successfully opened
+    and the data read in..
+    """
+
+    def openPostHook(buffer):
+        """
+        Method to manipulate the buffer after the buffer has been
+        loaded.
+        """
 
 class BufferHooks(Component):
     openPostHooks=ExtensionPoint(IBufferOpenPostHook)
@@ -296,6 +306,43 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index,mode.getTabName())
 
 
+## FramePlugins
+
+class FramePlugin(ClassSettingsMixin):
+    """
+    Base class for all frame plugins.  A frame plugin is generally
+    used to create a new UI window in a frame that is outside the
+    purview of the major mode.  It is a constant regardless of which
+    major mode is selected.
+    """
+    keyword=None
+
+    def __init__(self, frame):
+        ClassSettingsMixin.__init__(self)
+        self.frame=frame
+        if self.keyword is None:
+            raise ValueError("keyword class attribute must be defined.")
+
+        self.setup()
+
+        self.createWindows(self.frame)
+        
+    def setup(self):
+        pass
+
+    def createWindows(self,parent):
+        pass
+
+class IFramePluginProvider(Interface):
+    """
+    Add a frame plugin to a new frame.
+    """
+
+    def getFramePlugins():
+        """
+        Return iterator containing list of frame plugins.
+        """
+
 class FramePluginLoader(Component,debugmixin):
     debuglevel=0
     
@@ -320,6 +367,9 @@ class FramePluginLoader(Component,debugmixin):
                 self.dprint("found %s" % keyword)
                 plugin=FramePluginLoader.pluginmap[keyword]
                 frame.createFramePlugin(plugin)
+
+
+## BufferFrames
 
 class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     debuglevel=0

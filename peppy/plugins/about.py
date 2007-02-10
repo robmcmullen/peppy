@@ -7,8 +7,8 @@ import wx
 from peppy import *
 from peppy.menu import *
 from peppy.major_modes.fundamental import FundamentalMode
-from peppy.plugin import *
 from peppy.major import *
+from peppy.iofilter import *
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.

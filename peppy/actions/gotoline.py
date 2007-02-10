@@ -12,7 +12,6 @@ import wx.stc as stc
 
 from peppy.actions.minibuffer import *
 from peppy.major import *
-from peppy.plugin import *
 from peppy.debug import *
 
 

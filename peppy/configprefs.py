@@ -7,10 +7,12 @@ Managing user config files and directories.
 import os,types
 from ConfigParser import ConfigParser
 import cPickle as pickle
+from trac.core import *
 from debug import *
 
 __all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
-            'getSubclassHierarchy']
+            'getSubclassHierarchy', 'IConfigurationExtender',
+            'ConfigurationExtender']
 
 def getHomeDir(debug=False):
     """
@@ -300,102 +302,57 @@ class ClassSettingsMixin(object):
         self.settings=SettingsProxy(hier)
 
 
-##### Testing stuff
-def testHomeDir():
-    print "for platform %s:" % os.sys.platform
-    print getHomeDir()
-    c=HomeConfigDir(".configprefs",debug=True)
-    print "found home dir=%s" % c.dir
-    fd=c.open("test.cfg",'w')
-    fd.write('blah!!!')
-    fd.close()
-    nums=[0,1,2,4,6,99]
-    c.saveObject("stuff.bin",nums)
-    print c.loadObject("stuff.bin")
 
-class Vehicle(ClassSettingsMixin):
-    defaultsettings={'wheels':0,
-                     'doors':0,
-                     'wings':'no wings on this puppy',
-                     'primes':[2,3,5,7],
-                     }
+## Configuration extender interface for hooking into the load/save
+## configuration file process
 
-class Truck(Vehicle):
-    defaultsettings={'wheels':True,
-                     'doors':True,
-                     'primes':[11,13,17,19],
-                     }
+class IConfigurationExtender(Interface):
+    """
+    Used to add new configuration ophiotn to the application.
+    """
 
-class PickupTruck(Truck):
-    defaultsettings={'wheels':4,
-                     'doors':2,
-                     'primes':[23,29],
-                     }
+    def loadConf(app):
+        """
+        Load some configuration settings, possibly from an external
+        source like a file.  This is called after the application has
+        loaded all the plugins and the main configuration file.
+        """
 
-class ShortBedPickupTruck(Truck):
-    pass
+    def saveConf(app):
+        """
+        Save configuration settings, possibly to an external file.
+        This is called before the main configuration file is written,
+        so additions to it are possible.
+        """
 
-def testHierarchy():
-    GlobalSettings.setDefaults({
-        'MenuFrame':{'width':600,
-                     'height':500,
-                     },
-        'Peppy':{'plugins':'hexedit-plugin,python-plugin,fundamental',
-                 },
-        'MajorMode':{'linenumbers':'True',
-                     'wordwrap':'False',
-                     },
-        'PythonMode':{'wordwrap':'True',
-                      },
-        })
-    vehicle=ShortBedPickupTruck()
-    print getHierarchy(vehicle,debug=True)
-    print getNameHierarchy(vehicle,debug=True)
-    print vehicle.settings.wheels
-    vehicle.settings.mudflaps=True
-    vehicle.settings.wheels=6
-    print vehicle.settings._getDefaults()
-    print vehicle.settings._getUser()
-    print vehicle.settings._getAll()
-    print vehicle.settings.wings
-    print vehicle.settings.primes
-    print vehicle.settings._getList('primes')
-    print vehicle.settings._getList('wheels')
-    
-class SettingsMixin(object):
-    def __init__(self):
-        pass
+class ConfigurationExtender(Component):
+    extensions=ExtensionPoint(IConfigurationExtender)
 
-class Plant(SettingsMixin):
-    settings=['roots','branches','leaves','fruit']
-    roots=True
+    def load(self,app):
+        for ext in self.extensions:
+            ext.loadConf(app)
 
-    def __init__(self):
-        self.branches=False
-        self.leaves=False
-        self.fruit=False
-        
-class Tree(Plant):
-    def __init__(self):
-        self.branches=True
-        self.leaves=True
+    def save(self,app):
+        for ext in self.extensions:
+            ext.saveConf(app)
 
-class OrangeTree(Tree):
-    settings=['company']
-    fruit="tangerines"
-    
-    def __init__(self):
-        self.fruit="oranges"
-        self.company="Tropicana"
 
-def testSettingMixin():
-    tree=OrangeTree()
-    print tree.fruit
-    print tree.__class__.fruit
-    print tree.settings
-    print tree.company
 
 
 if __name__=='__main__':
-    testHierarchy()
-    #testSettingMixin()
+    # Testing stuff that creates a directory in the user's homedir.
+    # Don't perform this in the standard unit tests.
+
+    def testHomeDir():
+        print "for platform %s:" % os.sys.platform
+        print getHomeDir()
+        c=HomeConfigDir(".configprefs",debug=True)
+        print "found home dir=%s" % c.dir
+        fd=c.open("test.cfg",'w')
+        fd.write('blah!!!')
+        fd.close()
+        nums=[0,1,2,4,6,99]
+        c.saveObject("stuff.bin",nums)
+        print c.loadObject("stuff.bin")
+    
+    testHomeDir()

@@ -1,7 +1,7 @@
 import os,sys,re
 
-from orderer import *
-from debug import *
+from peppy.orderer import *
+from peppy.menu import *
 
 from nose.tools import *
 

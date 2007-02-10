@@ -5,10 +5,10 @@ import os,re,urlparse
 from cStringIO import StringIO
 
 from trac.core import *
-from plugin import *
 from debug import *
+from stcinterface import *
 
-__all__ = [ 'GetIOFilter' ]
+__all__ = [ 'GetIOFilter', 'ProtocolPlugin', 'ProtocolPluginBase' ]
 
 class URLInfo(object):
     def __init__(self,url,default="file",usewin=False):
@@ -32,10 +32,54 @@ class URLInfo(object):
                                                         self.fragment))
             
 
-#### Loaders for reading files and populating the STC interface
+#### ProtocolPlugins that define loaders for reading files and
+#### populating the STC interface
 
 class UnknownProtocolError(ValueError):
     pass
+
+class ProtocolPlugin(Interface):
+    """Interface for IO plugins.  A plugin that implements this
+    interface takes a URL in the form of protocol://path/to/some/file
+    and implements two methods that return a file-like object that can
+    be used to either read from or write to the datastore that is
+    pointed to by the URL.  Some protocols, like http, will typically
+    be read-only, which means the getWriter method may be omitted from
+    the plugin."""
+
+    def supportedProtocols():
+        """Return a list of protocols that this interface supports,
+        i.e. a http protocol class would return ['http'] or
+        potentially ['http','https'] if it also http over SSL."""
+        
+    def getReader(filename):
+        """Returns a file-like object that can be used to read the
+        data using the given protocol."""
+
+    def getWriter(filename):
+        """Returns a file-like object that can be used to write the
+        data using the given protocol."""
+
+    def getSTC(parent):
+        """
+        Get an STC instance that supports this protocol.
+        """
+
+class ProtocolPluginBase(Component):
+    def supportedProtocels(self):
+        return NotImplementedError
+    
+    def getReader(self,filename):
+        return NotImplementedError
+    
+    def getWriter(self,filename):
+        return NotImplementedError
+    
+    def getSTC(self,parent):
+        return MySTC(parent)
+
+
+## Default protocols
 
 class FileProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)

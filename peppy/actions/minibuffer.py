@@ -6,7 +6,6 @@ import wx
 import wx.stc as stc
 
 from peppy.major import *
-from peppy.plugin import *
 from peppy.debug import *
 
 

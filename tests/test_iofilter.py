@@ -1,7 +1,7 @@
 import os,sys,re
 
-from iofilter import URLInfo,GetIOFilter
-from stcinterface import NullSTC
+from peppy.iofilter import URLInfo,GetIOFilter
+from peppy.stcinterface import NullSTC
 
 from nose.tools import *
 
@@ -83,7 +83,7 @@ class TestGetIOFilter:
         eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
         
     def testChatbots(self):
-        import plugins.chatbots
+        import peppy.plugins.chatbots
         filter=GetIOFilter("shell:eliza")
         eq_(filter.urlinfo.protocol,'shell')
         eq_(filter.urlinfo.path,'eliza')

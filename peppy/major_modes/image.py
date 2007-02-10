@@ -91,7 +91,6 @@ class ImageViewMode(MajorMode):
     This mode leaves the image in its native format.
     """
     
-    pluginkey = 'image'
     keyword='ImageView'
     icon='icons/picture.png'
     regex="\.(jpg|jpeg|gif|bmp|png|ico)"

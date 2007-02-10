@@ -11,7 +11,6 @@ from menu import *
 from buffers import *
 from debug import *
 from trac.core import *
-from plugin import *
 
 
 
