@@ -15,10 +15,12 @@ class IconStorage(debugmixin):
         self.il=wx.ImageList(16,16)
         self.map={}
         self.bitmap={}
+        self.basedir=os.path.dirname(__file__)
+        dprint(self.basedir)
 
     def get(self,filename):
         if filename not in self.map:
-            img=wx.ImageFromBitmap(wx.Bitmap(filename))
+            img=wx.ImageFromBitmap(wx.Bitmap(os.path.join(self.basedir,filename)))
             img.Rescale(16,16)
             bitmap=wx.BitmapFromImage(img)
             self.bitmap[filename]=bitmap
