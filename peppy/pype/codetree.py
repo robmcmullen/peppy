@@ -30,7 +30,7 @@ class TreeCtrl(wx.TreeCtrl):
                         wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, isz)]
             
             for icf in ('icons/green.gif', 'icons/yellow.gif', 'icons/red.gif'):
-                #icf = os.path.join(_pype.runpath, icf)
+                icf = os.path.join(_pype.runpath, icf)
                 self.images.append(wx.BitmapFromImage(wx.Image(icf)))
             
             for i in self.images:
@@ -47,6 +47,68 @@ class TreeCtrl(wx.TreeCtrl):
         else:
             return cmp(self.GetItemData(item1).GetData()[1],\
                        self.GetItemData(item2).GetData()[1])
+    
+    def _get_children(self, node):
+        chi = []
+        z = self.GetChildrenCount(node) - 1
+        if z == -1:
+            return chi
+        try:    #2.6 and previous
+            ch, cookie = self.GetFirstChild(node, 0)
+        except: #2.7 and later
+            ch, cookie = self.GetFirstChild(node)
+        if ch.IsOk():
+            chi.append(ch)
+        while z > 0:
+            ch, cookie = self.GetNextChild(node, cookie)
+            if ch.IsOk():
+                chi.append(ch)
+            z -= 1
+        return chi
+    
+    def _save(self):
+        expanded = []
+        selected = None
+        fvi = None
+        y = self.GetFirstVisibleItem()
+        
+        stk = [(ch, ()) for ch in self._get_children(self.root)]
+        
+        while stk:
+            cur, h = stk.pop()
+            x = h + (self.GetItemText(cur),)
+            if self.IsSelected(cur):
+                selected = x
+            if cur == y:
+                fvi = x
+            if self.GetChildrenCount(cur) and self.IsExpanded(cur):
+                expanded.append(x)
+                for ch in self._get_children(cur):
+                    stk.append((ch, x))
+        
+        return dict.fromkeys(expanded), selected, fvi
+    
+    def _restore(self, expanded, selected, fvi):
+        stk = [(ch, ()) for ch in self._get_children(self.root)]
+        y = None
+        
+        while stk:
+            cur, h = stk.pop()
+            x = h + (self.GetItemText(cur),)
+            if x == fvi:
+                y = cur
+            if selected == x:
+                if not y:
+                    y = cur
+                self.SelectItem(cur)
+            if self.GetChildrenCount(cur):
+                if x in expanded:
+                    self.Expand(cur)
+                for ch in self._get_children(cur):
+                    stk.append((ch, x))
+        if y:
+            wx.CallAfter(self.ScrollTo, y)
+        
 
 class hierCodeTreePanel(wx.Panel):
     def __init__(self, root, parent, st):
@@ -67,8 +129,10 @@ class hierCodeTreePanel(wx.Panel):
         #self.tree.Expand(self.root)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClick)
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
-
+    
     def new_hierarchy(self, hier):
+        self.Freeze()
+        _restore = self.tree._save()
         self.tree.DeleteAllItems()
         if newroot:
             #on GTK/Linux, tree.DeleteAllItems() kills the unseen root,
@@ -80,6 +144,8 @@ class hierCodeTreePanel(wx.Panel):
             cur = stk.pop()
             while cur:
                 name, line_no, leading, children = cur.pop()
+                ## if self.tree.SORTTREE and name[:3] == '-- ' and name[-3:] == ' --':
+                    ## continue
                 item_no = self.tree.AppendItem(root[-1], name)
                 self.tree.SetPyData(item_no, line_no)
                 if colors: self.tree.SetItemTextColour(item_no, D.get(name[:2], blue))
@@ -109,6 +175,9 @@ class hierCodeTreePanel(wx.Panel):
                     self.tree.SetItemImage(item_no, color, wx.TreeItemIcon_Selected)
             self.tree.SortChildren(root[-1])
             root.pop()
+        
+        self.tree._restore(*_restore)
+        self.Thaw()
 
     def OnLeftDClick(self, event):
         #pity this doesn't do what it should.

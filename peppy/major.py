@@ -8,7 +8,6 @@ import wx.stc as stc
 from menu import SelectAction
 from stcinterface import *
 from configprefs import *
-from plugin import *
 from debug import *
 from iconstorage import *
 from minor import *
