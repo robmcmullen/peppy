@@ -425,7 +425,7 @@ class Peppy(BufferApp,ClassSettingsMixin):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'plugins.about,major_modes.fundamental,major_modes.python,major_modes.hexedit,major_modes.shell,plugins.chatbots,plugins.openrecent,minor_modes.funclist,plugins.filebrowser,minor_modes.sizereporter',
+                   'Peppy':{'plugins':'plugins.about,major_modes.fundamental,major_modes.python,major_modes.hexedit,major_modes.shell,major_modes.image,plugins.chatbots,plugins.openrecent,minor_modes.funclist,plugins.filebrowser,minor_modes.sizereporter',
                             'recentfiles':'recentfiles.txt',
                             },
                    'FundamentalMode':{'linenumbers':True,
