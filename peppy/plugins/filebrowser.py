@@ -7,12 +7,12 @@ Adapter class around PyPE's FilesystemBrowser sidebar widget.
 
 import os
 
-from menu import *
-from debug import *
-from trac.core import *
-from plugin import *
+from peppy import *
+from peppy.menu import *
+from peppy.trac.core import *
+from peppy.plugin import *
 
-from pype.browser import FilesystemBrowser
+from peppy.pype.browser import FilesystemBrowser
 
 class FileBrowser(FramePlugin):
     keyword="filebrowser"

@@ -11,10 +11,9 @@ import os
 
 import wx
 
-from menu import *
-from debug import *
-from trac.core import *
-from minor import *
+from peppy import *
+from peppy.menu import *
+from peppy.trac.core import *
 
 class SizeReportCtrl(wx.PyControl):
     """

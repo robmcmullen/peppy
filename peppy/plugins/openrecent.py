@@ -9,10 +9,10 @@ and save process.
 """
 import os
 
-from menu import *
-from debug import *
-from trac.core import *
-from plugin import *
+from peppy import *
+from peppy.menu import *
+from peppy.trac.core import *
+from peppy.plugin import *
 
 
 class OpenRecent(GlobalList):

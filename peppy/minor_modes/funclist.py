@@ -8,12 +8,11 @@ its getFunctionList method will be able to work with this minor mode.
 
 import os
 
-from menu import *
-from debug import *
-from trac.core import *
-from minor import *
+from peppy import *
+from peppy.menu import *
+from peppy.trac.core import *
 
-from pype.codetree import hierCodeTreePanel
+from peppy.pype.codetree import hierCodeTreePanel
 
 class FuncList(MinorMode):
     keyword="funclist"
