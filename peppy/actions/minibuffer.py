@@ -5,9 +5,9 @@ import os
 import wx
 import wx.stc as stc
 
-from major import *
-from plugin import *
-from debug import *
+from peppy.major import *
+from peppy.plugin import *
+from peppy.debug import *
 
 
 class MinibufferAction(MajorAction):

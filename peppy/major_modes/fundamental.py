@@ -5,15 +5,13 @@ import os
 import wx
 import wx.stc as stc
 
-from menu import *
-from buffers import *
-from major import *
-from plugin import *
-from debug import *
+from peppy import *
+from peppy.menu import *
+from peppy.plugin import *
 
-from actions.minibuffer import *
-from actions.gotoline import *
-from actions.pypefind import *
+from peppy.actions.minibuffer import *
+from peppy.actions.gotoline import *
+from peppy.actions.pypefind import *
 
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"

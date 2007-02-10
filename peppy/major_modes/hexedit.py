@@ -8,12 +8,9 @@ import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from menu import *
-from buffers import *
-
-from major import MajorMode
-
-from debug import *
+from peppy import *
+from peppy.menu import *
+from peppy.major import *
 
 
 class OpenHexEditor(SelectAction):

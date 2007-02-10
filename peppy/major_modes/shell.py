@@ -8,12 +8,13 @@ import wx.lib.newevent
 
 from cStringIO import StringIO
 
-from trac.core import *
-from plugin import *
-from debug import *
-from major_modes.fundamental import FundamentalMode
-from stcinterface import MySTC
-from menu import *
+from peppy import *
+from peppy.major import *
+from peppy.menu import *
+from peppy.plugin import *
+from peppy.trac.core import *
+from peppy.major_modes.fundamental import FundamentalMode
+from peppy.stcinterface import MySTC
 
 class ShellPipePlugin(Interface):
     """

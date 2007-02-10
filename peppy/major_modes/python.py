@@ -10,14 +10,10 @@ import keyword
 import wx
 import wx.stc as stc
 
-from menu import *
-from buffers import *
-
-from major import *
-from plugin import *
-from major_modes.fundamental import FundamentalMode
-
-from debug import *
+from peppy import *
+from peppy.menu import *
+from peppy.major import *
+from peppy.major_modes.fundamental import FundamentalMode
 
 class SamplePython(SelectAction):
     name = "&Open Sample Python"

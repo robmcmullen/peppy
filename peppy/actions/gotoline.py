@@ -10,10 +10,10 @@ import os
 import wx
 import wx.stc as stc
 
-from actions.minibuffer import *
-from major import *
-from plugin import *
-from debug import *
+from peppy.actions.minibuffer import *
+from peppy.major import *
+from peppy.plugin import *
+from peppy.debug import *
 
 
 class GotoMinibuffer(IntMinibuffer):

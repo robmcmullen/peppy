@@ -4,16 +4,15 @@ import os,os.path,sys,re,time,commands,glob,random
 
 import wx
 
-from menu import *
-from major import *
-from major_modes.fundamental import FundamentalMode
-from debug import *
-from trac.core import *
-from plugin import *
+from peppy import *
+from peppy.menu import *
+from peppy.major_modes.fundamental import FundamentalMode
+from peppy.plugin import *
+from peppy.major import *
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
-from __main__ import __version__,__description__,__author__,__author_email__,__url__
+from peppy import __version__,__description__,__author__,__author_email__,__url__
 
 gpl_text="""
 This program is free software; you can redistribute it and/or modify

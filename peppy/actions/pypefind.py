@@ -20,9 +20,9 @@ import os
 import wx
 import wx.stc as stc
 
-from actions.minibuffer import *
+from peppy.actions.minibuffer import *
 
-from pype import findbar
+from peppy.pype import findbar
 
 
 class PypeFindReplaceAdapterMixin(object):

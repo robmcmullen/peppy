@@ -10,14 +10,14 @@ import wx
 
 from cStringIO import StringIO
 
-from debug import *
-from trac.core import *
-from major_modes.shell import *
+from peppy import *
+from peppy.trac.core import *
+from peppy.major_modes.shell import *
 
-import nltk_lite.chat.eliza
-import nltk_lite.chat.zen
-import nltk_lite.chat.iesha
-import nltk_lite.chat.rude
+import peppy.nltk_lite.chat.eliza
+import peppy.nltk_lite.chat.zen
+import peppy.nltk_lite.chat.iesha
+import peppy.nltk_lite.chat.rude
 
 class ChatShell(Component):
     implements(ShellPipePlugin)
