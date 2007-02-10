@@ -14,31 +14,17 @@ from peppy import *
 from peppy.trac.core import *
 from peppy.major_modes.shell import *
 
-import peppy.nltk_lite.chat.eliza
-import peppy.nltk_lite.chat.zen
-import peppy.nltk_lite.chat.iesha
-import peppy.nltk_lite.chat.rude
+from peppy.nltk_lite.chat import *
 
 class ChatShell(Component):
     implements(ShellPipePlugin)
 
-    def __init__(self):
-        self.modules={'eliza':[nltk_lite.chat.eliza.eliza,
-                               "Hello.  How are you feeling today?"],
-                      'zen':[nltk_lite.chat.zen.zen,
-                             "Welcome, my child."],
-                      'iesha':[nltk_lite.chat.iesha.iesha,
-                               "hi!! i'm iesha! who r u??!"],
-                      'rude':[nltk_lite.chat.rude.rude,
-                              "I suppose I should say hello."],
-                      }
-
     def supportedShells(self):
-        return self.modules.keys()
+        return chatbots.keys()
 
     def getPipe(self,filename):
-        if filename in self.modules.keys():
-            return ChatWrapper(*self.modules[filename])
+        if filename in chatbots.keys():
+            return ChatWrapper(*chatbots[filename])
 
 
 class ChatWrapper(debugmixin):
