@@ -1,0 +1,32 @@
+$prog $version
+$release_date
+Copyright (c) $yearrange $author ($author_email)
+
+$url
+
+
+
+INSTALLATION
+============
+
+Unix Installation Instructions
+------------------------------
+
+peppy follows the standard python module installation process using
+distutils.  It installs the peppy module to site-packages, and the
+peppy script to the default binary directory.
+
+Depending on the permissions of your system, you may have to be root
+to install.
+
+$ python setup.py install
+
+
+Windows Installation Instructions
+---------------------------------
+
+I'm currently not providing a windows installer, but that might change
+in the future.  For now, just follow the Unix installation
+instructions.  There are no compiled extensions, so there shouldn't be
+any differences between the two installation procedures.
+

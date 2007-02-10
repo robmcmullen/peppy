@@ -21,10 +21,14 @@ PREREQUISITES
 =============
 
 python 2.4 or later
-wxPython 2.6.3.2 or later
+wxPython 2.8 or later
 
-(Currently developed on Python 2.4.3 and wxPython 2.8.1.1 on Linux, and
-Python 2.5 and wxPython 2.8.1.1 on Windows.)
+Currently developed on Python 2.4.3 and wxPython 2.8.1.1 on Linux, and
+Python 2.5 and wxPython 2.8.1.1 on Windows.
+
+Peppy requires such a new version of wxPython because it's using the
+AUI (Advanced User Interface) set of widgets for the main frame and
+the notebook.
 
 
 
@@ -47,6 +51,22 @@ See the web at http://www.flipturn.org/peppy
 
 
 
+INSTALLATION
+============
+
+Quick Install
+-------------
+
+$ python setup.py install
+
+
+Full Installation Instructions
+------------------------------
+
+See the file INSTALL in this directory.
+
+
+
 KNOWN ISSUES
 ============
 
@@ -59,20 +79,7 @@ actually save your files, although it might if it's in a good mood.
 CREDITS
 =======
 
-Thanks to:
-
-* Robin Dunn for the omnipresence on the wxPython mailing list
-
-* Josiah Carlson for PyPE (http://pype.sourceforge.net) and various
-  contributions on the wxPython wiki
-
-* Stani Michiels for SPE (http://www.stani.be/python/spe)
-
-* Mark James for the free silk icon set
-  (http://www.famfamfam.com/lab/icons/silk/)
-
-* The Natural Language Toolkit project (http://nltk.sourceforge.net)
-  for the chatbot implementations
+See the file THANKS in this directory.
 
 
 
