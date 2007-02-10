@@ -44,8 +44,8 @@ __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
 
-from peppy.main import Peppy, run, main
-
+# Define the common global classes that plugins and extensions should
+# need to use
 from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
 from peppy.configprefs import *
 from peppy.debug import debuglog, dprint, debugmixin
@@ -55,7 +55,6 @@ from peppy.minor import MinorMode, IMinorModeProvider, \
      MinorModeIncompatibilityError
 
 __all__ = [ 
-    'Peppy', 'run', 'main',
     'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
     'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
             'getSubclassHierarchy',

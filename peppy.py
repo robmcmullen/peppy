@@ -5,6 +5,6 @@ Main driver program for the peppy editor.
 
 import os,sys
 
-import peppy
+import peppy.main
 
-peppy.main()
+peppy.main.main()
