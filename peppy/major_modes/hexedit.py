@@ -482,6 +482,8 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         self._tc = HexTextCtrl(parent, id, self.parentgrid)
         self.SetControl(self._tc)
 
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
 
     def SetSize(self, rect):
         """
@@ -500,7 +502,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         to set colours or fonts for the control.
         """
         self.dprint("show=%s, attr=%s" % (show, attr))
-        self.base_Show(show, attr)
+        Grid.PyGridCellEditor.Show(self, show, attr)
 
 
     def PaintBackground(self, rect, attr):
@@ -606,7 +608,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
     def Destroy(self):
         """final cleanup"""
         self.dprint("")
-        self.base_Destroy()
+        Grid.PyGridCellEditor.Destroy(self)
 
 
     def Clone(self):
@@ -731,7 +733,7 @@ class HexEditMode(MajorMode):
     
     keyword='HexEdit'
     icon='icons/tux.png'
-    regex="\.(hex|bin|so|dat|ico|emf|png)"
+    regex="\.(hex|bin|so|a|exe)$"
 
     debuglevel=0
 
@@ -754,7 +756,7 @@ class HexEditMode(MajorMode):
         
     def deleteWindowPostHook(self):
         self.dprint("unregistering %s" % self.underlyingSTCChanged)
-        eventManager.DeregisterListener(self.underlyingSTCChanged)        
+        eventManager.DeregisterListener(self.underlyingSTCChanged)
         
     def transModType(self, modType):
         st = ""

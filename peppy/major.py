@@ -162,9 +162,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         pass
 
     def deleteWindow(self):
-        self.dprint("closing view %s of buffer %s" % (self,self.buffer))
         # remove reference to this view in the buffer's listeners
+        self.dprint("closing view %s of buffer %s" % (self,self.buffer))
         self.buffer.remove(self)
+        self.dprint("destroying window %s" % (self))
         self.Destroy()
 
     def deleteWindowPostHook(self):

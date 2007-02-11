@@ -281,15 +281,13 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if index<0:
             self.addTab(mode)
         else:
-            self.Freeze()
             self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
             self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
             oldmode=self.GetPage(index+1)
             self.RemovePage(index+1)
             oldmode.deleteWindow()
-            del oldmode
+            #del oldmode
             self.SetSelection(index)
-            self.Thaw()
         
     def getCurrent(self):
         index = self.GetSelection()
