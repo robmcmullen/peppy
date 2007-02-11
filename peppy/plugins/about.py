@@ -76,18 +76,11 @@ SetAbout('blank','')
 license="Licensed under the GPL"
 warning="""This is still alpha software, so please treat accordingly. :)
 
-May be unstable and crash without warning, so don't use this to edit
-important stuff.  Or, at least make lots of backups.  It probably will save
-what you're working on, but you never know.  I'm not using this as my primary
-editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x
-series of releases, I intend to be using this as my primary editor, so I'll
-have much more confidence in it by then.
+May be unstable and crash without warning, so don't use this to edit important stuff.  Or, at least make lots of backups.  It probably will save what you're working on, but you never know.  I'm not using this as my primary editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x series of releases, I intend to be using this as my primary editor, so I'll have much more confidence in it by then.
 """
 thanks="""Thanks to lots of folks:
-* Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself,
-and the wxPIA book
-* Josiah Carlson for PyPE and for licensing PyPE under the GPL so I could borrow some
-of his code to create a few of the plugins
+* Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself, and the wxPIA book
+* Josiah Carlson for PyPE and for licensing PyPE under the GPL so I could borrow some of his code to create a few of the plugins
 * the nltk_lite toolkit for Eliza and the other chatbot implementations.
 See the file THANKS for more credits.
 """
@@ -213,7 +206,9 @@ class BlankMode(MajorMode):
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)
         text=self.buffer.stc.GetText()
-        wx.StaticText(win, -1, text, (10,10))
+        lines=wx.StaticText(win, -1, text, (10,10))
+        lines.Wrap(500)
+
         return win
 
 class TitleMode(BlankMode):
