@@ -73,6 +73,7 @@ SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
 
+license="Licensed under the GPL"
 warning="""This is still alpha software, so please treat accordingly. :)
 
 May be unstable and crash without warning, so don't use this to edit
@@ -82,7 +83,15 @@ editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x
 series of releases, I intend to be using this as my primary editor, so I'll
 have much more confidence in it by then.
 """
-SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)\n\n%s" % ("peppy",__version__,__description__,__author__,__author_email__,warning))
+thanks="""Thanks to lots of folks:
+* Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself,
+and the wxPIA book
+* Josiah Carlson for PyPE and for licensing PyPE under the GPL so I could borrow some
+of his code to create a few of the plugins
+* the nltk_lite toolkit for Eliza and the other chatbot implementations.
+See the file THANKS for more credits.
+"""
+SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)\n%s\n\n%s\n%s" % ("peppy",__version__,__description__,__author__,__author_email__,license,warning,thanks))
 SetAbout('sample.py','''#!/usr/bin/env python
 """ doc string """
 import os

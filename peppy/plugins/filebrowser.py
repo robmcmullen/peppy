@@ -24,7 +24,7 @@ class FileBrowser(FramePlugin):
         self.current_path=""
         
         self.browser=FilesystemBrowser(parent, self)
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption("File List")
+        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption("File List (from PyPE)")
         paneinfo.Left()
         paneinfo.BestSize(wx.Size(self.settings.best_width,
                                   self.settings.best_height))
