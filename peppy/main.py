@@ -233,6 +233,11 @@ class Paste(SelectAction):
     icon = "icons/paste_plain.png"
 
 class GlobalMenu(Component):
+    """Trac plugin that provides the global menubar and toolbar.
+
+    This provides the base menubar and toolbar that all major modes
+    build upon.
+    """
     implements(IMenuItemProvider)
     implements(IToolBarItemProvider)
 
@@ -255,6 +260,8 @@ class GlobalMenu(Component):
                   ("Edit",MenuItem(Paste).first()),
                   ("Edit",Separator("paste").first()),
                   (None,Menu("View").before("Major Mode")),
+                  ("View",MenuItem(NewTab).first()),
+                  ("View",Separator("tabs").first()),
                   ("View",MenuItem(NewFrame).first()),
                   ("View",MenuItem(DeleteFrame).first()),
                   ("View",Separator("begin").first()),
@@ -292,8 +299,7 @@ class GlobalMenu(Component):
 
 
 class DebugClass(ToggleListAction):
-    """
-    A multi-entry menu list that allows individual toggling of debug
+    """A multi-entry menu list that allows individual toggling of debug
     printing for classes.
 
     All frames will share the same list, which makes sense since the
@@ -312,8 +318,7 @@ class DebugClass(ToggleListAction):
 
     @staticmethod
     def append(kls,text=None):
-        """
-        Add a class to the list of entries
+        """Add a class to the list of entries
 
         @param kls: class
         @type kls: class
@@ -358,12 +363,13 @@ class DebugGlobalActions(Component):
 
 
 
-class Peppy(BufferApp,ClassSettingsMixin):
-    """
-    Main application object.  This handles the initialization of the
-    debug parameters for objects and loads the configuration file,
-    plugins, configures the initial keyboard mapping, and other lower
-    level initialization from the BufferApp superclass.
+class Peppy(BufferApp, ClassSettingsMixin):
+    """Main application object.
+
+    This handles the initialization of the debug parameters for
+    objects and loads the configuration file, plugins, configures the
+    initial keyboard mapping, and other lower level initialization
+    from the BufferApp superclass.
     """
     debuglevel=0
     verbose=0
@@ -415,8 +421,10 @@ class Peppy(BufferApp,ClassSettingsMixin):
                    }
     
     def OnInit(self):
-        """
-        Main application initialization.  Called by the wx framework.
+        """Main application initialization.
+
+        Called by the wx framework and used instead of the __init__
+        method in a wx application.
         """
         if self.verbose:
             self.setVerbosity()
@@ -536,6 +544,12 @@ class Peppy(BufferApp,ClassSettingsMixin):
 
 
 def run(options={},args=None):
+    """Start an instance of the application.
+
+    @param options: OptionParser option class
+    @param args: command line argument list
+    """
+    
     if options.logfile:
         debuglog(options.logfile)
     Peppy.verbose=options.verbose
@@ -559,6 +573,11 @@ def run(options={},args=None):
     app.MainLoop()
 
 def main():
+    """Main entry point for editor.
+
+    This is called from a script outside the package, parses the
+    command line, and starts up a new wx.App.
+    """
     from optparse import OptionParser
 
     usage="usage: %prog file [files...]"
