@@ -50,6 +50,12 @@ long_description = os.linesep.join(lines[firstline:lastline])
 ##print "download: %s" % module.__download_url__,
 ##print
 
+# use windows batch files if we're on windows
+scripts = ['scripts/peppy']
+from distutils import util
+if util.get_platform()[:3] == 'win':
+    scripts = [script + '.bat' for script in scripts]
+
 setup(name = module.__name__,
       version = str(module.__version__),
       description = module.__description__,
@@ -61,7 +67,7 @@ setup(name = module.__name__,
       url = module.__url__,
       download_url = module.__download_url__,
       platforms='any',
-      scripts=['scripts/peppy'],
+      scripts=scripts,
       packages=['peppy',
                 'peppy.actions',
                 'peppy.major_modes',
