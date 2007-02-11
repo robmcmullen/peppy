@@ -18,7 +18,7 @@ class URLInfo(object):
 
         # special handling for windows filenames with drive letters
         if os.name in ['nt','ce','os2'] or usewin:
-            print self
+            # dprint(self)
             if len(self.protocol)==1:
                 self.path="%s:%s" % (self.protocol,self.path)
                 self.protocol="file"

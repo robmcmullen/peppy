@@ -103,9 +103,9 @@ class Orderer(debugmixin):
                 self.constraints.append((a,b))
         except KeyError:
             if a not in self.namemap:
-                dprint("bad constraint: %s" % a)
+                self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                dprint("bad constraint: %s" % b)
+                self.dprint("bad constraint: %s" % b)
             pass
 
     def after(self,a,b,store=True):
@@ -119,9 +119,9 @@ class Orderer(debugmixin):
                 self.constraints.append((b,a))
         except KeyError:
             if a not in self.namemap:
-                dprint("bad constraint: %s" % a)
+                self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                dprint("bad constraint: %s" % b)
+                self.dprint("bad constraint: %s" % b)
             pass
 
     def first(self,a):
@@ -135,9 +135,9 @@ class Orderer(debugmixin):
                     self.before(str(a),str(b),store=False)
         except KeyError:
             if a not in self.namemap:
-                dprint("bad constraint: %s" % a)
+                self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                dprint("bad constraint: %s" % b)
+                self.dprint("bad constraint: %s" % b)
             pass
 
     def last(self,b):
@@ -151,9 +151,9 @@ class Orderer(debugmixin):
                     self.after(str(b),str(a),store=False)
         except KeyError:
             if a not in self.namemap:
-                dprint("bad constraint: %s" % a)
+                self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                dprint("bad constraint: %s" % b)
+                self.dprint("bad constraint: %s" % b)
             pass
 
     def fixconstraints(self):
