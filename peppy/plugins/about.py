@@ -72,7 +72,16 @@ SetAbout('untitled','')
 SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
-SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)" % ("peppy",__version__,__description__,__author__,__author_email__))
+
+warning="""This is still alpha software, so please treat accordingly. :)
+
+May be unstable and crash without warning.  There is a known bug
+(see http://trac.flipturn.org/ticket/99) that causes hexedit mode to
+crash the program when changing the tab to another mode (either by
+loading a new buffer in that tab or by changing to the image view mode
+using the View menu) after a change has been made in the hex cells.
+"""
+SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)\n\n%s" % ("peppy",__version__,__description__,__author__,__author_email__,warning))
 SetAbout('sample.py','''#!/usr/bin/env python
 """ doc string """
 import os
@@ -97,7 +106,16 @@ class Foo(Bar):
         return
 ''')
 SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
-
+SetAbout('red.png',
+"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
+\x00\x00\x00\x90\x91h6\x00\x00\x00\x03sBIT\x08\x08\x08\xdb\xe1O\xe0\x00\x00\
+\x00\x93IDAT(\x91\xb5\x921\x0e\xc3 \x0cE\x7f:0r\x90\x0c,Y\x18\x98\xb8B\x8e\
+\xc5\n'\xe4\x160\xfc\x0e\x14K\xb4T(\x91\xf2\xe5\xf1=[\xb2\xbd\x91\xc4\x95\
+\xbc.\xd1?B\xadH\t\xdeC)(\x05\xef\x91\x12j\x1d\x18Jr\xe6q\x10\xf8.c\x98\xb3P\
+](\x85\xc6LhqJ\x19\x85\x10\xfe\xd2\xadB\x18\x05k\x17\x82\xb5\xa3\xa0\xf5B\
+\xd0\xba\x81\xb7\xd7\xba\xef\x0b\xb0\x03]8\xcf\x85 \xc0\xdd\xb5\xb6\xc3M\x9d\
+\xf9\xe1dN\x8ct\xee\x83:\xc7\x18\xa5w\xcb\xf6\xf8\xb7\xbe\x01K&\xfa\xcbB\xfe\
+\xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82")
 
 
 class AboutProtocol(ProtocolPluginBase,debugmixin):

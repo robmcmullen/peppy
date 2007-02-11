@@ -38,7 +38,7 @@ class OpenImageViewer(SelectAction):
 
     def action(self, pos=-1):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("icons/red.gif")
+        self.frame.open("about:red.png")
 
 class UseImageViewMajorMode(SelectAction):
     """
