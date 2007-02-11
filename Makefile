@@ -23,20 +23,17 @@ top_builddir = .
 distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
-DISTMAIN = peppy.py
-#DISTMODS = buffers.py configprefs.py debug.py fundamental.py gotoline.py hexedit-plugin.py iofilter.py menudev.py minibuffer.py plugin.py python-plugin.py shell.py singletonmixin.py stcinterface.py tabbedviewer.py test-plugin.py views.py wxemacskeybindings.py
-#DISTSRC = $(DISTMAIN) $(DISTMODS)
-#DISTDOCS = README ChangeLog LICENSE
-#DISTFILES = $(DISTSRC) $(DISTDOCS) icons trac tests nltk_lite pype
-#DISTFILE_TESTS = 
+APPMAIN = peppy.py
+SCRIPTMAIN = scripts/peppy
+DISTMAIN = peppy/__init__.py
 
 SVN_LIST = $(shell svn ls -R)
-#SVN_LIST = ChangeLog LICENSE Makedoc.py Makefile README.pre.in actions/ actions/__init__.py actions/gotoline.py actions/minibuffer.py actions/pypefind.py buffers.py configprefs.py debug.py demos/ demos/__init__.py demos/actions.py demos/auitest.py demos/ngmenu.py demos/samplewidgets.py dialogs.py icons/ icons/application.png icons/application_xp_terminal.png icons/arrow_turn_left.png icons/arrow_turn_right.png icons/blank.ico icons/bug_add.png icons/cross.png icons/cut.png icons/disk.png icons/disk_edit.png icons/folder_image.png icons/folder_page.png icons/green.gif icons/html.png icons/image.png icons/map_magnify.png icons/page.png icons/page_copy.png icons/page_white.png icons/page_white_c.png icons/page_white_cplusplus.png icons/page_white_picture.png icons/page_white_text.png icons/page_white_tux.png icons/paste_plain.png icons/picture.png icons/py.ico icons/red.gif icons/text_indent_remove_rob.png icons/text_indent_rob.png icons/tux.png icons/world.png icons/yellow.gif iconstorage.py iofilter.py major.py major_modes/ major_modes/__init__.py major_modes/fundamental.py major_modes/hexedit.py major_modes/python.py major_modes/shell.py menu.py minor.py minor_modes/ minor_modes/__init__.py minor_modes/funclist.py minor_modes/sizereporter.py nltk_lite/ nltk_lite/__init__.py nltk_lite/chat/ nltk_lite/chat/__init__.py nltk_lite/chat/eliza.py nltk_lite/chat/iesha.py nltk_lite/chat/rude.py nltk_lite/chat/zen.py orderer.py peppy.py plugin.py plugins/ plugins/__init__.py plugins/about.py plugins/chatbots.py plugins/filebrowser.py plugins/openrecent.py pype/ pype/__init__.py pype/browser.py pype/codetree.py pype/exparse.py pype/filehistory.py pype/findbar.py pype/parsers.py stcinterface.py tests/ tests/test_iofilter.py tests/test_majormode.py tests/test_orderer.py trac/ trac/__init__.py trac/core.py wxemacskeybindings.py
-SVN_FILTER_OUT := README.pre.in INSTALL.pre.in Makedoc.py %/
+#SVN_LIST = AUTHORS ChangeLog FAQ INSTALL.pre.in LICENSE Makedoc.py Makefile NEWS README.pre.in THANKS TODO setup.py demo/ demo/__init__.py demo/actions.py demo/auitest.py demo/ngmenu.py demo/samplewidgets.py docs/ docs/README docs/api/ peppy/ peppy/__init__.py peppy/actions/ peppy/actions/__init__.py peppy/actions/gotoline.py peppy/actions/minibuffer.py peppy/actions/pypefind.py peppy/buffers.py peppy/configprefs.py peppy/debug.py peppy/dialogs.py peppy/icons/ peppy/icons/application.png peppy/icons/application_xp_terminal.png peppy/icons/arrow_turn_left.png peppy/icons/arrow_turn_right.png peppy/icons/blank.ico peppy/icons/bug_add.png peppy/icons/cross.png peppy/icons/cut.png peppy/icons/disk.png peppy/icons/disk_edit.png peppy/icons/folder_image.png peppy/icons/folder_page.png peppy/icons/green.gif peppy/icons/html.png peppy/icons/image.png peppy/icons/map_magnify.png peppy/icons/page.png peppy/icons/page_copy.png peppy/icons/page_white.png peppy/icons/page_white_c.png peppy/icons/page_white_cplusplus.png peppy/icons/page_white_picture.png peppy/icons/page_white_text.png peppy/icons/page_white_tux.png peppy/icons/paste_plain.png peppy/icons/picture.png peppy/icons/py.ico peppy/icons/red.gif peppy/icons/text_indent_remove_rob.png peppy/icons/text_indent_rob.png peppy/icons/tux.png peppy/icons/world.png peppy/icons/yellow.gif peppy/iconstorage.py peppy/iofilter.py peppy/main.py peppy/major.py peppy/major_modes/ peppy/major_modes/__init__.py peppy/major_modes/fundamental.py peppy/major_modes/hexedit.py peppy/major_modes/image.py peppy/major_modes/python.py peppy/major_modes/shell.py peppy/menu.py peppy/minor.py peppy/minor_modes/ peppy/minor_modes/__init__.py peppy/minor_modes/funclist.py peppy/minor_modes/sizereporter.py peppy/nltk_lite/ peppy/nltk_lite/__init__.py peppy/nltk_lite/chat/ peppy/nltk_lite/chat/__init__.py peppy/nltk_lite/chat/eliza.py peppy/nltk_lite/chat/iesha.py peppy/nltk_lite/chat/nltk_lite/ peppy/nltk_lite/chat/nltk_lite/__init__.py peppy/nltk_lite/chat/nltk_lite/chat.py peppy/nltk_lite/chat/rude.py peppy/nltk_lite/chat/zen.py peppy/orderer.py peppy/plugins/ peppy/plugins/__init__.py peppy/plugins/about.py peppy/plugins/chatbots.py peppy/plugins/filebrowser.py peppy/plugins/openrecent.py peppy/plugins/pype_compat.py peppy/pype/ peppy/pype/__init__.py peppy/pype/browser.py peppy/pype/codetree.py peppy/pype/exparse.py peppy/pype/filehistory.py peppy/pype/findbar.py peppy/pype/parsers.py peppy/stcinterface.py peppy/trac/ peppy/trac/__init__.py peppy/trac/core.py peppy/wxemacskeybindings.py peppy.py tests/ tests/test_configprefs.py tests/test_iofilter.py tests/test_majormode.py tests/test_orderer.py
+SVN_FILTER_OUT := README.pre.in INSTALL.pre.in Makedoc.py setup.py %/
 SVN_FILTERED := $(filter-out $(SVN_FILTER_OUT),$(SVN_LIST))
 DISTSRC := $(filter %.py,$(SVN_FILTERED))
-DISTFILES := README INSTALL $(SVN_FILTERED)
-DISTMODS := $(filter-out peppy.py,$(DISTSRC))
+DISTFILES := README INSTALL setup.py $(SVN_FILTERED)
+APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 
 
 .SUFFIXES:      .html.in .pre.in .html
@@ -53,10 +50,6 @@ DISTMODS := $(filter-out peppy.py,$(DISTSRC))
 
 all: doc
 
-docs/api/index.html: $(DISTSRC)
-	./Makedoc.py -m peppy -d -o /tmp/peppy.py peppy.py
-	$(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' /tmp/peppy.py $(DISTMODS)
-
 README: README.pre.in
 	./Makedoc.py -m peppy -o README README.pre.in
 
@@ -69,8 +62,6 @@ html: $(HTML) $(PRE)
 
 publish_html: html
 	rsync -avuz $(WEBSITE) robm@peppy.sourceforge.net:/home/groups/p/py/peppy/htdocs
-
-api: docs/api/index.html
 
 publish_api: api
 	rsync -avuz api robm351@www.flipturn.org:flipturn.org/peppy/
@@ -94,8 +85,15 @@ distdir: $(DISTFILES)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
 	tar cf - $(DISTFILES) | (cd $(distdir); tar xf -)
+	chmod 644 $(distdir)/tests/*.py
 	rm $(distdir)/$(DISTMAIN)
-	sed -e "s/svn-devel/$(VERSION)/" $(DISTMAIN)>$(distdir)/$(DISTMAIN)
+	./Makedoc.py -m peppy -d -o /tmp/makedoc.tmp $(DISTMAIN)
+	sed -e "s/svn-devel/$(VERSION)/" /tmp/makedoc.tmp > $(distdir)/$(DISTMAIN)
+	mkdir $(distdir)/scripts
+	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
+
+api: distdir
+	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) | tee epydoc.out
 
 
 

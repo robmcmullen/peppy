@@ -54,16 +54,52 @@ See the web at http://www.flipturn.org/peppy
 INSTALLATION
 ============
 
-Quick Install
--------------
+This is still alpha software, so caveat emptor.  If you really want to
+install the software in the python site-packages directory, see the
+file INSTALL in this directory.  Since it is packaged using the
+standard Python distutils system, though, you can really just do:
 
 $ python setup.py install
 
+but again I don't necessarily recommend it as this is currently not
+what you'd call stable software.
 
-Full Installation Instructions
-------------------------------
 
-See the file INSTALL in this directory.
+
+RUNNING THE UNIT TESTS
+======================
+
+peppy uses the nose testing framework, available here:
+
+  http://somethingaboutorange.com/mrl/projects/nose/
+
+or if you have setuptools installed, using
+
+$ easy_install nose
+
+Once you have nose installed, you can run the unit tests right out of
+the main directory with:
+
+$ nosetests
+
+and hopefully it reports zero errors.
+
+
+
+RUNNING THE PROGRAM
+===================
+
+If you installed the software, it should have put the command 'peppy'
+somewhere in your path, in which case you can start it right from the
+command line with:
+
+$ peppy
+
+Probably the better way to run peppy for the moment is not to install
+it, but run it right out of the directory that you just unpacked.
+This command is simply:
+
+$ python peppy.py
 
 
 
