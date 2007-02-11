@@ -75,11 +75,12 @@ SetAbout('blank','')
 
 warning="""This is still alpha software, so please treat accordingly. :)
 
-May be unstable and crash without warning.  There is a known bug
-(see http://trac.flipturn.org/ticket/99) that causes hexedit mode to
-crash the program when changing the tab to another mode (either by
-loading a new buffer in that tab or by changing to the image view mode
-using the View menu) after a change has been made in the hex cells.
+May be unstable and crash without warning, so don't use this to edit
+important stuff.  Or, at least make lots of backups.  It probably will save
+what you're working on, but you never know.  I'm not using this as my primary
+editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x
+series of releases, I intend to be using this as my primary editor, so I'll
+have much more confidence in it by then.
 """
 SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)\n\n%s" % ("peppy",__version__,__description__,__author__,__author_email__,warning))
 SetAbout('sample.py','''#!/usr/bin/env python
