@@ -1,5 +1,35 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""Base module for major mode implementations.
+
+Implementing a new major mode means to extend from the L{MajorMode}
+base class and at least implement the createEditWindow method.
+Several attributes must be set: C{icon} that points to the filename of
+the icon to be used, and C{keyword} which is a text string that
+uniquely identifies the major mode from other major modes.  [FIXME:
+more documentation here.]
+
+Once the major mode subclass has been created, it must be announced to
+peppy.  This is done by creating another class that extends from
+L{MajorModeMatcherBase} and implements the L{IMajorModeMatcher}
+interface.  This interface is used by the file loader to determine
+which major mode gets the default view of a file when it is opened.
+
+Because MajorModeMatcherBase is a trac component, all you have to do
+is list your new module in the plugin path specified in your
+configuration directory, and it will get picked up the next time peppy
+starts.  You can also place them in your python's [FIXME: some
+directory to be added like site-packages/peppy/autoload] directory
+which is always scanned by peppy as it starts.
+
+To provide user interface objects, you can add the
+L{IMenuItemProvider} and L{IToolBarItemProvider} interfaces to your
+subclass of L{IMajorModeMatcher} and implement the methods that those
+require to add menu items or toolbar items.  Note that the first
+element of the tuple returned by getMenuItems or getToolBarItems will
+be the C{keyword} attribute of your major mode.
+"""
+
 import os,sys,re
 
 import wx

@@ -1,5 +1,12 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""Definition and storage of the 'about:' protocol.
+
+This provides the about: protocol handling (a read-only protocol) for
+built-in storage of data.  It also provides some global user interface
+elements for the help menu and other testing menu items.
+"""
+
 import os,os.path,sys,re,time,commands,glob,random
 
 import wx

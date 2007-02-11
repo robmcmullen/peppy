@@ -1,9 +1,21 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-"""
-Your one-stop shop for minor mode building blocks.  Base class,
-interface, loader, all you could need to define a new minor mode.
-Except for examples, which are in other directories.
+"""Your one-stop shop for minor mode building blocks.
+
+Minor modes provide enhancements to a major mode or a set of major
+modes.  They can be very limited and only apply to some major modes,
+or more general and be applicable to lots of major modes.  It just
+depends on the implementation and what the goals are.
+
+A minor mode is created by subclassing from L{MinorMode} and
+implementing the L{createWindows} method if you are adding a window to
+the major mode's AuiManager area, or implementing L{setup} if you
+don't need an element.
+
+Registering your minor mode means creating a trac.core.Component that
+implements the L{IMinorModeProvider} interface.  This Component can
+also implement L{IMenuItemProvider} and L{IToolBarItemProvider} to
+provide other user interface elements.
 """
 
 import os,re
@@ -83,12 +95,38 @@ class MinorMode(ClassSettingsMixin,debugmixin):
         self.createWindows(self.parent)
         
     def setup(self):
+        """Hook for minor modes that don't need any user inteface
+        elements.
+
+        Rather than overriding __init__, if you don't need to create
+        any windows, you can override this method to register whatever
+        you need to for your minor mode.
+        """
         pass
 
     def createWindows(self,parent):
+        """Hook to create a window for your minor mode.
+
+        If your minor mode needs to create a window in the major mode
+        area, this is the method to use.
+
+        @param parent: parent wx.Window that is managed by the
+        BufferFrame's AuiManager
+        """
         pass
 
     def getDefaultPaneInfo(self,caption):
+        """Convenience method to create an AuiPaneInfo object.
+
+        AuiPaneInfo objects are used by the L{BufferFrame} to position
+        the new subwindow within the managed area of the major mode.
+        This hooks into the class settings (through the
+        ClassSettingsMixin) to allow the user to specify the initial
+        size of the minor mode.
+
+        @param caption: text string that will become the caption bar
+        of the Aui-managed window.
+        """
         paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
         paneinfo.BestSize(wx.Size(self.settings.best_width,
                                   self.settings.best_height))

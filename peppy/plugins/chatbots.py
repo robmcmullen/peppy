@@ -1,7 +1,9 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-"""
-Shell plugin and wrapper around the nltk_lite chatbots.
+"""Shell plugin and wrapper around the nltk_lite chatbots.
+
+Basically this is just an adapter around the nltk_lite chatbots that
+provides the pipe-based interfaces that ShellPipe classes expect.
 """
 
 import os,re

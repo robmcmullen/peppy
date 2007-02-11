@@ -1,12 +1,9 @@
 #!/usr/bin/env python
+"""peppy - (ap)Proximated (X)Emacs Powered by Python.
 
-"""
-peppy - (ap)Proximated (X)Emacs Powered by Python.
-
-An experiment using the modern software development process.
-
-This is a wxPython/Scintilla-based editor written in and extensible
-through Python. It attempts to provide an XEmacs-like multi-window,
+An experiment using the modern software development process -- this is
+a wxPython/Scintilla-based editor written in and extensible through
+Python. It attempts to provide an XEmacs-like multi-window,
 multi-tabbed interface using the Advanced User Interface (wx.aui)
 framework of wxPython.
 
@@ -23,9 +20,13 @@ after learning just enough to hack XEmacs.
 Plugins
 =======
 
-There are currently two plugin types that can be used to extend peppy:
-L{ProtocolPlugin<plugin.ProtocolPlugin>}s and
-L{IMajorModeMatcher<plugin.IMajorModeMatcher>}s.
+peppy is extended by plugins.  Plugins are based on the trac component
+architecture.
+
+Here are some of the types that can be used to extend peppy:
+
+L{ProtocolPlugin<peppy.iofilter.ProtocolPlugin>}s and
+L{IMajorModeMatcher<major.IMajorModeMatcher>}s.
 
 @author: $author
 @version: $version

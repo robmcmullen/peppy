@@ -1,5 +1,13 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""Dynamic menubar and toolbar system.
+
+This module implements the menubar and toolbar system that is based on
+actions linked to particular major modes.  When the major mode is
+changed, the menu and toolbar system changes with it to only show
+those actions that are applicable to the current state of the frame.
+"""
+
 import os,sys,time
 import wx
 
@@ -757,9 +765,10 @@ class MenuItemLoader(Component,debugmixin):
     extensions=ExtensionPoint(IMenuItemProvider)
 
     def load(self,frame,majors=[],minors=[]):
-        """Load the global actions into the menu system.  Any
-        L{Component} that implements the L{IGlobalMenuItems} interface
-        will be loaded here and stuffed into the GUI.
+        """Load the global actions into the menu system.
+
+        Any L{Component} that implements the L{IMenuItemProvider}
+        interface will be loaded here and stuffed into the GUI.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
@@ -796,9 +805,10 @@ class ToolBarItemLoader(Component,debugmixin):
     extensions=ExtensionPoint(IToolBarItemProvider)
 
     def load(self,frame,majors=[],minors=[]):
-        """Load the global actions into the menu system.  Any
-        L{Component} that implements the L{IGlobalMenuItems} interface
-        will be loaded here and stuffed into the GUI.
+        """Load actions into the toolbar system.
+
+        Any L{Component} that implements the L{IMenuItemProvider}
+        interface will be loaded here and stuffed into the GUI.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
@@ -855,9 +865,11 @@ class KeyboardItemLoader(Component,debugmixin):
                     KeyboardItemLoader.modekeys[mode].append(action)
 
     def load(self,frame,majors=[],minors=[]):
-        """Load the global actions into the menu system.  Any
-        L{Component} that implements the L{IGlobalMenuItems} interface
-        will be loaded here and stuffed into the GUI.
+        """Load actions into the keyboard handler.
+
+        Any L{Component} that implements the L{IKeyboardItemProvider}
+        interface will be loaded here and stuffed into the keyboard
+        handler.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
