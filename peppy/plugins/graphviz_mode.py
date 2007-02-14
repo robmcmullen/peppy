@@ -6,6 +6,7 @@ Python major mode.
 
 import os,struct
 import keyword
+from cStringIO import StringIO
 
 import wx
 import wx.stc as stc
@@ -55,7 +56,7 @@ class GraphvizMode(FundamentalMode):
     lexer=stc.STC_LEX_CPP
 
     def getKeyWords(self):
-        return [(0,"strict graph digraph")]
+        return [(0,"strict graph digraph graph node edge subgraph")]
     
     def styleSTC(self):
         self.format=os.linesep
@@ -113,58 +114,165 @@ class GraphvizMode(FundamentalMode):
 
 
 
+class BitmapScroller(wx.ScrolledWindow):
+    def __init__(self, parent):
+        wx.ScrolledWindow.__init__(self, parent, -1)
+
+        self.bmp = None
+        
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
+    def setBitmap(self, bmp):
+        self.bmp = bmp
+        if bmp is not None:
+            self.SetVirtualSize((bmp.GetWidth(), bmp.GetHeight()))
+        else:
+            self.SetVirtualSize(10,10)
+        self.SetScrollRate(1,1)
+
+    def OnPaint(self, ev):
+        if self.bmp is not None:
+            dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
+        # Apparently the drawing actually happens when the dc goes out
+        # of scope and is destroyed.  Dunno if I would have figured
+        # that out on my own, so thankfully the python demo was
+        # commented.
+
 class GraphvizViewCtrl(wx.Panel):
     """Viewer that calls graphviz to generate an image.
 
     Call graphviz to generate an image and display it.
     """
 
-    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, mgr=None):
+    def __init__(self, parent, minor):
         wx.Panel.__init__(self, parent)
+        self.minor = minor
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
         buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.dotprogs = ['neato', 'dot', 'twopi', 'circo', 'fdp']
+        self.dotprogs = ['neato', 'dot', 'twopi', 'circo', 'fdp', 'nop']
         self.prog = wx.Choice(self, -1, (100, 50), choices = self.dotprogs)
+        self.prog.SetSelection(0)
         buttons.Add(self.prog, 1, wx.EXPAND)
         
-        regen = wx.Button(self, -1, "Regenerate")
-        buttons.Add(regen, 1, wx.EXPAND)
-
-        regen.Bind(wx.EVT_BUTTON, self.OnRegenerate)
+        self.regen = wx.Button(self, -1, "Regenerate")
+        self.regen.Bind(wx.EVT_BUTTON, self.OnRegenerate)
+        buttons.Add(self.regen, 1, wx.EXPAND)
 
         self.sizer.Add(buttons)
 
-        self.drawing = wx.Window(self, -1)
+        self.preview = None
+        self.bmp = None
+        #self.drawing = wx.Window(self, -1)
+        #self.drawing.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.drawing = BitmapScroller(self)
         self.sizer.Add(self.drawing, 1, wx.EXPAND)
+
+        self.process = None
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.Bind(wx.EVT_END_PROCESS, self.OnProcessEnded)
 
         self.Layout()
 
-        self.drawing.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
+    def __del__(self):
+        if self.process is not None:
+            self.process.Detach()
+            self.process.CloseOutput()
+            self.process = None
+
     def OnRegenerate(self, event):
-        dprint("using %s to run graphviz" % self.prog.GetStringSelection())
+        prog = os.path.normpath(os.path.join(self.minor.settings.path,self.prog.GetStringSelection()))
+        dprint("using %s to run graphviz" % repr(prog))
+
+        cmd = "%s -Tpng" % prog
+        
+        self.process = wx.Process(self)
+        self.process.Redirect();
+        pid = wx.Execute(cmd, wx.EXEC_ASYNC, self.process)
+        if pid==0:
+            self.minor.major.frame.SetStatusText("Couldn't run %s" % cmd)
+        else:
+            self.minor.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
+            self.regen.Enable(False)
+
+            self.preview = StringIO()
+            
+            #print "text = %s" % self.minor.major.buffer.stc.GetText()
+            text = self.minor.major.buffer.stc.GetText()
+            size = len(text)
+            fh = self.process.GetOutputStream()
+            dprint("sending text size=%d to %s" % (size,fh))
+            if size > 1000:
+                for i in range(0,size,1000):
+                    last = i+1000
+                    if last>size:
+                        last=size
+                    dprint("sending text[%d:%d] to %s" % (i,last,fh))
+                    fh.write(text[i:last])
+                    dprint("last write = %s" % str(fh.LastWrite()))
+            else:
+                fh.write(self.minor.major.buffer.stc.GetText())
+            self.process.CloseOutput()
+
+    def readStream(self):
+        stream = self.process.GetInputStream()
+
+        if stream.CanRead():
+            text = stream.read()
+            self.preview.write(text)
+
+    def OnIdle(self, evt):
+        if self.process is not None:
+            self.readStream()
+
+    def OnProcessEnded(self, evt):
+        dprint("here.")
+        self.readStream()
+        self.process.Destroy()
+        self.process = None
+        self.regen.Enable(True)
+        self.createImage()
+        self.Refresh()
+
+    def createImage(self):
+        dprint("using image, size=%s" % len(self.preview.getvalue()))
+        if len(self.preview.getvalue())==0:
+            self.minor.major.frame.SetStatusText("Error running graphviz!")
+            return
+        
+##        fh = open("test.png",'wb')
+##        fh.write(self.preview.getvalue())
+##        fh.close()
+        fh = StringIO(self.preview.getvalue())
+        img = wx.EmptyImage()
+        if img.LoadStream(fh):
+            self.bmp = wx.BitmapFromImage(img)
+        else:
+            self.bmp = None
+            self.minor.major.frame.SetStatusText("Invalid image")
+        self.drawing.setBitmap(self.bmp)
 
     def OnPaint(self, event):
         dc = wx.PaintDC(self.drawing)
-        
-        size = self.drawing.GetClientSize()
-        s = ("Size: %d x %d")%(size.x, size.y)
-
-        dc.SetFont(wx.NORMAL_FONT)
-        w, height = dc.GetTextExtent(s)
-        height = height + 3
-        dc.SetBrush(wx.WHITE_BRUSH)
-        dc.SetPen(wx.WHITE_PEN)
-        dc.DrawRectangle(0, 0, size.x, size.y)
-        dc.SetPen(wx.LIGHT_GREY_PEN)
-        dc.DrawLine(0, 0, size.x, size.y)
-        dc.DrawLine(0, size.y, size.x, 0)
-        dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2))
+        if self.bmp is not None:
+            dc.DrawBitmap(self.bmp, 0, 0, True)
+        else:
+            size = self.drawing.GetClientSize()
+            s = ("Size: %d x %d")%(size.x, size.y)
+            dc.SetFont(wx.NORMAL_FONT)
+            w, height = dc.GetTextExtent(s)
+            height = height + 3
+            dc.SetBrush(wx.WHITE_BRUSH)
+            dc.SetPen(wx.WHITE_PEN)
+            dc.DrawRectangle(0, 0, size.x, size.y)
+            dc.SetPen(wx.LIGHT_GREY_PEN)
+            dc.DrawLine(0, 0, size.x, size.y)
+            dc.DrawLine(0, size.y, size.x, 0)
+            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2))
 
     def OnSize(self, event):
         self.Refresh()
@@ -173,9 +281,12 @@ class GraphvizViewCtrl(wx.Panel):
 
 class GraphvizViewMinorMode(MinorMode):
     keyword="GraphvizView"
+    defaults={'path':'/usr/bin'}
 
     def createWindows(self, parent):
-        self.sizerep=GraphvizViewCtrl(parent)
+        if self.settings.path is None:
+            self.settings.path = GraphvizViewMinorMode.defaults['path']
+        self.sizerep=GraphvizViewCtrl(parent,self)
         paneinfo=self.getDefaultPaneInfo("Graphviz View")
         paneinfo.Right()
         self.major.addPane(self.sizerep,paneinfo)
