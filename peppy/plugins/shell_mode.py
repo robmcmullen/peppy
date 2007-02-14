@@ -13,7 +13,7 @@ from peppy.major import *
 from peppy.menu import *
 from peppy.iofilter import ProtocolPlugin, ProtocolPluginBase
 from peppy.trac.core import *
-from peppy.major_modes.fundamental import FundamentalMode
+from peppy.fundamental import FundamentalMode
 from peppy.stcinterface import MySTC
 
 class ShellPipePlugin(Interface):

@@ -14,7 +14,7 @@ from cStringIO import StringIO
 
 from peppy import *
 from peppy.trac.core import *
-from peppy.major_modes.shell import *
+from peppy.plugins.shell_mode import *
 
 from peppy.nltk_lite.chat import *
 

@@ -13,7 +13,7 @@ import wx
 
 from peppy import *
 from peppy.menu import *
-from peppy.major_modes.fundamental import FundamentalMode
+from peppy.fundamental import FundamentalMode
 from peppy.major import *
 from peppy.iofilter import *
 

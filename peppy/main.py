@@ -389,7 +389,7 @@ class Peppy(BufferApp, ClassSettingsMixin):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.about,peppy.major_modes.fundamental,peppy.major_modes.python,peppy.major_modes.hexedit,peppy.major_modes.shell,peppy.major_modes.image,peppy.plugins.chatbots,peppy.plugins.openrecent,peppy.minor_modes.funclist,peppy.plugins.pype_filebrowser,peppy.minor_modes.sizereporter,peppy.plugins.pype_compat',
+                   'Peppy':{'plugins':'peppy.plugins.about,peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.chatbots,peppy.plugins.openrecent,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.pype_compat,peppy.plugins.graphviz_mode',
                             'recentfiles':'recentfiles.txt',
                             },
                    'FundamentalMode':{'linenumbers':True,
@@ -523,7 +523,7 @@ class Peppy(BufferApp, ClassSettingsMixin):
     def parseConfigMajorModes(self):
         """
         Placeholder for future method to automatically import major
-        modes in the major_modes subdirectory.  An even better way
+        modes in the plugins subdirectory.  An even better way
         would be to import the modules only on request when they are
         first needed.
         """

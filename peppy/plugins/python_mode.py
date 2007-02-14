@@ -13,7 +13,7 @@ import wx.stc as stc
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.major_modes.fundamental import FundamentalMode
+from peppy.fundamental import FundamentalMode
 
 class SamplePython(SelectAction):
     name = "&Open Sample Python"
