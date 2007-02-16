@@ -85,6 +85,15 @@ class MinorMode(ClassSettingsMixin,debugmixin):
     
     """
 
+    default_settings = {
+        # Set default size here.  Probably should override best_*
+        # sizes in subclass
+        'best_width':100,
+        'best_height':100,
+        'min_width':100,
+        'min_height':100,
+        }
+    
     def __init__(self, major, parent):
         ClassSettingsMixin.__init__(self)
         self.major=major

@@ -226,6 +226,11 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
     regex="\.(py|pyx)$"
     lexer=stc.STC_LEX_PYTHON
 
+    default_settings = {
+        'wordwrap': True,
+        'minor_modes': 'funclist,funcmenu,sizereporter',
+        }
+
     def getKeyWords(self):
         return [(0," ".join(keyword.kwlist))]
 

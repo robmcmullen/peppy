@@ -17,6 +17,13 @@ from peppy.pype.browser import FilesystemBrowser
 class FileBrowser(FramePlugin):
     keyword="filebrowser"
 
+    default_settings = {
+        'best_width': 200,
+        'best_height': 500,
+        'min_width': 100,
+        'min_height': 100,
+        }
+    
     def createWindows(self,parent):
 ##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
 

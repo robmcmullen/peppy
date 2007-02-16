@@ -15,7 +15,8 @@ __all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
             'ConfigurationExtender']
 
 def getHomeDir(debug=False):
-    """
+    """Find the user's home directory.
+    
     Try to find the user home directory, otherwise return current
     directory.  Adapted from
     http://mail.python.org/pipermail/python-list/2005-February/263921.html
@@ -68,6 +69,12 @@ def getHomeDir(debug=False):
         return os.getcwd()
 
 class HomeConfigDir:
+    """Simple loader for config files in the home directory.
+
+    Wrapper around home directory files.  Load and save files or
+    pickled objects in the home directory.
+    """
+    
     def __init__(self,dirname,create=True,debug=False):
         self.home=getHomeDir(debug)
         if dirname.startswith('.'):
@@ -108,7 +115,10 @@ class HomeConfigDir:
 
 
 def parents(c, seen=None):
-    """Python class base-finder from
+    """Python class base-finder.
+
+    Find the list of parent classes of the given class.  Works with
+    either old style or new style classes.  From
     http://mail.python.org/pipermail/python-list/2002-November/132750.html
     """
     if type( c ) == types.ClassType:
@@ -131,6 +141,15 @@ parentclasses={}
 skipclasses=['debugmixin','ClassSettingsMixin','object']
 
 def getHierarchy(obj,debug=0):
+    """Get class hierarchy of an object using global class cache.
+
+    If the class has already been seen, it will be pulled from the
+    cache and the results will be immediately returned.  If not, the
+    hierarchy is generated, stored for future reference, and returned.
+
+    @param obj: object of interest
+    @returns: list of parent classes
+    """
     global parentclasses
     
     klass=obj.__class__
@@ -144,12 +163,35 @@ def getHierarchy(obj,debug=0):
     return hierarchy
 
 def getNameHierarchy(obj,debug=0):
+    """Get the class name hierarchy.
+
+    Given an object, return a list of names of parent classes.
+    
+    Similar to L{getHierarchy}, except returns the text names of the
+    classes instead of the class objects themselves.
+
+    @param obj: object of interest
+    @returns: list of strings naming each parent class
+    """
+    
     hierarchy=getHierarchy(obj,debug)
     names=[k.__name__ for k in hierarchy]
     if debug: print "name hierarchy: %s" % names
     return names
 
 def getSubclassHierarchy(obj,subclass,debug=0):
+    """Return class hierarchy of a particular subclass.
+
+    Given an object, return the hierarchy of classes that are
+    subclasses of a given type.  In other words, this filters the
+    output of C{getHierarchy} such that only the classes that are
+    descended from the desired subclass are returned.
+
+    @param obj: object of interest
+    @param subclass: subclass type on which to filter
+    @returns: list of strings naming each parent class
+    """
+    
     klasses=getHierarchy(obj)
     subclasses=[]
     for klass in klasses:
@@ -163,7 +205,8 @@ class GlobalSettings(object):
     
     default={}
     user={}
-    hierarchy={}
+    name_hierarchy={}
+    class_hierarchy={}
     magic_conversion=True
     
     @staticmethod
@@ -171,8 +214,11 @@ class GlobalSettings(object):
         GlobalSettings.default.update(defs)
 
     @staticmethod
-    def addHierarchy(leaf,hier):
-        GlobalSettings.hierarchy[leaf]=hier
+    def addHierarchy(leaf, classhier, namehier):
+        if leaf not in GlobalSettings.class_hierarchy:
+            GlobalSettings.class_hierarchy[leaf]=classhier
+        if leaf not in GlobalSettings.name_hierarchy:
+            GlobalSettings.name_hierarchy[leaf]=namehier
 
     @staticmethod
     def setupHierarchyDefaults(klasshier):
@@ -235,16 +281,26 @@ class GlobalSettings(object):
         print "Saving user configuration: %s" % GlobalSettings.user
 
 class SettingsProxy(debugmixin):
+    """Dictionary-like object to provide global settings to a class.
+
+    Implements a dictionary that returns a value for a keyword based
+    on the class hierarchy.  Each class will define a group of
+    settings and default values for each of those settings.  The class
+    hierarchy then defines the search order if a setting is not found
+    in a child class -- the search proceeds up the class hierarchy
+    looking for the desired keyword.
+    """
+    
     debuglevel=0
     
     def __init__(self,hier):
         names=[k.__name__ for k in hier]
         self.__dict__['_startSearch']=names[0]
-        GlobalSettings.addHierarchy(names[0],names)
+        GlobalSettings.addHierarchy(names[0], hier, names)
         GlobalSettings.setupHierarchyDefaults(hier)
 
     def __getattr__(self,name):
-        klasses=GlobalSettings.hierarchy[self.__dict__['_startSearch']]
+        klasses=GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]
         d=GlobalSettings.user
         for klass in klasses:
             self.dprint("checking %s for %s in user" % (klass,name))
@@ -255,6 +311,12 @@ class SettingsProxy(debugmixin):
             self.dprint("checking %s for %s in default" % (klass,name))
             if klass in d and name in d[klass]:
                 return d[klass][name]
+
+        klasses=GlobalSettings.class_hierarchy[self.__dict__['_startSearch']]
+        for klass in klasses:
+            self.dprint("checking %s for %s in default_settings" % (klass,name))
+            if hasattr(klass,'default_settings') and name in klass.default_settings:
+                return klass.default_settings[name]
         return None
 
     def __setattr__(self,name,value):
@@ -282,7 +344,7 @@ class SettingsProxy(debugmixin):
 
     def _getList(self,name):
         vals=[]
-        klasses=GlobalSettings.hierarchy[self.__dict__['_startSearch']]
+        klasses=GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]
         for klass in klasses:
             val=self._getValue(klass,name)
             if val is not None:
@@ -293,10 +355,26 @@ class SettingsProxy(debugmixin):
         return vals
 
     def _getMRO(self):
-        return [cls for cls in GlobalSettings.hierarchy[self.__dict__['_startSearch']]]
+        return [cls for cls in GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]]
         
         
 class ClassSettingsMixin(object):
+    """Mixin that provides the settings attribute for the class.
+
+    Adds the C{settings} class attribute to a class, providing
+    configuration file support and hierarchical parameter setting.
+    C{self.settings} acts as a dictionary, and values can be read from
+    and written to this dictionary.
+
+    Accessing a key from this dictionary-like object attempts to find
+    the keyword by that name in the current class's configuration
+    options.  If it is not found, it searches up through the parent
+    classes' configuration options until it finds a match.  If no
+    match is found through this hierarchical lookup, it returns None.
+
+    FIXME: add the searching of default options through the class
+    hierarchy as well.
+    """
     def __init__(self,defaults=None):
         hier=[klass for klass in getHierarchy(self) if klass!=ClassSettingsMixin]
         self.settings=SettingsProxy(hier)
@@ -307,25 +385,38 @@ class ClassSettingsMixin(object):
 ## configuration file process
 
 class IConfigurationExtender(Interface):
-    """
-    Used to add new configuration ophiotn to the application.
+    """Interface to add new configuration options to the application.
+
+    Implement L{loadConf} to add to the configuration settings before
+    the first frame appears.  Could also be used to load additional
+    settings not in the main configuration file.
+
+    Implement L{saveConf} to adjust configuration settings before any
+    are saved.  Could also be used to save additional settings not in
+    the main configuration file.
     """
 
     def loadConf(app):
-        """
-        Load some configuration settings, possibly from an external
-        source like a file.  This is called after the application has
-        loaded all the plugins and the main configuration file.
+        """Load some configuration settings, possibly from an external
+        source like a file.
+
+        This is called after the application has loaded all the
+        plugins and the main configuration file.
         """
 
     def saveConf(app):
-        """
-        Save configuration settings, possibly to an external file.
+        """Save configuration settings, possibly to an external file.
+
         This is called before the main configuration file is written,
         so additions to it are possible.
         """
 
 class ConfigurationExtender(Component):
+    """ExtensionPoint that loads L{IConfigurationExtenders}.
+
+    Driver class that is used to call all the registered
+    IConfigurationExtenders during application init and shutdown.
+    """
     extensions=ExtensionPoint(IConfigurationExtender)
 
     def load(self,app):

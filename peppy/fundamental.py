@@ -100,6 +100,16 @@ class FundamentalMode(MajorMode):
     regex=".*"
     lexer=stc.STC_LEX_NULL
 
+    default_settings = {
+        'linenumbers': True,
+        'linenumber_margin_width': 40,
+        'symbols': False,
+        'symbols_margin_width': 16,
+        'folding': False,
+        'folding_margin_width': 16,
+        'wordwrap': False,
+        }
+    
     def createEditWindow(self,parent):
         self.dprint("creating new Fundamental window")
         self.createSTC(parent,style=True)

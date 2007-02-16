@@ -315,6 +315,13 @@ class FramePlugin(ClassSettingsMixin):
     """
     keyword=None
 
+    default_settings = {
+        'best_width': 100,
+        'best_height': 200,
+        'min_width': 100,
+        'min_height': 100,
+        }
+    
     def __init__(self, frame):
         ClassSettingsMixin.__init__(self)
         self.frame=frame
@@ -373,6 +380,8 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
     debuglevel=0
     frameid=0
     perspectives={}
+
+    default_settings = {}
     
     def __init__(self, app, id=-1):
         BufferFrame.frameid+=1

@@ -17,6 +17,13 @@ from peppy.pype.codetree import hierCodeTreePanel
 class FuncList(MinorMode):
     keyword="funclist"
 
+    default_settings = {
+        'best_width':150,
+        'best_height':500,
+        'min_width':100,
+        'min_height':100,
+        }
+    
     def createWindows(self, parent):
         self.funclist=hierCodeTreePanel(self.major,parent,False)
         self.fl=self.major.getFunctionList()

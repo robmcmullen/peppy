@@ -66,6 +66,10 @@ class GraphvizMode(FundamentalMode):
     regex="\.dot$"
     lexer=stc.STC_LEX_CPP
 
+    default_settings = {
+        'minor_modes':'GraphvizView',
+        }
+    
     def getKeyWords(self):
         return [(0,"strict graph digraph graph node edge subgraph")]
     
@@ -297,11 +301,17 @@ class GraphvizViewMinorMode(MinorMode):
     bitmap version of the graph.
     """
     keyword="GraphvizView"
-    defaults={'path':'/usr/bin'}
+    default_settings={
+        'best_width': 300,
+        'best_height': 300,
+        'min_width': 300,
+        'min_height': 300,
+        
+        'path': '/usr/bin',
+        }
 
     def createWindows(self, parent):
-        if self.settings.path is None:
-            self.settings.path = GraphvizViewMinorMode.defaults['path']
+        dprint("self.settings.path = %s" % self.settings.path)
         self.sizerep=GraphvizViewCtrl(parent,self)
         paneinfo=self.getDefaultPaneInfo("Graphviz View")
         paneinfo.Right()
