@@ -11,7 +11,7 @@ from menu import *
 from buffers import *
 from debug import *
 from trac.core import *
-
+from about import *
 
 
 class NewTab(SelectAction):
@@ -420,7 +420,7 @@ class Peppy(BufferApp, ClassSettingsMixin):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.about,peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.chatbots,peppy.plugins.openrecent,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.pype_compat,peppy.plugins.graphviz_mode',
+                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode',
                             'recentfiles':'recentfiles.txt',
                             },
                    }

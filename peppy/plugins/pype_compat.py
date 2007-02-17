@@ -15,6 +15,9 @@ from peppy import *
 from peppy.trac.core import *
 from peppy.configprefs import *
 
+from peppy.about import AddCredit
+AddCredit("Josiah Carlson for PyPE and for licensing PyPE under the GPL so I could borrow some of his code to create a few of the plugins")
+
 class PyPECompat(object):
     # runpath is needed for loading icons and pype config settings.
     # It should point to the peppy module directory.  This file is in

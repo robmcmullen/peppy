@@ -18,6 +18,9 @@ from peppy.plugins.shell_mode import *
 
 from peppy.nltk_lite.chat import *
 
+from peppy.about import AddCredit
+AddCredit("Eliza and the other chatbot implementations are from the Natural Language Toolkit (http://nltk.sourceforge.net/).")
+
 class ChatShell(Component):
     implements(ShellPipePlugin)
 

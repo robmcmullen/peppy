@@ -20,6 +20,21 @@ from peppy.iofilter import *
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
 from peppy import __version__,__description__,__author__,__author_email__,__url__
+substitutes = {
+    'prog': 'peppy',
+    'yearrange': '2006-2007',
+    'version': __version__,
+    'description': __description__,
+    'author': __author__,
+    'author_email': __author_email__,
+    'url': __url__,
+    'license': "Licensed under the GPL",
+    'warning': """This is still alpha software, so please treat accordingly. :)
+
+May be unstable and crash without warning, so don't use this to edit important stuff.  Or, at least make lots of backups.  It probably will save what you're working on, but you never know.  I'm not using this as my primary editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x series of releases, I intend to be using this as my primary editor, so I'll have much more confidence in it by then.
+    """,
+    'thanks': "",
+    }
 
 gpl_text="""
 This program is free software; you can redistribute it and/or modify
@@ -73,18 +88,7 @@ SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
 
-license="Licensed under the GPL"
-warning="""This is still alpha software, so please treat accordingly. :)
-
-May be unstable and crash without warning, so don't use this to edit important stuff.  Or, at least make lots of backups.  It probably will save what you're working on, but you never know.  I'm not using this as my primary editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x series of releases, I intend to be using this as my primary editor, so I'll have much more confidence in it by then.
-"""
-thanks="""Thanks to lots of folks:
-* Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself, and the wxPIA book
-* Josiah Carlson for PyPE and for licensing PyPE under the GPL so I could borrow some of his code to create a few of the plugins
-* the nltk_lite toolkit for Eliza and the other chatbot implementations.
-See the file THANKS for more credits.
-"""
-SetAbout('title.txt',"%s %s\n%s\n\nCopyright (c) 2006-2007 %s (%s)\n%s\n\n%s\n%s" % ("peppy",__version__,__description__,__author__,__author_email__,license,warning,thanks))
+SetAbout('title.txt',"%(prog)s %(version)s\n%(description)s\n\nCopyright (c) %(yearrange)s %(author)s (%(author_email)s)\n%(license)s\n\n%(warning)s\nThanks to lots of folks:\n%(thanks)s\nSee the file THANKS for more credits.")
 SetAbout('sample.py','''#!/usr/bin/env python
 """ doc string """
 import os
@@ -121,6 +125,16 @@ SetAbout('red.png',
 \xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82")
 
 
+credits=[]
+
+def AddCredit(text):
+    credits.append(text)
+    substitutes['thanks']="\n".join(["* %s" % c for c in credits])
+        
+AddCredit("Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
+
+
+
 class AboutProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)
 
@@ -129,8 +143,11 @@ class AboutProtocol(ProtocolPluginBase,debugmixin):
     
     def getReader(self,urlinfo):
         if urlinfo.path in aboutfiles:
+            text = aboutfiles[urlinfo.path]
+            if text.find("%(") >= 0:
+                text = text % substitutes
             fh=StringIO()
-            fh.write(aboutfiles[urlinfo.path])
+            fh.write(text)
             fh.seek(0)
             return fh
         raise IOError
