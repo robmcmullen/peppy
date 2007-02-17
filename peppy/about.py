@@ -140,6 +140,11 @@ class AboutProtocol(ProtocolPluginBase,debugmixin):
 
     def supportedProtocols(self):
         return ['about']
+
+    def getStats(self, urlinfo):
+        stats = URLStats()
+        stats.readonly = True
+        return stats
     
     def getReader(self,urlinfo):
         if urlinfo.path in aboutfiles:

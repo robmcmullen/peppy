@@ -117,7 +117,12 @@ class Save(SelectAction):
     keyboard = "C-X C-S"
 
     def isEnabled(self):
-        return self.frame.isOpen()
+        mode=self.frame.getActiveMajorMode()
+        if mode:
+            if mode.buffer.readonly:
+                return False
+            return True
+        return False
 
     def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))

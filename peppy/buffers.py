@@ -106,6 +106,7 @@ class Buffer(debugmixin):
     def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
         Buffer.count+=1
         self.fh=fh
+        self.readonly = False
         self.defaultmode=defaultmode
         self.setFilename(filename)
 
@@ -192,6 +193,8 @@ class Buffer(debugmixin):
 
     def open(self,stcparent):
         filter=GetIOFilter(self.filename)
+        self.readonly = filter.stats.readonly
+        
         if self.stc==None:
             self.initSTC(filter.getSTC(stcparent))
         filter.read(self.stc)
