@@ -60,7 +60,7 @@ class LineNumbers(ToggleAction):
     
 class BeginningOfLine(SelectAction):
     name = "Cursor to Start of Line"
-    tooltip = "Move the cursor to the start of the current line."
+    tooltip = "Move the cursor to the start of the current line"
     keyboard = 'C-A'
 
     def action(self, pos=-1):
@@ -75,7 +75,7 @@ class BeginningOfLine(SelectAction):
 
 class EndOfLine(SelectAction):
     name = "Cursor to End of Line"
-    tooltip = "Move the cursor to the end of the current line."
+    tooltip = "Move the cursor to the end of the current line"
     keyboard = 'C-E'
 
     def action(self, pos=-1):
@@ -85,6 +85,76 @@ class EndOfLine(SelectAction):
             s=viewer.stc
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
+
+def changeCaseOfWord(s, func):
+    """Convenience function to change case of word or region.
+
+    The string function specified by the lambda function will be
+    called on the selected region or current word and changed in the
+    text control.
+
+    @param s: styled text control
+    @param func: lambda function supplying a string method
+    """
+    s.BeginUndoAction()
+    (pos, end) = s.GetSelection()
+    if pos==end:
+        s.CmdKeyExecute(stc.STC_CMD_WORDRIGHT)
+        end = s.GetCurrentPos()
+    word = s.GetTextRange(pos, end)
+    s.SetTargetStart(pos)
+    s.SetTargetEnd(end)
+    s.ReplaceTarget(func(word))
+    s.EndUndoAction()
+    s.GotoPos(end)
+            
+class CapitalizeWord(SelectAction):
+    """Title-case the current word and move the cursor to the start of
+    the next word.
+    """
+
+    name ="Capitalize word"
+    tooltip = "Capitalize current word"
+    keyboard = 'M-C'
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            s=viewer.stc
+            changeCaseOfWord(s, lambda t:t.title())
+
+class UpcaseWord(SelectAction):
+    """Upcase the current word and move the cursor to the start of the
+    next word.
+    """
+
+    name ="Upcase word"
+    tooltip = "Upcase current word"
+    keyboard = 'M-U'
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            s=viewer.stc
+            changeCaseOfWord(s, lambda t:t.upper())
+
+class DowncaseWord(SelectAction):
+    """Downcase the current word and move the cursor to the start of the
+    next word.
+    """
+
+    name ="Downcase word"
+    tooltip = "Downcase current word"
+    keyboard = 'M-L'
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            s=viewer.stc
+            changeCaseOfWord(s, lambda t:t.lower())
 
 
 
@@ -234,6 +304,9 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
 
     default_keys=(("Fundamental",BeginningOfLine),
                   ("Fundamental",EndOfLine),
+                  ("Fundamental",CapitalizeWord),
+                  ("Fundamental",UpcaseWord),
+                  ("Fundamental",DowncaseWord),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:
