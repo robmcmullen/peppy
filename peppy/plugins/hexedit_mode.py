@@ -25,17 +25,6 @@ class OpenHexEditor(SelectAction):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:0x00-0xff")
 
-class UseHexEditMajorMode(SelectAction):
-    name = "Change to HexEdit Major Mode"
-    tooltip = "Change to binary editor"
-    icon = "icons/folder_page.png"
-    keyboard = "C-X C-H"
-
-    def action(self, pos=-1):
-        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.changeMajorMode(HexEditMode)
-
-
 
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
@@ -859,7 +848,6 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
 
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenHexEditor)),
-                  (None,"View",MenuItem(UseHexEditMajorMode)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

@@ -35,7 +35,7 @@ import os,sys,re
 import wx
 import wx.stc as stc
 
-from menu import SelectAction
+from menu import *
 from stcinterface import *
 from configprefs import *
 from debug import *
@@ -85,6 +85,38 @@ class ElectricReturn(MajorAction):
     def majoraction(self, viewer, pos=-1):
         viewer.electricReturn()
 
+class MajorModeSelect(RadioAction):
+    name="Major Mode"
+    inline=False
+    tooltip="Switch major mode"
+
+    modes=None
+    items=None
+
+    def initPreHook(self):
+        modes = self.frame.app.getSubclasses(MajorMode)
+        modes.sort(key=lambda s:s.keyword)
+        dprint(modes)
+        MajorModeSelect.modes = modes
+        names = [m.keyword for m in modes]
+        MajorModeSelect.items = names
+
+    def saveIndex(self,index):
+        self.dprint("index=%d" % index)
+
+    def getIndex(self):
+        mode = self.frame.getActiveMajorMode().__class__
+        self.dprint("searching for %s in %s" % (mode, MajorModeSelect.modes))
+        if mode is not None:
+            return MajorModeSelect.modes.index(mode)
+        return 0
+                                           
+    def getItems(self):
+        return MajorModeSelect.items
+
+    def action(self, index=0, old=-1):
+        self.frame.changeMajorMode(MajorModeSelect.modes[index])
+
 
 #### MajorMode base class
 
@@ -116,6 +148,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self.buffer=buffer
         self.frame=frame
         self.popup=None
+        self.minors=[]
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
         self.win=self
@@ -181,6 +214,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
             minorlist=minors.split(',')
             self.dprint("loading %s" % minorlist)
             MinorModeLoader(ComponentManager()).load(self,minorlist)
+            self.createMinorModeList()
 
     def createMinorMode(self,minorcls):
         try:
@@ -188,6 +222,14 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
             # register minor mode here
         except MinorModeIncompatibilityError:
             pass
+
+    def createMinorModeList(self):
+        minors = self._mgr.GetAllPanes()
+        for minor in minors:
+            dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
+            if minor.name != "main":
+                self.minors.append(minor)
+        self.minors.sort(key=lambda s:s.caption)
 
     def OnUpdateUI(self,evt):
         self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
@@ -434,6 +476,15 @@ class MajorModeMatcherBase(Component):
 class MajorModeMatcherDriver(Component,debugmixin):
     debuglevel=0
     plugins=ExtensionPoint(IMajorModeMatcher)
+    implements(IMenuItemProvider)
+
+    default_menu=(("View",MenuItem(MajorModeSelect).after("begin")),
+                  )
+
+    def getMenuItems(self):
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
+
 
     def parseEmacs(self,line):
         """

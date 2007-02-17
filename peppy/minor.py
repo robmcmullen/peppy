@@ -24,8 +24,33 @@ import wx
 
 from trac.core import *
 
+from menu import *
 from configprefs import *
 from debug import *
+
+class MinorModeShow(ToggleListAction):
+    name="Minor Modes"
+    inline=False
+    tooltip="Show or hide minor mode windows"
+
+    def getItems(self):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            return [m.caption for m in major.minors]
+        return []
+
+    def isChecked(self, index):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            return major.minors[index].IsShown()
+        return False
+
+    def action(self, index=0, old=-1):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            major.minors[index].Show(not major.minors[index].IsShown())
+            major._mgr.Update()
+
 
 class MinorModeIncompatibilityError(Exception):
     pass
@@ -47,6 +72,7 @@ class MinorModeLoader(Component,debugmixin):
     """
     debuglevel=0
     extensions=ExtensionPoint(IMinorModeProvider)
+    implements(IMenuItemProvider)
 
     def __init__(self):
         # Only call this once.
@@ -59,6 +85,14 @@ class MinorModeLoader(Component,debugmixin):
             for minor in ext.getMinorModes():
                 self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
+
+    default_menu=(("View",MenuItem(MinorModeShow).after("Major Mode")),
+                  )
+
+    def getMenuItems(self):
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
+
 
     def load(self,major,minorlist=[]):
         self.dprint("Loading minor modes %s for %s" % (str(minorlist),major))
@@ -137,6 +171,7 @@ class MinorMode(ClassSettingsMixin,debugmixin):
         of the Aui-managed window.
         """
         paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
+        paneinfo.DestroyOnClose(False)
         paneinfo.BestSize(wx.Size(self.settings.best_width,
                                   self.settings.best_height))
         paneinfo.MinSize(wx.Size(self.settings.min_width,

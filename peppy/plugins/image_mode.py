@@ -40,18 +40,6 @@ class OpenImageViewer(SelectAction):
         self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:red.png")
 
-class UseImageViewMajorMode(SelectAction):
-    """
-    Action to change the major mode to the ImageView mode.
-    """
-    name = "Change to ImageView Major Mode"
-    tooltip = "Change to binary editor"
-    icon = "icons/folder_page.png"
-
-    def action(self, pos=-1):
-        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.changeMajorMode(ImageViewMode)
-
 
 class BitmapView(wx.Panel):
     """
@@ -167,7 +155,6 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenImageViewer)),
-                  (None,"View",MenuItem(UseImageViewMajorMode)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
