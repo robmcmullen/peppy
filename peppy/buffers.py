@@ -575,11 +575,12 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultmode=mode)
         # If we get an exception, it won't get added to the buffer list
         
+        mode=self.getActiveMajorMode()
         self.app.addBuffer(buffer)
-        if newTab:
-            self.newBuffer(buffer)
-        else:
+        if not newTab or (mode is not None and mode.temporary):
             self.setBuffer(buffer)
+        else:
+            self.newBuffer(buffer)
         mode=self.getActiveMajorMode()
         msg=mode.getWelcomeMessage()
         self.SetStatusText(msg)
