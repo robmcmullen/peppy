@@ -655,7 +655,10 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.RegisterDataType(Grid.GRID_VALUE_STRING, None, None)
         self.SetDefaultEditor(HexCellEditor(self))
 
+        self.updateUICallback = None
+        self.Bind(Grid.EVT_GRID_CELL_LEFT_CLICK, self.OnLeftDown)
         self.Bind(Grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
+        self.Bind(Grid.EVT_GRID_SELECT_CELL, self.OnSelectCell)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(EVT_WAIT_UPDATE,self.OnUnderlyingUpdate)
         self.Show(True)
@@ -664,13 +667,13 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.dprint("Need to update grid")
         self.table.ResetView(self,stc,format)
 
-    def OnUnderlyingUpdate(self, ev, loc=None):
+    def OnUnderlyingUpdate(self, evt, loc=None):
         """Data has changed in some other view, so we need to update
         the grid and reset the grid's cursor to the updated position
         if the location is given.
         """
         self.dprint("OnUnderlyingUpdate: slow way of updating the grid -- updating the whole thing.")
-        self.dprint(ev)
+        self.dprint(evt)
 
         self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
@@ -679,27 +682,34 @@ class HugeTableGrid(Grid.Grid,debugmixin):
             self.SetGridCursor(row,col)
             self.MakeCellVisible(row,col)
 
-    def OnRightDown(self, ev):
+    def OnRightDown(self, evt):
         self.dprint(self.GetSelectedRows())
+
+    def OnLeftDown(self, evt):
+        evt.Skip()
+        wx.CallAfter(self.doUpdateUICallback)
+
+    def OnSelectCell(self, evt):
+        evt.Skip()
+        wx.CallAfter(self.doUpdateUICallback)
 
     def OnKeyDown(self, evt):
         self.dprint("evt=%s" % evt)
         if evt.GetKeyCode() == wx.WXK_RETURN or evt.GetKeyCode()==wx.WXK_TAB:
             if evt.ControlDown():   # the edit control needs this key
                 evt.Skip()
-                return
-
-            self.DisableCellEditControl()
-            if evt.ShiftDown():
-                (row,col)=self.GetTable().getPrevCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
             else:
-                (row,col)=self.GetTable().getNextCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
-            self.SetGridCursor(row,col)
-            self.MakeCellVisible(row,col)
-
+                self.DisableCellEditControl()
+                if evt.ShiftDown():
+                    (row,col)=self.GetTable().getPrevCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
+                else:
+                    (row,col)=self.GetTable().getNextCursorPosition(self.GetGridCursorRow(),self.GetGridCursorCol())
+                self.SetGridCursor(row,col)
+                self.MakeCellVisible(row,col)
         else:
             evt.Skip()
-            return
+            
+        wx.CallAfter(self.doUpdateUICallback)
 
     def abortEdit(self):
         self.DisableCellEditControl()
@@ -713,6 +723,35 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.SetGridCursor(row,col)
         self.EnableCellEditControl()
 
+    ## STC interface
+
+    def GetCurrentLine(self):
+        return self.GetGridCursorRow()
+
+    def GetCurrentPos(self):
+        return -1
+
+    def GetColumn(self, pos):
+        return self.GetGridCursorCol()
+    
+    def addUpdateUIEvent(self, callback):
+        """Add the equivalent to STC_UPDATEUI event for UI changes.
+
+        The STC supplies the EVT_STC_UPDATEUI event that fires for
+        every change that could be used to update the user interface:
+        a text change, a style change, or a selection change.  If the
+        editing (viewing) window does not use the STC to display
+        information, you should supply the equivalent event for the
+        edit window.
+        
+        @param callback: event handler to execute on event
+        """
+        self.updateUICallback = callback
+
+    def doUpdateUICallback(self):
+        if self.updateUICallback is not None:
+            self.updateUICallback(None)
+        
 
 
 class HexEditMode(MajorMode):
@@ -741,7 +780,11 @@ class HexEditMode(MajorMode):
         # event manager for multiple bindings.
         eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
 
-        self.editwin.Update(self.buffer.stc)
+        # self.stc points to the data storage; self.editwin points to
+        # the user interface window.  In this case, they are
+        # different.
+        self.stc = self.buffer.stc
+        self.editwin.Update(self.stc)
         
     def deleteWindowPostHook(self):
         self.dprint("unregistering %s" % self.underlyingSTCChanged)

@@ -495,9 +495,34 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.keys.addMinorKeyMap(self.menumap.keymap)
         #get_all_referrers(SelectAction)
 
-        
+    enablecount = 0
+    def enableTools(self):
+        """Enable toolbar buttons.
+
+        Fixed bug?  Originally, the enabling of individual toolbar
+        buttons was accomplished using the EVT_UPDATE_UI event on the
+        toolbar button itself.  When deleting toolbars, that caused a
+        crash because one toolbar button was getting its enable method
+        called after the toolbar was destroyed.  By moving the toolbar
+        enabling out of there and into here, the crash was eliminated.
+        This is called using the STC_UPDATEUI event now.  I think this
+        is more efficient, anyway.
+        """
+        BufferFrame.enablecount += 1
+        count = BufferFrame.enablecount
+        #print
+        #print
+        #print
+        self.dprint("---------- %d id=%s len=%d" % (count, id(self.toolmap),len(self.toolmap.actions)))
+        for action in self.toolmap.actions:
+            self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
+            action.Enable()
+
     def setToolmap(self,majormodes=[],minormodes=[]):
         if self.toolmap is not None:
+            for action in self.toolmap.actions:
+                action.remove()
+            self.dprint(self.toolmap.actions)
             for tb in self.toolmap.toolbars:
                 self._mgr.DetachPane(tb)
                 tb.Destroy()
@@ -551,7 +576,6 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         mode=buffer.createMajorMode(self)
         self.dprint("setting buffer to new view %s" % mode)
         self.tabs.replaceTab(mode)
-        self.switchMode()
 
     def changeMajorMode(self,requested):
         mode=self.getActiveMajorMode()
@@ -559,13 +583,15 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
             newmode=mode.buffer.createMajorMode(self,requested)
             self.dprint("new mode=%s" % newmode)
             self.tabs.replaceTab(newmode)
-            self.switchMode()
 
     def newBuffer(self,buffer):
         mode=buffer.createMajorMode(self)
         self.dprint("major mode=%s" % mode)
         self.tabs.addTab(mode)
         self.dprint("after addViewer")
+
+        # switchMode must be called here because no tabbed event is
+        # generated when adding a new tab.
         self.switchMode()
 
     def titleBuffer(self):
@@ -631,6 +657,7 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         
         # "commit" all changes made to FrameManager   
         self._mgr.Update()
+        wx.CallAfter(self.enableTools)
 
     def getTitle(self):
         return self.name

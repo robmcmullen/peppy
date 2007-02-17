@@ -96,7 +96,7 @@ class MajorModeSelect(RadioAction):
     def initPreHook(self):
         modes = self.frame.app.getSubclasses(MajorMode)
         modes.sort(key=lambda s:s.keyword)
-        dprint(modes)
+        self.dprint(modes)
         MajorModeSelect.modes = modes
         names = [m.keyword for m in modes]
         MajorModeSelect.items = names
@@ -141,10 +141,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         ClassSettingsMixin.__init__(self)
         self.win=None
         self.splitter=None
-        self.editwin=None
+        self.editwin=None # user interface window
         self.minibuffer=None
         self.sidebar=None
-        self.stc=NullSTC()
+        self.stc=NullSTC() # data store
         self.buffer=buffer
         self.frame=frame
         self.popup=None
@@ -184,8 +184,11 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self.editwin=self.createEditWindow(self.splitter)
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
                           CenterPane())
-        if isinstance(self.editwin,MySTC):
-            self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
+
+        if hasattr(self.editwin,'addUpdateUIEvent'):
+            self.editwin.addUpdateUIEvent(self.OnUpdateUI)
+##        if isinstance(self.editwin,MySTC):
+##            self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
 
         self.loadMinorModes()
         
@@ -232,11 +235,24 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
         self.minors.sort(key=lambda s:s.caption)
 
     def OnUpdateUI(self,evt):
+        """Callback to update user interface elements.
+
+        This event is called when the user interacts with the editing
+        window, possibly creating a state change that would require
+        some user interface elements to change state.
+
+        Don't depend on this coming from the STC, as non-STC based
+        modes won't have the STC_EVT_UPDATEUI event and may be calling
+        this using other events.
+
+        @param evt: some event of undetermined type
+        """
         self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
         self.frame.SetStatusText("L%d C%d" % (linenum+1,col+1),1)
+        self.frame.enableTools()
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)

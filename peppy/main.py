@@ -219,18 +219,49 @@ class Cut(SelectAction):
     tooltip = "Cut"
     icon = "icons/cut.png"
 
+    def isEnabled(self):
+        viewer=self.frame.getActiveMajorMode()
+        if viewer: return viewer.stc.CanCut()
+        return False
+
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
+            return viewer.stc.Cut()
 
 class Copy(SelectAction):
     name = "Copy"
     tooltip = "Copy"
     icon = "icons/page_copy.png"
 
+    def isEnabled(self):
+        viewer=self.frame.getActiveMajorMode()
+        if viewer: return viewer.stc.CanCopy()
+        return False
+
+    def action(self, pos=-1):
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
+            return viewer.stc.Copy()
+
 class Paste(SelectAction):
     name = "Paste"
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
+
+    def isEnabled(self):
+        viewer=self.frame.getActiveMajorMode()
+        self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
+        if viewer: return viewer.stc.CanPaste()
+        return False
+
+    def action(self, pos=-1):
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
+            return viewer.stc.Paste()
 
 class GlobalMenu(Component):
     """Trac plugin that provides the global menubar and toolbar.

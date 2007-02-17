@@ -128,8 +128,12 @@ class SelectAction(debugmixin):
         toolbar.AddLabelTool(self.id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
-        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
+
+    def remove(self):
+        self.dprint("removing %s (widget id=%d) result=%s" % (self.name, self.id, self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)))
+        self.widget = None
+        self.tool = None
+        self.frame = None
         
     def OnMenuSelected(self,evt):
         self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
@@ -151,6 +155,7 @@ class SelectAction(debugmixin):
         if self.widget is not None:
             self.widget.Enable(self.isEnabled())
         if self.tool is not None:
+            self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name,self.id,self.isEnabled(), self.tool))
             self.tool.EnableTool(self.id,self.isEnabled())
 
     def isEnabled(self):

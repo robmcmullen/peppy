@@ -27,17 +27,23 @@ class STCInterface(object):
         """PyPE compat to show read-only status"""
         return True
     
-    def CanPaste(self):
-        return 0
-
     def Clear(self):
         pass
+
+    def CanCopy(self):
+        return False
 
     def Copy(self):
         pass
 
+    def CanCut(self):
+        return False
+
     def Cut(self):
         pass
+
+    def CanPaste(self):
+        return False
 
     def Paste(self):
         pass
@@ -46,13 +52,13 @@ class STCInterface(object):
         pass
 
     def CanUndo(self):
-        return 0
+        return False
 
     def Undo(self):
         pass
 
     def CanRedo(self):
-        return 0
+        return False
 
     def Redo(self):
         pass
@@ -166,6 +172,20 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
             self.dprint("sending event %s to %s" % (evt,otherstc))
             wx.PostEvent(otherstc,evt())
 
+    def addUpdateUIEvent(self, callback):
+        """Add the equivalent to STC_UPDATEUI event for UI changes.
+
+        The STC supplies the EVT_STC_UPDATEUI event that fires for
+        every change that could be used to update the user interface:
+        a text change, a style change, or a selection change.  If the
+        editing (viewing) window does not use the STC to display
+        information, you should supply the equivalent event for the
+        edit window.
+        
+        @param callback: event handler to execute on event
+        """
+        self.Bind(stc.EVT_STC_UPDATEUI, callback)
+        
     def openPostHook(self,filter):
         """
         Hook here for subclasses of STC to do whatever they need with
@@ -178,6 +198,13 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
 
     def CanEdit(self):
         """PyPE compat"""
+        return True
+
+    ## STCInterface additions
+    def CanCopy(self):
+        return True
+
+    def CanCut(self):
         return True
 
     def GetBinaryData(self,start,end):
@@ -293,6 +320,10 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
 ##                                  evt.GetLength(),
 ##                                  repr(evt.GetText()) ))
         self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+        evt.Skip()
+
+    def OnUpdateUI(self, evt):
+        dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
         evt.Skip()
 
 
