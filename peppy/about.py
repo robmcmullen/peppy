@@ -35,6 +35,7 @@ May be unstable and crash without warning, so don't use this to edit important s
     """,
     'thanks': "",
     }
+substitutes['copyright'] = 'Copyright (c) %(yearrange)s %(author)s (%(author_email)s)' % substitutes
 
 gpl_text="""
 This program is free software; you can redistribute it and/or modify
@@ -53,33 +54,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 """
 
 aboutfiles={}
-aboutfiles['demo.txt'] = """\
-This editor is provided by a class named wx.StyledTextCtrl.  As
-the name suggests, you can define styles that can be applied to
-sections of text.  This will typically be used for things like
-syntax highlighting code editors, but I'm sure that there are other
-applications as well.  A style is a combination of font, point size,
-foreground and background colours.  The editor can handle
-proportional fonts just as easily as monospaced fonts, and various
-styles can use different sized fonts.
-
-There are a few canned language lexers and colourizers included,
-(see the next demo) or you can handle the colourization yourself.
-If you do you can simply register an event handler and the editor
-will let you know when the visible portion of the text needs
-styling.
-
-wx.StyledTextEditor also supports setting markers in the margin...
-
-
-
-
-...and indicators within the text.  You can use these for whatever
-you want in your application.  Cut, Copy, Paste, Drag and Drop of
-text works, as well as virtually unlimited Undo and Redo
-capabilities, (right click to try it out.)
-"""
-
 def SetAbout(path,text):
     aboutfiles[path]=text
 
@@ -112,6 +86,32 @@ class Foo(Bar):
             raise TypeError("stuff")
         return
 ''')
+SetAbout('demo.txt',"""\
+This editor is provided by a class named wx.StyledTextCtrl.  As
+the name suggests, you can define styles that can be applied to
+sections of text.  This will typically be used for things like
+syntax highlighting code editors, but I'm sure that there are other
+applications as well.  A style is a combination of font, point size,
+foreground and background colours.  The editor can handle
+proportional fonts just as easily as monospaced fonts, and various
+styles can use different sized fonts.
+
+There are a few canned language lexers and colourizers included,
+(see the next demo) or you can handle the colourization yourself.
+If you do you can simply register an event handler and the editor
+will let you know when the visible portion of the text needs
+styling.
+
+wx.StyledTextEditor also supports setting markers in the margin...
+
+
+
+
+...and indicators within the text.  You can use these for whatever
+you want in your application.  Cut, Copy, Paste, Drag and Drop of
+text works, as well as virtually unlimited Undo and Redo
+capabilities, (right click to try it out.)
+""")
 SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
 SetAbout('red.png',
 "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
@@ -127,12 +127,12 @@ SetAbout('red.png',
 
 credits=[]
 
-def AddCredit(text):
-    credits.append(text)
-    substitutes['thanks']="\n".join(["* %s" % c for c in credits])
+def AddCredit(author, contribution):
+    credits.append((author, contribution))
+    substitutes['thanks']="\n".join(["* %s - %s" % (a,c) for a,c in credits])
         
-AddCredit("Robin Dunn for all the contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
-
+AddCredit("Robin Dunn", "contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
+AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
 
 
 class AboutProtocol(ProtocolPluginBase,debugmixin):
@@ -165,26 +165,21 @@ class HelpAbout(SelectAction):
         from wx.lib.wordwrap import wordwrap
         
         info = wx.AboutDialogInfo()
-        info.Name = "peppy"
-        info.Version = __version__
-        info.Copyright = "Copyright (c) 2006 %s (%s)" % (__author__,__author_email__)
-        info.Description = wordwrap(
-            "This program is a wxPython/Scintilla-based editor written "
-            "in and extensible through Python.  Its aim to provide "
-            "the user with an XEmacs-like multi-window, multi-tabbed "
-            "interface while providing the developer easy ways to "
-            "extend the capabilities of the editor using Python "
-            "instead of Emacs lisp.\n",
+        info.Name = substitutes['prog']
+        info.Version = substitutes['version']
+        info.Copyright = substitutes['copyright']
+        info.Description = wordwrap(substitutes['description'],
             350, wx.ClientDC(self.frame))
-        info.WebSite = (__url__, "peppy home page")
-        info.Developers = [ "Rob McMullen",
-                            "",
-                            "Contributions by:",
-                            "Robin Dunn (for wxPython)",
-                            "Josiah Carlson (for ideas & code from PyPE)",
-                            "Stani Michiels (for ideas & code from SPE)",
-                            "Mark James (for the silk icon library)",
-                            "The Natural Language Toolkit project (nltk.sourceforge.net) for the chatbot implementations"]
+        info.WebSite = (__url__, "%(prog)s home page" % substitutes)
+        devs = [ substitutes['author'],
+                 "",
+                 "Contributions by:",
+                 ]
+        dprint([a for a,c in credits])
+        devs.extend([a for a,c in credits])
+        devs.extend(("", "See the file THANKS for more credits"))
+        info.Developers = devs
+        dprint(info.Developers)
 
         info.License = wordwrap(gpl_text, 500, wx.ClientDC(self.frame))
 

@@ -22,7 +22,7 @@ from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-from peppy.plugins.about import SetAbout
+from peppy.about import SetAbout
 
 SetAbout('sample.dot','digraph G {Hello->World}')
 
