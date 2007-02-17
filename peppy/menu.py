@@ -95,16 +95,23 @@ class SelectAction(debugmixin):
         self.widget=None
         self.tool=None
         self.frame=frame
+
+        self.initPreHook()
+        
         if menu is not None:
             self.insertIntoMenu(menu)
         if toolbar is not None:
             self.insertIntoToolBar(toolbar)
-        self.userinit()
+
+        self.initPostHook()
 
     def __del__(self):
         self.dprint("DELETING action %s" % self.name)
 
-    def userinit(self):
+    def initPreHook(self):
+        pass
+
+    def initPostHook(self):
         pass
 
     def insertIntoMenu(self,menu):
