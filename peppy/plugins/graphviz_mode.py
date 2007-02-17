@@ -209,6 +209,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         pid = wx.Execute(cmd, wx.EXEC_ASYNC, self.process)
         if pid==0:
             self.minor.major.frame.SetStatusText("Couldn't run %s" % cmd)
+            self.process = None
         else:
             self.minor.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
             self.regen.Enable(False)
@@ -312,10 +313,10 @@ class GraphvizViewMinorMode(MinorMode):
 
     def createWindows(self, parent):
         dprint("self.settings.path = %s" % self.settings.path)
-        self.sizerep=GraphvizViewCtrl(parent,self)
+        self.sizerep=GraphvizViewCtrl(parent, self)
         paneinfo=self.getDefaultPaneInfo("Graphviz View")
         paneinfo.Right()
-        self.major.addPane(self.sizerep,paneinfo)
+        self.major.addPane(self.sizerep, paneinfo)
         
 
 
