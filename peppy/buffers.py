@@ -376,6 +376,21 @@ class FramePluginLoader(Component,debugmixin):
                 plugin=FramePluginLoader.pluginmap[keyword]
                 frame.createFramePlugin(plugin)
 
+class FramePluginShow(ToggleListAction):
+    name="Plugins"
+    inline=False
+    tooltip="Show or hide frame plugin windows"
+
+    def getItems(self):
+        return [m.caption for m in self.frame.plugins]
+
+    def isChecked(self, index):
+        return self.frame.plugins[index].IsShown()
+
+    def action(self, index=0, old=-1):
+        self.frame.plugins[index].Show(not self.frame.plugins[index].IsShown())
+        self.frame._mgr.Update()
+
 
 ## BufferFrames
 
@@ -413,14 +428,8 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.tabs = MyNotebook(self)
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
-##        self.minortabs = MinorNotebook(self,size=(100,400))
-##        self._mgr.AddPane(self.minortabs, wx.aui.AuiPaneInfo().Name("minor").
-##                          Caption("Stuff").Right())
-##        self.tree = DemoCustomTree(self,size=(100,400))
-##        self._mgr.AddPane(self.tree, wx.aui.AuiPaneInfo().Name("funclist").
-##                          Caption("Function List").Right())
+        self.plugins = []
         
-
         # Prepare the menu bar
         self.tempsettings={'asteroids':False,
                            'inner planets':True,
@@ -449,9 +458,18 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
             pluginlist=plugins.split(',')
             self.dprint("loading %s" % pluginlist)
             FramePluginLoader(ComponentManager()).load(self,pluginlist)
+            self.createFramePluginList()
 
     def createFramePlugin(self,plugincls):
         plugin=plugincls(self)
+
+    def createFramePluginList(self):
+        plugins = self._mgr.GetAllPanes()
+        for plugin in plugins:
+            dprint("name=%s caption=%s window=%s state=%s" % (plugin.name, plugin.caption, plugin.window, plugin.state))
+            if plugin.name != "notebook":
+                self.plugins.append(plugin)
+        self.plugins.sort(key=lambda s:s.caption)
 
 
     # Overrides of wx methods
@@ -516,7 +534,7 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         #print
         #print
         #print
-        self.dprint("---------- %d id=%s len=%d" % (count, id(self.toolmap),len(self.toolmap.actions)))
+        self.dprint("---------- %d id=%s" % (count, id(self.toolmap)))
         for action in self.toolmap.actions:
             self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
             action.Enable()
@@ -631,9 +649,9 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         majors=[m.keyword for m in hierarchy[:-1]]
         self.dprint("Major mode names: %s" % majors)
         
-        if last:
-            self.dprint("saving settings for mode %s" % last)
-            BufferFrame.perspectives[last.buffer.filename] = self._mgr.SavePerspective()
+##        if last:
+##            self.dprint("saving settings for mode %s" % last)
+##            BufferFrame.perspectives[last.buffer.filename] = self._mgr.SavePerspective()
         
         mode.focus()
         self.setTitle()
@@ -642,21 +660,21 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         self.setMenumap(majors)
         self.setToolmap(majors)
 
-        if mode.buffer.filename in BufferFrame.perspectives:
-            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])
-            self.dprint(BufferFrame.perspectives[mode.buffer.filename])
-        else:
-            if 'default perspective' in self.tempsettings:
-                # This doesn't exactly work because anything not named in
-                # the default perspective listing won't be shown.  Need to
-                # find a way to determine which panes are new and show
-                # them.
-                self._mgr.LoadPerspective(self.tempsettings['default perspective'])
-                all_panes = self._mgr.GetAllPanes()
-                for pane in xrange(len(all_panes)):
-                    all_panes[pane].Show()
-            else:
-                self.tempsettings['default perspective'] = self._mgr.SavePerspective()
+##        if mode.buffer.filename in BufferFrame.perspectives:
+##            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])
+##            self.dprint(BufferFrame.perspectives[mode.buffer.filename])
+##        else:
+##            if 'default perspective' in self.tempsettings:
+##                # This doesn't exactly work because anything not named in
+##                # the default perspective listing won't be shown.  Need to
+##                # find a way to determine which panes are new and show
+##                # them.
+##                self._mgr.LoadPerspective(self.tempsettings['default perspective'])
+##                all_panes = self._mgr.GetAllPanes()
+##                for pane in xrange(len(all_panes)):
+##                    all_panes[pane].Show()
+##            else:
+##                self.tempsettings['default perspective'] = self._mgr.SavePerspective()
         
         # "commit" all changes made to FrameManager   
         self._mgr.Update()

@@ -301,6 +301,8 @@ class GlobalMenu(Component):
                   ("View",MenuItem(NewFrame).first()),
                   ("View",MenuItem(DeleteFrame).first()),
                   ("View",Separator("begin").first()),
+                  ("View",Separator("plugins").after("begin")),
+                  ("View",MenuItem(FramePluginShow).after("plugins")),
                   ("View",MenuItem(FrameList).last()),
                   ("View",Separator("end").last()),
                   (None,Menu("Buffers").before("Major Mode")),
