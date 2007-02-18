@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os
+import os, shutil
 
 import wx
 import wx.stc as stc
@@ -193,7 +193,6 @@ class FundamentalMode(MajorMode):
     """
     keyword='Fundamental'
     regex=".*"
-    lexer=stc.STC_LEX_NULL
 
     default_settings = {
         'linenumbers': True,
@@ -204,6 +203,7 @@ class FundamentalMode(MajorMode):
         'folding_margin_width': 16,
         'wordwrap': False,
         'sample_file': "some pithy statement here...",
+        'has_stc_styling': True,
         'stc_style_lang': "",
         'stc_style_default': "",
         }
@@ -216,15 +216,37 @@ class FundamentalMode(MajorMode):
         return win
 
     def createSTC(self,parent):
+        """Create the STC and apply styling settings.
+
+        Everything that subclasses from FundamentalMode will use an
+        STC instance for displaying the user interaction window.
+        
+        Styling information is loaded from the stc-styles.rc.cfg files
+        that the boa styling editor uses.  This file is located in the
+        default configuration directory of the application on a
+        per-user basis, and in the peppy/config directory on a
+        site-wide basis.
+        """
         self.stc=MySTC(parent,refstc=self.buffer.stc)
         self.format=os.linesep
 
         self.applyDefaultSettings()
-        if not self.styleSTC():
+        if self.styleSTC():
+            self.settings.has_stc_styling = True
+        else:
+            # If the style file fails to load, it probably means that
+            # the style definition doesn't exist in the style file.
+            # So, add the default style settings supplied by the major
+            # mode to the file and try again.
             self.styleDefault()
-            if not self.styleSTC():
+            if self.styleSTC():
+                self.settings.has_stc_styling = True
+            else:
+                # If the file still doesn't load, fall back to a style
+                # that hopefully does exist.  The boa stc styling
+                # dialog won't be available.
+                self.settings.has_stc_styling = False
                 self.styleSTC('text')
-                self.setLexer()
 
     def createWindowPostHook(self):
         # SetIndent must be called whenever a new document is loaded
@@ -235,10 +257,26 @@ class FundamentalMode(MajorMode):
         self.stc.SetIndentationGuides(1)
 
     def styleDefault(self):
+        """Create entry in stc configuration file for this mode.
+
+        If the style definitions don't exist in the stc configuration
+        file, use the defaults supplied by the major mode to add them
+        to the file.
+
+        FIXME: The format itself is a bit fragile and will cause
+        exceptions if a keyword is missing.  Need to have a robust way
+        of handling errors in a user-edited style file.
+
+        See the L{peppy.boa.STCStyleEditor} documentation for more
+        information on the format of the configuration file.
+        """
+        if not self.settings.stc_style_lang or not self.settings.stc_style_default:
+            dprint("no STC styling information for major mode %s" % self.keyword)
+            return
+        
         config=self.getSTCConfig()
         c = wx.FileConfig(localFilename=config, style=wx.CONFIG_USE_LOCAL_FILE)
         c.SetExpandEnvVars(False)
-        print c
         keyword = self.keyword.lower()
         c.SetPath('')
         c.DeleteGroup(keyword)
@@ -259,6 +297,9 @@ class FundamentalMode(MajorMode):
             name, value = line.split('=')
             dprint("%s = %s" % ("style.%s.%s" % (keyword,name.strip()), value.strip()))
             c.Write("style.%s.%s" % (keyword,name.strip()), value.strip())
+            
+        # Note: the configuration file is written when the variable
+        # goes out of scope.
 
     def applyDefaultSettings(self):
         # turn off symbol margin
@@ -295,17 +336,43 @@ class FundamentalMode(MajorMode):
             self.stc.SetMarginWidth(0,0)
 
     def getSTCConfig(self):
-        return os.path.join(os.path.dirname(__file__),"config/stc-styles.rc.cfg")
+        """Get pointer to stc style configuration file.
 
-    def styleSTC(self, keyword=None):
+        Returns filename of stc configuration file.  First looks in
+        the per-user configuration directory, and if it doesn't exist,
+        copies it from the default configuration directory.
+        """
+        config = self.frame.app.getConfigFilePath("stc-styles.rc.cfg")
+        if os.path.exists(config):
+            return config
+        default = os.path.join(os.path.dirname(__file__),"config/stc-styles.rc.cfg")
+        try:
+            shutil.copyfile(default, config)
+            return config
+        except:
+            #FIXME: when write permissions are denied, such as when
+            #this is installed to the site-packages directory and the
+            #user isn't root, this will cause a failure when
+            #styleDefault tries to save to this file.
+            return default
+
+    def styleSTC(self, lang=None):
+        """Style the STC using the information in the styling config file.
+
+        Call the boa method of styling the stc that reads the styling
+        information (including the lexer type) out of its format
+        config file.
+
+        @param lang: language keyword to look up in the file
+        """
         config=self.getSTCConfig()
-        if keyword is None:
-            keyword = self.keyword
+        if lang is None:
+            lang = self.keyword
             
         try:
-            boa.initSTC(self.stc, config, keyword)
+            boa.initSTC(self.stc, config, lang)
         except SyntaxError:
-            dprint("no STC style defined for %s" % self.keyword)
+            dprint("no STC style defined for %s" % lang)
             return False
         return True
 

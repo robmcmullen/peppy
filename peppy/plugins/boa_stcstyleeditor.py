@@ -18,6 +18,12 @@ class STCStyles(SelectAction):
     tooltip = "Open the STC Style Editor to edit the current mode's text display."
     icon = "icons/style_edit.png"
 
+    def isEnabled(self):
+        mode=self.frame.getActiveMajorMode()
+        if mode:
+            return mode.settings.has_stc_styling
+        return False
+
     def action(self, pos=-1):
         mode=self.frame.getActiveMajorMode()
         if mode:
