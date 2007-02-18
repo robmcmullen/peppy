@@ -92,17 +92,32 @@ class WordOrRegionMutate(SelectAction):
     """
 
     def mutate(self, txt):
+        """Operate on specified text and return new text.
+
+        Method designed to be overridden by subclasses to provide the
+        text operation desired by the subclass.
+
+        @param txt: input text
+        @returns: text resulting from the desired processing
+        """
         return txt
 
     def mutateSelection(self, s):
-        """Convenience function to change case of word or region.
-        
-        The string function specified by the lambda function will be
-        called on the selected region or current word and changed in
-        the text control.
+        """Change the current word or highlighted region.
+
+        Perform some text operation on the current word or region.  If
+        a region is active in the STC, use it; otherwise, use the word
+        as defined by the text from the current cursor position to the
+        end of the word.  The end of the word is defined by the STC's
+        STC_CMD_WORDRIGHT.
+
+        The operation is performed by the C{mutate} method, which
+        subclasses will override to provide the functionality.
+
+        Side effect: moves the cursor to the end of the region if it
+        operated on the region, or to the start of the next word.
         
         @param s: styled text control
-        @param func: lambda function supplying a string method
         """
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
@@ -132,6 +147,9 @@ class CapitalizeWord(WordOrRegionMutate):
     keyboard = 'M-C'
 
     def mutate(self, txt):
+        """Change to title case -- first letter capitalized, rest
+        lower case.
+        """
         return txt.title()
 
 class UpcaseWord(WordOrRegionMutate):
@@ -144,6 +162,8 @@ class UpcaseWord(WordOrRegionMutate):
     keyboard = 'M-U'
 
     def mutate(self, txt):
+        """Change to all upper case.
+        """
         return txt.upper()
 
 class DowncaseWord(WordOrRegionMutate):
@@ -156,6 +176,8 @@ class DowncaseWord(WordOrRegionMutate):
     keyboard = 'M-L'
 
     def mutate(self, txt):
+        """Change to all lower case.
+        """
         return txt.lower()
 
 
