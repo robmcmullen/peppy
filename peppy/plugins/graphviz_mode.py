@@ -24,7 +24,11 @@ from peppy.fundamental import FundamentalMode
 
 from peppy.about import SetAbout
 
-SetAbout('sample.dot','digraph G {Hello->World}')
+_sample_file = """\
+digraph G {Hello->World}
+"""
+
+SetAbout('sample.dot',_sample_file)
 
 
 class SampleDot(SelectAction):
@@ -35,24 +39,6 @@ class SampleDot(SelectAction):
     def action(self, pos=-1):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:sample.dot")
-
-if wx.Platform == '__WXMSW__':
-    faces = { 'times': 'Times New Roman',
-              'mono' : 'Courier New',
-              'helv' : 'Arial',
-              'other': 'Comic Sans MS',
-              'size' : 10,
-              'size2': 8,
-             }
-else:
-    faces = { 'times': 'Times',
-              'mono' : 'Courier',
-              'helv' : 'Helvetica',
-              'other': 'new century schoolbook',
-              'size' : 10,
-              'size2': 8,
-             }
-
 
 
 class GraphvizMode(FundamentalMode):
@@ -67,65 +53,28 @@ class GraphvizMode(FundamentalMode):
     lexer=stc.STC_LEX_CPP
 
     default_settings = {
-        'minor_modes':'GraphvizView',
+        'minor_modes': 'GraphvizView',
+        'sample_file': _sample_file,
+        'stc_style_lang':
+        """braces={}
+        keywords=strict graph digraph graph node edge subgraph
+        lexer=wx.stc.STC_LEX_CPP
+        styleidnames={wx.stc.STC_C_DEFAULT: 'Default', wx.stc.STC_C_COMMENT: 'Comment',wx.stc.STC_C_COMMENTLINE: 'Comment line',wx.stc.STC_C_COMMENTDOC: 'Comment doc',wx.stc.STC_C_NUMBER: 'Number',wx.stc.STC_C_WORD: 'Keyword',wx.stc.STC_C_STRING: 'String',wx.stc.STC_C_CHARACTER: 'Character',wx.stc.STC_C_UUID: 'UUID',wx.stc.STC_C_PREPROCESSOR: 'Preprocessor',wx.stc.STC_C_OPERATOR: 'Operator', wx.stc.STC_C_IDENTIFIER: 'Identifier', wx.stc.STC_C_STRINGEOL: 'EOL unclosed string', wx.stc.STC_C_VERBATIM: 'Verbatim'}""",
+        'stc_style_default':
+        """001=fore:#008040,back:#EAFFEA
+        002=fore:#008040,back:#EAFFEA,size:8
+        004=fore:#0076AE
+        005=bold,fore:#004080
+        006=fore:#800080
+        009=fore:#808000
+        010=bold
+        012=back:#FFD5FF
+        032=face:%(mono)s
+        033=size:%(ln-size)s
+        034=fore:#0000FF,back:#FFFFB9,bold
+        035=fore:#FF0000,back:#FFFFB9,bold""",
         }
     
-    def getKeyWords(self):
-        return [(0,"strict graph digraph graph node edge subgraph")]
-    
-    def styleSTC(self):
-        self.format=os.linesep
-        
-        s=self.stc
-
-        face1 = 'Arial'
-        face2 = 'Times New Roman'
-        face3 = 'Courier New'
-        pb = 10
-
-        # Show mixed tabs/spaces
-        s.SetProperty("tab.timmy.whinge.level", "1")
-        
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
-        s.StyleClearAll()  # Reset all to be like the default
-
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0,face:%(mono)s,size:%(size2)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  "fore:#FFFFFF,back:#0000FF,bold")
-        s.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FF0000,bold")
-
-        # Python styles
-        # Default 
-        s.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
-        # Comments
-        s.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(mono)s,size:%(size)d" % faces)
-        # Number
-        s.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
-        # String
-        s.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
-        # Single quoted string
-        s.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
-        # Keyword
-        s.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
-        # Triple quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Triple double quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Class name definition
-        s.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
-        # Function or method name definition
-        s.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
-        # Operators
-        s.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
-        # Identifiers
-        s.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
-        # Comment-blocks
-        s.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,face:%(mono)s,size:%(size)d" % faces)
-        # End of line where string is not closed
-        s.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
 
 
 

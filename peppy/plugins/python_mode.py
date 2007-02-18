@@ -232,61 +232,7 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
         }
 
     def getKeyWords(self):
-        return [(0," ".join(keyword.kwlist))]
-
-    def styleSTC(self):
-        self.format=os.linesep
-        
-        s=self.stc
-
-        face1 = 'Arial'
-        face2 = 'Times New Roman'
-        face3 = 'Courier New'
-        pb = 10
-
-        # Show mixed tabs/spaces
-        s.SetProperty("tab.timmy.whinge.level", "1")
-        
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
-        s.StyleClearAll()  # Reset all to be like the default
-
-        # Global default styles for all languages
-        s.StyleSetSpec(stc.STC_STYLE_DEFAULT,     "face:%(mono)s,size:%(size)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  "back:#C0C0C0,face:%(mono)s,size:%(size2)d" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(other)s" % faces)
-        s.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  "fore:#FFFFFF,back:#0000FF,bold")
-        s.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    "fore:#000000,back:#FF0000,bold")
-
-        # Python styles
-        # Default 
-        s.StyleSetSpec(stc.STC_P_DEFAULT, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
-        # Comments
-        s.StyleSetSpec(stc.STC_P_COMMENTLINE, "fore:#007F00,face:%(mono)s,size:%(size)d" % faces)
-        # Number
-        s.StyleSetSpec(stc.STC_P_NUMBER, "fore:#007F7F,size:%(size)d" % faces)
-        # String
-        s.StyleSetSpec(stc.STC_P_STRING, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
-        # Single quoted string
-        s.StyleSetSpec(stc.STC_P_CHARACTER, "fore:#7F007F,face:%(mono)s,size:%(size)d" % faces)
-        # Keyword
-        s.StyleSetSpec(stc.STC_P_WORD, "fore:#00007F,bold,size:%(size)d" % faces)
-        # Triple quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Triple double quotes
-        s.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#7F0000,size:%(size)d" % faces)
-        # Class name definition
-        s.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#0000FF,bold,underline,size:%(size)d" % faces)
-        # Function or method name definition
-        s.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#007F7F,bold,size:%(size)d" % faces)
-        # Operators
-        s.StyleSetSpec(stc.STC_P_OPERATOR, "bold,size:%(size)d" % faces)
-        # Identifiers
-        s.StyleSetSpec(stc.STC_P_IDENTIFIER, "fore:#000000,face:%(mono)s,size:%(size)d" % faces)
-        # Comment-blocks
-        s.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#7F7F7F,face:%(mono)s,size:%(size)d" % faces)
-        # End of line where string is not closed
-        s.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#000000,face:%(mono)s,back:#E0C0E0,eol,size:%(size)d" % faces)
+        return [(0," ".join(keyword.kwlist))]        
 
     ##
     # tab the line to the correct indent (matching the line above)

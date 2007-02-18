@@ -11,6 +11,7 @@ from peppy.menu import *
 from peppy.actions.minibuffer import *
 from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
+import peppy.boa.STCStyleEditor as boa
 
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
@@ -202,21 +203,28 @@ class FundamentalMode(MajorMode):
         'folding': False,
         'folding_margin_width': 16,
         'wordwrap': False,
+        'sample_file': "some pithy statement here...",
+        'stc_style_lang': "",
+        'stc_style_default': "",
         }
     
     def createEditWindow(self,parent):
         self.dprint("creating new Fundamental window")
-        self.createSTC(parent,style=True)
+        self.createSTC(parent)
         win=self.stc
         win.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
         return win
 
-    def createSTC(self,parent,style=False):
+    def createSTC(self,parent):
         self.stc=MySTC(parent,refstc=self.buffer.stc)
-        self.applyDefaultStyle()
-        self.setLexer()
-        if style:
-            self.styleSTC()
+        self.format=os.linesep
+
+        self.applyDefaultSettings()
+        if not self.styleSTC():
+            self.styleDefault()
+            if not self.styleSTC():
+                self.styleSTC('text')
+                self.setLexer()
 
     def createWindowPostHook(self):
         # SetIndent must be called whenever a new document is loaded
@@ -226,44 +234,33 @@ class FundamentalMode(MajorMode):
 
         self.stc.SetIndentationGuides(1)
 
-    def setLexer(self):
-        self.stc.SetLexer(self.lexer)
-        keylist=self.getKeyWords()
-        for keyset,keywords in keylist:
-            self.stc.SetKeyWords(keyset, keywords)
+    def styleDefault(self):
+        config=self.getSTCConfig()
+        c = wx.FileConfig(localFilename=config, style=wx.CONFIG_USE_LOCAL_FILE)
+        c.SetExpandEnvVars(False)
+        print c
+        keyword = self.keyword.lower()
+        c.SetPath('')
+        c.DeleteGroup(keyword)
+        c.SetPath(keyword)
+        dprint("[%s]" % keyword)
+        text=eval(repr(self.settings.sample_file))
+        dprint("displaysrc = %s" % text)
+        c.Write('displaysrc', text)
+        for line in self.settings.stc_style_lang.splitlines():
+            name, value = line.split('=')
+            dprint("%s = %s" % (name.strip(), value.strip()))
+            c.Write(name.strip(), value.strip())
+        c.SetPath('')
+        c.DeleteGroup("style.%s" % keyword)
+        c.SetPath("style.%s" % keyword)
+        dprint("[style.%s]" % keyword)
+        for line in self.settings.stc_style_default.splitlines():
+            name, value = line.split('=')
+            dprint("%s = %s" % ("style.%s.%s" % (keyword,name.strip()), value.strip()))
+            c.Write("style.%s.%s" % (keyword,name.strip()), value.strip())
 
-    def getKeyWords(self):
-        """
-        Return a list of tuples that specify the keyword set and the
-        list of keywords for that set.  The STC can handle multiple
-        sets of keywords in certain cases (HTML, CPP, others: see
-        L{http://www.yellowbrain.com/stc/lexing.html#setkw})
-
-        Keywords should be space separated.
-
-        @return: list of tuples
-        @rtype: list of (int, keywords)
-        """
-        return [(0,"")]
-
-    def applyDefaultStyle(self):
-        face1 = 'Arial'
-        face2 = 'Times New Roman'
-        face3 = 'Courier New'
-        pb = 10
-
-        # make some styles
-        self.stc.StyleSetSpec(stc.STC_STYLE_DEFAULT, "size:%d,face:%s" % (pb, face3))
-        self.stc.StyleClearAll()
-
-        # line numbers in the margin
-        self.stc.StyleSetSpec(stc.STC_STYLE_LINENUMBER, "size:%d,face:%s" % (pb, face1))
-        if self.settings.linenumbers:
-            self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0, self.settings.linenumber_margin_width)
-        else:
-            self.stc.SetMarginWidth(0,0)
-            
+    def applyDefaultSettings(self):
         # turn off symbol margin
         if self.settings.symbols:
             self.stc.SetMarginWidth(1, self.settings.symbols_margin_width)
@@ -277,6 +274,7 @@ class FundamentalMode(MajorMode):
             self.stc.SetMarginWidth(2, 0)
 
         self.setWordWrap()
+        self.setLineNumbers()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -296,8 +294,20 @@ class FundamentalMode(MajorMode):
         else:
             self.stc.SetMarginWidth(0,0)
 
-    def styleSTC(self):
-        pass
+    def getSTCConfig(self):
+        return os.path.join(os.path.dirname(__file__),"config/stc-styles.rc.cfg")
+
+    def styleSTC(self, keyword=None):
+        config=self.getSTCConfig()
+        if keyword is None:
+            keyword = self.keyword
+            
+        try:
+            boa.initSTC(self.stc, config, keyword)
+        except SyntaxError:
+            dprint("no STC style defined for %s" % self.keyword)
+            return False
+        return True
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):

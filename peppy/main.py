@@ -268,6 +268,18 @@ class Paste(SelectAction):
             dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
             return viewer.stc.Paste()
 
+class Preferences(SelectAction):
+    name = "Preferences..."
+    tooltip = "Preferences, settings, and configurations..."
+    icon = "icons/wrench.png"
+
+    def isEnabled(self):
+        return False
+
+    def action(self, pos=-1):
+        pass
+    
+
 class GlobalMenu(Component):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -295,6 +307,8 @@ class GlobalMenu(Component):
                   ("Edit",MenuItem(Copy).first()),
                   ("Edit",MenuItem(Paste).first()),
                   ("Edit",Separator("paste").first()),
+                  ("Edit",Separator("lastsep").last()),
+                  ("Edit",MenuItem(Preferences).after("lastsep")),
                   (None,Menu("View").before("Major Mode")),
                   ("View",MenuItem(NewTab).first()),
                   ("View",Separator("tabs").first()),
@@ -303,8 +317,8 @@ class GlobalMenu(Component):
                   ("View",Separator("begin").first()),
                   ("View",Separator("plugins").after("begin")),
                   ("View",MenuItem(FramePluginShow).after("plugins")),
-                  ("View",MenuItem(FrameList).last()),
                   ("View",Separator("end").last()),
+                  ("View",MenuItem(FrameList).last()),
                   (None,Menu("Buffers").before("Major Mode")),
                   ("Buffers",MenuItem(BufferList).first()),
                   (None,Menu("Major Mode").hide()),
@@ -427,7 +441,7 @@ class Peppy(BufferApp, ClassSettingsMixin):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode',
+                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor',
                             'recentfiles':'recentfiles.txt',
                             },
                    }
