@@ -86,29 +86,43 @@ class EndOfLine(SelectAction):
             line = s.GetCurrentLine()
             s.GotoPos(s.GetLineEndPosition(line))
 
-def changeCaseOfWord(s, func):
-    """Convenience function to change case of word or region.
 
-    The string function specified by the lambda function will be
-    called on the selected region or current word and changed in the
-    text control.
-
-    @param s: styled text control
-    @param func: lambda function supplying a string method
+class WordOrRegionMutate(SelectAction):
+    """No-op base class to operate on a word or the selected region.
     """
-    s.BeginUndoAction()
-    (pos, end) = s.GetSelection()
-    if pos==end:
-        s.CmdKeyExecute(stc.STC_CMD_WORDRIGHT)
-        end = s.GetCurrentPos()
-    word = s.GetTextRange(pos, end)
-    s.SetTargetStart(pos)
-    s.SetTargetEnd(end)
-    s.ReplaceTarget(func(word))
-    s.EndUndoAction()
-    s.GotoPos(end)
+
+    def mutate(self, txt):
+        return txt
+
+    def mutateSelection(self, s):
+        """Convenience function to change case of word or region.
+        
+        The string function specified by the lambda function will be
+        called on the selected region or current word and changed in
+        the text control.
+        
+        @param s: styled text control
+        @param func: lambda function supplying a string method
+        """
+        s.BeginUndoAction()
+        (pos, end) = s.GetSelection()
+        if pos==end:
+            s.CmdKeyExecute(stc.STC_CMD_WORDRIGHT)
+            end = s.GetCurrentPos()
+        word = s.GetTextRange(pos, end)
+        s.SetTargetStart(pos)
+        s.SetTargetEnd(end)
+        s.ReplaceTarget(self.mutate(word))
+        s.EndUndoAction()
+        s.GotoPos(end)
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            self.mutateSelection(viewer.stc)
             
-class CapitalizeWord(SelectAction):
+class CapitalizeWord(WordOrRegionMutate):
     """Title-case the current word and move the cursor to the start of
     the next word.
     """
@@ -117,14 +131,10 @@ class CapitalizeWord(SelectAction):
     tooltip = "Capitalize current word"
     keyboard = 'M-C'
 
-    def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            s=viewer.stc
-            changeCaseOfWord(s, lambda t:t.title())
+    def mutate(self, txt):
+        return txt.title()
 
-class UpcaseWord(SelectAction):
+class UpcaseWord(WordOrRegionMutate):
     """Upcase the current word and move the cursor to the start of the
     next word.
     """
@@ -133,14 +143,10 @@ class UpcaseWord(SelectAction):
     tooltip = "Upcase current word"
     keyboard = 'M-U'
 
-    def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            s=viewer.stc
-            changeCaseOfWord(s, lambda t:t.upper())
+    def mutate(self, txt):
+        return txt.upper()
 
-class DowncaseWord(SelectAction):
+class DowncaseWord(WordOrRegionMutate):
     """Downcase the current word and move the cursor to the start of the
     next word.
     """
@@ -149,12 +155,8 @@ class DowncaseWord(SelectAction):
     tooltip = "Downcase current word"
     keyboard = 'M-L'
 
-    def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            s=viewer.stc
-            changeCaseOfWord(s, lambda t:t.lower())
+    def mutate(self, txt):
+        return txt.lower()
 
 
 
