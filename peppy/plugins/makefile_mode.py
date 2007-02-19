@@ -1,0 +1,106 @@
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+"""Makefile editing support.
+
+Major mode for editing makefiles.
+"""
+
+import os,struct
+import keyword
+from cStringIO import StringIO
+
+import wx
+import wx.stc as stc
+
+from peppy import *
+from peppy.menu import *
+from peppy.major import *
+from peppy.fundamental import FundamentalMode
+
+from peppy.about import SetAbout
+
+_sample_file = """\
+VAR = something
+OTHER = $(VAR)
+OTHER1 = ${VAR}
+DIR = $(shell ls -1)
+
+.SUFFIXES: .o
+
+all: foo
+	echo stuff
+
+foo: bar.o baz.o
+
+clean:
+	rm -rf *~ *.o
+    
+.PHONY: print-% clean
+
+print-%: ; @ echo $* = $($*)
+"""
+
+SetAbout('sample.mak',_sample_file)
+
+
+class SampleMakefile(SelectAction):
+    name = "&Open Sample Makefile"
+    tooltip = "Open a sample Makefile"
+    icon = wx.ART_FILE_OPEN
+
+    def action(self, pos=-1):
+        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        self.frame.open("about:sample.mak")
+
+
+class MakefileMode(FundamentalMode):
+    """Major mode for editing Makefiles.
+
+    STC has a built-in Makefile mode, so we'll be using that.
+    """
+    keyword='Makefile'
+    icon='icons/cog.png'
+    regex="(\.mak|[Mm]akefile)$"
+
+    default_settings = {
+        'minor_modes': '',
+        'tab_size': 8,
+        'word_wrap': True,
+        'sample_file': _sample_file,
+        'stc_lexer': wx.stc.STC_LEX_MAKEFILE,
+        'stc_keywords': 'if elif else endif',
+        'stc_boa_style_names': {wx.stc.STC_MAKE_DEFAULT: 'Default',
+                                wx.stc.STC_MAKE_COMMENT: 'Comment',
+                                wx.stc.STC_MAKE_IDENTIFIER: 'Variable or identifier',
+                                wx.stc.STC_MAKE_PREPROCESSOR: 'Preprocessor',
+                                wx.stc.STC_MAKE_OPERATOR: 'Operator',
+                                wx.stc.STC_MAKE_IDEOL: 'Identifier unclosed string',
+                                wx.stc.STC_MAKE_TARGET: 'Target',
+                                },
+        'stc_lexer_styles': {wx.stc.STC_MAKE_DEFAULT: '',
+                             wx.stc.STC_MAKE_COMMENT: 'fore:%(comment-col)s,italic',
+                             wx.stc.STC_MAKE_IDENTIFIER: 'fore:%(identifier-col)s',
+                             wx.stc.STC_MAKE_PREPROCESSOR: 'fore:#008040,back:#EAFFEA',
+                             wx.stc.STC_MAKE_OPERATOR: 'fore:#0076AE',
+                             wx.stc.STC_MAKE_IDEOL: 'fore:#808000',
+                             wx.stc.STC_MAKE_TARGET: 'bold,fore:#004080',
+                             },
+        }
+    
+
+class MakefilePlugin(MajorModeMatcherBase,debugmixin):
+    """Makefile plugin to register modes and user interface.
+    """
+    implements(IMajorModeMatcher)
+    implements(IMenuItemProvider)
+
+    def possibleModes(self):
+        yield MakefileMode
+    
+    default_menu=((None,None,Menu("Test").after("Minor Mode")),
+                  (None,"Test",MenuItem(SampleMakefile)),
+                  )
+    def getMenuItems(self):
+        for mode,menu,item in self.default_menu:
+            yield (mode,menu,item)
+
