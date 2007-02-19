@@ -36,9 +36,7 @@ common_defs_platforms = {
                         },
     }
 
-lines = ["""\
-common.styleidnames = {wx.stc.STC_STYLE_DEFAULT: 'Style default', wx.stc.STC_STYLE_LINENUMBER: 'Line numbers', wx.stc.STC_STYLE_BRACELIGHT: 'Matched braces', wx.stc.STC_STYLE_BRACEBAD: 'Unmatched brace', wx.stc.STC_STYLE_CONTROLCHAR: 'Control characters', wx.stc.STC_STYLE_INDENTGUIDE: 'Indent guide'}""",
-         "",
+lines = [('common.styleidnames',"""{wx.stc.STC_STYLE_DEFAULT: 'Style default', wx.stc.STC_STYLE_LINENUMBER: 'Line numbers', wx.stc.STC_STYLE_BRACELIGHT: 'Matched braces', wx.stc.STC_STYLE_BRACEBAD: 'Unmatched brace', wx.stc.STC_STYLE_CONTROLCHAR: 'Control characters', wx.stc.STC_STYLE_INDENTGUIDE: 'Indent guide'}"""),
          ]
 
 
@@ -58,9 +56,10 @@ def getUserConfigFile(app):
 
 def createUserConfigFile(config):
     try:
-        fh = open(config,'w')
-        writeUserConfigFile(fh)
-        fh.close()
+        c = wx.FileConfig(localFilename=config, style=wx.CONFIG_USE_LOCAL_FILE)
+        c.SetExpandEnvVars(False)
+        dprint("opened %s" % c)
+        writeUserConfigFile(c)
         return config
     except:
         raise
@@ -70,16 +69,17 @@ def createUserConfigFile(config):
         #styleDefault tries to save to this file.
         #return None
 
-def writeUserConfigFile(fh):
+def writeUserConfigFile(c):
+    c.SetPath('')
     for key,defs in common_defs_platforms.iteritems():
         for k, v in common_defs.items():
             if not k in defs:
                 defs[k] = v
         dprint("%s=%s" % (key,defs))
-        fh.write("%s=%s%s" % (key,defs,os.linesep))
-    for line in lines:
-        dprint("%s" % line)
-        fh.write("%s%s" % (line,os.linesep))
+        c.Write(key,str(defs))
+    for k,v in lines:
+        dprint("%s=%s" % (k,v))
+        c.Write(k,v)
 
 def updateConfigFile(app, mode):
     config=getUserConfigFile(app)
