@@ -26,7 +26,11 @@ from peppy.fundamental import FundamentalMode
 from peppy.about import SetAbout
 
 _sample_file = """\
-digraph G {Hello->World}
+// Sample graphviz source file
+digraph G {
+   Hello->World;
+   peppy->"is here";
+}
 """
 
 SetAbout('sample.dot',_sample_file)
@@ -42,11 +46,12 @@ class SampleDot(SelectAction):
         self.frame.open("about:sample.dot")
 
 
+
 class GraphvizMode(FundamentalMode):
     """Major mode for editing Graphviz .dot files.
 
     Uses the C++ mode of the STC to highlight the files, since
-    graphvis .dot files are similar in structure to C++ files.
+    graphviz .dot files are similar in structure to C++ files.
     """
     keyword='Graphviz'
     icon='icons/graphviz.ico'
@@ -55,24 +60,28 @@ class GraphvizMode(FundamentalMode):
     default_settings = {
         'minor_modes': 'GraphvizView',
         'sample_file': _sample_file,
-        'stc_style_lang':
-        """braces={}
-        keywords=strict graph digraph graph node edge subgraph
-        lexer=wx.stc.STC_LEX_CPP
-        styleidnames={wx.stc.STC_C_DEFAULT: 'Default', wx.stc.STC_C_COMMENT: 'Comment',wx.stc.STC_C_COMMENTLINE: 'Comment line',wx.stc.STC_C_COMMENTDOC: 'Comment doc',wx.stc.STC_C_NUMBER: 'Number',wx.stc.STC_C_WORD: 'Keyword',wx.stc.STC_C_STRING: 'String',wx.stc.STC_C_CHARACTER: 'Character',wx.stc.STC_C_UUID: 'UUID',wx.stc.STC_C_PREPROCESSOR: 'Preprocessor',wx.stc.STC_C_OPERATOR: 'Operator', wx.stc.STC_C_IDENTIFIER: 'Identifier', wx.stc.STC_C_STRINGEOL: 'EOL unclosed string', wx.stc.STC_C_VERBATIM: 'Verbatim'}""",
-        'stc_style_default':
-        """001=fore:#008040,back:#EAFFEA
-        002=fore:#008040,back:#EAFFEA,size:8
-        004=fore:#0076AE
-        005=bold,fore:#004080
-        006=fore:#800080
-        009=fore:#808000
-        010=bold
-        012=back:#FFD5FF
-        032=face:%(mono)s
-        033=size:%(ln-size)s
-        034=fore:#0000FF,back:#FFFFB9,bold
-        035=fore:#FF0000,back:#FFFFB9,bold""",
+        'stc_lexer': wx.stc.STC_LEX_CPP,
+        'stc_keywords': 'strict graph digraph graph node edge subgraph',
+        'stc_boa_style_names': {wx.stc.STC_C_DEFAULT: 'Default',
+                                wx.stc.STC_C_COMMENT: 'Comment',
+                                wx.stc.STC_C_COMMENTLINE: 'Comment line',
+                                wx.stc.STC_C_COMMENTDOC: 'Comment doc',
+                                wx.stc.STC_C_NUMBER: 'Number',
+                                wx.stc.STC_C_WORD: 'Keyword',
+                                wx.stc.STC_C_STRING: 'String',
+                                wx.stc.STC_C_PREPROCESSOR: 'Preprocessor',
+                                wx.stc.STC_C_OPERATOR: 'Operator',
+                                wx.stc.STC_C_STRINGEOL: 'EOL unclosed string',
+                                },
+        'stc_lexer_styles': {wx.stc.STC_C_COMMENTLINE: wx.stc.STC_C_COMMENT,
+                             wx.stc.STC_C_COMMENTDOC: wx.stc.STC_C_COMMENT,
+                             wx.stc.STC_C_NUMBER: 'fore:#0076AE',
+                             wx.stc.STC_C_WORD: 'bold,fore:#004080',
+                             wx.stc.STC_C_STRING: 'fore:#800080',
+                             wx.stc.STC_C_PREPROCESSOR: 'fore:#808000',
+                             wx.stc.STC_C_OPERATOR: 'bold',
+                             wx.stc.STC_C_STRINGEOL: 'back:#FFD5FF',
+                             },
         }
     
 
@@ -83,7 +92,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
     Call a graphviz program to generate an image and display it.
     """
     debuglevel = 0
-    dotprogs = ['neato', 'dot', 'twopi', 'circo', 'fdp', 'nop']
+    dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
 
     def __init__(self, parent, minor):
         wx.Panel.__init__(self, parent)

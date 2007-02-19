@@ -11,7 +11,7 @@ from peppy.menu import *
 from peppy.actions.minibuffer import *
 from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
-import peppy.boa.STCStyleEditor as boa
+import peppy.boa as boa
 
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
@@ -33,14 +33,14 @@ class WordWrap(ToggleAction):
     def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            return viewer.settings.wordwrap
+            return viewer.settings.word_wrap
         return False
     
     def action(self, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setWordWrap(not viewer.settings.wordwrap)
+            viewer.setWordWrap(not viewer.settings.word_wrap)
     
 class LineNumbers(ToggleAction):
     name = "&Line Numbers"
@@ -50,14 +50,14 @@ class LineNumbers(ToggleAction):
     def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            return viewer.settings.linenumbers
+            return viewer.settings.line_numbers
         return False
     
     def action(self, pos=-1):
         self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setLineNumbers(not viewer.settings.linenumbers)
+            viewer.setLineNumbers(not viewer.settings.line_numbers)
     
 class BeginningOfLine(SelectAction):
     name = "Cursor to Start of Line"
@@ -194,18 +194,37 @@ class FundamentalMode(MajorMode):
     keyword='Fundamental'
     regex=".*"
 
+    # increment after every style change
+    style_number = 0
+
     default_settings = {
-        'linenumbers': True,
-        'linenumber_margin_width': 40,
+        'tab_size': 4,
+        'line_numbers': True,
+        'line_number_margin_width': 40,
         'symbols': False,
         'symbols_margin_width': 16,
         'folding': False,
         'folding_margin_width': 16,
-        'wordwrap': False,
-        'sample_file': "some pithy statement here...",
+        'word_wrap': False,
+        'sample_file': "Fundamental mode is the base for all other modes that use the STC to view text.",
         'has_stc_styling': True,
-        'stc_style_lang': "",
-        'stc_style_default': "",
+        'stc_lexer': wx.stc.STC_LEX_NULL,
+        'stc_keywords': "",
+        'stc_boa_braces': "{}",
+        'stc_boa_style_names': {},
+        'stc_lexer_styles': {},
+
+        # Note: 1 tends to be the comment style, but not in all cases.
+        'stc_lexer_default_styles': {0: '',
+                                     1: 'fore:%(comment-col)s,italic',
+                                     wx.stc.STC_STYLE_DEFAULT: 'face:%(mono)s,size:%(size)d',
+                                     wx.stc.STC_STYLE_LINENUMBER: 'face:%(ln-font)s,size:%(ln-size)d',
+                                     
+                                     wx.stc.STC_STYLE_BRACEBAD: '',
+                                     wx.stc.STC_STYLE_BRACELIGHT: '',
+                                     wx.stc.STC_STYLE_CONTROLCHAR: '',
+                                     wx.stc.STC_STYLE_INDENTGUIDE: '',
+                                     }
         }
     
     def createEditWindow(self,parent):
@@ -229,6 +248,7 @@ class FundamentalMode(MajorMode):
         """
         self.stc=MySTC(parent,refstc=self.buffer.stc)
         self.format=os.linesep
+        self.current_style = self.__class__.style_number
 
         self.applyDefaultSettings()
         if self.styleSTC():
@@ -251,7 +271,7 @@ class FundamentalMode(MajorMode):
     def createWindowPostHook(self):
         # SetIndent must be called whenever a new document is loaded
         # into the STC
-        self.stc.SetIndent(4)
+        self.stc.SetIndent(self.settings.tab_size)
         #self.dprint("indention=%d" % self.stc.GetIndent())
 
         self.stc.SetIndentationGuides(1)
@@ -270,36 +290,10 @@ class FundamentalMode(MajorMode):
         See the L{peppy.boa.STCStyleEditor} documentation for more
         information on the format of the configuration file.
         """
-        if not self.settings.stc_style_lang or not self.settings.stc_style_default:
+        if not self.settings.stc_lexer:
             dprint("no STC styling information for major mode %s" % self.keyword)
             return
-        
-        config=self.getSTCConfig()
-        c = wx.FileConfig(localFilename=config, style=wx.CONFIG_USE_LOCAL_FILE)
-        c.SetExpandEnvVars(False)
-        keyword = self.keyword.lower()
-        c.SetPath('')
-        c.DeleteGroup(keyword)
-        c.SetPath(keyword)
-        dprint("[%s]" % keyword)
-        text=eval(repr(self.settings.sample_file))
-        dprint("displaysrc = %s" % text)
-        c.Write('displaysrc', text)
-        for line in self.settings.stc_style_lang.splitlines():
-            name, value = line.split('=')
-            dprint("%s = %s" % (name.strip(), value.strip()))
-            c.Write(name.strip(), value.strip())
-        c.SetPath('')
-        c.DeleteGroup("style.%s" % keyword)
-        c.SetPath("style.%s" % keyword)
-        dprint("[style.%s]" % keyword)
-        for line in self.settings.stc_style_default.splitlines():
-            name, value = line.split('=')
-            dprint("%s = %s" % ("style.%s.%s" % (keyword,name.strip()), value.strip()))
-            c.Write("style.%s.%s" % (keyword,name.strip()), value.strip())
-            
-        # Note: the configuration file is written when the variable
-        # goes out of scope.
+        boa.updateConfigFile(self.frame.app, self)
 
     def applyDefaultSettings(self):
         # turn off symbol margin
@@ -319,8 +313,8 @@ class FundamentalMode(MajorMode):
 
     def setWordWrap(self,enable=None):
         if enable is not None:
-            self.settings.wordwrap=enable
-        if self.settings.wordwrap:
+            self.settings.word_wrap=enable
+        if self.settings.word_wrap:
             self.stc.SetWrapMode(stc.STC_WRAP_CHAR)
             self.stc.SetWrapVisualFlags(stc.STC_WRAPVISUALFLAG_END)
         else:
@@ -328,33 +322,12 @@ class FundamentalMode(MajorMode):
 
     def setLineNumbers(self,enable=None):
         if enable is not None:
-            self.settings.linenumbers=enable
-        if self.settings.linenumbers:
+            self.settings.line_numbers=enable
+        if self.settings.line_numbers:
             self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0,  self.settings.linenumber_margin_width)
+            self.stc.SetMarginWidth(0,  self.settings.line_number_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
-
-    def getSTCConfig(self):
-        """Get pointer to stc style configuration file.
-
-        Returns filename of stc configuration file.  First looks in
-        the per-user configuration directory, and if it doesn't exist,
-        copies it from the default configuration directory.
-        """
-        config = self.frame.app.getConfigFilePath("stc-styles.rc.cfg")
-        if os.path.exists(config):
-            return config
-        default = os.path.join(os.path.dirname(__file__),"config/stc-styles.rc.cfg")
-        try:
-            shutil.copyfile(default, config)
-            return config
-        except:
-            #FIXME: when write permissions are denied, such as when
-            #this is installed to the site-packages directory and the
-            #user isn't root, this will cause a failure when
-            #styleDefault tries to save to this file.
-            return default
 
     def styleSTC(self, lang=None):
         """Style the STC using the information in the styling config file.
@@ -365,7 +338,9 @@ class FundamentalMode(MajorMode):
 
         @param lang: language keyword to look up in the file
         """
-        config=self.getSTCConfig()
+        self.current_style = self.__class__.style_number
+
+        config=boa.getUserConfigFile(self.frame.app)
         if lang is None:
             lang = self.keyword
             
@@ -375,6 +350,17 @@ class FundamentalMode(MajorMode):
             dprint("no STC style defined for %s" % lang)
             return False
         return True
+
+    def changeStyle(self):
+        """Change the style of this mode and all others like it"""
+
+        self.__class__.style_number += 1
+        self.styleSTC()
+
+    def focusPostHook(self):
+        if self.current_style != self.__class__.style_number:
+            self.styleSTC()
+        
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):

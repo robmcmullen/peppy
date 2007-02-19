@@ -63,29 +63,6 @@ SetAbout('bravo','')
 SetAbout('blank','')
 
 SetAbout('title.txt',"%(prog)s %(version)s\n%(description)s\n\nCopyright (c) %(yearrange)s %(author)s (%(author_email)s)\n%(license)s\n\n%(warning)s\nThanks to lots of folks:\n%(thanks)s\nSee the file THANKS for more credits.")
-SetAbout('sample.py','''#!/usr/bin/env python
-""" doc string """
-import os
-from cStringIO import StringIO
-
-globalvar="string"
-listvar=[2,3,5,7,11]
-dictvar={'a':1,'b':2,'z'=3333}
-
-class Foo(Bar):
-    """
-    Multi-line
-    doc string
-    """
-    classvar="stuff"
-    def __init__(self):
-        self.baz="zippy"
-        if self.baz=str(globalvar):
-            open(self.baz)
-        else:
-            raise TypeError("stuff")
-        return
-''')
 SetAbout('demo.txt',"""\
 This editor is provided by a class named wx.StyledTextCtrl.  As
 the name suggests, you can define styles that can be applied to

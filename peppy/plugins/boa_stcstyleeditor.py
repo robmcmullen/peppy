@@ -10,7 +10,7 @@ import os
 from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
-from peppy.boa.STCStyleEditor import *
+import peppy.boa as boa
 
 
 class STCStyles(SelectAction):
@@ -27,15 +27,16 @@ class STCStyles(SelectAction):
     def action(self, pos=-1):
         mode=self.frame.getActiveMajorMode()
         if mode:
-            config=os.path.normpath(os.path.join(os.path.dirname(__file__),"../config/stc-styles.rc.cfg"))
+            config=boa.getUserConfigFile(self.frame.app)
             dprint(config)
             name = mode.keyword
             lang = mode.keyword.lower()
-            dlg = STCStyleEditDlg(self.frame, name, lang, config)
+            dlg = boa.STCStyleEditDlg(self.frame, name, lang, config)
             try:
                 dlg.ShowModal()
             finally:
                 dlg.Destroy()
+            mode.changeStyle()
 
 
 class STCStylesMenuProvider(Component):

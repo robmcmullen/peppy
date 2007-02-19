@@ -299,6 +299,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     def focus(self):
         #self.dprint("View: setting focus to %s" % self)
         self.editwin.SetFocus()
+        self.focusPostHook()
+
+    def focusPostHook(self):
+        pass
 
     def showModified(self,modified):
         self.frame.showModified(self)
