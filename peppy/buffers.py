@@ -147,7 +147,7 @@ class Buffer(debugmixin):
         self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
-            if issubclass(view.stc.__class__,MySTC):
+            if issubclass(view.stc.__class__,MySTC) and view.stc != self.stc:
                 self.stc.removeSubordinate(view.stc)
         else:
             raise ValueError("Bug somewhere.  Major mode %s not found in Buffer %s" % (view,self))
