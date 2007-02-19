@@ -113,19 +113,15 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.sizer.Add(buttons)
 
         self.preview = None
-        self.bmp = None
-        #self.drawing = wx.Window(self, -1)
-        #self.drawing.Bind(wx.EVT_PAINT, self.OnPaint)
         self.drawing = BitmapScroller(self)
         self.sizer.Add(self.drawing, 1, wx.EXPAND)
 
         self.process = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_END_PROCESS, self.OnProcessEnded)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.Layout()
-
-        self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def __del__(self):
         if self.process is not None:
@@ -178,6 +174,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
     def OnIdle(self, evt):
         if self.process is not None:
             self.readStream()
+        evt.Skip()
 
     def OnProcessEnded(self, evt):
         self.dprint()
@@ -186,6 +183,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.process = None
         self.regen.Enable(True)
         self.createImage()
+        evt.Skip()
 
     def createImage(self):
         self.dprint("using image, size=%s" % len(self.preview.getvalue()))
@@ -205,27 +203,9 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
             self.minor.major.frame.SetStatusText("Invalid image")
         self.drawing.setBitmap(self.bmp)
 
-    def OnPaint(self, event):
-        dc = wx.PaintDC(self.drawing)
-        if self.bmp is not None:
-            dc.DrawBitmap(self.bmp, 0, 0, True)
-        else:
-            size = self.drawing.GetClientSize()
-            s = ("Size: %d x %d")%(size.x, size.y)
-            dc.SetFont(wx.NORMAL_FONT)
-            w, height = dc.GetTextExtent(s)
-            height = height + 3
-            dc.SetBrush(wx.WHITE_BRUSH)
-            dc.SetPen(wx.WHITE_PEN)
-            dc.DrawRectangle(0, 0, size.x, size.y)
-            dc.SetPen(wx.LIGHT_GREY_PEN)
-            dc.DrawLine(0, 0, size.x, size.y)
-            dc.DrawLine(0, size.y, size.x, 0)
-            dc.DrawText(s, (size.x-w)/2, ((size.y-(height*5))/2))
-
-    def OnSize(self, event):
+    def OnSize(self, evt):
         self.Refresh()
-        event.Skip()
+        evt.Skip()
         
 
 class GraphvizViewMinorMode(MinorMode):
@@ -242,7 +222,7 @@ class GraphvizViewMinorMode(MinorMode):
         'min_width': 300,
         'min_height': 300,
         
-        'path': '/usr/bin',
+        'path': '/usr/local/bin',
         }
 
     def createWindows(self, parent):

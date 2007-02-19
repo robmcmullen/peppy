@@ -28,9 +28,9 @@ class BitmapScroller(wx.ScrolledWindow):
         self.SetScrollRate(1,1)
         self.Refresh()
 
-    def OnPaint(self, ev):
+    def OnPaint(self, evt):
         if self.bmp is not None:
             dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
             # Note that the drawing actually happens when the dc goes
             # out of scope and is destroyed.
-
+        evt.Skip()
