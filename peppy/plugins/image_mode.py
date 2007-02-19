@@ -24,6 +24,7 @@ import wx.lib.newevent
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
+from peppy.controls import *
 
 __all__ = ['ImageViewPlugin']
 
@@ -49,9 +50,13 @@ class BitmapView(wx.Panel):
         wx.Panel.__init__(self, parent, -1)
         self.frame = frame
         self.stc = stc
-        self.bmp = None
         
-        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.sizer)
+        self.drawing = BitmapScroller(self)
+        self.sizer.Add(self.drawing, 1, wx.EXPAND)
+
+        self.Layout()
         
     def update(self):
         fh = StringIO(self.stc.GetBinaryData(0,self.stc.GetTextLength()))
@@ -60,15 +65,10 @@ class BitmapView(wx.Panel):
         # causes python to crash.
         img = wx.EmptyImage()
         if img.LoadStream(fh):
-            self.bmp = wx.BitmapFromImage(img)
+            self.drawing.setBitmap(wx.BitmapFromImage(img))
         else:
-            self.bmp = None
+            self.drawing.setBitmap(None)
             self.frame.SetStatusText("Invalid image")
-
-    def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
-        if self.bmp is not None:
-            dc.DrawBitmap(self.bmp, 0, 0, True)
 
 class ImageViewMode(MajorMode):
     """
@@ -146,12 +146,9 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     """
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
-    
-    def scanFilename(self,filename):
-        match=re.search(ImageViewMode.regex,filename)
-        if match:
-            return MajorModeMatch(ImageViewMode,exact=True)
-        return None
+
+    def possibleModes(self):
+        yield ImageViewMode
     
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenImageViewer)),

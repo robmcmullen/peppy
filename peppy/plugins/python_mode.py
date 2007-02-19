@@ -203,36 +203,15 @@ class PythonElectricReturnMixin(object):
             s.ReplaceSelection(viewer.format+a)
         
 
-if wx.Platform == '__WXMSW__':
-    faces = { 'times': 'Times New Roman',
-              'mono' : 'Courier New',
-              'helv' : 'Arial',
-              'other': 'Comic Sans MS',
-              'size' : 10,
-              'size2': 8,
-             }
-else:
-    faces = { 'times': 'Times',
-              'mono' : 'Courier',
-              'helv' : 'Helvetica',
-              'other': 'new century schoolbook',
-              'size' : 10,
-              'size2': 8,
-             }
-
 class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
-    lexer=stc.STC_LEX_PYTHON
 
     default_settings = {
         'wordwrap': True,
         'minor_modes': 'funclist,funcmenu,sizereporter',
         }
-
-    def getKeyWords(self):
-        return [(0," ".join(keyword.kwlist))]        
 
     ##
     # tab the line to the correct indent (matching the line above)
@@ -262,20 +241,8 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMenuItemProvider)
     implements(IToolBarItemProvider)
 
-    def scanEmacs(self,emacsmode,vars):
-        if emacsmode in ['python',PythonMode.keyword]:
-            return MajorModeMatch(PythonMode,exact=True)
-        return None
-
-    def scanShell(self,bangpath):
-        if bangpath.find('python')>-1:
-            return MajorModeMatch(PythonMode,exact=True)
-        return None
-
-    def scanFilename(self,filename):
-        if filename.endswith('.py'):
-            return MajorModeMatch(PythonMode,exact=True)
-        return None
+    def possibleModes(self):
+        yield PythonMode
     
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(SamplePython)),

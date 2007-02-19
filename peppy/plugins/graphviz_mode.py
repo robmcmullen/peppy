@@ -18,6 +18,7 @@ import wx
 import wx.stc as stc
 
 from peppy import *
+from peppy.controls import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
@@ -50,7 +51,6 @@ class GraphvizMode(FundamentalMode):
     keyword='Graphviz'
     icon='icons/graphviz.ico'
     regex="\.dot$"
-    lexer=stc.STC_LEX_CPP
 
     default_settings = {
         'minor_modes': 'GraphvizView',
@@ -77,35 +77,13 @@ class GraphvizMode(FundamentalMode):
     
 
 
-
-class BitmapScroller(wx.ScrolledWindow):
-    def __init__(self, parent):
-        wx.ScrolledWindow.__init__(self, parent, -1)
-
-        self.bmp = None
-        
-        self.Bind(wx.EVT_PAINT, self.OnPaint)
-
-    def setBitmap(self, bmp):
-        self.bmp = bmp
-        if bmp is not None:
-            self.SetVirtualSize((bmp.GetWidth(), bmp.GetHeight()))
-        else:
-            self.SetVirtualSize(10,10)
-        self.SetScrollRate(1,1)
-
-    def OnPaint(self, ev):
-        if self.bmp is not None:
-            dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
-            # Note that the drawing actually happens when the dc goes
-            # out of scope and is destroyed.
-
 class GraphvizViewCtrl(wx.Panel,debugmixin):
     """Viewer that calls graphviz to generate an image.
 
     Call a graphviz program to generate an image and display it.
     """
     debuglevel = 0
+    dotprogs = ['neato', 'dot', 'twopi', 'circo', 'fdp', 'nop']
 
     def __init__(self, parent, minor):
         wx.Panel.__init__(self, parent)
@@ -115,7 +93,6 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.SetSizer(self.sizer)
 
         buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.dotprogs = ['neato', 'dot', 'twopi', 'circo', 'fdp', 'nop']
         self.prog = wx.Choice(self, -1, (100, 50), choices = self.dotprogs)
         self.prog.SetSelection(0)
         buttons.Add(self.prog, 1, wx.EXPAND)
@@ -200,7 +177,6 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.process = None
         self.regen.Enable(True)
         self.createImage()
-        self.Refresh()
 
     def createImage(self):
         self.dprint("using image, size=%s" % len(self.preview.getvalue()))
@@ -276,23 +252,15 @@ class GraphvizPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMinorModeProvider)
     implements(IMenuItemProvider)
 
-    def scanEmacs(self,emacsmode,vars):
-        if emacsmode in ['graphviz',GraphvizMode.keyword]:
-            return MajorModeMatch(GraphvizMode,exact=True)
-        return None
+    def possibleModes(self):
+        yield GraphvizMode
 
-    def scanShell(self,bangpath):
-        if bangpath.find('dot')>-1:
-            return MajorModeMatch(GraphvizMode,exact=True)
-        return None
-
-    def scanFilename(self,filename):
-        if filename.endswith('.dot'):
-            return MajorModeMatch(GraphvizMode,exact=True)
-        return None
-
+    def possibleEmacsMappings(self):
+        for prog in GraphvizViewCtrl.dotprogs:
+            yield (prog,GraphvizMode)
+    
     def getMinorModes(self):
-        yield GraphvizViewMinorMode    
+        yield GraphvizViewMinorMode
     
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(SampleDot)),

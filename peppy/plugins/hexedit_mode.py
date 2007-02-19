@@ -865,21 +865,19 @@ class HexEditMode(MajorMode):
 class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
-    
-    def scanEmacs(self,emacsmode,vars):
-        if emacsmode in ['hexl',HexEditMode.keyword]:
-            return MajorModeMatch(HexEditMode,exact=True)
-        return None
 
+    def possibleModes(self):
+        yield HexEditMode
+
+    def possibleEmacsMappings(self):
+        yield ('hexl',HexEditMode)
+    
     def scanShell(self,bangpath):
+        """Override base method to return None because there won't be
+        a shell bangpath on a binary file.
+        """
         return None
 
-    def scanFilename(self,filename):
-        match=re.search(HexEditMode.regex,filename)
-        if match:
-            return MajorModeMatch(HexEditMode,exact=True)
-        return None
-    
     def scanMagic(self,buffer):
         """
         If the buffer looks like it is a binary file, flag it as a

@@ -475,13 +475,67 @@ class MajorModeMatcherBase(Component):
     @see: L{FundamentalPlugin<fundamental.FundamentalPlugin>} or
     L{PythonPlugin} for examples.
     """
+    def possibleModes(self):
+        """Return list of possible major modes.
+
+        A subclass that extends MajorModeMatcherBase should return a
+        list or generator of all the major modes that this matcher is
+        representing.  Generally, a matcher will only represent a
+        single mode, but it is possible to represent more.
+
+        @returns: list of MajorMode classes
+        """
+        return []
+
+    def possibleEmacsMappings(self):
+        """Return a list of emacs names to major modes.
+
+        A subclass that extends MajorModeMatcherBase should return a
+        list or generator that maps an emacs mode name to the peppy
+        MajorMode.  The emacs mode name is the string that emacs uses
+        to recognize a major mode; for instance 'hexl' is used to
+        represent the hex editig mode in emacs, but it is known as
+        'HexEdit' in peppy.  So, the L{HexEditPlugin} defines a
+        mapping from 'hexl' to L{HexEditMode}.
+
+        Generally, a matcher will only represent a single mode, but it
+        is possible to represent more.
+
+        @returns: tuple of (string, MajorMode class)
+        """
+        return []
+    
     def scanEmacs(self,emacsmode,vars):
+        # match mode keyword against emacs mode string
+        for mode in self.possibleModes():
+            if emacsmode.lower() == mode.keyword.lower():
+                return MajorModeMatch(mode,exact=True)
+        # try to match the mode's alternate emacs strings
+        for keyword, mode in self.possibleEmacsMappings():
+            if emacsmode.lower() == keyword.lower():
+                return MajorModeMatch(mode,exact=True)
         return None
 
     def scanShell(self,bangpath):
+        text = bangpath.lower()
+        for mode in self.possibleModes():
+            keyword = mode.keyword.lower()
+
+            # only match words that are bounded by some sort of
+            # non-word delimiter.  For instance, if the mode is
+            # "test", it will match "/usr/bin/test" or
+            # "/usr/bin/test.exe" or "/usr/bin/env test", but not
+            # /usr/bin/testing or /usr/bin/attested
+            match=re.search(r'[\W]%s([\W]|$)' % keyword, text)
+            if match:
+                return MajorModeMatch(mode,exact=True)
         return None
 
     def scanFilename(self,filename):
+        for mode in self.possibleModes():
+            match=re.search(mode.regex,filename)
+            if match:
+                return MajorModeMatch(mode,exact=True)
         return None
     
     def scanMagic(self,buffer):

@@ -187,11 +187,8 @@ class ShellPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IKeyboardItemProvider)
     
-    def scanFilename(self,filename):
-        match=re.search(ShellMode.regex,filename)
-        if match:
-            return MajorModeMatch(ShellMode,exact=True)
-        return None
+    def possibleModes(self):
+        yield ShellMode
     
     default_keys=(("Shell",ProcessShellLine),
                   )
