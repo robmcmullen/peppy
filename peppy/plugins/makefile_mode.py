@@ -68,7 +68,7 @@ class MakefileMode(FundamentalMode):
         'word_wrap': True,
         'sample_file': _sample_file,
         'stc_lexer': wx.stc.STC_LEX_MAKEFILE,
-        'stc_keywords': 'if elif else endif',
+        'stc_keywords': 'if or and ifeq ifneq else endif ifdef ifndef subst patsubst strip findstring filter filter-out sort word wordlist words firstword lastword dir notdir suffix basename addsuffix addprefix join wildcard realpath abspath foreach call value eval origin flavor shell error warning info',
         'stc_boa_style_names': {wx.stc.STC_MAKE_DEFAULT: 'Default',
                                 wx.stc.STC_MAKE_COMMENT: 'Comment',
                                 wx.stc.STC_MAKE_IDENTIFIER: 'Variable or identifier',
