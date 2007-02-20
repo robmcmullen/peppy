@@ -271,7 +271,7 @@ class GlobalSettings(object):
             d={}
             for option,value in cfg.items(section):
                 if GlobalSettings.magic_conversion:
-                    d[option]=convertValue(section,option,value)
+                    d[option]=GlobalSettings.convertValue(section,option,value)
                 else:
                     d[option]=value
             GlobalSettings.user[section]=d
