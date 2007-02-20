@@ -10,10 +10,15 @@ from peppy.debug import *
 
 
 class MinibufferAction(MajorAction):
+    minibuffer_label = None
+    
     def majoraction(self, mode, pos=-1):
-        minibuffer=self.minibuffer(mode)
+        minibuffer=self.minibuffer(mode, self, label=self.minibuffer_label)
         #print minibuffer.win
         mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, text):
+        self.dprint("processing %s" % text)
 
 
 class Minibuffer(debugmixin):
@@ -23,12 +28,20 @@ class Minibuffer(debugmixin):
     dialog box, uses the bottom of the screen as a small user input
     window.
     """
-    def __init__(self, mode):
+    label = "Input:"
+    error = "Bad input."
+    
+    def __init__(self, mode, action, label=None, error=None):
         self.win=None
         self.mode=mode
-        self.create(mode)
+        self.action = action
+        if error is not None:
+            self.error = error
+        if label is not None:
+            self.label = label
+        self.createWindow()
         
-    def create(self, mode):
+    def createWindow(self):
         """
         Create a window that represents the minibuffer, and set
         self.win to that window.
@@ -60,31 +73,50 @@ class Minibuffer(debugmixin):
 
 
 
-class IntMinibuffer(Minibuffer):
+class TextMinibuffer(Minibuffer):
     """
-    Dedicated subclass of Minibuffer that prompts for an integer.
+    Dedicated subclass of Minibuffer that prompts for a text string
     """
+    debuglevel = 1
     
-    def create(self, mode, label="Integer"):
-        self.win=wx.Panel(mode.win, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
-        sizer=wx.BoxSizer(wx.HORIZONTAL)
-        label=wx.StaticText(self.win, -1, label)
-        sizer.Add(label, flag=wx.EXPAND)
-        self.text=wx.TextCtrl(self.win, -1, size=(125,-1), style=wx.TE_PROCESS_ENTER)
-        sizer.Add(self.text, flag=wx.EXPAND)
+    label = "Text"
+    error = "Bad input."
+    
+    def createWindow(self):
+        self.win = wx.Panel(self.mode.win, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        prompt = wx.StaticText(self.win, -1, self.label)
+        sizer.Add(prompt, 0, wx.CENTER)
+        self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
+        sizer.Add(self.text, 1, wx.EXPAND)
         self.win.SetSizer(sizer)
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
 
-    def OnInt(self, number):
-        return NotImplementedError
+    def convert(self, text):
+        return text
 
     def OnEnter(self, evt):
+        text = self.text.GetValue()
+        self.dprint("text=%s" % text)
         try:
-            number=int(self.text.GetValue())
-            self.dprint("number=%s" % number)
-            pos=self.OnInt(number)
+            text = self.convert(text)
+            error = self.action.processMinibuffer(text)
+            if error is not None:
+                self.mode.frame.SetStatusText(error)
         except:
-            self.mode.frame.SetStatusText("Not an integer.")
+            self.mode.frame.SetStatusText(self.error)
         self.done()
 
+class IntMinibuffer(TextMinibuffer):
+    """
+    Dedicated subclass of Minibuffer that prompts for an integer.
+    """
+    label = "Integer"
+    error = "Not an integer."
+    
+    def convert(self, text):
+        number = int(self.text.GetValue())
+        self.dprint("number=%s" % number)
+        return number

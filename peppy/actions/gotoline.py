@@ -15,33 +15,25 @@ from peppy.major import *
 from peppy.debug import *
 
 
-class GotoMinibuffer(IntMinibuffer):
-    """
+class GotoLine(MinibufferAction):
+    """Goto a line number.
+    
     Use minibuffer to request a line number, then go to that line in
     the stc.
     """
-    
-    def create(self, mode):
-        """
-        Create the minibuffer with the Goto Line label.
 
-        @param mode: the current major mode
-        """
-        IntMinibuffer.create(self, mode, label="Goto Line:")
+    name = "Goto Line..."
+    tooltip = "Goto a line in the text."
+    keyboard = 'M-G'
+    minibuffer = IntMinibuffer
+    minibuffer_label = "Goto Line:"
 
-    def OnInt(self, line):
+    def processMinibuffer(self, line):
         """
         Callback function used to set the stc to the correct line.
         """
         
         # stc counts lines from zero, but displayed starting at 1.
-        self.mode.stc.GotoLine(line-1)
-        
-
-
-class GotoLine(MinibufferAction):
-    name = "Goto Line..."
-    tooltip = "Goto a line in the text."
-    keyboard = 'M-G'
-    minibuffer = GotoMinibuffer
-
+        dprint("goto line = %d" % line)
+        mode = self.frame.getActiveMajorMode()
+        mode.stc.GotoLine(line-1)
