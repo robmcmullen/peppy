@@ -441,7 +441,7 @@ class Peppy(BufferApp, ClassSettingsMixin):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor,peppy.plugins.makefile_mode,peppy.plugins.lexerdebug_mode',
+                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor,peppy.plugins.makefile_mode,peppy.plugins.lexerdebug_mode,peppy.plugins.text_mode',
                             'recentfiles':'recentfiles.txt',
                             },
                    }
