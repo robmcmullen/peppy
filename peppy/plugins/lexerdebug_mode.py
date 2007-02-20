@@ -18,6 +18,45 @@ from peppy.major import *
 from peppy.actions.minibuffer import *
 from peppy.fundamental import FundamentalMode
 
+
+_colors = [
+'fore:#FFC0CB',
+'fore:#DC143C',
+'fore:#FF1493',
+'fore:#DA70D6',
+'fore:#FF00FF',
+'fore:#8B008B',
+'fore:#9400D3',
+'fore:#7B68EE',
+
+'fore:#0000FF',
+'fore:#6495ED',
+'fore:#1E90FF',
+'fore:#00BFFF',
+'fore:#5F9EA0',
+'fore:#00FFFF',
+'fore:#008080',
+'fore:#00FA9A',
+
+'fore:#2E8B57',
+'fore:#98FB98',
+'fore:#32CD32',
+'fore:#00ff00',
+'fore:#228B22',
+'fore:#9ACD32',
+'fore:#FFFF00',
+'fore:#808000',
+
+'fore:#BDB76B',
+'fore:#FFD700',
+'fore:#DAA520',
+'fore:#FFA500',
+'fore:#DEB887',
+'fore:#D2691E',
+'fore:#A0522D',
+'fore:#FA8072',
+]
+
 _debug_boa_style_names = {}
 _debug_lexer_styles = {}
 for i in range(32):
@@ -71,45 +110,6 @@ class LexerDebugMode(FundamentalMode):
         self.stc.Colourise(0, self.stc.GetTextLength())
         self.dprint("new lexer = %d" % self.stc.GetLexer())
 
-
-
-_colors = [
-'fore:#FFC0CB',
-'fore:#DC143C',
-'fore:#FF1493',
-'fore:#DA70D6',
-'fore:#FF00FF',
-'fore:#8B008B',
-'fore:#9400D3',
-'fore:#7B68EE',
-
-'fore:#0000FF',
-'fore:#6495ED',
-'fore:#1E90FF',
-'fore:#00BFFF',
-'fore:#5F9EA0',
-'fore:#00FFFF',
-'fore:#008080',
-'fore:#00FA9A',
-
-'fore:#2E8B57',
-'fore:#98FB98',
-'fore:#32CD32',
-'fore:#00ff00',
-'fore:#228B22',
-'fore:#9ACD32',
-'fore:#FFFF00',
-'fore:#808000',
-
-'fore:#BDB76B',
-'fore:#FFD700',
-'fore:#DAA520',
-'fore:#FFA500',
-'fore:#DEB887',
-'fore:#D2691E',
-'fore:#A0522D',
-'fore:#FA8072',
-]
 
 # cd /opt/wx/src/wxPython-src-2.8.1.1/contrib/src/stc/scintilla/include
 # grep SCLEX SciLexer.h |cut -c9-
