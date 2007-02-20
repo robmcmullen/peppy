@@ -126,16 +126,17 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     least createEditWindow that will return the main user interaction
     window.
     """
-    debuglevel=0
+    debuglevel = 0
     
-    icon='icons/page_white.png'
-    keyword='Abstract Major Mode'
-    temporary=False # True if it is a temporary view
+    icon = 'icons/page_white.png'
+    keyword = 'Abstract Major Mode'
+    regex = None
+    temporary = False # True if it is a temporary view
 
     # Need one keymap per subclass, so we can't use the settings.
     # Settings would propogate up the class hierachy and find a keymap
     # of a superclass.  This is a dict based on the class name.
-    localkeymaps={}
+    localkeymaps = {}
     
     def __init__(self,buffer,frame):
         ClassSettingsMixin.__init__(self)
@@ -537,9 +538,10 @@ class MajorModeMatcherBase(Component):
 
     def scanFilename(self,filename):
         for mode in self.possibleModes():
-            match=re.search(mode.regex,filename)
-            if match:
-                return MajorModeMatch(mode,exact=True)
+            if mode.regex:
+                match=re.search(mode.regex,filename)
+                if match:
+                    return MajorModeMatch(mode,exact=True)
         return None
     
     def scanMagic(self,buffer):
@@ -629,7 +631,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
             emacs=self.parseEmacs(bangpath)
             bangpath=None
         self.dprint("bangpath=%s" % bangpath)
-        self.dprint("emacs=%s" % emacs)
+        self.dprint("emacs=%s" % str(emacs))
         best=None
         generics=[]
         if emacs is not None:
