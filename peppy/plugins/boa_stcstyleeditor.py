@@ -32,6 +32,18 @@ class STCStyles(SelectAction):
             name = mode.keyword
             lang = mode.keyword.lower()
             dlg = boa.STCStyleEditDlg(self.frame, name, lang, config)
+
+            # special case: the LexerDebug mode needs to set the
+            # sample text to whatever is currently in the buffer.  It
+            # also needs to set the lexer, so we have to break the
+            # black-box model and poke around in the internals of the
+            # boa dialog to do it.
+            if mode.settings.stc_boa_use_current_text:
+                dlg.stc.SetText(mode.stc.GetText())
+                dlg.lexer = mode.stc.GetLexer()
+                dlg._blockUpdate = False
+                dlg.setStyles()
+                
             try:
                 dlg.ShowModal()
             finally:
