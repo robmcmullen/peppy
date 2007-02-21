@@ -20,3 +20,6 @@ Additional thanks to:
 
 * The Natural Language Toolkit project (http://nltk.sourceforge.net)
   for the chatbot implementations
+
+* Riaan Booysen and the Boa Constructor project for the style editor
+  for the wxStyledTextCtrl (http://boa-constructor.sourceforge.net/)

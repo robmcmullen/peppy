@@ -12,6 +12,9 @@ from peppy.menu import *
 from peppy.trac.core import *
 import peppy.boa as boa
 
+from peppy.about import AddCredit
+AddCredit("Riaan Booysen and the Boa Constructor project", "for the style editor for the wxStyledTextCtrl (http://boa-constructor.sourceforge.net/)")
+
 
 class STCStyles(SelectAction):
     name="Text Styles..."
