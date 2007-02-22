@@ -268,17 +268,6 @@ class Paste(SelectAction):
             dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
             return viewer.stc.Paste()
 
-class Preferences(SelectAction):
-    name = "Preferences..."
-    tooltip = "Preferences, settings, and configurations..."
-    icon = "icons/wrench.png"
-
-    def isEnabled(self):
-        return False
-
-    def action(self, pos=-1):
-        pass
-    
 
 class GlobalMenu(Component):
     """Trac plugin that provides the global menubar and toolbar.
@@ -308,7 +297,6 @@ class GlobalMenu(Component):
                   ("Edit",MenuItem(Paste).first()),
                   ("Edit",Separator("paste").first()),
                   ("Edit",Separator("lastsep").last()),
-                  ("Edit",MenuItem(Preferences).after("lastsep")),
                   (None,Menu("View").before("Major Mode")),
                   ("View",MenuItem(NewTab).first()),
                   ("View",Separator("tabs").first()),
@@ -441,7 +429,7 @@ class Peppy(BufferApp, ClassSettings):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor,peppy.plugins.makefile_mode,peppy.plugins.lexerdebug_mode,peppy.plugins.text_mode',
+                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor,peppy.plugins.makefile_mode,peppy.plugins.lexerdebug_mode,peppy.plugins.text_mode,peppy.plugins.preferences',
                             'recentfiles':'recentfiles.txt',
                             },
                    }
