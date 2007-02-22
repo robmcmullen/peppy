@@ -202,7 +202,7 @@ for line in _stc_lexer_defines.splitlines():
     define, num = line.split()
     define = define[6:]
     num = int(num)
-    dprint("define=%s num=%d" % (define, num))
+    #dprint("define=%s num=%d" % (define, num))
     if num<1000:
         _stc_lexer_define_map[define] = num
 
@@ -210,7 +210,7 @@ for line in _stc_lexer_defines.splitlines():
         # doesn't exist below.
         _stc_lexer_num[num] = define
         
-dprint(_stc_lexer_define_map)
+#dprint(_stc_lexer_define_map)
     
 # cd /opt/wx/src/wxPython-src-2.8.1.1/contrib/src/stc/scintilla/include
 # egrep "^lex" Scintilla.iface|cut -c5-|cut -f1 -d " "
@@ -288,7 +288,7 @@ Spice=SCLEX_SPICE
 for line in _stc_name_mapping_text.splitlines():
     name, define = line.split('=')
     define = define[6:] # strip off "SCLEX_"
-    dprint("name=%s define=%s" % (name, define))
+    #dprint("name=%s define=%s" % (name, define))
     if define in _stc_lexer_define_map:
         num = _stc_lexer_define_map[define]
         _stc_lexer_num[num] = name
@@ -296,7 +296,7 @@ for num, name in _stc_lexer_num.iteritems():
     _stc_lexer[name] = num
 _stc_lexer_names = _stc_lexer.keys()
 _stc_lexer_names.sort()
-dprint(_stc_lexer_names)
+#dprint(_stc_lexer_names)
 
 
 class LexerSelect(RadioAction):

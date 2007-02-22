@@ -389,11 +389,11 @@ class ClassSettingsMetaClass(type):
         accessed through self.settings changes the class settings.
         Instance settings are maintained by the class itself.
         """
-        dprint('Bases: %s' % str(bases))
+        #dprint('Bases: %s' % str(bases))
         expanded = [cls]
         for base in bases:
             expanded.extend(getClassHierarchy(base))
-        dprint('New bases: %s' % str(expanded))
+        #dprint('New bases: %s' % str(expanded))
         # Add the settings class attribute
         cls.settings = SettingsProxy(expanded)
 
