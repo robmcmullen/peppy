@@ -129,6 +129,19 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
             self.process.CloseOutput()
             self.process = None
 
+    def busy(self, busy):
+        
+        if busy:
+            cursor = wx.StockCursor(wx.CURSOR_WATCH)
+        else:
+            cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
+        self.SetCursor(cursor)
+        self.drawing.SetCursor(cursor)
+        self.regen.SetCursor(cursor)
+        self.regen.Enable(not busy)
+        self.prog.SetCursor(cursor)
+        self.prog.Enable(not busy)
+
     def OnRegenerate(self, event):
         prog = os.path.normpath(os.path.join(self.minor.settings.path,self.prog.GetStringSelection()))
         self.dprint("using %s to run graphviz" % repr(prog))
@@ -143,8 +156,9 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
             self.process = None
         else:
             self.minor.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
-            self.regen.Enable(False)
 
+            self.busy(True)
+            
             self.preview = StringIO()
             
             #print "text = %s" % self.minor.major.buffer.stc.GetText()
@@ -181,9 +195,9 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.readStream()
         self.process.Destroy()
         self.process = None
-        self.regen.Enable(True)
+        self.busy(False)
         self.createImage()
-        evt.Skip()
+        # Don't call evt.Skip() here because it causes a crash
 
     def createImage(self):
         self.dprint("using image, size=%s" % len(self.preview.getvalue()))
@@ -198,6 +212,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         img = wx.EmptyImage()
         if img.LoadStream(fh):
             self.bmp = wx.BitmapFromImage(img)
+            self.minor.major.frame.SetStatusText("Graphviz completed.")
         else:
             self.bmp = None
             self.minor.major.frame.SetStatusText("Invalid image")
