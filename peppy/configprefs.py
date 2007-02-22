@@ -10,7 +10,8 @@ import cPickle as pickle
 from trac.core import *
 from debug import *
 
-__all__ = [ 'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
+__all__ = [ 'HomeConfigDir', 'GlobalSettings',
+            'ClassSettings', 'ClassSettingsProxy', 'ClassSettingsMixin',
             'getSubclassHierarchy', 'IConfigurationExtender',
             'ConfigurationExtender']
 
@@ -138,7 +139,28 @@ def parents(c, seen=None):
 
 
 parentclasses={}
-skipclasses=['debugmixin','ClassSettingsMixin','object']
+skipclasses=['debugmixin','ClassSettings','ClassSettingsMixin','object']
+
+def getClassHierarchy(klass,debug=0):
+    """Get class hierarchy of a class using global class cache.
+
+    If the class has already been seen, it will be pulled from the
+    cache and the results will be immediately returned.  If not, the
+    hierarchy is generated, stored for future reference, and returned.
+
+    @param klass: class of interest
+    @returns: list of parent classes
+    """
+    global parentclasses
+    
+    if klass in parentclasses:
+        hierarchy=parentclasses[klass]
+        if debug: print "Found class hierarchy: %s" % hierarchy
+    else:
+        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__module__.startswith('wx.')]
+        if debug: print "Created class hierarchy: %s" % hierarchy
+        parentclasses[klass]=hierarchy
+    return hierarchy
 
 def getHierarchy(obj,debug=0):
     """Get class hierarchy of an object using global class cache.
@@ -150,17 +172,8 @@ def getHierarchy(obj,debug=0):
     @param obj: object of interest
     @returns: list of parent classes
     """
-    global parentclasses
-    
     klass=obj.__class__
-    if klass in parentclasses:
-        hierarchy=parentclasses[klass]
-        if debug: print "Found class hierarchy: %s" % hierarchy
-    else:
-        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses]
-        if debug: print "Created class hierarchy: %s" % hierarchy
-        parentclasses[klass]=hierarchy
-    return hierarchy
+    return getClassHierarchy(klass,debug)
 
 def getNameHierarchy(obj,debug=0):
     """Get the class name hierarchy.
@@ -358,6 +371,40 @@ class SettingsProxy(debugmixin):
         return [cls for cls in GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]]
         
         
+def ClassSettingsProxy(cls):
+    """Return settings object for a given class.
+
+    Returns a SettingProxy object that acts as a dictionary.
+    """
+    hier=[c for c in getClassHierarchy(cls) if c!=ClassSettingsMixin]
+    return SettingsProxy(hier)
+
+class ClassSettingsMetaClass(type):
+    def __init__(cls, name, bases, attributes):
+        """Add settings attribute to class attributes.
+
+        All classes of the created type will point to the same
+        settings object.  Perhaps that's a 'duh', since settings is a
+        class attribute, but it is worth the reminder.  Everything
+        accessed through self.settings changes the class settings.
+        Instance settings are maintained by the class itself.
+        """
+        dprint('Bases: %s' % str(bases))
+        expanded = [cls]
+        for base in bases:
+            expanded.extend(getClassHierarchy(base))
+        dprint('New bases: %s' % str(expanded))
+        # Add the settings class attribute
+        cls.settings = SettingsProxy(expanded)
+
+class ClassSettings(object):
+    """Base class to extend in order to support class settings.
+
+    Uses the L{ClassSettingsMetaClass} to provide automatic support
+    for the settings class attribute.
+    """
+    __metaclass__ = ClassSettingsMetaClass
+
 class ClassSettingsMixin(object):
     """Mixin that provides the settings attribute for the class.
 
@@ -376,9 +423,7 @@ class ClassSettingsMixin(object):
     hierarchy as well.
     """
     def __init__(self,defaults=None):
-        hier=[klass for klass in getHierarchy(self) if klass!=ClassSettingsMixin]
-        self.settings=SettingsProxy(hier)
-
+        self.settings=ClassSettingsProxy(self.__class__)
 
 
 ## Configuration extender interface for hooking into the load/save

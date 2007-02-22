@@ -16,10 +16,13 @@ from peppy.buffers import *
 from peppy.configprefs import *
 
 
-class OpenRecent(GlobalList):
+class OpenRecent(GlobalList, ClassSettings):
     name="Open Recent"
     inline=False
-    maxlen=6
+
+    default_settings = {
+        'list_length': 10,
+        }
 
     storage=[]
     others=[]
@@ -28,7 +31,13 @@ class OpenRecent(GlobalList):
     def append(cls,item):
 ##        dprint("BEFORE: storage: %s" % cls.storage)
 ##        dprint("BEFORE: others: %s" % cls.others)
-        # New items are added at the top of this list
+        
+        # skip files with the about: protocol
+        if item.startswith('about:'):
+            return
+
+        # if we're adding an item that's already in the list, move it
+        # to the top of the list by recreating the list
         if item in cls.storage:
             newlist=[item]
             for olditem in cls.storage:
@@ -36,9 +45,12 @@ class OpenRecent(GlobalList):
                     newlist.append(olditem)
             cls.storage=newlist
         else:
+            # New items are added at the top of this list
             cls.storage[0:0]=[item]
-        if len(cls.storage)>cls.maxlen:
-            cls.storage[cls.maxlen:]=[]
+
+        # Trim list to max number of items
+        if len(cls.storage)>cls.settings.list_length:
+            cls.storage[cls.settings.list_length:]=[]
         cls.update()
 ##        dprint("AFTER: storage: %s" % cls.storage)
 ##        dprint("AFTER: others: %s" % cls.others)
@@ -56,9 +68,10 @@ class OpenRecent(GlobalList):
 
     @classmethod
     def save(cls,pathname):
-        #fh=open(pathname)
+        fh=open(pathname,'w')
         for file in cls.storage:
             print "saving %s to %s" % (file,pathname)
+            fh.write("%s%s" % (file,os.linesep))
 
     def action(self,state=None,index=0):
         self.dprint("opening file %s" % (self.storage[index]))
