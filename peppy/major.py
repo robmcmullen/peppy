@@ -253,6 +253,11 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         col = self.editwin.GetColumn(pos)
         self.frame.SetStatusText("L%d C%d" % (linenum+1,col+1),1)
         self.frame.enableTools()
+        self.OnUpdateUIHook(evt)
+        evt.Skip()
+
+    def OnUpdateUIHook(self, evt):
+        pass
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1)

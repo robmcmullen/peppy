@@ -182,9 +182,54 @@ class DowncaseWord(WordOrRegionMutate):
         return txt.lower()
 
 
+class BraceHighlightMixin(object):
+    """Brace highlighting mixin for code modes.
+
+    Highlight matching braces or flag mismatched braces.  This is
+    called during the EVT_STC_UPDATEUI event handler.
+
+    Code taken from StyledTextCtrl_2 from the wxPython demo.  Should
+    probably implement this as a dynamic method of the text control or
+    the Major Mode, controllable by a setting.
+    """
+    def braceHighlight(self):
+        s = self.stc
+
+        # check for matching braces
+        braceAtCaret = -1
+        braceOpposite = -1
+        charBefore = None
+        caretPos = s.GetCurrentPos()
+
+        if caretPos > 0:
+            charBefore = s.GetCharAt(caretPos - 1)
+            styleBefore = s.GetStyleAt(caretPos - 1)
+
+        # check before
+        if charBefore and chr(charBefore) in "[]{}()" and styleBefore == stc.STC_P_OPERATOR:
+            braceAtCaret = caretPos - 1
+
+        # check after
+        if braceAtCaret < 0:
+            charAfter = s.GetCharAt(caretPos)
+            styleAfter = s.GetStyleAt(caretPos)
+
+            if charAfter and chr(charAfter) in "[]{}()" and styleAfter == stc.STC_P_OPERATOR:
+                braceAtCaret = caretPos
+
+        if braceAtCaret >= 0:
+            braceOpposite = s.BraceMatch(braceAtCaret)
+
+        if braceAtCaret != -1  and braceOpposite == -1:
+            s.BraceBadLight(braceAtCaret)
+        else:
+            s.BraceHighlight(braceAtCaret, braceOpposite)
+        
 
 
-class FundamentalMode(MajorMode):
+
+
+class FundamentalMode(MajorMode,BraceHighlightMixin):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -360,7 +405,9 @@ class FundamentalMode(MajorMode):
     def focusPostHook(self):
         if self.current_style != self.__class__.style_number:
             self.styleSTC()
-        
+
+    def OnUpdateUIHook(self, evt):
+        self.braceHighlight()
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
