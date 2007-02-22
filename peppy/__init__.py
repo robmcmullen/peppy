@@ -57,7 +57,7 @@ from peppy.minor import MinorMode, IMinorModeProvider, \
 
 __all__ = [ 
     'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
-    'HomeConfigDir', 'GlobalSettings', 'ClassSettingsMixin',
+    'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
             'getSubclassHierarchy',
     'debuglog','dprint','debugmixin',
     'getIconStorage','getIconBitmap',

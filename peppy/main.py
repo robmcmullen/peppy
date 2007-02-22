@@ -415,7 +415,7 @@ class DebugGlobalActions(Component):
 
 
 
-class Peppy(BufferApp, ClassSettingsMixin):
+class Peppy(BufferApp, ClassSettings):
     """Main application object.
 
     This handles the initialization of the debug parameters for
@@ -456,7 +456,6 @@ class Peppy(BufferApp, ClassSettingsMixin):
             self.setVerbosity()
         BufferApp.OnInit(self)
 
-        ClassSettingsMixin.__init__(self)
         self.setConfigDir("peppy")
         self.setInitialConfig(self.initialconfig)
         self.loadConfig("peppy.cfg")

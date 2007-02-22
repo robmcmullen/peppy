@@ -103,7 +103,7 @@ class MinorModeLoader(Component,debugmixin):
                 major.createMinorMode(minor)
 
 
-class MinorMode(ClassSettingsMixin,debugmixin):
+class MinorMode(ClassSettings,debugmixin):
     """
     Base class for all minor modes.  A minor mode doesn't have to
     create any of the following, but it can:
@@ -129,7 +129,6 @@ class MinorMode(ClassSettingsMixin,debugmixin):
         }
     
     def __init__(self, major, parent):
-        ClassSettingsMixin.__init__(self)
         self.major=major
         self.parent=parent
 
@@ -163,9 +162,9 @@ class MinorMode(ClassSettingsMixin,debugmixin):
 
         AuiPaneInfo objects are used by the L{BufferFrame} to position
         the new subwindow within the managed area of the major mode.
-        This hooks into the class settings (through the
-        ClassSettingsMixin) to allow the user to specify the initial
-        size of the minor mode.
+        This hooks into the class settings (through the MinorMode's
+        subclassing of ClassSettings) to allow the user to specify the
+        initial size of the minor mode.
 
         @param caption: text string that will become the caption bar
         of the Aui-managed window.

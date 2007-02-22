@@ -120,7 +120,7 @@ class MajorModeSelect(RadioAction):
 
 #### MajorMode base class
 
-class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
+class MajorMode(wx.Panel,debugmixin,ClassSettings):
     """
     Base class for all major modes.  Subclasses need to implement at
     least createEditWindow that will return the main user interaction
@@ -139,7 +139,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettingsMixin):
     localkeymaps = {}
     
     def __init__(self,buffer,frame):
-        ClassSettingsMixin.__init__(self)
         self.win=None
         self.splitter=None
         self.editwin=None # user interface window

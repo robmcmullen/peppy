@@ -309,7 +309,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
 
 ## FramePlugins
 
-class FramePlugin(ClassSettingsMixin):
+class FramePlugin(ClassSettings):
     """
     Base class for all frame plugins.  A frame plugin is generally
     used to create a new UI window in a frame that is outside the
@@ -326,7 +326,6 @@ class FramePlugin(ClassSettingsMixin):
         }
     
     def __init__(self, frame):
-        ClassSettingsMixin.__init__(self)
         self.frame=frame
         if self.keyword is None:
             raise ValueError("keyword class attribute must be defined.")
@@ -394,7 +393,7 @@ class FramePluginShow(ToggleListAction):
 
 ## BufferFrames
 
-class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
+class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     debuglevel=0
     frameid=0
     perspectives={}
@@ -405,12 +404,7 @@ class BufferFrame(wx.Frame,ClassSettingsMixin,debugmixin):
         BufferFrame.frameid+=1
         self.name="peppy: Frame #%d" % BufferFrame.frameid
 
-        # FIXME: temporary hack to get window size from application
-        # config
-        ClassSettingsMixin.__init__(self)
         size=(int(self.settings.width),int(self.settings.height))
-        self.dprint(size)
-        
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
         self.app=app
 
