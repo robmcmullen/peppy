@@ -95,7 +95,13 @@ class MajorModeSelect(RadioAction):
     items=None
 
     def initPreHook(self):
+        currentmode = self.frame.getActiveMajorMode()
         modes = self.frame.app.getSubclasses(MajorMode)
+
+        # Only display those modes that use the same type of STC as
+        # the current mode.
+        modes = [m for m in modes if m.mmap_stc_class == currentmode.mmap_stc_class]
+        
         modes.sort(key=lambda s:s.keyword)
         self.dprint(modes)
         MajorModeSelect.modes = modes
@@ -133,6 +139,13 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     keyword = 'Abstract Major Mode'
     regex = None
     temporary = False # True if it is a temporary view
+
+    # mmap_stc_class is used to associate this major mode with a
+    # storage mechanism (implementing the STCInterface) that allows
+    # files larger than can reside in memory.  Specifying a class here
+    # implies that this major mode is not using a subclass of the
+    # scintilla editor
+    mmap_stc_class = None
 
     default_settings = {
         'line_number_offset': 1,

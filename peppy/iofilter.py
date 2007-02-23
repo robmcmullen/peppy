@@ -169,61 +169,66 @@ class ProtocolHandler(Component):
 class IOFilter(debugmixin):
     debuglevel = 0
     
-    def read(self, protocol, path):
+    def read(self, fh, stc):
         raise NotImplementedError
 
-    def write(self, protocol, path):
+    def write(self, fh, stc):
         raise NotImplementedError
 
 class TextFilter(IOFilter):
-    def read(self, protocol, path, stc):
-        fh = protocol.getReader(path)
-        txt = fh.read()
-        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt), path))
-        stc.SetText(txt)
+    def read(self, fh, stc, size=None):
+        if size is not None:
+            txt = fh.read(size)
+        else:
+            txt = fh.read()
+        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt), fh))
+        stc.AddText(txt)
         return fh, txt
 
-    def write(self, protocol, path, stc):
-        fh = protocol.getWriter(path)
+    def write(self, fh, stc):
         txt = stc.GetText()
-        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt), path))
+        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt), fh))
         try:
             fh.write(txt)
         except:
-            print "TextFilter: something went wrong writing to %s" % path
+            print "TextFilter: something went wrong writing to %s" % fh
             raise
-        return fh
 
 class BinaryFilter(IOFilter):
-    def read(self, protocol, urlinfo, stc):
-        fh = protocol.getReader(urlinfo)
-        txt = fh.read()
-        self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), urlinfo))
+    debuglevel = 1
+    
+    def read(self, fh, stc, size=None):
+        if size is not None:
+            txt = fh.read(size)
+        else:
+            txt = fh.read()
+        self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
 
         # Now, need to convert it to two bytes per character
         styledtxt = '\0'.join(txt)+'\0'
         self.dprint("styledtxt: length=%d" % len(styledtxt))
 
-        stc.ClearAll()
         stc.AddStyledText(styledtxt)
 
-        length = stc.GetTextLength()
+        # Debugging stuff to check to see if the text conversion went
+        # correctly.
+        
+##        length = stc.GetTextLength()
 
-        newtxt = stc.GetStyledText(0, length)
-        out = " ".join(["%02x" % ord(i) for i in txt])
-        self.dprint(out)
+##        newtxt = stc.GetStyledText(0, length)
+##        out = " ".join(["%02x" % ord(i) for i in txt])
+##        self.dprint(out)
 
-        errors = 0
-        for i in range(len(txt)):
-            if newtxt[i*2]!=txt[i]:
-                self.dprint("error at: %d (%02x != %02x)" % (i, ord(newtxt[i*2]), ord(txt[i])))
-                errors+=1
-            if errors>50: break
-        self.dprint("errors=%d" % errors)
-        return fh, txt
+##        errors = 0
+##        for i in range(len(txt)):
+##            if newtxt[i*2]!=txt[i]:
+##                self.dprint("error at: %d (%02x != %02x)" % (i, ord(newtxt[i*2]), ord(txt[i])))
+##                errors+=1
+##            if errors>50: break
+##        self.dprint("errors=%d" % errors)
+        return txt
     
-    def write(self, protocol, urlinfo, stc):
-        fh = protocol.getWriter(urlinfo)
+    def write(self, fh, stc):
         numchars = stc.GetTextLength()
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
@@ -235,7 +240,6 @@ class BinaryFilter(IOFilter):
         except:
             print "BinaryFilter: something went wrong writing to %s" % urlinfo
             raise
-        return fh
 
 
 #### Filter wrappers that combine Protocols and Filters
@@ -248,14 +252,22 @@ class FilterWrapper(debugmixin):
         self.fh = None
         self.stats = protocol.getStats(info)
 
-    def read(self, stc):
-        self.fh, raw = self.filter.read(self.protocol, self.urlinfo, stc)
-            
+    def read(self, stc, size=None):
+        if self.fh is None:
+            self.fh = self.protocol.getReader(self.urlinfo)
+        raw = self.filter.read(self.fh, stc, size)
+        
         from pype.parsers import detectLineEndings
         stc.format = detectLineEndings(raw)
 
     def write(self, stc):
-        self.fh = self.filter.write(self.protocol, self.urlinfo, stc)
+        self.fh = self.protocol.getWriter(self.urlinfo)
+        self.filter.write(self.fh, stc)
+
+    def close(self):
+        if self.fh is not None:
+            self.fh.close()
+        self.fh = None
 
     def getSTC(self, parent):
         return self.protocol.getSTC(parent)

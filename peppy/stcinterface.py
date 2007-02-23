@@ -84,6 +84,19 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
+    def openPostHook(self, filter):
+        """Hook called after the initial open of the file.
+        
+        Hook here for subclasses of STC to do whatever they need with
+        the FilterWrapper object used to load the file.  In some cases it
+        might be useful to keep a reference to the filter.
+
+        @param filter: filter used to load the file
+
+        @type filter: iofilter.FilterWrapper
+        """
+        pass
+
 
 class NullSTC(STCInterface):
     """
@@ -103,6 +116,9 @@ class NullSTC(STCInterface):
     def SetText(self,text):
         self.styledtext='\0'.join(text)+'\0'
 
+    def AddText(self,text):
+        self.styledtext += '\0'.join(text)+'\0'
+
     def GetText(self):
         return self.styledtext[::2]
 
@@ -119,7 +135,7 @@ class NullSTC(STCInterface):
         return self.styledtext[start*2:start*2+length*2]
     
 
-class MySTC(stc.StyledTextCtrl,debugmixin):
+class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
     """
     Base version of the STC that most major modes will use as the STC
     implementation.
@@ -186,16 +202,6 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
         """
         self.Bind(stc.EVT_STC_UPDATEUI, callback)
         
-    def openPostHook(self,filter):
-        """
-        Hook here for subclasses of STC to do whatever they need with
-        the FilterWrapper object used to load the file.  In some cases it
-        might be useful to keep a reference to the filter.
-        @param filter: filter used to load the file
-        @type filter: iofilter.FilterWrapper
-        """
-        pass
-
     def CanEdit(self):
         """PyPE compat"""
         return True
@@ -350,4 +356,45 @@ class MySTC(stc.StyledTextCtrl,debugmixin):
             st = 'UNKNOWN'
 
         return st
+
+
+
+class NonResidentSTC(STCInterface,debugmixin):
+    """Non-memory-resident version of the STC.
+    
+    Base version of a non-memory resident storage space that
+    implements the STC interface.
+    """
+    debuglevel=0
+    
+    def __init__(self):
+        self.filename = None
+        
+    def openPostHook(self, filter):
+        try:
+            self.filename = filter.protocol.getFilename(filter.urlinfo)
+        except:
+            raise TypeError("url must be a file. %s" % filter.urlinfo)
+
+        filter.close()
+
+        self.openMmap()
+
+    def openMmap(self):
+        pass
+    
+
+class MmapSTC(NonResidentSTC):
+    def openMmap(self):
+        self.fh = open(self.filename)
+        self.mmap = mmap.mmap(self.fh.fileno(), 0, access=mmap.ACCESS_READ)
+        dprint(self.mmap)
+
+    def GetTextLength(self):
+        return self.mmap.size()
+
+    def GetBinaryData(self, start, end):
+        self.mmap.seek(start)
+        return self.mmap.read(end-start)
+
 

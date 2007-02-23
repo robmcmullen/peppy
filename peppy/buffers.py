@@ -127,11 +127,7 @@ class Buffer(debugmixin):
 
         self.open(stcparent)
 
-    def initSTC(self,mystc,stcparent=None):
-        if mystc==None:
-            self.stc=MySTC(stcparent)
-        else:
-            self.stc=mystc
+    def initSTC(self):
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
 
     def createMajorMode(self,frame,modeclass=None):
@@ -194,18 +190,38 @@ class Buffer(debugmixin):
     def open(self,stcparent):
         filter=GetIOFilter(self.filename)
         self.readonly = filter.stats.readonly
+
+        # Need a two-stage opening process in order to support files
+        # that are too large to fit in memory at once.  First, load
+        # the first group of bytes into memory and use that to check
+        # to see what type it is.
         
-        if self.stc==None:
-            self.initSTC(filter.getSTC(stcparent))
-        filter.read(self.stc)
+        self.stc = filter.getSTC(stcparent)
+        self.stc.ClearAll()
+
+        # Read the first thousand bytes
+        filter.read(self.stc, self.guessLength)
         # if no exceptions, it must have worked.
+        if self.defaultmode is None:
+            self.defaultmode=GetMajorMode(self)
+
+        if self.defaultmode.mmap_stc_class is not None:
+            # we have a STC that allows files that are larger that
+            # memory, so allow it to manage the file itself.
+            self.stc = self.defaultmode.mmap_stc_class()
+        else:
+            # Getting here means we've decided that we're using an
+            # in-resident STC, so load the whole file.
+            filter.read(self.stc)
+            # if no exceptions, it must have worked.
+            self.initSTC()
+            
         self.stc.openPostHook(filter)
+        filter.close()
+        
         self.guessBinary=self.stc.GuessBinary(self.guessLength,self.guessPercentage)
         self.modified=False
         self.stc.EmptyUndoBuffer()
-
-        if self.defaultmode is None:
-            self.defaultmode=GetMajorMode(self)
 
         BufferHooks(ComponentManager()).openPostHook(self)
         
