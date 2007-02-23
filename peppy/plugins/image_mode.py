@@ -24,7 +24,7 @@ import wx.lib.newevent
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.controls import *
+from peppy.lib.controls import *
 
 __all__ = ['ImageViewPlugin']
 
