@@ -460,7 +460,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def createFramePluginList(self):
         plugins = self._mgr.GetAllPanes()
         for plugin in plugins:
-            dprint("name=%s caption=%s window=%s state=%s" % (plugin.name, plugin.caption, plugin.window, plugin.state))
+            self.dprint("name=%s caption=%s window=%s state=%s" % (plugin.name, plugin.caption, plugin.window, plugin.state))
             if plugin.name != "notebook":
                 self.plugins.append(plugin)
         self.plugins.sort(key=lambda s:s.caption)

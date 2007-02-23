@@ -229,7 +229,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     def createMinorModeList(self):
         minors = self._mgr.GetAllPanes()
         for minor in minors:
-            dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
+            self.dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
             if minor.name != "main":
                 self.minors.append(minor)
         self.minors.sort(key=lambda s:s.caption)
