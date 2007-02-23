@@ -39,8 +39,9 @@ from menu import *
 from stcinterface import *
 from configprefs import *
 from debug import *
-from iconstorage import *
 from minor import *
+
+from lib.iconstorage import *
 
 
 class MajorAction(SelectAction):

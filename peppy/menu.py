@@ -13,11 +13,12 @@ import wx
 
 import weakref
 
-from orderer import *
 from trac.core import *
 from debug import *
-from iconstorage import *
-from wxemacskeybindings import *
+
+from lib.iconstorage import *
+from lib.orderer import *
+from lib.wxemacskeybindings import *
 
 class IMenuItemProvider(Interface):
     """Interface used to add user actions to the menu bar."""

@@ -6,7 +6,7 @@ relative positions.
 """
 
 import os,sys
-from debug import *
+from peppy.debug import *
 from cStringIO import StringIO
 
 class DelayedOrderer(debugmixin):

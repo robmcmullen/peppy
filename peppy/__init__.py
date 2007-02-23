@@ -50,10 +50,11 @@ __license__ = "GPL"
 from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
 from peppy.configprefs import *
 from peppy.debug import debuglog, dprint, debugmixin
-from peppy.iconstorage import *
 from peppy.major import MajorMode, MajorAction
 from peppy.minor import MinorMode, IMinorModeProvider, \
      MinorModeIncompatibilityError
+
+from peppy.lib.iconstorage import *
 
 __all__ = [ 
     'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',

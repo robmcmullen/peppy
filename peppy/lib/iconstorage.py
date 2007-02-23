@@ -4,7 +4,7 @@ import os,sys,re
 
 import wx
 
-from debug import *
+from peppy.debug import *
 
 __all__ = ['getIconStorage','getIconBitmap']
 
@@ -15,7 +15,10 @@ class IconStorage(debugmixin):
         self.il=wx.ImageList(16,16)
         self.map={}
         self.bitmap={}
-        self.basedir=os.path.dirname(__file__)
+
+        # FIXME: shouldn't depend on icons directory being one level
+        # up from this dir.
+        self.basedir=os.path.dirname(os.path.dirname(__file__))
 
     def get(self,filename):
         if filename not in self.map:

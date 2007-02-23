@@ -7,7 +7,8 @@ import wx.aui
 import wx.stc as stc
 
 from menu import *
-from wxemacskeybindings import *
+from lib.wxemacskeybindings import *
+from lib.iconstorage import *
 
 from cStringIO import StringIO
 
@@ -15,7 +16,6 @@ from configprefs import *
 from stcinterface import *
 from iofilter import *
 from major import *
-from iconstorage import *
 from debug import *
 from trac.core import *
 from dialogs import *
