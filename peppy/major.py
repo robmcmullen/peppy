@@ -134,6 +134,11 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     regex = None
     temporary = False # True if it is a temporary view
 
+    default_settings = {
+        'line_number_offset': 1,
+        'column_number_offset': 1,
+        }
+
     # Need one keymap per subclass, so we can't use the settings.
     # Settings would propogate up the class hierachy and find a keymap
     # of a superclass.  This is a dict based on the class name.
@@ -235,7 +240,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
                 self.minors.append(minor)
         self.minors.sort(key=lambda s:s.caption)
 
-    def OnUpdateUI(self,evt):
+    def OnUpdateUI(self, evt):
         """Callback to update user interface elements.
 
         This event is called when the user interacts with the editing
@@ -252,10 +257,11 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
-        self.frame.SetStatusText("L%d C%d" % (linenum+1,col+1),1)
+        self.frame.SetStatusText("L%d C%d" % (linenum+self.settings.line_number_offset, col+self.settings.column_number_offset),1)
         self.frame.enableTools()
         self.OnUpdateUIHook(evt)
-        evt.Skip()
+        if evt is not None:
+            evt.Skip()
 
     def OnUpdateUIHook(self, evt):
         pass
