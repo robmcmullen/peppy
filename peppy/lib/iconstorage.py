@@ -6,7 +6,7 @@ import wx
 
 from peppy.debug import *
 
-__all__ = ['getIconStorage','getIconBitmap']
+__all__ = ['getIconStorage', 'getIconBitmap', 'addIconBitmap']
 
 #### Icons
 
@@ -20,16 +20,19 @@ class IconStorage(debugmixin):
         # up from this dir.
         self.basedir=os.path.dirname(os.path.dirname(__file__))
 
+    def set(self, filename, bitmap):
+        self.bitmap[filename]=bitmap
+        icon=self.il.Add(bitmap)
+        self.dprint("ICON=%s" % str(icon))
+        self.map[filename]=icon
+
     def get(self,filename):
         if filename not in self.map:
             img=wx.ImageFromBitmap(wx.Bitmap(os.path.join(self.basedir,filename)))
             img.Rescale(16,16)
-            bitmap=wx.BitmapFromImage(img)
-            self.bitmap[filename]=bitmap
-            icon=self.il.Add(bitmap)
-            self.dprint("ICON=%s" % str(icon))
             self.dprint(img)
-            self.map[filename]=icon
+            bitmap=wx.BitmapFromImage(img)
+            self.set(filename, bitmap)
         else:
             self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
         return self.map[filename]
@@ -57,11 +60,13 @@ def getIconStorage(icon=None):
         return _iconStorage
 
 def getIconBitmap(icon=None):
-    global _iconStorage
-    if _iconStorage==None:
-        _iconStorage=IconStorage()
+    store = getIconStorage()
     if icon:
-        return _iconStorage.getBitmap(icon)
+        return store.getBitmap(icon)
     else:
         return wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16))
 
+def addIconBitmap(name, data):
+    store = getIconStorage()
+    store.set(name, data)
+    
