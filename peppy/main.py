@@ -429,7 +429,7 @@ class Peppy(BufferApp, ClassSettings):
                                   'height':600,
                                   'plugins':'filebrowser',
                                   },
-                   'Peppy':{'plugins':'peppy.plugins.python_mode,peppy.plugins.hexedit_mode,peppy.plugins.shell_mode,peppy.plugins.image_mode,peppy.plugins.openrecent,peppy.plugins.pype_compat,peppy.plugins.pype_funclist_minormode,peppy.plugins.pype_filebrowser,peppy.plugins.sizereporter_minormode,peppy.plugins.chatbots,peppy.plugins.graphviz_mode,peppy.plugins.boa_stcstyleeditor,peppy.plugins.makefile_mode,peppy.plugins.lexerdebug_mode,peppy.plugins.text_mode,peppy.plugins.preferences',
+                   'Peppy':{'plugins': '',
                             'recentfiles':'recentfiles.txt',
                             },
                    }
@@ -528,27 +528,41 @@ class Peppy(BufferApp, ClassSettings):
         """
         Main driver for any functions that need to look in the config file.
         """
-        self.parseConfigMajorModes()
+        self.autoloadPlugins()
         self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 
-    def parseConfigMajorModes(self):
+    def autoloadPlugins(self, plugindir='plugins'):
+        """Autoload plugins from peppy plugins directory.
+
+        All .py files that exist in the peppy.plugins directory are
+        loaded here.  Currently uses a naive approach by loading them
+        in the order returned by os.listdir.  No dependency ordering
+        is done.
         """
-        Placeholder for future method to automatically import major
-        modes in the plugins subdirectory.  An even better way
-        would be to import the modules only on request when they are
-        first needed.
-        """
-        pass
+        autoloaddir = os.path.join(os.path.dirname(__file__), plugindir)
+        basemodule = self.__module__.rsplit('.', 1)[0]
+        for plugin in os.listdir(autoloaddir):
+            if plugin.endswith(".py"):
+                self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
+                                              plugin[:-3]))
 
     def parseConfigPlugins(self):
-        """
-        Load plugins specified in the config file.
+        """Load plugins specified in the config file.
+
+        Additional plugins specified in the 'plugins' setting in the
+        Peppy setting of the config file, e.g.:
+
+          [Peppy]
+          plugins = pluginlib.plugin1, alternate.plugin.lib.pluginX
+
+        which means that the plugins must reside somewhere in the
+        PYTHONPATH.
         """
         mods=self.settings.plugins
         self.dprint(mods)
-        if mods is not None:
+        if mods:
             self.loadPlugins(mods)
 
     def quitHook(self):

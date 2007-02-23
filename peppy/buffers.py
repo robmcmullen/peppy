@@ -753,21 +753,35 @@ class BufferApp(wx.App,debugmixin):
     def quitHook(self):
         return True
 
-    def loadPlugin(self, mod):
-        self.dprint("loading plugins from module=%s" % str(mod))
-        # FIXME: is this needed anymore, now that I'm using Trac plugins?
+    def loadPlugin(self, plugin):
+        """Import a plugin from a module name
+
+        Given a module name (e.g. 'peppy.plugins.example_plugin',
+        import the module and trap any import errors.
+
+        @param: name of plugin to load
+        """
+        self.dprint("loading plugins from module=%s" % str(plugin))
+        try:
+            mod=__import__(plugin)
+        except Exception,ex:
+            print "couldn't load plugin %s" % plugin
+            print ex
+            self.errors.append("couldn't load plugin %s" % plugin)
 
     def loadPlugins(self,plugins):
+        """Import a list of plugins.
+
+        From either a list or a comma separated string, import a group
+        of plugins.
+
+        @param plugins: list or comma separated string of plugins to
+        load
+        """
         if not isinstance(plugins,list):
             plugins=[p.strip() for p in plugins.split(',')]
         for plugin in plugins:
-            try:
-                mod=__import__(plugin)
-                self.loadPlugin(mod)
-            except Exception,ex:
-                print "couldn't load plugin %s" % plugin
-                print ex
-                self.errors.append("couldn't load plugin %s" % plugin)
+            self.loadPlugin(plugin)
 
     def setConfigDir(self,dirname):
         self.confdir=dirname
