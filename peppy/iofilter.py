@@ -210,7 +210,7 @@ class TextFilter(IOFilter):
             raise
 
 class BinaryFilter(IOFilter):
-    debuglevel = 1
+    debuglevel = 0
     
     def read(self, fh, stc, size=None):
         if size is not None:
@@ -248,12 +248,12 @@ class BinaryFilter(IOFilter):
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
         txt = stc.GetStyledText(0, numchars)[0:numchars*2:2]
-        self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), urlinfo))
+        self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
         self.dprint(repr(txt))
         try:
             fh.write(txt)
         except:
-            print "BinaryFilter: something went wrong writing to %s" % urlinfo
+            print "BinaryFilter: something went wrong writing to %s" % fh
             raise
 
 

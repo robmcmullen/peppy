@@ -147,48 +147,33 @@ class SaveAs(SelectAction):
         if mode and mode.buffer:
             saveas=mode.buffer.getFilename()
             cwd = self.frame.cwd()
+            saveas=os.path.basename(saveas)
 
-            # Do this in a loop so that the user can get a chance to
-            # change the filename if the specified file exists.
-            while True:
-                # If we come through this loop again, saveas will hold
-                # a complete pathname.  Shorten it.
-                saveas=os.path.basename(saveas)
-
-                # FIXME: is this a bug in wx?
-                dprint("BUG?  I'm setting cwd = %s, but the dialog doesn't use that directory on Linux" % cwd)
-                
-                wildcard="*.*"
-                dlg = wx.FileDialog(
-                    self.frame, message="Save File", defaultDir=cwd, 
-                    defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)
-
-                retval=dlg.ShowModal()
-                if retval==wx.ID_OK:
-                    # This returns a Python list of files that were selected.
-                    paths = dlg.GetPaths()
-                dlg.Destroy()
-
-                if retval!=wx.ID_OK:
-                    break
-                elif len(paths)==1:
+            # FIXME: bug in linux: setting defaultFile to some
+            # non-blank string causes directory to be set to
+            # current working directory.  If defaultFile == "",
+            # working directory is set to the specified
+            # defaultDir.
+            
+            wildcard="*.*"
+            dlg = wx.FileDialog(
+                self.frame, message="Save File", defaultDir=cwd, 
+                defaultFile=saveas, wildcard=wildcard,
+                style=wx.SAVE| wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+            
+            retval=dlg.ShowModal()
+            if retval==wx.ID_OK:
+                # This returns a Python list of files that were selected.
+                paths = dlg.GetPaths()
+                if len(paths)>0:
                     saveas=paths[0]
                     self.dprint("save file %s:" % saveas)
 
-                    # If new filename exists, make user confirm to
-                    # overwrite
-                    if os.path.exists(saveas):
-                        dlg = wx.MessageDialog(self.frame, "%s\n\nexists.  Overwrite?" % saveas, "Overwrite?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-                        retval=dlg.ShowModal()
-                        dlg.Destroy()
-                    else:
-                        retval=wx.ID_YES
-                    if retval==wx.ID_YES:
-                        mode.buffer.save(saveas)
-                        break
+                    mode.buffer.save(saveas)
                 elif paths!=None:
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
 
+            dlg.Destroy()
 
 
 class Undo(SelectAction):
