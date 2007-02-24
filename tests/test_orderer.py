@@ -1,6 +1,6 @@
 import os,sys,re
 
-from peppy.orderer import *
+from peppy.lib.orderer import *
 from peppy.menu import *
 
 from nose.tools import *
