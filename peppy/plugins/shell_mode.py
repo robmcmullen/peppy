@@ -45,6 +45,9 @@ class ShellProtocol(ProtocolPluginBase,debugmixin):
     def supportedProtocols(self):
         return ['shell']
     
+    def getNormalizedName(self, urlinfo):
+        return "shell:%s" % urlinfo.path
+
     def getReader(self,urlinfo):
         self.dprint("getReader: trying to open %s" % urlinfo.path)
         for shell in self.shells:

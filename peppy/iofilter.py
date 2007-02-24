@@ -60,6 +60,12 @@ class ProtocolPlugin(Interface):
         i.e. a http protocol class would return ['http'] or
         potentially ['http','https'] if it also http over SSL."""
 
+    def getNormalizedName(urlinfo):
+        """Return the normalized URL.
+
+        Return a string representing the normalized URL.
+        """
+
     def getStats(urlinfo):
         """Return statistics on the URLInfo object.
 
@@ -82,7 +88,10 @@ class ProtocolPlugin(Interface):
         """
 
 class ProtocolPluginBase(Component):
-    def supportedProtocels(self):
+    def supportedProtocols(self):
+        return NotImplementedError
+
+    def getNormalizedName(self):
         return NotImplementedError
 
     def getStats(self, urlinfo):
@@ -105,6 +114,9 @@ class FileProtocol(ProtocolPluginBase, debugmixin):
 
     def supportedProtocols(self):
         return ['file']
+
+    def getNormalizedName(self, urlinfo):
+        return "file:" + os.path.abspath(self.getFilename(urlinfo))
 
     def getFilename(self, urlinfo):
         # urlparse makes a distinction between file://name and
@@ -140,6 +152,9 @@ class HTTPProtocol(ProtocolPluginBase, debugmixin):
 
     def supportedProtocols(self):
         return ['http', 'https']
+
+    def getNormalizedName(self, urlinfo):
+        return urlinfo.url
     
     def getStats(self, urlinfo):
         stats = ProtocolStatistics()
@@ -251,6 +266,7 @@ class FilterWrapper(debugmixin):
         self.urlinfo = info
         self.fh = None
         self.stats = protocol.getStats(info)
+        self.url = protocol.getNormalizedName(self.urlinfo)
 
     def read(self, stc, size=None):
         if self.fh is None:

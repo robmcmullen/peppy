@@ -57,6 +57,8 @@ class TestURLInfo:
 class TestGetIOFilter:
     def testFile(self):
         filter=GetIOFilter("file:LICENSE")
+        cwd = os.getcwd()
+        eq_(filter.url, "file:%s" % os.path.join(cwd, 'LICENSE'))
         eq_(filter.urlinfo.protocol,'file')
         eq_(filter.protocol.getFilename(filter.urlinfo),'LICENSE')
         stc=NullSTC()
@@ -66,6 +68,8 @@ class TestGetIOFilter:
         
     def testFileRelative(self):
         filter=GetIOFilter("file://LICENSE")
+        cwd = os.getcwd()
+        eq_(filter.url, "file:%s" % os.path.join(cwd, 'LICENSE'))
         eq_(filter.urlinfo.protocol,'file')
         eq_(filter.protocol.getFilename(filter.urlinfo),'LICENSE')
         stc=NullSTC()
@@ -75,6 +79,8 @@ class TestGetIOFilter:
         
     def testFileDefault(self):
         filter=GetIOFilter("LICENSE")
+        cwd = os.getcwd()
+        eq_(filter.url, "file:%s" % os.path.join(cwd, 'LICENSE'))
         eq_(filter.urlinfo.protocol,'file')
         eq_(filter.protocol.getFilename(filter.urlinfo),'LICENSE')
         stc=NullSTC()
@@ -85,11 +91,13 @@ class TestGetIOFilter:
     def testChatbots(self):
         import peppy.plugins.chatbots
         filter=GetIOFilter("shell:eliza")
+        eq_(filter.url, "shell:eliza")
         eq_(filter.urlinfo.protocol,'shell')
         eq_(filter.urlinfo.path,'eliza')
 
     def testWindowsFile(self):
         filter=GetIOFilter("file://c:/some/path.txt",usewin=True)
+        #eq_(filter.url, "file:/c:/some/path.txt")
         eq_(filter.urlinfo.protocol,'file')
         eq_(filter.protocol.getFilename(filter.urlinfo),'c:/some/path.txt')
         filter=GetIOFilter("c:/some/path.txt",usewin=True)

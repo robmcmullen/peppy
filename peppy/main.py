@@ -30,7 +30,9 @@ class New(SelectAction):
 
     def action(self, pos=-1):
         self.frame.open("about:untitled")
-        
+
+
+
 class OpenFile(SelectAction):
     name = "&Open File..."
     tooltip = "Open a file"
@@ -41,7 +43,7 @@ class OpenFile(SelectAction):
         self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
 
         wildcard="*"
-        cwd=os.getcwd()
+        cwd=self.frame.cwd()
         dlg = wx.FileDialog(
             self.frame, message="Open File", defaultDir=cwd, 
             defaultFile="", wildcard=wildcard, style=wx.OPEN)
@@ -144,6 +146,7 @@ class SaveAs(SelectAction):
         paths=None
         if mode and mode.buffer:
             saveas=mode.buffer.getFilename()
+            cwd = self.frame.cwd()
 
             # Do this in a loop so that the user can get a chance to
             # change the filename if the specified file exists.
@@ -151,9 +154,11 @@ class SaveAs(SelectAction):
                 # If we come through this loop again, saveas will hold
                 # a complete pathname.  Shorten it.
                 saveas=os.path.basename(saveas)
+
+                # FIXME: is this a bug in wx?
+                dprint("BUG?  I'm setting cwd = %s, but the dialog doesn't use that directory on Linux" % cwd)
                 
                 wildcard="*.*"
-                cwd=os.getcwd()
                 dlg = wx.FileDialog(
                     self.frame, message="Save File", defaultDir=cwd, 
                     defaultFile=saveas, wildcard=wildcard, style=wx.SAVE)

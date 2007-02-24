@@ -108,7 +108,6 @@ class Buffer(debugmixin):
         self.fh=fh
         self.readonly = False
         self.defaultmode=defaultmode
-        self.setFilename(filename)
 
         self.guessBinary=False
         self.guessLength=1024
@@ -125,7 +124,7 @@ class Buffer(debugmixin):
             # defer STC initialization until we know the subclass
             self.stc=None
 
-        self.open(stcparent)
+        self.open(filename, stcparent)
 
     def initSTC(self):
         self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
@@ -187,8 +186,8 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self,stcparent):
-        filter=GetIOFilter(self.filename)
+    def open(self, filename, stcparent):
+        filter=GetIOFilter(filename)
         self.readonly = filter.stats.readonly
 
         # Need a two-stage opening process in order to support files
@@ -202,6 +201,9 @@ class Buffer(debugmixin):
         # Read the first thousand bytes
         filter.read(self.stc, self.guessLength)
         # if no exceptions, it must have worked.
+        self.setFilename(filter.url)
+        self.guessBinary=self.stc.GuessBinary(self.guessLength,
+                                              self.guessPercentage)
         if self.defaultmode is None:
             self.defaultmode=GetMajorMode(self)
 
@@ -215,11 +217,10 @@ class Buffer(debugmixin):
             filter.read(self.stc)
             # if no exceptions, it must have worked.
             self.initSTC()
-            
+        
         self.stc.openPostHook(filter)
         filter.close()
         
-        self.guessBinary=self.stc.GuessBinary(self.guessLength,self.guessPercentage)
         self.modified=False
         self.stc.EmptyUndoBuffer()
 
@@ -653,6 +654,23 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         mode=self.getActiveMajorMode()
         if mode and mode.buffer:
             mode.buffer.save()
+
+    def cwd(self):
+        """Get working filesystem directory for current mode.
+
+        Convenience function to get working directory of the current
+        mode.
+        """
+        mode = self.getActiveMajorMode()
+        if mode and mode.buffer:
+            if mode.buffer.filename.startswith('file:'):
+                cwd = os.path.dirname(mode.buffer.filename[5:])
+            else:
+                mode = None
+
+        if mode is None:
+            cwd=os.getcwd()
+        return cwd
             
     def switchMode(self):
         last=self.tabs.getPrevious()

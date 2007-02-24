@@ -118,6 +118,9 @@ class AboutProtocol(ProtocolPluginBase,debugmixin):
     def supportedProtocols(self):
         return ['about']
 
+    def getNormalizedName(self, urlinfo):
+        return "about:%s" % urlinfo.path
+
     def getStats(self, urlinfo):
         stats = URLStats()
         stats.readonly = True
