@@ -194,7 +194,8 @@ class Undo(SelectAction):
     
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.CanUndo()
+        if viewer:
+            return viewer.stc.CanUndo()
         return False
 
     def action(self, pos=-1):
@@ -211,7 +212,8 @@ class Redo(SelectAction):
     
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.CanRedo()
+        if viewer:
+            return viewer.stc.CanRedo()
         return False
 
     def action(self, pos=-1):
@@ -226,7 +228,8 @@ class Cut(SelectAction):
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.CanCut()
+        if viewer:
+            return viewer.stc.CanCut()
         return False
 
     def action(self, pos=-1):
@@ -242,7 +245,8 @@ class Copy(SelectAction):
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.CanCopy()
+        if viewer:
+            return viewer.stc.CanCopy()
         return False
 
     def action(self, pos=-1):
@@ -258,8 +262,9 @@ class Paste(SelectAction):
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
-        self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
-        if viewer: return viewer.stc.CanPaste()
+        if viewer:
+            self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
+            return viewer.stc.CanPaste()
         return False
 
     def action(self, pos=-1):

@@ -112,10 +112,10 @@ class MajorModeSelect(RadioAction):
         self.dprint("index=%d" % index)
 
     def getIndex(self):
-        mode = self.frame.getActiveMajorMode().__class__
-        self.dprint("searching for %s in %s" % (mode, MajorModeSelect.modes))
-        if mode is not None:
-            return MajorModeSelect.modes.index(mode)
+        modecls = self.frame.getActiveMajorMode().__class__
+        self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
+        if modecls is not None.__class__:
+            return MajorModeSelect.modes.index(modecls)
         return 0
                                            
     def getItems(self):

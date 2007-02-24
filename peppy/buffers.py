@@ -158,7 +158,7 @@ class Buffer(debugmixin):
         for viewer in viewers:
             self.dprint("count=%d" % len(self.viewers))
             self.dprint("removing view %s of %s" % (viewer,self))
-            viewer.frame.closeViewer(viewer)
+            viewer.frame.tabs.closeTab(viewer)
         self.dprint("final count=%d" % len(self.viewers))
 
     def setFilename(self,filename):
@@ -287,7 +287,14 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabClosed(self, evt):
         index = evt.GetSelection()
         mode = self.GetPage(index)
-        self.dprint("closing tab %d: mode %s" % (index,mode))
+        self.dprint("closing tab # %d: mode %s" % (index,mode))
+        evt.Skip()
+
+    def closeTab(self, mode):
+        self.dprint("closing tab: mode %s" % mode)
+        index=self.GetPageIndex(mode)
+        self.RemovePage(index)
+        mode.deleteWindow()
 
     def addTab(self,mode):
         self.dprint("Adding tab %s" % mode)
@@ -304,8 +311,9 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
             oldmode=self.GetPage(index+1)
             self.RemovePage(index+1)
-            oldmode.deleteWindow()
-            #del oldmode
+            if oldmode:
+                oldmode.deleteWindow()
+                #del oldmode
             self.SetSelection(index)
         
     def getCurrent(self):
@@ -586,8 +594,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         major=self.getActiveMajorMode()
         if major:
             buffer=major.buffer
-            if self.app.close(buffer):
-                self.tabs.closeTab(major)
+            self.app.close(buffer)
 
     def setTitle(self):
         major=self.getActiveMajorMode()

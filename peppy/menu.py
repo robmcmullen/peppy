@@ -245,8 +245,9 @@ class ListAction(SelectAction):
         # One menu item in this group has to have the EVT_UPDATE_UI
         # event in order to keep the state of the menu synced with the
         # application
-        self.frame.Connect(self.toplevel[0],-1,wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
+        if len(self.toplevel)>0:
+            self.frame.Connect(self.toplevel[0],-1,wx.wxEVT_UPDATE_UI,
+                               self.OnUpdateUI)
 
     def _insertItems(self,menu,pos,is_toplevel=False):
         items=self.getItems()
