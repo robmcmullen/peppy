@@ -141,13 +141,16 @@ class CommitHook:
         msg = to_unicode(msg, encoding)
         self.author = author
         self.rev = rev
-	lines = []
-	for line in msg.splitlines():
-	    if line.startswith("*"):
-	        lines.append(" "+line)
+
+        # convert my * lists to trac wiki lists
+        lines = []
+        for line in msg.splitlines():
+            if line.startswith("*"):
+                lines.append(" "+line)
             else:
-	        lines.append(line)
+                lines.append(line)
         msg = "\n".join(lines)
+        
         self.msg = "(In [%s]) %s" % (rev, msg)
         self.now = int(time.time()) 
         self.env = open_environment(project)
