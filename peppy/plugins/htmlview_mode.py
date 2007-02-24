@@ -32,7 +32,7 @@ class HTMLWindow(wx.html.HtmlWindow, debugmixin):
 
     def OnLinkClicked(self, linkinfo):
         self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
-        #self.mode.frame.SetStatusText(linkinfo.GetHref())
+        self.mode.frame.open(linkinfo.GetHref())
 
     def OnCellMouseHover(self, cell, x, y):
         self.dprint('OnCellMouseHover: %s\n' % cell)

@@ -157,7 +157,7 @@ class HTTPProtocol(ProtocolPluginBase, debugmixin):
         return urlinfo.url
     
     def getStats(self, urlinfo):
-        stats = ProtocolStatistics()
+        stats = URLStats()
         stats.readonly = True
         return stats
 
