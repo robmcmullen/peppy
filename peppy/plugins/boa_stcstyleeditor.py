@@ -23,7 +23,7 @@ class STCStyles(SelectAction):
 
     def isEnabled(self):
         mode=self.frame.getActiveMajorMode()
-        if mode:
+        if mode and mode.settings.has_stc_styling is not None:
             return mode.settings.has_stc_styling
         return False
 
