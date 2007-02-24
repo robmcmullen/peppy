@@ -13,7 +13,6 @@ import wx
 
 from peppy import *
 from peppy.menu import *
-from peppy.fundamental import FundamentalMode
 from peppy.major import *
 from peppy.iofilter import *
 
@@ -247,8 +246,6 @@ class AboutPlugin(MajorModeMatcherBase):
             return MajorModeMatch(TitleMode,exact=True)
         elif filename=='about:blank':
             return MajorModeMatch(BlankMode,exact=True)
-        elif filename=='about:untitled':
-            return MajorModeMatch(FundamentalMode,exact=True)
         else:
             return None
 
