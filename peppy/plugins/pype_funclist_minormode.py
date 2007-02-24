@@ -12,10 +12,11 @@ from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 
+import peppy.pype
 from peppy.pype.codetree import hierCodeTreePanel
 
 class FuncList(MinorMode):
-    keyword="funclist"
+    keyword="pype_funclist"
 
     default_settings = {
         'best_width':150,
@@ -29,7 +30,7 @@ class FuncList(MinorMode):
         self.fl=self.major.getFunctionList()
         self.funclist.new_hierarchy(self.fl[0])
 
-        paneinfo=self.getDefaultPaneInfo("Function List")
+        paneinfo=self.getDefaultPaneInfo("PyPE Function List")
         paneinfo.Right()
         if not self.fl[0]:
             paneinfo.Hide()

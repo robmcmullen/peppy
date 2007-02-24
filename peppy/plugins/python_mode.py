@@ -240,7 +240,7 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
 
     default_settings = {
         'word_wrap': True,
-        'minor_modes': 'funclist,funcmenu,sizereporter',
+        'minor_modes': 'pype_funclist,funcmenu,spe_funclist',
         'sample_file': _sample_file,
         'stc_lexer': wx.stc.STC_LEX_PYTHON,
         'stc_keywords': 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False self',

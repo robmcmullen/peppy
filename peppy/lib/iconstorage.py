@@ -26,9 +26,21 @@ class IconStorage(debugmixin):
         self.dprint("ICON=%s" % str(icon))
         self.map[filename]=icon
 
-    def get(self,filename):
+    def get(self, filename, dir=None):
         if filename not in self.map:
-            img=wx.ImageFromBitmap(wx.Bitmap(os.path.join(self.basedir,filename)))
+            if dir is not None:
+                # if a directory is specified, use the whole path name
+                # so as to not conflict with the standard icons
+                filename = os.path.join(dir, filename)
+                path = filename
+            else:
+                path = os.path.join(self.basedir,filename)
+            if os.path.exists(path):
+                img = wx.ImageFromBitmap(wx.Bitmap(path))
+            else:
+                # return placeholder icon if a real one isn't found
+                img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16)))
+                
             img.Rescale(16,16)
             self.dprint(img)
             bitmap=wx.BitmapFromImage(img)
@@ -37,8 +49,8 @@ class IconStorage(debugmixin):
             self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
         return self.map[filename]
 
-    def getBitmap(self,filename):
-        self.get(filename)
+    def getBitmap(self,filename, dir=None):
+        self.get(filename, dir)
         return self.bitmap[filename]
 
     def assign(self,notebook):
@@ -50,19 +62,19 @@ class IconStorage(debugmixin):
         notebook.SetImageList(self.il)
 
 _iconStorage=None
-def getIconStorage(icon=None):
+def getIconStorage(icon=None, path=None):
     global _iconStorage
     if _iconStorage==None:
         _iconStorage=IconStorage()
     if icon:
-        return _iconStorage.get(icon)
+        return _iconStorage.get(icon, path)
     else:
         return _iconStorage
 
-def getIconBitmap(icon=None):
+def getIconBitmap(icon=None, path=None):
     store = getIconStorage()
     if icon:
-        return store.getBitmap(icon)
+        return store.getBitmap(icon, path)
     else:
         return wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16))
 

@@ -12,6 +12,7 @@ from peppy.menu import *
 from peppy.trac.core import *
 from peppy.buffers import *
 
+import peppy.pype
 from peppy.pype.browser import FilesystemBrowser
 
 class FileBrowser(FramePlugin):
