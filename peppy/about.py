@@ -249,8 +249,8 @@ class AboutPlugin(MajorModeMatcherBase):
         else:
             return None
 
-    default_menu=((None,None,Menu("Help").last()),
-                  (None,"Help",MenuItem(HelpAbout).first()),
+    default_menu=((None,None,Menu("&Help").last()),
+                  (None,"&Help",MenuItem(HelpAbout).first()),
                   (None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenAlpha).first()),
                   (None,"Test",MenuItem(OpenBravo).first()),

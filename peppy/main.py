@@ -307,7 +307,7 @@ class GlobalMenu(Component):
                   ("Buffers",MenuItem(BufferList).first()),
                   (None,Menu("Major Mode").hide()),
                   (None,Menu("Minor Mode").hide().after("Major Mode")),
-                  (None,Menu("Help").last()),
+                  (None,Menu("&Help").last()),
                   )
     def getMenuItems(self):
         for menu,item in self.default_menu:
@@ -390,7 +390,7 @@ class DebugClass(ToggleListAction):
 class DebugGlobalActions(Component):
     implements(IMenuItemProvider)
 
-    default_menu=((None,Menu("Debug").after("Minor Mode").before("Help")),
+    default_menu=((None,Menu("Debug").after("Minor Mode").before("&Help")),
                   ("Debug",MenuItem(DebugClass).first()),
                   )
     def getMenuItems(self):
