@@ -634,7 +634,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.switchMode()
 
     def titleBuffer(self):
-        self.open('about:title.txt')
+        self.open('about:title.html')
         
     def open(self,filename,newTab=True,mode=None):
         buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultmode=mode)

@@ -62,7 +62,27 @@ SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
 
-SetAbout('title.txt',"%(prog)s %(version)s\n%(description)s\n\nCopyright (c) %(yearrange)s %(author)s (%(author_email)s)\n%(license)s\n\n%(warning)s\nGPL code borrowed from the following projects:\n%(gpl_code)s\n\nThanks to lots of folks:\n%(thanks)s\nSee the file THANKS for more credits.")
+SetAbout('title.html',"""\
+<h2>%(prog)s %(version)s</h2>
+
+<h3>%(description)s</h3>
+
+<p>Copyright (c) %(yearrange)s %(author)s (%(author_email)s)</p>
+
+<p>%(license)s</p>
+
+<p>%(warning)s</p>
+
+<p>GPL code borrowed from the following projects:</p>
+<ul>
+%(gpl_code)s
+</ul>
+<p>Thanks to lots of folks:</p>
+<ul>
+%(thanks)s
+</ul>
+<p>See the file THANKS for more credits.</p>
+""")
 SetAbout('demo.txt',"""\
 This editor is provided by a class named wx.StyledTextCtrl.  As
 the name suggests, you can define styles that can be applied to
@@ -106,7 +126,7 @@ credits=[]
 
 def AddCredit(author, contribution):
     credits.append((author, contribution))
-    substitutes['thanks']="\n".join(["* %s - %s" % (a,c) for a,c in credits])
+    substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits])
         
 AddCredit("Robin Dunn", "contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
 AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
@@ -114,8 +134,13 @@ AddCredit("Chris Barker", "for testing on the Mac and many bug reports and featu
 
 copyrights = []
 def AddCopyright(project, website, author, date, reason=None):
-    copyrights.append((project, website, author, date))
-    substitutes['gpl_code']="\n".join(["* %s (%s) Copyright (c) %s %s" % c for c in copyrights])
+    copyrights.append({'website': website,
+                       'project': project,
+                       'author': author,
+                       'date': date,
+                       'reason': reason,
+                       })
+    substitutes['gpl_code']="\n".join(["<li><a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights])
         
 
 class AboutProtocol(ProtocolPluginBase,debugmixin):
@@ -216,7 +241,7 @@ class BlankMode(MajorMode):
 
 class TitleMode(BlankMode):
     keyword='Title'
-    regex="about:title.txt"
+    regex="about:title.html"
     temporary=True
 
 
@@ -249,8 +274,8 @@ class AboutPlugin(MajorModeMatcherBase):
             return MajorModeMatch(AlphaMode,exact=True)
         elif filename=='about:bravo':
             return MajorModeMatch(BravoMode,exact=True)
-        elif filename=='about:title.txt':
-            return MajorModeMatch(TitleMode,exact=True)
+##        elif filename=='about:title.html':
+##            return MajorModeMatch(TitleMode,exact=True)
         elif filename=='about:blank':
             return MajorModeMatch(BlankMode,exact=True)
         else:
