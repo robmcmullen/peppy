@@ -145,6 +145,7 @@ class CommitHook:
         # convert my * lists to trac wiki lists
         # test comment
         # test comment #2
+        # test comment #3
         lines = []
         for line in msg.splitlines():
             if line.startswith("*"):
@@ -207,6 +208,7 @@ class CommitHook:
 
 
 if __name__ == "__main__":
+    print "here in main"
     if len(sys.argv) < 5:
         print "For usage: %s --help" % (sys.argv[0])
     else:
