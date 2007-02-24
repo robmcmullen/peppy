@@ -149,17 +149,18 @@ class SaveAs(SelectAction):
             cwd = self.frame.cwd()
             saveas=os.path.basename(saveas)
 
-            # FIXME: bug in linux: setting defaultFile to some
-            # non-blank string causes directory to be set to
-            # current working directory.  If defaultFile == "",
-            # working directory is set to the specified
-            # defaultDir.
-            
             wildcard="*.*"
             dlg = wx.FileDialog(
                 self.frame, message="Save File", defaultDir=cwd, 
                 defaultFile=saveas, wildcard=wildcard,
                 style=wx.SAVE| wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+
+            # FIXME: bug in linux: setting defaultFile to some
+            # non-blank string causes directory to be set to
+            # current working directory.  If defaultFile == "",
+            # working directory is set to the specified
+            # defaultDir.           
+            dlg.SetDirectory(cwd)
             
             retval=dlg.ShowModal()
             if retval==wx.ID_OK:
