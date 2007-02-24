@@ -146,6 +146,7 @@ class CommitHook:
         # test comment
         # test comment #2
         # test comment #3
+        # test comment #4
         lines = []
         for line in msg.splitlines():
             if line.startswith("*"):
