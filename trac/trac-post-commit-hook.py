@@ -141,17 +141,6 @@ class CommitHook:
         msg = to_unicode(msg, encoding)
         self.author = author
         self.rev = rev
-
-        # convert my * lists to trac wiki lists
-        # test comment
-        # test comment #2
-        # test comment #3
-        # test comment #4
-        # test comment #5
-        # test comment #6
-        # test comment #7
-        # test comment #8
-        # test comment #9
         lines = []
         for line in msg.splitlines():
             if line.startswith("*"):
@@ -159,16 +148,20 @@ class CommitHook:
             else:
                 lines.append(line)
         msg = "\n".join(lines)
-        
         self.msg = "(In [%s]) %s" % (rev, msg)
+        #print "message = %s" % self.msg
+
         self.now = int(time.time()) 
+        #print "project = %s" % project
         self.env = open_environment(project)
+        #print "env = %s" % self.env
         if url is None:
             url = self.env.config.get('project', 'url')
         self.env.href = Href(url)
         self.env.abs_href = Href(url)
 
         cmdGroups = commandPattern.findall(msg)
+        #print "cmdGroups = %s" % str(cmdGroups)
 
         tickets = {}
         for cmd, tkts in cmdGroups:
@@ -178,7 +171,9 @@ class CommitHook:
                     func = getattr(self, funcname)
                     tickets.setdefault(tkt_id, []).append(func)
 
+        #print "tickets = %s" % str(tickets)
         for tkt_id, cmds in tickets.iteritems():
+            #print "id = %s, cmds = %s" % (str(tkt_id),str(cmds))
             try:
                 db = self.env.get_db_cnx()
                 
@@ -214,8 +209,12 @@ class CommitHook:
 
 
 if __name__ == "__main__":
-    print "here in main"
+    #print "here in main"
     if len(sys.argv) < 5:
         print "For usage: %s --help" % (sys.argv[0])
     else:
-        CommitHook()
+        #print "calling CommitHook"
+        try:
+            CommitHook()
+        except Exception, e:
+            print "error %s" % e
