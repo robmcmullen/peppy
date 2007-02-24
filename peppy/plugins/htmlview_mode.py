@@ -15,18 +15,32 @@ from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
 from peppy import *
+from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
 
 __all__ = ['HTMLViewPlugin']
 
 
-class HTMLWindow(wx.html.HtmlWindow):
-    def __init__(self, parent, stc):
+class HTMLWindow(wx.html.HtmlWindow, debugmixin):
+    def __init__(self, parent, mode):
         wx.html.HtmlWindow.__init__(self, parent, -1, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.stc = stc
+        self.mode = mode
+        self.stc = mode.buffer.stc
         if "gtk2" in wx.PlatformInfo:
             self.SetStandardFonts()
+
+    def OnLinkClicked(self, linkinfo):
+        self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
+        #self.mode.frame.SetStatusText(linkinfo.GetHref())
+
+    def OnCellMouseHover(self, cell, x, y):
+        self.dprint('OnCellMouseHover: %s\n' % cell)
+        linkinfo = cell.GetLink()
+        if linkinfo is not None:
+            self.mode.frame.SetStatusText(linkinfo.GetHref())
+        else:
+            self.mode.frame.SetStatusText("")
 
     def update(self):
         self.SetPage(self.stc.GetText())
@@ -52,7 +66,7 @@ class HTMLViewMode(MajorMode):
         """
         self.dprint()
 
-        win=HTMLWindow(parent, self.buffer.stc)
+        win=HTMLWindow(parent, self)
 
         eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
 
