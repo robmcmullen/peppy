@@ -143,6 +143,7 @@ class CommitHook:
         self.rev = rev
 
         # convert my * lists to trac wiki lists
+        # test comment
         lines = []
         for line in msg.splitlines():
             if line.startswith("*"):
