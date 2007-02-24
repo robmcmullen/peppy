@@ -144,6 +144,7 @@ class CommitHook:
 
         # convert my * lists to trac wiki lists
         # test comment
+        # test comment #2
         lines = []
         for line in msg.splitlines():
             if line.startswith("*"):
