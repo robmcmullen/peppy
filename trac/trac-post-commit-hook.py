@@ -129,7 +129,7 @@ class CommitHook:
                        'fixed':      '_cmdClose',
                        'fixes':      '_cmdClose',
                        'addresses':  '_cmdRefs',
-                       'continues':  '_cmdRefs',
+                       'continues':  '_cmdRefs', # added by me
                        're':         '_cmdRefs',
                        'references': '_cmdRefs',
                        'refs':       '_cmdRefs',
