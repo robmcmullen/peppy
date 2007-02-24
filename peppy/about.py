@@ -33,6 +33,7 @@ substitutes = {
 May be unstable and crash without warning, so don't use this to edit important stuff.  Or, at least make lots of backups.  It probably will save what you're working on, but you never know.  I'm not using this as my primary editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x series of releases, I intend to be using this as my primary editor, so I'll have much more confidence in it by then.
     """,
     'thanks': "",
+    'gpl_code': "",
     }
 substitutes['copyright'] = 'Copyright (c) %(yearrange)s %(author)s (%(author_email)s)' % substitutes
 
@@ -61,7 +62,7 @@ SetAbout('alpha','')
 SetAbout('bravo','')
 SetAbout('blank','')
 
-SetAbout('title.txt',"%(prog)s %(version)s\n%(description)s\n\nCopyright (c) %(yearrange)s %(author)s (%(author_email)s)\n%(license)s\n\n%(warning)s\nThanks to lots of folks:\n%(thanks)s\nSee the file THANKS for more credits.")
+SetAbout('title.txt',"%(prog)s %(version)s\n%(description)s\n\nCopyright (c) %(yearrange)s %(author)s (%(author_email)s)\n%(license)s\n\n%(warning)s\nGPL code borrowed from the following projects:\n%(gpl_code)s\n\nThanks to lots of folks:\n%(thanks)s\nSee the file THANKS for more credits.")
 SetAbout('demo.txt',"""\
 This editor is provided by a class named wx.StyledTextCtrl.  As
 the name suggests, you can define styles that can be applied to
@@ -109,7 +110,13 @@ def AddCredit(author, contribution):
         
 AddCredit("Robin Dunn", "contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
 AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
+AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
 
+copyrights = []
+def AddCopyright(project, website, author, date, reason=None):
+    copyrights.append((project, website, author, date))
+    substitutes['gpl_code']="\n".join(["* %s (%s) Copyright (c) %s %s" % c for c in copyrights])
+        
 
 class AboutProtocol(ProtocolPluginBase,debugmixin):
     implements(ProtocolPlugin)

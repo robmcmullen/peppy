@@ -14,7 +14,7 @@ import info
 from peppy.debug import *
 from peppy.lib.iconstorage import *
 
-from peppy.about import AddCredit
+from peppy.about import AddCredit, AddCopyright
 
 SPECompat = None
 
@@ -24,9 +24,7 @@ class _SPECompat(object):
         self.iconsListIndex = {}
         
         spedir = os.path.dirname(__file__)
-        dprint(spedir)
         for filename in os.listdir(spedir):
-            dprint("name=%s type=%s" % (filename, filename.__class__))
             if filename.endswith(".png"):
                 self.iconsListIndex[filename] = icons.get(filename, spedir)
 
@@ -34,6 +32,7 @@ class _SPECompat(object):
 if SPECompat is None:
     SPECompat = _SPECompat()
 
-    AddCredit("Stani Michiels", "for SPE (GPL Licensed, Copyright (c) 2003-2005 www.stani.be), and the pyxides mailing list.")
+    AddCredit("Stani Michiels", "for the pyxides mailing list")
+    AddCopyright("SPE", "http://www.stani.be", "Stani Michiels", "2003-2005")
 
 __all__ = ['SPECompat', 'info']

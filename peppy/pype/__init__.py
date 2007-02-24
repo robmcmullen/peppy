@@ -14,7 +14,7 @@ import os
 from peppy import *
 from peppy.configprefs import *
 
-from peppy.about import AddCredit
+from peppy.about import AddCopyright
 
 PyPECompat = None
 
@@ -32,6 +32,6 @@ if PyPECompat is None:
     else:
         __builtins__._pype = PyPECompat()
 
-    AddCredit("Josiah Carlson", "for some plugins from PyPE (http://pype.sourceforge.net/, Copyright (c) 2003-2006 Josiah Carlson) that I'm borrowing.")
+    AddCopyright("PyPE", "http://pype.sourceforge.net/", "Josiah Carlson", "2003-2006")
 
 __all__ = ['PyPECompat']

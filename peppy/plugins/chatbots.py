@@ -18,8 +18,8 @@ from peppy.plugins.shell_mode import *
 
 from peppy.nltk_lite.chat import *
 
-from peppy.about import AddCredit
-AddCredit("Natural Language Toolkit project", "for Eliza and the other chatbot implementations (http://nltk.sourceforge.net/)")
+from peppy.about import AddCopyright
+AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "2001-2006", "University of Pennsylvania", "Eliza and the other chatbot implementations")
 
 class ChatShell(Component):
     implements(ShellPipePlugin)

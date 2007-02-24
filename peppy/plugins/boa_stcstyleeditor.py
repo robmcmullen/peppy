@@ -12,8 +12,8 @@ from peppy.menu import *
 from peppy.trac.core import *
 import peppy.boa as boa
 
-from peppy.about import AddCredit
-AddCredit("Riaan Booysen and the Boa Constructor project", "for the style editor for the wxStyledTextCtrl (http://boa-constructor.sourceforge.net/)")
+from peppy.about import AddCopyright
+AddCopyright("Boa Constructor", "http://boa-constructor.sourceforge.net/", "Riaan Booysen", "2001-2005", "for the STCStyleEditor dialog for the wxStyledTextCtrl")
 
 
 class STCStyles(SelectAction):
