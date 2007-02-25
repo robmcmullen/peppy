@@ -173,6 +173,8 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.win=self
         self.createWindow()
         self.createWindowPostHook()
+        self.createEventBindings()
+        self.createEventBindingsPostHook()
 
     def __del__(self):
         dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
@@ -204,11 +206,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
                           CenterPane())
 
-        if hasattr(self.editwin,'addUpdateUIEvent'):
-            self.editwin.addUpdateUIEvent(self.OnUpdateUI)
-##        if isinstance(self.editwin,MySTC):
-##            self.editwin.Bind(stc.EVT_STC_UPDATEUI, self.OnUpdateUI)
-
         self.loadMinorModes()
         
         self._mgr.Update()
@@ -224,6 +221,16 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.Destroy()
 
     def deleteWindowPostHook(self):
+        pass
+
+    def createEventBindings(self):
+        if hasattr(self.editwin,'addUpdateUIEvent'):
+            self.editwin.addUpdateUIEvent(self.OnUpdateUI)
+
+        self.idle_update_menu = False
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+    def createEventBindingsPostHook(self):
         pass
 
     def addPane(self, win, paneinfo):
@@ -271,12 +278,27 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
         self.frame.SetStatusText("L%d C%d" % (linenum+self.settings.line_number_offset, col+self.settings.column_number_offset),1)
-        self.frame.enableTools()
+        self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
 
     def OnUpdateUIHook(self, evt):
+        pass
+
+    def OnIdle(self, evt):
+        if self.idle_update_menu:
+            # FIXME: calling the toolbar enable here is better than in
+            # the update UI loop, but it still seems to cause flicker
+            # in the paste icon.  What's up with that?
+            self.frame.enableTools()
+            self.idle_update_menu = False
+        self.idlePostHook()
+        evt.Skip()
+
+    def idlePostHook(self):
+        """Hook for subclasses to process during idle time.
+        """
         pass
 
     def createEditWindow(self,parent):
