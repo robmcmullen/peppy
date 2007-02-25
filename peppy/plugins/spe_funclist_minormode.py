@@ -12,6 +12,7 @@ import os, re
 from wx.lib.evtmgr import eventManager
 
 from peppy import *
+from peppy.debug import *
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.lib.iconstorage import *
@@ -19,21 +20,41 @@ from peppy.lib.iconstorage import *
 from peppy.spe.realtime import TreeCtrl
 from peppy.spe import *
 
+
+def getLexedItems(stc, classes):
+    length = stc.GetTextLength()*2
+    text = stc.GetStyledText(0, length)
+    bits = (2**stc.GetStyleBits()) -1
+    print "seaching for %s" % classes
+
+    i=1 # styling bytes are the odd bytes
+    parsed = []
+    while i<length:
+        # get the style, stripping off the the indicator bits
+        style = ord(text[i]) & bits
+        if style in classes:
+            # it's a style we're interested in, so gather
+            # characters until the style changes.
+            found = i-1
+            i+=2
+            while i < length:
+                s = ord(text[i]) & bits
+                if style != s:
+                    parsed.append((found, i-1, style, text[found:i-1:2]))
+                    break
+                i+=2
+        else:
+            i+=2
+    print parsed
+
+
+
 RE_DOCSTRING            = re.compile(r'(\n|\n__doc__\s*=(\s*|\s*\\\s*\n))("""([^"]*)"""|\'\'\'([^\']*)\'\'\'|"([^"]*)"|\'([^\']*)\')')
 RE_DOCSTRING_FIRST      = re.compile(r'(|__doc__\s*=(\s*|\s*\\\s*\n))("""([^"]*)"""|\'\'\'([^\']*)\'\'\'|"([^"]*)"|\'([^\']*)\')')
 RE_TODO                 = re.compile('.*#[ ]*TODO[ ]*:(.+)', re.IGNORECASE)
 RE_SEPARATOR            = re.compile('^.*(#-{3})')
 RE_SEPARATOR_HIGHLIGHT  = re.compile('^.*(#{4})')
 RE_ENCODING             = re.compile('coding[:=]\s*([-\w.]+)', re.IGNORECASE)
-
-def isUtf8(text):
-    try:
-        if text.startswith('\xef\xbb\xbf'):
-            return True
-        else:
-            return False
-    except:
-        return False
 
 class SPEFuncList(MinorMode):
     keyword="spe_funclist"
@@ -58,7 +79,7 @@ class SPEFuncList(MinorMode):
 
         self.fl=self.major.getFunctionList()
         self.source = self.major.stc
-        self.updateExplore()
+        self.updateExploreGeneric()
 
         eventManager.Register(self.onSourceChange,wx.stc.EVT_STC_CHANGE,self.source)
         eventManager.Register(self.onSourceFromExplore,wx.EVT_TREE_ITEM_ACTIVATED,self.explore)
@@ -73,6 +94,16 @@ class SPEFuncList(MinorMode):
         if not self.fl[0]:
             paneinfo.Hide()
         self.major.addPane(self.explore, paneinfo)
+
+    def updateExploreGeneric(self):
+        if self.major.keyword == 'Python':
+            self.updateExplore()
+        else:
+            classes = {wx.stc.STC_P_CLASSNAME: 'Class definition',
+                       wx.stc.STC_P_DEFNAME: 'Function or method',
+                       }
+            getLexedItems(self.source, classes)
+
 
     def updateExplore(self,uml=0):
         """Updates explore in sidebar."""
@@ -204,6 +235,7 @@ class SPEFuncList(MinorMode):
         #expand root of explore
         #self.explore.Expand(self.root)
         #if self.parentPanel.exploreVisible: ...
+        dprint(hierarchy)
         self.explore.Update()
         return classes
 

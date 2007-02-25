@@ -10,6 +10,7 @@ provide the icon list.
 import os, os.path
 
 import info
+import sm
 
 from peppy.debug import *
 from peppy.lib.iconstorage import *
@@ -35,4 +36,13 @@ if SPECompat is None:
     AddCredit("Stani Michiels", "for the pyxides mailing list")
     AddCopyright("SPE", "http://www.stani.be", "Stani Michiels", "2003-2005")
 
-__all__ = ['SPECompat', 'info']
+def isUtf8(text):
+    try:
+        if text.startswith('\xef\xbb\xbf'):
+            return True
+        else:
+            return False
+    except:
+        return False
+
+__all__ = ['SPECompat', 'isUtf8', 'info', 'sm']
