@@ -62,6 +62,8 @@ class MakefileMode(FundamentalMode):
     icon='icons/cog.png'
     regex="(\.mak|[Mm]akefile)$"
 
+    start_line_comment = "# "
+
     default_settings = {
         'minor_modes': '',
         'tab_size': 8,
@@ -86,7 +88,7 @@ class MakefileMode(FundamentalMode):
                              wx.stc.STC_MAKE_TARGET: 'bold,fore:#004080',
                              },
         }
-    
+
 
 class MakefilePlugin(MajorModeMatcherBase,debugmixin):
     """Makefile plugin to register modes and user interface.

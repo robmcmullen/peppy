@@ -57,6 +57,8 @@ class GraphvizMode(FundamentalMode):
     icon='icons/graphviz.ico'
     regex="\.dot$"
 
+    start_line_comment = "// "
+
     default_settings = {
         'minor_modes': 'GraphvizView',
         'sample_file': _sample_file,

@@ -236,7 +236,8 @@ class StandardIndentMixin(object):
         Source code started life from pype.PythonSTC.Dent(); modified
         by me.
 
-        @param s: stc to indent
+        It is assumed that this is to be mixin in to a FundamentalMode
+        subclass.
 
         @param incr: integer indicating multiplier and direction of
         indent: >0 indents, <0 removes indentation
@@ -246,22 +247,8 @@ class StandardIndentMixin(object):
         self.dprint("indenting by %d" % incr)
         incr *= s.GetIndent()
         self.dprint("indenting by %d" % incr)
-        x,y = s.GetSelection()
-        if x==y:
-            lnstart = s.GetCurrentLine()
-            lnend = lnstart
-            if incr < 0:
-                a = s.GetLineIndentation(lnstart)%(abs(incr))
-                if a:
-                    incr = -a
-            pos = s.GetCurrentPos()
-            col = s.GetColumn(pos)
-            linestart = pos-col
-            a = max(linestart+col+incr, linestart)
-        else:
-            lnstart = s.LineFromPosition(x)
-            lnend = s.LineFromPosition(y-1)
         s.BeginUndoAction()
+        lnstart, lnend = s.GetLineRegion()
         try:
             for ln in xrange(lnstart, lnend+1):
                 count = s.GetLineIndentation(ln)
@@ -269,14 +256,6 @@ class StandardIndentMixin(object):
                 m += cmp(0, incr)*(m%incr)
                 m = max(m, 0)
                 s.SetLineIndentation(ln, m)
-            if x==y:
-                pos = pos + (m-count) - min(0, col + (m-count))
-                s.SetSelection(pos, pos)
-            else:
-                p = 0
-                if lnstart != 0:
-                    p = s.GetLineEndPosition(lnstart-1) + len(s.format)
-                s.SetSelection(p, s.GetLineEndPosition(lnend))
         finally:
             s.EndUndoAction()
 
@@ -302,6 +281,45 @@ class ShiftRight(MajorAction):
             mode.indent(1)
 
 
+
+class StandardCommentMixin(debugmixin):
+    def comment(self, add=True):
+        """Comment or uncomment a region.
+
+        Comment or uncomment a region.
+
+        @param add: True to add comments, False to remove them
+        """
+        s = self.stc
+        
+        s.BeginUndoAction()
+        line, lineend = s.GetLineRegion()
+        self.dprint("lines: %d - %d" % (line, lineend))
+        try:
+            selstart, selend = s.GetSelection()
+            self.dprint("selection: %d - %d" % (selstart, selend))
+
+            start = selstart
+            end = s.GetLineEndPosition(line)
+            while line <= lineend:
+                start = self.commentLine(start, end)
+                line += 1
+                end = s.GetLineEndPosition(line)
+            s.SetSelection(selstart, start - s.eol_len)
+        finally:
+            s.EndUndoAction()
+
+class CommentRegion(MajorAction):
+    name = "&Comment Region"
+    tooltip = "Comment a line or region"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'C-C C-C'
+
+    def majoraction(self, mode, pos=-1):
+        if hasattr(mode, 'comment') and mode.comment is not None:
+            mode.comment(True)
+
+
 class ElectricReturn(MajorAction):
     name = "Electric Return"
     tooltip = "Indent the next line following a return"
@@ -314,7 +332,8 @@ class ElectricReturn(MajorAction):
 
 
 
-class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin):
+class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
+                      StandardCommentMixin):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -323,6 +342,9 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin):
     """
     keyword='Fundamental'
     regex=".*"
+
+    start_line_comment = ''
+    end_line_comment = ''
 
     # increment after every style change
     style_number = 0
@@ -494,6 +516,31 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin):
     def OnUpdateUIHook(self, evt):
         self.braceHighlight()
 
+    def commentLine(self, start, end):
+        """Add comment to the line specified by start and end.
+
+        Generic method that uses the start_line_comment and
+        end_line_comment class attributes to comment a line.  This is
+        to be called within a loop that adds comment characters to the
+        line.  start and end are assumed to be the endpoints of the
+        current line, so no further checking of the line is necessary.
+
+        @param start: first character in line
+        @param end: last character in line before line ending
+
+        @returns: new position of last character before line ending
+        """
+        self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
+        slen = len(self.start_line_comment)
+        self.stc.InsertText(start, self.start_line_comment)
+        end += slen
+
+        elen = len(self.end_line_comment)
+        if elen > 0:
+            self.stc.InsertText(end, self.start_line_comment)
+            end += elen
+        return end + self.stc.eol_len
+
     def electricReturn(self):
         """
         Indent the next line to the appropriate level.  This is called
@@ -528,6 +575,8 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental",None,Menu("Cmds").after("Edit")),
                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),
                   ("Fundamental","Cmds",MenuItem(ShiftRight)),
+                  ("Fundamental","Cmds",Separator("shift").last()),
+                  ("Fundamental","Cmds",MenuItem(CommentRegion)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

@@ -195,6 +195,8 @@ class PythonMode(PythonElectricReturnMixin,FundamentalMode):
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
 
+    start_line_comment = "##"
+
     default_settings = {
         'word_wrap': True,
         'minor_modes': 'pype_funclist,funcmenu,spe_funclist',

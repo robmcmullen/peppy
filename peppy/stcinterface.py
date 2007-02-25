@@ -173,6 +173,7 @@ class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
         # assume unix line endings for now; will be changed after file
         # is loaded
         self.format='\n'
+        self.eol_len=len(self.format)
 
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
@@ -262,7 +263,25 @@ class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
             return True
         return False
         
+    def GetLineRegion(self):
+        """Get current region, extending to current line if no region
+        selected.
+
+        If there's a region selected, extend it if necessary to
+        encompass full lines.  If no region is selected, create one
+        from the current line.
+        """
+        start, end = self.GetSelection()
+        if start == end:
+            linestart = lineend = self.GetCurrentLine()
+        else:
+            linestart = self.LineFromPosition(start)
+            lineend = self.LineFromPosition(end - 1)
         
+        start -= self.GetColumn(start)
+        end = self.GetLineEndPosition(lineend)
+        self.SetSelection(start, end)
+        return (linestart, lineend)
         
     def OnDestroy(self, evt):
         """
