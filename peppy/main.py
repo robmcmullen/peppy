@@ -387,17 +387,6 @@ class DebugClass(ToggleListAction):
             kls.debuglevel=0
         self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
 
-class DebugGlobalActions(Component):
-    implements(IMenuItemProvider)
-
-    default_menu=((None,Menu("Debug").after("Minor Mode").before("&Help")),
-                  ("Debug",MenuItem(DebugClass).first()),
-                  )
-    def getMenuItems(self):
-        for menu,item in self.default_menu:
-            yield (None,menu,item)
-
-
 
 class Peppy(BufferApp, ClassSettings):
     """Main application object.
@@ -423,7 +412,7 @@ class Peppy(BufferApp, ClassSettings):
     
     initialconfig={'BufferFrame':{'width':800,
                                   'height':600,
-                                  'plugins':'filebrowser',
+                                  'plugins':'filebrowser,debug_list',
                                   },
                    'Peppy':{'plugins': '',
                             'recentfiles':'recentfiles.txt',
