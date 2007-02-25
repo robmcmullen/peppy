@@ -227,9 +227,94 @@ class BraceHighlightMixin(object):
         
 
 
+class StandardIndentMixin(object):
+    def indent(self, incr):
+        """Indent or unindent a region.
+
+        Indent (or unindent) a region.  The absolute value of the incr
+        parameter is the number of tab stops to indent (or unindent).
+        Source code started life from pype.PythonSTC.Dent(); modified
+        by me.
+
+        @param s: stc to indent
+
+        @param incr: integer indicating multiplier and direction of
+        indent: >0 indents, <0 removes indentation
+        """
+        s = self.stc
+        
+        self.dprint("indenting by %d" % incr)
+        incr *= s.GetIndent()
+        self.dprint("indenting by %d" % incr)
+        x,y = s.GetSelection()
+        if x==y:
+            lnstart = s.GetCurrentLine()
+            lnend = lnstart
+            if incr < 0:
+                a = s.GetLineIndentation(lnstart)%(abs(incr))
+                if a:
+                    incr = -a
+            pos = s.GetCurrentPos()
+            col = s.GetColumn(pos)
+            linestart = pos-col
+            a = max(linestart+col+incr, linestart)
+        else:
+            lnstart = s.LineFromPosition(x)
+            lnend = s.LineFromPosition(y-1)
+        s.BeginUndoAction()
+        try:
+            for ln in xrange(lnstart, lnend+1):
+                count = s.GetLineIndentation(ln)
+                m = (count+incr)
+                m += cmp(0, incr)*(m%incr)
+                m = max(m, 0)
+                s.SetLineIndentation(ln, m)
+            if x==y:
+                pos = pos + (m-count) - min(0, col + (m-count))
+                s.SetSelection(pos, pos)
+            else:
+                p = 0
+                if lnstart != 0:
+                    p = s.GetLineEndPosition(lnstart-1) + len(s.format)
+                s.SetSelection(p, s.GetLineEndPosition(lnend))
+        finally:
+            s.EndUndoAction()
 
 
-class FundamentalMode(MajorMode,BraceHighlightMixin):
+class ShiftLeft(MajorAction):
+    name = "Shift &Left"
+    tooltip = "Unindent a line region"
+    icon = 'icons/text_indent_remove_rob.png'
+    keyboard = 'S-TAB'
+
+    def majoraction(self, mode, pos=-1):
+        if hasattr(mode, 'indent') and mode.indent is not None:
+            mode.indent(-1)
+
+class ShiftRight(MajorAction):
+    name = "Shift &Right"
+    tooltip = "Indent a line or region"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'TAB'
+
+    def majoraction(self, mode, pos=-1):
+        if hasattr(mode, 'indent') and mode.indent is not None:
+            mode.indent(1)
+
+
+class ElectricReturn(MajorAction):
+    name = "Electric Return"
+    tooltip = "Indent the next line following a return"
+    icon = 'icons/text_indent_rob.png'
+    keyboard = 'RET'
+
+    def majoraction(self, viewer, pos=-1):
+        viewer.electricReturn()
+
+
+
+
+class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -409,10 +494,19 @@ class FundamentalMode(MajorMode,BraceHighlightMixin):
     def OnUpdateUIHook(self, evt):
         self.braceHighlight()
 
+    def electricReturn(self):
+        """
+        Indent the next line to the appropriate level.  This is called
+        instead of letting the STC handle a return press on its own.
+        """
+        pass
+
+
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
     implements(IKeyboardItemProvider)
     
     def scanMagic(self,buffer):
@@ -431,9 +525,20 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental","Edit",MenuItem(FindText)),
                   ("Fundamental","Edit",MenuItem(ReplaceText)),
                   ("Fundamental","Edit",MenuItem(GotoLine)),
+                  ("Fundamental",None,Menu("Cmds").after("Edit")),
+                  ("Fundamental","Cmds",MenuItem(ShiftLeft)),
+                  ("Fundamental","Cmds",MenuItem(ShiftRight)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
+            yield (mode,menu,item)
+
+    default_tools=(("Fundamental",None,Menu("Cmds").after("Major Mode")),
+                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),
+                   ("Fundamental","Cmds",MenuItem(ShiftRight)),
+                   )
+    def getToolBarItems(self):
+        for mode,menu,item in self.default_tools:
             yield (mode,menu,item)
 
     default_keys=(("Fundamental",BeginningOfLine),

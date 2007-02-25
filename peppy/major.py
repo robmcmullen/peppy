@@ -59,33 +59,6 @@ class MajorAction(SelectAction):
         self.majoraction(self.frame.getActiveMajorMode())
 
 
-class ShiftLeft(MajorAction):
-    name = "Shift &Left"
-    tooltip = "Unindent a line region"
-    icon = 'icons/text_indent_remove_rob.png'
-    keyboard = 'S-TAB'
-
-    def majoraction(self, viewer, pos=-1):
-        viewer.indent(-1)
-
-class ShiftRight(MajorAction):
-    name = "Shift &Right"
-    tooltip = "Indent a line or region"
-    icon = 'icons/text_indent_rob.png'
-    keyboard = 'TAB'
-
-    def majoraction(self, viewer, pos=-1):
-        viewer.indent(1)
-
-class ElectricReturn(MajorAction):
-    name = "Electric Return"
-    tooltip = "Indent the next line following a return"
-    icon = 'icons/text_indent_rob.png'
-    keyboard = 'RET'
-
-    def majoraction(self, viewer, pos=-1):
-        viewer.electricReturn()
-
 class MajorModeSelect(RadioAction):
     name="Major Mode"
     inline=False
@@ -361,24 +334,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         class, a function, a todo item, etc.
         '''
         return ([], [], {}, [])
-
-    def indent(self, direction):
-        """
-        Indent (or unindent) a region.  The absolute value of the
-        direction parameter is the number of tab stops to indent (or
-        unindent).
-
-        @param direction: positive to indent, negative to unindent;
-        @type direction: int
-        """
-        pass
-
-    def electricReturn(self):
-        """
-        Indent the next line to the appropriate level.  This is called
-        instead of letting the STC handle a return press on its own.
-        """
-        pass
 
     def getNumWin(self, evt=None):
         """PyPE compat"""

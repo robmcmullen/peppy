@@ -54,49 +54,6 @@ class SamplePython(SelectAction):
         self.frame.open("about:sample.py")
 
 
-class PythonIndentMixin(object):
-    def indent(self, incr):
-        s=self.stc
-
-        # from pype.PythonSTC.Dent()
-        self.dprint("indenting by %d" % incr)
-        incr *= s.GetIndent()
-        self.dprint("indenting by %d" % incr)
-        x,y = s.GetSelection()
-        if x==y:
-            lnstart = s.GetCurrentLine()
-            lnend = lnstart
-            if incr < 0:
-                a = s.GetLineIndentation(lnstart)%(abs(incr))
-                if a:
-                    incr = -a
-            pos = s.GetCurrentPos()
-            col = s.GetColumn(pos)
-            linestart = pos-col
-            a = max(linestart+col+incr, linestart)
-        else:
-            lnstart = s.LineFromPosition(x)
-            lnend = s.LineFromPosition(y-1)
-        s.BeginUndoAction()
-        try:
-            for ln in xrange(lnstart, lnend+1):
-                count = s.GetLineIndentation(ln)
-                m = (count+incr)
-                m += cmp(0, incr)*(m%incr)
-                m = max(m, 0)
-                s.SetLineIndentation(ln, m)
-            if x==y:
-                pos = pos + (m-count) - min(0, col + (m-count))
-                s.SetSelection(pos, pos)
-            else:
-                p = 0
-                if lnstart != 0:
-                    p = s.GetLineEndPosition(lnstart-1) + len(s.format)
-                s.SetSelection(p, s.GetLineEndPosition(lnend))
-        finally:
-            s.EndUndoAction()
-
-
 
 class PythonElectricReturnMixin(object):
     def electricReturn(self):
@@ -233,7 +190,7 @@ class PythonElectricReturnMixin(object):
 
 
 
-class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
+class PythonMode(PythonElectricReturnMixin,FundamentalMode):
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
@@ -300,24 +257,24 @@ class PythonMode(PythonIndentMixin,PythonElectricReturnMixin,FundamentalMode):
 class PythonPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
+##    implements(IToolBarItemProvider)
 
     def possibleModes(self):
         yield PythonMode
     
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(SamplePython)),
-                  ("Python",None,Menu("Python").after("Major Mode")),
-                  ("Python","Python",MenuItem(ShiftLeft)),
-                  ("Python","Python",MenuItem(ShiftRight)),
+##                  ("Python",None,Menu("Python").after("Major Mode")),
+##                  ("Python","Python",MenuItem(ShiftLeft)),
+##                  ("Python","Python",MenuItem(ShiftRight)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
     default_tools=(("Python",None,Menu("Python").after("Major Mode")),
-                   ("Python","Python",MenuItem(ShiftLeft)),
-                   ("Python","Python",MenuItem(ShiftRight)),
+##                   ("Python","Python",MenuItem(ShiftLeft)),
+##                   ("Python","Python",MenuItem(ShiftRight)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
