@@ -15,7 +15,7 @@ from peppy.buffers import *
 import peppy.pype
 from peppy.pype.browser import FilesystemBrowser
 
-class FileBrowser(FramePlugin):
+class FileBrowser(Sidebar):
     keyword="filebrowser"
 
     default_settings = {
@@ -51,7 +51,7 @@ class FileBrowser(FramePlugin):
         
 
 class FileBrowserProvider(Component):
-    implements(IFramePluginProvider)
+    implements(ISidebarProvider)
 
-    def getFramePlugins(self):
+    def getSidebars(self):
         yield FileBrowser

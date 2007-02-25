@@ -16,7 +16,7 @@ from peppy.menu import *
 from peppy.trac.core import *
 from peppy.buffers import *
 
-class DebugClassList(FramePlugin, debugmixin):
+class DebugClassList(Sidebar, debugmixin):
     """Turn debug printing on or off for the listed classes.
 
     This is a global plugin that is used to turn on or off debug
@@ -59,12 +59,12 @@ class DebugClassList(FramePlugin, debugmixin):
         self.list.Check(index, self.debuglist.isChecked(index))
 
 class DebugClassProvider(Component):
-    implements(IFramePluginProvider)
+    implements(ISidebarProvider)
     implements(IMenuItemProvider)
 
     use_menu = False
 
-    def getFramePlugins(self):
+    def getSidebars(self):
         yield DebugClassList
 
     default_menu=((None,Menu("Debug").after("Minor Mode").before("&Help")),

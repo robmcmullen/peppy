@@ -300,7 +300,7 @@ class GlobalMenu(Component):
                   ("View",MenuItem(DeleteFrame).first()),
                   ("View",Separator("begin").first()),
                   ("View",Separator("plugins").after("begin")),
-                  ("View",MenuItem(FramePluginShow).after("plugins")),
+                  ("View",MenuItem(SidebarShow).after("plugins")),
                   ("View",MenuItem(FrameList).last()),
                   ("View",Separator("end").last()),
                   (None,Menu("Buffers").before("Major Mode")),
@@ -412,7 +412,7 @@ class Peppy(BufferApp, ClassSettings):
     
     initialconfig={'BufferFrame':{'width':800,
                                   'height':600,
-                                  'plugins':'filebrowser,debug_list',
+                                  'sidebars':'filebrowser,debug_list',
                                   },
                    'Peppy':{'plugins': '',
                             'recentfiles':'recentfiles.txt',

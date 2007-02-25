@@ -332,11 +332,11 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index,mode.getTabName())
 
 
-## FramePlugins
+## Sidebars
 
-class FramePlugin(ClassSettings):
+class Sidebar(ClassSettings):
     """
-    Base class for all frame plugins.  A frame plugin is generally
+    Base class for all frame sidebars.  A frame sidebar is generally
     used to create a new UI window in a frame that is outside the
     purview of the major mode.  It is a constant regardless of which
     major mode is selected.
@@ -365,54 +365,54 @@ class FramePlugin(ClassSettings):
     def createWindows(self,parent):
         pass
 
-class IFramePluginProvider(Interface):
+class ISidebarProvider(Interface):
     """
-    Add a frame plugin to a new frame.
+    Add a frame sidebar to a new frame.
     """
 
-    def getFramePlugins():
+    def getSidebars():
         """
-        Return iterator containing list of frame plugins.
+        Return iterator containing list of frame sidebars.
         """
 
-class FramePluginLoader(Component,debugmixin):
+class SidebarLoader(Component,debugmixin):
     debuglevel=0
     
-    extensions=ExtensionPoint(IFramePluginProvider)
+    extensions=ExtensionPoint(ISidebarProvider)
 
     def __init__(self):
         # Only call this once.
-        if hasattr(FramePluginLoader,'pluginmap'):
+        if hasattr(SidebarLoader,'sidebarmap'):
             return self
         
-        FramePluginLoader.pluginmap={}
+        SidebarLoader.sidebarmap={}
         
         for ext in self.extensions:
-            for plugin in ext.getFramePlugins():
-                self.dprint("Registering frame plugin %s" % plugin.keyword)
-                FramePluginLoader.pluginmap[plugin.keyword]=plugin
+            for sidebar in ext.getSidebars():
+                self.dprint("Registering frame sidebar %s" % sidebar.keyword)
+                SidebarLoader.sidebarmap[sidebar.keyword]=sidebar
 
-    def load(self,frame,pluginlist=[]):
-        self.dprint("Loading plugins %s for %s" % (str(pluginlist),frame))
-        for keyword in pluginlist:
-            if keyword in FramePluginLoader.pluginmap:
+    def load(self,frame,sidebarlist=[]):
+        self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
+        for keyword in sidebarlist:
+            if keyword in SidebarLoader.sidebarmap:
                 self.dprint("found %s" % keyword)
-                plugin=FramePluginLoader.pluginmap[keyword]
-                frame.createFramePlugin(plugin)
+                sidebar=SidebarLoader.sidebarmap[keyword]
+                frame.createSidebar(sidebar)
 
-class FramePluginShow(ToggleListAction):
-    name="Plugins"
+class SidebarShow(ToggleListAction):
+    name="Sidebars"
     inline=False
-    tooltip="Show or hide frame plugin windows"
+    tooltip="Show or hide sidebar windows"
 
     def getItems(self):
-        return [m.caption for m in self.frame.plugins]
+        return [m.caption for m in self.frame.sidebars]
 
     def isChecked(self, index):
-        return self.frame.plugins[index].IsShown()
+        return self.frame.sidebars[index].IsShown()
 
     def action(self, index=0, old=-1):
-        self.frame.plugins[index].Show(not self.frame.plugins[index].IsShown())
+        self.frame.sidebars[index].Show(not self.frame.sidebars[index].IsShown())
         self.frame._mgr.Update()
 
 
@@ -447,14 +447,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.tabs = MyNotebook(self)
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
-        self.plugins = []
-        
-        # Prepare the menu bar
-        self.tempsettings={'asteroids':False,
-                           'inner planets':True,
-                           'outer planets':True,
-                           'major mode':'C++',
-                           }
+        self.sidebars = []
         
         self.SetMenuBar(wx.MenuBar())
         self.menumap=None
@@ -463,32 +456,32 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.keys=KeyProcessor(self)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
 
-        self.loadFramePlugins()
+        self.loadSidebars()
         
         self.app.SetTopWindow(self)
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
 
-    def loadFramePlugins(self):
-        plugins=self.settings.plugins
-        self.dprint(plugins)
-        if plugins is not None:
-            pluginlist=plugins.split(',')
-            self.dprint("loading %s" % pluginlist)
-            FramePluginLoader(ComponentManager()).load(self,pluginlist)
-            self.createFramePluginList()
+    def loadSidebars(self):
+        sidebars=self.settings.sidebars
+        self.dprint(sidebars)
+        if sidebars is not None:
+            sidebarlist=sidebars.split(',')
+            self.dprint("loading %s" % sidebarlist)
+            SidebarLoader(ComponentManager()).load(self,sidebarlist)
+            self.createSidebarList()
 
-    def createFramePlugin(self,plugincls):
-        plugin=plugincls(self)
+    def createSidebar(self,sidebarcls):
+        sidebar=sidebarcls(self)
 
-    def createFramePluginList(self):
-        plugins = self._mgr.GetAllPanes()
-        for plugin in plugins:
-            self.dprint("name=%s caption=%s window=%s state=%s" % (plugin.name, plugin.caption, plugin.window, plugin.state))
-            if plugin.name != "notebook":
-                self.plugins.append(plugin)
-        self.plugins.sort(key=lambda s:s.caption)
+    def createSidebarList(self):
+        sidebars = self._mgr.GetAllPanes()
+        for sidebar in sidebars:
+            self.dprint("name=%s caption=%s window=%s state=%s" % (sidebar.name, sidebar.caption, sidebar.window, sidebar.state))
+            if sidebar.name != "notebook":
+                self.sidebars.append(sidebar)
+        self.sidebars.sort(key=lambda s:s.caption)
 
 
     # Overrides of wx methods
@@ -690,7 +683,6 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         
         mode.focus()
         self.setTitle()
-        self.tempsettings['major mode']=mode
         self.setKeys(majors)
         self.setMenumap(majors)
         self.setToolmap(majors)
