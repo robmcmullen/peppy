@@ -14,7 +14,7 @@ from peppy.menu import *
 from peppy.iofilter import ProtocolPlugin, ProtocolPluginBase
 from peppy.trac.core import *
 from peppy.fundamental import FundamentalMode
-from peppy.stcinterface import MySTC
+from peppy.stcinterface import PeppySTC
 
 class ShellPipePlugin(Interface):
     """
@@ -69,7 +69,7 @@ class ShellProtocol(ProtocolPluginBase,debugmixin):
 (ShellUpdateEvent, EVT_SHELL_UPDATE) = wx.lib.newevent.NewEvent()
 
 
-class ShellSTC(MySTC):
+class ShellSTC(PeppySTC):
     """
     Specialized STC used as the buffer of a shell mode.  Note, setting
     the cursor position on this STC doesn't affect the views directly.
@@ -78,7 +78,7 @@ class ShellSTC(MySTC):
     debuglevel=0
 
     def __init__(self, parent, ID=-1):
-        MySTC.__init__(self,parent,ID)
+        PeppySTC.__init__(self,parent,ID)
         self.pipe=None
         self.waiting=False
         self.promptPosEnd=0
@@ -145,7 +145,7 @@ class ShellSTC(MySTC):
         
 
     def OnModified(self, evt):
-        MySTC.OnModified(self,evt)
+        PeppySTC.OnModified(self,evt)
 
 
 class ProcessShellLine(SelectAction):

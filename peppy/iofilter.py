@@ -104,7 +104,7 @@ class ProtocolPluginBase(Component):
         return NotImplementedError
     
     def getSTC(self, parent):
-        return MySTC(parent)
+        return PeppySTC(parent)
 
 
 ## Default protocols

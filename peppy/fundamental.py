@@ -331,27 +331,6 @@ class ElectricReturn(MajorAction):
         viewer.electricReturn()
 
 
-
-def GetClipboardText():
-    success = False
-    do = wx.TextDataObject()
-    if wx.TheClipboard.Open():
-        success = wx.TheClipboard.GetData(do)
-        wx.TheClipboard.Close()
-
-    if success:
-        return do.GetText()
-    return None
-
-def SetClipboardText(txt):
-    do = wx.TextDataObject()
-    do.SetText(txt)
-    if wx.TheClipboard.Open():
-        wx.TheClipboard.SetData(do)
-        wx.TheClipboard.Close()
-        return 1
-    return 0
-
 class PasteAtColumn(Paste):
     name = "Paste at Column"
     tooltip = "Paste selection indented to the cursor's column"
@@ -360,37 +339,7 @@ class PasteAtColumn(Paste):
     def action(self, pos=-1):
         mode = self.frame.getActiveMajorMode()
         if mode:
-            s = mode.stc
-            dprint("rectangle=%s" % s.SelectionIsRectangle())
-            start, end = s.GetSelection()
-            dprint("selection = %d,%d" % (start, end))
-
-            line = s.LineFromPosition(start)
-            col = s.GetColumn(start)
-            dprint("line = %d, col=%d" % (line, col))
-
-            paste = GetClipboardText()
-            s.BeginUndoAction()
-            try:
-                for insert in paste.splitlines():
-                    pos = s.PositionFromLine(line)
-                    last = s.GetLineEndPosition(line)
-
-                    # FIXME: doesn't work with tabs
-                    if (pos + col) > last:
-                        # need to insert spaces before the rectangular area
-                        num = pos + col - last
-                        insert = ' '*num + insert
-                        pos = last
-                    else:
-                        pos += col
-                    dprint("inserting line '%s' at %d" % (insert, pos))
-                    s.InsertText(pos, insert)
-                    line += 1
-                    if line > s.GetLineCount():
-                        s.InsertText(s.GetTextLength(), s.format)
-            finally:
-                s.EndUndoAction()
+            mode.stc.PasteAtColumn()
 
 
 
@@ -461,7 +410,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         per-user basis, and in the peppy/config directory on a
         site-wide basis.
         """
-        self.stc=MySTC(parent,refstc=self.buffer.stc)
+        self.stc=PeppySTC(parent,refstc=self.buffer.stc)
         self.format=os.linesep
         self.current_style = self.__class__.style_number
 

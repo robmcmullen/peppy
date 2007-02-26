@@ -10,6 +10,26 @@ from cStringIO import StringIO
 from debug import *
 
 
+def GetClipboardText():
+    success = False
+    do = wx.TextDataObject()
+    if wx.TheClipboard.Open():
+        success = wx.TheClipboard.GetData(do)
+        wx.TheClipboard.Close()
+
+    if success:
+        return do.GetText()
+    return None
+
+def SetClipboardText(txt):
+    do = wx.TextDataObject()
+    do.SetText(txt)
+    if wx.TheClipboard.Open():
+        wx.TheClipboard.SetData(do)
+        wx.TheClipboard.Close()
+        return 1
+    return 0
+
 
 #### STC Interface
 
@@ -133,40 +153,13 @@ class NullSTC(STCInterface):
 
     def GetStyledText(self,start=0,length=0):
         return self.styledtext[start*2:start*2+length*2]
-    
 
-class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
+
+class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
+    """All the non-GUI enhancements to the STC are here.
     """
-    Base version of the STC that most major modes will use as the STC
-    implementation.
-    """
-    debuglevel=0
-    
-    def __init__(self, parent, ID=-1, refstc=None):
+    def __init__(self, parent, ID=-1):
         stc.StyledTextCtrl.__init__(self, parent, ID)
-
-        self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
-        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
-        self.Bind(stc.EVT_STC_START_DRAG, self.OnStartDrag)
-        self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
-
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
-
-        self.debug_dnd=False
-
-        if refstc is not None:
-            self.refstc=refstc
-            self.docptr=self.refstc.docptr
-            self.AddRefDocument(self.docptr)
-            self.SetDocPointer(self.docptr)
-            self.refstc.addSubordinate(self)
-            self.dprint("referencing document %s" % self.docptr)
-        else:
-            self.refstc=None
-            self.docptr=self.CreateDocument()
-            self.SetDocPointer(self.docptr)
-            self.dprint("creating new document %s" % self.docptr)
-            self.subordinates=[]
 
         ## PyPE compat
 
@@ -174,35 +167,7 @@ class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
         # is loaded
         self.format='\n'
         self.eol_len=len(self.format)
-
-    def addSubordinate(self,otherstc):
-        self.subordinates.append(otherstc)
-
-    def removeSubordinate(self,otherstc):
-        self.subordinates.remove(otherstc)
-
-    def sendEvents(self,evt):
-        """
-        Send an event to all subordinate STCs
-        """
-        for otherstc in self.subordinates:
-            self.dprint("sending event %s to %s" % (evt,otherstc))
-            wx.PostEvent(otherstc,evt())
-
-    def addUpdateUIEvent(self, callback):
-        """Add the equivalent to STC_UPDATEUI event for UI changes.
-
-        The STC supplies the EVT_STC_UPDATEUI event that fires for
-        every change that could be used to update the user interface:
-        a text change, a style change, or a selection change.  If the
-        editing (viewing) window does not use the STC to display
-        information, you should supply the equivalent event for the
-        edit window.
-        
-        @param callback: event handler to execute on event
-        """
-        self.Bind(stc.EVT_STC_UPDATEUI, callback)
-        
+    
     def CanEdit(self):
         """PyPE compat"""
         return True
@@ -282,6 +247,101 @@ class MySTC(stc.StyledTextCtrl,STCInterface,debugmixin):
         end = self.GetLineEndPosition(lineend)
         self.SetSelection(start, end)
         return (linestart, lineend)
+
+    def PasteAtColumn(self, paste=None):
+        dprint("rectangle=%s" % self.SelectionIsRectangle())
+        start, end = self.GetSelection()
+        dprint("selection = %d,%d" % (start, end))
+
+        line = self.LineFromPosition(start)
+        col = self.GetColumn(start)
+        dprint("line = %d, col=%d" % (line, col))
+
+        if paste is None:
+            paste = GetClipboardText()
+        self.BeginUndoAction()
+        try:
+            for insert in paste.splitlines():
+                pos = self.PositionFromLine(line)
+                last = self.GetLineEndPosition(line)
+
+                # FIXME: doesn't work with tabs
+                if (pos + col) > last:
+                    # need to insert spaces before the rectangular area
+                    num = pos + col - last
+                    insert = ' '*num + insert
+                    pos = last
+                else:
+                    pos += col
+                dprint("inserting line '%s' at %d" % (insert, pos))
+                self.InsertText(pos, insert)
+                line += 1
+                if line > self.GetLineCount():
+                    self.InsertText(self.GetTextLength(), self.format)
+        finally:
+            self.EndUndoAction()
+
+
+class PeppySTC(PeppyBaseSTC):
+    """
+    Base version of the STC that most major modes will use as the STC
+    implementation.
+    """
+    debuglevel=0
+    
+    def __init__(self, parent, ID=-1, refstc=None):
+        PeppyBaseSTC.__init__(self, parent, ID)
+
+        self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
+        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
+        self.Bind(stc.EVT_STC_START_DRAG, self.OnStartDrag)
+        self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
+
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+
+        self.debug_dnd=False
+
+        if refstc is not None:
+            self.refstc=refstc
+            self.docptr=self.refstc.docptr
+            self.AddRefDocument(self.docptr)
+            self.SetDocPointer(self.docptr)
+            self.refstc.addSubordinate(self)
+            self.dprint("referencing document %s" % self.docptr)
+        else:
+            self.refstc=None
+            self.docptr=self.CreateDocument()
+            self.SetDocPointer(self.docptr)
+            self.dprint("creating new document %s" % self.docptr)
+            self.subordinates=[]
+
+    def addSubordinate(self,otherstc):
+        self.subordinates.append(otherstc)
+
+    def removeSubordinate(self,otherstc):
+        self.subordinates.remove(otherstc)
+
+    def sendEvents(self,evt):
+        """
+        Send an event to all subordinate STCs
+        """
+        for otherstc in self.subordinates:
+            self.dprint("sending event %s to %s" % (evt,otherstc))
+            wx.PostEvent(otherstc,evt())
+
+    def addUpdateUIEvent(self, callback):
+        """Add the equivalent to STC_UPDATEUI event for UI changes.
+
+        The STC supplies the EVT_STC_UPDATEUI event that fires for
+        every change that could be used to update the user interface:
+        a text change, a style change, or a selection change.  If the
+        editing (viewing) window does not use the STC to display
+        information, you should supply the equivalent event for the
+        edit window.
+        
+        @param callback: event handler to execute on event
+        """
+        self.Bind(stc.EVT_STC_UPDATEUI, callback)
         
     def OnDestroy(self, evt):
         """
