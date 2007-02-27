@@ -16,15 +16,20 @@ class BitmapScroller(wx.ScrolledWindow):
         wx.ScrolledWindow.__init__(self, parent, -1)
 
         self.bmp = None
+        self.width = 0
+        self.height = 0
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
     def setBitmap(self, bmp):
         self.bmp = bmp
         if bmp is not None:
-            self.SetVirtualSize((bmp.GetWidth(), bmp.GetHeight()))
+            self.width = bmp.GetWidth()
+            self.height = bmp.GetHeight()
         else:
-            self.SetVirtualSize(10,10)
+            self.width = 10
+            self.height = 10
+        self.SetVirtualSize((self.width, self.height))
         self.SetScrollRate(1,1)
         self.Refresh()
 
@@ -33,4 +38,8 @@ class BitmapScroller(wx.ScrolledWindow):
             dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
             # Note that the drawing actually happens when the dc goes
             # out of scope and is destroyed.
+            self.OnPaintHook(dc)
         evt.Skip()
+
+    def OnPaintHook(self, dc):
+        pass
