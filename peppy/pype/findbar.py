@@ -72,16 +72,44 @@ class ReplaceBar(wx.Panel):
         
         #match case toggle, along with re-calling the last find operation when
         #it is switched
+        if DOUBLE_ROW_ONE:
+            ss = wx.BoxSizer(wx.VERTICAL)
+        if USE_BOX_SIZERS and not DOUBLE_ROW_ONE:
+            ss = wx.BoxSizer(wx.HORIZONTAL)
+        
         self.case = wx.CheckBox(self, -1, "Match Case")
-        self.sizer.Add(self.case, (0,3), flag=wx.EXPAND|wx.RIGHT, border=5)
+        if USE_MINI_CHECKBOXES:
+            self.case.SetWindowVariant(wx.WINDOW_VARIANT_SMALL)
+        if USE_BOX_SIZERS or DOUBLE_ROW_ONE:
+            ss.Add(self.case, flag=wx.EXPAND|wx.RIGHT, border=5)
+        else:
+            self.sizer.Add(self.case, (0,3), flag=wx.EXPAND|wx.RIGHT, border=5)
         self.case.SetValue(prefs['case'])
         self.wrap = wx.CheckBox(self, -1, "Wrap Search")
+        if USE_MINI_CHECKBOXES:
+            self.wrap.SetWindowVariant(wx.WINDOW_VARIANT_SMALL)
         self.wrap.SetValue(prefs['wrap'])
-        self.sizer.Add(self.wrap, (0,4), flag=wx.EXPAND|wx.RIGHT, border=5)
+        if USE_BOX_SIZERS or DOUBLE_ROW_ONE:
+            ss.Add(self.wrap, flag=wx.EXPAND|wx.RIGHT, border=5)
+        else:
+            self.sizer.Add(self.wrap, (0,4), flag=wx.EXPAND|wx.RIGHT, border=5)
+        
+        if DOUBLE_ROW_ONE:
+            if not USE_BOX_SIZERS:
+                self.sizer.Add(ss, (0,3), flag=wx.EXPAND|wx.RIGHT, border=5)
+            else:
+                ss2 = wx.BoxSizer(wx.HORIZONTAL)
+                ss2.Add(ss, 0, wx.EXPAND|wx.RIGHT, border=5)
+                ss = ss2
         
         #close button
         self.close = OnCloseBar(self)
-        self.closebutton = self.addbutton(self.sizer, self, "Close", self.close, (0,6))
+        if USE_BOX_SIZERS:
+            ss.Add(wx.StaticText(self), 1, wx.EXPAND)
+            self.closebutton = self.addbutton(ss, self, "Close", self.close, 0)
+            self.sizer.Add(ss, (0,3), flag=wx.EXPAND)
+        else:
+            self.closebutton = self.addbutton(self.sizer, self, "Close", self.close, (0,5-bool(DOUBLE_ROW_ONE)))
         
         if isinstance(self, FindBar):
             self.box1.MoveAfterInTabOrder(self.closebutton)
@@ -98,10 +126,21 @@ class ReplaceBar(wx.Panel):
         
         self.addbutton(self.sizer, self, "Replace", self.OnReplace, (1,1))
         self.addbutton(self.sizer, self, "Replace All", self.OnReplaceAll, (1,2))
-        self.addbutton(self.sizer, self, "Replace in Selection", self.OnReplaceSel, (1,3))
+        
+        ss = wx.BoxSizer(wx.HORIZONTAL)
+        if USE_BOX_SIZERS:
+            self.addbutton(ss, self, "Replace in Selection", self.OnReplaceSel, 0)
+        else:
+            self.addbutton(self.sizer, self, "Replace in Selection", self.OnReplaceSel, (1,3))
         self.smartcase = wx.CheckBox(self, -1, "Smart Case")
+        if USE_MINI_CHECKBOXES:
+            self.smartcase.SetWindowVariant(wx.WINDOW_VARIANT_SMALL)
         self.smartcase.SetValue(prefs['smartcase'])
-        self.sizer.Add(self.smartcase, (1,4), flag=wx.EXPAND|wx.RIGHT, border=5)
+        if USE_BOX_SIZERS:
+            ss.Add(self.smartcase, flag=wx.EXPAND|wx.RIGHT, border=5)
+            self.sizer.Add(ss, (1,3), flag=wx.EXPAND)
+        else:
+            self.sizer.Add(self.smartcase, (1,4), flag=wx.EXPAND|wx.RIGHT)
         
         self.box1.MoveAfterInTabOrder(self.smartcase)
         self.finish_setup()
@@ -115,8 +154,21 @@ class ReplaceBar(wx.Panel):
     def addbutton(self, sizer, control, alt, fcn, pos):
         t2 = wx.Button(control, -1, alt, style=wx.NO_BORDER)
         wx.EVT_BUTTON(control, t2.GetId(), fcn)
-        sizer.Add(t2, pos, flag=wx.EXPAND|wx.RIGHT, border=5)
-        if pos[1] == 1:
+        flags = wx.RIGHT
+        if type(pos) is tuple:
+            #first row buttons are longer than second row buttons
+            if pos[0] == 0:
+                flags |= wx.ALIGN_CENTER_VERTICAL
+            else:
+                flags |= wx.EXPAND
+        border = 5
+        if alt == 'Close':
+            #move the close button to the right
+            flags |= wx.ALIGN_RIGHT
+            #remove the right border on the close button
+            flags ^= wx.RIGHT
+        sizer.Add(t2, pos, flag=flags, border=5)
+        if type(pos) is tuple and pos[1] == 1:
             self.buttons.append(t2)
         return t2
 
@@ -573,3 +625,42 @@ class FindBar(ReplaceBar):
     """
     Embedded find in the current document
     """
+
+USE_MINI_CHECKBOXES = 1
+DOUBLE_ROW_ONE = 1
+USE_BOX_SIZERS = 0
+
+if __name__ == "__main__":
+    ## Test Code to mess with layout
+    # some dummy classes for prefs, etc.
+    class Window1:
+        findbarprefs = {}
+
+    class root:
+        def getglobal(self, key):
+            return {}
+
+    class TestFrame(wx.Frame):
+        def __init__(self, *args, **kwargs):
+            wx.Frame.__init__(self, *args, **kwargs)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            fb = FindBar(self, root())
+            rb = ReplaceBar(self, root())
+            
+            sizer.Add(fb, 0, wx.EXPAND)
+            sizer.Add((20,20))
+            sizer.Add(rb, 0, wx.EXPAND)
+            
+            self.SetSizerAndFit(sizer)
+            
+        def GetWindow1(self):
+            return Window1()
+
+    app = wx.App(False)
+           
+    f = TestFrame(None)
+
+    f.Show()
+    wx.CallAfter(f.SendSizeEvent)
+    app.MainLoop()
