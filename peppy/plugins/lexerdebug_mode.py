@@ -102,13 +102,13 @@ class LexerDebugMode(FundamentalMode):
         self.keywords = ""
 
     def changeLexer(self, lexer):
-        self.dprint("changing to new lexer %d" % lexer)
+        assert self.dprint("changing to new lexer %d" % lexer)
         self.currentLexer = lexer
         self.stc.SetLexer(self.currentLexer)
         self.stc.SetKeyWords(0, self.keywords)
         self.stc.StyleClearAll()
         self.stc.Colourise(0, self.stc.GetTextLength())
-        self.dprint("new lexer = %d" % self.stc.GetLexer())
+        assert self.dprint("new lexer = %d" % self.stc.GetLexer())
 
 
 # cd /opt/wx/src/wxPython-src-2.8.1.1/contrib/src/stc/scintilla/include
@@ -307,12 +307,12 @@ class LexerSelect(RadioAction):
     tooltip="Change lexer"
 
     def saveIndex(self,index):
-        self.dprint("index=%d" % index)
+        assert self.dprint("index=%d" % index)
 
     def getIndex(self):
         mode = self.frame.getActiveMajorMode()
         if mode is not None:
-            self.dprint("index=%s, name=%s" % (mode.currentLexer, _stc_lexer_num[mode.currentLexer]))
+            assert self.dprint("index=%s, name=%s" % (mode.currentLexer, _stc_lexer_num[mode.currentLexer]))
             return _stc_lexer_names.index(_stc_lexer_num[mode.currentLexer])
         return 0
                                            
@@ -322,7 +322,7 @@ class LexerSelect(RadioAction):
     def action(self, index=0, old=-1):
         mode = self.frame.getActiveMajorMode()
         if mode:
-            self.dprint("changing to index=%d" % index)
+            assert self.dprint("changing to index=%d" % index)
             mode.changeLexer(_stc_lexer[_stc_lexer_names[index]])
 
 class LexerKeywords(MinibufferAction):

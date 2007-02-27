@@ -23,7 +23,7 @@ class IconStorage(debugmixin):
     def set(self, filename, bitmap):
         self.bitmap[filename]=bitmap
         icon=self.il.Add(bitmap)
-        self.dprint("ICON=%s" % str(icon))
+        assert self.dprint("ICON=%s" % str(icon))
         self.map[filename]=icon
 
     def get(self, filename, dir=None):
@@ -42,11 +42,11 @@ class IconStorage(debugmixin):
                 img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16)))
                 
             img.Rescale(16,16)
-            self.dprint(img)
+            assert self.dprint(img)
             bitmap=wx.BitmapFromImage(img)
             self.set(filename, bitmap)
         else:
-            self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
+            assert self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
         return self.map[filename]
 
     def getBitmap(self,filename, dir=None):

@@ -83,7 +83,7 @@ class MinorModeLoader(Component,debugmixin):
         
         for ext in self.extensions:
             for minor in ext.getMinorModes():
-                self.dprint("Registering minor mode %s" % minor.keyword)
+                assert self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
 
     default_menu=(("View",MenuItem(MinorModeShow).after("Major Mode")),
@@ -95,10 +95,10 @@ class MinorModeLoader(Component,debugmixin):
 
 
     def load(self,major,minorlist=[]):
-        self.dprint("Loading minor modes %s for %s" % (str(minorlist),major))
+        assert self.dprint("Loading minor modes %s for %s" % (str(minorlist),major))
         for keyword in minorlist:
             if keyword in MinorModeLoader.modekeys:
-                self.dprint("found %s" % keyword)
+                assert self.dprint("found %s" % keyword)
                 minor=MinorModeLoader.modekeys[keyword]
                 major.createMinorMode(minor)
 

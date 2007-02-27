@@ -31,11 +31,11 @@ class HTMLWindow(wx.html.HtmlWindow, debugmixin):
             self.SetStandardFonts()
 
     def OnLinkClicked(self, linkinfo):
-        self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
+        assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
         self.mode.frame.open(linkinfo.GetHref())
 
     def OnCellMouseHover(self, cell, x, y):
-        self.dprint('OnCellMouseHover: %s\n' % cell)
+        assert self.dprint('OnCellMouseHover: %s\n' % cell)
         linkinfo = cell.GetLink()
         if linkinfo is not None:
             self.mode.frame.SetStatusText(linkinfo.GetHref())
@@ -64,7 +64,7 @@ class HTMLViewMode(MajorMode):
 
         @param parent: parent window in which to create this window 
         """
-        self.dprint()
+        assert self.dprint()
 
         win=HTMLWindow(parent, self)
 
@@ -88,7 +88,7 @@ class HTMLViewMode(MajorMode):
         when the buffer had been changed by some other view of the
         buffer.
         """
-        self.dprint("unregistering %s" % self.underlyingSTCChanged)
+        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
         eventManager.DeregisterListener(self.underlyingSTCChanged)        
         
     def underlyingSTCChanged(self,evt):

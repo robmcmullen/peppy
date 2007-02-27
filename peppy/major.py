@@ -47,7 +47,7 @@ from lib.iconstorage import *
 class MajorAction(SelectAction):
     # Set up a new run() method to pass the viewer
     def action(self, pos=-1):
-        self.dprint("id=%s name=%s" % (id(self),self.name))
+        assert self.dprint("id=%s name=%s" % (id(self),self.name))
         self.majoraction(self.frame.getActiveMajorMode(),pos)
 
     def majoraction(self, viewer, pos=-1):
@@ -55,7 +55,7 @@ class MajorAction(SelectAction):
 
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
-        self.dprint("%s called by keybindings" % self)
+        assert self.dprint("%s called by keybindings" % self)
         self.majoraction(self.frame.getActiveMajorMode())
 
 
@@ -76,17 +76,17 @@ class MajorModeSelect(RadioAction):
         modes = [m for m in modes if m.mmap_stc_class == currentmode.mmap_stc_class]
         
         modes.sort(key=lambda s:s.keyword)
-        self.dprint(modes)
+        assert self.dprint(modes)
         MajorModeSelect.modes = modes
         names = [m.keyword for m in modes]
         MajorModeSelect.items = names
 
     def saveIndex(self,index):
-        self.dprint("index=%d" % index)
+        assert self.dprint("index=%d" % index)
 
     def getIndex(self):
         modecls = self.frame.getActiveMajorMode().__class__
-        self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
+        assert self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
         if modecls is not None.__class__:
             return MajorModeSelect.modes.index(modecls)
         return 0
@@ -188,9 +188,9 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
     def deleteWindow(self):
         # remove reference to this view in the buffer's listeners
-        self.dprint("closing view %s of buffer %s" % (self,self.buffer))
+        assert self.dprint("closing view %s of buffer %s" % (self,self.buffer))
         self.buffer.remove(self)
-        self.dprint("destroying window %s" % (self))
+        assert self.dprint("destroying window %s" % (self))
         self.Destroy()
 
     def deleteWindowPostHook(self):
@@ -211,10 +211,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
     def loadMinorModes(self):
         minors=self.settings.minor_modes
-        self.dprint(minors)
+        assert self.dprint(minors)
         if minors is not None:
             minorlist=minors.split(',')
-            self.dprint("loading %s" % minorlist)
+            assert self.dprint("loading %s" % minorlist)
             MinorModeLoader(ComponentManager()).load(self,minorlist)
             self.createMinorModeList()
 
@@ -228,7 +228,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     def createMinorModeList(self):
         minors = self._mgr.GetAllPanes()
         for minor in minors:
-            self.dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
+            assert self.dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
             if minor.name != "main":
                 self.minors.append(minor)
         self.minors.sort(key=lambda s:s.caption)
@@ -246,7 +246,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
         @param evt: some event of undetermined type
         """
-        self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
+        assert self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
@@ -312,12 +312,12 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         # callbacks to the command objects should still work if the
         # popup is generated in the same way that the regular menu and
         # toolbars are.
-        self.dprint("popping up menu for %s" % evt.GetEventObject())
+        assert self.dprint("popping up menu for %s" % evt.GetEventObject())
         self.win.PopupMenu(self.popup)
         evt.Skip()
 
     def focus(self):
-        #self.dprint("View: setting focus to %s" % self)
+        #assert self.dprint("View: setting focus to %s" % self)
         self.editwin.SetFocus()
         self.focusPostHook()
 
@@ -631,8 +631,8 @@ class MajorModeMatcherDriver(Component,debugmixin):
         else:
             emacs=self.parseEmacs(bangpath)
             bangpath=None
-        self.dprint("bangpath=%s" % bangpath)
-        self.dprint("emacs=%s" % str(emacs))
+        assert self.dprint("bangpath=%s" % bangpath)
+        assert self.dprint("emacs=%s" % str(emacs))
         best=None
         generics=[]
         if emacs is not None:
@@ -642,7 +642,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
                     if best.exact:
                         return best.view
                     else:
-                        self.dprint("scanEmacs: appending generic %s" % best.view)
+                        assert self.dprint("scanEmacs: appending generic %s" % best.view)
                         generics.append(best)
         if bangpath is not None:
             for plugin in self.plugins:
@@ -651,7 +651,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
                     if best.exact:
                         return best.view
                     else:
-                        self.dprint("scanShell: appending generic %s" % best.view)
+                        assert self.dprint("scanShell: appending generic %s" % best.view)
                         generics.append(best)
         for plugin in self.plugins:
             best=plugin.scanFilename(buffer.filename)
@@ -659,7 +659,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
                 if best.exact:
                     return best.view
                 else:
-                    self.dprint("scanFilename: appending generic %s" % best.view)
+                    assert self.dprint("scanFilename: appending generic %s" % best.view)
                     generics.append(best)
         for plugin in self.plugins:
             best=plugin.scanMagic(buffer)
@@ -667,10 +667,10 @@ class MajorModeMatcherDriver(Component,debugmixin):
                 if best.exact:
                     return best.view
                 else:
-                    self.dprint("scanMagic: appending generic %s" % best.view)
+                    assert self.dprint("scanMagic: appending generic %s" % best.view)
                     generics.append(best)
         if generics:
-            self.dprint("Choosing from generics: %s" % [g.view for g in generics])
+            assert self.dprint("Choosing from generics: %s" % [g.view for g in generics])
             # FIXME: don't just use the first one, do something smarter!
             return generics[0].view
         else:

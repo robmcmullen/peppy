@@ -20,7 +20,7 @@ class NewTab(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:blank")
 
 class New(SelectAction):
@@ -40,7 +40,7 @@ class OpenFile(SelectAction):
     keyboard = "C-X C-F"
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
 
         wildcard="*"
         cwd=self.frame.cwd()
@@ -55,7 +55,7 @@ class OpenFile(SelectAction):
             paths = dlg.GetPaths()
 
             for path in paths:
-                self.dprint("open file %s:" % path)
+                assert self.dprint("open file %s:" % path)
                 # Force the loader to use the file: protocol
                 self.frame.open("file:%s" % path)
 
@@ -70,7 +70,7 @@ class OpenURL(SelectAction):
     keyboard = "C-X C-A"
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
 
         wildcard="*"
         cwd=os.getcwd()
@@ -84,7 +84,7 @@ class OpenURL(SelectAction):
             # This returns a Python list of files that were selected.
             url = dlg.GetValue()
 
-            self.dprint("open url %s:" % url)
+            assert self.dprint("open url %s:" % url)
             self.frame.open(url)
 
         # Destroy the dialog. Don't do this until you are done with it!
@@ -109,7 +109,7 @@ class Close(SelectAction):
         return self.frame.isOpen()
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.close()
 
 class Save(SelectAction):
@@ -127,7 +127,7 @@ class Save(SelectAction):
         return False
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.save()
 
 class SaveAs(SelectAction):
@@ -140,7 +140,7 @@ class SaveAs(SelectAction):
         return self.frame.isOpen()
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
 
         mode=self.frame.getActiveMajorMode()
         paths=None
@@ -168,7 +168,7 @@ class SaveAs(SelectAction):
                 paths = dlg.GetPaths()
                 if len(paths)>0:
                     saveas=paths[0]
-                    self.dprint("save file %s:" % saveas)
+                    assert self.dprint("save file %s:" % saveas)
 
                     mode.buffer.save(saveas)
                 elif paths!=None:
@@ -190,7 +190,7 @@ class Undo(SelectAction):
         return False
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Undo()
 
@@ -208,7 +208,7 @@ class Redo(SelectAction):
         return False
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer: return viewer.stc.Redo()
 
@@ -254,7 +254,7 @@ class Paste(SelectAction):
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
+            assert self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
             return viewer.stc.CanPaste()
         return False
 
@@ -378,14 +378,14 @@ class DebugClass(ToggleListAction):
         """
         Turn on or off the debug logging for the selected class
         """
-        self.dprint("DebugClass.action: id(self)=%x name=%s index=%d id(itemlist)=%x" % (id(self),self.name,index,id(DebugClass.itemlist)))
+        assert self.dprint("DebugClass.action: id(self)=%x name=%s index=%d id(itemlist)=%x" % (id(self),self.name,index,id(DebugClass.itemlist)))
         kls=DebugClass.itemlist[index]['item']
         DebugClass.itemlist[index]['checked']=not DebugClass.itemlist[index]['checked']
         if DebugClass.itemlist[index]['checked']:
             kls.debuglevel=1
         else:
             kls.debuglevel=0
-        self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
+        assert self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
 
 
 class Peppy(BufferApp, ClassSettings):
@@ -504,7 +504,7 @@ class Peppy(BufferApp, ClassSettings):
         for kls in debuggable:
             if reset:
                 self.setVerboseLevel(kls)
-            self.dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
+            assert self.dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
             if menu:
                 menu.append(kls)
         #sys.exit()
@@ -546,7 +546,7 @@ class Peppy(BufferApp, ClassSettings):
         PYTHONPATH.
         """
         mods=self.settings.plugins
-        self.dprint(mods)
+        assert self.dprint(mods)
         if mods:
             self.loadPlugins(mods)
 

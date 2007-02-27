@@ -20,7 +20,7 @@ class Preferences(SelectAction):
     icon = "icons/wrench.png"
 
     def action(self, pos=-1):
-        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         dlg = PreferencesDialog(self.frame)
         retval = dlg.ShowModal()
         dlg.Destroy()

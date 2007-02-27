@@ -307,12 +307,12 @@ class PeppySTC(PeppyBaseSTC):
             self.AddRefDocument(self.docptr)
             self.SetDocPointer(self.docptr)
             self.refstc.addSubordinate(self)
-            self.dprint("referencing document %s" % self.docptr)
+            assert self.dprint("referencing document %s" % self.docptr)
         else:
             self.refstc=None
             self.docptr=self.CreateDocument()
             self.SetDocPointer(self.docptr)
-            self.dprint("creating new document %s" % self.docptr)
+            assert self.dprint("creating new document %s" % self.docptr)
             self.subordinates=[]
 
     def addSubordinate(self,otherstc):
@@ -326,7 +326,7 @@ class PeppySTC(PeppyBaseSTC):
         Send an event to all subordinate STCs
         """
         for otherstc in self.subordinates:
-            self.dprint("sending event %s to %s" % (evt,otherstc))
+            assert self.dprint("sending event %s to %s" % (evt,otherstc))
             wx.PostEvent(otherstc,evt())
 
     def addUpdateUIEvent(self, callback):
@@ -356,7 +356,7 @@ class PeppySTC(PeppyBaseSTC):
 
 
     def OnStartDrag(self, evt):
-        self.dprint("OnStartDrag: %d, %s\n"
+        assert self.dprint("OnStartDrag: %d, %s\n"
                        % (evt.GetDragAllowMove(), evt.GetDragText()))
 
         if self.debug_dnd and evt.GetPosition() < 250:
@@ -366,7 +366,7 @@ class PeppySTC(PeppyBaseSTC):
 
 
     def OnDragOver(self, evt):
-        self.dprint(
+        assert self.dprint(
             "OnDragOver: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
             % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult())
             )
@@ -376,7 +376,7 @@ class PeppySTC(PeppyBaseSTC):
 
 
     def OnDoDrop(self, evt):
-        self.dprint("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
+        assert self.dprint("OnDoDrop: x,y=(%d, %d)  pos: %d  DragResult: %d\n"
                        "\ttext: %s\n"
                        % (evt.GetX(), evt.GetY(), evt.GetPosition(), evt.GetDragResult(),
                           evt.GetDragText()))
@@ -394,7 +394,7 @@ class PeppySTC(PeppyBaseSTC):
 
 
     def OnModified(self, evt):
-##        self.dprint("""OnModified
+##        assert self.dprint("""OnModified
 ##        Mod type:     %s
 ##        At position:  %d
 ##        Lines added:  %d
@@ -404,7 +404,7 @@ class PeppySTC(PeppyBaseSTC):
 ##                                  evt.GetLinesAdded(),
 ##                                  evt.GetLength(),
 ##                                  repr(evt.GetText()) ))
-        self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+        assert self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
         evt.Skip()
 
     def OnUpdateUI(self, evt):

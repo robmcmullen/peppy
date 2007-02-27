@@ -18,7 +18,7 @@ class MinibufferAction(MajorAction):
         mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, text):
-        self.dprint("processing %s" % text)
+        assert self.dprint("processing %s" % text)
 
 
 class Minibuffer(debugmixin):
@@ -53,7 +53,7 @@ class Minibuffer(debugmixin):
         Set the focus to the component in the menubar that should get
         the text focus.
         """
-        self.dprint("focus!!!")
+        assert self.dprint("focus!!!")
         self.win.SetFocus()
     
     def close(self):
@@ -99,7 +99,7 @@ class TextMinibuffer(Minibuffer):
 
     def OnEnter(self, evt):
         text = self.text.GetValue()
-        self.dprint("text=%s" % text)
+        assert self.dprint("text=%s" % text)
         try:
             text = self.convert(text)
             error = self.action.processMinibuffer(text)
@@ -118,5 +118,5 @@ class IntMinibuffer(TextMinibuffer):
     
     def convert(self, text):
         number = int(self.text.GetValue())
-        self.dprint("number=%s" % number)
+        assert self.dprint("number=%s" % number)
         return number

@@ -49,7 +49,7 @@ class SampleMakefile(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:sample.mak")
 
 

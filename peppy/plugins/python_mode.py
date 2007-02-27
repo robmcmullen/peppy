@@ -50,7 +50,7 @@ class SamplePython(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:sample.py")
 
 
@@ -90,7 +90,7 @@ class PythonElectricReturnMixin(object):
             if (line.find(':')>-1):
                 for i in xrange(linestart, min(pos, s.GetTextLength())):
                     styl = s.GetStyleAt(i)
-                    #self.dprint(styl, s.GetCharAt(i))
+                    #assert self.dprint(styl, s.GetCharAt(i))
                     if not xtra:
                         if (styl==10) and (s.GetCharAt(i) == colon):
                             xtra = 1
@@ -117,7 +117,7 @@ class PythonElectricReturnMixin(object):
                             a = line.find(i)
                             if (a > -1):
                                 found.append(a)
-                        #self.dprint('fnd', found)
+                        #assert self.dprint('fnd', found)
                         if found: found = min(found)
                         else:     found = -1
                         if (found > -1) and\
@@ -137,7 +137,7 @@ class PythonElectricReturnMixin(object):
                         break
                 if fnd:
                     seq = []
-                    #self.dprint("finding stuff")
+                    #assert self.dprint("finding stuff")
                     for i in "(){}[]":
                         a = line.find(i)
                         start = 0
@@ -150,9 +150,9 @@ class PythonElectricReturnMixin(object):
                     cl = {')':'(', ']': '[', '}': '{',
                         '(':'',  '[': '',  '{': ''}
                     stk = []
-                    #self.dprint("making tree")
+                    #assert self.dprint("making tree")
                     for po, ch in seq:
-                        #self.dprint(ch,)
+                        #assert self.dprint(ch,)
                         if not cl[ch]:
                             #standard opening
                             stk.append((po, ch))
@@ -173,7 +173,7 @@ class PythonElectricReturnMixin(object):
                             stk = []
                             break
                     if stk:
-                        #self.dprint("stack remaining", stk)
+                        #assert self.dprint("stack remaining", stk)
                         ind = stk[-1][0]
             if not xtra:
                 ls = line.lstrip()
@@ -252,7 +252,7 @@ class PythonMode(PythonElectricReturnMixin,FundamentalMode):
     def getFunctionList(self):
         import peppy.pype.parsers
         flist=peppy.pype.parsers.slower_parser(self.stc.GetText(),'\n',3,lambda:None)
-        self.dprint(flist)
+        assert self.dprint(flist)
         return flist
 
 

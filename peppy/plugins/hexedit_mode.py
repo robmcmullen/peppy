@@ -22,7 +22,7 @@ class OpenHexEditor(SelectAction):
 ##        return not self.frame.isOpen()
 
     def action(self, pos=-1):
-        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:0x00-0xff")
 
 
@@ -59,7 +59,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         mult=None
         endian='='
         for c in format:
-            self.dprint("checking %s" % c)
+            assert self.dprint("checking %s" % c)
             if c>='0' and c<='9':
                 if mult==None:
                     mult=0
@@ -74,7 +74,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             elif c in ['@','=','<','>','!']:
                 endian=c
             else:
-                self.dprint("ignoring %s" % c)
+                assert self.dprint("ignoring %s" % c)
         self.sizes=[]
         self.offsets=[]
         offset=0
@@ -89,15 +89,15 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             offset+=size
             
         self._textcols=len(self.types)
-        self.dprint("format = %s" % self.types)
-        self.dprint("sizes = %s" % self.sizes)
-        self.dprint("offsets = %s" % self.offsets)
+        assert self.dprint("format = %s" % self.types)
+        assert self.dprint("sizes = %s" % self.sizes)
+        assert self.dprint("offsets = %s" % self.offsets)
         
     def setSTC(self, stc):
         self.stc=stc
-        self.dprint("stc = %s" % self.stc        )
+        assert self.dprint("stc = %s" % self.stc        )
         self._rows=((self.stc.GetTextLength()-1)/self.nbytes)+1
-        self.dprint(" rows=%d cols=%d" % (self._rows,self._cols))
+        assert self.dprint(" rows=%d cols=%d" % (self._rows,self._cols))
 
 ##    def GetAttr(self, row, col, kind):
 ##        attr = [self.even, self.odd][row % 2]
@@ -174,18 +174,18 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         return (row,col)
    
     def GetNumberRows(self):
-        self.dprint("rows = %d" % self._rows)
+        assert self.dprint("rows = %d" % self._rows)
         return self._rows
 
     def GetRowLabelValue(self, row):
         return "%04x" % (row*self.nbytes)
 
     def GetNumberCols(self):
-        self.dprint("cols = %d" % self._cols)
+        assert self.dprint("cols = %d" % self._cols)
         return self._cols
 
     def GetColLabelValue(self, col):
-        self.dprint("col=%x" % col)
+        assert self.dprint("col=%x" % col)
         if col<self._hexcols:
             return "%x" % col
         else:
@@ -204,14 +204,14 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if col<self._hexcols:
             loc = self.getLoc(row,col)
             s = "%02x" % self.stc.GetCharAt(loc)
-            self.dprint(s)
+            assert self.dprint(s)
             return s
         else:
             startpos = self.getLoc(row,col)
             textcol = self.getTextCol(col)
             endpos = startpos+self.sizes[textcol]
             data = self.stc.GetStyledText(startpos,endpos)[::2]
-            self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
+            assert self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
             s = struct.unpack(self.types[textcol],data)
             return str(s[0])
 
@@ -225,13 +225,13 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
                 self.stc.ReplaceSelection('')
                 self.stc.AddStyledText(c+'\0')
             else:
-                self.dprint('SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val))
+                assert self.dprint('SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val))
         else:
             textcol = self.getTextCol(col)
             fmt = self.types[textcol]
-            self.dprint('SetValue(%d, %d, "%s") packing with fmt %s.' % (row, col, value, fmt))
+            assert self.dprint('SetValue(%d, %d, "%s") packing with fmt %s.' % (row, col, value, fmt))
             bytes = struct.pack(fmt, value)
-            self.dprint('bytes = %s' % repr(bytes))
+            assert self.dprint('bytes = %s' % repr(bytes))
             loc=self.getLoc(row,col)
             self.stc.SetSelection(loc,loc+1)
             self.stc.ReplaceSelection('')
@@ -278,13 +278,13 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         (width,height)=dc.GetTextExtent("MM")
         grid.SetDefaultRowSize(height)
         for col in range(self._hexcols):
-            self.dprint("col %d width=%d" % (col,width))
+            assert self.dprint("col %d width=%d" % (col,width))
             grid.SetColMinimalWidth(col,10)
             grid.SetColSize(col,width+4)
             grid.SetColAttr(col,hexattr)
         (width,height)=dc.GetTextExtent("M")
         for col in range(self._hexcols,self._cols,1):
-            self.dprint("col %d width=%d" % (col,width))
+            assert self.dprint("col %d width=%d" % (col,width))
             grid.SetColMinimalWidth(col,4)
             grid.SetColSize(col,width+4)
             grid.SetColAttr(col,textattr)
@@ -333,7 +333,7 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
         # validation ourselves using EVT_KEY_DOWN.
         wx.TextCtrl.__init__(self,parent, id,
                              style=wx.TE_PROCESS_TAB|wx.TE_PROCESS_ENTER)
-        self.dprint("parent=%s" % parent)
+        assert self.dprint("parent=%s" % parent)
         self.SetInsertionPoint(0)
         self.Bind(wx.EVT_TEXT, self.OnText)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
@@ -406,7 +406,7 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
 
         @param evt: key event to process
         """
-        self.dprint("key down before evt=%s" % evt.GetKeyCode())
+        assert self.dprint("key down before evt=%s" % evt.GetKeyCode())
         key=evt.GetKeyCode()
         
         if key==wx.WXK_TAB:
@@ -433,7 +433,7 @@ class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
         
         @param evt: CommandEvent
         """
-        self.dprint("evt=%s str=%s cursor=%d" % (evt,evt.GetString(),self.GetInsertionPoint()))
+        assert self.dprint("evt=%s str=%s cursor=%d" % (evt,evt.GetString(),self.GetInsertionPoint()))
         
         # NOTE: we check that GetInsertionPoint returns 1 less than
         # the desired number because the insertion point hasn't been
@@ -467,7 +467,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         Called to create the control, which must derive from wx.Control.
         *Must Override*
         """
-        self.dprint("")
+        assert self.dprint("")
         self._tc = HexTextCtrl(parent, id, self.parentgrid)
         self.SetControl(self._tc)
 
@@ -480,7 +480,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         If you don't fill the cell (the rect) then be sure to override
         PaintBackground and do something meaningful there.
         """
-        self.dprint("rect=%s\n" % rect)
+        assert self.dprint("rect=%s\n" % rect)
         self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
                                wx.SIZE_ALLOW_MINUS_ONE)
 
@@ -490,7 +490,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         Show or hide the edit control.  You can use the attr (if not None)
         to set colours or fonts for the control.
         """
-        self.dprint("show=%s, attr=%s" % (show, attr))
+        assert self.dprint("show=%s, attr=%s" % (show, attr))
         Grid.PyGridCellEditor.Show(self, show, attr)
 
 
@@ -501,7 +501,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         attribute.  In this class the edit control fills the whole cell so
         don't do anything at all in order to reduce flicker.
         """
-        self.dprint("MyCellEditor: PaintBackground\n")
+        assert self.dprint("MyCellEditor: PaintBackground\n")
 
 
     def BeginEdit(self, row, col, grid):
@@ -510,7 +510,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         to begin editing.  Set the focus to the edit control.
         *Must Override*
         """
-        self.dprint("row,col=(%d,%d)" % (row, col))
+        assert self.dprint("row,col=(%d,%d)" % (row, col))
         self.startValue = grid.GetTable().GetValue(row, col)
         mode='hex'
         table=self.parentgrid.table
@@ -524,7 +524,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
                     mode='str'
             else:
                 mode='text'
-            self.dprint("In value area! mode=%s" % mode)
+            assert self.dprint("In value area! mode=%s" % mode)
         self._tc.editingNewCell(self.startValue,mode)
 
 
@@ -534,7 +534,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         has changed.  If necessary, the control may be destroyed.
         *Must Override*
         """
-        self.dprint("row,col=(%d,%d)" % (row, col))
+        assert self.dprint("row,col=(%d,%d)" % (row, col))
         changed = False
 
         val = self._tc.GetValue()
@@ -553,7 +553,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         Reset the value in the control back to its starting value.
         *Must Override*
         """
-        self.dprint("")
+        assert self.dprint("")
         self._tc.SetValue(self.startValue)
         self._tc.SetInsertionPointEnd()
 
@@ -564,7 +564,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         version only checks that the event has no modifiers.  F2 is special
         and will always start the editor.
         """
-        self.dprint("keycode=%d" % (evt.GetKeyCode()))
+        assert self.dprint("keycode=%d" % (evt.GetKeyCode()))
 
         ## We can ask the base class to do it
         #return self.base_IsAcceptedKey(evt)
@@ -579,7 +579,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         If the editor is enabled by pressing keys on the grid, this will be
         called to let the editor do something about that first key if desired.
         """
-        self.dprint("keycode=%d" % evt.GetKeyCode())
+        assert self.dprint("keycode=%d" % evt.GetKeyCode())
         key = evt.GetKeyCode()
         if not self._tc.insertFirstKey(key):
             evt.Skip()
@@ -591,12 +591,12 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         called to allow the editor to simulate the click on the control if
         needed.
         """
-        self.dprint("")
+        assert self.dprint("")
 
 
     def Destroy(self):
         """final cleanup"""
-        self.dprint("")
+        assert self.dprint("")
         Grid.PyGridCellEditor.Destroy(self)
 
 
@@ -605,7 +605,7 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
         Create a new object which is the copy of this one
         *Must Override*
         """
-        self.dprint("")
+        assert self.dprint("")
         return HexCellEditor(self.parentgrid)
 
 
@@ -664,7 +664,7 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         self.Show(True)
 
     def Update(self,stc,format=None):
-        self.dprint("Need to update grid")
+        assert self.dprint("Need to update grid")
         self.table.ResetView(self,stc,format)
 
     def OnUnderlyingUpdate(self, evt, loc=None):
@@ -672,8 +672,8 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         the grid and reset the grid's cursor to the updated position
         if the location is given.
         """
-        self.dprint("OnUnderlyingUpdate: slow way of updating the grid -- updating the whole thing.")
-        self.dprint(evt)
+        assert self.dprint("OnUnderlyingUpdate: slow way of updating the grid -- updating the whole thing.")
+        assert self.dprint(evt)
 
         self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
@@ -683,7 +683,7 @@ class HugeTableGrid(Grid.Grid,debugmixin):
             self.MakeCellVisible(row,col)
 
     def OnRightDown(self, evt):
-        self.dprint(self.GetSelectedRows())
+        assert self.dprint(self.GetSelectedRows())
 
     def OnLeftDown(self, evt):
         evt.Skip()
@@ -694,7 +694,7 @@ class HugeTableGrid(Grid.Grid,debugmixin):
         wx.CallAfter(self.doUpdateUICallback)
 
     def OnKeyDown(self, evt):
-        self.dprint("evt=%s" % evt)
+        assert self.dprint("evt=%s" % evt)
         if evt.GetKeyCode() == wx.WXK_RETURN or evt.GetKeyCode()==wx.WXK_TAB:
             if evt.ControlDown():   # the edit control needs this key
                 evt.Skip()
@@ -766,7 +766,7 @@ class HexEditMode(MajorMode):
     debuglevel=0
 
     def createEditWindow(self,parent):
-        self.dprint("creating new HexEditMode window")
+        assert self.dprint("creating new HexEditMode window")
         win=HugeTableGrid(parent,self.buffer.stc,"16c")        
         return win
 
@@ -787,7 +787,7 @@ class HexEditMode(MajorMode):
         self.editwin.Update(self.stc)
         
     def deleteWindowPostHook(self):
-        self.dprint("unregistering %s" % self.underlyingSTCChanged)
+        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
         eventManager.DeregisterListener(self.underlyingSTCChanged)
         
     def transModType(self, modType):
@@ -822,7 +822,7 @@ class HexEditMode(MajorMode):
         # and it is the active major mode, we know that we are editing
         # this grid by hand.
         if self.frame.isTopWindow() and self.frame.getActiveMajorMode()==self:
-            self.dprint("TopWindow!  Skipping underlyingSTCChanged!")
+            assert self.dprint("TopWindow!  Skipping underlyingSTCChanged!")
             return
         
         # As the comment in the createWindow method noted, we have to
@@ -830,7 +830,7 @@ class HexEditMode(MajorMode):
         # allowed to change the events that self.buffer.stc sees.
         etype=evt.GetModificationType()
         if etype&stc.STC_MOD_INSERTTEXT or etype&stc.STC_MOD_DELETETEXT:
-            self.dprint("""UnderlyingSTCChanged
+            assert self.dprint("""UnderlyingSTCChanged
             Mod type:     %s
             At position:  %d
             Lines added:  %d
@@ -844,18 +844,18 @@ class HexEditMode(MajorMode):
             #self.win.underlyingUpdate(self.stc,evt.GetPosition())
             if self.waiting:
                 if self.waiting.isAlive():
-                    self.dprint("found active wait thread")
+                    assert self.dprint("found active wait thread")
                     self.waiting.waitMore()
                 else:
                     self.waiting.join()
                     self.waiting=None
-                    self.dprint("wait thread destroyed")
+                    assert self.dprint("wait thread destroyed")
                     # start a new thread below
 
             # don't use an else here so that a new thread will be
             # started if we just destroyed the old thread.
             if not self.waiting:
-                self.dprint("starting wait thread")
+                assert self.dprint("starting wait thread")
                 self.waiting=WaitThread(self.editwin)
                 self.waiting.start()
         

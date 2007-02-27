@@ -38,7 +38,7 @@ class OpenImageViewer(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:red.png")
 
 
@@ -92,7 +92,7 @@ class ImageViewMode(MajorMode):
 
         @param parent: parent window in which to create this window 
         """
-        self.dprint()
+        assert self.dprint()
 
         win=BitmapView(parent,self.frame,self.buffer.stc)        
 
@@ -116,7 +116,7 @@ class ImageViewMode(MajorMode):
         when the buffer had been changed by some other view of the
         buffer.
         """
-        self.dprint("unregistering %s" % self.underlyingSTCChanged)
+        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
         eventManager.DeregisterListener(self.underlyingSTCChanged)        
         
     def underlyingSTCChanged(self,evt):

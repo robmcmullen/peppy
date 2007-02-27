@@ -42,7 +42,7 @@ class SampleDot(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:sample.dot")
 
 
@@ -146,7 +146,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
 
     def OnRegenerate(self, event):
         prog = os.path.normpath(os.path.join(self.minor.settings.path,self.prog.GetStringSelection()))
-        self.dprint("using %s to run graphviz" % repr(prog))
+        assert self.dprint("using %s to run graphviz" % repr(prog))
 
         cmd = "%s -Tpng" % prog
         
@@ -167,15 +167,15 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
             text = self.minor.major.buffer.stc.GetText()
             size = len(text)
             fh = self.process.GetOutputStream()
-            self.dprint("sending text size=%d to %s" % (size,fh))
+            assert self.dprint("sending text size=%d to %s" % (size,fh))
             if size > 1000:
                 for i in range(0,size,1000):
                     last = i+1000
                     if last>size:
                         last=size
-                    self.dprint("sending text[%d:%d] to %s" % (i,last,fh))
+                    assert self.dprint("sending text[%d:%d] to %s" % (i,last,fh))
                     fh.write(text[i:last])
-                    self.dprint("last write = %s" % str(fh.LastWrite()))
+                    assert self.dprint("last write = %s" % str(fh.LastWrite()))
             else:
                 fh.write(self.minor.major.buffer.stc.GetText())
             self.process.CloseOutput()
@@ -193,7 +193,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         evt.Skip()
 
     def OnProcessEnded(self, evt):
-        self.dprint()
+        assert self.dprint()
         self.readStream()
         self.process.Destroy()
         self.process = None
@@ -202,7 +202,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         # Don't call evt.Skip() here because it causes a crash
 
     def createImage(self):
-        self.dprint("using image, size=%s" % len(self.preview.getvalue()))
+        assert self.dprint("using image, size=%s" % len(self.preview.getvalue()))
         if len(self.preview.getvalue())==0:
             self.minor.major.frame.SetStatusText("Error running graphviz!")
             return

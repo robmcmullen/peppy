@@ -23,7 +23,7 @@ class OpenFundamental(SelectAction):
 ##        return not self.frame.isOpen()
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:demo.txt")
 
 class WordWrap(ToggleAction):
@@ -38,7 +38,7 @@ class WordWrap(ToggleAction):
         return False
     
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s" % (id(self),self.name))
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setWordWrap(not viewer.settings.word_wrap)
@@ -55,7 +55,7 @@ class LineNumbers(ToggleAction):
         return False
     
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s" % (id(self),self.name))
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setLineNumbers(not viewer.settings.line_numbers)
@@ -66,7 +66,7 @@ class BeginningOfLine(SelectAction):
     keyboard = 'C-A'
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             s=viewer.stc
@@ -81,7 +81,7 @@ class EndOfLine(SelectAction):
     keyboard = 'C-E'
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             s=viewer.stc
@@ -134,7 +134,7 @@ class WordOrRegionMutate(SelectAction):
         s.GotoPos(end)
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             self.mutateSelection(viewer.stc)
@@ -245,9 +245,9 @@ class StandardIndentMixin(object):
         """
         s = self.stc
         
-        self.dprint("indenting by %d" % incr)
+        assert self.dprint("indenting by %d" % incr)
         incr *= s.GetIndent()
-        self.dprint("indenting by %d" % incr)
+        assert self.dprint("indenting by %d" % incr)
         s.BeginUndoAction()
         lnstart, lnend = s.GetLineRegion()
         try:
@@ -295,10 +295,10 @@ class StandardCommentMixin(debugmixin):
         
         s.BeginUndoAction()
         line, lineend = s.GetLineRegion()
-        self.dprint("lines: %d - %d" % (line, lineend))
+        assert self.dprint("lines: %d - %d" % (line, lineend))
         try:
             selstart, selend = s.GetSelection()
-            self.dprint("selection: %d - %d" % (selstart, selend))
+            assert self.dprint("selection: %d - %d" % (selstart, selend))
 
             start = selstart
             end = s.GetLineEndPosition(line)
@@ -392,7 +392,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         }
     
     def createEditWindow(self,parent):
-        self.dprint("creating new Fundamental window")
+        assert self.dprint("creating new Fundamental window")
         self.createSTC(parent)
         win=self.stc
         win.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
@@ -436,7 +436,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         # SetIndent must be called whenever a new document is loaded
         # into the STC
         self.stc.SetIndent(self.settings.tab_size)
-        #self.dprint("indention=%d" % self.stc.GetIndent())
+        #assert self.dprint("indention=%d" % self.stc.GetIndent())
 
         self.stc.SetIndentationGuides(1)
 
@@ -542,7 +542,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
 
         @returns: new position of last character before line ending
         """
-        self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
+        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
         slen = len(self.start_line_comment)
         self.stc.InsertText(start, self.start_line_comment)
         end += slen

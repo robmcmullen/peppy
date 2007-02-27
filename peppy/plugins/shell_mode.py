@@ -49,7 +49,7 @@ class ShellProtocol(ProtocolPluginBase,debugmixin):
         return "shell:%s" % urlinfo.path
 
     def getReader(self,urlinfo):
-        self.dprint("getReader: trying to open %s" % urlinfo.path)
+        assert self.dprint("getReader: trying to open %s" % urlinfo.path)
         for shell in self.shells:
             if urlinfo.path in shell.supportedShells():
                 fh=shell.getPipe(urlinfo.path)
@@ -86,7 +86,7 @@ class ShellSTC(PeppySTC):
         self.more=0
 
     def openPostHook(self,filter):
-        self.dprint("in ShellSTC")
+        assert self.dprint("in ShellSTC")
         self.pipe=filter.fh
         self.pipe.setNotifyWindow(self)
         self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
@@ -154,7 +154,7 @@ class ProcessShellLine(SelectAction):
     keyboard = 'RET'
 
     def action(self, pos=-1):
-        self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.buffer.stc.process(viewer)
@@ -167,7 +167,7 @@ class ShellMode(FundamentalMode):
     regex="shell:.*$"
 
     def createWindowPostHook(self):
-        self.dprint("In shell.")
+        assert self.dprint("In shell.")
         self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
 
         #Use an event listener to update the cursor position when the
@@ -176,13 +176,13 @@ class ShellMode(FundamentalMode):
         self.OnUpdateCursorPos()
 
     def OnUpdateCursorPos(self,evt=None):
-        self.dprint("cursor position = %d" % self.buffer.stc.GetCurrentPos())
+        assert self.dprint("cursor position = %d" % self.buffer.stc.GetCurrentPos())
         self.stc.GotoPos(self.buffer.stc.GetCurrentPos())
         self.stc.EnsureCaretVisible()
         self.stc.ScrollToColumn(0)
 
     def OnUpdate(self,evt=None):
-        self.dprint("Updated!")
+        assert self.dprint("Updated!")
         
 
 

@@ -31,7 +31,7 @@ class BufferList(GlobalList):
         return [buf.name for buf in BufferList.storage]
 
     def action(self,state=None,index=0):
-        self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
+        assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
         self.frame.setBuffer(BufferList.storage[index])
     
 class FrameList(GlobalList):
@@ -45,7 +45,7 @@ class FrameList(GlobalList):
         return [frame.getTitle() for frame in FrameList.storage]
 
     def action(self,state=None,index=0):
-        self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
+        assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
         self.frame.app.SetTopWindow(FrameList.storage[index])
         wx.CallAfter(FrameList.storage[index].Raise)
     
@@ -135,18 +135,18 @@ class Buffer(debugmixin):
         else:
             viewer=self.defaultmode(self,frame) # create new view
         self.viewers.append(viewer) # keep track of views
-        self.dprint("views of %s: %s" % (self,self.viewers))
+        assert self.dprint("views of %s: %s" % (self,self.viewers))
         return viewer
 
     def remove(self,view):
-        self.dprint("removing view %s of %s" % (view,self))
+        assert self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
             if issubclass(view.stc.__class__, PeppySTC) and view.stc != self.stc:
                 self.stc.removeSubordinate(view.stc)
         else:
             raise ValueError("Bug somewhere.  Major mode %s not found in Buffer %s" % (view,self))
-        self.dprint("views remaining of %s: %s" % (self,self.viewers))
+        assert self.dprint("views remaining of %s: %s" % (self,self.viewers))
 
     def removeAllViews(self):
         # Have to make a copy of self.viewers, because when the viewer
@@ -155,10 +155,10 @@ class Buffer(debugmixin):
         # a changing list.
         viewers=self.viewers[:]
         for viewer in viewers:
-            self.dprint("count=%d" % len(self.viewers))
-            self.dprint("removing view %s of %s" % (viewer,self))
+            assert self.dprint("count=%d" % len(self.viewers))
+            assert self.dprint("removing view %s of %s" % (viewer,self))
             viewer.frame.tabs.closeTab(viewer)
-        self.dprint("final count=%d" % len(self.viewers))
+        assert self.dprint("final count=%d" % len(self.viewers))
 
     def setFilename(self,filename):
         if not filename:
@@ -227,7 +227,7 @@ class Buffer(debugmixin):
         BufferHooks(ComponentManager()).openPostHook(self)
         
     def save(self,filename=None):
-        self.dprint("Buffer: saving buffer %s" % (self.filename))
+        assert self.dprint("Buffer: saving buffer %s" % (self.filename))
         try:
             if filename is None:
                 saveas=self.filename
@@ -246,15 +246,15 @@ class Buffer(debugmixin):
 
     def showModifiedAll(self):
         for view in self.viewers:
-            self.dprint("notifing: %s" % view)
+            assert self.dprint("notifing: %s" % view)
             view.showModified(self.modified)
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
-            self.dprint("modified!")
+            assert self.dprint("modified!")
             changed=True
         else:
-            self.dprint("clean!")
+            assert self.dprint("clean!")
             changed=False
         if changed!=self.modified:
             self.modified=changed
@@ -276,7 +276,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabChanged(self, evt):
         newpage = evt.GetSelection()
         oldpage = evt.GetOldSelection()
-        self.dprint("changing from tab %s to %s" % (oldpage, newpage))
+        assert self.dprint("changing from tab %s to %s" % (oldpage, newpage))
         if oldpage>0:
             self.lastActivePage=self.GetPage(oldpage)
         else:
@@ -288,17 +288,17 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnTabClosed(self, evt):
         index = evt.GetSelection()
         mode = self.GetPage(index)
-        self.dprint("closing tab # %d: mode %s" % (index,mode))
+        assert self.dprint("closing tab # %d: mode %s" % (index,mode))
         evt.Skip()
 
     def closeTab(self, mode):
-        self.dprint("closing tab: mode %s" % mode)
+        assert self.dprint("closing tab: mode %s" % mode)
         index=self.GetPageIndex(mode)
         self.RemovePage(index)
         mode.deleteWindow()
 
     def addTab(self,mode):
-        self.dprint("Adding tab %s" % mode)
+        assert self.dprint("Adding tab %s" % mode)
         self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
         index=self.GetPageIndex(mode)
         self.SetSelection(index)
@@ -308,7 +308,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if index<0:
             self.addTab(mode)
         else:
-            self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
+            assert self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
             self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
             oldmode=self.GetPage(index+1)
             self.RemovePage(index+1)
@@ -389,14 +389,14 @@ class SidebarLoader(Component,debugmixin):
         
         for ext in self.extensions:
             for sidebar in ext.getSidebars():
-                self.dprint("Registering frame sidebar %s" % sidebar.keyword)
+                assert self.dprint("Registering frame sidebar %s" % sidebar.keyword)
                 SidebarLoader.sidebarmap[sidebar.keyword]=sidebar
 
     def load(self,frame,sidebarlist=[]):
-        self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
+        assert self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
         for keyword in sidebarlist:
             if keyword in SidebarLoader.sidebarmap:
-                self.dprint("found %s" % keyword)
+                assert self.dprint("found %s" % keyword)
                 sidebar=SidebarLoader.sidebarmap[keyword]
                 frame.createSidebar(sidebar)
 
@@ -465,10 +465,10 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
     def loadSidebars(self):
         sidebars=self.settings.sidebars
-        self.dprint(sidebars)
+        assert self.dprint(sidebars)
         if sidebars is not None:
             sidebarlist=sidebars.split(',')
-            self.dprint("loading %s" % sidebarlist)
+            assert self.dprint("loading %s" % sidebarlist)
             SidebarLoader(ComponentManager()).load(self,sidebarlist)
             self.createSidebarList()
 
@@ -478,7 +478,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def createSidebarList(self):
         sidebars = self._mgr.GetAllPanes()
         for sidebar in sidebars:
-            self.dprint("name=%s caption=%s window=%s state=%s" % (sidebar.name, sidebar.caption, sidebar.window, sidebar.state))
+            assert self.dprint("name=%s caption=%s window=%s state=%s" % (sidebar.name, sidebar.caption, sidebar.window, sidebar.state))
             if sidebar.name != "notebook":
                 self.sidebars.append(sidebar)
         self.sidebars.sort(key=lambda s:s.caption)
@@ -486,7 +486,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
     # Overrides of wx methods
     def OnClose(self, evt=None):
-        self.dprint(evt)
+        assert self.dprint(evt)
         if len(FrameList.storage)==1:
             wx.CallAfter(self.app.quit)
         else:
@@ -546,16 +546,16 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         #print
         #print
         #print
-        self.dprint("---------- %d id=%s" % (count, id(self.toolmap)))
+        assert self.dprint("---------- %d id=%s" % (count, id(self.toolmap)))
         for action in self.toolmap.actions:
-            self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
+            assert self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
             action.Enable()
 
     def setToolmap(self,majormodes=[],minormodes=[]):
         if self.toolmap is not None:
             for action in self.toolmap.actions:
                 action.remove()
-            self.dprint(self.toolmap.actions)
+            assert self.dprint(self.toolmap.actions)
             for tb in self.toolmap.toolbars:
                 self._mgr.DetachPane(tb)
                 tb.Destroy()
@@ -578,7 +578,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     
     def isOpen(self):
         major=self.getActiveMajorMode()
-            #self.dprint("major=%s isOpen=%s" % (str(major),str(major!=None)))
+            #assert self.dprint("major=%s isOpen=%s" % (str(major),str(major!=None)))
         return major is not None
 
     def isTopWindow(self):
@@ -606,21 +606,21 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
         mode=buffer.createMajorMode(self)
-        self.dprint("setting buffer to new view %s" % mode)
+        assert self.dprint("setting buffer to new view %s" % mode)
         self.tabs.replaceTab(mode)
 
     def changeMajorMode(self,requested):
         mode=self.getActiveMajorMode()
         if mode:
             newmode=mode.buffer.createMajorMode(self,requested)
-            self.dprint("new mode=%s" % newmode)
+            assert self.dprint("new mode=%s" % newmode)
             self.tabs.replaceTab(newmode)
 
     def newBuffer(self,buffer):
         mode=buffer.createMajorMode(self)
-        self.dprint("major mode=%s" % mode)
+        assert self.dprint("major mode=%s" % mode)
         self.tabs.addTab(mode)
-        self.dprint("after addViewer")
+        assert self.dprint("after addViewer")
 
         # switchMode must be called here because no tabbed event is
         # generated when adding a new tab.
@@ -668,17 +668,17 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def switchMode(self):
         last=self.tabs.getPrevious()
         mode=self.getActiveMajorMode()
-        self.dprint("Switching from mode %s to mode %s" % (last,mode))
+        assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
         hierarchy=getSubclassHierarchy(mode,MajorMode)
-        self.dprint("Mode hierarchy: %s" % hierarchy)
+        assert self.dprint("Mode hierarchy: %s" % hierarchy)
         # Get the major mode names for the hierarchy (but don't
         # include the last one which is the abstract MajorMode)
         majors=[m.keyword for m in hierarchy[:-1]]
-        self.dprint("Major mode names: %s" % majors)
+        assert self.dprint("Major mode names: %s" % majors)
         
 ##        if last:
-##            self.dprint("saving settings for mode %s" % last)
+##            assert self.dprint("saving settings for mode %s" % last)
 ##            BufferFrame.perspectives[last.buffer.filename] = self._mgr.SavePerspective()
         
         mode.focus()
@@ -689,7 +689,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
 ##        if mode.buffer.filename in BufferFrame.perspectives:
 ##            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])
-##            self.dprint(BufferFrame.perspectives[mode.buffer.filename])
+##            assert self.dprint(BufferFrame.perspectives[mode.buffer.filename])
 ##        else:
 ##            if 'default perspective' in self.tempsettings:
 ##                # This doesn't exactly work because anything not named in
@@ -765,10 +765,10 @@ class BufferApp(wx.App,debugmixin):
             self.removeBuffer(buffer)
 
     def quit(self):
-        self.dprint("prompt for unsaved changes...")
+        assert self.dprint("prompt for unsaved changes...")
         unsaved=[]
         for buf in BufferList.storage:
-            self.dprint("buf=%s modified=%s" % (buf,buf.modified))
+            assert self.dprint("buf=%s modified=%s" % (buf,buf.modified))
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
@@ -794,7 +794,7 @@ class BufferApp(wx.App,debugmixin):
 
         @param: name of plugin to load
         """
-        self.dprint("loading plugins from module=%s" % str(plugin))
+        assert self.dprint("loading plugins from module=%s" % str(plugin))
         try:
             mod=__import__(plugin)
         except Exception,ex:
@@ -821,7 +821,7 @@ class BufferApp(wx.App,debugmixin):
 
     def getConfigFilePath(self,filename):
         c=HomeConfigDir(self.confdir)
-        self.dprint("found home dir=%s" % c.dir)
+        assert self.dprint("found home dir=%s" % c.dir)
         return os.path.join(c.dir,filename)
 
     def setInitialConfig(self,defaults={'Frame':{'width':400,

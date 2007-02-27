@@ -82,52 +82,52 @@ class Orderer(debugmixin):
         return s.getvalue()
 
     def importConstraints(self,items):
-        self.dprint(self.items)
-        self.dprint('before')
-        self.dprint(self)
+        assert self.dprint(self.items)
+        assert self.dprint('before')
+        assert self.dprint(self)
         for c in items:
             if hasattr(c,'populate'):
-                self.dprint("calling %s to populate constraints" % c.name)
+                assert self.dprint("calling %s to populate constraints" % c.name)
                 c.populate(self)
-        self.dprint('after')
-        self.dprint(self)
+        assert self.dprint('after')
+        assert self.dprint(self)
         
     def before(self,a,b,store=True):
         try:
             a=self.namemap[a]
             b=self.namemap[b]
-            self.dprint("%s before %s" % (a,b))
+            assert self.dprint("%s before %s" % (a,b))
             self.orderer[a][b]=-1
             self.orderer[b][a]=1
             if store:
                 self.constraints.append((a,b))
         except KeyError:
             if a not in self.namemap:
-                self.dprint("bad constraint: %s" % a)
+                assert self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                self.dprint("bad constraint: %s" % b)
+                assert self.dprint("bad constraint: %s" % b)
             pass
 
     def after(self,a,b,store=True):
         try:
             a=self.namemap[a]
             b=self.namemap[b]
-            self.dprint("%s after %s" % (a,b))
+            assert self.dprint("%s after %s" % (a,b))
             self.orderer[a][b]=1
             self.orderer[b][a]=-1
             if store:
                 self.constraints.append((b,a))
         except KeyError:
             if a not in self.namemap:
-                self.dprint("bad constraint: %s" % a)
+                assert self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                self.dprint("bad constraint: %s" % b)
+                assert self.dprint("bad constraint: %s" % b)
             pass
 
     def first(self,a):
         try:
             a=self.namemap[a]
-            self.dprint("%s before everything" % a)
+            assert self.dprint("%s before everything" % a)
             for b in self.items:
                 if a!=b and self.orderer[a][b]==0:
                     # don't need to store this result because we are
@@ -135,15 +135,15 @@ class Orderer(debugmixin):
                     self.before(str(a),str(b),store=False)
         except KeyError:
             if a not in self.namemap:
-                self.dprint("bad constraint: %s" % a)
+                assert self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                self.dprint("bad constraint: %s" % b)
+                assert self.dprint("bad constraint: %s" % b)
             pass
 
     def last(self,b):
         try:
             b=self.namemap[b]
-            self.dprint("%s after everything" % b)
+            assert self.dprint("%s after everything" % b)
             for a in self.items:
                 if a!=b and self.orderer[a][b]==0:
                     # don't need to store this result because we are
@@ -151,28 +151,28 @@ class Orderer(debugmixin):
                     self.after(str(b),str(a),store=False)
         except KeyError:
             if a not in self.namemap:
-                self.dprint("bad constraint: %s" % a)
+                assert self.dprint("bad constraint: %s" % a)
             if b not in self.namemap:
-                self.dprint("bad constraint: %s" % b)
+                assert self.dprint("bad constraint: %s" % b)
             pass
 
     def fixconstraints(self):
-        self.dprint("fixing constraints:")
-        self.dprint('before')
-        self.dprint(self)
+        assert self.dprint("fixing constraints:")
+        assert self.dprint('before')
+        assert self.dprint(self)
         for a,b in self.constraints:
             # Given a before b, look for any aprime that is also
             # before a (i.e. when aprime compared to a is -1), because
             # that aprime will also be before b
             for aprime in self.items:
-                self.dprint("  checking [%s][%s]=%d" % (aprime,a,self.orderer[aprime][a]))
+                assert self.dprint("  checking [%s][%s]=%d" % (aprime,a,self.orderer[aprime][a]))
                 if aprime!=a and self.orderer[aprime][a]==-1:
                     self.orderer[aprime][b]=-1
-                    self.dprint("  setting [%s][%s]=%d" % (aprime,b,self.orderer[aprime][b]))
+                    assert self.dprint("  setting [%s][%s]=%d" % (aprime,b,self.orderer[aprime][b]))
                     self.orderer[b][aprime]=1
-                    self.dprint("  setting [%s][%s]=%d" % (b,aprime,self.orderer[b][aprime]))
-        self.dprint('after')
-        self.dprint(self)
+                    assert self.dprint("  setting [%s][%s]=%d" % (b,aprime,self.orderer[b][aprime]))
+        assert self.dprint('after')
+        assert self.dprint(self)
 
         # Check for fully satisfied constraints
         for a in self.items:
@@ -181,8 +181,8 @@ class Orderer(debugmixin):
                 total+=self.orderer[a][b]
             self.total[a]=total
 
-        self.dprint("totals:")
-        self.dprint(self.total)
+        assert self.dprint("totals:")
+        assert self.dprint(self.total)
     
     def sorter(self,a,b):
         if self.total[a]<self.total[b]:

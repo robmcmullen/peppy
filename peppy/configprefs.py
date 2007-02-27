@@ -316,18 +316,18 @@ class SettingsProxy(debugmixin):
         klasses=GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]
         d=GlobalSettings.user
         for klass in klasses:
-            self.dprint("checking %s for %s in user" % (klass,name))
+            assert self.dprint("checking %s for %s in user" % (klass,name))
             if klass in d and name in d[klass]:
                 return d[klass][name]
         d=GlobalSettings.default
         for klass in klasses:
-            self.dprint("checking %s for %s in default" % (klass,name))
+            assert self.dprint("checking %s for %s in default" % (klass,name))
             if klass in d and name in d[klass]:
                 return d[klass][name]
 
         klasses=GlobalSettings.class_hierarchy[self.__dict__['_startSearch']]
         for klass in klasses:
-            self.dprint("checking %s for %s in default_settings" % (klass,name))
+            assert self.dprint("checking %s for %s in default_settings" % (klass,name))
             if hasattr(klass,'default_settings') and name in klass.default_settings:
                 return klass.default_settings[name]
         return None

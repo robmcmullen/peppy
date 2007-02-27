@@ -137,13 +137,13 @@ class FileProtocol(ProtocolPluginBase, debugmixin):
 
     def getReader(self, urlinfo):
         filename = self.getFilename(urlinfo)
-        self.dprint("getReader: trying to open %s" % filename)
+        assert self.dprint("getReader: trying to open %s" % filename)
         fh = open(filename, "rb")
         return fh
 
     def getWriter(self, urlinfo):
         filename = self.getFilename(urlinfo)
-        self.dprint("getWriter: trying to open %s" % filename)
+        assert self.dprint("getWriter: trying to open %s" % filename)
         fh = open(filename, "wb")
         return fh
 
@@ -196,13 +196,13 @@ class TextFilter(IOFilter):
             txt = fh.read(size)
         else:
             txt = fh.read()
-        self.dprint("TextFilter: reading %d bytes from %s" % (len(txt), fh))
+        assert self.dprint("TextFilter: reading %d bytes from %s" % (len(txt), fh))
         stc.AddText(txt)
         return fh, txt
 
     def write(self, fh, stc):
         txt = stc.GetText()
-        self.dprint("TextFilter: writing %d bytes to %s" % (len(txt), fh))
+        assert self.dprint("TextFilter: writing %d bytes to %s" % (len(txt), fh))
         try:
             fh.write(txt)
         except:
@@ -217,11 +217,11 @@ class BinaryFilter(IOFilter):
             txt = fh.read(size)
         else:
             txt = fh.read()
-        self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
+        assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
 
         # Now, need to convert it to two bytes per character
         styledtxt = '\0'.join(txt)+'\0'
-        self.dprint("styledtxt: length=%d" % len(styledtxt))
+        assert self.dprint("styledtxt: length=%d" % len(styledtxt))
 
         stc.AddStyledText(styledtxt)
 
@@ -232,15 +232,15 @@ class BinaryFilter(IOFilter):
 
 ##        newtxt = stc.GetStyledText(0, length)
 ##        out = " ".join(["%02x" % ord(i) for i in txt])
-##        self.dprint(out)
+##        assert self.dprint(out)
 
 ##        errors = 0
 ##        for i in range(len(txt)):
 ##            if newtxt[i*2]!=txt[i]:
-##                self.dprint("error at: %d (%02x != %02x)" % (i, ord(newtxt[i*2]), ord(txt[i])))
+##                assert self.dprint("error at: %d (%02x != %02x)" % (i, ord(newtxt[i*2]), ord(txt[i])))
 ##                errors+=1
 ##            if errors>50: break
-##        self.dprint("errors=%d" % errors)
+##        assert self.dprint("errors=%d" % errors)
         return txt
     
     def write(self, fh, stc):
@@ -248,8 +248,8 @@ class BinaryFilter(IOFilter):
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
         txt = stc.GetStyledText(0, numchars)[0:numchars*2:2]
-        self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
-        self.dprint(repr(txt))
+        assert self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
+        assert self.dprint(repr(txt))
         try:
             fh.write(txt)
         except:

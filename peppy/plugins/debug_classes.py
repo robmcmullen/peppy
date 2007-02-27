@@ -38,7 +38,7 @@ class DebugClassList(Sidebar, debugmixin):
         self.debuglist = DebugClass(parent)
         items = self.debuglist.getItems()
         self.list=wx.CheckListBox(parent, choices=items)
-        self.dprint(items)
+        assert self.dprint(items)
         for i in range(len(items)):
             self.list.Check(i, self.debuglist.isChecked(i))
         self.list.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
@@ -55,23 +55,36 @@ class DebugClassList(Sidebar, debugmixin):
     def OnCheckListBox(self, evt):
         index = evt.GetSelection()
         self.debuglist.action(index)
-        self.dprint("index=%d checked=%s" % (index, self.debuglist.isChecked(index)))
+        assert self.dprint("index=%d checked=%s" % (index, self.debuglist.isChecked(index)))
         self.list.Check(index, self.debuglist.isChecked(index))
 
 class DebugClassProvider(Component):
+    """Plugin to show all classes capable of debug printing.
+
+    This plugin manages the debug list and the debug menu.  Note that
+    if we're running in optimize mode (python -O), this plugin won't
+    be active because it won't do anything.  Debug print statements
+    are hidden behind asserts, and asserts are removed when running in
+    optimize mode.
+    """
     implements(ISidebarProvider)
     implements(IMenuItemProvider)
 
     use_menu = False
 
     def getSidebars(self):
-        yield DebugClassList
+        # Don't show the sidebar in optimize mode (__debug == False)
+        if __debug__:
+            yield DebugClassList
+        else:
+            raise StopIteration
 
     default_menu=((None,Menu("Debug").after("Minor Mode").before("&Help")),
                   ("Debug",MenuItem(DebugClass).first()),
                   )
     def getMenuItems(self):
-        if self.use_menu:
+        # Don't show menu if in optimize mode
+        if self.use_menu and __debug__:
             for menu,item in self.default_menu:
                 yield (None,menu,item)
         else:

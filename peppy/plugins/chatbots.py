@@ -55,7 +55,7 @@ class ChatWrapper(debugmixin):
     def write(self,s):
         while s[-1] in "!.": s = s[:-1]
         response=self.therapist.respond(s)
-        self.dprint("'%s' -> '%s'" % (s,response))
+        assert self.dprint("'%s' -> '%s'" % (s,response))
         self.pending.write(response)
         wx.PostEvent(self._notify_window,ShellUpdateEvent())
     

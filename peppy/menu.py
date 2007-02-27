@@ -73,13 +73,13 @@ class MenuItem(DelayedOrderer):
         DelayedOrderer.__init__(self,name)
             
         self.actions=(action,)
-        self.dprint(self.actions)
+        assert self.dprint(self.actions)
 
 class MenuItemGroup(DelayedOrderer):
     def __init__(self,name,*actions):
         DelayedOrderer.__init__(self,name)
         self.actions=actions
-        self.dprint(self.actions)
+        assert self.dprint(self.actions)
 
 
 
@@ -107,7 +107,7 @@ class SelectAction(debugmixin):
         self.initPostHook()
 
     def __del__(self):
-        self.dprint("DELETING action %s" % self.name)
+        assert self.dprint("DELETING action %s" % self.name)
 
     def initPreHook(self):
         pass
@@ -131,32 +131,32 @@ class SelectAction(debugmixin):
                            self.OnMenuSelected)
 
     def remove(self):
-        self.dprint("removing %s (widget id=%d) result=%s" % (self.name, self.id, self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)))
+        assert self.dprint("removing %s (widget id=%d) result=%s" % (self.name, self.id, self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)))
         self.widget = None
         self.tool = None
         self.frame = None
         
     def OnMenuSelected(self,evt):
-        self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
         self.action()
 
     def OnUpdateUI(self,evt):
-        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
 
     def action(self, state=None, index=-1):
         pass
 
     def __call__(self, evt, number=None):
-        self.dprint("%s called by keybindings" % self)
+        assert self.dprint("%s called by keybindings" % self)
         self.action()
 
     def Enable(self):
-        self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))
+        assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))
         if self.widget is not None:
             self.widget.Enable(self.isEnabled())
         if self.tool is not None:
-            self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name,self.id,self.isEnabled(), self.tool))
+            assert self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name,self.id,self.isEnabled(), self.tool))
             self.tool.EnableTool(self.id,self.isEnabled())
 
     def isEnabled(self):
@@ -183,12 +183,12 @@ class ToggleAction(SelectAction):
         self.Check()
         
     def OnMenuSelected(self,evt):
-        self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
         self.action()
         self.Check()
 
     def OnUpdateUI(self,evt):
-        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
         self.Check()
 
@@ -289,11 +289,11 @@ class ListAction(SelectAction):
 
     def OnMenuSelected(self,evt):
         self.id=evt.GetId()
-        self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
+        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
         self.action(index=self.id2index[self.id])
 
     def OnUpdateUI(self,evt):
-        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
 
     def getHash(self):
@@ -301,25 +301,25 @@ class ListAction(SelectAction):
                    
     def dynamic(self):
         if self.savehash == self.getHash():
-            self.dprint("dynamic menu not changed.  Skipping")
+            assert self.dprint("dynamic menu not changed.  Skipping")
             return
-        self.dprint("toplevel=%s" % self.toplevel)
-        self.dprint("id2index=%s" % self.id2index)
-        self.dprint("items in list: %s" % self.menu.GetMenuItems())
+        assert self.dprint("toplevel=%s" % self.toplevel)
+        assert self.dprint("id2index=%s" % self.id2index)
+        assert self.dprint("items in list: %s" % self.menu.GetMenuItems())
         pos=0
         for item in self.menu.GetMenuItems():
             if item.GetId()==self.toplevel[0]:
                 break
             pos+=1
-        self.dprint("inserting items at pos=%d" % pos)
+        assert self.dprint("inserting items at pos=%d" % pos)
         for id in self.toplevel:
-            self.dprint("disconnecting widget %d" % id)
+            assert self.dprint("disconnecting widget %d" % id)
             self.frame.Disconnect(id,-1,wx.wxEVT_UPDATE_UI)
-            self.dprint("deleting widget %d" % id)
+            assert self.dprint("deleting widget %d" % id)
             self.menu.Delete(id)
         self.toplevel=[]
         self.id2index={}
-        self.dprint("inserting new widgets at %d" % pos)
+        assert self.dprint("inserting new widgets at %d" % pos)
         self.insertIntoMenu(self.menu,pos)
 
     def getItems(self):
@@ -330,7 +330,7 @@ class ListAction(SelectAction):
 
     def Enable(self):
         if self.toplevel:
-            self.dprint("Enabling all items: %s" % str(self.toplevel))
+            assert self.dprint("Enabling all items: %s" % str(self.toplevel))
             for id in self.toplevel:
                 self.menu.Enable(id,self.isEnabled())
 
@@ -365,19 +365,19 @@ class RadioAction(ListAction):
         old=self.getIndex()
         self.id=evt.GetId()
         index=self.id2index[self.id]
-        self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
+        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
         self.saveIndex(index)
         self.action(index=index,old=old)
 
     def OnUpdateUI(self,evt):
-        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
         self.Check()
 
     def Check(self):
         if self.index2id:
             index=self.getIndex()
-            self.dprint("checking %d" % (index))
+            assert self.dprint("checking %d" % (index))
             self.menu.Check(self.index2id[index],True)
 
     def saveIndex(self,index):
@@ -406,17 +406,17 @@ class ToggleListAction(ListAction):
 
     def OnMenuSelected(self,evt):
         self.id=evt.GetId()
-        self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
+        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
         self.action(index=self.id2index[self.id])
 
     def OnUpdateUI(self,evt):
-        self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
+        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
         self.Check()
 
     def Check(self):
         if self.toplevel:
-            self.dprint("Checking all items: %s" % str(self.toplevel))
+            assert self.dprint("Checking all items: %s" % str(self.toplevel))
             for id in self.toggles:
                 self.menu.Check(id,self.isChecked(self.id2index[id]))
 
@@ -441,11 +441,11 @@ class GlobalList(ListAction):
     def __init__(self, frame, menu):
         ListAction.__init__(self, frame, menu)
         self.__class__.others.append(weakref.ref(self))
-        self.dprint("others: %s" % self.__class__.others)
+        assert self.dprint("others: %s" % self.__class__.others)
         import gc
         reference=self.__class__.others[0]
         action=reference()
-        self.dprint(gc.get_referrers(action))
+        assert self.dprint(gc.get_referrers(action))
 
     def createClassReferences(self):
         raise NotImplementedError
@@ -504,7 +504,7 @@ class GlobalList(ListAction):
         
     def getHash(self):
         temp=tuple(self.getItems())
-        self.dprint("hash=%s" % hash(temp))
+        assert self.dprint("hash=%s" % hash(temp))
         return hash(temp)
 
     def getItems(self):
@@ -543,7 +543,7 @@ class MenuBarActionMap(debugmixin):
         self.menumap={}
 
     def __del__(self):
-        self.dprint("DELETING %s" % self)
+        assert self.dprint("DELETING %s" % self)
 
     def getkey(self,parent,name=None):
         if parent is None:
@@ -585,7 +585,7 @@ class MenuBarActionMap(debugmixin):
         menukey=self.getkey(parent,menu.name)
         self.setorderer(menukey,menu)
         
-        self.dprint("Adding %s to menu %s: key=%s" % (menu,parent,str(menukey)))
+        assert self.dprint("Adding %s to menu %s: key=%s" % (menu,parent,str(menukey)))
         if menukey not in self.menumap:
             # if the menuname doesn't exist yet, make a
             # placeholder under the assumption that the menu will
@@ -612,14 +612,14 @@ class MenuBarActionMap(debugmixin):
     def sortHierarchy(self,hier):
         # Both submenus and items should be sorted together
         for menu in hier.keys():
-            self.dprint("sorting: %s" % str(menu))
+            assert self.dprint("sorting: %s" % str(menu))
             submenus=hier[menu]['submenus']
             menus=[submenus[i]['order'] for i in submenus.keys()]
             menus.extend(hier[menu]['items'])
             order=Orderer(menus)
             menus=order.sort()
             hier[menu]['sorted']=menus
-            self.dprint("sorted:  %s" % hier[menu]['sorted'])
+            assert self.dprint("sorted:  %s" % hier[menu]['sorted'])
 
             self.sortHierarchy(hier[menu]['submenus'])
 
@@ -631,7 +631,7 @@ class MenuBarActionMap(debugmixin):
         if not self.dirty:
             return
 
-        self.dprint(self.hier)
+        assert self.dprint(self.hier)
 
         self.sortHierarchy(self.hier)
         self.dirty=False
@@ -641,20 +641,20 @@ class MenuBarActionMap(debugmixin):
         for menu in hier.keys():
             currentkey=self.getkey(parent,menu)
             order=hier[menu]['sorted']
-            self.dprint("populating: %s with %s" % (menu,order))
-            self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
+            assert self.dprint("populating: %s with %s" % (menu,order))
+            assert self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
             if 'widget' in hier[menu]:
                 widget=hier[menu]['widget']
                 addsep=False
                 for itemgroup in hier[menu]['sorted']:
-                    self.dprint("  processing itemgroup %s" % itemgroup)
+                    assert self.dprint("  processing itemgroup %s" % itemgroup)
                     if itemgroup.actions is None:
                         submenu=wx.Menu()
                         widget.AppendMenu(-1,itemgroup.name,submenu)
                         menukey=self.getkey(currentkey,itemgroup.name)
                         h=self.gethier(menukey)
                         h['widget']=submenu
-                        self.dprint("  submenu menukey %s: %s" % (str(menukey),h))
+                        assert self.dprint("  submenu menukey %s: %s" % (str(menukey),h))
                     else:
                         for action in itemgroup.actions:
                             if action is None:
@@ -689,9 +689,9 @@ class MenuBarActionMap(debugmixin):
         for menu in hier['sorted']:
             label=menu.name
             if menu.hidden:
-                self.dprint("  skipping hidden menu %s" % label)
+                assert self.dprint("  skipping hidden menu %s" % label)
                 continue
-            self.dprint("  processing menu %s" % label)
+            assert self.dprint("  processing menu %s" % label)
             menu = wx.Menu()
             if index<count:
                 menubar.Replace(index, menu, label)
@@ -703,26 +703,26 @@ class MenuBarActionMap(debugmixin):
             h['widget']=menu
             index+=1
            
-        self.dprint(hier)
+        assert self.dprint(hier)
         self.populateMenu('root',hier['submenus'])
 
         while index<count:
             menubar.Remove(index)
             index+=1
-        self.dprint("count=%d" % menubar.GetMenuCount())
+        assert self.dprint("count=%d" % menubar.GetMenuCount())
 
 
     def populateTools(self,parent,hier):
         for menu in hier.keys():
             currentkey=self.getkey(parent,menu)
             order=hier[menu]['sorted']
-            self.dprint("populating: %s with %s" % (menu,order))
-            self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
+            assert self.dprint("populating: %s with %s" % (menu,order))
+            assert self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
             if 'widget' in hier[menu]:
                 widget=hier[menu]['widget']
                 addsep=False
                 for itemgroup in hier[menu]['sorted']:
-                    self.dprint("  processing itemgroup %s" % itemgroup)
+                    assert self.dprint("  processing itemgroup %s" % itemgroup)
                     if itemgroup.actions is None:
                         # Currently, submenus are ignored it toolbars!
                         pass
@@ -755,9 +755,9 @@ class MenuBarActionMap(debugmixin):
         for menu in hier['sorted']:
             label=menu.name
             if menu.hidden:
-                self.dprint("  skipping hidden toolbar %s" % label)
+                assert self.dprint("  skipping hidden toolbar %s" % label)
                 continue
-            self.dprint("  processing toolbar %s" % label)
+            assert self.dprint("  processing toolbar %s" % label)
             tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
                             wx.TB_FLAT | wx.TB_NODIVIDER)
             tb.label=label
@@ -769,7 +769,7 @@ class MenuBarActionMap(debugmixin):
             h=self.gethier(menukey)
             h['widget']=tb
            
-        self.dprint(hier)
+        assert self.dprint(hier)
         self.populateTools('root',hier['submenus'])
             
 
@@ -790,20 +790,20 @@ class MenuItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         menumap=MenuBarActionMap(frame)
 
-        self.dprint(self.extensions)
+        assert self.dprint(self.extensions)
         later=[]
         for extension in self.extensions:
-            self.dprint("collecting from extension %s" % extension)
+            assert self.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getMenuItems():
                 if mode is None:
-                    self.dprint("global menu %s: processing group %s" % (menu,group))
+                    assert self.dprint("global menu %s: processing group %s" % (menu,group))
                     menumap.addMenuItems(menu,group)
                 elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
         for menu,group in later:
-            self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
+            assert self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
             menumap.addMenuItems(menu,group)
 
         # create the menubar
@@ -830,20 +830,20 @@ class ToolBarItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         toolmap=MenuBarActionMap(frame)
 
-        self.dprint(self.extensions)
+        assert self.dprint(self.extensions)
         later=[]
         for extension in self.extensions:
-            self.dprint("collecting from extension %s" % extension)
+            assert self.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getToolBarItems():
                 if mode is None:
-                    self.dprint("global menu %s: processing group %s" % (menu,group))
+                    assert self.dprint("global menu %s: processing group %s" % (menu,group))
                     toolmap.addMenuItems(menu,group)
                 elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
         for menu,group in later:
-            self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
+            assert self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
             toolmap.addMenuItems(menu,group)
 
         # create the menubar
@@ -864,18 +864,18 @@ class KeyboardItemLoader(Component,debugmixin):
         KeyboardItemLoader.modekeys={}
         
         for extension in self.extensions:
-            self.dprint("collecting from extension %s" % extension)
+            assert self.dprint("collecting from extension %s" % extension)
             for mode,action in extension.getKeyboardItems():
                 if action.keyboard is None:
                     continue
                 
                 if mode is None:
-                    self.dprint("found global key %s" % (action.keyboard))
+                    assert self.dprint("found global key %s" % (action.keyboard))
                     KeyboardItemLoader.globalkeys.append(action)
                 else:
                     if mode not in KeyboardItemLoader.modekeys:
                         KeyboardItemLoader.modekeys[mode]=[]
-                    self.dprint("found mode %s, key %s" % (mode,action.keyboard))
+                    assert self.dprint("found mode %s, key %s" % (mode,action.keyboard))
                     KeyboardItemLoader.modekeys[mode].append(action)
 
     def load(self,frame,majors=[],minors=[]):
