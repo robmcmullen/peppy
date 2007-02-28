@@ -88,6 +88,7 @@ SetAbout('bravo','')
 SetAbout('blank','')
 
 SetAbout('title.html',"""\
+<!-- -*- HTMLView -*- -->
 <h2>%(prog)s %(version)s</h2>
 
 <h3>%(description)s</h3>

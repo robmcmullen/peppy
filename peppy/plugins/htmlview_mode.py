@@ -53,7 +53,7 @@ class HTMLViewMode(MajorMode):
     
     keyword='HTMLView'
     icon='icons/world.png'
-    regex="\.(htm|html|shtml)"
+    regex=""
 
     debuglevel=0
 
