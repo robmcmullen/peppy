@@ -422,6 +422,20 @@ class SidebarShow(ToggleListAction):
 
 ## BufferFrames
 
+class FrameDropTarget(wx.FileDropTarget, debugmixin):
+    def __init__(self, frame):
+        wx.FileDropTarget.__init__(self)
+        self.frame = frame
+
+    def OnDropFiles(self, x, y, filenames):
+        assert self.dprint("%d file(s) dropped at %d,%d:" % (len(filenames),
+                                                             x, y))
+
+        for filename in filenames:
+            assert self.dprint("filename='%s'" % filename)
+            self.frame.open(filename)
+
+
 class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     debuglevel=0
     frameid=0
@@ -461,6 +475,9 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
 
         self.loadSidebars()
+
+        self.dropTarget=FrameDropTarget(self)
+        self.SetDropTarget(self.dropTarget)        
         
         self.app.SetTopWindow(self)
         
