@@ -160,11 +160,11 @@ class Buffer(debugmixin):
             viewer.frame.tabs.closeTab(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
 
-    def setFilename(self,filename):
-        if not filename:
+    def setFilename(self, url, path):
+        if not url:
             filename="untitled"
-        self.filename=filename
-        basename=os.path.basename(self.filename)
+        self.filename=url
+        basename=os.path.basename(path)
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count
@@ -187,21 +187,20 @@ class Buffer(debugmixin):
         return self.displayname
 
     def open(self, filename, stcparent):
-        filter=GetIOFilter(filename)
-        self.readonly = filter.stats.readonly
+        fh=GetReader(filename)
 
         # Need a two-stage opening process in order to support files
         # that are too large to fit in memory at once.  First, load
         # the first group of bytes into memory and use that to check
         # to see what type it is.
         
-        self.stc = filter.getSTC(stcparent)
-        self.stc.ClearAll()
+        self.stc = PeppySTC(stcparent)
 
         # Read the first thousand bytes
-        filter.read(self.stc, self.guessLength)
+        self.stc.readFrom(fh, self.guessLength)
         # if no exceptions, it must have worked.
-        self.setFilename(filter.url)
+        self.readonly = fh.urlinfo.readonly
+        self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
         self.guessBinary=self.stc.GuessBinary(self.guessLength,
                                               self.guessPercentage)
         if self.defaultmode is None:
@@ -210,16 +209,21 @@ class Buffer(debugmixin):
         if self.defaultmode.mmap_stc_class is not None:
             # we have a STC that allows files that are larger that
             # memory, so allow it to manage the file itself.
-            self.stc = self.defaultmode.mmap_stc_class()
+            self.stc = self.defaultmode.mmap_stc_class(stcparent, copy=self.stc)
         else:
             # Getting here means we've decided that we're using an
             # in-resident STC, so load the whole file.
-            filter.read(self.stc)
+            self.stc.readFrom(fh)
+
+        if isinstance(self.stc,PeppySTC):
             # if no exceptions, it must have worked.
             self.initSTC()
-        
-        self.stc.openPostHook(filter)
-        filter.close()
+
+        # let the stc get additional data from the file handle if it
+        # needs to, and let it close the file.  Some stcs may be
+        # interactive and need to keep the file open, so don't
+        # explicitly close it here.
+        self.stc.openPostHook(fh)
         
         self.modified=False
         self.stc.EmptyUndoBuffer()
@@ -233,12 +237,12 @@ class Buffer(debugmixin):
                 saveas=self.filename
             else:
                 saveas=filename
-            filter=GetIOFilter(saveas)
-            filter.write(self.stc)
+            fh=GetWriter(saveas)
+            self.stc.writeTo(fh)
             self.stc.SetSavePoint()
             self.modified=False
             if filename is not None and filename!=self.filename:
-                self.setFilename(filename)
+                self.setFilename(filter.fh.geturl(), filter.fh.path)
             self.showModifiedAll()
         except:
             print "Buffer: failed writing!"

@@ -1,27 +1,54 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re,urlparse
+import urllib2
 
 from cStringIO import StringIO
 
 from trac.core import *
 from debug import *
-from stcinterface import *
 
-__all__ = [ 'GetIOFilter', 'ProtocolPlugin', 'ProtocolPluginBase', 'URLStats' ]
+__all__ = [ 'URLInfo', 'GetReader', 'GetWriter', 'IURLHandler' ]
 
-class URLInfo(object):
-    def __init__(self, url, default="file", usewin=False):
+
+class URLInfo(debugmixin):
+    def __init__(self, url, default="file", usewin=None):
         self.url = url
         (self.protocol, self.netloc, self.path, self.parameters,
          self.query_string, self.fragment) = urlparse.urlparse(self.url, default)
+        assert self.dprint(self)
 
-        # special handling for windows filenames with drive letters
-        if os.name in ['nt', 'ce', 'os2'] or usewin:
-            # dprint(self)
+        # special handling for windows filenames with drive letters.
+        # For testing purposes, usewin can be specified as False
+        if os.name in ['nt', 'ce', 'os2'] and usewin is None:
+            usewin = True
+
+        if usewin:
+            # assert self.dprint(self)
             if len(self.protocol)==1:
                 self.path = "%s:%s" % (self.protocol, self.path)
                 self.protocol = "file"
+            elif len(self.path)>3 and self.path[0] == '/' and self.path[2] == ':':
+                self.path = "%s:%s" % (self.path[1], self.path[3:])
+
+        if self.protocol == "file":
+            # urlparse makes a distinction between file://name and
+            # file:///name:
+            # >>> urlparse("file://LICENSE")
+            # ('file', 'LICENSE', '', '', '', '')
+            # >>> urlparse("file:///LICENSE")
+            # ('file', '', '/LICENSE', '', '', '')
+
+            # but, I don't need that distinction, so just cat them.
+            self.path = os.path.abspath(self.netloc + self.path)
+            if usewin:
+                self.url = "file:///" + self.path.replace('\\','/')
+            elif usewin == False and os.name in ['nt', 'ce', 'os2']:
+                self.path = self.path[2:] # remove drive letter
+                self.url = "file://" + self.path.replace('\\','/')
+            else:
+                self.url = "file://" + self.path
+            self.netloc = ''
 
     def __str__(self):
         return "%s %s" % (self.url, (self.protocol,
@@ -30,23 +57,12 @@ class URLInfo(object):
                                                         self.parameters,
                                                         self.query_string,
                                                         self.fragment))
-            
 
-#### ProtocolPlugins that define loaders for reading files and
-#### populating the STC interface
 
-class UnknownProtocolError(ValueError):
-    pass
+#### The ProtocolHandler and IURLHandler define extensions to the
+#### urllib2 module to load other types of URLs.
 
-class URLStats(object):
-    def __init__(self):
-        self.size = -1
-        self.readonly = False
-        self.owner = None
-        self.group = None
-        self.permissions = None
-        
-class ProtocolPlugin(Interface):
+class IURLHandler(Interface):
     """Interface for IO plugins.  A plugin that implements this
     interface takes a URL in the form of protocol://path/to/some/file
     and implements two methods that return a file-like object that can
@@ -55,249 +71,60 @@ class ProtocolPlugin(Interface):
     be read-only, which means the getWriter method may be omitted from
     the plugin."""
 
-    def supportedProtocols():
-        """Return a list of protocols that this interface supports,
-        i.e. a http protocol class would return ['http'] or
-        potentially ['http','https'] if it also http over SSL."""
-
-    def getNormalizedName(urlinfo):
-        """Return the normalized URL.
-
-        Return a string representing the normalized URL.
-        """
-
-    def getStats(urlinfo):
-        """Return statistics on the URLInfo object.
-
-        Return a URLStats instance containing information about the
-        data pointed to by the specified url.
-        """
-        
-    def getReader(urlinfo):
-        """Returns a file-like object that can be used to read the
-        data using the given protocol.
-        """
-
-    def getWriter(urlinfo):
-        """Returns a file-like object that can be used to write the
-        data using the given protocol."""
-
-    def getSTC(parent):
-        """
-        Get an STC instance that supports this protocol.
-        """
-
-class ProtocolPluginBase(Component):
-    def supportedProtocols(self):
-        return NotImplementedError
-
-    def getNormalizedName(self):
-        return NotImplementedError
-
-    def getStats(self, urlinfo):
-        return URLStats()
-    
-    def getReader(self, urlinfo):
-        return NotImplementedError
-    
-    def getWriter(self, urlinfo):
-        return NotImplementedError
-    
-    def getSTC(self, parent):
-        return PeppySTC(parent)
+    def getURLHandlers():
+        """Return a list of urllib2 handlers defining new protocol
+        support."""
 
 
-## Default protocols
+class ProtocolHandler(Component, debugmixin):
+    handlers = ExtensionPoint(IURLHandler)
 
-class FileProtocol(ProtocolPluginBase, debugmixin):
-    implements(ProtocolPlugin)
+    def __init__(self):
+        # Only call this once.
+        if hasattr(ProtocolHandler,'opener'):
+            return self
 
-    def supportedProtocols(self):
-        return ['file']
-
-    def getNormalizedName(self, urlinfo):
-        return "file:" + os.path.abspath(self.getFilename(urlinfo))
-
-    def getFilename(self, urlinfo):
-        # urlparse makes a distinction between file://name and
-        # file:///name:
-        # >>> urlparse("file://LICENSE")
-        # ('file', 'LICENSE', '', '', '', '')
-        # >>> urlparse("file:///LICENSE")
-        # ('file', '', '/LICENSE', '', '', '')
-        
-        # but, I don't need that distinction, so just cat them.
-        return urlinfo.netloc + urlinfo.path
-    
-    def getStats(self, urlinfo):
-        filename = self.getFilename(urlinfo)
-        stats = URLStats()
-        stats.readonly = not os.access(filename, os.W_OK)
-        return stats
-
-    def getReader(self, urlinfo):
-        filename = self.getFilename(urlinfo)
-        assert self.dprint("getReader: trying to open %s" % filename)
-        fh = open(filename, "rb")
-        return fh
-
-    def getWriter(self, urlinfo):
-        filename = self.getFilename(urlinfo)
-        assert self.dprint("getWriter: trying to open %s" % filename)
-        fh = open(filename, "wb")
-        return fh
-
-class HTTPProtocol(ProtocolPluginBase, debugmixin):
-    implements(ProtocolPlugin)
-
-    def supportedProtocols(self):
-        return ['http', 'https']
-
-    def getNormalizedName(self, urlinfo):
-        return urlinfo.url
-    
-    def getStats(self, urlinfo):
-        stats = URLStats()
-        stats.readonly = True
-        return stats
-
-    def getReader(self, urlinfo):
-        import urllib2
-
-        fh = urllib2.urlopen(urlinfo.url)
-        fh.readonly = True
-        return fh
-
-
-class ProtocolHandler(Component):
-    handlers = ExtensionPoint(ProtocolPlugin)
-
-    def find(self, protoidentifier):
+        urlhandlers = []
         for handler in self.handlers:
-            if protoidentifier in handler.supportedProtocols():
-                return handler
-        raise UnknownProtocolError("no handler for %s protocol" % protoidentifier)
+            urlhandlers.extend(handler.getURLHandlers())
 
-
-
-
-class IOFilter(debugmixin):
-    debuglevel = 0
-    
-    def read(self, fh, stc):
-        raise NotImplementedError
-
-    def write(self, fh, stc):
-        raise NotImplementedError
-
-class TextFilter(IOFilter):
-    def read(self, fh, stc, size=None):
-        if size is not None:
-            txt = fh.read(size)
-        else:
-            txt = fh.read()
-        assert self.dprint("TextFilter: reading %d bytes from %s" % (len(txt), fh))
-        stc.AddText(txt)
-        return fh, txt
-
-    def write(self, fh, stc):
-        txt = stc.GetText()
-        assert self.dprint("TextFilter: writing %d bytes to %s" % (len(txt), fh))
-        try:
-            fh.write(txt)
-        except:
-            print "TextFilter: something went wrong writing to %s" % fh
-            raise
-
-class BinaryFilter(IOFilter):
-    debuglevel = 0
-    
-    def read(self, fh, stc, size=None):
-        if size is not None:
-            txt = fh.read(size)
-        else:
-            txt = fh.read()
-        assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
-
-        # Now, need to convert it to two bytes per character
-        styledtxt = '\0'.join(txt)+'\0'
-        assert self.dprint("styledtxt: length=%d" % len(styledtxt))
-
-        stc.AddStyledText(styledtxt)
-
-        # Debugging stuff to check to see if the text conversion went
-        # correctly.
+        assert self.dprint(urlhandlers)
+        ProtocolHandler.opener = urllib2.build_opener(*urlhandlers)
         
-##        length = stc.GetTextLength()
+    def urlreader(self, url, data=None, usewin=False):
+        info = URLInfo(url, "file")
 
-##        newtxt = stc.GetStyledText(0, length)
-##        out = " ".join(["%02x" % ord(i) for i in txt])
-##        assert self.dprint(out)
+        fh = ProtocolHandler.opener.open(info.url)
 
-##        errors = 0
-##        for i in range(len(txt)):
-##            if newtxt[i*2]!=txt[i]:
-##                assert self.dprint("error at: %d (%02x != %02x)" % (i, ord(newtxt[i*2]), ord(txt[i])))
-##                errors+=1
-##            if errors>50: break
-##        assert self.dprint("errors=%d" % errors)
-        return txt
-    
-    def write(self, fh, stc):
-        numchars = stc.GetTextLength()
-        # Have to use GetStyledText because GetText will truncate the
-        # string at the first zero character.
-        txt = stc.GetStyledText(0, numchars)[0:numchars*2:2]
-        assert self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
-        assert self.dprint(repr(txt))
-        try:
-            fh.write(txt)
-        except:
-            print "BinaryFilter: something went wrong writing to %s" % fh
-            raise
+        if info.protocol == "file":
+            info.netloc = ''
+            info.path = os.path.abspath(info.netloc + info.path)
+            info.readonly = not os.access(info.path, os.W_OK)
+        else:
+            info.readonly = True
+        fh.urlinfo = info
+        return fh
+
+    def urlwriter(self, url):
+        info = URLInfo(url, "file")
+        assert self.dprint("trying to open %s" % info.url)
+        if info.protocol == "file":
+            assert self.dprint("saving to file %s" % info.path)
+            fh = open(info.path, "wb")
+            #fh.urlinfo = info
+            return fh
+        raise IOError("protocol %s not supported for writing" % info.protocol)
 
 
-#### Filter wrappers that combine Protocols and Filters
-
-class FilterWrapper(debugmixin):
-    def __init__(self, protocol, filter, info):
-        self.protocol = protocol
-        self.filter = filter
-        self.urlinfo = info
-        self.fh = None
-        self.stats = protocol.getStats(info)
-        self.url = protocol.getNormalizedName(self.urlinfo)
-
-    def read(self, stc, size=None):
-        if self.fh is None:
-            self.fh = self.protocol.getReader(self.urlinfo)
-        raw = self.filter.read(self.fh, stc, size)
-        
-        from pype.parsers import detectLineEndings
-        stc.format = detectLineEndings(raw)
-
-    def write(self, stc):
-        self.fh = self.protocol.getWriter(self.urlinfo)
-        self.filter.write(self.fh, stc)
-
-    def close(self):
-        if self.fh is not None:
-            self.fh.close()
-        self.fh = None
-
-    def getSTC(self, parent):
-        return self.protocol.getSTC(parent)
-
-
-def GetIOFilter(path, default="file", usewin=False):
+def GetReader(url, default="file", usewin=False):
     comp_mgr = ComponentManager()
     handler = ProtocolHandler(comp_mgr)
-    info = URLInfo(path, default, usewin)
-    if info.protocol is None:
-        info.protocol = default
-    protocol = handler.find(info.protocol)
-    filter = BinaryFilter()
-    return FilterWrapper(protocol, filter, info)
+    return handler.urlreader(url)
+
+def GetWriter(url, default="file", usewin=False):
+    comp_mgr = ComponentManager()
+    handler = ProtocolHandler(comp_mgr)
+    return handler.urlwriter(url)
 
 
 if __name__ == "__main__":

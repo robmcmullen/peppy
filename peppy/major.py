@@ -136,7 +136,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.editwin=None # user interface window
         self.minibuffer=None
         self.sidebar=None
-        self.stc=NullSTC() # data store
+        self.stc=None # data store
         self.buffer=buffer
         self.frame=frame
         self.popup=None

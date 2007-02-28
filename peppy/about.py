@@ -8,6 +8,7 @@ elements for the help menu and other testing menu items.
 """
 
 import os,os.path,sys,re,time,commands,glob,random
+import urllib2
 
 import wx
 
@@ -15,6 +16,9 @@ from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
+
+# can't use cStringIO because we need to add attributes to it
+from StringIO import StringIO
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
@@ -56,6 +60,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 aboutfiles={}
 def SetAbout(path,text):
     aboutfiles[path]=text
+    
+class AboutHandler(urllib2.BaseHandler):
+    # Use local file or FTP depending on form of URL
+    def about_open(self, req):
+        url = req.get_selector()
+        dprint(url)
+
+        text = aboutfiles[url]
+        if text.find("%(") >= 0:
+            text = text % substitutes
+        fh=StringIO()
+        fh.write(text)
+        fh.seek(0)
+        fh.geturl = lambda :"about:%s" % url
+        fh.info = lambda :{'Content-type': 'text/plain',
+                            'Content-length': len(text),
+                            'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
+                            }
+
+        return fh
+
 
 SetAbout('untitled','')
 SetAbout('alpha','')
@@ -142,32 +167,6 @@ def AddCopyright(project, website, author, date, reason=None):
                        })
     substitutes['gpl_code']="\n".join(["<li><a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights])
         
-
-class AboutProtocol(ProtocolPluginBase,debugmixin):
-    implements(ProtocolPlugin)
-
-    def supportedProtocols(self):
-        return ['about']
-
-    def getNormalizedName(self, urlinfo):
-        return "about:%s" % urlinfo.path
-
-    def getStats(self, urlinfo):
-        stats = URLStats()
-        stats.readonly = True
-        return stats
-    
-    def getReader(self,urlinfo):
-        if urlinfo.path in aboutfiles:
-            text = aboutfiles[urlinfo.path]
-            if text.find("%(") >= 0:
-                text = text % substitutes
-            fh=StringIO()
-            fh.write(text)
-            fh.seek(0)
-            return fh
-        raise IOError
-
 
 
 class HelpAbout(SelectAction):
@@ -268,6 +267,10 @@ class OpenBravo(SelectAction):
 class AboutPlugin(MajorModeMatcherBase):
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
+    implements(IURLHandler)
+
+    def getURLHandlers(self):
+        return [AboutHandler]
 
     def scanFilename(self,filename):
         if filename=='about:alpha':

@@ -104,7 +104,12 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-    def openPostHook(self, filter):
+    def detectLineEndings(self, num=1024):
+        from pype.parsers import detectLineEndings
+        self.format = detectLineEndings(self.GetTextRange(0,num))
+        self.eol_len = len(self.format)
+
+    def openPostHook(self, fh):
         """Hook called after the initial open of the file.
         
         Hook here for subclasses of STC to do whatever they need with
@@ -115,51 +120,42 @@ class STCInterface(object):
 
         @type filter: iofilter.FilterWrapper
         """
+        fh.close()
+        self.detectLineEndings()
+
+    def readFrom(self, fh):
+        """Read from filehandle, converting as necessary"""
         pass
 
-
-class NullSTC(STCInterface):
-    """
-    Bare-bones STC implementation (without any user interface)
-    interface for testing purposes.  A few methods are implemented to
-    support testing of the STC without using wx
-    """
-    def __init__(self):
-        self.styledtext=""
-        
-    def Bind(self,evt,obj):
+    def writeTo(self, fh):
+        """Write to filehandle, converting as necessary"""
         pass
-
-    def ClearAll(self):
-        self.styledtext=""
-
-    def SetText(self,text):
-        self.styledtext='\0'.join(text)+'\0'
-
-    def AddText(self,text):
-        self.styledtext += '\0'.join(text)+'\0'
-
-    def GetText(self):
-        return self.styledtext[::2]
-
-    def GetTextLength(self):
-        return len(self.styledtext)/2
-
-    def SetStyledText(self,text):
-        self.styledtext=text
-
-    def AddStyledText(self,text):
-        self.styledtext+=text
-
-    def GetStyledText(self,start=0,length=0):
-        return self.styledtext[start*2:start*2+length*2]
 
 
 class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
     """
-    def __init__(self, parent, ID=-1):
-        stc.StyledTextCtrl.__init__(self, parent, ID)
+    def __init__(self, parent, refstc=None, copy=None):
+        stc.StyledTextCtrl.__init__(self, parent, -1)
+        self.ClearAll()
+        
+        if refstc is not None:
+            self.refstc=refstc
+            self.docptr=self.refstc.docptr
+            self.AddRefDocument(self.docptr)
+            self.SetDocPointer(self.docptr)
+            self.refstc.addSubordinate(self)
+            assert self.dprint("referencing document %s" % self.docptr)
+        else:
+            self.refstc=None
+            self.docptr=self.CreateDocument()
+            self.SetDocPointer(self.docptr)
+            assert self.dprint("creating new document %s" % self.docptr)
+            self.subordinates=[]
+            if copy is not None:
+                txt = copy.GetStyledText(0,copy.GetTextLength())
+                dprint("copying %s from old stc." % repr(txt))
+                self.AddStyledText(txt)
 
         ## PyPE compat
 
@@ -167,7 +163,40 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
         # is loaded
         self.format='\n'
         self.eol_len=len(self.format)
+
+
+    def addSubordinate(self,otherstc):
+        self.subordinates.append(otherstc)
+
+    def removeSubordinate(self,otherstc):
+        self.subordinates.remove(otherstc)
+
+    def readFrom(self, fh, size=None):
+        if size is not None:
+            txt = fh.read(size)
+        else:
+            txt = fh.read()
+        assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
+
+        # Now, need to convert it to two bytes per character
+        styledtxt = '\0'.join(txt)+'\0'
+        assert self.dprint("styledtxt: length=%d" % len(styledtxt))
+
+        self.AddStyledText(styledtxt)
     
+    def writeTo(self, fh):
+        numchars = self.GetTextLength()
+        # Have to use GetStyledText because GetText will truncate the
+        # string at the first zero character.
+        txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
+        assert self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
+        assert self.dprint(repr(txt))
+        try:
+            fh.write(txt)
+        except:
+            print "BinaryFilter: something went wrong writing to %s" % fh
+            raise
+        
     def CanEdit(self):
         """PyPE compat"""
         return True
@@ -289,8 +318,8 @@ class PeppySTC(PeppyBaseSTC):
     """
     debuglevel=0
     
-    def __init__(self, parent, ID=-1, refstc=None):
-        PeppyBaseSTC.__init__(self, parent, ID)
+    def __init__(self, parent, refstc=None, copy=None):
+        PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy)
 
         self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
         self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
@@ -300,26 +329,6 @@ class PeppySTC(PeppyBaseSTC):
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         self.debug_dnd=False
-
-        if refstc is not None:
-            self.refstc=refstc
-            self.docptr=self.refstc.docptr
-            self.AddRefDocument(self.docptr)
-            self.SetDocPointer(self.docptr)
-            self.refstc.addSubordinate(self)
-            assert self.dprint("referencing document %s" % self.docptr)
-        else:
-            self.refstc=None
-            self.docptr=self.CreateDocument()
-            self.SetDocPointer(self.docptr)
-            assert self.dprint("creating new document %s" % self.docptr)
-            self.subordinates=[]
-
-    def addSubordinate(self,otherstc):
-        self.subordinates.append(otherstc)
-
-    def removeSubordinate(self,otherstc):
-        self.subordinates.remove(otherstc)
 
     def sendEvents(self,evt):
         """
@@ -446,16 +455,16 @@ class NonResidentSTC(STCInterface,debugmixin):
     """
     debuglevel=0
     
-    def __init__(self):
+    def __init__(self, parent=None, copy=None):
         self.filename = None
         
-    def openPostHook(self, filter):
-        try:
-            self.filename = filter.protocol.getFilename(filter.urlinfo)
-        except:
-            raise TypeError("url must be a file. %s" % filter.urlinfo)
+    def openPostHook(self, fh):
+        if fh.urlinfo.protocol == 'file':
+            self.filename = fh.urlinfo.path
+        else:
+            raise TypeError("url must be a file. %s" % fh.urlinfo.url)
 
-        filter.close()
+        fh.close()
 
         self.openMmap()
 

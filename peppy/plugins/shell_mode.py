@@ -1,6 +1,7 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re
+import urllib2
 
 import wx
 import wx.stc as stc
@@ -11,7 +12,7 @@ from cStringIO import StringIO
 from peppy import *
 from peppy.major import *
 from peppy.menu import *
-from peppy.iofilter import ProtocolPlugin, ProtocolPluginBase
+from peppy.iofilter import *
 from peppy.trac.core import *
 from peppy.fundamental import FundamentalMode
 from peppy.stcinterface import PeppySTC
@@ -37,31 +38,20 @@ class ShellPipePlugin(Interface):
         this object.
         """
 
-class ShellProtocol(ProtocolPluginBase,debugmixin):
-    implements(ProtocolPlugin)
-    
-    shells=ExtensionPoint(ShellPipePlugin)
+class ShellHandler(urllib2.BaseHandler):
+    def shell_open(self, req):
+        url = req.get_selector()
+        dprint(url)
 
-    def supportedProtocols(self):
-        return ['shell']
-    
-    def getNormalizedName(self, urlinfo):
-        return "shell:%s" % urlinfo.path
-
-    def getReader(self,urlinfo):
-        assert self.dprint("getReader: trying to open %s" % urlinfo.path)
-        for shell in self.shells:
-            if urlinfo.path in shell.supportedShells():
-                fh=shell.getPipe(urlinfo.path)
-                return fh
-        raise IOError
-
-    def getWriter(self,urlinfo):
-        return self.getReader(urlinfo)
-
-    def getSTC(self,parent):
-        return ShellSTC(parent)
-    
+        comp_mgr = ComponentManager()
+        handler = ShellPlugin(comp_mgr)
+        fh = handler.find(url)
+        fh.geturl = lambda :"shell:%s" % url
+        fh.info = lambda :{'Content-type': 'text/plain',
+                            'Content-length': 0,
+                            'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
+                            }        
+        return fh
 
 
 # This creates a new Event class and a EVT binder function used when
@@ -77,17 +67,17 @@ class ShellSTC(PeppySTC):
     """
     debuglevel=0
 
-    def __init__(self, parent, ID=-1):
-        PeppySTC.__init__(self,parent,ID)
+    def __init__(self, parent, copy=None):
+        PeppySTC.__init__(self, parent, copy=copy)
         self.pipe=None
         self.waiting=False
         self.promptPosEnd=0
         self.filter=1
         self.more=0
 
-    def openPostHook(self,filter):
+    def openPostHook(self, fh):
         assert self.dprint("in ShellSTC")
-        self.pipe=filter.fh
+        self.pipe = fh
         self.pipe.setNotifyWindow(self)
         self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
         
@@ -166,6 +156,8 @@ class ShellMode(FundamentalMode):
     icon='icons/application_xp_terminal.png'
     regex="shell:.*$"
 
+    mmap_stc_class = ShellSTC
+
     def createWindowPostHook(self):
         assert self.dprint("In shell.")
         self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
@@ -189,6 +181,18 @@ class ShellMode(FundamentalMode):
 class ShellPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IKeyboardItemProvider)
+    implements(IURLHandler)
+    shells=ExtensionPoint(ShellPipePlugin)
+
+    def getURLHandlers(self):
+        return [ShellHandler]
+
+    def find(self, url):
+        for shell in self.shells:
+            if url in shell.supportedShells():
+                fh=shell.getPipe(url)
+                return fh
+        raise IOError("shell %s not found" % url)        
     
     def possibleModes(self):
         yield ShellMode

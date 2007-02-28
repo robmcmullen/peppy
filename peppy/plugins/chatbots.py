@@ -47,7 +47,7 @@ class ChatWrapper(debugmixin):
     def setNotifyWindow(self,win):
         self._notify_window=win
 
-    def read(self):
+    def read(self, size=0):
         txt=self.pending.getvalue()
         self.pending=StringIO()
         return txt
@@ -58,6 +58,10 @@ class ChatWrapper(debugmixin):
         assert self.dprint("'%s' -> '%s'" % (s,response))
         self.pending.write(response)
         wx.PostEvent(self._notify_window,ShellUpdateEvent())
+
+    def close(self):
+        self.pending=StringIO()
+        self.pending.write(self.greeting)
     
 
 if __name__ == "__main__":
