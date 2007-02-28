@@ -321,6 +321,36 @@ class CommentRegion(MajorAction):
             mode.comment(True)
 
 
+class StandardReturnMixin(debugmixin):
+    def electricReturn(self):
+        """Add a newline and indent to the proper tab level.
+
+        Indent to the level of the line above.
+        """
+        s = self.stc
+        
+        linenum = s.GetCurrentLine()
+        pos = s.GetCurrentPos()
+        col = s.GetColumn(pos)
+        linestart = s.PositionFromLine(linenum)
+        line = s.GetLine(linenum)[:pos-linestart]
+    
+        #get info about the current line's indentation
+        ind = s.GetLineIndentation(linenum)                    
+
+        if col <= ind:
+            if s.GetUseTabs():
+                s.ReplaceSelection(s.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
+            else:
+                s.ReplaceSelection(s.format+(col*' '))
+        elif not pos:
+            s.ReplaceSelection(s.format)
+        else:
+            a = ind*' '
+            if s.GetUseTabs():
+                a = a.replace(s.GetTabWidth()*' ', '\t')
+            s.ReplaceSelection(s.format+a)
+
 class ElectricReturn(MajorAction):
     name = "Electric Return"
     tooltip = "Indent the next line following a return"
@@ -345,7 +375,7 @@ class PasteAtColumn(Paste):
 
 
 class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
-                      StandardCommentMixin):
+                      StandardCommentMixin, StandardReturnMixin):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -553,13 +583,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
             end += elen
         return end + self.stc.eol_len
 
-    def electricReturn(self):
-        """
-        Indent the next line to the appropriate level.  This is called
-        instead of letting the STC handle a return press on its own.
-        """
-        pass
-
 
 
 class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
@@ -608,6 +631,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental",CapitalizeWord),
                   ("Fundamental",UpcaseWord),
                   ("Fundamental",DowncaseWord),
+                  ("Fundamental",ElectricReturn),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:

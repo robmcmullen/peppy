@@ -77,12 +77,12 @@ class PythonElectricReturnMixin(object):
         if col <= ind:
             xtra = None
             if s.GetUseTabs():
-                s.ReplaceSelection(viewer.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
+                s.ReplaceSelection(s.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
             else:
-                s.ReplaceSelection(viewer.format+(col*' '))
+                s.ReplaceSelection(s.format+(col*' '))
         elif not pos:
             xtra = None
-            s.ReplaceSelection(viewer.format)
+            s.ReplaceSelection(s.format)
 
         else:
             colon = ord(':')
@@ -185,8 +185,8 @@ class PythonElectricReturnMixin(object):
             
             if s.GetUseTabs():
                 a = a.replace(s.GetTabWidth()*' ', '\t')
-            ## s._tdisable(s.ReplaceSelection, viewer.format+a)
-            s.ReplaceSelection(viewer.format+a)
+            ## s._tdisable(s.ReplaceSelection, s.format+a)
+            s.ReplaceSelection(s.format+a)
 
 
 
