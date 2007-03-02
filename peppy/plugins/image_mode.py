@@ -25,6 +25,7 @@ from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.lib.controls import *
+from peppy.stcinterface import *
 
 __all__ = ['ImageViewPlugin']
 
@@ -42,21 +43,14 @@ class OpenImageViewer(SelectAction):
         self.frame.open("about:red.png")
 
 
-class BitmapView(wx.Panel):
+class BitmapView(BitmapScroller):
     """
     Simple bitmap viewer that loads an image from the data in an STC.
     """
     def __init__(self, parent, frame, stc):
-        wx.Panel.__init__(self, parent, -1)
+        BitmapScroller.__init__(self, parent)
         self.frame = frame
         self.stc = stc
-        
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.sizer)
-        self.drawing = BitmapScroller(self)
-        self.sizer.Add(self.drawing, 1, wx.EXPAND)
-
-        self.Layout()
         
     def update(self):
         fh = StringIO(self.stc.GetBinaryData(0,self.stc.GetTextLength()))
@@ -65,10 +59,37 @@ class BitmapView(wx.Panel):
         # causes python to crash.
         img = wx.EmptyImage()
         if img.LoadStream(fh):
-            self.drawing.setBitmap(wx.BitmapFromImage(img))
+            self.setBitmap(wx.BitmapFromImage(img))
         else:
-            self.drawing.setBitmap(None)
+            self.setBitmap(None)
             self.frame.SetStatusText("Invalid image")
+
+
+class ImageSTCWrapper(STCProxy):
+    def __init__(self, stc, win):
+        self.stc = stc
+        self.win = win
+        
+    def CanEdit(self):
+        return False
+
+    def CanCopy(self):
+        return True
+
+    def Copy(self):
+        self.win.copyToClipboard()
+
+    def CanCut(self):
+        return False
+
+    def CanPaste(self):
+        return False
+
+    def CanUndo(self):
+        return False
+
+    def CanRedo(self):
+        return False
 
 class ImageViewMode(MajorMode):
     """
@@ -95,6 +116,7 @@ class ImageViewMode(MajorMode):
         assert self.dprint()
 
         win=BitmapView(parent,self.frame,self.buffer.stc)        
+        #win=wx.Window(parent, -1)
 
         eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
 
@@ -108,6 +130,7 @@ class ImageViewMode(MajorMode):
         Initialize the bitmap viewer with the image contained in the
         buffer.
         """
+        self.stc = ImageSTCWrapper(self.buffer.stc, self.editwin)
         self.editwin.update()
 
     def deleteWindowPostHook(self):

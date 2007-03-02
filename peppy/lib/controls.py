@@ -33,6 +33,12 @@ class BitmapScroller(wx.ScrolledWindow):
         self.SetScrollRate(1,1)
         self.Refresh()
 
+    def copyToClipboard(self):
+        bmpdo = wx.BitmapDataObject(self.bmp)
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(bmpdo)
+            wx.TheClipboard.Close()
+
     def OnPaint(self, evt):
         if self.bmp is not None:
             dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
