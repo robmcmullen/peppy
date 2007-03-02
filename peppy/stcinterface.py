@@ -303,22 +303,24 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
         return (linestart, lineend)
 
     def PasteAtColumn(self, paste=None):
-        dprint("rectangle=%s" % self.SelectionIsRectangle())
+        assert self.dprint("rectangle=%s" % self.SelectionIsRectangle())
         start, end = self.GetSelection()
-        dprint("selection = %d,%d" % (start, end))
+        assert self.dprint("selection = %d,%d" % (start, end))
 
         line = self.LineFromPosition(start)
         col = self.GetColumn(start)
-        dprint("line = %d, col=%d" % (line, col))
+        assert self.dprint("line = %d, col=%d" % (line, col))
 
         if paste is None:
             paste = GetClipboardText()
         self.BeginUndoAction()
         try:
             for insert in paste.splitlines():
-                pos = self.PositionFromLine(line)
+                if line >= self.GetLineCount():
+                    self.InsertText(self.GetTextLength(), self.format)
+                start = pos = self.PositionFromLine(line)
                 last = self.GetLineEndPosition(line)
-
+                
                 # FIXME: doesn't work with tabs
                 if (pos + col) > last:
                     # need to insert spaces before the rectangular area
@@ -327,11 +329,11 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
                     pos = last
                 else:
                     pos += col
-                dprint("inserting line '%s' at %d" % (insert, pos))
+                assert self.dprint("before: (%d,%d) = '%s'" % (start,last,self.GetTextRange(start,last)))
+                assert self.dprint("inserting: '%s' at %d" % (insert, pos))
                 self.InsertText(pos, insert)
+                assert self.dprint("after: (%d,%d) = '%s'" % (start,last+len(insert),self.GetTextRange(start,last+len(insert))))
                 line += 1
-                if line > self.GetLineCount():
-                    self.InsertText(self.GetTextLength(), self.format)
         finally:
             self.EndUndoAction()
 

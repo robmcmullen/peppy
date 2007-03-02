@@ -43,7 +43,7 @@ class TestColumns(object):
        eq_(self.stc.GetLine(self.mid), 'spam\n')
        eq_(self.stc.GetLine(self.mid + 1), 'spam%04d-0123456789\n' % (self.mid))
 
-class TestPasteAtColumn(object):
+class TestPasteAtColumn1(object):
    def setUp(self):
        self.count = 10
        self.mid = self.count/2
@@ -56,6 +56,90 @@ class TestPasteAtColumn(object):
       eq_(self.stc.GetLine(1), '%04d-abc0123456789\n' % (1))
       eq_(self.stc.GetLine(2), '%04d-abc0123456789\n' % (2))
       eq_(self.stc.GetLine(3), '%04d-0123456789\n' % (3))
+
+
+class TestPasteAtColumn2(object):
+   def setUp(self):
+      self.stc = getSTC()
+      self.stc.SetText("""\
+123
+123456
+1234
+12345678
+12""")
+
+   def test1(self):
+      self.stc.SetSelection(2, 2)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+12abc3
+12abc3456
+12abc34
+12345678
+12""")
+      
+   def test2(self):
+      self.stc.SetSelection(18, 18)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+123
+123456
+1234
+12abc345678
+12abc
+  abc""")
+
+   def test3(self):
+      self.stc.SetSelection(20, 20)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+123
+123456
+1234
+1234abc5678
+12  abc
+    abc""")
+
+class TestPasteAtColumn3(object):
+   def setUp(self):
+      self.stc = getSTC()
+      self.stc.SetText("""\
+123
+123456
+
+12345678
+12""")
+
+   def test1(self):
+      self.stc.SetSelection(2, 2)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+12abc3
+12abc3456
+  abc
+12345678
+12""")
+      
+   def test2(self):
+      self.stc.SetSelection(11, 11)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+123
+123456
+abc
+abc12345678
+abc12""")
+      
+   def test2(self):
+      self.stc.SetSelection(12, 12)
+      self.stc.PasteAtColumn("abc\nabc\nabc")
+      eq_(self.stc.GetText(),"""\
+123
+123456
+
+abc12345678
+abc12
+abc""")
 
 
 class STCProxyTest(STCProxy):
