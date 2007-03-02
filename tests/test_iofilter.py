@@ -61,7 +61,7 @@ class TestURLInfo:
     def testFileRelative(self):
         urlinfo = URLInfo("file://LICENSE")
         cwd = os.getcwd()
-        eq_(urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/'))
+        eq_(urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
         eq_(urlinfo.protocol,'file')
         print urlinfo
         eq_(os.path.basename(urlinfo.path),'LICENSE')
@@ -70,7 +70,7 @@ class TestGetReader:
     def testFile(self):
         fh=GetReader("file:LICENSE")
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/'))
+        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
         eq_(fh.urlinfo.protocol,'file')
         eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
         stc=getSTC()
@@ -81,7 +81,7 @@ class TestGetReader:
     def testFileRelative(self):
         fh=GetReader("file://LICENSE")
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/'))
+        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
         eq_(fh.urlinfo.protocol,'file')
         print fh.urlinfo
         eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
@@ -93,7 +93,7 @@ class TestGetReader:
     def testFileDefault(self):
         fh=GetReader("LICENSE")
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/'))
+        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
         eq_(fh.urlinfo.protocol,'file')
         eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
         stc=getSTC()
