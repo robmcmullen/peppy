@@ -1,7 +1,15 @@
-The following people have contributed bug fixes or suggestions:
+The following people have contributed bug fixes or suggestions, and I
+appreciate their work.
 
-* Nobody yet!  You could be the first.
+Thanks to:
 
+* Chris Barker for testing peppy on the Mac and for all the
+  suggestions from a fellow emacs user.
+
+* Josiah Carlson for the collaborations on the code I've borrowed from
+  PyPE
+
+* Stani Michiels for the pyxides discussions
 
 
 

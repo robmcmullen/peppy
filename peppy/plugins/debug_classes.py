@@ -22,7 +22,7 @@ class DebugClassList(Sidebar, debugmixin):
     This is a global plugin that is used to turn on or off debug
     printing for all the classes that subclass from L{debugmixin}.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     keyword="debug_list"
 

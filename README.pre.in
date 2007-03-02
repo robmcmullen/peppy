@@ -11,9 +11,12 @@ ABSTRACT
 
 $prog - $description
 
-This is a wxPython/Scintilla-based editor written in and extensible
-through Python. It attempts to provide an XEmacs-like multi-window,
-multi-tabbed interface.
+This is a wxPython/Scintilla-based editor and framework written in and
+extensible through Python.  It attempts to provide an XEmacs-like
+multi-window, multi-tabbed interface.  The architectural goal is to
+provide a system with low coupling in order to reduce the work
+required to extend the editor with new major modes, minor modes, and
+sidebars.
 
 
 

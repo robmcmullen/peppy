@@ -119,7 +119,7 @@ class SelectAction(debugmixin):
     def getMenuItemName(self):
         if self.use_accelerators and self.keyboard:
             keystrokes = KeyMap.split(self.keyboard)
-            dprint(keystrokes)
+            assert self.dprint(keystrokes)
             if len(keystrokes) == 1:
                 return "%s\t%s" % (self.name, KeyMap.nonEmacsName(keystrokes[0]))
             else:

@@ -235,7 +235,7 @@ class SPEFuncList(MinorMode):
         #expand root of explore
         #self.explore.Expand(self.root)
         #if self.parentPanel.exploreVisible: ...
-        dprint(hierarchy)
+        assert self.dprint(hierarchy)
         self.explore.Update()
         return classes
 

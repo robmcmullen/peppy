@@ -51,10 +51,10 @@ APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 
 all: doc
 
-README: README.pre.in
+README: README.pre.in ChangeLog
 	./Makedoc.py -m peppy -o README README.pre.in
 
-INSTALL: INSTALL.pre.in
+INSTALL: INSTALL.pre.in ChangeLog
 	./Makedoc.py -m peppy -o INSTALL INSTALL.pre.in
 
 doc: README INSTALL
