@@ -199,6 +199,8 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     def createEventBindings(self):
         if hasattr(self.editwin,'addUpdateUIEvent'):
             self.editwin.addUpdateUIEvent(self.OnUpdateUI)
+        
+        self.editwin.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
 
         self.idle_update_menu = False
         self.Bind(wx.EVT_IDLE, self.OnIdle)

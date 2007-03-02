@@ -425,7 +425,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         assert self.dprint("creating new Fundamental window")
         self.createSTC(parent)
         win=self.stc
-        win.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
         return win
 
     def createSTC(self,parent):

@@ -85,6 +85,7 @@ class MenuItemGroup(DelayedOrderer):
 
 class SelectAction(debugmixin):
     debuglevel=0
+    use_accelerators = True
     name=None
     help=""
     icon=None
@@ -115,9 +116,20 @@ class SelectAction(debugmixin):
     def initPostHook(self):
         pass
 
+    def getMenuItemName(self):
+        if self.use_accelerators and self.keyboard:
+            keystrokes = KeyMap.split(self.keyboard)
+            dprint(keystrokes)
+            if len(keystrokes) == 1:
+                return "%s\t%s" % (self.name, KeyMap.nonEmacsName(keystrokes[0]))
+            else:
+                return "%s    %s" % (self.name, self.keyboard)
+        else:
+            return self.name
+
     def insertIntoMenu(self,menu):
         self.id=wx.NewId()
-        self.widget=menu.Append(self.id, self.name, self.tooltip)
+        self.widget=menu.Append(self.id, self.getMenuItemName(), self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,

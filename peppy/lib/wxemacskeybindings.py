@@ -35,27 +35,31 @@ class DuplicateKeyError(Exception):
 # one for local keymaps, and an arbitrary number of other keymaps for
 # any additional minor modes that need other keymappings.
 class KeyMap(object):
+    modifiers=['C-','S-','A-','M-']
+    modaccelerator = {'C-': 'Ctrl-',
+                      'S-': 'Shift-',
+                      'A-': 'Alt-',
+                      'M-': 'Alt-',
+                      }
+    modaliases={'Ctrl-':'C-',
+                'Shift-':'S-',
+                'Alt-':'A-',
+                'Meta-':'M-',
+                'Ctrl+':'C-',
+                'Shift+':'S-',
+                'Alt+':'A-',
+                'Meta+':'M-',
+                }
+    keyaliases={'RET':'RETURN',
+                'SPC':'SPACE',
+                'ESC':'ESCAPE',
+                }
+    debug = False
+
     def __init__(self):
-        self.debug=False
-        
         self.lookup={}
         self.reset()
         
-        self.modifiers=['C-','S-','A-','M-']
-        self.modaliases={'Ctrl-':'C-',
-                         'Shift-':'S-',
-                         'Alt-':'A-',
-                         'Meta-':'M-',
-                         'Ctrl+':'C-',
-                         'Shift+':'S-',
-                         'Alt+':'A-',
-                         'Meta+':'M-',
-                         }
-        self.keyaliases={'RET':'RETURN',
-                         'SPC':'SPACE',
-                         'ESC':'ESCAPE',
-                         }
-
         self.function=None
 
         # if this is true, it will throw an exception when finding a
@@ -101,6 +105,7 @@ class KeyMap(object):
 
     ##
     # Find a modifier in the accerelator string
+    @classmethod
     def matchModifier(self,str):
         for m in self.modifiers:
             if str.startswith(m):
@@ -113,6 +118,7 @@ class KeyMap(object):
     ##
     # Find a keyname (not modifier name) in the accelerator string,
     # matching any special keys or abbreviations of the special keys
+    @classmethod
     def matchKey(self,str):
         key=None
         i=0
@@ -131,6 +137,7 @@ class KeyMap(object):
     # Split the accelerator string (e.g. "C-X C-S") into individual
     # keystrokes, expanding abbreviations and standardizing the order
     # of modifier keys
+    @classmethod
     def split(self,acc):
         if acc.find('\t')>=0:
             # match the original format from the wxpython wiki, where
@@ -169,6 +176,21 @@ class KeyMap(object):
                 i=j+chars
         if self.debug: print "keystrokes: %s" % keystrokes
         return keystrokes
+
+    @classmethod
+    def nonEmacsName(self, acc):
+        modifiers=[]
+        j=0
+        while j<len(acc):
+            chars,m=self.matchModifier(acc[j:])
+            if m:
+                j+=chars
+                modifiers.append(self.modaccelerator[m])
+            else:
+                modifiers.append(acc[j:])
+                break
+        return "".join(modifiers)
+        
                 
     ##
     # Create the nested dicts that point to the function to be
