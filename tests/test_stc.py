@@ -4,7 +4,7 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-from peppy.stcinterface import PeppyBaseSTC
+from peppy.stcinterface import *
 
 from tests.mock_wx import getSTC
 
@@ -58,3 +58,22 @@ class TestPasteAtColumn(object):
       eq_(self.stc.GetLine(3), '%04d-0123456789\n' % (3))
 
 
+class STCProxyTest(STCProxy):
+   def GetText(self):
+      return "BLAH!!!"
+
+   def CanEdit(self):
+      return False
+
+   def CanUndo(self):
+      return 5
+
+class TestProxy(object):
+   def setUp(self):
+      self.stc = STCProxyTest(getSTC())
+
+   def testProxy(self):
+      eq_(self.stc.GetText(), 'BLAH!!!')
+      eq_(self.stc.CanEdit(), False)
+      eq_(self.stc.CanUndo(), 5)
+      eq_(self.stc.GetTextLength(), 0)

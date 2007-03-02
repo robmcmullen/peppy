@@ -83,8 +83,6 @@ class AboutHandler(urllib2.BaseHandler):
 
 
 SetAbout('untitled','')
-SetAbout('alpha','')
-SetAbout('bravo','')
 SetAbout('blank','')
 
 SetAbout('title.html',"""\
@@ -204,28 +202,6 @@ class HelpAbout(SelectAction):
 
 
 
-class AlphaMode(MajorMode):
-    keyword='Alpha'
-    icon = 'icons/world.png'
-    regex = "alpha"
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        wx.StaticText(win, -1, self.buffer.name, (45, 45))
-        return win
-
-
-class BravoMode(MajorMode):
-    keyword='Bravo'
-    icon='icons/bug_add.png'
-    regex="bravo"
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        wx.StaticText(win, -1, self.buffer.name, (100,100))
-        return win
-
-
 class BlankMode(MajorMode):
     keyword='Blank'
     icon='icons/application.png'
@@ -236,33 +212,8 @@ class BlankMode(MajorMode):
         text=self.buffer.stc.GetText()
         lines=wx.StaticText(win, -1, text, (10,10))
         lines.Wrap(500)
-
+        self.stc = self.buffer.stc
         return win
-
-class TitleMode(BlankMode):
-    keyword='Title'
-    regex="about:title.html"
-    temporary=True
-
-
-class OpenAlpha(SelectAction):
-    name = "&Open Alpha..."
-    tooltip = "Open an Alpha object"
-    icon = wx.ART_FILE_OPEN
-
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("about:alpha")
-
-class OpenBravo(SelectAction):
-    name = "&Open Bravo..."
-    tooltip = "Open a Bravo object"
-    icon = wx.ART_FILE_OPEN
-
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.open("about:bravo")
-
 
 
 class AboutPlugin(MajorModeMatcherBase):
@@ -274,25 +225,13 @@ class AboutPlugin(MajorModeMatcherBase):
         return [AboutHandler]
 
     def scanFilename(self,filename):
-        if filename=='about:alpha':
-            return MajorModeMatch(AlphaMode,exact=True)
-        elif filename=='about:bravo':
-            return MajorModeMatch(BravoMode,exact=True)
-##        elif filename=='about:title.html':
-##            return MajorModeMatch(TitleMode,exact=True)
-        elif filename=='about:blank':
+        if filename=='about:blank':
             return MajorModeMatch(BlankMode,exact=True)
         else:
             return None
 
     default_menu=((None,None,Menu("&Help").last()),
                   (None,"&Help",MenuItem(HelpAbout).first()),
-                  (None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(OpenAlpha).first()),
-                  (None,"Test",MenuItem(OpenBravo).first()),
-                  ("Alpha",None,Menu("Alpha").after("Major Mode")),
-                  ("Alpha","Alpha",MenuItem(OpenAlpha).first()),
-                  ("Alpha","Alpha",MenuItem(OpenBravo).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

@@ -18,6 +18,7 @@ from peppy import *
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
+from peppy.stcinterface import *
 
 __all__ = ['HTMLViewPlugin']
 
@@ -44,6 +45,38 @@ class HTMLWindow(wx.html.HtmlWindow, debugmixin):
 
     def update(self):
         self.SetPage(self.stc.GetText())
+
+
+class HTMLSTCWrapper(STCProxy):
+    def __init__(self, stc, html):
+        self.stc = stc
+        self.html = html
+        
+    def CanEdit(self):
+        return False
+
+    def CanCopy(self):
+        return True
+
+    def Copy(self):
+        txt = self.html.SelectionToText()
+        SetClipboardText(txt)
+        dprint(txt)
+
+    def CanCut(self):
+        return False
+
+    def CanPaste(self):
+        return False
+
+    def CanUndo(self):
+        return False
+
+    def CanRedo(self):
+        return False
+
+    
+
 
 class HTMLViewMode(MajorMode):
     """Major mode for viewing HTML markup.
@@ -80,6 +113,7 @@ class HTMLViewMode(MajorMode):
         Initialize the bitmap viewer with the image contained in the
         buffer.
         """
+        self.stc = HTMLSTCWrapper(self.buffer.stc, self.editwin)
         self.editwin.update()
 
     def deleteWindowPostHook(self):

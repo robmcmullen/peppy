@@ -132,6 +132,31 @@ class STCInterface(object):
         pass
 
 
+class STCProxy(object):
+    """Proxy object to defer requests to a real STC.
+
+    Used to wrap a real STC but supply some custom methods.  This is
+    used in the case where the major mode is using a real stc for its
+    data storage, but not using the stc for display.  Because the
+    major mode depends on an stc interface to manage the user
+    interface (enabling/disabling buttons, menu items, etc.), a mode
+    that doesn't use the stc for display still has to present an stc
+    interface for this purpose.  So, wrapping the buffer's stc in this
+    object and reassigning methods as appropriate for the display is
+    the way to go.
+    """
+    def __init__(self, stc):
+        self.stc = stc
+
+    def __getattr__(self, name):
+        # can't use self.stc.__dict__ because the stc is a swig object
+        # and apparently swig attributes don't show up in __dict__.
+        # So, this is probably slow.
+        if hasattr(self.stc, name):
+            return getattr(self.stc, name)
+        raise AttributeError
+
+
 class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
     """
