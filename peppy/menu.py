@@ -91,6 +91,7 @@ class SelectAction(debugmixin):
     icon=None
     tooltip=""
     keyboard=None
+    stock_id=None
     submenu=None
     
     def __init__(self, frame, menu=None, toolbar=None):
@@ -128,7 +129,10 @@ class SelectAction(debugmixin):
             return self.name
 
     def insertIntoMenu(self,menu):
-        self.id=wx.NewId()
+        if self.stock_id:
+            self.id=self.stock_id
+        else:
+            self.id=wx.NewId()
         self.widget=menu.Append(self.id, self.getMenuItemName(), self.tooltip)
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)

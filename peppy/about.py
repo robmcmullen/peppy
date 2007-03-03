@@ -171,6 +171,7 @@ def AddCopyright(project, website, author, date, reason=None):
 class HelpAbout(SelectAction):
     name = "&About..."
     tooltip = "About this program"
+    stock_id = wx.ID_ABOUT
 
     about = "Test program"
     title = "Test program title"
@@ -201,6 +202,17 @@ class HelpAbout(SelectAction):
         wx.AboutBox(info)
 
 
+class HelpManual(SelectAction):
+    name = "&Help..."
+    tooltip = "User manual"
+    stock_id = wx.ID_HELP
+
+    about = "Test program"
+    title = "Test program title"
+    
+    def action(self, pos=None):
+        dprint("placeholder for online user's manual")
+        
 
 class BlankMode(MajorMode):
     keyword='Blank'
@@ -232,6 +244,8 @@ class AboutPlugin(MajorModeMatcherBase):
 
     default_menu=((None,None,Menu("&Help").last()),
                   (None,"&Help",MenuItem(HelpAbout).first()),
+                  (None,"&Help",Separator("sep1").first()),
+                  (None,"&Help",MenuItem(HelpManual).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
