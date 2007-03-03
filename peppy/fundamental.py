@@ -6,7 +6,7 @@ import wx
 import wx.stc as stc
 
 from peppy import *
-from peppy.main import Paste
+from peppy.mainmenu import Paste
 from peppy.menu import *
 
 from peppy.actions.minibuffer import *
