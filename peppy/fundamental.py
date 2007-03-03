@@ -365,6 +365,7 @@ class PasteAtColumn(Paste):
     name = "Paste at Column"
     tooltip = "Paste selection indented to the cursor's column"
     icon = "icons/paste_plain.png"
+    keyboard = None
 
     def action(self, pos=-1):
         mode = self.frame.getActiveMajorMode()

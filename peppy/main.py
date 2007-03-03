@@ -3,7 +3,7 @@
 Main application program.
 """
 
-import os
+import os, sys
 
 import wx
 
@@ -14,6 +14,38 @@ from trac.core import *
 from about import *
 import mainmenu
 
+
+class KeyboardConf(ClassSettings, debugmixin):
+    """Loader for keyboard configurations.
+
+    Keyboard accelerator settings are made in the application
+    configuration file peppy.cfg in the user's configuration
+    directory.  In the file, the section KeyboardConf is used to map an action name to its keyboard accelerator.
+    """
+    default_settings = {}
+
+    @classmethod
+    def load(cls):
+        actions = Peppy.getSubclasses(SelectAction)
+        #dprint(actions)
+        for action in actions:
+            #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.settings._get(action.__name__)))
+            acc = cls.settings._get(action.__name__)
+            if acc is not None and acc.lower() != "none":
+                action.keyboard = cls.settings._get(action.__name__)
+
+    @classmethod
+    def configDefault(cls, fh=sys.stdout):
+        lines = []
+        lines.append("[%s]" % cls.__name__)
+        keymap = {}
+        for action in Peppy.getSubclasses(SelectAction):
+            keymap[action.__name__] = action.keyboard
+        names = keymap.keys()
+        names.sort()
+        for name in names:
+            lines.append("%s = %s" % (name, keymap[name]))
+        fh.write(os.linesep.join(lines) + os.linesep)
 
 class DebugClass(ToggleListAction):
     """A multi-entry menu list that allows individual toggling of debug
@@ -120,6 +152,7 @@ class Peppy(BufferApp, ClassSettings):
 
         return True
 
+    @classmethod
     def getSubclasses(self,parent=debugmixin,subclassof=None):
         """
         Recursive call to get all classes that have a specified class
@@ -196,6 +229,7 @@ class Peppy(BufferApp, ClassSettings):
         """
         self.autoloadPlugins()
         self.parseConfigPlugins()
+        KeyboardConf.load()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 

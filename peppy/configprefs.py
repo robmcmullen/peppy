@@ -313,6 +313,9 @@ class SettingsProxy(debugmixin):
         GlobalSettings.setupHierarchyDefaults(hier)
 
     def __getattr__(self,name):
+        return self._get(name)
+
+    def _get(self, name):
         klasses=GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]
         d=GlobalSettings.user
         for klass in klasses:
