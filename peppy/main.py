@@ -20,7 +20,23 @@ class KeyboardConf(ClassSettings, debugmixin):
 
     Keyboard accelerator settings are made in the application
     configuration file peppy.cfg in the user's configuration
-    directory.  In the file, the section KeyboardConf is used to map an action name to its keyboard accelerator.
+    directory.  In the file, the section KeyboardConf is used to map
+    an action name to its keyboard accelerator.
+
+    For example:
+
+      [KeyboardConf]
+      Copy = C-C
+      Open = C-X C-F
+      SaveAs = None
+      Help = default
+
+    will set the keyboard accelerators for the Copy and Open actions,
+    remove any keyboard accelerator from SaveAs, and use the
+    application's default setting for Help.  Additionally, if an
+    action doesn't appear in the KeyboardConf section it will also use
+    the application's default value (which is specified in the source
+    code.)
     """
     default_settings = {}
 
@@ -31,8 +47,12 @@ class KeyboardConf(ClassSettings, debugmixin):
         for action in actions:
             #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.settings._get(action.__name__)))
             acc = cls.settings._get(action.__name__)
-            if acc is not None and acc.lower() != "none":
-                action.keyboard = cls.settings._get(action.__name__)
+            if acc is not None and acc.lower() != 'default':
+                if acc.lower() == "none":
+                    # if the text is None, don't bind it to anything.
+                    action.keyboard = None
+                else:
+                    action.keyboard = cls.settings._get(action.__name__)
 
     @classmethod
     def configDefault(cls, fh=sys.stdout):
