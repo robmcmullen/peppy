@@ -15,8 +15,8 @@ from peppy.actions.pypefind import *
 import peppy.boa as boa
 
 class OpenFundamental(SelectAction):
-    name = "&Open Sample Text"
-    tooltip = "Open some sample text"
+    name = _("&Open Sample Text")
+    tooltip = _("Open some sample text")
     icon = wx.ART_FILE_OPEN
 
 ##    def isEnabled(self):
@@ -27,8 +27,8 @@ class OpenFundamental(SelectAction):
         self.frame.open("about:demo.txt")
 
 class WordWrap(ToggleAction):
-    name = "&Word Wrap"
-    tooltip = "Toggle word wrap in this view"
+    name = _("&Word Wrap")
+    tooltip = _("Toggle word wrap in this view")
     icon = wx.ART_TOOLBAR
 
     def isChecked(self):
@@ -44,8 +44,8 @@ class WordWrap(ToggleAction):
             viewer.setWordWrap(not viewer.settings.word_wrap)
     
 class LineNumbers(ToggleAction):
-    name = "&Line Numbers"
-    tooltip = "Toggle line numbers in this view"
+    name = _("&Line Numbers")
+    tooltip = _("Toggle line numbers in this view")
     icon = wx.ART_TOOLBAR
 
     def isChecked(self):
@@ -61,8 +61,8 @@ class LineNumbers(ToggleAction):
             viewer.setLineNumbers(not viewer.settings.line_numbers)
     
 class BeginningOfLine(SelectAction):
-    name = "Cursor to Start of Line"
-    tooltip = "Move the cursor to the start of the current line"
+    name = _("Cursor to Start of Line")
+    tooltip = _("Move the cursor to the start of the current line")
     keyboard = 'C-A'
 
     def action(self, pos=-1):
@@ -76,8 +76,8 @@ class BeginningOfLine(SelectAction):
         
 
 class EndOfLine(SelectAction):
-    name = "Cursor to End of Line"
-    tooltip = "Move the cursor to the end of the current line"
+    name = _("Cursor to End of Line")
+    tooltip = _("Move the cursor to the end of the current line")
     keyboard = 'C-E'
 
     def action(self, pos=-1):
@@ -144,8 +144,8 @@ class CapitalizeWord(WordOrRegionMutateMixin, SelectAction):
     the next word.
     """
 
-    name ="Capitalize word"
-    tooltip = "Capitalize current word"
+    name = _("Capitalize word")
+    tooltip = _("Capitalize current word")
     keyboard = 'M-C'
 
     def mutate(self, txt):
@@ -159,8 +159,8 @@ class UpcaseWord(WordOrRegionMutateMixin, SelectAction):
     next word.
     """
 
-    name ="Upcase word"
-    tooltip = "Upcase current word"
+    name = _("Upcase word")
+    tooltip = _("Upcase current word")
     keyboard = 'M-U'
 
     def mutate(self, txt):
@@ -173,8 +173,8 @@ class DowncaseWord(WordOrRegionMutateMixin, SelectAction):
     next word.
     """
 
-    name ="Downcase word"
-    tooltip = "Downcase current word"
+    name = _("Downcase word")
+    tooltip = _("Downcase current word")
     keyboard = 'M-L'
 
     def mutate(self, txt):
@@ -262,8 +262,8 @@ class StandardIndentMixin(object):
 
 
 class ShiftLeft(MajorAction):
-    name = "Shift &Left"
-    tooltip = "Unindent a line region"
+    name = _("Shift &Left")
+    tooltip = _("Unindent a line region")
     icon = 'icons/text_indent_remove_rob.png'
     keyboard = 'S-TAB'
 
@@ -272,8 +272,8 @@ class ShiftLeft(MajorAction):
             mode.indent(-1)
 
 class ShiftRight(MajorAction):
-    name = "Shift &Right"
-    tooltip = "Indent a line or region"
+    name = _("Shift &Right")
+    tooltip = _("Indent a line or region")
     icon = 'icons/text_indent_rob.png'
     keyboard = 'TAB'
 
@@ -311,8 +311,8 @@ class StandardCommentMixin(debugmixin):
             s.EndUndoAction()
 
 class CommentRegion(MajorAction):
-    name = "&Comment Region"
-    tooltip = "Comment a line or region"
+    name = _("&Comment Region")
+    tooltip = _("Comment a line or region")
     icon = 'icons/text_indent_rob.png'
     keyboard = 'C-C C-C'
 
@@ -352,8 +352,8 @@ class StandardReturnMixin(debugmixin):
             s.ReplaceSelection(s.format+a)
 
 class ElectricReturn(MajorAction):
-    name = "Electric Return"
-    tooltip = "Indent the next line following a return"
+    name = _("Electric Return")
+    tooltip = _("Indent the next line following a return")
     icon = 'icons/text_indent_rob.png'
     keyboard = 'RET'
 
@@ -362,8 +362,8 @@ class ElectricReturn(MajorAction):
 
 
 class PasteAtColumn(Paste):
-    name = "Paste at Column"
-    tooltip = "Paste selection indented to the cursor's column"
+    name = _("Paste at Column")
+    tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
     keyboard = None
 

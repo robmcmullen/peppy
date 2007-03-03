@@ -7,6 +7,8 @@ import os
 
 import wx
 
+from peppy import *
+
 from menu import *
 from buffers import *
 from debug import *
@@ -14,8 +16,8 @@ from trac.core import *
 
 
 class NewTab(SelectAction):
-    name = "New &Tab"
-    tooltip = "Open a new Tab"
+    name = _("New &Tab")
+    tooltip = _("Open a new Tab")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -23,8 +25,8 @@ class NewTab(SelectAction):
         self.frame.open("about:blank")
 
 class New(SelectAction):
-    name = "&New File..."
-    tooltip = "New file"
+    name = _("&New File...")
+    tooltip = _("New file")
     icon = "icons/page.png"
 
     def action(self, pos=-1):
@@ -33,8 +35,8 @@ class New(SelectAction):
 
 
 class OpenFile(SelectAction):
-    name = "&Open File..."
-    tooltip = "Open a file"
+    name = _("&Open File...")
+    tooltip = _("Open a file")
     icon = "icons/folder_page.png"
     keyboard = "C-X C-F"
 
@@ -63,8 +65,8 @@ class OpenFile(SelectAction):
         dlg.Destroy()
 
 class OpenURL(SelectAction):
-    name = "Open URL..."
-    tooltip = "Open a file through a URL"
+    name = _("Open URL...")
+    tooltip = _("Open a file through a URL")
     icon = "icons/folder_page.png"
     keyboard = "C-X C-A"
 
@@ -92,16 +94,16 @@ class OpenURL(SelectAction):
 
 
 class Exit(SelectAction):
-    name = "E&xit"
-    tooltip = "Quit the program."
+    name = _("E&xit")
+    tooltip = _("Quit the program.")
     keyboard = "C-X C-C"
     
     def action(self, pos=-1):
         self.frame.app.quit()
 
 class Close(SelectAction):
-    name = "&Close"
-    tooltip = "Close current file"
+    name = _("&Close")
+    tooltip = _("Close current file")
     icon = "icons/cross.png"
 
     def isEnabled(self):
@@ -112,8 +114,8 @@ class Close(SelectAction):
         self.frame.close()
 
 class Save(SelectAction):
-    name = "&Save..."
-    tooltip = "Save the current file"
+    name = _("&Save...")
+    tooltip = _("Save the current file")
     icon = "icons/disk.png"
     keyboard = "C-X C-S"
 
@@ -130,8 +132,8 @@ class Save(SelectAction):
         self.frame.save()
 
 class SaveAs(SelectAction):
-    name = "Save &As..."
-    tooltip = "Save as a new file"
+    name = _("Save &As...")
+    tooltip = _("Save as a new file")
     icon = "icons/disk_edit.png"
     keyboard = "C-X C-W"
     
@@ -177,8 +179,8 @@ class SaveAs(SelectAction):
 
 
 class Undo(SelectAction):
-    name = "Undo"
-    tooltip = "Undo"
+    name = _("Undo")
+    tooltip = _("Undo")
     icon = "icons/arrow_turn_left.png"
     keyboard = "C-/"
     
@@ -195,8 +197,8 @@ class Undo(SelectAction):
 
 
 class Redo(SelectAction):
-    name = "Redo"
-    tooltip = "Redo"
+    name = _("Redo")
+    tooltip = _("Redo")
     icon = "icons/arrow_turn_right.png"
     keyboard = "C-S-/"
     
@@ -212,8 +214,8 @@ class Redo(SelectAction):
         if viewer: return viewer.stc.Redo()
 
 class Cut(SelectAction):
-    name = "Cut"
-    tooltip = "Cut"
+    name = _("Cut")
+    tooltip = _("Cut")
     icon = "icons/cut.png"
 
     def isEnabled(self):
@@ -229,8 +231,8 @@ class Cut(SelectAction):
             return viewer.stc.Cut()
 
 class Copy(SelectAction):
-    name = "Copy"
-    tooltip = "Copy"
+    name = _("Copy")
+    tooltip = _("Copy")
     icon = "icons/page_copy.png"
 
     def isEnabled(self):
@@ -246,8 +248,8 @@ class Copy(SelectAction):
             return viewer.stc.Copy()
 
 class Paste(SelectAction):
-    name = "Paste"
-    tooltip = "Paste"
+    name = _("Paste")
+    tooltip = _("Paste")
     icon = "icons/paste_plain.png"
 
     def isEnabled(self):
