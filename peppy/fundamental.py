@@ -89,8 +89,8 @@ class EndOfLine(SelectAction):
             s.GotoPos(s.GetLineEndPosition(line))
 
 
-class WordOrRegionMutate(SelectAction):
-    """No-op base class to operate on a word or the selected region.
+class WordOrRegionMutateMixin(object):
+    """Mixin class to operate on a word or the selected region.
     """
 
     def mutate(self, txt):
@@ -139,7 +139,7 @@ class WordOrRegionMutate(SelectAction):
         if viewer:
             self.mutateSelection(viewer.stc)
             
-class CapitalizeWord(WordOrRegionMutate):
+class CapitalizeWord(WordOrRegionMutateMixin, SelectAction):
     """Title-case the current word and move the cursor to the start of
     the next word.
     """
@@ -154,7 +154,7 @@ class CapitalizeWord(WordOrRegionMutate):
         """
         return txt.title()
 
-class UpcaseWord(WordOrRegionMutate):
+class UpcaseWord(WordOrRegionMutateMixin, SelectAction):
     """Upcase the current word and move the cursor to the start of the
     next word.
     """
@@ -168,7 +168,7 @@ class UpcaseWord(WordOrRegionMutate):
         """
         return txt.upper()
 
-class DowncaseWord(WordOrRegionMutate):
+class DowncaseWord(WordOrRegionMutateMixin, SelectAction):
     """Downcase the current word and move the cursor to the start of the
     next word.
     """

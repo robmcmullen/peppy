@@ -40,6 +40,8 @@ class KeyboardConf(ClassSettings, debugmixin):
     """
     default_settings = {}
 
+    ignore_list = ['MajorAction', 'MinibufferAction']
+
     @classmethod
     def load(cls):
         actions = Peppy.getSubclasses(SelectAction)
@@ -60,7 +62,8 @@ class KeyboardConf(ClassSettings, debugmixin):
         lines.append("[%s]" % cls.__name__)
         keymap = {}
         for action in Peppy.getSubclasses(SelectAction):
-            keymap[action.__name__] = action.keyboard
+            if not issubclass(action, ToggleAction) and not issubclass(action, ListAction) and action.__name__ not in cls.ignore_list:
+                keymap[action.__name__] = action.keyboard
         names = keymap.keys()
         names.sort()
         for name in names:
@@ -301,6 +304,11 @@ def run(options={},args=None):
         debuglog(options.logfile)
     Peppy.verbose=options.verbose
     app=Peppy(redirect=False)
+
+    if options.sample_config:
+        KeyboardConf.configDefault()
+        sys.exit()
+    
     frame=BufferFrame(app)
     frame.Show(True)
     bad=[]
@@ -332,6 +340,7 @@ def main():
     parser.add_option("-p", action="store_true", dest="profile", default=False)
     parser.add_option("-v", action="count", dest="verbose", default=0)
     parser.add_option("-l", action="store", dest="logfile", default=None)
+    parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
     (options, args) = parser.parse_args()
     #print options
 
