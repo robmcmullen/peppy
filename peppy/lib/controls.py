@@ -12,6 +12,8 @@ import wx
 from wx.lib import buttons
 from wx.lib import imageutils
 
+from iconstorage import *
+
 class BitmapScroller(wx.ScrolledWindow):
     def __init__(self, parent):
         wx.ScrolledWindow.__init__(self, parent, -1)
@@ -79,3 +81,79 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
     
     def GetBackgroundBrush(self, dc):
         return None
+
+
+class PeppyStatusBar(wx.StatusBar):
+    def __init__(self, parent):
+        wx.StatusBar.__init__(self, parent, -1)
+
+        self.default_widths = [-1,100]
+        if wx.Platform == '__WXGTK__':
+            self.spacing = 3
+        else:
+            self.spacing = 0
+        self.controls = []
+        self.setWidths()
+
+##        self.addIcon("icons/windows.png")
+        
+        self.sizeChanged = False
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+
+    def setWidths(self):
+        self.widths = [i for i in self.default_widths]
+        for widget in self.controls:
+            self.widths.append(widget.GetSizeTuple()[0] + 2*self.spacing)
+        self.widths.append(16 + 2*self.spacing) # leave space for the resizer
+        self.SetFieldsCount(len(self.widths))
+        self.SetStatusWidths(self.widths)
+        self.Reposition()
+        
+    def reset(self):
+        for widget in self.controls:
+            self.RemoveChild(widget)
+            widget.Destroy()
+        self.controls = []
+        self.setWidths()
+
+    def addIcon(self, bmp, tooltip=None):
+        if isinstance(bmp,str):
+            bmp = getIconBitmap(bmp)
+        b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE)
+        if tooltip:
+            b.SetToolTipString(tooltip)
+        self.controls.append(b)
+        self.setWidths()
+
+    def OnSize(self, evt):
+        self.Reposition()  # for normal size events
+
+        # Set a flag so the idle time handler will also do the repositioning.
+        # It is done this way to get around a buglet where GetFieldRect is not
+        # accurate during the EVT_SIZE resulting from a frame maximize.
+        self.sizeChanged = True
+
+
+    def OnIdle(self, evt):
+        if self.sizeChanged:
+            self.Reposition()
+
+    # reposition the checkbox
+    def Reposition(self):
+        if self.controls:
+            field = len(self.default_widths)
+            for widget in self.controls:
+                rect = self.GetFieldRect(field)
+                #dprint(rect)
+                size = widget.GetSize()
+                #dprint(size)
+                xoffset = (rect.width - size.width)/2
+                yoffset = (rect.height - size.height)/2
+                #dprint((xoffset, yoffset))
+                widget.SetPosition((rect.x + xoffset,
+                                  rect.y + yoffset + self.spacing))
+                #widget.SetSize((rect.width-4, rect.height-4))
+                
+                field += 1
+        self.sizeChanged = False
