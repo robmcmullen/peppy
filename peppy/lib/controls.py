@@ -93,10 +93,12 @@ class PeppyStatusBar(wx.StatusBar):
         else:
             self.spacing = 0
         self.controls = []
+
+        self.gauge = None
+        self.overlays = []
+
         self.setWidths()
 
-##        self.addIcon("icons/windows.png")
-        
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
@@ -156,4 +158,41 @@ class PeppyStatusBar(wx.StatusBar):
                 #widget.SetSize((rect.width-4, rect.height-4))
                 
                 field += 1
+        if self.overlays:
+            for widget, rect in self.overlays:
+                widget.SetPosition((rect.x, rect.y))
+                widget.SetSize((rect.width, rect.height))
         self.sizeChanged = False
+
+    def SetStatusText(self, text, field=0):
+        if self.gauge is None:
+            # Only set the text if the gauge isn't present
+            wx.StatusBar.SetStatusText(self, text, field)
+
+    def startProgress(self, text, max=100, cancel=False):
+        dc=wx.ClientDC(self)
+        trect = self.GetFieldRect(0)
+        label = wx.StaticText(self, -1, text)
+        tw, th = dc.GetTextExtent(text)
+        trect.x += self.spacing
+        trect.width = tw
+        self.overlays.append((label, trect))
+        
+        gauge = wx.Gauge(self, -1, max)
+        grect = self.GetFieldRect(0)
+        grect.x = trect.x + trect.width + self.spacing
+        grect.width -= grect.x
+        self.overlays.append((gauge, grect))
+        self.gauge = gauge
+        self.Reposition()
+
+    def updateProgress(self, value):
+        self.gauge.SetValue(value)
+
+    def stopProgress(self):
+        for widget, rect in self.overlays:
+            self.RemoveChild(widget)
+            widget.Destroy()
+        self.overlays = []
+        self.gauge = None
+        
