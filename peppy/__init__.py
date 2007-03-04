@@ -45,9 +45,6 @@ __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
 
-import wx
-_ = wx.GetTranslation
-
 # Define the common global classes that plugins and extensions should
 # need to use
 from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
@@ -60,7 +57,6 @@ from peppy.minor import MinorMode, IMinorModeProvider, \
 from peppy.lib.iconstorage import *
 
 __all__ = [
-    '_',
     'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
     'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
             'getSubclassHierarchy',

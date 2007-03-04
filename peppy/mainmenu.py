@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
-Main application program.
+Main menu and actions.
 """
 
 import os

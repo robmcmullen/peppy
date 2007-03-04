@@ -11,7 +11,7 @@ sync if this is shown on two different frames.
 import os
 
 from peppy import *
-from peppy.main import DebugClass
+from peppy.mainapp import DebugClass
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.buffers import *
