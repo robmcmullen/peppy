@@ -9,7 +9,8 @@ dependencies on other parts of peppy.
 import os
 
 import wx
-import wx.stc as stc
+from wx.lib import buttons
+from wx.lib import imageutils
 
 class BitmapScroller(wx.ScrolledWindow):
     def __init__(self, parent):
@@ -49,3 +50,32 @@ class BitmapScroller(wx.ScrolledWindow):
 
     def OnPaintHook(self, dc):
         pass
+
+
+#----------------------------------------------------------------------
+
+class StatusBarButton(wx.lib.buttons.GenBitmapButton):
+    """A minimally sized bitmap button for use in the statusbar.
+
+    This is a small-sized button for use in the status bar that
+    doesn't have the usual button highlight or button-pressed cues.
+    Trying to mimic the Mozilla statusbar buttons as much as possible.
+    """
+    labelDelta = 0
+
+    def _GetLabelSize(self):
+        """ used internally """
+        if not self.bmpLabel:
+            return -1, -1, False
+        return self.bmpLabel.GetWidth(), self.bmpLabel.GetHeight(), False
+
+    def DoGetBestSize(self):
+        """
+        Overridden base class virtual.  Determines the best size of the
+        button based on the label and bezel size.
+        """
+        width, height, useMin = self._GetLabelSize()
+        return (width, height)
+    
+    def GetBackgroundBrush(self, dc):
+        return None

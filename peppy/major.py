@@ -283,6 +283,16 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         wx.StaticText(win, -1, text, (10,10))
         return win
 
+    def createStatusIcons(self):
+        """Create any icons in the status bar.
+
+        This is called after making the major mode the active mode in
+        the frame.  The status bar will be cleared to its initial
+        empty state, so all this method has to do is add any icons
+        that it needs.
+        """
+        pass
+
     def setMinibuffer(self,minibuffer=None):
         self.removeMinibuffer()
         if minibuffer is not None:
