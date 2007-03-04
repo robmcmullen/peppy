@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+# peppy Copyright (c) 2006-2007 Rob McMullen
+# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
-Main application program.
+Main application class.
 """
 
 import os, sys
@@ -11,7 +12,6 @@ from menu import *
 from buffers import *
 from debug import *
 from trac.core import *
-from about import *
 import mainmenu
 
 
