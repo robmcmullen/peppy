@@ -49,6 +49,9 @@ class URLInfo(debugmixin):
             else:
                 self.url = "file://" + self.path
             self.netloc = ''
+            self.readonly = not os.access(self.path, os.W_OK)
+        else:
+            self.readonly = True
 
     def __str__(self):
         return "%s %s" % (self.url, (self.protocol,
@@ -57,6 +60,14 @@ class URLInfo(debugmixin):
                                                         self.parameters,
                                                         self.query_string,
                                                         self.fragment))
+
+class FileWrapper(object):
+    def __init__(self, fh, info):
+        self.fh = fh
+        self.urlinfo = info
+
+    def __getattr__(self, name):
+        return getattr(self.fh, name)
 
 
 #### The ProtocolHandler and IURLHandler define extensions to the
@@ -95,13 +106,6 @@ class ProtocolHandler(Component, debugmixin):
         info = URLInfo(url, "file")
 
         fh = ProtocolHandler.opener.open(info.url)
-
-        if info.protocol == "file":
-            info.netloc = ''
-            info.path = os.path.abspath(info.netloc + info.path)
-            info.readonly = not os.access(info.path, os.W_OK)
-        else:
-            info.readonly = True
         fh.urlinfo = info
         return fh
 
@@ -110,8 +114,7 @@ class ProtocolHandler(Component, debugmixin):
         assert self.dprint("trying to open %s" % info.url)
         if info.protocol == "file":
             assert self.dprint("saving to file %s" % info.path)
-            fh = open(info.path, "wb")
-            #fh.urlinfo = info
+            fh = FileWrapper(open(info.path, "wb"), info)
             return fh
         raise IOError("protocol %s not supported for writing" % info.protocol)
 

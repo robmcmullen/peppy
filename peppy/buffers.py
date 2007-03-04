@@ -243,7 +243,7 @@ class Buffer(debugmixin):
             self.stc.SetSavePoint()
             self.modified=False
             if filename is not None and filename!=self.filename:
-                self.setFilename(filter.fh.geturl(), filter.fh.path)
+                self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
             self.showModifiedAll()
         except:
             print "Buffer: failed writing!"
