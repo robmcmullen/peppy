@@ -373,6 +373,29 @@ class PasteAtColumn(Paste):
             mode.stc.PasteAtColumn()
 
 
+class EOLModeSelect(RadioAction):
+    name="Line Endings"
+    inline=False
+    tooltip="Switch line endings"
+
+    items = ['Unix (LF)', 'Apple (CR)', 'Dos (CRLF)']
+    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CR, wx.stc.STC_EOL_CRLF]
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+
+    def getIndex(self):
+        mode = self.frame.getActiveMajorMode()
+        eol = mode.buffer.stc.GetEOLMode()
+        return EOLModeSelect.modes.index(eol)
+                                           
+    def getItems(self):
+        return EOLModeSelect.items
+
+    def action(self, index=0, old=-1):
+        mode = self.frame.getActiveMajorMode()
+        mode.buffer.stc.ConvertEOLs(EOLModeSelect.modes[index])
+        self.frame.resetStatusBar()
 
 
 class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
@@ -441,7 +464,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         site-wide basis.
         """
         self.stc=PeppySTC(parent,refstc=self.buffer.stc)
-        self.format=os.linesep
         self.current_style = self.__class__.style_number
 
         self.applyDefaultSettings()
@@ -469,6 +491,14 @@ class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
         #assert self.dprint("indention=%d" % self.stc.GetIndent())
 
         self.stc.SetIndentationGuides(1)
+
+    def createStatusIcons(self):
+        if self.buffer.stc.format == '\r\n':
+            self.frame.statusbar.addIcon("icons/windows.png", "DOS line endings")
+        elif self.buffer.stc.format == '\r':
+            self.frame.statusbar.addIcon("icons/apple.png", "Apple line endings")
+        else:
+            self.frame.statusbar.addIcon("icons/tux.png", "Unix line endings")
 
     def styleDefault(self):
         """Create entry in stc configuration file for this mode.
@@ -608,6 +638,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental","Edit",MenuItem(FindText)),
                   ("Fundamental","Edit",MenuItem(ReplaceText)),
                   ("Fundamental","Edit",MenuItem(GotoLine)),
+                  ("Fundamental","Edit",MenuItem(EOLModeSelect)),
                   ("Fundamental",None,Menu("Cmds").after("Edit")),
                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),
                   ("Fundamental","Cmds",MenuItem(ShiftRight)),

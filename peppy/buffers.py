@@ -608,6 +608,11 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.SetStatusBar(self.statusbar)
 
     # non-wx methods
+
+    def resetStatusBar(self):
+        self.statusbar.reset()
+        mode=self.getActiveMajorMode()
+        mode.createStatusIcons()        
     
     def setKeys(self,majormodes=[],minormodes=[]):
         comp_mgr=ComponentManager()
@@ -783,9 +788,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.setKeys(majors)
         self.setMenumap(majors)
         self.setToolmap(majors)
-
-        self.statusbar.reset()
-        mode.createStatusIcons()
+        self.resetStatusBar()
 
 ##        if mode.buffer.filename in BufferFrame.perspectives:
 ##            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])

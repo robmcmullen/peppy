@@ -104,11 +104,6 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-    def detectLineEndings(self, num=1024):
-        from pype.parsers import detectLineEndings
-        self.format = detectLineEndings(self.GetTextRange(0,num))
-        self.eol_len = len(self.format)
-
     def openPostHook(self, fh):
         """Hook called after the initial open of the file.
         
@@ -116,12 +111,9 @@ class STCInterface(object):
         the FilterWrapper object used to load the file.  In some cases it
         might be useful to keep a reference to the filter.
 
-        @param filter: filter used to load the file
-
-        @type filter: iofilter.FilterWrapper
+        @param fh: file-like object used to load the file
         """
         fh.close()
-        self.detectLineEndings()
 
     def readFrom(self, fh):
         """Read from filehandle, converting as necessary"""
@@ -160,6 +152,15 @@ class STCProxy(object):
 class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
     """
+    eol2int = {'\r': wx.stc.STC_EOL_CR,
+               '\r\n': wx.stc.STC_EOL_CRLF,
+               '\n': wx.stc.STC_EOL_LF,
+               }
+    int2eol = {wx.stc.STC_EOL_CR: '\r',
+               wx.stc.STC_EOL_CRLF: '\r\n',
+               wx.stc.STC_EOL_LF: '\n',
+               }
+    
     def __init__(self, parent, refstc=None, copy=None):
         stc.StyledTextCtrl.__init__(self, parent, -1)
         self.ClearAll()
@@ -336,6 +337,34 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
                 line += 1
         finally:
             self.EndUndoAction()
+
+    def detectLineEndings(self, num=1024):
+        from pype.parsers import detectLineEndings
+        self.format = detectLineEndings(self.GetTextRange(0,num))
+        self.eol_len = len(self.format)
+        mode = self.eol2int[self.format]
+        self.SetEOLMode(mode)
+
+    def ConvertEOLs(self, mode):
+        wx.stc.StyledTextCtrl.ConvertEOLs(self, mode)
+        self.SetEOLMode(mode)
+        self.format = self.int2eol[mode]
+        self.eol_len = len(self.format)
+        
+
+    def openPostHook(self, fh):
+        """Hook called after the initial open of the file.
+        
+        Hook here for subclasses of STC to do whatever they need with
+        the FilterWrapper object used to load the file.  In some cases it
+        might be useful to keep a reference to the filter.
+
+        @param filter: filter used to load the file
+
+        @type filter: iofilter.FilterWrapper
+        """
+        fh.close()
+        self.detectLineEndings()
 
 
 class PeppySTC(PeppyBaseSTC):
