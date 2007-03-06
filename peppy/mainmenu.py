@@ -256,8 +256,8 @@ class Paste(SelectAction):
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            assert self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanPaste()))
-            return viewer.stc.CanPaste()
+            assert self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanEdit()))
+            return viewer.stc.CanEdit()
         return False
 
     def action(self, pos=-1):
