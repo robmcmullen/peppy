@@ -239,59 +239,17 @@ class BraceHighlightMixin(object):
         
 
 
-class StandardIndentMixin(object):
-    def indent(self, incr):
-        """Indent or unindent a region.
-
-        Indent (or unindent) a region.  The absolute value of the incr
-        parameter is the number of tab stops to indent (or unindent).
-        Source code started life from pype.PythonSTC.Dent(); modified
-        by me.
-
-        It is assumed that this is to be mixin in to a FundamentalMode
-        subclass.
-
-        @param incr: integer indicating multiplier and direction of
-        indent: >0 indents, <0 removes indentation
-        """
-        s = self.stc
-        
-        assert self.dprint("indenting by %d" % incr)
-        incr *= s.GetIndent()
-        assert self.dprint("indenting by %d" % incr)
-        s.BeginUndoAction()
-        lnstart, lnend = s.GetLineRegion()
-        try:
-            for ln in xrange(lnstart, lnend+1):
-                count = s.GetLineIndentation(ln)
-                m = (count+incr)
-                m += cmp(0, incr)*(m%incr)
-                m = max(m, 0)
-                s.SetLineIndentation(ln, m)
-        finally:
-            s.EndUndoAction()
-
-
-class ShiftLeft(MajorAction):
+class ShiftLeft(ScintillaCmdKeyExecute):
     name = _("Shift &Left")
     tooltip = _("Unindent a line region")
     icon = 'icons/text_indent_remove_rob.png'
-    keyboard = 'S-TAB'
+    cmd = wx.stc.STC_CMD_BACKTAB
 
-    def majoraction(self, mode, pos=-1):
-        if hasattr(mode, 'indent') and mode.indent is not None:
-            mode.indent(-1)
-
-class ShiftRight(MajorAction):
+class ShiftRight(ScintillaCmdKeyExecute):
     name = _("Shift &Right")
     tooltip = _("Indent a line or region")
     icon = 'icons/text_indent_rob.png'
-    keyboard = 'TAB'
-
-    def majoraction(self, mode, pos=-1):
-        if hasattr(mode, 'indent') and mode.indent is not None:
-            mode.indent(1)
-
+    cmd = wx.stc.STC_CMD_TAB
 
 
 class StandardCommentMixin(debugmixin):
@@ -409,7 +367,7 @@ class EOLModeSelect(RadioAction):
         self.frame.resetStatusBar()
 
 
-class FundamentalMode(MajorMode, BraceHighlightMixin, StandardIndentMixin,
+class FundamentalMode(MajorMode, BraceHighlightMixin,
                       StandardCommentMixin, StandardReturnMixin):
     """
     The base view of most (if not all) of the views that use the STC
