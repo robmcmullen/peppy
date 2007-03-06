@@ -56,138 +56,112 @@ class SamplePython(SelectAction):
 
 
 class PythonElectricReturnMixin(object):
-    def electricReturn(self):
+    def findIndent(self, linenum):
         s=self.stc
-        
-        # From PyPE: indent the new line to the correct indent
-        # (matching the line above or indented further based on syntax)
 
-        #get information about the current cursor position
-        linenum = s.GetCurrentLine()
-        pos = s.GetCurrentPos()
-        col = s.GetColumn(pos)
         linestart = s.PositionFromLine(linenum)
-        line = s.GetLine(linenum)[:pos-linestart]
-    
-        #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)                    
+        lineend = s.GetLineEndPosition(linenum)
+        line = s.GetTextRange(linestart, lineend)
+        ind = s.GetLineIndentation(linenum)
 
         xtra = 0
-
-        if col <= ind:
-            xtra = None
-            if s.GetUseTabs():
-                s.ReplaceSelection(s.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
-            else:
-                s.ReplaceSelection(s.format+(col*' '))
-        elif not pos:
-            xtra = None
-            s.ReplaceSelection(s.format)
-
-        else:
-            colon = ord(':')
-            
-            if (line.find(':')>-1):
-                for i in xrange(linestart, min(pos, s.GetTextLength())):
-                    styl = s.GetStyleAt(i)
-                    #assert self.dprint(styl, s.GetCharAt(i))
-                    if not xtra:
-                        if (styl==10) and (s.GetCharAt(i) == colon):
-                            xtra = 1
-                    elif (styl == 1):
-                        #it is a comment, ignore the character
-                        pass
-                    elif (styl == 0) and (s.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
-                        #is not a comment, but is the space before a comment
-                        #or the end of a line, ignore the character
-                        pass
-                    else:
-                        #this is not a comment or some innocuous other character
-                        #this is a docstring or otherwise, no additional indent
-                        xtra = 0
-                        #commenting the break fixes stuff like this
-                        # for i in blah[:]:
-                        #break
-                if xtra:
-                    #This deals with ending single and multi-line definitions properly.
-                    while linenum >= 0:
-                        found = []
-                        for i in ['def', 'class', 'if', 'else', 'elif', 'while',
-                                'for', 'try', 'except', 'finally', 'with', 'cdef']:
-                            a = line.find(i)
-                            if (a > -1):
-                                found.append(a)
-                        #assert self.dprint('fnd', found)
-                        if found: found = min(found)
-                        else:     found = -1
-                        if (found > -1) and\
-                        (s.GetStyleAt(s.GetLineEndPosition(linenum)-len(line)+found)==5) and\
-                        (s.GetLineIndentation(linenum) == found):
-                            ind = s.GetLineIndentation(linenum)
-                            break
-                        linenum -= 1
-                        line = s.GetLine(linenum)
-            #if we were to do indentation for ()[]{}, it would be here
-            if not xtra:
-                #yep, right here.
-                fnd = 0
-                for i in "(){}[]":
-                    if (line.find(i) > -1):
-                        fnd = 1
-                        break
-                if fnd:
-                    seq = []
-                    #assert self.dprint("finding stuff")
-                    for i in "(){}[]":
+        colon = ord(':')
+        
+        if (line.find(':')>-1):
+            for i in xrange(linestart, lineend):
+                styl = s.GetStyleAt(i)
+                #assert self.dprint(styl, s.GetCharAt(i))
+                if not xtra:
+                    if (styl==10) and (s.GetCharAt(i) == colon):
+                        xtra = 1
+                elif (styl == 1):
+                    #it is a comment, ignore the character
+                    pass
+                elif (styl == 0) and (s.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
+                    #is not a comment, but is the space before a comment
+                    #or the end of a line, ignore the character
+                    pass
+                else:
+                    #this is not a comment or some innocuous other character
+                    #this is a docstring or otherwise, no additional indent
+                    xtra = 0
+                    #commenting the break fixes stuff like this
+                    # for i in blah[:]:
+                    #break
+            if xtra:
+                #This deals with ending single and multi-line definitions properly.
+                while linenum >= 0:
+                    found = []
+                    for i in ['def', 'class', 'if', 'else', 'elif', 'while',
+                            'for', 'try', 'except', 'finally', 'with', 'cdef']:
                         a = line.find(i)
-                        start = 0
-                        while a > -1:
-                            start += a+1
-                            if s.GetStyleAt(start+linestart-1)==10:
-                                seq.append((start, i))
-                            a = line[start:].find(i)
-                    seq.sort()
-                    cl = {')':'(', ']': '[', '}': '{',
-                        '(':'',  '[': '',  '{': ''}
-                    stk = []
-                    #assert self.dprint("making tree")
-                    for po, ch in seq:
-                        #assert self.dprint(ch,)
-                        if not cl[ch]:
-                            #standard opening
-                            stk.append((po, ch))
-                        elif stk:
-                            if cl[ch] == stk[-1][1]:
-                                #proper closing of something
-                                stk.pop()
-                            else:
-                                #probably a syntax error
-                                #does it matter what is done?
-                                stk = []
-                                break
+                        if (a > -1):
+                            found.append(a)
+                    #assert self.dprint('fnd', found)
+                    if found: found = min(found)
+                    else:     found = -1
+                    if (found > -1) and\
+                    (s.GetStyleAt(s.GetLineEndPosition(linenum)-len(line)+found)==5) and\
+                    (s.GetLineIndentation(linenum) == found):
+                        ind = s.GetLineIndentation(linenum)
+                        break
+                    linenum -= 1
+                    line = s.GetLine(linenum)
+        #if we were to do indentation for ()[]{}, it would be here
+        if not xtra:
+            #yep, right here.
+            fnd = 0
+            for i in "(){}[]":
+                if (line.find(i) > -1):
+                    fnd = 1
+                    break
+            if fnd:
+                seq = []
+                #assert self.dprint("finding stuff")
+                for i in "(){}[]":
+                    a = line.find(i)
+                    start = 0
+                    while a > -1:
+                        start += a+1
+                        if s.GetStyleAt(start+linestart-1)==10:
+                            seq.append((start, i))
+                        a = line[start:].find(i)
+                seq.sort()
+                cl = {')':'(', ']': '[', '}': '{',
+                    '(':'',  '[': '',  '{': ''}
+                stk = []
+                #assert self.dprint("making tree")
+                for po, ch in seq:
+                    #assert self.dprint(ch,)
+                    if not cl[ch]:
+                        #standard opening
+                        stk.append((po, ch))
+                    elif stk:
+                        if cl[ch] == stk[-1][1]:
+                            #proper closing of something
+                            stk.pop()
                         else:
-        #Probably closing something on another line, should probably find
-        #the indent level of the opening, but that would require checking
-        #multiple previous items for the opening item.
-        #single-line dedent.
+                            #probably a syntax error
+                            #does it matter what is done?
                             stk = []
                             break
-                    if stk:
-                        #assert self.dprint("stack remaining", stk)
-                        ind = stk[-1][0]
-            if not xtra:
-                ls = line.lstrip()
-                if (ls[:6] == 'return') or (ls[:4] == 'pass') or (ls[:5] == 'break') or (ls[:8] == 'continue'):
-                    xtra = -1
-        
-        if xtra != None:
-            a = max(ind+xtra*s.GetIndent(), 0)*' '
-            
-            if s.GetUseTabs():
-                a = a.replace(s.GetTabWidth()*' ', '\t')
-            ## s._tdisable(s.ReplaceSelection, s.format+a)
-            s.ReplaceSelection(s.format+a)
+                    else:
+                        # Probably closing something on another line,
+                        # should probably find the indent level of the
+                        # opening, but that would require checking
+                        # multiple previous items for the opening
+                        # item.  single-line dedent.
+                        stk = []
+                        break
+                if stk:
+                    #assert self.dprint("stack remaining", stk)
+                    ind = stk[-1][0]
+        if not xtra:
+            ls = line.lstrip()
+            if (ls[:6] == 'return') or (ls[:4] == 'pass') or (ls[:5] == 'break') or (ls[:8] == 'continue'):
+                xtra = -1
 
+        return max(ind+xtra*s.GetIndent(), 0)
 
 
 class PythonMode(PythonElectricReturnMixin,FundamentalMode):

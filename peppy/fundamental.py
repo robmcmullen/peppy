@@ -291,6 +291,15 @@ class CommentRegion(MajorAction):
 
 
 class StandardReturnMixin(debugmixin):
+    def findIndent(self, linenum):
+        """Find proper indention of next line given a line number.
+
+        This is designed to be overridden in subclasses.  Given the
+        current line, figure out what the indention should be for the
+        next line.
+        """
+        return self.stc.GetLineIndentation(linenum)
+        
     def electricReturn(self):
         """Add a newline and indent to the proper tab level.
 
@@ -305,7 +314,7 @@ class StandardReturnMixin(debugmixin):
         line = s.GetLine(linenum)[:pos-linestart]
     
         #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)                    
+        ind = s.GetLineIndentation(linenum)
 
         if col <= ind:
             if s.GetUseTabs():
@@ -315,6 +324,7 @@ class StandardReturnMixin(debugmixin):
         elif not pos:
             s.ReplaceSelection(s.format)
         else:
+            ind = self.findIndent(linenum)
             a = ind*' '
             if s.GetUseTabs():
                 a = a.replace(s.GetTabWidth()*' ', '\t')
