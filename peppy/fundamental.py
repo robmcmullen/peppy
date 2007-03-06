@@ -59,34 +59,45 @@ class LineNumbers(ToggleAction):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             viewer.setLineNumbers(not viewer.settings.line_numbers)
-    
-class BeginningOfLine(SelectAction):
-    name = _("Cursor to Start of Line")
-    tooltip = _("Move the cursor to the start of the current line")
-    keyboard = 'C-A'
+
+class ScintillaCmdKeyExecute(SelectAction):
+    cmd = 0
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
             s=viewer.stc
-            pos = s.GetCurrentPos()
-            col = s.GetColumn(pos)
-            s.GotoPos(pos-col)
-        
+            s.CmdKeyExecute(self.cmd)
 
-class EndOfLine(SelectAction):
+class BeginningOfLine(ScintillaCmdKeyExecute):
+    name = _("Cursor to Start of Line")
+    tooltip = _("Move the cursor to the start of the current line")
+    cmd = wx.stc.STC_CMD_HOMEDISPLAY
+        
+class BeginningTextOfLine(ScintillaCmdKeyExecute):
+    name = _("Cursor to first non-blank character in the line")
+    tooltip = _("Move the cursor to the start of the current line")
+    keyboard = 'C-A'
+    cmd = wx.stc.STC_CMD_VCHOME
+        
+class EndOfLine(ScintillaCmdKeyExecute):
     name = _("Cursor to End of Line")
     tooltip = _("Move the cursor to the end of the current line")
     keyboard = 'C-E'
+    cmd = wx.stc.STC_CMD_LINEEND
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            s=viewer.stc
-            line = s.GetCurrentLine()
-            s.GotoPos(s.GetLineEndPosition(line))
+class PreviousLine(ScintillaCmdKeyExecute):
+    name = _("Cursor to previous line")
+    tooltip = _("Move the cursor up a line")
+    keyboard = 'C-P'
+    cmd = wx.stc.STC_CMD_LINEUP
+
+class NextLine(ScintillaCmdKeyExecute):
+    name = _("Cursor to next line")
+    tooltip = _("Move the cursor down a line")
+    keyboard = 'C-N'
+    cmd = wx.stc.STC_CMD_LINEDOWN
 
 
 class WordOrRegionMutateMixin(object):
@@ -657,8 +668,10 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
         for mode,menu,item in self.default_tools:
             yield (mode,menu,item)
 
-    default_keys=(("Fundamental",BeginningOfLine),
+    default_keys=(("Fundamental",BeginningTextOfLine),
                   ("Fundamental",EndOfLine),
+                  ("Fundamental",PreviousLine),
+                  ("Fundamental",NextLine),
                   ("Fundamental",CapitalizeWord),
                   ("Fundamental",UpcaseWord),
                   ("Fundamental",DowncaseWord),
