@@ -26,12 +26,15 @@ class ProgressBarTest(SelectAction):
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
-        self.frame.statusbar.startProgress("Testing...", 100)
+        statusbar = self.frame.statusbar
+        statusbar.startProgress("Testing...", 100, True)
         for i in range(100):
             wx.Yield()
-            self.frame.statusbar.updateProgress(i)
-            time.sleep(.05)
-        self.frame.statusbar.stopProgress()
+            if statusbar.isCancelled():
+                break
+            statusbar.updateProgress(i)
+            time.sleep(.2)
+        statusbar.stopProgress()
         
 
 

@@ -96,6 +96,7 @@ class PeppyStatusBar(wx.StatusBar):
 
         self.gauge = None
         self.overlays = []
+        self.cancelled = False
 
         self.setWidths()
 
@@ -170,9 +171,21 @@ class PeppyStatusBar(wx.StatusBar):
             wx.StatusBar.SetStatusText(self, text, field)
 
     def startProgress(self, text, max=100, cancel=False):
+        self.cancelled = False
+        
         dc=wx.ClientDC(self)
         trect = self.GetFieldRect(0)
-        label = wx.StaticText(self, -1, text)
+        if wx.Platform == '__WXGTK__':
+            # This works on unix, but not windows.  On windows, the
+            # text gets overwritten if something else sets the status
+            # bar text
+            label = wx.Window(self, -1)
+            label.SetBackgroundColour(self.GetBackgroundColour())
+            wx.StaticText(label, -1, text, (0,0))
+        else:
+            # this is what works on windows.  On unix, the text gets
+            # overwritten using this method.
+            label = wx.StaticText(self, -1, text)
         tw, th = dc.GetTextExtent(text)
         trect.x += self.spacing
         trect.width = tw
@@ -180,14 +193,33 @@ class PeppyStatusBar(wx.StatusBar):
         
         gauge = wx.Gauge(self, -1, max)
         grect = self.GetFieldRect(0)
-        grect.x = trect.x + trect.width + self.spacing
+        grect.x = trect.x + trect.width
         grect.width -= grect.x
         self.overlays.append((gauge, grect))
         self.gauge = gauge
+
+        if cancel:
+            text = _("Cancel")
+            button = wx.Button(self, -1, text)
+            self.Bind(wx.EVT_BUTTON, self.OnCancel, button)
+            tw, th = dc.GetTextExtent(text)
+            tw += 20 # add some padding to the text for button border
+            crect = self.GetFieldRect(0)
+            crect.x = crect.width - tw
+            crect.width = tw
+            grect.width -= tw
+            self.overlays.append((button, crect))
+            
         self.Reposition()
 
     def updateProgress(self, value):
         self.gauge.SetValue(value)
+
+    def OnCancel(self, evt):
+        self.cancelled = True
+    
+    def isCancelled(self):
+        return self.cancelled
 
     def stopProgress(self):
         for widget, rect in self.overlays:
