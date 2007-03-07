@@ -58,4 +58,4 @@ class STCStylesMenuProvider(Component):
     implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        yield (None,"Edit",MenuItem(STCStyles).after("lastsep"))
+        yield (None,"Format",MenuItem(STCStyles).last())

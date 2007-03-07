@@ -86,7 +86,7 @@ class MinorModeLoader(Component,debugmixin):
                 assert self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
 
-    default_menu=(("View",MenuItem(MinorModeShow).after("Major Mode")),
+    default_menu=(("View",MenuItem(MinorModeShow).first().after("Major Mode")),
                   )
 
     def getMenuItems(self):

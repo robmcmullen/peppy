@@ -567,7 +567,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
     plugins=ExtensionPoint(IMajorModeMatcher)
     implements(IMenuItemProvider)
 
-    default_menu=(("View",MenuItem(MajorModeSelect).after("begin")),
+    default_menu=(("View",MenuItem(MajorModeSelect).first()),
                   )
 
     def getMenuItems(self):
