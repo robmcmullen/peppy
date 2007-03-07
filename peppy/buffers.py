@@ -230,6 +230,14 @@ class Buffer(debugmixin):
         self.stc.EmptyUndoBuffer()
 
         BufferHooks(ComponentManager()).openPostHook(self)
+
+    def revert(self):
+        fh=GetReader(self.filename)
+        self.stc.ClearAll()
+        self.stc.readFrom(fh)
+        self.modified=False
+        self.stc.EmptyUndoBuffer()
+        wx.CallAfter(self.showModifiedAll)  
         
     def save(self,filename=None):
         assert self.dprint("Buffer: saving buffer %s" % (self.filename))

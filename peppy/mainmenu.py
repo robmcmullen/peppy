@@ -114,6 +114,27 @@ class Close(SelectAction):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.close()
 
+class Revert(SelectAction):
+    name = _("&Revert")
+    tooltip = _("Revert to last saved version")
+    icon = "icons/cross.png"
+
+    def isEnabled(self):
+        mode=self.frame.getActiveMajorMode()
+        if mode and mode.buffer.stc.CanEdit():
+            return True
+        return False
+
+    def action(self, pos=-1):
+        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        mode=self.frame.getActiveMajorMode()
+        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % mode.buffer.filename, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+        retval=dlg.ShowModal()
+        dlg.Destroy()
+            
+        if retval==wx.ID_YES:
+            mode.buffer.revert()
+
 class Save(SelectAction):
     name = _("&Save...")
     tooltip = _("Save the current file")
@@ -284,6 +305,8 @@ class MainMenu(Component):
                   ("File",MenuItem(Save).after("opensep")),
                   ("File",MenuItem(SaveAs).after("opensep")),
                   ("File",MenuItem(Close).after("opensep")),
+                  ("File",Separator("closesep").after("opensep")),
+                  ("File",MenuItem(Revert).after("opensep")),
                   ("File",Separator("quit").after("opensep")),
                   ("File",MenuItem(Exit).last()),
                   (None,Menu("Edit").after("File").first()),

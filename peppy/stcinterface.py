@@ -513,6 +513,9 @@ class NonResidentSTC(STCInterface,debugmixin):
     
     def __init__(self, parent=None, copy=None):
         self.filename = None
+
+    def CanEdit(self):
+        return False
         
     def openPostHook(self, fh):
         if fh.urlinfo.protocol == 'file':
