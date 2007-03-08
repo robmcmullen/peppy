@@ -692,12 +692,11 @@ class MenuBarActionMap(debugmixin):
                 self.populateMenu(self.getkey(parent,menu),hier[menu]['submenus'])
 
 
-    def populateMenuBar(self):
+    def populateMenuBar(self, menubar):
         """Populates the frame's menubar with the current definition.
         This replaces the current menubar in the frame.
         """
         self.sort()
-        menubar=self.frame.GetMenuBar()
         index=0
         count=menubar.GetMenuCount()
         hier=self.hier['root']
@@ -794,7 +793,7 @@ class MenuItemLoader(Component,debugmixin):
     debuglevel=0
     extensions=ExtensionPoint(IMenuItemProvider)
 
-    def load(self,frame,majors=[],minors=[]):
+    def load(self, frame, majors=[], minors=[], create=True):
         """Load the global actions into the menu system.
 
         Any L{Component} that implements the L{IMenuItemProvider}
@@ -823,7 +822,13 @@ class MenuItemLoader(Component,debugmixin):
             menumap.addMenuItems(menu,group)
 
         # create the menubar
-        menumap.populateMenuBar()
+        if create:
+            bar = wx.MenuBar()
+        else:
+            bar = frame.GetMenuBar()
+        menumap.populateMenuBar(bar)
+        if create:
+            frame.SetMenuBar(bar)
 
         return menumap
 

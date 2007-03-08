@@ -18,6 +18,7 @@ class Preferences(SelectAction):
     name = "&Preferences..."
     tooltip = "Preferences, settings, and configurations..."
     icon = "icons/wrench.png"
+    stock_id = wx.ID_PREFERENCES
 
     def action(self, pos=-1):
         assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
