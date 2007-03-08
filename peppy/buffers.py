@@ -277,6 +277,8 @@ class Buffer(debugmixin):
 
 
 class MyNotebook(wx.aui.AuiNotebook,debugmixin):
+    debuglevel = 0
+    
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS)
         
@@ -311,10 +313,16 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         mode.deleteWindow()
 
     def addTab(self,mode):
-        assert self.dprint("Adding tab %s" % mode)
+        before = self.GetPageCount()
+        assert self.dprint("#tabs = %d.  Adding mode %s" % (before, mode))
         self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
         index=self.GetPageIndex(mode)
         self.SetSelection(index)
+        if before==0:
+            # If this is the first tab added, a tab changed event
+            # won't be generated, so we have to call switchMode
+            # ourselves.
+            self.frame.switchMode()
         
     def replaceTab(self,mode):
         index=self.GetSelection()
@@ -663,10 +671,6 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         assert self.dprint("major mode=%s" % mode)
         self.tabs.addTab(mode)
         assert self.dprint("after addViewer")
-
-        # switchMode must be called here because no tabbed event is
-        # generated when adding a new tab.
-        self.switchMode()
 
     def titleBuffer(self):
         self.open('about:title.html')
