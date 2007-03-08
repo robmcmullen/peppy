@@ -20,23 +20,27 @@ from peppy.menu import *
 from peppy.major import *
 
 
-class ProgressBarTest(SelectAction):
-    name = "&Test the progress bar"
+class SlowProgressBarTest(SelectAction):
+    name = "Slow test of the progress bar"
     tooltip = "Test the progress bar"
-    icon = wx.ART_FILE_OPEN
+    delay = .2
 
     def action(self, pos=-1):
-        statusbar = self.frame.statusbar
-        statusbar.startProgress("Testing...", 100, True)
-        for i in range(100):
-            wx.Yield()
-            if statusbar.isCancelled():
-                break
-            statusbar.updateProgress(i)
-            time.sleep(.2)
-        statusbar.stopProgress()
+        mode = self.frame.getActiveMajorMode()
+        if mode is not None:
+            statusbar = mode.statusbar
+            statusbar.startProgress("Testing...", 100, True)
+            for i in range(100):
+                wx.Yield()
+                if statusbar.isCancelled():
+                    break
+                statusbar.updateProgress(i)
+                time.sleep(self.delay)
+            statusbar.stopProgress()
         
-
+class FastProgressBarTest(SlowProgressBarTest):
+    name = "Fast test of the progress bar"
+    delay = .01
 
 class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     """Plugin to register sandbox tests.
@@ -44,7 +48,8 @@ class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMenuItemProvider)
 
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(ProgressBarTest)),
+                  (None,"Test",MenuItem(FastProgressBarTest)),
+                  (None,"Test",MenuItem(SlowProgressBarTest)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

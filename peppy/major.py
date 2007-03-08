@@ -42,7 +42,7 @@ from debug import *
 from minor import *
 
 from lib.iconstorage import *
-
+from lib.controls import *
 
 class MajorAction(SelectAction):
     # Set up a new run() method to pass the viewer
@@ -141,6 +141,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.frame=frame
         self.popup=None
         self.minors=[]
+        self.statusbar = None
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
         self.win=self
@@ -292,6 +293,31 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         that it needs.
         """
         pass
+
+    def getStatusBar(self):
+        """Returns pointer to this mode's status bar.
+
+        Individual status bars are maintained by each instance of a
+        major mode.  The frame only shows the status bar of the active
+        mode and hides all the rest.  This means that modes may change
+        their status bars without checking if they are the active
+        mode.  This situation arizes when there is some background
+        processing going on (either with threads or using wx.Yield)
+        and the user switches to some other mode.
+        """
+        if self.statusbar is None:
+            self.statusbar = PeppyStatusBar(self.frame)
+            self.createStatusIcons()
+        return self.statusbar
+
+    def resetStatusBar(self):
+        """Updates the status bar.
+
+        This method clears and rebuilds the status bar, usually
+        because something requests an icon change.
+        """
+        self.statusbar.reset()
+        self.createStatusIcons()
 
     def setMinibuffer(self,minibuffer=None):
         self.removeMinibuffer()

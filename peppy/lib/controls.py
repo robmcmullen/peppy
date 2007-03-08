@@ -95,6 +95,7 @@ class PeppyStatusBar(wx.StatusBar):
         self.controls = []
 
         self.gauge = None
+        self.gaugeWidth = 100
         self.overlays = []
         self.cancelled = False
 
@@ -165,36 +166,17 @@ class PeppyStatusBar(wx.StatusBar):
                 widget.SetSize((rect.width, rect.height))
         self.sizeChanged = False
 
-    def SetStatusText(self, text, field=0):
-        if self.gauge is None:
-            # Only set the text if the gauge isn't present
-            wx.StatusBar.SetStatusText(self, text, field)
-
     def startProgress(self, text, max=100, cancel=False):
         self.cancelled = False
         
+        self.SetStatusText(text)
+
         dc=wx.ClientDC(self)
-        trect = self.GetFieldRect(0)
-        if wx.Platform == '__WXGTK__':
-            # This works on unix, but not windows.  On windows, the
-            # text gets overwritten if something else sets the status
-            # bar text
-            label = wx.Window(self, -1)
-            label.SetBackgroundColour(self.GetBackgroundColour())
-            wx.StaticText(label, -1, text, (0,0))
-        else:
-            # this is what works on windows.  On unix, the text gets
-            # overwritten using this method.
-            label = wx.StaticText(self, -1, text)
-        tw, th = dc.GetTextExtent(text)
-        trect.x += self.spacing
-        trect.width = tw
-        self.overlays.append((label, trect))
-        
+       
         gauge = wx.Gauge(self, -1, max)
         grect = self.GetFieldRect(0)
-        grect.x = trect.x + trect.width
-        grect.width -= grect.x
+        grect.x = grect.width - self.gaugeWidth
+        grect.width = self.gaugeWidth
         self.overlays.append((gauge, grect))
         self.gauge = gauge
 
@@ -207,7 +189,7 @@ class PeppyStatusBar(wx.StatusBar):
             crect = self.GetFieldRect(0)
             crect.x = crect.width - tw
             crect.width = tw
-            grect.width -= tw
+            grect.x -= tw
             self.overlays.append((button, crect))
             
         self.Reposition()
@@ -221,10 +203,14 @@ class PeppyStatusBar(wx.StatusBar):
     def isCancelled(self):
         return self.cancelled
 
-    def stopProgress(self):
+    def stopProgress(self, text="Completed."):
         for widget, rect in self.overlays:
             self.RemoveChild(widget)
             widget.Destroy()
+        if self.cancelled:
+            self.SetStatusText("Cancelled.")
+        else:
+            self.SetStatusText(text)
         self.overlays = []
         self.gauge = None
         

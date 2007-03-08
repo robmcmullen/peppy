@@ -374,7 +374,7 @@ class EOLModeSelect(RadioAction):
     def action(self, index=0, old=-1):
         mode = self.frame.getActiveMajorMode()
         mode.buffer.stc.ConvertEOLs(EOLModeSelect.modes[index])
-        self.frame.resetStatusBar()
+        mode.resetStatusBar()
 
 
 class FundamentalMode(MajorMode, BraceHighlightMixin,
@@ -473,11 +473,11 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
 
     def createStatusIcons(self):
         if self.buffer.stc.format == '\r\n':
-            self.frame.statusbar.addIcon("icons/windows.png", "DOS line endings")
+            self.statusbar.addIcon("icons/windows.png", "DOS line endings")
         elif self.buffer.stc.format == '\r':
-            self.frame.statusbar.addIcon("icons/apple.png", "Apple line endings")
+            self.statusbar.addIcon("icons/apple.png", "Apple line endings")
         else:
-            self.frame.statusbar.addIcon("icons/tux.png", "Unix line endings")
+            self.statusbar.addIcon("icons/tux.png", "Unix line endings")
 
     def styleDefault(self):
         """Create entry in stc configuration file for this mode.
