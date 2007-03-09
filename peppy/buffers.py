@@ -466,6 +466,9 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
         size=(int(self.settings.width),int(self.settings.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
+        icon = wx.EmptyIcon()
+        icon.CopyFromBitmap(getIconBitmap('icons/peppy.png'))
+        self.SetIcon(icon)
         self.app=app
 
         FrameList.append(self)
