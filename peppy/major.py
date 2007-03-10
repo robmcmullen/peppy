@@ -79,7 +79,7 @@ class BufferModificationAction(BufferBusyActionMixin, SelectAction):
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
         assert self.dprint("%s called by keybindings" % self)
-        self.changeBuffer(self.frame.getActiveMajorMode())
+        self.modify(self.frame.getActiveMajorMode())
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
