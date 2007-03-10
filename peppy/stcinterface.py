@@ -205,17 +205,18 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
         assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
 
         # Now, need to convert it to two bytes per character
-        styledtxt = '\0'.join(txt)+'\0'
-        assert self.dprint("styledtxt: length=%d" % len(styledtxt))
-
-        self.AddStyledText(styledtxt)
+        if len(txt) > 0:
+            styledtxt = '\0'.join(txt)+'\0'
+            assert self.dprint("styledtxt: length=%d" % len(styledtxt))
+            
+            self.AddStyledText(styledtxt)
     
     def writeTo(self, fh):
         numchars = self.GetTextLength()
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
         txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
-        assert self.dprint("BinaryFilter: writing %d bytes to %s" % (len(txt), fh))
+        assert self.dprint("numchars=%d: writing %d bytes to %s" % (numchars, len(txt), fh))
         assert self.dprint(repr(txt))
         try:
             fh.write(txt)
