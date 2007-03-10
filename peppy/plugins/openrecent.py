@@ -98,5 +98,5 @@ class OpenRecentConfExtender(Component):
         yield (None,"File",MenuItem(OpenRecent).after("&Open File...").before("opensep"))
 
     def openPostHook(self,buffer):
-        OpenRecent.append(buffer.filename)
+        OpenRecent.append(buffer.url)
         

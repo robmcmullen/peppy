@@ -130,7 +130,7 @@ class Revert(SelectAction):
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         mode=self.frame.getActiveMajorMode()
-        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % mode.buffer.filename, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
         retval=dlg.ShowModal()
         dlg.Destroy()
             
