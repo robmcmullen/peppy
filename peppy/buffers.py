@@ -251,6 +251,7 @@ class Buffer(debugmixin):
             self.stc.writeTo(fh)
             self.stc.SetSavePoint()
             self.modified=False
+            self.readonly = False
             if url is not None and url!=self.url:
                 self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
             self.showModifiedAll()
@@ -262,6 +263,7 @@ class Buffer(debugmixin):
         for view in self.viewers:
             assert self.dprint("notifing: %s modified = %s" % (view, self.modified))
             view.showModified(self.modified)
+        wx.GetApp().enableFrames()
 
     def setBusy(self, state):
         self.busy = state
