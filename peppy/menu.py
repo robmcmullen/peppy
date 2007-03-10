@@ -826,6 +826,12 @@ class MenuItemLoader(Component,debugmixin):
             bar = wx.MenuBar()
         else:
             bar = frame.GetMenuBar()
+            
+        if wx.Platform == '__WXMAC__':
+            # turn off the automatic generation of the Window menu.
+            # We generate one ourselves
+            wx.MenuBar.SetAutoWindowMenu(False)
+            
         menumap.populateMenuBar(bar)
         if create:
             frame.SetMenuBar(bar)
