@@ -752,8 +752,9 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         """
         mode = self.getActiveMajorMode()
         if mode and mode.buffer:
-            if mode.buffer.url.startswith('file:'):
-                cwd = os.path.dirname(mode.buffer.url[5:])
+            info = URLInfo(mode.buffer.url)
+            if info.protocol == 'file':
+                cwd = os.path.dirname(info.path)
             else:
                 mode = None
 

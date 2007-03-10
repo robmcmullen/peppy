@@ -172,6 +172,7 @@ class SaveAs(SelectAction):
         if mode and mode.buffer:
             saveas=mode.buffer.getFilename()
             cwd = self.frame.cwd()
+            assert self.dprint("cwd = %s, path = %s" % (cwd, saveas))
             saveas=os.path.basename(saveas)
 
             wildcard="*.*"
