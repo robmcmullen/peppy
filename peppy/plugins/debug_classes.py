@@ -24,7 +24,8 @@ class DebugClassList(Sidebar, debugmixin):
     """
     debuglevel = 0
     
-    keyword="debug_list"
+    keyword = "debug_list"
+    caption = _("Debug Printing")
 
     default_settings = {
         'best_width': 200,
@@ -33,7 +34,7 @@ class DebugClassList(Sidebar, debugmixin):
         'min_height': 100,
         }
     
-    def createWindows(self,parent):
+    def getSidebarWindow(self,parent):
 ##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
         self.debuglist = DebugClass(parent)
         items = self.debuglist.getItems()
@@ -43,14 +44,7 @@ class DebugClassList(Sidebar, debugmixin):
             self.list.Check(i, self.debuglist.isChecked(i))
         self.list.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
         
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption("Debug Printing")
-        paneinfo.Left()
-        paneinfo.BestSize(wx.Size(self.settings.best_width,
-                                  self.settings.best_height))
-        paneinfo.MinSize(wx.Size(self.settings.min_width,
-                                 self.settings.min_height))
-        
-        self.frame.addPane(self.list,paneinfo)
+        return self.list
 
     def OnCheckListBox(self, evt):
         index = evt.GetSelection()

@@ -16,7 +16,8 @@ import peppy.pype
 from peppy.pype.browser import FilesystemBrowser
 
 class FileBrowser(Sidebar):
-    keyword="filebrowser"
+    keyword = "filebrowser"
+    caption = _("File List (from PyPE)")
 
     default_settings = {
         'best_width': 200,
@@ -25,22 +26,14 @@ class FileBrowser(Sidebar):
         'min_height': 100,
         }
     
-    def createWindows(self,parent):
-##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
-
+    def getSidebarWindow(self,parent):
         self.wildcard="*"
         self.current_path=""
         
         self.browser=FilesystemBrowser(parent, self)
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption("File List (from PyPE)")
-        paneinfo.Left()
-        paneinfo.BestSize(wx.Size(self.settings.best_width,
-                                  self.settings.best_height))
-        paneinfo.MinSize(wx.Size(self.settings.min_width,
-                                 self.settings.min_height))
-        
-        self.frame.addPane(self.browser,paneinfo)
+        return self.browser
 
+    def initPostHook(self):
         self.browser.showstuff()
 
     # PyPE adapter

@@ -363,19 +363,21 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
 ## Sidebars
 
 class Sidebar(ClassSettings):
+    """Base class for all frame sidebars.
+
+    A frame sidebar is generally used to create a new UI window in a
+    frame that is outside the purview of the major mode.  It is a
+    constant regardless of which major mode is selected.
     """
-    Base class for all frame sidebars.  A frame sidebar is generally
-    used to create a new UI window in a frame that is outside the
-    purview of the major mode.  It is a constant regardless of which
-    major mode is selected.
-    """
-    keyword=None
+    keyword = None
+    caption = None
 
     default_settings = {
         'best_width': 100,
         'best_height': 200,
         'min_width': 100,
         'min_height': 100,
+        'show': True,
         }
     
     def __init__(self, frame):
@@ -383,15 +385,50 @@ class Sidebar(ClassSettings):
         if self.keyword is None:
             raise ValueError("keyword class attribute must be defined.")
 
-        self.setup()
+        self.initPreHook()
 
-        self.createWindows(self.frame)
+        self.win = self.getSidebarWindow(self.frame)
+        paneinfo = self.getPaneInfo()
+        self.frame.addPane(self.win, paneinfo)
+
+        self.initPostHook()
         
-    def setup(self):
+    def initPreHook(self):
+        """Hook called before window creation."""
         pass
 
-    def createWindows(self,parent):
+    def initPostHook(self):
+        """Hook called after window creation."""
         pass
+
+    def getSidebarWindow(self, parent):
+        """Factory method to return a window.
+
+        Each sidebar can have only one top level window, but there's
+        no limit to the number of subwindows it can have.  This method
+        is responsible for creating whatever windows are necessary and
+        returning the window that holds all the other windows.
+        Typically, a sidebar will just be a single window, so this
+        method would return that window.
+        """
+        raise NotImplementedError
+
+    def getPaneInfo(self):
+        """Factory method to return pane info.
+
+        Most sidebars won't need to override this, but it is available
+        in the case that it is necessary.  A wx.aui.AuiPaneInfo object
+        should be returned.
+        """
+        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(self.caption)
+        paneinfo.Left()
+        paneinfo.BestSize(wx.Size(self.settings.best_width,
+                                  self.settings.best_height))
+        paneinfo.MinSize(wx.Size(self.settings.min_width,
+                                 self.settings.min_height))
+        paneinfo.Show(self.settings.show)
+        return paneinfo
+
 
 class ISidebarProvider(Interface):
     """
