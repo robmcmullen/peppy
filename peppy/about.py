@@ -206,7 +206,7 @@ class HelpManual(SelectAction):
     name = "&Help..."
     tooltip = "User manual"
     stock_id = wx.ID_HELP
-    keyboard = "F1"
+    key_bindings = {'default': "F1",}
 
     about = "Test program"
     title = "Test program title"

@@ -67,7 +67,7 @@ class DeleteFrame(SelectAction):
 class NewFrame(SelectAction):
     name = "&New Frame"
     tooltip = "Open a new window"
-    keyboard = "C-X 5 2"
+    key_bindings = {'emacs': "C-X 5 2",}
     
     def action(self, pos=-1):
         frame=self.frame.app.newFrame(callingFrame=self.frame)

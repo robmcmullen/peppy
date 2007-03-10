@@ -78,25 +78,25 @@ class BeginningOfLine(ScintillaCmdKeyExecute):
 class BeginningTextOfLine(ScintillaCmdKeyExecute):
     name = _("Cursor to first non-blank character in the line")
     tooltip = _("Move the cursor to the start of the current line")
-    keyboard = 'C-A'
+    key_bindings = {'emacs': 'C-A',}
     cmd = wx.stc.STC_CMD_VCHOME
         
 class EndOfLine(ScintillaCmdKeyExecute):
     name = _("Cursor to End of Line")
     tooltip = _("Move the cursor to the end of the current line")
-    keyboard = 'C-E'
+    key_bindings = {'emacs': 'C-E',}
     cmd = wx.stc.STC_CMD_LINEEND
 
 class PreviousLine(ScintillaCmdKeyExecute):
     name = _("Cursor to previous line")
     tooltip = _("Move the cursor up a line")
-    keyboard = 'C-P'
+    key_bindings = {'emacs': 'C-P',}
     cmd = wx.stc.STC_CMD_LINEUP
 
 class NextLine(ScintillaCmdKeyExecute):
     name = _("Cursor to next line")
     tooltip = _("Move the cursor down a line")
-    keyboard = 'C-N'
+    key_bindings = {'emacs': 'C-N',}
     cmd = wx.stc.STC_CMD_LINEDOWN
 
 
@@ -157,7 +157,7 @@ class CapitalizeWord(WordOrRegionMutateMixin, SelectAction):
 
     name = _("Capitalize word")
     tooltip = _("Capitalize current word")
-    keyboard = 'M-C'
+    key_bindings = {'emacs': 'M-C',}
 
     def mutate(self, txt):
         """Change to title case -- first letter capitalized, rest
@@ -172,7 +172,7 @@ class UpcaseWord(WordOrRegionMutateMixin, SelectAction):
 
     name = _("Upcase word")
     tooltip = _("Upcase current word")
-    keyboard = 'M-U'
+    key_bindings = {'emacs': 'M-U',}
 
     def mutate(self, txt):
         """Change to all upper case.
@@ -186,7 +186,7 @@ class DowncaseWord(WordOrRegionMutateMixin, SelectAction):
 
     name = _("Downcase word")
     tooltip = _("Downcase current word")
-    keyboard = 'M-L'
+    key_bindings = {'emacs': 'M-L',}
 
     def mutate(self, txt):
         """Change to all lower case.
@@ -283,7 +283,7 @@ class CommentRegion(MajorAction):
     name = _("&Comment Region")
     tooltip = _("Comment a line or region")
     icon = 'icons/text_indent_rob.png'
-    keyboard = 'C-C C-C'
+    key_bindings = {'emacs': 'C-C C-C',}
 
     def majoraction(self, mode, pos=-1):
         if hasattr(mode, 'comment') and mode.comment is not None:
@@ -334,7 +334,7 @@ class ElectricReturn(MajorAction):
     name = _("Electric Return")
     tooltip = _("Indent the next line following a return")
     icon = 'icons/text_indent_rob.png'
-    keyboard = 'RET'
+    key_bindings = {'default': 'RET',}
 
     def majoraction(self, viewer, pos=-1):
         viewer.electricReturn()
@@ -344,7 +344,6 @@ class PasteAtColumn(Paste):
     name = _("Paste at Column")
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
-    keyboard = None
 
     def action(self, pos=-1):
         mode = self.frame.getActiveMajorMode()

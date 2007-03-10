@@ -68,6 +68,7 @@ def main():
     parser.add_option("--config-name", action="store", dest="confdir", default="peppy")
     parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
     parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
+    parser.add_option("--key-bindings", action="store", dest="key_bindings", default='win')
     (options, args) = parser.parse_args()
     #print options
 

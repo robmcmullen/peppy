@@ -24,7 +24,7 @@ class GotoLine(MinibufferAction):
 
     name = "Goto Line..."
     tooltip = "Goto a line in the text."
-    keyboard = 'M-G'
+    key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
 

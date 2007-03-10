@@ -141,7 +141,7 @@ class ShellSTC(PeppySTC):
 class ProcessShellLine(SelectAction):
     name = "Process a shell command"
     tooltip = "Process a shell command."
-    keyboard = 'RET'
+    key_bindings = {'default': 'RET', }
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))

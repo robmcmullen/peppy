@@ -29,6 +29,7 @@ class New(SelectAction):
     name = _("&New File...")
     tooltip = _("New file")
     icon = "icons/page.png"
+    key_bindings = {'win': "C-N", }
 
     def action(self, pos=-1):
         self.frame.open("about:untitled")
@@ -39,7 +40,7 @@ class OpenFile(SelectAction):
     name = _("&Open File...")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
-    keyboard = "C-X C-F"
+    key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
@@ -69,7 +70,7 @@ class OpenURL(SelectAction):
     name = _("Open URL...")
     tooltip = _("Open a file through a URL")
     icon = "icons/folder_page.png"
-    keyboard = "C-X C-A"
+    key_bindings = {'emacs': "C-X C-A", }
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
@@ -97,7 +98,7 @@ class OpenURL(SelectAction):
 class Exit(SelectAction):
     name = _("E&xit")
     tooltip = _("Quit the program.")
-    keyboard = "C-X C-C"
+    key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, pos=-1):
         self.frame.app.quit()
@@ -139,7 +140,7 @@ class Save(SelectAction):
     name = _("&Save...")
     tooltip = _("Save the current file")
     icon = "icons/disk.png"
-    keyboard = "C-X C-S"
+    key_bindings = {'win': "C-S", 'emacs': "C-X C-S",}
 
     def isEnabled(self):
         mode=self.frame.getActiveMajorMode()
@@ -157,7 +158,7 @@ class SaveAs(SelectAction):
     name = _("Save &As...")
     tooltip = _("Save as a new file")
     icon = "icons/disk_edit.png"
-    keyboard = "C-X C-W"
+    key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
     
     def isEnabled(self):
         return self.frame.isOpen()
@@ -204,7 +205,7 @@ class Undo(SelectAction):
     name = _("Undo")
     tooltip = _("Undo")
     icon = "icons/arrow_turn_left.png"
-    keyboard = "C-/"
+    key_bindings = {'win': "C-Z", 'emacs': "C-/",}
     
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
@@ -222,7 +223,7 @@ class Redo(SelectAction):
     name = _("Redo")
     tooltip = _("Redo")
     icon = "icons/arrow_turn_right.png"
-    keyboard = "C-S-/"
+    key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
     
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
@@ -239,6 +240,7 @@ class Cut(SelectAction):
     name = _("Cut")
     tooltip = _("Cut")
     icon = "icons/cut.png"
+    key_bindings = {'win': "C-X"}
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
@@ -256,6 +258,7 @@ class Copy(SelectAction):
     name = _("Copy")
     tooltip = _("Copy")
     icon = "icons/page_copy.png"
+    key_bindings = {'win': "C-C"}
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()
@@ -273,6 +276,7 @@ class Paste(SelectAction):
     name = _("Paste")
     tooltip = _("Paste")
     icon = "icons/paste_plain.png"
+    key_bindings = {'win': "C-V"}
 
     def isEnabled(self):
         viewer=self.frame.getActiveMajorMode()

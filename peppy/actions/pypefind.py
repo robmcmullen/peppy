@@ -134,12 +134,12 @@ class ReplaceMinibuffer(FindMinibuffer):
 class FindText(MinibufferAction):
     name = "Find..."
     tooltip = "Search for a string in the text."
-    keyboard = 'C-S'
+    key_bindings = {'win': "C-F", 'emacs': 'C-S', }
     minibuffer = FindMinibuffer
 
 class ReplaceText(MinibufferAction):
     name = "Replace..."
     tooltip = "Replace a string in the text."
-    keyboard = 'F6'
+    key_bindings = {'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
 

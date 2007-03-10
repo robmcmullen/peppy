@@ -39,13 +39,26 @@ class KeyboardConf(ClassSettings, debugmixin):
     code.)
     """
     default_settings = {}
-
+    platform = 'win'
+    
     ignore_list = ['MajorAction', 'MinibufferAction']
 
+    @classmethod
+    def getKey(cls, action):
+        keyboard = None
+        bindings = action.key_bindings
+        if isinstance(bindings, dict):
+            if cls.platform in bindings:
+                keyboard = bindings[cls.platform]
+            elif 'default' in bindings:
+                keyboard = bindings['default']
+        return keyboard
+    
     @classmethod
     def load(cls):
         actions = Peppy.getSubclasses(SelectAction)
         #dprint(actions)
+        found_emacs = False
         for action in actions:
             #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.settings._get(action.__name__)))
             acc = cls.settings._get(action.__name__)
@@ -54,7 +67,21 @@ class KeyboardConf(ClassSettings, debugmixin):
                     # if the text is None, don't bind it to anything.
                     action.keyboard = None
                 else:
-                    action.keyboard = cls.settings._get(action.__name__)
+                    action.keyboard = acc
+            else:
+                action.keyboard = cls.getKey(action)
+
+            # Determine up the accelerator text here, up front, rather
+            # than computing it every time the menu is displayed.
+            numkeystrokes = action.setAcceleratorText()
+            if numkeystrokes>1:
+                found_emacs = True
+
+        if found_emacs:
+            # Found a multi-key accelerator: force all accelerators to
+            # be displayed in emacs style.
+            for action in actions:
+                action.setAcceleratorText(force_emacs=True)
 
     @classmethod
     def configDefault(cls, fh=sys.stdout):
@@ -63,7 +90,7 @@ class KeyboardConf(ClassSettings, debugmixin):
         keymap = {}
         for action in Peppy.getSubclasses(SelectAction):
             if not issubclass(action, ToggleAction) and not issubclass(action, ListAction) and action.__name__ not in cls.ignore_list:
-                keymap[action.__name__] = action.keyboard
+                keymap[action.__name__] = cls.getKey(action)
         names = keymap.keys()
         names.sort()
         for name in names:
@@ -302,6 +329,10 @@ def run(options={},args=None):
     
     if options.logfile:
         debuglog(options.logfile)
+
+    if options.key_bindings:
+        KeyboardConf.platform = options.key_bindings
+        
     Peppy.verbose=options.verbose
     app=Peppy(redirect=False)
 
@@ -326,31 +357,3 @@ def run(options={},args=None):
         frame.SetStatusText("Failed loading %s" % ", ".join([f for f in bad]))
     
     app.MainLoop()
-
-def main():
-    """Main entry point for editor.
-
-    This is called from a script outside the package, parses the
-    command line, and starts up a new wx.App.
-    """
-    from optparse import OptionParser
-
-    usage="usage: %prog file [files...]"
-    parser=OptionParser(usage=usage)
-    parser.add_option("-p", action="store_true", dest="profile", default=False)
-    parser.add_option("-v", action="count", dest="verbose", default=0)
-    parser.add_option("-l", action="store", dest="logfile", default=None)
-    parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
-    (options, args) = parser.parse_args()
-    #print options
-
-    if options.profile:
-        import profile
-        profile.run('run()','profile.out')
-    else:
-        run(options,args)
-
-
-
-if __name__ == "__main__":
-    main()

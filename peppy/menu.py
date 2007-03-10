@@ -91,6 +91,8 @@ class SelectAction(debugmixin):
     icon=None
     tooltip=""
     keyboard=None
+    key_bindings = None # map of platform to default keybinding
+    _accelerator_text = None # This is not set by the user
     stock_id=None
     submenu=None
     
@@ -117,14 +119,27 @@ class SelectAction(debugmixin):
     def initPostHook(self):
         pass
 
+    @classmethod
+    def setAcceleratorText(cls, force_emacs=False):
+        if cls.keyboard:
+            keystrokes = KeyMap.split(cls.keyboard)
+            if len(keystrokes) == 1 and (cls.stock_id is not None or not force_emacs):
+                # if it has a stock id, always force it to use the
+                # standard accelerator because wxWidgets will put one
+                # there anyway and we need to overwrite it with our
+                # definition
+                cls._accelerator_text = "\t%s" % KeyMap.nonEmacsName(keystrokes[0])
+            else:
+                cls._accelerator_text = "    %s" % cls.keyboard
+            assert dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
+            return len(keystrokes)
+        else:
+            cls._accelerator_text = ""
+        return 0
+    
     def getMenuItemName(self):
         if self.use_accelerators and self.keyboard:
-            keystrokes = KeyMap.split(self.keyboard)
-            assert self.dprint(keystrokes)
-            if len(keystrokes) == 1:
-                return "%s\t%s" % (self.name, KeyMap.nonEmacsName(keystrokes[0]))
-            else:
-                return "%s    %s" % (self.name, self.keyboard)
+            return "%s%s" % (self.name, self._accelerator_text)
         else:
             return self.name
 
