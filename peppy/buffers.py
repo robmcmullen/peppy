@@ -164,7 +164,8 @@ class Buffer(debugmixin):
     def setFilename(self, url, path):
         if not url:
             filename="untitled"
-        self.filename=url
+        self.url = url
+        self.filename = path
         basename=os.path.basename(path)
         if basename in self.filenames:
             count=self.filenames[basename]+1
@@ -173,7 +174,7 @@ class Buffer(debugmixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
-        self.name="Buffer #%d: %s" % (self.count,str(self.filename))
+        self.name="Buffer #%d: %s" % (self.count,str(self.url))
 
         # Update UI because the filename associated with this buffer
         # may have changed and that needs to be reflected in the menu.
@@ -232,25 +233,25 @@ class Buffer(debugmixin):
         BufferHooks(ComponentManager()).openPostHook(self)
 
     def revert(self):
-        fh=GetReader(self.filename)
+        fh=GetReader(self.url)
         self.stc.ClearAll()
         self.stc.readFrom(fh)
         self.modified=False
         self.stc.EmptyUndoBuffer()
         wx.CallAfter(self.showModifiedAll)  
         
-    def save(self,filename=None):
+    def save(self, url=None):
         assert self.dprint("Buffer: saving buffer %s" % (self.filename))
         try:
-            if filename is None:
-                saveas=self.filename
+            if url is None:
+                saveas=self.url
             else:
-                saveas=filename
+                saveas=url
             fh=GetWriter(saveas)
             self.stc.writeTo(fh)
             self.stc.SetSavePoint()
             self.modified=False
-            if filename is not None and filename!=self.filename:
+            if url is not None and url!=self.url:
                 self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
             self.showModifiedAll()
         except:
