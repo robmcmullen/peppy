@@ -357,8 +357,8 @@ class EOLModeSelect(RadioAction):
     inline=False
     tooltip="Switch line endings"
 
-    items = ['Unix (LF)', 'Apple (CR)', 'Dos (CRLF)']
-    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CR, wx.stc.STC_EOL_CRLF]
+    items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
+    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
 
     def saveIndex(self,index):
         assert self.dprint("index=%d" % index)
@@ -473,9 +473,9 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
 
     def createStatusIcons(self):
         if self.buffer.stc.format == '\r\n':
-            self.statusbar.addIcon("icons/windows.png", "DOS line endings")
+            self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
         elif self.buffer.stc.format == '\r':
-            self.statusbar.addIcon("icons/apple.png", "Apple line endings")
+            self.statusbar.addIcon("icons/apple.png", "Old-style Apple line endings")
         else:
             self.statusbar.addIcon("icons/tux.png", "Unix line endings")
 
