@@ -106,7 +106,7 @@ class Buffer(debugmixin):
     
     def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
         Buffer.count+=1
-        self.fh=fh
+        self.busy = False
         self.readonly = False
         self.defaultmode=defaultmode
 
@@ -259,8 +259,15 @@ class Buffer(debugmixin):
 
     def showModifiedAll(self):
         for view in self.viewers:
-            assert self.dprint("notifing: %s" % view)
+            assert self.dprint("notifing: %s modified = %s" % (view, self.modified))
             view.showModified(self.modified)
+
+    def setBusy(self, state):
+        self.busy = state
+        for view in self.viewers:
+            assert self.dprint("notifing: %s busy = %s" % (view, self.busy))
+            view.showBusy(self.busy)
+        wx.GetApp().enableFrames()
 
     def OnChanged(self, evt):
         if self.stc.GetModify():
@@ -802,6 +809,25 @@ class BufferApp(wx.App,debugmixin):
     def showFrame(self,frame):
         frame.Show(True)
 
+    def enableFrames(self):
+        """Force all frames to update their enable status.
+
+        Loop through each frame and force an update of the
+        enable/disable state of ui items.  The menu does this in
+        response to a user event, so this is really for the toolbar
+        and other always-visible widgets that aren't automatically
+        updated.
+        """
+        for frame in wx.GetTopLevelWindows():
+            assert self.dprint(frame)
+            try:
+                frame.enableTools()
+            except:
+                # not all top level windows will be BufferFrame
+                # subclasses, so just use the easy way out and catch
+                # all exceptions.
+                pass
+            
     def close(self,buffer):
         if buffer.modified:
             dlg = wx.MessageDialog(self.GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )

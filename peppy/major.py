@@ -35,6 +35,7 @@ import os,sys,re
 import wx
 import wx.stc as stc
 
+from peppy import *
 from menu import *
 from stcinterface import *
 from configprefs import *
@@ -44,22 +45,44 @@ from minor import *
 from lib.iconstorage import *
 from lib.controls import *
 
-class MajorAction(SelectAction):
+class BufferBusyActionMixin(object):
+    """Mixin to disable an action when the buffer is being modified.
+
+    If a subclass needs to supply more information about its enable
+    state, override isActionAvailable instead of isEnabled, or else
+    you lose the buffer busy test.
+    """
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        if mode is not None:
+            return not mode.buffer.busy and self.isActionAvailable(mode)
+        return False
+
+    def isActionAvailable(self, mode):
+        return True
+
+class BufferModificationAction(BufferBusyActionMixin, SelectAction):
+    """Base class for any action that changes the bytes in the buffer.
+
+    This uses the BufferBusyActionMixin to disable any action that
+    would change the buffer when the buffer is in the process of being
+    modified by a long-running process.
+    """
     # Set up a new run() method to pass the viewer
     def action(self, pos=-1):
         assert self.dprint("id=%s name=%s" % (id(self),self.name))
-        self.majoraction(self.frame.getActiveMajorMode(),pos)
+        self.modify(self.frame.getActiveMajorMode(),pos)
 
-    def majoraction(self, viewer, pos=-1):
+    def modify(self, mode, pos=-1):
         raise NotImplementedError
 
     # Set up a new keyboard callback to also pass the viewer
     def __call__(self, evt, number=None):
         assert self.dprint("%s called by keybindings" % self)
-        self.majoraction(self.frame.getActiveMajorMode())
+        self.changeBuffer(self.frame.getActiveMajorMode())
 
 
-class MajorModeSelect(RadioAction):
+class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     name="Major Mode"
     inline=False
     tooltip="Switch major mode"
@@ -131,7 +154,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     localkeymaps = {}
     
     def __init__(self,buffer,frame):
-        self.win=None
         self.splitter=None
         self.editwin=None # user interface window
         self.minibuffer=None
@@ -144,7 +166,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.statusbar = None
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
-        self.win=self
         self.createWindow()
         self.createWindowPostHook()
         self.createEventBindings()
@@ -170,9 +191,9 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     
     def createWindow(self):
         box=wx.BoxSizer(wx.VERTICAL)
-        self.win.SetAutoLayout(True)
-        self.win.SetSizer(box)
-        self.splitter=wx.Panel(self.win)
+        self.SetAutoLayout(True)
+        self.SetSizer(box)
+        self.splitter=wx.Panel(self)
         box.Add(self.splitter,1,wx.EXPAND)
         self._mgr = wx.aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
@@ -323,27 +344,27 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.removeMinibuffer()
         if minibuffer is not None:
             self.minibuffer=minibuffer
-            box=self.win.GetSizer()
+            box=self.GetSizer()
             box.Add(self.minibuffer.win,0,wx.EXPAND)
-            self.win.Layout()
+            self.Layout()
             self.minibuffer.win.Show()
             self.minibuffer.focus()
 
     def removeMinibuffer(self):
         if self.minibuffer is not None:
-            box=self.win.GetSizer()
+            box=self.GetSizer()
             box.Detach(self.minibuffer.win)
             self.minibuffer.close()
             self.minibuffer=None
-            self.win.Layout()
+            self.Layout()
             self.focus()
 
     def reparent(self,parent):
-        self.win.Reparent(parent)
+        self.Reparent(parent)
 
     def addPopup(self,popup):
         self.popup=popup
-        self.win.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
 
     def popupMenu(self,evt):
         # popups generate menu events as normal menus, so the
@@ -351,7 +372,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         # popup is generated in the same way that the regular menu and
         # toolbars are.
         assert self.dprint("popping up menu for %s" % evt.GetEventObject())
-        self.win.PopupMenu(self.popup)
+        self.PopupMenu(self.popup)
         evt.Skip()
 
     def focus(self):
@@ -364,6 +385,14 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
     def showModified(self,modified):
         self.frame.showModified(self)
+
+    def showBusy(self, busy):
+        self.Enable(not busy)
+        if busy:
+            cursor = wx.StockCursor(wx.CURSOR_WATCH)
+        else:
+            cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
+        self.editwin.SetCursor(cursor)
 
     def getFunctionList(self):
         '''

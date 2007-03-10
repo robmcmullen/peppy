@@ -10,6 +10,7 @@ import wx
 
 from peppy import *
 
+from major import *
 from menu import *
 from buffers import *
 from debug import *
@@ -200,96 +201,72 @@ class SaveAs(SelectAction):
 
             dlg.Destroy()
 
-
-class Undo(SelectAction):
+class Undo(BufferModificationAction):
     name = _("Undo")
     tooltip = _("Undo")
     icon = "icons/arrow_turn_left.png"
     key_bindings = {'win': "C-Z", 'emacs': "C-/",}
     
-    def isEnabled(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.stc.CanUndo()
-        return False
+    def isActionAvailable(self, mode):
+        return mode.stc.CanUndo()
 
-    def action(self, pos=-1):
+    def modify(self, mode, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.Undo()
+        return mode.stc.Undo()
 
 
-class Redo(SelectAction):
+class Redo(BufferModificationAction):
     name = _("Redo")
     tooltip = _("Redo")
     icon = "icons/arrow_turn_right.png"
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
     
-    def isEnabled(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.stc.CanRedo()
-        return False
+    def isActionAvailable(self, mode):
+        return mode.stc.CanRedo()
 
-    def action(self, pos=-1):
+    def modify(self, mode, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer: return viewer.stc.Redo()
+        return mode.stc.Redo()
 
-class Cut(SelectAction):
+class Cut(BufferModificationAction):
     name = _("Cut")
     tooltip = _("Cut")
     icon = "icons/cut.png"
     key_bindings = {'win': "C-X"}
 
-    def isEnabled(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.stc.CanCut()
-        return False
+    def isActionAvailable(self, mode):
+        return mode.stc.CanCut()
 
-    def action(self, pos=-1):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
-            return viewer.stc.Cut()
+    def modify(self, mode, pos=-1):
+        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
+        return mode.stc.Cut()
 
-class Copy(SelectAction):
+class Copy(BufferModificationAction):
     name = _("Copy")
     tooltip = _("Copy")
     icon = "icons/page_copy.png"
     key_bindings = {'win': "C-C"}
 
-    def isEnabled(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.stc.CanCopy()
-        return False
+    def isActionAvailable(self, mode):
+        return mode.stc.CanCopy()
 
-    def action(self, pos=-1):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
-            return viewer.stc.Copy()
+    def modify(self, mode, pos=-1):
+        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
+        return mode.stc.Copy()
 
-class Paste(SelectAction):
+class Paste(BufferModificationAction):
     name = _("Paste")
     tooltip = _("Paste")
     icon = "icons/paste_plain.png"
     key_bindings = {'win': "C-V"}
 
-    def isEnabled(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            assert self.dprint("mode=%s stc=%s paste=%s" % (viewer,viewer.stc,viewer.stc.CanEdit()))
-            return viewer.stc.CanEdit()
-        return False
+    def isActionAvailable(self, mode):
+        return mode.stc.CanEdit()
 
-    def action(self, pos=-1):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            dprint("rectangle=%s" % viewer.stc.SelectionIsRectangle())
-            return viewer.stc.Paste()
+    def modify(self, mode, pos=-1):
+        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
+        return mode.stc.Paste()
+
 
 
 class MainMenu(Component):

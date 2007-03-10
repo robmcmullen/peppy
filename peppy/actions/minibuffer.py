@@ -9,10 +9,10 @@ from peppy.major import *
 from peppy.debug import *
 
 
-class MinibufferAction(MajorAction):
+class MinibufferAction(BufferModificationAction):
     minibuffer_label = None
     
-    def majoraction(self, mode, pos=-1):
+    def modify(self, mode, pos=-1):
         minibuffer=self.minibuffer(mode, self, label=self.minibuffer_label)
         #print minibuffer.win
         mode.setMinibuffer(minibuffer)

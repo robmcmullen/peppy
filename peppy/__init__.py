@@ -50,7 +50,7 @@ __license__ = "GPL"
 from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
 from peppy.configprefs import *
 from peppy.debug import debuglog, dprint, debugmixin
-from peppy.major import MajorMode, MajorAction
+from peppy.major import MajorMode, BufferModificationAction
 from peppy.minor import MinorMode, IMinorModeProvider, \
      MinorModeIncompatibilityError
 
@@ -62,7 +62,7 @@ __all__ = [
             'getSubclassHierarchy',
     'debuglog','dprint','debugmixin',
     'getIconStorage','getIconBitmap',
-    'MajorMode', 'MajorAction',
+    'MajorMode', 'BufferModificationAction',
     'MinorMode', 'IMinorModeProvider', 'MinorModeIncompatibilityError',
     ]
 #print __all__

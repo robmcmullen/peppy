@@ -28,6 +28,7 @@ class SlowProgressBarTest(SelectAction):
     def action(self, pos=-1):
         mode = self.frame.getActiveMajorMode()
         if mode is not None:
+            mode.buffer.setBusy(True)
             statusbar = mode.statusbar
             statusbar.startProgress("Testing...", 100, True)
             for i in range(100):
@@ -37,6 +38,7 @@ class SlowProgressBarTest(SelectAction):
                 statusbar.updateProgress(i)
                 time.sleep(self.delay)
             statusbar.stopProgress()
+            mode.buffer.setBusy(False)
         
 class FastProgressBarTest(SlowProgressBarTest):
     name = "Fast test of the progress bar"

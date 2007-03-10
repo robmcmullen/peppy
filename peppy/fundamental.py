@@ -19,9 +19,6 @@ class OpenFundamental(SelectAction):
     tooltip = _("Open some sample text")
     icon = wx.ART_FILE_OPEN
 
-##    def isEnabled(self):
-##        return not self.frame.isOpen()
-
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:demo.txt")
@@ -60,15 +57,12 @@ class LineNumbers(ToggleAction):
         if viewer:
             viewer.setLineNumbers(not viewer.settings.line_numbers)
 
-class ScintillaCmdKeyExecute(SelectAction):
+class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
 
-    def action(self, pos=-1):
+    def modify(self, mode, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            s=viewer.stc
-            s.CmdKeyExecute(self.cmd)
+        mode.stc.CmdKeyExecute(self.cmd)
 
 class BeginningOfLine(ScintillaCmdKeyExecute):
     name = _("Cursor to Start of Line")
@@ -150,7 +144,7 @@ class WordOrRegionMutateMixin(object):
         if viewer:
             self.mutateSelection(viewer.stc)
             
-class CapitalizeWord(WordOrRegionMutateMixin, SelectAction):
+class CapitalizeWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Title-case the current word and move the cursor to the start of
     the next word.
     """
@@ -165,7 +159,7 @@ class CapitalizeWord(WordOrRegionMutateMixin, SelectAction):
         """
         return txt.title()
 
-class UpcaseWord(WordOrRegionMutateMixin, SelectAction):
+class UpcaseWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Upcase the current word and move the cursor to the start of the
     next word.
     """
@@ -179,7 +173,7 @@ class UpcaseWord(WordOrRegionMutateMixin, SelectAction):
         """
         return txt.upper()
 
-class DowncaseWord(WordOrRegionMutateMixin, SelectAction):
+class DowncaseWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Downcase the current word and move the cursor to the start of the
     next word.
     """
@@ -279,13 +273,13 @@ class StandardCommentMixin(debugmixin):
         finally:
             s.EndUndoAction()
 
-class CommentRegion(MajorAction):
+class CommentRegion(BufferModificationAction):
     name = _("&Comment Region")
     tooltip = _("Comment a line or region")
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'emacs': 'C-C C-C',}
 
-    def majoraction(self, mode, pos=-1):
+    def modify(self, mode, pos=-1):
         if hasattr(mode, 'comment') and mode.comment is not None:
             mode.comment(True)
 
@@ -330,14 +324,14 @@ class StandardReturnMixin(debugmixin):
                 a = a.replace(s.GetTabWidth()*' ', '\t')
             s.ReplaceSelection(s.format+a)
 
-class ElectricReturn(MajorAction):
+class ElectricReturn(BufferModificationAction):
     name = _("Electric Return")
     tooltip = _("Indent the next line following a return")
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'RET',}
 
-    def majoraction(self, viewer, pos=-1):
-        viewer.electricReturn()
+    def modify(self, mode, pos=-1):
+        mode.electricReturn()
 
 
 class PasteAtColumn(Paste):
@@ -351,7 +345,7 @@ class PasteAtColumn(Paste):
             mode.stc.PasteAtColumn()
 
 
-class EOLModeSelect(RadioAction):
+class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     name="Line Endings"
     inline=False
     tooltip="Switch line endings"
