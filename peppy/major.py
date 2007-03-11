@@ -33,7 +33,7 @@ be the C{keyword} attribute of your major mode.
 import os,sys,re
 
 import wx
-import wx.stc as stc
+import wx.stc
 from wx.lib.pubsub import Publisher
 
 from peppy import *

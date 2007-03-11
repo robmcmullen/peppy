@@ -18,6 +18,7 @@ import os
 from cStringIO import StringIO
 
 import wx
+import wx.stc
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
@@ -118,7 +119,7 @@ class ImageViewMode(MajorMode):
         win=BitmapView(parent,self.frame,self.buffer.stc)        
         #win=wx.Window(parent, -1)
 
-        eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
+        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
 
         # Thread stuff for the underlying change callback
         self.waiting=None

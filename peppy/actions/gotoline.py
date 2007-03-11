@@ -8,7 +8,7 @@ major mode.
 import os
 
 import wx
-import wx.stc as stc
+import wx.stc
 
 from peppy.actions.minibuffer import *
 from peppy.major import *

@@ -3,7 +3,7 @@
 import os,struct
 
 import wx
-import wx.stc as stc
+import wx.stc
 import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
@@ -775,10 +775,10 @@ class HexEditMode(MajorMode):
         self.waiting=None
 
         # Multiple binds to the same handler, ie multiple HexEditModes
-        # trying to do self.buffer.stc.Bind(stc.EVT_STC_MODIFIED,
+        # trying to do self.buffer.stc.Bind(wx.stc.EVT_STC_MODIFIED,
         # self.underlyingSTCChanged) don't work.  Need to use the
         # event manager for multiple bindings.
-        eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
+        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
 
         # self.stc points to the data storage; self.editwin points to
         # the user interface window.  In this case, they are
@@ -792,17 +792,17 @@ class HexEditMode(MajorMode):
         
     def transModType(self, modType):
         st = ""
-        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
-                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
-                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
-                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
-                 (stc.STC_PERFORMED_USER, "UserFlag"),
-                 (stc.STC_PERFORMED_UNDO, "Undo"),
-                 (stc.STC_PERFORMED_REDO, "Redo"),
-                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
-                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
-                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
-                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+        table = [(wx.stc.STC_MOD_INSERTTEXT, "InsertText"),
+                 (wx.stc.STC_MOD_DELETETEXT, "DeleteText"),
+                 (wx.stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                 (wx.stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                 (wx.stc.STC_PERFORMED_USER, "UserFlag"),
+                 (wx.stc.STC_PERFORMED_UNDO, "Undo"),
+                 (wx.stc.STC_PERFORMED_REDO, "Redo"),
+                 (wx.stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                 (wx.stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                 (wx.stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                 (wx.stc.STC_MOD_BEFOREDELETE, "B4-Delete")
                  ]
 
         for flag,text in table:
@@ -829,7 +829,7 @@ class HexEditMode(MajorMode):
         # screen for the events we're interested in because we're not
         # allowed to change the events that self.buffer.stc sees.
         etype=evt.GetModificationType()
-        if etype&stc.STC_MOD_INSERTTEXT or etype&stc.STC_MOD_DELETETEXT:
+        if etype&wx.stc.STC_MOD_INSERTTEXT or etype&wx.stc.STC_MOD_DELETETEXT:
             assert self.dprint("""UnderlyingSTCChanged
             Mod type:     %s
             At position:  %d

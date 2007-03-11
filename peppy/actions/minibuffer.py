@@ -3,7 +3,7 @@
 import os
 
 import wx
-import wx.stc as stc
+import wx.stc
 
 from peppy.major import *
 from peppy.debug import *

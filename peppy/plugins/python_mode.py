@@ -8,7 +8,7 @@ import os,struct
 import keyword
 
 import wx
-import wx.stc as stc
+import wx.stc
 
 from peppy import *
 from peppy.about import SetAbout

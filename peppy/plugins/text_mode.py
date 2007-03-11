@@ -8,7 +8,7 @@ Major mode for generic text editing.
 import os
 
 import wx
-import wx.stc as stc
+import wx.stc
 
 from peppy import *
 from peppy.major import *

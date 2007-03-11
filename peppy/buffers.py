@@ -4,7 +4,7 @@ import os,re
 
 import wx
 import wx.aui
-import wx.stc as stc
+import wx.stc
 
 from menu import *
 from lib.wxemacskeybindings import *
@@ -128,7 +128,7 @@ class Buffer(debugmixin):
         self.open(filename, stcparent)
 
     def initSTC(self):
-        self.stc.Bind(stc.EVT_STC_CHANGE, self.OnChanged)
+        self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
     def createMajorMode(self,frame,modeclass=None):
         if modeclass:

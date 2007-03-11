@@ -3,7 +3,7 @@
 import os, shutil
 
 import wx
-import wx.stc as stc
+import wx.stc
 from wx.lib.pubsub import Publisher
 
 from peppy import *
@@ -130,7 +130,7 @@ class WordOrRegionMutateMixin(object):
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
         if pos==end:
-            s.CmdKeyExecute(stc.STC_CMD_WORDRIGHT)
+            s.CmdKeyExecute(wx.stc.STC_CMD_WORDRIGHT)
             end = s.GetCurrentPos()
         word = s.GetTextRange(pos, end)
         s.SetTargetStart(pos)
@@ -213,7 +213,7 @@ class BraceHighlightMixin(object):
             styleBefore = s.GetStyleAt(caretPos - 1)
 
         # check before
-        if charBefore and chr(charBefore) in "[]{}()" and styleBefore == stc.STC_P_OPERATOR:
+        if charBefore and chr(charBefore) in "[]{}()" and styleBefore == wx.stc.STC_P_OPERATOR:
             braceAtCaret = caretPos - 1
 
         # check after
@@ -221,7 +221,7 @@ class BraceHighlightMixin(object):
             charAfter = s.GetCharAt(caretPos)
             styleAfter = s.GetStyleAt(caretPos)
 
-            if charAfter and chr(charAfter) in "[]{}()" and styleAfter == stc.STC_P_OPERATOR:
+            if charAfter and chr(charAfter) in "[]{}()" and styleAfter == wx.stc.STC_P_OPERATOR:
                 braceAtCaret = caretPos
 
         if braceAtCaret >= 0:
@@ -517,16 +517,16 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         if enable is not None:
             self.settings.word_wrap=enable
         if self.settings.word_wrap:
-            self.stc.SetWrapMode(stc.STC_WRAP_CHAR)
-            self.stc.SetWrapVisualFlags(stc.STC_WRAPVISUALFLAG_END)
+            self.stc.SetWrapMode(wx.stc.STC_WRAP_CHAR)
+            self.stc.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
         else:
-            self.stc.SetWrapMode(stc.STC_WRAP_NONE)
+            self.stc.SetWrapMode(wx.stc.STC_WRAP_NONE)
 
     def setLineNumbers(self,enable=None):
         if enable is not None:
             self.settings.line_numbers=enable
         if self.settings.line_numbers:
-            self.stc.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+            self.stc.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
             self.stc.SetMarginWidth(0,  self.settings.line_number_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
