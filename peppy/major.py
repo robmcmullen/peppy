@@ -402,10 +402,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         '''
         return ([], [], {}, [])
 
-    def getNumWin(self, evt=None):
-        """PyPE compat"""
-        return 1,self.editwin
-
 
 
 class MajorModeMatch(object):

@@ -255,6 +255,7 @@ class StandardCommentMixin(debugmixin):
         @param add: True to add comments, False to remove them
         """
         s = self.stc
+        eol_len = len(s.getLinesep())
         
         s.BeginUndoAction()
         line, lineend = s.GetLineRegion()
@@ -269,7 +270,7 @@ class StandardCommentMixin(debugmixin):
                 start = self.commentLine(start, end)
                 line += 1
                 end = s.GetLineEndPosition(line)
-            s.SetSelection(selstart, start - s.eol_len)
+            s.SetSelection(selstart, start - eol_len)
         finally:
             s.EndUndoAction()
 
@@ -300,6 +301,7 @@ class StandardReturnMixin(debugmixin):
         Indent to the level of the line above.
         """
         s = self.stc
+        linesep = s.getLinesep()
         
         linenum = s.GetCurrentLine()
         pos = s.GetCurrentPos()
@@ -310,19 +312,21 @@ class StandardReturnMixin(debugmixin):
         #get info about the current line's indentation
         ind = s.GetLineIndentation(linenum)
 
+        dprint("format = %s ind = '%s'" % (repr(linesep), ind)) 
+
         if col <= ind:
             if s.GetUseTabs():
-                s.ReplaceSelection(s.format+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
+                s.ReplaceSelection(linesep+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
             else:
-                s.ReplaceSelection(s.format+(col*' '))
+                s.ReplaceSelection(linesep+(col*' '))
         elif not pos:
-            s.ReplaceSelection(s.format)
+            s.ReplaceSelection(linesep)
         else:
             ind = self.findIndent(linenum)
             a = ind*' '
             if s.GetUseTabs():
                 a = a.replace(s.GetTabWidth()*' ', '\t')
-            s.ReplaceSelection(s.format+a)
+            s.ReplaceSelection(linesep+a)
 
 class ElectricReturn(BufferModificationAction):
     name = _("Electric Return")
@@ -465,9 +469,10 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         self.stc.SetIndentationGuides(1)
 
     def createStatusIcons(self):
-        if self.buffer.stc.format == '\r\n':
+        linesep = self.stc.getLinesep()
+        if linesep == '\r\n':
             self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
-        elif self.buffer.stc.format == '\r':
+        elif linesep == '\r':
             self.statusbar.addIcon("icons/apple.png", "Old-style Apple line endings")
         else:
             self.statusbar.addIcon("icons/tux.png", "Unix line endings")
@@ -583,7 +588,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         if elen > 0:
             self.stc.InsertText(end, self.start_line_comment)
             end += elen
-        return end + self.stc.eol_len
+        return end + len(self.stc.getLinesep())
 
 
 

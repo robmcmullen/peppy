@@ -183,14 +183,6 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
                 dprint("copying %s from old stc." % repr(txt))
                 self.AddStyledText(txt)
 
-        ## PyPE compat
-
-        # assume unix line endings for now; will be changed after file
-        # is loaded
-        self.format='\n'
-        self.eol_len=len(self.format)
-
-
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
 
@@ -319,7 +311,7 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
         try:
             for insert in paste.splitlines():
                 if line >= self.GetLineCount():
-                    self.InsertText(self.GetTextLength(), self.format)
+                    self.InsertText(self.GetTextLength(), self.getLinesep())
                 start = pos = self.PositionFromLine(line)
                 last = self.GetLineEndPosition(line)
                 
@@ -341,17 +333,22 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
 
     def detectLineEndings(self, num=1024):
         from pype.parsers import detectLineEndings
-        self.format = detectLineEndings(self.GetTextRange(0,num))
-        self.eol_len = len(self.format)
-        mode = self.eol2int[self.format]
+        if num > self.GetTextLength():
+            num = self.GetTextLength()
+        linesep = detectLineEndings(self.GetTextRange(0,num))
+        mode = self.eol2int[linesep]
         self.SetEOLMode(mode)
 
     def ConvertEOLs(self, mode):
         wx.stc.StyledTextCtrl.ConvertEOLs(self, mode)
         self.SetEOLMode(mode)
-        self.format = self.int2eol[mode]
-        self.eol_len = len(self.format)
-        
+
+    def getLinesep(self):
+        """Get the current line separator character.
+
+        """
+        mode = self.GetEOLMode()
+        return self.int2eol[mode]
 
     def openPostHook(self, fh):
         """Hook called after the initial open of the file.

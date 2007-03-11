@@ -9,6 +9,7 @@ its getFunctionList method will be able to work with this minor mode.
 import os
 
 from peppy import *
+from peppy.stcinterface import STCProxy
 from peppy.menu import *
 from peppy.trac.core import *
 
@@ -26,7 +27,7 @@ class FuncList(MinorMode):
         }
     
     def createWindows(self, parent):
-        self.funclist=hierCodeTreePanel(self.major,parent,False)
+        self.funclist=hierCodeTreePanel(self,parent,False)
         self.fl=self.major.getFunctionList()
         self.funclist.new_hierarchy(self.fl[0])
 
@@ -35,6 +36,12 @@ class FuncList(MinorMode):
         if not self.fl[0]:
             paneinfo.Hide()
         self.major.addPane(self.funclist,paneinfo)
+
+    def getNumWin(self, evt=None):
+        """PyPE compat"""
+        s = STCProxy(self.major.stc)
+        s.format = self.major.stc.getLinesep()
+        return 1,s
         
 
 class FuncListProvider(Component):
