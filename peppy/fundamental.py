@@ -4,6 +4,7 @@ import os, shutil
 
 import wx
 import wx.stc as stc
+from wx.lib.pubsub import Publisher
 
 from peppy import *
 from peppy.mainmenu import Paste
@@ -362,7 +363,7 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
     def getIndex(self):
         mode = self.frame.getActiveMajorMode()
-        eol = mode.buffer.stc.GetEOLMode()
+        eol = mode.stc.GetEOLMode()
         return EOLModeSelect.modes.index(eol)
                                            
     def getItems(self):
@@ -370,8 +371,8 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
     def action(self, index=0, old=-1):
         mode = self.frame.getActiveMajorMode()
-        mode.buffer.stc.ConvertEOLs(EOLModeSelect.modes[index])
-        mode.resetStatusBar()
+        mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
+        Publisher().sendMessage('resetStatusBar')
 
 
 class FundamentalMode(MajorMode, BraceHighlightMixin,

@@ -34,6 +34,7 @@ import os,sys,re
 
 import wx
 import wx.stc as stc
+from wx.lib.pubsub import Publisher
 
 from peppy import *
 from menu import *
@@ -170,10 +171,14 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.createWindowPostHook()
         self.createEventBindings()
         self.createEventBindingsPostHook()
+        self.createListeners()
+        self.createListenersPostHook()
 
     def __del__(self):
         dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
         dprint("deleting %s: %s" % (self.__class__.__name__,self.getTabName()))
+        self.removeListeners()
+        self.removeListenersPostHook()
         self.deleteWindowPostHook()
 
     # If there is no title, return the keyword
@@ -228,6 +233,43 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
     def createEventBindingsPostHook(self):
+        pass
+
+    def createListeners(self):
+        """Required wx.lib.pubsub listeners are created here.
+
+        Subclasses should override createListenersPostHook to add
+        their own listeners.
+        """
+        Publisher().subscribe(self.resetStatusBar, 'resetStatusBar')
+
+    def createListenersPostHook(self):
+        """Hook to add custom listeners.
+
+        Subclasses should override this method rather than
+        createListeners to add their own listeners.
+        """
+        pass
+
+    def removeListeners(self):
+        """Required wx.lib.pubsub listeners are removed here.
+
+        Subclasses should override removeListenersPostHook to remove
+        any listeners that were added.  Normally, wx.lib.pubsub
+        removes references to dead objects, and so this cleanup
+        shouldn't be necessary.  But, because the MajorMode is
+        subclassed from the C++ object, the python part is removed but
+        the C++ part isn't cleaned up immediately.  So, we have to
+        remove the listener references manually.
+        """
+        Publisher().unsubscribe(self.resetStatusBar)
+
+    def removeListenersPostHook(self):
+        """Hook to remove custom listeners.
+
+        Any listeners added by subclasses in createListenersPostHook
+        should be removed here.
+        """
         pass
 
     def addPane(self, win, paneinfo):
@@ -331,12 +373,13 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             self.createStatusIcons()
         return self.statusbar
 
-    def resetStatusBar(self):
+    def resetStatusBar(self, message=None):
         """Updates the status bar.
 
         This method clears and rebuilds the status bar, usually
         because something requests an icon change.
         """
+        dprint()
         self.statusbar.reset()
         self.createStatusIcons()
 
