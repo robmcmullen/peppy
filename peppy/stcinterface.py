@@ -3,7 +3,8 @@
 import os,re
 
 import wx
-import wx.stc as stc
+import wx.stc
+from wx.lib.pubsub import Publisher
 
 from cStringIO import StringIO
 
@@ -149,7 +150,7 @@ class STCProxy(object):
         raise AttributeError
 
 
-class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
+class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
     """
     eol2int = {'\r': wx.stc.STC_EOL_CR,
@@ -162,7 +163,7 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
                }
     
     def __init__(self, parent, refstc=None, copy=None):
-        stc.StyledTextCtrl.__init__(self, parent, -1)
+        wx.stc.StyledTextCtrl.__init__(self, parent, -1)
         self.ClearAll()
         
         if refstc is not None:
@@ -182,6 +183,7 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
                 txt = copy.GetStyledText(0,copy.GetTextLength())
                 dprint("copying %s from old stc." % repr(txt))
                 self.AddStyledText(txt)
+        self.maybe_undo_eolmode = None
 
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
@@ -215,6 +217,23 @@ class PeppyBaseSTC(stc.StyledTextCtrl, STCInterface, debugmixin):
         except:
             print "BinaryFilter: something went wrong writing to %s" % fh
             raise
+
+    ## Additional functionality
+    def checkUndoEOL(self):
+        # Check to see if the eol mode has changed.
+        if self.maybe_undo_eolmode is not None:
+            if self.maybe_undo_eolmode['likely']:
+                self.detectLineEndings()
+                Publisher().sendMessage('resetStatusBar')
+            self.maybe_undo_eolmode = None
+        
+    def Undo(self):
+        wx.stc.StyledTextCtrl.Undo(self)
+        self.checkUndoEOL()
+        
+    def Redo(self):
+        wx.stc.StyledTextCtrl.Redo(self)
+        self.checkUndoEOL()
         
     def CanEdit(self):
         """PyPE compat"""
@@ -375,10 +394,10 @@ class PeppySTC(PeppyBaseSTC):
     def __init__(self, parent, refstc=None, copy=None):
         PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy)
 
-        self.Bind(stc.EVT_STC_DO_DROP, self.OnDoDrop)
-        self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
-        self.Bind(stc.EVT_STC_START_DRAG, self.OnStartDrag)
-        self.Bind(stc.EVT_STC_MODIFIED, self.OnModified)
+        self.Bind(wx.stc.EVT_STC_DO_DROP, self.OnDoDrop)
+        self.Bind(wx.stc.EVT_STC_DRAG_OVER, self.OnDragOver)
+        self.Bind(wx.stc.EVT_STC_START_DRAG, self.OnStartDrag)
+        self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
@@ -404,7 +423,7 @@ class PeppySTC(PeppyBaseSTC):
         
         @param callback: event handler to execute on event
         """
-        self.Bind(stc.EVT_STC_UPDATEUI, callback)
+        self.Bind(wx.stc.EVT_STC_UPDATEUI, callback)
         
     def OnDestroy(self, evt):
         """
@@ -468,6 +487,25 @@ class PeppySTC(PeppyBaseSTC):
 ##                                  evt.GetLength(),
 ##                                  repr(evt.GetText()) ))
         assert self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+
+        # Since the stc doesn't store the EOL state as an undoable
+        # parameter, we have to check for it.
+        mod = evt.GetModificationType()
+        if mod & (wx.stc.STC_PERFORMED_UNDO | wx.stc.STC_PERFORMED_REDO) and mod & (wx.stc.STC_MOD_INSERTTEXT | wx.stc.STC_MOD_DELETETEXT):
+            text = evt.GetText()
+            if self.maybe_undo_eolmode is None:
+                self.maybe_undo_eolmode = {'total': 0, 'linesep': 0, 'likely': False}
+            stats = self.maybe_undo_eolmode
+            stats['total'] += 1
+            if text == '\n' or text == '\r':
+                self.dprint("found eol char")
+                stats['linesep'] += 1
+            if mod & wx.stc.STC_LASTSTEPINUNDOREDO:
+                self.dprint("eol summary: %s" % stats)
+                if stats['linesep'] == stats['total'] and stats['linesep'] >= self.GetLineCount()-1:
+                    self.dprint("likely that this is a eol change")
+                    stats['likely'] = True
+        
         evt.Skip()
 
     def OnUpdateUI(self, evt):
@@ -477,17 +515,17 @@ class PeppySTC(PeppyBaseSTC):
 
     def transModType(self, modType):
         st = ""
-        table = [(stc.STC_MOD_INSERTTEXT, "InsertText"),
-                 (stc.STC_MOD_DELETETEXT, "DeleteText"),
-                 (stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
-                 (stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
-                 (stc.STC_PERFORMED_USER, "UserFlag"),
-                 (stc.STC_PERFORMED_UNDO, "Undo"),
-                 (stc.STC_PERFORMED_REDO, "Redo"),
-                 (stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
-                 (stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
-                 (stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
-                 (stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+        table = [(wx.stc.STC_MOD_INSERTTEXT, "InsertText"),
+                 (wx.stc.STC_MOD_DELETETEXT, "DeleteText"),
+                 (wx.stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                 (wx.stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                 (wx.stc.STC_PERFORMED_USER, "UserFlag"),
+                 (wx.stc.STC_PERFORMED_UNDO, "Undo"),
+                 (wx.stc.STC_PERFORMED_REDO, "Redo"),
+                 (wx.stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                 (wx.stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                 (wx.stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                 (wx.stc.STC_MOD_BEFOREDELETE, "B4-Delete")
                  ]
 
         for flag,text in table:
