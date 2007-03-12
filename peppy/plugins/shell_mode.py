@@ -160,7 +160,7 @@ class ShellMode(FundamentalMode):
 
     def createWindowPostHook(self):
         assert self.dprint("In shell.")
-        self.stc.Bind(stc.EVT_STC_MODIFIED, self.OnUpdate)
+        self.stc.Bind(wx.stc.EVT_STC_MODIFIED, self.OnUpdate)
 
         #Use an event listener to update the cursor position when the
         #underlying shell has changed.

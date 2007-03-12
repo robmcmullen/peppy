@@ -10,6 +10,7 @@ import os
 from cStringIO import StringIO
 
 import wx
+import wx.stc
 import wx.html
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
@@ -101,7 +102,7 @@ class HTMLViewMode(MajorMode):
 
         win=HTMLWindow(parent, self)
 
-        eventManager.Bind(self.underlyingSTCChanged,stc.EVT_STC_MODIFIED,self.buffer.stc)
+        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
 
         # Thread stuff for the underlying change callback
         self.waiting=None
