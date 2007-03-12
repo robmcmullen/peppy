@@ -26,16 +26,19 @@ class SlowProgressBarTest(SelectAction):
     delay = .2
 
     def action(self, pos=-1):
+        wx.CallAfter(self.statusbarTest)
+
+    def statusbarTest(self):
         mode = self.frame.getActiveMajorMode()
         if mode is not None:
             mode.buffer.setBusy(True)
             statusbar = mode.statusbar
             statusbar.startProgress("Testing...", 100, True)
             for i in range(100):
-                wx.Yield()
                 if statusbar.isCancelled():
                     break
                 statusbar.updateProgress(i)
+                wx.Yield()
                 time.sleep(self.delay)
             statusbar.stopProgress()
             mode.buffer.setBusy(False)
