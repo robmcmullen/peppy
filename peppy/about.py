@@ -202,17 +202,21 @@ class HelpAbout(SelectAction):
         wx.AboutBox(info)
 
 
+SetAbout('User Manual',"""\
+<!-- -*- HTMLView -*- -->
+<h2>User Manual for %(prog)s %(version)s</h2>
+<p>Copyright (c) %(yearrange)s %(author)s (%(author_email)s)</p>
+
+<p>Well, not so much a user's manual as a placeholder for one.
+""")
 class HelpManual(SelectAction):
     name = "&Help..."
     tooltip = "User manual"
     stock_id = wx.ID_HELP
     key_bindings = {'default': "F1",}
-
-    about = "Test program"
-    title = "Test program title"
     
     def action(self, pos=None):
-        dprint("placeholder for online user's manual")
+        self.frame.open("about:User Manual")
         
 
 class BlankMode(MajorMode):
