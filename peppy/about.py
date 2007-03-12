@@ -65,7 +65,7 @@ class AboutHandler(urllib2.BaseHandler):
     # Use local file or FTP depending on form of URL
     def about_open(self, req):
         url = req.get_selector()
-        dprint(url)
+        #dprint(url)
 
         text = aboutfiles[url]
         if text.find("%(") >= 0:

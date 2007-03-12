@@ -70,7 +70,7 @@ class OpenRecent(GlobalList, ClassSettings):
     def save(cls,pathname):
         fh=open(pathname,'w')
         for file in cls.storage:
-            print "saving %s to %s" % (file,pathname)
+            #print "saving %s to %s" % (file,pathname)
             fh.write("%s%s" % (file,os.linesep))
 
     def action(self,state=None,index=0):

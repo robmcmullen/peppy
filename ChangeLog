@@ -1,3 +1,20 @@
+2007-03-11  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.6.2
+	* Loadable keybindings using --key-bindings=win or
+	--key-bindings=emacs
+	* Custom keybindings also specifiable in config file
+	* I18N support for text strings
+	* Line-endings supported: unix, windows, old-style apple
+	* Undoable line ending conversion
+	* Icons in the status bar
+	* Progress bar in the status bar and busy state added to modes
+	* New menubar layout based on Mac interface guidelines
+	* Better support of Mac menus (thanks to Chris Barker)
+	* Hide sidebars on application start
+	* File loading now based entirely on urllib2
+	* Added an application icon (although I'm sure it will change)
+	
 2007-03-01  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.1

@@ -131,7 +131,7 @@ class SelectAction(debugmixin):
                 cls._accelerator_text = "\t%s" % KeyMap.nonEmacsName(keystrokes[0])
             else:
                 cls._accelerator_text = "    %s" % cls.keyboard
-            assert dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
+            #dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
             return len(keystrokes)
         else:
             cls._accelerator_text = ""

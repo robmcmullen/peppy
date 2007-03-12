@@ -243,7 +243,7 @@ class GraphvizViewMinorMode(MinorMode):
         }
 
     def createWindows(self, parent):
-        dprint("self.settings.path = %s" % self.settings.path)
+        assert self.dprint("self.settings.path = %s" % self.settings.path)
         self.sizerep=GraphvizViewCtrl(parent, self)
         paneinfo=self.getDefaultPaneInfo("Graphviz View")
         paneinfo.Right()

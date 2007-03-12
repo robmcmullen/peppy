@@ -252,7 +252,7 @@ class Copy(BufferModificationAction):
         return mode.stc.CanCopy()
 
     def modify(self, mode, pos=-1):
-        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
+        assert self.dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
         return mode.stc.Copy()
 
 class Paste(BufferModificationAction):

@@ -379,7 +379,6 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         This method clears and rebuilds the status bar, usually
         because something requests an icon change.
         """
-        dprint()
         self.statusbar.reset()
         self.createStatusIcons()
 
