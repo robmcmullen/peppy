@@ -63,7 +63,7 @@ class Minibuffer(debugmixin):
         self.win.Destroy()
         self.win=None
 
-    def done(self):
+    def removeFromParent(self):
         """
         Convenience routine to destroy minibuffer after the event loop
         exits.
@@ -83,7 +83,7 @@ class TextMinibuffer(Minibuffer):
     error = "Bad input."
     
     def createWindow(self):
-        self.win = wx.Panel(self.mode.win, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, self.label)
@@ -107,7 +107,7 @@ class TextMinibuffer(Minibuffer):
                 self.mode.frame.SetStatusText(error)
         except:
             self.mode.frame.SetStatusText(self.error)
-        self.done()
+        self.removeFromParent()
 
 class IntMinibuffer(TextMinibuffer):
     """

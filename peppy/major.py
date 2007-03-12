@@ -393,11 +393,16 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             self.minibuffer.win.Show()
             self.minibuffer.focus()
 
-    def removeMinibuffer(self):
+    def removeMinibuffer(self, detach_only=False):
+        dprint(self.minibuffer)
         if self.minibuffer is not None:
             box=self.GetSizer()
             box.Detach(self.minibuffer.win)
-            self.minibuffer.close()
+            if not detach_only:
+                # for those cases where you still want to keep a
+                # pointer around to the minibuffer and close it later,
+                # use detach_only
+                self.minibuffer.close()
             self.minibuffer=None
             self.Layout()
             self.focus()

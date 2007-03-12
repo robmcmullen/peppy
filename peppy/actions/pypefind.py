@@ -74,20 +74,13 @@ class FindMinibuffer(Minibuffer):
     """
     def createWindow(self):
         # Create the find bar widget.
-        self.win=PypeFindBar(self.mode.win, self)
+        self.win=PypeFindBar(self.mode, self)
         #print "findbar=%s" % self.win
 
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
         # to the text ctrl or combo box of the pype findbar.
         self.win.box1.SetFocus()
-
-    def close(self):
-        # Override the minibuffer's default action and don't destroy
-        # the window here.  Pype's OnCloseBar callback destroys it
-        # after the call to minibuffer.close, and otherwise we end up
-        # destroying it twice.
-        pass
 
     #### PyPE Compatability
 
@@ -106,9 +99,10 @@ class FindMinibuffer(Minibuffer):
         return self.mode.stc
 
     def Unsplit(self):
-        # Pype's idiom for removing the widget from the screen.  Map
-        # it to the minibuffer close method.
-        self.mode.removeMinibuffer()
+        # Pype's idiom for removing the widget from the screen.  It
+        # expects the widget to be removed but not destroyed,
+        # necessitating the detach_only parameter to removeMinibuffer
+        self.mode.removeMinibuffer(detach_only=True)
 
     
 class ReplaceMinibuffer(FindMinibuffer):
@@ -117,7 +111,7 @@ class ReplaceMinibuffer(FindMinibuffer):
     features to the stuff already in the FindMinibuffer parent class.
     """
     def createWindow(self):
-        self.win=PypeReplaceBar(self.mode.win, self)
+        self.win=PypeReplaceBar(self.mode, self)
         self.control=self
 
     def GetPageCount(self):
