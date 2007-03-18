@@ -8,11 +8,11 @@ from cStringIO import StringIO
 import wx
 import wx.aui
 
-from orderer import *
-from trac.core import *
-from debug import *
+from peppy.lib.orderer import *
+from peppy.trac.core import *
+from peppy.debug import *
 
-from menu import *
+from peppy.menu import *
 
 
 class NewFrame(SelectAction):

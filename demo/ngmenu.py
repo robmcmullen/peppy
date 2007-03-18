@@ -2,16 +2,17 @@
 
 import os,sys,time
 up_one=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(up_one)
+print up_one
+sys.path[0:0] = [up_one]
 import wx
 
-from orderer import *
-from trac.core import *
-from debug import *
+from peppy.lib.orderer import *
+from peppy.trac.core import *
+from peppy.debug import *
 
-from menu import *
+from peppy.menu import *
 
-from demos.actions import *
+from actions import *
 
 
 class MyFrame(wx.Frame,debugmixin):
@@ -46,6 +47,7 @@ check the source for this sample to see how to implement them.
                        }
         
         self.SetMenuBar(wx.MenuBar())
+        MenuBarActionMap.debuglevel = 1
         self.setMenumap()
 
     # Methods
@@ -58,7 +60,7 @@ check the source for this sample to see how to implement them.
         wx.Frame.Raise(self)
         self.win.SetFocus()
         
-    def setMenumap(self,majormode=None,minormodes=[]):
+    def setMenumap(self,majormode=[None],minormodes=[]):
         comp_mgr=ComponentManager()
         menuloader=MenuItemLoader(comp_mgr)
         self.menumap=menuloader.load(self,majormode,minormodes)
@@ -66,7 +68,7 @@ check the source for this sample to see how to implement them.
     def switchMode(self,mode):
         self.dprint("Switching to mode %s" % mode)
         self.settings['major mode']=mode
-        self.setMenumap(mode)
+        self.setMenumap([mode])
 
     def getTitle(self):
         return self.title

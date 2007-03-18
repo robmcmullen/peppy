@@ -645,7 +645,13 @@ class MenuBarActionMap(debugmixin):
         for menu in hier.keys():
             assert self.dprint("sorting: %s" % str(menu))
             submenus=hier[menu]['submenus']
-            menus=[submenus[i]['order'] for i in submenus.keys()]
+            assert self.dprint("submenus: %s" % str(submenus))
+            menus = []
+            for i in submenus.keys():
+                if 'order' in submenus[i]:
+                    menus.append(submenus[i]['order'])
+                else:
+                    dprint("submenu %s of %s not ordered" % (i, hier))
             menus.extend(hier[menu]['items'])
             order=Orderer(menus)
             menus=order.sort()
