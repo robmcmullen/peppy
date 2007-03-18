@@ -316,7 +316,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
-        self.frame.SetStatusText("L%d C%d" % (linenum+self.settings.line_number_offset, col+self.settings.column_number_offset),1)
+        self.frame.SetStatusText("L%d C%d F%d" % (linenum+self.settings.line_number_offset, col+self.settings.column_number_offset, self.editwin.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE),1)
         self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:

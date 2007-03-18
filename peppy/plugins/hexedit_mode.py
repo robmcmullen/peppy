@@ -11,6 +11,7 @@ import wx.lib.newevent
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
+from peppy.stcinterface import STCInterface
 
 
 class OpenHexEditor(SelectAction):
@@ -635,7 +636,7 @@ class WaitThread(Thread):
 
 
 
-class HugeTableGrid(Grid.Grid,debugmixin):
+class HugeTableGrid(Grid.Grid, STCInterface, debugmixin):
     debuglevel=0
     
     def __init__(self, parent, stc, format="@4f"):

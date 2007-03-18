@@ -58,6 +58,23 @@ class LineNumbers(ToggleAction):
         if viewer:
             viewer.setLineNumbers(not viewer.settings.line_numbers)
 
+class Folding(ToggleAction):
+    name = _("&Folding")
+    tooltip = _("Toggle folding in this view")
+    icon = wx.ART_TOOLBAR
+
+    def isChecked(self):
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            return viewer.settings.folding
+        return False
+    
+    def action(self, pos=-1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        viewer=self.frame.getActiveMajorMode()
+        if viewer:
+            viewer.setFolding(not viewer.settings.folding)
+
 class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
 
@@ -510,8 +527,10 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         else:
             self.stc.SetMarginWidth(2, 0)
 
+        self.stc.SetProperty("fold", "1")
         self.setWordWrap()
         self.setLineNumbers()
+        self.setFolding()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -530,6 +549,48 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
             self.stc.SetMarginWidth(0,  self.settings.line_number_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
+
+    def setFolding(self,enable=None):
+        if enable is not None:
+            self.settings.folding=enable
+        if self.settings.folding:
+            self.stc.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
+            self.stc.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
+            self.stc.SetMarginSensitive(2, True)
+            self.stc.SetMarginWidth(2, self.settings.folding_margin_width)
+            # Marker definitions from PyPE
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL, wx.stc.STC_MARK_TCORNER,  "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,    wx.stc.STC_MARK_LCORNER,  "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
+            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
+            self.stc.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
+        else:
+            self.stc.SetMarginWidth(2, 0)
+            self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
+
+    def onMarginClick(self, evt):
+        # fold and unfold as needed
+        if evt.GetMargin() == 2:
+            if evt.GetShift() and evt.GetControl():
+                self.stc.FoldAll()
+            else:
+                lineClicked = self.stc.LineFromPosition(evt.GetPosition())
+                if self.stc.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
+                    if evt.GetShift():
+                        self.stc.SetFoldExpanded(lineClicked, True)
+                        self.stc.Expand(lineClicked, True, True, 1)
+                    elif evt.GetControl():
+                        if self.stc.GetFoldExpanded(lineClicked):
+                            self.stc.SetFoldExpanded(lineClicked, False)
+                            self.stc.Expand(lineClicked, False, True, 0)
+                        else:
+                            self.stc.SetFoldExpanded(lineClicked, True)
+                            self.stc.Expand(lineClicked, True, True, 100)
+                    else:
+                        self.stc.ToggleFold(lineClicked)
 
     def styleSTC(self, lang=None):
         """Style the STC using the information in the styling config file.
@@ -618,6 +679,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental","Format",Separator()),
                   ("Fundamental","View",MenuItem(WordWrap)),
                   ("Fundamental","View",MenuItem(LineNumbers)),
+                  ("Fundamental","View",MenuItem(Folding)),
                   ("Fundamental","View",Separator("cmdsep")),
                   ("Fundamental",None,Menu("Cmds").after("Edit")),
                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),

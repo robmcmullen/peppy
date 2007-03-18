@@ -105,6 +105,14 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
+    def GetFoldLevel(self, line):
+        """Return fold level of specified line.
+
+        Return fold level of line, which seems to be the number of
+        spaces used to indent the line, plus an offset.
+        """
+        return wx.stc.STC_FOLDLEVELBASE
+
     def openPostHook(self, fh):
         """Hook called after the initial open of the file.
         
