@@ -54,6 +54,57 @@ class SamplePython(SelectAction):
         self.frame.open("about:sample.py")
 
 
+class PythonReindentMixin(debugmixin):
+    def reindent(self, linenum=None):
+        """Reindent the specified line to the correct level.
+
+        Given a line, use Scintilla's built-in folding to determine
+        the indention level of the current line.
+        """
+        s = self.stc
+        if linenum is None:
+            linenum = s.GetCurrentLine()
+        linestart = s.PositionFromLine(linenum)
+
+        # actual indention of current line
+        ind = s.GetLineIndentation(linenum) # columns
+        pos = s.GetLineIndentPosition(linenum) # absolute character position
+
+        # folding says this should be the current indention
+        fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
+        s.SetTargetStart(linestart)
+        s.SetTargetEnd(pos)
+
+        # get line without indention
+        line = s.GetLine(linenum)[pos-linestart:]
+        dprint(line)
+
+        # the keywords elif or else should be unindented if the
+        # previous line is at the same level
+        style = s.GetStyleAt(pos)
+        if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
+            prev = s.GetLineIndentation(linenum - 1)
+            dprint("prev = %s" % prev)
+            if prev == ind:
+                fold-=4
+
+        a = fold*' '
+        if s.GetUseTabs():
+            a = a.replace(s.GetTabWidth()*' ', '\t')
+        s.ReplaceTarget(a)
+
+class ElectricColon(BufferModificationAction):
+    name = _("Electric Colon")
+    tooltip = _("Indent the current line when a colon is pressed")
+    icon = 'icons/text_indent_rob.png'
+    key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
+
+    def modify(self, mode, pos=-1):
+        mode.stc.ReplaceSelection(":")
+        mode.reindent()
+        pass
+        
 
 class PythonElectricReturnMixin(object):
     def findIndent(self, linenum):
@@ -164,7 +215,8 @@ class PythonElectricReturnMixin(object):
         return max(ind+xtra*s.GetIndent(), 0)
 
 
-class PythonMode(PythonElectricReturnMixin,FundamentalMode):
+class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
+                 FundamentalMode):
     keyword='Python'
     icon='icons/py.ico'
     regex="\.(py|pyx)$"
@@ -172,6 +224,7 @@ class PythonMode(PythonElectricReturnMixin,FundamentalMode):
     start_line_comment = "##"
 
     default_settings = {
+        'tab_style': 'spaces',
         'word_wrap': True,
         'minor_modes': 'pype_funclist,funcmenu,spe_funclist',
         'sample_file': _sample_file,
@@ -234,6 +287,7 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
 ##    implements(IToolBarItemProvider)
+    implements(IKeyboardItemProvider)
 
     def possibleModes(self):
         yield PythonMode
@@ -255,3 +309,9 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
             yield (mode,menu,item)
+    
+    default_keys=(("Python",ElectricColon),
+                  )
+    def getKeyboardItems(self):
+        for mode,action in self.default_keys:
+            yield (mode,action)

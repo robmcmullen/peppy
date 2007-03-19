@@ -320,6 +320,9 @@ class StandardReturnMixin(debugmixin):
         """
         s = self.stc
         linesep = s.getLinesep()
+
+        # reindent current line (if necessary), then process the return
+        self.reindent()
         
         linenum = s.GetCurrentLine()
         pos = s.GetCurrentPos()
@@ -354,6 +357,33 @@ class ElectricReturn(BufferModificationAction):
 
     def modify(self, mode, pos=-1):
         mode.electricReturn()
+
+
+class StandardReindentMixin(debugmixin):
+    def reindent(self, linenum=None):
+        """Reindent the specified line to the correct level.
+
+        Given a line, use Scintilla's built-in folding to determine
+        the indention level of the current line.
+        """
+        s = self.stc
+        if linenum is None:
+            linenum = s.GetCurrentLine()
+        linestart = s.PositionFromLine(linenum)
+
+        # actual indention of current line
+        ind = s.GetLineIndentation(linenum) # columns
+        pos = s.GetLineIndentPosition(linenum) # absolute character position
+
+        # folding says this should be the current indention
+        fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
+        a = fold*' '
+        if s.GetUseTabs():
+            a = a.replace(s.GetTabWidth()*' ', '\t')
+        s.SetTargetStart(linestart)
+        s.SetTargetEnd(pos)
+        s.ReplaceTarget(a)
 
 
 class PasteAtColumn(Paste):
@@ -393,7 +423,8 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class FundamentalMode(MajorMode, BraceHighlightMixin,
-                      StandardCommentMixin, StandardReturnMixin):
+                      StandardCommentMixin, StandardReturnMixin,
+                      StandardReindentMixin):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -411,6 +442,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
 
     default_settings = {
         'tab_size': 4,
+        'tab_style': 'mixed',
         'line_numbers': True,
         'line_number_margin_width': 40,
         'symbols': False,
@@ -531,6 +563,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         self.setWordWrap()
         self.setLineNumbers()
         self.setFolding()
+        self.setTabStyle()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -570,6 +603,16 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         else:
             self.stc.SetMarginWidth(2, 0)
             self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
+
+    def setTabStyle(self):
+        styles = ['ignore', 'consistent', 'mixed', 'tabs', 'spaces']
+        if self.settings.tab_style in styles:
+            i = styles.index(self.settings.tab_style)
+            self.stc.SetProperty('tab.timmy.whinge.level', str(i))
+            if i==4:
+                self.stc.SetUseTabs(False)
+            else:
+                self.stc.SetUseTabs(True)
 
     def onMarginClick(self, evt):
         # fold and unfold as needed
