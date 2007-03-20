@@ -363,6 +363,42 @@ class StandardReindentMixin(debugmixin):
     def reindent(self, linenum=None):
         """Reindent the specified line to the correct level.
 
+        Given a line, indent to the previous line
+        """
+        s = self.stc
+        if linenum is None:
+            linenum = s.GetCurrentLine()
+        if linenum == 0:
+            # first line is always indented correctly
+            return
+        
+        linestart = s.PositionFromLine(linenum)
+
+        # actual indention of current line
+        ind = s.GetLineIndentation(linenum) # columns
+        pos = s.GetLineIndentPosition(linenum) # absolute character position
+
+        # look at indention of previous line
+        prevstart = s.PositionFromLine(linenum - 1)
+        prevind = s.GetLineIndentation(linenum - 1) # columns
+        prevpos = s.GetLineIndentPosition(linenum - 1)
+        dprint("ind = %s (char num=%d), prev ind=%s (char num = %d)" % (ind, pos, prevind, prevpos))
+        prevline = s.GetTextRange(prevstart, linestart)
+        if len(prevline.strip()) == 0:
+            # previous line is blank, so leave the indention
+            return
+
+        # previous line is not blank, so indent line to previous
+        # line's level
+        s.SetTargetStart(linestart)
+        s.SetTargetEnd(pos)
+        s.ReplaceTarget(s.GetTextRange(prevstart, prevpos))
+
+
+class FoldingReindentMixin(debugmixin):
+    def reindent(self, linenum=None):
+        """Reindent the specified line to the correct level.
+
         Given a line, use Scintilla's built-in folding to determine
         the indention level of the current line.
         """
@@ -385,6 +421,19 @@ class StandardReindentMixin(debugmixin):
         s.SetTargetEnd(pos)
         s.ReplaceTarget(a)
 
+
+class Reindent(BufferModificationAction):
+    name = _("Reindent")
+    tooltip = _("Reindent a line or region")
+    icon = 'icons/text_indent_rob.png'
+    key_bindings = {'default': 'M-TAB',}
+
+    def modify(self, mode, pos=-1):
+        mode.reindent()
+        s = mode.stc
+        linenum = s.GetCurrentLine()
+        pos = s.GetLineIndentPosition(linenum) # absolute character position
+        s.GotoPos(pos)
 
 class PasteAtColumn(Paste):
     name = _("Paste at Column")
@@ -727,6 +776,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental",None,Menu("Cmds").after("Edit")),
                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),
                   ("Fundamental","Cmds",MenuItem(ShiftRight)),
+                  ("Fundamental","Cmds",MenuItem(Reindent)),
                   ("Fundamental","Cmds",Separator("shift").last()),
                   ("Fundamental","Cmds",MenuItem(CommentRegion)),
                   )

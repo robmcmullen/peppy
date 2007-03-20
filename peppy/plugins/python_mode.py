@@ -72,7 +72,6 @@ class PythonReindentMixin(debugmixin):
 
         # folding says this should be the current indention
         fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
-        dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
         s.SetTargetStart(linestart)
         s.SetTargetEnd(pos)
 
@@ -83,6 +82,7 @@ class PythonReindentMixin(debugmixin):
         # the keywords elif or else should be unindented if the
         # previous line is at the same level
         style = s.GetStyleAt(pos)
+        dprint("linenum=%d pos=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, style, ind, fold, repr(line)))
         if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
             prev = s.GetLineIndentation(linenum - 1)
             dprint("prev = %s" % prev)
@@ -106,7 +106,9 @@ class ElectricColon(BufferModificationAction):
         pass
         
 
-class PythonElectricReturnMixin(object):
+class PythonElectricReturnMixin(debugmixin):
+    debuglevel = 0
+    
     def findIndent(self, linenum):
         s=self.stc
 
@@ -114,18 +116,20 @@ class PythonElectricReturnMixin(object):
         lineend = s.GetLineEndPosition(linenum)
         line = s.GetTextRange(linestart, lineend)
         ind = s.GetLineIndentation(linenum)
-
+        assert self.dprint("line (%d-%d) = %s" % (linestart, lineend, repr(line)))
         xtra = 0
         colon = ord(':')
         
         if (line.find(':')>-1):
+            assert self.dprint("found a ':'")
             for i in xrange(linestart, lineend):
                 styl = s.GetStyleAt(i)
-                #assert self.dprint(styl, s.GetCharAt(i))
+                assert self.dprint("pos=%d char=%s style=%d" % (i, repr(s.GetCharAt(i)), styl))
                 if not xtra:
                     if (styl==10) and (s.GetCharAt(i) == colon):
                         xtra = 1
                 elif (styl == 1):
+                    assert self.dprint("in comment")
                     #it is a comment, ignore the character
                     pass
                 elif (styl == 0) and (s.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
@@ -212,6 +216,7 @@ class PythonElectricReturnMixin(object):
             if (ls[:6] == 'return') or (ls[:4] == 'pass') or (ls[:5] == 'break') or (ls[:8] == 'continue'):
                 xtra = -1
 
+        dprint("indent = %d" % int(ind+xtra*s.GetIndent()))
         return max(ind+xtra*s.GetIndent(), 0)
 
 
@@ -229,7 +234,7 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
         'minor_modes': 'pype_funclist,funcmenu,spe_funclist',
         'sample_file': _sample_file,
         'stc_lexer': wx.stc.STC_LEX_PYTHON,
-        'stc_keywords': 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False self',
+        'stc_keywords': 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self',
         'stc_boa_braces': "{'good': (9, 12), 'bad': (10, 12)}",
         'stc_boa_style_names': {wx.stc.STC_P_DEFAULT: 'Default',
                                 wx.stc.STC_P_COMMENTLINE: 'Comment',

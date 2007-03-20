@@ -132,6 +132,12 @@ class STCInterface(object):
         """Write to filehandle, converting as necessary"""
         pass
 
+    def showStyle(self, linenum=None):
+        """Debugging routine to show the styling information on a line.
+
+        Print styling information to stdout to aid in debugging.
+        """
+        pass
 
 class STCProxy(object):
     """Proxy object to defer requests to a real STC.
@@ -390,6 +396,24 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         fh.close()
         self.detectLineEndings()
+
+    def showStyle(self, linenum=None):
+        if linenum is None:
+            linenum = self.GetCurrentLine()
+
+        linestart = self.PositionFromLine(linenum)
+
+        # actual indention of current line
+        ind = self.GetLineIndentation(linenum) # columns
+        pos = self.GetLineIndentPosition(linenum) # absolute character position
+        
+        # folding says this should be the current indention
+        fold = self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        
+        # get line without indention
+        line = self.GetLine(linenum)
+        for i in range(len(line)):
+            print "pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) )
 
 
 class PeppySTC(PeppyBaseSTC):

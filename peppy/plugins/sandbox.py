@@ -47,6 +47,17 @@ class FastProgressBarTest(SlowProgressBarTest):
     name = "Fast test of the progress bar"
     delay = .01
 
+class ShowStyles(SelectAction):
+    name = _("Show Line Style")
+    tooltip = _("Show the styling information of the current line")
+    key_bindings = {'default': 'M-S',}
+    
+    def action(self, pos=-1):
+        mode = self.frame.getActiveMajorMode()
+        if mode:
+            mode.stc.showStyle()
+
+
 class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     """Plugin to register sandbox tests.
     """
@@ -55,6 +66,7 @@ class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(FastProgressBarTest)),
                   (None,"Test",MenuItem(SlowProgressBarTest)),
+                  (None,"Test",MenuItem(ShowStyles)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
