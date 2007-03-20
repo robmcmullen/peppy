@@ -412,8 +412,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         
         # get line without indention
         line = self.GetLine(linenum)
+        print "linenum=%d fold=%d cursor=%d line=%s" % (linenum, fold, self.GetCurrentPos(), repr(line))
         for i in range(len(line)):
-            print "pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) )
+            print "  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) )
 
 
 class PeppySTC(PeppyBaseSTC):

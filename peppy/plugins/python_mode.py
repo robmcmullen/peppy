@@ -72,6 +72,8 @@ class PythonReindentMixin(debugmixin):
 
         # folding says this should be the current indention
         fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        if fold % s.GetIndent() != 0:
+            fold += (s.GetIndent() - fold % s.GetIndent())
         s.SetTargetStart(linestart)
         s.SetTargetEnd(pos)
 
@@ -87,7 +89,7 @@ class PythonReindentMixin(debugmixin):
             prev = s.GetLineIndentation(linenum - 1)
             dprint("prev = %s" % prev)
             if prev == ind:
-                fold-=4
+                fold-=s.GetIndent()
 
         a = fold*' '
         if s.GetUseTabs():
@@ -101,7 +103,12 @@ class ElectricColon(BufferModificationAction):
     key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
 
     def modify(self, mode, pos=-1):
-        mode.stc.ReplaceSelection(":")
+        s = mode.stc
+        s.ReplaceSelection(":")
+        # folding info not automatically updated after a Replace, so
+        # do it manually
+        linestart = s.PositionFromLine(s.GetCurrentLine())
+        s.Colourise(linestart, s.GetSelectionEnd())
         mode.reindent()
         pass
         

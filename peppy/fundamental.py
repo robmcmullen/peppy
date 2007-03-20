@@ -429,11 +429,23 @@ class Reindent(BufferModificationAction):
     key_bindings = {'default': 'M-TAB',}
 
     def modify(self, mode, pos=-1):
-        mode.reindent()
         s = mode.stc
+
+        # save cursor information so the cursor can be maintained at
+        # the same relative location in the text after the indention
         linenum = s.GetCurrentLine()
-        pos = s.GetLineIndentPosition(linenum) # absolute character position
-        s.GotoPos(pos)
+        before = s.GetLineIndentPosition(linenum)
+        pos = s.GetCurrentPos()
+        
+        mode.reindent()
+
+        # place cursor in same relative location or on first non-blank
+        # character if cursor was before any non-blank char
+        after = s.GetLineIndentPosition(linenum)
+        if pos < before:
+            s.GotoPos(after)
+        else:
+            s.GotoPos(pos - before + after)
 
 class PasteAtColumn(Paste):
     name = _("Paste at Column")

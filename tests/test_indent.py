@@ -14,7 +14,6 @@ def prepareSTC(stc, pair):
     before, after = pair
     print "*** before ***\n%s" % before
     cursor = before.find("|")
-    print "cursor at location %d" % cursor
     stc.SetText(before)
 
     # change "|" to the cursor
@@ -96,6 +95,7 @@ line at column zero
 class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonReindentMixin):
     def setUp(self):
         self.stc = getSTC(lexer=wx.stc.STC_LEX_PYTHON)
+        self.reindentAction = Reindent(self)
 
     def testReturn(self):
         tests = """\
@@ -128,11 +128,35 @@ if blah:
     pass
 else:|
 --------
+if blah:
+  pass|
+--
+if blah:
+    pass|
+--------
+if blah:
+  pa|ss
+--
+if blah:
+    pa|ss
+--------
+if blah:
+  |  pass
+--
+if blah:
+    |pass
+--------
+if blah:
+ | pass
+--
+if blah:
+    |pass
+--------
 """
 
         for test in splittests(tests):
             prepareSTC(self.stc, test)
             self.stc.showStyle()
-            self.reindent()
+            self.reindentAction.modify(self)
             self.stc.showStyle()
             assert checkSTC(self.stc, test)
