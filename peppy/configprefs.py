@@ -139,7 +139,7 @@ def parents(c, seen=None):
 
 
 parentclasses={}
-skipclasses=['debugmixin','ClassSettings','ClassSettingsMixin','object']
+skipclasses=['debugmixin','ClassSettings','object']
 
 def getClassHierarchy(klass,debug=0):
     """Get class hierarchy of a class using global class cache.
@@ -157,7 +157,7 @@ def getClassHierarchy(klass,debug=0):
         hierarchy=parentclasses[klass]
         if debug: print "Found class hierarchy: %s" % hierarchy
     else:
-        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__module__.startswith('wx.')]
+        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__name__.endswith('Mixin') and not k.__module__.startswith('wx.')]
         if debug: print "Created class hierarchy: %s" % hierarchy
         parentclasses[klass]=hierarchy
     return hierarchy
