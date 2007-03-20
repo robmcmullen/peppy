@@ -249,6 +249,7 @@ class Buffer(debugmixin):
                 saveas=url
             fh=GetWriter(saveas)
             self.stc.writeTo(fh)
+            fh.close()
             self.stc.SetSavePoint()
             self.modified=False
             self.readonly = False
