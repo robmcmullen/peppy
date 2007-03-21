@@ -511,6 +511,14 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         'folding': False,
         'folding_margin_width': 16,
         'word_wrap': False,
+        'backspace_unindents': True,
+        'indentation_guides': True,
+        'highlight_column': 30,
+        'edge_column': 80,
+        'edge_indicator': 'line',
+        'caret_blink_rate': 0,
+        'caret_width': 2,
+        'caret_line_highlight': False,
         'sample_file': "Fundamental mode is the base for all other modes that use the STC to view text.",
         'has_stc_styling': True,
         'stc_lexer': wx.stc.STC_LEX_NULL,
@@ -571,14 +579,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
                 self.settings.has_stc_styling = False
                 self.styleSTC('text')
 
-    def createWindowPostHook(self):
-        # SetIndent must be called whenever a new document is loaded
-        # into the STC
-        self.stc.SetIndent(self.settings.tab_size)
-        #assert self.dprint("indention=%d" % self.stc.GetIndent())
-
-        self.stc.SetIndentationGuides(1)
-
     def createStatusIcons(self):
         linesep = self.stc.getLinesep()
         if linesep == '\r\n':
@@ -621,10 +621,16 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
             self.stc.SetMarginWidth(2, 0)
 
         self.stc.SetProperty("fold", "1")
+        self.stc.SetBackSpaceUnIndents(self.settings.backspace_unindents)
+        self.stc.SetIndentationGuides(self.settings.indentation_guides)
+        self.stc.SetHighlightGuide(self.settings.highlight_column)
+
         self.setWordWrap()
         self.setLineNumbers()
         self.setFolding()
         self.setTabStyle()
+        self.setEdgeStyle()
+        self.setCaretStyle()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -666,6 +672,7 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
             self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
 
     def setTabStyle(self):
+        self.stc.SetIndent(self.settings.tab_size)
         styles = ['ignore', 'consistent', 'mixed', 'tabs', 'spaces']
         if self.settings.tab_style in styles:
             i = styles.index(self.settings.tab_style)
@@ -674,6 +681,22 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
                 self.stc.SetUseTabs(False)
             else:
                 self.stc.SetUseTabs(True)
+
+    def setEdgeStyle(self):
+        if self.settings.edge_column > 0:
+            self.stc.SetEdgeColumn(self.settings.edge_column)
+            if self.settings.edge_indicator == 'line':
+                self.stc.SetEdgeMode(wx.stc.STC_EDGE_LINE)
+            else:
+                self.stc.SetEdgeMode(wx.stc.STC_EDGE_BACKGROUND)
+        else:
+            self.stc.SetEdgeColumn(0)
+            self.stc.SetEdgeMode(wx.stc.STC_EDGE_NONE)
+
+    def setCaretStyle(self):
+        self.stc.SetCaretPeriod(self.settings.caret_blink_rate)
+        self.stc.SetCaretLineVisible(self.settings.caret_line_highlight)
+        self.stc.SetCaretWidth(self.settings.caret_width)
 
     def onMarginClick(self, evt):
         # fold and unfold as needed
