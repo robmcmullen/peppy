@@ -105,14 +105,6 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-    def GetFoldLevel(self, line):
-        """Return fold level of specified line.
-
-        Return fold level of line, which seems to be the number of
-        spaces used to indent the line, plus an offset.
-        """
-        return wx.stc.STC_FOLDLEVELBASE
-
     def openPostHook(self, fh):
         """Hook called after the initial open of the file.
         
@@ -138,6 +130,30 @@ class STCInterface(object):
         Print styling information to stdout to aid in debugging.
         """
         pass
+
+    def GetFoldLevel(self, line):
+        """Return fold level of specified line.
+
+        Return fold level of line, which seems to be the number of
+        spaces used to indent the line, plus an offset.
+        """
+        return wx.stc.STC_FOLDLEVELBASE
+
+    def GetFoldColumn(self, line):
+        """Return column number of folding.
+
+        Return column number of the current fold level.
+        """
+        return 0
+
+    def GetPrevLineIndentation(self, line):
+        """Get the indentation of the line before the specified line.
+
+        Return a tuple containing the number of columns of indentation
+        of the first non-blank line before the specified line, and the
+        line number of the line that it found.
+        """
+        return 0, -1
 
 class STCProxy(object):
     """Proxy object to defer requests to a real STC.
@@ -416,6 +432,22 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         for i in range(len(line)):
             print "  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) )
 
+    # --- line indentation stuff
+    
+    def GetFoldColumn(self, linenum):
+        return self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+
+    def GetPrevLineIndentation(self, linenum):
+        for i in xrange(linenum-1, -1, -1):
+            indent = self.GetLineIndentPosition(i)
+            last = self.GetLineEndPosition(i)
+            if indent<last:
+                col = self.GetLineIndentation(i)
+                print("line=%d indent=%d (col=%d) last=%d" % (i, indent, col, last))
+                return col, i
+            print("line=%d indent=%d last=%d" % (i, indent, last))
+        return 0, -1
+            
 
 class PeppySTC(PeppyBaseSTC):
     """

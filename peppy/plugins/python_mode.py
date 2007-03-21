@@ -58,7 +58,8 @@ class PythonReindentMixin(debugmixin):
     def reindent(self, linenum=None):
         """Reindent the specified line to the correct level.
 
-        Given a line, use Scintilla's built-in folding to determine
+        Given a line, use Scintilla's built-in folding and a whole
+        bunch of heuristics based on the previous lines to determine
         the indention level of the current line.
         """
         s = self.stc
@@ -70,12 +71,47 @@ class PythonReindentMixin(debugmixin):
         ind = s.GetLineIndentation(linenum) # columns
         pos = s.GetLineIndentPosition(linenum) # absolute character position
 
-        # folding says this should be the current indention
-        fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
-        if fold % s.GetIndent() != 0:
-            fold += (s.GetIndent() - fold % s.GetIndent())
+        # the target to be replaced is the leading indention of the
+        # current line
         s.SetTargetStart(linestart)
         s.SetTargetEnd(pos)
+
+        # folding says this should be the current indention.  The
+        # limitation of Scintilla's folding logic, though, is that
+        # folding tells the indention position of the line as it is,
+        # not as it should be for pythonic consistancy.  For instance,
+        # using GetFoldColumn on each line in the following code:
+        #
+        # if blah:
+        #      stuff = 0
+        #          things = 1
+        #
+        # reports fold levels of 0, 4, and 8, even though for valid
+        # python the 3rd line should be at fold level 4.  So, we're
+        # forced to add a whole bunch of additional logic to figure
+        # out which indention level should be used.
+        fold = s.GetFoldColumn(linenum)
+
+        # get indention of previous (non-blank) line
+        prev, prevline = s.GetPrevLineIndentation(linenum)
+        if fold>=prev:
+            # OK, line is indented with respect to the previous line,
+            # so we need to honor the fact that it is indented.
+            # However, it may still be indented too much or too
+            # little.
+
+            # FIXME: this doesn't handle comments
+            line = s.GetLine(prevline).rstrip()
+            print "previous line %d = %s" % (prevline, line)
+            if line.endswith(':'):
+                fold = prev + s.GetIndent()
+            else:
+                fold = prev
+        elif fold > prev - s.GetIndent():
+            # line is partially indented, but not at the usual indent
+            # level.  We force this to be indented to match the indent
+            # level
+            fold = prev
 
         # get line without indention
         line = s.GetLine(linenum)[pos-linestart:]
@@ -86,7 +122,6 @@ class PythonReindentMixin(debugmixin):
         style = s.GetStyleAt(pos)
         dprint("linenum=%d pos=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, style, ind, fold, repr(line)))
         if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
-            prev = s.GetLineIndentation(linenum - 1)
             dprint("prev = %s" % prev)
             if prev == ind:
                 fold-=s.GetIndent()

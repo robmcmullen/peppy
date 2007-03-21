@@ -426,7 +426,7 @@ class Reindent(BufferModificationAction):
     name = _("Reindent")
     tooltip = _("Reindent a line or region")
     icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'M-TAB',}
+    key_bindings = {'default': 'C-TAB',}
 
     def modify(self, mode, pos=-1):
         s = mode.stc

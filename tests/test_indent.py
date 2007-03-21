@@ -97,6 +97,11 @@ class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonRei
         self.stc = getSTC(lexer=wx.stc.STC_LEX_PYTHON)
         self.reindentAction = Reindent(self)
 
+    def checkReturn(self, pair):
+        prepareSTC(self.stc, pair)
+        self.electricReturn()
+        assert checkSTC(self.stc, pair)
+
     def testReturn(self):
         tests = """\
 class blah:|
@@ -114,11 +119,16 @@ class blah:
 """
 
         for test in splittests(tests):
-            prepareSTC(self.stc, test)
-            self.electricReturn()
-            assert checkSTC(self.stc, test)
-            
-    def testReindent(self):
+            yield self.checkReturn, test
+
+    def checkReindentAction(self, pair):
+        prepareSTC(self.stc, pair)
+        self.stc.showStyle()
+        self.reindentAction.modify(self)
+        self.stc.showStyle()
+        assert checkSTC(self.stc, pair)
+
+    def testReindentAction(self):
         tests = """\
 if blah:
     pass
@@ -130,6 +140,12 @@ else:|
 --------
 if blah:
   pass|
+--
+if blah:
+    pass|
+--------
+if blah:
+pass|
 --
 if blah:
     pass|
@@ -152,11 +168,71 @@ if blah:
 if blah:
     |pass
 --------
+if blah:
+  |            pass
+--
+if blah:
+    |pass
+--------
+blank lines between if and the indented region
+if blah:
+
+
+
+  |            pass
+--
+blank lines between if and the indented region
+if blah:
+
+
+
+    |pass
+--------
+blank lines have whitespace in them
+if blah:
+         
+
+                       
+  |            pass
+--
+blank lines have whitespace in them
+if blah:
+         
+
+                       
+    |pass
+--------
+blank lines have whitespace in them
+        if blah:
+         
+
+                       
+  |            pass
+--
+blank lines have whitespace in them
+        if blah:
+         
+
+                       
+            |pass
+--------
+if blah:
+    stuff
+  |            pass
+--
+if blah:
+    stuff
+    |pass
+--------
+if blah:
+    stuff
+  |pass
+--
+if blah:
+    stuff
+    |pass
+--------
 """
 
         for test in splittests(tests):
-            prepareSTC(self.stc, test)
-            self.stc.showStyle()
-            self.reindentAction.modify(self)
-            self.stc.showStyle()
-            assert checkSTC(self.stc, test)
+            yield self.checkReindentAction, test
