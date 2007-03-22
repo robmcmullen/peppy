@@ -371,7 +371,7 @@ class SettingsProxy(debugmixin):
         return vals
 
     def _getMRO(self):
-        return [cls for cls in GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]]
+        return [cls for cls in GlobalSettings.class_hierarchy[self.__dict__['_startSearch']]]
         
         
 def ClassSettingsProxy(cls):
