@@ -39,7 +39,7 @@ class PreferenceTableModel(wx.grid.PyGridTableBase):
         self.normal=wx.grid.GridCellAttr()
         self.normal.SetBackgroundColour("white")
         self.from_parent=wx.grid.GridCellAttr()
-        self.from_parent.SetBackgroundColour("gray70")
+        self.from_parent.SetBackgroundColour(wx.Color(240,240,240))
 
     def setClass(self, grid, cls):
         oldrows = self.GetNumberRows()
@@ -50,7 +50,7 @@ class PreferenceTableModel(wx.grid.PyGridTableBase):
                 all.update(parent.default_settings.keys())
             self.settings = list(all)
             self.settings.sort()
-            self.local_settings = set(cls.settings._getAll().keys()) - all
+            self.local_settings = set(cls.default_settings.keys())
             for setting in self.settings:
                 dprint("  %s = %s" % (setting, cls.settings._get(setting)))
         else:
@@ -130,12 +130,18 @@ class PreferenceTable(wx.grid.Grid):
         
 
 class PreferenceTree(wx.TreeCtrl):
-    def __init__(self, parent, style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS):
+    def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
+        if wx.Platform != '__WXMSW__':
+            style |= wx.TR_HIDE_ROOT
         wx.TreeCtrl.__init__(self, parent, -1, size=(200,400), style=style)
 
-        self.AddRoot("The Root Item")
-        self.SetPyData(self.GetRootItem(), None)
         getIconStorage().assign(self)
+        self.AddRoot("Preferences")
+        self.SetPyData(self.GetRootItem(), None)
+        self.SetItemImage(self.GetRootItem(), getIconStorage("icons/wrench.png"))
+
+    def ExpandAll(self):
+        self.ExpandAllChildren(self.GetFirstVisibleItem())
 
     def FindParent(self, mro, parent=None):
         if parent is None:
@@ -156,6 +162,8 @@ class PreferenceTree(wx.TreeCtrl):
         parent = self.FindParent(mro[1:])
         if parent is not None:
             item = self.AppendItem(parent, mro[0].__name__)
+            if hasattr(cls, 'icon'):
+                self.SetItemImage(item, getIconStorage(cls.icon))
             self.SetPyData(item, cls)
 
 ##        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnItemExpanded, self.tree)
