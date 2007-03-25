@@ -1,12 +1,13 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os,sys,re
+import os, sys, re, glob
 
 import wx
 
 from peppy.debug import *
 
-__all__ = ['getIconStorage', 'getIconBitmap', 'addIconBitmap']
+__all__ = ['getIconStorage', 'getIconBitmap', 'addIconBitmap',
+           'addIconsFromDirectory']
 
 #### Icons
 
@@ -26,6 +27,18 @@ class IconStorage(debugmixin):
         assert self.dprint("ICON=%s" % str(icon))
         self.map[filename]=icon
 
+    def load(self, path):
+        if os.path.exists(path) and wx.Image.CanRead(path):
+            img = wx.ImageFromBitmap(wx.Bitmap(path))
+        else:
+            # return placeholder icon if a real one isn't found
+            img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16)))
+                
+        img.Rescale(16,16)
+        assert self.dprint(img)
+        bitmap=wx.BitmapFromImage(img)
+        return bitmap
+
     def get(self, filename, dir=None):
         if filename not in self.map:
             if dir is not None:
@@ -35,15 +48,7 @@ class IconStorage(debugmixin):
                 path = filename
             else:
                 path = os.path.join(self.basedir,filename)
-            if os.path.exists(path):
-                img = wx.ImageFromBitmap(wx.Bitmap(path))
-            else:
-                # return placeholder icon if a real one isn't found
-                img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16)))
-                
-            img.Rescale(16,16)
-            assert self.dprint(img)
-            bitmap=wx.BitmapFromImage(img)
+            bitmap = self.load(path)
             self.set(filename, bitmap)
         else:
             assert self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
@@ -82,3 +87,10 @@ def addIconBitmap(name, data):
     store = getIconStorage()
     store.set(name, data)
     
+def addIconsFromDirectory(path):
+    store = getIconStorage()
+    files = glob.glob(os.path.join(path,'*'))
+    for path in files:
+        filename = os.path.basename(path)
+        bitmap = store.load(path)
+        store.set(filename, bitmap)
