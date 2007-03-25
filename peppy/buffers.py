@@ -724,7 +724,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         assert self.dprint("after addViewer")
 
     def titleBuffer(self):
-        self.open('about:title.html')
+        self.open('about:peppy')
         
     def open(self,filename,newTab=True,mode=None):
         buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultmode=mode)

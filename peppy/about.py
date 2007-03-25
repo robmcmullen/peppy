@@ -85,7 +85,7 @@ class AboutHandler(urllib2.BaseHandler):
 SetAbout('untitled','')
 SetAbout('blank','')
 
-SetAbout('title.html',"""\
+SetAbout('peppy',"""\
 <!-- -*- HTMLView -*- -->
 <h2>%(prog)s %(version)s</h2>
 
