@@ -851,6 +851,17 @@ class BufferApp(wx.App,debugmixin):
     def showFrame(self,frame):
         frame.Show(True)
 
+    def getTopFrame(self):
+        frame = self.GetTopWindow()
+        if not isinstance(frame, BufferFrame):
+            # FIXME: can this ever happen?
+            dprint("Top window not a BufferFrame!")
+            for frame in wx.GetTopLevelWindows():
+                if isinstance(frame, BufferFrame):
+                    return frame
+            dprint("No top level BufferFrames found!")
+        return frame
+           
     def enableFrames(self):
         """Force all frames to update their enable status.
 

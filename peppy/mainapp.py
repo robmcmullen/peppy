@@ -14,6 +14,8 @@ from debug import *
 from trac.core import *
 import mainmenu
 
+from peppy.lib.loadfileserver import LoadFileProxy
+
 
 class KeyboardConf(ClassSettings, debugmixin):
     """Loader for keyboard configurations.
@@ -181,6 +183,10 @@ class Peppy(BufferApp, ClassSettings):
                             'recentfiles':'recentfiles.txt',
                             },
                    }
+    default_settings = {
+        'listen_port': 55555,
+        'one_instance': True,
+        }
     
     def OnInit(self):
         """Main application initialization.
@@ -273,10 +279,29 @@ class Peppy(BufferApp, ClassSettings):
                 menu.append(kls)
         #sys.exit()
 
+    def startServer(self):
+        if self.settings.one_instance:
+            self.server = LoadFileProxy(port=self.settings.listen_port)
+            if not self.server.find():
+                self.server.start(self)
+        else:
+            self.server = None
+
+    def otherInstanceRunning(self):
+        return self.server is not None and self.server.socket is not None
+
+    def sendToOtherInstance(self, filename):
+        self.server.send(filename)
+
+    def loadFile(self, filename):
+        frame = self.getTopFrame()
+        frame.open(filename)
+        
     def loadConfigPostHook(self):
         """
         Main driver for any functions that need to look in the config file.
         """
+        self.startServer()
         self.autoloadPlugins()
         self.parseConfigPlugins()
         KeyboardConf.load()
@@ -338,6 +363,12 @@ def run(options={},args=None):
 
     if options.sample_config:
         KeyboardConf.configDefault()
+        sys.exit()
+
+    if app.otherInstanceRunning():
+        if args:
+            for filename in args:
+                app.sendToOtherInstance(filename)
         sys.exit()
     
     frame=BufferFrame(app)
