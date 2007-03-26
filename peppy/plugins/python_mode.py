@@ -14,7 +14,7 @@ from peppy import *
 from peppy.about import SetAbout
 from peppy.menu import *
 from peppy.major import *
-from peppy.fundamental import FundamentalMode
+from peppy.fundamental import *
 
 _sample_file='''\
 #!/usr/bin/env python
@@ -54,8 +54,8 @@ class SamplePython(SelectAction):
         self.frame.open("about:sample.py")
 
 
-class PythonReindentMixin(debugmixin):
-    def reindent(self, linenum=None):
+class PythonReindentMixin(ReindentBase):
+    def getReindentString(self, linenum, linestart, pos, before, col, ind):
         """Reindent the specified line to the correct level.
 
         Given a line, use Scintilla's built-in folding and a whole
@@ -63,19 +63,7 @@ class PythonReindentMixin(debugmixin):
         the indention level of the current line.
         """
         s = self.stc
-        if linenum is None:
-            linenum = s.GetCurrentLine()
-        linestart = s.PositionFromLine(linenum)
-
-        # actual indention of current line
-        ind = s.GetLineIndentation(linenum) # columns
-        pos = s.GetLineIndentPosition(linenum) # absolute character position
-
-        # the target to be replaced is the leading indention of the
-        # current line
-        s.SetTargetStart(linestart)
-        s.SetTargetEnd(pos)
-
+        
         # folding says this should be the current indention.  The
         # limitation of Scintilla's folding logic, though, is that
         # folding tells the indention position of the line as it is,
@@ -114,22 +102,20 @@ class PythonReindentMixin(debugmixin):
             fold = prev
 
         # get line without indention
-        line = s.GetLine(linenum)[pos-linestart:]
+        line = s.GetLine(linenum)[before-linestart:]
         dprint(line)
 
         # the keywords elif or else should be unindented if the
         # previous line is at the same level
-        style = s.GetStyleAt(pos)
-        dprint("linenum=%d pos=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, style, ind, fold, repr(line)))
+        style = s.GetStyleAt(before)
+        dprint("linenum=%d cursor=%d before=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, before, style, ind, fold, repr(line)))
         if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
             dprint("prev = %s" % prev)
             if prev == ind:
                 fold-=s.GetIndent()
 
-        a = fold*' '
-        if s.GetUseTabs():
-            a = a.replace(s.GetTabWidth()*' ', '\t')
-        s.ReplaceTarget(a)
+        return s.GetIndentString(fold)
+
 
 class ElectricColon(BufferModificationAction):
     name = _("Electric Colon")

@@ -5,6 +5,9 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
+import peppy.debug
+peppy.debug.logfh = sys.stdout
+
 from peppy.stcinterface import PeppyBaseSTC
 
 class MockWX(object):

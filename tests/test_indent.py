@@ -57,6 +57,11 @@ class TestFundamentalIndent(StandardReturnMixin, StandardReindentMixin):
     def setUp(self):
         self.stc = getSTC(lexer=wx.stc.STC_LEX_NULL)
 
+    def checkReturn(self, pair):
+        prepareSTC(self.stc, pair)
+        self.electricReturn()
+        assert checkSTC(self.stc, pair)
+
     def testReturn(self):
         tests = """\
 line at column zero|
@@ -84,13 +89,37 @@ line at column zero
 
     line at column 4
     |
+--------
+line at column zero
+
+    line at column 4
+    |
+--
+line at column zero
+
+    line at column 4
+    
+    |
+--------
+line at column zero
+
+    line at column 4
+
+
+back at column zero|
+--
+line at column zero
+
+    line at column 4
+
+
+back at column zero
+|
 -------
 """
 
         for test in splittests(tests):
-            prepareSTC(self.stc, test)
-            self.electricReturn()
-            assert checkSTC(self.stc, test)
+            yield self.checkReturn, test
 
 class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonReindentMixin):
     def setUp(self):
@@ -116,6 +145,15 @@ class blah:
     def __init__():
         |
 --------
+class blah:
+    def __init__():
+        |
+--
+class blah:
+    def __init__():
+        
+        |
+--------
 """
 
         for test in splittests(tests):
@@ -123,9 +161,9 @@ class blah:
 
     def checkReindentAction(self, pair):
         prepareSTC(self.stc, pair)
-        self.stc.showStyle()
+        #self.stc.showStyle()
         self.reindentAction.modify(self)
-        self.stc.showStyle()
+        #self.stc.showStyle()
         assert checkSTC(self.stc, pair)
 
     def testReindentAction(self):

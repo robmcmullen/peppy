@@ -322,10 +322,10 @@ class StandardReturnMixin(debugmixin):
         linesep = s.getLinesep()
 
         # reindent current line (if necessary), then process the return
-        self.reindent()
+        pos = self.reindent()
         
         linenum = s.GetCurrentLine()
-        pos = s.GetCurrentPos()
+        #pos = s.GetCurrentPos()
         col = s.GetColumn(pos)
         linestart = s.PositionFromLine(linenum)
         line = s.GetLine(linenum)[:pos-linestart]
@@ -333,21 +333,19 @@ class StandardReturnMixin(debugmixin):
         #get info about the current line's indentation
         ind = s.GetLineIndentation(linenum)
 
-        dprint("format = %s ind = '%s'" % (repr(linesep), ind)) 
+        dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
 
+        s.SetTargetStart(pos)
+        s.SetTargetEnd(pos)
         if col <= ind:
-            if s.GetUseTabs():
-                s.ReplaceSelection(linesep+(col*' ').replace(s.GetTabWidth()*' ', '\t'))
-            else:
-                s.ReplaceSelection(linesep+(col*' '))
+            newline = linesep+s.GetIndentString(col)
         elif not pos:
-            s.ReplaceSelection(linesep)
+            newline = linesep
         else:
             ind = self.findIndent(linenum)
-            a = ind*' '
-            if s.GetUseTabs():
-                a = a.replace(s.GetTabWidth()*' ', '\t')
-            s.ReplaceSelection(linesep+a)
+            newline = linesep+s.GetIndentString(ind)
+        s.ReplaceTarget(newline)
+        s.GotoPos(pos + len(newline))
 
 class ElectricReturn(BufferModificationAction):
     name = _("Electric Return")
@@ -359,7 +357,7 @@ class ElectricReturn(BufferModificationAction):
         mode.electricReturn()
 
 
-class StandardReindentMixin(debugmixin):
+class ReindentBase(debugmixin):
     def reindent(self, linenum=None):
         """Reindent the specified line to the correct level.
 
@@ -370,29 +368,61 @@ class StandardReindentMixin(debugmixin):
             linenum = s.GetCurrentLine()
         if linenum == 0:
             # first line is always indented correctly
-            return
+            return s.GetCurrentPos()
         
         linestart = s.PositionFromLine(linenum)
 
         # actual indention of current line
-        ind = s.GetLineIndentation(linenum) # columns
-        pos = s.GetLineIndentPosition(linenum) # absolute character position
+        indcol = s.GetLineIndentation(linenum) # columns
+        pos = s.GetCurrentPos()
+        indpos = s.GetLineIndentPosition(linenum) # absolute character position
+        col = s.GetColumn(pos)
+        dprint("linestart=%d pos=%d indpos=%d col=%d indcol=%d" % (linestart, pos, indpos, col, indcol))
 
+        indstr = self.getReindentString(linenum, linestart, pos, indpos, col, indcol)
+        if indstr is None:
+            return pos
+        
+        # the target to be replaced is the leading indention of the
+        # current line
+        s.SetTargetStart(linestart)
+        s.SetTargetEnd(indpos)
+        s.ReplaceTarget(indstr)
+
+        # recalculate cursor position, because it may have moved if it
+        # was within the target
+        after = s.GetLineIndentPosition(linenum)
+        dprint("after: indent=%d cursor=%d" % (after, s.GetCurrentPos()))
+        if pos < linestart:
+            return pos
+        newpos = pos - indpos + after
+        if newpos < linestart:
+            # we were in the indent region, but the region was made smaller
+            return after
+        elif pos < indpos:
+            # in the indent region
+            return after
+        return newpos
+
+    def getReindentString(self, linenum, linestart, pos, indpos, col, indcol):
+        return None
+
+
+class StandardReindentMixin(ReindentBase):
+    def getReindentString(self, linenum, linestart, pos, indpos, col, indcol):
+        s = self.stc
+        
         # look at indention of previous line
-        prevstart = s.PositionFromLine(linenum - 1)
-        prevind = s.GetLineIndentation(linenum - 1) # columns
-        prevpos = s.GetLineIndentPosition(linenum - 1)
-        dprint("ind = %s (char num=%d), prev ind=%s (char num = %d)" % (ind, pos, prevind, prevpos))
-        prevline = s.GetTextRange(prevstart, linestart)
-        if len(prevline.strip()) == 0:
-            # previous line is blank, so leave the indention
-            return
+        prevind, prevline = s.GetPrevLineIndentation(linenum)
+        if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
+            # if there's blank lines before this and the previous
+            # non-blank line is indented less than this one, ignore
+            # it.  Make the user manually unindent lines.
+            return None
 
         # previous line is not blank, so indent line to previous
         # line's level
-        s.SetTargetStart(linestart)
-        s.SetTargetEnd(pos)
-        s.ReplaceTarget(s.GetTextRange(prevstart, prevpos))
+        return s.GetIndentString(prevind)
 
 
 class FoldingReindentMixin(debugmixin):
@@ -414,12 +444,9 @@ class FoldingReindentMixin(debugmixin):
         # folding says this should be the current indention
         fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
         dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
-        a = fold*' '
-        if s.GetUseTabs():
-            a = a.replace(s.GetTabWidth()*' ', '\t')
         s.SetTargetStart(linestart)
         s.SetTargetEnd(pos)
-        s.ReplaceTarget(a)
+        s.ReplaceTarget(s.GetIndentString(fold))
 
 
 class Reindent(BufferModificationAction):
@@ -433,19 +460,9 @@ class Reindent(BufferModificationAction):
 
         # save cursor information so the cursor can be maintained at
         # the same relative location in the text after the indention
-        linenum = s.GetCurrentLine()
-        before = s.GetLineIndentPosition(linenum)
-        pos = s.GetCurrentPos()
-        
-        mode.reindent()
+        pos = mode.reindent()
+        s.GotoPos(pos)
 
-        # place cursor in same relative location or on first non-blank
-        # character if cursor was before any non-blank char
-        after = s.GetLineIndentPosition(linenum)
-        if pos < before:
-            s.GotoPos(after)
-        else:
-            s.GotoPos(pos - before + after)
 
 class PasteAtColumn(Paste):
     name = _("Paste at Column")

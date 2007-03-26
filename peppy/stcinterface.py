@@ -428,9 +428,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         
         # get line without indention
         line = self.GetLine(linenum)
-        print "linenum=%d fold=%d cursor=%d line=%s" % (linenum, fold, self.GetCurrentPos(), repr(line))
-        for i in range(len(line)):
-            print "  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) )
+        dprint("linenum=%d fold=%d cursor=%d line=%s" % (linenum, fold, self.GetCurrentPos(), repr(line)))
+##        for i in range(len(line)):
+##            dprint("  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) ))
 
     # --- line indentation stuff
     
@@ -443,10 +443,16 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             last = self.GetLineEndPosition(i)
             if indent<last:
                 col = self.GetLineIndentation(i)
-                print("line=%d indent=%d (col=%d) last=%d" % (i, indent, col, last))
+                dprint("line=%d indent=%d (col=%d) last=%d" % (i, indent, col, last))
                 return col, i
-            print("line=%d indent=%d last=%d" % (i, indent, last))
+            dprint("all blanks: line=%d indent=%d last=%d" % (i, indent, last))
         return 0, -1
+
+    def GetIndentString(self, ind):
+        if self.GetUseTabs():
+            return (ind*' ').replace(self.GetTabWidth()*' ', '\t')
+        else:
+            return ind*' '
             
 
 class PeppySTC(PeppyBaseSTC):
