@@ -357,7 +357,8 @@ class HyperspectralSTC(NonResidentSTC):
         dprint("filename = %s" % self.filename)
         comp_mgr = ComponentManager()
         loader = HSI.Loader(comp_mgr)
-        header = loader.identify(self.filename)
+        urlinfo = URLInfo(self.filename)
+        header = loader.identify(urlinfo)
         dprint("header = '%s'" % header)
         if header:
             dprint("Loading %s format cube" % header.format_name)
@@ -564,7 +565,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
         loader = HSI.Loader(comp_mgr)
         info = URLInfo(url)
         try:
-            header = loader.identify(info.path)
+            header = loader.identify(info)
             return MajorModeMatch(HSIMode, exact=True)
         except TypeError:
             pass

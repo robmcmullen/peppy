@@ -127,14 +127,12 @@ class Header(dict,HSI.MetadataMixin):
                 self.open(filename)
 
     @classmethod
-    def identify(cls,fh=None,filename=None):
-        if fh is None:
-            if filename is None:
-                return False
-            fh = open(filename, 'rb')
-        line=fh.read(4)
-        if line=='ENVI':
-            return True
+    def identify(cls, urlinfo):
+        if urlinfo.protocol == "file":
+            fh = open(urlinfo.path, 'rb')
+            line=fh.read(4)
+            if line=='ENVI':
+                return True
         return False
 
     @classmethod

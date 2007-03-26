@@ -60,12 +60,13 @@ class GDALDataset(HSI.MetadataMixin):
         return fs.getvalue()
 
     @classmethod
-    def identify(cls, fh, filename):
-        dprint("trying gdal.Open(%s)" % filename)
-        dataset=gdal.Open(filename,gdal.GA_ReadOnly)
-        dprint("dataset = %s" % dataset)
-        if dataset:
-            return True
+    def identify(cls, urlinfo):
+        if urlinfo.protocol == 'file':
+            dprint("trying gdal.Open(%s)" % urlinfo.path)
+            dataset=gdal.Open(urlinfo.path, gdal.GA_ReadOnly)
+            dprint("dataset = %s" % dataset)
+            if dataset:
+                return True
         return False
 
     def setFilename(self,filename=None):

@@ -43,17 +43,15 @@ class IHyperspectralFileFormat(Interface):
 class Loader(Component):
     handlers = ExtensionPoint(IHyperspectralFileFormat)
 
-    def identify(self, filename):
-        #fh=open(filename, 'rb')
+    def identify(self, urlinfo):
         print "handlers: %s" % self.handlers
         for loader in self.handlers:
             for format in loader.supportedFormats():
-                print "checking %s for %s format" % (filename,format.format_name)
-                #fh.seek(0)
-                if format.identify(None,filename):
+                print "checking %s for %s format" % (urlinfo, format.format_name)
+                if format.identify(urlinfo):
                     print "Identified %s format" % format.format_name
                     return format
-                others=format.alternateNames(filename)
+                others=format.alternateNames(urlinfo.path)
                 for othername in others:
                     print "checking alternate %s for %s format" % (othername,format.format_name)
                     fh2 = open(othername, 'rb')
