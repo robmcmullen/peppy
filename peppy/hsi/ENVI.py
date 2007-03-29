@@ -65,13 +65,13 @@ def findHeaders(url):
     urls = []
     for ext in _header_extensions:
         header = URLInfo(str(url)+ext)
-        if url.exists():
+        if header.exists():
             urls.append(header)
 
     name,ext=os.path.splitext(str(url))
     for ext in _header_extensions:
         header = URLInfo(name+ext)
-        if url.exists():
+        if header.exists():
             urls.append(header)
 
     return urls

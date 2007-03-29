@@ -7,6 +7,7 @@ import os,os.path,sys,re,time,commands
 
 from nose.tools import *
 
+from peppy.iofilter import *
 from peppy.trac.core import *
 import peppy.hsi as hsi
 import peppy.hsi.ENVI as ENVI
@@ -14,6 +15,10 @@ import peppy.hsi.HSI as HSI
 
 from cStringIO import StringIO
 import numpy
+
+def localfile(name):
+    path = os.path.join(os.path.dirname(__file__), name)
+    return path
 
 fakeNmFile="""ENVI
 description = {
@@ -240,3 +245,27 @@ class testFakeBSQCube(fakeBase):
             (1,4,2, 49),
             ]
         #print self.cube.raw
+
+class testFilenames(object):
+    def testHeader1(self):
+        filename = localfile('hsi/test1.bil')
+        urls = ENVI.findHeaders(filename)
+        header = URLInfo(localfile('hsi/test1.hdr'))
+        eq_(urls[0].path, header.path)
+        
+    def testHeader2(self):
+        filename = localfile('hsi/test2.bip')
+        urls = ENVI.findHeaders(filename)
+        header = URLInfo(localfile('hsi/test2.bip.hdr'))
+        eq_(urls[0].path, header.path)
+        
+    def testIdentify1(self):
+        filename = localfile('hsi/test1.bil')
+        format = HSI.HyperspectralFileFormat.identify(filename)
+        eq_(format.format_id, 'ENVI')
+        
+    def testIdentify2(self):
+        filename = localfile('hsi/test2.bip')
+        format = HSI.HyperspectralFileFormat.identify(filename)
+        eq_(format.format_id, 'ENVI')
+        
