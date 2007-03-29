@@ -8,7 +8,7 @@ from cStringIO import StringIO
 from trac.core import *
 from debug import *
 
-__all__ = [ 'URLInfo', 'GetReader', 'GetWriter', 'IURLHandler' ]
+__all__ = [ 'URLInfo', 'IURLHandler' ]
 
 
 class URLInfo(debugmixin):
@@ -53,7 +53,7 @@ class URLInfo(debugmixin):
         else:
             self.readonly = True
 
-    def __str__(self):
+    def __repr__(self):
         return "%s %s" % (self.url, (self.protocol,
                                                         self.netloc,
                                                         self.path,
@@ -61,13 +61,31 @@ class URLInfo(debugmixin):
                                                         self.query_string,
                                                         self.fragment))
 
-class FileWrapper(object):
-    def __init__(self, fh, info):
-        self.fh = fh
-        self.urlinfo = info
+    def __str__(self):
+        return self.url
 
-    def __getattr__(self, name):
-        return getattr(self.fh, name)
+    def exists(self):
+        if self.protocol == 'file':
+            return os.path.exists(self.path)
+        else:
+            try:
+                fh = self.getReader()
+                return True
+            except URLError:
+                return False
+
+    def getReader(self):
+        comp_mgr = ComponentManager()
+        handler = ProtocolHandler(comp_mgr)
+        fh = handler.urlreader(self)
+        return fh
+
+    def getWriter(self):
+        comp_mgr = ComponentManager()
+        handler = ProtocolHandler(comp_mgr)
+        fh = handler.urlwriter(self)
+        return fh
+
 
 
 #### The ProtocolHandler and IURLHandler define extensions to the
@@ -102,32 +120,18 @@ class ProtocolHandler(Component, debugmixin):
         assert self.dprint(urlhandlers)
         ProtocolHandler.opener = urllib2.build_opener(*urlhandlers)
         
-    def urlreader(self, url, data=None, usewin=False):
-        info = URLInfo(url, "file")
-
+    def urlreader(self, info):
         fh = ProtocolHandler.opener.open(info.url)
         fh.urlinfo = info
         return fh
 
-    def urlwriter(self, url):
-        info = URLInfo(url, "file")
+    def urlwriter(self, info):
         assert self.dprint("trying to open %s" % info.url)
         if info.protocol == "file":
             assert self.dprint("saving to file %s" % info.path)
-            fh = FileWrapper(open(info.path, "wb"), info)
+            fh = open(info.path, "wb")
             return fh
         raise IOError("protocol %s not supported for writing" % info.protocol)
-
-
-def GetReader(url, default="file", usewin=False):
-    comp_mgr = ComponentManager()
-    handler = ProtocolHandler(comp_mgr)
-    return handler.urlreader(url)
-
-def GetWriter(url, default="file", usewin=False):
-    comp_mgr = ComponentManager()
-    handler = ProtocolHandler(comp_mgr)
-    return handler.urlwriter(url)
 
 
 if __name__ == "__main__":

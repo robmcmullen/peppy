@@ -161,12 +161,11 @@ class Buffer(debugmixin):
             viewer.frame.tabs.closeTab(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
 
-    def setFilename(self, url, path):
+    def setURL(self, url):
         if not url:
-            filename="untitled"
+            url=URLInfo("file://untitled")
         self.url = url
-        self.filename = path
-        basename=os.path.basename(path)
+        basename=os.path.basename(url.path)
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count
@@ -181,7 +180,7 @@ class Buffer(debugmixin):
         BufferList.update()
         
     def getFilename(self):
-        return self.filename
+        return self.url.path
 
     def getTabName(self):
         if self.modified:
@@ -189,7 +188,8 @@ class Buffer(debugmixin):
         return self.displayname
 
     def open(self, filename, stcparent):
-        fh=GetReader(filename)
+        url = URLInfo(filename)
+        fh = url.getReader()
 
         # Need a two-stage opening process in order to support files
         # that are too large to fit in memory at once.  First, load
@@ -201,8 +201,8 @@ class Buffer(debugmixin):
         # Read the first thousand bytes
         self.stc.readFrom(fh, self.guessLength)
         # if no exceptions, it must have worked.
-        self.readonly = fh.urlinfo.readonly
-        self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
+        self.readonly = url.readonly
+        self.setURL(url)
         self.guessBinary=self.stc.GuessBinary(self.guessLength,
                                               self.guessPercentage)
         if self.defaultmode is None:
@@ -233,7 +233,7 @@ class Buffer(debugmixin):
         BufferHooks(ComponentManager()).openPostHook(self)
 
     def revert(self):
-        fh=GetReader(self.url)
+        fh=self.url.getReader()
         self.stc.ClearAll()
         self.stc.readFrom(fh)
         self.modified=False
@@ -241,20 +241,20 @@ class Buffer(debugmixin):
         wx.CallAfter(self.showModifiedAll)  
         
     def save(self, url=None):
-        assert self.dprint("Buffer: saving buffer %s" % (self.filename))
+        assert self.dprint("Buffer: saving buffer %s" % (self.url))
         try:
             if url is None:
                 saveas=self.url
             else:
-                saveas=url
-            fh=GetWriter(saveas)
+                saveas=URLInfo(url)
+            fh=saveas.getWriter()
             self.stc.writeTo(fh)
             fh.close()
             self.stc.SetSavePoint()
             self.modified=False
             self.readonly = False
             if url is not None and url!=self.url:
-                self.setFilename(fh.urlinfo.url, fh.urlinfo.path)
+                self.setURL(saveas)
             self.showModifiedAll()
         except:
             print "Buffer: failed writing!"
@@ -753,9 +753,9 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         """
         mode = self.getActiveMajorMode()
         if mode and mode.buffer:
-            info = URLInfo(mode.buffer.url)
-            if info.protocol == 'file':
-                cwd = os.path.dirname(info.path)
+            url = mode.buffer.url
+            if url.protocol == 'file':
+                cwd = os.path.dirname(url.path)
             else:
                 mode = None
 

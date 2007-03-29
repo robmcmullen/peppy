@@ -779,7 +779,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
                         assert self.dprint("scanShell: appending generic %s" % best.view)
                         generics.append(best)
         for plugin in self.plugins:
-            best=plugin.scanFilename(buffer.url)
+            best=plugin.scanFilename(str(buffer.url))
             if best is not None:
                 if best.exact:
                     return best.view

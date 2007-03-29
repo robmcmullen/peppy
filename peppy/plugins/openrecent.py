@@ -28,14 +28,15 @@ class OpenRecent(GlobalList, ClassSettings):
     others=[]
 
     @classmethod
-    def append(cls,item):
+    def append(cls, url):
 ##        dprint("BEFORE: storage: %s" % cls.storage)
 ##        dprint("BEFORE: others: %s" % cls.others)
         
         # skip files with the about: protocol
-        if item.startswith('about:'):
+        if url.protocol == 'about':
             return
 
+        item = str(url)
         # if we're adding an item that's already in the list, move it
         # to the top of the list by recreating the list
         if item in cls.storage:
