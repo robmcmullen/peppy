@@ -9,9 +9,11 @@ data contained in the corresponding data file.
 
 import os,os.path,sys,re,csv,textwrap
 
+from peppy.iofilter import *
 from peppy.trac.core import *
 
-import HSI
+import HSI as hsi
+import roi
 
 from cStringIO import StringIO
 from numpy.core.numerictypes import *
@@ -28,14 +30,6 @@ enviDataType=[None,int8,int16,int32,float32,float64,complex64,None,None,complex1
 
 # byte order: 0=little endian, 1=big endian
 
-
-def normalizeUnits(txt):
-    units=txt.lower()
-    if units[0:4]=='nano' or units[0:2]=='nm':
-        return 'nm'
-    elif units[0:5]=='micro' or units[0:2]=='um':
-        return 'um'
-    return None
 
 _header_extensions = ['.hdr','.HDR','hdr','HDR']
 def isHeader(filename):
@@ -67,14 +61,29 @@ def verifyHeader(filename):
 
     return filename
 
+def findHeaders(url):
+    urls = []
+    for ext in _header_extensions:
+        header = URLInfo(str(url)+ext)
+        if url.exists():
+            urls.append(header)
 
-class Header(dict,HSI.MetadataMixin):
+    name,ext=os.path.splitext(str(url))
+    for ext in _header_extensions:
+        header = URLInfo(name+ext)
+        if url.exists():
+            urls.append(header)
+
+    return urls
+
+
+class Header(dict,hsi.MetadataMixin):
     """
     Class representing the text fields of an ENVI format header, with
-    the ability to populate an L{HSI.Cube} with the parsed values from
+    the ability to populate an L{hsi.Cube} with the parsed values from
     this text.
 
-    When initially loading this class, all that is done is to parse the text into name/value pairs.  Conversion from text to something more interesting, like the actual values or lists of values is not done until you call L{getCube}, which then creates an L{HSI.Cube} instance and populates its fields with the values parsed from the ENVI header text.
+    When initially loading this class, all that is done is to parse the text into name/value pairs.  Conversion from text to something more interesting, like the actual values or lists of values is not done until you call L{getCube}, which then creates an L{hsi.Cube} instance and populates its fields with the values parsed from the ENVI header text.
     """
 
     format_id="ENVI"
@@ -89,7 +98,6 @@ class Header(dict,HSI.MetadataMixin):
         self['bands']="98"
         self['interleave']="bil"
 
-        self.filename=filename
         self.strings=['description']
         self.lists=['wavelength','fwhm','sigma','band names','default bands','bbl']
         self.outputorder=['description','samples','lines','bands','byte order','interleave']
@@ -101,7 +109,7 @@ class Header(dict,HSI.MetadataMixin):
             (int , ['samples','lines','bands','byte order','bbl','x start','header offset']),
             (float , ['wavelength','fwhm','sigma','reflectance scale factor']),
             (lambda s:s.lower() , ['interleave','sensor type']),
-            (normalizeUnits, ['wavelength units']),
+            (hsi.normalizeUnits, ['wavelength units']),
             (lambda s:enviDataType[int(s)], ['data type']),
             (lambda s:s, ['description','band names','default bands']),
             )
@@ -121,30 +129,43 @@ class Header(dict,HSI.MetadataMixin):
             }
 
         if filename:
-            if isinstance(filename,HSI.Cube):
+            if isinstance(filename,hsi.Cube):
                 self.getCubeAttributes(filename)
             else:
-                self.open(filename)
+                self.headerurl, self.cubeurl = self.getFilePair(filename)
+                self.open(self.headerurl)
+        else:
+            self.headerurl = None
+            self.cubeurl = None
+
+    @classmethod
+    def getFilePair(cls, url):
+        fh = url.getReader()
+        line=fh.read(4)
+        if line=='ENVI':
+            # need to open the cube, not the header
+            return (url, None)
+        fh.close()
+        headers = findHeaders(url)
+        for header in headers:
+            fh = header.getReader()
+            line=fh.read(4)
+            if line=='ENVI':
+                return (header, url)
+            fh.close()
+        return None
 
     @classmethod
     def identify(cls, urlinfo):
-        if urlinfo.protocol == "file":
-            fh = open(urlinfo.path, 'rb')
-            line=fh.read(4)
-            if line=='ENVI':
-                return True
+        pair = cls.getFilePair(urlinfo)
+        if pair is not None and pair[1] is not None:
+            return True
         return False
-
-    @classmethod
-    def alternateNames(cls, filename):
-        name=verifyHeader(filename)
-        return [name]
         
     def open(self,filename=None):
         """Open the header file, and if successful parse it."""
-        if filename:
-            self.verifyFilename(filename)
-            fh=open(self.filename)
+        if self.headerurl:
+            fh=self.headerurl.getReader()
             if fh:
                 self.read(fh)
                 fh.close()
@@ -159,12 +180,6 @@ class Header(dict,HSI.MetadataMixin):
                 fh.close()
             else:
                 print "Couldn't open header!\n"
-        
-
-    def verifyFilename(self,filename):
-        self.filename=verifyHeader(filename)
-        if self.debug: print "found header %s" % filename
-            
 
     def read(self,fh):
         """parse the header file for the ENVI key/value pairs."""
@@ -239,10 +254,10 @@ class Header(dict,HSI.MetadataMixin):
             return save
 
     def locateCube(self):
-        if self.filename==None:
+        if self.headerurl==None:
             return None
         
-        filename=self.filename
+        filename=self.headerurl
         extlen=isHeader(filename)
         if extlen>0:
             filename=filename[:-extlen]
@@ -258,10 +273,11 @@ class Header(dict,HSI.MetadataMixin):
         return None
 
     def getCube(self,filename=None,index=0):
-        if not filename or isHeader(self.filename):
-            filename=self.locateCube()
-        cube=HSI.newCube(self['interleave'],filename)
+        #print self.cubeurl, self.headerurl
+        cube=hsi.newCube(self['interleave'],self.cubeurl)
+        #print cube
         self.setCubeAttributes(cube)
+        cube.open()
         cube.verifyAttributes()
         return cube
 
@@ -352,13 +368,76 @@ class Header(dict,HSI.MetadataMixin):
         return fs.getvalue()
 
 
-HSI.addHandler(Header)
+class ENVITextROI(roi.ROIFile):
+    """ENVI Text format ROI file support.
+
+    This format supports loading and saving of ENVI text format ROIs.
+    """
+
+    format_id="ENVI"
+    format_name="ENVI ROI"
+
+    def __init__(self,filename=None,debug=False):
+        roi.ROIFile.__init__(self, filename)
+
+    @classmethod
+    def identify(cls, urlinfo):
+        fh = urlinfo.getReader()
+        line=fh.read(100)
+        if line.startswith('; ENVI Output of ROIs'):
+            return True
+        return False
+
+    @classmethod
+    def load(cls, urlinfo):
+        fh = urlinfo.getReader()
+        group = ENVITextROI(urlinfo)
+        current = None
+        index = -1
+        for line in fh:
+            if line.startswith(';'):
+                if line.startswith('; ROI '):
+                    name, val = line[6:].split(':')
+                    name = name.strip()
+                    val = val.strip()
+                    print "name=%s val=%s" % (name, val)
+                    if name == 'name':
+                        current = roi.ROI(val)
+                        group.addROI(current)
+                    elif name == 'npts':
+                        current.number = int(val)
+                    elif name == 'rgb value':
+                        current.setColor(val)
+                    else:
+                        print current
+                        current = None
+                elif line.startswith('; ID'):
+                    index = 0
+                    current = group.getROI(index)
+            else:
+                vals = line.split()
+                if len(vals)>0:
+                    # ENVI roi coordinates start from 1, not zero
+                    print vals
+                    current.addPoint(int(vals[0]), int(vals[1])-1, int(vals[2])-1)
+                else:
+                    index += 1
+                    current = group.getROI(index)
+
+        print group
+        return group
+
+
 
 class ENVIFormatProvider(Component):
-    implements(HSI.IHyperspectralFileFormat)
+    implements(hsi.IHyperspectralFileFormat)
+    implements(roi.IHyperspectralROIFormat)
     
     def supportedFormats(self):
         return [Header]
+
+    def supportedROIFormats(self):
+        return [ENVITextROI]
 
 if __name__ == "__main__":
     from optparse import OptionParser

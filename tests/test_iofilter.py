@@ -68,34 +68,37 @@ class TestURLInfo:
 
 class TestGetReader:
     def testFile(self):
-        fh=GetReader("file:LICENSE")
+        url = URLInfo("file:LICENSE")
+        fh = url.getReader()
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
-        eq_(fh.urlinfo.protocol,'file')
-        eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
+        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
+        eq_(url.protocol,'file')
+        eq_(os.path.basename(url.path),'LICENSE')
         stc=getSTC()
         stc.readFrom(fh)
         text=stc.GetText()
         eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
         
     def testFileRelative(self):
-        fh=GetReader("file://LICENSE")
+        url = URLInfo("file:LICENSE")
+        fh = url.getReader()
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
-        eq_(fh.urlinfo.protocol,'file')
-        print fh.urlinfo
-        eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
+        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
+        eq_(url.protocol,'file')
+        print url
+        eq_(os.path.basename(url.path),'LICENSE')
         stc=getSTC()
         stc.readFrom(fh)
         text=stc.GetText()
         eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
         
     def testFileDefault(self):
-        fh=GetReader("LICENSE")
+        url = URLInfo("file:LICENSE")
+        fh = url.getReader()
         cwd = os.getcwd()
-        eq_(fh.urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
-        eq_(fh.urlinfo.protocol,'file')
-        eq_(os.path.basename(fh.urlinfo.path),'LICENSE')
+        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
+        eq_(url.protocol,'file')
+        eq_(os.path.basename(url.path),'LICENSE')
         stc=getSTC()
         stc.readFrom(fh)
         text=stc.GetText()
@@ -103,17 +106,18 @@ class TestGetReader:
         
     def testChatbots(self):
         import peppy.plugins.chatbots
-        fh=GetReader("shell:eliza")
-        eq_(fh.urlinfo.url, "shell:eliza")
-        eq_(fh.urlinfo.protocol,'shell')
-        eq_(fh.urlinfo.path,'eliza')
+        url = URLInfo("shell:eliza")
+        fh = url.getReader()
+        eq_(url.url, "shell:eliza")
+        eq_(url.protocol,'shell')
+        eq_(url.path,'eliza')
 
 ##    def testWindowsFile(self):
 ##        fh=GetReader("file://c:/some/path.txt",usewin=True)
-##        #eq_(fh.urlinfo.url, "file:/c:/some/path.txt")
-##        eq_(fh.urlinfo.protocol,'file')
-##        eq_(fh.urlinfo.path,'c:/some/path.txt')
+##        #eq_(url.url, "file:/c:/some/path.txt")
+##        eq_(url.protocol,'file')
+##        eq_(url.path,'c:/some/path.txt')
 ##        fh=GetReader("c:/some/path.txt",usewin=True)
-##        eq_(fh.urlinfo.protocol,'file')
-##        eq_(fh.urlinfo.path,'c:/some/path.txt')
+##        eq_(url.protocol,'file')
+##        eq_(url.path,'c:/some/path.txt')
         

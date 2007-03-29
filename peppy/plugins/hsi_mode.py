@@ -39,7 +39,10 @@ from cStringIO import StringIO
 import wx
 import wx.stc as stc
 import wx.lib.newevent
-#import wx.lib.plot
+
+from peppy.actions.minibuffer import FloatMinibuffer
+
+import wx.lib.plot as plot
 import peppy.lib.plotter as plotter
 
 from peppy import *
@@ -52,21 +55,9 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 
-import HSI
-try:
-    import GDAL
-except ImportError:
-    has_gdal = False
-import ENVI # FIXME: this one last as a temporary hack because if
-            # there are multiple files with the same root name but
-            # different extensions and there is an ENVI header, simply
-            # finding the ".hdr" file means that it will determine
-            # that it is an envi file
+import peppy.hsi as hsi
 
 import numpy
-
-addIconsFromDirectory(os.path.dirname(__file__))
-
 
 class BandFilter(object):
     def __init__(self):
@@ -127,7 +118,8 @@ class ContrastFilter(BandFilter):
         valrange=maxval-minval
         print "data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange))
 
-        h=histogram(raw,minval,maxval+1,self.bins)
+        h,bins=numpy.histogram(raw,self.bins,range=(minval,maxval+1))
+        print h
         print "h[%d]=%d" % (self.bins-1,h[self.bins-1])
         #print h
 
@@ -160,7 +152,7 @@ class ContrastFilter(BandFilter):
 
             # histogram uses min <= val < max, so we need to use 256 as
             # the max
-            h=histogram(gray,0,256,256)
+            h,bins = numpy.histogram(gray,256,range=(0,256))
             print "h[255]=%d" % h[255]
             # print h
 
@@ -355,23 +347,14 @@ class CubeScroller(BitmapScroller):
 class HyperspectralSTC(NonResidentSTC):
     def openMmap(self):
         dprint("filename = %s" % self.filename)
-        comp_mgr = ComponentManager()
-        loader = HSI.Loader(comp_mgr)
         urlinfo = URLInfo(self.filename)
-        header = loader.identify(urlinfo)
-        dprint("header = '%s'" % header)
-        if header:
-            dprint("Loading %s format cube" % header.format_name)
-            h = header(self.filename)
-            self.cube=h.getCube(self.filename)
-            print self.cube
-
+        self.cube=hsi.HyperspectralFileFormat.load(urlinfo)
 
 
 class PrevBand(SelectAction):
     name = "Prev Band"
     tooltip = "Previous Band"
-    icon = 'hsi-band-prev.png'
+    icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
     
     def action(self, pos=None):
@@ -382,7 +365,7 @@ class PrevBand(SelectAction):
 class NextBand(SelectAction):
     name = "Next Band"
     tooltip = "Next Band"
-    icon = 'hsi-band-next.png'
+    icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
     def action(self, pos=None):
@@ -393,7 +376,7 @@ class NextBand(SelectAction):
 class PrevCube(SelectAction):
     name = "Prev Cube"
     tooltip = "Previous data cube in dataset"
-    icon = 'hsi-cube-prev.png'
+    icon = 'icons/hsi-cube-prev.png'
 
     def isEnabled(self):
         return False
@@ -401,11 +384,66 @@ class PrevCube(SelectAction):
 class NextCube(SelectAction):
     name = "Next Cube"
     tooltip = "Next data cube in dataset"
-    icon = 'hsi-cube-next.png'
+    icon = 'icons/hsi-cube-next.png'
 
     def isEnabled(self):
         return False
 
+class ContrastFilterAction(RadioAction):
+    debuglevel = 1
+    name = "Contrast"
+    tooltip = "Contrast adjustment method"
+    icon = 'icons/hsi-cube-next.png'
+
+    items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+        # do nothing here: it's actually changed in action
+
+    def getIndex(self):
+        mode = self.frame.getActiveMajorMode()
+        filt = mode.cubefilter
+        print filt
+        if hasattr(filt, 'contraststretch'):
+            val = filt.contraststretch
+            if val > 0.0001 and abs(val - 0.1) < 0.0001:
+                return 1
+            elif abs(val - 0.2) < 0.0001:
+                return 2
+            else:
+                return 3
+        else:
+            return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=0, old=-1):
+        assert self.dprint("index=%d" % index)
+        mode = self.frame.getActiveMajorMode()
+        if index == 0:
+            filt = BandFilter()
+        elif index == 1:
+            filt = ContrastFilter(0.1)
+        elif index == 2:
+            filt = ContrastFilter(0.2)
+        else:
+            wx.CallAfter(self.setContrast, mode)
+            return
+        mode.cubefilter = filt
+        wx.CallAfter(mode.update)
+
+    def processMinibuffer(self, mode, percentage):
+        dprint("returned percentage = %f" % percentage)
+        filt = ContrastFilter(percentage)
+        mode.cubefilter = filt
+        wx.CallAfter(mode.update)
+        
+    def setContrast(self, mode):
+        minibuffer = FloatMinibuffer(mode, self, label="Contrast [0.0 - 1.0]")
+        mode.setMinibuffer(minibuffer)
+        
 
 
 class HSIMode(MajorMode):
@@ -414,7 +452,7 @@ class HSIMode(MajorMode):
     ...
     """
     keyword='HSI'
-    icon='hsi-cube.png'
+    icon='icons/hsi-cube.png'
 
     mmap_stc_class = HyperspectralSTC
 
@@ -456,7 +494,6 @@ class HSIMode(MajorMode):
             evt.Skip()
         
     def OnUpdateUIHook(self, evt):
-        dprint()
         minors = self._mgr.GetAllPanes()
         for minor in minors:
             if minor.name != "main":
@@ -501,7 +538,7 @@ class HSIMode(MajorMode):
         return display
 
 
-class HSIPlotMinorMode(MinorMode):
+class HSIPlotMinorMode(MinorMode, plotter.PlotProxy):
     """Abstract base class for x-y plot of cube data.
 
     This displays a plot using the plotter.MultiPlotter class.  The
@@ -525,29 +562,138 @@ class HSIPlotMinorMode(MinorMode):
         self.major.addPane(self.plot, paneinfo)
         dprint(paneinfo)
 
-        proxy = self.plot_proxy(self.major.cubeband)
-        self.plot.setProxy(proxy)
+        self.listeners=[]
+        self.rgblookup=['red','green','blue']
+        self.setupAxes()
+        self.setupTitle()
+        self.plot.setProxy(self)
         
+    def setupTitle(self):
+        self.title=self.keyword
 
-        
+    def setupAxes(self):
+        pass
+    
 class HSISpectrumMinorMode(HSIPlotMinorMode):
     """Display a spectrum at the current crosshair point.
     """
     keyword = "Spectrum"
-    plot_proxy = plotter.SpectrumPlotProxy
+
+    def setupAxes(self):
+        cubeband = self.major.cubeband
+        if cubeband.cube.wavelengths:
+            self.xlabel = cubeband.cube.wavelength_units
+            self.xaxis = (cubeband.cube.wavelengths[0],
+                          cubeband.cube.wavelengths[-1])
+        else:
+            self.xlabel='band'
+            self.xaxis=(0,cubeband.cube.bands)
+        
+        # syncing over the whole cube takes too long, so we'll grow
+        # the axis as it gets bigger.  Start with the extrema of the
+        # current band so we aren't too far off.
+        self.ylabel='value'
+        self.yaxis=cubeband.extrema
+        
+    def getLines(self, x, y):
+        cubeband = self.major.cubeband
+        # print "SpectrumPlotProxy: (%d,%d)" % (x,y)
+
+        data=numpy.zeros((cubeband.cube.bands,2))
+        if cubeband.cube.wavelengths:
+            data[:,0]=cubeband.cube.wavelengths
+        else:
+            data[:,0]=numpy.arange(1,cubeband.cube.bands+1,1)
+        data[:,1] = cubeband.cube.getSpectra(y,x)
+        yaxis=cubeband.cube.getUpdatedExtrema()
+        if yaxis != self.yaxis:
+            # make copy of list.  The list returned by
+            # getUpdatedExtrema is modified in place, so the compare
+            # will always return true if we don't copy it.
+            self.yaxis=yaxis[:]
+            # print "yaxis=%s" % self.yaxis
+            self.updateListenerExtrema()
+        line = plot.PolyLine(data, legend= '%d, %d' % (x, y), colour='blue')
+        return [line]
+    
+
         
 class HSIXProfileMinorMode(HSIPlotMinorMode):
     """Display the X profile at the current crosshair line.
     """
     keyword="X Profile"
-    plot_proxy = plotter.XProfilePlotProxy
+    
+    def setupAxes(self):
+        cubeband = self.major.cubeband
+
+        self.xlabel='sample'
+        self.xaxis=(0,cubeband.cube.samples)
+
+        self.ylabel='value'
+        self.yaxis=cubeband.extrema
+        
+    def getLines(self, x, y):
+        cubeband = self.major.cubeband
+        profiles=cubeband.getHorizontalProfiles(y)
+
+        x=numpy.arange(1,cubeband.cube.samples+1,1)
+        colorindex=0
+        lines=[]
+        for values in profiles:
+            data=numpy.zeros((cubeband.cube.samples,2))
+            data[:,0]=x
+            data[:,1]=values
+            line=plot.PolyLine(data, legend= 'band #%d' % cubeband.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            lines.append(line)
+            colorindex+=1
+        yaxis=cubeband.cube.getUpdatedExtrema()
+        if yaxis != self.yaxis:
+            # make copy of list.  The list returned by
+            # getUpdatedExtrema is modified in place, so the compare
+            # will always return true if we don't copy it.
+            self.yaxis=yaxis[:]
+            # print "yaxis=%s" % self.yaxis
+            self.updateListenerExtrema()
+        return lines
         
 class HSIYProfileMinorMode(HSIPlotMinorMode):
     """Display the Y profile at the current crosshair line.
     """
     keyword="Y Profile"
-    plot_proxy = plotter.YProfilePlotProxy
+    
+    def setupAxes(self):
+        cubeband = self.major.cubeband
+
+        self.xlabel='line'
+        self.xaxis=(0,cubeband.cube.lines)
+
+        self.ylabel='value'
+        self.yaxis=cubeband.extrema
         
+    def getLines(self, x, y):
+        cubeband = self.major.cubeband
+        profiles=cubeband.getVerticalProfiles(x)
+
+        x=numpy.arange(1,cubeband.cube.lines+1,1)
+        colorindex=0
+        lines=[]
+        for values in profiles:
+            data=numpy.zeros((cubeband.cube.lines,2))
+            data[:,0]=x
+            data[:,1]=values
+            line=plot.PolyLine(data, legend= 'band #%d' % cubeband.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            lines.append(line)
+            colorindex+=1
+        yaxis=cubeband.cube.getUpdatedExtrema()
+        if yaxis != self.yaxis:
+            # make copy of list.  The list returned by
+            # getUpdatedExtrema is modified in place, so the compare
+            # will always return true if we don't copy it.
+            self.yaxis=yaxis[:]
+            # print "yaxis=%s" % self.yaxis
+            self.updateListenerExtrema()
+        return lines
+
 
 class HSIPlugin(MajorModeMatcherBase,debugmixin):
     """HSI viewer plugin to register modes and user interface.
@@ -561,14 +707,11 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
         yield HSIMode
 
     def scanFilename(self, url):
-        comp_mgr = ComponentManager()
-        loader = HSI.Loader(comp_mgr)
         info = URLInfo(url)
-        try:
-            header = loader.identify(info)
+        format = hsi.HyperspectralFileFormat.identify(info)
+        if format:
+            dprint("found %s" % format)
             return MajorModeMatch(HSIMode, exact=True)
-        except TypeError:
-            pass
         return None
    
     def getMinorModes(self):
@@ -581,6 +724,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                   ("HSI","Dataset",Separator("dataset")),
                   ("HSI","Dataset",MenuItem(PrevBand)),
                   ("HSI","Dataset",MenuItem(NextBand)),
+                  ("HSI","View",MenuItem(ContrastFilterAction).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

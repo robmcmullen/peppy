@@ -9,7 +9,10 @@ uncompressed formats) using memory mapped file access.
 import os,sys,re,random
 from cStringIO import StringIO
 
+from peppy.debug import *
+
 from peppy.trac.core import *
+from peppy.iofilter import *
 
 from numpy.core.numerictypes import *
 import numpy
@@ -31,6 +34,13 @@ units_scale={
 'm':1.0,
 }
 
+def normalizeUnits(txt):
+    units=txt.lower()
+    if units[0:4]=='nano' or units[0:2]=='nm':
+        return 'nm'
+    elif units[0:5]=='micro' or units[0:2]=='um':
+        return 'um'
+    return None
 
 
 # Trac plugin for registering new HSI readers
@@ -40,26 +50,36 @@ class IHyperspectralFileFormat(Interface):
         """Return a list of classes that this plugin defines.
         """
     
-class Loader(Component):
+class HyperspectralFileFormat(Component):
     handlers = ExtensionPoint(IHyperspectralFileFormat)
 
-    def identify(self, urlinfo):
-        print "handlers: %s" % self.handlers
-        for loader in self.handlers:
+    @staticmethod
+    def identify(urlinfo):
+        if not isinstance(urlinfo, URLInfo):
+            urlinfo = URLInfo(urlinfo)
+        comp_mgr = ComponentManager()
+        register = HyperspectralFileFormat(comp_mgr)
+        print "handlers: %s" % register.handlers
+        for loader in register.handlers:
             for format in loader.supportedFormats():
                 print "checking %s for %s format" % (urlinfo, format.format_name)
                 if format.identify(urlinfo):
                     print "Identified %s format" % format.format_name
                     return format
-                others=format.alternateNames(urlinfo.path)
-                for othername in others:
-                    print "checking alternate %s for %s format" % (othername,format.format_name)
-                    fh2 = open(othername, 'rb')
-                    if format.identify(fh2,othername):
-                        return format
-                    fh2.close()
-        fh.close()
-        raise TypeError("no handler for %s" % filename)
+        return None
+
+    @staticmethod
+    def load(urlinfo):
+        if not isinstance(urlinfo, URLInfo):
+            urlinfo = URLInfo(urlinfo)
+        format = HyperspectralFileFormat.identify(urlinfo)
+        if format:
+            dprint("Loading %s format cube" % format.format_name)
+            h = format(urlinfo)
+            cube=h.getCube()
+            print cube
+            return cube
+        return None
 
     def wildcards(self):
         pairs={}
@@ -82,6 +102,7 @@ class Loader(Component):
         wildcards+="All files (*.*)|*.*"
         print wildcards
         return wildcards
+
 
 
 class MetadataMixin(object):
@@ -143,9 +164,8 @@ class Cube:
     """
 
     def __init__(self,filename=None):
-        self.filename=None
-        self.pathname=None
-        self.setFilename(filename)
+        self.url = None
+        self.setURL(filename)
         
         self.samples=-1
         self.lines=-1
@@ -204,7 +224,7 @@ class Cube:
         description=%s
         data_offset=%d header_offset=%d data_type=%s
         samples=%d lines=%d bands=%d data_bytes=%d
-        interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.filename,self.description,self.data_offset,self.header_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
+        interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
         # s.write("        wavelengths: %s\n" % self.wavelengths)
@@ -216,44 +236,46 @@ class Cube:
         return s.getvalue()
 
     def fileExists(self):
-        print self.pathname
-        return os.path.exists(self.pathname)
+        return self.url.exists()
                 
     def isDataLoaded(self):
         if isinstance(self.mmap,numpy.ndarray) or self.mmap or isinstance(self.raw,numpy.ndarray) or self.raw:
             return True
         return False
 
-    def setFilename(self,filename=None):
-        #print "setting filename to %s" % filename
-        if filename:
-            self.filename=filename
-            self.pathname=os.path.abspath(filename)
+    def setURL(self, url=None):
+        #print "setting url to %s" % url
+        if url:
+            if isinstance(url, str):
+                url = URLInfo(url)
+            self.url=url
         else:
-            self.filename=None
-            self.pathname=None
+            self.url=None
 
-    def open(self,filename=None):
-        if filename:
-            self.setFilename(filename)
+    def open(self,url=None):
+        if url:
+            self.setURL(url)
 
-        if self.filename:
-            if self.mmap is None: # don't try to reopen if already open
-                self.mmap=numpy.memmap(self.filename,mode="r")
-                self.initialize()
+        if self.url:
+            if self.url.protocol == 'file':
+                if self.mmap is None: # don't try to reopen if already open
+                    self.mmap=numpy.memmap(self.url.path,mode="r")
+                    self.initialize()
+            else:
+                raise IOError("Only file protocols supported for mmap")
         else:
-            raise IOError("No filename specified.")
+            raise IOError("No url specified.")
     
-    def save(self,filename=None):
-        if filename:
-            self.setFilename(filename)
+    def save(self,url=None):
+        if url:
+            self.setURL(url)
 
-        if self.filename:
+        if self.url:
             if self.mmap is not None and not isinstance(self.mmap,bool):
                 self.mmap.flush()
                 self.mmap.sync()
             else:
-                self.raw.tofile(self.filename)
+                self.raw.tofile(self.url)
 
     def initialize(self,datatype=None,byteorder=None):
         self.initializeSizes(datatype,byteorder)
@@ -534,8 +556,8 @@ class Cube:
 
 # BIP: (line,sample,band)
 class BIPCube(Cube):
-    def __init__(self,filename=None):
-        Cube.__init__(self,filename)
+    def __init__(self,url=None):
+        Cube.__init__(self,url)
         self.interleave='bip'
         
     def shape(self):
@@ -575,8 +597,8 @@ class BIPCube(Cube):
 
     
 class BILCube(Cube):
-    def __init__(self,filename=None):
-        Cube.__init__(self,filename)
+    def __init__(self,url=None):
+        Cube.__init__(self,url)
         self.interleave='bil'
         
     def shape(self):
@@ -617,8 +639,8 @@ class BILCube(Cube):
 
 
 class BSQCube(Cube):
-    def __init__(self,filename=None):
-        Cube.__init__(self,filename)
+    def __init__(self,url=None):
+        Cube.__init__(self,url)
         self.interleave='bsq'
         
     def shape(self):
@@ -658,16 +680,16 @@ class BSQCube(Cube):
 
     
 
-def newCube(interleave,filename=None):
+def newCube(interleave,url=None):
     i=interleave.lower()
     if i=='bil':
-        cube=BILCube(filename)
+        cube=BILCube(url)
     elif i=='bip':
-        cube=BIPCube(filename)
+        cube=BIPCube(url)
     elif i=='bsq':
-        cube=BSQCube(filename)
+        cube=BSQCube(url)
 ##    elif i=='gdal':
-##        cube=GDALCube(filename)
+##        cube=GDALCube(url)
     else:
         raise ValueError("Interleave format %s not supported." % interleave)
     return cube
@@ -685,69 +707,6 @@ def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByt
     cube.mmap=True
     cube.initialize(datatype,byteorder)
     return cube
-
-# Ability to identify multiple image formats
-
-format_loaders=[]
-
-def addHandler(handler):
-    valid=getattr(handler,'identify',None)
-    if valid:
-        # if the handler includes the identify method, then add it to
-        # the list.
-        format_loaders.append(handler)
-
-def checkHeader(header,filename):
-    fh=open(filename,'rb')
-    if fh:
-        if header.identify(fh,filename):
-            fh.close()
-            print "Identified %s format" % header.formatName()
-            header.open(filename)
-            return True
-    else:
-        print "can't open %s to check for format %s" % (filename,header.formatName())
-    return False
-
-def loadHeader(filename,debug=False):
-    for loader in format_loaders:
-        print "checking %s for %s format" % (filename,loader.format_name)
-        header=loader(debug=debug)
-        if checkHeader(header,filename):
-            return header
-        else:
-            # any alternate names?
-            others=header.alternateNames(filename)
-            for othername in others:
-                print "checking %s for %s format" % (othername,header.formatName())
-                if checkHeader(header,othername):
-                    return header
-                
-    return None
-
-def getWxHeaderWildcardList():
-    pairs={}
-    for loader in format_loaders:
-        header=loader()
-        pairs[header.format_name]=header.extensions
-    names=pairs.keys()
-    names.sort()
-    wildcards=""
-    for name in names:
-        print "%s: %s" % (name,pairs[name])
-        shown=';'.join("*"+ext for ext in pairs[name])
-        expandedexts=list(pairs[name])
-        expandedexts.extend(ext.upper() for ext in pairs[name])
-        print expandedexts
-        expanded=';'.join("*"+ext for ext in expandedexts)
-        wildcards+="%s (%s)|%s|" % (name,shown,expanded)
-
-    wildcards+="All files (*.*)|*.*"
-    print wildcards
-    return wildcards
-
-
-
 
 
 if __name__ == "__main__":
