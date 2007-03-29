@@ -143,12 +143,19 @@ class SelectAction(debugmixin):
         else:
             return self.name
 
+    def getTooltip(self, id=None, name=None):
+        if id is None:
+            id = self.id
+        if name is None:
+            name = self.name
+        return "%s ('%s', id=%d)" % (self.tooltip, name, id)
+
     def insertIntoMenu(self,menu):
         if self.stock_id:
             self.id=self.stock_id
         else:
             self.id=wx.NewId()
-        self.widget=menu.Append(self.id, self.getMenuItemName(), self.tooltip)
+        self.widget=menu.Append(self.id, self.getMenuItemName(), self.getTooltip())
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -157,7 +164,7 @@ class SelectAction(debugmixin):
     def insertIntoToolBar(self,toolbar):
         self.id=wx.NewId()
         self.tool=toolbar
-        toolbar.AddLabelTool(self.id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.tooltip)
+        toolbar.AddLabelTool(self.id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
 
@@ -196,7 +203,7 @@ class SelectAction(debugmixin):
 class ToggleAction(SelectAction):
     def insertIntoMenu(self,menu):
         self.id=wx.NewId()
-        self.widget=menu.AppendCheckItem(self.id, self.name, self.tooltip)
+        self.widget=menu.AppendCheckItem(self.id, self.name, self.getTooltip())
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -206,7 +213,7 @@ class ToggleAction(SelectAction):
     def insertIntoToolBar(self,toolbar):
         self.id=wx.NewId()
         self.tool=toolbar
-        toolbar.AddCheckTool(self.id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.tooltip)
+        toolbar.AddCheckTool(self.id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.getTooltip())
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
         self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
@@ -304,7 +311,7 @@ class ListAction(SelectAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id=wx.NewId()
-        widget=menu.Insert(pos,id,name,self.tooltip)
+        widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
@@ -384,7 +391,7 @@ class RadioAction(ListAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id=wx.NewId()
-        widget=menu.InsertRadioItem(pos,id,name,self.tooltip)
+        widget=menu.InsertRadioItem(pos,id,name, self.getTooltip(id, name))
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
@@ -426,7 +433,7 @@ class ToggleListAction(ListAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id=wx.NewId()
-        widget=menu.InsertCheckItem(pos,id,name,self.tooltip)
+        widget=menu.InsertCheckItem(pos,id,name, self.getTooltip())
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
