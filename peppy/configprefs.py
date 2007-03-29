@@ -315,18 +315,20 @@ class SettingsProxy(debugmixin):
     def __getattr__(self,name):
         return self._get(name)
 
-    def _get(self, name):
+    def _get(self, name, user=True, default=True):
         klasses=GlobalSettings.name_hierarchy[self.__dict__['_startSearch']]
-        d=GlobalSettings.user
-        for klass in klasses:
-            assert self.dprint("checking %s for %s in user" % (klass,name))
-            if klass in d and name in d[klass]:
-                return d[klass][name]
-        d=GlobalSettings.default
-        for klass in klasses:
-            assert self.dprint("checking %s for %s in default" % (klass,name))
-            if klass in d and name in d[klass]:
-                return d[klass][name]
+        if user:
+            d=GlobalSettings.user
+            for klass in klasses:
+                assert self.dprint("checking %s for %s in user" % (klass,name))
+                if klass in d and name in d[klass]:
+                    return d[klass][name]
+        if default:
+            d=GlobalSettings.default
+            for klass in klasses:
+                assert self.dprint("checking %s for %s in default" % (klass,name))
+                if klass in d and name in d[klass]:
+                    return d[klass][name]
 
         klasses=GlobalSettings.class_hierarchy[self.__dict__['_startSearch']]
         for klass in klasses:
@@ -338,6 +340,11 @@ class SettingsProxy(debugmixin):
     def __setattr__(self,name,value):
         GlobalSettings.user[self.__dict__['_startSearch']][name]=value
 
+    _set = __setattr__
+
+    def _del(self, name):
+        del GlobalSettings.user[self.__dict__['_startSearch']][name]
+        
     def _getValue(self,klass,name):
         d=GlobalSettings.user
         if klass in d and name in d[klass]:

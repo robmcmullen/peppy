@@ -7,6 +7,8 @@ styles of the STC.
 """
 import os
 
+from wx.lib.pubsub import Publisher
+
 from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
@@ -51,7 +53,8 @@ class STCStyles(SelectAction):
                 dlg.ShowModal()
             finally:
                 dlg.Destroy()
-            mode.changeStyle()
+            Publisher().sendMessage('settingsChanged')
+
 
 
 class STCStylesMenuProvider(Component):

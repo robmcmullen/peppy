@@ -500,9 +500,9 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
         Publisher().sendMessage('resetStatusBar')
 
 
-class FundamentalMode(MajorMode, BraceHighlightMixin,
+class FundamentalMode(BraceHighlightMixin,
                       StandardCommentMixin, StandardReturnMixin,
-                      StandardReindentMixin):
+                      StandardReindentMixin, MajorMode):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -514,9 +514,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
 
     start_line_comment = ''
     end_line_comment = ''
-
-    # increment after every style change
-    style_number = 0
 
     default_settings = {
         'tab_size': 4,
@@ -563,6 +560,15 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         win=self.stc
         return win
 
+    def createStatusIcons(self):
+        linesep = self.stc.getLinesep()
+        if linesep == '\r\n':
+            self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
+        elif linesep == '\r':
+            self.statusbar.addIcon("icons/apple.png", "Old-style Apple line endings")
+        else:
+            self.statusbar.addIcon("icons/tux.png", "Unix line endings")
+
     def createSTC(self,parent):
         """Create the STC and apply styling settings.
 
@@ -576,8 +582,9 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
         site-wide basis.
         """
         self.stc=PeppySTC(parent,refstc=self.buffer.stc)
-        self.current_style = self.__class__.style_number
+        self.applySettings()
 
+    def applySettings(self):
         self.applyDefaultSettings()
         if self.styleSTC():
             self.settings.has_stc_styling = True
@@ -595,15 +602,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
                 # dialog won't be available.
                 self.settings.has_stc_styling = False
                 self.styleSTC('text')
-
-    def createStatusIcons(self):
-        linesep = self.stc.getLinesep()
-        if linesep == '\r\n':
-            self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
-        elif linesep == '\r':
-            self.statusbar.addIcon("icons/apple.png", "Old-style Apple line endings")
-        else:
-            self.statusbar.addIcon("icons/tux.png", "Unix line endings")
 
     def styleDefault(self):
         """Create entry in stc configuration file for this mode.
@@ -745,8 +743,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
 
         @param lang: language keyword to look up in the file
         """
-        self.current_style = self.__class__.style_number
-
         config=boa.getUserConfigFile(self.frame.app)
         if lang is None:
             lang = self.keyword
@@ -757,16 +753,6 @@ class FundamentalMode(MajorMode, BraceHighlightMixin,
             dprint("no STC style defined for %s" % lang)
             return False
         return True
-
-    def changeStyle(self):
-        """Change the style of this mode and all others like it"""
-
-        self.__class__.style_number += 1
-        self.styleSTC()
-
-    def focusPostHook(self):
-        if self.current_style != self.__class__.style_number:
-            self.styleSTC()
 
     def OnUpdateUIHook(self, evt):
         self.braceHighlight()

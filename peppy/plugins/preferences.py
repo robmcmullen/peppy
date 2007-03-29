@@ -8,6 +8,8 @@ class.
 """
 import os
 
+from wx.lib.pubsub import Publisher
+
 import wx.grid
 
 from peppy import *
@@ -26,6 +28,9 @@ class Preferences(SelectAction):
         assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         dlg = PreferencesDialog(self.frame)
         retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            dlg.applyPreferences()
+            Publisher().sendMessage('settingsChanged')
         dlg.Destroy()
 
 
@@ -36,23 +41,26 @@ class PreferenceTableModel(wx.grid.PyGridTableBase):
         self.settings = []
         self.local_settings = set()
 
-        self.normal=wx.grid.GridCellAttr()
-        self.normal.SetBackgroundColour("white")
-        self.from_parent=wx.grid.GridCellAttr()
-        self.from_parent.SetBackgroundColour(wx.Color(240,240,240))
+        self.default_color = wx.Color(240, 240, 240)
+        self.local_color = wx.Color(255, 255, 255)
+        self.user_color = wx.Color(240, 255, 240)
 
     def setClass(self, grid, cls):
         oldrows = self.GetNumberRows()
         if 'default_settings' in dir(cls):
             self.cls = cls
+            if 'preference_dialog_settings' not in dir(self.cls):
+                self.cls.preference_dialog_settings = {}
+                
             all = set()
             for parent in cls.settings._getMRO():
-                all.update(parent.default_settings.keys())
+                if 'default_settings' in dir(parent):
+                    all.update(parent.default_settings.keys())
             self.settings = list(all)
             self.settings.sort()
             self.local_settings = set(cls.default_settings.keys())
-            for setting in self.settings:
-                dprint("  %s = %s" % (setting, cls.settings._get(setting)))
+##            for setting in self.settings:
+##                dprint("  %s = %s" % (setting, cls.settings._get(setting)))
         else:
             self.cls = None
             self.settings = []
@@ -73,13 +81,20 @@ class PreferenceTableModel(wx.grid.PyGridTableBase):
         grid.ForceRefresh()
 
     def GetAttr(self, row, col, kind):
-        #attr = [self.even, self.odd][row % 2]
         setting = self.settings[row]
-        if setting in self.local_settings:
-            attr = self.normal
+        attr = wx.grid.GridCellAttr()
+        if col==0:
+            attr.SetReadOnly(True)
+            if setting in self.local_settings:
+                attr.SetBackgroundColour(self.local_color)
+            else:
+                attr.SetBackgroundColour(self.default_color)
         else:
-            attr = self.from_parent
-        attr.IncRef()
+            d = self.cls.settings._getUser()
+            if setting in d or setting in self.cls.preference_dialog_settings:
+                attr.SetBackgroundColour(self.user_color)
+            else:
+                attr.SetBackgroundColour(self.default_color)
         return attr
 
     def GetNumberRows(self):
@@ -105,15 +120,48 @@ class PreferenceTableModel(wx.grid.PyGridTableBase):
             return ""
         setting = self.settings[row]
         if col==0:
-            return str(self.cls.settings._get(setting))
+            return str(self.cls.settings._get(setting, user=False))
         else:
+            d = self.cls.preference_dialog_settings
+            if setting in d:
+                return d[setting]
             d = self.cls.settings._getUser()
             if setting in d:
                 return d[setting]
             return ""
 
     def SetValue(self, row, col, value):
-        pass
+        if col==1:
+            setting = self.settings[row]
+            d = self.cls.preference_dialog_settings
+            if value=="":
+                # first, try to delete it in the preference dialog
+                # settings list
+                if setting in d:
+                    del d[setting]
+                else:
+                    # it hasn't been set during this call to
+                    # preference dialog, so try to delete it from the
+                    # user settings.
+                    d = self.cls.settings._getUser()
+                    if setting in d:
+                        self.cls.settings._del(setting)
+            else:
+                old = self.cls.settings._get(setting, user=False)
+                dprint("old = %s" % str(old))
+                if isinstance(old, bool):
+                    # bool has to go first, because according to
+                    # isinstance, a bool is also an int.
+                    if value.lower() in [_('true'), _('on'), _('yes'), '1']:
+                        d[setting] = True
+                    else:
+                        d[setting] = False
+                elif isinstance(old, int):
+                    d[setting] = int(value)
+                elif isinstance(old, float):
+                    d[setting] = float(value)
+                else:
+                    d[setting] = value
 
 
 class PreferenceTable(wx.grid.Grid):
@@ -148,7 +196,12 @@ class PreferenceTree(wx.TreeCtrl):
             parent = self.GetRootItem()
         if len(mro)==0:
             return parent
-        name = mro.pop().__name__
+        cls = mro.pop()
+        if 'default_settings' not in dir(cls):
+            # ignore intermediate subclasses that don't have any
+            # default settings
+            return self.FindParent(mro, parent)
+        name = cls.__name__
         item, cookie = self.GetFirstChild(parent)
         while item:
             if self.GetItemText(item) == name:
@@ -161,8 +214,9 @@ class PreferenceTree(wx.TreeCtrl):
         mro = cls.settings._getMRO()
         parent = self.FindParent(mro[1:])
         if parent is not None:
+            dprint("  found parent = %s" % self.GetItemText(parent))
             item = self.AppendItem(parent, mro[0].__name__)
-            if hasattr(cls, 'icon'):
+            if hasattr(cls, 'icon') and cls.icon is not None:
                 self.SetItemImage(item, getIconStorage(cls.icon))
             self.SetPyData(item, cls)
 
@@ -185,7 +239,20 @@ class PreferenceTree(wx.TreeCtrl):
         while item:
             self.SortRecurse(item)
             item, cookie = self.GetNextChild(parent, cookie)
-        
+
+    def applyRecurse(self, parent=None):
+        if parent is None:
+            parent = self.GetRootItem()
+        cls = self.GetItemPyData(parent)
+        if 'preference_dialog_settings' in dir(cls):
+            for key, val in cls.preference_dialog_settings.iteritems():
+                dprint("setting %s[%s]=%s" % (cls.__name__, key, val))
+                cls.settings._set(key, val)
+            cls.preference_dialog_settings.clear()
+        item, cookie = self.GetFirstChild(parent)
+        while item:
+            self.applyRecurse(item)
+            item, cookie = self.GetNextChild(parent, cookie)
     
     def OnCompareItems(self, item1, item2):
         t1 = self.GetItemText(item1)
@@ -216,8 +283,8 @@ class PreferencesDialog(wx.Dialog):
             if 'default_settings' in dir(cls):
                 attrs = cls.default_settings.keys()
                 attrs.sort()
-                for attr in attrs:
-                    dprint("  %s = %s" % (attr, cls.default_settings[attr]))
+##                for attr in attrs:
+##                    dprint("  %s = %s" % (attr, cls.default_settings[attr]))
         self.tree.SortRecurse()
         self.tree.ExpandAll()
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
@@ -250,7 +317,8 @@ class PreferencesDialog(wx.Dialog):
             self.table.setClass(cls)
         evt.Skip()
 
-
+    def applyPreferences(self):
+        self.tree.applyRecurse()
 
 
 class PreferencesPlugin(Component):

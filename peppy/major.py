@@ -242,6 +242,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         their own listeners.
         """
         Publisher().subscribe(self.resetStatusBar, 'resetStatusBar')
+        Publisher().subscribe(self.settingsChanged, 'settingsChanged')
 
     def createListenersPostHook(self):
         """Hook to add custom listeners.
@@ -263,6 +264,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         remove the listener references manually.
         """
         Publisher().unsubscribe(self.resetStatusBar)
+        Publisher().unsubscribe(self.settingsChanged)
 
     def removeListenersPostHook(self):
         """Hook to remove custom listeners.
@@ -421,6 +423,19 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         assert self.dprint("popping up menu for %s" % evt.GetEventObject())
         self.PopupMenu(self.popup)
         evt.Skip()
+
+    def applySettings(self):
+        """Apply settings to the view
+
+        This is the place where settings for the class show their
+        effects.  Calling this should update the view to reflect any
+        changes in the settings.
+        """
+        pass
+
+    def settingsChanged(self, message=None):
+        dprint("changing settings for mode %s" % self.__class__.__name__)
+        self.applySettings()       
 
     def focus(self):
         #assert self.dprint("View: setting focus to %s" % self)
