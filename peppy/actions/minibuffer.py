@@ -17,7 +17,7 @@ class MinibufferAction(BufferModificationAction):
         #print minibuffer.win
         mode.setMinibuffer(minibuffer)
 
-    def processMinibuffer(self, text):
+    def processMinibuffer(self, mode, text):
         assert self.dprint("processing %s" % text)
 
 
@@ -102,7 +102,7 @@ class TextMinibuffer(Minibuffer):
         assert self.dprint("text=%s" % text)
         try:
             text = self.convert(text)
-            error = self.action.processMinibuffer(text)
+            error = self.action.processMinibuffer(self.mode, text)
             if error is not None:
                 self.mode.frame.SetStatusText(error)
         except:
@@ -118,5 +118,18 @@ class IntMinibuffer(TextMinibuffer):
     
     def convert(self, text):
         number = int(self.text.GetValue())
+        assert self.dprint("number=%s" % number)
+        return number
+
+class FloatMinibuffer(TextMinibuffer):
+    """
+    Dedicated subclass of Minibuffer that prompts for a floating point
+    number.
+    """
+    label = "Floating Point"
+    error = "Not a number."
+    
+    def convert(self, text):
+        number = float(self.text.GetValue())
         assert self.dprint("number=%s" % number)
         return number

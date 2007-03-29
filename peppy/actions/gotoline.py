@@ -28,12 +28,11 @@ class GotoLine(MinibufferAction):
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
 
-    def processMinibuffer(self, line):
+    def processMinibuffer(self, mode, line):
         """
         Callback function used to set the stc to the correct line.
         """
         
         # stc counts lines from zero, but displayed starting at 1.
         dprint("goto line = %d" % line)
-        mode = self.frame.getActiveMajorMode()
         mode.stc.GotoLine(line-1)

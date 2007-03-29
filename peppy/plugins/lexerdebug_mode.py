@@ -338,14 +338,13 @@ class LexerKeywords(MinibufferAction):
     minibuffer = TextMinibuffer
     minibuffer_label = "Keywords:"
 
-    def processMinibuffer(self, text):
+    def processMinibuffer(self, mode, text):
         """
         Callback function used to set the keywords
         """
         
         # stc counts lines from zero, but displayed starting at 1.
         dprint("keywords = %s" % text)
-        mode = self.frame.getActiveMajorMode()
         mode.keywords = text
 
 
