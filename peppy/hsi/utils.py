@@ -19,6 +19,21 @@ import numpy
 
 
 def getRangeIntersection(x1, x2, bbl1=None):
+    """Computes the common range of sampling points.
+
+    Given two lists of sampling points, determine the subset of the
+    range of the first set such that the endpoints are guaranteed to
+    be within the range of the second set of sampling points.
+
+    @param x1: list of sampling points to subset
+    @param x2: list of sampling points of other set
+    @param bbl1: optional bad band list of x1 (0 = bad, 1 = good)
+
+    @returns: tuple (index1, index2) specifying indexes that give the
+    range within 1st sampling set.  Note the indexes are in the python
+    idiom where index2 is actually one beyond the last good value so
+    you can do a slice like x1[index1:index2] and get the actual list.
+    """
     i1start = 0
     i1end = len(x1)
     while x1[i1start] < x2[0] and i1start < i1end:
@@ -38,6 +53,8 @@ def resample(x1, y1, x2, y2, bbl1=None):
 
     Given two sets of data, resample the second set to match the first
     set's x values and range.
+
+    @returns tuple (sampling, data1, data2)
     """
     xout = []
     y1out = []
@@ -66,6 +83,14 @@ def resample(x1, y1, x2, y2, bbl1=None):
     return (xout, y1out, y2out)
         
 def spectralAngle(lam1, spectra1, lam2, spectra2, bbl=None):
+    """Determine spectral angle between two vectors.
+
+    Computes the spectral angle between the common range of two
+    vectors, resampling the second one to conform to the first's
+    sampling points if necessary.
+
+    @returns angle in degrees
+    """
     new2 = []
     lam, s1, s2 = resample(lam1, spectra1, lam2, spectra2, bbl)
     print "resampled: lam=%s\ns1=%s\ns2=%s" % (lam, s1, s2)
@@ -90,3 +115,21 @@ def spectralAngle(lam1, spectra1, lam2, spectra2, bbl=None):
 
     return alpha
 
+def euclidianDistance(lam1, spectra1, lam2, spectra2, bbl=None):
+    """Determine Euclidian distance between two vectors.
+
+    Compute Euclidian distance between the common range of two
+    vectors, resampling the second one to conform to the first's
+    sampling points.
+
+    @returns distance (units are ???)
+    """
+    new2 = []
+    lam, s1, s2 = resample(lam1, spectra1, lam2, spectra2, bbl)
+    print "resampled: lam=%s\ns1=%s\ns2=%s" % (lam, s1, s2)
+    
+    dist = 0.0
+    for i in range(len(lam)):
+        delta = s1[i] - s2[i]
+        dist += delta*delta
+    return math.sqrt(dist)
