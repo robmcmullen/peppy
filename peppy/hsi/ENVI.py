@@ -12,7 +12,8 @@ import os,os.path,sys,re,csv,textwrap
 from peppy.iofilter import *
 from peppy.trac.core import *
 
-import HSI as hsi
+from cube import *
+import utils
 import roi
 
 from cStringIO import StringIO
@@ -77,18 +78,18 @@ def findHeaders(url):
     return urls
 
 
-class Header(dict,hsi.MetadataMixin):
+class Header(dict,MetadataMixin):
     """
     Class representing the text fields of an ENVI format header, with
-    the ability to populate an L{hsi.Cube} with the parsed values from
+    the ability to populate an L{Cube} with the parsed values from
     this text.
 
-    When initially loading this class, all that is done is to parse the text into name/value pairs.  Conversion from text to something more interesting, like the actual values or lists of values is not done until you call L{getCube}, which then creates an L{hsi.Cube} instance and populates its fields with the values parsed from the ENVI header text.
+    When initially loading this class, all that is done is to parse the text into name/value pairs.  Conversion from text to something more interesting, like the actual values or lists of values is not done until you call L{getCube}, which then creates an L{Cube} instance and populates its fields with the values parsed from the ENVI header text.
     """
 
     format_id="ENVI"
     format_name="ENVI Datacube"
-    extensions=['.bil','.bip','.bsq','.sli','.img']
+    extensions=['.bil','.bip','.bsq','.sli']
 
     def __init__(self,filename=None,debug=False):
         self.debug = debug
@@ -109,7 +110,7 @@ class Header(dict,hsi.MetadataMixin):
             (int , ['samples','lines','bands','byte order','bbl','x start','header offset']),
             (float , ['wavelength','fwhm','sigma','reflectance scale factor']),
             (lambda s:s.lower() , ['interleave','sensor type']),
-            (hsi.normalizeUnits, ['wavelength units']),
+            (utils.normalizeUnits, ['wavelength units']),
             (lambda s:enviDataType[int(s)], ['data type']),
             (lambda s:s, ['description','band names','default bands']),
             )
@@ -129,7 +130,7 @@ class Header(dict,hsi.MetadataMixin):
             }
 
         if filename:
-            if isinstance(filename,hsi.Cube):
+            if isinstance(filename,Cube):
                 self.getCubeAttributes(filename)
             else:
                 self.headerurl, self.cubeurl = self.getFilePair(filename)
@@ -274,7 +275,7 @@ class Header(dict,hsi.MetadataMixin):
 
     def getCube(self,filename=None,index=0):
         #print self.cubeurl, self.headerurl
-        cube=hsi.newCube(self['interleave'],self.cubeurl)
+        cube=newCube(self['interleave'],self.cubeurl)
         #print cube
         self.setCubeAttributes(cube)
         cube.open()
@@ -368,7 +369,7 @@ class Header(dict,hsi.MetadataMixin):
         return fs.getvalue()
 
 
-class ENVITextROI(roi.ROIFile):
+class TextROI(roi.ROIFile):
     """ENVI Text format ROI file support.
 
     This format supports loading and saving of ENVI text format ROIs.
@@ -430,14 +431,14 @@ class ENVITextROI(roi.ROIFile):
 
 
 class ENVIFormatProvider(Component):
-    implements(hsi.IHyperspectralFileFormat)
+    implements(IHyperspectralFileFormat)
     implements(roi.IHyperspectralROIFormat)
     
     def supportedFormats(self):
         return [Header]
 
     def supportedROIFormats(self):
-        return [ENVITextROI]
+        return [TextROI]
 
 if __name__ == "__main__":
     from optparse import OptionParser

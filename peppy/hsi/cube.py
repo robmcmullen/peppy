@@ -6,8 +6,10 @@ This class supports reading HSI data cubes (that are stored in raw,
 uncompressed formats) using memory mapped file access.
 """
 
-import os,sys,re,random
+import os,sys,re,random, glob
 from cStringIO import StringIO
+
+import utils
 
 from peppy.debug import *
 
@@ -26,22 +28,6 @@ else:
     nativeByteOrder=BigEndian
 byteordertext=['<','>']
 
-# number of meters per unit
-units_scale={
-'nm':1.0e-9,
-'um':1.0e-6,
-'mm':1.0e-3,
-'m':1.0,
-}
-
-def normalizeUnits(txt):
-    units=txt.lower()
-    if units[0:4]=='nano' or units[0:2]=='nm':
-        return 'nm'
-    elif units[0:5]=='micro' or units[0:2]=='um':
-        return 'um'
-    return None
-
 
 # Trac plugin for registering new HSI readers
 
@@ -53,23 +39,68 @@ class IHyperspectralFileFormat(Interface):
 class HyperspectralFileFormat(Component):
     handlers = ExtensionPoint(IHyperspectralFileFormat)
 
+    loaded = False
+
+    @staticmethod
+    def discover():
+        if HyperspectralFileFormat.loaded:
+            return
+        import ENVI
+        #import GDAL
+        dprint("module name %s" % __name__)
+        modbase, ext = os.path.splitext(__name__)
+        
+        path = os.path.dirname(__file__)
+        files = glob.glob(os.path.join(path,'frmts','*.py'))
+        files.extend(glob.glob(os.path.join(path,'mil','*.py')))
+        for include in files:
+            sub = os.path.basename(os.path.dirname(include))
+            mod, ext = os.path.splitext(os.path.basename(include))
+            mod = '%s.%s.%s' % (modbase, sub, mod)
+            dprint('trying to load module %s' % mod)
+            try:
+                __import__(mod)
+            except Exception,e:
+                print e
+        HyperspectralFileFormat.loaded = True
+
     @staticmethod
     def identify(urlinfo):
+        HyperspectralFileFormat.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
         comp_mgr = ComponentManager()
         register = HyperspectralFileFormat(comp_mgr)
         print "handlers: %s" % register.handlers
+        matches = []
         for loader in register.handlers:
             for format in loader.supportedFormats():
                 print "checking %s for %s format" % (urlinfo, format.format_name)
                 if format.identify(urlinfo):
-                    print "Identified %s format" % format.format_name
-                    return format
+                    print "Possible match for %s format" % format.format_name
+                    matches.append(format)
+        for match in matches:
+            # It is possible that the file can be loaded as more than
+            # one format.  For instance, GDAL supports a bunch of
+            # formats, but custom classes can be written to be more
+            # efficient than GDAL.  So, loop through the matches and
+            # see if there is a specific class that should be used
+            # instead of a generic one.
+            print "Checking %s for specific support of %s" % (match, urlinfo)
+            name, ext = os.path.splitext(urlinfo.path)
+            ext.lower()
+            if ext in match.extensions:
+                print "Found specific support for %s in %s" % (ext, match)
+                return match
+        if matches:
+            # FIXME: return the first match, but could prompt the user
+            # to choose...
+            return matches[0]
         return None
 
     @staticmethod
     def load(urlinfo):
+        HyperspectralFileFormat.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
         format = HyperspectralFileFormat.identify(urlinfo)
@@ -122,13 +153,6 @@ class MetadataMixin(object):
         valid instance of the type that the subclass is expecting to
         load."""
         return False
-
-    @classmethod
-    def alternateNames(cls, filename):
-        """If we need multiple files to describe the format, e.g. ENVI
-        format with a raw data file and a separate header file, return
-        possible header names given the raw data file name."""
-        return []
 
     def formatName(self):
         return self.format_name
@@ -461,8 +485,8 @@ class Cube:
     def normalizeUnits(self,val,units):
         if not self.wavelength_units:
             return val
-        cubeunits=units_scale[self.wavelength_units]
-        theseunits=units_scale[units]
+        cubeunits=utils.units_scale[self.wavelength_units]
+        theseunits=utils.units_scale[units]
 ##        converted=val*cubeunits/theseunits
         converted=val*theseunits/cubeunits
         #print "val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits))
@@ -474,8 +498,8 @@ class Cube:
         """
         if not self.wavelength_units:
             return val
-        cubeunits=units_scale[self.wavelength_units]
-        theseunits=units_scale[units]
+        cubeunits=utils.units_scale[self.wavelength_units]
+        theseunits=utils.units_scale[units]
         converted=val*cubeunits/theseunits
         #print "val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits))
         return converted

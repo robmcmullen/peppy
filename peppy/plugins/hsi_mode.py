@@ -44,6 +44,7 @@ from peppy.actions.minibuffer import FloatMinibuffer
 
 import wx.lib.plot as plot
 import peppy.lib.plotter as plotter
+from peppy.lib.rubberband import RubberBand
 
 from peppy import *
 from peppy.menu import *
@@ -55,7 +56,7 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 
-import peppy.hsi as hsi
+from peppy.hsi import *
 
 import numpy
 
@@ -285,11 +286,13 @@ class CubeScroller(BitmapScroller):
         BitmapScroller.__init__(self, parent)
         self.parent = parent
         self.frame = frame
+
+        self.rb = RubberBand(drawingSurface=self)
+        self.rb.enabled = False
         
         self.crosshair=None
-        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftButtonEvent)
-        self.Bind(wx.EVT_LEFT_UP,   self.OnLeftButtonEvent)
-        self.Bind(wx.EVT_MOTION,    self.OnLeftButtonEvent)
+        self.Bind(wx.EVT_MOUSE_EVENTS, self.OnLeftButtonEvent)
+        self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         
     def convertEventCoords(self, ev, fixbounds=True):
         xView, yView = self.GetViewStart()
@@ -313,32 +316,65 @@ class CubeScroller(BitmapScroller):
         xDelta, yDelta = self.GetScrollPixelsPerUnit()
         x -= (xView * xDelta)
         y -= (yView * yDelta)
+        dprint('x=%d, y=%d' % (x, y))
         dc.DrawLine(x,0,x,self.height)
         dc.DrawLine(0,y,self.width,y)
 
-    def OnPaintHook(self, dc):
+    def OnPaintHook(self, evt, dc):
         if self.crosshair:
-            dc.SetPen(wx.Pen(wx.RED))
+            dc.SetPen(wx.Pen(wx.RED, 1, wx.DOT))
             dc.SetLogicalFunction(wx.XOR)
+##            dprint('x=%d, y=%d' % self.crosshair)
+##            self.drawCrossHair(dc,*self.crosshair)
+
+    def OnKillFocus(self, evt):
+        if self.crosshair:
+            dc=self.getCrosshairDC()
             self.drawCrossHair(dc,*self.crosshair)
+            self.crosshair = None
+
+    def getCrosshairDC(self, dc=None):
+        if dc is None:
+            dc=wx.ClientDC(self)
+        dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
+        dc.SetLogicalFunction(wx.XOR)
+        return dc
+
+    def handleCrosshairEvent(self, ev=None):
+        # draw crosshair (note: in event coords, not converted coords)
+        dc=self.getCrosshairDC()
+        if self.crosshair:
+            self.drawCrossHair(dc,*self.crosshair)
+        coords=self.convertEventCoords(ev)
+        # print "drawing crosshair at (%d,%d)" % coords
+        self.crosshair=coords
+        self.drawCrossHair(dc,*self.crosshair)
+
+        wx.PostEvent(self, HSIUpdateEvent())
+
+    def getRubberBandState(self):
+        return self.rb.enabled
+
+    def setRubberBand(self, state):
+        if state != self.rb.enabled:
+            self.rb.enabled = state
+            if state:
+                if self.crosshair:
+                    dc=self.getCrosshairDC()
+                    self.drawCrossHair(dc, *self.crosshair)
+                    self.crosshair = None
+            else:
+                self.rb.reset()
 
     def OnLeftButtonEvent(self, ev):
-        if ev.LeftDown() or ev.Dragging():
-            coords=self.convertEventCoords(ev)
-            # print "left mouse button event at (%d,%d)" % coords
-            if self.bmp:
-                # draw crosshair (note: in event coords, not converted coords)
-                dc=wx.ClientDC(self)
-                dc.SetPen(wx.Pen(wx.RED))
-                dc.SetLogicalFunction(wx.XOR)
-                if self.crosshair:
-                    self.drawCrossHair(dc,*self.crosshair)
-                self.crosshair=coords
-                self.drawCrossHair(dc,*self.crosshair)
-
-                wx.PostEvent(self, HSIUpdateEvent())
-        # elif ev.LeftUp():
-        #     pass
+        if self.bmp:
+            if self.rb.enabled:
+                self.rb._handleMouseEvents(ev)
+            else:
+                if ev.LeftDown() or ev.Dragging():
+                    self.handleCrosshairEvent(ev)
+                # elif ev.LeftUp():
+                #     pass
 
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_HSI_UPDATE, callback)
@@ -348,8 +384,22 @@ class HyperspectralSTC(NonResidentSTC):
     def openMmap(self):
         dprint("filename = %s" % self.filename)
         urlinfo = URLInfo(self.filename)
-        self.cube=hsi.HyperspectralFileFormat.load(urlinfo)
+        self.cube=HyperspectralFileFormat.load(urlinfo)
 
+
+class SelectSubcube(ToggleAction):
+    name = "Select Subcube"
+    tooltip = "Select subcube spectrally."
+    icon = 'icons/rectangular_select.png'
+    
+    def isChecked(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.editwin.getRubberBandState()
+
+    def action(self, pos=None):
+        print "Select mode!!!"
+        mode = self.frame.getActiveMajorMode()
+        mode.editwin.setRubberBand(not mode.editwin.getRubberBandState())
 
 class PrevBand(SelectAction):
     name = "Prev Band"
@@ -708,7 +758,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
 
     def scanFilename(self, url):
         info = URLInfo(url)
-        format = hsi.HyperspectralFileFormat.identify(info)
+        format = HyperspectralFileFormat.identify(info)
         if format:
             dprint("found %s" % format)
             return MajorModeMatch(HSIMode, exact=True)
@@ -724,6 +774,8 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                   ("HSI","Dataset",Separator("dataset")),
                   ("HSI","Dataset",MenuItem(PrevBand)),
                   ("HSI","Dataset",MenuItem(NextBand)),
+                  ("HSI","Dataset",Separator("this dataset")),
+                  ("HSI","Dataset",MenuItem(SelectSubcube)),
                   ("HSI","View",MenuItem(ContrastFilterAction).first()),
                   )
     def getMenuItems(self):
@@ -736,6 +788,8 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                    ("HSI","Dataset",Separator("dataset")),
                    ("HSI","Dataset",MenuItem(PrevBand)),
                    ("HSI","Dataset",MenuItem(NextBand)),
+                   ("HSI","Dataset",Separator("this dataset")),
+                   ("HSI","Dataset",MenuItem(SelectSubcube)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:

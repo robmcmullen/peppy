@@ -47,10 +47,16 @@ class BitmapScroller(wx.ScrolledWindow):
             dc=wx.BufferedPaintDC(self, self.bmp, wx.BUFFER_VIRTUAL_AREA)
             # Note that the drawing actually happens when the dc goes
             # out of scope and is destroyed.
-            self.OnPaintHook(dc)
+            self.OnPaintHook(evt, dc)
         evt.Skip()
 
-    def OnPaintHook(self, dc):
+    def OnPaintHook(self, evt, dc):
+        """Hook to draw any additional items onto the saved bitmap.
+
+        Note that any changes made to the dc will be reflected in the
+        saved bitmap, so subsequent times calling this function will
+        continue to add new data to the image.
+        """
         pass
 
 

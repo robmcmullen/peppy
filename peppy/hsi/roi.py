@@ -11,6 +11,8 @@ performed on extracted data.
 import os,os.path,sys,re,struct,stat
 from cStringIO import StringIO
 
+from peppy.hsi.utils import *
+
 from peppy.debug import *
 from peppy.iofilter import *
 from peppy.trac.core import *
@@ -54,7 +56,20 @@ class HyperspectralROIFormat(Component):
             return roi
         return None
 
+class ROISpectrum(object):
+    def __init__(self, label, color, spectra, cube):
+        self.label = label
+        self.color = color
+        self.wavelengths = cube.wavelengths
+        self.bbl = cube.bbl
+        self.spectra = spectra
 
+    def compare(self, wavelengths, spectra):
+        sam = spectralAngle(self.wavelengths, self.spectra,
+                            wavelengths, spectra, self.bbl)
+        dist = euclideanDistance(self.wavelengths, self.spectra,
+                                 wavelengths, spectra, self.bbl)
+        return (sam, dist)
 
 class ROI(object):
     def __init__(self, name):
@@ -91,9 +106,9 @@ class ROI(object):
     def getAllColumns(self, cube):
         cols = []
         for i in range(len(self.points)):
-            col = ['%s-%s' % (self.name, self.labels[i])]
+            label = '%s-%s' % (self.name, self.labels[i])
             spectra = cube.getSpectra(self.points[i][1],self.points[i][0])/10000.0
-            col.extend(spectra)
+            col = ROISpectrum(label, self.color, spectra, cube)
             cols.append(col)
         #print cols
         return cols
@@ -105,8 +120,8 @@ class ROI(object):
             total += cube.getSpectra(self.points[i][1],self.points[i][0])
         total /= len(self.points)
         total /= 10000.0
-        col = ['%s-%s-%s' % (self.name, self.labels[0], self.labels[-1])]
-        col.extend(total)
+        label = '%s-%s-%s' % (self.name, self.labels[0], self.labels[-1])
+        col = ROISpectrum(label, self.color, total, cube)
         cols.append(col)
         #print cols
         return cols

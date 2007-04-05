@@ -11,7 +11,8 @@ compression.
 import os,os.path,sys,re,struct,stat
 from cStringIO import StringIO
 
-import HSI
+import cube
+
 import gdal
 
 from peppy.debug import *
@@ -30,11 +31,11 @@ GDALDataType=[None, numpy.uint8,
               numpy.complex64, numpy.complex128]
 
 
-class GDALDataset(HSI.MetadataMixin):
+class GDALDataset(cube.MetadataMixin):
     """
     Class representing the metadata associated with an image loaded
     through the GDAL interface.  This has the ability to populate an
-    L{HSI.Cube} with the parsed values from this text.
+    L{cube.Cube} with the parsed values from this text.
     """
 
     debug=True
@@ -48,7 +49,7 @@ class GDALDataset(HSI.MetadataMixin):
         self.subsets=[]
 
         if filename:
-            if isinstance(filename,HSI.Cube):
+            if isinstance(filename,cube.Cube):
                 self.getCubeAttributes(filename)
             else:
                 self.open(filename)
@@ -134,9 +135,9 @@ class GDALDataset(HSI.MetadataMixin):
         pass
 
 
-class GDALCube(HSI.Cube):
+class GDALCube(cube.Cube):
     def __init__(self,filename=None):
-        HSI.Cube.__init__(self,filename)
+        cube.Cube.__init__(self,filename)
 
         self.interleave='bsq'
         
@@ -224,7 +225,7 @@ class GDALCube(HSI.Cube):
 
 
 class GDALFormatProvider(Component):
-    implements(HSI.IHyperspectralFileFormat)
+    implements(cube.IHyperspectralFileFormat)
     
     def supportedFormats(self):
         return [GDALDataset]
@@ -241,7 +242,7 @@ if __name__ == "__main__":
     if args:
         for filename in args:
             GDALDataset.debug=True
-            h=HSI.loadHeader(filename)
+            h=cube.loadHeader(filename)
             print h
             cube=h.getCube()
             print cube
