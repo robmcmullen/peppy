@@ -28,9 +28,8 @@ WINBATCH = peppy.bat
 SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
-SVN_LIST = $(shell svn ls -R)
-#SVN_LIST = AUTHORS ChangeLog FAQ INSTALL.pre.in LICENSE Makedoc.py Makefile NEWS README.pre.in THANKS TODO demo/ demo/__init__.py demo/actions.py demo/auitest.py demo/ngmenu.py demo/samplewidgets.py docs/ docs/README docs/api/ peppy/ peppy/__init__.py peppy/actions/ peppy/actions/__init__.py peppy/actions/gotoline.py peppy/actions/minibuffer.py peppy/actions/pypefind.py peppy/buffers.py peppy/configprefs.py peppy/debug.py peppy/dialogs.py peppy/icons/ peppy/icons/application.png peppy/icons/application_xp_terminal.png peppy/icons/arrow_turn_left.png peppy/icons/arrow_turn_right.png peppy/icons/blank.ico peppy/icons/bug_add.png peppy/icons/cross.png peppy/icons/cut.png peppy/icons/disk.png peppy/icons/disk_edit.png peppy/icons/folder_image.png peppy/icons/folder_page.png peppy/icons/green.gif peppy/icons/html.png peppy/icons/image.png peppy/icons/map_magnify.png peppy/icons/page.png peppy/icons/page_copy.png peppy/icons/page_white.png peppy/icons/page_white_c.png peppy/icons/page_white_cplusplus.png peppy/icons/page_white_picture.png peppy/icons/page_white_text.png peppy/icons/page_white_tux.png peppy/icons/paste_plain.png peppy/icons/picture.png peppy/icons/py.ico peppy/icons/red.gif peppy/icons/text_indent_remove_rob.png peppy/icons/text_indent_rob.png peppy/icons/tux.png peppy/icons/world.png peppy/icons/yellow.gif peppy/iconstorage.py peppy/iofilter.py peppy/main.py peppy/major.py peppy/major_modes/ peppy/major_modes/__init__.py peppy/major_modes/fundamental.py peppy/major_modes/hexedit.py peppy/major_modes/image.py peppy/major_modes/python.py peppy/major_modes/shell.py peppy/menu.py peppy/minor.py peppy/minor_modes/ peppy/minor_modes/__init__.py peppy/minor_modes/funclist.py peppy/minor_modes/sizereporter.py peppy/nltk_lite/ peppy/nltk_lite/__init__.py peppy/nltk_lite/chat/ peppy/nltk_lite/chat/__init__.py peppy/nltk_lite/chat/eliza.py peppy/nltk_lite/chat/iesha.py peppy/nltk_lite/chat/nltk_lite/ peppy/nltk_lite/chat/nltk_lite/__init__.py peppy/nltk_lite/chat/nltk_lite/chat.py peppy/nltk_lite/chat/rude.py peppy/nltk_lite/chat/zen.py peppy/orderer.py peppy/plugins/ peppy/plugins/__init__.py peppy/plugins/about.py peppy/plugins/chatbots.py peppy/plugins/filebrowser.py peppy/plugins/openrecent.py peppy/plugins/pype_compat.py peppy/pype/ peppy/pype/__init__.py peppy/pype/browser.py peppy/pype/codetree.py peppy/pype/exparse.py peppy/pype/filehistory.py peppy/pype/findbar.py peppy/pype/parsers.py peppy/stcinterface.py peppy/trac/ peppy/trac/__init__.py peppy/trac/core.py peppy/wxemacskeybindings.py peppy.bat peppy.py setup.py tests/ tests/test_configprefs.py tests/test_iofilter.py tests/test_majormode.py tests/test_orderer.py
-SVN_FILTER_OUT := README.pre.in INSTALL.pre.in Makefile Makedoc.py peppy.bat setup.py %/
+SVN_LIST = $(shell python svn-ls.py)
+SVN_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py trac/% %/
 SVN_FILTERED := $(filter-out $(SVN_FILTER_OUT),$(SVN_LIST))
 DISTSRC := $(filter %.py,$(SVN_FILTERED))
 DISTFILES := README INSTALL setup.py $(SVN_FILTERED)
@@ -81,15 +80,18 @@ dist: distdir
 	$(COMPRESS) $(distdir).tar
 	-rm -rf $(distdir)
 
-distdir: $(DISTFILES)
+distdir:
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
 	tar cf - $(DISTFILES) | (cd $(distdir); tar xf -)
 	chmod 644 $(distdir)/tests/*.py
+	./Makedoc.py -m peppy -o $(distdir)/setup.py setup.py.in
 	rm $(distdir)/$(DISTMAIN)
-	./Makedoc.py -m peppy -d -o /tmp/makedoc.tmp $(DISTMAIN)
-	sed -e "s/svn-devel/$(VERSION)/" /tmp/makedoc.tmp > $(distdir)/$(DISTMAIN)
+	./Makedoc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
+	sed -e "s/svn-devel/$(VERSION)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
+	rm $(distdir)/$(DISTMAIN).tmp
+
 	mkdir $(distdir)/scripts
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts

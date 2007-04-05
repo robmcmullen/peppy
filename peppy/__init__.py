@@ -45,24 +45,33 @@ __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
 
-# Define the common global classes that plugins and extensions should
-# need to use
-from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
-from peppy.configprefs import *
-from peppy.debug import debuglog, dprint, debugmixin
-from peppy.major import MajorMode, BufferModificationAction
-from peppy.minor import MinorMode, IMinorModeProvider, \
-     MinorModeIncompatibilityError
+__have_wx = True
+try:
+    import wx
+except:
+    # Don't have wx.  Still allow peppy to be imported, because there
+    # are some classes that don't depend on wx
+    __have_wx = False
 
-from peppy.lib.iconstorage import *
+if __have_wx:
+    # If we have wx, define the common global classes that plugins and
+    # extensions should need to use
+    from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
+    from peppy.configprefs import *
+    from peppy.debug import debuglog, dprint, debugmixin
+    from peppy.major import MajorMode, BufferModificationAction
+    from peppy.minor import MinorMode, IMinorModeProvider, \
+         MinorModeIncompatibilityError
 
-__all__ = [
-    'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
-    'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
-            'getSubclassHierarchy',
-    'debuglog','dprint','debugmixin',
-    'getIconStorage','getIconBitmap',
-    'MajorMode', 'BufferModificationAction',
-    'MinorMode', 'IMinorModeProvider', 'MinorModeIncompatibilityError',
-    ]
-#print __all__
+    from peppy.lib.iconstorage import *
+
+    __all__ = [
+        'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
+        'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
+                'getSubclassHierarchy',
+        'debuglog','dprint','debugmixin',
+        'getIconStorage','getIconBitmap',
+        'MajorMode', 'BufferModificationAction',
+        'MinorMode', 'IMinorModeProvider', 'MinorModeIncompatibilityError',
+        ]
+    #print __all__

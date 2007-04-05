@@ -14,6 +14,8 @@ namespace={
     'author_email':None,
     'url':None,
     'description':None,
+    'long_description': None,
+    'packages': None,
     'cvs_version':None,
     'release_version':None,
     'version':None,
@@ -44,6 +46,39 @@ def findChangeLogVersion():
     namespace['version']=version
     #print namespace
 
+def findLongDescription():
+    # skip the opening one-line description and grab the first paragraph
+    # out of the module's docstring to use as the long description.
+    long_description = ''
+    lines = module.__doc__.splitlines()
+    for firstline in range(len(lines)):
+        # skip until we reach a blank line
+        if len(lines[firstline])==0 or lines[firstline].isspace():
+            break
+    if firstline<len(lines):
+        firstline+=1
+    for lastline in range(firstline,len(lines)):
+        # stop when we reach a blank line
+        if len(lines[lastline])==0 or lines[lastline].isspace():
+            break
+    long_description = " ".join(lines[firstline:lastline])
+    namespace['long_description'] = long_description
+
+def findPackages():
+    packages = []
+
+    # find packages to be installed
+    path = os.path.dirname(module.__file__)
+    def addmodules(arg, dirname, names):
+        if '__init__.py' in names:
+            prefix = os.path.commonprefix((path, dirname))
+            mod = "%s%s" % (module.__name__, dirname[len(prefix):].replace(os.sep,'.'))
+            if mod not in packages:
+                packages.append(mod)
+    os.path.walk(path, addmodules, None)
+    print "packages = %s" % packages
+    namespace['packages'] = str(packages)
+
 def findlatest():
     files=os.listdir('archive')
     timestamp=0
@@ -70,19 +105,26 @@ def findlatest():
 def setnamespace():
     if module:
         defaults={
-            'prog':module.__name__,
-            'author':module.__author__,
-            'author_email':module.__author_email__,
-            'url':module.__url__,
-            'description':module.__description__,
+            'prog':'__name__',
+            'author':'__author__',
+            'author_email':'__author_email__',
+            'url':'__url__',
+            'download_url':'__download_url__',
+            'description':'__description__',
+            'license': '__license__',
+            'keywords': '__keywords__',
+            'coconuts': '__sir_not_appearing_in_this_film__',
             }
         
         for key,val in defaults.iteritems():
-            namespace[key]=val
+            if hasattr(module, val):
+                namespace[key]=getattr(module, val)
             # print "%s=%s" % (key,val)
     
     # findlatest()
     findChangeLogVersion()
+    findLongDescription()
+    findPackages()
     
     if int(namespace['yearstart'])<int(namespace['year']):
         namespace['yearrange']=namespace['yearstart']+'-'+namespace['year']
