@@ -915,7 +915,7 @@ class BufferApp(wx.App,debugmixin):
     def quitHook(self):
         return True
 
-    def loadPlugin(self, plugin):
+    def loadPlugin(self, plugin, abort=True):
         """Import a plugin from a module name
 
         Given a module name (e.g. 'peppy.plugins.example_plugin',
@@ -924,12 +924,17 @@ class BufferApp(wx.App,debugmixin):
         @param: name of plugin to load
         """
         assert self.dprint("loading plugins from module=%s" % str(plugin))
-        try:
+        # FIXME: make abort's default state be dependent on some
+        # configuration parameter
+        if abort:
             mod=__import__(plugin)
-        except Exception,ex:
-            print "couldn't load plugin %s" % plugin
-            print ex
-            self.errors.append("couldn't load plugin %s" % plugin)
+        else:
+            try:
+                mod=__import__(plugin)
+            except Exception,ex:
+                print "couldn't load plugin %s" % plugin
+                print ex
+                self.errors.append("couldn't load plugin %s" % plugin)
 
     def loadPlugins(self,plugins):
         """Import a list of plugins.
