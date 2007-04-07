@@ -133,6 +133,8 @@ class Header(dict,MetadataMixin):
             if isinstance(filename,Cube):
                 self.getCubeAttributes(filename)
             else:
+                if not isinstance(filename, URLInfo):
+                    filename = URLInfo(filename)
                 self.headerurl, self.cubeurl = self.getFilePair(filename)
                 self.open(self.headerurl)
         else:

@@ -17,6 +17,7 @@ import gdal
 
 from peppy.debug import *
 from peppy.trac.core import *
+from peppy.iofilter import *
 
 import numpy
 
@@ -44,8 +45,7 @@ class GDALDataset(cube.MetadataMixin):
     format_name="GDAL"
 
     def __init__(self,filename=None,debug=False):
-        self.filename=None
-        self.pathname=None
+        self.url = None
         self.subsets=[]
 
         if filename:
@@ -70,28 +70,28 @@ class GDALDataset(cube.MetadataMixin):
                 return True
         return False
 
-    def setFilename(self,filename=None):
-        if filename:
-            self.filename=filename
-            self.pathname=os.path.abspath(filename)
+    def setURL(self, url=None):
+        if url:
+            if not isinstance(url, URLInfo):
+                url = URLInfo(url)
+            self.url = url
         else:
-            self.filename=None
-            self.pathname=None
+            self.url = None
 
-    def open(self,filename=None):
+    def open(self, filename=None):
         """Open the header file, and if successful parse it."""
         if filename:
-            self.setFilename(filename)
+            self.setURL(filename)
 
-        if self.filename:
-            dataset=gdal.Open(filename,gdal.GA_ReadOnly)
+        if self.url:
+            dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
             if dataset:
                 self.read(dataset)
             else:
                 print "Couldn't open header!\n"
 
-    def save(self,filename=None):
-        if filename:
+    def save(self, url=None):
+        if url:
             print "Save not implemented yet!\n"           
 
     def read(self,dataset):
@@ -116,19 +116,20 @@ class GDALDataset(cube.MetadataMixin):
 
         cube.subcubes=len(self.subsets)
         print "adjusted number of subcubes to %s" % cube.subcubes
-        cube.setFilename(self.filename)
+        cube.setURL(self.url)
 
     def getCubeAttributes(self,cube):
         # transfer attributes from cube to self
         pass
     
     def getCube(self,filename=None,index=0):
-        #self.readFrames(self.fh)
+        if filename is None:
+            filename = self.url
         cube=GDALCube(filename)
         print cube
         self.setCubeAttributes(cube)
         cube.verifyAttributes()
-        cube.open(filename)
+        cube.open()
         return cube
 
     def write(self,fh):
@@ -159,11 +160,11 @@ class GDALCube(cube.Cube):
 
     def open(self,filename=None):
         if filename:
-            self.setFilename(filename)
+            self.setURL(filename)
 
-        if self.filename:
+        if self.url:
             if not self.dataset: # don't try to reopen if already open
-                self.dataset=gdal.Open(self.filename,gdal.GA_ReadOnly)
+                self.dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
                 if not self.dataset:
                     raise TypeError
                 self.verifyAttributes()
@@ -171,9 +172,9 @@ class GDALCube(cube.Cube):
     
     def save(self,filename=None):
         if filename:
-            self.setFilename(filename)
+            self.setURL(filename)
 
-        if self.filename:
+        if self.url:
             pass
 
     def guessDisplayBands(self):

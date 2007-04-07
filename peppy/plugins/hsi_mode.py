@@ -508,6 +508,7 @@ class HSIMode(MajorMode):
 
     default_settings = {
         'minor_modes': 'Spectrum,X Profile,Y Profile',
+        'display_rgb': False,
         }
     
     def createEditWindow(self,parent):
@@ -519,6 +520,8 @@ class HSIMode(MajorMode):
         """
         self.cube = self.buffer.stc.cube
         self.bands = self.cube.guessDisplayBands()
+        if not self.settings.display_rgb and len(self.bands)>1:
+            self.bands = [self.bands[0]]
         dprint("display bands = %s" % str(self.bands))
         self.cubeband = CubeBand(self.cube)
         self.cubefilter = BandFilter()

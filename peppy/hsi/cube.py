@@ -46,7 +46,10 @@ class HyperspectralFileFormat(Component):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
-        #import GDAL
+        try:
+            import GDAL
+        except Exception, e:
+            dprint("GDAL not available")
         dprint("module name %s" % __name__)
         modbase, ext = os.path.splitext(__name__)
         
@@ -65,7 +68,7 @@ class HyperspectralFileFormat(Component):
         HyperspectralFileFormat.loaded = True
 
     @staticmethod
-    def identify(urlinfo):
+    def identifyall(urlinfo):
         HyperspectralFileFormat.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
@@ -79,6 +82,7 @@ class HyperspectralFileFormat(Component):
                 if format.identify(urlinfo):
                     print "Possible match for %s format" % format.format_name
                     matches.append(format)
+        order = []
         for match in matches:
             # It is possible that the file can be loaded as more than
             # one format.  For instance, GDAL supports a bunch of
@@ -91,10 +95,16 @@ class HyperspectralFileFormat(Component):
             ext.lower()
             if ext in match.extensions:
                 print "Found specific support for %s in %s" % (ext, match)
-                return match
-        if matches:
-            # FIXME: return the first match, but could prompt the user
-            # to choose...
+                order.append(match)
+                matches.remove(match)
+        if len(matches)>0:
+            order.extend(matches)
+        return order
+
+    @staticmethod
+    def identify(urlinfo):
+        matches = HyperspectralFileFormat.identifyall(urlinfo)
+        if len(matches)>0:
             return matches[0]
         return None
 
@@ -103,13 +113,17 @@ class HyperspectralFileFormat(Component):
         HyperspectralFileFormat.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
-        format = HyperspectralFileFormat.identify(urlinfo)
-        if format:
+        matches = HyperspectralFileFormat.identifyall(urlinfo)
+        for format in matches:
             dprint("Loading %s format cube" % format.format_name)
             h = format(urlinfo)
-            cube=h.getCube()
-            print cube
-            return cube
+            try:
+                cube=h.getCube()
+                print cube
+                return cube
+            except Exception, e:
+                dprint("Failed loading %s format cube" % format.format_name)
+                dprint(e)
         return None
 
     def wildcards(self):
@@ -181,7 +195,7 @@ class MetadataMixin(object):
             fs.write("%s = %s%s" % (key,val,os.linesep))
         return fs.getvalue()
     
-class Cube:
+class Cube(object):
     """Generic representation of an HSI datacube.  Specific subclasses
     L{BILCube}, L{BIPCube}, and L{BSQCube} exist to fill in the
     concrete implementations of the common formats of HSI data.
@@ -252,7 +266,7 @@ class Cube:
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
         # s.write("        wavelengths: %s\n" % self.wavelengths)
-        # s.write("        bbl: %s\n" % self.bbl)
+        s.write("        bbl: %s\n" % self.bbl)
         # s.write("        fwhm: %s\n" % self.fwhm)
         # s.write("        band_names: %s\n" % self.band_names)
         s.write("        mmap=%s\n" % repr(self.mmap))
