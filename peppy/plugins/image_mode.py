@@ -43,6 +43,27 @@ class OpenImageViewer(SelectAction):
         assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:red.png")
 
+class ZoomIn(SelectAction):
+    name = "Zoom In"
+    tooltip = "Zoom in (magnify) image"
+    icon = 'icons/zoom_in.png'
+    keyboard = "="
+    
+    def action(self, pos=None):
+        dprint()
+        mode = self.frame.getActiveMajorMode()
+        mode.editwin.zoomIn()
+
+class ZoomOut(SelectAction):
+    name = "Zoom Out"
+    tooltip = "Zoom out (demagnify) image"
+    icon = 'icons/zoom_out.png'
+    keyboard = "-"
+    
+    def action(self, pos=None):
+        dprint()
+        mode = self.frame.getActiveMajorMode()
+        mode.editwin.zoomOut()
 
 class BitmapView(BitmapScroller):
     """
@@ -60,9 +81,9 @@ class BitmapView(BitmapScroller):
         # causes python to crash.
         img = wx.EmptyImage()
         if img.LoadStream(fh):
-            self.setBitmap(wx.BitmapFromImage(img))
+            self.setImage(img)
         else:
-            self.setBitmap(None)
+            self.setImage(None)
             self.frame.SetStatusText("Invalid image")
 
 
@@ -170,6 +191,7 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     """
     implements(IMajorModeMatcher)
     implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
 
     def possibleModes(self):
         yield ImageViewMode
@@ -181,3 +203,10 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
+    default_tools=(("ImageView",None,Menu("Image").after("Major Mode")),
+                   ("ImageView","Image",MenuItem(ZoomIn)),
+                   ("ImageView","Image",MenuItem(ZoomOut)),
+                   )
+    def getToolBarItems(self):
+        for mode,menu,item in self.default_tools:
+            yield (mode,menu,item)

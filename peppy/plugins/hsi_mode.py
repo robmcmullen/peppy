@@ -44,7 +44,6 @@ from peppy.actions.minibuffer import FloatMinibuffer
 
 import wx.lib.plot as plot
 import peppy.lib.plotter as plotter
-from peppy.lib.rubberband import RubberBand
 
 from peppy import *
 from peppy.menu import *
@@ -55,6 +54,8 @@ from peppy.stcinterface import NonResidentSTC
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
+
+from image_mode import ZoomIn, ZoomOut
 
 from peppy.hsi import *
 
@@ -286,40 +287,7 @@ class CubeScroller(BitmapScroller):
         BitmapScroller.__init__(self, parent)
         self.parent = parent
         self.frame = frame
-
-        self.rb = RubberBand(drawingSurface=self)
-        self.rb.enabled = False
         
-        self.crosshair=None
-        self.Bind(wx.EVT_MOUSE_EVENTS, self.OnLeftButtonEvent)
-        self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
-        
-    def convertEventCoords(self, ev, fixbounds=True):
-        xView, yView = self.GetViewStart()
-        xDelta, yDelta = self.GetScrollPixelsPerUnit()
-        x = ev.GetX() + (xView * xDelta)
-        y = ev.GetY() + (yView * yDelta)
-        if fixbounds:
-            if x<0: x=0
-            elif x>=self.width: x=self.width-1
-            if y<0: y=0
-            elif y>=self.height: y=self.height-1
-        return (x, y)
-
-    def isInBounds(self, x, y):
-        if self.bmp is None or x<0 or y<0 or x>=self.width or y>=self.height:
-            return False
-        return True
-
-    def drawCrossHair(self, dc, x, y):
-        xView, yView = self.GetViewStart()
-        xDelta, yDelta = self.GetScrollPixelsPerUnit()
-        x -= (xView * xDelta)
-        y -= (yView * yDelta)
-        dprint('x=%d, y=%d' % (x, y))
-        dc.DrawLine(x,0,x,self.height)
-        dc.DrawLine(0,y,self.width,y)
-
     def OnPaintHook(self, evt, dc):
         if self.crosshair:
             dc.SetPen(wx.Pen(wx.RED, 1, wx.DOT))
@@ -327,54 +295,8 @@ class CubeScroller(BitmapScroller):
 ##            dprint('x=%d, y=%d' % self.crosshair)
 ##            self.drawCrossHair(dc,*self.crosshair)
 
-    def OnKillFocus(self, evt):
-        if self.crosshair:
-            dc=self.getCrosshairDC()
-            self.drawCrossHair(dc,*self.crosshair)
-            self.crosshair = None
-
-    def getCrosshairDC(self, dc=None):
-        if dc is None:
-            dc=wx.ClientDC(self)
-        dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
-        dc.SetLogicalFunction(wx.XOR)
-        return dc
-
-    def handleCrosshairEvent(self, ev=None):
-        # draw crosshair (note: in event coords, not converted coords)
-        dc=self.getCrosshairDC()
-        if self.crosshair:
-            self.drawCrossHair(dc,*self.crosshair)
-        coords=self.convertEventCoords(ev)
-        # print "drawing crosshair at (%d,%d)" % coords
-        self.crosshair=coords
-        self.drawCrossHair(dc,*self.crosshair)
-
+    def crosshairEventPostHook(self, ev=None):
         wx.PostEvent(self, HSIUpdateEvent())
-
-    def getRubberBandState(self):
-        return self.rb.enabled
-
-    def setRubberBand(self, state):
-        if state != self.rb.enabled:
-            self.rb.enabled = state
-            if state:
-                if self.crosshair:
-                    dc=self.getCrosshairDC()
-                    self.drawCrossHair(dc, *self.crosshair)
-                    self.crosshair = None
-            else:
-                self.rb.reset()
-
-    def OnLeftButtonEvent(self, ev):
-        if self.bmp:
-            if self.rb.enabled:
-                self.rb._handleMouseEvents(ev)
-            else:
-                if ev.LeftDown() or ev.Dragging():
-                    self.handleCrosshairEvent(ev)
-                # elif ev.LeftUp():
-                #     pass
 
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_HSI_UPDATE, callback)
@@ -541,7 +463,7 @@ class HSIMode(MajorMode):
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        self.frame.SetStatusText("x=%d y=%d" % self.editwin.crosshair, 1)
+        self.frame.SetStatusText("x=%d y=%d" % self.editwin.getCrosshairCoordsOnImage(), 1)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
@@ -551,7 +473,7 @@ class HSIMode(MajorMode):
         for minor in minors:
             if minor.name != "main":
                 plotproxy = minor.window.proxies[0]
-                plotproxy.update(*self.editwin.crosshair)
+                plotproxy.update(*self.editwin.getCrosshairCoordsOnImage())
                 plotproxy.updateListeners()
 
     def update(self):
@@ -792,6 +714,8 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                    ("HSI","Dataset",MenuItem(PrevBand)),
                    ("HSI","Dataset",MenuItem(NextBand)),
                    ("HSI","Dataset",Separator("this dataset")),
+                   ("HSI","Dataset",MenuItem(ZoomIn)),
+                   ("HSI","Dataset",MenuItem(ZoomOut)),
                    ("HSI","Dataset",MenuItem(SelectSubcube)),
                    )
     def getToolBarItems(self):
