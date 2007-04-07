@@ -53,7 +53,7 @@ from peppy.stcinterface import NonResidentSTC
 
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
-from peppy.lib.controls import *
+from peppy.lib.bitmapscroller import *
 
 from image_mode import ZoomIn, ZoomOut
 

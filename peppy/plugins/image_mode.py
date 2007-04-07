@@ -25,7 +25,7 @@ import wx.lib.newevent
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.lib.controls import *
+from peppy.lib.bitmapscroller import *
 from peppy.stcinterface import *
 
 __all__ = ['ImageViewPlugin']
