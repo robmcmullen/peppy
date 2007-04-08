@@ -65,6 +65,23 @@ class ZoomOut(SelectAction):
         mode = self.frame.getActiveMajorMode()
         mode.editwin.zoomOut()
 
+class RectangularSelect(ToggleAction):
+    name = "Select Rect"
+    tooltip = "Select rectangular region."
+    icon = 'icons/rectangular_select.png'
+    
+    def isChecked(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.editwin.use_selector == RubberBand
+
+    def action(self, pos=None):
+        print "Select mode!!!"
+        mode = self.frame.getActiveMajorMode()
+        if mode.editwin.use_selector == RubberBand:
+            mode.editwin.setSelector(Crosshair)
+        else:
+            mode.editwin.setSelector(RubberBand)
+
 class BitmapView(BitmapScroller):
     """
     Simple bitmap viewer that loads an image from the data in an STC.
@@ -206,6 +223,7 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     default_tools=(("ImageView",None,Menu("Image").after("Major Mode")),
                    ("ImageView","Image",MenuItem(ZoomIn)),
                    ("ImageView","Image",MenuItem(ZoomOut)),
+                   ("ImageView","Image",MenuItem(RectangularSelect)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
