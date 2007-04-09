@@ -55,7 +55,7 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
-from image_mode import ZoomIn, ZoomOut
+from image_mode import *
 
 from peppy.hsi import *
 
@@ -279,27 +279,14 @@ class CubeBand(object):
             wx.TheClipboard.Close()
         
 
-# This creates a new Event class and a EVT binder function
-(HSIUpdateEvent, EVT_HSI_UPDATE) = wx.lib.newevent.NewEvent()
-
 class CubeScroller(BitmapScroller):
     def __init__(self, parent, frame):
         BitmapScroller.__init__(self, parent)
         self.parent = parent
         self.frame = frame
-        
-    def OnPaintHook(self, evt, dc):
-        if self.crosshair:
-            dc.SetPen(wx.Pen(wx.RED, 1, wx.DOT))
-            dc.SetLogicalFunction(wx.XOR)
-##            dprint('x=%d, y=%d' % self.crosshair)
-##            self.drawCrossHair(dc,*self.crosshair)
-
-    def crosshairEventPostHook(self, ev=None):
-        wx.PostEvent(self, HSIUpdateEvent())
 
     def addUpdateUIEvent(self, callback):
-        self.Bind(EVT_HSI_UPDATE, callback)
+        self.Bind(EVT_CROSSHAIR_MOTION, callback)
 
 
 class HyperspectralSTC(NonResidentSTC):
@@ -309,19 +296,11 @@ class HyperspectralSTC(NonResidentSTC):
         self.cube=HyperspectralFileFormat.load(urlinfo)
 
 
-class SelectSubcube(ToggleAction):
+class SelectSubcube(RectangularSelect):
     name = "Select Subcube"
     tooltip = "Select subcube spectrally."
     icon = 'icons/rectangular_select.png'
     
-    def isChecked(self):
-        mode = self.frame.getActiveMajorMode()
-        return mode.editwin.getRubberBandState()
-
-    def action(self, pos=None):
-        print "Select mode!!!"
-        mode = self.frame.getActiveMajorMode()
-        mode.editwin.setRubberBand(not mode.editwin.getRubberBandState())
 
 class PrevBand(SelectAction):
     name = "Prev Band"
@@ -463,7 +442,7 @@ class HSIMode(MajorMode):
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        self.frame.SetStatusText("x=%d y=%d" % self.editwin.getCrosshairCoordsOnImage(), 1)
+        self.frame.SetStatusText("x=%d y=%d" % self.editwin.getSelectorCoordsOnImage(), 1)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
@@ -473,7 +452,7 @@ class HSIMode(MajorMode):
         for minor in minors:
             if minor.name != "main":
                 plotproxy = minor.window.proxies[0]
-                plotproxy.update(*self.editwin.getCrosshairCoordsOnImage())
+                plotproxy.update(*self.editwin.getSelectorCoordsOnImage())
                 plotproxy.updateListeners()
 
     def update(self):

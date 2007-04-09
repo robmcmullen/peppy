@@ -14,6 +14,7 @@ import os
 
 import wx
 from wx.lib import imageutils
+import wx.lib.newevent
 
 try:
     from peppy.debug import *
@@ -51,8 +52,9 @@ class MouseSelector(object):
         dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
         if self.blank_cursor:
             self.scroller.blankCursor(ev, coords)
-
-    def handleEventPostHook(self, ev=None):
+        self.handleEventPostHook(ev)
+        
+    def handleEventPostHook(self, ev):
         pass
 
     def finishEvent(self, ev):
@@ -93,6 +95,10 @@ class MouseSelector(object):
         y = int(y * zoom)
         self.world_coords = (x + offset, y + offset)
 
+# create a new Event class and a EVT binder function for a crosshair
+# motion event
+(CrosshairMotionEvent, EVT_CROSSHAIR_MOTION) = wx.lib.newevent.NewEvent()
+
 class Crosshair(MouseSelector):
     def __init__(self, scroller):
         MouseSelector.__init__(self, scroller)
@@ -100,6 +106,9 @@ class Crosshair(MouseSelector):
 
         self.crossbox = None
         
+    def handleEventPostHook(self, ev):
+        wx.PostEvent(self.scroller, CrosshairMotionEvent())
+
     def drawSelector(self, dc):
         xoff, yoff = self.getViewOffset()
         x = self.world_coords[0] + xoff
@@ -133,10 +142,17 @@ class Crosshair(MouseSelector):
         dprint("crosshair = %s, img = %s" % (self.world_coords, self.last_img_coords))
 
 
+# create a new Event class and a EVT binder function for a crosshair
+# motion event
+(RubberBandMotionEvent, EVT_RUBBERBAND_MOTION) = wx.lib.newevent.NewEvent()
+
 class RubberBand(MouseSelector):
     def __init__(self, scroller):
         MouseSelector.__init__(self, scroller)
         self.start_world_coords = None
+
+    def handleEventPostHook(self, ev):
+        wx.PostEvent(self.scroller, RubberBandMotionEvent())
 
     def getXORDC(self, dc=None):
         if dc is None:
@@ -211,7 +227,7 @@ class BitmapScroller(wx.ScrolledWindow):
 
         self.use_selector = RubberBand
         self.selector = None
-        self.last_img_coords = None
+        self.selector_event_callback = None
         self.Bind(wx.EVT_MOUSE_EVENTS, self.OnLeftButtonEvent)
         self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
 
@@ -350,7 +366,7 @@ class BitmapScroller(wx.ScrolledWindow):
 
     def getSelectorCoordsOnImage(self):
         if self.selector:
-            return self.getImageCoords(*self.selector.pos)
+            return self.getImageCoords(*self.selector.world_coords)
         return None
     
     #### - Automatic scrolling
@@ -391,11 +407,15 @@ class BitmapScroller(wx.ScrolledWindow):
             self.save_cursor = None
         self.use_selector = selector
 
+    def addHandleEventPostHook(self, callback):
+        self.selector_event_callback = callback
+
     def OnLeftButtonEvent(self, ev):
         if self.img:
             if ev.LeftDown():
                 assert self.selector is None
                 self.selector = self.use_selector(self)
+                self.selector.addEventHook(self.selector_event_callback)
                 self.selector.startEvent(ev)
             elif ev.Dragging():
                 if self.selector:

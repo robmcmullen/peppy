@@ -28,8 +28,6 @@ from peppy.major import *
 from peppy.lib.bitmapscroller import *
 from peppy.stcinterface import *
 
-__all__ = ['ImageViewPlugin']
-
 
 class OpenImageViewer(SelectAction):
     """
