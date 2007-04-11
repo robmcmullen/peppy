@@ -1,25 +1,56 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-"""Scrolling Bitmap viewer.
+"""BitmapScroller -- a container for viewing bitmapped images.
 
 This control is designed to be a generic bitmap viewer that can scroll
-to handle large images.
+to handle large images.  In addition, user interaction with the bitmap
+is possible through the use of subclasses of the MouseSelector class.
+Currently, a crosshair selector and a rubber band selector are
+provided, with others to follow.
 
-Coordinate systems:
+Coordinate systems
+==================
 
 Event coords are in terms of a fixed viewport the size of the client
 area of the window containing the scrolled window.  The scrolled
 window itself has an origin that can be negative relative to this
 viewport.
 
-World coordinates are in terms of the size of the scrolled window
-itself, not the smaller size of the viewport onto the scrolled window.
+World coordinates are in terms of the size of canvas of the scrolled
+window itself, not the smaller size of the viewport onto the scrolled
+window.  The size of the scrolled window's canvas is determined by the
+scaled size of the bitmap containing it.
+
+Coordinate systems example
+--------------------------
+
+If the original bitmap is 100 pixels wide and 200 pixels high, and the
+zoom factor is 4, the size of both the scaled image and the scrolled
+window canvas will be 400 x 800 pixels.  If the viewport of the
+scrolled window is 200 x 300, some of the scaled bitmap won't be
+displayed.
+
+ +-------------+
+ |             |--- scaled bitmap
+ |    +------+ |
+ |    |      | |
+ |    |      |----- scrolled window viewport at location (x, y) of the bitmap
+ |    |      | |
+ |    +------+ |
+ |             |
+ +-------------+
+
+Again, world coordinates are in terms of the scaled bitmap, but event
+coordinates are in terms of the viewport.  An event coordinate of (0,
+0) actually occurs at (x, y) on the bitmap.
+
+@author: Rob McMullen
+@version: 0.3
 """
 
 import os
 
 import wx
-from wx.lib import imageutils
 import wx.lib.newevent
 
 try:
@@ -80,6 +111,21 @@ def pointOnBox(x, y, box, thickness=1):
 
 
 class MouseSelector(object):
+    """Base class for user interaction classes.
+
+    A selector is a class that represents a user interaction with the
+    bitmap.  User interactions are triggered by a certain mouse event
+    combination, and once triggered, the BitmapScroller makes that the
+    current selector.
+
+    Mouse event processing for the BitmapScroller is directed to the
+    current selector through the processEvent method, which directs
+    the action depending on which combination of mouse events occur.
+    The processEvent handler should return False when an event
+    combination is reached that signals the end of the selector's
+    processing.  The selector will be destroyed by the BitmapScroller
+    when this occurs.
+    """
     cursor = wx.CURSOR_ARROW
     
     def __init__(self, scroller, ev=None):
@@ -88,8 +134,11 @@ class MouseSelector(object):
         self.start_img_coords = None
         self.last_img_coords = None
 
+        # autoscrolling enabled?
+        self.want_autoscroll = False
+
         # cursor stuff
-        self.blank_cursor = False
+        self.want_blank_cursor = False
 
         if ev is not None:
             self.startEvent(ev)
@@ -121,17 +170,26 @@ class MouseSelector(object):
         return True
         
     def startEvent(self, ev):
+        """Set up the initial state to begin event processing.
+
+        This is generally called by the constructor to set up whatever
+        initial state is necessary to allow further events to be
+        handled by the processEvent method.
+        """
         coords = self.scroller.convertEventCoords(ev)
         self.start_img_coords = self.scroller.getImageCoords(*coords)
         self.setWorldCoordsFromImageCoords(*self.start_img_coords)
         self.draw()
         self.handleEventPostHook(ev)
         dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
-        if self.blank_cursor:
-            self.scroller.blankCursor(ev, coords)
+        self.want_autoscroll = True
         
     def handleEvent(self, ev):
-        # draw crosshair (note: in event coords, not converted coords)
+        """General event handler.
+
+        This method is called by processEvent to show the results of
+        the user interaction on the bitmap.
+        """
         coords = self.scroller.convertEventCoords(ev)
         img_coords = self.scroller.getImageCoords(*coords)
         if img_coords != self.last_img_coords:
@@ -140,13 +198,23 @@ class MouseSelector(object):
             self.draw()
             self.handleEventPostHook(ev)
         #dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
-        if self.blank_cursor:
-            self.scroller.blankCursor(ev, coords)
         
     def handleEventPostHook(self, ev):
         pass
 
     def finishEvent(self, ev):
+        """User interaction is complete.
+
+        This method is called when the user has completed the
+        interaction.  This does not necessarily destroy the selector
+        -- it's up to the processEvent returning False to signal the
+        BitmapScroller to kill the selector.
+
+        This could be used in multi-stage processing; see the
+        RubberBand for an example where finishEvent doesn't mean that
+        the selector should be destroyed.
+        """
+        self.want_autoscroll = False
         self.erase()
 
     def draw(self):
@@ -203,14 +271,21 @@ class Crosshair(MouseSelector):
     def __init__(self, scroller, ev=None):
         MouseSelector.__init__(self, scroller)
 
-        self.blank_cursor = True
+        self.want_blank_cursor = True
         self.crossbox = None
 
         if ev is not None:
             self.startEvent(ev)
         
     def handleEventPostHook(self, ev):
-        wx.PostEvent(self.scroller, CrosshairMotionEvent())
+        x, y = self.last_img_coords
+        if self.scroller.crop is not None:
+            dx, dy, w, h = self.scroller.crop
+        else:
+            dx, dy = (0, 0)
+        cev = CrosshairMotionEvent(imageCoords = (x, y),
+                                   uncroppedImageCoords = (x + dx, y + dy))
+        wx.PostEvent(self.scroller, cev)
 
     def drawSelector(self, dc):
         xoff, yoff = self.getViewOffset()
@@ -310,6 +385,7 @@ class RubberBand(MouseSelector):
             self.startMoveEvent(ev, coords)
         else:
             self.startNormalEvent(ev, coords)
+        self.want_autoscroll = True
 
     def startNormalEvent(self, ev, coords):
         self.event_type = None
@@ -319,8 +395,6 @@ class RubberBand(MouseSelector):
         self.draw()
         self.handleEventPostHook(ev)
         dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
-        if self.blank_cursor:
-            self.scroller.blankCursor(ev, coords)
 
     def startResizeEvent(self, ev, coords):
         self.event_type = "resize"
@@ -369,7 +443,7 @@ class RubberBand(MouseSelector):
 
     def finishEvent(self, ev):
         dprint()
-        pass
+        self.want_autoscroll = False
 
     def handleEventPostHook(self, ev):
         wx.PostEvent(self.scroller, RubberBandMotionEvent())
@@ -493,10 +567,8 @@ class RubberBand(MouseSelector):
         dx = x - self.move_img_coords[0]
         dy = y - self.move_img_coords[1]
         self.move_img_coords = (x, y)
-        x0 = self.start_img_coords[0]
-        y0 = self.start_img_coords[1]
-        x1 = self.last_img_coords[0]
-        y1 = self.last_img_coords[1]
+        x0, y0 = self.start_img_coords
+        x1, y1 = self.last_img_coords
         if x0 + dx < 0:
             dx = -x0
         elif x1 + dx >= self.scroller.img.GetWidth():
@@ -508,6 +580,19 @@ class RubberBand(MouseSelector):
         self.start_img_coords = (x0 + dx, y0 + dy)
         self.last_img_coords = (x1 + dx, y1 + dy)
         self.recalc()
+
+    def getSelectedBox(self):
+        """Return selected box in image coords.
+
+        Returns an (x, y, w, h) tuple of the selected rectangle.
+        """
+        x0, y0 = self.start_img_coords
+        x1, y1 = self.last_img_coords
+        if x0 > x1:
+            x0, x1 = x1, x0
+        if y0 > y1:
+            y0, y1 = y1, y0
+        return (x0, y0, x1 - x0 + 1, y1 - y0 + 1)
 
 
 class BitmapScroller(wx.ScrolledWindow):
@@ -541,7 +626,6 @@ class BitmapScroller(wx.ScrolledWindow):
         self.selector = None
         self.selector_event_callback = None
         self.Bind(wx.EVT_MOUSE_EVENTS, self.OnMouseEvent)
-        self.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
 
         self.setSelector(selector)
 
@@ -549,19 +633,19 @@ class BitmapScroller(wx.ScrolledWindow):
         self.zoom *= zoom
         if self.zoom > self.max_zoom:
             self.zoom = self.max_zoom
-        self.scaleImage()
+        self._scaleImage()
         
     def zoomOut(self, zoom=2):
         self.zoom /= zoom
         if self.zoom < self.min_zoom:
             self.zoom = self.min_zoom
-        self.scaleImage()
+        self._scaleImage()
 
-    def clearBackground(self, dc, w, h):
+    def _clearBackground(self, dc, w, h):
         dc.SetBackground(wx.Brush(self.background_color))
         dc.Clear()
 
-    def checkerboardBackground(self, dc, w, h):
+    def _checkerboardBackground(self, dc, w, h):
         # draw checkerboard for transparent background
         box = self.checkerboard_box_size
         y = 0
@@ -576,17 +660,23 @@ class BitmapScroller(wx.ScrolledWindow):
                 x += box*2
             y += box
 
-    def drawBackground(self, dc, w, h):
-        self.clearBackground(dc, w, h)
+    def _drawBackground(self, dc, w, h):
+        self._clearBackground(dc, w, h)
         if self.use_checkerboard:
-            self.checkerboardBackground(dc, w, h)
+            self._checkerboardBackground(dc, w, h)
 
     def inOrigImage(self, x, y):
         if x>=0 and x<self.orig_img.GetWidth() and y>=0 and y<self.orig_img.GetHeight():
             return True
         return False
 
-    def getCroppedImage(self):
+    def _getCroppedImage(self):
+        """Returns cropped image.
+
+        Creates and returns a new image if there is a cropping
+        specified, otherwise just returns the original image
+        unchanged.
+        """
         if self.crop is not None and isinstance(self.crop, tuple):
             if self.inOrigImage(self.crop[0], self.crop[1]) and self.inOrigImage(self.crop[0] + self.crop[2] - 1, self.crop[1] + self.crop[3] - 1):
                 return self.orig_img.GetSubImage(self.crop)
@@ -594,15 +684,22 @@ class BitmapScroller(wx.ScrolledWindow):
                 print("trying to crop outside of image: %s" % str(self.crop))
         return self.orig_img
 
-    def scaleImage(self):
+    def _scaleImage(self):
+        """Creates new image at specified zoom factor.
+
+        Creates a new image that is to be used as the background of
+        the scrolled bitmap.  Currently, actually creates the entire
+        image, which could lead to memory problems if the image is
+        really huge and the zoom factor is large.
+        """
         if self.orig_img is not None:
-            self.img = self.getCroppedImage()
+            self.img = self._getCroppedImage()
             w = int(self.img.GetWidth() * self.zoom)
             h = int(self.img.GetHeight() * self.zoom)
             dc = wx.MemoryDC()
             self.scaled_bmp = wx.EmptyBitmap(w, h)
             dc.SelectObject(self.scaled_bmp)
-            self.drawBackground(dc, w, h)
+            self._drawBackground(dc, w, h)
             dc.DrawBitmap(wx.BitmapFromImage(self.img.Scale(w, h)), 0,0, True)
             self.width = self.scaled_bmp.GetWidth()
             self.height = self.scaled_bmp.GetHeight()           
@@ -618,6 +715,18 @@ class BitmapScroller(wx.ScrolledWindow):
         
     def setImage(self, img=None, zoom=None, rot=None,
                  vmirror=False, hmirror=False, crop=None):
+        """Sets the control to contain a new image.
+
+        Main user interaction with this control -- makes the control
+        display a new image, discarding the old image.
+
+        @param img: new wx.Image to display
+        @param zoom: optional floating point zoom factor
+        @param rot: not working yet
+        @param vmirror: not working yet
+        @param hmirror: not working yet
+        @param crop: None for no cropping, or (x, y, w, h) tuple
+        """
         if img is not None:
             # change the bitmap if specified
             self.bmp = None
@@ -630,17 +739,47 @@ class BitmapScroller(wx.ScrolledWindow):
 
         self.crop = crop
 
-        self.scaleImage()
+        self._scaleImage()
 
     def setBitmap(self, bmp=None, zoom=None):
+        """Set the control to display a new bitmap.
+
+        Similar to setImage, but takes a wx.Bitmap instead of a
+        wx.Image.
+        """
         if bmp is not None:
             img = bmp.ConvertToImage()
             self.setImage(img, zoom)
         else:
             self.setImage(None, zoom)
 
+    def setCrop(self, crop=None):
+        """Set the image cropping.
+
+        Crops the image to the specified size.  If crop is an (x, y,
+        w, h) tuple, it crops the image as specified.  If crop is
+        None, it restores the original image.
+        """
+        if crop is not None and self.crop is not None:
+            # If we're cropping an image that's already cropped,
+            # add the offsets to find the new subimage.
+            x = crop[0] + self.crop[0]
+            y = crop[1] + self.crop[1]
+            crop = (x, y, crop[2], crop[3])
+        self.crop = crop
+        self._scaleImage()
+
     def copyToClipboard(self):
-        bmpdo = wx.BitmapDataObject(self.scaled_bmp)
+        """Copies current image to clipboard.
+
+        Copies the current image, including scaling, zooming, etc. to
+        the clipboard.
+        """
+        img = self._getCroppedImage()
+        w = int(img.GetWidth() * self.zoom)
+        h = int(img.GetHeight() * self.zoom)
+        clip = wx.BitmapFromImage(img.Scale(w, h))
+        bmpdo = wx.BitmapDataObject(clip)
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(bmpdo)
             wx.TheClipboard.Close()
@@ -708,7 +847,14 @@ class BitmapScroller(wx.ScrolledWindow):
         self.SetCursor(cursor)
 
     def blankCursor(self, ev, coords=None):
-        dprint()
+        """Turn off cursor.
+
+        Some selectors, like the crosshair selector, work better when
+        the mouse cursor isn't obscuring the image.  This method is
+        called by the selector itself to blank the cursor when over
+        the image.
+        """
+        #dprint()
         if coords is None:
             coords = self.convertEventCoords(ev)
         if self.isInBounds(*coords) and self.isEventInClientArea(ev):
@@ -729,7 +875,7 @@ class BitmapScroller(wx.ScrolledWindow):
             return (x, y)
         return None
     
-    #### - Automatic scrolling
+    #### - Automatic scrolling  FIXME: doesn't work yet
 
     def autoScroll(self, ev):
         x = ev.GetX()
@@ -766,23 +912,38 @@ class BitmapScroller(wx.ScrolledWindow):
         self.setCursor(self.use_selector.cursor)
         self.save_cursor = None
 
+    def getActiveSelector(self):
+        """Returns the currently active selector."""
+        return self.selector
+
     def OnMouseEvent(self, ev):
+        """Driver to process mouse events.
+
+        This is the main driver to process all mouse events that
+        happen on the BitmapScroller.  Once a selector is triggered by
+        its event combination, it becomes the active selector and
+        further mouse events are directed to its handler.
+        """
         if self.img:
+            # First, process the event itself or start it up if it has
+            # been triggered.
             if self.selector:
                 if not self.selector.processEvent(ev):
                     self.selector = None
                     if self.save_cursor:
                         self.setCursor(self.use_selector.cursor)
                         self.save_cursor = None
-                elif not self.isEventInClientArea(ev):
-                    self.autoScroll(ev)
             elif self.use_selector.trigger(ev):
                 self.selector = self.use_selector(self, ev)
 
-    def OnKillFocus(self, evt):
-        if self.selector:
-            self.selector.erase()
-            self.selector = None
+
+            # Next, if we have a selector, process some user interface
+            # side effects
+            if self.selector:
+                if self.selector.want_autoscroll and not self.isEventInClientArea(ev):
+                    self.autoScroll(ev)
+                if self.selector.want_blank_cursor:
+                    self.blankCursor(ev)
 
     def OnPaint(self, evt):
         if self.scaled_bmp is not None:
@@ -805,18 +966,22 @@ class BitmapScroller(wx.ScrolledWindow):
 if __name__ == '__main__':
     app   = wx.PySimpleApp()
     frame = wx.Frame(None, -1, title='BitmapScroller Test', size=(500,500))
-
+    frame.CreateStatusBar()
+    
     # Add a panel that the rubberband will work on.
     panel = BitmapScroller(frame)
     img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_WARNING, wx.ART_OTHER, wx.Size(48, 48)))
     panel.setImage(img)
 
+    # Add the crosshair callback
+    def xy(ev):
+        x, y = ev.imageCoords
+        frame.SetStatusText("x=%d y=%d" % (x, y))
+    panel.Bind(EVT_CROSSHAIR_MOTION, xy)
+
     # Layout the frame
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(panel,  1, wx.EXPAND | wx.ALL, 5)
-
-    buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
-    sizer.Add(buttonsizer, 0, wx.EXPAND | wx.ALL, 5)
     
     def buttonHandler(ev):
         id = ev.GetId()
@@ -828,6 +993,44 @@ if __name__ == '__main__':
             panel.setSelector(Crosshair)
         elif id == 103:
             panel.setSelector(RubberBand)
+        elif id == 104:
+            selector = panel.getActiveSelector()
+            dprint("selector = %s" % selector)
+            if isinstance(selector, RubberBand):
+                box = selector.getSelectedBox()
+                dprint("selected box = %s" % str(box))
+                panel.setCrop(box)
+        elif id == 105:
+            panel.setCrop(None)
+        elif id == 200:
+            wildcard="*"
+            dlg = wx.FileDialog(
+                frame, message="Open File",
+                defaultFile="", wildcard=wildcard, style=wx.OPEN)
+
+            # Show the dialog and retrieve the user response. If it is the
+            # OK response, process the data.
+            if dlg.ShowModal() == wx.ID_OK:
+                # This returns a Python list of files that were selected.
+                paths = dlg.GetPaths()
+
+                for path in paths:
+                    dprint("open file %s:" % path)
+                    fh = open(path, 'rb')
+                    img = wx.EmptyImage()
+                    if img.LoadStream(fh):
+                        panel.setImage(img)
+                    else:
+                        dprint("Invalid image: %s" % path)
+            # Destroy the dialog. Don't do this until you are done with it!
+            # BAD things can happen otherwise!
+            dlg.Destroy()
+        elif id == 201:
+            pass
+        elif id == 202:
+            panel.copyToClipboard()
+    buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(buttonsizer, 0, wx.EXPAND | wx.ALL, 5)
     button = wx.Button(frame, 100, 'Zoom In')
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
@@ -838,6 +1041,21 @@ if __name__ == '__main__':
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
     button = wx.Button(frame, 103, 'Select')
+    frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
+    buttonsizer.Add(button, 0, wx.EXPAND, 0)
+    button = wx.Button(frame, 104, 'Crop')
+    frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
+    buttonsizer.Add(button, 0, wx.EXPAND, 0)
+    button = wx.Button(frame, 105, 'Uncrop')
+    frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
+    buttonsizer.Add(button, 0, wx.EXPAND, 0)
+
+    buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(buttonsizer, 0, wx.EXPAND | wx.ALL, 5)
+    button = wx.Button(frame, 200, 'Load')
+    frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
+    buttonsizer.Add(button, 0, wx.EXPAND, 0)
+    button = wx.Button(frame, 202, 'Copy to Clipboard')
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
 

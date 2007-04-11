@@ -442,7 +442,7 @@ class HSIMode(MajorMode):
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        self.frame.SetStatusText("x=%d y=%d" % self.editwin.getSelectorCoordsOnImage(), 1)
+        self.frame.SetStatusText("x=%d y=%d" % evt.imageCoords, 1)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
@@ -452,7 +452,7 @@ class HSIMode(MajorMode):
         for minor in minors:
             if minor.name != "main":
                 plotproxy = minor.window.proxies[0]
-                plotproxy.update(*self.editwin.getSelectorCoordsOnImage())
+                plotproxy.update(*evt.imageCoords)
                 plotproxy.updateListeners()
 
     def update(self):
