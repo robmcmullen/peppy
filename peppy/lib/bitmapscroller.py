@@ -45,7 +45,7 @@ coordinates are in terms of the viewport.  An event coordinate of (0,
 0) actually occurs at (x, y) on the bitmap.
 
 @author: Rob McMullen
-@version: 0.3
+@version: 0.3.1
 """
 
 import os
@@ -780,10 +780,8 @@ class BitmapScroller(wx.ScrolledWindow):
         self.SetScrollRate(rate, rate)
         if self.selector:
             self.selector.erase()
-        self.Refresh()
-        if self.selector:
             self.selector.recalc()
-            wx.CallAfter(self.selector.draw)
+        self.Refresh()
         
     def setImage(self, img=None, zoom=None, rot=None,
                  vmirror=False, hmirror=False, crop=None):
@@ -1037,6 +1035,8 @@ class BitmapScroller(wx.ScrolledWindow):
             # Note that the drawing actually happens when the dc goes
             # out of scope and is destroyed.
             self.OnPaintHook(evt, dc)
+            if self.selector:
+                wx.CallAfter(self.selector.draw)
         evt.Skip()
 
     def OnPaintHook(self, evt, dc):
