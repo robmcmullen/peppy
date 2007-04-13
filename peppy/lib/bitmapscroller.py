@@ -56,8 +56,9 @@ import wx.lib.newevent
 try:
     from peppy.debug import *
 except:
-    def dprint(txt):
-        print txt
+    def dprint(txt=""):
+        #print txt
+        pass
 
 
 ##### - Here are some utility functions from wx.lib.mixins.rubberband
@@ -126,6 +127,8 @@ class MouseSelector(object):
     processing.  The selector will be destroyed by the BitmapScroller
     when this occurs.
     """
+    debuglevel = 0
+    
     cursor = wx.CURSOR_ARROW
     
     def __init__(self, scroller, ev=None):
@@ -226,7 +229,8 @@ class MouseSelector(object):
         self.setWorldCoordsFromImageCoords(*self.last_img_coords)
 
     def erase(self):
-        self.draw()
+        if self.world_coords:
+            self.draw()
         self.world_coords = None
     
     def getXORDC(self, dc=None):
@@ -657,6 +661,8 @@ class RubberBand(MouseSelector):
 
 
 class BitmapScroller(wx.ScrolledWindow):
+    debuglevel = 0
+    
     def __init__(self, parent, selector=RubberBand):
         wx.ScrolledWindow.__init__(self, parent, -1)
 
@@ -674,7 +680,7 @@ class BitmapScroller(wx.ScrolledWindow):
         self.scaled_bmp = None
         self.width = 0
         self.height = 0
-        self.zoom = 4.0
+        self.zoom = 1.0
         self.crop = None
 
         # cursors
@@ -772,7 +778,12 @@ class BitmapScroller(wx.ScrolledWindow):
         if rate < 1:
             rate = 1
         self.SetScrollRate(rate, rate)
+        if self.selector:
+            self.selector.erase()
         self.Refresh()
+        if self.selector:
+            self.selector.recalc()
+            wx.CallAfter(self.selector.draw)
         
     def setImage(self, img=None, zoom=None, rot=None,
                  vmirror=False, hmirror=False, crop=None):
@@ -799,9 +810,7 @@ class BitmapScroller(wx.ScrolledWindow):
             self.zoom = zoom
 
         self.crop = crop
-
         self.endActiveSelector()
-
         self._scaleImage()
 
     def setBitmap(self, bmp=None, zoom=None):
@@ -830,6 +839,7 @@ class BitmapScroller(wx.ScrolledWindow):
             y = crop[1] + self.crop[1]
             crop = (x, y, crop[2], crop[3])
         self.crop = crop
+        self.endActiveSelector()
         self._scaleImage()
 
     def copyToClipboard(self):
@@ -977,6 +987,7 @@ class BitmapScroller(wx.ScrolledWindow):
 
     def setSelector(self, selector):
         if self.selector:
+            self.selector.erase()
             self.selector = None
         self.use_selector = selector
         self.setCursor(self.use_selector.cursor)
@@ -987,7 +998,9 @@ class BitmapScroller(wx.ScrolledWindow):
         return self.selector
 
     def endActiveSelector(self):
-        self.selector = None
+        if self.selector:
+            self.selector.erase()
+            self.selector = None
         if self.save_cursor:
             self.setCursor(self.use_selector.cursor)
             self.save_cursor = None
