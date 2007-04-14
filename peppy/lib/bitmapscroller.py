@@ -663,7 +663,7 @@ class RubberBand(MouseSelector):
 class BitmapScroller(wx.ScrolledWindow):
     debuglevel = 0
     
-    def __init__(self, parent, selector=RubberBand):
+    def __init__(self, parent, selector=Crosshair):
         wx.ScrolledWindow.__init__(self, parent, -1)
 
         # Settings
