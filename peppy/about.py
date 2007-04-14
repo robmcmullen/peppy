@@ -67,6 +67,8 @@ class AboutHandler(urllib2.BaseHandler):
         url = req.get_selector()
         #dprint(url)
 
+        if url not in aboutfiles:
+            raise urllib2.URLError("url %s not found")
         text = aboutfiles[url]
         if text.find("%(") >= 0:
             text = text % substitutes

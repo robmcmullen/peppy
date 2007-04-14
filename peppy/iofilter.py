@@ -71,7 +71,7 @@ class URLInfo(debugmixin):
             try:
                 fh = self.getReader()
                 return True
-            except URLError:
+            except urllib2.URLError:
                 return False
 
     def getReader(self):
