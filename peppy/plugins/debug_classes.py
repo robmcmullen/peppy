@@ -32,6 +32,7 @@ class DebugClassList(Sidebar, debugmixin):
         'best_height': 500,
         'min_width': 100,
         'min_height': 100,
+        'show': False,
         }
     
     def getSidebarWindow(self,parent):
