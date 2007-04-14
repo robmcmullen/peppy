@@ -113,5 +113,5 @@ class testSAM(object):
 
         ang = hsi.spectralAngle(lam1, spectra1, lam2, spectra2)
         print ang
-        dist = hsi.euclidianDistance(lam1, spectra1, lam2, spectra2)
+        dist = hsi.euclideanDistance(lam1, spectra1, lam2, spectra2)
         print dist

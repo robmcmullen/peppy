@@ -105,7 +105,9 @@ class TestGetReader:
         eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
         
     def testChatbots(self):
+        import peppy.plugins.shell_mode
         import peppy.plugins.chatbots
+        URLHandler.clearHandlers()
         url = URLInfo("shell:eliza")
         fh = url.getReader()
         eq_(url.url, "shell:eliza")

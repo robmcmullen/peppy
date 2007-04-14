@@ -8,7 +8,7 @@ from cStringIO import StringIO
 from trac.core import *
 from debug import *
 
-__all__ = [ 'URLInfo', 'IURLHandler' ]
+__all__ = [ 'URLInfo', 'IURLHandler', 'URLHandler' ]
 
 
 class URLInfo(debugmixin):
@@ -76,19 +76,19 @@ class URLInfo(debugmixin):
 
     def getReader(self):
         comp_mgr = ComponentManager()
-        handler = ProtocolHandler(comp_mgr)
+        handler = URLHandler(comp_mgr)
         fh = handler.urlreader(self)
         return fh
 
     def getWriter(self):
         comp_mgr = ComponentManager()
-        handler = ProtocolHandler(comp_mgr)
+        handler = URLHandler(comp_mgr)
         fh = handler.urlwriter(self)
         return fh
 
 
 
-#### The ProtocolHandler and IURLHandler define extensions to the
+#### The URLHandler and IURLHandler define extensions to the
 #### urllib2 module to load other types of URLs.
 
 class IURLHandler(Interface):
@@ -105,12 +105,12 @@ class IURLHandler(Interface):
         support."""
 
 
-class ProtocolHandler(Component, debugmixin):
+class URLHandler(Component, debugmixin):
     handlers = ExtensionPoint(IURLHandler)
 
     def __init__(self):
         # Only call this once.
-        if hasattr(ProtocolHandler,'opener'):
+        if hasattr(URLHandler,'opener'):
             return self
 
         urlhandlers = []
@@ -118,10 +118,17 @@ class ProtocolHandler(Component, debugmixin):
             urlhandlers.extend(handler.getURLHandlers())
 
         assert self.dprint(urlhandlers)
-        ProtocolHandler.opener = urllib2.build_opener(*urlhandlers)
+        URLHandler.opener = urllib2.build_opener(*urlhandlers)
+
+    @classmethod
+    def clearHandlers(cls):
+        """Force handlers to be reloaded next time a handler is requested."""
+        
+        if hasattr(URLHandler,'opener'):
+            delattr(URLHandler,'opener')
         
     def urlreader(self, info):
-        fh = ProtocolHandler.opener.open(info.url)
+        fh = URLHandler.opener.open(info.url)
         fh.urlinfo = info
         return fh
 

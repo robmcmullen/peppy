@@ -11,7 +11,6 @@ from peppy.iofilter import *
 from peppy.trac.core import *
 import peppy.hsi as hsi
 import peppy.hsi.ENVI as ENVI
-import peppy.hsi.HSI as HSI
 
 from cStringIO import StringIO
 import numpy
@@ -42,7 +41,7 @@ wavelength = {
 wavelength units = nm
 fwhm = {
           9.610,          9.580,          9.550,          9.530 }
-""" % HSI.nativeByteOrder
+""" % hsi.nativeByteOrder
 
 fakeUmFile="""ENVI
 description = {
@@ -66,7 +65,7 @@ wavelength = {
 wavelength units = um
 fwhm = {
         .009610,        .009580,          .009550,          .009530 }
-""" % HSI.nativeByteOrder
+""" % hsi.nativeByteOrder
 
 
 def fakeCube(interleave,default=None, file=fakeNmFile):
@@ -93,7 +92,7 @@ def loadCube(filename):
 
 class fakeFooCube(object):
     def testFail(self):
-        self.assertRaises(ValueError,HSI.newCube,'foo')
+        self.assertRaises(ValueError,cube.newCube,'foo')
 
 
 class baseCube(object):
@@ -261,11 +260,11 @@ class testFilenames(object):
         
     def testIdentify1(self):
         filename = localfile('hsi/test1.bil')
-        format = HSI.HyperspectralFileFormat.identify(filename)
+        format = hsi.HyperspectralFileFormat.identify(filename)
         eq_(format.format_id, 'ENVI')
         
     def testIdentify2(self):
         filename = localfile('hsi/test2.bip')
-        format = HSI.HyperspectralFileFormat.identify(filename)
+        format = hsi.HyperspectralFileFormat.identify(filename)
         eq_(format.format_id, 'ENVI')
         
