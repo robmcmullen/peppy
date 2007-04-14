@@ -297,14 +297,14 @@ class HyperspectralSTC(NonResidentSTC):
 
 
 class SelectSubcube(RectangularSelect):
-    name = "Select Subcube"
-    tooltip = "Select subcube spectrally."
+    name = _("Select Subcube")
+    tooltip = _("Select subcube spectrally.")
     icon = 'icons/rectangular_select.png'
     
 
 class PrevBand(SelectAction):
-    name = "Prev Band"
-    tooltip = "Previous Band"
+    name = _("Prev Band")
+    tooltip = _("Previous Band")
     icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
     
@@ -314,8 +314,8 @@ class PrevBand(SelectAction):
         mode.prevBand()
 
 class NextBand(SelectAction):
-    name = "Next Band"
-    tooltip = "Next Band"
+    name = _("Next Band")
+    tooltip = _("Next Band")
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
@@ -325,16 +325,16 @@ class NextBand(SelectAction):
         mode.nextBand()
 
 class PrevCube(SelectAction):
-    name = "Prev Cube"
-    tooltip = "Previous data cube in dataset"
+    name = _("Prev Cube")
+    tooltip = _("Previous data cube in dataset")
     icon = 'icons/hsi-cube-prev.png'
 
     def isEnabled(self):
         return False
 
 class NextCube(SelectAction):
-    name = "Next Cube"
-    tooltip = "Next data cube in dataset"
+    name = _("Next Cube")
+    tooltip = _("Next data cube in dataset")
     icon = 'icons/hsi-cube-next.png'
 
     def isEnabled(self):
@@ -342,8 +342,8 @@ class NextCube(SelectAction):
 
 class ContrastFilterAction(RadioAction):
     debuglevel = 1
-    name = "Contrast"
-    tooltip = "Contrast adjustment method"
+    name = _("Contrast")
+    tooltip = _("Contrast adjustment method")
     icon = 'icons/hsi-cube-next.png'
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
@@ -672,30 +672,30 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
         for mode in [HSIXProfileMinorMode, HSIYProfileMinorMode, HSISpectrumMinorMode]:
             yield mode
     
-    default_menu=(("HSI",None,Menu("Dataset").after("Major Mode")),
-                  ("HSI","Dataset",MenuItem(PrevCube)),
-                  ("HSI","Dataset",MenuItem(NextCube)),
-                  ("HSI","Dataset",Separator("dataset")),
-                  ("HSI","Dataset",MenuItem(PrevBand)),
-                  ("HSI","Dataset",MenuItem(NextBand)),
-                  ("HSI","Dataset",Separator("this dataset")),
-                  ("HSI","Dataset",MenuItem(SelectSubcube)),
-                  ("HSI","View",MenuItem(ContrastFilterAction).first()),
+    default_menu=(("HSI",None,Menu(_("Dataset")).after("Major Mode")),
+                  ("HSI",_("Dataset"),MenuItem(PrevCube)),
+                  ("HSI",_("Dataset"),MenuItem(NextCube)),
+                  ("HSI",_("Dataset"),Separator("dataset")),
+                  ("HSI",_("Dataset"),MenuItem(PrevBand)),
+                  ("HSI",_("Dataset"),MenuItem(NextBand)),
+                  ("HSI",_("Dataset"),Separator("this dataset")),
+                  ("HSI",_("Dataset"),MenuItem(SelectSubcube)),
+                  ("HSI",_("View"),MenuItem(ContrastFilterAction).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("HSI",None,Menu("Dataset").after("Major Mode")),
-                   ("HSI","Dataset",MenuItem(PrevCube)),
-                   ("HSI","Dataset",MenuItem(NextCube)),
-                   ("HSI","Dataset",Separator("dataset")),
-                   ("HSI","Dataset",MenuItem(PrevBand)),
-                   ("HSI","Dataset",MenuItem(NextBand)),
-                   ("HSI","Dataset",Separator("this dataset")),
-                   ("HSI","Dataset",MenuItem(ZoomIn)),
-                   ("HSI","Dataset",MenuItem(ZoomOut)),
-                   ("HSI","Dataset",MenuItem(SelectSubcube)),
+    default_tools=(("HSI",None,Menu(_("Dataset")).after("Major Mode")),
+                   ("HSI",_("Dataset"),MenuItem(PrevCube)),
+                   ("HSI",_("Dataset"),MenuItem(NextCube)),
+                   ("HSI",_("Dataset"),Separator("dataset")),
+                   ("HSI",_("Dataset"),MenuItem(PrevBand)),
+                   ("HSI",_("Dataset"),MenuItem(NextBand)),
+                   ("HSI",_("Dataset"),Separator("this dataset")),
+                   ("HSI",_("Dataset"),MenuItem(ZoomOut)),
+                   ("HSI",_("Dataset"),MenuItem(ZoomIn)),
+                   ("HSI",_("Dataset"),MenuItem(SelectSubcube)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
