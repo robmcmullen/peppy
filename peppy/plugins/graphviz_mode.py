@@ -18,7 +18,7 @@ import wx
 import wx.stc
 
 from peppy import *
-from peppy.lib.controls import *
+from peppy.lib.bitmapscroller import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
