@@ -293,7 +293,7 @@ class HyperspectralSTC(NonResidentSTC):
     def openMmap(self):
         dprint("filename = %s" % self.filename)
         urlinfo = URLInfo(self.filename)
-        self.cube=HyperspectralFileFormat.load(urlinfo)
+        self.dataset=HyperspectralFileFormat.load(urlinfo)
 
 
 class SelectSubcube(RectangularSelect):
@@ -308,6 +308,15 @@ class PrevBand(SelectAction):
     icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
     
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        for band in mode.bands:
+            # check if any of the display bands is at the low limit
+            if band < 1:
+                return False
+        # nope, still room to decrement all bands
+        return True
+
     def action(self, pos=None):
         print "Previous band!!!"
         mode = self.frame.getActiveMajorMode()
@@ -319,6 +328,15 @@ class NextBand(SelectAction):
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        for band in mode.bands:
+            # check if any of the display bands is at the high limit
+            if band >= (mode.cube.bands-1):
+                return False
+        # nope, still room to advance all bands
+        return True
+
     def action(self, pos=None):
         print "Next band!!!"
         mode = self.frame.getActiveMajorMode()
@@ -330,7 +348,17 @@ class PrevCube(SelectAction):
     icon = 'icons/hsi-cube-prev.png'
 
     def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        index = mode.dataset_index
+        num = mode.dataset.getNumCubes()
+        if index>0:
+            return True
         return False
+
+    def action(self, pos=None):
+        print "Prev cube!!!"
+        mode = self.frame.getActiveMajorMode()
+        mode.prevCube()
 
 class NextCube(SelectAction):
     name = _("Next Cube")
@@ -338,8 +366,44 @@ class NextCube(SelectAction):
     icon = 'icons/hsi-cube-next.png'
 
     def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        index = mode.dataset_index
+        num = mode.dataset.getNumCubes()
+        if index < (num-1):
+            return True
         return False
 
+    def action(self, pos=None):
+        print "Next cube!!!"
+        mode = self.frame.getActiveMajorMode()
+        mode.nextCube()
+
+class SelectCube(RadioAction):
+    debuglevel = 1
+    name = _("Select Cube")
+    tooltip = _("Select a cube from the dataset")
+    icon = 'icons/hsi-cube.png'
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+        # do nothing here: it's actually changed in action
+
+    def getIndex(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.dataset_index
+
+    def getItems(self):
+        mode = self.frame.getActiveMajorMode()
+        self.dprint("datasets = %s" % mode.dataset.getCubeNames())
+        return mode.dataset.getCubeNames()
+
+    def action(self, index=0, old=-1):
+        assert self.dprint("index=%d" % index)
+        mode = self.frame.getActiveMajorMode()
+        mode.setCube(index)
+        dprint("mode.dataset_index = %d" % mode.dataset_index)
+        wx.CallAfter(mode.update)
+        
 class ContrastFilterAction(RadioAction):
     debuglevel = 1
     name = _("Contrast")
@@ -419,13 +483,8 @@ class HSIMode(MajorMode):
 
         @param parent: parent window in which to create this window 
         """
-        self.cube = self.buffer.stc.cube
-        self.bands = self.cube.guessDisplayBands()
-        if not self.settings.display_rgb and len(self.bands)>1:
-            self.bands = [self.bands[0]]
-        dprint("display bands = %s" % str(self.bands))
-        self.cubeband = CubeBand(self.cube)
-        self.cubefilter = BandFilter()
+        self.dataset = self.buffer.stc.dataset
+        self.setCube(0)
         win = CubeScroller(parent, self.frame)
         return win
 
@@ -434,10 +493,7 @@ class HSIMode(MajorMode):
         Initialize the bitmap viewer with the image contained in the
         buffer.
         """
-        self.cube.open()
-        self.cubeband.loadBands(self.bands)
-        self.cubeband.show(self.cubefilter, bands=self.bands)
-        self.editwin.setBitmap(self.cubeband.bitmap)
+        self.update(False) # initial case will refresh automatically
         self.stc = self.buffer.stc
 
     def OnUpdateUI(self, evt):
@@ -455,10 +511,42 @@ class HSIMode(MajorMode):
                 plotproxy.update(*evt.imageCoords)
                 plotproxy.updateListeners()
 
-    def update(self):
+    def update(self, refresh=True):
         self.cubeband.show(self.cubefilter, bands=self.bands)
         self.editwin.setBitmap(self.cubeband.bitmap)
-        self.editwin.Refresh()
+        if refresh:
+            self.editwin.Refresh()
+        self.idle_update_menu = True
+
+    def setCube(self, index=0):
+        self.dataset_index = index
+        self.cube = self.dataset.getCube(index)
+        self.bands = self.cube.guessDisplayBands()
+        if not self.settings.display_rgb and len(self.bands)>1:
+            self.bands = [self.bands[0]]
+        dprint("display bands = %s" % str(self.bands))
+        self.cubeband = CubeBand(self.cube)
+        self.cubefilter = BandFilter()
+        #self.cube.open()
+        print self.cube
+        self.cubeband.loadBands(self.bands)
+
+    def nextCube(self):
+        index = self.dataset_index
+        num = self.dataset.getNumCubes()
+        if index < (num-1):
+            index += 1
+            self.setCube(index)
+            dprint("self.dataset_index = %d" % self.dataset_index)
+            wx.CallAfter(self.update)
+
+    def prevCube(self):
+        index = self.dataset_index
+        if index > 0:
+            index -= 1
+            self.setCube(index)
+            dprint("self.dataset_index = %d" % self.dataset_index)
+            wx.CallAfter(self.update)
 
     def nextBand(self):
         newbands=[]
@@ -675,6 +763,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
     default_menu=(("HSI",None,Menu(_("Dataset")).after("Major Mode")),
                   ("HSI",_("Dataset"),MenuItem(PrevCube)),
                   ("HSI",_("Dataset"),MenuItem(NextCube)),
+                  ("HSI",_("Dataset"),MenuItem(SelectCube)),
                   ("HSI",_("Dataset"),Separator("dataset")),
                   ("HSI",_("Dataset"),MenuItem(PrevBand)),
                   ("HSI",_("Dataset"),MenuItem(NextBand)),

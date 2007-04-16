@@ -65,8 +65,8 @@ class GDALDataset(cube.MetadataMixin):
         if urlinfo.protocol == 'file':
             dprint("trying gdal.Open(%s)" % urlinfo.path)
             dataset=gdal.Open(urlinfo.path, gdal.GA_ReadOnly)
-            dprint("dataset = %s" % dataset)
             if dataset:
+                dprint("found GDAL dataset")
                 return True
         return False
 

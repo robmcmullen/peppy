@@ -284,6 +284,10 @@ class Header(dict,MetadataMixin):
         cube.verifyAttributes()
         return cube
 
+    def getCubeNames(self):
+        desc = 'Cube #1: %s' % self['description'].strip()
+        return [desc]
+
     def getAttributeId(self,txt):
         """Convert ENVI header text string into the corresponding
         attribute ID of the Cube object"""

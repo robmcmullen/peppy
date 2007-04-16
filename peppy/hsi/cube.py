@@ -116,14 +116,8 @@ class HyperspectralFileFormat(Component):
         matches = HyperspectralFileFormat.identifyall(urlinfo)
         for format in matches:
             dprint("Loading %s format cube" % format.format_name)
-            h = format(urlinfo)
-            try:
-                cube=h.getCube()
-                print cube
-                return cube
-            except Exception, e:
-                dprint("Failed loading %s format cube" % format.format_name)
-                dprint(e)
+            dataset = format(urlinfo)
+            return dataset
         return None
 
     def wildcards(self):
@@ -184,6 +178,17 @@ class MetadataMixin(object):
         """Return a cube instance that represents the data pointed to
         by the metadata."""
         return None
+
+    def getCubeNames(self):
+        """Return names of cubes contained within this file.
+
+        Return a list of names that identify the cubes contained
+        within this file.
+        """
+        return []
+
+    def getNumCubes(self):
+        return len(self.getCubeNames())
     
     def __str__(self):
         fs=StringIO()
