@@ -210,7 +210,7 @@ class Header(dict,MetadataMixin):
             else:
                 if re.search('=',txt):
                     if self.debug: print "txt=%s" % txt
-                    key,val = [s.strip() for s in re.split('= +',txt,1)]
+                    key,val = [s.strip() for s in re.split('=\s*',txt,1)]
                     key=key.lower()
                     if self.debug: print "matching: '%s'='%s'" % (key,val)
                     if val == "{":
