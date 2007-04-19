@@ -299,7 +299,6 @@ class HyperspectralSTC(NonResidentSTC):
 class SelectSubcube(RectangularSelect):
     name = _("Select Subcube")
     tooltip = _("Select subcube spectrally.")
-    icon = 'icons/rectangular_select.png'
     
 
 class PrevBand(SelectAction):

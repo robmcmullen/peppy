@@ -66,7 +66,7 @@ class ZoomOut(SelectAction):
 class RectangularSelect(ToggleAction):
     name = "Select Rect"
     tooltip = "Select rectangular region."
-    icon = 'icons/rectangular_select.png'
+    icon = 'icons/shape_square_rect_select.png'
     
     def isChecked(self):
         mode = self.frame.getActiveMajorMode()
