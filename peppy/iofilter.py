@@ -78,6 +78,9 @@ class URLInfo(debugmixin):
         comp_mgr = ComponentManager()
         handler = URLHandler(comp_mgr)
         fh = handler.urlreader(self)
+        if self.protocol == 'file':
+            fh.tell = fh.fp.tell
+            fh.seek = fh.fp.seek
         return fh
 
     def getWriter(self):
