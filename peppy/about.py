@@ -154,9 +154,9 @@ def AddCredit(author, contribution):
     credits.append((author, contribution))
     substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits])
         
-AddCredit("Robin Dunn", "contributions on the wxPython mailing list, wxPython itself, and the wxPIA book")
 AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
 AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
+AddCredit("Julian Back", "for the framework for the C edit mode")
 
 copyrights = []
 def AddCopyright(project, website, author, date, reason=None):

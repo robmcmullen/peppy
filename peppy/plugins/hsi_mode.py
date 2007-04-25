@@ -59,7 +59,13 @@ from image_mode import *
 
 from peppy.hsi import *
 
-import numpy
+# hsi mode requires numpy, so if we don't have numpy, set a flag that
+# will disable the HSIPlugin class
+try:
+    import numpy
+    HAS_NUMPY = True
+except:
+    HAS_NUMPY = False
 
 class BandFilter(object):
     def __init__(self):
@@ -739,10 +745,11 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
 class HSIPlugin(MajorModeMatcherBase,debugmixin):
     """HSI viewer plugin to register modes and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMinorModeProvider)
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
+    if HAS_NUMPY:
+        implements(IMajorModeMatcher)
+        implements(IMinorModeProvider)
+        implements(IMenuItemProvider)
+        implements(IToolBarItemProvider)
 
     def possibleModes(self):
         yield HSIMode

@@ -94,7 +94,7 @@ def pointInBox(x, y, box):
     """
     e = boxToExtent(box)
     state = x >= e[0] and x <= e[2] and y >= e[1] and y <= e[3]
-    dprint("x=%d y=%d box=%s state=%s" % (x, y, e, state))
+    # dprint("x=%d y=%d box=%s state=%s" % (x, y, e, state))
     return state
 
 
@@ -184,7 +184,7 @@ class MouseSelector(object):
         self.setWorldCoordsFromImageCoords(*self.start_img_coords)
         self.draw()
         self.handleEventPostHook(ev)
-        dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
+        # dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
         self.want_autoscroll = True
         
     def handleEvent(self, ev):
@@ -321,7 +321,7 @@ class Crosshair(MouseSelector):
             self.crossbox = (x-1, y-1, zoom + 2, zoom + 2)
         else:
             self.crossbox = None
-        dprint("crosshair = %s, img = %s" % (self.world_coords, self.last_img_coords))
+        # dprint("crosshair = %s, img = %s" % (self.world_coords, self.last_img_coords))
 
 
 # create a new Event class and a EVT binder function for a crosshair
@@ -383,7 +383,7 @@ class RubberBand(MouseSelector):
         rectangular area bigger.
         """
         coords = self.scroller.convertEventCoords(ev)
-        dprint("mouse=%s world=%s" % (coords, self.world_coords))
+        # dprint("mouse=%s world=%s" % (coords, self.world_coords))
         if self.isOnBorder(coords):
             self.startResizeEvent(ev, coords)
         elif self.isInside(coords):
@@ -399,19 +399,19 @@ class RubberBand(MouseSelector):
         self.setWorldCoordsFromImageCoords(*self.start_img_coords)
         self.draw()
         self.handleEventPostHook(ev)
-        dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
+        # dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
 
     def startResizeEvent(self, ev, coords):
         self.event_type = "resize"
         self.normalizeImageCoords()
         self.move_img_coords = self.scroller.getImageCoords(*coords)
-        dprint("%s: index=%d starting from %s" % (self.event_type, self.resize_index, self.move_img_coords))
+        # dprint("%s: index=%d starting from %s" % (self.event_type, self.resize_index, self.move_img_coords))
 
     def startMoveEvent(self, ev, coords):
         self.event_type = "move"
         self.normalizeImageCoords()
         self.move_img_coords = self.scroller.getImageCoords(*coords)
-        dprint("%s: starting from %s" % (self.event_type, self.move_img_coords))
+        # dprint("%s: starting from %s" % (self.event_type, self.move_img_coords))
         
     def handleEvent(self, ev):
         if self.event_type == "resize":
@@ -420,14 +420,14 @@ class RubberBand(MouseSelector):
             self.handleMoveEvent(ev)
         else:
             MouseSelector.handleEvent(self, ev)
-        dprint(self.world_coords)
+        # dprint(self.world_coords)
 
     def handleResizeEvent(self, ev):
         coords = self.scroller.convertEventCoords(ev)
         img_coords = self.scroller.getImageCoords(coords[0],
                                                   coords[1],
                                                   fixbounds=False)
-        dprint("img_coords = %s" % str(img_coords))
+        # dprint("img_coords = %s" % str(img_coords))
         if img_coords != self.move_img_coords:
             self.erase()
             self.resizeWorldCoordsFromImageCoords(*img_coords)
@@ -439,7 +439,7 @@ class RubberBand(MouseSelector):
         img_coords = self.scroller.getImageCoords(coords[0],
                                                   coords[1],
                                                   fixbounds=False)
-        dprint("img_coords = %s" % str(img_coords))
+        # dprint("img_coords = %s" % str(img_coords))
         if img_coords != self.move_img_coords:
             self.erase()
             self.moveWorldCoordsFromImageCoords(*img_coords)
@@ -448,7 +448,7 @@ class RubberBand(MouseSelector):
         
     def handleCursorChanges(self, ev):
         coords = self.scroller.convertEventCoords(ev)
-        dprint("mouse=%s world=%s" % (coords, self.world_coords))
+        # dprint("mouse=%s world=%s" % (coords, self.world_coords))
         self.resize_index = None
         if self.isOnBorder(coords):
             self.resize_index = self.getBorderCursorIndex(coords)
@@ -460,7 +460,7 @@ class RubberBand(MouseSelector):
         self.scroller.setCursor(cursor)
 
     def finishEvent(self, ev):
-        dprint()
+        # dprint()
         self.want_autoscroll = False
 
     def handleEventPostHook(self, ev):
@@ -494,8 +494,7 @@ class RubberBand(MouseSelector):
         w = self.world_coords[2]
         h = self.world_coords[3]
 
-        dprint("start=%s current=%s  xywh=%s" % (self.start_img_coords,
-                                                 self.last_img_coords, (x,y,w,h)))
+        # dprint("start=%s current=%s  xywh=%s" % (self.start_img_coords, self.last_img_coords, (x,y,w,h)))
         dc.DrawRectangle(x, y, w, h)
 
     def isOnBorder(self, coords):
@@ -504,7 +503,7 @@ class RubberBand(MouseSelector):
         Return true if the world coordinates specified are on or
         within a tolerance of the selecton border.
         """
-        dprint(self.world_coords)
+        # dprint(self.world_coords)
         if self.world_coords is None:
             return False
         return pointOnBox(coords[0], coords[1], self.world_coords, self.border_sensitivity)
@@ -552,7 +551,7 @@ class RubberBand(MouseSelector):
         Return true if the world coordinates specified are on or
         within a tolerance of the selecton border.
         """
-        dprint(self.world_coords)
+        # dprint(self.world_coords)
         if self.world_coords is None:
             return False
         return pointInBox(coords[0], coords[1], self.world_coords)

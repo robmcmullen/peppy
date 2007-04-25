@@ -30,3 +30,34 @@ in the future.  For now, just follow the Unix installation
 instructions.  There are no compiled extensions, so there shouldn't be
 any differences between the two installation procedures.
 
+
+
+INSTALLING OPTIONAL MODULES
+===========================
+
+If using the hyperspectral image viewing capabilities of peppy, numpy
+must be installed, and gdal can optionally be installed.
+
+Installing numpy
+----------------
+
+The numerical python library, numpy (numpy.scipi.org) is installed
+like a typical python module: by downloading it and running
+
+$ python setup.py install
+
+You may have to be root to complete the installation.
+
+Installing gdal
+---------------
+
+To take advantage of the variety of image formats that GDAL supports,
+you can install it as well.  Download from www.gdal.org and uncompress
+in a directory.  The setup is a bit more complicated than a typical
+python module:
+
+$ cd gdal-1.4.1
+$ ./configure --without-python --with-ngpython
+$ make
+$ cd swig/python
+$ python setup.py install

@@ -29,7 +29,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 SVN_LIST = $(shell python svn-ls.py)
-SVN_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py trac/% %/
+SVN_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py svn-ls.py trac/% %/
 SVN_FILTERED := $(filter-out $(SVN_FILTER_OUT),$(SVN_LIST))
 DISTSRC := $(filter %.py,$(SVN_FILTERED))
 DISTFILES := README INSTALL $(SVN_FILTERED)

@@ -64,7 +64,7 @@ def findLongDescription():
     long_description = " ".join(lines[firstline:lastline])
     namespace['long_description'] = long_description
 
-def findPackages():
+def findPackages(mil=False):
     packages = []
 
     # find packages to be installed
@@ -77,6 +77,8 @@ def findPackages():
                 packages.append(mod)
     os.path.walk(path, addmodules, None)
     print "packages = %s" % packages
+    if mil == False and 'peppy.hsi.mil' in packages:
+        packages.remove('peppy.hsi.mil')
     namespace['packages'] = str(packages)
 
 def findlatest():

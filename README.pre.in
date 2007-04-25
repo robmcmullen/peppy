@@ -34,6 +34,21 @@ AUI (Advanced User Interface) set of widgets for the main frame and
 the notebook.
 
 
+Optional Modules
+----------------
+
+The hyperspectral image view mode has additional requirements:
+
+numpy 1.0 or later
+gdal 1.4.0 or later
+
+GDAL support is actually optional, but only raw image formats like
+ENVI can be loaded without it.  GDAL provides image loading capability
+for a wide variety of formats, including compressed images.  To use
+GDAL support, the ngpython swig bindings must be used when compiling
+the module.
+
+
 
 FEATURES
 ========
