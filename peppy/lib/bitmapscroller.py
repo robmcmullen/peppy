@@ -45,7 +45,13 @@ coordinates are in terms of the viewport.  An event coordinate of (0,
 0) actually occurs at (x, y) on the bitmap.
 
 @author: Rob McMullen
-@version: 0.3.1
+@version: 0.4
+
+Changelog:
+    0.4:
+        * added methods to allow programmatic specification of rubberband
+        * added setSelection to Rubberband
+        * added startSelector to BitmapScroller
 """
 
 import os
@@ -657,6 +663,15 @@ class RubberBand(MouseSelector):
         if y0 > y1:
             y0, y1 = y1, y0
         return (x0, y0, x1 - x0 + 1, y1 - y0 + 1)
+        
+    def setSelection(self, x0, y0, x1, y1):
+        """Programmatically set the selection rectangle.
+        """
+        self.erase()
+        self.start_img_coords = self.scroller.getBoundedCoords(x0, y0)
+        self.last_img_coords = self.scroller.getBoundedCoords(x1, y1)
+        self.recalc()
+        self.draw()
 
 
 class BitmapScroller(wx.ScrolledWindow):
@@ -989,6 +1004,9 @@ class BitmapScroller(wx.ScrolledWindow):
         self.use_selector = selector
         self.setCursor(self.use_selector.cursor)
         self.save_cursor = None
+    
+    def startSelector(self, ev=None):
+        self.selector = self.use_selector(self, ev)
 
     def getActiveSelector(self):
         """Returns the currently active selector."""
@@ -1017,8 +1035,7 @@ class BitmapScroller(wx.ScrolledWindow):
                 if not self.selector.processEvent(ev):
                     self.endActiveSelector()
             elif self.use_selector.trigger(ev):
-                self.selector = self.use_selector(self, ev)
-
+                self.startSelector(ev)
 
             # Next, if we have a selector, process some user interface
             # side effects
@@ -1097,6 +1114,12 @@ if __name__ == '__main__':
                 panel.setCrop(box)
         elif id == 105:
             panel.setCrop(None)
+        elif id == 106:
+            panel.setSelector(RubberBand)
+            panel.startSelector()
+            selector = panel.getActiveSelector()
+            img = panel.orig_img
+            selector.setSelection(0,0, img.GetWidth()/2, img.GetHeight()/2)
         elif id == 200:
             wildcard="*"
             dlg = wx.FileDialog(
@@ -1138,10 +1161,16 @@ if __name__ == '__main__':
     button = wx.Button(frame, 103, 'Select')
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
+    
+    buttonsizer = wx.BoxSizer(wx.HORIZONTAL)
+    sizer.Add(buttonsizer, 0, wx.EXPAND | wx.ALL, 5)
     button = wx.Button(frame, 104, 'Crop')
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
     button = wx.Button(frame, 105, 'Uncrop')
+    frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
+    buttonsizer.Add(button, 0, wx.EXPAND, 0)
+    button = wx.Button(frame, 106, 'Select half')
     frame.Bind(wx.EVT_BUTTON, buttonHandler, button)
     buttonsizer.Add(button, 0, wx.EXPAND, 0)
 
