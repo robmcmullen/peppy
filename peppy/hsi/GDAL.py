@@ -64,10 +64,13 @@ class GDALDataset(cube.MetadataMixin):
     def identify(cls, urlinfo):
         if urlinfo.protocol == 'file':
             dprint("trying gdal.Open(%s)" % urlinfo.path)
-            dataset=gdal.Open(urlinfo.path, gdal.GA_ReadOnly)
-            if dataset:
-                dprint("found GDAL dataset")
-                return True
+            try:
+                dataset=gdal.Open(urlinfo.path, gdal.GA_ReadOnly)
+                if dataset:
+                    dprint("found GDAL dataset")
+                    return True
+            except TypeError:
+                dprint("type error opening GDAL.  Skipping")
         return False
 
     def setURL(self, url=None):
@@ -84,11 +87,15 @@ class GDALDataset(cube.MetadataMixin):
             self.setURL(filename)
 
         if self.url:
-            dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
-            if dataset:
-                self.read(dataset)
-            else:
-                print "Couldn't open header!\n"
+            dprint(self.url.path)
+            try:
+                dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
+                if dataset:
+                    self.read(dataset)
+                else:
+                    print "Couldn't open header!\n"
+            except TypeError:
+                dprint("type error opening GDAL.  Skipping")
 
     def save(self, url=None):
         if url:

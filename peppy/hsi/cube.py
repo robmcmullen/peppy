@@ -318,7 +318,7 @@ class Cube(object):
                 self.mmap.flush()
                 self.mmap.sync()
             else:
-                self.raw.tofile(self.url)
+                self.raw.tofile(self.url.path)
 
     def initialize(self,datatype=None,byteorder=None):
         self.initializeSizes(datatype,byteorder)
