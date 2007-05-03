@@ -67,6 +67,16 @@ try:
 except:
     HAS_NUMPY = False
 
+# Some features require scipy, so set this flag to allow the features
+# that require scipi to be enabled at runtime
+try:
+    import scipy
+    import scipy.signal
+    HAS_SCIPY = True
+except:
+    HAS_SCIPY = False
+
+
 class BandFilter(object):
     def __init__(self):
         self.planes=[]
@@ -87,7 +97,7 @@ class BandFilter(object):
     def getPlane(self,raw):
         return self.getGray(raw)
 
-    def getRGB(self,cubeband,progress=None):
+    def getRGB(self, cubeband, filt, progress=None):
         if not cubeband.cube: return None
         
         self.planes=[]
@@ -95,7 +105,7 @@ class BandFilter(object):
         count=0
         for band in cubeband.bands:
             print "getRGB: band=%s" % str(band)
-            self.planes.append(self.getPlane(band[1]))
+            self.planes.append(self.getPlane(filt.getPlane(band[1])))
             if progress: progress.Update(50+((count+1)*50)/len(cubeband.bands))
             count+=1
         self.rgb=numpy.zeros((cubeband.cube.lines,cubeband.cube.samples,3),numpy.uint8)
@@ -166,6 +176,33 @@ class ContrastFilter(BandFilter):
 
         return gray
 
+class GeneralFilter(object):
+    def __init__(self, pos=0):
+        self.pos = pos
+        
+    def getPlane(self,raw):
+        return raw
+
+class MedianFilter1D(GeneralFilter):
+    """Apply a median filter to the band.
+
+    A median filter is a simple filter that uses a sliding window in
+    each dimension to smooth the data.  It tends to preserve edges,
+    which is one of the reasons to use this filter as opposed to a
+    smoothing function.
+    """
+    def __init__(self, kernel_sample=3, kernel_line=1, pos=0):
+        GeneralFilter.__init__(self, pos=pos)
+
+        # since a band is stored in the array as [line, sample], the
+        # kernel must be described that way as well
+        self.kernel = [kernel_line, kernel_sample]
+   
+    def getPlane(self,raw):
+        if HAS_SCIPY:
+            filtered = scipy.signal.medfilt2d(raw.astype(numpy.float32), self.kernel)
+            return filtered
+        return raw
 
 class CubeBand(object):
     def __init__(self, cube):
@@ -248,7 +285,7 @@ class CubeBand(object):
             profiles.append(profile)
         return profiles
 
-    def show(self,filter,bands=None,progress=None):
+    def show(self, prefilter, colorfilter, bands=None,progress=None):
         if not self.cube: return
 
         refresh=False
@@ -264,7 +301,7 @@ class CubeBand(object):
         if refresh or not self.bands:
             self.loadBands(bands)
         
-        self.rgb=filter.getRGB(self,progress)
+        self.rgb=colorfilter.getRGB(self, prefilter, progress)
         image=wx.ImageFromData(self.cube.samples,self.cube.lines,self.rgb.tostring())
         self.bitmap=wx.BitmapFromImage(image)
         # wx.StaticBitmap(self, -1, self.bitmap, (0,0), (self.cube.samples,self.cube.lines))
@@ -464,6 +501,52 @@ class ContrastFilterAction(RadioAction):
         minibuffer = FloatMinibuffer(mode, self, label="Contrast [0.0 - 1.0]")
         mode.setMinibuffer(minibuffer)
         
+class MedianFilterAction(RadioAction):
+    debuglevel = 1
+    name = _("Median Filter")
+    tooltip = _("Median filter")
+    icon = 'icons/hsi-cube-next.png'
+
+    items = ['No median',
+             'Median 3x1 pixel', 'Median 1x3 pixel', 'Median 3x3 pixel',
+             'Median 5x1 pixel', 'Median 1x5 pixel', 'Median 5x5 pixel']
+
+    def isEnabled(self):
+        return HAS_SCIPY
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+        # do nothing here: it's actually changed in action
+
+    def getIndex(self):
+        mode = self.frame.getActiveMajorMode()
+        filt = mode.filter
+        print filt
+        return filt.pos
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=0, old=-1):
+        assert self.dprint("index=%d" % index)
+        mode = self.frame.getActiveMajorMode()
+        if index == 0:
+            filt = GeneralFilter(pos=0)
+        elif index == 1:
+            filt = MedianFilter1D(3, 1, pos=index)
+        elif index == 2:
+            filt = MedianFilter1D(1, 3, pos=index)
+        elif index == 3:
+            filt = MedianFilter1D(3, 3, pos=index)
+        elif index == 4:
+            filt = MedianFilter1D(5, 1, pos=index)
+        elif index == 5:
+            filt = MedianFilter1D(1, 5, pos=index)
+        elif index == 6:
+            filt = MedianFilter1D(5, 5, pos=index)
+        mode.filter = filt
+        wx.CallAfter(mode.update)
+        
 
 
 class HSIMode(MajorMode):
@@ -517,7 +600,7 @@ class HSIMode(MajorMode):
                 plotproxy.updateListeners()
 
     def update(self, refresh=True):
-        self.cubeband.show(self.cubefilter, bands=self.bands)
+        self.cubeband.show(self.filter, self.cubefilter, bands=self.bands)
         self.editwin.setBitmap(self.cubeband.bitmap)
         if refresh:
             self.editwin.Refresh()
@@ -532,6 +615,7 @@ class HSIMode(MajorMode):
         dprint("display bands = %s" % str(self.bands))
         self.cubeband = CubeBand(self.cube)
         self.cubefilter = BandFilter()
+        self.filter = GeneralFilter()
         #self.cube.open()
         print self.cube
         self.cubeband.loadBands(self.bands)
@@ -776,6 +860,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                   ("HSI",_("Dataset"),Separator("this dataset")),
                   ("HSI",_("Dataset"),MenuItem(SelectSubcube)),
                   ("HSI",_("View"),MenuItem(ContrastFilterAction).first()),
+                  ("HSI",_("View"),MenuItem(MedianFilterAction).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
