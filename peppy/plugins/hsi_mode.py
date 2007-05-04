@@ -339,9 +339,9 @@ class HyperspectralSTC(NonResidentSTC):
         self.dataset=HyperspectralFileFormat.load(urlinfo)
 
 
-class SelectSubcube(RectangularSelect):
-    name = _("Select Subcube")
-    tooltip = _("Select subcube spectrally.")
+class SpatialSelect(RectangularSelect):
+    name = _("Spatial Select")
+    tooltip = _("Select subcube spatially.")
     
 
 class PrevBand(SelectAction):
@@ -858,9 +858,10 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                   ("HSI",_("Dataset"),MenuItem(PrevBand)),
                   ("HSI",_("Dataset"),MenuItem(NextBand)),
                   ("HSI",_("Dataset"),Separator("this dataset")),
-                  ("HSI",_("Dataset"),MenuItem(SelectSubcube)),
-                  ("HSI",_("View"),MenuItem(ContrastFilterAction).first()),
-                  ("HSI",_("View"),MenuItem(MedianFilterAction).first()),
+                  ("HSI",_("Dataset"),MenuItem(SpatialSelect)),
+                  ("HSI",_("View"),MenuItem(ContrastFilterAction)),
+                  ("HSI",_("View"),MenuItem(MedianFilterAction)),
+                  ("HSI",_("View"),Separator("after filters")),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
@@ -875,7 +876,7 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
                    ("HSI",_("Dataset"),Separator("this dataset")),
                    ("HSI",_("Dataset"),MenuItem(ZoomOut)),
                    ("HSI",_("Dataset"),MenuItem(ZoomIn)),
-                   ("HSI",_("Dataset"),MenuItem(SelectSubcube)),
+                   ("HSI",_("Dataset"),MenuItem(SpatialSelect)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
