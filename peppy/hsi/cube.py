@@ -502,6 +502,8 @@ class Cube(object):
         raise NotImplementedError
 
     def normalizeUnits(self,val,units):
+        """Normalize a value in the specified units to the cube's
+        default wavelength unit."""
         if not self.wavelength_units:
             return val
         cubeunits=utils.units_scale[self.wavelength_units]
@@ -512,8 +514,8 @@ class Cube(object):
         return converted
 
     def normalizeUnitsTo(self,val,units):
-        """Normalize wavelength units from the cube's default to the
-        specified unit.
+        """Normalize a value given in the cube's default wavelength
+        unit to the specified unit.
         """
         if not self.wavelength_units:
             return val

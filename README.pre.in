@@ -40,13 +40,17 @@ Optional Modules
 The hyperspectral image view mode has additional requirements:
 
 numpy 1.0 or later
+
+and optionally:
+
+scipy 0.5.2 or later
 gdal 1.4.0 or later
 
-GDAL support is actually optional, but only raw image formats like
-ENVI can be loaded without it.  GDAL provides image loading capability
-for a wide variety of formats, including compressed images.  To use
-GDAL support, the ngpython swig bindings must be used when compiling
-the module.
+Without GDAL support, only raw image formats like ENVI are available.
+GDAL provides image loading capability for a wide variety of formats,
+including compressed images.  To use GDAL support, the ngpython swig
+bindings must be used when compiling the module.  See the file INSTALL
+for more information.
 
 
 
