@@ -1,7 +1,7 @@
 2007-05-10  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.3
-	* Added hyperspectral image mode
+	* Added hyperspectral image mode (requires numpy)
 	* Added zoomable image display for bitmaps
 	* Added preference dialog
 
