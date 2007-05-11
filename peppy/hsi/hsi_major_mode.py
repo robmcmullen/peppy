@@ -52,23 +52,18 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
-from image_mode import *
+from peppy.plugins.image_mode import *
 
 from peppy.hsi import *
 
-# hsi mode requires numpy, so if we don't have numpy, set a flag that
-# will disable the HSIPlugin class
-try:
-    import numpy
-    HAS_NUMPY = True
-except:
-    HAS_NUMPY = False
+# hsi mode requires numpy, the check for which is handled by the major
+# mode wrapper
+import numpy
 
-if HAS_NUMPY:
-    # plotting requires NumPy, so only import these if NumPy is
-    # around, otherwise the failure loading this module kills peppy.
-    import wx.lib.plot as plot
-    import peppy.lib.plotter as plotter
+# plotting requires NumPy, so only import these if NumPy is
+# around, otherwise the failure loading this module kills peppy.
+import wx.lib.plot as plot
+import peppy.lib.plotter as plotter
 
 
 # Some features require scipy, so set this flag to allow the features
@@ -833,11 +828,10 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
 class HSIPlugin(MajorModeMatcherBase,debugmixin):
     """HSI viewer plugin to register modes and user interface.
     """
-    if HAS_NUMPY:
-        implements(IMajorModeMatcher)
-        implements(IMinorModeProvider)
-        implements(IMenuItemProvider)
-        implements(IToolBarItemProvider)
+    implements(IMajorModeMatcher)
+    implements(IMinorModeProvider)
+    implements(IMenuItemProvider)
+    implements(IToolBarItemProvider)
 
     def possibleModes(self):
         yield HSIMode
