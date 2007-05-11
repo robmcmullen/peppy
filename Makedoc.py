@@ -104,7 +104,7 @@ def findlatest():
     else:
         namespace['version']=namespace['cvs_version']
 
-def setnamespace():
+def setnamespace(mil=False):
     if module:
         defaults={
             'prog':'__name__',
@@ -126,7 +126,7 @@ def setnamespace():
     # findlatest()
     findChangeLogVersion()
     findLongDescription()
-    findPackages()
+    findPackages(mil)
     
     if int(namespace['yearstart'])<int(namespace['year']):
         namespace['yearrange']=namespace['yearstart']+'-'+namespace['year']
@@ -199,6 +199,8 @@ if __name__=='__main__':
                       help="filename of template file")
     parser.add_option("-p", "--print-namespace", action="store_true",
                       dest="printnamespace", help="print namespace and exit without processing")
+    parser.add_option("--mil", action="store_true", default=False,
+                      dest="mil", help="use mil modules")
     parser.add_option("-d", "--docstring-only", action="store_true",
                       dest="docstringonly", help="only variable-expand the named file's docstring only; leave the remaining contents unchanged.")
     (options, args) = parser.parse_args()
@@ -208,7 +210,7 @@ if __name__=='__main__':
     if options.module:
         module=__import__(options.module)
 
-    setnamespace()
+    setnamespace(options.mil)
 
     if options.namespace:
         for keyword,filename in options.namespace:

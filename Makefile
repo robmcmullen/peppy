@@ -86,6 +86,8 @@ distdir:
 	-chmod 777 $(distdir)
 	tar cf - $(DISTFILES) | (cd $(distdir); tar xf -)
 	chmod 644 $(distdir)/tests/*.py
+	./Makedoc.py -m peppy -o $(distdir)/README README.pre.in
+	./Makedoc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
 	./Makedoc.py -m peppy -o $(distdir)/setup.py setup.py.in
 	rm $(distdir)/$(DISTMAIN)
 	./Makedoc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
@@ -95,6 +97,17 @@ distdir:
 	mkdir $(distdir)/scripts
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts
+
+distmil: distmildir
+	-chmod -R a+r $(distdir)
+	$(TAR) cvf $(distdir).tar $(TAROPTS) $(distdir)
+	$(COMPRESS) $(distdir).tar
+	-rm -rf $(distdir)
+
+distmildir: distdir
+	./Makedoc.py -m peppy --mil -o $(distdir)/setup.py setup.py.in
+	mkdir $(distdir)/peppy/hsi/mil
+	cp -a peppy/hsi/mil/*.py $(distdir)/peppy/hsi/mil
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) | tee epydoc.out
