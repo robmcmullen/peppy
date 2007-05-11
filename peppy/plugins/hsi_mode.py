@@ -42,9 +42,6 @@ import wx.lib.newevent
 
 from peppy.actions.minibuffer import FloatMinibuffer
 
-import wx.lib.plot as plot
-import peppy.lib.plotter as plotter
-
 from peppy import *
 from peppy.menu import *
 from peppy.major import *
@@ -66,6 +63,13 @@ try:
     HAS_NUMPY = True
 except:
     HAS_NUMPY = False
+
+if HAS_NUMPY:
+    # plotting requires NumPy, so only import these if NumPy is
+    # around, otherwise the failure loading this module kills peppy.
+    import wx.lib.plot as plot
+    import peppy.lib.plotter as plotter
+
 
 # Some features require scipy, so set this flag to allow the features
 # that require scipi to be enabled at runtime
