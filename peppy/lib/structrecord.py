@@ -801,13 +801,17 @@ class List(Wrapper):
         save=getattr(obj,proxy._name)
         num=self.getRepeats(obj)
         self.dprint("looping %d times for proxy %s; save=%s" % (num,proxy._name,save))
-        for i in range(num):
-            self.dprint("save[%d]=%s" % (i,save[i]))
-            if isinstance(proxy,Record):
-                proxy.pack(fh,save[i])
-            else:
-                setattr(obj,proxy._name,save[i])
-                proxy.pack(fh,obj)
+        try:
+            for i in range(num):
+                self.dprint("save[%d]=%s" % (i,save[i]))
+                if isinstance(proxy,Record):
+                    proxy.pack(fh,save[i])
+                else:
+                    setattr(obj,proxy._name,save[i])
+                    proxy.pack(fh,obj)
+        except:
+            print ("Error processing %s: i=%d save=%s" % (proxy._name, i, str(save)))
+            raise
         setattr(obj,proxy._name,save)
 
 class MetaList(List):
