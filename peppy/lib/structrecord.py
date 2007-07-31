@@ -64,17 +64,18 @@ debug=True
 # base indent level when printing stuff
 base_indent="    "
 
-def repr1(name,value,indent):
+def repr1(name,value,indent, printall=False):
     if isinstance(value,Field):
         txt=value._getString(indent)
     elif isinstance(value,list):
         stuff=[]
+        print_all = False
         for item in value:
             if isinstance(item,Field):
                 stuff.append(item._getString(indent+base_indent))
             else:
                 stuff.append("%s%s" % (indent+base_indent,repr(item)))
-        if len(stuff)>10:
+        if printall==False and len(stuff)>10:
             stuff[2:-2]=["\n%s..." % (indent+base_indent)]
         txt="%s%s = [\n%s\n%s]" % (indent,name,",\n".join(stuff),indent)
     else:
@@ -99,6 +100,7 @@ class FieldAbortError(FieldError):
 
 class Field(debugmixin):
     debuglevel=0
+    print_all = False
     
     def __init__(self,name,default=None):
         if name is not None and name.startswith("_"):
@@ -134,11 +136,15 @@ class Field(debugmixin):
         names=self.__dict__.keys()
         names.sort()
         lines=["%s%s %s:" % (indent,repr(self),self._name)]
+        if "_print_all" in self.__dict__ or self.print_all:
+            printall = True
+        else:
+            printall = False
         for name in names:
             # ignore all keys that start with an underscore
             if not name.startswith("_"):
                 value=self.__dict__[name]
-                lines.append(repr1(name,value,indent+base_indent))
+                lines.append(repr1(name,value,indent+base_indent, printall))
         if "_" in self.__dict__.keys():
             lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
         return "\n".join(lines)
