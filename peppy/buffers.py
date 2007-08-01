@@ -104,7 +104,7 @@ class Buffer(debugmixin):
 
     filenames={}
     
-    def __init__(self,filename=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
+    def __init__(self,url=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
         Buffer.count+=1
         self.busy = False
         self.readonly = False
@@ -125,7 +125,7 @@ class Buffer(debugmixin):
             # defer STC initialization until we know the subclass
             self.stc=None
 
-        self.open(filename, stcparent)
+        self.open(url, stcparent)
 
     def initSTC(self):
         self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
@@ -173,6 +173,7 @@ class Buffer(debugmixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
+        self.readonly = url.readonly
         self.name="Buffer #%d: %s" % (self.count,str(self.url))
 
         # Update UI because the filename associated with this buffer
@@ -187,10 +188,35 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self, filename, stcparent):
-        url = URLInfo(filename)
+    def open(self, urlstring, stcparent):
+        url = URLInfo(urlstring)
         fh = url.getReader()
 
+        info = fh.info()
+        if 'Default-mode' in info:
+            self.openDefaultMode(fh, url, stcparent)
+        else:
+            self.openFile(fh, url, stcparent)
+
+        self.openWasSuccessful(fh, url)
+
+    def openDefaultMode(self, fh, url, stcparent):
+        """Create a buffer for a special-case protocol.
+
+        When a protocol is not general enough to be treated as a
+        something that supplies a file-like interface to an object,
+        the STC and buffer can be created using the major mode
+        specified in the Default-mode parameter of the file handle
+        returned from the urllib2 handler.  It also implies that we
+        don't scan a file to determine its type -- we blindly create
+        the required major mode.
+        """
+        self.defaultmode=fh.info()['Default-mode']
+        self.stc = self.defaultmode.mmap_stc_class(stcparent)
+
+        self.setURL(url)                
+
+    def openFile(self, fh, url, stcparent):
         # Need a two-stage opening process in order to support files
         # that are too large to fit in memory at once.  First, load
         # the first group of bytes into memory and use that to check
@@ -198,11 +224,12 @@ class Buffer(debugmixin):
         
         self.stc = PeppySTC(stcparent)
 
-        # Read the first thousand bytes
+        # Read the first thousand-ish bytes
         self.stc.readFrom(fh, self.guessLength)
+        
         # if no exceptions, it must have worked.
-        self.readonly = url.readonly
         self.setURL(url)
+
         self.guessBinary=self.stc.GuessBinary(self.guessLength,
                                               self.guessPercentage)
         if self.defaultmode is None:
@@ -217,6 +244,7 @@ class Buffer(debugmixin):
             # in-resident STC, so load the whole file.
             self.stc.readFrom(fh)
 
+    def openWasSuccessful(self, fh, url):
         if isinstance(self.stc,PeppySTC):
             # if no exceptions, it must have worked.
             self.initSTC()
@@ -726,8 +754,8 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def titleBuffer(self):
         self.open('about:peppy')
         
-    def open(self,filename,newTab=True,mode=None):
-        buffer=Buffer(filename,stcparent=self.app.dummyframe,defaultmode=mode)
+    def open(self,url,newTab=True,mode=None):
+        buffer=Buffer(url,stcparent=self.app.dummyframe,defaultmode=mode)
         # If we get an exception, it won't get added to the buffer list
         
         mode=self.getActiveMajorMode()
