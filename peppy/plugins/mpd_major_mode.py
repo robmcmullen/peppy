@@ -98,7 +98,7 @@ class PlayPause(SelectAction):
     
     def isEnabled(self):
         mode = self.frame.getActiveMajorMode()
-        return not mode.isConnected()
+        return mode.isConnected()
 
     def action(self, pos=None):
         print "Play son!!!"
@@ -132,7 +132,8 @@ class MPDMode(MajorMode):
 
         @param parent: parent window in which to create this window 
         """
-        self.mpd = self.buffer.stc.mpd
+        self.stc = self.buffer.stc
+        self.mpd = self.stc.mpd
         self.initializeConnection()
         win = wx.ListCtrl(parent)
         return win
