@@ -31,6 +31,7 @@ class URLInfo(debugmixin):
             elif len(self.path)>3 and self.path[0] == '/' and self.path[2] == ':':
                 self.path = "%s:%s" % (self.path[1], self.path[3:])
 
+        # FIXME: this file specific stuff should be moved outta here
         if self.protocol == "file":
             # urlparse makes a distinction between file://name and
             # file:///name:
@@ -112,10 +113,14 @@ class URLHandler(Component, debugmixin):
     handlers = ExtensionPoint(IURLHandler)
 
     def __init__(self):
-        # Only call this once.
+        # Only call this once, unless forced to by removing the
+        # attribute 'opener' from the class namespace.
         if hasattr(URLHandler,'opener'):
             return self
 
+        # urllib2 seems to want a complete set of handlers built at
+        # once -- it doesn't work calling build_opener more than once,
+        # because it forgets all the previous user defined handlers.
         urlhandlers = []
         for handler in self.handlers:
             urlhandlers.extend(handler.getURLHandlers())
@@ -129,13 +134,20 @@ class URLHandler(Component, debugmixin):
         
         if hasattr(URLHandler,'opener'):
             delattr(URLHandler,'opener')
-        
+
     def urlreader(self, info):
+        """Get a file-like object for reading from this url."""
         fh = URLHandler.opener.open(info.url)
         fh.urlinfo = info
         return fh
 
     def urlwriter(self, info):
+        """Get a file-like object for (binary) writing to this url.
+
+        Currently, only file:// style urls are supported for writing.
+        Theoretically, webdav can be used to write to an http scheme
+        url, but I haven't figured that out yet.
+        """
         assert self.dprint("trying to open %s" % info.url)
         if info.protocol == "file":
             assert self.dprint("saving to file %s" % info.path)
