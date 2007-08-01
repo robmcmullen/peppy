@@ -794,6 +794,13 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def switchMode(self):
         last=self.tabs.getPrevious()
         mode=self.getActiveMajorMode()
+        if mode is None:
+            # If there were multiple tabs open and they were all the
+            # same, they will go away when the buffer is closed.  In
+            # this case, don't try to do anything more because there
+            # isn't a mode that's left associated with this frame
+            return
+
         assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
         hierarchy=getSubclassHierarchy(mode,MajorMode)
