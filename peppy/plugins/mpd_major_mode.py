@@ -226,6 +226,16 @@ class PlaylistCtrl(wx.ListCtrl):
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
+        self.default_font = self.GetFont()
+        self.bold_font = wx.Font(
+                    self.default_font.GetPointSize(), 
+                    self.default_font.GetFamily(),
+                    self.default_font.GetStyle(),
+                    wx.BOLD
+                    )
+        
+        self.songindex = -1
+
     def createColumns(self):
         self.InsertColumn(0, "#")
         self.InsertColumn(1, "Title")
@@ -256,8 +266,27 @@ class PlaylistCtrl(wx.ListCtrl):
             self.SetStringItem(index, 2, album)
             self.SetStringItem(index, 3, str(track['time']))
 
+    def highlightSong(self, newindex):
+        if newindex == self.songindex:
+            return
+        
+        if self.songindex>0:
+            item = self.GetItem(self.songindex)
+            item.SetFont(self.default_font)
+            self.SetItem(item)
+        self.songindex = newindex
+        if newindex > 0:
+            item = self.GetItem(self.songindex)
+            item.SetFont(self.bold_font)
+            self.SetItem(item)            
+            self.EnsureVisible(newindex)
+            
     def update(self, mpd):
-        pass
+        status = mpd.status()
+        if status['state'] == 'stop':
+            self.highlightSong(-1)
+        else:
+            self.highlightSong(int(status['songid']))
 
 
 class MPDPlaylist(MinorMode):
