@@ -219,9 +219,12 @@ class MPDMode(MajorMode):
 
 class PlaylistCtrl(wx.ListCtrl):
     def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=wx.LC_REPORT):
+                 size=wx.DefaultSize, style=wx.LC_REPORT, mpd=None):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
+        self.mpd = mpd
         self.createColumns()
+
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
     def createColumns(self):
         self.InsertColumn(0, "#")
@@ -229,6 +232,11 @@ class PlaylistCtrl(wx.ListCtrl):
         self.InsertColumn(2, "Artist")
         self.InsertColumn(3, "Time", wx.LIST_FORMAT_RIGHT)
 
+    def OnItemActivated(self, evt):
+        index = evt.GetIndex()
+        self.mpd.play(index)
+        evt.Skip()
+        
     def reset(self, mpd):
         playlist = mpd.playlistinfo()
         self.DeleteAllItems()
@@ -265,7 +273,7 @@ class MPDPlaylist(MinorMode):
         }
 
     def createWindows(self, parent):
-        self.playlist = PlaylistCtrl(parent)
+        self.playlist = PlaylistCtrl(parent, mpd=self.major.mpd)
         paneinfo = self.getDefaultPaneInfo(self.keyword)
         paneinfo.Right()
         self.major.addPane(self.playlist, paneinfo)
