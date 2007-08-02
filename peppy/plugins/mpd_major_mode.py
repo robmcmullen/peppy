@@ -13,6 +13,7 @@ from cStringIO import StringIO
 
 import wx
 import wx.lib.newevent
+import wx.lib.stattext
 
 from peppy import *
 from peppy.menu import *
@@ -26,10 +27,74 @@ from peppy.lib.iconstorage import *
 from peppy.lib.mpdclient2 import mpd_connection
 
 class MPDWrapper(mpd_connection):
-    def read(self, size=None):
-        """Dummy function to satisfy PeppySTC's need to classify the buffer"""
+    """Wrapper around mpd_connection to save state information.
 
-        return "MPD Client"
+    Small wrapper around mpdclient2's mpd_connection object to save
+    state information about the mpd instance.  All views into the mpd
+    instance and all minor modes that access the mpd object will then
+    share the same information, rather than having to look somewhere
+    else to find it.
+    """
+    def __init__(self, *args, **kw):
+        mpd_connection.__init__(self, *args, **kw)
+
+        self.save_mute = -1
+        self.last_status = {'state': 'stop'}
+        
+    def isPlaying(self):
+        return self.last_status['state'] == 'play'
+
+    def getStatus(self):
+        self.last_status = self.status()
+        #print self.last_status
+
+    def playPause(self):
+        state = self.last_status['state']
+        if state == 'play':
+            self.pause(1)
+        elif state == 'pause':
+            # resume playing
+            self.pause(0)
+        else:
+            self.play()
+
+    def stopPlaying(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.stop()
+
+    def prevSong(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.previous()
+
+    def nextSong(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.next()
+
+    def volumeUp(self, step):
+        vol = int(self.last_status['volume']) + step
+        if vol > 100: vol = 100
+        self.setvol(vol)
+        self.save_mute = -1
+
+    def volumeDown(self, step):
+        vol = int(self.last_status['volume']) - step
+        if vol < 0: vol = 0
+        self.setvol(vol)
+        self.save_mute = -1
+
+    def setMute(self):
+        if self.save_mute < 0:
+            self.save_mute = int(self.last_status['volume'])
+            vol = 0
+        else:
+            vol = self.save_mute
+            self.save_mute = -1
+        self.setvol(vol)
+
+
 
 class MPDHandler(urllib2.BaseHandler):
     def mpd_open(self, req):
@@ -55,7 +120,7 @@ class MPDHandler(urllib2.BaseHandler):
 class PlayingAction(SelectAction):    
     def isEnabled(self):
         mode = self.frame.getActiveMajorMode()
-        return mode.isPlaying()
+        return mode.mpd.isPlaying()
 
 class PrevSong(PlayingAction):
     name = _("Prev Song")
@@ -66,7 +131,8 @@ class PrevSong(PlayingAction):
     def action(self, pos=None):
         print "Previous song!!!"
         mode = self.frame.getActiveMajorMode()
-        mode.prevSong()
+        mode.mpd.prevSong()
+        mode.update()
 
 class NextSong(PlayingAction):
     name = _("Next Song")
@@ -77,7 +143,8 @@ class NextSong(PlayingAction):
     def action(self, pos=None):
         print "Next song!!!"
         mode = self.frame.getActiveMajorMode()
-        mode.nextSong()
+        mode.mpd.nextSong()
+        mode.update()
 
 class StopSong(PlayingAction):
     name = _("Stop")
@@ -88,7 +155,8 @@ class StopSong(PlayingAction):
     def action(self, pos=None):
         print "Stop playing!!!"
         mode = self.frame.getActiveMajorMode()
-        mode.stop()
+        mode.mpd.stopPlaying()
+        mode.update()
 
 class PlayPause(SelectAction):
     name = _("Play/Pause Song")
@@ -103,8 +171,41 @@ class PlayPause(SelectAction):
     def action(self, pos=None):
         print "Play song!!!"
         mode = self.frame.getActiveMajorMode()
-        mode.playPause()
+        mode.mpd.playPause()
+        mode.update()
 
+class Mute(PlayPause):
+    name = _("Mute")
+    tooltip = _("Mute the volume")
+    icon = 'icons/sound_mute.png'
+    keyboard = "\\"
+    
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        mode.mpd.setMute()
+        mode.update()
+
+class VolumeUp(PlayPause):
+    name = _("Increase Volume")
+    tooltip = _("Increase the volume")
+    icon = 'icons/sound.png'
+    keyboard = "\\"
+    
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        mode.mpd.volumeUp(mode.settings.volume_step)
+        mode.update()
+
+class VolumeDown(PlayPause):
+    name = _("Decrease Volume")
+    tooltip = _("Decrease the volume")
+    icon = 'icons/sound_low.png'
+    keyboard = "\\"
+    
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        mode.mpd.volumeDown(mode.settings.volume_step)
+        mode.update()
 
 class MPDSTC(NonResidentSTC):
     def openPostHook(self, fh):
@@ -118,6 +219,7 @@ class MPDMode(MajorMode):
 
     ...
     """
+    debug_level = 0
     keyword='MPD'
     icon='icons/mpd.ico'
 
@@ -126,6 +228,7 @@ class MPDMode(MajorMode):
     default_settings = {
         'minor_modes': 'MPD Playlist,MPD Currently Playing',
         'update_interval': 1,
+        'volume_step': 10,
         }
     
     def createEditWindow(self,parent):
@@ -149,8 +252,8 @@ class MPDMode(MajorMode):
         self.update()
 
     def initializeConnection(self):
-        self.getStatus()
-        dprint(self.last_status)
+        self.mpd.getStatus()
+        dprint(self.mpd.last_status)
         
         outputs = self.mpd.outputs()
 
@@ -162,58 +265,23 @@ class MPDMode(MajorMode):
             print "  name:", output.outputname
             print "  enabled:", ('no', 'yes')[int(output.outputenabled)]
 
-    def getStatus(self):
-        self.last_status = self.mpd.status()
-        #print self.last_status
-
     def update(self):
-        self.getStatus()
+        self.mpd.getStatus()
         self.idle_update_menu = True
         for minor in self.minors:
-            dprint(minor.window)
+            self.dprint(minor.window)
             minor.window.update(self.mpd)
 
     def reset(self):
-        self.getStatus()
+        self.mpd.getStatus()
         self.idle_update_menu = True
         for minor in self.minors:
-            dprint(minor.window)
+            self.dprint(minor.window)
             minor.window.reset(self.mpd)
-
-    def isPlaying(self):
-        return self.last_status['state'] == 'play'
 
     def isConnected(self):
         return self.mpd is not None
 
-    def playPause(self):
-        state = self.last_status['state']
-        if state == 'play':
-            self.mpd.pause(1)
-        elif state == 'pause':
-            # resume playing
-            self.mpd.pause(0)
-        else:
-            self.mpd.play()
-        self.update()
-
-    def stop(self):
-        state = self.last_status['state']
-        if state != 'stop':
-            self.mpd.stop()
-        self.update()
-
-    def prevSong(self):
-        state = self.last_status['state']
-        if state != 'stop':
-            self.mpd.previous()
-        self.update()
-
-    def nextSong(self):
-        state = self.last_status['state']
-        if state != 'stop':
-            self.mpd.next()
-        self.update()
 
 
 
@@ -227,12 +295,9 @@ class PlaylistCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
         self.default_font = self.GetFont()
-        self.bold_font = wx.Font(
-                    self.default_font.GetPointSize(), 
-                    self.default_font.GetFamily(),
-                    self.default_font.GetStyle(),
-                    wx.BOLD
-                    )
+        self.bold_font = wx.Font(self.default_font.GetPointSize(), 
+                                 self.default_font.GetFamily(),
+                                 self.default_font.GetStyle(),wx.BOLD)
         
         self.songindex = -1
 
@@ -326,8 +391,12 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.title = wx.StaticText(self)
-        self.sizer.Add(self.title, flag=wx.EXPAND)
+        # NOTE: the standard wx.StaticText automatically word wrapped
+        # text even though I set Wrap(-1).  Fixed by using the
+        # GenStaticText control
+        self.title = wx.lib.stattext.GenStaticText(self, -1, ' ', style=wx.ALIGN_LEFT|wx.ST_NO_AUTORESIZE)
+        
+        self.sizer.Add(self.title, 0, wx.EXPAND)
 
         self.slider = wx.Slider(self)
         self.sizer.Add(self.slider, flag=wx.EXPAND)
@@ -359,6 +428,8 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
                 title = track['file']
             else:
                 title = track['title']
+                if 'artist' in track:
+                    title += " -- %s" % track['artist']
             self.title.SetLabel(title)
             self.slider.SetRange(0, int(track['time']))
             self.songid = int(track['id'])
@@ -378,7 +449,7 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
                 self.reset(mpd)
 
             if not self.user_scrolling:
-                dprint(status)
+                self.dprint(status)
                 pos, tot = status['time'].split(":")
                 self.slider.SetValue(int(pos))
 
@@ -431,6 +502,11 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
                   ("MPD",_("MPD"),MenuItem(StopSong)),
                   ("MPD",_("MPD"),MenuItem(PlayPause)),
                   ("MPD",_("MPD"),MenuItem(NextSong)),
+                  ("MPD",_("MPD"),MenuItem(NextSong)),
+                  ("MPD",_("MPD"),Separator("volume")),
+                  ("MPD",_("MPD"),MenuItem(VolumeUp)),
+                  ("MPD",_("MPD"),MenuItem(VolumeDown)),
+                  ("MPD",_("MPD"),MenuItem(Mute)),
                    )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
@@ -441,6 +517,10 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
                   ("MPD",_("MPD"),MenuItem(StopSong)),
                   ("MPD",_("MPD"),MenuItem(PlayPause)),
                   ("MPD",_("MPD"),MenuItem(NextSong)),
+                  ("MPD",_("MPD"),Separator("volume")),
+                  ("MPD",_("MPD"),MenuItem(VolumeDown)),
+                  ("MPD",_("MPD"),MenuItem(VolumeUp)),
+                  ("MPD",_("MPD"),MenuItem(Mute)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:
