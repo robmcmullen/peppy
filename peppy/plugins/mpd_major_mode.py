@@ -270,14 +270,14 @@ class MPDMode(MajorMode):
         self.idle_update_menu = True
         for minor in self.minors:
             self.dprint(minor.window)
-            minor.window.update(self.mpd)
+            minor.window.update()
 
     def reset(self):
         self.mpd.getStatus()
         self.idle_update_menu = True
         for minor in self.minors:
             self.dprint(minor.window)
-            minor.window.reset(self.mpd)
+            minor.window.reset()
 
     def isConnected(self):
         return self.mpd is not None
@@ -293,6 +293,8 @@ class PlaylistCtrl(wx.ListCtrl):
         self.createColumns()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
+        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
 
         self.default_font = self.GetFont()
         self.bold_font = wx.Font(self.default_font.GetPointSize(), 
@@ -300,6 +302,7 @@ class PlaylistCtrl(wx.ListCtrl):
                                  self.default_font.GetStyle(),wx.BOLD)
         
         self.songindex = -1
+        self.dragging = None
 
     def createColumns(self):
         self.InsertColumn(0, "#")
@@ -312,13 +315,57 @@ class PlaylistCtrl(wx.ListCtrl):
         self.mpd.play(index)
         evt.Skip()
         
-    def reset(self, mpd):
-        playlist = mpd.playlistinfo()
-        self.DeleteAllItems()
-        count = 0
+    def OnStartDrag(self, evt):
+        index = evt.GetIndex()
+        print "beginning drag of item %d" % index
+        self.dragging = index
+
+    def _getDropIndex(self, x, y):
+        """Find the index to insert the new item, given x & y coords."""
+
+        # Find insertion point.
+        index, flags = self.HitTest((x, y))
+
+        if index == wx.NOT_FOUND: # not clicked on an item
+            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)): # empty list or below last item
+                index = self.GetItemCount() # append to end of list
+            elif (self.GetItemCount() > 0):
+                if y <= self.GetItemRect(0).y: # clicked just above first item
+                    index = 0 # append to top of list
+                else:
+                    index = self.GetItemCount() + 1 # append to end of list
+        else: # clicked on an item
+            # Get bounding rectangle for the item the user is dropping over.
+            rect = self.GetItemRect(index)
+
+            # If the user is dropping into the lower half of the rect, we want to insert _after_ this item.
+            # Correct for the fact that there may be a heading involved
+            if y > (rect.y - self.GetItemRect(0).y + rect.height/2):
+                index = index + 1
+
+        return index
+
+    def OnEndDrag(self, evt):
+        if self.dragging:
+            x = evt.GetX()
+            y = evt.GetY()
+            index = self._getDropIndex(x, y)
+            print "dropping item %d at %s -> index=%d" % (self.dragging, (x,y), index)
+
+            self.mpd.move(self.dragging, index)
+            self.reset()
+            self.update()
+            self.dragging = None
+        
+    def reset(self, mpd=None):
+        if mpd is not None:
+            self.mpd = mpd
+        playlist = self.mpd.playlistinfo()
+        list_count = self.GetItemCount()
+        index = 0
         for track in playlist:
-            count += 1
-            index = self.InsertStringItem(sys.maxint, str(count))
+            if index >= list_count:
+                self.InsertStringItem(sys.maxint, str(index+1))
             if 'title' not in track:
                 title = track['file']
             else:
@@ -330,6 +377,14 @@ class PlaylistCtrl(wx.ListCtrl):
                 album = track['album']
             self.SetStringItem(index, 2, album)
             self.SetStringItem(index, 3, str(track['time']))
+
+            index += 1
+
+        if index < list_count:
+            for i in range(index, list_count):
+                # always delete the first item because the list gets
+                # shorter by one each time.
+                self.DeleteItem(index)
 
     def highlightSong(self, newindex):
         if newindex == self.songindex:
@@ -346,12 +401,12 @@ class PlaylistCtrl(wx.ListCtrl):
             self.SetItem(item)            
             self.EnsureVisible(newindex)
             
-    def update(self, mpd):
-        status = mpd.status()
+    def update(self):
+        status = self.mpd.status()
         if status['state'] == 'stop':
             self.highlightSong(-1)
         else:
-            self.highlightSong(int(status['songid']))
+            self.highlightSong(int(status['song']))
 
 
 class MPDPlaylist(MinorMode):
@@ -419,11 +474,13 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         dprint(evt.GetPosition())
         self.mpd.seekid(self.songid, evt.GetPosition())
 
-    def reset(self, mpd):
-        self.mpd = mpd
-        track = mpd.currentsong()
+    def reset(self, mpd=None):
+        if mpd is not None:
+            self.mpd = mpd
+        track = self.mpd.currentsong()
         if track:
-            dprint(track)
+            dprint("currentsong: \n%s" % track)
+            dprint("status: \n%s" % self.mpd.last_status)
             if 'title' not in track:
                 title = track['file']
             else:
@@ -440,13 +497,13 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
             self.songid = -1
         self.user_scrolling = False
 
-    def update(self, mpd):
-        status = mpd.status()
+    def update(self):
+        status = self.mpd.status()
         if status['state'] == 'stop':
             self.slider.SetValue(0)
         else:
             if int(status['songid']) != self.songid:
-                self.reset(mpd)
+                self.reset()
 
             if not self.user_scrolling:
                 self.dprint(status)
