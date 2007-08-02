@@ -64,7 +64,7 @@ class PrevSong(PlayingAction):
     keyboard = "-"
     
     def action(self, pos=None):
-        print "Previous band!!!"
+        print "Previous song!!!"
         mode = self.frame.getActiveMajorMode()
         mode.prevSong()
 
@@ -75,7 +75,7 @@ class NextSong(PlayingAction):
     keyboard = "="
     
     def action(self, pos=None):
-        print "Previous band!!!"
+        print "Next song!!!"
         mode = self.frame.getActiveMajorMode()
         mode.nextSong()
 
@@ -86,9 +86,9 @@ class StopSong(PlayingAction):
     keyboard = "S"
     
     def action(self, pos=None):
-        print "Previous band!!!"
+        print "Stop playing!!!"
         mode = self.frame.getActiveMajorMode()
-        mode.nextSong()
+        mode.stop()
 
 class PlayPause(SelectAction):
     name = _("Play/Pause Song")
@@ -101,7 +101,7 @@ class PlayPause(SelectAction):
         return mode.isConnected()
 
     def action(self, pos=None):
-        print "Play son!!!"
+        print "Play song!!!"
         mode = self.frame.getActiveMajorMode()
         mode.playPause()
 
@@ -124,7 +124,8 @@ class MPDMode(MajorMode):
     mmap_stc_class = MPDSTC
 
     default_settings = {
-        'minor_modes': 'MPD Playlist',
+        'minor_modes': 'MPD Playlist,MPD Currently Playing',
+        'update_interval': 1,
         }
     
     def createEditWindow(self,parent):
@@ -138,10 +139,19 @@ class MPDMode(MajorMode):
         win = wx.ListCtrl(parent)
         return win
 
-    def initializeConnection(self):
-        self.last_status = self.mpd.status()
-        print self.last_status
+    def createWindowPostHook(self):
+        self.update_timer = wx.Timer(self.editwin)
+        self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
 
+        self.update_timer.Start(self.settings.update_interval*1000)
+
+    def OnTimer(self, evt):
+        self.update()
+
+    def initializeConnection(self):
+        self.getStatus()
+        dprint(self.last_status)
+        
         outputs = self.mpd.outputs()
 
         print 'i got %d output(s)' % len(outputs)
@@ -152,11 +162,58 @@ class MPDMode(MajorMode):
             print "  name:", output.outputname
             print "  enabled:", ('no', 'yes')[int(output.outputenabled)]
 
+    def getStatus(self):
+        self.last_status = self.mpd.status()
+        #print self.last_status
+
+    def update(self):
+        self.getStatus()
+        self.idle_update_menu = True
+        for minor in self.minors:
+            dprint(minor.window)
+            minor.window.update(self.mpd)
+
+    def reset(self):
+        self.getStatus()
+        self.idle_update_menu = True
+        for minor in self.minors:
+            dprint(minor.window)
+            minor.window.reset(self.mpd)
+
     def isPlaying(self):
         return self.last_status['state'] == 'play'
 
     def isConnected(self):
         return self.mpd is not None
+
+    def playPause(self):
+        state = self.last_status['state']
+        if state == 'play':
+            self.mpd.pause(1)
+        elif state == 'pause':
+            # resume playing
+            self.mpd.pause(0)
+        else:
+            self.mpd.play()
+        self.update()
+
+    def stop(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.mpd.stop()
+        self.update()
+
+    def prevSong(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.mpd.previous()
+        self.update()
+
+    def nextSong(self):
+        state = self.last_status['state']
+        if state != 'stop':
+            self.mpd.next()
+        self.update()
 
 
 
@@ -172,7 +229,8 @@ class PlaylistCtrl(wx.ListCtrl):
         self.InsertColumn(2, "Artist")
         self.InsertColumn(3, "Time", wx.LIST_FORMAT_RIGHT)
 
-    def replacePlaylist(self, playlist):
+    def reset(self, mpd):
+        playlist = mpd.playlistinfo()
         self.DeleteAllItems()
         count = 0
         for track in playlist:
@@ -189,6 +247,9 @@ class PlaylistCtrl(wx.ListCtrl):
                 album = track['album']
             self.SetStringItem(index, 2, album)
             self.SetStringItem(index, 3, str(track['time']))
+
+    def update(self, mpd):
+        pass
 
 
 class MPDPlaylist(MinorMode):
@@ -210,20 +271,104 @@ class MPDPlaylist(MinorMode):
         self.major.addPane(self.playlist, paneinfo)
         dprint(paneinfo)
 
-        self.setupPlaylist()
-
-    def setupPlaylist(self):
-        mpd = self.major.mpd
+        self.playlist.reset(self.major.mpd)
         
-        playlist = mpd.playlistinfo()
 
-        print 'i got %d playlist entry item(s)' % len(playlist)
+class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
+    """Small control to display current song and stats.
 
-        for output in playlist:
-            print output
+    Displays current title, artist, and album, with controls for
+    position in the song and play/pause controls.
+    """
+    debuglevel = 0
 
-        self.playlist.replacePlaylist(playlist)
+    def __init__(self, parent, minor):
+        wx.Panel.__init__(self, parent)
+        self.minor = minor
 
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.sizer)
+
+        self.title = wx.StaticText(self)
+        self.sizer.Add(self.title, flag=wx.EXPAND)
+
+        self.slider = wx.Slider(self)
+        self.sizer.Add(self.slider, flag=wx.EXPAND)
+
+        self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
+        self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
+
+        self.Layout()
+
+        self.mpd = None
+        self.songid = -1
+        self.user_scrolling = False
+
+    def OnSliderMove(self, evt):
+        self.user_scrolling = True
+        evt.Skip()
+        
+    def OnSliderRelease(self, evt):
+        self.user_scrolling = False
+        dprint(evt.GetPosition())
+        self.mpd.seekid(self.songid, evt.GetPosition())
+
+    def reset(self, mpd):
+        self.mpd = mpd
+        track = mpd.currentsong()
+        if track:
+            dprint(track)
+            if 'title' not in track:
+                title = track['file']
+            else:
+                title = track['title']
+            self.title.SetLabel(title)
+            self.slider.SetRange(0, int(track['time']))
+            self.songid = int(track['id'])
+        else:
+            self.title.SetLabel('')
+            self.slider.SetRange(0,1)
+            self.slider.SetValue(0)
+            self.songid = -1
+        self.user_scrolling = False
+
+    def update(self, mpd):
+        status = mpd.status()
+        if status['state'] == 'stop':
+            self.slider.SetValue(0)
+        else:
+            if int(status['songid']) != self.songid:
+                self.reset(mpd)
+
+            if not self.user_scrolling:
+                dprint(status)
+                pos, tot = status['time'].split(":")
+                self.slider.SetValue(int(pos))
+
+    def OnSize(self, evt):
+        self.Refresh()
+        evt.Skip()
+
+class MPDCurrentlyPlaying(MinorMode):
+    """Minor mode to display the current playlist and controls for
+    music playing.
+    """
+    keyword = "MPD Currently Playing"
+    default_settings={
+        'best_width': 400,
+        'best_height': 100,
+        'min_width': 300,
+        'min_height': 50,
+        }
+
+    def createWindows(self, parent):
+        self.playing = CurrentlyPlayingCtrl(parent, self)
+        paneinfo = self.getDefaultPaneInfo(self.keyword)
+        paneinfo.Right()
+        self.major.addPane(self.playing, paneinfo)
+        dprint(paneinfo)
+        
+        self.playing.reset(self.major.mpd)
 
 class MPDPlugin(MajorModeMatcherBase,debugmixin):
     """HSI viewer plugin to register modes and user interface.
@@ -237,16 +382,11 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
     def getURLHandlers(self):
         return [MPDHandler]
 
-    def scanFilename(self, url):
-        if url.startswith("mpd:"):
-            return MajorModeMAtch(MPDMode, exact=True)
-        return None
-    
     def possibleModes(self):
         yield MPDMode
 
     def getMinorModes(self):
-        for mode in [MPDPlaylist]:
+        for mode in [MPDPlaylist, MPDCurrentlyPlaying]:
             yield mode
     
     default_menu=(("MPD",None,Menu(_("MPD")).after("Major Mode")),
