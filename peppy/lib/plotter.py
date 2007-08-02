@@ -12,6 +12,17 @@ import wx.lib.plot as plot
 
 import numpy
 
+try:
+    from peppy.debug import *
+except:
+    # stubs so things that use peppy.debug can operate without peppy
+    def dprint(txt=""):
+        #print txt
+        pass
+
+    class debugmixin(object):
+        def dprint(self, txt):
+            pass
 
 
 class PlotProxy(object):
@@ -68,10 +79,12 @@ class TestPlotProxy(PlotProxy):
         self.yaxis=(0,10)
         
     def getLines(self, x, y):
-        # print "SpectrumPlotProxy: (%d,%d)" % (x,y)
+        # print "TestPlotProxy: (%d,%d)" % (x,y)
         data=numpy.zeros((10,2))
         data[:,0]=numpy.arange(10)
-        data[:,1]=numpy.array(random.shuffle(range(10)))
+        y = range(10)
+        random.shuffle(y)
+        data[:,1]=numpy.array(y)
         line = plot.PolyLine(data, legend= 'random', colour='orange')
         return [line]
 
@@ -161,6 +174,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         self.yaxis=self.getYAxis()
 
     def update(self):
+        dprint("Found %d proxies" % len(self.proxies))
         if len(self.proxies)==0: return
         
         lines=[]
@@ -245,7 +259,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
 
     def drawPointLabel(self, dc, nearest):
         ptx, pty = nearest["scaledXY"] #scaled x,y of closest point
-        # print "drawing value at (%d,%d)" % (ptx,pty)
+        #dprint("drawing value at (%d,%d)" % (ptx,pty))
 
         # FIXME: what to do when we are zoomed and the point is out of
         # the viewing area?  Currently, we aren't clipping so points
@@ -260,3 +274,24 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         x,y = nearest["pointXY"] # data values
         if self._frame:
             self._frame.SetStatusText("%s: x = %.4f, y = %.4f" % (nearest['legend'],x,y))
+
+
+if __name__ == "__main__":
+    app   = wx.PySimpleApp()
+    frame = wx.Frame(None, -1, title='MultiPlotter and PlotProxy Test', size=(500,500))
+    
+    # Add a multiplotter
+    plotter = MultiPlotter(frame)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(plotter,  1, wx.EXPAND | wx.ALL, 5)
+
+    # Add some proxies
+    t1 = TestPlotProxy()
+    plotter.addProxy(t1)
+    t1.update(0,0)
+    plotter.update()
+    
+    frame.SetAutoLayout(1)
+    frame.SetSizer(sizer)
+    frame.Show(1)
+    app.MainLoop()
