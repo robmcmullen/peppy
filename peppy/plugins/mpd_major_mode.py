@@ -4,7 +4,12 @@
 
 Major mode for controlling an MPD server.
 
-http://mpd.wikia.com/wiki/MusicPlayerDaemonCommands
+http://mpd.wikia.com/wiki/MusicPlayerDaemonCommands shows the commands
+available to the mpd server.  I was confused about the difference
+between a song and a songid in a status message, and id and pos in the
+currentsong message...  It appears that"song" and "id" refer to the
+position in the current playlist, and "id" and "songid" refer to the
+position in the original unshuffled playlist.
 """
 
 import os, struct, mmap
@@ -42,6 +47,7 @@ class MPDWrapper(mpd_connection):
         self.last_status = {'state': 'stop'}
         
     def isPlaying(self):
+        """True if playing music; false if paused or stopped."""
         return self.last_status['state'] == 'play'
 
     def getStatus(self):
@@ -49,6 +55,11 @@ class MPDWrapper(mpd_connection):
         #print self.last_status
 
     def playPause(self):
+        """User method to play or pause.
+
+        Called to play music either from a stopped state or to resume
+        from pause.
+        """
         state = self.last_status['state']
         if state == 'play':
             self.pause(1)
@@ -59,33 +70,58 @@ class MPDWrapper(mpd_connection):
             self.play()
 
     def stopPlaying(self):
+        """User method to stop playing."""
         state = self.last_status['state']
         if state != 'stop':
             self.stop()
 
     def prevSong(self):
+        """User method to skip to previous song.
+
+        Usable only when playing.
+        """
         state = self.last_status['state']
         if state != 'stop':
             self.previous()
 
     def nextSong(self):
+        """User method to skip to next song.
+
+        Usable only when playing.
+        """
         state = self.last_status['state']
         if state != 'stop':
             self.next()
 
     def volumeUp(self, step):
+        """Increase volume, usable at any time.
+
+        Volume ranges from 0 - 100 inclusive.
+
+        @param step: step size to increase
+        """
         vol = int(self.last_status['volume']) + step
         if vol > 100: vol = 100
         self.setvol(vol)
         self.save_mute = -1
 
     def volumeDown(self, step):
+        """Decrease volume, usable at any time.
+
+        Volume ranges from 0 - 100 inclusive.
+
+        @param step: step size to increase
+        """
         vol = int(self.last_status['volume']) - step
         if vol < 0: vol = 0
         self.setvol(vol)
         self.save_mute = -1
 
     def setMute(self):
+        """Mute or unmute, usable at any time
+
+        Mute volume or restore muted sound to previous volume level.
+        """
         if self.save_mute < 0:
             self.save_mute = int(self.last_status['volume'])
             vol = 0
@@ -93,27 +129,6 @@ class MPDWrapper(mpd_connection):
             vol = self.save_mute
             self.save_mute = -1
         self.setvol(vol)
-
-
-
-class MPDHandler(urllib2.BaseHandler):
-    def mpd_open(self, req):
-        dprint(req)
-        url = req.get_host()
-        dprint(url)
-
-        comp_mgr = ComponentManager()
-        handler = MPDPlugin(comp_mgr)
-        fh = MPDWrapper(url, 6600)
-        fh.geturl = lambda :"mpd:%s" % url
-        fh.info = lambda :{'Content-type': 'text/plain',
-                           'Content-length': 0,
-                           'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
-                           'Default-mode': MPDMode,
-                            }
-        
-        return fh
-
 
 
 
@@ -534,6 +549,29 @@ class MPDCurrentlyPlaying(MinorMode):
         dprint(paneinfo)
         
         self.playing.reset(self.major.mpd)
+
+
+
+
+
+class MPDHandler(urllib2.BaseHandler):
+    def mpd_open(self, req):
+        dprint(req)
+        url = req.get_host()
+        dprint(url)
+
+        comp_mgr = ComponentManager()
+        handler = MPDPlugin(comp_mgr)
+        fh = MPDWrapper(url, 6600)
+        fh.geturl = lambda :"mpd:%s" % url
+        fh.info = lambda :{'Content-type': 'text/plain',
+                           'Content-length': 0,
+                           'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
+                           'Default-mode': MPDMode,
+                            }
+        
+        return fh
+
 
 class MPDPlugin(MajorModeMatcherBase,debugmixin):
     """HSI viewer plugin to register modes and user interface.
