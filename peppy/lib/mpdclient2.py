@@ -136,10 +136,10 @@ commands = {
     # list <metadata arg1> [<metadata arg2> <search term>]
 
     # <metadata arg1>
-    ("list", 1): ('%s "%s"', MANY, '', plitem_delim),
+    ("list", 1): ('%s "%s"', MANY, '', None),
 
     # <metadata arg1> <metadata arg2> <search term>
-    ("list", 3): ('%s "%s" "%s" "%s"', MANY, '', plitem_delim),
+    ("list", 3): ('%s "%s" "%s" "%s"', MANY, '', None),
 }
 
 def is_command(cmd):
@@ -240,8 +240,9 @@ class response_fetcher(object):
 
             key, val = pair
             key = key.lower()
+            #print "one_object: %s, %s" % (key, val)
 
-            if key in keywords and key in entity.keys():
+            if keywords is not None and key in keywords and key in entity.keys():
                 return entity
 
             if not type and 'type' not in entity.keys():
@@ -249,6 +250,9 @@ class response_fetcher(object):
 
             entity[key] = self.convert(entity['type'], key, val)
             self.talker.current_line = ''
+
+            if keywords is None:
+                return entity
 
         return entity
 
