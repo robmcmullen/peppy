@@ -31,6 +31,26 @@ from peppy.lib.iconstorage import *
 
 from peppy.lib.mpdclient2 import mpd_connection
 
+
+def getTitle(track):
+    """Convenience function to return title of a track"""
+    if 'title' in track:
+        title = track['title']
+    elif 'file' in track:
+        title = track['file']
+    else:
+        title = str(track)
+    return title
+
+def getAlbum(track):
+    """Convenience function to return album of a track"""
+    if 'album' not in track:
+        album = ''
+    else:
+        album = track['album']
+    return album
+
+
 class MPDWrapper(mpd_connection):
     """Wrapper around mpd_connection to save state information.
 
@@ -132,10 +152,25 @@ class MPDWrapper(mpd_connection):
 
 
 
-class PlayingAction(SelectAction):    
+class PlayingAction(SelectAction):
+    """Base class for actions that are valid only while playing music.
+
+    Anything that subclasses this action only makes sense while the
+    server is playing (or paused).
+    """
     def isEnabled(self):
         mode = self.frame.getActiveMajorMode()
         return mode.mpd.isPlaying()
+
+class ConnectedAction(SelectAction):
+    """Base class for actions that only need a working mpd.
+
+    Anything that subclasses this action can still function regardless
+    of the play/pause state of the server.
+    """
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.isConnected()
 
 class PrevSong(PlayingAction):
     name = _("Prev Song")
@@ -173,23 +208,19 @@ class StopSong(PlayingAction):
         mode.mpd.stopPlaying()
         mode.update()
 
-class PlayPause(SelectAction):
+class PlayPause(ConnectedAction):
     name = _("Play/Pause Song")
     tooltip = _("Play/Pause Song")
     icon = 'icons/control_play.png'
     keyboard = "SPC"
     
-    def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
-        return mode.isConnected()
-
     def action(self, pos=None):
         print "Play song!!!"
         mode = self.frame.getActiveMajorMode()
         mode.mpd.playPause()
         mode.update()
 
-class Mute(PlayPause):
+class Mute(ConnectedAction):
     name = _("Mute")
     tooltip = _("Mute the volume")
     icon = 'icons/sound_mute.png'
@@ -200,7 +231,7 @@ class Mute(PlayPause):
         mode.mpd.setMute()
         mode.update()
 
-class VolumeUp(PlayPause):
+class VolumeUp(ConnectedAction):
     name = _("Increase Volume")
     tooltip = _("Increase the volume")
     icon = 'icons/sound.png'
@@ -211,7 +242,7 @@ class VolumeUp(PlayPause):
         mode.mpd.volumeUp(mode.settings.volume_step)
         mode.update()
 
-class VolumeDown(PlayPause):
+class VolumeDown(ConnectedAction):
     name = _("Decrease Volume")
     tooltip = _("Decrease the volume")
     icon = 'icons/sound_low.png'
@@ -222,11 +253,101 @@ class VolumeDown(PlayPause):
         mode.mpd.volumeDown(mode.settings.volume_step)
         mode.update()
 
+class UpdateDatabase(ConnectedAction):
+    name = _("Update Database")
+    tooltip = _("Rescan the filesystem and update the MPD database")
+    icon = 'icons/sound_low.png'
+    keyboard = "C-U"
+    
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        mode.mpd.update()
+        mode.reset()
+
 class MPDSTC(NonResidentSTC):
     def openPostHook(self, fh):
         """Save the file handle, which is really the mpd connection"""
-        
         self.mpd = fh
+
+
+class MPDDatabase(wx.Panel, debugmixin):
+    """Control to search through the MPD database to add songs to the
+    playlist.
+
+    Displays genre, artist, album, and songs.
+    """
+    debuglevel = 0
+
+    def __init__(self, mode, parent):
+        wx.Panel.__init__(self, parent)
+        self.mpd = mode.mpd
+
+        self.default_font = self.GetFont()
+        self.font = wx.Font(mode.settings.list_font_size, 
+                            self.default_font.GetFamily(),
+                            self.default_font.GetStyle(),
+                            self.default_font.GetWeight())
+        
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.sizer)
+
+        self.lists = {}
+        c = self.lists['genre'] = wx.ListCtrl(self, style=wx.LC_REPORT)
+        c.InsertColumn(0, "Genre")
+        c.SetFont(self.font)
+        self.sizer.Add(c, 0, wx.EXPAND)
+        
+        c = self.lists['artist'] = wx.ListCtrl(self, style=wx.LC_REPORT)
+        c.InsertColumn(0, "Artist")
+        c.SetFont(self.font)
+        self.sizer.Add(c, 0, wx.EXPAND)
+        
+        c = self.lists['album'] = wx.ListCtrl(self, style=wx.LC_REPORT)
+        c.InsertColumn(0, "Album")
+        c.SetFont(self.font)
+        self.sizer.Add(c, 0, wx.EXPAND)
+        
+        c = self.songlist = wx.ListCtrl(self, style=wx.LC_REPORT)
+        c.InsertColumn(0, "Title")
+        c.SetFont(self.font)
+        self.sizer.Add(c, 0, wx.EXPAND)
+        
+        self.Layout()
+
+    def reset(self):
+        self.showGenres()
+
+    def showItems(self, keyword, items):
+        list = self.lists[keyword]
+        list.DeleteAllItems()
+        for item in items:
+            #dprint(item)
+            index = list.InsertStringItem(sys.maxint, str(item[keyword]).decode('utf-8'))
+
+    def showSongs(self, items):
+        list = self.songlist
+        list.DeleteAllItems()
+        for item in items:
+            #dprint(item)
+            if item['type'] == 'file':
+                index = list.InsertStringItem(sys.maxint, str(getTitle(item)).decode('utf-8'))
+
+    def showGenres(self):
+        items = self.mpd.list("genre")
+        #dprint(items)
+        self.showItems('genre', items)
+        
+        items = self.mpd.list("artist")
+        #dprint(items)
+        self.showItems('artist', items)
+        
+        items = self.mpd.list("album")
+        #dprint(items)
+        self.showItems('album', items)
+
+        #items = self.mpd.lsinfo()
+        #dprint(items)
+        #self.showSongs(items)
 
 
 class MPDMode(MajorMode):
@@ -244,6 +365,7 @@ class MPDMode(MajorMode):
         'minor_modes': 'MPD Playlist,MPD Currently Playing',
         'update_interval': 1,
         'volume_step': 10,
+        'list_font_size': 8,
         }
     
     def createEditWindow(self,parent):
@@ -254,7 +376,7 @@ class MPDMode(MajorMode):
         self.stc = self.buffer.stc
         self.mpd = self.stc.mpd
         self.initializeConnection()
-        win = wx.ListCtrl(parent)
+        win = MPDDatabase(self, parent)
         return win
 
     def createWindowPostHook(self):
@@ -262,6 +384,8 @@ class MPDMode(MajorMode):
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
 
         self.update_timer.Start(self.settings.update_interval*1000)
+
+        self.editwin.reset()
 
     def OnTimer(self, evt):
         self.update()
@@ -290,6 +414,7 @@ class MPDMode(MajorMode):
     def reset(self):
         self.mpd.getStatus()
         self.idle_update_menu = True
+        self.editwin.reset()
         for minor in self.minors:
             self.dprint(minor.window)
             minor.window.reset()
@@ -301,10 +426,9 @@ class MPDMode(MajorMode):
 
 
 class PlaylistCtrl(wx.ListCtrl):
-    def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=wx.LC_REPORT, mpd=None):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        self.mpd = mpd
+    def __init__(self, mode, parent):
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        self.mpd = mode.mpd
         self.createColumns()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
@@ -312,7 +436,12 @@ class PlaylistCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
 
         self.default_font = self.GetFont()
-        self.bold_font = wx.Font(self.default_font.GetPointSize(), 
+        self.font = wx.Font(mode.settings.list_font_size, 
+                            self.default_font.GetFamily(),
+                            self.default_font.GetStyle(),
+                            self.default_font.GetWeight())
+        self.SetFont(self.font)
+        self.bold_font = wx.Font(mode.settings.list_font_size, 
                                  self.default_font.GetFamily(),
                                  self.default_font.GetStyle(),wx.BOLD)
         
@@ -381,16 +510,8 @@ class PlaylistCtrl(wx.ListCtrl):
         for track in playlist:
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, str(index+1))
-            if 'title' not in track:
-                title = track['file']
-            else:
-                title = track['title']
-            self.SetStringItem(index, 1, title)
-            if 'album' not in track:
-                album = ''
-            else:
-                album = track['album']
-            self.SetStringItem(index, 2, album)
+            self.SetStringItem(index, 1, getTitle(track))
+            self.SetStringItem(index, 2, getAlbum(track))
             self.SetStringItem(index, 3, str(track['time']))
 
             index += 1
@@ -437,7 +558,7 @@ class MPDPlaylist(MinorMode):
         }
 
     def createWindows(self, parent):
-        self.playlist = PlaylistCtrl(parent, mpd=self.major.mpd)
+        self.playlist = PlaylistCtrl(self.major, parent)
         paneinfo = self.getDefaultPaneInfo(self.keyword)
         paneinfo.Right()
         self.major.addPane(self.playlist, paneinfo)
@@ -602,6 +723,8 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
                   ("MPD",_("MPD"),MenuItem(VolumeUp)),
                   ("MPD",_("MPD"),MenuItem(VolumeDown)),
                   ("MPD",_("MPD"),MenuItem(Mute)),
+                  ("MPD",_("MPD"),Separator("database")),
+                  ("MPD",_("MPD"),MenuItem(UpdateDatabase)),
                    )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
