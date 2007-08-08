@@ -17,7 +17,6 @@ import urllib2
 from cStringIO import StringIO
 
 import wx
-import wx.lib.newevent
 import wx.lib.stattext
 
 from peppy import *
@@ -29,6 +28,7 @@ from peppy.stcinterface import NonResidentSTC
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 
+from peppy.lib.nextpanel import *
 from peppy.lib.mpdclient2 import mpd_connection
 
 
@@ -280,6 +280,7 @@ class MPDDatabase(wx.Panel, debugmixin):
 
     def __init__(self, mode, parent):
         wx.Panel.__init__(self, parent)
+        self.mode = mode
         self.mpd = mode.mpd
 
         self.default_font = self.GetFont()
@@ -291,38 +292,34 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SetSizer(self.sizer)
 
-        self.lists = {}
-        c = self.lists['genre'] = wx.ListCtrl(self, style=wx.LC_REPORT)
-        c.InsertColumn(0, "Genre")
-        c.SetFont(self.font)
-        self.sizer.Add(c, 0, wx.EXPAND)
-        
-        c = self.lists['artist'] = wx.ListCtrl(self, style=wx.LC_REPORT)
-        c.InsertColumn(0, "Artist")
-        c.SetFont(self.font)
-        self.sizer.Add(c, 0, wx.EXPAND)
-        
-        c = self.lists['album'] = wx.ListCtrl(self, style=wx.LC_REPORT)
-        c.InsertColumn(0, "Album")
-        c.SetFont(self.font)
-        self.sizer.Add(c, 0, wx.EXPAND)
-        
-        c = self.songlist = wx.ListCtrl(self, style=wx.LC_REPORT)
-        c.InsertColumn(0, "Title")
-        c.SetFont(self.font)
-        self.sizer.Add(c, 0, wx.EXPAND)
+        self.dirlevels = NeXTPanel(self)
+        self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
+        self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+        self.lists = ['genre', 'artist', 'album']
+        self.shown = 1
         
         self.Layout()
 
     def reset(self):
-        self.showGenres()
+        self.shown = 0
+        items = self.getLevelItems(-1, None)
+        self.showItems(self.shown, self.lists[self.shown], items)
 
-    def showItems(self, keyword, items):
-        list = self.lists[keyword]
+    def showItems(self, index, keyword, items):
+        list = self.dirlevels.GetList(index)
+        if list is None:
+            list = self.dirlevels.AppendList(self.mode.settings.list_width, keyword)
         list.DeleteAllItems()
+        names = {}
         for item in items:
             #dprint(item)
-            index = list.InsertStringItem(sys.maxint, str(item[keyword]).decode('utf-8'))
+            names[str(item[keyword]).decode('utf-8')] = 1
+        names = names.keys()
+        names.sort()
+        for name in names:
+            #dprint(item)
+            index = list.InsertStringItem(sys.maxint, name)
 
     def showSongs(self, items):
         list = self.songlist
@@ -332,22 +329,24 @@ class MPDDatabase(wx.Panel, debugmixin):
             if item['type'] == 'file':
                 index = list.InsertStringItem(sys.maxint, str(getTitle(item)).decode('utf-8'))
 
-    def showGenres(self):
-        items = self.mpd.list("genre")
-        #dprint(items)
-        self.showItems('genre', items)
-        
-        items = self.mpd.list("artist")
-        #dprint(items)
-        self.showItems('artist', items)
-        
-        items = self.mpd.list("album")
-        #dprint(items)
-        self.showItems('album', items)
+    def getLevelItems(self, level, item):
+        if level<0:
+            return self.mpd.list("genre")
+        return self.mpd.list(self.lists[level+1], self.lists[level], item)
 
-        #items = self.mpd.lsinfo()
-        #dprint(items)
-        #self.showSongs(items)
+    def OnPanelUpdate(self, evt):
+        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        print evt.listnum, evt.selections
+        self.shown = evt.listnum + 1
+        list = evt.list
+        newitems = []
+        for i in evt.selections:
+            item = list.GetString(i)
+            newitems.extend(self.getLevelItems(evt.listnum, item))
+        self.showItems(self.shown, self.lists[self.shown], newitems)
+        dprint("shown=%d" % self.shown)
+        self.dirlevels.DeleteAfter(self.shown)
+        self.dirlevels.ensureVisible(self.shown)
 
 
 class MPDMode(MajorMode):
@@ -366,6 +365,7 @@ class MPDMode(MajorMode):
         'update_interval': 1,
         'volume_step': 10,
         'list_font_size': 8,
+        'list_width': 100,
         }
     
     def createEditWindow(self,parent):
