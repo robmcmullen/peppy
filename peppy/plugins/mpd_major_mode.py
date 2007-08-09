@@ -15,6 +15,7 @@ position in the original unshuffled playlist.
 import os, struct, mmap
 import urllib2
 from cStringIO import StringIO
+import cPickle as pickle
 
 import wx
 import wx.lib.stattext
@@ -269,18 +270,22 @@ class MPDSTC(NonResidentSTC):
         """Save the file handle, which is really the mpd connection"""
         self.mpd = fh
 
+
+class SongDataObject(wx.CustomDataObject):
+    def __init__(self):
+        wx.CustomDataObject.__init__(self, "SongData")
+
 class FileCtrl(wx.ListCtrl):
     def __init__(self, mode, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        self.mode = mode
         self.mpd = mode.mpd
         self.createColumns()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
 
         self.songindex = -1
-        self.dragging = None
 
         self.artists = []
         self.albums = []
@@ -293,54 +298,43 @@ class FileCtrl(wx.ListCtrl):
         self.InsertColumn(4, "Album")
         self.InsertColumn(5, "Track")
         self.InsertColumn(6, "Genre")
+        self.InsertColumn(7, "Filename")
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        self.mpd.play(index)
+        filename = self.GetItem(index, 7).GetText()
+        dprint("song %d: %s" % (index, filename))
+        self.mpd.add(filename)
+        self.mode.reset()
         evt.Skip()
-        
+
+    def getSelectedSongs(self):
+        songlist = []
+        index = self.GetFirstSelected()
+        while index != -1:
+            filename = self.GetItem(index, 7).GetText()
+            dprint("song %d: %s" % (index, filename))
+            songlist.append(filename)
+            index = self.GetNextSelected(index)
+        return songlist
+    
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
         print "beginning drag of item %d" % index
         self.dragging = index
-
-    def _getDropIndex(self, x, y):
-        """Find the index to insert the new item, given x & y coords."""
-
-        # Find insertion point.
-        index, flags = self.HitTest((x, y))
-
-        if index == wx.NOT_FOUND: # not clicked on an item
-            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)): # empty list or below last item
-                index = self.GetItemCount() # append to end of list
-            elif (self.GetItemCount() > 0):
-                if y <= self.GetItemRect(0).y: # clicked just above first item
-                    index = 0 # append to top of list
-                else:
-                    index = self.GetItemCount() + 1 # append to end of list
-        else: # clicked on an item
-            # Get bounding rectangle for the item the user is dropping over.
-            rect = self.GetItemRect(index)
-
-            # If the user is dropping into the lower half of the rect, we want to insert _after_ this item.
-            # Correct for the fact that there may be a heading involved
-            if y > (rect.y - self.GetItemRect(0).y + rect.height/2):
-                index = index + 1
-
-        return index
-
-    def OnEndDrag(self, evt):
-        if self.dragging:
-            x = evt.GetX()
-            y = evt.GetY()
-            index = self._getDropIndex(x, y)
-            print "dropping item %d at %s -> index=%d" % (self.dragging, (x,y), index)
-
-            self.mpd.move(self.dragging, index)
-            self.reset()
-            self.update()
-            self.dragging = None
         
+        data = SongDataObject()
+        songlist = self.getSelectedSongs()
+        data.SetData(pickle.dumps(songlist,-1))
+
+        # And finally, create the drop source and begin the drag
+        # and drop opperation
+        dropSource = wx.DropSource(self)
+        dropSource.SetData(data)
+        dprint("Begining DragDrop\n")
+        result = dropSource.DoDragDrop(wx.Drag_AllowMove)
+        dprint("DragDrop completed: %d\n" % result)
+
     def reset(self, mpd=None):
         if mpd is not None:
             self.mpd = mpd
@@ -356,6 +350,7 @@ class FileCtrl(wx.ListCtrl):
                 else:
                     self.SetStringItem(index, 0, getTitle(track))
                 self.SetStringItem(index, 1, str(track['time']))
+                self.SetStringItem(index, 7, track['file'])
 
                 index += 1
 
@@ -365,32 +360,13 @@ class FileCtrl(wx.ListCtrl):
                 # shorter by one each time.
                 self.DeleteItem(index)
 
-    def highlightSong(self, newindex):
-        if newindex == self.songindex:
-            return
-        
-        if self.songindex>0:
-            item = self.GetItem(self.songindex)
-            item.SetFont(self.default_font)
-            self.SetItem(item)
-        self.songindex = newindex
-        if newindex > 0:
-            item = self.GetItem(self.songindex)
-            item.SetFont(self.bold_font)
-            self.SetItem(item)            
-            self.EnsureVisible(newindex)
-            
     def populate(self, artists, albums):
         self.artists = [i for i in artists]
         self.albums = [i for i in albums]
         self.reset()
 
     def update(self):
-        status = self.mpd.status()
-        if status['state'] == 'stop':
-            self.highlightSong(-1)
-        else:
-            self.highlightSong(int(status['song']))
+        self.reset()
 
 
 class MPDDatabase(wx.Panel, debugmixin):
@@ -551,7 +527,56 @@ class MPDMode(MajorMode):
         return self.mpd is not None
 
 
+class SongDropTarget(wx.PyDropTarget):
+    """Custom drop target modified from the wxPython demo."""
+    def __init__(self, window):
+        wx.PyDropTarget.__init__(self)
+        self.dv = window
 
+        # specify the type of data we will accept
+        self.data = SongDataObject()
+        self.SetDataObject(self.data)
+
+    # some virtual methods that track the progress of the drag
+    def OnEnter(self, x, y, d):
+        dprint("OnEnter: %d, %d, %d\n" % (x, y, d))
+        return d
+
+    def OnLeave(self):
+        dprint("OnLeave\n")
+
+    def OnDrop(self, x, y):
+        dprint("OnDrop: %d %d\n" % (x, y))
+        return True
+
+    def OnDragOver(self, x, y, d):
+        #dprint("OnDragOver: %d, %d, %d\n" % (x, y, d))
+
+        # The value returned here tells the source what kind of visual
+        # feedback to give.  For example, if wxDragCopy is returned then
+        # only the copy cursor will be shown, even if the source allows
+        # moves.  You can use the passed in (x,y) to determine what kind
+        # of feedback to give.  In this case we return the suggested value
+        # which is based on whether the Ctrl key is pressed.
+        return d
+
+
+
+    # Called when OnDrop returns True.  We need to get the data and
+    # do something with it.
+    def OnData(self, x, y, d):
+        dprint("OnData: %d, %d, %d\n" % (x, y, d))
+
+        # copy the data from the drag source to our data object
+        if self.GetData():
+            # convert it back to a list of lines and give it to the viewer
+            songs = pickle.loads(self.data.GetData())
+            self.dv.AddSongs(x, y, songs)
+            
+        # what is returned signals the source what to do
+        # with the original data (move, copy, etc.)  In this
+        # case we just return the suggested value given to us.
+        return d
 
 class PlaylistCtrl(wx.ListCtrl):
     def __init__(self, mode, parent):
@@ -563,16 +588,19 @@ class PlaylistCtrl(wx.ListCtrl):
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
         self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
 
-        self.default_font = self.GetFont()
+        default_font = self.GetFont()
         self.font = wx.Font(mode.settings.list_font_size, 
-                            self.default_font.GetFamily(),
-                            self.default_font.GetStyle(),
-                            self.default_font.GetWeight())
+                            default_font.GetFamily(),
+                            default_font.GetStyle(),
+                            default_font.GetWeight())
         self.SetFont(self.font)
         self.bold_font = wx.Font(mode.settings.list_font_size, 
-                                 self.default_font.GetFamily(),
-                                 self.default_font.GetStyle(),wx.BOLD)
+                                 default_font.GetFamily(),
+                                 default_font.GetStyle(),wx.BOLD)
         
+        self.dropTarget=SongDropTarget(self)
+        self.SetDropTarget(self.dropTarget)
+
         self.songindex = -1
         self.dragging = None
 
@@ -628,6 +656,22 @@ class PlaylistCtrl(wx.ListCtrl):
             self.reset()
             self.update()
             self.dragging = None
+
+    def AddSongs(self, x, y, songs):
+        index = self._getDropIndex(x, y)
+        dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
+        # Looks like the MPD protocol is a bit limited in that you
+        # can't add a song at a particular spot; only at the end.  So,
+        # we'll have to add them all and then move them (potential
+        # race condition if there's another mpd client adding songs at
+        # the some time.
+        list_count = self.GetItemCount()
+        for song in songs:
+            ret = self.mpd.addid(song)
+            id = int(ret['id'])
+            self.mpd.moveid(id, index)
+            index += 1
+        self.reset()
         
     def reset(self, mpd=None):
         if mpd is not None:
@@ -656,7 +700,7 @@ class PlaylistCtrl(wx.ListCtrl):
         
         if self.songindex>0:
             item = self.GetItem(self.songindex)
-            item.SetFont(self.default_font)
+            item.SetFont(self.font)
             self.SetItem(item)
         self.songindex = newindex
         if newindex > 0:
