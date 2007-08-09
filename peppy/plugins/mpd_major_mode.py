@@ -269,6 +269,129 @@ class MPDSTC(NonResidentSTC):
         """Save the file handle, which is really the mpd connection"""
         self.mpd = fh
 
+class FileCtrl(wx.ListCtrl):
+    def __init__(self, mode, parent):
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        self.mpd = mode.mpd
+        self.createColumns()
+
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
+        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
+
+        self.songindex = -1
+        self.dragging = None
+
+        self.artists = []
+        self.albums = []
+
+    def createColumns(self):
+        self.InsertColumn(0, "Title")
+        self.InsertColumn(1, "Time")
+        self.InsertColumn(2, "Rating")
+        self.InsertColumn(3, "Artist")
+        self.InsertColumn(4, "Album")
+        self.InsertColumn(5, "Track")
+        self.InsertColumn(6, "Genre")
+
+    def OnItemActivated(self, evt):
+        index = evt.GetIndex()
+        self.mpd.play(index)
+        evt.Skip()
+        
+    def OnStartDrag(self, evt):
+        index = evt.GetIndex()
+        print "beginning drag of item %d" % index
+        self.dragging = index
+
+    def _getDropIndex(self, x, y):
+        """Find the index to insert the new item, given x & y coords."""
+
+        # Find insertion point.
+        index, flags = self.HitTest((x, y))
+
+        if index == wx.NOT_FOUND: # not clicked on an item
+            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)): # empty list or below last item
+                index = self.GetItemCount() # append to end of list
+            elif (self.GetItemCount() > 0):
+                if y <= self.GetItemRect(0).y: # clicked just above first item
+                    index = 0 # append to top of list
+                else:
+                    index = self.GetItemCount() + 1 # append to end of list
+        else: # clicked on an item
+            # Get bounding rectangle for the item the user is dropping over.
+            rect = self.GetItemRect(index)
+
+            # If the user is dropping into the lower half of the rect, we want to insert _after_ this item.
+            # Correct for the fact that there may be a heading involved
+            if y > (rect.y - self.GetItemRect(0).y + rect.height/2):
+                index = index + 1
+
+        return index
+
+    def OnEndDrag(self, evt):
+        if self.dragging:
+            x = evt.GetX()
+            y = evt.GetY()
+            index = self._getDropIndex(x, y)
+            print "dropping item %d at %s -> index=%d" % (self.dragging, (x,y), index)
+
+            self.mpd.move(self.dragging, index)
+            self.reset()
+            self.update()
+            self.dragging = None
+        
+    def reset(self, mpd=None):
+        if mpd is not None:
+            self.mpd = mpd
+
+        index = 0
+        list_count = self.GetItemCount()
+        for album in self.albums:
+            tracks = self.mpd.search("album", album)
+            playlist = self.mpd.playlistinfo()
+            for track in tracks:
+                if index >= list_count:
+                    self.InsertStringItem(sys.maxint, getTitle(track))
+                else:
+                    self.SetStringItem(index, 0, getTitle(track))
+                self.SetStringItem(index, 1, str(track['time']))
+
+                index += 1
+
+        if index < list_count:
+            for i in range(index, list_count):
+                # always delete the first item because the list gets
+                # shorter by one each time.
+                self.DeleteItem(index)
+
+    def highlightSong(self, newindex):
+        if newindex == self.songindex:
+            return
+        
+        if self.songindex>0:
+            item = self.GetItem(self.songindex)
+            item.SetFont(self.default_font)
+            self.SetItem(item)
+        self.songindex = newindex
+        if newindex > 0:
+            item = self.GetItem(self.songindex)
+            item.SetFont(self.bold_font)
+            self.SetItem(item)            
+            self.EnsureVisible(newindex)
+            
+    def populate(self, artists, albums):
+        self.artists = [i for i in artists]
+        self.albums = [i for i in albums]
+        self.reset()
+
+    def update(self):
+        status = self.mpd.status()
+        if status['state'] == 'stop':
+            self.highlightSong(-1)
+        else:
+            self.highlightSong(int(status['song']))
+
 
 class MPDDatabase(wx.Panel, debugmixin):
     """Control to search through the MPD database to add songs to the
@@ -289,12 +412,17 @@ class MPDDatabase(wx.Panel, debugmixin):
                             self.default_font.GetStyle(),
                             self.default_font.GetWeight())
         
-        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
         self.dirlevels = NeXTPanel(self)
+        self.dirlevels.SetFont(self.font)
         self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
         self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+        self.songlist = FileCtrl(self.mode, parent)
+        self.songlist.SetFont(self.font)
+        self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
         self.lists = ['genre', 'artist', 'album']
         self.shown = 1
@@ -321,32 +449,32 @@ class MPDDatabase(wx.Panel, debugmixin):
             #dprint(item)
             index = list.InsertStringItem(sys.maxint, name)
 
-    def showSongs(self, items):
-        list = self.songlist
-        list.DeleteAllItems()
-        for item in items:
-            #dprint(item)
-            if item['type'] == 'file':
-                index = list.InsertStringItem(sys.maxint, str(getTitle(item)).decode('utf-8'))
-
     def getLevelItems(self, level, item):
-        if level<0:
+        if level < 0:
             return self.mpd.list("genre")
-        return self.mpd.list(self.lists[level+1], self.lists[level], item)
+        if level < len(self.lists) - 1:
+            return self.mpd.list(self.lists[level+1], self.lists[level], item)
+        return None
 
     def OnPanelUpdate(self, evt):
         dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
         print evt.listnum, evt.selections
         self.shown = evt.listnum + 1
-        list = evt.list
-        newitems = []
-        for i in evt.selections:
-            item = list.GetString(i)
-            newitems.extend(self.getLevelItems(evt.listnum, item))
-        self.showItems(self.shown, self.lists[self.shown], newitems)
-        dprint("shown=%d" % self.shown)
-        self.dirlevels.DeleteAfter(self.shown)
-        self.dirlevels.ensureVisible(self.shown)
+        if self.shown < len(self.lists):
+            list = evt.list
+            newitems = []
+            for i in evt.selections:
+                item = list.GetString(i)
+                newitems.extend(self.getLevelItems(evt.listnum, item))
+            self.showItems(self.shown, self.lists[self.shown], newitems)
+            dprint("shown=%d" % self.shown)
+            self.dirlevels.DeleteAfter(self.shown)
+            self.dirlevels.ensureVisible(self.shown)
+        else:
+            artists = []
+            list = evt.list
+            albums = [list.GetString(i) for i in evt.selections]
+            self.songlist.populate(artists, albums)
 
 
 class MPDMode(MajorMode):
