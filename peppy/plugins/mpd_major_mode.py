@@ -321,8 +321,6 @@ class FileCtrl(wx.ListCtrl):
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
         print "beginning drag of item %d" % index
-        self.dragging = index
-        
         data = SongDataObject()
         songlist = self.getSelectedSongs()
         data.SetData(pickle.dumps(songlist,-1))
@@ -586,7 +584,6 @@ class PlaylistCtrl(wx.ListCtrl):
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
 
         default_font = self.GetFont()
         self.font = wx.Font(mode.settings.list_font_size, 
@@ -602,7 +599,9 @@ class PlaylistCtrl(wx.ListCtrl):
         self.SetDropTarget(self.dropTarget)
 
         self.songindex = -1
-        self.dragging = None
+
+        # keep track of playlist index to playlist song id
+        self.playlist_cache = []
 
     def createColumns(self):
         self.InsertColumn(0, "#")
@@ -615,10 +614,31 @@ class PlaylistCtrl(wx.ListCtrl):
         self.mpd.play(index)
         evt.Skip()
         
+    def getSelectedSongs(self):
+        songlist = []
+        index = self.GetFirstSelected()
+        while index != -1:
+            dprint("song %d" % (index, ))
+            songlist.append(index)
+            index = self.GetNextSelected(index)
+        return songlist
+    
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
         print "beginning drag of item %d" % index
-        self.dragging = index
+        
+        data = SongDataObject()
+        songlist = self.getSelectedSongs()
+        data.SetData(pickle.dumps(songlist,-1))
+
+        # And finally, create the drop source and begin the drag
+        # and drop opperation
+        dropSource = wx.DropSource(self)
+        dropSource.SetData(data)
+        dprint("Begining DragDrop\n")
+        result = dropSource.DoDragDrop(wx.Drag_AllowMove)
+        dprint("DragDrop completed: %d\n" % result)
+
 
     def _getDropIndex(self, x, y):
         """Find the index to insert the new item, given x & y coords."""
@@ -645,18 +665,6 @@ class PlaylistCtrl(wx.ListCtrl):
 
         return index
 
-    def OnEndDrag(self, evt):
-        if self.dragging:
-            x = evt.GetX()
-            y = evt.GetY()
-            index = self._getDropIndex(x, y)
-            print "dropping item %d at %s -> index=%d" % (self.dragging, (x,y), index)
-
-            self.mpd.move(self.dragging, index)
-            self.reset()
-            self.update()
-            self.dragging = None
-
     def AddSongs(self, x, y, songs):
         index = self._getDropIndex(x, y)
         dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
@@ -666,12 +674,33 @@ class PlaylistCtrl(wx.ListCtrl):
         # race condition if there's another mpd client adding songs at
         # the some time.
         list_count = self.GetItemCount()
+        highlight = []
         for song in songs:
-            ret = self.mpd.addid(song)
-            id = int(ret['id'])
-            self.mpd.moveid(id, index)
-            index += 1
+            if type(song) == int:
+                sid = self.playlist_cache[song]
+                dprint("Moving id=%d (index=%d) to %d" % (sid, song, index))
+                self.mpd.moveid(sid, index)
+                if song >= index:
+                    index += 1
+                highlight.append(sid)
+            else:
+                ret = self.mpd.addid(song)
+                id = int(ret['id'])
+                self.mpd.moveid(id, index)
+                index += 1
+                highlight.append(sid)
         self.reset()
+        self.setSelected(highlight)
+
+    def setSelected(self, ids):
+        list_count = self.GetItemCount()
+        cache = self.playlist_cache
+        for index in range(list_count):
+            if cache[index] in ids:
+                self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            else:
+                self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+
         
     def reset(self, mpd=None):
         if mpd is not None:
@@ -679,15 +708,18 @@ class PlaylistCtrl(wx.ListCtrl):
         playlist = self.mpd.playlistinfo()
         list_count = self.GetItemCount()
         index = 0
+        cache = []
         for track in playlist:
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, str(index+1))
             self.SetStringItem(index, 1, getTitle(track))
             self.SetStringItem(index, 2, getAlbum(track))
             self.SetStringItem(index, 3, str(track['time']))
+            cache.append(int(track['id']))
 
             index += 1
-
+        self.playlist_cache = cache
+        
         if index < list_count:
             for i in range(index, list_count):
                 # always delete the first item because the list gets
