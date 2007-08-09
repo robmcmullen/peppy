@@ -115,6 +115,7 @@ commands = {
     ("listallinfo", 1): ('%s "%s"', MANY, '', plitem_delim), # <string path>
     ("lsinfo",      1): ('%s "%s"', MANY, '', plitem_delim), # <string directory>
     ("add",         1): ('%s "%s"', ZERO, '', []), # <string>
+    ("addid",       1): ('%s "%s"', ONE, 'id', []), # <string>
     ("load",        1): ('%s "%s"', ZERO, '', []), # <string name>
     ("rm",          1): ('%s "%s"', ZERO, '', []), # <string name>
     ("save",        1): ('%s "%s"', ZERO, '', []), # <string playlist name>
