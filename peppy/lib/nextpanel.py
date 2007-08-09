@@ -2,7 +2,23 @@
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """Multi-pane list similar to the NeXT file-manager
 
+This widget is designed for hierarchical display of data, similar to
+what a tree could provide but allows more information to be displayed
+at one time (at the cost of more screen real estate).
 
+The NeXTPanel is a set of columns that adds more columns as you delve
+deeper into the hierarchy.  The initial view is just a single column
+displaying the root of the hierarchy.  Selecting one or more items
+causes another column to be displayed to the right of the column
+displaying the children of the selected items.  More columns can be
+added by selecting items in the new list.
+
+@author: Rob McMullen
+@version: 0.1
+
+Changelog:
+    0.1:
+        * initial release
 """
 
 import os, sys, struct, mmap
@@ -97,7 +113,6 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
         self.splitter = wx.lib.splitter.MultiSplitterWindow(self, style=wx.SP_LIVE_UPDATE)
         self.sizer.Add(self.splitter, 1, wx.EXPAND)
 
-        self.font = self.GetFont()
         self.viewing = -1
 
         c = wx.Panel(self, size=(1,1))
@@ -152,9 +167,14 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
         
 
     def SetFont(self, font):
-        self.font = font
-        for c in self.lists:
+        """Overridden function to set font of all sub lists."""
+        dprint("font=%s" % font)
+        HackedScrolledPanel.SetFont(self, font)
+        index = 0
+        while index < self.GetNumLists():
+            c = self.GetList(index)
             c.SetFont(font)
+            index += 1
 
     def GetNumLists(self):
         return len(self.splitter._windows) - 1
@@ -195,7 +215,7 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
     def makeList(self, title):
         c = NeXTList(self.splitter, style=wx.LB_EXTENDED|wx.LB_ALWAYS_SB)
         c.Bind(wx.EVT_LISTBOX, self.OnListSelect)
-        c.SetFont(self.font)
+        c.SetFont(self.GetFont())
         return c
 
     def findLevel(self, list):
@@ -241,6 +261,7 @@ class NeXTTest(wx.Panel, debugmixin):
         self.SetSizer(self.sizer)
 
         self.dirlevels = NeXTPanel(self)
+        self.dirlevels.SetFont(self.font)
         self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
         self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
