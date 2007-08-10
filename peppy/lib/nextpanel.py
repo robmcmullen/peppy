@@ -62,6 +62,8 @@ class NeXTList(wx.ListBox):
         wx.ListBox.__init__(self, parent, *args, **kw)
         
     def DeleteAllItems(self):
+        for index in range(self.GetCount()):
+            self.Deselect(index)
         self.Clear()
 
     def InsertStringItem(self, idx, txt):
@@ -69,6 +71,23 @@ class NeXTList(wx.ListBox):
             self.Append(txt)
         else:
             self.Insert(txt, idx)
+
+    def ReplaceItems(self, names):
+        count = self.GetCount()
+        index = 0
+        for name in names:
+            # NOTE: have to deselect items before changing, otherwise
+            # a select event is emitted!
+            self.Deselect(index)
+            if index >= count:
+                self.Append(name)
+            else:
+                self.SetString(index, name)
+            index += 1
+        while index < count:
+            self.Delete(index)
+            count -= 1
+        
 
     def GetEffectiveMinSize(self):
         # FIXME: the real GetEffectiveSize doesn't seem to include the
@@ -91,11 +110,18 @@ class HackedScrolledPanel(wx.lib.scrolledpanel.ScrolledPanel):
     handles focus for real container widgets
     """
     def OnChildFocus(self, evt):
-        # If the child window that gets the focus is not visible,
-        # this handler will try to scroll enough to see it.
+        """Override to prevent auto scrolling.
+
+        In the original OnChildFocus if the child window that gets the
+        focus is not visible, this handler will try to scroll enough
+        to see it.  However, when the child is a MultiSplitterWindow,
+        it always scrolls to the origin of the MultiSplitterWindow,
+        regardless of which child inthe splitter has the focus.  So,
+        we have to override it here to prevent auto scrolling.
+        """
         evt.Skip()
         child = evt.GetWindow()
-        print "BLAH! %s" % child
+        # print "child window: %s" % child
     
 
 class NeXTPanel(HackedScrolledPanel, debugmixin):
@@ -104,6 +130,8 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
     Displays a group of independent column lists, where the number of
     columns can grow or shrink.
     """
+    debuglevel = 1
+    
     def __init__(self, parent):
         HackedScrolledPanel.__init__(self, parent)
 
@@ -122,18 +150,18 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
         self.SetupScrolling()
 
     def resetSize(self):
-        dprint(self.splitter.DoGetBestSize())
+        self.dprint(self.splitter.DoGetBestSize())
         self.SetVirtualSize(self.splitter.DoGetBestSize())
         self.ensureVisible(self.viewing)
 
     def ensureVisible(self, idx):
-        dprint("Scrolling %d into view" % idx)
+        self.dprint("Scrolling %d into view" % idx)
         total = 0
         sashes = []
         for i in range(self.GetNumLists()):
             total += self.splitter.GetSashPosition(i)
             sashes.append(total)
-        dprint("sashes = %s" % sashes)
+        self.dprint("sashes = %s" % sashes)
         
         if idx >= self.GetNumLists():
             idx = self.GetNumLists() - 1
@@ -148,7 +176,7 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
         vs_x, vs_y = self.GetViewStart()
         clntsz = self.GetClientSize()
         new_vs_x = -1
-        dprint("first=%d last=%d, vs=%d sppu=%d cl=%d" % (first, last, vs_x, sppu_x, clntsz.width))
+        self.dprint("first=%d last=%d, vs=%d sppu=%d cl=%d" % (first, last, vs_x, sppu_x, clntsz.width))
 
         # is it before the left edge?
         if first < 0 and sppu_x > 0:
@@ -168,7 +196,7 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
 
     def SetFont(self, font):
         """Overridden function to set font of all sub lists."""
-        dprint("font=%s" % font)
+        self.dprint("font=%s" % font)
         HackedScrolledPanel.SetFont(self, font)
         index = 0
         while index < self.GetNumLists():
@@ -188,31 +216,37 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
         return self.InsertList(self.GetNumLists(), width, title)
     
     def InsertList(self, index, width, title):
+        self.dprint(title)
         c = self.makeList(title)
         self.splitter.InsertWindow(index, c, width)
         self.viewing = index
         wx.CallAfter(self.resetSize)
         return c
     
-    def DeleteList(self, index):
+    def DeleteList(self, index, refresh=True):
+        self.dprint("removing index=%d" % index)
         if index < self.GetNumLists():
             c = self.splitter.GetWindow(index)
             self.splitter.DetachWindow(c)
+            c.DeleteAllItems()
             c.Destroy()
             del c
         else:
             raise IndexError("Attempting to remove list index %d; only %d lists total" % (index, self.GetNumLists()))
-        self.resetSize()
+        if refresh:
+            self.resetSize()
 
     def DeleteAfter(self, index):
-        dprint("index=%d, before: %d" % (index, self.GetNumLists()))
+        self.dprint("index=%d, before: %d" % (index, self.GetNumLists()))
+        self.viewing = index
         index += 1
         while index < self.GetNumLists():
-            self.DeleteList(index)
-        dprint("after: %d" % self.GetNumLists())
+            self.DeleteList(index, False)
+        self.dprint("after: %d" % self.GetNumLists())
         self.resetSize()
 
     def makeList(self, title):
+        self.dprint(title)
         c = NeXTList(self.splitter, style=wx.LB_EXTENDED|wx.LB_ALWAYS_SB)
         c.Bind(wx.EVT_LISTBOX, self.OnListSelect)
         c.SetFont(self.GetFont())
@@ -224,21 +258,31 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
             return idx
         return -1
 
+    def LaunchEvent(self, list, idx):
+        self.dprint("launching event for index=%d" % idx)
+        newevt = NeXTPanelEvent()
+        newevt.list = list
+        newevt.listnum = idx
+        newevt.selections = list.GetSelections()
+        self.GetEventHandler().ProcessEvent(newevt)
+        
+        list.SetFocus()
+
     def OnListSelect(self, evt):
         list = evt.GetEventObject()
         idx = self.findLevel(list)
+        if idx == -1:
+            # list not found
+            evt.Skip()
+            return
 
-        dprint("%s idx=%d %s %s" % (list, idx, evt.GetSelection(), list.GetSelections()))
-        
         if evt.IsSelection():
+            self.dprint("SELECTION: %s idx=%d %s %s" % (list, idx, evt.GetSelection(), list.GetSelections()))
+        
             # If it is a selection (not deselection), create a new event
-            newevt = NeXTPanelEvent()
-            newevt.list = list
-            newevt.listnum = idx
-            newevt.selections = list.GetSelections()
-            self.GetEventHandler().ProcessEvent(newevt)
-
-            list.SetFocus()
+            wx.CallAfter(self.LaunchEvent, list, idx)
+        else:
+            self.dprint("DESELECTION: %s idx=%d %s %s" % (list, idx, evt.GetSelection(), list.GetSelections()))
         evt.Skip()
 
 class NeXTTest(wx.Panel, debugmixin):
@@ -282,7 +326,7 @@ class NeXTTest(wx.Panel, debugmixin):
             list = self.dirlevels.AppendList(self.list_width, keyword)
         list.DeleteAllItems()
         for item in items:
-            #dprint(item)
+            #self.dprint(item)
             index = list.InsertStringItem(sys.maxint, item)
 
     def getLevelItems(self, level, item):
@@ -292,7 +336,7 @@ class NeXTTest(wx.Panel, debugmixin):
         return [prefix + str(i) for i in range(8)]
 
     def OnPanelUpdate(self, evt):
-        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
         print evt.listnum, evt.selections
         self.shown = evt.listnum + 1
         list = evt.list
@@ -301,7 +345,7 @@ class NeXTTest(wx.Panel, debugmixin):
             item = list.GetString(i)
             newitems.extend(self.getLevelItems(evt.listnum, item))
         self.showItems(self.shown, "blah", newitems)
-        dprint("shown=%d" % self.shown)
+        self.dprint("shown=%d" % self.shown)
         self.dirlevels.DeleteAfter(self.shown)
         self.dirlevels.ensureVisible(self.shown)
         
