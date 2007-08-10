@@ -34,18 +34,18 @@ try:
     from peppy.debug import *
 except:
     def dprint(txt=""):
-        #print txt
-        pass
+        print txt
 
     class debugmixin(object):
-        pass
+        def dprint(self, txt):
+            if self.debuglevel > 0:
+                dprint(txt)
 
-
-# FIXME: the newevent.NewEvent() style didn't work; had to grab the
-# PyCommandEvent pattern from the demo.
 
 #(NeXTPanelEvent, EVT_NEXTPANEL) = wx.lib.newevent.NewEvent()
 
+# FIXME: the newevent.NewEvent() style didn't work; had to grab the
+# PyCommandEvent pattern from the demo.
 myEVT_NEXTPANEL = wx.NewEventType()
 EVT_NEXTPANEL = wx.PyEventBinder(myEVT_NEXTPANEL, 1)
 
@@ -78,14 +78,22 @@ class NeXTList(wx.ListBox):
         for name in names:
             # NOTE: have to deselect items before changing, otherwise
             # a select event is emitted!
+            #dprint("Before Deselect %d %s" % (index, name))
             self.Deselect(index)
+            #dprint("After Deselect %d %s" % (index, name))
             if index >= count:
                 self.Append(name)
             else:
                 self.SetString(index, name)
+            #dprint("After set %d %s" % (index, name))
             index += 1
         while index < count:
+            # NOTE: also have to deselect items before deleting,
+            # otherwise a select event is emitted!
+            #dprint("Before delete %d %s" % (count, name))
+            self.Deselect(index)
             self.Delete(index)
+            #dprint("After delete %d %s" % (count, name))
             count -= 1
         
 
@@ -130,7 +138,7 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
     Displays a group of independent column lists, where the number of
     columns can grow or shrink.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     def __init__(self, parent):
         HackedScrolledPanel.__init__(self, parent)
@@ -283,76 +291,77 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
             wx.CallAfter(self.LaunchEvent, list, idx)
         else:
             self.dprint("DESELECTION: %s idx=%d %s %s" % (list, idx, evt.GetSelection(), list.GetSelections()))
-        evt.Skip()
 
-class NeXTTest(wx.Panel, debugmixin):
-    """Control to search through the MPD database to add songs to the
-    playlist.
 
-    Displays genre, artist, album, and songs.
-    """
-    debuglevel = 0
-
-    def __init__(self, parent):
-        wx.Panel.__init__(self, parent)
-        self.default_font = self.GetFont()
-        self.font = wx.Font(8, 
-                            self.default_font.GetFamily(),
-                            self.default_font.GetStyle(),
-                            self.default_font.GetWeight())
-        
-        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SetSizer(self.sizer)
-
-        self.dirlevels = NeXTPanel(self)
-        self.dirlevels.SetFont(self.font)
-        self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
-        self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
-
-        self.lists = ['genre', 'artist', 'album']
-        self.list_width = 100
-        self.shown = 0
-        
-        self.Layout()
-
-    def reset(self):
-        self.shown = 0
-        items = self.getLevelItems(-1, None)
-        self.showItems(self.shown, self.lists[self.shown], items)
-
-    def showItems(self, index, keyword, items):
-        list = self.dirlevels.GetList(index)
-        if list is None:
-            list = self.dirlevels.AppendList(self.list_width, keyword)
-        list.DeleteAllItems()
-        for item in items:
-            #self.dprint(item)
-            index = list.InsertStringItem(sys.maxint, item)
-
-    def getLevelItems(self, level, item):
-        if level<0:
-            return [str(i) for i in range(10,25)]
-        prefix = item
-        return [prefix + str(i) for i in range(8)]
-
-    def OnPanelUpdate(self, evt):
-        self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
-        print evt.listnum, evt.selections
-        self.shown = evt.listnum + 1
-        list = evt.list
-        newitems = []
-        for i in evt.selections:
-            item = list.GetString(i)
-            newitems.extend(self.getLevelItems(evt.listnum, item))
-        self.showItems(self.shown, "blah", newitems)
-        self.dprint("shown=%d" % self.shown)
-        self.dirlevels.DeleteAfter(self.shown)
-        self.dirlevels.ensureVisible(self.shown)
-        
 
 if __name__ == '__main__':
+    class NeXTTest(wx.Panel, debugmixin):
+        """Control to search through the MPD database to add songs to the
+        playlist.
+
+        Displays genre, artist, album, and songs.
+        """
+        debuglevel = 0
+
+        def __init__(self, parent):
+            wx.Panel.__init__(self, parent)
+            self.default_font = self.GetFont()
+            self.font = wx.Font(8, 
+                                self.default_font.GetFamily(),
+                                self.default_font.GetStyle(),
+                                self.default_font.GetWeight())
+
+            self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.SetSizer(self.sizer)
+
+            self.dirlevels = NeXTPanel(self)
+            self.dirlevels.SetFont(self.font)
+            self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
+            self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+            self.lists = ['genre', 'artist', 'album']
+            self.list_width = 100
+            self.shown = 0
+
+            self.Layout()
+
+        def reset(self):
+            self.shown = 0
+            items = self.getLevelItems(-1, None)
+            self.showItems(self.shown, self.lists[self.shown], items)
+
+        def showItems(self, index, keyword, items):
+            list = self.dirlevels.GetList(index)
+            if list is None:
+                list = self.dirlevels.AppendList(self.list_width, keyword)
+            list.DeleteAllItems()
+            for item in items:
+                #self.dprint(item)
+                index = list.InsertStringItem(sys.maxint, item)
+
+        def getLevelItems(self, level, item):
+            if level<0:
+                return [str(i) for i in range(10,25)]
+            prefix = item
+            return [prefix + str(i) for i in range(8)]
+
+        def OnPanelUpdate(self, evt):
+            self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+            print evt.listnum, evt.selections
+            self.shown = evt.listnum + 1
+            list = evt.list
+            newitems = []
+            for i in evt.selections:
+                item = list.GetString(i)
+                newitems.extend(self.getLevelItems(evt.listnum, item))
+            self.showItems(self.shown, "blah", newitems)
+            self.dprint("shown=%d" % self.shown)
+            self.dirlevels.DeleteAfter(self.shown)
+            self.dirlevels.ensureVisible(self.shown)
+
+
     app   = wx.PySimpleApp()
-    frame = wx.Frame(None, -1, title='NeXT Panel Test', size=(300,500))
+    frame = wx.Frame(None, -1, title='NeXT Panel Test', size=(400,500))
     frame.CreateStatusBar()
     
     # Add a panel that the rubberband will work on.
