@@ -52,6 +52,16 @@ def getAlbum(track):
         album = track['album']
     return album
 
+def getTime(track):
+    """Convenience function to return album of a track"""
+    seconds = int(track['time'])
+    if seconds < 60:
+        minutes = 0
+    else:
+        minutes = seconds / 60
+        seconds = seconds % 60
+    return "%d:%02d" % (minutes, seconds)
+
 
 class MPDWrapper(mpd_connection):
     """Wrapper around mpd_connection to save state information.
@@ -358,7 +368,7 @@ class FileCtrl(wx.ListCtrl):
                     self.InsertStringItem(sys.maxint, getTitle(track))
                 else:
                     self.SetStringItem(index, 0, getTitle(track))
-                self.SetStringItem(index, 1, str(track['time']))
+                self.SetStringItem(index, 1, getTime(track))
                 self.SetStringItem(index, 7, track['file'])
 
                 index += 1
@@ -424,9 +434,6 @@ class MPDDatabase(wx.Panel, debugmixin):
         if list is None:
             dprint("list at position %d not found!  Creating new list" % index)
             list = self.dirlevels.AppendList(self.mode.settings.list_width, keyword)
-        #dprint("before DeleteAllItems")
-        #list.DeleteAllItems()
-        #dprint("after DeleteAllItems")
         names = {}
         for item in items:
             #dprint(item)
@@ -434,13 +441,9 @@ class MPDDatabase(wx.Panel, debugmixin):
         names = names.keys()
         names.sort()
 
-        dprint("before InsertStringItem")
-        #for name in names:
-        #    #dprint(item)
-        #    index = list.InsertStringItem(sys.maxint, name)
+        #dprint("before InsertStringItem")
         list.ReplaceItems(names)
-        
-        dprint("after InsertStringItem")
+        #dprint("after InsertStringItem")
 
     def getLevelItems(self, level, item):
         if level < 0:
@@ -754,7 +757,7 @@ class PlaylistCtrl(wx.ListCtrl):
                 self.InsertStringItem(sys.maxint, str(index+1))
             self.SetStringItem(index, 1, getTitle(track))
             self.SetStringItem(index, 2, getAlbum(track))
-            self.SetStringItem(index, 3, str(track['time']))
+            self.SetStringItem(index, 3, getTime(track))
             cache.append(int(track['id']))
 
             index += 1
