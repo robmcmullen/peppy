@@ -21,8 +21,7 @@ Changelog:
         * initial release
 """
 
-import os, sys, struct, mmap
-import urllib2
+import os, sys, os.path, glob
 from cStringIO import StringIO
 
 import wx
@@ -294,12 +293,83 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
 
 
 
+class NeXTFileManager(wx.Panel, debugmixin):
+    """Display the filesystem in a NeXTPanel
+    """
+    debuglevel = 0
+
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        self.default_font = self.GetFont()
+        self.font = wx.Font(8, 
+                            self.default_font.GetFamily(),
+                            self.default_font.GetStyle(),
+                            self.default_font.GetWeight())
+
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(self.sizer)
+
+        self.dirlevels = NeXTPanel(self)
+        self.dirlevels.SetFont(self.font)
+        self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
+        self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+        self.list_width = 100
+        self.shown = 0
+        self.dirtree = ['nothing yet']
+
+        self.Layout()
+
+    def reset(self):
+        self.shown = 0
+        items = self.getLevelItems(-1, None)
+        self.showItems(self.shown, self.dirtree[self.shown], items)
+
+    def showItems(self, index, keyword, items):
+        list = self.dirlevels.GetList(index)
+        if list is None:
+            list = self.dirlevels.AppendList(self.list_width, keyword)
+        list.DeleteAllItems()
+        for item in items:
+            #self.dprint(item)
+            index = list.InsertStringItem(sys.maxint, item)
+
+    def getLevelItems(self, level, item):
+        if level<0:
+            path = '/*'
+        else:
+            path = os.path.join('/', *self.dirtree[0:level+1])
+            path = os.path.join(path, '*')
+        paths = glob.glob(path)
+        names = [os.path.basename(a) for a in paths]
+        names.sort()
+        return names
+
+    def OnPanelUpdate(self, evt):
+        self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        print evt.listnum, evt.selections
+        self.shown = evt.listnum + 1
+        list = evt.list
+        newitems = []
+        for i in evt.selections:
+            item = list.GetString(i)
+            if evt.listnum >= len(self.dirtree):
+                self.dirtree.append(item)
+            else:
+                self.dirtree[evt.listnum] = item
+            newitems.extend(self.getLevelItems(evt.listnum, item))
+        self.showItems(self.shown, "blah", newitems)
+        self.dprint("shown=%d" % self.shown)
+        self.dirlevels.DeleteAfter(self.shown)
+        self.dirlevels.ensureVisible(self.shown)
+
+
+
+
 if __name__ == '__main__':
     class NeXTTest(wx.Panel, debugmixin):
-        """Control to search through the MPD database to add songs to the
-        playlist.
-
-        Displays genre, artist, album, and songs.
+        """Simple test that displays a hierarchy of numbers in the
+        NeXTPanel.
         """
         debuglevel = 0
 
@@ -365,7 +435,8 @@ if __name__ == '__main__':
     frame.CreateStatusBar()
     
     # Add a panel that the rubberband will work on.
-    panel = NeXTTest(frame)
+    #panel = NeXTTest(frame)
+    panel = NeXTFileManager(frame)
 
     # Layout the frame
     sizer = wx.BoxSizer(wx.VERTICAL)
