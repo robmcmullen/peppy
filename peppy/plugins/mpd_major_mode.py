@@ -19,6 +19,7 @@ import cPickle as pickle
 
 import wx
 import wx.lib.stattext
+from wx.lib.pubsub import Publisher
 
 from peppy import *
 from peppy.menu import *
@@ -265,6 +266,16 @@ class UpdateDatabase(ConnectedAction):
         mode.mpd.update()
         mode.reset()
 
+class DeleteFromPlaylist(ConnectedAction):
+    name = _("Delete Playlist Entry")
+    tooltip = _("Delete selected songs from playlist")
+    icon = 'icons/sound_low.png'
+    keyboard = "BACK"
+    
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
+
 class MPDSTC(NonResidentSTC):
     def openPostHook(self, fh):
         """Save the file handle, which is really the mpd connection"""
@@ -411,17 +422,25 @@ class MPDDatabase(wx.Panel, debugmixin):
     def showItems(self, index, keyword, items):
         list = self.dirlevels.GetList(index)
         if list is None:
+            dprint("list at position %d not found!  Creating new list" % index)
             list = self.dirlevels.AppendList(self.mode.settings.list_width, keyword)
-        list.DeleteAllItems()
+        #dprint("before DeleteAllItems")
+        #list.DeleteAllItems()
+        #dprint("after DeleteAllItems")
         names = {}
         for item in items:
             #dprint(item)
             names[str(item[keyword]).decode('utf-8')] = 1
         names = names.keys()
         names.sort()
-        for name in names:
-            #dprint(item)
-            index = list.InsertStringItem(sys.maxint, name)
+
+        dprint("before InsertStringItem")
+        #for name in names:
+        #    #dprint(item)
+        #    index = list.InsertStringItem(sys.maxint, name)
+        list.ReplaceItems(names)
+        
+        dprint("after InsertStringItem")
 
     def getLevelItems(self, level, item):
         if level < 0:
@@ -430,26 +449,27 @@ class MPDDatabase(wx.Panel, debugmixin):
             return self.mpd.list(self.lists[level+1], self.lists[level], item)
         return None
 
-    def OnPanelUpdate(self, evt):
-        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
-        print evt.listnum, evt.selections
-        self.shown = evt.listnum + 1
+    def rebuildLevels(self, level, list, selections):
+        dprint("level=%d selections=%s" % (level, selections))
+        self.shown = level + 1
         if self.shown < len(self.lists):
-            list = evt.list
-            newitems = []
-            for i in evt.selections:
-                item = list.GetString(i)
-                newitems.extend(self.getLevelItems(evt.listnum, item))
-            self.showItems(self.shown, self.lists[self.shown], newitems)
             dprint("shown=%d" % self.shown)
             self.dirlevels.DeleteAfter(self.shown)
+
+            newitems = []
+            for i in selections:
+                item = list.GetString(i)
+                newitems.extend(self.getLevelItems(level, item))
+            self.showItems(self.shown, self.lists[self.shown], newitems)
             self.dirlevels.ensureVisible(self.shown)
         else:
             artists = []
-            list = evt.list
-            albums = [list.GetString(i) for i in evt.selections]
-            self.songlist.populate(artists, albums)
+            albums = [list.GetString(i) for i in selections]
+            self.songlist.populate(artists, albums)        
 
+    def OnPanelUpdate(self, evt):
+        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        wx.CallAfter(self.rebuildLevels, evt.listnum, evt.list, evt.selections)
 
 class MPDMode(MajorMode):
     """Major mode for controlling a Music Player Daemon.
@@ -482,12 +502,18 @@ class MPDMode(MajorMode):
         return win
 
     def createWindowPostHook(self):
+        Publisher().subscribe(self.showMessages, 'mpd')
+        
         self.update_timer = wx.Timer(self.editwin)
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
 
         self.update_timer.Start(self.settings.update_interval*1000)
 
         self.editwin.reset()
+
+    def showMessages(self, message=None):
+        """debug method to show all pubsub messages."""
+        dprint("message = %s" % message)        
 
     def OnTimer(self, evt):
         self.update()
@@ -599,6 +625,7 @@ class PlaylistCtrl(wx.ListCtrl):
         self.SetDropTarget(self.dropTarget)
 
         self.songindex = -1
+        Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
@@ -613,7 +640,7 @@ class PlaylistCtrl(wx.ListCtrl):
         index = evt.GetIndex()
         self.mpd.play(index)
         evt.Skip()
-        
+
     def getSelectedSongs(self):
         songlist = []
         index = self.GetFirstSelected()
@@ -623,6 +650,19 @@ class PlaylistCtrl(wx.ListCtrl):
             index = self.GetNextSelected(index)
         return songlist
     
+    def delete(self, message=None):
+        dprint(message)
+
+        # Make sure the message relates to our mpd instance
+        if message.data == self.mpd:
+            songlist = self.getSelectedSongs()
+            if songlist:
+                sids = [self.playlist_cache[i] for i in songlist]
+                for sid in sids:
+                    self.mpd.deleteid(sid)
+                self.reset()
+                self.setSelected([])
+        
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
         print "beginning drag of item %d" % index
@@ -685,8 +725,8 @@ class PlaylistCtrl(wx.ListCtrl):
                 highlight.append(sid)
             else:
                 ret = self.mpd.addid(song)
-                id = int(ret['id'])
-                self.mpd.moveid(id, index)
+                sid = int(ret['id'])
+                self.mpd.moveid(sid, index)
                 index += 1
                 highlight.append(sid)
         self.reset()
@@ -927,6 +967,8 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
                   ("MPD",_("MPD"),MenuItem(VolumeUp)),
                   ("MPD",_("MPD"),MenuItem(VolumeDown)),
                   ("MPD",_("MPD"),MenuItem(Mute)),
+                  ("MPD",_("MPD"),Separator("playlist")),
+                  ("MPD",_("MPD"),MenuItem(DeleteFromPlaylist)),
                   ("MPD",_("MPD"),Separator("database")),
                   ("MPD",_("MPD"),MenuItem(UpdateDatabase)),
                    )
