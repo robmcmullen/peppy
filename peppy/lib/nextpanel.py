@@ -78,11 +78,11 @@ class NeXTList(wx.ListBox):
             # NOTE: have to deselect items before changing, otherwise
             # a select event is emitted!
             #dprint("Before Deselect %d %s" % (index, name))
-            self.Deselect(index)
             #dprint("After Deselect %d %s" % (index, name))
             if index >= count:
                 self.Append(name)
             else:
+                self.Deselect(index)
                 self.SetString(index, name)
             #dprint("After set %d %s" % (index, name))
             index += 1
