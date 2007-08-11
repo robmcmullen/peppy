@@ -216,6 +216,10 @@ class Cube(object):
         self.interleave='unknown'
         self.sensor_type='unknown'
 
+        # date/time metadata
+        self.imaging_date = 0
+        self.file_date = 0
+
         # absolute pointer to data within the file
         self.file_offset=0
         # number of header bytes to skip when reading the raw data
@@ -397,6 +401,9 @@ class Cube(object):
             if self.data_offset==0:
                 # if it's not already set, set it
                 self.data_offset=self.file_offset+self.header_offset
+
+        if self.url is not None:
+            self.file_date = os.path.getmtime(self.url.path)
 
     
 
