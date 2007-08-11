@@ -325,8 +325,7 @@ class FileCtrl(wx.ListCtrl):
         index = evt.GetIndex()
         filename = self.GetItem(index, 7).GetText()
         dprint("song %d: %s" % (index, filename))
-        self.mpd.add(filename)
-        self.mode.reset()
+        Publisher().sendMessage('mpd.appendSong', (self.mpd, filename))
         evt.Skip()
 
     def getSelectedSongs(self):
@@ -629,6 +628,7 @@ class PlaylistCtrl(wx.ListCtrl):
 
         self.songindex = -1
         Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
+        Publisher().subscribe(self.appendSong, 'mpd.appendSong')
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
@@ -745,19 +745,22 @@ class PlaylistCtrl(wx.ListCtrl):
                 self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
         
-    def reset(self, mpd=None):
+    def reset(self, mpd=None, visible=None):
         if mpd is not None:
             self.mpd = mpd
         playlist = self.mpd.playlistinfo()
         list_count = self.GetItemCount()
         index = 0
         cache = []
+        show = -1
         for track in playlist:
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, str(index+1))
             self.SetStringItem(index, 1, getTitle(track))
             self.SetStringItem(index, 2, getAlbum(track))
             self.SetStringItem(index, 3, getTime(track))
+            if track['file'] == visible:
+                show = index
             cache.append(int(track['id']))
 
             index += 1
@@ -768,6 +771,16 @@ class PlaylistCtrl(wx.ListCtrl):
                 # always delete the first item because the list gets
                 # shorter by one each time.
                 self.DeleteItem(index)
+        if show >= 0:
+            self.EnsureVisible(show)
+
+    def appendSong(self, message=None):
+        dprint(message)
+
+        # Make sure the message relates to our mpd instance
+        if message.data[0] == self.mpd:
+            self.mpd.add(message.data[1])
+            self.reset(visible = message.data[1])
 
     def highlightSong(self, newindex):
         if newindex == self.songindex:
