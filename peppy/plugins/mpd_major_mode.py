@@ -414,7 +414,7 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
         self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
-        self.songlist = FileCtrl(self.mode, parent)
+        self.songlist = FileCtrl(self.mode, self)
         self.songlist.SetFont(self.font)
         self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
