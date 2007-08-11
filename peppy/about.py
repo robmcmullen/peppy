@@ -251,8 +251,9 @@ class AboutPlugin(MajorModeMatcherBase):
 
     default_menu=((None,None,Menu("&Help").last()),
                   (None,"&Help",MenuItem(HelpAbout).first()),
-                  (None,"&Help",Separator("sep1").first()),
+                  (None,"&Help",Separator("manual").first()),
                   (None,"&Help",MenuItem(HelpManual).first()),
+                  (None,"&Help",Separator("debug").first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
