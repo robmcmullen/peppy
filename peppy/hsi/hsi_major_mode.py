@@ -836,9 +836,8 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HSIMode
 
-    def scanFilename(self, url):
-        info = URLInfo(url)
-        format = HyperspectralFileFormat.identify(info)
+    def scanMagic(self, buffer):
+        format = HyperspectralFileFormat.identify(buffer.url)
         if format:
             dprint("found %s" % format)
             return MajorModeMatch(HSIMode, exact=True)

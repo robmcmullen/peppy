@@ -42,6 +42,7 @@ from stcinterface import *
 from configprefs import *
 from debug import *
 from minor import *
+from iofilter import *
 
 from lib.iconstorage import *
 from lib.controls import *
@@ -180,6 +181,16 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.removeListeners()
         self.removeListenersPostHook()
         self.deleteWindowPostHook()
+
+    @classmethod
+    def openSpecialNonFileHook(cls, url, fh):
+        """Hook to short-circuit opening process if the major mode doesn't
+        use traditional file-like objects.
+        
+        To handle a major mode that doesn't use file-like objects, intercept
+        the opening process here by returning True from this method.
+        """ 
+        return None
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -579,6 +590,21 @@ class IMajorModeMatcher(Interface):
         @type filename: string
         """
     
+    def scanURLInfo(url):
+        """
+        Called to see if the url can be matched to the
+        L{MajorMode} that should be used.
+
+        If your plugin recognizes something, return a L{MajorModeMatch}
+        object with the optional indicators filled in.  If not, return
+        None and the
+        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
+        continue processing.
+
+        @param url: filename, can be in URL form
+        @type url: URLInfo
+        """
+    
     def scanMagic(buffer):
         """
         Called to see if a pattern in the text can be identified that
@@ -670,6 +696,9 @@ class MajorModeMatcherBase(Component):
                     return MajorModeMatch(mode,exact=True)
         return None
     
+    def scanURLInfo(self, url):
+        return None
+    
     def scanMagic(self,buffer):
         return None
     
@@ -722,7 +751,50 @@ class MajorModeMatcherDriver(Component,debugmixin):
                 return (match.group(3),vars)
         return None
 
-    def find(self,buffer):
+    def scanURL(self, url):
+        """
+        Determine the best possible L{MajorMode} subclass for the
+        given buffer, but only using the buffer's metadata and without
+        reading any of the buffer itself.  See L{IMajorModeMatcher} for more information
+        on designing plugins that this method uses.
+
+        The URL is searched first, and if no match is found with any component
+        of the URL, the filename is checked for regular expressions.
+
+        If an exact match, the searching stops and that mode is returned.  If
+        there is a generic match, the searching continues for a possibly
+        better match.
+
+        If only generic matches are left ... figure out some way to
+        choose the best one.
+
+        @param url: URLInfo object to scan
+        
+        @returns: the best view for the buffer
+        @rtype: L{MajorMode} subclass
+        """
+
+        generics = []
+        for plugin in self.plugins:
+            best=plugin.scanURLInfo(url)
+            if best is not None:
+                if best.exact:
+                    return best.view
+                else:
+                    assert self.dprint("scanFilename: appending generic %s" % best.view)
+                    generics.append(best)
+        for plugin in self.plugins:
+            best=plugin.scanFilename(url.path)
+            if best is not None:
+                if best.exact:
+                    return best.view
+                else:
+                    assert self.dprint("scanFilename: appending generic %s" % best.view)
+                    generics.append(best)
+        return generics
+
+
+    def scanBuffer(self,buffer):
         """
         Determine the best possible L{MajorMode} subclass for the
         given buffer.  See L{IMajorModeMatcher} for more information
@@ -779,14 +851,6 @@ class MajorModeMatcherDriver(Component,debugmixin):
                         assert self.dprint("scanShell: appending generic %s" % best.view)
                         generics.append(best)
         for plugin in self.plugins:
-            best=plugin.scanFilename(str(buffer.url))
-            if best is not None:
-                if best.exact:
-                    return best.view
-                else:
-                    assert self.dprint("scanFilename: appending generic %s" % best.view)
-                    generics.append(best)
-        for plugin in self.plugins:
             best=plugin.scanMagic(buffer)
             if best is not None:
                 if best.exact:
@@ -805,7 +869,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
             # the default mode.
             return FundamentalMode
 
-def GetMajorMode(buffer):
+def ScanBufferForMajorMode(buffer):
     """
     Application-wide entry point used to find the best view for the
     given buffer.
@@ -816,5 +880,19 @@ def GetMajorMode(buffer):
     
     comp_mgr=ComponentManager()
     driver=MajorModeMatcherDriver(comp_mgr)
-    view=driver.find(buffer)
-    return view
+    mode = driver.scanBuffer(buffer)
+    return mode
+
+def InitialGuessMajorMode(url):
+    """
+    Application-wide entry point used to find the best view for the
+    given buffer.
+
+    @param buffer: the newly loaded buffer
+    @type buffer: L{Buffer<buffers.Buffer>}
+    """
+    
+    comp_mgr=ComponentManager()
+    driver=MajorModeMatcherDriver(comp_mgr)
+    mode = driver.scanURL(url)
+    return mode

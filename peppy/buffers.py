@@ -190,32 +190,19 @@ class Buffer(debugmixin):
 
     def open(self, urlstring, stcparent):
         url = URLInfo(urlstring)
+        modeguess = InitialGuessMajorMode(url)
+        dprint(modeguess)
+        
         fh = url.getReader()
-
-        info = fh.info()
-        if 'Default-mode' in info:
-            self.openDefaultMode(fh, url, stcparent)
+        if modeguess and modeguess.openSpecialNonFileHook(url, fh):
+            self.defaultmode = modeguess
+            self.stc = self.defaultmode.mmap_stc_class(stcparent)
+            self.setURL(url)                
         else:
             self.openFile(fh, url, stcparent)
 
         self.openWasSuccessful(fh, url)
-
-    def openDefaultMode(self, fh, url, stcparent):
-        """Create a buffer for a special-case protocol.
-
-        When a protocol is not general enough to be treated as a
-        something that supplies a file-like interface to an object,
-        the STC and buffer can be created using the major mode
-        specified in the Default-mode parameter of the file handle
-        returned from the urllib2 handler.  It also implies that we
-        don't scan a file to determine its type -- we blindly create
-        the required major mode.
-        """
-        self.defaultmode=fh.info()['Default-mode']
-        self.stc = self.defaultmode.mmap_stc_class(stcparent)
-
-        self.setURL(url)                
-
+    
     def openFile(self, fh, url, stcparent):
         # Need a two-stage opening process in order to support files
         # that are too large to fit in memory at once.  First, load
@@ -233,7 +220,7 @@ class Buffer(debugmixin):
         self.guessBinary=self.stc.GuessBinary(self.guessLength,
                                               self.guessPercentage)
         if self.defaultmode is None:
-            self.defaultmode=GetMajorMode(self)
+            self.defaultmode=ScanBufferForMajorMode(self)
 
         if self.defaultmode.mmap_stc_class is not None:
             # we have a STC that allows files that are larger that

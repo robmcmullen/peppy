@@ -287,6 +287,12 @@ class DeleteFromPlaylist(ConnectedAction):
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 
 class MPDSTC(NonResidentSTC):
+    @classmethod
+    def verifyCanOpen(cls, url, fh):
+        if url.protocol == 'mpd':
+            return True
+        return False
+    
     def openPostHook(self, fh):
         """Save the file handle, which is really the mpd connection"""
         self.mpd = fh
@@ -491,6 +497,12 @@ class MPDMode(MajorMode):
         'list_font_size': 8,
         'list_width': 100,
         }
+    
+    @classmethod
+    def openSpecialNonFileHook(self, url, fh):
+        if url.protocol == 'mpd':
+            return True
+        return False
     
     def createEditWindow(self,parent):
         """Create the main MPD music search window.
@@ -948,7 +960,6 @@ class MPDHandler(urllib2.BaseHandler):
         fh.info = lambda :{'Content-type': 'text/plain',
                            'Content-length': 0,
                            'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
-                           'Default-mode': MPDMode,
                             }
         
         return fh
@@ -968,6 +979,11 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
 
     def possibleModes(self):
         yield MPDMode
+    
+    def scanURLInfo(self, url):
+        if url.protocol == 'mpd':
+            return MajorModeMatch(MPDMode, exact=True)
+        return None
 
     def getMinorModes(self):
         for mode in [MPDPlaylist, MPDCurrentlyPlaying]:

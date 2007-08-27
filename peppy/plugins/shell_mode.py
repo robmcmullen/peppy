@@ -65,7 +65,7 @@ class ShellSTC(PeppySTC):
     the cursor position on this STC doesn't affect the views directly.
     This is the data storage STC, not the viewing STC.
     """
-    debuglevel=0
+    debuglevel=1
 
     def __init__(self, parent, copy=None):
         PeppySTC.__init__(self, parent, copy=copy)
@@ -81,6 +81,7 @@ class ShellSTC(PeppySTC):
         self.pipe.setNotifyWindow(self)
         self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
         
+        self.readFrom(fh)
         length=self.GetTextLength()
         self.SetCurrentPos(length)
         self.AddText('\n')
@@ -137,8 +138,14 @@ class ShellSTC(PeppySTC):
     def OnModified(self, evt):
         PeppySTC.OnModified(self,evt)
 
-
+# FIXME: this is hidden by Fundamental's ElectricReturn action...  To
+# workaround this, have to create an electric return mixin for ShellMode
+# A better way to work around is to have the most recent major mode with
+# a duplicate key binding override the superclass's action for that
+# keybinding.
 class ProcessShellLine(SelectAction):
+    debuglevel = 1
+    
     name = "Process a shell command"
     tooltip = "Process a shell command."
     key_bindings = {'default': 'RET', }
@@ -149,14 +156,23 @@ class ProcessShellLine(SelectAction):
         if viewer:
             viewer.buffer.stc.process(viewer)
 
-class ShellMode(FundamentalMode):
-    debuglevel=0
+class ShellReturnMixin(object):
+    def electricReturn(self):
+        self.buffer.stc.process(self)
+
+class ShellMode(ShellReturnMixin, FundamentalMode):
+    debuglevel=1
     
     keyword='Shell'
     icon='icons/application_xp_terminal.png'
-    regex="shell:.*$"
 
     mmap_stc_class = ShellSTC
+    
+    @classmethod
+    def openSpecialNonFileHook(cls, url, fh):
+        if url.protocol == 'shell':
+            return True
+        return False
 
     def createWindowPostHook(self):
         assert self.dprint("In shell.")
@@ -186,6 +202,11 @@ class ShellPlugin(MajorModeMatcherBase,debugmixin):
 
     def getURLHandlers(self):
         return [ShellHandler]
+    
+    def scanURLInfo(self, url):
+        if url.protocol == 'shell':
+            return MajorModeMatch(ShellMode, exact=True)
+        return None
 
     def find(self, url):
         for shell in self.shells:
