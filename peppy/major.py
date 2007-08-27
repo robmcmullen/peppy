@@ -486,8 +486,8 @@ class MajorModeMatch(object):
 
     """
     
-    def __init__(self,view,generic=False,exact=True,editable=True):
-        self.view=view
+    def __init__(self, mode, generic=False, exact=True, editable=True):
+        self.mode = mode
         self.vars={}
         if generic:
             self.exact=False
@@ -773,25 +773,26 @@ class MajorModeMatcherDriver(Component,debugmixin):
         @returns: the best view for the buffer
         @rtype: L{MajorMode} subclass
         """
-
+        
+        exact = []
         generics = []
         for plugin in self.plugins:
             best=plugin.scanURLInfo(url)
             if best is not None:
                 if best.exact:
-                    return best.view
+                    exact.append(best)
                 else:
-                    assert self.dprint("scanFilename: appending generic %s" % best.view)
+                    assert self.dprint("scanFilename: appending generic %s" % best.mode)
                     generics.append(best)
         for plugin in self.plugins:
             best=plugin.scanFilename(url.path)
             if best is not None:
                 if best.exact:
-                    return best.view
+                    exact.append(best)
                 else:
-                    assert self.dprint("scanFilename: appending generic %s" % best.view)
+                    assert self.dprint("scanFilename: appending generic %s" % best.mode)
                     generics.append(best)
-        return generics
+        return exact, generics
 
 
     def scanBuffer(self,buffer):
@@ -831,43 +832,40 @@ class MajorModeMatcherDriver(Component,debugmixin):
         assert self.dprint("bangpath=%s" % bangpath)
         assert self.dprint("emacs=%s" % str(emacs))
         best=None
+        exact = []
         generics=[]
         if emacs is not None:
             for plugin in self.plugins:
                 best=plugin.scanEmacs(*emacs)
                 if best is not None:
                     if best.exact:
-                        return best.view
+                        exact.append(best)
                     else:
-                        assert self.dprint("scanEmacs: appending generic %s" % best.view)
+                        assert self.dprint("scanEmacs: appending generic %s" % best.mode)
                         generics.append(best)
         if bangpath is not None:
             for plugin in self.plugins:
                 best=plugin.scanShell(bangpath)
                 if best is not None:
                     if best.exact:
-                        return best.view
+                        exact.append(best)
                     else:
-                        assert self.dprint("scanShell: appending generic %s" % best.view)
+                        assert self.dprint("scanShell: appending generic %s" % best.mode)
                         generics.append(best)
         for plugin in self.plugins:
             best=plugin.scanMagic(buffer)
             if best is not None:
                 if best.exact:
-                    return best.view
+                    exact.append(best)
                 else:
-                    assert self.dprint("scanMagic: appending generic %s" % best.view)
+                    assert self.dprint("scanMagic: appending generic %s" % best.mode)
                     generics.append(best)
-        if generics:
-            assert self.dprint("Choosing from generics: %s" % [g.view for g in generics])
-            # FIXME: don't just use the first one, do something smarter!
-            return generics[0].view
-        else:
-            # FIXME: need to specify the global default mode, but not
-            # like this.  The plugins should manage it.  Maybe add a
-            # method to the IMajorModeMatcher to see if this mode is
-            # the default mode.
-            return FundamentalMode
+                    
+        # FIXME: need to specify the global default mode, somehow.
+        # The plugins should manage it.  Maybe add a
+        # method to the IMajorModeMatcher to see if a mode is
+        # the default mode.
+        return exact, generics
 
 def ScanBufferForMajorMode(buffer):
     """
@@ -880,8 +878,8 @@ def ScanBufferForMajorMode(buffer):
     
     comp_mgr=ComponentManager()
     driver=MajorModeMatcherDriver(comp_mgr)
-    mode = driver.scanBuffer(buffer)
-    return mode
+    exact, generic = driver.scanBuffer(buffer)
+    return exact, generic
 
 def InitialGuessMajorMode(url):
     """
@@ -894,5 +892,5 @@ def InitialGuessMajorMode(url):
     
     comp_mgr=ComponentManager()
     driver=MajorModeMatcherDriver(comp_mgr)
-    mode = driver.scanURL(url)
-    return mode
+    exact, generic = driver.scanURL(url)
+    return exact, generic

@@ -190,8 +190,12 @@ class Buffer(debugmixin):
 
     def open(self, urlstring, stcparent):
         url = URLInfo(urlstring)
-        modeguess = InitialGuessMajorMode(url)
-        dprint(modeguess)
+        exact, possible = InitialGuessMajorMode(url)
+        if exact:
+            modeguess = exact[0].mode
+        else:
+            modeguess = None
+        dprint("exact=%s possible=%s guess=%s" % (str(exact), str(possible), str(modeguess)))
         
         fh = url.getReader()
         if modeguess and modeguess.openSpecialNonFileHook(url, fh):
@@ -199,11 +203,11 @@ class Buffer(debugmixin):
             self.stc = self.defaultmode.mmap_stc_class(stcparent)
             self.setURL(url)                
         else:
-            self.openFile(fh, url, stcparent)
+            self.openFile(fh, url, stcparent, modeguess)
 
         self.openWasSuccessful(fh, url)
     
-    def openFile(self, fh, url, stcparent):
+    def openFile(self, fh, url, stcparent, initialguess):
         # Need a two-stage opening process in order to support files
         # that are too large to fit in memory at once.  First, load
         # the first group of bytes into memory and use that to check
@@ -220,7 +224,16 @@ class Buffer(debugmixin):
         self.guessBinary=self.stc.GuessBinary(self.guessLength,
                                               self.guessPercentage)
         if self.defaultmode is None:
-            self.defaultmode=ScanBufferForMajorMode(self)
+            exact, possible = ScanBufferForMajorMode(self)
+            
+            # FIXME: Do something smarter here, or ask the user
+            if exact:
+                self.defaultmode = exact[0].mode
+            elif possible:
+                if initialguess is None:
+                    self.defaultmode = possible[0].mode
+                else:
+                    self.defaultmode = initialguess
 
         if self.defaultmode.mmap_stc_class is not None:
             # we have a STC that allows files that are larger that
