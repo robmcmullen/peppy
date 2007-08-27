@@ -65,7 +65,7 @@ class ShellSTC(PeppySTC):
     the cursor position on this STC doesn't affect the views directly.
     This is the data storage STC, not the viewing STC.
     """
-    debuglevel=1
+    debuglevel=0
 
     def __init__(self, parent, copy=None):
         PeppySTC.__init__(self, parent, copy=copy)
@@ -144,7 +144,7 @@ class ShellSTC(PeppySTC):
 # a duplicate key binding override the superclass's action for that
 # keybinding.
 class ProcessShellLine(SelectAction):
-    debuglevel = 1
+    debuglevel = 0
     
     name = "Process a shell command"
     tooltip = "Process a shell command."
@@ -161,11 +161,12 @@ class ShellReturnMixin(object):
         self.buffer.stc.process(self)
 
 class ShellMode(ShellReturnMixin, FundamentalMode):
-    debuglevel=1
+    debuglevel=0
     
     keyword='Shell'
     icon='icons/application_xp_terminal.png'
-
+    regex = None
+    
     mmap_stc_class = ShellSTC
     
     @classmethod
