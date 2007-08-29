@@ -304,13 +304,14 @@ class Peppy(BufferApp, ClassSettings):
         Main driver for any functions that need to look in the config file.
         """
         self.startServer()
-        self.autoloadPlugins()
+        self.autoloadStandardPlugins()
+        self.autoloadSetuptoolsPlugins()
         self.parseConfigPlugins()
         KeyboardConf.load()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
 
-    def autoloadPlugins(self, plugindir='plugins'):
+    def autoloadStandardPlugins(self, plugindir='plugins'):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
@@ -324,6 +325,15 @@ class Peppy(BufferApp, ClassSettings):
             if plugin.endswith(".py"):
                 self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
                                               plugin[:-3]))
+
+    def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
+        """Autoload setuptools plugins.
+
+        All setuptools plugins with the peppy entry point are loaded
+        here, if setuptools is installed.
+        """
+        import peppy.lib.setuptools_utils
+        peppy.lib.setuptools_utils.load_plugins(entry_point)
 
     def parseConfigPlugins(self):
         """Load plugins specified in the config file.

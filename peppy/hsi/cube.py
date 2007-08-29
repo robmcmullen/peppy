@@ -65,6 +65,10 @@ class HyperspectralFileFormat(Component):
                 __import__(mod)
             except Exception,e:
                 print e
+
+        import peppy.lib.setuptools_utils
+        peppy.lib.setuptools_utils.load_plugins("peppy.hsi.plugins")
+        
         HyperspectralFileFormat.loaded = True
 
     @staticmethod
