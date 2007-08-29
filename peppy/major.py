@@ -706,8 +706,8 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         # If we fail all the tests, use a generic mode
         if guessBinary(header, app.settings.binary_percentage):
-            return MajorModeMatcherDriver.findModeByName('HexEdit')
-        return MajorModeMatcherDriver.findModeByName('Fundamental')
+            return MajorModeMatcherDriver.findModeByName(app.settings.default_binary_mode)
+        return MajorModeMatcherDriver.findModeByName(app.settings.default_text_mode)
 
     @staticmethod
     def findModeByName(name):

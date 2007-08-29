@@ -188,6 +188,8 @@ class Peppy(BufferApp, ClassSettings):
         'one_instance': True,
         'binary_percentage': 10,
         'magic_size': 1024,
+        'default_text_mode': 'Fundamental',
+        'default_binary_mode': 'HexEdit',
         }
     
     def OnInit(self):
