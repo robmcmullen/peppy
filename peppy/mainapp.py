@@ -186,6 +186,8 @@ class Peppy(BufferApp, ClassSettings):
     default_settings = {
         'listen_port': 55555,
         'one_instance': True,
+        'binary_percentage': 10,
+        'magic_size': 1024,
         }
     
     def OnInit(self):

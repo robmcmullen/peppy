@@ -635,12 +635,10 @@ def guessBinary(text, percentage):
         return True
     return False
 
-class MajorModeMatcherDriver(Component,debugmixin):
+class MajorModeMatcherDriver(Component, debugmixin):
     debuglevel=0
     plugins=ExtensionPoint(IMajorModeMatcher)
     implements(IMenuItemProvider)
-
-    binary_percentage = 10
 
     default_menu=(("View",MenuItem(MajorModeSelect).first()),
                   )
@@ -650,9 +648,13 @@ class MajorModeMatcherDriver(Component,debugmixin):
             yield (None,menu,item)
 
     @staticmethod
-    def match(url, magic_size=1024):
+    def match(url, magic_size=None):
         comp_mgr=ComponentManager()
         driver=MajorModeMatcherDriver(comp_mgr)
+
+        app = wx.GetApp() # Get the Peppy instance
+        if magic_size is None:
+            magic_size = app.settings.magic_size
 
         # Try to match a specific protocol
         modes = driver.scanProtocol(url)
@@ -703,7 +705,7 @@ class MajorModeMatcherDriver(Component,debugmixin):
             return mode
 
         # If we fail all the tests, use a generic mode
-        if guessBinary(header, MajorModeMatcherDriver.binary_percentage):
+        if guessBinary(header, app.settings.binary_percentage):
             return MajorModeMatcherDriver.findModeByName('HexEdit')
         return MajorModeMatcherDriver.findModeByName('Fundamental')
 
