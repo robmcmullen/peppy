@@ -75,17 +75,17 @@ class ShellSTC(PeppySTC):
         self.filter=1
         self.more=0
 
-    def openPostHook(self, fh):
-        assert self.dprint("in ShellSTC")
-        self.pipe = fh
-        self.pipe.setNotifyWindow(self)
-        self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
-        
-        self.readFrom(fh)
+    def open(self, url):
+        """Save the file handle, which is really the mpd connection"""
+        self.pipe = url.getDirectReader()
+        self.readFrom(self.pipe)
         length=self.GetTextLength()
         self.SetCurrentPos(length)
         self.AddText('\n')
         self.prompt()
+        
+        self.pipe.setNotifyWindow(self)
+        self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
 
     def prompt(self):
         if self.filter:
@@ -167,10 +167,10 @@ class ShellMode(ShellReturnMixin, FundamentalMode):
     icon='icons/application_xp_terminal.png'
     regex = None
     
-    mmap_stc_class = ShellSTC
+    stc_class = ShellSTC
     
     @classmethod
-    def openSpecialNonFileHook(cls, url, fh):
+    def verifyProtocol(cls, url):
         if url.protocol == 'shell':
             return True
         return False
@@ -204,11 +204,6 @@ class ShellPlugin(MajorModeMatcherBase,debugmixin):
     def getURLHandlers(self):
         return [ShellHandler]
     
-    def scanURLInfo(self, url):
-        if url.protocol == 'shell':
-            return MajorModeMatch(ShellMode, exact=True)
-        return None
-
     def find(self, url):
         for shell in self.shells:
             if url in shell.supportedShells():

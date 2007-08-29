@@ -332,10 +332,8 @@ class CubeScroller(BitmapScroller):
 
 
 class HyperspectralSTC(NonResidentSTC):
-    def openMmap(self):
-        dprint("filename = %s" % self.filename)
-        urlinfo = URLInfo(self.filename)
-        self.dataset=HyperspectralFileFormat.load(urlinfo)
+    def open(self, url):
+        self.dataset=HyperspectralFileFormat.load(url)
 
 
 class SpatialSelect(RectangularSelect):
@@ -556,12 +554,20 @@ class HSIMode(MajorMode):
     keyword='HSI'
     icon='icons/hsi-cube.png'
 
-    mmap_stc_class = HyperspectralSTC
+    stc_class = HyperspectralSTC
 
     default_settings = {
         'minor_modes': 'Spectrum,X Profile,Y Profile',
         'display_rgb': False,
         }
+
+    @classmethod
+    def attemptOpen(cls, url):
+        format = HyperspectralFileFormat.identify(url)
+        if format:
+            dprint("found %s" % format)
+            return True
+        return False
     
     def createEditWindow(self,parent):
         """
@@ -836,13 +842,6 @@ class HSIPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HSIMode
 
-    def scanMagic(self, buffer):
-        format = HyperspectralFileFormat.identify(buffer.url)
-        if format:
-            dprint("found %s" % format)
-            return MajorModeMatch(HSIMode, exact=True)
-        return None
-   
     def getMinorModes(self):
         for mode in [HSIXProfileMinorMode, HSIYProfileMinorMode, HSISpectrumMinorMode]:
             yield mode

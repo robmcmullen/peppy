@@ -143,7 +143,7 @@ class Header(dict,MetadataMixin):
 
     @classmethod
     def getFilePair(cls, url):
-        fh = url.getReader()
+        fh = url.getDirectReader()
         line=fh.read(4)
         if line=='ENVI':
             # need to open the cube, not the header
@@ -151,7 +151,7 @@ class Header(dict,MetadataMixin):
         fh.close()
         headers = findHeaders(url)
         for header in headers:
-            fh = header.getReader()
+            fh = header.getDirectReader()
             line=fh.read(4)
             if line=='ENVI':
                 return (header, url)
@@ -168,7 +168,7 @@ class Header(dict,MetadataMixin):
     def open(self,filename=None):
         """Open the header file, and if successful parse it."""
         if self.headerurl:
-            fh=self.headerurl.getReader()
+            fh=self.headerurl.getDirectReader()
             if fh:
                 self.read(fh)
                 fh.close()

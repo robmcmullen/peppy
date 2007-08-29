@@ -261,10 +261,6 @@ class GraphvizPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield GraphvizMode
 
-    def possibleEmacsMappings(self):
-        for prog in GraphvizViewCtrl.dotprogs:
-            yield (prog,GraphvizMode)
-    
     def getMinorModes(self):
         yield GraphvizViewMinorMode
     

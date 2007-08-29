@@ -5,6 +5,8 @@ import urllib2
 
 from cStringIO import StringIO
 
+from lib.bufferedreader import *
+
 from trac.core import *
 from debug import *
 
@@ -14,6 +16,8 @@ __all__ = [ 'URLInfo', 'IURLHandler', 'URLHandler' ]
 class URLInfo(debugmixin):
     def __init__(self, url, default="file", usewin=None):
         self.url = url
+        self.bfh = None # Buffered file reader
+        
         (self.protocol, self.netloc, self.path, self.parameters,
          self.query_string, self.fragment) = urlparse.urlparse(self.url, default)
         assert self.dprint(self)
@@ -75,7 +79,14 @@ class URLInfo(debugmixin):
             except urllib2.URLError:
                 return False
 
-    def getReader(self):
+    def getReader(self, size=1024):
+        if self.bfh is None:
+            fh = self.getDirectReader()
+            self.bfh = BufferedReader(fh, size)
+        self.bfh.seek(0)
+        return self.bfh
+
+    def getDirectReader(self):
         comp_mgr = ComponentManager()
         handler = URLHandler(comp_mgr)
         fh = handler.urlreader(self)

@@ -15,6 +15,7 @@ from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
 import peppy.boa as boa
 
+
 class OpenFundamental(SelectAction):
     name = _("&Open Sample Text")
     tooltip = _("Open some sample text")
@@ -509,8 +510,7 @@ class FundamentalMode(BraceHighlightMixin,
     image viewer) that only use the STC as the backend storage are
     probably not based on this view.
     """
-    keyword='Fundamental'
-    regex=".*"
+    keyword = 'Fundamental'
 
     start_line_comment = ''
     end_line_comment = ''
@@ -553,7 +553,7 @@ class FundamentalMode(BraceHighlightMixin,
                                      wx.stc.STC_STYLE_INDENTGUIDE: '',
                                      }
         }
-    
+
     def createEditWindow(self,parent):
         assert self.dprint("creating new Fundamental window")
         self.createSTC(parent)
@@ -790,15 +790,9 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     implements(IToolBarItemProvider)
     implements(IKeyboardItemProvider)
     
-    def scanMagic(self,buffer):
-        """
-        If the buffer looks like it is a text file, flag it as a
-        potential Fundamental.
-        """
-        if not buffer.guessBinary:
-            return MajorModeMatch(FundamentalMode,generic=True)
-        return None
-
+    def possibleModes(self):
+        yield FundamentalMode
+    
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenFundamental).first()),
                   ("Fundamental","Edit",MenuItem(PasteAtColumn).after("Paste").before("paste")),

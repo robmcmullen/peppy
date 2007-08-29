@@ -105,23 +105,27 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-    def openPostHook(self, fh):
-        """Hook called after the initial open of the file.
+    def open(self, url):
+        """Read from the specified url to populate the STC.
         
-        Hook here for subclasses of STC to do whatever they need with
-        the FilterWrapper object used to load the file.  In some cases it
-        might be useful to keep a reference to the filter.
+        Abstract method that subclasses use to read data into the STC.
+
+        @param url: URLInfo object used to read the file
+        """
+        pass
+
+    def readFrom(self, fh):
+        """Read from filehandle, converting as necessary
 
         @param fh: file-like object used to load the file
         """
-        fh.close()
-
-    def readFrom(self, fh):
-        """Read from filehandle, converting as necessary"""
         pass
 
     def writeTo(self, fh):
-        """Write to filehandle, converting as necessary"""
+        """Write to filehandle, converting as necessary
+
+        @param fh: file-like object used to write the file
+        """
         pass
 
     def showStyle(self, linenum=None):
@@ -221,6 +225,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     def removeSubordinate(self,otherstc):
         self.subordinates.remove(otherstc)
 
+    def open(self, url):
+        fh = url.getReader()
+        self.readFrom(fh)
+        self.detectLineEndings()
+    
     def readFrom(self, fh, size=None):
         if size is not None:
             txt = fh.read(size)
@@ -398,20 +407,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         mode = self.GetEOLMode()
         return self.int2eol[mode]
-
-    def openPostHook(self, fh):
-        """Hook called after the initial open of the file.
-        
-        Hook here for subclasses of STC to do whatever they need with
-        the FilterWrapper object used to load the file.  In some cases it
-        might be useful to keep a reference to the filter.
-
-        @param filter: filter used to load the file
-
-        @type filter: iofilter.FilterWrapper
-        """
-        fh.close()
-        self.detectLineEndings()
 
     def showStyle(self, linenum=None):
         if linenum is None:
@@ -623,32 +618,3 @@ class NonResidentSTC(STCInterface,debugmixin):
 
     def CanEdit(self):
         return False
-        
-    def openPostHook(self, fh):
-        if fh.urlinfo.protocol == 'file':
-            self.filename = fh.urlinfo.path
-        else:
-            raise TypeError("url must be a file. %s" % fh.urlinfo.url)
-
-        fh.close()
-
-        self.openMmap()
-
-    def openMmap(self):
-        pass
-    
-
-class MmapSTC(NonResidentSTC):
-    def openMmap(self):
-        self.fh = open(self.filename)
-        self.mmap = mmap.mmap(self.fh.fileno(), 0, access=mmap.ACCESS_READ)
-        dprint(self.mmap)
-
-    def GetTextLength(self):
-        return self.mmap.size()
-
-    def GetBinaryData(self, start, end):
-        self.mmap.seek(start)
-        return self.mmap.read(end-start)
-
-

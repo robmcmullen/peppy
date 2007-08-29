@@ -190,76 +190,23 @@ class Buffer(debugmixin):
 
     def open(self, urlstring, stcparent):
         url = URLInfo(urlstring)
-        exact, possible = InitialGuessMajorMode(url)
-        if exact:
-            modeguess = exact[0].mode
-        else:
-            modeguess = None
-        dprint("exact=%s possible=%s guess=%s" % (str(exact), str(possible), str(modeguess)))
-        
-        fh = url.getReader()
-        if modeguess and modeguess.openSpecialNonFileHook(url, fh):
-            self.defaultmode = modeguess
-            self.stc = self.defaultmode.mmap_stc_class(stcparent)
-            self.setURL(url)                
-        else:
-            self.openFile(fh, url, stcparent, modeguess)
+        self.defaultmode = MajorModeMatcherDriver.match(url)
+        dprint("mode=%s" % (str(self.defaultmode)))
 
-        self.openWasSuccessful(fh, url)
-    
-    def openFile(self, fh, url, stcparent, initialguess):
-        # Need a two-stage opening process in order to support files
-        # that are too large to fit in memory at once.  First, load
-        # the first group of bytes into memory and use that to check
-        # to see what type it is.
-        
-        self.stc = PeppySTC(stcparent)
+        self.stc = self.defaultmode.stc_class(stcparent)
+        self.stc.open(url)
 
-        # Read the first thousand-ish bytes
-        self.stc.readFrom(fh, self.guessLength)
-        
         # if no exceptions, it must have worked.
         self.setURL(url)
 
-        self.guessBinary=self.stc.GuessBinary(self.guessLength,
-                                              self.guessPercentage)
-        if self.defaultmode is None:
-            exact, possible = ScanBufferForMajorMode(self)
-            
-            # FIXME: Do something smarter here, or ask the user
-            if exact:
-                self.defaultmode = exact[0].mode
-            elif possible:
-                if initialguess is None:
-                    self.defaultmode = possible[0].mode
-                else:
-                    self.defaultmode = initialguess
-
-        if self.defaultmode.mmap_stc_class is not None:
-            # we have a STC that allows files that are larger that
-            # memory, so allow it to manage the file itself.
-            self.stc = self.defaultmode.mmap_stc_class(stcparent, copy=self.stc)
-        else:
-            # Getting here means we've decided that we're using an
-            # in-resident STC, so load the whole file.
-            self.stc.readFrom(fh)
-
-    def openWasSuccessful(self, fh, url):
         if isinstance(self.stc,PeppySTC):
-            # if no exceptions, it must have worked.
             self.initSTC()
 
-        # let the stc get additional data from the file handle if it
-        # needs to, and let it close the file.  Some stcs may be
-        # interactive and need to keep the file open, so don't
-        # explicitly close it here.
-        self.stc.openPostHook(fh)
-        
         self.modified=False
         self.stc.EmptyUndoBuffer()
 
         BufferHooks(ComponentManager()).openPostHook(self)
-
+    
     def revert(self):
         fh=self.url.getReader()
         self.stc.ClearAll()

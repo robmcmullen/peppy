@@ -98,7 +98,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
         # Only display those modes that use the same type of STC as
         # the current mode.
-        modes = [m for m in modes if m.mmap_stc_class == currentmode.mmap_stc_class]
+        modes = [m for m in modes if m.stc_class == currentmode.stc_class]
         
         modes.sort(key=lambda s:s.keyword)
         assert self.dprint(modes)
@@ -135,15 +135,15 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     
     icon = 'icons/page_white.png'
     keyword = 'Abstract Major Mode'
+    emacs_synonyms = None
+    
     regex = None
     temporary = False # True if it is a temporary view
 
-    # mmap_stc_class is used to associate this major mode with a
-    # storage mechanism (implementing the STCInterface) that allows
-    # files larger than can reside in memory.  Specifying a class here
-    # implies that this major mode is not using a subclass of the
-    # scintilla editor
-    mmap_stc_class = None
+    # stc_class is used to associate this major mode with a storage
+    # mechanism (implementing the STCInterface).  The default is
+    # PeppySTC, which is a subclass of the scintilla editor.
+    stc_class = PeppySTC
 
     default_settings = {
         'line_number_offset': 1,
@@ -183,14 +183,69 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.deleteWindowPostHook()
 
     @classmethod
-    def openSpecialNonFileHook(cls, url, fh):
-        """Hook to short-circuit opening process if the major mode doesn't
-        use traditional file-like objects.
+    def verifyProtocol(cls, url):
+        """Hook to short-circuit the mode matching heuristics.
+
+        For non-editing applications and client applications that
+        connect to a server, this hook provides the ability to
+        short-circuit the matching process and open a mode
+        immediately.
+
+        This method must not attempt to open the url and read any
+        data.  All modes' verifyProtocol methods are called before the
+        file is attempted to be opened, and attempting to read data
+        here could mess up streaming files.
+
+        @param url: URLInfo object
+
+        @returns: True to short circuit and use this mode.
+        """
+        return False
+
+    @classmethod
+    def verifyFilename(cls, filename):
+        """Hook to verify filename matches the default regular
+        expression for this mode.
+
+        @param filename: the pathname part of the url (i.e. not the
+        protocol, port number, query string, or anything else)
+
+        @returns: True if the filename matches
+        """
+        if cls.regex:
+            match=re.search(cls.regex, filename)
+            if match:
+                return True
+        return False
+
+    @classmethod
+    def verifyMagic(cls, header):
+        """Hook to verify the file is acceptable to this mode.
+
+        If the file can be identified by magic characters within the
+        first n bytes (typically n < 1024), return a flag that
+        indicates whether or not this file can be opened by this mode.
+
+        @param header: string with the first n characters of the file
         
-        To handle a major mode that doesn't use file-like objects, intercept
-        the opening process here by returning True from this method.
-        """ 
+        @returns: True if the magic was identified exactly, False if
+        the file is not capable of being opened by this mode, or None
+        if indeterminate.
+        """
         return None
+
+    @classmethod
+    def attemptOpen(cls, url):
+        """Last resort to major mode matching: attempting to open the url.
+
+        This method is the last resort if all other pattern matching
+        and mode searching fails.  Typically, this is only an issue
+        with non-Scintilla editors that use third-party file loading
+        libraries.
+
+        @returns: True if the open was successful or False if not.
+        """
+        return False
 
     # If there is no title, return the keyword
     def getTitle(self):
@@ -477,148 +532,19 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
 
 
-class MajorModeMatch(object):
-    """
-    Return type of a L{IMajorModeMatcher} when a successful match is
-    made.  In addition of the View class, any name/value pairs
-    specific to this file can be passed back to the caller, as well as
-    an indicator if the match is exact or generic.
-
-    """
-    
-    def __init__(self, mode, generic=False, exact=True, editable=True):
-        self.mode = mode
-        self.vars={}
-        if generic:
-            self.exact=False
-        else:
-            self.exact=True
-        self.editable=True
-
-
 class IMajorModeMatcher(Interface):
-    """
-    Interface that
-    L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} uses to
-    determine if a View represented by this plugin is capable of
-    viewing the data in the buffer.  (Note that one IMajorModeMatcher
-    may represent more than one View.)  Several methods are used in an
-    attempt to pick the best match for the data in the buffer.
-
-    First, if the first non-blank line in the buffer (or second line
-    if the first contains the shell string C{#!}) contains the emacs
-    mode, the L{scanEmacs} method will be called to see if your plugin
-    recognizes the emacs major mode string within the C{-*-} delimiters.
-
-    Secondly, if the first line starts with C{#!}, the rest of the line
-    is passed to L{scanShell} method to see if it looks like an shell
-    command.
-
-    If neither of these methods return a View, then the user hasn't
-    explicitly named the view, so we need to determine which View to
-    use based on either the filename or by scanning the contents.
-
-    The first of the subsequent search methods is also the simplest:
-    L{scanFilename}.  If a pattern (typically the filename extension)
-    is recognized, that view is used.
-
-    Next in order, L{scanMagic} is called to see if some pattern in
-    the text can be used to identify the file type.
+    """Interface that plugins should use to announce new MajorModes.
     """
 
-    def scanEmacs(emacsmode,vars):
-        """
-        This method is called if the first non-blank line in the
-        buffer (or second line if the first contains the shell string
-        C{#!}) contains an emacs major mode specifier.  Emacs
-        recognizes a string in the form of::
+    def possibleModes():
+        """Return list of possible major modes.
 
-          -*-C++-*-
-          -*- mode: Python; -*-
-          -*- mode: Ksh; var1:value1; var3:value9; -*-
-      
-        The text within the delimiters is parsed by the
-        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}, and
-        two parameters are passed to this method.  The emacs mode
-        string is passed in as C{emacsmode}, and any name/value pairs
-        are passed in the C{vars} dict (which could be empty).  It is
-        not required that your plugin understand and process the
-        variables.
+        A subclass that extends MajorModeMatcherBase should return a
+        list or generator of all the major modes that this matcher is
+        representing.  Generally, a matcher will only represent a
+        single mode, but it is possible to represent more.
 
-        If your plugin recognizes the emacs major mode string, return
-        a L{MajorModeMatch} object that contains the View class.
-        Otherwise, return None and the
-        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
-        continue processing.
-
-        @param emacsmode: text string of the Emacs major mode
-        @type emacsmode: string
-        @param vars: name:value pairs, can be the empty list
-        @type vars: list
-        """
-
-    def scanShell(bangpath):
-        """
-        Called if the first line starts with the system shell string
-        C{#!}.  The remaining characters from the first line are
-        passed in as C{bangpath}.
-
-        If your plugin recognizes something in the shell string,
-        return a L{MajorModeMatch} object that contains the View class and
-        the L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}
-        will stop looking and use than View.  If not, return None and
-        the L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>}
-        will continue processing.
-
-        @param bangpath: characters after the C{#!}
-        @type bangpath: string
-        """
-
-    def scanFilename(filename):
-        """
-        Called to see if a pattern in the filename can be identified
-        that determines the file type and therefore the
-        L{View<views.View>} that should be used.
-
-        If your plugin recognizes something, return a L{MajorModeMatch}
-        object with the optional indicators filled in.  If not, return
-        None and the
-        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
-        continue processing.
-
-        @param filename: filename, can be in URL form
-        @type filename: string
-        """
-    
-    def scanURLInfo(url):
-        """
-        Called to see if the url can be matched to the
-        L{MajorMode} that should be used.
-
-        If your plugin recognizes something, return a L{MajorModeMatch}
-        object with the optional indicators filled in.  If not, return
-        None and the
-        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
-        continue processing.
-
-        @param url: filename, can be in URL form
-        @type url: URLInfo
-        """
-    
-    def scanMagic(buffer):
-        """
-        Called to see if a pattern in the text can be identified that
-        determines the file type and therefore the L{View<views.View>}
-        that should be used.
-
-        If your plugin recognizes something, return a L{MajorModeMatch}
-        object with the optional indicators filled in.  If not, return
-        None and the
-        L{MajorModeMatcherDriver<views.MajorModeMatcherDriver>} will
-        continue processing.
-
-        @param buffer: buffer of already loaded file
-        @type buffer: L{Buffer<buffers.Buffer>}
+        @returns: list of MajorMode classes
         """
 
 class MajorModeMatcherBase(Component):
@@ -644,70 +570,77 @@ class MajorModeMatcherBase(Component):
         """
         return []
 
-    def possibleEmacsMappings(self):
-        """Return a list of emacs names to major modes.
+def parseEmacs(line):
+    """
+    Parse a potential emacs major mode specifier line into the
+    mode and the optional variables.  The mode may appears as any
+    of::
 
-        A subclass that extends MajorModeMatcherBase should return a
-        list or generator that maps an emacs mode name to the peppy
-        MajorMode.  The emacs mode name is the string that emacs uses
-        to recognize a major mode; for instance 'hexl' is used to
-        represent the hex editig mode in emacs, but it is known as
-        'HexEdit' in peppy.  So, the L{HexEditPlugin} defines a
-        mapping from 'hexl' to L{HexEditMode}.
+      -*-C++-*-
+      -*- mode: Python; -*-
+      -*- mode: Ksh; var1:value1; var3:value9; -*-
 
-        Generally, a matcher will only represent a single mode, but it
-        is possible to represent more.
+    @param line: first or second line in text file
+    @type line: string
+    @return: two-tuple of the mode and a dict of the name/value pairs.
+    @rtype: tuple
+    """
+    match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
+    if match:
+        vars={}
+        varstring=match.group(5)
+        if varstring:
+            try:
+                for nameval in varstring.split(';'):
+                    s=nameval.strip()
+                    if s:
+                        name,val=s.split(':')
+                        vars[name.strip()]=val.strip()
+            except:
+                pass
+        if match.group(2):
+            return (match.group(2),vars)
+        elif match.group(3):
+            return (match.group(3),vars)
+    return None, None
 
-        @returns: tuple of (string, MajorMode class)
-        """
-        return []
-    
-    def scanEmacs(self,emacsmode,vars):
-        # match mode keyword against emacs mode string
-        for mode in self.possibleModes():
-            if emacsmode.lower() == mode.keyword.lower():
-                return MajorModeMatch(mode,exact=True)
-        # try to match the mode's alternate emacs strings
-        for keyword, mode in self.possibleEmacsMappings():
-            if emacsmode.lower() == keyword.lower():
-                return MajorModeMatch(mode,exact=True)
-        return None
+def guessBinary(text, percentage):
+    """
+    Guess if the text in this file is binary or text by scanning
+    through the first C{amount} characters in the file and
+    checking if some C{percentage} is out of the printable ascii
+    range.
 
-    def scanShell(self,bangpath):
-        text = bangpath.lower()
-        for mode in self.possibleModes():
-            keyword = mode.keyword.lower()
+    Obviously this is a poor check for unicode files, so this is
+    just a bit of a hack.
 
-            # only match words that are bounded by some sort of
-            # non-word delimiter.  For instance, if the mode is
-            # "test", it will match "/usr/bin/test" or
-            # "/usr/bin/test.exe" or "/usr/bin/env test", but not
-            # /usr/bin/testing or /usr/bin/attested
-            match=re.search(r'[\W]%s([\W]|$)' % keyword, text)
-            if match:
-                return MajorModeMatch(mode,exact=True)
-        return None
+    @param amount: number of characters to check at the beginning
+    of the file
 
-    def scanFilename(self,filename):
-        for mode in self.possibleModes():
-            if mode.regex:
-                match=re.search(mode.regex,filename)
-                if match:
-                    return MajorModeMatch(mode,exact=True)
-        return None
-    
-    def scanURLInfo(self, url):
-        return None
-    
-    def scanMagic(self,buffer):
-        return None
-    
+    @type amount: int
 
+    @param percentage: percentage of characters that must be in
+    the printable ASCII range
+
+    @type percentage: number
+
+    @rtype: boolean
+    """
+    data = [ord(i) for i in text]
+    binary=0
+    for ch in data:
+        if (ch<8) or (ch>13 and ch<32) or (ch>126):
+            binary+=1
+    if binary>(len(text)/percentage):
+        return True
+    return False
 
 class MajorModeMatcherDriver(Component,debugmixin):
     debuglevel=0
     plugins=ExtensionPoint(IMajorModeMatcher)
     implements(IMenuItemProvider)
+
+    binary_percentage = 10
 
     default_menu=(("View",MenuItem(MajorModeSelect).first()),
                   )
@@ -716,181 +649,199 @@ class MajorModeMatcherDriver(Component,debugmixin):
         for menu,item in self.default_menu:
             yield (None,menu,item)
 
+    @staticmethod
+    def match(url, magic_size=1024):
+        comp_mgr=ComponentManager()
+        driver=MajorModeMatcherDriver(comp_mgr)
 
-    def parseEmacs(self,line):
-        """
-        Parse a potential emacs major mode specifier line into the
-        mode and the optional variables.  The mode may appears as any
-        of::
+        # Try to match a specific protocol
+        modes = driver.scanProtocol(url)
+        if modes:
+            return modes[0]
 
-          -*-C++-*-
-          -*- mode: Python; -*-
-          -*- mode: Ksh; var1:value1; var3:value9; -*-
+        # ok, it's not a specific protocol.  Try to match a url pattern
+        modes = driver.scanURL(url)
+        fh = url.getReader(magic_size)
+        header = fh.read(magic_size)
+        if modes:
+            # OK, there is a match with the filenames.  Determine the
+            # capability of the mode to edit the file by verifying any
+            # magic bytes in the file
+            capable = [m.verifyMagic(header) for m in modes]
+            cm = zip(capable, modes)
+            dprint(cm)
 
-        @param line: first or second line in text file
-        @type line: string
-        @return: two-tuple of the mode and a dict of the name/value pairs.
-        @rtype: tuple
-        """
-        match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
-        if match:
-            vars={}
-            varstring=match.group(5)
-            if varstring:
-                try:
-                    for nameval in varstring.split(';'):
-                        s=nameval.strip()
-                        if s:
-                            name,val=s.split(':')
-                            vars[name.strip()]=val.strip()
-                except:
-                    pass
-            if match.group(2):
-                return (match.group(2),vars)
-            elif match.group(3):
-                return (match.group(3),vars)
+            # If there's an exact match, load it
+            for c, m in cm:
+                if c is not None and c:
+                    return m
+
+            # if there's an acceptable one, load it
+            for c, m in cm:
+                if c is None:
+                    return m
+
+        # Try to match an emacs mode specifier
+        mode = driver.scanEmacs(header)
+        if mode:
+            return mode
+
+        # Try to match a shell bangpath
+        mode = driver.scanShell(header)
+        if mode:
+            return mode
+
+        # Try to match some magic bytes that identify the file
+        modes = driver.scanMagic(header)
+        if modes:
+            # It is unlikely that multiple modes will match the same magic
+            # values, so just load the first one that we find
+            return modes[0]
+
+        mode = driver.attemptOpen(url)
+        if mode:
+            return mode
+
+        # If we fail all the tests, use a generic mode
+        if guessBinary(header, MajorModeMatcherDriver.binary_percentage):
+            return MajorModeMatcherDriver.findModeByName('HexEdit')
+        return MajorModeMatcherDriver.findModeByName('Fundamental')
+
+    @staticmethod
+    def findModeByName(name):
+        comp_mgr=ComponentManager()
+        driver=MajorModeMatcherDriver(comp_mgr)
+
+        for plugin in driver.plugins:
+            for mode in plugin.possibleModes():
+                dprint("searching %s" % mode.keyword)
+                if mode.keyword == name:
+                    return mode
         return None
 
-    def scanURL(self, url):
-        """
-        Determine the best possible L{MajorMode} subclass for the
-        given buffer, but only using the buffer's metadata and without
-        reading any of the buffer itself.  See L{IMajorModeMatcher} for more information
-        on designing plugins that this method uses.
-
-        The URL is searched first, and if no match is found with any component
-        of the URL, the filename is checked for regular expressions.
-
-        If an exact match, the searching stops and that mode is returned.  If
-        there is a generic match, the searching continues for a possibly
-        better match.
-
-        If only generic matches are left ... figure out some way to
-        choose the best one.
+    def scanProtocol(self, url):
+        """Scan for url protocol match.
+        
+        Determine if the protocol is enough to specify the major mode.
+        This generally happens only when the major mode is a client of
+        a specific server and not a generic editor.  (E.g. MPDMode)
 
         @param url: URLInfo object to scan
         
-        @returns: the best view for the buffer
-        @rtype: L{MajorMode} subclass
+        @returns: list of matching L{MajorMode} subclasses
         """
         
-        exact = []
-        generics = []
+        modes = []
         for plugin in self.plugins:
-            best=plugin.scanURLInfo(url)
-            if best is not None:
-                if best.exact:
-                    exact.append(best)
-                else:
-                    assert self.dprint("scanFilename: appending generic %s" % best.mode)
-                    generics.append(best)
-        for plugin in self.plugins:
-            best=plugin.scanFilename(url.path)
-            if best is not None:
-                if best.exact:
-                    exact.append(best)
-                else:
-                    assert self.dprint("scanFilename: appending generic %s" % best.mode)
-                    generics.append(best)
-        return exact, generics
+            for mode in plugin.possibleModes():
+                dprint("scanning %s" % mode)
+                if mode.verifyProtocol(url):
+                    modes.append(mode)
+        return modes
 
+    def scanURL(self, url):
+        """Scan for url filename match.
+        
+        Determine if the pathname matches some pattern that can
+        identify the corresponding major mode.
 
-    def scanBuffer(self,buffer):
-        """
-        Determine the best possible L{MajorMode} subclass for the
-        given buffer.  See L{IMajorModeMatcher} for more information
-        on designing plugins that this method uses.
-
-        Emacs-style major mode strings are searched for first, and if
-        a match is found, immediately returns that MajorMode.
-        Bangpath lines are then searched, also returning immediately
-        if identified.
-
-        If neither of those cases match, a more complicated search
-        procedure is used.  If a filename match is determined to be an
-        exact match, that MajorMode is used.  But, if the filename
-        match is only a generic match, searching continues.  Magic
-        values within the file are checked, and again if an exact
-        match is found the MajorMode is returned.
-
-        If only generic matches are left ... figure out some way to
-        choose the best one.
-
-        @param buffer: the buffer of interest
-        @type buffer: L{Buffer<buffers.Buffer>}
-
-        @returns: the best view for the buffer
-        @rtype: L{MajorMode} subclass
+        @param url: URLInfo object to scan
+        
+        @returns: list of matching L{MajorMode} subclasses
         """
         
-        bangpath=buffer.stc.GetLine(0)
-        if bangpath.startswith('#!'):
-            emacs=self.parseEmacs(bangpath + buffer.stc.GetLine(1))
-        else:
-            emacs=self.parseEmacs(bangpath)
-            bangpath=None
-        assert self.dprint("bangpath=%s" % bangpath)
-        assert self.dprint("emacs=%s" % str(emacs))
-        best=None
-        exact = []
-        generics=[]
-        if emacs is not None:
-            for plugin in self.plugins:
-                best=plugin.scanEmacs(*emacs)
-                if best is not None:
-                    if best.exact:
-                        exact.append(best)
-                    else:
-                        assert self.dprint("scanEmacs: appending generic %s" % best.mode)
-                        generics.append(best)
-        if bangpath is not None:
-            for plugin in self.plugins:
-                best=plugin.scanShell(bangpath)
-                if best is not None:
-                    if best.exact:
-                        exact.append(best)
-                    else:
-                        assert self.dprint("scanShell: appending generic %s" % best.mode)
-                        generics.append(best)
+        modes = []
         for plugin in self.plugins:
-            best=plugin.scanMagic(buffer)
-            if best is not None:
-                if best.exact:
-                    exact.append(best)
-                else:
-                    assert self.dprint("scanMagic: appending generic %s" % best.mode)
-                    generics.append(best)
-                    
-        # FIXME: need to specify the global default mode, somehow.
-        # The plugins should manage it.  Maybe add a
-        # method to the IMajorModeMatcher to see if a mode is
-        # the default mode.
-        return exact, generics
+            for mode in plugin.possibleModes():
+                if mode.verifyFilename(url.path):
+                    modes.append(mode)
+        return modes
 
-def ScanBufferForMajorMode(buffer):
-    """
-    Application-wide entry point used to find the best view for the
-    given buffer.
+    def scanMagic(self, header):
+        """Scan for a pattern match in the first bytes of the file.
+        
+        Determine if there is a 'magic' pattern in the first n bytes
+        of the file that can associate it with a major mode.
 
-    @param buffer: the newly loaded buffer
-    @type buffer: L{Buffer<buffers.Buffer>}
-    """
+        @param header: first n bytes of the file
+        
+        @returns: list of matching L{MajorMode} subclasses
+        """
+        
+        modes = []
+        for plugin in self.plugins:
+            for mode in plugin.possibleModes():
+                if mode.verifyMagic(header):
+                    modes.append(mode)
+        return modes
+
+    def scanEmacs(self, header):
+        """Scan the first two lines of a file for an emacs mode
+        specifier.
+        
+        Determine if an emacs mode specifier in the file can be
+        associated with a major mode.
+
+        @param header: first n bytes of the file
+        
+        @returns: matching L{MajorMode} subclass or None
+        """
+        
+        modename, settings = parseEmacs(header)
+        dprint("modename = %s, settings = %s" % (modename, settings))
+        for plugin in self.plugins:
+            for mode in plugin.possibleModes():
+                if modename == mode.keyword:
+                    return mode
+                if mode.emacs_synonyms:
+                    if isinstance(mode.emacs_synonyms, str):
+                        if modename == mode.emacs_synonyms:
+                            return mode
+                    else:
+                        if modename in mode.emacs_synonyms:
+                            return mode
+        return None
+        
+    def scanShell(self, header):
+        """Scan the first lines of a file for a shell 'bangpath'
+        specifier.
+        
+        Determine if a shell bangpath in the file can be associated
+        with a major mode.
+
+        @param header: first n bytes of the file
+        
+        @returns: matching L{MajorMode} subclass or None
+        """
+        
+        if header.startswith("#!"):
+            lines = header.splitlines()
+            bangpath = lines[0].lower()
+            for mode in self.possibleModes():
+                keyword = mode.keyword.lower()
+
+                # only match words that are bounded by some sort of
+                # non-word delimiter.  For instance, if the mode is
+                # "test", it will match "/usr/bin/test" or
+                # "/usr/bin/test.exe" or "/usr/bin/env test", but not
+                # /usr/bin/testing or /usr/bin/attested
+                match=re.search(r'[\W]%s([\W]|$)' % keyword, text)
+                if match:
+                    return mode
+        return None
     
-    comp_mgr=ComponentManager()
-    driver=MajorModeMatcherDriver(comp_mgr)
-    exact, generic = driver.scanBuffer(buffer)
-    return exact, generic
-
-def InitialGuessMajorMode(url):
-    """
-    Application-wide entry point used to find the best view for the
-    given buffer.
-
-    @param buffer: the newly loaded buffer
-    @type buffer: L{Buffer<buffers.Buffer>}
-    """
-    
-    comp_mgr=ComponentManager()
-    driver=MajorModeMatcherDriver(comp_mgr)
-    exact, generic = driver.scanURL(url)
-    return exact, generic
+    def attemptOpen(self, url):
+        """Use the mode's attemptOpen method to see if it recognizes
+        the url.
+        
+        @param url: URLInfo object to scan
+        
+        @returns: matching L{MajorMode} subclass or None
+        """
+        
+        for plugin in self.plugins:
+            for mode in plugin.possibleModes():
+                dprint("scanning %s" % mode)
+                if mode.attemptOpen(url):
+                    return mode
+        return None

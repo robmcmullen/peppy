@@ -760,7 +760,9 @@ class HexEditMode(MajorMode):
     View for editing in hexidecimal notation.
     """
     
-    keyword='HexEdit'
+    keyword = 'HexEdit'
+    emacs_synonyms = 'hexl'
+    
     icon='icons/tux.png'
     regex="\.(hex|bin|so|a|exe)$"
 
@@ -870,22 +872,10 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HexEditMode
 
-    def possibleEmacsMappings(self):
-        yield ('hexl',HexEditMode)
-    
     def scanShell(self,bangpath):
         """Override base method to return None because there won't be
         a shell bangpath on a binary file.
         """
-        return None
-
-    def scanMagic(self,buffer):
-        """
-        If the buffer looks like it is a binary file, flag it as a
-        potential HexEditMode.
-        """
-        if buffer.guessBinary:
-            return MajorModeMatch(HexEditMode,generic=True)
         return None
 
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
