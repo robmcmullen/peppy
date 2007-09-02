@@ -521,6 +521,16 @@ class ColumnSizerMixin(object):
         evt.Skip()
         
     def resizeColumns(self, flags=[]):
+        try:
+            self._resizeColumns(flags)
+        except wx._core.PyDeadObjectError:
+            # This happens because an event might be scheduled between
+            # the time the OnSize event is called and the CallAfter
+            # gets around to executing the resizeColumns
+            dprint("caught dead object error for %s" % self)
+            pass
+        
+    def _resizeColumns(self, flags=[]):
         """Resize each column according to the flag.
 
         For each column, the respective flag indicates the following:
@@ -868,7 +878,7 @@ class MPDMode(MajorMode):
         win = MPDDatabase(self, parent)
         return win
 
-    def createWindowPostHook(self):
+    def createPostHook(self):
         Publisher().subscribe(self.showMessages, 'mpd')
 
         # Don't initialize the MPD connection till all the minor modes
@@ -880,6 +890,9 @@ class MPDMode(MajorMode):
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
         self.update_timer = wx.Timer(self.editwin)
         self.update_timer.Start(self.settings.update_interval*1000)
+
+    def deleteWindowPostHook(self):
+        Publisher().unsubscribe(self.showMessages)
 
     def showMessages(self, message=None):
         """debug method to show all pubsub messages."""
@@ -958,9 +971,6 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.mpd = mode.mpd
         self.createColumns()
 
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-        
         default_font = self.GetFont()
         self.font = wx.Font(mode.settings.list_font_size, 
                             default_font.GetFamily(),
@@ -975,16 +985,22 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.SetDropTarget(self.dropTarget)
 
         self.songindex = -1
-        Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
         
     def addBindings(self):
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
+        
+        Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
+
         eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
         eventManager.Bind(self.OnPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED, win=wx.GetApp())
 
     def removeBindings(self):
+        Publisher().unsubscribe(self.delete)
+        
         eventManager.DeregisterListener(self.OnSongChanged)
         eventManager.DeregisterListener(self.OnPlaylistChanged)
 
@@ -1209,7 +1225,7 @@ class MPDPlaylist(MinorMode):
         self.window.addBindings()
         self.window.reset(self.major.mpd)
 
-    def deleteWindowHook(self):
+    def deleteWindowPreHook(self):
         dprint("unregistering bindings for %s" % self.window)
         self.window.removeBindings()
         
@@ -1239,9 +1255,6 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.slider = wx.Slider(self)
         self.sizer.Add(self.slider, flag=wx.EXPAND)
 
-        self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
-        self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
-
         self.Layout()
 
         self.mpd = None
@@ -1249,10 +1262,11 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.user_scrolling = False
 
     def addBindings(self):
+        self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
+        self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
+
         eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
         eventManager.Bind(self.OnSongTime, EVT_MPD_SONG_TIME, win=wx.GetApp())
-##        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
-##        wx.GetApp().Bind(EVT_MPD_SONG_TIME, self.OnSongTime)
 
     def removeBindings(self):
         eventManager.DeregisterListener(self.OnSongChanged)
@@ -1340,7 +1354,7 @@ class MPDCurrentlyPlaying(MinorMode):
         self.window.addBindings()
         self.window.reset(self.major.mpd)
 
-    def deleteWindowHook(self):
+    def deleteWindowPreHook(self):
         dprint("unregistering bindings for %s" % self.window)
         self.window.removeBindings()
 

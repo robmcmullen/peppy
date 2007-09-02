@@ -290,6 +290,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         index = evt.GetSelection()
         mode = self.GetPage(index)
         assert self.dprint("closing tab # %d: mode %s" % (index,mode))
+        mode.deleteWindowPre()
         evt.Skip()
 
     def closeTab(self, mode):

@@ -173,14 +173,29 @@ class MinorMode(ClassSettings,debugmixin):
         """
         pass
 
-    def deleteWindowHook(self):
-        """Hook to clean up any resources when the major mode is
+    def deletePreHook(self):
+        """Hook to clean up any resources before anything else is
         deleted.
 
-        When the major mode is deleted, all minor modes associated
-        with it are also deleted.  This hook exists to allow the minor
-        mode to be cleaned up if it allocated anything that isn't
-        automatically cleaned up upon destruction.
+        This hook is called whether or not the minor mode has a window.
+        """
+        pass
+
+    def deleteWindowPreHook(self):
+        """Hook to clean up any resources before the window is deleted.
+
+        Only called if the minor mode has a window, this hook allows
+        the minor mode to be cleaned up if it allocated anything that
+        isn't automatically cleaned up upon destruction.
+        """
+        pass
+
+    def deleteWindowPostHook(self):
+        """Hook to clean up any resources after the window is deleted.
+
+        Only called if the minor mode has a window, this hook allows
+        cleanup after the window has been deleted.  Note that the
+        window will not exist, so don't attempt to reference it.
         """
         pass
 

@@ -105,8 +105,8 @@ class Exit(SelectAction):
         self.frame.app.quit()
 
 class Close(SelectAction):
-    name = _("&Close")
-    tooltip = _("Close current file")
+    name = _("&Close Buffer")
+    tooltip = _("Close current buffer")
     icon = "icons/cross.png"
 
     def isEnabled(self):

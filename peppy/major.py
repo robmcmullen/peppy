@@ -171,10 +171,14 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
         self.createWindow()
         self.createWindowPostHook()
+        self.loadMinorModes()
         self.createEventBindings()
         self.createEventBindingsPostHook()
         self.createListeners()
         self.createListenersPostHook()
+        self.createPostHook()
+        
+        self._mgr.Update()
 
     def __del__(self):
         dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
@@ -262,6 +266,12 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         return "%s major mode" % self.keyword
     
     def createWindow(self):
+        """Non-user-callable routine to create the main window.
+
+        Users should override createEditWindow to generate the main
+        window, and can also override createWindowPostHook to add any
+        non-window resources to the major mode.
+        """
         box=wx.BoxSizer(wx.VERTICAL)
         self.SetAutoLayout(True)
         self.SetSizer(box)
@@ -273,11 +283,29 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
                           CenterPane())
 
-        self.loadMinorModes()
-        
-        self._mgr.Update()
-
     def createWindowPostHook(self):
+        """User hook to add resources after the edit window is created.
+        """
+        pass
+
+    def deleteWindowPre(self):
+        """Manager routine to delete resources before the main window
+        is deleted.
+
+        Not called from user code; override deleteWindowPreHook to add
+        user code to the delete process.
+        """
+        self.deleteWindowPreHook()
+        self.deleteMinorModes()
+
+    def deleteWindowPreHook(self):
+        """Hook to remove resources before windows are deleted.
+
+        This is called before anything is deleted.  Don't try to
+        delete any of the resources that are automatically managed
+        (i.e. minor modes, windows, toolbars, etc.) or BadThings(tm)
+        will happen.
+        """
         pass
 
     def deleteWindow(self):
@@ -285,12 +313,17 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         assert self.dprint("closing view %s of buffer %s" % (self,self.buffer))
         self.buffer.remove(self)
 
-        self.deleteMinorModes()
-        
+        self.deleteWindowPre()
+
         assert self.dprint("destroying window %s" % (self))
         self.Destroy()
 
     def deleteWindowPostHook(self):
+        """Hook after all widgets are deleted.
+
+        This is called after all windows have been deleted, in case
+        there are any non-window references to clean up.
+        """
         pass
 
     def createEventBindings(self):
@@ -378,9 +411,16 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
     def deleteMinorModes(self):
         dprint()
-        for minor in self.minors:
+        while len(self.minors)>0:
+            minor = self.minors.pop()
             dprint("deleting minor mode %s" % (minor.keyword))
-            minor.deleteWindowHook()
+            minor.deletePreHook()
+            if minor.window:
+                minor.deleteWindowPreHook()
+                self._mgr.DetachPane(minor.window)
+                minor.window.Destroy()
+                minor.window = None
+                minor.deleteWindowPostHook()
 
     def OnUpdateUI(self, evt):
         """Callback to update user interface elements.
@@ -429,6 +469,15 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         text=self.buffer.stc.GetText()
         wx.StaticText(win, -1, text, (10,10))
         return win
+
+    def createPostHook(self):
+        """Hook called when everything has been created.
+
+        This hook is called just before control is returned to the
+        main application loop, i.e. after the edit window, minor
+        modes, and all bindings and other hooks are called.
+        """
+        pass
 
     def createStatusIcons(self):
         """Create any icons in the status bar.
