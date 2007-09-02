@@ -261,11 +261,15 @@ class MPDComm(object):
     def cmd(self, cmd, *args):
         self.queue.put(MPDCommand(cmd, args))
 
-    def sync(self, cmd, *args):
+    def sync(self, cmd, *args, **kw):
         queue = Queue.Queue()
         self.queue.put(MPDCommand(cmd, args, result=queue))
         dprint("Waiting for %s" % cmd)
-        ret = queue.get(True, self.sync_timeout)
+        if 'timeout' in kw:
+            timeout = kw['timeout']
+        else:
+            timeout = self.sync_timeout
+        ret = queue.get(True, timeout)
         dprint("Got result for %s: %s" % (cmd, ret))
         return ret
         
@@ -781,6 +785,67 @@ class MPDListByPath(NeXTFileManager):
         return names
 
 
+class MPDListSearch(wx.Panel, debugmixin):
+    """Search the database by keyword
+    """
+    debuglevel = 0
+
+    def __init__(self, parent_win, parent):
+        wx.Panel.__init__(self, parent_win)
+        self.parent = parent
+        
+        self.sizer = wx.GridBagSizer(5,5)
+        
+        self.title = wx.StaticText(self, -1, "Enter search terms:")
+        self.sizer.Add(self.title, (0,0), (1,5), wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.searches = []
+        self.search = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
+        self.search.ShowSearchButton(True)
+        self.search.ShowCancelButton(True)
+        self.search.SetMenu(self.MakeMenu())
+        
+        self.sizer.Add(self.search, (1,0))
+
+        self.SetSizer(self.sizer)
+
+
+        self.Bind(wx.EVT_SEARCHCTRL_SEARCH_BTN, self.OnSearch, self.search)
+        self.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self.OnCancel, self.search)
+        self.Bind(wx.EVT_TEXT_ENTER, self.OnDoSearch, self.search)
+        ##self.Bind(wx.EVT_TEXT, self.OnDoSearch, self.search)        
+
+    def OnSearch(self, evt):
+        dprint("OnSearch")
+            
+    def OnCancel(self, evt):
+        dprint("OnCancel")
+
+    def OnDoSearch(self, evt):
+        keyword = self.search.GetValue()
+        self.searches.append(keyword)
+        self.search.SetMenu(self.MakeMenu())
+        dprint("OnDoSearch: " + self.search.GetValue())
+        items = self.parent.mpd.sync('search', 'any', keyword, timeout=2.0)
+        names = []
+        tracks = []
+        for item in items:
+            #dprint(item)
+            if item['type'] == 'file':
+                tracks.append(item)
+
+        self.parent.songlist.populateTracks(tracks)
+
+    def MakeMenu(self):
+        menu = wx.Menu()
+        item = menu.Append(-1, "Recent Searches")
+        item.Enable(False)
+        for txt in self.searches:
+            menu.Append(-1, txt)
+        return menu
+
+
+
 class MPDDatabase(wx.Panel, debugmixin):
     """Control to search through the MPD database by pathname.
 
@@ -819,7 +884,10 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.genre = MPDListByGenre(self.notebook, self)
         self.genre.SetFont(self.font)
         self.notebook.AddPage(self.genre, "Genre Browser")
-        #self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+        self.search = MPDListSearch(self.notebook, self)
+        self.search.SetFont(self.font)
+        self.notebook.AddPage(self.search, "Search")
 
         self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
@@ -837,9 +905,6 @@ class MPDDatabase(wx.Panel, debugmixin):
     def reset(self):
         page = self.notebook.GetCurrentPage()
         page.reset()
-
-
-
 
 
 
