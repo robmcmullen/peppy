@@ -12,13 +12,14 @@ position in the current playlist, and "id" and "songid" refer to the
 position in the original unshuffled playlist.
 """
 
-import os, struct, mmap
+import os, struct, mmap, Queue, threading, time
 import urllib2
 from cStringIO import StringIO
 import cPickle as pickle
 
 import wx
 import wx.lib.stattext
+import wx.lib.newevent
 from wx.lib.pubsub import Publisher
 
 from peppy import *
@@ -63,7 +64,140 @@ def getTime(track):
     return "%d:%02d" % (minutes, seconds)
 
 
-class MPDWrapper(mpd_connection):
+MpdSongChanged, EVT_MPD_SONG_CHANGED = wx.lib.newevent.NewEvent()
+MpdSongTime, EVT_MPD_SONG_TIME = wx.lib.newevent.NewEvent()
+MpdPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED = wx.lib.newevent.NewEvent()
+
+class MPDCommand(object):
+    # The following commands or changes in attributes generate events
+    check_events = {'playlistinfo': MpdPlaylistChanged,
+                    'currentsong': MpdSongChanged,
+                    'time': MpdSongTime,
+                    }
+
+    # If the attribute changes in status, call the corresponding
+    # command
+    attribute_change_commands = {'playlist': 'playlistinfo',
+                                 'songid': 'currentsong',
+                                 }
+
+    def __init__(self, cmd=None, args=[], **kw):
+        self.cmd = cmd
+        self.args = args
+        if kw and 'callback' in kw:
+            self.callback = kw['callback']
+        else:
+            self.callback = None
+        if kw and 'sync' in kw:
+            self.sync_dict, self.sync_key = kw['sync']
+        else:
+            self.sync_dict = None
+        if kw and 'result' in kw:
+            self.retq = kw['result']
+        else:
+            self.retq = None
+
+    def process(self, mpd, output):
+        dprint("processing cmd=%s, args=%s sync=%s queue=%s" % (self.cmd, str(self.args), self.sync_dict, self.retq))
+        if self.cmd is None:
+            return
+
+        try:
+            if mpd.do.flush_pending:
+                mpd.do.flush()
+        except Exception,e:
+            import traceback
+            traceback.print_exc()
+            
+            dprint("Still no connection; flush still pending")
+            return
+        
+        try:
+            ret = mpd.do.send_n_fetch(self.cmd, self.args)
+        except Exception, e:
+            dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
+            mpd.do.flush_pending = True
+            return
+
+        if self.cmd == 'status':
+            self.status(ret, output)
+        elif self.cmd in self.check_events:
+            #dprint("setting %s = %s" % (self.cmd, ret))
+            setattr(output, self.cmd, ret)
+            evt = self.check_events[self.cmd]
+            wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
+
+        if self.callback:
+            wx.CallAfter(self.callback, self, ret)
+
+        if self.sync_dict is not None:
+            #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
+            self.sync_dict[self.sync_key] = ret
+
+        if self.retq is not None:
+            #dprint("Setting return value to %s" % ret)
+            self.retq.put(ret)
+    
+    def status(self, status, output):
+        # kick off the followup commands if an attribute change means
+        # that other data should be updated.  For example, if the
+        # playlist attribute changes, that means that the playlist has
+        # changed and playlistinfo should be called.
+        for attr, cmd in self.attribute_change_commands.iteritems():
+            if attr in status:
+                if attr not in output.status or status[attr] != output.status[attr]:
+                    output.queue.put(MPDCommand(cmd))
+
+        # If one of the check_events attributes has changed, fire a wx
+        # event to let the UI know that something has happened.
+        for attr, evt in self.check_events.iteritems():
+            if attr in status:
+                if attr not in output.status or status[attr] != output.status[attr]:
+                    dprint("Posting event %s" % evt)
+                    wx.PostEvent(wx.GetApp(), evt(mpd=output, status=status))
+
+        output.status = status
+
+
+class ThreadedMPD(threading.Thread):
+    """Wrapper around mpd_connection to provide background operation.
+
+    Small wrapper around mpdclient2's mpd_connection object to save
+    state information about the mpd instance.  All views into the mpd
+    instance and all minor modes that access the mpd object will then
+    share the same information, rather than having to look somewhere
+    else to find it.
+    """
+    def __init__(self, output, queue, host, port, timeout=0.5):
+        threading.Thread.__init__(self)
+        
+        self.output = output
+        self.queue = queue
+        self.mpd = mpd_connection(host, port, timeout)
+
+        self._want_abort = False
+        self.start()
+
+    def shutdown(self):
+        self._want_abort = True
+        self.queue.put(MPDCommand())
+
+    def run(self):
+        while(not self._want_abort):
+            cmd = self.queue.get()
+            dprint("queue size=%d" % self.queue.qsize())
+            if cmd is not None:
+                try:
+                    cmd.process(self.mpd, self.output)
+                except Exception, e:
+                    import traceback
+                    traceback.print_exc()
+                    #print "Exception: %s" % str(e)
+
+                
+
+
+class MPDComm(object):
     """Wrapper around mpd_connection to save state information.
 
     Small wrapper around mpdclient2's mpd_connection object to save
@@ -73,41 +207,65 @@ class MPDWrapper(mpd_connection):
     else to find it.
     """
     def __init__(self, host, port, timeout=0.5):
-        mpd_connection.__init__(self, host, port, timeout)
-
+        self.queue = Queue.Queue()
+        self.thread = ThreadedMPD(self, self.queue, host, port, timeout)
+        
         self.save_mute = -1
-        self.last_status = {'state': 'stop'}
-        self.last_playlist = -1
-        self.last_songid = -1
-        self.check_messages = {'playlist': 'mpd.playlist.changed',
-                               'songid': 'mpd.song.changed',
-                               'time': 'mpd.song.time',
-                               }
+        self.status = {'state': 'stop'}
+        self.playlistinfo = []
+        self.currentsong = {}
+        self.songid = -1
+
+        self.sync_counter = 0
+        self.sync_dict = {}
+        self.sync_sleep = 0.1
+        self.sync_abort = 10
+        self.sync_timeout = 0.2
+        
+        Publisher().subscribe(self.shutdown, 'peppy.shutdown')
+
+    def reset(self):
+        self.playlistinfo = []
+        self.currentsong = {}
+        self.cmd('status')
+        
+    def shutdown(self, msg=None):
+        self.thread.shutdown()
+
+    def cmd(self, cmd, *args):
+        self.queue.put(MPDCommand(cmd, args))
+
+    def sync(self, cmd, *args):
+        queue = Queue.Queue()
+        self.queue.put(MPDCommand(cmd, args, result=queue))
+        dprint("Waiting for %s" % cmd)
+        ret = queue.get(True, self.sync_timeout)
+        dprint("Got result for %s: %s" % (cmd, ret))
+        return ret
+        
+    def sync_dict(self, cmd, *args):
+        self.sync_counter += 1
+        key = self.sync_counter
+        self.queue.put(MPDCommand(cmd, args, sync=(self.sync_dict,key)))
+        dprint("Waiting for %s: key=%d" % (cmd, key))
+
+        count = 0
+        while key not in self.sync_dict:
+            time.sleep(self.sync_sleep)
+            count += 1
+            if count >= self.sync_abort:
+                self.sync_dict[key] = []
+        ret = self.sync_dict[key]
+        del self.sync_dict[key]
+        return ret
+        
+
+    def callback(self, callback, cmd, *args):
+        self.queue.put(MPDCommand(cmd, args, callback=callback))
         
     def isPlaying(self):
         """True if playing music; false if paused or stopped."""
-        return self.last_status['state'] == 'play'
-
-    def cmd(self, cmd, *args):
-        try:
-            result = self.do.send_n_fetch(cmd, args)
-            return result
-        except Exception, e:
-            print "Exception: %s" % str(e)
-        return None
-
-    def getStatus(self, reset=False):
-        status = self.cmd('status')
-        if status is None:
-            Publisher().sendMessage("mpd.ioerror", (self,))
-        else:
-            #print status
-            for k, msg in self.check_messages.iteritems():
-                if k in status:
-                    if k not in self.last_status or status[k] != self.last_status[k]:
-                        dprint("sending msg=%s" % msg)
-                        Publisher().sendMessage(msg, (self, status))
-            self.last_status = status
+        return self.status['state'] == 'play'
 
     def playPause(self):
         """User method to play or pause.
@@ -115,38 +273,38 @@ class MPDWrapper(mpd_connection):
         Called to play music either from a stopped state or to resume
         from pause.
         """
-        state = self.last_status['state']
+        state = self.status['state']
         if state == 'play':
-            self.pause(1)
+            self.cmd('pause',1)
         elif state == 'pause':
             # resume playing
-            self.pause(0)
+            self.cmd('pause',0)
         else:
-            self.play()
+            self.cmd('play')
 
     def stopPlaying(self):
         """User method to stop playing."""
-        state = self.last_status['state']
+        state = self.status['state']
         if state != 'stop':
-            self.stop()
+            self.cmd('stop')
 
     def prevSong(self):
         """User method to skip to previous song.
 
         Usable only when playing.
         """
-        state = self.last_status['state']
+        state = self.status['state']
         if state != 'stop':
-            self.previous()
+            self.cmd('previous')
 
     def nextSong(self):
         """User method to skip to next song.
 
         Usable only when playing.
         """
-        state = self.last_status['state']
+        state = self.status['state']
         if state != 'stop':
-            self.next()
+            self.cmd('next')
 
     def volumeUp(self, step):
         """Increase volume, usable at any time.
@@ -155,9 +313,9 @@ class MPDWrapper(mpd_connection):
 
         @param step: step size to increase
         """
-        vol = int(self.last_status['volume']) + step
+        vol = int(self.status['volume']) + step
         if vol > 100: vol = 100
-        self.setvol(vol)
+        self.cmd('setvol', vol)
         self.save_mute = -1
 
     def volumeDown(self, step):
@@ -167,9 +325,9 @@ class MPDWrapper(mpd_connection):
 
         @param step: step size to increase
         """
-        vol = int(self.last_status['volume']) - step
+        vol = int(self.status['volume']) - step
         if vol < 0: vol = 0
-        self.setvol(vol)
+        self.cmd('setvol', vol)
         self.save_mute = -1
 
     def setMute(self):
@@ -178,13 +336,12 @@ class MPDWrapper(mpd_connection):
         Mute volume or restore muted sound to previous volume level.
         """
         if self.save_mute < 0:
-            self.save_mute = int(self.last_status['volume'])
+            self.save_mute = int(self.status['volume'])
             vol = 0
         else:
             vol = self.save_mute
             self.save_mute = -1
-        self.setvol(vol)
-
+        self.cmd('setvol', vol)
 
 
 class PlayingAction(SelectAction):
@@ -422,7 +579,8 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         index = evt.GetIndex()
         filename = self.GetItem(index, 7).GetText()
         dprint("song %d: %s" % (index, filename))
-        Publisher().sendMessage('mpd.appendSong', (self.mpd, filename))
+        self.mpd.cmd('add', filename)
+        self.mpd.cmd('status')
         evt.Skip()
 
     def getSelectedSongs(self):
@@ -573,9 +731,9 @@ class MPDListByPath(NeXTFileManager):
             path = '/'.join(self.dirtree[0:level+1])
         #dprint(self.dirtree)
         #dprint(path)
+        items = self.parent.mpd.sync('lsinfo', path)
         names = []
         tracks = []
-        items = self.parent.mpd.lsinfo(path)
         for item in items:
             #dprint(item)
             if item['type'] == 'directory':
@@ -689,7 +847,7 @@ class MPDMode(MajorMode):
 
         # Don't initialize the MPD connection till all the minor modes
         # are created, because their own initialization depends on
-        # message passing from the mpd.getStatus() method
+        # message passing from the mpd wrapper
         self.initializeConnection()
 
         self.OnTimer()        
@@ -705,11 +863,11 @@ class MPDMode(MajorMode):
         self.update()
 
     def initializeConnection(self):
-        self.mpd.getStatus()
-        dprint(self.mpd.last_status)
+        self.mpd.reset()
+        dprint(self.mpd.status)
 
     def update(self):
-        self.mpd.getStatus()
+        self.mpd.cmd('status')
         self.idle_update_menu = True
 
     def isConnected(self):
@@ -792,9 +950,8 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
 
         self.songindex = -1
         Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
-        Publisher().subscribe(self.appendSong, 'mpd.appendSong')
-        Publisher().subscribe(self.playlistChanged, 'mpd.playlist.changed')
-        Publisher().subscribe(self.songChanged, 'mpd.song.changed')
+        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
+        wx.GetApp().Bind(EVT_MPD_PLAYLIST_CHANGED, self.OnPlaylistChanged)
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
@@ -807,7 +964,7 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        self.mpd.play(index)
+        self.mpd.cmd('play',index)
         evt.Skip()
 
     def getSelectedSongs(self):
@@ -828,9 +985,19 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
             if songlist:
                 sids = [self.playlist_cache[i] for i in songlist]
                 for sid in sids:
-                    self.mpd.deleteid(sid)
+                    self.mpd.cmd('deleteid', sid)
+                self.mpd.cmd('status')
                 self.reset()
                 self.setSelected([])
+
+    def OnSongChanged(self, evt):
+        dprint("EVENT!!!")
+        status = evt.status
+        if status['state'] == 'stop':
+            self.highlightSong(-1)
+        else:
+            self.highlightSong(int(status['song']))
+        evt.Skip()
         
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
@@ -888,17 +1055,16 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
             if type(song) == int:
                 sid = self.playlist_cache[song]
                 dprint("Moving id=%d (index=%d) to %d" % (sid, song, index))
-                self.mpd.moveid(sid, index)
+                self.mpd.sync('moveid', sid, index)
                 if song >= index:
                     index += 1
                 highlight.append(sid)
             else:
-                ret = self.mpd.addid(song)
+                ret = self.mpd.sync('addid', song)
                 sid = int(ret['id'])
-                self.mpd.moveid(sid, index)
+                self.mpd.cmd('moveid', sid, index)
                 index += 1
                 highlight.append(sid)
-        self.mpd.getStatus()
         self.setSelected(highlight)
 
     def setSelected(self, ids):
@@ -916,10 +1082,15 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.reset(visible=self.songindex)
         self.songChanged(msg)
     
+    def OnPlaylistChanged(self, evt):
+        status = evt.status
+        self.reset(visible=self.songindex)
+        self.OnSongChanged(evt)
+    
     def reset(self, mpd=None, visible=None):
         if mpd is not None:
             self.mpd = mpd
-        playlist = self.mpd.playlistinfo()
+        playlist = self.mpd.playlistinfo
         list_count = self.GetItemCount()
         index = 0
         cache = []
@@ -1042,8 +1213,18 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.songid = -1
         self.user_scrolling = False
         
-        Publisher().subscribe(self.songChanged, 'mpd.song.changed')
-        Publisher().subscribe(self.songTime, 'mpd.song.time')
+        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
+        wx.GetApp().Bind(EVT_MPD_SONG_TIME, self.OnSongTime)
+
+    def OnSongChanged(self, evt):
+        dprint("EVENT!!!")
+        self.reset()
+        evt.Skip()
+        
+    def OnSongTime(self, evt):
+        dprint("EVENT!!!")
+        self.update(evt.status)
+        evt.Skip()
 
     def OnSliderMove(self, evt):
         self.user_scrolling = True
@@ -1052,7 +1233,7 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
     def OnSliderRelease(self, evt):
         self.user_scrolling = False
         dprint(evt.GetPosition())
-        self.mpd.seekid(self.songid, evt.GetPosition())
+        self.mpd.cmd('seekid', self.songid, evt.GetPosition())
 
     def songChanged(self, msg=None):
         dprint("songChanged: msg=%s" % str(msg.topic))
@@ -1061,10 +1242,10 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
     def reset(self, mpd=None):
         if mpd is not None:
             self.mpd = mpd
-        track = self.mpd.currentsong()
+        track = self.mpd.currentsong
         if track:
             dprint("currentsong: \n%s" % track)
-            dprint("status: \n%s" % self.mpd.last_status)
+            dprint("status: \n%s" % self.mpd.status)
             if 'title' not in track:
                 title = track['file']
             else:
@@ -1131,7 +1312,7 @@ class MPDHandler(urllib2.BaseHandler):
 
         comp_mgr = ComponentManager()
         handler = MPDPlugin(comp_mgr)
-        fh = MPDWrapper(url, 6600)
+        fh = MPDComm(url, 6600)
         fh.geturl = lambda :"mpd:%s" % url
         fh.info = lambda :{'Content-type': 'text/plain',
                            'Content-length': 0,

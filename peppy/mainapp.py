@@ -7,6 +7,7 @@ Main application class.
 import os, sys
 
 import wx
+from wx.lib.pubsub import Publisher
 
 from menu import *
 from buffers import *
@@ -356,6 +357,7 @@ class Peppy(BufferApp, ClassSettings):
 
     def quitHook(self):
         self.saveConfig("peppy.cfg")
+        Publisher().sendMessage('peppy.shutdown')
         return True
 
 

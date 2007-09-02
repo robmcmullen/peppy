@@ -173,8 +173,16 @@ class sender_n_fetcher(object):
         self.fetcher = fetcher
         self.iterate = False
 
+        self.flush_pending = False
+
     def __getattr__(self, cmd):
         return lambda *args: self.send_n_fetch(cmd, args)
+
+    def flush(self):
+        if self.flush_pending:
+            # It will throw an exception if the connection is down
+            self.fetcher.flush()
+            self.flush_pending = False
 
     def send_n_fetch(self, cmd, args):
         getattr(self.sender, cmd)(*args)
@@ -220,6 +228,27 @@ class response_fetcher(object):
             self.talker.current_line = ''
             self.talker.get_line()
         self.talker.current_line = ''
+
+    def flush(self):
+##        text = self.talker.file.read()
+##        print("flushed %s" % text)
+        print ("flushing:")
+        self.talker.file.flush()
+
+        readdata = False
+        try:
+            while (True):
+                while not self.talker.done:
+                    self.talker.current_line = ''
+                    line = self.talker.get_line()
+                    print ("flushed: %s" % line)
+                    readdata = True
+                self.talker.done = False
+        except socket.timeout:
+            if readdata:
+                print ("flushed: timeout reached")
+                return
+            raise
 
     def one_object(self, keywords, type):
         # if type isn't empty, then the object's type is set to it.  otherwise
