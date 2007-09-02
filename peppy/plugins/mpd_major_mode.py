@@ -39,7 +39,7 @@ def getTitle(track):
     if 'title' in track:
         title = track['title']
     elif 'file' in track:
-        title = track['file']
+        title = os.path.basename(track['file'])
     else:
         title = str(track)
     return title
@@ -311,7 +311,7 @@ class ColumnSizerMixin(object):
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, evt):
-        self.resizeColumns()
+        wx.CallAfter(self.resizeColumns)
         evt.Skip()
         
     def resizeColumns(self, flags=[]):
@@ -324,6 +324,7 @@ class ColumnSizerMixin(object):
         >1: maximum size
         <0: absolute value is the minimum size
         """
+        self.Freeze()
         if self.resize_flags is None or len(flags) > 0:
             # have to make copy of list, otherwise are operating on
             # the list that's passed in
@@ -331,7 +332,7 @@ class ColumnSizerMixin(object):
             if len(copy) < self.GetColumnCount():
                 copy.extend([0] * (self.GetColumnCount() - len(copy)))
             self.resize_flags = tuple(copy)
-            dprint("resetting flags to %s" % str(self.resize_flags))
+            #dprint("resetting flags to %s" % str(self.resize_flags))
             
         flags = self.resize_flags
         fixed_width = 0
@@ -363,9 +364,10 @@ class ColumnSizerMixin(object):
         w -= fixed_width
         for col in range(self.GetColumnCount()):
             before = self.GetColumnWidth(col)
-            dprint("col %d: flag=%d before=%d" % (col, flags[col], before))
+            #dprint("col %d: flag=%d before=%d" % (col, flags[col], before))
             if flags[col] != 1:
                 self.SetColumnWidth(col, before*w/total_width)
+        self.Thaw()
 
 class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
     def __init__(self, mode, parent):
@@ -429,20 +431,24 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         if mpd is not None:
             self.mpd = mpd
 
-        index = 0
-        list_count = self.GetItemCount()
+        all_tracks = []
         for album in self.albums:
             tracks = self.mpd.search("album", album)
-            playlist = self.mpd.playlistinfo()
-            for track in tracks:
-                if index >= list_count:
-                    self.InsertStringItem(sys.maxint, getTitle(track))
-                else:
-                    self.SetStringItem(index, 0, getTitle(track))
-                self.SetStringItem(index, 1, getTime(track))
-                self.SetStringItem(index, 7, track['file'])
+            all_tracks.extend(tracks)
+        self.populateTracks(all_tracks)
 
-                index += 1
+    def populateTracks(self, tracks):
+        index = 0
+        list_count = self.GetItemCount()
+        for track in tracks:
+            if index >= list_count:
+                self.InsertStringItem(sys.maxint, getTitle(track))
+            else:
+                self.SetStringItem(index, 0, getTitle(track))
+            self.SetStringItem(index, 1, getTime(track))
+            self.SetStringItem(index, 7, track['file'])
+
+            index += 1
 
         if index < list_count:
             for i in range(index, list_count):
@@ -460,11 +466,108 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.reset()
 
 
-class MPDDatabase(wx.Panel, debugmixin):
+
+class MPDListByGenre(NeXTPanel, debugmixin):
     """Control to search through the MPD database to add songs to the
     playlist.
 
     Displays genre, artist, album, and songs.
+    """
+    debuglevel = 0
+
+    def __init__(self, parent_win, parent):
+        NeXTPanel.__init__(self, parent_win)
+        self.parent = parent
+
+        self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+
+        self.lists = ['genre', 'artist', 'album']
+        self.shown = 1
+
+        self.Layout()
+
+    def reset(self):
+        self.shown = 0
+        items = self.getLevelItems(-1, None)
+        self.showItems(self.shown, self.lists[self.shown], items)
+
+    def showItems(self, index, keyword, items):
+        list = self.GetList(index)
+        if list is None:
+            dprint("list at position %d not found!  Creating new list" % index)
+            list = self.AppendList(self.parent.mode.settings.list_width, keyword)
+        names = {}
+        for item in items:
+            #dprint(item)
+            names[str(item[keyword]).decode('utf-8')] = 1
+        names = names.keys()
+        names.sort()
+
+        #dprint("before InsertStringItem")
+        list.ReplaceItems(names)
+        #dprint("after InsertStringItem")
+
+    def getLevelItems(self, level, item):
+        if level < 0:
+            return self.parent.mpd.list("genre")
+        if level < len(self.lists) - 1:
+            return self.parent.mpd.list(self.lists[level+1], self.lists[level], item)
+        return None
+
+    def rebuildLevels(self, level, list, selections):
+        dprint("level=%d selections=%s" % (level, selections))
+        self.shown = level + 1
+        if self.shown < len(self.lists):
+            dprint("shown=%d" % self.shown)
+            self.DeleteAfter(self.shown)
+
+            newitems = []
+            for i in selections:
+                item = list.GetString(i)
+                newitems.extend(self.getLevelItems(level, item))
+            self.showItems(self.shown, self.lists[self.shown], newitems)
+            self.ensureVisible(self.shown)
+        else:
+            artists = []
+            albums = [list.GetString(i) for i in selections]
+            self.parent.songlist.populate(artists, albums)        
+
+    def OnPanelUpdate(self, evt):
+        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        wx.CallAfter(self.rebuildLevels, evt.listnum, evt.list, evt.selections)
+
+
+class MPDListByPath(NeXTFileManager):
+    def __init__(self, parent_win, parent):
+        NeXTFileManager.__init__(self, parent_win)
+        self.parent = parent
+        self.files = {}
+        
+    def getLevelItems(self, level, item):
+        if level<0:
+            path = ''
+        else:
+            path = '/'.join(self.dirtree[0:level+1])
+        #dprint(self.dirtree)
+        #dprint(path)
+        names = []
+        tracks = []
+        items = self.parent.mpd.lsinfo(path)
+        for item in items:
+            #dprint(item)
+            if item['type'] == 'directory':
+                names.append(os.path.basename(item['directory']))
+            elif item['type'] == 'file':
+                tracks.append(item)
+
+        self.parent.songlist.populateTracks(tracks)
+        return names
+
+
+class MPDDatabase(wx.Panel, debugmixin):
+    """Control to search through the MPD database by pathname.
+
+    Displays pathnames and puts files into the file list.
     """
     debuglevel = 0
 
@@ -482,69 +585,42 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.dirlevels = NeXTPanel(self)
-        self.dirlevels.SetFont(self.font)
-        self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
-        self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
+        self.notebook = wx.Notebook(self)
+        self.sizer.Add(self.notebook, 1, wx.EXPAND)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+
+        self.pathname = MPDListByPath(self.notebook, self)
+        self.pathname.SetFont(self.font)
+        self.notebook.AddPage(self.pathname, "Pathname Browser")
+
+        self.genre = MPDListByGenre(self.notebook, self)
+        self.genre.SetFont(self.font)
+        self.notebook.AddPage(self.genre, "Genre Browser")
+        #self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
         self.songlist = FileCtrl(self.mode, self)
         self.songlist.SetFont(self.font)
         self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
-        self.lists = ['genre', 'artist', 'album']
-        self.shown = 1
+        self.shown = 0
+        self.dirtree = []
         
         self.Layout()
 
+    def OnTabChanged(self, evt):
+        val = evt.GetSelection()
+        page = self.notebook.GetPage(val)
+        page.reset()
+        evt.Skip()
+
     def reset(self):
-        self.shown = 0
-        items = self.getLevelItems(-1, None)
-        self.showItems(self.shown, self.lists[self.shown], items)
+        page = self.notebook.GetCurrentPage()
+        page.reset()
 
-    def showItems(self, index, keyword, items):
-        list = self.dirlevels.GetList(index)
-        if list is None:
-            dprint("list at position %d not found!  Creating new list" % index)
-            list = self.dirlevels.AppendList(self.mode.settings.list_width, keyword)
-        names = {}
-        for item in items:
-            #dprint(item)
-            names[str(item[keyword]).decode('utf-8')] = 1
-        names = names.keys()
-        names.sort()
 
-        #dprint("before InsertStringItem")
-        list.ReplaceItems(names)
-        #dprint("after InsertStringItem")
 
-    def getLevelItems(self, level, item):
-        if level < 0:
-            return self.mpd.list("genre")
-        if level < len(self.lists) - 1:
-            return self.mpd.list(self.lists[level+1], self.lists[level], item)
-        return None
 
-    def rebuildLevels(self, level, list, selections):
-        dprint("level=%d selections=%s" % (level, selections))
-        self.shown = level + 1
-        if self.shown < len(self.lists):
-            dprint("shown=%d" % self.shown)
-            self.dirlevels.DeleteAfter(self.shown)
 
-            newitems = []
-            for i in selections:
-                item = list.GetString(i)
-                newitems.extend(self.getLevelItems(level, item))
-            self.showItems(self.shown, self.lists[self.shown], newitems)
-            self.dirlevels.ensureVisible(self.shown)
-        else:
-            artists = []
-            albums = [list.GetString(i) for i in selections]
-            self.songlist.populate(artists, albums)        
-
-    def OnPanelUpdate(self, evt):
-        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
-        wx.CallAfter(self.rebuildLevels, evt.listnum, evt.list, evt.selections)
 
 class MPDMode(MajorMode):
     """Major mode for controlling a Music Player Daemon.
@@ -867,12 +943,12 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         if newindex == self.songindex:
             return
         
-        if self.songindex>0:
+        if self.songindex >= 0:
             item = self.GetItem(self.songindex)
             item.SetFont(self.font)
             self.SetItem(item)
         self.songindex = newindex
-        if newindex > 0:
+        if newindex >= 0:
             item = self.GetItem(self.songindex)
             item.SetFont(self.bold_font)
             self.SetItem(item)            
