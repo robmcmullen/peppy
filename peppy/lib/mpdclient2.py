@@ -286,6 +286,9 @@ class dictobj(dict):
 
 class mpd_connection(object):
     def __init__(self, host, port):
+        self.setup(host, port)
+
+    def setup(self, host, port):
         self.talker = socket_talker(host, port)
         self.send = command_sender(self.talker)
         self.fetch = response_fetcher(self.talker)
@@ -303,7 +306,14 @@ class mpd_connection(object):
     # conn.foo() is equivalent to conn.do.foo(), but nicer
     def __getattr__(self, attr):
         if is_command(attr):
-            return getattr(self.do, attr)
+            try:
+                return getattr(self.do, attr)
+            except socket.error:
+                # If the socket goes away (this happened to me on
+                # Windows after resuming from a suspend), try to
+                # reopen the connection
+                self.setup(self.talker.host, self.talker.port)
+                return getattr(self.do, attr)
         raise AttributeError(attr)
 
 def parse_host(host):
