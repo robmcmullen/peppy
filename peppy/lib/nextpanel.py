@@ -300,17 +300,11 @@ class NeXTFileManager(wx.Panel, debugmixin):
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
-        self.default_font = self.GetFont()
-        self.font = wx.Font(8, 
-                            self.default_font.GetFamily(),
-                            self.default_font.GetStyle(),
-                            self.default_font.GetWeight())
 
         self.sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SetSizer(self.sizer)
 
         self.dirlevels = NeXTPanel(self)
-        self.dirlevels.SetFont(self.font)
         self.sizer.Add(self.dirlevels, 1, wx.EXPAND)
         self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
@@ -320,6 +314,12 @@ class NeXTFileManager(wx.Panel, debugmixin):
 
         self.Layout()
 
+    def SetFont(self, font):
+        """Overridden function to set font of all sub lists."""
+        self.dprint("font=%s" % font)
+        wx.Panel.SetFont(self, font)
+        self.dirlevels.SetFont(font)
+
     def reset(self):
         self.shown = 0
         items = self.getLevelItems(-1, None)
@@ -328,6 +328,9 @@ class NeXTFileManager(wx.Panel, debugmixin):
     def showItems(self, index, keyword, items):
         list = self.dirlevels.GetList(index)
         if list is None:
+            if len(items) == 0:
+                # don't create a new level if there are no items to add
+                return
             list = self.dirlevels.AppendList(self.list_width, keyword)
         list.DeleteAllItems()
         for item in items:
