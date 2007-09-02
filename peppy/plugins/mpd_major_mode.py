@@ -72,8 +72,8 @@ class MPDWrapper(mpd_connection):
     share the same information, rather than having to look somewhere
     else to find it.
     """
-    def __init__(self, *args, **kw):
-        mpd_connection.__init__(self, *args, **kw)
+    def __init__(self, host, port, timeout=0.5):
+        mpd_connection.__init__(self, host, port, timeout)
 
         self.save_mute = -1
         self.last_status = {'state': 'stop'}
@@ -88,15 +88,26 @@ class MPDWrapper(mpd_connection):
         """True if playing music; false if paused or stopped."""
         return self.last_status['state'] == 'play'
 
+    def cmd(self, cmd, *args):
+        try:
+            result = self.do.send_n_fetch(cmd, args)
+            return result
+        except Exception, e:
+            print "Exception: %s" % str(e)
+        return None
+
     def getStatus(self, reset=False):
-        status = self.status()
-        #print status
-        for k, msg in self.check_messages.iteritems():
-            if k in status:
-                if k not in self.last_status or status[k] != self.last_status[k]:
-                    dprint("sending msg=%s" % msg)
-                    Publisher().sendMessage(msg, (self, status))
-        self.last_status = status
+        status = self.cmd('status')
+        if status is None:
+            Publisher().sendMessage("mpd.ioerror", (self,))
+        else:
+            #print status
+            for k, msg in self.check_messages.iteritems():
+                if k in status:
+                    if k not in self.last_status or status[k] != self.last_status[k]:
+                        dprint("sending msg=%s" % msg)
+                        Publisher().sendMessage(msg, (self, status))
+            self.last_status = status
 
     def playPause(self):
         """User method to play or pause.

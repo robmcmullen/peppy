@@ -15,10 +15,11 @@ import socket
 
 class socket_talker(object):
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, timeout=None):
         self.host = host
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.settimeout(timeout)
         self.sock.connect((host, port))
         self.file = self.sock.makefile("rb+")
         self.current_line = ''
@@ -285,11 +286,11 @@ class dictobj(dict):
                 '\n  }>')
 
 class mpd_connection(object):
-    def __init__(self, host, port):
-        self.setup(host, port)
+    def __init__(self, host, port, timeout=None):
+        self.setup(host, port, timeout)
 
-    def setup(self, host, port):
-        self.talker = socket_talker(host, port)
+    def setup(self, host, port, timeout):
+        self.talker = socket_talker(host, port, timeout)
         self.send = command_sender(self.talker)
         self.fetch = response_fetcher(self.talker)
         self.do = sender_n_fetcher(self.send, self.fetch)
@@ -306,14 +307,7 @@ class mpd_connection(object):
     # conn.foo() is equivalent to conn.do.foo(), but nicer
     def __getattr__(self, attr):
         if is_command(attr):
-            try:
-                return getattr(self.do, attr)
-            except socket.error:
-                # If the socket goes away (this happened to me on
-                # Windows after resuming from a suspend), try to
-                # reopen the connection
-                self.setup(self.talker.host, self.talker.port)
-                return getattr(self.do, attr)
+            return getattr(self.do, attr)
         raise AttributeError(attr)
 
 def parse_host(host):
