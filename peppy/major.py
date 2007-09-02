@@ -819,17 +819,18 @@ class MajorModeMatcherDriver(Component, debugmixin):
         if header.startswith("#!"):
             lines = header.splitlines()
             bangpath = lines[0].lower()
-            for mode in self.possibleModes():
-                keyword = mode.keyword.lower()
+            for plugin in self.plugins:
+                for mode in plugin.possibleModes():
+                    keyword = mode.keyword.lower()
 
-                # only match words that are bounded by some sort of
-                # non-word delimiter.  For instance, if the mode is
-                # "test", it will match "/usr/bin/test" or
-                # "/usr/bin/test.exe" or "/usr/bin/env test", but not
-                # /usr/bin/testing or /usr/bin/attested
-                match=re.search(r'[\W]%s([\W]|$)' % keyword, text)
-                if match:
-                    return mode
+                    # only match words that are bounded by some sort
+                    # of non-word delimiter.  For instance, if the
+                    # mode is "test", it will match "/usr/bin/test" or
+                    # "/usr/bin/test.exe" or "/usr/bin/env test", but
+                    # not /usr/bin/testing or /usr/bin/attested
+                    match=re.search(r'[\W]%s([\W]|$)' % keyword, bangpath)
+                    if match:
+                        return mode
         return None
     
     def attemptOpen(self, url):
