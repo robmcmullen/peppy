@@ -903,7 +903,7 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         dprint("message received: msg=%s" % str(msg.topic))
         mpd, status = msg.data
         self.reset(visible=self.songindex)
-        self.highlightSong(int(status['song']))
+        self.songChanged(msg)
     
     def reset(self, mpd=None, visible=None):
         if mpd is not None:
