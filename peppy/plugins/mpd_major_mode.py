@@ -77,14 +77,26 @@ class MPDWrapper(mpd_connection):
 
         self.save_mute = -1
         self.last_status = {'state': 'stop'}
+        self.last_playlist = -1
+        self.last_songid = -1
+        self.check_messages = {'playlist': 'mpd.playlist.changed',
+                               'songid': 'mpd.song.changed',
+                               'time': 'mpd.song.time',
+                               }
         
     def isPlaying(self):
         """True if playing music; false if paused or stopped."""
         return self.last_status['state'] == 'play'
 
-    def getStatus(self):
-        self.last_status = self.status()
-        #print self.last_status
+    def getStatus(self, reset=False):
+        status = self.status()
+        #print status
+        for k, msg in self.check_messages.iteritems():
+            if k in status:
+                if k not in self.last_status or status[k] != self.last_status[k]:
+                    dprint("sending msg=%s" % msg)
+                    Publisher().sendMessage(msg, (self, status))
+        self.last_status = status
 
     def playPause(self):
         """User method to play or pause.
@@ -585,6 +597,12 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
+        # Songlist must be created before the pathname and genre
+        # browsers, because they try to populate the songlist at init
+        # time
+        self.songlist = FileCtrl(self.mode, self)
+        self.songlist.SetFont(self.font)
+
         self.notebook = wx.Notebook(self)
         self.sizer.Add(self.notebook, 1, wx.EXPAND)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
@@ -598,8 +616,6 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.notebook.AddPage(self.genre, "Genre Browser")
         #self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
-        self.songlist = FileCtrl(self.mode, self)
-        self.songlist.SetFont(self.font)
         self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
         self.shown = 0
@@ -654,55 +670,36 @@ class MPDMode(MajorMode):
         """
         self.stc = self.buffer.stc
         self.mpd = self.stc.mpd
-        self.initializeConnection()
         win = MPDDatabase(self, parent)
         return win
 
     def createWindowPostHook(self):
         Publisher().subscribe(self.showMessages, 'mpd')
-        
-        self.update_timer = wx.Timer(self.editwin)
+
+        # Don't initialize the MPD connection till all the minor modes
+        # are created, because their own initialization depends on
+        # message passing from the mpd.getStatus() method
+        self.initializeConnection()
+
+        self.OnTimer()        
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
-
+        self.update_timer = wx.Timer(self.editwin)
         self.update_timer.Start(self.settings.update_interval*1000)
-
-        self.editwin.reset()
 
     def showMessages(self, message=None):
         """debug method to show all pubsub messages."""
-        dprint("message = %s" % message)        
+        dprint(str(message.topic))
 
-    def OnTimer(self, evt):
+    def OnTimer(self, evt=None):
         self.update()
 
     def initializeConnection(self):
         self.mpd.getStatus()
         dprint(self.mpd.last_status)
-        
-        outputs = self.mpd.outputs()
-
-        print 'i got %d output(s)' % len(outputs)
-
-        for output in outputs:
-            print "here's an output"
-            print "  id:", output.outputid
-            print "  name:", output.outputname
-            print "  enabled:", ('no', 'yes')[int(output.outputenabled)]
 
     def update(self):
         self.mpd.getStatus()
         self.idle_update_menu = True
-        for minor in self.minors:
-            self.dprint(minor.window)
-            minor.window.update()
-
-    def reset(self):
-        self.mpd.getStatus()
-        self.idle_update_menu = True
-        self.editwin.reset()
-        for minor in self.minors:
-            self.dprint(minor.window)
-            minor.window.reset()
 
     def isConnected(self):
         return self.mpd is not None
@@ -785,6 +782,8 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.songindex = -1
         Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
         Publisher().subscribe(self.appendSong, 'mpd.appendSong')
+        Publisher().subscribe(self.playlistChanged, 'mpd.playlist.changed')
+        Publisher().subscribe(self.songChanged, 'mpd.song.changed')
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
@@ -888,7 +887,7 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
                 self.mpd.moveid(sid, index)
                 index += 1
                 highlight.append(sid)
-        self.reset()
+        self.mpd.getStatus()
         self.setSelected(highlight)
 
     def setSelected(self, ids):
@@ -900,7 +899,12 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
             else:
                 self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
-        
+    def playlistChanged(self, msg=None):
+        dprint("message received: msg=%s" % str(msg.topic))
+        mpd, status = msg.data
+        self.reset(visible=self.songindex)
+        self.highlightSong(int(status['song']))
+    
     def reset(self, mpd=None, visible=None):
         if mpd is not None:
             self.mpd = mpd
@@ -942,21 +946,29 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
     def highlightSong(self, newindex):
         if newindex == self.songindex:
             return
-        
-        if self.songindex >= 0:
-            item = self.GetItem(self.songindex)
-            item.SetFont(self.font)
-            self.SetItem(item)
-        self.songindex = newindex
-        if newindex >= 0:
-            item = self.GetItem(self.songindex)
-            item.SetFont(self.bold_font)
-            self.SetItem(item)            
-            self.EnsureVisible(newindex)
-        self.resizeColumns()
+
+        try:
+            if self.songindex >= 0:
+                item = self.GetItem(self.songindex)
+                item.SetFont(self.font)
+                self.SetItem(item)
+            self.songindex = newindex
+            if newindex >= 0:
+                item = self.GetItem(self.songindex)
+                item.SetFont(self.bold_font)
+                self.SetItem(item)            
+                self.EnsureVisible(newindex)
+            self.resizeColumns()
+        except:
+            # Failure probably means that the playlist has changed out
+            # from under us by another mpd client.  Just skip it and
+            # let the playlist get updated by the next playlist
+            # changed message
+            pass
             
-    def update(self):
-        status = self.mpd.status()
+    def songChanged(self, msg):
+        dprint(str(msg.topic))
+        mpd, status = msg.data
         if status['state'] == 'stop':
             self.highlightSong(-1)
         else:
@@ -1018,6 +1030,9 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.mpd = None
         self.songid = -1
         self.user_scrolling = False
+        
+        Publisher().subscribe(self.songChanged, 'mpd.song.changed')
+        Publisher().subscribe(self.songTime, 'mpd.song.time')
 
     def OnSliderMove(self, evt):
         self.user_scrolling = True
@@ -1027,6 +1042,10 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.user_scrolling = False
         dprint(evt.GetPosition())
         self.mpd.seekid(self.songid, evt.GetPosition())
+
+    def songChanged(self, msg=None):
+        dprint("songChanged: msg=%s" % str(msg.topic))
+        self.reset()
 
     def reset(self, mpd=None):
         if mpd is not None:
@@ -1051,18 +1070,18 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
             self.songid = -1
         self.user_scrolling = False
 
-    def update(self):
-        status = self.mpd.status()
+    def songTime(self, msg=None):
+        dprint("msg=%s" % str(msg.topic))
+        mpd, status = msg.data
+        self.update(status)
+
+    def update(self, status):
         if status['state'] == 'stop':
             self.slider.SetValue(0)
-        else:
-            if int(status['songid']) != self.songid:
-                self.reset()
-
-            if not self.user_scrolling:
-                self.dprint(status)
-                pos, tot = status['time'].split(":")
-                self.slider.SetValue(int(pos))
+        elif not self.user_scrolling:
+            self.dprint(status)
+            pos, tot = status['time'].split(":")
+            self.slider.SetValue(int(pos))
 
     def OnSize(self, evt):
         self.Refresh()
