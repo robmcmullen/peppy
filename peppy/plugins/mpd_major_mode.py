@@ -297,9 +297,80 @@ class SongDataObject(wx.CustomDataObject):
     def __init__(self):
         wx.CustomDataObject.__init__(self, "SongData")
 
-class FileCtrl(wx.ListCtrl):
+
+class ColumnSizerMixin(object):
+    """Enhancement to ListCtrl to handle column resizing.
+
+    Resizes columns to a fixed size or based on the size of the
+    contents, but constrains the whole width to the visible area of
+    the list.  Theoretically there won't be any horizontal scrollbars,
+    but this doesnt' yet work on GTK, at least.
+    """
+    def __init__(self, *args, **kw):
+        self.resize_flags = None
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
+    def OnSize(self, evt):
+        self.resizeColumns()
+        evt.Skip()
+        
+    def resizeColumns(self, flags=[]):
+        """Resize each column according to the flag.
+
+        For each column, the respective flag indicates the following:
+
+        0: smallest width that fits the entire string
+        1: smallest width, and keep this column fixed width if possible
+        >1: maximum size
+        <0: absolute value is the minimum size
+        """
+        if self.resize_flags is None or len(flags) > 0:
+            # have to make copy of list, otherwise are operating on
+            # the list that's passed in
+            copy = list(flags)
+            if len(copy) < self.GetColumnCount():
+                copy.extend([0] * (self.GetColumnCount() - len(copy)))
+            self.resize_flags = tuple(copy)
+            dprint("resetting flags to %s" % str(self.resize_flags))
+            
+        flags = self.resize_flags
+        fixed_width = 0
+        total_width = 0
+        num_fixed = 0
+        for col in range(self.GetColumnCount()):
+            self.SetColumnWidth(col, wx.LIST_AUTOSIZE)
+            flag = flags[col]
+            if flag > 1:
+                after = self.GetColumnWidth(col)
+                if after > flag:
+                    self.SetColumnWidth(col, flag)
+            elif flag < 0:
+                after = self.GetColumnWidth(col)
+                if after < -flag:
+                    self.SetColumnWidth(col, -flag)
+
+            after = self.GetColumnWidth(col)
+            total_width += after
+            if flag == 1:
+                num_fixed += 1
+                fixed_width += after
+        
+        # FIXME: column 3 seems to get cut off by a few pixels when
+        # using a bold font.  It seems like the SetColumnWidth
+        # algorithm doesn't see the difference in the bold font.
+        w, h = self.GetClientSizeTuple()
+        dprint("client width = %d, fixed_width = %d" % (w, fixed_width))
+        w -= fixed_width
+        for col in range(self.GetColumnCount()):
+            before = self.GetColumnWidth(col)
+            dprint("col %d: flag=%d before=%d" % (col, flags[col], before))
+            if flags[col] != 1:
+                self.SetColumnWidth(col, before*w/total_width)
+
+class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
     def __init__(self, mode, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        ColumnSizerMixin.__init__(self)
         self.mode = mode
         self.mpd = mode.mpd
         self.createColumns()
@@ -378,6 +449,7 @@ class FileCtrl(wx.ListCtrl):
                 # always delete the first item because the list gets
                 # shorter by one each time.
                 self.DeleteItem(index)
+        self.resizeColumns([0,1,-40,-40,-40,-40,-40,0])
 
     def populate(self, artists, albums):
         self.artists = [i for i in artists]
@@ -611,15 +683,16 @@ class SongDropTarget(wx.PyDropTarget):
         # case we just return the suggested value given to us.
         return d
 
-class PlaylistCtrl(wx.ListCtrl):
+class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
     def __init__(self, mode, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        ColumnSizerMixin.__init__(self)
         self.mpd = mode.mpd
         self.createColumns()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-
+        
         default_font = self.GetFont()
         self.font = wx.Font(mode.settings.list_font_size, 
                             default_font.GetFamily(),
@@ -629,7 +702,7 @@ class PlaylistCtrl(wx.ListCtrl):
         self.bold_font = wx.Font(mode.settings.list_font_size, 
                                  default_font.GetFamily(),
                                  default_font.GetStyle(),wx.BOLD)
-        
+
         self.dropTarget=SongDropTarget(self)
         self.SetDropTarget(self.dropTarget)
 
@@ -780,6 +853,7 @@ class PlaylistCtrl(wx.ListCtrl):
                 self.DeleteItem(index)
         if show >= 0:
             self.EnsureVisible(show)
+        self.resizeColumns([1,0,0,1])
 
     def appendSong(self, message=None):
         dprint(message)
@@ -803,6 +877,7 @@ class PlaylistCtrl(wx.ListCtrl):
             item.SetFont(self.bold_font)
             self.SetItem(item)            
             self.EnsureVisible(newindex)
+        self.resizeColumns()
             
     def update(self):
         status = self.mpd.status()
