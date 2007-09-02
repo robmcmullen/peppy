@@ -103,40 +103,51 @@ class MPDCommand(object):
             return
 
         try:
-            if mpd.do.flush_pending:
-                mpd.do.flush()
-        except Exception,e:
-            import traceback
-            traceback.print_exc()
+            try:
+                if mpd.do.flush_pending:
+                    mpd.do.flush()
+            except Exception,e:
+                import traceback
+                traceback.print_exc()
+
+                dprint("Still no connection; flush still pending")
+                return
+
+            try:
+                ret = mpd.do.send_n_fetch(self.cmd, self.args)
+            except Exception, e:
+                dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
+                mpd.do.flush_pending = True
+                return
+
+            if self.cmd == 'status':
+                self.status(ret, output)
+            elif self.cmd in self.check_events:
+                #dprint("setting %s = %s" % (self.cmd, ret))
+                setattr(output, self.cmd, ret)
+                evt = self.check_events[self.cmd]
+                wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
+
+            if self.callback:
+                wx.CallAfter(self.callback, self, ret)
+
+            if self.sync_dict is not None:
+                #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
+                self.sync_dict[self.sync_key] = ret
+
+            if self.retq is not None:
+                #dprint("Setting return value to %s" % ret)
+                self.retq.put(ret)
+        except socket.error, e:
+            if isinstance(e, tuple):
+                import errno
+                if e[0] == errno.ECONNRESET:
+                    # Need to reopen the mpd connection -- on windows
+                    # after a suspend, the connection doesn't come
+                    # back automatically.
+                    data = mpd.socket_talker
+                    mpd.setup(data.host, data.port, data.timeout)
             
-            dprint("Still no connection; flush still pending")
-            return
-        
-        try:
-            ret = mpd.do.send_n_fetch(self.cmd, self.args)
-        except Exception, e:
-            dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
-            mpd.do.flush_pending = True
-            return
-
-        if self.cmd == 'status':
-            self.status(ret, output)
-        elif self.cmd in self.check_events:
-            #dprint("setting %s = %s" % (self.cmd, ret))
-            setattr(output, self.cmd, ret)
-            evt = self.check_events[self.cmd]
-            wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
-
-        if self.callback:
-            wx.CallAfter(self.callback, self, ret)
-
-        if self.sync_dict is not None:
-            #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
-            self.sync_dict[self.sync_key] = ret
-
-        if self.retq is not None:
-            #dprint("Setting return value to %s" % ret)
-            self.retq.put(ret)
     
     def status(self, status, output):
         # kick off the followup commands if an attribute change means
