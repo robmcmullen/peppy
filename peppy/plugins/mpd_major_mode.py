@@ -12,7 +12,7 @@ position in the current playlist, and "id" and "songid" refer to the
 position in the original unshuffled playlist.
 """
 
-import os, struct, mmap, Queue, threading, time
+import os, struct, mmap, Queue, threading, time, socket
 import urllib2
 from cStringIO import StringIO
 import cPickle as pickle
@@ -102,51 +102,65 @@ class MPDCommand(object):
         if self.cmd is None:
             return
 
-        try:
+        if mpd.needs_reopen:
             try:
-                if mpd.do.flush_pending:
-                    mpd.do.flush()
-            except Exception,e:
+                mpd.setup()
+            except:
+                dprint("Still needs reopening.  Will try again next time.")
+                return
+
+        try:
+            if mpd.do.flush_pending:
+                mpd.do.flush()
+        except socket.error, e:
+            # Not a lot of documentation on socket.error, but I did
+            # determine out that e is of class socket.error, and can
+            # be accessed like a tuple.
+            if isinstance(e[0], str):
+                # It's a string error, so it's likely a timeout.  I'm
+                # assuming that it's not important enough to attempt
+                # to regenerate the connection.
                 import traceback
                 traceback.print_exc()
 
                 dprint("Still no connection; flush still pending")
                 return
+            else:
+                # OK, it's an integer value, meaning the error is an
+                # underlying operating system error.  Previously, I
+                # was checking only for errno.ECONNRESET, but there
+                # are other errors that get returned as well.  So, I'm
+                # assuming that if we get an operating system error,
+                # the connection is never going to come back on its
+                # own.  So, we reopen it.
+                dprint("Attempting to reopen connection: e=%s class=%s e[0]=c%s" % (e, e.__class__, str(e[0])))
+                mpd.setup()
 
-            try:
-                ret = mpd.do.send_n_fetch(self.cmd, self.args)
-            except Exception, e:
-                dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
-                mpd.do.flush_pending = True
-                return
+        try:
+            ret = mpd.do.send_n_fetch(self.cmd, self.args)
+        except Exception, e:
+            dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
+            mpd.do.flush_pending = True
+            return
 
-            if self.cmd == 'status':
-                self.status(ret, output)
-            elif self.cmd in self.check_events:
-                #dprint("setting %s = %s" % (self.cmd, ret))
-                setattr(output, self.cmd, ret)
-                evt = self.check_events[self.cmd]
-                wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
+        if self.cmd == 'status':
+            self.status(ret, output)
+        elif self.cmd in self.check_events:
+            #dprint("setting %s = %s" % (self.cmd, ret))
+            setattr(output, self.cmd, ret)
+            evt = self.check_events[self.cmd]
+            wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
 
-            if self.callback:
-                wx.CallAfter(self.callback, self, ret)
+        if self.callback:
+            wx.CallAfter(self.callback, self, ret)
 
-            if self.sync_dict is not None:
-                #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
-                self.sync_dict[self.sync_key] = ret
+        if self.sync_dict is not None:
+            #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
+            self.sync_dict[self.sync_key] = ret
 
-            if self.retq is not None:
-                #dprint("Setting return value to %s" % ret)
-                self.retq.put(ret)
-        except socket.error, e:
-            if isinstance(e, tuple):
-                import errno
-                if e[0] == errno.ECONNRESET:
-                    # Need to reopen the mpd connection -- on windows
-                    # after a suspend, the connection doesn't come
-                    # back automatically.
-                    data = mpd.socket_talker
-                    mpd.setup(data.host, data.port, data.timeout)
+        if self.retq is not None:
+            #dprint("Setting return value to %s" % ret)
+            self.retq.put(ret)
             
     
     def status(self, status, output):

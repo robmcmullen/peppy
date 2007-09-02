@@ -16,9 +16,6 @@ import socket
 class socket_talker(object):
 
     def __init__(self, host, port, timeout=None):
-        self.host = host
-        self.port = port
-        self.timeout = timeout
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(timeout)
         self.sock.connect((host, port))
@@ -317,15 +314,22 @@ class dictobj(dict):
 
 class mpd_connection(object):
     def __init__(self, host, port, timeout=None):
-        self.setup(host, port, timeout)
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.needs_reopen = False
+        
+        self.setup()
 
-    def setup(self, host, port, timeout):
-        self.talker = socket_talker(host, port, timeout)
+    def setup(self):
+        self.needs_reopen = True
+        self.talker = socket_talker(self.host, self.port, self.timeout)
         self.send = command_sender(self.talker)
         self.fetch = response_fetcher(self.talker)
         self.do = sender_n_fetcher(self.send, self.fetch)
 
         self._hello()
+        self.needs_reopen = False
 
     def _hello(self):
         line = self.talker.get_line()
