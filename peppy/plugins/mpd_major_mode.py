@@ -639,7 +639,7 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
 
         all_tracks = []
         for album in self.albums:
-            tracks = self.mpd.search("album", album)
+            tracks = self.mpd.sync("search", "album", album)
             all_tracks.extend(tracks)
         self.populateTracks(all_tracks)
 
@@ -715,9 +715,9 @@ class MPDListByGenre(NeXTPanel, debugmixin):
 
     def getLevelItems(self, level, item):
         if level < 0:
-            return self.parent.mpd.list("genre")
+            return self.parent.mpd.sync("list", "genre")
         if level < len(self.lists) - 1:
-            return self.parent.mpd.list(self.lists[level+1], self.lists[level], item)
+            return self.parent.mpd.sync("list", self.lists[level+1], self.lists[level], item)
         return None
 
     def rebuildLevels(self, level, list, selections):
