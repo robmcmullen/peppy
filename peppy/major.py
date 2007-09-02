@@ -165,6 +165,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.frame=frame
         self.popup=None
         self.minors=[]
+        self.minor_panes = []
         self.statusbar = None
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
@@ -283,6 +284,9 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         # remove reference to this view in the buffer's listeners
         assert self.dprint("closing view %s of buffer %s" % (self,self.buffer))
         self.buffer.remove(self)
+
+        self.deleteMinorModes()
+        
         assert self.dprint("destroying window %s" % (self))
         self.Destroy()
 
@@ -344,28 +348,39 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self._mgr.AddPane(win, paneinfo)
 
     def loadMinorModes(self):
-        minors=self.settings.minor_modes
-        assert self.dprint(minors)
-        if minors is not None:
-            minorlist=minors.split(',')
-            assert self.dprint("loading %s" % minorlist)
-            MinorModeLoader(ComponentManager()).load(self,minorlist)
-            self.createMinorModeList()
+        minor_list = self.settings.minor_modes
+        assert self.dprint(minor_list)
+        if minor_list is not None:
+            minor_names=minor_list.split(',')
+            assert self.dprint("loading %s" % minor_names)
+            MinorModeLoader(ComponentManager()).load(self,minor_names)
+            self.createMinorPaneList()
 
     def createMinorMode(self,minorcls):
         try:
             minor=minorcls(self,self.splitter)
             # register minor mode here
+            if minor.window is not None:
+                paneinfo = minor.getPaneInfo()
+                paneinfo.Right()
+                self.addPane(minor.window, paneinfo)
+            self.minors.append(minor)
         except MinorModeIncompatibilityError:
             pass
 
-    def createMinorModeList(self):
-        minors = self._mgr.GetAllPanes()
-        for minor in minors:
-            assert self.dprint("name=%s caption=%s window=%s state=%s" % (minor.name, minor.caption, minor.window, minor.state))
-            if minor.name != "main":
-                self.minors.append(minor)
-        self.minors.sort(key=lambda s:s.caption)
+    def createMinorPaneList(self):
+        panes = self._mgr.GetAllPanes()
+        for pane in panes:
+            assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))
+            if pane.name != "main":
+                self.minor_panes.append(pane)
+        self.minor_panes.sort(key=lambda s:s.caption)
+
+    def deleteMinorModes(self):
+        dprint()
+        for minor in self.minors:
+            dprint("deleting minor mode %s" % (minor.keyword))
+            minor.deleteWindowHook()
 
     def OnUpdateUI(self, evt):
         """Callback to update user interface elements.

@@ -597,12 +597,10 @@ class HSIMode(MajorMode):
             evt.Skip()
         
     def OnUpdateUIHook(self, evt):
-        minors = self._mgr.GetAllPanes()
-        for minor in minors:
-            if minor.name != "main":
-                plotproxy = minor.window.proxies[0]
-                plotproxy.update(*evt.imageCoords)
-                plotproxy.updateListeners()
+        for minor in self.minors:
+            plotproxy = minor.window.proxies[0]
+            plotproxy.update(*evt.imageCoords)
+            plotproxy.updateListeners()
 
     def update(self, refresh=True):
         self.cubeband.show(self.filter, self.cubefilter, bands=self.bands)
@@ -691,13 +689,12 @@ class HSIPlotMinorMode(MinorMode, plotter.PlotProxy):
         }
     plot_proxy = None
 
-    def createWindows(self, parent):
-        self.plot = plotter.MultiPlotter(parent, frame=self.major.frame)
-        paneinfo = self.getDefaultPaneInfo(self.keyword)
-        paneinfo.Right()
-        self.major.addPane(self.plot, paneinfo)
-        dprint(paneinfo)
+    def createEditWindow(self, parent):
+        return plotter.MultiPlotter(parent, frame=self.major.frame)
 
+    def createWindowPostHook(self):
+        self.plot = self.window
+        
         self.listeners=[]
         self.rgblookup=['red','green','blue']
         self.setupAxes()

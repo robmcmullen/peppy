@@ -66,11 +66,13 @@ class SPEFuncList(MinorMode):
         'min_height':100,
         }
     
-    def createWindows(self, parent):
+    def createEditWindow(self, parent):
         self.parentPanel = SPECompat
         self.explore = TreeCtrl(parent=parent,
                                 style=wx.TR_HAS_BUTTONS|wx.TR_HIDE_ROOT)
-        
+        return self.explore
+
+    def createWindowPostHook(self):
         self.explore.SetBackgroundColour(wx.WHITE)
         self.root = self.explore.AddRoot('Right click to locate')
         
@@ -89,11 +91,10 @@ class SPEFuncList(MinorMode):
         eventManager.Register(self.onSourceFromExplore,wx.EVT_TREE_ITEM_MIDDLE_CLICK,self.explore)
         eventManager.Register(self.onSourceFromExplore,wx.EVT_TREE_ITEM_RIGHT_CLICK,self.explore)
 
-        paneinfo=self.getDefaultPaneInfo("SPE Function List")
-        paneinfo.Right()
+    def paneInfoHook(self, paneinfo):
+        paneinfo.Caption("SPE Function List")
         if not self.fl[0]:
             paneinfo.Hide()
-        self.major.addPane(self.explore, paneinfo)
 
     def updateExploreGeneric(self):
         if self.major.keyword == 'Python':

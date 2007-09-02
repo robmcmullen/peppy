@@ -26,16 +26,17 @@ class FuncList(MinorMode):
         'min_height':100,
         }
     
-    def createWindows(self, parent):
-        self.funclist=hierCodeTreePanel(self,parent,False)
-        self.fl=self.major.getFunctionList()
-        self.funclist.new_hierarchy(self.fl[0])
+    def createEditWindow(self, parent):
+        return hierCodeTreePanel(self,parent,False)
 
-        paneinfo=self.getDefaultPaneInfo("PyPE Function List")
-        paneinfo.Right()
+    def createWindowPostHook(self):
+        self.fl=self.major.getFunctionList()
+        self.window.new_hierarchy(self.fl[0])
+
+    def paneInfoHook(self, paneinfo):
+        paneinfo.Caption("PyPE Function List")
         if not self.fl[0]:
             paneinfo.Hide()
-        self.major.addPane(self.funclist,paneinfo)
 
     def getNumWin(self, evt=None):
         """PyPE compat"""

@@ -86,13 +86,10 @@ class SizeReportCtrl(wx.PyControl):
 
 
 class SizeReporterMinorMode(MinorMode):
-    keyword="sizereporter"
+    keyword="Size Reporter"
 
-    def createWindows(self, parent):
-        self.sizerep=SizeReportCtrl(parent,mgr=self.major._mgr)
-        paneinfo=self.getDefaultPaneInfo("Size Reporter")
-        paneinfo.Right()
-        self.major.addPane(self.sizerep,paneinfo)
+    def createEditWindow(self, parent):
+        return SizeReportCtrl(parent,mgr=self.major._mgr)
         
 
 class SizeReporterProvider(Component):

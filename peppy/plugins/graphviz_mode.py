@@ -242,12 +242,9 @@ class GraphvizViewMinorMode(MinorMode):
         'path': '/usr/local/bin',
         }
 
-    def createWindows(self, parent):
+    def createEditWindow(self, parent):
         assert self.dprint("self.settings.path = %s" % self.settings.path)
-        self.sizerep=GraphvizViewCtrl(parent, self)
-        paneinfo=self.getDefaultPaneInfo("Graphviz View")
-        paneinfo.Right()
-        self.major.addPane(self.sizerep, paneinfo)
+        return GraphvizViewCtrl(parent, self)
         
 
 

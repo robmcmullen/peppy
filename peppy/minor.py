@@ -36,19 +36,19 @@ class MinorModeShow(ToggleListAction):
     def getItems(self):
         major = self.frame.getActiveMajorMode()
         if major is not None:
-            return [m.caption for m in major.minors]
+            return [m.caption for m in major.minor_panes]
         return []
 
     def isChecked(self, index):
         major = self.frame.getActiveMajorMode()
         if major is not None:
-            return major.minors[index].IsShown()
+            return major.minor_panes[index].IsShown()
         return False
 
     def action(self, index=0, old=-1):
         major = self.frame.getActiveMajorMode()
         if major is not None:
-            major.minors[index].Show(not major.minors[index].IsShown())
+            major.minor_panes[index].Show(not major.minor_panes[index].IsShown())
             major._mgr.Update()
 
 
@@ -129,12 +129,14 @@ class MinorMode(ClassSettings,debugmixin):
         }
     
     def __init__(self, major, parent):
-        self.major=major
-        self.parent=parent
-
+        self.major = major
+        self.parent = parent
+        self.window = None
+        self.paneinfo = None
+        
         self.setup()
 
-        self.createWindows(self.parent)
+        self.createWindow()
         
     def setup(self):
         """Hook for minor modes that don't need any user inteface
@@ -146,7 +148,15 @@ class MinorMode(ClassSettings,debugmixin):
         """
         pass
 
-    def createWindows(self,parent):
+    def createWindow(self):
+        """Driver to create a window, if required by this minor mode.
+        """
+        self.window = self.createEditWindow(self.parent)
+
+        if self.window:
+            self.createWindowPostHook()
+
+    def createEditWindow(self, parent):
         """Hook to create a window for your minor mode.
 
         If your minor mode needs to create a window in the major mode
@@ -155,9 +165,33 @@ class MinorMode(ClassSettings,debugmixin):
         @param parent: parent wx.Window that is managed by the
         BufferFrame's AuiManager
         """
+        return None
+
+    def createWindowPostHook(self):
+        """Hook to add any resources needed once the window has been
+        created.
+        """
         pass
 
-    def getDefaultPaneInfo(self,caption):
+    def deleteWindowHook(self):
+        """Hook to clean up any resources when the major mode is
+        deleted.
+
+        When the major mode is deleted, all minor modes associated
+        with it are also deleted.  This hook exists to allow the minor
+        mode to be cleaned up if it allocated anything that isn't
+        automatically cleaned up upon destruction.
+        """
+        pass
+
+    def getPaneInfo(self):
+        """Create the AuiPaneInfo object for this minor mode.
+        """
+        paneinfo = self.getDefaultPaneInfo()
+        self.paneInfoHook(paneinfo)
+        return paneinfo
+
+    def getDefaultPaneInfo(self, caption=None):
         """Convenience method to create an AuiPaneInfo object.
 
         AuiPaneInfo objects are used by the L{BufferFrame} to position
@@ -169,6 +203,8 @@ class MinorMode(ClassSettings,debugmixin):
         @param caption: text string that will become the caption bar
         of the Aui-managed window.
         """
+        if caption is None:
+            caption = self.keyword
         paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
         paneinfo.DestroyOnClose(False)
         paneinfo.BestSize(wx.Size(self.settings.best_width,
@@ -176,4 +212,10 @@ class MinorMode(ClassSettings,debugmixin):
         paneinfo.MinSize(wx.Size(self.settings.min_width,
                                  self.settings.min_height))
         return paneinfo
+
+    def paneInfoHook(self, paneinfo):
+        """Hook to modify the paneinfo object before the major mode
+        does anything with it.
+        """
+        pass
     

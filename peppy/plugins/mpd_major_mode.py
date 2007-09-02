@@ -21,6 +21,7 @@ import wx
 import wx.lib.stattext
 import wx.lib.newevent
 from wx.lib.pubsub import Publisher
+from wx.lib.evtmgr import eventManager
 
 from peppy import *
 from peppy.menu import *
@@ -975,11 +976,18 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
 
         self.songindex = -1
         Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
-        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
-        wx.GetApp().Bind(EVT_MPD_PLAYLIST_CHANGED, self.OnPlaylistChanged)
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
+        
+    def addBindings(self):
+        eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
+        eventManager.Bind(self.OnPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED, win=wx.GetApp())
+
+    def removeBindings(self):
+        eventManager.DeregisterListener(self.OnSongChanged)
+        eventManager.DeregisterListener(self.OnPlaylistChanged)
+
 
     def createColumns(self):
         self.InsertColumn(0, "#")
@@ -1194,14 +1202,16 @@ class MPDPlaylist(MinorMode):
         'min_height': 100,
         }
 
-    def createWindows(self, parent):
-        self.playlist = PlaylistCtrl(self.major, parent)
-        paneinfo = self.getDefaultPaneInfo(self.keyword)
-        paneinfo.Right()
-        self.major.addPane(self.playlist, paneinfo)
-        dprint(paneinfo)
+    def createEditWindow(self, parent):
+        return PlaylistCtrl(self.major, parent)
 
-        self.playlist.reset(self.major.mpd)
+    def createWindowPostHook(self):
+        self.window.addBindings()
+        self.window.reset(self.major.mpd)
+
+    def deleteWindowHook(self):
+        dprint("unregistering bindings for %s" % self.window)
+        self.window.removeBindings()
         
 
 class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
@@ -1237,9 +1247,16 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.mpd = None
         self.songid = -1
         self.user_scrolling = False
-        
-        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
-        wx.GetApp().Bind(EVT_MPD_SONG_TIME, self.OnSongTime)
+
+    def addBindings(self):
+        eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
+        eventManager.Bind(self.OnSongTime, EVT_MPD_SONG_TIME, win=wx.GetApp())
+##        wx.GetApp().Bind(EVT_MPD_SONG_CHANGED, self.OnSongChanged)
+##        wx.GetApp().Bind(EVT_MPD_SONG_TIME, self.OnSongTime)
+
+    def removeBindings(self):
+        eventManager.DeregisterListener(self.OnSongChanged)
+        eventManager.DeregisterListener(self.OnSongTime)
 
     def OnSongChanged(self, evt):
         dprint("EVENT!!!")
@@ -1316,15 +1333,16 @@ class MPDCurrentlyPlaying(MinorMode):
         'min_height': 50,
         }
 
-    def createWindows(self, parent):
-        self.playing = CurrentlyPlayingCtrl(parent, self)
-        paneinfo = self.getDefaultPaneInfo(self.keyword)
-        paneinfo.Right()
-        self.major.addPane(self.playing, paneinfo)
-        dprint(paneinfo)
-        
-        self.playing.reset(self.major.mpd)
+    def createEditWindow(self, parent):
+        return CurrentlyPlayingCtrl(parent, self)
 
+    def createWindowPostHook(self):
+        self.window.addBindings()
+        self.window.reset(self.major.mpd)
+
+    def deleteWindowHook(self):
+        dprint("unregistering bindings for %s" % self.window)
+        self.window.removeBindings()
 
 
 
