@@ -796,8 +796,8 @@ class MPDListSearch(wx.Panel, debugmixin):
         
         self.sizer = wx.GridBagSizer(5,5)
         
-        self.title = wx.StaticText(self, -1, "Enter search terms:")
-        self.sizer.Add(self.title, (0,0), (1,5), wx.ALIGN_CENTER | wx.ALL, 5)
+        title = wx.StaticText(self, -1, "Search terms:")
+        self.sizer.Add(title, (1,0))
 
         self.searches = []
         self.search = wx.SearchCtrl(self, size=(200,-1), style=wx.TE_PROCESS_ENTER)
@@ -805,7 +805,14 @@ class MPDListSearch(wx.Panel, debugmixin):
         self.search.ShowCancelButton(True)
         self.search.SetMenu(self.MakeMenu())
         
-        self.sizer.Add(self.search, (1,0))
+        self.sizer.Add(self.search, (1,1))
+
+        options = wx.StaticText(self, -1, "Search by:")
+        self.sizer.Add(options, (2,0), flag = wx.ALIGN_CENTER)
+
+        keywords = ['any', 'album', 'artist', 'title', 'filename']
+        self.category = wx.RadioBox(self, -1, "", choices=keywords)
+        self.sizer.Add(self.category, (2,1))
 
         self.SetSizer(self.sizer)
 
@@ -826,7 +833,8 @@ class MPDListSearch(wx.Panel, debugmixin):
         self.searches.append(keyword)
         self.search.SetMenu(self.MakeMenu())
         dprint("OnDoSearch: " + self.search.GetValue())
-        items = self.parent.mpd.sync('search', 'any', keyword, timeout=2.0)
+        category = self.category.GetStringSelection()
+        items = self.parent.mpd.sync('search', category, keyword, timeout=2.0)
         names = []
         tracks = []
         for item in items:
