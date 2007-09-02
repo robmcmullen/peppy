@@ -109,7 +109,6 @@ class TestGetReader:
         import peppy.plugins.chatbots
         URLHandler.clearHandlers()
         url = URLInfo("shell:eliza")
-        fh = url.getReader()
         eq_(url.url, "shell:eliza")
         eq_(url.protocol,'shell')
         eq_(url.path,'eliza')

@@ -1,23 +1,20 @@
 #!/usr/bin/env python
 
 import os, sys
+from utils import *
 
-import gdal
+try:
+    import gdal
+    USE_GDAL = True
+except:
+    USE_GDAL = False
 
-if __name__=='__main__':
-    args = sys.argv[1:]
-    if len(args)==0:
-        args=['cubes/minicube.bil']
+class TestGDAL:
+    def setUp(self):
+        self.path = localfile('data/test1.bil')
 
-    for name in args:
-        print "trying %s" % name
-        dataset = gdal.Open(name, gdal.GA_ReadOnly)
-        if dataset is not None:
-            print "opened %s" % name
+    def testLoad(self):
+        if USE_GDAL:
+            dataset = gdal.Open(self.path, gdal.GA_ReadOnly)
             dtype = dataset.GetRasterBand(1).DataType
             bytes = dataset.ReadRaster(1,1,1,1,buf_type=dtype)
-        else:
-            print "couldn't open %s" % name
-
-    print "exiting"
-    

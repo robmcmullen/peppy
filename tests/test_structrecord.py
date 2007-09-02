@@ -32,7 +32,17 @@ def eq_(a,b):
 class ExampleData(object):
     def __init__(self, **kw):
         for k,v in kw.iteritems():
+            if isinstance(v, list):
+                v = self.getList(v, self)
             setattr(self,k,v)
+
+    def getList(self, items, parent):
+        newlist = RecordList(parent)
+        for item in items:
+            if isinstance(item, list):
+                item = self.getList(item, newlist)
+            newlist.append(item)
+        return newlist
 
 @raises(FieldTypedefError)
 def testEmptyTypedef():
@@ -115,7 +125,7 @@ class BaseTest(RecordSetupMixin):
                     if isinstance(datai,ExampleData):
                         self.compareObjObj(obji,datai)
                     else:
-                        #print "obji=%s datai=%s" % (obji,datai)
+                        print "obji=%s datai=%s" % (obji,datai)
                         eq_(obji,datai)
             else:
                 eq_(objvalue,datavalue)
@@ -449,7 +459,7 @@ class Testifcompute2(BaseTest):
         BANDS=3,
         )
 
-class Testifcompute3(BaseTest):
+class Testifcompute3(RecordSetupMixin):
     typedef=(
         ComputePack(SBInt8('NBANDS'),lambda s:s.BANDS<10 and s.BANDS or int(0)),
         If(lambda s:s.NBANDS==0,ComputePack(SBInt16('XBANDS'),lambda s:s.BANDS),debug=False),
