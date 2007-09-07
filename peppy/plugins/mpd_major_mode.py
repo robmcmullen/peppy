@@ -619,16 +619,16 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         'min_height': 200,
         }
 
-    def __init__(self, mode, parent):
+    def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
-        self.mode = mode
-        self.mpd = mode.mpd
+        self.major = major
+        self.mpd = major.mpd
         self.createColumns()
 
         self.songindex = -1
         default_font = self.GetFont()
-        self.font = wx.Font(mode.settings.list_font_size, 
+        self.font = wx.Font(major.settings.list_font_size, 
                             default_font.GetFamily(),
                             default_font.GetStyle(),
                             default_font.GetWeight())
@@ -725,7 +725,10 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
                 # always delete the first item because the list gets
                 # shorter by one each time.
                 self.DeleteItem(index)
-        self.resizeColumns([0,1,-40,-40,-40,-40,-40,0])
+
+        if index > 0:
+            self.showIfHidden()
+            self.resizeColumns([0,1,-40,-40,-40,-40,-40,0])
 
     def searchResultsTracks(self, message=None):
         mpd, tracks = message.data
@@ -743,6 +746,11 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         
         if mpd == self.mpd:
             self.populate(artists, albums)
+
+    def showIfHidden(self):
+        if not self.paneinfo.IsShown():
+            self.paneinfo.Show(True)
+            self.major._mgr.Update()
 
     def update(self):
         self.reset()
@@ -777,7 +785,7 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         list = self.GetList(index)
         if list is None:
             dprint("list at position %d not found!  Creating new list" % index)
-            list = self.AppendList(self.parent.mode.settings.list_width, keyword)
+            list = self.AppendList(self.parent.major.settings.list_width, keyword)
         names = {}
         for item in items:
             #dprint(item)
@@ -924,13 +932,13 @@ class MPDDatabase(wx.Panel, debugmixin):
     """
     debuglevel = 0
 
-    def __init__(self, mode, parent):
+    def __init__(self, major, parent):
         wx.Panel.__init__(self, parent)
-        self.mode = mode
-        self.mpd = mode.mpd
+        self.major = major
+        self.mpd = major.mpd
 
         self.default_font = self.GetFont()
-        self.font = wx.Font(mode.settings.list_font_size, 
+        self.font = wx.Font(major.settings.list_font_size, 
                             self.default_font.GetFamily(),
                             self.default_font.GetStyle(),
                             self.default_font.GetWeight())
@@ -1105,21 +1113,21 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         'min_height': 100,
         }
 
-    def __init__(self, mode, parent):
+    def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
 
-        self.mode = mode
-        self.mpd = mode.mpd
+        self.major = major
+        self.mpd = major.mpd
         self.createColumns()
 
         default_font = self.GetFont()
-        self.font = wx.Font(mode.settings.list_font_size, 
+        self.font = wx.Font(major.settings.list_font_size, 
                             default_font.GetFamily(),
                             default_font.GetStyle(),
                             default_font.GetWeight())
         self.SetFont(self.font)
-        self.bold_font = wx.Font(mode.settings.list_font_size, 
+        self.bold_font = wx.Font(major.settings.list_font_size, 
                                  default_font.GetFamily(),
                                  default_font.GetStyle(),wx.BOLD)
 
