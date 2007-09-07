@@ -270,7 +270,7 @@ class MPDComm(object):
         else:
             timeout = self.sync_timeout
         ret = queue.get(True, timeout)
-        dprint("Got result for %s: %s" % (cmd, ret))
+        dprint("Got result for %s: %s" % (cmd, type(ret)))
         return ret
         
     def sync_dict(self, cmd, *args):
@@ -518,14 +518,22 @@ class ColumnSizerMixin(object):
     """
     def __init__(self, *args, **kw):
         self.resize_flags = None
+        self.resize_dirty = True
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, evt):
-        wx.CallAfter(self.resizeColumns)
+        wx.CallAfter(self.resizeColumnsIfDirty)
         evt.Skip()
+        
+    def resizeColumnsIfDirty(self):
+        # OnSize gets called a lot, so only do the column resize one
+        # time unless the data has changed
+        if self.resize_dirty:
+            self._resizeColumns(flags)
         
     def resizeColumns(self, flags=[]):
         try:
+            self.resize_dirty = True
             self._resizeColumns(flags)
         except wx._core.PyDeadObjectError:
             # This happens because an event might be scheduled between
@@ -544,6 +552,8 @@ class ColumnSizerMixin(object):
         >1: maximum size
         <0: absolute value is the minimum size
         """
+        if not self.resize_dirty:
+            return
         self.Freeze()
         if self.resize_flags is None or len(flags) > 0:
             # have to make copy of list, otherwise are operating on
@@ -588,6 +598,7 @@ class ColumnSizerMixin(object):
             if flags[col] != 1:
                 self.SetColumnWidth(col, before*w/total_width)
         self.Thaw()
+        self.resize_dirty = False
 
 class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
     def __init__(self, mode, parent):
