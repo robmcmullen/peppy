@@ -6,6 +6,8 @@ from tests.mock_wx import getSTC
 
 from nose.tools import *
 
+from utils import *
+
 class TestURLInfo:
     def testHttp(self):
         url=URLInfo("http://www.flipturn.org")
@@ -59,46 +61,21 @@ class TestURLInfo:
         eq_(url.path,"authors")
 
     def testFileRelative(self):
-        urlinfo = URLInfo("file://LICENSE")
+        urlinfo = URLInfo("file://noserun.sh")
         cwd = os.getcwd()
-        eq_(urlinfo.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
+        eq_(urlinfo.url, "file:///%s" % os.path.join(cwd, 'noserun.sh').replace('\\','/').lstrip('/'))
         eq_(urlinfo.protocol,'file')
         print urlinfo
-        eq_(os.path.basename(urlinfo.path),'LICENSE')
+        eq_(os.path.basename(urlinfo.path),'noserun.sh')
 
 class TestGetReader:
     def testFile(self):
-        url = URLInfo("file:LICENSE")
+        url = URLInfo("file:samples/sample.txt")
         fh = url.getReader()
         cwd = os.getcwd()
-        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
+        eq_(url.url, "file:///%s" % localfile('samples/sample.txt').replace('\\','/').lstrip('/'))
         eq_(url.protocol,'file')
-        eq_(os.path.basename(url.path),'LICENSE')
-        stc=getSTC()
-        stc.readFrom(fh)
-        text=stc.GetText()
-        eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
-        
-    def testFileRelative(self):
-        url = URLInfo("file:LICENSE")
-        fh = url.getReader()
-        cwd = os.getcwd()
-        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
-        eq_(url.protocol,'file')
-        print url
-        eq_(os.path.basename(url.path),'LICENSE')
-        stc=getSTC()
-        stc.readFrom(fh)
-        text=stc.GetText()
-        eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
-        
-    def testFileDefault(self):
-        url = URLInfo("file:LICENSE")
-        fh = url.getReader()
-        cwd = os.getcwd()
-        eq_(url.url, "file:///%s" % os.path.join(cwd, 'LICENSE').replace('\\','/').lstrip('/'))
-        eq_(url.protocol,'file')
-        eq_(os.path.basename(url.path),'LICENSE')
+        eq_(os.path.basename(url.path),'sample.txt')
         stc=getSTC()
         stc.readFrom(fh)
         text=stc.GetText()
