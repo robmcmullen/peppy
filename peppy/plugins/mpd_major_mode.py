@@ -54,6 +54,14 @@ def getAlbum(track):
         album = track['album']
     return album
 
+def getArtist(track):
+    """Convenience function to return album of a track"""
+    if 'artist' not in track:
+        artist = ''
+    else:
+        artist = track['artist']
+    return artist
+
 def getTime(track):
     """Convenience function to return album of a track"""
     seconds = int(track['time'])
@@ -1232,7 +1240,7 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, str(index+1))
             self.SetStringItem(index, 1, getTitle(track))
-            self.SetStringItem(index, 2, getAlbum(track))
+            self.SetStringItem(index, 2, getArtist(track))
             self.SetStringItem(index, 3, getTime(track))
             if track['file'] == visible:
                 show = index
