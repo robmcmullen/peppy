@@ -81,6 +81,7 @@ class MPDCommand(object):
     # The following commands or changes in attributes generate events
     check_events = {'playlistinfo': MpdPlaylistChanged,
                     'currentsong': MpdSongChanged,
+                    'state': MpdSongChanged,
                     'time': MpdSongTime,
                     }
 
@@ -1390,7 +1391,7 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         if mpd is not None:
             self.mpd = mpd
         track = self.mpd.currentsong
-        if track:
+        if track and self.mpd.status['state'] != 'stop':
             dprint("currentsong: \n%s" % track)
             dprint("status: \n%s" % self.mpd.status)
             if 'title' not in track:
