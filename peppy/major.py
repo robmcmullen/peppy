@@ -395,9 +395,13 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             # register minor mode here
             if minor.window is not None:
                 paneinfo = minor.getPaneInfo()
-                paneinfo.Right()
                 self.addPane(minor.window, paneinfo)
             self.minors.append(minor)
+
+            # A different paneinfo object is stored in the AUIManager,
+            # so we have to get it's version rather than using the
+            # paneinfo we generate
+            minor.paneinfo = self._mgr.GetPane(minor.window)
         except MinorModeIncompatibilityError:
             pass
 

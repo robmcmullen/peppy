@@ -616,14 +616,30 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.mpd = mode.mpd
         self.createColumns()
 
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-
         self.songindex = -1
+        default_font = self.GetFont()
+        self.font = wx.Font(mode.settings.list_font_size, 
+                            default_font.GetFamily(),
+                            default_font.GetStyle(),
+                            default_font.GetWeight())
+        self.SetFont(self.font)
 
         self.artists = []
         self.albums = []
 
+    def addBindings(self):
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
+
+        Publisher().subscribe(self.searchResultsTracks,
+                              'mpd.searchResultsTracks')
+        Publisher().subscribe(self.searchResultsArtistsAlbums,
+                              'mpd.searchResultsArtistsAlbums')
+
+    def removeBindings(self):
+        Publisher().unsubscribe(self.searchResultsTracks)
+        Publisher().unsubscribe(self.searchResultsArtistsAlbums)
+        
     def createColumns(self):
         self.InsertColumn(0, "Title")
         self.InsertColumn(1, "Time")
@@ -697,14 +713,51 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
                 self.DeleteItem(index)
         self.resizeColumns([0,1,-40,-40,-40,-40,-40,0])
 
+    def searchResultsTracks(self, message=None):
+        mpd, tracks = message.data
+        
+        if mpd == self.mpd:
+            self.populateTracks(tracks)
+
     def populate(self, artists, albums):
         self.artists = [i for i in artists]
         self.albums = [i for i in albums]
         self.reset()
 
+    def searchResultsArtistsAlbums(self, message=None):
+        mpd, artists, albums = message.data
+        
+        if mpd == self.mpd:
+            self.populate(artists, albums)
+
     def update(self):
         self.reset()
 
+class MPDSearchResults(MinorMode):
+    """Minor mode to display the results of a file search.
+    """
+    keyword = "MPD Search Results"
+    default_settings={
+        'best_width': 800,
+        'best_height': 400,
+        'min_width': 300,
+        'min_height': 200,
+        }
+
+    def createEditWindow(self, parent):
+        return FileCtrl(self.major, parent)
+
+    def createWindowPostHook(self):
+        self.window.addBindings()
+        self.window.reset(self.major.mpd)
+
+    def paneInfoHook(self, paneinfo):
+        paneinfo.Bottom()
+
+    def deleteWindowPreHook(self):
+        dprint("unregistering bindings for %s" % self.window)
+        self.window.removeBindings()
+        
 
 
 class MPDListByGenre(NeXTPanel, debugmixin):
@@ -770,7 +823,7 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         else:
             artists = []
             albums = [list.GetString(i) for i in selections]
-            self.parent.songlist.populate(artists, albums)        
+            Publisher().sendMessage('mpd.searchResultsArtistsAlbums', (self.parent.mpd, artists, albums))
 
     def OnPanelUpdate(self, evt):
         dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
@@ -800,7 +853,8 @@ class MPDListByPath(NeXTFileManager):
             elif item['type'] == 'file':
                 tracks.append(item)
 
-        self.parent.songlist.populateTracks(tracks)
+        Publisher().sendMessage('mpd.searchResultsTracks',
+                                (self.parent.mpd, tracks))
         return names
 
 
@@ -861,7 +915,8 @@ class MPDListSearch(wx.Panel, debugmixin):
             if item['type'] == 'file':
                 tracks.append(item)
 
-        self.parent.songlist.populateTracks(tracks)
+        Publisher().sendMessage('mpd.searchResultsTracks',
+                                (self.parent.mpd, tracks))
 
     def MakeMenu(self):
         menu = wx.Menu()
@@ -894,12 +949,6 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        # Songlist must be created before the pathname and genre
-        # browsers, because they try to populate the songlist at init
-        # time
-        self.songlist = FileCtrl(self.mode, self)
-        self.songlist.SetFont(self.font)
-
         self.notebook = wx.Notebook(self)
         self.sizer.Add(self.notebook, 1, wx.EXPAND)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
@@ -915,8 +964,6 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.search = MPDListSearch(self.notebook, self)
         self.search.SetFont(self.font)
         self.notebook.AddPage(self.search, "Search")
-
-        self.sizer.Add(self.songlist, 1, wx.EXPAND)
 
         self.shown = 0
         self.dirtree = []
@@ -947,7 +994,7 @@ class MPDMode(MajorMode):
     stc_class = MPDSTC
 
     default_settings = {
-        'minor_modes': 'MPD Playlist,MPD Currently Playing',
+        'minor_modes': 'MPD Playlist,MPD Currently Playing,MPD Search Results',
         'update_interval': 1,
         'volume_step': 10,
         'list_font_size': 8,
@@ -1487,7 +1534,7 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
         yield MPDMode
     
     def getMinorModes(self):
-        for mode in [MPDPlaylist, MPDCurrentlyPlaying]:
+        for mode in [MPDPlaylist, MPDCurrentlyPlaying, MPDSearchResults]:
             yield mode
     
     default_menu=(("MPD",None,Menu(_("MPD")).after("Major Mode")),

@@ -220,7 +220,7 @@ class MinorMode(ClassSettings,debugmixin):
         """
         if caption is None:
             caption = self.keyword
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
+        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption).Right()
         paneinfo.DestroyOnClose(False)
         paneinfo.BestSize(wx.Size(self.settings.best_width,
                                   self.settings.best_height))
