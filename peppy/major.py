@@ -377,25 +377,31 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         """
         pass
 
-    def addPane(self, win, paneinfo):
-        self._mgr.AddPane(win, paneinfo)
-
     def loadMinorModes(self):
+        """Find the listof minor modes to load and create them."""
+        
         minor_list = self.settings.minor_modes
         assert self.dprint(minor_list)
         if minor_list is not None:
             minor_names=minor_list.split(',')
             assert self.dprint("loading %s" % minor_names)
-            MinorModeLoader(ComponentManager()).load(self,minor_names)
+
+            # convert the list of strings into the corresponding list
+            # of classes
+            minors = MinorModeLoader(ComponentManager()).getClasses(self, minor_names)
+            assert self.dprint("found class list: %s" % str(minors))
+            for minorcls in minors:
+                self.createMinorMode(minorcls)
             self.createMinorPaneList()
 
-    def createMinorMode(self,minorcls):
+    def createMinorMode(self, minorcls):
+        """Create minor modes and register them with the AUI Manager."""
         try:
             minor=minorcls(self, self.splitter)
             # register minor mode here
             if isinstance(minor, wx.Window):
                 paneinfo = minor.getPaneInfo()
-                self.addPane(minor, paneinfo)
+                self._mgr.AddPane(minor, paneinfo)
             self.minors.append(minor)
 
             # A different paneinfo object is stored in the AUIManager,
@@ -406,6 +412,11 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             pass
 
     def createMinorPaneList(self):
+        """Create alphabetized list of minor modes.
+
+        This is used by the menu system to display the list of minor
+        modes to the user.
+        """
         panes = self._mgr.GetAllPanes()
         for pane in panes:
             assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))
@@ -414,6 +425,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.minor_panes.sort(key=lambda s:s.caption)
 
     def deleteMinorModes(self):
+        """Remove the minor modes from the AUI Manager and delete them."""
         dprint()
         while len(self.minors)>0:
             minor = self.minors.pop()

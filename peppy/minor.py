@@ -29,9 +29,9 @@ from configprefs import *
 from debug import *
 
 class MinorModeShow(ToggleListAction):
-    name="Minor Modes"
-    inline=False
-    tooltip="Show or hide minor mode windows"
+    name = "Minor Modes"
+    inline = False
+    tooltip = "Show or hide minor mode windows"
 
     def getItems(self):
         major = self.frame.getActiveMajorMode()
@@ -66,7 +66,7 @@ class IMinorModeProvider(Interface):
         associated with this plugin.
         """
 
-class MinorModeLoader(Component,debugmixin):
+class MinorModeLoader(Component, debugmixin):
     """
     Trac component that handles minor mode loading.
     """
@@ -75,10 +75,11 @@ class MinorModeLoader(Component,debugmixin):
     implements(IMenuItemProvider)
 
     def __init__(self):
-        # Only call this once.
-        if hasattr(MinorModeLoader,'modekeys'):
+        # Only call this once.  Check for presense of class attribute
+        if hasattr(MinorModeLoader, 'modekeys'):
             return self
-        
+
+        # Create the class attribute
         MinorModeLoader.modekeys={}
         
         for ext in self.extensions:
@@ -86,24 +87,29 @@ class MinorModeLoader(Component,debugmixin):
                 assert self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
 
-    default_menu=(("View",MenuItem(MinorModeShow).first().after("Major Mode")),
+    default_menu=(("View", MenuItem(MinorModeShow).first().after("Major Mode")),
                   )
 
     def getMenuItems(self):
-        for menu,item in self.default_menu:
-            yield (None,menu,item)
+        for menu, item in self.default_menu:
+            yield (None, menu, item)
 
 
-    def load(self,major,minorlist=[]):
-        assert self.dprint("Loading minor modes %s for %s" % (str(minorlist),major))
+    def getClasses(self, major, minorlist=[]):
+        """Return a list of classes corresponding to the minor mode names"""
+        
+        assert self.dprint("Loading minor modes %s for %s" % (str(minorlist), major))
+
+        classes = []
         for keyword in minorlist:
             if keyword in MinorModeLoader.modekeys:
                 assert self.dprint("found %s" % keyword)
                 minor=MinorModeLoader.modekeys[keyword]
-                major.createMinorMode(minor)
+                classes.append(minor)
+        return classes
 
 
-class MinorMode(ClassSettings,debugmixin):
+class MinorMode(ClassSettings, debugmixin):
     """
     Mixin class for all minor modes.  A minor mode should generally be
     a subclass of wx.Window (windowless minor modes are coming in the
