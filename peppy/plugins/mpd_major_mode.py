@@ -491,8 +491,7 @@ class UpdateDatabase(ConnectedAction):
     
     def action(self, pos=None):
         mode = self.frame.getActiveMajorMode()
-        mode.mpd.update()
-        mode.reset()
+        status = mode.mpd.cmd('update')
 
 class DeleteFromPlaylist(ConnectedAction):
     name = _("Delete Playlist Entry")
