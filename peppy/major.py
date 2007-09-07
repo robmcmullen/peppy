@@ -391,17 +391,17 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
 
     def createMinorMode(self,minorcls):
         try:
-            minor=minorcls(self,self.splitter)
+            minor=minorcls(self, self.splitter)
             # register minor mode here
-            if minor.window is not None:
+            if isinstance(minor, wx.Window):
                 paneinfo = minor.getPaneInfo()
-                self.addPane(minor.window, paneinfo)
+                self.addPane(minor, paneinfo)
             self.minors.append(minor)
 
             # A different paneinfo object is stored in the AUIManager,
             # so we have to get it's version rather than using the
             # paneinfo we generate
-            minor.paneinfo = self._mgr.GetPane(minor.window)
+            minor.paneinfo = self._mgr.GetPane(minor)
         except MinorModeIncompatibilityError:
             pass
 
@@ -419,12 +419,9 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             minor = self.minors.pop()
             dprint("deleting minor mode %s" % (minor.keyword))
             minor.deletePreHook()
-            if minor.window:
-                minor.deleteWindowPreHook()
-                self._mgr.DetachPane(minor.window)
-                minor.window.Destroy()
-                minor.window = None
-                minor.deleteWindowPostHook()
+            if self._mgr.GetPane(minor):
+                self._mgr.DetachPane(minor)
+                minor.Destroy()
 
     def OnUpdateUI(self, evt):
         """Callback to update user interface elements.

@@ -88,17 +88,30 @@ class GraphvizMode(FundamentalMode):
     
 
 
-class GraphvizViewCtrl(wx.Panel,debugmixin):
-    """Viewer that calls graphviz to generate an image.
+class GraphvizViewMinorMode(MinorMode, wx.Panel, debugmixin):
+    """Display the graphical view of the DOT file.
 
-    Call a graphviz program to generate an image and display it.
+    This displays the graphic image that is represented by the .dot
+    file.  It calls the external graphviz program and displays a
+    bitmap version of the graph.
     """
     debuglevel = 0
+
+    keyword="GraphvizView"
+    default_settings={
+        'best_width': 300,
+        'best_height': 300,
+        'min_width': 300,
+        'min_height': 300,
+        
+        'path': '/usr/local/bin',
+        }
+
     dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
 
-    def __init__(self, parent, minor):
+    def __init__(self, major, parent):
         wx.Panel.__init__(self, parent)
-        self.minor = minor
+        self.major = major
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -125,7 +138,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
 
         self.Layout()
 
-    def __del__(self):
+    def deletePreHook(self):
         if self.process is not None:
             self.process.Detach()
             self.process.CloseOutput()
@@ -145,7 +158,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.prog.Enable(not busy)
 
     def OnRegenerate(self, event):
-        prog = os.path.normpath(os.path.join(self.minor.settings.path,self.prog.GetStringSelection()))
+        prog = os.path.normpath(os.path.join(self.settings.path,self.prog.GetStringSelection()))
         assert self.dprint("using %s to run graphviz" % repr(prog))
 
         cmd = "%s -Tpng" % prog
@@ -154,17 +167,17 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         self.process.Redirect();
         pid = wx.Execute(cmd, wx.EXEC_ASYNC, self.process)
         if pid==0:
-            self.minor.major.frame.SetStatusText("Couldn't run %s" % cmd)
+            self.major.frame.SetStatusText("Couldn't run %s" % cmd)
             self.process = None
         else:
-            self.minor.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
+            self.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
 
             self.busy(True)
             
             self.preview = StringIO()
             
-            #print "text = %s" % self.minor.major.buffer.stc.GetText()
-            text = self.minor.major.buffer.stc.GetText()
+            #print "text = %s" % self.major.buffer.stc.GetText()
+            text = self.major.buffer.stc.GetText()
             size = len(text)
             fh = self.process.GetOutputStream()
             assert self.dprint("sending text size=%d to %s" % (size,fh))
@@ -177,7 +190,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
                     fh.write(text[i:last])
                     assert self.dprint("last write = %s" % str(fh.LastWrite()))
             else:
-                fh.write(self.minor.major.buffer.stc.GetText())
+                fh.write(self.major.buffer.stc.GetText())
             self.process.CloseOutput()
 
     def readStream(self):
@@ -204,7 +217,7 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
     def createImage(self):
         assert self.dprint("using image, size=%s" % len(self.preview.getvalue()))
         if len(self.preview.getvalue())==0:
-            self.minor.major.frame.SetStatusText("Error running graphviz!")
+            self.major.frame.SetStatusText("Error running graphviz!")
             return
         
 ##        fh = open("test.png",'wb')
@@ -214,10 +227,10 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         img = wx.EmptyImage()
         if img.LoadStream(fh):
             self.bmp = wx.BitmapFromImage(img)
-            self.minor.major.frame.SetStatusText("Graphviz completed.")
+            self.major.frame.SetStatusText("Graphviz completed.")
         else:
             self.bmp = None
-            self.minor.major.frame.SetStatusText("Invalid image")
+            self.major.frame.SetStatusText("Invalid image")
         self.drawing.setBitmap(self.bmp)
 
     def OnSize(self, evt):
@@ -225,27 +238,6 @@ class GraphvizViewCtrl(wx.Panel,debugmixin):
         evt.Skip()
         
 
-class GraphvizViewMinorMode(MinorMode):
-    """Display the graphical view of the DOT file.
-
-    This displays the graphic image that is represented by the .dot
-    file.  It calls the external graphviz program and displays a
-    bitmap version of the graph.
-    """
-    keyword="GraphvizView"
-    default_settings={
-        'best_width': 300,
-        'best_height': 300,
-        'min_width': 300,
-        'min_height': 300,
-        
-        'path': '/usr/local/bin',
-        }
-
-    def createEditWindow(self, parent):
-        assert self.dprint("self.settings.path = %s" % self.settings.path)
-        return GraphvizViewCtrl(parent, self)
-        
 
 
 class GraphvizPlugin(MajorModeMatcherBase,debugmixin):

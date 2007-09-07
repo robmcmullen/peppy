@@ -16,7 +16,7 @@ from peppy.trac.core import *
 import peppy.pype
 from peppy.pype.codetree import hierCodeTreePanel
 
-class FuncList(MinorMode):
+class FuncList(MinorMode, hierCodeTreePanel):
     keyword="pype_funclist"
 
     default_settings = {
@@ -26,12 +26,12 @@ class FuncList(MinorMode):
         'min_height':100,
         }
     
-    def createEditWindow(self, parent):
-        return hierCodeTreePanel(self,parent,False)
+    def __init__(self, major, parent):
+        hierCodeTreePanel.__init__(self, self, parent, False)
 
-    def createWindowPostHook(self):
+        self.major = major
         self.fl=self.major.getFunctionList()
-        self.window.new_hierarchy(self.fl[0])
+        self.new_hierarchy(self.fl[0])
 
     def paneInfoHook(self, paneinfo):
         paneinfo.Caption("PyPE Function List")

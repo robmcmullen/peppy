@@ -608,7 +608,17 @@ class ColumnSizerMixin(object):
         self.Thaw()
         self.resize_dirty = False
 
-class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
+class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
+    """Minor mode to display the results of a file search.
+    """
+    keyword = "MPD Search Results"
+    default_settings={
+        'best_width': 800,
+        'best_height': 400,
+        'min_width': 300,
+        'min_height': 200,
+        }
+
     def __init__(self, mode, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
@@ -627,7 +637,6 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         self.artists = []
         self.albums = []
 
-    def addBindings(self):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
 
@@ -636,10 +645,15 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
         Publisher().subscribe(self.searchResultsArtistsAlbums,
                               'mpd.searchResultsArtistsAlbums')
 
-    def removeBindings(self):
+        self.reset(self.mpd)
+
+    def deletePreHook(self):
         Publisher().unsubscribe(self.searchResultsTracks)
         Publisher().unsubscribe(self.searchResultsArtistsAlbums)
         
+    def paneInfoHook(self, paneinfo):
+        paneinfo.Bottom()
+
     def createColumns(self):
         self.InsertColumn(0, "Title")
         self.InsertColumn(1, "Time")
@@ -733,31 +747,6 @@ class FileCtrl(wx.ListCtrl, ColumnSizerMixin):
     def update(self):
         self.reset()
 
-class MPDSearchResults(MinorMode):
-    """Minor mode to display the results of a file search.
-    """
-    keyword = "MPD Search Results"
-    default_settings={
-        'best_width': 800,
-        'best_height': 400,
-        'min_width': 300,
-        'min_height': 200,
-        }
-
-    def createEditWindow(self, parent):
-        return FileCtrl(self.major, parent)
-
-    def createWindowPostHook(self):
-        self.window.addBindings()
-        self.window.reset(self.major.mpd)
-
-    def paneInfoHook(self, paneinfo):
-        paneinfo.Bottom()
-
-    def deleteWindowPreHook(self):
-        dprint("unregistering bindings for %s" % self.window)
-        self.window.removeBindings()
-        
 
 
 class MPDListByGenre(NeXTPanel, debugmixin):
@@ -1103,10 +1092,24 @@ class SongDropTarget(wx.PyDropTarget):
         # case we just return the suggested value given to us.
         return d
 
-class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
+        
+class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
+    """Minor mode to display the current playlist and controls for
+    music playing.
+    """
+    keyword = "MPD Playlist"
+    default_settings={
+        'best_width': 400,
+        'best_height': 400,
+        'min_width': 300,
+        'min_height': 100,
+        }
+
     def __init__(self, mode, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
+
+        self.mode = mode
         self.mpd = mode.mpd
         self.createColumns()
 
@@ -1128,7 +1131,6 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
         
-    def addBindings(self):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
         
@@ -1137,7 +1139,7 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
         eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
         eventManager.Bind(self.OnPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED, win=wx.GetApp())
 
-    def removeBindings(self):
+    def deletePreHook(self):
         Publisher().unsubscribe(self.delete)
         
         eventManager.DeregisterListener(self.OnSongChanged)
@@ -1345,41 +1347,23 @@ class PlaylistCtrl(wx.ListCtrl, ColumnSizerMixin):
             self.highlightSong(int(status['song']))
 
 
-class MPDPlaylist(MinorMode):
-    """Minor mode to display the current playlist and controls for
-    music playing.
-    """
-    keyword = "MPD Playlist"
-    default_settings={
-        'best_width': 400,
-        'best_height': 400,
-        'min_width': 300,
-        'min_height': 100,
-        }
 
-    def createEditWindow(self, parent):
-        return PlaylistCtrl(self.major, parent)
-
-    def createWindowPostHook(self):
-        self.window.addBindings()
-        self.window.reset(self.major.mpd)
-
-    def deleteWindowPreHook(self):
-        dprint("unregistering bindings for %s" % self.window)
-        self.window.removeBindings()
-        
-
-class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
-    """Small control to display current song and stats.
-
-    Displays current title, artist, and album, with controls for
-    position in the song and play/pause controls.
+class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
+    """Minor mode to display the current title, artist, and album,
+    with controls for position in the song and play/pause controls.
     """
     debuglevel = 0
 
-    def __init__(self, parent, minor):
+    keyword = "MPD Currently Playing"
+    default_settings={
+        'best_width': 400,
+        'best_height': 100,
+        'min_width': 300,
+        'min_height': 50,
+        }
+
+    def __init__(self, major, parent):
         wx.Panel.__init__(self, parent)
-        self.minor = minor
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -1396,18 +1380,18 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
 
         self.Layout()
 
-        self.mpd = None
+        self.major = major
+        self.mpd = major.mpd
         self.songid = -1
         self.user_scrolling = False
 
-    def addBindings(self):
         self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
         self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
 
         eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
         eventManager.Bind(self.OnSongTime, EVT_MPD_SONG_TIME, win=wx.GetApp())
 
-    def removeBindings(self):
+    def deletePreHook(self):
         eventManager.DeregisterListener(self.OnSongChanged)
         eventManager.DeregisterListener(self.OnSongTime)
 
@@ -1474,28 +1458,6 @@ class CurrentlyPlayingCtrl(wx.Panel,debugmixin):
         self.Refresh()
         evt.Skip()
 
-class MPDCurrentlyPlaying(MinorMode):
-    """Minor mode to display the current playlist and controls for
-    music playing.
-    """
-    keyword = "MPD Currently Playing"
-    default_settings={
-        'best_width': 400,
-        'best_height': 100,
-        'min_width': 300,
-        'min_height': 50,
-        }
-
-    def createEditWindow(self, parent):
-        return CurrentlyPlayingCtrl(parent, self)
-
-    def createWindowPostHook(self):
-        self.window.addBindings()
-        self.window.reset(self.major.mpd)
-
-    def deleteWindowPreHook(self):
-        dprint("unregistering bindings for %s" % self.window)
-        self.window.removeBindings()
 
 
 

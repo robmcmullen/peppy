@@ -105,10 +105,9 @@ class MinorModeLoader(Component,debugmixin):
 
 class MinorMode(ClassSettings,debugmixin):
     """
-    Base class for all minor modes.  A minor mode doesn't have to
-    create any of the following, but it can:
-
-    * a window (or multiple windows) within the major mode AUI manager
+    Mixin class for all minor modes.  A minor mode should generally be
+    a subclass of wx.Window (windowless minor modes are coming in the
+    future).  Minor modes may also have associated with them:
 
     * menu, toolbar items -- but note that these will be created using
       the IMenuBarItemProvider and IToolBarItemProvider interfaces,
@@ -129,14 +128,13 @@ class MinorMode(ClassSettings,debugmixin):
         }
     
     def __init__(self, major, parent):
+        """Classes using this mixin should call this method, or at
+        least save the major mode."""
+        
         self.major = major
         self.parent = parent
         self.window = None
         self.paneinfo = None
-        
-        self.setup()
-
-        self.createWindow()
         
     def setup(self):
         """Hook for minor modes that don't need any user inteface
@@ -148,54 +146,11 @@ class MinorMode(ClassSettings,debugmixin):
         """
         pass
 
-    def createWindow(self):
-        """Driver to create a window, if required by this minor mode.
-        """
-        self.window = self.createEditWindow(self.parent)
-
-        if self.window:
-            self.createWindowPostHook()
-
-    def createEditWindow(self, parent):
-        """Hook to create a window for your minor mode.
-
-        If your minor mode needs to create a window in the major mode
-        area, this is the method to use.
-
-        @param parent: parent wx.Window that is managed by the
-        BufferFrame's AuiManager
-        """
-        return None
-
-    def createWindowPostHook(self):
-        """Hook to add any resources needed once the window has been
-        created.
-        """
-        pass
-
     def deletePreHook(self):
         """Hook to clean up any resources before anything else is
         deleted.
 
         This hook is called whether or not the minor mode has a window.
-        """
-        pass
-
-    def deleteWindowPreHook(self):
-        """Hook to clean up any resources before the window is deleted.
-
-        Only called if the minor mode has a window, this hook allows
-        the minor mode to be cleaned up if it allocated anything that
-        isn't automatically cleaned up upon destruction.
-        """
-        pass
-
-    def deleteWindowPostHook(self):
-        """Hook to clean up any resources after the window is deleted.
-
-        Only called if the minor mode has a window, this hook allows
-        cleanup after the window has been deleted.  Note that the
-        window will not exist, so don't attempt to reference it.
         """
         pass
 

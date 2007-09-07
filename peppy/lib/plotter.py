@@ -42,7 +42,7 @@ class PlotProxy(object):
     def getLines(self, x, y):
         return []
 
-    def update(self, x, y):
+    def updateLines(self, x, y):
         # print "PlotProxy: update (%d,%d)" % (x,y)
         self.lines=self.getLines(x,y)
 

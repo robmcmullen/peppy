@@ -15,7 +15,8 @@ from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 
-class SizeReportCtrl(wx.PyControl):
+
+class SizeReporterMinorMode(MinorMode, wx.PyControl):
     """
     Utility control that always reports its client size.  If embedded
     in an AUI manager, it can also display information about the
@@ -23,13 +24,14 @@ class SizeReportCtrl(wx.PyControl):
 
     (From the wxPython AUI_DockingWindowMgr.py demo.)
     """
+    keyword="Size Reporter"
 
-    def __init__(self, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, mgr=None):
+    def __init__(self, major, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
+                 size=wx.DefaultSize):
 
         wx.PyControl.__init__(self, parent, id, pos, size, wx.NO_BORDER)
             
-        self._mgr = mgr
+        self._mgr = major._mgr
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -84,13 +86,6 @@ class SizeReportCtrl(wx.PyControl):
         self.Refresh()
         event.Skip()
 
-
-class SizeReporterMinorMode(MinorMode):
-    keyword="Size Reporter"
-
-    def createEditWindow(self, parent):
-        return SizeReportCtrl(parent,mgr=self.major._mgr)
-        
 
 class SizeReporterProvider(Component):
     implements(IMinorModeProvider)

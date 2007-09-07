@@ -56,7 +56,7 @@ RE_SEPARATOR            = re.compile('^.*(#-{3})')
 RE_SEPARATOR_HIGHLIGHT  = re.compile('^.*(#{4})')
 RE_ENCODING             = re.compile('coding[:=]\s*([-\w.]+)', re.IGNORECASE)
 
-class SPEFuncList(MinorMode):
+class SPEFuncList(MinorMode, TreeCtrl):
     keyword="spe_funclist"
 
     default_settings = {
@@ -66,13 +66,14 @@ class SPEFuncList(MinorMode):
         'min_height':100,
         }
     
-    def createEditWindow(self, parent):
+    def __init__(self, major, parent):
         self.parentPanel = SPECompat
-        self.explore = TreeCtrl(parent=parent,
-                                style=wx.TR_HAS_BUTTONS|wx.TR_HIDE_ROOT)
-        return self.explore
+        TreeCtrl.__init__(self, parent=parent,
+                          style=wx.TR_HAS_BUTTONS|wx.TR_HIDE_ROOT)
 
-    def createWindowPostHook(self):
+        self.major = major
+        self.explore = self
+
         self.explore.SetBackgroundColour(wx.WHITE)
         self.root = self.explore.AddRoot('Right click to locate')
         
@@ -95,6 +96,13 @@ class SPEFuncList(MinorMode):
         paneinfo.Caption("SPE Function List")
         if not self.fl[0]:
             paneinfo.Hide()
+
+    def deletePreHook(self):
+        eventManager.DeregisterListener(self.onSourceChange)
+        eventManager.DeregisterListener(self.onSourceFromExplore)
+        if not info.DARWIN:
+            eventManager.DeregisterListener(self.onToggleExploreTree)
+        
 
     def updateExploreGeneric(self):
         if self.major.keyword == 'Python':

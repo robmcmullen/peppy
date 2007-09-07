@@ -598,8 +598,8 @@ class HSIMode(MajorMode):
         
     def OnUpdateUIHook(self, evt):
         for minor in self.minors:
-            plotproxy = minor.window.proxies[0]
-            plotproxy.update(*evt.imageCoords)
+            plotproxy = minor.proxies[0]
+            plotproxy.updateLines(*evt.imageCoords)
             plotproxy.updateListeners()
 
     def update(self, refresh=True):
@@ -672,7 +672,7 @@ class HSIMode(MajorMode):
         return display
 
 
-class HSIPlotMinorMode(MinorMode, plotter.PlotProxy):
+class HSIPlotMinorMode(MinorMode, plotter.MultiPlotter, plotter.PlotProxy):
     """Abstract base class for x-y plot of cube data.
 
     This displays a plot using the plotter.MultiPlotter class.  The
@@ -689,17 +689,16 @@ class HSIPlotMinorMode(MinorMode, plotter.PlotProxy):
         }
     plot_proxy = None
 
-    def createEditWindow(self, parent):
-        return plotter.MultiPlotter(parent, frame=self.major.frame)
+    def __init__(self, major, parent):
+        plotter.MultiPlotter.__init__(self, parent, frame=major.frame)
 
-    def createWindowPostHook(self):
-        self.plot = self.window
-        
+        self.major = major
+
         self.listeners=[]
         self.rgblookup=['red','green','blue']
         self.setupAxes()
         self.setupTitle()
-        self.plot.setProxy(self)
+        self.setProxy(self)
         
     def setupTitle(self):
         self.title=self.keyword
