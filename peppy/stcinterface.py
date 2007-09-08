@@ -48,6 +48,10 @@ class STCInterface(object):
         """PyPE compat to show read-only status"""
         return True
     
+    def CanSave(self):
+        """Can this STC instance save its contents?"""
+        return True
+    
     def Clear(self):
         pass
 

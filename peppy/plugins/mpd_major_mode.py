@@ -509,6 +509,9 @@ class DeleteFromPlaylist(ConnectedAction):
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 
 class MPDSTC(NonResidentSTC):
+    def CanSave(self):
+        return False
+    
     def open(self, url):
         """Save the file handle, which is really the mpd connection"""
         fh = url.getDirectReader()

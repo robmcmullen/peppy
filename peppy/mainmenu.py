@@ -146,7 +146,7 @@ class Save(SelectAction):
     def isEnabled(self):
         mode=self.frame.getActiveMajorMode()
         if mode:
-            if mode.buffer.readonly:
+            if mode.buffer.readonly or not mode.buffer.stc.CanSave():
                 return False
             return True
         return False
@@ -162,7 +162,10 @@ class SaveAs(SelectAction):
     key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
     
     def isEnabled(self):
-        return self.frame.isOpen()
+        mode=self.frame.getActiveMajorMode()
+        if mode:
+            return mode.buffer.stc.CanSave()
+        return False
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
