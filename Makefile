@@ -8,7 +8,7 @@ WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
 
 # Distribution stuff
 TAR = tar
-TAROPTS = --exclude=.svn --exclude='*.pyc' --exclude='*~'
+TAROPTS = --exclude=.git --exclude=.svn --exclude='*.pyc' --exclude='*~'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
@@ -28,11 +28,11 @@ WINBATCH = peppy.bat
 SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
-SVN_LIST = $(shell python svn-ls.py)
-SVN_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py svn-ls.py trac/% %/
-SVN_FILTERED := $(filter-out $(SVN_FILTER_OUT),$(SVN_LIST))
-DISTSRC := $(filter %.py,$(SVN_FILTERED))
-DISTFILES := README INSTALL $(SVN_FILTERED)
+GIT_LIST = $(shell git-ls-files)
+GIT_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py svn-ls.py trac/% %/
+GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
+DISTSRC := $(filter %.py,$(GIT_FILTERED))
+DISTFILES := README INSTALL $(GIT_FILTERED)
 APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 
 
