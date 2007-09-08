@@ -17,6 +17,7 @@ from configprefs import *
 from stcinterface import *
 from iofilter import *
 from major import *
+from sidebar import SidebarLoader
 from debug import *
 from trac.core import *
 from dialogs import *
@@ -341,127 +342,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index,mode.getTabName())
 
 
-## Sidebars
-
-class Sidebar(ClassSettings):
-    """Base class for all frame sidebars.
-
-    A frame sidebar is generally used to create a new UI window in a
-    frame that is outside the purview of the major mode.  It is a
-    constant regardless of which major mode is selected.
-    """
-    keyword = None
-    caption = None
-
-    default_settings = {
-        'best_width': 100,
-        'best_height': 200,
-        'min_width': 100,
-        'min_height': 100,
-        'show': True,
-        }
-    
-    def __init__(self, frame):
-        self.frame=frame
-        if self.keyword is None:
-            raise ValueError("keyword class attribute must be defined.")
-
-        self.initPreHook()
-
-        self.win = self.getSidebarWindow(self.frame)
-        paneinfo = self.getPaneInfo()
-        self.frame.addPane(self.win, paneinfo)
-
-        self.initPostHook()
-        
-    def initPreHook(self):
-        """Hook called before window creation."""
-        pass
-
-    def initPostHook(self):
-        """Hook called after window creation."""
-        pass
-
-    def getSidebarWindow(self, parent):
-        """Factory method to return a window.
-
-        Each sidebar can have only one top level window, but there's
-        no limit to the number of subwindows it can have.  This method
-        is responsible for creating whatever windows are necessary and
-        returning the window that holds all the other windows.
-        Typically, a sidebar will just be a single window, so this
-        method would return that window.
-        """
-        raise NotImplementedError
-
-    def getPaneInfo(self):
-        """Factory method to return pane info.
-
-        Most sidebars won't need to override this, but it is available
-        in the case that it is necessary.  A wx.aui.AuiPaneInfo object
-        should be returned.
-        """
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(self.caption)
-        paneinfo.Left()
-        paneinfo.BestSize(wx.Size(self.settings.best_width,
-                                  self.settings.best_height))
-        paneinfo.MinSize(wx.Size(self.settings.min_width,
-                                 self.settings.min_height))
-        paneinfo.Show(self.settings.show)
-        return paneinfo
-
-
-class ISidebarProvider(Interface):
-    """
-    Add a frame sidebar to a new frame.
-    """
-
-    def getSidebars():
-        """
-        Return iterator containing list of frame sidebars.
-        """
-
-class SidebarLoader(Component,debugmixin):
-    debuglevel=0
-    
-    extensions=ExtensionPoint(ISidebarProvider)
-
-    def __init__(self):
-        # Only call this once.
-        if hasattr(SidebarLoader,'sidebarmap'):
-            return self
-        
-        SidebarLoader.sidebarmap={}
-        
-        for ext in self.extensions:
-            for sidebar in ext.getSidebars():
-                assert self.dprint("Registering frame sidebar %s" % sidebar.keyword)
-                SidebarLoader.sidebarmap[sidebar.keyword]=sidebar
-
-    def load(self,frame,sidebarlist=[]):
-        assert self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
-        for keyword in sidebarlist:
-            if keyword in SidebarLoader.sidebarmap:
-                assert self.dprint("found %s" % keyword)
-                sidebar=SidebarLoader.sidebarmap[keyword]
-                frame.createSidebar(sidebar)
-
-class SidebarShow(ToggleListAction):
-    name="Sidebars"
-    inline=False
-    tooltip="Show or hide sidebar windows"
-
-    def getItems(self):
-        return [m.caption for m in self.frame.sidebars]
-
-    def isChecked(self, index):
-        return self.frame.sidebars[index].IsShown()
-
-    def action(self, index=0, old=-1):
-        self.frame.sidebars[index].Show(not self.frame.sidebars[index].IsShown())
-        self.frame._mgr.Update()
-
-
 ## BufferFrames
 
 class FrameDropTarget(wx.FileDropTarget, debugmixin):
@@ -510,7 +390,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.tabs = MyNotebook(self)
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
-        self.sidebars = []
+        self.sidebar_panes = []
         
         self.SetMenuBar(wx.MenuBar())
         self.menumap=None
@@ -530,24 +410,33 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self._mgr.AddPane(win, paneinfo)
 
     def loadSidebars(self):
-        sidebars=self.settings.sidebars
-        assert self.dprint(sidebars)
-        if sidebars is not None:
-            sidebarlist=sidebars.split(',')
-            assert self.dprint("loading %s" % sidebarlist)
-            SidebarLoader(ComponentManager()).load(self,sidebarlist)
+        sidebar_list = self.settings.sidebars
+        assert self.dprint(sidebar_list)
+        if sidebar_list is not None:
+            sidebar_names = sidebar_list.split(',')
+            assert self.dprint("loading %s" % sidebar_names)
+            sidebars = SidebarLoader(ComponentManager()).getClasses(self,sidebar_names)
+            for sidebarcls in sidebars:
+                self.createSidebar(sidebarcls)
             self.createSidebarList()
 
-    def createSidebar(self,sidebarcls):
-        sidebar=sidebarcls(self)
+    def createSidebar(self, sidebarcls):
+        """Create the sidebar and register it with the frame's AUI
+        Manager."""
+
+        sidebar = sidebarcls(self)
+        paneinfo = sidebar.getPaneInfo()
+        self._mgr.AddPane(sidebar, paneinfo)
+        sidebar.paneinfo = self._mgr.GetPane(sidebar)
 
     def createSidebarList(self):
+        self.sidebar_panes = []
         sidebars = self._mgr.GetAllPanes()
         for sidebar in sidebars:
             assert self.dprint("name=%s caption=%s window=%s state=%s" % (sidebar.name, sidebar.caption, sidebar.window, sidebar.state))
             if sidebar.name != "notebook":
-                self.sidebars.append(sidebar)
-        self.sidebars.sort(key=lambda s:s.caption)
+                self.sidebar_panes.append(sidebar)
+        self.sidebar_panes.sort(key=lambda s:s.caption)
 
 
     # Overrides of wx methods

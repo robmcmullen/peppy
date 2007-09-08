@@ -417,6 +417,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         This is used by the menu system to display the list of minor
         modes to the user.
         """
+        self.minor_panes = []
         panes = self._mgr.GetAllPanes()
         for pane in panes:
             assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))

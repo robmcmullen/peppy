@@ -10,12 +10,12 @@ import os
 from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
-from peppy.buffers import *
+from peppy.sidebar import *
 
 import peppy.pype
 from peppy.pype.browser import FilesystemBrowser
 
-class FileBrowser(Sidebar):
+class FileBrowser(FilesystemBrowser, Sidebar):
     keyword = "filebrowser"
     caption = _("File List (from PyPE)")
 
@@ -27,15 +27,13 @@ class FileBrowser(Sidebar):
         'show': False,
         }
     
-    def getSidebarWindow(self,parent):
+    def __init__(self, parent):
+        self.frame = parent
         self.wildcard="*"
         self.current_path=""
         
-        self.browser=FilesystemBrowser(parent, self)
-        return self.browser
-
-    def initPostHook(self):
-        self.browser.showstuff()
+        FilesystemBrowser.__init__(self, parent, self)
+        self.showstuff()
 
     # PyPE adapter
 

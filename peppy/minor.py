@@ -55,60 +55,6 @@ class MinorModeShow(ToggleListAction):
 class MinorModeIncompatibilityError(Exception):
     pass
 
-class IMinorModeProvider(Interface):
-    """
-    Used to register a new minor mode.
-    """
-
-    def getMinorModes():
-        """
-        Return an iterator containing the minor mode classes
-        associated with this plugin.
-        """
-
-class MinorModeLoader(Component, debugmixin):
-    """
-    Trac component that handles minor mode loading.
-    """
-    debuglevel=0
-    extensions=ExtensionPoint(IMinorModeProvider)
-    implements(IMenuItemProvider)
-
-    def __init__(self):
-        # Only call this once.  Check for presense of class attribute
-        if hasattr(MinorModeLoader, 'modekeys'):
-            return self
-
-        # Create the class attribute
-        MinorModeLoader.modekeys={}
-        
-        for ext in self.extensions:
-            for minor in ext.getMinorModes():
-                assert self.dprint("Registering minor mode %s" % minor.keyword)
-                MinorModeLoader.modekeys[minor.keyword]=minor
-
-    default_menu=(("View", MenuItem(MinorModeShow).first().after("Major Mode")),
-                  )
-
-    def getMenuItems(self):
-        for menu, item in self.default_menu:
-            yield (None, menu, item)
-
-
-    def getClasses(self, major, minorlist=[]):
-        """Return a list of classes corresponding to the minor mode names"""
-        
-        assert self.dprint("Loading minor modes %s for %s" % (str(minorlist), major))
-
-        classes = []
-        for keyword in minorlist:
-            if keyword in MinorModeLoader.modekeys:
-                assert self.dprint("found %s" % keyword)
-                minor=MinorModeLoader.modekeys[keyword]
-                classes.append(minor)
-        return classes
-
-
 class MinorMode(ClassSettings, debugmixin):
     """
     Mixin class for all minor modes.  A minor mode should generally be
@@ -195,3 +141,57 @@ class MinorMode(ClassSettings, debugmixin):
         """
         pass
     
+
+
+class IMinorModeProvider(Interface):
+    """
+    Used to register a new minor mode.
+    """
+
+    def getMinorModes():
+        """
+        Return an iterator containing the minor mode classes
+        associated with this plugin.
+        """
+
+class MinorModeLoader(Component, debugmixin):
+    """
+    Trac component that handles minor mode loading.
+    """
+    debuglevel=0
+    extensions=ExtensionPoint(IMinorModeProvider)
+    implements(IMenuItemProvider)
+
+    def __init__(self):
+        # Only call this once.  Check for presense of class attribute
+        if hasattr(MinorModeLoader, 'modekeys'):
+            return self
+
+        # Create the class attribute
+        MinorModeLoader.modekeys={}
+        
+        for ext in self.extensions:
+            for minor in ext.getMinorModes():
+                assert self.dprint("Registering minor mode %s" % minor.keyword)
+                MinorModeLoader.modekeys[minor.keyword]=minor
+
+    default_menu=(("View", MenuItem(MinorModeShow).first().after("Major Mode")),
+                  )
+
+    def getMenuItems(self):
+        for menu, item in self.default_menu:
+            yield (None, menu, item)
+
+
+    def getClasses(self, major, minorlist=[]):
+        """Return a list of classes corresponding to the minor mode names"""
+        
+        assert self.dprint("Loading minor modes %s for %s" % (str(minorlist), major))
+
+        classes = []
+        for keyword in minorlist:
+            if keyword in MinorModeLoader.modekeys:
+                assert self.dprint("found %s" % keyword)
+                minor=MinorModeLoader.modekeys[keyword]
+                classes.append(minor)
+        return classes

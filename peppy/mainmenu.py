@@ -306,7 +306,7 @@ class MainMenu(Component):
                   (None,Menu(_("Format")).after(_("Edit")).first()),
                   (None,Menu(_("View")).before(_("Major Mode"))),
                   (_("View"),Separator(_("modes"))),
-                  (_("View"),MenuItem(SidebarShow)),
+                  (_("View"),Separator(_("sidebars"))),
                   (_("View"),Separator(_("menusep"))),
                   (_("View"),Separator(_("end")).last()),
                   (None,Menu(_("Major Mode")).hide()),

@@ -14,9 +14,9 @@ from peppy import *
 from peppy.mainapp import DebugClass
 from peppy.menu import *
 from peppy.trac.core import *
-from peppy.buffers import *
+from peppy.sidebar import *
 
-class DebugClassList(Sidebar, debugmixin):
+class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
     """Turn debug printing on or off for the listed classes.
 
     This is a global plugin that is used to turn on or off debug
@@ -35,23 +35,22 @@ class DebugClassList(Sidebar, debugmixin):
         'show': False,
         }
     
-    def getSidebarWindow(self,parent):
+    def __init__(self, parent):
 ##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
         self.debuglist = DebugClass(parent)
         items = self.debuglist.getItems()
-        self.list=wx.CheckListBox(parent, choices=items)
+        wx.CheckListBox.__init__(self, parent, choices=items)
+        
         assert self.dprint(items)
         for i in range(len(items)):
-            self.list.Check(i, self.debuglist.isChecked(i))
-        self.list.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
-        
-        return self.list
+            self.Check(i, self.debuglist.isChecked(i))
+        self.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
 
     def OnCheckListBox(self, evt):
         index = evt.GetSelection()
         self.debuglist.action(index)
         assert self.dprint("index=%d checked=%s" % (index, self.debuglist.isChecked(index)))
-        self.list.Check(index, self.debuglist.isChecked(index))
+        self.Check(index, self.debuglist.isChecked(index))
 
 class DebugClassProvider(Component):
     """Plugin to show all classes capable of debug printing.
