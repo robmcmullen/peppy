@@ -350,7 +350,6 @@ class NeXTFileManager(wx.Panel, debugmixin):
 
     def OnPanelUpdate(self, evt):
         self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
-        print evt.listnum, evt.selections
         self.shown = evt.listnum + 1
         list = evt.list
         newitems = []
@@ -420,7 +419,6 @@ if __name__ == '__main__':
 
         def OnPanelUpdate(self, evt):
             self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
-            print evt.listnum, evt.selections
             self.shown = evt.listnum + 1
             list = evt.list
             newitems = []

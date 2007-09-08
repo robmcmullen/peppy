@@ -81,7 +81,7 @@ MpdSongChanged, EVT_MPD_SONG_CHANGED = wx.lib.newevent.NewEvent()
 MpdSongTime, EVT_MPD_SONG_TIME = wx.lib.newevent.NewEvent()
 MpdPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED = wx.lib.newevent.NewEvent()
 
-class MPDCommand(object):
+class MPDCommand(debugmixin):
     # The following commands or changes in attributes generate events
     check_events = {'playlistinfo': MpdPlaylistChanged,
                     'currentsong': MpdSongChanged,
@@ -112,7 +112,7 @@ class MPDCommand(object):
             self.retq = None
 
     def process(self, mpd, output):
-        dprint("processing cmd=%s, args=%s sync=%s queue=%s" % (self.cmd, str(self.args), self.sync_dict, self.retq))
+        assert self.dprint("processing cmd=%s, args=%s sync=%s queue=%s" % (self.cmd, str(self.args), self.sync_dict, self.retq))
         if self.cmd is None:
             return
 
@@ -120,7 +120,7 @@ class MPDCommand(object):
             try:
                 mpd.setup()
             except:
-                dprint("Still needs reopening.  Will try again next time.")
+                assert self.dprint("Still needs reopening.  Will try again next time.")
                 return
 
         try:
@@ -137,7 +137,7 @@ class MPDCommand(object):
                 import traceback
                 traceback.print_exc()
 
-                dprint("Still no connection; flush still pending")
+                assert self.dprint("Still no connection; flush still pending")
                 return
             else:
                 # OK, it's an integer value, meaning the error is an
@@ -147,20 +147,20 @@ class MPDCommand(object):
                 # assuming that if we get an operating system error,
                 # the connection is never going to come back on its
                 # own.  So, we reopen it.
-                dprint("Attempting to reopen connection: e=%s class=%s e[0]=c%s" % (e, e.__class__, str(e[0])))
+                assert self.dprint("Attempting to reopen connection: e=%s class=%s e[0]=c%s" % (e, e.__class__, str(e[0])))
                 mpd.setup()
 
         try:
             ret = mpd.do.send_n_fetch(self.cmd, self.args)
         except Exception, e:
-            dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
+            assert self.dprint("Caught send_n_fetch exception.  Setting pending_flush=True")
             mpd.do.flush_pending = True
             return
 
         if self.cmd == 'status':
             self.status(ret, output)
         elif self.cmd in self.check_events:
-            #dprint("setting %s = %s" % (self.cmd, ret))
+            #assert self.dprint("setting %s = %s" % (self.cmd, ret))
             setattr(output, self.cmd, ret)
             evt = self.check_events[self.cmd]
             wx.PostEvent(wx.GetApp(), evt(mpd=output, status=output.status))
@@ -169,11 +169,11 @@ class MPDCommand(object):
             wx.CallAfter(self.callback, self, ret)
 
         if self.sync_dict is not None:
-            #dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
+            #assert self.dprint("Setting dict[%d] to %s" % (self.sync_key, ret))
             self.sync_dict[self.sync_key] = ret
 
         if self.retq is not None:
-            #dprint("Setting return value to %s" % ret)
+            #assert self.dprint("Setting return value to %s" % ret)
             self.retq.put(ret)
             
     
@@ -192,13 +192,13 @@ class MPDCommand(object):
         for attr, evt in self.check_events.iteritems():
             if attr in status:
                 if attr not in output.status or status[attr] != output.status[attr]:
-                    dprint("Posting event %s" % evt)
+                    assert self.dprint("Posting event %s" % evt)
                     wx.PostEvent(wx.GetApp(), evt(mpd=output, status=status))
 
         output.status = status
 
 
-class ThreadedMPD(threading.Thread):
+class ThreadedMPD(threading.Thread, debugmixin):
     """Wrapper around mpd_connection to provide background operation.
 
     Small wrapper around mpdclient2's mpd_connection object to save
@@ -224,7 +224,7 @@ class ThreadedMPD(threading.Thread):
     def run(self):
         while(not self._want_abort):
             cmd = self.queue.get()
-            dprint("queue size=%d" % self.queue.qsize())
+            assert self.dprint("queue size=%d" % self.queue.qsize())
             if cmd is not None:
                 try:
                     cmd.process(self.mpd, self.output)
@@ -236,7 +236,7 @@ class ThreadedMPD(threading.Thread):
                 
 
 
-class MPDComm(object):
+class MPDComm(debugmixin):
     """Wrapper around mpd_connection to save state information.
 
     Small wrapper around mpdclient2's mpd_connection object to save
@@ -277,20 +277,20 @@ class MPDComm(object):
     def sync(self, cmd, *args, **kw):
         queue = Queue.Queue()
         self.queue.put(MPDCommand(cmd, args, result=queue))
-        dprint("Waiting for %s" % cmd)
+        assert self.dprint("Waiting for %s" % cmd)
         if 'timeout' in kw:
             timeout = kw['timeout']
         else:
             timeout = self.sync_timeout
         ret = queue.get(True, timeout)
-        dprint("Got result for %s: %s" % (cmd, type(ret)))
+        assert self.dprint("Got result for %s: %s" % (cmd, type(ret)))
         return ret
         
     def sync_dict(self, cmd, *args):
         self.sync_counter += 1
         key = self.sync_counter
         self.queue.put(MPDCommand(cmd, args, sync=(self.sync_dict,key)))
-        dprint("Waiting for %s: key=%d" % (cmd, key))
+        assert self.dprint("Waiting for %s: key=%d" % (cmd, key))
 
         count = 0
         while key not in self.sync_dict:
@@ -414,7 +414,7 @@ class PrevSong(PlayingAction):
     keyboard = "-"
     
     def action(self, pos=None):
-        print "Previous song!!!"
+        assert self.dprint("Previous song!!!")
         mode = self.frame.getActiveMajorMode()
         mode.mpd.prevSong()
         mode.update()
@@ -426,7 +426,7 @@ class NextSong(PlayingAction):
     keyboard = "="
     
     def action(self, pos=None):
-        print "Next song!!!"
+        assert self.dprint("Next song!!!")
         mode = self.frame.getActiveMajorMode()
         mode.mpd.nextSong()
         mode.update()
@@ -438,7 +438,7 @@ class StopSong(PlayingAction):
     keyboard = "S"
     
     def action(self, pos=None):
-        print "Stop playing!!!"
+        assert self.dprint("Stop playing!!!")
         mode = self.frame.getActiveMajorMode()
         mode.mpd.stopPlaying()
         mode.update()
@@ -450,7 +450,7 @@ class PlayPause(ConnectedAction):
     keyboard = "SPC"
     
     def action(self, pos=None):
-        print "Play song!!!"
+        assert self.dprint("Play song!!!")
         mode = self.frame.getActiveMajorMode()
         mode.mpd.playPause()
         mode.update()
@@ -554,7 +554,7 @@ class ColumnSizerMixin(object):
             # This happens because an event might be scheduled between
             # the time the OnSize event is called and the CallAfter
             # gets around to executing the resizeColumns
-            dprint("caught dead object error for %s" % self)
+            assert self.dprint("caught dead object error for %s" % self)
             pass
         
     def _resizeColumns(self, flags=[]):
@@ -577,7 +577,7 @@ class ColumnSizerMixin(object):
             if len(copy) < self.GetColumnCount():
                 copy.extend([0] * (self.GetColumnCount() - len(copy)))
             self.resize_flags = tuple(copy)
-            #dprint("resetting flags to %s" % str(self.resize_flags))
+            #assert self.dprint("resetting flags to %s" % str(self.resize_flags))
             
         flags = self.resize_flags
         fixed_width = 0
@@ -605,17 +605,17 @@ class ColumnSizerMixin(object):
         # using a bold font.  It seems like the SetColumnWidth
         # algorithm doesn't see the difference in the bold font.
         w, h = self.GetClientSizeTuple()
-        dprint("client width = %d, fixed_width = %d" % (w, fixed_width))
+        assert self.dprint("client width = %d, fixed_width = %d" % (w, fixed_width))
         w -= fixed_width
         for col in range(self.GetColumnCount()):
             before = self.GetColumnWidth(col)
-            #dprint("col %d: flag=%d before=%d" % (col, flags[col], before))
+            #assert self.dprint("col %d: flag=%d before=%d" % (col, flags[col], before))
             if flags[col] != 1:
                 self.SetColumnWidth(col, before*w/total_width)
         self.Thaw()
         self.resize_dirty = False
 
-class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
+class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
     """Minor mode to display the results of a file search.
     """
     keyword = "MPD Search Results"
@@ -674,7 +674,7 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
         filename = self.GetItem(index, 7).GetText()
-        dprint("song %d: %s" % (index, filename))
+        assert self.dprint("song %d: %s" % (index, filename))
         self.mpd.cmd('add', filename)
         self.mpd.cmd('status')
         evt.Skip()
@@ -684,14 +684,14 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         index = self.GetFirstSelected()
         while index != -1:
             filename = self.GetItem(index, 7).GetText()
-            dprint("song %d: %s" % (index, filename))
+            assert self.dprint("song %d: %s" % (index, filename))
             songlist.append(filename)
             index = self.GetNextSelected(index)
         return songlist
     
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
-        print "beginning drag of item %d" % index
+        self.dprint("beginning drag of item %d" % index)
         data = SongDataObject()
         songlist = self.getSelectedSongs()
         data.SetData(pickle.dumps(songlist,-1))
@@ -700,9 +700,9 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         # and drop opperation
         dropSource = wx.DropSource(self)
         dropSource.SetData(data)
-        dprint("Begining DragDrop\n")
+        assert self.dprint("Begining DragDrop\n")
         result = dropSource.DoDragDrop(wx.Drag_AllowMove)
-        dprint("DragDrop completed: %d\n" % result)
+        assert self.dprint("DragDrop completed: %d\n" % result)
 
     def reset(self, mpd=None):
         if mpd is not None:
@@ -791,18 +791,18 @@ class MPDListByGenre(NeXTPanel, debugmixin):
     def showItems(self, index, keyword, items):
         list = self.GetList(index)
         if list is None:
-            dprint("list at position %d not found!  Creating new list" % index)
+            assert self.dprint("list at position %d not found!  Creating new list" % index)
             list = self.AppendList(self.parent.major.settings.list_width, keyword)
         names = {}
         for item in items:
-            #dprint(item)
+            #assert self.dprint(item)
             names[str(item[keyword]).decode('utf-8')] = 1
         names = names.keys()
         names.sort()
 
-        #dprint("before InsertStringItem")
+        #assert self.dprint("before InsertStringItem")
         list.ReplaceItems(names)
-        #dprint("after InsertStringItem")
+        #assert self.dprint("after InsertStringItem")
 
     def getLevelItems(self, level, item):
         if level < 0:
@@ -812,10 +812,10 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         return None
 
     def rebuildLevels(self, level, list, selections):
-        dprint("level=%d selections=%s" % (level, selections))
+        assert self.dprint("level=%d selections=%s" % (level, selections))
         self.shown = level + 1
         if self.shown < len(self.lists):
-            dprint("shown=%d" % self.shown)
+            assert self.dprint("shown=%d" % self.shown)
             self.DeleteAfter(self.shown)
 
             newitems = []
@@ -830,11 +830,11 @@ class MPDListByGenre(NeXTPanel, debugmixin):
             Publisher().sendMessage('mpd.searchResultsArtistsAlbums', (self.parent.mpd, artists, albums))
 
     def OnPanelUpdate(self, evt):
-        dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        assert self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
         wx.CallAfter(self.rebuildLevels, evt.listnum, evt.list, evt.selections)
 
 
-class MPDListByPath(NeXTFileManager):
+class MPDListByPath(NeXTFileManager, debugmixin):
     def __init__(self, parent_win, parent):
         NeXTFileManager.__init__(self, parent_win)
         self.parent = parent
@@ -845,13 +845,13 @@ class MPDListByPath(NeXTFileManager):
             path = ''
         else:
             path = '/'.join(self.dirtree[0:level+1])
-        #dprint(self.dirtree)
-        #dprint(path)
+        #assert self.dprint(self.dirtree)
+        #assert self.dprint(path)
         items = self.parent.mpd.sync('lsinfo', path)
         names = []
         tracks = []
         for item in items:
-            #dprint(item)
+            #assert self.dprint(item)
             if item['type'] == 'directory':
                 names.append(os.path.basename(item['directory']))
             elif item['type'] == 'file':
@@ -900,22 +900,22 @@ class MPDListSearch(wx.Panel, debugmixin):
         ##self.Bind(wx.EVT_TEXT, self.OnDoSearch, self.search)        
 
     def OnSearch(self, evt):
-        dprint("OnSearch")
+        assert self.dprint("OnSearch")
             
     def OnCancel(self, evt):
-        dprint("OnCancel")
+        assert self.dprint("OnCancel")
 
     def OnDoSearch(self, evt):
         keyword = self.search.GetValue()
         self.searches.append(keyword)
         self.search.SetMenu(self.MakeMenu())
-        dprint("OnDoSearch: " + self.search.GetValue())
+        assert self.dprint("OnDoSearch: " + self.search.GetValue())
         category = self.category.GetStringSelection()
         items = self.parent.mpd.sync('search', category, keyword, timeout=2.0)
         names = []
         tracks = []
         for item in items:
-            #dprint(item)
+            #assert self.dprint(item)
             if item['type'] == 'file':
                 tracks.append(item)
 
@@ -930,6 +930,10 @@ class MPDListSearch(wx.Panel, debugmixin):
             menu.Append(-1, txt)
         return menu
 
+    def reset(self):
+        # reset is called by MPDDatabase when the tab is changed, but
+        # we don't need to do anyting here.
+        pass
 
 
 class MPDDatabase(wx.Panel, debugmixin):
@@ -986,7 +990,7 @@ class MPDDatabase(wx.Panel, debugmixin):
 
 
 
-class MPDMode(MajorMode):
+class MPDMode(MajorMode, debugmixin):
     """Major mode for controlling a Music Player Daemon.
 
     ...
@@ -1039,14 +1043,14 @@ class MPDMode(MajorMode):
 
     def showMessages(self, message=None):
         """debug method to show all pubsub messages."""
-        dprint(str(message.topic))
+        assert self.dprint(str(message.topic))
 
     def OnTimer(self, evt=None):
         self.update()
 
     def initializeConnection(self):
         self.mpd.reset()
-        dprint(self.mpd.status)
+        assert self.dprint(self.mpd.status)
 
     def update(self):
         self.mpd.cmd('status')
@@ -1056,7 +1060,7 @@ class MPDMode(MajorMode):
         return self.mpd is not None
 
 
-class SongDropTarget(wx.PyDropTarget):
+class SongDropTarget(wx.PyDropTarget, debugmixin):
     """Custom drop target modified from the wxPython demo."""
     def __init__(self, window):
         wx.PyDropTarget.__init__(self)
@@ -1068,18 +1072,18 @@ class SongDropTarget(wx.PyDropTarget):
 
     # some virtual methods that track the progress of the drag
     def OnEnter(self, x, y, d):
-        dprint("OnEnter: %d, %d, %d\n" % (x, y, d))
+        assert self.dprint("OnEnter: %d, %d, %d\n" % (x, y, d))
         return d
 
     def OnLeave(self):
-        dprint("OnLeave\n")
+        assert self.dprint("OnLeave\n")
 
     def OnDrop(self, x, y):
-        dprint("OnDrop: %d %d\n" % (x, y))
+        assert self.dprint("OnDrop: %d %d\n" % (x, y))
         return True
 
     def OnDragOver(self, x, y, d):
-        #dprint("OnDragOver: %d, %d, %d\n" % (x, y, d))
+        #assert self.dprint("OnDragOver: %d, %d, %d\n" % (x, y, d))
 
         # The value returned here tells the source what kind of visual
         # feedback to give.  For example, if wxDragCopy is returned then
@@ -1094,7 +1098,7 @@ class SongDropTarget(wx.PyDropTarget):
     # Called when OnDrop returns True.  We need to get the data and
     # do something with it.
     def OnData(self, x, y, d):
-        dprint("OnData: %d, %d, %d\n" % (x, y, d))
+        assert self.dprint("OnData: %d, %d, %d\n" % (x, y, d))
 
         # copy the data from the drag source to our data object
         if self.GetData():
@@ -1108,7 +1112,7 @@ class SongDropTarget(wx.PyDropTarget):
         return d
 
         
-class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
+class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
     """Minor mode to display the current playlist and controls for
     music playing.
     """
@@ -1176,13 +1180,13 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         songlist = []
         index = self.GetFirstSelected()
         while index != -1:
-            dprint("song %d" % (index, ))
+            assert self.dprint("song %d" % (index, ))
             songlist.append(index)
             index = self.GetNextSelected(index)
         return songlist
     
     def delete(self, message=None):
-        dprint(message)
+        assert self.dprint(message)
 
         # Make sure the message relates to our mpd instance
         if message.data == self.mpd:
@@ -1196,7 +1200,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
                 self.setSelected([])
 
     def OnSongChanged(self, evt):
-        dprint("EVENT!!!")
+        assert self.dprint("EVENT!!!")
         status = evt.status
         if status['state'] == 'stop':
             self.highlightSong(-1)
@@ -1206,7 +1210,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
-        print "beginning drag of item %d" % index
+        self.dprint("beginning drag of item %d" % index)
         
         data = SongDataObject()
         songlist = self.getSelectedSongs()
@@ -1216,9 +1220,9 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         # and drop opperation
         dropSource = wx.DropSource(self)
         dropSource.SetData(data)
-        dprint("Begining DragDrop\n")
+        assert self.dprint("Begining DragDrop\n")
         result = dropSource.DoDragDrop(wx.Drag_AllowMove)
-        dprint("DragDrop completed: %d\n" % result)
+        assert self.dprint("DragDrop completed: %d\n" % result)
 
 
     def _getDropIndex(self, x, y):
@@ -1248,7 +1252,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
 
     def AddSongs(self, x, y, songs):
         index = self._getDropIndex(x, y)
-        dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
+        assert self.dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
         # Looks like the MPD protocol is a bit limited in that you
         # can't add a song at a particular spot; only at the end.  So,
         # we'll have to add them all and then move them (potential
@@ -1259,7 +1263,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         for song in songs:
             if type(song) == int:
                 sid = self.playlist_cache[song]
-                dprint("Moving id=%d (index=%d) to %d" % (sid, song, index))
+                assert self.dprint("Moving id=%d (index=%d) to %d" % (sid, song, index))
                 self.mpd.sync('moveid', sid, index)
                 if song >= index:
                     index += 1
@@ -1282,7 +1286,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
                 self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def playlistChanged(self, msg=None):
-        dprint("message received: msg=%s" % str(msg.topic))
+        assert self.dprint("message received: msg=%s" % str(msg.topic))
         mpd, status = msg.data
         self.reset(visible=self.songindex)
         self.songChanged(msg)
@@ -1323,7 +1327,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
         self.resizeColumns([1,0,0,1])
 
     def appendSong(self, message=None):
-        dprint(message)
+        assert self.dprint(message)
 
         # Make sure the message relates to our mpd instance
         if message.data[0] == self.mpd:
@@ -1354,7 +1358,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin):
             pass
             
     def songChanged(self, msg):
-        dprint(str(msg.topic))
+        assert self.dprint(str(msg.topic))
         mpd, status = msg.data
         if status['state'] == 'stop':
             self.highlightSong(-1)
@@ -1411,12 +1415,12 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
         eventManager.DeregisterListener(self.OnSongTime)
 
     def OnSongChanged(self, evt):
-        dprint("EVENT!!!")
+        assert self.dprint("EVENT!!!")
         self.reset()
         evt.Skip()
         
     def OnSongTime(self, evt):
-        dprint("EVENT!!!")
+        assert self.dprint("EVENT!!!")
         self.update(evt.status)
         evt.Skip()
 
@@ -1426,11 +1430,11 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
         
     def OnSliderRelease(self, evt):
         self.user_scrolling = False
-        dprint(evt.GetPosition())
+        assert self.dprint(evt.GetPosition())
         self.mpd.cmd('seekid', self.songid, evt.GetPosition())
 
     def songChanged(self, msg=None):
-        dprint("songChanged: msg=%s" % str(msg.topic))
+        assert self.dprint("songChanged: msg=%s" % str(msg.topic))
         self.reset()
 
     def reset(self, mpd=None):
@@ -1438,8 +1442,8 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
             self.mpd = mpd
         track = self.mpd.currentsong
         if track and self.mpd.status['state'] != 'stop':
-            dprint("currentsong: \n%s" % track)
-            dprint("status: \n%s" % self.mpd.status)
+            assert self.dprint("currentsong: \n%s" % track)
+            assert self.dprint("status: \n%s" % self.mpd.status)
             if 'title' not in track:
                 title = track['file']
             else:
@@ -1457,7 +1461,7 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
         self.user_scrolling = False
 
     def songTime(self, msg=None):
-        dprint("msg=%s" % str(msg.topic))
+        assert self.dprint("msg=%s" % str(msg.topic))
         mpd, status = msg.data
         self.update(status)
 
@@ -1465,7 +1469,7 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
         if status['state'] == 'stop':
             self.slider.SetValue(0)
         elif not self.user_scrolling:
-            self.dprint(status)
+            assert self.dprint(status)
             pos, tot = status['time'].split(":")
             self.slider.SetValue(int(pos))
 
@@ -1477,11 +1481,11 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
 
 
 
-class MPDHandler(urllib2.BaseHandler):
+class MPDHandler(urllib2.BaseHandler, debugmixin):
     def mpd_open(self, req):
-        dprint(req)
+        assert self.dprint(req)
         url = req.get_host()
-        dprint(url)
+        assert self.dprint(url)
 
         comp_mgr = ComponentManager()
         handler = MPDPlugin(comp_mgr)
