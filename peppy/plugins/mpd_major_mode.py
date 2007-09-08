@@ -7,7 +7,7 @@ Major mode for controlling an MPD server.
 http://mpd.wikia.com/wiki/MusicPlayerDaemonCommands shows the commands
 available to the mpd server.  I was confused about the difference
 between a song and a songid in a status message, and id and pos in the
-currentsong message...  It appears that"song" and "id" refer to the
+currentsong message...  It appears that "song" and "id" refer to the
 position in the current playlist, and "id" and "songid" refer to the
 position in the original unshuffled playlist.
 """
@@ -24,6 +24,7 @@ from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 
 from peppy import *
+from peppy.mainmenu import OpenDialog
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
@@ -180,7 +181,6 @@ class MPDCommand(debugmixin):
             
     
     def status(self, status, output):
-        dprint(status)
         if 'state' not in status:
             # If state doesn't exist, that means that we don't have
             # permissions for playback.
@@ -209,13 +209,10 @@ class MPDCommand(debugmixin):
 
 
 class ThreadedMPD(threading.Thread, debugmixin):
-    """Wrapper around mpd_connection to provide background operation.
+    """Thread control of a mpd instance
 
-    Small wrapper around mpdclient2's mpd_connection object to save
-    state information about the mpd instance.  All views into the mpd
-    instance and all minor modes that access the mpd object will then
-    share the same information, rather than having to look somewhere
-    else to find it.
+    Simple container for an mpd_connection object that provides the
+    connection between the GUI thread and the mpd thread.
     """
     def __init__(self, output, queue, host, port, timeout=0.5):
         threading.Thread.__init__(self)
@@ -311,7 +308,6 @@ class MPDComm(debugmixin):
         ret = self.sync_dict[key]
         del self.sync_dict[key]
         return ret
-        
 
     def callback(self, callback, cmd, *args):
         self.queue.put(MPDCommand(cmd, args, callback=callback))
@@ -400,6 +396,36 @@ class MPDComm(debugmixin):
         self.cmd('setvol', vol)
 
 
+class Login(SelectAction):
+    name = _("Login")
+    tooltip = _("Login")
+    icon = 'icons/control_start.png'
+    keyboard = "-"
+    
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.isConnected()
+
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        wx.CallAfter(mode.loginPassword)
+
+class OpenMPD(OpenDialog):
+    name = _("MPD Server...")
+    tooltip = _("Open an MPD server through a URL")
+    icon = "icons/folder_page.png"
+
+    dialog_message = "Open MPD server.  Specify host[:port]"
+
+    def processURL(self, url):
+        if not url.startswith('mpd://'):
+            url = 'mpd://' + url
+        parts = url.split(':')
+        if len(parts) == 2:
+            url += ':6600'
+        dprint(url)
+        self.frame.open(url)
+
 class PlayingAction(SelectAction):
     """Base class for actions that are valid only while playing music.
 
@@ -431,20 +457,6 @@ class PrevSong(PlayingAction):
         mode = self.frame.getActiveMajorMode()
         mode.mpd.prevSong()
         mode.update()
-
-class Login(SelectAction):
-    name = _("Login")
-    tooltip = _("Login")
-    icon = 'icons/control_start.png'
-    keyboard = "-"
-    
-    def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
-        return mode.isConnected()
-
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
-        wx.CallAfter(mode.loginPassword)
 
 class NextSong(PlayingAction):
     name = _("Next Song")
@@ -1537,11 +1549,17 @@ class MPDHandler(urllib2.BaseHandler, debugmixin):
     def mpd_open(self, req):
         assert self.dprint(req)
         url = req.get_host()
-        assert self.dprint(url)
+        parts = url.split(":")
+        host = parts[0]
+        if len(parts) > 1:
+            port = int(parts[1])
+        else:
+            port = 6600
+        assert self.dprint(parts)
 
         comp_mgr = ComponentManager()
         handler = MPDPlugin(comp_mgr)
-        fh = MPDComm(url, 6600)
+        fh = MPDComm(host, port)
         fh.geturl = lambda :"mpd:%s" % url
         fh.info = lambda :{'Content-type': 'text/plain',
                            'Content-length': 0,
@@ -1570,7 +1588,8 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
         for mode in [MPDPlaylist, MPDCurrentlyPlaying, MPDSearchResults]:
             yield mode
     
-    default_menu=(("MPD",None,Menu(_("MPD")).after("Major Mode")),
+    default_menu=((None,(_("File"),_("Open")),MenuItem(OpenMPD).first()),
+                  ("MPD",None,Menu(_("MPD")).after("Major Mode")),
                   ("MPD",_("MPD"),MenuItem(PrevSong)),
                   ("MPD",_("MPD"),MenuItem(StopSong)),
                   ("MPD",_("MPD"),MenuItem(PlayPause)),

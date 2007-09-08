@@ -38,7 +38,7 @@ class New(SelectAction):
 
 
 class OpenFile(SelectAction):
-    name = _("&Open File...")
+    name = _("&File...")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
     key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
@@ -67,19 +67,14 @@ class OpenFile(SelectAction):
         # BAD things can happen otherwise!
         dlg.Destroy()
 
-class OpenURL(SelectAction):
-    name = _("Open URL...")
-    tooltip = _("Open a file through a URL")
-    icon = "icons/folder_page.png"
-    key_bindings = {'emacs': "C-X C-A", }
-
+class OpenDialog(SelectAction):
+    dialog_message = "Open..."
+    
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
 
-        wildcard="*"
-        cwd=os.getcwd()
         dlg = wx.TextEntryDialog(
-            self.frame, message="Open URL", defaultValue="",
+            self.frame, message=self.dialog_message, defaultValue="",
             style=wx.OK|wx.CANCEL)
 
         # Show the dialog and retrieve the user response. If it is the
@@ -87,13 +82,24 @@ class OpenURL(SelectAction):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             url = dlg.GetValue()
-
-            assert self.dprint("open url %s:" % url)
-            self.frame.open(url)
+            self.processURL(url)
 
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
         dlg.Destroy()
+
+    def processURL(self, url):
+        assert self.dprint("open url %s:" % url)
+        self.frame.open(url)
+        
+
+class OpenURL(OpenDialog):
+    name = _("&URL...")
+    tooltip = _("Open a buffer using a URL")
+    icon = "icons/folder_page.png"
+    key_bindings = {'emacs': "C-X C-A", }
+
+    dialog_message = "Open URL"
 
 
 class Exit(SelectAction):
@@ -284,9 +290,10 @@ class MainMenu(Component):
 
     default_menu=((None,Menu(_("File")).first()),
                   (_("File"),MenuItem(New).first()),
-                  (_("File"),MenuItem(OpenFile).after(_("&New File..."))),
-                  (_("File"),MenuItem(OpenURL).after(_("&Open File..."))),
-                  (_("File"),Separator(_("opensep")).after(_("Open URL..."))),
+                  (_("File"),Menu(_("Open")).after(_("&New File..."))),
+                  ((_("File"),_("Open")),MenuItem(OpenFile).first()),
+                  ((_("File"),_("Open")),MenuItem(OpenURL).first()),
+                  (_("File"),Separator(_("opensep")).after(_("Open"))),
                   (_("File"),MenuItem(Save).after(_("opensep"))),
                   (_("File"),MenuItem(SaveAs).after(_("opensep"))),
                   (_("File"),MenuItem(Close).after(_("opensep"))),
