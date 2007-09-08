@@ -35,6 +35,10 @@ from peppy.lib.iconstorage import *
 from peppy.lib.nextpanel import *
 from peppy.lib.mpdclient2 import mpd_connection
 
+from peppy.about import AddCredit
+
+AddCredit("Nick Welch", "for the public domain mpd client py-libmpdclient2")
+
 
 def getTitle(track):
     """Convenience function to return title of a track"""
@@ -537,7 +541,7 @@ class ColumnSizerMixin(object):
         # OnSize gets called a lot, so only do the column resize one
         # time unless the data has changed
         if self.resize_dirty:
-            self._resizeColumns(flags)
+            self._resizeColumns()
         
     def resizeColumns(self, flags=[]):
         try:
