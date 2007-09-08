@@ -172,6 +172,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         self.createWindow()
         self.createWindowPostHook()
         self.loadMinorModes()
+        self.loadMinorModesPostHook()
         self.createEventBindings()
         self.createEventBindingsPostHook()
         self.createListeners()
@@ -393,6 +394,14 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
             for minorcls in minors:
                 self.createMinorMode(minorcls)
             self.createMinorPaneList()
+
+    def loadMinorModesPostHook(self):
+        """User hook after all minor modes have been loaded.
+
+        Use this hook if you need to initialize the set of minor modes
+        after all of them have been loaded.
+        """
+        pass
 
     def createMinorMode(self, minorcls):
         """Create minor modes and register them with the AUI Manager."""

@@ -80,6 +80,7 @@ def getTime(track):
 MpdSongChanged, EVT_MPD_SONG_CHANGED = wx.lib.newevent.NewEvent()
 MpdSongTime, EVT_MPD_SONG_TIME = wx.lib.newevent.NewEvent()
 MpdPlaylistChanged, EVT_MPD_PLAYLIST_CHANGED = wx.lib.newevent.NewEvent()
+MpdLoggedIn, EVT_MPD_LOGGED_IN = wx.lib.newevent.NewEvent()
 
 class MPDCommand(debugmixin):
     # The following commands or changes in attributes generate events
@@ -87,6 +88,7 @@ class MPDCommand(debugmixin):
                     'currentsong': MpdSongChanged,
                     'state': MpdSongChanged,
                     'time': MpdSongTime,
+                    'login': MpdLoggedIn,
                     }
 
     # If the attribute changes in status, call the corresponding
@@ -178,6 +180,14 @@ class MPDCommand(debugmixin):
             
     
     def status(self, status, output):
+        dprint(status)
+        if 'state' not in status:
+            # If state doesn't exist, that means that we don't have
+            # permissions for playback.
+            status['login'] = False
+        else:
+            status['login'] = True
+        
         # kick off the followup commands if an attribute change means
         # that other data should be updated.  For example, if the
         # playlist attribute changes, that means that the playlist has
@@ -305,10 +315,13 @@ class MPDComm(debugmixin):
 
     def callback(self, callback, cmd, *args):
         self.queue.put(MPDCommand(cmd, args, callback=callback))
+
+    def isLoggedIn(self):
+        return self.status['login']
         
     def isPlaying(self):
         """True if playing music; false if paused or stopped."""
-        return self.status['state'] == 'play'
+        return self.status['login'] and self.status['state'] == 'play'
 
     def playPause(self):
         """User method to play or pause.
@@ -405,7 +418,7 @@ class ConnectedAction(SelectAction):
     """
     def isEnabled(self):
         mode = self.frame.getActiveMajorMode()
-        return mode.isConnected()
+        return mode.isConnected() and mode.mpd.isLoggedIn()
 
 class PrevSong(PlayingAction):
     name = _("Prev Song")
@@ -418,6 +431,20 @@ class PrevSong(PlayingAction):
         mode = self.frame.getActiveMajorMode()
         mode.mpd.prevSong()
         mode.update()
+
+class Login(SelectAction):
+    name = _("Login")
+    tooltip = _("Login")
+    icon = 'icons/control_start.png'
+    keyboard = "-"
+    
+    def isEnabled(self):
+        mode = self.frame.getActiveMajorMode()
+        return mode.isConnected()
+
+    def action(self, pos=None):
+        mode = self.frame.getActiveMajorMode()
+        wx.CallAfter(mode.loginPassword)
 
 class NextSong(PlayingAction):
     name = _("Next Song")
@@ -1007,6 +1034,7 @@ class MPDMode(MajorMode, debugmixin):
         'volume_step': 10,
         'list_font_size': 8,
         'list_width': 100,
+        'password': None,
         }
     
     @classmethod
@@ -1027,19 +1055,27 @@ class MPDMode(MajorMode, debugmixin):
 
     def createPostHook(self):
         Publisher().subscribe(self.showMessages, 'mpd')
-
-        # Don't initialize the MPD connection till all the minor modes
-        # are created, because their own initialization depends on
-        # message passing from the mpd wrapper
-        self.initializeConnection()
+        eventManager.Bind(self.OnLogin, EVT_MPD_LOGGED_IN, win=wx.GetApp())
+        self.login_shown = False
 
         self.OnTimer()        
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
         self.update_timer = wx.Timer(self.editwin)
         self.update_timer.Start(self.settings.update_interval*1000)
 
+    def loadMinorModesPostHook(self):
+        # Don't initialize the MPD connection till all the minor modes
+        # are created, because their own initialization depends on
+        # message passing from the mpd wrapper
+        if isinstance(self.settings.password, str):
+            self.mpd.cmd('password', self.settings.password)
+        
+        self.mpd.reset()
+        assert self.dprint(self.mpd.status)
+
     def deleteWindowPostHook(self):
         Publisher().unsubscribe(self.showMessages)
+        eventManager.DeregisterListener(self.OnLogin)
 
     def showMessages(self, message=None):
         """debug method to show all pubsub messages."""
@@ -1047,10 +1083,10 @@ class MPDMode(MajorMode, debugmixin):
 
     def OnTimer(self, evt=None):
         self.update()
-
-    def initializeConnection(self):
-        self.mpd.reset()
-        assert self.dprint(self.mpd.status)
+        if 'login' in self.mpd.status and not self.mpd.status['login']:
+            if not self.login_shown:
+                self.login_shown = True
+                wx.CallAfter(self.loginPassword)
 
     def update(self):
         self.mpd.cmd('status')
@@ -1058,6 +1094,22 @@ class MPDMode(MajorMode, debugmixin):
 
     def isConnected(self):
         return self.mpd is not None
+
+    def loginPassword(self):
+        dlg = wx.TextEntryDialog(self.editwin,
+                                 'Enter MPD password for %s' % self.buffer.url.url,
+                                 style=wx.OK | wx.CANCEL | wx.TE_PASSWORD)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            dprint("password: %s" % dlg.GetValue())
+            self.mpd.cmd('password', dlg.GetValue())
+
+        dlg.Destroy()
+
+    def OnLogin(self, evt=None):
+        self.editwin.reset()
+        evt.Skip()
+
 
 
 class SongDropTarget(wx.PyDropTarget, debugmixin):
@@ -1531,6 +1583,7 @@ class MPDPlugin(MajorModeMatcherBase,debugmixin):
                   ("MPD",_("MPD"),Separator("playlist")),
                   ("MPD",_("MPD"),MenuItem(DeleteFromPlaylist)),
                   ("MPD",_("MPD"),Separator("database")),
+                  ("MPD",_("MPD"),MenuItem(Login)),
                   ("MPD",_("MPD"),MenuItem(UpdateDatabase)),
                    )
     def getMenuItems(self):
