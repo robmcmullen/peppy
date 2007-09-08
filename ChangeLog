@@ -1,3 +1,20 @@
+2007-09-08  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.6.4
+	* Added MPD major mode
+	* Created MPD threaded MPD client layer on top of libmpdclient2
+	* Changed minor modes to be mixins that are expected to also
+	subclass from wx.Window
+	* Moved sidebars out of buffer.py and made changes analogous to
+	minor mode
+	* Added NeXTPanel, a NeXT FileManager like client to show
+	hierarchies
+	* Added support for setuptools plugins
+	* Streamlined buffer loading process; not so convoluted now
+	* Changed process for matching a major mode to a url
+	* Added widget inspector plugin from wx.lib
+	* Various bug fixes
+
 2007-05-10  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.3

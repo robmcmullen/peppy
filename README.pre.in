@@ -20,14 +20,45 @@ sidebars.
 
 
 
+FEATURES
+========
+
+* XEmacs feel
+
+* Multiple top-level windows
+
+* AUI widgets for an awesomely awesome, cutting-edge GUI
+
+* Interesting major modes like:
+
+  * MPDMode for controlling a Music Player Daemon instance.  Point it
+    to a music player daemon instance using the url mpd://host[:port]
+    where the port will default to 6600 if you don't specify it.
+
+  * HSIMode for viewing hyperspectral image files
+ 
+
+Many more features are available or planned.  See the roadmap on the
+web at http://trac.flipturn.org/roadmap
+
+
+
+DOCUMENTATION
+=============
+
+Currently a bit lacking.  See the web at http://www.flipturn.org/peppy
+for what's available.
+
+
+
 PREREQUISITES
 =============
 
 python 2.4 or later
 wxPython 2.8 or later
 
-Currently developed on Python 2.4.3 and wxPython 2.8.1.1 on Linux, and
-Python 2.5 and wxPython 2.8.1.1 on Windows.
+Currently developed on Python 2.5.1 and wxPython 2.8.1.4 on Linux, and
+Python 2.5 and wxPython 2.8.1.4 on Windows.
 
 Peppy requires such a new version of wxPython because it's using the
 AUI (Advanced User Interface) set of widgets for the main frame and
@@ -54,32 +85,16 @@ for more information.
 
 
 
-FEATURES
-========
-
-* XEmacs feel
-* Multiple top-level windows
-* AUI widgets for an awesomely awesome, cutting-edge GUI
-
-Many more features are available or planned.  See the roadmap on the
-web at http://trac.flipturn.org/roadmap
-
-
-
-DOCUMENTATION
-=============
-
-See the web at http://www.flipturn.org/peppy
-
-
-
 INSTALLATION
 ============
 
-This is still alpha software, so caveat emptor.  If you really want to
-install the software in the python site-packages directory, see the
-file INSTALL in this directory.  Since it is packaged using the
-standard Python distutils system, though, you can really just do:
+This is still alpha software, so caveat emptor.  I recommend just
+running it out of the directory in which the software was unpacked.
+
+If you really want to install the software in the python site-packages
+directory, see the file INSTALL in this directory.  Since it is
+packaged using the standard Python distutils system, though, you can
+really just do:
 
 $ python setup.py install
 
@@ -99,12 +114,12 @@ or if you have setuptools installed, using
 
 $ easy_install nose
 
-Once you have nose installed, you can run the unit tests right out of
-the main directory with:
+Once you have nose installed, you can run all the unit tests by
+running
 
-$ nosetests
+$ noserun.sh
 
-and hopefully it reports zero errors.
+in the tests/ directory.
 
 
 
@@ -129,8 +144,9 @@ KNOWN ISSUES
 ============
 
 This editor is still in heavy development, so I wouldn't recommend
-that you do anything mission critical with it.  Don't expect it to
-actually save your files, although it might if it's in a good mood.
+that you do anything mission critical with it.  It tends to be in a
+good mood most of the time and therefore is likely save your files,
+but it might crash unexpectedly.
 
 
 
