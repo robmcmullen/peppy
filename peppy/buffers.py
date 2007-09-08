@@ -165,7 +165,7 @@ class Buffer(debugmixin):
         if not url:
             url=URLInfo("file://untitled")
         self.url = url
-        basename=os.path.basename(url.path)
+        basename=url.getBasename()
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count
@@ -190,6 +190,7 @@ class Buffer(debugmixin):
 
     def open(self, urlstring, stcparent):
         url = URLInfo(urlstring)
+        dprint("url: %s" % repr(url))
         self.defaultmode = MajorModeMatcherDriver.match(url)
         dprint("mode=%s" % (str(self.defaultmode)))
 

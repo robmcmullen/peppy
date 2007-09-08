@@ -79,6 +79,21 @@ class URLInfo(debugmixin):
             except urllib2.URLError:
                 return False
 
+    def getBasename(self):
+        basename=os.path.basename(self.path)
+        if not basename:
+            # It's possible that the basename doesn't exist:
+            # e.g. http://www.flipturn.org doesn't have a path
+            # component to the url.  Even though it actually refers to
+            # http://www.flipturn.org/index.html, nothing in the
+            # returned data indicates the actual filename.
+
+            # FIXME: So, what to do about it?
+            if self.bfh:
+                dprint("info: %s" % self.bfh.fh.info())
+                dprint("geturl: %s" % self.bfh.fh.geturl())
+        return basename
+
     def getReader(self, size=1024):
         if self.bfh is None:
             fh = self.getDirectReader()

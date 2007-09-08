@@ -21,7 +21,10 @@ class BufferedReplacementReader(object):
         try:
             self.fh.seek(self.len)
             self.seekable = True
-        except IOError:
+        except:
+            # It may not throw an IOError, so rather than guessing
+            # what sort of error does show up, just assume that on any
+            # error it's not seekable
             self.seekable = False
 
     def seek(self, pos, whence=0):
