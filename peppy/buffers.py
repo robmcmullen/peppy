@@ -593,17 +593,21 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.open('about:peppy')
         
     def open(self,url,newTab=True,mode=None):
-        buffer=Buffer(url,stcparent=self.app.dummyframe,defaultmode=mode)
-        # If we get an exception, it won't get added to the buffer list
+        try:
+            buffer=Buffer(url,stcparent=self.app.dummyframe,defaultmode=mode)
+            # If we get an exception, it won't get added to the buffer list
         
-        mode=self.getActiveMajorMode()
-        self.app.addBuffer(buffer)
-        if not newTab or (mode is not None and mode.temporary):
-            self.setBuffer(buffer)
-        else:
-            self.newBuffer(buffer)
-        mode=self.getActiveMajorMode()
-        msg=mode.getWelcomeMessage()
+            mode=self.getActiveMajorMode()
+            self.app.addBuffer(buffer)
+            if not newTab or (mode is not None and mode.temporary):
+                self.setBuffer(buffer)
+            else:
+                self.newBuffer(buffer)
+                mode=self.getActiveMajorMode()
+                msg=mode.getWelcomeMessage()
+        except:
+            msg = "Failed opening %s" % url
+            Publisher().sendMessage('peppy.log.error', msg)
         self.SetStatusText(msg)
 
     def save(self):        

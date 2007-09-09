@@ -178,7 +178,7 @@ class Peppy(BufferApp, ClassSettings):
     
     initialconfig={'BufferFrame':{'width':800,
                                   'height':600,
-                                  'sidebars':'filebrowser,debug_list',
+                                  'sidebars':'filebrowser,debug_list,error_log',
                                   },
                    'Peppy':{'plugins': '',
                             'recentfiles':'recentfiles.txt',
