@@ -82,7 +82,7 @@ class TestGetReader:
         stc=getSTC()
         stc.readFrom(fh)
         text=stc.GetText()
-        eq_(text[0:32],'\t\t    GNU GENERAL PUBLIC LICENSE')
+        eq_(text[0:26],'Lorem ipsum dolor sit amet')
         
     def testChatbots(self):
         import peppy.plugins.shell_mode

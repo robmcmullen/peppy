@@ -13,6 +13,7 @@
 	* Streamlined buffer loading process; not so convoluted now
 	* Changed process for matching a major mode to a url
 	* Added widget inspector plugin from wx.lib
+	* Added an error logging sidebar
 	* Various bug fixes
 
 2007-05-10  Rob McMullen  <robm@users.sourceforge.net>

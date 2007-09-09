@@ -31,3 +31,6 @@ Additional thanks to:
 
 * Riaan Booysen and the Boa Constructor project for the style editor
   for the wxStyledTextCtrl (http://boa-constructor.sourceforge.net/)
+
+* Nick Welch for the implementation of an mpd client for python
+  (http://incise.org/index.cgi/py-libmpdclient2)
