@@ -423,7 +423,7 @@ class OpenMPD(OpenDialog):
         parts = url.split(':')
         if len(parts) == 2:
             url += ':6600'
-        dprint(url)
+        dprint("Attempting to open mpd url: %s" % url)
         self.frame.open(url)
 
 class PlayingAction(SelectAction):
@@ -1113,7 +1113,7 @@ class MPDMode(MajorMode, debugmixin):
                                  style=wx.OK | wx.CANCEL | wx.TE_PASSWORD)
         
         if dlg.ShowModal() == wx.ID_OK:
-            dprint("password: %s" % dlg.GetValue())
+            self.dprint("password: %s" % dlg.GetValue())
             self.mpd.cmd('password', dlg.GetValue())
 
         dlg.Destroy()
@@ -1210,6 +1210,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         self.SetDropTarget(self.dropTarget)
 
         self.songindex = -1
+        self.pending_highlight = -1
 
         # keep track of playlist index to playlist song id
         self.playlist_cache = []
@@ -1388,6 +1389,10 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
                 self.DeleteItem(index)
         if show >= 0:
             self.EnsureVisible(show)
+
+        if self.pending_highlight >= 0:
+            self.highlightSong(self.pending_highlight)
+            self.pending_highlight = -1
         self.resizeColumns([1,0,0,1])
 
     def appendSong(self, message=None):
@@ -1403,16 +1408,26 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
             return
 
         try:
-            if self.songindex >= 0:
+            # Check to see if indicies are within bounds, because it
+            # is possible to get an event here before the songlist is
+            # populated.
+            if self.songindex >= 0 and self.songindex < self.GetItemCount():
                 item = self.GetItem(self.songindex)
                 item.SetFont(self.font)
                 self.SetItem(item)
             self.songindex = newindex
-            if newindex >= 0:
+            if newindex >= 0 and newindex < self.GetItemCount():
                 item = self.GetItem(self.songindex)
                 item.SetFont(self.bold_font)
                 self.SetItem(item)            
                 self.EnsureVisible(newindex)
+            else:
+                # If the new index is out of range, we must have
+                # received events out of order, so flag this index for
+                # the next time we get a playlistChanged event
+                self.pending_highlight = newindex
+                self.songindex = -1
+                self.dprint("pending_highlight = %d" % self.pending_highlight)
             self.resizeColumns()
         except:
             # Failure probably means that the playlist has changed out
