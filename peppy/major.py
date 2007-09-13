@@ -94,7 +94,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
     def initPreHook(self):
         currentmode = self.frame.getActiveMajorMode()
-        modes = self.frame.app.getSubclasses(MajorMode)
+        modes = getSubclasses(MajorMode)
 
         # Only display those modes that use the same type of STC as
         # the current mode.
@@ -765,7 +765,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         comp_mgr=ComponentManager()
         driver=MajorModeMatcherDriver(comp_mgr)
 
-        app = wx.GetApp() # Get the Peppy instance
+        app = wx.GetApp()
         if magic_size is None:
             magic_size = app.settings.magic_size
 

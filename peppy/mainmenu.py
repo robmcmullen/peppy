@@ -108,7 +108,7 @@ class Exit(SelectAction):
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, pos=-1):
-        self.frame.app.quit()
+        Publisher().sendMessage('peppy.request.quit')
 
 class Close(SelectAction):
     name = _("&Close Buffer")

@@ -23,18 +23,47 @@ from trac.core import *
 from dialogs import *
 
 class BufferList(GlobalList):
-    debuglevel=0
-    name="Buffers"
+    debuglevel = 0
+    name = "Buffers"
 
-    storage=[]
-    others=[]
-    
+    storage = []
+    others = []
+
+    @classmethod
+    def addBuffer(self, buffer):
+        BufferList.append(buffer)
+
+    @classmethod
+    def removeBuffer(self, buffer):
+        BufferList.remove(buffer)
+
+    @staticmethod
+    def promptUnsaved(msg):
+        dprint("prompt for unsaved changes...")
+        unsaved=[]
+        for buf in BufferList.storage:
+            dprint("buf=%s modified=%s" % (buf,buf.modified))
+            if buf.modified:
+                unsaved.append(buf)
+        if len(unsaved)>0:
+            dlg = QuitDialog(self.GetTopWindow(), unsaved)
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            retval=wx.ID_OK
+
+        if retval==wx.ID_OK:
+            Publisher().sendMessage('peppy.app.quit')
+            
     def getItems(self):
         return [buf.name for buf in BufferList.storage]
 
     def action(self,state=None,index=0):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
         self.frame.setBuffer(BufferList.storage[index])
+
+Publisher.subscribe(BufferList.promptUnsaved, 'peppy.request.quit')
+
     
 class FrameList(GlobalList):
     debuglevel=0
@@ -48,7 +77,7 @@ class FrameList(GlobalList):
 
     def action(self,state=None,index=0):
         assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
-        self.frame.app.SetTopWindow(FrameList.storage[index])
+        wx.GetApp().SetTopWindow(FrameList.storage[index])
         wx.CallAfter(FrameList.storage[index].Raise)
     
 
@@ -71,7 +100,7 @@ class NewFrame(SelectAction):
     key_bindings = {'emacs': "C-X 5 2",}
     
     def action(self, pos=-1):
-        frame=self.frame.app.newFrame(callingFrame=self.frame)
+        frame=BufferApp.newFrame(callingFrame=self.frame)
         frame.titleBuffer()
         frame.Show(True)
 
@@ -368,20 +397,33 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     debuglevel=0
     frameid=0
+    
+    dummyframe = None
+    
     perspectives={}
 
     default_settings = {}
-    
-    def __init__(self, app, id=-1):
+
+    @classmethod
+    def initDummyFrame(cls):
+        # the Buffer objects have an stc as the base, and they need a
+        # frame in which to work.  So, we create a dummy frame here
+        # that is never shown.
+        BufferFrame.dummyframe=wx.Frame(None)
+        BufferFrame.dummyframe.Show(False)
+
+    def __init__(self, id=-1):
         BufferFrame.frameid+=1
         self.name="peppy: Frame #%d" % BufferFrame.frameid
+
+        if BufferFrame.dummyframe is None:
+            BufferFrame.initDummyFrame()
 
         size=(int(self.settings.width),int(self.settings.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
         icon = wx.EmptyIcon()
         icon.CopyFromBitmap(getIconBitmap('icons/peppy.png'))
         self.SetIcon(icon)
-        self.app=app
 
         FrameList.append(self)
         
@@ -411,7 +453,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self.dropTarget=FrameDropTarget(self)
         self.SetDropTarget(self.dropTarget)        
         
-        self.app.SetTopWindow(self)
+        wx.GetApp().SetTopWindow(self)
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
@@ -450,7 +492,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     def OnClose(self, evt=None):
         assert self.dprint(evt)
         if len(FrameList.storage)==1:
-            wx.CallAfter(self.app.quit)
+            wx.CallAfter(Publisher().sendMessage, 'peppy.request.quit')
         else:
             FrameList.remove(self)
             self.Destroy()
@@ -556,13 +598,13 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         return major is not None
 
     def isTopWindow(self):
-        return self.app.GetTopWindow()==self
+        return wx.GetApp().GetTopWindow()==self
 
     def close(self):
         major=self.getActiveMajorMode()
         if major:
             buffer=major.buffer
-            self.app.close(buffer)
+            BufferApp.close(buffer)
 
     def setTitle(self):
         major=self.getActiveMajorMode()
@@ -598,14 +640,18 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
     def titleBuffer(self):
         self.open('about:peppy')
+
+    def showTitleIfNecessary(self):
+        if len(BufferList.storage)==0:
+            self.titleBuffer()
         
     def open(self,url,newTab=True,mode=None):
         try:
-            buffer=Buffer(url,stcparent=self.app.dummyframe,defaultmode=mode)
+            buffer=Buffer(url,stcparent=self.dummyframe,defaultmode=mode)
             # If we get an exception, it won't get added to the buffer list
         
             mode=self.getActiveMajorMode()
-            self.app.addBuffer(buffer)
+            BufferList.addBuffer(buffer)
             if not newTab or (mode is not None and mode.temporary):
                 self.setBuffer(buffer)
             else:
@@ -689,185 +735,3 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
 
     def getTitle(self):
         return self.name
-
-
-
-
-
-class BufferApp(wx.App,debugmixin):
-    def OnInit(self):
-        self.menu_actions=[]
-        self.toolbar_actions=[]
-        self.keyboard_actions=[]
-        self.bufferhandlers=[]
-        
-        self.confdir=None
-        self.cfgfile=None
-
-        self.globalKeys=KeyMap()
-
-        # the Buffer objects have an stc as the base, and they need a
-        # frame in which to work.  So, we create a dummy frame here
-        # that is never shown.
-        self.dummyframe=wx.Frame(None)
-        self.dummyframe.Show(False)
-
-        self.errors=[]
-
-    def addBuffer(self,buffer):
-        BufferList.append(buffer)
-
-    def removeBuffer(self,buffer):
-        BufferList.remove(buffer)
-
-    def deleteFrame(self,frame):
-        #self.pendingframes.append((self.frames.getid(frame),frame))
-        #self.frames.remove(frame)
-        pass
-    
-    def newFrame(self,callingFrame=None):
-        frame=BufferFrame(self)
-        return frame
-        
-    def showFrame(self,frame):
-        frame.Show(True)
-
-    def getTopFrame(self):
-        frame = self.GetTopWindow()
-        if not isinstance(frame, BufferFrame):
-            # FIXME: can this ever happen?
-            dprint("Top window not a BufferFrame!")
-            for frame in wx.GetTopLevelWindows():
-                if isinstance(frame, BufferFrame):
-                    return frame
-            dprint("No top level BufferFrames found!")
-        return frame
-           
-    def enableFrames(self):
-        """Force all frames to update their enable status.
-
-        Loop through each frame and force an update of the
-        enable/disable state of ui items.  The menu does this in
-        response to a user event, so this is really for the toolbar
-        and other always-visible widgets that aren't automatically
-        updated.
-        """
-        for frame in wx.GetTopLevelWindows():
-            assert self.dprint(frame)
-            try:
-                frame.enableTools()
-            except:
-                # not all top level windows will be BufferFrame
-                # subclasses, so just use the easy way out and catch
-                # all exceptions.
-                pass
-            
-    def close(self,buffer):
-        if buffer.modified:
-            dlg = wx.MessageDialog(self.GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-            retval=dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            retval=wx.ID_YES
-
-        if retval==wx.ID_YES:
-            buffer.removeAllViews()
-            self.removeBuffer(buffer)
-
-    def quit(self):
-        assert self.dprint("prompt for unsaved changes...")
-        unsaved=[]
-        for buf in BufferList.storage:
-            assert self.dprint("buf=%s modified=%s" % (buf,buf.modified))
-            if buf.modified:
-                unsaved.append(buf)
-        if len(unsaved)>0:
-            dlg = QuitDialog(self.GetTopWindow(), unsaved)
-            retval=dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            retval=wx.ID_OK
-
-        if retval==wx.ID_OK:
-            doit=self.quitHook()
-            if doit:
-                self.ExitMainLoop()
-
-    def quitHook(self):
-        return True
-
-    def loadPlugin(self, plugin, abort=True):
-        """Import a plugin from a module name
-
-        Given a module name (e.g. 'peppy.plugins.example_plugin',
-        import the module and trap any import errors.
-
-        @param: name of plugin to load
-        """
-        assert self.dprint("loading plugins from module=%s" % str(plugin))
-        # FIXME: make abort's default state be dependent on some
-        # configuration parameter
-        if abort:
-            mod=__import__(plugin)
-        else:
-            try:
-                mod=__import__(plugin)
-            except Exception,ex:
-                print "couldn't load plugin %s" % plugin
-                print ex
-                self.errors.append("couldn't load plugin %s" % plugin)
-
-    def loadPlugins(self,plugins):
-        """Import a list of plugins.
-
-        From either a list or a comma separated string, import a group
-        of plugins.
-
-        @param plugins: list or comma separated string of plugins to
-        load
-        """
-        if not isinstance(plugins,list):
-            plugins=[p.strip() for p in plugins.split(',')]
-        for plugin in plugins:
-            self.loadPlugin(plugin)
-
-    def setConfigDir(self,dirname):
-        self.confdir=dirname
-
-    def getConfigFilePath(self,filename):
-        c=HomeConfigDir(self.confdir)
-        assert self.dprint("found home dir=%s" % c.dir)
-        return os.path.join(c.dir,filename)
-
-    def setInitialConfig(self,defaults={'Frame':{'width':400,
-                                                 'height':400,
-                                                 }
-                                        }):
-        GlobalSettings.setDefaults(defaults)
-
-    def loadConfig(self,filename):
-        self.setInitialConfig()
-        filename=self.getConfigFilePath(filename)
-        GlobalSettings.loadConfig(filename)
-
-        self.loadConfigPostHook()
-        
-        ConfigurationExtender(ComponentManager()).load(self)
-
-    def loadConfigPostHook(self):
-        pass
-
-    def saveConfigPreHook(self):
-        pass
-
-    def saveConfig(self,filename):
-        self.saveConfigPreHook()
-        
-        ConfigurationExtender(ComponentManager()).save(self)
-
-        GlobalSettings.saveConfig(filename)
-
-
-if __name__ == "__main__":
-    pass
-

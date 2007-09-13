@@ -11,10 +11,81 @@ sync if this is shown on two different frames.
 import os
 
 from peppy import *
-from peppy.mainapp import DebugClass
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.sidebar import *
+
+from wx.lib.pubsub import Publisher
+
+
+class DebugClass(ToggleListAction):
+    """A multi-entry menu list that allows individual toggling of debug
+    printing for classes.
+
+    All frames will share the same list, which makes sense since the
+    debugging is controlled by class attributes.
+    """
+    debuglevel=0
+    
+    name = "DebugClassMenu"
+    empty = "< list of classes >"
+    tooltip = "Turn on/off debugging for listed classes"
+    categories = False
+    inline = True
+
+    # File list is shared among all windows
+    itemlist = []
+
+    @staticmethod
+    def append(kls,text=None):
+        """Add a class to the list of entries
+
+        @param kls: class
+        @type kls: class
+        @param text: (optional) name of class
+        @type text: text
+        """
+        if not text:
+            text=kls.__name__
+        DebugClass.itemlist.append({'item':kls,'name':text,'icon':None,'checked':kls.debuglevel>0})
+
+    @staticmethod
+    def setup(msg):
+        dprint(msg)
+        app = wx.GetApp()
+        debuggable=getSubclasses()
+        debuggable.sort(key=lambda s:s.__name__)
+        for kls in debuggable:
+            if app.verbose:
+                app.setVerboseLevel(kls)
+            #assert dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
+            DebugClass.append(kls)
+
+        
+    def getHash(self):
+        return len(DebugClass.itemlist)
+
+    def getItems(self):
+        return [item['name'] for item in DebugClass.itemlist]
+
+    def isChecked(self, index):
+        return DebugClass.itemlist[index]['checked']
+
+    def action(self, index=-1):
+        """
+        Turn on or off the debug logging for the selected class
+        """
+        assert self.dprint("DebugClass.action: id(self)=%x name=%s index=%d id(itemlist)=%x" % (id(self),self.name,index,id(DebugClass.itemlist)))
+        kls=DebugClass.itemlist[index]['item']
+        DebugClass.itemlist[index]['checked']=not DebugClass.itemlist[index]['checked']
+        if DebugClass.itemlist[index]['checked']:
+            kls.debuglevel=1
+        else:
+            kls.debuglevel=0
+        assert self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
+
+Publisher().subscribe(DebugClass.setup, 'peppy.startup.complete')
+
 
 class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
     """Turn debug printing on or off for the listed classes.

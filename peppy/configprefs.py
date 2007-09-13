@@ -4,70 +4,20 @@
 Managing user config files and directories.
 """
 
-import os,types
+import os, os.path, types
 from ConfigParser import ConfigParser
 import cPickle as pickle
+
+import wx
+
 from trac.core import *
 from debug import *
 
 __all__ = [ 'HomeConfigDir', 'GlobalSettings',
             'ClassSettings', 'ClassSettingsProxy', 'ClassSettingsMixin',
-            'getSubclassHierarchy', 'IConfigurationExtender',
+            'getSubclasses', 'getSubclassHierarchy', 'IConfigurationExtender',
             'ConfigurationExtender']
 
-def getHomeDir(debug=False):
-    """Find the user's home directory.
-    
-    Try to find the user home directory, otherwise return current
-    directory.  Adapted from
-    http://mail.python.org/pipermail/python-list/2005-February/263921.html
-    """
-    try:
-        path1=os.path.expanduser("~")
-        if debug: print "path1=%s" % path1
-    except:
-        path1=""
-    try:
-        path2=os.environ["HOME"]
-        if debug: print "path2=%s" % path2
-    except:
-        path2=""
-    try:
-        path3=os.environ["USERPROFILE"]
-        if debug: print "path3=%s" % path3
-    except:
-        path3=""
-    try:
-        path4 = os.environ.get('HOMEPATH', None)
-        if path4 is not None:
-            path4 = os.environ['HOMEDRIVE']+homeDir
-        if debug: print "path4=%s" % path4
-    except:
-        path4=""
-
-    # Note that if you are running under Cygwin but using the Windows
-    # python, you'll get the unix-style homedir if running under a
-    # Cygwin shell, but the Windows 'Documents and Settings' dir if
-    # running under standalone Python.
-    if os.sys.platform=='win32':
-        if os.path.exists(path3):
-            return path3
-        elif os.path.exists(path4):
-            return path4
-        # else, fallthrough to regular code
-    
-    # Cygwin's python shows up with os.sys.platform=='cygwin', so it
-    # will default to the unix style homedir.
-    if os.path.exists(path1):
-        return path1
-    elif os.path.exists(path2):
-        return path2
-    elif os.path.exists(path3):
-        return path3
-    elif os.path.exists(path4):
-        return path4
-    else:
-        return os.getcwd()
 
 class HomeConfigDir:
     """Simple loader for config files in the home directory.
@@ -76,25 +26,39 @@ class HomeConfigDir:
     pickled objects in the home directory.
     """
     
-    def __init__(self,dirname,create=True,debug=False):
-        self.home=getHomeDir(debug)
-        if dirname.startswith('.'):
-            dirname=dirname[1:]
-        if os.sys.platform=='win32':
-            self.dot='_'
+    def __init__(self, dirname, create=True, debug=False):
+        if dirname:
+            self.dir = os.path.normpath(dirname)
         else:
-            self.dot='.'
-        self.dir=os.path.join(self.home,self.dot+dirname)
-
-        self.check(create)
-
-    def check(self,create):
-        if not os.path.exists(self.dir):
+            self.dir = wx.StandardPaths.Get().GetUserDataDir()
+            
+        if not self.exists():
             if create:
-                os.mkdir(self.dir)
+                try:
+                    self.create()
+                except:
+                    d = wx.StandardPaths.Get().GetUserDataDir()
+                    if d != self.dir:
+                        self.dir = d
+                        try:
+                            self.create()
+                        except:
+                            print "Can't create configuration directory"
+                            self.dir = None
 
-    def exists(self,name):
-        return os.path.exists(os.path.join(self.dir,name))
+    def create(self):
+        try:
+            os.mkdir(self.dir)
+            return True
+        except:
+            return False
+
+    def exists(self, name=None):
+        if name is not None:
+            d = os.path.join(self.dir, name)
+        else:
+            d = self.dir
+        return os.path.exists(d)
 
     def open(self,name,mode='r'):
         path=os.path.join(self.dir,name)
@@ -114,6 +78,39 @@ class HomeConfigDir:
         pickle.dump(item,fd)
         fd.close()
 
+
+def getSubclasses(parent=debugmixin, subclassof=None):
+    """
+    Recursive call to get all classes that have a specified class
+    in their ancestry.  The call to __subclasses__ only finds the
+    direct, child subclasses of an object, so to find
+    grandchildren and objects further down the tree, we have to go
+    recursively down each subclasses hierarchy to see if the
+    subclasses are of the type we want.
+
+    @param parent: class used to find subclasses
+    @type parent: class
+    @param subclassof: class used to verify type during recursive calls
+    @type subclassof: class
+    @returns: list of classes
+    """
+    if subclassof is None:
+        subclassof=parent
+    subclasses=[]
+
+    # this call only returns immediate (child) subclasses, not
+    # grandchild subclasses where there is an intermediate class
+    # between the two.
+    classes=parent.__subclasses__()
+    for kls in classes:
+        if issubclass(kls,subclassof):
+            subclasses.append(kls)
+        # for each subclass, recurse through its subclasses to
+        # make sure we're not missing any descendants.
+        subs=getSubclasses(parent=kls)
+        if len(subs)>0:
+            subclasses.extend(subs)
+    return subclasses
 
 def parents(c, seen=None):
     """Python class base-finder.

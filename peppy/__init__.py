@@ -56,7 +56,8 @@ except:
 if __have_wx:
     # If we have wx, define the common global classes that plugins and
     # extensions should need to use
-    from peppy.buffers import Buffer, BufferHooks, BufferFrame, BufferApp
+    from peppy.main import Peppy
+    from peppy.buffers import Buffer, BufferHooks, BufferFrame
     from peppy.configprefs import *
     from peppy.debug import debuglog, dprint, debugmixin
     from peppy.major import MajorMode, BufferModificationAction
@@ -66,7 +67,7 @@ if __have_wx:
     from peppy.lib.iconstorage import *
 
     __all__ = [
-        'Buffer', 'BufferHooks', 'BufferFrame', 'BufferApp',
+        'Peppy', 'Buffer', 'BufferHooks', 'BufferFrame',
         'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
                 'getSubclassHierarchy',
         'debuglog','dprint','debugmixin',

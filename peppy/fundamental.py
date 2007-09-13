@@ -620,7 +620,7 @@ class FundamentalMode(BraceHighlightMixin,
         if not self.settings.stc_lexer:
             dprint("no STC styling information for major mode %s" % self.keyword)
             return
-        boa.updateConfigFile(self.frame.app, self)
+        boa.updateConfigFile(wx.GetApp(), self)
 
     def applyDefaultSettings(self):
         # turn off symbol margin
@@ -743,7 +743,7 @@ class FundamentalMode(BraceHighlightMixin,
 
         @param lang: language keyword to look up in the file
         """
-        config=boa.getUserConfigFile(self.frame.app)
+        config=boa.getUserConfigFile(wx.GetApp())
         if lang is None:
             lang = self.keyword
             
