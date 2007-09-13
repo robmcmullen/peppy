@@ -25,8 +25,8 @@ except:
 
     class debugmixin(object):
         debuglevel = 0
-        def dprint(self, txt):
-            if self.debuglevel > 0:
+        def dprint(self, txt=""):
+            if self.debuglevel > 0 and txt:
                 dprint(txt)
             return True
 
