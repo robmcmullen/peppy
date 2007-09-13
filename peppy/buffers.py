@@ -184,6 +184,13 @@ class Buffer(debugmixin):
     def getFilename(self):
         return self.url.path
 
+    def cwd(self):
+        if self.url.protocol == 'file':
+            path = os.path.dirname(self.url.path)
+        else:
+            path = os.getcwd()
+        return path
+            
     def getTabName(self):
         if self.modified:
             return "*"+self.displayname
@@ -625,13 +632,8 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         """
         mode = self.getActiveMajorMode()
         if mode and mode.buffer:
-            url = mode.buffer.url
-            if url.protocol == 'file':
-                cwd = os.path.dirname(url.path)
-            else:
-                mode = None
-
-        if mode is None:
+            cwd = mode.buffer.cwd()
+        else:
             cwd=os.getcwd()
         return cwd
             
