@@ -186,7 +186,7 @@ class Buffer(debugmixin):
 
     def cwd(self):
         if self.url.protocol == 'file':
-            path = os.path.dirname(self.url.path)
+            path = os.path.normpath(os.path.dirname(self.url.path))
         else:
             path = os.getcwd()
         return path
