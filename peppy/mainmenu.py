@@ -159,7 +159,9 @@ class Save(SelectAction):
 
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        self.frame.save()
+        mode=self.frame.getActiveMajorMode()
+        if mode:
+            mode.save()
 
 class SaveAs(SelectAction):
     name = _("Save &As...")
@@ -205,7 +207,7 @@ class SaveAs(SelectAction):
                     saveas=paths[0]
                     assert self.dprint("save file %s:" % saveas)
 
-                    mode.buffer.save(saveas)
+                    mode.save(saveas)
                 elif paths!=None:
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
 

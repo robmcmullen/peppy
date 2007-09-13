@@ -605,7 +605,9 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
                 self.newBuffer(buffer)
                 mode=self.getActiveMajorMode()
                 msg=mode.getWelcomeMessage()
-        except:
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
             msg = "Failed opening %s" % url
             Publisher().sendMessage('peppy.log.error', msg)
         self.SetStatusText(msg)

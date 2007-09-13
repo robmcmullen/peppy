@@ -253,6 +253,26 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         """
         return False
 
+    def save(self, url=None):
+        veto = self.savePreHook(url)
+        if veto == False:
+            return
+        self.buffer.save(url)
+        self.savePostHook()
+
+    def savePreHook(self, url=None):
+        """Hook before the buffer is saved.
+
+        The save is vetoable by returning False.  Returning True or
+        None (None is also returned when you don't explicitly return
+        anything) allows the save to continue.
+        """
+        pass
+
+    def savePostHook(self):
+        """Hook to perform any housekeeping after a save"""
+        pass
+
     # If there is no title, return the keyword
     def getTitle(self):
         return self.keyword
@@ -752,6 +772,8 @@ class MajorModeMatcherDriver(Component, debugmixin):
         modes = driver.scanURL(url)
         fh = url.getReader(magic_size)
         header = fh.read(magic_size)
+
+        url_match = None
         if modes:
             # OK, there is a match with the filenames.  Determine the
             # capability of the mode to edit the file by verifying any
@@ -760,25 +782,31 @@ class MajorModeMatcherDriver(Component, debugmixin):
             cm = zip(capable, modes)
             dprint(cm)
 
-            # If there's an exact match, load it
+            # If there's an exact match, make a note of it
             for c, m in cm:
                 if c is not None and c:
-                    return m
+                    url_match = m
+                    break
 
-            # if there's an acceptable one, load it
-            for c, m in cm:
-                if c is None:
-                    return m
+            if url_match is None:
+                # if there's an acceptable one, make a note of it
+                for c, m in cm:
+                    if c is None:
+                        url_match = m
+                        break
 
-        # Try to match an emacs mode specifier
-        mode = driver.scanEmacs(header)
-        if mode:
-            return mode
+        # Regardless if there's a match on the URL, try to match an
+        # emacs mode specifier since a match here means that we should
+        # override the match based on filename
+        emacs_match = driver.scanEmacs(header)
+        if emacs_match:
+            return emacs_match
 
-        # Try to match a shell bangpath
-        mode = driver.scanShell(header)
-        if mode:
-            return mode
+        # Like the emacs match, a match on a shell bangpath should
+        # override anything determined out of the filename
+        bang_match = driver.scanShell(header)
+        if bang_match:
+            return bang_match
 
         # Try to match some magic bytes that identify the file
         modes = driver.scanMagic(header)
@@ -787,6 +815,14 @@ class MajorModeMatcherDriver(Component, debugmixin):
             # values, so just load the first one that we find
             return modes[0]
 
+        # Now we get to the filename match above: if there had been a
+        # match on a filename but nothing more specific, we can return
+        # it because we've exhausted the other checks
+        if url_match:
+            return url_match
+
+        # As a last resort to open a specific mode, attempt to open it
+        # with any third-party openers that have been registered
         mode = driver.attemptOpen(url)
         if mode:
             return mode
