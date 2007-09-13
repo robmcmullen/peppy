@@ -291,8 +291,9 @@ class MainMenu(Component):
     implements(IToolBarItemProvider)
 
     default_menu=((None,Menu(_("File")).first()),
-                  (_("File"),MenuItem(New).first()),
-                  (_("File"),Menu(_("Open")).after(_("&New File..."))),
+                  (_("File"),Menu(_("New")).first()),
+                  ((_("File"),_("New")),MenuItem(New).first()),
+                  (_("File"),Menu(_("Open")).after(_("New"))),
                   ((_("File"),_("Open")),MenuItem(OpenFile).first()),
                   ((_("File"),_("Open")),MenuItem(OpenURL).first()),
                   (_("File"),Separator(_("opensep")).after(_("Open"))),
