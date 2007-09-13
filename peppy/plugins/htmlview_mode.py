@@ -15,7 +15,6 @@ import wx.html
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from peppy import *
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *

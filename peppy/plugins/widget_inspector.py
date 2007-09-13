@@ -7,13 +7,12 @@ for debugging layout of wxpython widgets.
 """
 import os
 
-from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 
 class WidgetInspector(SelectAction):
-    name="Widget Inspector..."
-    tooltip = "Open the wxPython widget inspector."
+    name=_("Widget Inspector...")
+    tooltip = _("Open the wxPython widget inspector.")
     icon = "icons/style_edit.png"
 
     def isEnabled(self):
@@ -29,4 +28,4 @@ class WidgetInspectorMenuProvider(Component):
     implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        yield (None,"&Help",MenuItem(WidgetInspector).last())
+        yield (None,_("&Help"),MenuItem(WidgetInspector).last())

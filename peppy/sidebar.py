@@ -26,9 +26,9 @@ from debug import *
 
 
 class SidebarShow(ToggleListAction):
-    name="Sidebars"
+    name=_("Sidebars")
     inline=False
-    tooltip="Show or hide sidebar windows"
+    tooltip=_("Show or hide sidebar windows")
 
     def getItems(self):
         return [m.caption for m in self.frame.sidebar_panes]
@@ -121,7 +121,7 @@ class SidebarLoader(Component, debugmixin):
                 assert self.dprint("Registering frame sidebar %s" % sidebar.keyword)
                 SidebarLoader.sidebarmap[sidebar.keyword]=sidebar
 
-    default_menu=(("View", MenuItem(SidebarShow).first().after("sidebars")),
+    default_menu=((_("View"), MenuItem(SidebarShow).first().after(_("sidebars"))),
                   )
 
     def getMenuItems(self):

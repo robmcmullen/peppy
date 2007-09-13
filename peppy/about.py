@@ -12,7 +12,6 @@ import urllib2
 
 import wx
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
@@ -171,8 +170,8 @@ def AddCopyright(project, website, author, date, reason=None):
 
 
 class HelpAbout(SelectAction):
-    name = "&About..."
-    tooltip = "About this program"
+    name = _("&About...")
+    tooltip = _("About this program")
     stock_id = wx.ID_ABOUT
 
     about = "Test program"
@@ -190,11 +189,11 @@ class HelpAbout(SelectAction):
         info.WebSite = (__url__, "%(prog)s home page" % substitutes)
         devs = [ substitutes['author'],
                  "",
-                 "Contributions by:",
+                 _("Contributions by:"),
                  ]
         dprint([a for a,c in credits])
         devs.extend([a for a,c in credits])
-        devs.extend(("", "See the file THANKS for more credits"))
+        devs.extend(("", _("See the file THANKS for more credits")))
         info.Developers = devs
         dprint(info.Developers)
 
@@ -212,8 +211,8 @@ SetAbout('User Manual',"""\
 <p>Well, not so much a user's manual as a placeholder for one.
 """)
 class HelpManual(SelectAction):
-    name = "&Help..."
-    tooltip = "User manual"
+    name = _("&Help...")
+    tooltip = _("User manual")
     stock_id = wx.ID_HELP
     key_bindings = {'default': "F1",}
     
@@ -249,11 +248,11 @@ class AboutPlugin(MajorModeMatcherBase):
         else:
             return None
 
-    default_menu=((None,None,Menu("&Help").last()),
-                  (None,"&Help",MenuItem(HelpAbout).first()),
-                  (None,"&Help",Separator("manual").first()),
-                  (None,"&Help",MenuItem(HelpManual).first()),
-                  (None,"&Help",Separator("debug").first()),
+    default_menu=((None,None,Menu(_("&Help")).last()),
+                  (None,_("&Help"),MenuItem(HelpAbout).first()),
+                  (None,_("&Help"),Separator(_("manual")).first()),
+                  (None,_("&Help"),MenuItem(HelpManual).first()),
+                  (None,_("&Help"),Separator(_("debug")).first()),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

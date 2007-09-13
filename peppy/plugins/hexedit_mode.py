@@ -8,15 +8,14 @@ import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.stcinterface import STCInterface
 
 
 class OpenHexEditor(SelectAction):
-    name = "&Open Hex Editor..."
-    tooltip = "Open a Hex Editor"
+    name = _("&Open Hex Editor...")
+    tooltip = _("Open a Hex Editor")
     icon = wx.ART_FILE_OPEN
 
 ##    def isEnabled(self, state=None):
@@ -872,8 +871,8 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HexEditMode
 
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(OpenHexEditor)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(OpenHexEditor)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

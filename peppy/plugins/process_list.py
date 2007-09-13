@@ -11,7 +11,6 @@ import os
 import wx
 from wx.lib.pubsub import Publisher
 
-from peppy import *
 from peppy.lib.processmanager import *
 from peppy.trac.core import *
 from peppy.sidebar import *

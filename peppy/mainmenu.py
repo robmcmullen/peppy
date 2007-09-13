@@ -8,8 +8,6 @@ import os
 
 import wx
 
-from peppy import *
-
 from major import *
 from menu import *
 from buffers import *

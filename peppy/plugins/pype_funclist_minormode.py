@@ -8,7 +8,7 @@ its getFunctionList method will be able to work with this minor mode.
 
 import os
 
-from peppy import *
+from peppy.minor import *
 from peppy.stcinterface import STCProxy
 from peppy.menu import *
 from peppy.trac.core import *

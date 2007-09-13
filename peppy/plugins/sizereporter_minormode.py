@@ -11,7 +11,7 @@ import os
 
 import wx
 
-from peppy import *
+from peppy.minor import *
 from peppy.menu import *
 from peppy.trac.core import *
 

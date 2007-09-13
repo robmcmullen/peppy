@@ -11,7 +11,6 @@ import os
 import wx
 import wx.stc
 
-from peppy import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
@@ -30,8 +29,8 @@ int main(int argc, char *argv[])
 SetAbout('hello.c',_sample_file)
 
 class SampleCFile(SelectAction):
-   name = "&Open Sample C File"
-   tooltip = "Open a sample C file"
+   name = _("&Open Sample C File")
+   tooltip = _("Open a sample C file")
    icon = wx.ART_FILE_OPEN
 
    def action(self, pos=-1):
@@ -83,8 +82,8 @@ class CModePlugin(MajorModeMatcherBase,debugmixin):
    def possibleModes(self):
        yield CMode
 
-   default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                 (None,"Test",MenuItem(SampleCFile)),
+   default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                 (None,_("Test"),MenuItem(SampleCFile)),
                  )
    def getMenuItems(self):
        for mode,menu,item in self.default_menu:

@@ -10,7 +10,6 @@ import os
 import wx
 import wx.stc
 
-from peppy import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 

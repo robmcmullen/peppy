@@ -9,7 +9,6 @@ import os
 
 from wx.lib.pubsub import Publisher
 
-from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 import peppy.boa as boa
@@ -19,8 +18,8 @@ AddCopyright("Boa Constructor", "http://boa-constructor.sourceforge.net/", "Riaa
 
 
 class STCStyles(SelectAction):
-    name="Text Styles..."
-    tooltip = "Open the STC Style Editor to edit the current mode's text display."
+    name=_("Text Styles...")
+    tooltip = _("Open the STC Style Editor to edit the current mode's text display.")
     icon = "icons/style_edit.png"
 
     def isEnabled(self):
@@ -61,4 +60,4 @@ class STCStylesMenuProvider(Component):
     implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        yield (None,"Format",MenuItem(STCStyles).last())
+        yield (None,_("Format"),MenuItem(STCStyles).last())

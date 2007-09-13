@@ -44,35 +44,3 @@ __download_url__ = "http://www.flipturn.org/peppy/archive/"
 __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
-
-__have_wx = True
-try:
-    import wx
-except:
-    # Don't have wx.  Still allow peppy to be imported, because there
-    # are some classes that don't depend on wx
-    __have_wx = False
-
-if __have_wx:
-    # If we have wx, define the common global classes that plugins and
-    # extensions should need to use
-    from peppy.main import Peppy
-    from peppy.buffers import Buffer, BufferHooks, BufferFrame
-    from peppy.configprefs import *
-    from peppy.debug import debuglog, dprint, debugmixin
-    from peppy.major import MajorMode, BufferModificationAction
-    from peppy.minor import MinorMode, IMinorModeProvider, \
-         MinorModeIncompatibilityError
-
-    from peppy.lib.iconstorage import *
-
-    __all__ = [
-        'Peppy', 'Buffer', 'BufferHooks', 'BufferFrame',
-        'HomeConfigDir', 'GlobalSettings', 'ClassSettings',
-                'getSubclassHierarchy',
-        'debuglog','dprint','debugmixin',
-        'getIconStorage','getIconBitmap',
-        'MajorMode', 'BufferModificationAction',
-        'MinorMode', 'IMinorModeProvider', 'MinorModeIncompatibilityError',
-        ]
-    #print __all__

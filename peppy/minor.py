@@ -29,9 +29,9 @@ from configprefs import *
 from debug import *
 
 class MinorModeShow(ToggleListAction):
-    name = "Minor Modes"
+    name = _("Minor Modes")
     inline = False
-    tooltip = "Show or hide minor mode windows"
+    tooltip = _("Show or hide minor mode windows")
 
     def getItems(self):
         major = self.frame.getActiveMajorMode()
@@ -175,7 +175,7 @@ class MinorModeLoader(Component, debugmixin):
                 assert self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor
 
-    default_menu=(("View", MenuItem(MinorModeShow).first().after("Major Mode")),
+    default_menu=((_("View"), MenuItem(MinorModeShow).first().after(_("Major Mode"))),
                   )
 
     def getMenuItems(self):

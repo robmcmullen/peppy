@@ -9,7 +9,6 @@ and save process.
 """
 import os
 
-from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.buffers import *
@@ -17,7 +16,7 @@ from peppy.configprefs import *
 
 
 class OpenRecent(GlobalList, ClassSettings):
-    name="Open Recent"
+    name=_("Open Recent")
     inline=False
 
     default_settings = {
@@ -96,7 +95,7 @@ class OpenRecentConfExtender(Component):
         OpenRecent.save(pathname)        
 
     def getMenuItems(self):
-        yield (None,"File",MenuItem(OpenRecent).after("&Open File...").before("opensep"))
+        yield (None,_("File"),MenuItem(OpenRecent).after(_("&Open File...")).before("opensep"))
 
     def openPostHook(self,buffer):
         OpenRecent.append(buffer.url)

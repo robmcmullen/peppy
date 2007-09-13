@@ -23,6 +23,10 @@ def i18n_gettext(path):
     trans = gettext.GNUTranslations(open(path, 'rb'))
     __builtin__._ = trans.ugettext
 
+def lower(text):
+    """Dummy conversion to test i18n without loading i18n stuff"""
+    return text.lower()
+
 def init_i18n(path, lang, catalog):
     gettext_path = os.path.join(path, lang, catalog)
     if os.path.exists(gettext_path):

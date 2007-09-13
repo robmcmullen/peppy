@@ -22,7 +22,6 @@ import wx.stc
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.lib.bitmapscroller import *
@@ -33,8 +32,8 @@ class OpenImageViewer(SelectAction):
     """
     Test action to open a sample image file.
     """
-    name = "&Open Image Viewer..."
-    tooltip = "Open an Image Viewer"
+    name = _("&Open Image Viewer...")
+    tooltip = _("Open an Image Viewer")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -42,8 +41,8 @@ class OpenImageViewer(SelectAction):
         self.frame.open("about:red.png")
 
 class ZoomIn(SelectAction):
-    name = "Zoom In"
-    tooltip = "Zoom in (magnify) image"
+    name = _("Zoom In")
+    tooltip = _("Zoom in (magnify) image")
     icon = 'icons/zoom_in.png'
     keyboard = "="
     
@@ -53,8 +52,8 @@ class ZoomIn(SelectAction):
         mode.editwin.zoomIn()
 
 class ZoomOut(SelectAction):
-    name = "Zoom Out"
-    tooltip = "Zoom out (demagnify) image"
+    name = _("Zoom Out")
+    tooltip = _("Zoom out (demagnify) image")
     icon = 'icons/zoom_out.png'
     keyboard = "-"
     
@@ -64,8 +63,8 @@ class ZoomOut(SelectAction):
         mode.editwin.zoomOut()
 
 class RectangularSelect(ToggleAction):
-    name = "Select Rect"
-    tooltip = "Select rectangular region."
+    name = _("Select Rect")
+    tooltip = _("Select rectangular region.")
     icon = 'icons/shape_square_rect_select.png'
     
     def isChecked(self):
@@ -137,7 +136,7 @@ class ImageViewMode(MajorMode):
     This mode leaves the image in its native format.
     """
     
-    keyword='ImageView'
+    keyword="ImageView"
     icon='icons/picture.png'
     regex="\.(jpg|jpeg|gif|bmp|png|ico)"
 
@@ -211,17 +210,17 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield ImageViewMode
     
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(OpenImageViewer)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(OpenImageViewer)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("ImageView",None,Menu("Image").after("Major Mode")),
-                   ("ImageView","Image",MenuItem(ZoomIn)),
-                   ("ImageView","Image",MenuItem(ZoomOut)),
-                   ("ImageView","Image",MenuItem(RectangularSelect)),
+    default_tools=(("ImageView",None,Menu(_("Image")).after(_("Major Mode"))),
+                   ("ImageView",_("Image"),MenuItem(ZoomIn)),
+                   ("ImageView",_("Image"),MenuItem(ZoomOut)),
+                   ("ImageView",_("Image"),MenuItem(RectangularSelect)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:

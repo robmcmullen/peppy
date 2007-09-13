@@ -9,18 +9,16 @@ class.
 import os
 
 from wx.lib.pubsub import Publisher
-
 import wx.grid
 
-from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.configprefs import *
 from peppy.lib.iconstorage import *
 
 class Preferences(SelectAction):
-    name = "&Preferences..."
-    tooltip = "Preferences, settings, and configurations..."
+    name = _("&Preferences...")
+    tooltip = _("Preferences, settings, and configurations...")
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES
 
@@ -271,7 +269,7 @@ class PreferencesDialog(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        label = wx.StaticText(self, -1, "This is a placeholder for the Preferences dialog")
+        label = wx.StaticText(self, -1, _("This is a placeholder for the Preferences dialog"))
         sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
         main = wx.BoxSizer(wx.HORIZONTAL)
@@ -325,4 +323,4 @@ class PreferencesPlugin(Component):
     implements(IMenuItemProvider)
 
     def getMenuItems(self):
-        yield (None,"Edit",MenuItem(Preferences).after("lastsep"))
+        yield (None,_("Edit"),MenuItem(Preferences).after(_("lastsep")))

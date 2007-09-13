@@ -17,7 +17,6 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-from peppy import *
 from peppy.lib.bitmapscroller import *
 from peppy.lib.processmanager import ProcessManager, JobOutputMixin
 from peppy.menu import *
@@ -38,8 +37,8 @@ SetAbout('sample.dot',_sample_file)
 
 
 class SampleDot(SelectAction):
-    name = "&Open Sample Graphviz dot file"
-    tooltip = "Open a sample Graphviz file"
+    name = _("&Open Sample Graphviz dot file")
+    tooltip = _("Open a sample Graphviz file")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -220,8 +219,8 @@ class GraphvizPlugin(MajorModeMatcherBase,debugmixin):
     def getMinorModes(self):
         yield GraphvizViewMinorMode
     
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(SampleDot)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(SampleDot)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

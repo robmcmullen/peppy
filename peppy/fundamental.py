@@ -6,7 +6,6 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy import *
 from peppy.mainmenu import Paste
 from peppy.menu import *
 
@@ -793,32 +792,32 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield FundamentalMode
     
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(OpenFundamental).first()),
-                  ("Fundamental","Edit",MenuItem(PasteAtColumn).after("Paste").before("paste")),
-                  ("Fundamental","Edit",MenuItem(FindText)),
-                  ("Fundamental","Edit",MenuItem(ReplaceText)),
-                  ("Fundamental","Edit",MenuItem(GotoLine)),
-                  ("Fundamental","Format",MenuItem(EOLModeSelect)),
-                  ("Fundamental","Format",Separator()),
-                  ("Fundamental","View",MenuItem(WordWrap)),
-                  ("Fundamental","View",MenuItem(LineNumbers)),
-                  ("Fundamental","View",MenuItem(Folding)),
-                  ("Fundamental","View",Separator("cmdsep")),
-                  ("Fundamental",None,Menu("Cmds").after("Edit")),
-                  ("Fundamental","Cmds",MenuItem(ShiftLeft)),
-                  ("Fundamental","Cmds",MenuItem(ShiftRight)),
-                  ("Fundamental","Cmds",MenuItem(Reindent)),
-                  ("Fundamental","Cmds",Separator("shift").last()),
-                  ("Fundamental","Cmds",MenuItem(CommentRegion)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(OpenFundamental).first()),
+                  ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
+                  ("Fundamental",_("Edit"),MenuItem(FindText)),
+                  ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
+                  ("Fundamental",_("Edit"),MenuItem(GotoLine)),
+                  ("Fundamental",_("Format"),MenuItem(EOLModeSelect)),
+                  ("Fundamental",_("Format"),Separator()),
+                  ("Fundamental",_("View"),MenuItem(WordWrap)),
+                  ("Fundamental",_("View"),MenuItem(LineNumbers)),
+                  ("Fundamental",_("View"),MenuItem(Folding)),
+                  ("Fundamental",_("View"),Separator(_("cmdsep"))),
+                  ("Fundamental",None,Menu(_("Cmds")).after(_("Edit"))),
+                  ("Fundamental",_("Cmds"),MenuItem(ShiftLeft)),
+                  ("Fundamental",_("Cmds"),MenuItem(ShiftRight)),
+                  ("Fundamental",_("Cmds"),MenuItem(Reindent)),
+                  ("Fundamental",_("Cmds"),Separator(_("shift")).last()),
+                  ("Fundamental",_("Cmds"),MenuItem(CommentRegion)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("Fundamental",None,Menu("Cmds").after("Major Mode")),
-                   ("Fundamental","Cmds",MenuItem(ShiftLeft)),
-                   ("Fundamental","Cmds",MenuItem(ShiftRight)),
+    default_tools=(("Fundamental",None,Menu(_("Cmds")).after(_("Major Mode"))),
+                   ("Fundamental",_("Cmds"),MenuItem(ShiftLeft)),
+                   ("Fundamental",_("Cmds"),MenuItem(ShiftRight)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:

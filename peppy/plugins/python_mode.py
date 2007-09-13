@@ -10,7 +10,6 @@ import keyword
 import wx
 import wx.stc
 
-from peppy import *
 from peppy.about import SetAbout
 from peppy.menu import *
 from peppy.major import *
@@ -45,8 +44,8 @@ SetAbout('sample.py',_sample_file)
 
 
 class SamplePython(SelectAction):
-    name = "&Open Sample Python"
-    tooltip = "Open a sample Python file"
+    name = _("&Open Sample Python")
+    tooltip = _("Open a sample Python file")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -325,19 +324,19 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield PythonMode
     
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(SamplePython)),
-##                  ("Python",None,Menu("Python").after("Major Mode")),
-##                  ("Python","Python",MenuItem(ShiftLeft)),
-##                  ("Python","Python",MenuItem(ShiftRight)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(SamplePython)),
+##                  ("Python",None,Menu(_("Python")).after(_("Major Mode"))),
+##                  ("Python",_("Python"),MenuItem(ShiftLeft)),
+##                  ("Python",_("Python"),MenuItem(ShiftRight)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("Python",None,Menu("Python").after("Major Mode")),
-##                   ("Python","Python",MenuItem(ShiftLeft)),
-##                   ("Python","Python",MenuItem(ShiftRight)),
+    default_tools=(("Python",None,Menu(_("Python")).after(_("Major Mode"))),
+##                   ("Python",_("Python"),MenuItem(ShiftLeft)),
+##                   ("Python",_("Python"),MenuItem(ShiftRight)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:

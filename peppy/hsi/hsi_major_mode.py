@@ -41,8 +41,6 @@ import wx.stc as stc
 import wx.lib.newevent
 
 from peppy.actions.minibuffer import FloatMinibuffer
-
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *

@@ -36,7 +36,6 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy import *
 from menu import *
 from stcinterface import *
 from configprefs import *
@@ -85,9 +84,9 @@ class BufferModificationAction(BufferBusyActionMixin, SelectAction):
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
-    name="Major Mode"
+    name=_("Major Mode")
     inline=False
-    tooltip="Switch major mode"
+    tooltip=_("Switch major mode")
 
     modes=None
     items=None
@@ -753,7 +752,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
     plugins=ExtensionPoint(IMajorModeMatcher)
     implements(IMenuItemProvider)
 
-    default_menu=(("View",MenuItem(MajorModeSelect).first()),
+    default_menu=((_("View"),MenuItem(MajorModeSelect).first()),
                   )
 
     def getMenuItems(self):

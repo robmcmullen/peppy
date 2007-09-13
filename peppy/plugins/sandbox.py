@@ -15,14 +15,13 @@ import time
 
 import wx
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 
 
 class SlowProgressBarTest(SelectAction):
-    name = "Slow test of the progress bar"
-    tooltip = "Test the progress bar"
+    name = _("Slow test of the progress bar")
+    tooltip = _("Test the progress bar")
     delay = .2
 
     def action(self, pos=-1):
@@ -33,7 +32,7 @@ class SlowProgressBarTest(SelectAction):
         if mode is not None:
             mode.buffer.setBusy(True)
             statusbar = mode.statusbar
-            statusbar.startProgress("Testing...", 100, True)
+            statusbar.startProgress(_("Testing..."), 100, True)
             for i in range(100):
                 if statusbar.isCancelled():
                     break
@@ -44,7 +43,7 @@ class SlowProgressBarTest(SelectAction):
             mode.buffer.setBusy(False)
         
 class FastProgressBarTest(SlowProgressBarTest):
-    name = "Fast test of the progress bar"
+    name = _("Fast test of the progress bar")
     delay = .01
 
 class ShowStyles(SelectAction):
@@ -63,10 +62,10 @@ class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     """
     implements(IMenuItemProvider)
 
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(FastProgressBarTest)),
-                  (None,"Test",MenuItem(SlowProgressBarTest)),
-                  (None,"Test",MenuItem(ShowStyles)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(FastProgressBarTest)),
+                  (None,_("Test"),MenuItem(SlowProgressBarTest)),
+                  (None,_("Test"),MenuItem(ShowStyles)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

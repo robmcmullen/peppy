@@ -11,9 +11,7 @@ code.
 """
 import os
 
-from peppy import *
 from peppy.configprefs import *
-
 from peppy.about import AddCopyright
 
 PyPECompat = None

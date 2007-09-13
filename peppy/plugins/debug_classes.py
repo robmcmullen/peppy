@@ -10,7 +10,6 @@ sync if this is shown on two different frames.
 
 import os
 
-from peppy import *
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.sidebar import *
@@ -27,9 +26,9 @@ class DebugClass(ToggleListAction):
     """
     debuglevel=0
     
-    name = "DebugClassMenu"
+    name = _("DebugClassMenu")
     empty = "< list of classes >"
-    tooltip = "Turn on/off debugging for listed classes"
+    tooltip = _("Turn on/off debugging for listed classes")
     categories = False
     inline = True
 
@@ -144,8 +143,8 @@ class DebugClassProvider(Component):
         else:
             raise StopIteration
 
-    default_menu=((None,Menu("Debug").after("Minor Mode").before("&Help")),
-                  ("Debug",MenuItem(DebugClass).first()),
+    default_menu=((None,Menu(_("Debug")).after(_("Minor Mode")).before(_("&Help"))),
+                  (_("Debug"),MenuItem(DebugClass).first()),
                   )
     def getMenuItems(self):
         # Don't show menu if in optimize mode

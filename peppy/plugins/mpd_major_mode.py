@@ -23,7 +23,6 @@ import wx.lib.newevent
 from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 
-from peppy import *
 from peppy.mainmenu import OpenDialog
 from peppy.menu import *
 from peppy.major import *

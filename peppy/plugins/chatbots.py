@@ -7,12 +7,10 @@ provides the pipe-based interfaces that ShellPipe classes expect.
 """
 
 import os,re
+from cStringIO import StringIO
 
 import wx
 
-from cStringIO import StringIO
-
-from peppy import *
 from peppy.trac.core import *
 from peppy.plugins.shell_mode import *
 

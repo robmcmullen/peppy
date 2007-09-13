@@ -12,7 +12,6 @@ from cStringIO import StringIO
 
 import wx
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.actions.minibuffer import *
@@ -357,9 +356,9 @@ class LexerDebugPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield LexerDebugMode
     
-    default_menu=(("LexerDebug",None,Menu("Lexer").after("Minor Mode")),
-                  ("LexerDebug","Lexer",MenuItem(LexerKeywords)),
-                  ("LexerDebug","Lexer",MenuItem(LexerSelect)),
+    default_menu=(("LexerDebug",None,Menu(_("Lexer")).after(_("Minor Mode"))),
+                  ("LexerDebug",_("Lexer"),MenuItem(LexerKeywords)),
+                  ("LexerDebug",_("Lexer"),MenuItem(LexerSelect)),
                   )
     def getMenuItems(self):
         for mode,parentmenu,item in self.default_menu:

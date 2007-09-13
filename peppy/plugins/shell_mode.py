@@ -2,14 +2,12 @@
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re
 import urllib2
+from cStringIO import StringIO
 
 import wx
 import wx.stc
 import wx.lib.newevent
 
-from cStringIO import StringIO
-
-from peppy import *
 from peppy.major import *
 from peppy.menu import *
 from peppy.iofilter import *

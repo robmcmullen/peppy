@@ -12,7 +12,6 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-from peppy import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
@@ -44,8 +43,8 @@ SetAbout('sample.mak',_sample_file)
 
 
 class SampleMakefile(SelectAction):
-    name = "&Open Sample Makefile"
-    tooltip = "Open a sample Makefile"
+    name = _("&Open Sample Makefile")
+    tooltip = _("Open a sample Makefile")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -99,8 +98,8 @@ class MakefilePlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield MakefileMode
     
-    default_menu=((None,None,Menu("Test").after("Minor Mode")),
-                  (None,"Test",MenuItem(SampleMakefile)),
+    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
+                  (None,_("Test"),MenuItem(SampleMakefile)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
