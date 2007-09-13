@@ -74,65 +74,6 @@ class Peppy(wx.App, ClassSettings, debugmixin):
 
     config = None
     
-    def deleteFrame(self,frame):
-        #self.pendingframes.append((self.frames.getid(frame),frame))
-        #self.frames.remove(frame)
-        pass
-
-    @classmethod
-    def newFrame(cls, callingFrame=None):
-        frame=BufferFrame(wx.GetApp())
-        return frame
-
-    @classmethod
-    def showFrame(cls, frame):
-        frame.Show(True)
-
-    @classmethod
-    def getTopFrame(cls):
-        frame = self.GetTopWindow()
-        if not isinstance(frame, BufferFrame):
-            # FIXME: can this ever happen?
-            dprint("Top window not a BufferFrame!")
-            for frame in wx.GetTopLevelWindows():
-                if isinstance(frame, BufferFrame):
-                    return frame
-            dprint("No top level BufferFrames found!")
-        return frame
-
-    @classmethod
-    def enableFrames(cls):
-        """Force all frames to update their enable status.
-
-        Loop through each frame and force an update of the
-        enable/disable state of ui items.  The menu does this in
-        response to a user event, so this is really for the toolbar
-        and other always-visible widgets that aren't automatically
-        updated.
-        """
-        for frame in wx.GetTopLevelWindows():
-            assert self.dprint(frame)
-            try:
-                frame.enableTools()
-            except:
-                # not all top level windows will be BufferFrame
-                # subclasses, so just use the easy way out and catch
-                # all exceptions.
-                pass
-
-    @classmethod
-    def close(cls, buffer):
-        if buffer.modified:
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-            retval=dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            retval=wx.ID_YES
-
-        if retval==wx.ID_YES:
-            buffer.removeAllViews()
-            BufferList.removeBuffer(buffer)
-
     def OnInit(self):
         """Main application initialization.
 
@@ -329,7 +270,7 @@ class Peppy(wx.App, ClassSettings, debugmixin):
             self.loadPlugin(plugin)
 
     def autoloadImports(self):
-        import keyboard
+        pass
     
     def autoloadStandardPlugins(self, plugindir='plugins'):
         """Autoload plugins from peppy plugins directory.
@@ -371,6 +312,56 @@ class Peppy(wx.App, ClassSettings, debugmixin):
         assert self.dprint(mods)
         if mods:
             self.loadPlugins(mods)
+
+    def deleteFrame(self,frame):
+        #self.pendingframes.append((self.frames.getid(frame),frame))
+        #self.frames.remove(frame)
+        pass
+
+    def showFrame(self, frame):
+        frame.Show(True)
+
+    def getTopFrame(self):
+        frame = self.GetTopWindow()
+        if not isinstance(frame, BufferFrame):
+            # FIXME: can this ever happen?
+            dprint("Top window not a BufferFrame!")
+            for frame in wx.GetTopLevelWindows():
+                if isinstance(frame, BufferFrame):
+                    return frame
+            dprint("No top level BufferFrames found!")
+        return frame
+
+    def enableFrames(self):
+        """Force all frames to update their enable status.
+
+        Loop through each frame and force an update of the
+        enable/disable state of ui items.  The menu does this in
+        response to a user event, so this is really for the toolbar
+        and other always-visible widgets that aren't automatically
+        updated.
+        """
+        for frame in wx.GetTopLevelWindows():
+            assert self.dprint(frame)
+            try:
+                frame.enableTools()
+            except:
+                # not all top level windows will be BufferFrame
+                # subclasses, so just use the easy way out and catch
+                # all exceptions.
+                pass
+
+    def close(self, buffer):
+        if buffer.modified:
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            retval=wx.ID_YES
+
+        if retval==wx.ID_YES:
+            buffer.removeAllViews()
+            BufferList.removeBuffer(buffer)
 
     def quit(self, msg):
         doit=self.quitHook()
