@@ -46,7 +46,7 @@ class BufferList(GlobalList):
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
-            dlg = QuitDialog(self.GetTopWindow(), unsaved)
+            dlg = QuitDialog(wx.GetApp().GetTopWindow(), unsaved)
             retval=dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -100,7 +100,7 @@ class NewFrame(SelectAction):
     key_bindings = {'emacs': "C-X 5 2",}
     
     def action(self, pos=-1):
-        frame=BufferApp.newFrame(callingFrame=self.frame)
+        frame=BufferFrame()
         frame.titleBuffer()
         frame.Show(True)
 
