@@ -28,6 +28,7 @@ except:
         def dprint(self, txt):
             if self.debuglevel > 0:
                 dprint(txt)
+            return True
 
 
 _GlobalProcessManager = None
@@ -68,12 +69,11 @@ class Job(debugmixin):
     debuglevel = 0
     
     def __init__(self, cmd, job_output):
-        handler = wx.GetApp()
         self.pid = None
         self.process = None
         self.cmd = cmd
         self.jobout = job_output
-        self.handler = handler
+        self.handler = wx.GetApp()
         self.stdout = None
         self.stderr = None
 
@@ -112,7 +112,7 @@ class Job(debugmixin):
             self.process = None
 
     def readStream(self, stream, callback):
-        if stream.CanRead():
+        if stream and stream.CanRead():
             text = stream.read()
             wx.CallAfter(callback, self, text)
 
@@ -284,7 +284,7 @@ class ProcessList(wx.ListCtrl, debugmixin):
 if __name__ == '__main__':
     class jobframe(wx.Frame, JobOutputMixin):
         def __init__(self):
-            wx.Frame.__init__(self, None, -1, 'asd')#, style=0)
+            wx.Frame.__init__(self, None, -1, 'Process Manager Test')
             
             mainsizer = wx.BoxSizer(wx.VERTICAL)
             listsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -319,7 +319,13 @@ if __name__ == '__main__':
             self.out.AppendText("job=%s text=%s" % (job.pid, text))
     
         def OnStart(self, event):
-            p = ProcessManager().run('''/bin/bash -c "while echo blah; do sleep 1; done"''', self)
+            p = ProcessManager().run("python -u", self, """\
+import time
+
+while True:
+    print 'blah'
+    time.sleep(1)
+""")
             print p.pid
             
         def OnKill(self, event):
