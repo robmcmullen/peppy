@@ -454,6 +454,12 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
                 self.minor_panes.append(pane)
         self.minor_panes.sort(key=lambda s:s.caption)
 
+    def findMinorMode(self, name):
+        for minor in self.minors:
+            if minor.keyword == name:
+                return minor
+        return None
+
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
         dprint()
