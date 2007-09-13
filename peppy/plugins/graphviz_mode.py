@@ -19,6 +19,7 @@ import wx.stc
 
 from peppy import *
 from peppy.lib.bitmapscroller import *
+from peppy.lib.processmanager import ProcessManager, JobOutputMixin
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
@@ -88,7 +89,7 @@ class GraphvizMode(FundamentalMode):
     
 
 
-class GraphvizViewMinorMode(MinorMode, wx.Panel, debugmixin):
+class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
     """Display the graphical view of the DOT file.
 
     This displays the graphic image that is represented by the .dot
@@ -133,19 +134,15 @@ class GraphvizViewMinorMode(MinorMode, wx.Panel, debugmixin):
 
         self.process = None
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.Bind(wx.EVT_END_PROCESS, self.OnProcessEnded)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.Layout()
 
     def deletePreHook(self):
         if self.process is not None:
-            self.process.Detach()
-            self.process.CloseOutput()
-            self.process = None
+            self.process.kill()
 
     def busy(self, busy):
-        
         if busy:
             cursor = wx.StockCursor(wx.CURSOR_WATCH)
         else:
@@ -162,53 +159,23 @@ class GraphvizViewMinorMode(MinorMode, wx.Panel, debugmixin):
         assert self.dprint("using %s to run graphviz" % repr(prog))
 
         cmd = "%s -Tpng" % prog
-        
-        self.process = wx.Process(self)
-        self.process.Redirect();
-        pid = wx.Execute(cmd, wx.EXEC_ASYNC, self.process)
-        if pid==0:
-            self.major.frame.SetStatusText("Couldn't run %s" % cmd)
-            self.process = None
-        else:
-            self.major.frame.SetStatusText("Running %s with pid=%d" % (cmd, pid))
 
-            self.busy(True)
-            
-            self.preview = StringIO()
-            
-            #print "text = %s" % self.major.buffer.stc.GetText()
-            text = self.major.buffer.stc.GetText()
-            size = len(text)
-            fh = self.process.GetOutputStream()
-            assert self.dprint("sending text size=%d to %s" % (size,fh))
-            if size > 1000:
-                for i in range(0,size,1000):
-                    last = i+1000
-                    if last>size:
-                        last=size
-                    assert self.dprint("sending text[%d:%d] to %s" % (i,last,fh))
-                    fh.write(text[i:last])
-                    assert self.dprint("last write = %s" % str(fh.LastWrite()))
-            else:
-                fh.write(self.major.buffer.stc.GetText())
-            self.process.CloseOutput()
+        ProcessManager().run(cmd, self, self.major.buffer.stc.GetText())
 
-    def readStream(self):
-        stream = self.process.GetInputStream()
+    def startupCallback(self, job):
+        self.process = job
+        self.busy(True)
+        self.preview = StringIO()
 
-        if stream.CanRead():
-            text = stream.read()
-            self.preview.write(text)
+    def stdoutCallback(self, job, text):
+        self.preview.write(text)
 
     def OnIdle(self, evt):
-        if self.process is not None:
-            self.readStream()
+        ProcessManager().idle()
         evt.Skip()
 
-    def OnProcessEnded(self, evt):
+    def finishedCallback(self, job):
         assert self.dprint()
-        self.readStream()
-        self.process.Destroy()
         self.process = None
         self.busy(False)
         self.createImage()
