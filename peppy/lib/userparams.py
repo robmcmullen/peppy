@@ -96,6 +96,16 @@ class Param(debugmixin):
     def getValue(self, ctrl):
         return str(ctrl.GetValue())
 
+class ReadOnlyParam(debugmixin):
+    def __init__(self, keyword, default=None):
+        self.keyword = keyword
+        self.category = None
+        if default is not None:
+            self.default = default
+
+    def isSettable(self):
+        return False
+
 class ParamCategory(Param):
     def __init__(self, keyword, default=None):
         self.keyword = keyword
@@ -601,14 +611,14 @@ class ClassPrefs(object):
     __metaclass__ = ClassPrefsMetaClass
 
 
-class PrefPanel(wx.Panel, debugmixin):
+class PrefPanel(ScrolledPanel, debugmixin):
     """Panel that shows ui controls corresponding to all preferences
     """
     debuglevel = 0
 
 
     def __init__(self, parent, obj):
-        wx.Panel.__init__(self, parent)
+        Parent.__init__(self, parent, -1, size=(500,-1))
         self.parent = parent
         self.obj = obj
         
@@ -620,6 +630,13 @@ class PrefPanel(wx.Panel, debugmixin):
         self.SetSizer(self.sizer)
         self.Layout()
 
+    def Layout(self):
+        dprint()
+        ScrolledPanel.Layout(self)
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
+        self.Scroll(0,0)
+        
     def create(self):
         row = 0
         focused = False
@@ -787,28 +804,16 @@ class PrefDialog(wx.Dialog):
         label = wx.StaticText(self, -1, _("This is a placeholder for the Preferences dialog"))
         sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
-        main = wx.BoxSizer(wx.HORIZONTAL)
-        self.tree = PrefClassTree(self)
-        
-        classes = getAllSubclassesOf(ClassPrefs)
-        dprint(classes)
-        for cls in classes:
-            self.tree.AppendClass(cls)
-        self.tree.SortRecurse()
-        self.tree.ExpandAll()
+        self.splitter = wx.SplitterWindow(self)
+        self.splitter.SetMinimumPaneSize(50)
+        self.tree = self.createTree(self.obj.__class__)
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
-        main.Add(self.tree, 0, wx.EXPAND, border=0)
-
-        self.panel = wx.Panel(self)
-        psizer = wx.BoxSizer(wx.VERTICAL)
-        self.panel.SetSizer(psizer)
 
         self.pref_panels = {}
-        self.pref = self.createPanel(self.obj.__class__)
-        
-        main.Add(self.panel, 0, wx.EXPAND, border=0)
-        
-        sizer.Add(main, 0, wx.EXPAND, border=0)
+        pref = self.createPanel(self.obj.__class__)
+
+        self.splitter.SplitVertically(self.tree, pref, -500)
+        sizer.Add(self.splitter, 0, wx.EXPAND)
 
         btnsizer = wx.StdDialogButtonSizer()
         
@@ -825,9 +830,21 @@ class PrefDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
 
+        self.Layout()
+
+    def createTree(self, cls):
+        tree = PrefClassTree(self.splitter)
+        
+        classes = getAllSubclassesOf(ClassPrefs)
+        dprint(classes)
+        for cls in classes:
+            tree.AppendClass(cls)
+        tree.SortRecurse()
+        tree.ExpandAll()
+        return tree
+        
     def createPanel(self, cls):
-        pref = PrefPanel(self.panel, cls)
-        self.panel.GetSizer().Add(pref, 0, wx.EXPAND, border=0)
+        pref = PrefPanel(self.splitter, cls)
         self.pref_panels[cls] = pref
         return pref
 
@@ -836,13 +853,14 @@ class PrefDialog(wx.Dialog):
         if self.item:
             cls = self.tree.GetItemPyData(self.item)
             if cls in self.pref_panels:
-                panel = self.pref_panels[cls]
+                pref = self.pref_panels[cls]
             else:
-                panel = self.createPanel(cls)
-            self.pref.Hide()
-            panel.Show()
-            panel.GetSizer().Fit(panel)
-            self.pref = panel
+                pref = self.createPanel(cls)
+            old = self.splitter.GetWindow2()
+            self.splitter.ReplaceWindow(old, pref)
+            old.Hide()
+            pref.Show()
+            pref.Layout()
         evt.Skip()
 
     def applyPreferences(self):
