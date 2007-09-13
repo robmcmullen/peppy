@@ -415,8 +415,8 @@ def getSubclassHierarchy(obj,subclass,debug=0):
     return subclasses
     
 
-class GlobalPrefs(object):
-    debug=False
+class GlobalPrefs(debugmixin):
+    debuglevel = 0
     
     default={}
     user={}
@@ -471,8 +471,8 @@ class GlobalPrefs(object):
                     
             if klass.__name__ not in GlobalPrefs.user:
                 GlobalPrefs.user[klass.__name__]={}
-        if GlobalPrefs.debug: dprint("default: %s" % GlobalPrefs.default)
-        if GlobalPrefs.debug: dprint("user: %s" % GlobalPrefs.user)
+        if GlobalPrefs.debuglevel > 0: dprint("default: %s" % GlobalPrefs.default)
+        if GlobalPrefs.debuglevel > 0: dprint("user: %s" % GlobalPrefs.user)
 
     @staticmethod
     def convertValue(section,option,value):
@@ -504,8 +504,24 @@ class GlobalPrefs(object):
             GlobalPrefs.user[section]=d
 
     @staticmethod
-    def saveConfig(filename):
-        print "Saving user configuration: %s" % GlobalPrefs.user
+    def configToText():
+        if GlobalPrefs.debuglevel > 0: dprint("Saving user configuration: %s" % GlobalPrefs.user)
+        lines = ["# Automatically generated file!  Do not edit -- edit override.cfg instead"]
+        sections = GlobalPrefs.user.keys()
+        sections.sort()
+        for section in sections:
+            kvpairs = GlobalPrefs.user[section]
+            if kvpairs:
+                lines.append("[%s]" % section)
+                keys = kvpairs.keys()
+                keys.sort()
+                for key in keys:
+                    lines.append("%s = %s" % (key, kvpairs[key]))
+                lines.append("")
+        text = os.linesep.join(lines)
+        if GlobalPrefs.debuglevel > 0: dprint(text)
+        return text
+        
 
 class PrefsProxy(debugmixin):
     """Dictionary-like object to provide global prefs to a class.
@@ -607,11 +623,11 @@ class ClassPrefsMetaClass(type):
         accessed through self.prefs changes the class prefs.
         Instance prefs are maintained by the class itself.
         """
-        dprint('Bases: %s' % str(bases))
+        #dprint('Bases: %s' % str(bases))
         expanded = [cls]
         for base in bases:
             expanded.extend(getClassHierarchy(base))
-        dprint('New bases: %s' % str(expanded))
+        #dprint('New bases: %s' % str(expanded))
         # Add the prefs class attribute
         cls.classprefs = PrefsProxy(expanded)
 

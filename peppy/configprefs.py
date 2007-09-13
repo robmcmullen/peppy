@@ -53,29 +53,32 @@ class HomeConfigDir:
         except:
             return False
 
+    def fullpath(self, name):
+        return os.path.join(self.dir, name)
+
     def exists(self, name=None):
         if name is not None:
-            d = os.path.join(self.dir, name)
+            d = self.fullpath(name)
         else:
             d = self.dir
         return os.path.exists(d)
 
-    def open(self,name,mode='r'):
-        path=os.path.join(self.dir,name)
-        fd=open(path,mode)
+    def open(self, name, mode='r'):
+        path = self.fullpath(name)
+        fd = open(path,mode)
         return fd
 
-    def loadObject(self,name):
-        item=None
+    def loadObject(self, name):
+        item = None
         if self.exists(name):
-            fd=self.open(name,'rb')
-            item=pickle.load(fd)
+            fd = self.open(name, 'rb')
+            item = pickle.load(fd)
             fd.close()
         return item
 
-    def saveObject(self,name,item):
-        fd=self.open(name,'wb')
-        pickle.dump(item,fd)
+    def saveObject(self, name, item):
+        fd = self.open(name, 'wb')
+        pickle.dump(item, fd)
         fd.close()
 
 

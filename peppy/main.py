@@ -237,12 +237,24 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def saveConfigPreHook(self):
         pass
 
-    def saveConfig(self,filename):
+    def saveConfig(self, filename):
         self.saveConfigPreHook()
         
         ConfigurationExtender(ComponentManager()).save(self)
 
-        GlobalSettings.saveConfig(filename)
+        text = GlobalPrefs.configToText()
+        try:
+            fh = self.config.open(filename, "w")
+            fh.write(text)
+            retval=wx.ID_YES
+        except:
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "Unable to save configuration file\n%s\n\nQuit anyway?" % self.config.fullpath(filename), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+
+        if retval==wx.ID_YES:
+            return True
+        return False
 
     def loadPlugin(self, plugin, abort=True):
         """Import a plugin from a module name
@@ -379,7 +391,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             wx.GetApp().ExitMainLoop()
 
     def quitHook(self):
-        self.saveConfig("peppy.cfg")
+        if not self.saveConfig("peppy.cfg"):
+            return False
         Publisher().sendMessage('peppy.shutdown')
         return True
     
