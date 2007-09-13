@@ -190,6 +190,7 @@ class MinorModeLoader(Component, debugmixin):
 
         classes = []
         for keyword in minorlist:
+            keyword = keyword.strip()
             if keyword in MinorModeLoader.modekeys:
                 assert self.dprint("found %s" % keyword)
                 minor=MinorModeLoader.modekeys[keyword]

@@ -133,6 +133,7 @@ class SidebarLoader(Component, debugmixin):
         assert self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
         classes = []
         for keyword in sidebarlist:
+            keyword = keyword.strip()
             if keyword in SidebarLoader.sidebarmap:
                 assert self.dprint("found %s" % keyword)
                 sidebar = SidebarLoader.sidebarmap[keyword]
