@@ -18,8 +18,8 @@ from trac.core import *
 
 
 class NewTab(SelectAction):
-    name = _("New &Tab")
-    tooltip = _("Open a new Tab")
+    name = _("&Tab")
+    tooltip = _("Open a new tab")
     icon = wx.ART_FILE_OPEN
 
     def action(self, pos=-1):
@@ -27,8 +27,8 @@ class NewTab(SelectAction):
         self.frame.open("about:blank")
 
 class New(SelectAction):
-    name = _("&New File...")
-    tooltip = _("New file")
+    name = _("&Text file")
+    tooltip = _("New plain text file")
     icon = "icons/page.png"
     key_bindings = {'win': "C-N", }
 
@@ -292,6 +292,7 @@ class MainMenu(Component):
 
     default_menu=((None,Menu(_("File")).first()),
                   (_("File"),Menu(_("New")).first()),
+                  ((_("File"),_("New")),MenuItem(NewTab).first()),
                   ((_("File"),_("New")),MenuItem(New).first()),
                   (_("File"),Menu(_("Open")).after(_("New"))),
                   ((_("File"),_("Open")),MenuItem(OpenFile).first()),
@@ -324,7 +325,6 @@ class MainMenu(Component):
                   (None,Menu(_("Buffers")).last()),
                   (_("Buffers"),MenuItem(BufferList).first()),
                   (None,Menu(_("Window")).last().after(_("Buffers"))),
-                  (_("Window"),MenuItem(NewTab).first()),
                   (_("Window"),Separator(_("tabs")).first()),
                   (_("Window"),MenuItem(NewFrame).first()),
                   (_("Window"),MenuItem(DeleteFrame).first()),
