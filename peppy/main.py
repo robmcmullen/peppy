@@ -59,7 +59,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                   '.*Filter':3,
                   }
     
-    initialconfig={'BufferFrame':{'width':800,
+    minimal_config={'BufferFrame':{'width':800,
                                   'height':600,
                                   'sidebars':'filebrowser,debug_list,error_log',
                                   },
@@ -95,7 +95,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.keyboard_actions=[]
         self.bufferhandlers=[]
         
-        self.initialConfig(self.initialconfig)
+        name = self.__class__.__name__
+        if wx.Platform not in ["__WXMAC__", "__WXMSW__"]:
+            name = name.lower()
+        self.SetAppName(name)
+        self.config = HomeConfigDir(self.options.confdir)
+
+        self.initialConfig(self.minimal_config)
         self.i18nConfig()
         self.loadConfig("peppy.cfg")
 
@@ -176,23 +182,17 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         frame.open(filename)
         
     def getConfigFilePath(self,filename):
-        c = wx.GetApp().config
-        assert self.dprint("found home dir=%s" % c.dir)
-        return os.path.join(c.dir,filename)
+        assert self.dprint("found home dir=%s" % self.config.dir)
+        return os.path.join(self.config.dir,filename)
 
     def initialConfig(self,defaults={'Frame':{'width':400,
                                                  'height':400,
                                                  }
                                         }):
-        GlobalSettings.setDefaults(defaults)
-
-        name = self.__class__.__name__
-        if wx.Platform not in ["__WXMAC__", "__WXMSW__"]:
-            name = name.lower()
-        self.SetAppName(name)
+        GlobalPrefs.setDefaults(defaults)
+        dprint("port = %s, type=%s" % (self.classprefs.listen_port, type(self.classprefs.listen_port)))
 
     def i18nConfig(self):
-        self.config = HomeConfigDir(self.options.confdir)
         dprint("found home dir=%s" % self.config.dir)
 
         basedir = os.path.dirname(os.path.dirname(__file__))
@@ -211,9 +211,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         init_i18n(path, locale, self.options.i18n_catalog)
 
-    def loadConfig(self,filename):
-        filename=self.getConfigFilePath(filename)
-        GlobalSettings.loadConfig(filename)
+    def loadConfig(self, filename):
+        try:
+            fh = self.config.open(filename)
+            GlobalPrefs.readConfig(fh)
+        except:
+            print "Failed opening config file %s" % filename
 
         self.loadConfigPostHook()
         

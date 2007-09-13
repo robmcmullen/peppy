@@ -5,6 +5,7 @@
 
 import os, struct, time, re, types
 from cStringIO import StringIO
+from ConfigParser import ConfigParser
 import locale
 
 import wx
@@ -356,10 +357,10 @@ def getClassHierarchy(klass,debug=0):
     
     if klass in parentclasses:
         hierarchy=parentclasses[klass]
-        if debug: print "Found class hierarchy: %s" % hierarchy
+        if debug: dprint("Found class hierarchy: %s" % hierarchy)
     else:
         hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__name__.endswith('Mixin') and not k.__module__.startswith('wx.')]
-        if debug: print "Created class hierarchy: %s" % hierarchy
+        if debug: dprint("Created class hierarchy: %s" % hierarchy)
         parentclasses[klass]=hierarchy
     return hierarchy
 
@@ -390,7 +391,7 @@ def getNameHierarchy(obj,debug=0):
     
     hierarchy=getHierarchy(obj,debug)
     names=[k.__name__ for k in hierarchy]
-    if debug: print "name hierarchy: %s" % names
+    if debug:  dprint("name hierarchy: %s" % names)
     return names
 
 def getSubclassHierarchy(obj,subclass,debug=0):
@@ -415,7 +416,7 @@ def getSubclassHierarchy(obj,subclass,debug=0):
     
 
 class GlobalPrefs(object):
-    debug=True
+    debug=False
     
     default={}
     user={}
@@ -425,7 +426,20 @@ class GlobalPrefs(object):
     
     @staticmethod
     def setDefaults(defs):
-        GlobalPrefs.default.update(defs)
+        """Set system defaults to the dict of dicts.
+
+        The GlobalPrefs.default values are used as failsafe defaults
+        -- they are only used if the user defaults aren't found.
+
+        The outer layer dict is class name, the inner dict has
+        name/value pairs.  Note that the value's type should match
+        with the default_classprefs, or there'll be trouble.
+        """
+        d = GlobalPrefs.default
+        for section, defaults in defs.iteritems():
+            if section not in d:
+                d[section] = {}
+            d[section].update(defaults)
 
     @staticmethod
     def addHierarchy(leaf, classhier, namehier):
@@ -457,8 +471,8 @@ class GlobalPrefs(object):
                     
             if klass.__name__ not in GlobalPrefs.user:
                 GlobalPrefs.user[klass.__name__]={}
-        if GlobalPrefs.debug: print "default: %s" % GlobalPrefs.default
-        if GlobalPrefs.debug: print "user: %s" % GlobalPrefs.user
+        if GlobalPrefs.debug: dprint("default: %s" % GlobalPrefs.default)
+        if GlobalPrefs.debug: dprint("user: %s" % GlobalPrefs.user)
 
     @staticmethod
     def convertValue(section,option,value):
@@ -476,10 +490,10 @@ class GlobalPrefs(object):
         return result
 
     @staticmethod
-    def loadConfig(filename):
+    def readConfig(fh):
         cfg=ConfigParser()
         cfg.optionxform=str
-        cfg.read(filename)
+        cfg.readfp(fh)
         for section in cfg.sections():
             d={}
             for option,value in cfg.items(section):
@@ -503,7 +517,6 @@ class PrefsProxy(debugmixin):
     in a child class -- the search proceeds up the class hierarchy
     looking for the desired keyword.
     """
-    
     debuglevel=0
     
     def __init__(self,hier):
@@ -523,13 +536,13 @@ class PrefsProxy(debugmixin):
         if user:
             d=GlobalPrefs.user
             for klass in klasses:
-                assert self.dprint("checking %s for %s in user" % (klass,name))
+                assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d))
                 if klass in d and name in d[klass]:
                     return d[klass][name]
         if default:
             d=GlobalPrefs.default
             for klass in klasses:
-                assert self.dprint("checking %s for %s in default" % (klass,name))
+                assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d))
                 if klass in d and name in d[klass]:
                     return d[klass][name]
 
@@ -702,19 +715,19 @@ class PrefClassTree(wx.TreeCtrl):
 
     def setIconStorage(self):
         # FIXME: this isn't portable
-        from peppy.lib.iconstorage import *
+        import peppy.lib.iconstorage as icons
 
-        getIconStorage().assign(self)
+        icons.getIconStorage().assign(self)
 
     def setIconForItem(self, item, cls=None):
         # FIXME: this isn't portable
-        from peppy.lib.iconstorage import *
+        import peppy.lib.iconstorage as icons
 
         icon = None
         if item == self.GetRootItem():
-            icon = getIconStorage("icons/wrench.png")
+            icon = icons.getIconStorage("icons/wrench.png")
         elif hasattr(cls, 'icon') and cls.icon is not None:
-            icon = getIconStorage(cls.icon)
+            icon = icons.getIconStorage(cls.icon)
 
         if icon is not None:
             self.SetItemImage(item, icon)
