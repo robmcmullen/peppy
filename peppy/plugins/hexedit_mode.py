@@ -872,12 +872,6 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HexEditMode
 
-    def scanShell(self,bangpath):
-        """Override base method to return None because there won't be
-        a shell bangpath on a binary file.
-        """
-        return None
-
     default_menu=((None,None,Menu("Test").after("Minor Mode")),
                   (None,"Test",MenuItem(OpenHexEditor)),
                   )
