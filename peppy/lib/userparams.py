@@ -31,6 +31,36 @@ if '_' not in dir():
     _ = str
 
 
+class DirBrowseButton2(DirBrowseButton):
+    """Update to dir browse button to browse to the currently set
+    directory instead of always using the initial directory.
+    """
+    def OnBrowse(self, ev = None):
+        current = self.GetValue()
+        directory = os.path.split(current)
+        if os.path.isdir( current):
+            directory = current
+            current = ''
+        elif directory and os.path.isdir( directory[0] ):
+            current = directory[1]
+            directory = directory [0]
+        else:
+            directory = self.startDirectory
+
+        style=0
+
+        if not self.newDirectory:
+          style |= wx.DD_DIR_MUST_EXIST
+
+        dialog = self.dialogClass(self,
+                                  message = self.dialogTitle,
+                                  defaultPath = directory,
+                                  style = style)
+
+        if dialog.ShowModal() == wx.ID_OK:
+            self.SetValue(dialog.GetPath())
+        dialog.Destroy()
+    
 
 
 class Param(debugmixin):
@@ -43,7 +73,7 @@ class Param(debugmixin):
     def isSettable(self):
         return True
 
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
         ctrl = wx.TextCtrl(parent, -1, size=(125, -1),
                            style=wx.TE_PROCESS_ENTER)
         return ctrl
@@ -74,7 +104,7 @@ class ParamCategory(Param):
     def isSettable(self):
         return False
 
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
         box = wx.StaticBox(parent, -1, self.keyword)
         ctrl = wx.StaticBoxSizer(box, wx.VERTICAL)
         return ctrl
@@ -82,7 +112,7 @@ class ParamCategory(Param):
 class BoolParam(Param):
     default = False
     
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
         ctrl = wx.CheckBox(parent, -1, "")
         return ctrl
 
@@ -137,7 +167,7 @@ class StrParam(Param):
 class DateParam(Param):
     default = ""
     
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
         dpc = wx.DatePickerCtrl(parent, size=(120,-1),
                                 style=wx.DP_DROPDOWN | wx.DP_SHOWCENTURY)
         return dpc
@@ -170,9 +200,11 @@ class DateParam(Param):
 class DirParam(Param):
     default = ""
     
-    def getCtrl(self, parent):
-        c = DirBrowseButton(parent, -1, size=(300, -1),
-                            labelText = '', startDirectory=parent.cwd())
+    def getCtrl(self, parent, initial=None):
+        if initial is None:
+            initial = os.getcwd()
+        c = DirBrowseButton2(parent, -1, size=(300, -1),
+                            labelText = '', startDirectory=initial)
         return c
 
     def setValue(self, ctrl, value):
@@ -181,10 +213,12 @@ class DirParam(Param):
 class PathParam(DirParam):
     default = ""
     
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
+        if initial is None:
+            initial = os.getcwd()
         c = FileBrowseButtonWithHistory(parent, -1, size=(300, -1),
                                         labelText = '',
-                                        startDirectory=parent.cwd(),
+                                        startDirectory=initial,
                                         changeCallback = self.callback)
         return c
 
@@ -212,7 +246,7 @@ class ChoiceParam(Param):
         self.choices = choices
         self.default = choices[0]
 
-    def getCtrl(self, parent):
+    def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
         return ctrl
 
