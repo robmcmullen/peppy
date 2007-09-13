@@ -93,7 +93,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
     def initPreHook(self):
         currentmode = self.frame.getActiveMajorMode()
-        modes = getSubclasses(MajorMode)
+        modes = getAllSubclassesOf(MajorMode)
 
         # Only display those modes that use the same type of STC as
         # the current mode.

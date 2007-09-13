@@ -52,7 +52,7 @@ class DebugClass(ToggleListAction):
     def setup(msg):
         dprint(msg)
         app = wx.GetApp()
-        debuggable=getSubclasses()
+        debuggable=getAllSubclassesOf()
         debuggable.sort(key=lambda s:s.__name__)
         for kls in debuggable:
             if app.verbose:

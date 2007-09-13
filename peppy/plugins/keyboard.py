@@ -56,7 +56,7 @@ class KeyboardConf(ClassSettings, debugmixin):
     
     @classmethod
     def load(cls):
-        actions = getSubclasses(SelectAction)
+        actions = getAllSubclassesOf(SelectAction)
         #dprint(actions)
         found_emacs = False
         for action in actions:
@@ -88,7 +88,7 @@ class KeyboardConf(ClassSettings, debugmixin):
         lines = []
         lines.append("[%s]" % cls.__name__)
         keymap = {}
-        for action in getSubclasses(SelectAction):
+        for action in getAllSubclassesOf(SelectAction):
             if not issubclass(action, ToggleAction) and not issubclass(action, ListAction) and action.__name__ not in cls.ignore_list:
                 keymap[action.__name__] = cls.getKey(action)
         names = keymap.keys()

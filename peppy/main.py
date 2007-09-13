@@ -144,7 +144,7 @@ class Peppy(wx.App, ClassSettings, debugmixin):
         @param menu: if set, the value of the menu to populate
         @type menu: DebugClass instance, or None
         """
-        debuggable=getSubclasses()
+        debuggable=getAllSubclassesOf(debugmixin)
         debuggable.sort(key=lambda s:s.__name__)
         for kls in debuggable:
             if reset:

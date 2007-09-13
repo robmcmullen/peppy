@@ -274,7 +274,7 @@ class PreferencesDialog(wx.Dialog):
 
         main = wx.BoxSizer(wx.HORIZONTAL)
         self.tree = PreferenceTree(self)
-        classes = wx.GetApp().getSubclasses(ClassSettings)
+        classes = getAllSubclassesOf(ClassSettings)
         dprint(classes)
         for cls in classes:
             self.tree.AppendClass(cls)

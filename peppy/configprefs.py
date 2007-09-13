@@ -15,8 +15,8 @@ from debug import *
 
 __all__ = [ 'HomeConfigDir', 'GlobalSettings',
             'ClassSettings', 'ClassSettingsProxy', 'ClassSettingsMixin',
-            'getSubclasses', 'getSubclassHierarchy', 'IConfigurationExtender',
-            'ConfigurationExtender']
+            'getAllSubclassesOf', 'getSubclassHierarchy',
+            'IConfigurationExtender', 'ConfigurationExtender']
 
 
 class HomeConfigDir:
@@ -79,7 +79,7 @@ class HomeConfigDir:
         fd.close()
 
 
-def getSubclasses(parent=debugmixin, subclassof=None):
+def getAllSubclassesOf(parent=debugmixin, subclassof=None):
     """
     Recursive call to get all classes that have a specified class
     in their ancestry.  The call to __subclasses__ only finds the
@@ -107,7 +107,7 @@ def getSubclasses(parent=debugmixin, subclassof=None):
             subclasses.append(kls)
         # for each subclass, recurse through its subclasses to
         # make sure we're not missing any descendants.
-        subs=getSubclasses(parent=kls)
+        subs=getAllSubclassesOf(parent=kls)
         if len(subs)>0:
             subclasses.extend(subs)
     return subclasses
@@ -234,8 +234,8 @@ class GlobalSettings(object):
     def setupHierarchyDefaults(klasshier):
         for klass in klasshier:
             if klass.__name__ not in GlobalSettings.default:
-                if hasattr(klass,'defaultsettings'):
-                    defs=klass.defaultsettings.copy()
+                if hasattr(klass,'default_settings'):
+                    defs=klass.default_settings.copy()
                 else:
                     defs={}
                 GlobalSettings.default[klass.__name__]=defs
@@ -245,8 +245,8 @@ class GlobalSettings(object):
                 # class.  Merge them in without overwriting the
                 # existing settings.
                 #print "!!!!! missed %s" % klass
-                if hasattr(klass,'defaultsettings'):
-                    defs=klass.defaultsettings
+                if hasattr(klass,'default_settings'):
+                    defs=klass.default_settings
                     g=GlobalSettings.default[klass.__name__]
                     for k,v in defs.iteritems():
                         if k not in g:
