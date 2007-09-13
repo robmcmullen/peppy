@@ -284,31 +284,42 @@ class ProcessList(wx.ListCtrl, debugmixin):
 if __name__ == '__main__':
     class jobframe(wx.Frame, JobOutputMixin):
         def __init__(self):
-            wx.Frame.__init__(self, None, -1, 'Process Manager Test')
+            wx.Frame.__init__(self, None, -1, 'Process Manager Test',
+                              size=(640,480))
             
             mainsizer = wx.BoxSizer(wx.VERTICAL)
             listsizer = wx.BoxSizer(wx.HORIZONTAL)
             sizer = wx.BoxSizer(wx.VERTICAL)
             
             b = wx.Button(self, -1, "Start")
-            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 10)
+            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnStart)
             
             b = wx.Button(self, -1, "Kill")
-            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 10)
+            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnKill)
             
             b = wx.Button(self, -1, "Cleanup")
-            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 10)
+            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnCleanup)
+            
+            b = wx.Button(self, -1, "Quit")
+            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
+            b.Bind(wx.EVT_BUTTON, self.OnQuit)
             
             self.list = ProcessList(self)
             listsizer.Add(sizer, 0, wx.EXPAND|wx.ALL, 0)
             listsizer.Add(self.list, 1, wx.EXPAND|wx.ALL, 0)
+            
+            self.cmd = wx.TextCtrl(self, -1, '')
+            mainsizer.Add(self.cmd, 0, wx.EXPAND, 0)
+            
             mainsizer.Add(listsizer, 1, wx.EXPAND|wx.ALL, 0)
 
             self.out = wx.TextCtrl(self, -1, '',
                                    style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_RICH2)
+
+            self.cmd.SetValue("python -u")
             
             mainsizer.Add(self.out, 1, wx.EXPAND|wx.ALL, 10)
 
@@ -318,8 +329,8 @@ if __name__ == '__main__':
         def stdoutCallback(self, job, text):
             self.out.AppendText("job=%s text=%s" % (job.pid, text))
     
-        def OnStart(self, event):
-            p = ProcessManager().run("python -u", self, """\
+        def OnStart(self, evt):
+            p = ProcessManager().run(self.cmd.GetValue(), self, """\
 import time
 
 while True:
@@ -328,13 +339,17 @@ while True:
 """)
             print p.pid
             
-        def OnKill(self, event):
+        def OnKill(self, evt):
             print "kill highlighted process"
             self.list.kill()
 
-        def OnCleanup(self, event):
+        def OnCleanup(self, evt):
             print "cleanup list & remove completed jobs"
             self.list.cleanup()
+
+        def OnQuit(self, evt):
+            sys.exit(1)
+            
 
     def test():
         app = wx.PySimpleApp()
