@@ -616,7 +616,6 @@ class PrefPanel(wx.Panel, debugmixin):
 
         self.ctrls = {}
         self.create()
-        self.update()
 
         self.SetSizer(self.sizer)
         self.Layout()
@@ -624,28 +623,53 @@ class PrefPanel(wx.Panel, debugmixin):
     def create(self):
         row = 0
         focused = False
-        for param in self.obj.default_classprefs:
-            title = wx.StaticText(self, -1, param.keyword)
-            self.sizer.Add(title, (row,0))
+        hier = self.obj.classprefs._getMRO()
+        dprint(hier)
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            
+            for param in cls.default_classprefs:
+                if param.keyword in self.ctrls:
+                    # Don't put another control if it exists in a superclass
+                    continue
+                
+                title = wx.StaticText(self, -1, param.keyword)
+                self.sizer.Add(title, (row,0))
 
-            if param.isSettable():
-                ctrl = param.getCtrl(self)
-                self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
+                if param.isSettable():
+                    ctrl = param.getCtrl(self)
+                    self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
+                    
+                    val = self.obj.classprefs(param.keyword)
+                    param.setValue(ctrl, val)
+                    
+                    self.ctrls[param.keyword] = ctrl
+                    if not focused:
+                        self.SetFocus()
+                        ctrl.SetFocus()
+                        focused = True
 
-                self.ctrls[param] = ctrl
-                if not focused:
-                    self.SetFocus()
-                    ctrl.SetFocus()
-                    focused = True
-
-            row += 1
+                row += 1
         
     def update(self):
-        for param in self.obj.default_classprefs:
-            val = self.obj.classprefs(param.keyword)
-            dprint("updating %s = %s" % (param.keyword, val))
-            ctrl = self.ctrls[param]
-            param.setValue(ctrl, val)
+        hier = self.obj.classprefs._getMRO()
+        dprint(hier)
+        updated = {}
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            
+            for param in cls.default_classprefs:
+                if param.keyword in updated:
+                    # Don't update with value in superclass
+                    continue
+                
+                val = self.obj.classprefs(param.keyword)
+                dprint("updating %s = %s" % (param.keyword, val))
+                ctrl = self.ctrls[param.keyword]
+                param.setValue(ctrl, val)
+                updated[param.keyword] = True
 
 class PrefClassTree(wx.TreeCtrl):
     def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
