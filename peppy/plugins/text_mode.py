@@ -52,11 +52,11 @@ class TextMode(FundamentalMode):
     icon='icons/page_white_text.png'
     regex="(\.txt|[Rr][Ee][Aa][Dd][Mm][Ee]*)$"
 
-    default_settings = {
-        'minor_modes': '',
-        'word_wrap': True,
-        'sample_file': _sample_file,
-        }
+    default_classprefs = (
+        StrParam('minor_modes', ''),
+        BoolParam('word_wrap', True),
+        StrParam('sample_file', _sample_file),
+        )
     
 
 class TextModePlugin(MajorModeMatcherBase,debugmixin):

@@ -394,7 +394,7 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
             self.frame.open(filename)
 
 
-class BufferFrame(wx.Frame,ClassSettings,debugmixin):
+class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     debuglevel=0
     frameid=0
     
@@ -402,7 +402,11 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
     
     perspectives={}
 
-    default_settings = {}
+    default_classprefs = (
+        IntParam('width', 800),
+        IntParam('height', 600),
+        StrParam('sidebars', ''),
+        )
 
     @classmethod
     def initDummyFrame(cls):
@@ -419,7 +423,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         if BufferFrame.dummyframe is None:
             BufferFrame.initDummyFrame()
 
-        size=(int(self.settings.width),int(self.settings.height))
+        size=(int(self.classprefs.width),int(self.classprefs.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
         icon = wx.EmptyIcon()
         icon.CopyFromBitmap(getIconBitmap('icons/peppy.png'))
@@ -459,7 +463,7 @@ class BufferFrame(wx.Frame,ClassSettings,debugmixin):
         self._mgr.AddPane(win, paneinfo)
 
     def loadSidebars(self):
-        sidebar_list = self.settings.sidebars
+        sidebar_list = self.classprefs.sidebars
         assert self.dprint(sidebar_list)
         if sidebar_list is not None:
             sidebar_names = sidebar_list.split(',')

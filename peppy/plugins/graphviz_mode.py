@@ -59,12 +59,12 @@ class GraphvizMode(FundamentalMode):
 
     start_line_comment = "// "
 
-    default_settings = {
-        'minor_modes': 'GraphvizView',
-        'sample_file': _sample_file,
-        'stc_lexer': wx.stc.STC_LEX_CPP,
-        'stc_keywords': 'strict graph digraph graph node edge subgraph',
-        'stc_boa_style_names': {wx.stc.STC_C_DEFAULT: 'Default',
+    default_classprefs = (
+        StrParam('minor_modes', 'GraphvizView'),
+        StrParam('sample_file', _sample_file),
+        IntParam('stc_lexer', wx.stc.STC_LEX_CPP),
+        StrParam('stc_keywords', 'strict graph digraph graph node edge subgraph'),
+        ReadOnlyParam('stc_boa_style_names', {wx.stc.STC_C_DEFAULT: 'Default',
                                 wx.stc.STC_C_COMMENT: 'Comment',
                                 wx.stc.STC_C_COMMENTLINE: 'Comment line',
                                 wx.stc.STC_C_COMMENTDOC: 'Comment doc',
@@ -74,8 +74,8 @@ class GraphvizMode(FundamentalMode):
                                 wx.stc.STC_C_PREPROCESSOR: 'Preprocessor',
                                 wx.stc.STC_C_OPERATOR: 'Operator',
                                 wx.stc.STC_C_STRINGEOL: 'EOL unclosed string',
-                                },
-        'stc_lexer_styles': {wx.stc.STC_C_COMMENTLINE: wx.stc.STC_C_COMMENT,
+                                }),
+        ReadOnlyParam('stc_lexer_styles', {wx.stc.STC_C_COMMENTLINE: wx.stc.STC_C_COMMENT,
                              wx.stc.STC_C_COMMENTDOC: wx.stc.STC_C_COMMENT,
                              wx.stc.STC_C_NUMBER: 'fore:#0076AE',
                              wx.stc.STC_C_WORD: 'bold,fore:#004080',
@@ -83,8 +83,8 @@ class GraphvizMode(FundamentalMode):
                              wx.stc.STC_C_PREPROCESSOR: 'fore:#808000',
                              wx.stc.STC_C_OPERATOR: 'bold',
                              wx.stc.STC_C_STRINGEOL: 'back:#FFD5FF',
-                             },
-        }
+                             }),
+        )
     
 
 
@@ -98,14 +98,14 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
     debuglevel = 0
 
     keyword="GraphvizView"
-    default_settings={
-        'best_width': 300,
-        'best_height': 300,
-        'min_width': 300,
-        'min_height': 300,
+    default_classprefs = (
+        IntParam('best_width', 300),
+        IntParam('best_height', 300),
+        IntParam('min_width', 300),
+        IntParam('min_height', 300),
         
-        'path': '/usr/local/bin',
-        }
+        StrParam('path', '/usr/local/bin'),
+        )
 
     dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
 

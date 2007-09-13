@@ -14,17 +14,17 @@ from peppy.sidebar import *
 import peppy.pype
 from peppy.pype.browser import FilesystemBrowser
 
-class FileBrowser(FilesystemBrowser, Sidebar):
+class PyPEFileBrowser(FilesystemBrowser, Sidebar):
     keyword = "filebrowser"
     caption = _("File List (from PyPE)")
 
-    default_settings = {
-        'best_width': 200,
-        'best_height': 500,
-        'min_width': 100,
-        'min_height': 100,
-        'show': False,
-        }
+    default_classprefs = (
+        IntParam('best_width', 200),
+        IntParam('best_height', 500),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        BoolParam('show', False),
+        )
     
     def __init__(self, parent):
         self.frame = parent
@@ -45,4 +45,4 @@ class FileBrowserProvider(Component):
     implements(ISidebarProvider)
 
     def getSidebars(self):
-        yield FileBrowser
+        yield PyPEFileBrowser

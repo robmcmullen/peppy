@@ -554,10 +554,10 @@ class HSIMode(MajorMode):
 
     stc_class = HyperspectralSTC
 
-    default_settings = {
-        'minor_modes': 'Spectrum,X Profile,Y Profile',
-        'display_rgb': False,
-        }
+    default_classprefs = (
+        StrParam('minor_modes', 'Spectrum, X Profile, Y Profile'),
+        BoolParam('display_rgb', False),
+        )
 
     @classmethod
     def attemptOpen(cls, url):
@@ -679,12 +679,12 @@ class HSIPlotMinorMode(MinorMode, plotter.MultiPlotter, plotter.PlotProxy):
     uniquely identifies the minor mode.
     """
     keyword = None
-    default_settings={
-        'best_width': 400,
-        'best_height': 400,
-        'min_width': 300,
-        'min_height': 100,
-        }
+    default_classprefs = (
+        IntParam('best_width', 400),
+        IntParam('best_height', 400),
+        IntParam('min_width', 300),
+        IntParam('min_height', 100),
+        )
     plot_proxy = None
 
     def __init__(self, major, parent):

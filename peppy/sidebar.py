@@ -21,9 +21,8 @@ import wx
 from trac.core import *
 
 from menu import *
-from configprefs import *
 from debug import *
-
+from peppy.lib.userparams import *
 
 class SidebarShow(ToggleListAction):
     name=_("Sidebars")
@@ -42,7 +41,7 @@ class SidebarShow(ToggleListAction):
 
 
 
-class Sidebar(ClassSettings):
+class Sidebar(ClassPrefs):
     """Mixin class for all frame sidebars.
 
     A frame sidebar is generally used to create a new UI window in a
@@ -52,13 +51,13 @@ class Sidebar(ClassSettings):
     keyword = None
     caption = None
 
-    default_settings = {
-        'best_width': 100,
-        'best_height': 200,
-        'min_width': 100,
-        'min_height': 100,
-        'show': True,
-        }
+    default_classprefs = (
+        IntParam('best_width', 100),
+        IntParam('best_height', 200),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        BoolParam('show', True),
+        )
     
     def __init__(self, frame):
         self.frame=frame
@@ -78,11 +77,11 @@ class Sidebar(ClassSettings):
         should be returned.
         """
         paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(self.caption)
-        paneinfo.BestSize(wx.Size(self.settings.best_width,
-                                  self.settings.best_height))
-        paneinfo.MinSize(wx.Size(self.settings.min_width,
-                                 self.settings.min_height))
-        paneinfo.Show(self.settings.show)
+        paneinfo.BestSize(wx.Size(self.classprefs.best_width,
+                                  self.classprefs.best_height))
+        paneinfo.MinSize(wx.Size(self.classprefs.min_width,
+                                 self.classprefs.min_height))
+        paneinfo.Show(self.classprefs.show)
         return paneinfo
 
     def paneInfoHook(self, paneinfo):

@@ -59,12 +59,12 @@ RE_ENCODING             = re.compile('coding[:=]\s*([-\w.]+)', re.IGNORECASE)
 class SPEFuncList(MinorMode, TreeCtrl):
     keyword="spe_funclist"
 
-    default_settings = {
-        'best_width':150,
-        'best_height':500,
-        'min_width':100,
-        'min_height':100,
-        }
+    default_classprefs = (
+        IntParam('best_width', 150),
+        IntParam('best_height', 500),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        )
     
     def __init__(self, major, parent):
         self.parentPanel = SPECompat

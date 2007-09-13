@@ -27,13 +27,13 @@ class ProcessSidebar(Sidebar, ProcessList, debugmixin):
     keyword = "processes"
     caption = _("Running Jobs")
 
-    default_settings = {
-        'best_width': 500,
-        'best_height': 50,
-        'min_width': 100,
-        'min_height': 20,
-        'show': False,
-        }
+    default_classprefs = (
+        IntParam('best_width', 500),
+        IntParam('best_height', 50),
+        IntParam('min_width', 100),
+        IntParam('min_height', 20),
+        BoolParam('show', False),
+        )
     
     def __init__(self, parent):
         ProcessList.__init__(self, parent)

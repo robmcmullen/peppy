@@ -10,12 +10,13 @@ import wx
 from wx.lib.pubsub import Publisher
 
 from peppy.menu import *
-from peppy.configprefs import *
 from peppy.debug import *
+from peppy.configprefs import *
+from peppy.lib.userparams import *
 
 from peppy.trac.core import *
 
-class KeyboardConf(ClassSettings, debugmixin):
+class KeyboardConf(ClassPrefs, debugmixin):
     """Loader for keyboard configurations.
 
     Keyboard accelerator settings are made in the application
@@ -38,7 +39,7 @@ class KeyboardConf(ClassSettings, debugmixin):
     the application's default value (which is specified in the source
     code.)
     """
-    default_settings = {}
+    default_classprefs = ()
     platform = 'win'
     
     ignore_list = ['MajorAction', 'MinibufferAction']
@@ -60,8 +61,8 @@ class KeyboardConf(ClassSettings, debugmixin):
         #dprint(actions)
         found_emacs = False
         for action in actions:
-            #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.settings._get(action.__name__)))
-            acc = cls.settings._get(action.__name__)
+            #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.classprefs._get(action.__name__)))
+            acc = cls.classprefs._get(action.__name__)
             if acc is not None and acc.lower() != 'default':
                 if acc.lower() == "none":
                     # if the text is None, don't bind it to anything.
@@ -101,7 +102,7 @@ class KeyboardConfExtender(Component):
     implements(IConfigurationExtender)
     
     def loadConf(self,app):
-        KeyboardConf.platform = app.settings.key_bindings
+        KeyboardConf.platform = app.classprefs.key_bindings
         KeyboardConf.load()
     
     def saveConf(self,app):

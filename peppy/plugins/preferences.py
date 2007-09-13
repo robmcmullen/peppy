@@ -14,6 +14,7 @@ import wx.grid
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.configprefs import *
+from peppy.lib.userparams import *
 from peppy.lib.iconstorage import *
 
 class Preferences(SelectAction):
@@ -24,7 +25,7 @@ class Preferences(SelectAction):
 
     def action(self, pos=-1):
         assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        dlg = PreferencesDialog(self.frame)
+        dlg = PrefDialog(self.frame, self.frame.getActiveMajorMode())
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             dlg.applyPreferences()

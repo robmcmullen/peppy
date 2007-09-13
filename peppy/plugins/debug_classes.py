@@ -97,13 +97,13 @@ class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
     keyword = "debug_list"
     caption = _("Debug Printing")
 
-    default_settings = {
-        'best_width': 200,
-        'best_height': 500,
-        'min_width': 100,
-        'min_height': 100,
-        'show': False,
-        }
+    default_classprefs = (
+        IntParam('best_width', 200),
+        IntParam('best_height', 500),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        BoolParam('show', False),
+        )
     
     def __init__(self, parent):
 ##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)

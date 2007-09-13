@@ -42,6 +42,7 @@ from configprefs import *
 from debug import *
 from minor import *
 from iofilter import *
+from peppy.lib.userparams import *
 
 from lib.iconstorage import *
 from lib.controls import *
@@ -124,7 +125,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 #### MajorMode base class
 
-class MajorMode(wx.Panel,debugmixin,ClassSettings):
+class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     """
     Base class for all major modes.  Subclasses need to implement at
     least createEditWindow that will return the main user interaction
@@ -144,10 +145,10 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     # PeppySTC, which is a subclass of the scintilla editor.
     stc_class = PeppySTC
 
-    default_settings = {
-        'line_number_offset': 1,
-        'column_number_offset': 1,
-        }
+    default_classprefs = (
+        IntParam('line_number_offset', 1),
+        IntParam('column_number_offset', 1),
+        )
 
     # Need one keymap per subclass, so we can't use the settings.
     # Settings would propogate up the class hierachy and find a keymap
@@ -400,7 +401,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
     def loadMinorModes(self):
         """Find the listof minor modes to load and create them."""
         
-        minor_list = self.settings.minor_modes
+        minor_list = self.classprefs.minor_modes
         assert self.dprint(minor_list)
         if minor_list is not None:
             minor_names=minor_list.split(',')
@@ -487,7 +488,7 @@ class MajorMode(wx.Panel,debugmixin,ClassSettings):
         linenum = self.editwin.GetCurrentLine()
         pos = self.editwin.GetCurrentPos()
         col = self.editwin.GetColumn(pos)
-        self.frame.SetStatusText("L%d C%d F%d" % (linenum+self.settings.line_number_offset, col+self.settings.column_number_offset, self.editwin.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE),1)
+        self.frame.SetStatusText("L%d C%d F%d" % (linenum+self.classprefs.line_number_offset, col+self.classprefs.column_number_offset, self.editwin.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE),1)
         self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
@@ -766,7 +767,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         app = wx.GetApp()
         if magic_size is None:
-            magic_size = app.settings.magic_size
+            magic_size = app.classprefs.magic_size
 
         # Try to match a specific protocol
         modes = driver.scanProtocol(url)
@@ -833,9 +834,9 @@ class MajorModeMatcherDriver(Component, debugmixin):
             return mode
 
         # If we fail all the tests, use a generic mode
-        if guessBinary(header, app.settings.binary_percentage):
-            return MajorModeMatcherDriver.findModeByName(app.settings.default_binary_mode)
-        return MajorModeMatcherDriver.findModeByName(app.settings.default_text_mode)
+        if guessBinary(header, app.classprefs.binary_percentage):
+            return MajorModeMatcherDriver.findModeByName(app.classprefs.default_binary_mode)
+        return MajorModeMatcherDriver.findModeByName(app.classprefs.default_text_mode)
 
     @staticmethod
     def findModeByName(name):

@@ -512,7 +512,7 @@ class VolumeUp(ConnectedAction):
     
     def action(self, pos=None):
         mode = self.frame.getActiveMajorMode()
-        mode.mpd.volumeUp(mode.settings.volume_step)
+        mode.mpd.volumeUp(mode.classprefs.volume_step)
         mode.update()
 
 class VolumeDown(ConnectedAction):
@@ -523,7 +523,7 @@ class VolumeDown(ConnectedAction):
     
     def action(self, pos=None):
         mode = self.frame.getActiveMajorMode()
-        mode.mpd.volumeDown(mode.settings.volume_step)
+        mode.mpd.volumeDown(mode.classprefs.volume_step)
         mode.update()
 
 class UpdateDatabase(ConnectedAction):
@@ -657,12 +657,12 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
     """Minor mode to display the results of a file search.
     """
     keyword = "MPD Search Results"
-    default_settings={
-        'best_width': 800,
-        'best_height': 400,
-        'min_width': 300,
-        'min_height': 200,
-        }
+    default_classprefs = (
+        IntParam('best_width', 800),
+        IntParam('best_height', 400),
+        IntParam('min_width', 300),
+        IntParam('min_height', 200),
+        )
 
     def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
@@ -673,7 +673,7 @@ class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
 
         self.songindex = -1
         default_font = self.GetFont()
-        self.font = wx.Font(major.settings.list_font_size, 
+        self.font = wx.Font(major.classprefs.list_font_size, 
                             default_font.GetFamily(),
                             default_font.GetStyle(),
                             default_font.GetWeight())
@@ -830,7 +830,7 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         list = self.GetList(index)
         if list is None:
             assert self.dprint("list at position %d not found!  Creating new list" % index)
-            list = self.AppendList(self.parent.major.settings.list_width, keyword)
+            list = self.AppendList(self.parent.major.classprefs.list_width, keyword)
         names = {}
         for item in items:
             #assert self.dprint(item)
@@ -987,7 +987,7 @@ class MPDDatabase(wx.Panel, debugmixin):
         self.mpd = major.mpd
 
         self.default_font = self.GetFont()
-        self.font = wx.Font(major.settings.list_font_size, 
+        self.font = wx.Font(major.classprefs.list_font_size, 
                             self.default_font.GetFamily(),
                             self.default_font.GetStyle(),
                             self.default_font.GetWeight())
@@ -1039,14 +1039,14 @@ class MPDMode(MajorMode, debugmixin):
 
     stc_class = MPDSTC
 
-    default_settings = {
-        'minor_modes': 'MPD Playlist,MPD Currently Playing,MPD Search Results',
-        'update_interval': 1,
-        'volume_step': 10,
-        'list_font_size': 8,
-        'list_width': 100,
-        'password': None,
-        }
+    default_classprefs = (
+        IntParam('minor_modes', 'MPD Playlist, MPD Currently Playing, MPD Search Results'),
+        IntParam('update_interval', 1),
+        IntParam('volume_step', 10),
+        IntParam('list_font_size', 8),
+        IntParam('list_width', 100),
+        StrParam('password', None),
+        )
     
     @classmethod
     def verifyProtocol(cls, url):
@@ -1072,14 +1072,14 @@ class MPDMode(MajorMode, debugmixin):
         self.OnTimer()        
         self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
         self.update_timer = wx.Timer(self.editwin)
-        self.update_timer.Start(self.settings.update_interval*1000)
+        self.update_timer.Start(self.classprefs.update_interval*1000)
 
     def loadMinorModesPostHook(self):
         # Don't initialize the MPD connection till all the minor modes
         # are created, because their own initialization depends on
         # message passing from the mpd wrapper
-        if isinstance(self.settings.password, str):
-            self.mpd.cmd('password', self.settings.password)
+        if isinstance(self.classprefs.password, str):
+            self.mpd.cmd('password', self.classprefs.password)
         
         self.mpd.reset()
         assert self.dprint(self.mpd.status)
@@ -1180,12 +1180,12 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
     music playing.
     """
     keyword = "MPD Playlist"
-    default_settings={
-        'best_width': 400,
-        'best_height': 400,
-        'min_width': 300,
-        'min_height': 100,
-        }
+    default_classprefs = (
+        IntParam('best_width', 400),
+        IntParam('best_height', 400),
+        IntParam('min_width', 300),
+        IntParam('min_height', 100),
+        )
 
     def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
@@ -1196,12 +1196,12 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         self.createColumns()
 
         default_font = self.GetFont()
-        self.font = wx.Font(major.settings.list_font_size, 
+        self.font = wx.Font(major.classprefs.list_font_size, 
                             default_font.GetFamily(),
                             default_font.GetStyle(),
                             default_font.GetWeight())
         self.SetFont(self.font)
-        self.bold_font = wx.Font(major.settings.list_font_size, 
+        self.bold_font = wx.Font(major.classprefs.list_font_size, 
                                  default_font.GetFamily(),
                                  default_font.GetStyle(),wx.BOLD)
 
@@ -1452,12 +1452,12 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
     debuglevel = 0
 
     keyword = "MPD Currently Playing"
-    default_settings={
-        'best_width': 400,
-        'best_height': 100,
-        'min_width': 300,
-        'min_height': 50,
-        }
+    default_classprefs = (
+        IntParam('best_width', 400),
+        IntParam('best_height', 100),
+        IntParam('min_width', 300),
+        IntParam('min_height', 50),
+        )
 
     def __init__(self, major, parent):
         wx.Panel.__init__(self, parent)

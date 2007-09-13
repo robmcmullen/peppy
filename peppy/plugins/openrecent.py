@@ -12,16 +12,16 @@ import os
 from peppy.menu import *
 from peppy.trac.core import *
 from peppy.buffers import *
-from peppy.configprefs import *
+from peppy.lib.userparams import *
 
 
-class OpenRecent(GlobalList, ClassSettings):
+class OpenRecent(GlobalList, ClassPrefs):
     name=_("Open Recent")
     inline=False
 
-    default_settings = {
-        'list_length': 10,
-        }
+    default_classprefs = (
+        IntParam('list_length', 10),
+        )
 
     storage=[]
     others=[]
@@ -49,8 +49,8 @@ class OpenRecent(GlobalList, ClassSettings):
             cls.storage[0:0]=[item]
 
         # Trim list to max number of items
-        if len(cls.storage)>cls.settings.list_length:
-            cls.storage[cls.settings.list_length:]=[]
+        if len(cls.storage)>cls.classprefs.list_length:
+            cls.storage[cls.classprefs.list_length:]=[]
         cls.update()
 ##        dprint("AFTER: storage: %s" % cls.storage)
 ##        dprint("AFTER: others: %s" % cls.others)
@@ -85,12 +85,12 @@ class OpenRecentConfExtender(Component):
     implements(IBufferOpenPostHook)
 
     def loadConf(self,app):
-        filename=app.settings.recentfiles
+        filename=app.classprefs.recentfiles
         pathname=app.getConfigFilePath(filename)
         OpenRecent.load(pathname)
     
     def saveConf(self,app):
-        filename=app.settings.recentfiles
+        filename=app.classprefs.recentfiles
         pathname=app.getConfigFilePath(filename)
         OpenRecent.save(pathname)        
 

@@ -16,15 +16,15 @@ from peppy.trac.core import *
 import peppy.pype
 from peppy.pype.codetree import hierCodeTreePanel
 
-class FuncList(MinorMode, hierCodeTreePanel):
+class PyPEFuncList(MinorMode, hierCodeTreePanel):
     keyword="pype_funclist"
 
-    default_settings = {
-        'best_width':150,
-        'best_height':500,
-        'min_width':100,
-        'min_height':100,
-        }
+    default_classprefs = (
+        IntParam('best_width', 150),
+        IntParam('best_height', 500),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        )
     
     def __init__(self, major, parent):
         hierCodeTreePanel.__init__(self, self, parent, False)
@@ -49,4 +49,4 @@ class FuncListProvider(Component):
     implements(IMinorModeProvider)
 
     def getMinorModes(self):
-        yield FuncList
+        yield PyPEFuncList

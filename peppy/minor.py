@@ -25,8 +25,8 @@ import wx
 from trac.core import *
 
 from menu import *
-from configprefs import *
 from debug import *
+from peppy.lib.userparams import *
 
 class MinorModeShow(ToggleListAction):
     name = _("Minor Modes")
@@ -55,7 +55,7 @@ class MinorModeShow(ToggleListAction):
 class MinorModeIncompatibilityError(Exception):
     pass
 
-class MinorMode(ClassSettings, debugmixin):
+class MinorMode(ClassPrefs, debugmixin):
     """
     Mixin class for all minor modes.  A minor mode should generally be
     a subclass of wx.Window (windowless minor modes are coming in the
@@ -70,14 +70,14 @@ class MinorMode(ClassSettings, debugmixin):
     
     """
 
-    default_settings = {
+    default_classprefs = (
         # Set default size here.  Probably should override best_*
         # sizes in subclass
-        'best_width':100,
-        'best_height':100,
-        'min_width':100,
-        'min_height':100,
-        }
+        IntParam('best_width', 100),
+        IntParam('best_height', 100),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        )
     
     def __init__(self, major, parent):
         """Classes using this mixin should call this method, or at
@@ -129,10 +129,10 @@ class MinorMode(ClassSettings, debugmixin):
             caption = self.keyword
         paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption).Right()
         paneinfo.DestroyOnClose(False)
-        paneinfo.BestSize(wx.Size(self.settings.best_width,
-                                  self.settings.best_height))
-        paneinfo.MinSize(wx.Size(self.settings.min_width,
-                                 self.settings.min_height))
+        paneinfo.BestSize(wx.Size(self.classprefs.best_width,
+                                  self.classprefs.best_height))
+        paneinfo.MinSize(wx.Size(self.classprefs.min_width,
+                                 self.classprefs.min_height))
         return paneinfo
 
     def paneInfoHook(self, paneinfo):

@@ -24,14 +24,14 @@ class STCStyles(SelectAction):
 
     def isEnabled(self):
         mode=self.frame.getActiveMajorMode()
-        if mode and mode.settings.has_stc_styling is not None:
-            return mode.settings.has_stc_styling
+        if mode and mode.classprefs.has_stc_styling is not None:
+            return mode.classprefs.has_stc_styling
         return False
 
     def action(self, pos=-1):
         mode=self.frame.getActiveMajorMode()
         if mode:
-            config=boa.getUserConfigFile(self.frame.app)
+            config=boa.getUserConfigFile(wx.GetApp())
             dprint(config)
             name = mode.keyword
             lang = mode.keyword.lower()
@@ -42,7 +42,7 @@ class STCStyles(SelectAction):
             # also needs to set the lexer, so we have to break the
             # black-box model and poke around in the internals of the
             # boa dialog to do it.
-            if mode.settings.stc_boa_use_current_text:
+            if mode.classprefs.stc_boa_use_current_text:
                 dlg.stc.SetText(mode.stc.GetText())
                 dlg.lexer = mode.stc.GetLexer()
                 dlg._blockUpdate = False

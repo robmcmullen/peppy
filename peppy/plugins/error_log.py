@@ -32,14 +32,14 @@ class ErrorLog(Sidebar, PeppySTC, debugmixin):
     keyword = "error_log"
     caption = _("Error Log")
 
-    default_settings = {
-        'best_width': 500,
-        'best_height': 50,
-        'min_width': 100,
-        'min_height': 20,
-        'show': False,
-        'always_scroll': False,
-        }
+    default_classprefs = (
+        IntParam('best_width', 500),
+        IntParam('best_height', 50),
+        IntParam('min_width', 100),
+        IntParam('min_height', 20),
+        BoolParam('show', False),
+        BoolParam('always_scroll', False),
+        )
     
     def __init__(self, parent):
         PeppySTC.__init__(self, parent)
@@ -57,7 +57,7 @@ class ErrorLog(Sidebar, PeppySTC, debugmixin):
             self.frame._mgr.Update()
 
         scroll = False
-        if not self.settings.always_scroll:
+        if not self.classprefs.always_scroll:
             # If we're at the end, scroll down as new lines are added.
             # If we are scrolled back reading something else, don't
             # scroll.

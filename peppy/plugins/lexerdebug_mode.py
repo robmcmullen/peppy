@@ -86,15 +86,15 @@ class LexerDebugMode(FundamentalMode):
     icon = 'icons/bug.png'
     regex = None
 
-    default_settings = {
-        'minor_modes': '',
-        'tab_size': 8,
-        'stc_lexer': wx.stc.STC_LEX_NULL,
-        'stc_keywords': '',
-        'stc_boa_style_names': _debug_boa_style_names,
-        'stc_lexer_styles': _debug_lexer_styles,
-        'stc_boa_use_current_text': True,
-        }
+    default_classprefs = (
+        StrParam('minor_modes', ''),
+        IntParam('tab_size', 8),
+        IntParam('stc_lexer', wx.stc.STC_LEX_NULL),
+        StrParam('stc_keywords', ''),
+        ReadOnlyParam('stc_boa_style_names', _debug_boa_style_names),
+        ReadOnlyParam('stc_lexer_styles', _debug_lexer_styles),
+        BoolParam('stc_boa_use_current_text', True),
+        )
 
     def createWindowPostHook(self):
         self.currentLexer = wx.stc.STC_LEX_NULL

@@ -14,6 +14,7 @@ from configprefs import *
 from debug import *
 
 from peppy.lib.loadfileserver import LoadFileProxy
+from peppy.lib.userparams import *
 
 from trac.core import *
 
@@ -35,7 +36,7 @@ def init_i18n(path, lang, catalog):
         __builtin__._ = str
 
 
-class Peppy(wx.App, ClassSettings, debugmixin):
+class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
 
     This handles the initialization of the debug parameters for
@@ -66,15 +67,17 @@ class Peppy(wx.App, ClassSettings, debugmixin):
                             'recentfiles':'recentfiles.txt',
                             },
                    }
-    default_settings = {
-        'key_bindings': 'win',
-        'listen_port': 55555,
-        'one_instance': True,
-        'binary_percentage': 10,
-        'magic_size': 1024,
-        'default_text_mode': 'Fundamental',
-        'default_binary_mode': 'HexEdit',
-        }
+    default_classprefs = (
+        StrParam('plugins', ''),
+        StrParam('recentfiles', 'recentfiles.txt'),
+        StrParam('key_bindings', 'win'),
+        IntParam('listen_port', 55555),
+        BoolParam('one_instance', True),
+        IntParam('binary_percentage', 10),
+        IntParam('magic_size', 1024),
+        StrParam('default_text_mode', 'Fundamental'),
+        StrParam('default_binary_mode', 'HexEdit'),
+        )
 
     config = None
     
@@ -113,7 +116,7 @@ class Peppy(wx.App, ClassSettings, debugmixin):
             debuglog(self.options.logfile)
 
         if self.options.key_bindings:
-            self.default_settings['key_bindings'] = self.options.key_bindings
+            self.classprefs.key_bindings = self.options.key_bindings
             
         self.verbose = self.options.verbose
 
@@ -155,8 +158,8 @@ class Peppy(wx.App, ClassSettings, debugmixin):
         #sys.exit()
 
     def startServer(self):
-        if self.settings.one_instance:
-            self.server = LoadFileProxy(port=self.settings.listen_port)
+        if self.classprefs.one_instance:
+            self.server = LoadFileProxy(port=self.classprefs.listen_port)
             if not self.server.find():
                 self.server.start(self)
         else:
@@ -312,7 +315,7 @@ class Peppy(wx.App, ClassSettings, debugmixin):
         which means that the plugins must reside somewhere in the
         PYTHONPATH.
         """
-        mods=self.settings.plugins
+        mods=self.classprefs.plugins
         assert self.dprint(mods)
         if mods:
             self.loadPlugins(mods)

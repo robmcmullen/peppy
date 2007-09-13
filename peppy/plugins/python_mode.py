@@ -255,15 +255,15 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
 
     start_line_comment = "##"
 
-    default_settings = {
-        'tab_style': 'spaces',
-        'word_wrap': True,
-        'minor_modes': 'pype_funclist,funcmenu,spe_funclist',
-        'sample_file': _sample_file,
-        'stc_lexer': wx.stc.STC_LEX_PYTHON,
-        'stc_keywords': 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self',
-        'stc_boa_braces': "{'good': (9, 12), 'bad': (10, 12)}",
-        'stc_boa_style_names': {wx.stc.STC_P_DEFAULT: 'Default',
+    default_classprefs = (
+        StrParam('tab_style', 'spaces'),
+        BoolParam('word_wrap', True),
+        StrParam('minor_modes', 'pype_funclist, funcmenu,spe_funclist'),
+        StrParam('sample_file', _sample_file),
+        IntParam('stc_lexer', wx.stc.STC_LEX_PYTHON),
+        StrParam('stc_keywords', 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self'),
+        StrParam('stc_boa_braces', "{'good': (9), 12, 'bad': (10, 12)}"),
+        ReadOnlyParam('stc_boa_style_names', {wx.stc.STC_P_DEFAULT: 'Default',
                                 wx.stc.STC_P_COMMENTLINE: 'Comment',
                                 wx.stc.STC_P_NUMBER : 'Number',
                                 wx.stc.STC_P_STRING : 'String',
@@ -276,8 +276,8 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
                                 wx.stc.STC_P_OPERATOR: 'Operators',
                                 wx.stc.STC_P_IDENTIFIER: 'Identifiers',
                                 wx.stc.STC_P_COMMENTBLOCK: 'Comment blocks',
-                                wx.stc.STC_P_STRINGEOL: 'EOL unclosed string'},
-        'stc_lexer_styles': {wx.stc.STC_P_NUMBER : 'fore:#074E4E',
+                                wx.stc.STC_P_STRINGEOL: 'EOL unclosed string'}),
+        ReadOnlyParam('stc_lexer_styles', {wx.stc.STC_P_NUMBER : 'fore:#074E4E',
                              wx.stc.STC_P_STRING : 'fore:#1D701B',
                              wx.stc.STC_P_CHARACTER: wx.stc.STC_P_STRING,
                              wx.stc.STC_P_WORD: 'fore:#000000,bold',
@@ -289,8 +289,8 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
                              wx.stc.STC_P_IDENTIFIER: '',
                              wx.stc.STC_P_COMMENTBLOCK: 'fore:%(comment-col)s,bold',
                              wx.stc.STC_P_STRINGEOL: 'fore:#000000,back:#ECD7EC,eolfilled',
-                             },
-        }
+                             }),
+        )
 
     ##
     # tab the line to the correct indent (matching the line above)

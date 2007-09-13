@@ -32,14 +32,14 @@ class WordWrap(ToggleAction):
     def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            return viewer.settings.word_wrap
+            return viewer.classprefs.word_wrap
         return False
     
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setWordWrap(not viewer.settings.word_wrap)
+            viewer.setWordWrap(not viewer.classprefs.word_wrap)
     
 class LineNumbers(ToggleAction):
     name = _("&Line Numbers")
@@ -49,14 +49,14 @@ class LineNumbers(ToggleAction):
     def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            return viewer.settings.line_numbers
+            return viewer.classprefs.line_numbers
         return False
     
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setLineNumbers(not viewer.settings.line_numbers)
+            viewer.setLineNumbers(not viewer.classprefs.line_numbers)
 
 class Folding(ToggleAction):
     name = _("&Folding")
@@ -66,14 +66,14 @@ class Folding(ToggleAction):
     def isChecked(self):
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            return viewer.settings.folding
+            return viewer.classprefs.folding
         return False
     
     def action(self, pos=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         viewer=self.frame.getActiveMajorMode()
         if viewer:
-            viewer.setFolding(not viewer.settings.folding)
+            viewer.setFolding(not viewer.classprefs.folding)
 
 class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
@@ -514,34 +514,34 @@ class FundamentalMode(BraceHighlightMixin,
     start_line_comment = ''
     end_line_comment = ''
 
-    default_settings = {
-        'tab_size': 4,
-        'tab_style': 'mixed',
-        'line_numbers': True,
-        'line_number_margin_width': 40,
-        'symbols': False,
-        'symbols_margin_width': 16,
-        'folding': False,
-        'folding_margin_width': 16,
-        'word_wrap': False,
-        'backspace_unindents': True,
-        'indentation_guides': True,
-        'highlight_column': 30,
-        'edge_column': 80,
-        'edge_indicator': 'line',
-        'caret_blink_rate': 0,
-        'caret_width': 2,
-        'caret_line_highlight': False,
-        'sample_file': "Fundamental mode is the base for all other modes that use the STC to view text.",
-        'has_stc_styling': True,
-        'stc_lexer': wx.stc.STC_LEX_NULL,
-        'stc_keywords': "",
-        'stc_boa_braces': "{}",
-        'stc_boa_style_names': {},
-        'stc_lexer_styles': {},
+    default_classprefs = (
+        IntParam('tab_size', 4),
+        StrParam('tab_style', 'mixed'),
+        BoolParam('line_numbers', True),
+        IntParam('line_number_margin_width', 40),
+        BoolParam('symbols', False),
+        IntParam('symbols_margin_width', 16),
+        BoolParam('folding', False),
+        IntParam('folding_margin_width', 16),
+        BoolParam('word_wrap', False),
+        BoolParam('backspace_unindents', True),
+        BoolParam('indentation_guides', True),
+        IntParam('highlight_column', 30),
+        IntParam('edge_column', 80),
+        Param('edge_indicator', 'line'),
+        IntParam('caret_blink_rate', 0),
+        IntParam('caret_width', 2),
+        BoolParam('caret_line_highlight', False),
+        StrParam('sample_file', "Fundamental mode is the base for all other modes that use the STC to view text."),
+        BoolParam('has_stc_styling', True),
+        IntParam('stc_lexer', wx.stc.STC_LEX_NULL),
+        StrParam('stc_keywords', ""),
+        StrParam('stc_boa_braces', "{}"),
+        ReadOnlyParam('stc_boa_style_names', {}),
+        ReadOnlyParam('stc_lexer_styles', {}),
 
         # Note: 1 tends to be the comment style, but not in all cases.
-        'stc_lexer_default_styles': {0: '',
+        ReadOnlyParam('stc_lexer_default_styles', {0: '',
                                      1: 'fore:%(comment-col)s,italic',
                                      wx.stc.STC_STYLE_DEFAULT: 'face:%(mono)s,size:%(size)d',
                                      wx.stc.STC_STYLE_LINENUMBER: 'face:%(ln-font)s,size:%(ln-size)d',
@@ -550,8 +550,8 @@ class FundamentalMode(BraceHighlightMixin,
                                      wx.stc.STC_STYLE_BRACELIGHT: '',
                                      wx.stc.STC_STYLE_CONTROLCHAR: '',
                                      wx.stc.STC_STYLE_INDENTGUIDE: '',
-                                     }
-        }
+                                     }),
+        )
 
     def createEditWindow(self,parent):
         assert self.dprint("creating new Fundamental window")
@@ -586,7 +586,7 @@ class FundamentalMode(BraceHighlightMixin,
     def applySettings(self):
         self.applyDefaultSettings()
         if self.styleSTC():
-            self.settings.has_stc_styling = True
+            self.classprefs.has_stc_styling = True
         else:
             # If the style file fails to load, it probably means that
             # the style definition doesn't exist in the style file.
@@ -594,12 +594,12 @@ class FundamentalMode(BraceHighlightMixin,
             # mode to the file and try again.
             self.styleDefault()
             if self.styleSTC():
-                self.settings.has_stc_styling = True
+                self.classprefs.has_stc_styling = True
             else:
                 # If the file still doesn't load, fall back to a style
                 # that hopefully does exist.  The boa stc styling
                 # dialog won't be available.
-                self.settings.has_stc_styling = False
+                self.classprefs.has_stc_styling = False
                 self.styleSTC('text')
 
     def styleDefault(self):
@@ -616,28 +616,28 @@ class FundamentalMode(BraceHighlightMixin,
         See the L{peppy.boa.STCStyleEditor} documentation for more
         information on the format of the configuration file.
         """
-        if not self.settings.stc_lexer:
+        if not self.classprefs.stc_lexer:
             dprint("no STC styling information for major mode %s" % self.keyword)
             return
         boa.updateConfigFile(wx.GetApp(), self)
 
     def applyDefaultSettings(self):
         # turn off symbol margin
-        if self.settings.symbols:
-            self.stc.SetMarginWidth(1, self.settings.symbols_margin_width)
+        if self.classprefs.symbols:
+            self.stc.SetMarginWidth(1, self.classprefs.symbols_margin_width)
         else:
             self.stc.SetMarginWidth(1, 0)
 
         # turn off folding margin
-        if self.settings.folding:
-            self.stc.SetMarginWidth(2, self.settings.folding_margin_width)
+        if self.classprefs.folding:
+            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
         else:
             self.stc.SetMarginWidth(2, 0)
 
         self.stc.SetProperty("fold", "1")
-        self.stc.SetBackSpaceUnIndents(self.settings.backspace_unindents)
-        self.stc.SetIndentationGuides(self.settings.indentation_guides)
-        self.stc.SetHighlightGuide(self.settings.highlight_column)
+        self.stc.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
+        self.stc.SetIndentationGuides(self.classprefs.indentation_guides)
+        self.stc.SetHighlightGuide(self.classprefs.highlight_column)
 
         self.setWordWrap()
         self.setLineNumbers()
@@ -648,8 +648,8 @@ class FundamentalMode(BraceHighlightMixin,
 
     def setWordWrap(self,enable=None):
         if enable is not None:
-            self.settings.word_wrap=enable
-        if self.settings.word_wrap:
+            self.classprefs.word_wrap=enable
+        if self.classprefs.word_wrap:
             self.stc.SetWrapMode(wx.stc.STC_WRAP_CHAR)
             self.stc.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
         else:
@@ -657,21 +657,21 @@ class FundamentalMode(BraceHighlightMixin,
 
     def setLineNumbers(self,enable=None):
         if enable is not None:
-            self.settings.line_numbers=enable
-        if self.settings.line_numbers:
+            self.classprefs.line_numbers=enable
+        if self.classprefs.line_numbers:
             self.stc.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0,  self.settings.line_number_margin_width)
+            self.stc.SetMarginWidth(0,  self.classprefs.line_number_margin_width)
         else:
             self.stc.SetMarginWidth(0,0)
 
     def setFolding(self,enable=None):
         if enable is not None:
-            self.settings.folding=enable
-        if self.settings.folding:
+            self.classprefs.folding=enable
+        if self.classprefs.folding:
             self.stc.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
             self.stc.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
             self.stc.SetMarginSensitive(2, True)
-            self.stc.SetMarginWidth(2, self.settings.folding_margin_width)
+            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
             # Marker definitions from PyPE
             self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
             self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
@@ -686,10 +686,10 @@ class FundamentalMode(BraceHighlightMixin,
             self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
 
     def setTabStyle(self):
-        self.stc.SetIndent(self.settings.tab_size)
+        self.stc.SetIndent(self.classprefs.tab_size)
         styles = ['ignore', 'consistent', 'mixed', 'tabs', 'spaces']
-        if self.settings.tab_style in styles:
-            i = styles.index(self.settings.tab_style)
+        if self.classprefs.tab_style in styles:
+            i = styles.index(self.classprefs.tab_style)
             self.stc.SetProperty('tab.timmy.whinge.level', str(i))
             if i==4:
                 self.stc.SetUseTabs(False)
@@ -697,9 +697,9 @@ class FundamentalMode(BraceHighlightMixin,
                 self.stc.SetUseTabs(True)
 
     def setEdgeStyle(self):
-        if self.settings.edge_column > 0:
-            self.stc.SetEdgeColumn(self.settings.edge_column)
-            if self.settings.edge_indicator == 'line':
+        if self.classprefs.edge_column > 0:
+            self.stc.SetEdgeColumn(self.classprefs.edge_column)
+            if self.classprefs.edge_indicator == 'line':
                 self.stc.SetEdgeMode(wx.stc.STC_EDGE_LINE)
             else:
                 self.stc.SetEdgeMode(wx.stc.STC_EDGE_BACKGROUND)
@@ -708,9 +708,9 @@ class FundamentalMode(BraceHighlightMixin,
             self.stc.SetEdgeMode(wx.stc.STC_EDGE_NONE)
 
     def setCaretStyle(self):
-        self.stc.SetCaretPeriod(self.settings.caret_blink_rate)
-        self.stc.SetCaretLineVisible(self.settings.caret_line_highlight)
-        self.stc.SetCaretWidth(self.settings.caret_width)
+        self.stc.SetCaretPeriod(self.classprefs.caret_blink_rate)
+        self.stc.SetCaretLineVisible(self.classprefs.caret_line_highlight)
+        self.stc.SetCaretWidth(self.classprefs.caret_width)
 
     def onMarginClick(self, evt):
         # fold and unfold as needed
