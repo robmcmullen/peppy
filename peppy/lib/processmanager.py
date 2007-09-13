@@ -45,24 +45,19 @@ def ProcessManager():
 
 class JobOutputMixin(object):
     def startupFailureCallback(self, p):
-        #print "Couldn't run %s" % p.cmd
-        pass
+        dprint("Couldn't run %s" % p.cmd)
 
     def startupCallback(self, p):
-        #print "Started process %d" % p.pid
-        pass
+        dprint("Started process %d" % p.pid)
 
     def stdoutCallback(self, p, text):
-        #print "stdout: '%s'" % text
-        pass
+        dprint("stdout: '%s'" % text)
     
     def stderrCallback(self, p, text):
-        #print "stderr: '%s'" % text
-        pass
+        dprint("stderr: '%s'" % text)
     
     def finishedCallback(self, p):
-        #print "Finished with pid=%d" % p.pid
-        pass
+        dprint("Finished with pid=%d" % p.pid)
 
 
 class Job(debugmixin):
@@ -78,10 +73,12 @@ class Job(debugmixin):
         self.stderr = None
 
     def run(self, text=""):
+        assert self.dprint()
         self.process = wx.Process(self.handler)
         self.process.Redirect();
         self.pid = wx.Execute(self.cmd, wx.EXEC_ASYNC, self.process)
         if self.pid==0:
+            assert self.dprint("startup failed")
             self.process = None
             wx.CallAfter(self.jobout.startupFailureCallback, self)
         else:
@@ -98,25 +95,27 @@ class Job(debugmixin):
                     assert self.dprint("sending text[%d:%d] to %s" % (i,last,fh))
                     fh.write(text[i:last])
                     assert self.dprint("last write = %s" % str(fh.LastWrite()))
-            else:
+            elif len(text) > 0:
                 fh.write(text)
             self.process.CloseOutput()
             self.stdout = self.process.GetInputStream()
             self.stderr = self.process.GetErrorStream()
 
     def kill(self):
+        assert self.dprint()
         if self.process is not None:
-##            self.process.CloseOutput()
             if wx.Process.Kill(self.pid, wx.SIGTERM) != wx.KILL_OK:
                 wx.Process.Kill(self.pid, wx.SIGKILL)
             self.process = None
 
     def readStream(self, stream, callback):
+        assert self.dprint()
         if stream and stream.CanRead():
             text = stream.read()
             wx.CallAfter(callback, self, text)
 
     def readStreams(self):
+        assert self.dprint()
         if self.process is not None:
             self.readStream(self.stdout, self.jobout.stdoutCallback)
             self.readStream(self.stderr, self.jobout.stderrCallback)
@@ -129,15 +128,11 @@ class Job(debugmixin):
         to read the last bit of data from the streams.
         """
         assert self.dprint()
-        dprint("before readStreams")
         self.readStreams()
         if self.process and self.process.Exists(self.pid):
-            dprint("before Destroy")
             self.process.Destroy()
-            dprint("after Destroy")
             self.process = None
         wx.CallAfter(self.jobout.finishedCallback, self)
-    
 
 class _ProcessManager(debugmixin):
     """Display a list of all subprocesses.
@@ -156,6 +151,7 @@ class _ProcessManager(debugmixin):
     def run(self, cmd, job_output, input=""):
         job = Job(cmd, job_output)
         self.jobs.append(job)
+        assert self.dprint("Running job %s" % cmd)
         job.run(input)
         if job.pid > 0:
             self.job_lookup[job.pid] = job
@@ -178,29 +174,29 @@ class _ProcessManager(debugmixin):
 
     def OnProcessEnded(self, evt):
         pid = evt.GetPid()
-        dprint("process ended! pid=%d" % pid)
+        assert self.dprint("process ended! pid=%d" % pid)
         job = self.lookup(pid)
         if job:
-            #wx.CallAfter(self.cleanup, job)
             job.OnCleanup(evt)
             wx.CallAfter(self.cleanup, job)
-        evt.Skip()
+        # evt.Skip() # Don't call Skip here, or it causes a crash!
 
     def cleanup(self, job):
+        assert self.dprint("in cleanup")
         if self.autoclean:
             self.removeJob(job)
         self.finished(job)
 
     def removeJob(self, job):
         if job.pid in self.job_lookup:
+            assert self.dprint("removing pid=%d" % job.pid)
             del self.job_lookup[job.pid]
             jobs = [j for j in self.jobs if j != job]
             self.jobs = jobs
 
     def finished(self, job):
-        dprint("before peppy.processmanager.finished")
+        assert self.dprint("sending peppy.processmanager.finished")
         Publisher().sendMessage('peppy.processmanager.finished', job)
-        dprint("after peppy.processmanager.finished")
         
 
 class ProcessList(wx.ListCtrl, debugmixin):
@@ -327,17 +323,18 @@ if __name__ == '__main__':
             self.SetAutoLayout(True)
         
         def stdoutCallback(self, job, text):
+            dprint()
             self.out.AppendText("job=%s text=%s" % (job.pid, text))
     
         def OnStart(self, evt):
             p = ProcessManager().run(self.cmd.GetValue(), self, """\
 import time
 
-while True:
+for x in range(2):
     print 'blah'
     time.sleep(1)
 """)
-            print p.pid
+            dprint("OnStart: pid=%d" % p.pid)
             
         def OnKill(self, evt):
             print "kill highlighted process"
