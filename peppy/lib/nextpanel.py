@@ -36,6 +36,7 @@ except:
         print txt
 
     class debugmixin(object):
+        debuglevel = 0
         def dprint(self, txt):
             if self.debuglevel > 0:
                 dprint(txt)
