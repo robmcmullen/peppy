@@ -258,6 +258,7 @@ class response_fetcher(object):
         entity = dictobj()
         if type:
             entity['type'] = type
+        #print "one_object: keywords = %s, type = %s" % (str(keywords), str(type))
 
         while not self.talker.done:
             self.talker.get_line()
@@ -271,11 +272,19 @@ class response_fetcher(object):
             key = key.lower()
             #print "one_object: %s, %s" % (key, val)
 
-            if keywords is not None and key in keywords and key in entity.keys():
+            if keywords is not None and key in keywords and key in entity:
+                print "returning"
                 return entity
 
-            if not type and 'type' not in entity.keys():
-                entity['type'] = key
+            if not type:
+                if 'type' not in entity:
+                    entity['type'] = key
+                elif keywords is not None:
+                    # second time through, check if another keyword
+                    # has shown up, meaning that we should start a new
+                    # entity
+                    if key in keywords:
+                        return entity
 
             entity[key] = self.convert(entity['type'], key, val)
             self.talker.current_line = ''
