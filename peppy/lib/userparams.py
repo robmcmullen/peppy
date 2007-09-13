@@ -618,7 +618,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
 
 
     def __init__(self, parent, obj):
-        Parent.__init__(self, parent, -1, size=(500,-1))
+        ScrolledPanel.__init__(self, parent, -1, size=(500,-1))
         self.parent = parent
         self.obj = obj
         
@@ -777,7 +777,7 @@ class PrefClassTree(wx.TreeCtrl):
         if 'preference_dialog_settings' in dir(cls):
             for key, val in cls.preference_dialog_settings.iteritems():
                 dprint("setting %s[%s]=%s" % (cls.__name__, key, val))
-                cls.settings._set(key, val)
+                cls.classprefs._set(key, val)
             cls.preference_dialog_settings.clear()
         item, cookie = self.GetFirstChild(parent)
         while item:
