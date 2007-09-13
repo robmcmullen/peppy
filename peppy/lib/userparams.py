@@ -630,7 +630,7 @@ class PrefPanel(wx.Panel, debugmixin):
 
             if param.isSettable():
                 ctrl = param.getCtrl(self)
-                self.sizer.Add(ctrl, (row,1))
+                self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
 
                 self.ctrls[param] = ctrl
                 if not focused:
