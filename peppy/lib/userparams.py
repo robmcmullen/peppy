@@ -20,12 +20,14 @@ try:
 except:
     def dprint(txt=""):
         print txt
+        return True
 
     class debugmixin(object):
         debuglevel = 0
         def dprint(self, txt):
             if self.debuglevel > 0:
                 dprint(txt)
+            return True
 
 
 class DirBrowseButton2(DirBrowseButton):
@@ -743,7 +745,8 @@ class PrefPanel(ScrolledPanel, debugmixin):
 
 
     def __init__(self, parent, obj):
-        ScrolledPanel.__init__(self, parent, -1, size=(500,-1))
+        ScrolledPanel.__init__(self, parent, -1, size=(500,-1),
+                               pos=(9000,9000))
         self.parent = parent
         self.obj = obj
         
@@ -759,7 +762,6 @@ class PrefPanel(ScrolledPanel, debugmixin):
     def Layout(self):
         dprint()
         ScrolledPanel.Layout(self)
-        self.SetAutoLayout(1)
         self.SetupScrolling()
         self.Scroll(0,0)
         
@@ -831,22 +833,27 @@ class PrefClassTree(wx.TreeCtrl):
 
     def setIconStorage(self):
         # FIXME: this isn't portable
-        import peppy.lib.iconstorage as icons
-
-        icons.getIconStorage().assign(self)
+        try:
+            import peppy.lib.iconstorage as icons
+            icons.getIconStorage().assign(self)
+        except:
+            pass
 
     def setIconForItem(self, item, cls=None):
         # FIXME: this isn't portable
-        import peppy.lib.iconstorage as icons
+        try:
+            import peppy.lib.iconstorage as icons
 
-        icon = None
-        if item == self.GetRootItem():
-            icon = icons.getIconStorage("icons/wrench.png")
-        elif hasattr(cls, 'icon') and cls.icon is not None:
-            icon = icons.getIconStorage(cls.icon)
+            icon = None
+            if item == self.GetRootItem():
+                icon = icons.getIconStorage("icons/wrench.png")
+            elif hasattr(cls, 'icon') and cls.icon is not None:
+                icon = icons.getIconStorage(cls.icon)
 
-        if icon is not None:
-            self.SetItemImage(item, icon)
+            if icon is not None:
+                self.SetItemImage(item, icon)
+        except:
+            pass
 
     def ExpandAll(self):
         self.ExpandAllChildren(self.GetFirstVisibleItem())
@@ -876,7 +883,7 @@ class PrefClassTree(wx.TreeCtrl):
         if parent is not None:
             dprint("  found parent = %s" % self.GetItemText(parent))
             item = self.AppendItem(parent, mro[0].__name__)
-            self.setIconForItem(item)
+            self.setIconForItem(item, cls)
             self.SetPyData(item, cls)
 
 ##        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnItemExpanded, self.tree)
@@ -909,7 +916,7 @@ class PrefClassTree(wx.TreeCtrl):
 class PrefDialog(wx.Dialog):
     def __init__(self, parent, obj, title="Preferences"):
         wx.Dialog.__init__(self, parent, -1, title,
-                           size=wx.DefaultSize, pos=wx.DefaultPosition, 
+                           size=(700, 500), pos=wx.DefaultPosition, 
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 
         self.obj = obj
@@ -928,7 +935,7 @@ class PrefDialog(wx.Dialog):
         pref = self.createPanel(self.obj.__class__)
 
         self.splitter.SplitVertically(self.tree, pref, -500)
-        sizer.Add(self.splitter, 0, wx.EXPAND)
+        sizer.Add(self.splitter, 1, wx.EXPAND)
 
         btnsizer = wx.StdDialogButtonSizer()
         
@@ -986,6 +993,9 @@ class PrefDialog(wx.Dialog):
 
 
 if __name__ == "__main__":
+    import __builtin__
+    __builtin__._ = str
+    
     class Test1(ClassPrefs):
         default_classprefs = (
             IntParam("test1", 5),
@@ -1002,6 +1012,19 @@ if __name__ == "__main__":
             StrParam("teststr", "BLAH!"),
             )
 
+    class TestA(ClassPrefs):
+        default_classprefs = (
+            BoolParam("testa"),
+            )
+
+    class TestB(TestA):
+        default_classprefs = (
+            PathParam("testpath"),
+            )
+        pass
+
+    class TestC(TestA):
+        pass
    
     t1 = Test1()
     t2 = Test2()
@@ -1023,6 +1046,10 @@ if __name__ == "__main__":
 
     dlg = PrefDialog(None, t1)
     dlg.Show(True)
+
+    # Close down the dialog on a button press
+    import sys
+    dlg.Bind(wx.EVT_BUTTON, lambda e: sys.exit())
 
     app.MainLoop()
     
