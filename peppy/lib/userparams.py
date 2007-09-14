@@ -499,10 +499,19 @@ class GlobalPrefs(debugmixin):
 
     @staticmethod
     def findParam(section, option):
-        if section in GlobalPrefs.params and option in GlobalPrefs.params[section]:
-            param = GlobalPrefs.params[section][option]
+        params = GlobalPrefs.params
+        if section in params and option in params[section]:
+            param = params[section][option]
         else:
+            # Need to march up the class hierarchy to find the correct
+            # Param
+            klasses=GlobalPrefs.name_hierarchy[section]
+            dprint(klasses)
             param = None
+            for name in klasses[1:]:
+                if name in params and option in params[name]:
+                    param = params[name][option]
+                    break
         if GlobalPrefs.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
 
@@ -554,14 +563,17 @@ class GlobalPrefs(debugmixin):
             if section not in saved:
                 # If we have a new section that didn't exist when we
                 # loaded the file, something's changed
+                if GlobalPrefs.debuglevel > 0: dprint("  new section %s!  Change needs saving." % (section))
                 return True
             for option, val in options.iteritems():
                 if option not in saved[section]:
                     # We have a new option in an existing section.
                     # It's changed.
+                    if GlobalPrefs.debuglevel > 0: dprint("  new option %s in section %s!  Change needs saving." % (option, section))
                     return True
                 if val != saved[section][option]:
                     # The value itself has changed.
+                    if GlobalPrefs.debuglevel > 0: dprint("  new value %s for %s[%s]." % (val, section, option))
                     return True
                 if GlobalPrefs.debuglevel > 0: dprint("  nope, %s[%s] is still %s" % (section, option, val))
         # For completeness, we should check to see if an option has
