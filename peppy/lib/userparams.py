@@ -281,6 +281,55 @@ class ChoiceParam(Param):
         index = ctrl.GetSelection()
         return self.choices[index]
 
+class IndexChoiceParam(Param):
+    def __init__(self, keyword, choices):
+        Param.__init__(self, keyword)
+        self.choices = choices
+        self.default = choices[0]
+
+    def getCtrl(self, parent, initial=None):
+        ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        return ctrl
+
+    def textToValue(self, text):
+        text = Param.textToValue(self, text)
+        tmp = locale.atof(text)
+        val = int(tmp)
+        return val
+
+    def setValue(self, ctrl, value):
+        if value >= len(self.choices):
+            value = 0
+        ctrl.SetSelection(value)
+
+    def getValue(self, ctrl):
+        index = ctrl.GetSelection()
+        return index
+
+class KeyedIndexChoiceParam(IndexChoiceParam):
+    def __init__(self, keyword, choices):
+        Param.__init__(self, keyword)
+        self.choices = [entry[1] for entry in choices]
+        self.keys = [entry[0] for entry in choices]
+        self.default = choices[0]
+
+    def getCtrl(self, parent, initial=None):
+        ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        return ctrl
+
+    def textToValue(self, text):
+        text = Param.textToValue(self, text)
+        tmp = locale.atof(text)
+        val = int(tmp)
+        try:
+            index = self.keys.index(val)
+        except ValueError:
+            index = 0
+        return index
+
+    def valueToText(self, value):
+        return str(self.keys[value])
+
 
 
 
