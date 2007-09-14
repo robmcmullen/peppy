@@ -99,33 +99,33 @@ def addMode(c, mode):
     c.DeleteGroup(keyword)
     c.SetPath(keyword)
     dprint("[%s]" % keyword)
-    text=eval(repr(mode.settings.sample_file))
+    text=eval(repr(mode.classprefs.sample_file))
     dprint("displaysrc = %s" % text)
     c.Write('displaysrc', text)
-    c.Write('braces', mode.settings.stc_boa_braces)
-    c.WriteInt('lexer', mode.settings.stc_lexer)
-    c.Write('keywords', mode.settings.stc_keywords)
-    c.Write('styleidnames', str(mode.settings.stc_boa_style_names))
+    c.Write('braces', mode.classprefs.stc_boa_braces)
+    c.WriteInt('lexer', mode.classprefs.stc_lexer)
+    c.Write('keywords', mode.classprefs.stc_keywords)
+    c.Write('styleidnames', str(mode.classprefs.stc_boa_style_names))
 
     c.SetPath('')
     c.DeleteGroup("style.%s" % keyword)
     c.SetPath("style.%s" % keyword)
     dprint("[style.%s]" % keyword)
-    for num, style in mode.settings.stc_lexer_styles.iteritems():
+    for num, style in mode.classprefs.stc_lexer_styles.iteritems():
         if isinstance(style,int):
             # style can be an int, which means it is just copying from
             # another style.
-            if style in mode.settings.stc_lexer_styles:
-                style = mode.settings.stc_lexer_styles[style]
-            elif style in mode.settings.stc_lexer_default_styles:
-                style = mode.settings.stc_lexer_default_styles[style]
+            if style in mode.classprefs.stc_lexer_styles:
+                style = mode.classprefs.stc_lexer_styles[style]
+            elif style in mode.classprefs.stc_lexer_default_styles:
+                style = mode.classprefs.stc_lexer_default_styles[style]
             else:
                 # skip if it doesn't appear in either dict
                 continue
         dprint("%s = %s" % ("style.%s.%03d" % (keyword,num), style.strip()))
         c.Write("style.%s.%03d" % (keyword,num), style.strip())
-    for num, style in mode.settings.stc_lexer_default_styles.iteritems():
-        if not num in mode.settings.stc_lexer_styles:
+    for num, style in mode.classprefs.stc_lexer_default_styles.iteritems():
+        if not num in mode.classprefs.stc_lexer_styles:
             dprint("%s = %s" % ("style.%s.%03d" % (keyword,num), style.strip()))
             c.Write("style.%s.%03d" % (keyword,num), style.strip())
            

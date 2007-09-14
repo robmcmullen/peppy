@@ -533,7 +533,6 @@ class FundamentalMode(BraceHighlightMixin,
         IntParam('caret_width', 2),
         BoolParam('caret_line_highlight', False),
         StrParam('sample_file', "Fundamental mode is the base for all other modes that use the STC to view text."),
-        BoolParam('has_stc_styling', True),
         IntParam('stc_lexer', wx.stc.STC_LEX_NULL),
         StrParam('stc_keywords', ""),
         StrParam('stc_boa_braces', "{}"),
@@ -586,7 +585,7 @@ class FundamentalMode(BraceHighlightMixin,
     def applySettings(self):
         self.applyDefaultSettings()
         if self.styleSTC():
-            self.classprefs.has_stc_styling = True
+            self.has_stc_styling = True
         else:
             # If the style file fails to load, it probably means that
             # the style definition doesn't exist in the style file.
@@ -594,12 +593,12 @@ class FundamentalMode(BraceHighlightMixin,
             # mode to the file and try again.
             self.styleDefault()
             if self.styleSTC():
-                self.classprefs.has_stc_styling = True
+                self.has_stc_styling = True
             else:
                 # If the file still doesn't load, fall back to a style
                 # that hopefully does exist.  The boa stc styling
                 # dialog won't be available.
-                self.classprefs.has_stc_styling = False
+                self.has_stc_styling = False
                 self.styleSTC('text')
 
     def styleDefault(self):
