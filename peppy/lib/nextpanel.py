@@ -255,7 +255,8 @@ class NeXTPanel(HackedScrolledPanel, debugmixin):
 
     def makeList(self, title):
         self.dprint(title)
-        c = NeXTList(self.splitter, style=wx.LB_EXTENDED|wx.LB_ALWAYS_SB)
+        c = NeXTList(self.splitter, style=wx.LB_EXTENDED|wx.LB_ALWAYS_SB,
+                     pos=(9000,9000))
         c.Bind(wx.EVT_LISTBOX, self.OnListSelect)
         c.SetFont(self.GetFont())
         return c
