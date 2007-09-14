@@ -13,7 +13,7 @@ import wx.stc
 from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 from wx.lib.scrolledpanel import ScrolledPanel
-from wx.lib.filebrowsebutton import FileBrowseButtonWithHistory, DirBrowseButton
+from wx.lib.filebrowsebutton import *
 
 try:
     from peppy.debug import *
@@ -176,7 +176,7 @@ class StrParam(Param):
     pass
 
 class DateParam(Param):
-    default = ""
+    default = wx.DateTime().Today()
     
     def getCtrl(self, parent, initial=None):
         dpc = wx.DatePickerCtrl(parent, size=(120,-1),
@@ -209,7 +209,7 @@ class DateParam(Param):
         return ctrl.GetValue()
 
 class DirParam(Param):
-    default = ""
+    default = os.path.dirname(os.getcwd())
     
     def getCtrl(self, parent, initial=None):
         if initial is None:
@@ -222,12 +222,12 @@ class DirParam(Param):
         ctrl.SetValue(os.path.normpath(value))
 
 class PathParam(DirParam):
-    default = ""
+    default = os.getcwd()
     
     def getCtrl(self, parent, initial=None):
         if initial is None:
             initial = os.getcwd()
-        c = FileBrowseButtonWithHistory(parent, -1, size=(300, -1),
+        c = FileBrowseButton(parent, -1, size=(300, -1),
                                         labelText = '',
                                         startDirectory=initial,
                                         changeCallback = self.callback)
@@ -238,18 +238,19 @@ class PathParam(DirParam):
         # On MSW, a fake object can be sent to the callback, so check
         # to see if it is a real event before using it.
         if not hasattr(evt, 'GetEventObject'):
+            evt.Skip()
             return
         
-        ctrl = evt.GetEventObject()
-        value = evt.GetString()
-        if not value:
-            return
-        dprint('FileBrowseButtonWithHistory: %s\n' % value)
-        history = ctrl.GetHistory()
-        if value not in history:
-            history.append(value)
-            ctrl.SetHistory(history)
-            ctrl.GetHistoryControl().SetStringSelection(value)
+##        ctrl = evt.GetEventObject()
+##        value = evt.GetString()
+##        if value:
+##            dprint('FileBrowseButtonWithHistory: %s\n' % value)
+##            history = ctrl.GetHistory()
+##            if value not in history:
+##                history.append(value)
+##                ctrl.SetHistory(history)
+##                ctrl.GetHistoryControl().SetStringSelection(value)
+        evt.Skip()
 
 class ChoiceParam(Param):
     def __init__(self, keyword, choices):
