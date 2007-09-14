@@ -611,7 +611,7 @@ class HSIMode(MajorMode):
         self.dataset_index = index
         self.cube = self.dataset.getCube(index)
         self.bands = self.cube.guessDisplayBands()
-        if not self.settings.display_rgb and len(self.bands)>1:
+        if not self.classprefs.display_rgb and len(self.bands)>1:
             self.bands = [self.bands[0]]
         dprint("display bands = %s" % str(self.bands))
         self.cubeband = CubeBand(self.cube)
