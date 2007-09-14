@@ -233,10 +233,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             try:
                 fh = self.config.open(filename)
                 GlobalPrefs.readConfig(fh)
+                if self.verbose > 0: print "Loaded config file %s" % filename
             except:
                 print "Failed opening config file %s" % filename
         else:
-            print "Configuration file %s not found" % self.config.fullpath(filename)
+            if self.verbose > 0: print "Configuration file %s not found" % self.config.fullpath(filename)
 
     def loadConfigPostHook(self):
         """
@@ -425,7 +426,6 @@ def run(options={},args=None):
     
     Peppy.options = options
     peppy = Peppy(redirect=False)
-    dprint(peppy)
     
     if options.sample_config:
         from keyboard import KeyboardConf
@@ -474,7 +474,7 @@ def main():
     parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
     parser.add_option("--key-bindings", action="store", dest="key_bindings", default='win')
     (options, args) = parser.parse_args()
-    print options
+    #print options
 
     if options.profile:
         import profile

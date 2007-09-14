@@ -27,10 +27,6 @@ except:
             if self.debuglevel > 0:
                 dprint(txt)
 
-if '_' not in dir():
-    global _
-    _ = str
-
 
 class DirBrowseButton2(DirBrowseButton):
     """Update to dir browse button to browse to the currently set
@@ -129,17 +125,20 @@ class BoolParam(Param):
 
     def textToValue(self, text):
         text = Param.textToValue(self, text).lower()
-        if text[0:1] in ['1', 't', 'y']:
+        if text in ["1", _("yes"), _("true")]:
             return True
         return False
 
     def valueToText(self, value):
         if value:
-            return "1"
-        return "0"
+            return _("yes")
+        return _("no")
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(value)
+
+    def getValue(self, ctrl):
+        return ctrl.GetValue()
 
 class IntParam(Param):
     default = 0
@@ -756,7 +755,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         row = 0
         focused = False
         hier = self.obj.classprefs._getMRO()
-        dprint(hier)
+        self.dprint(hier)
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
@@ -774,7 +773,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
                     
                     val = self.obj.classprefs(param.keyword)
-                    dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
+                    self.dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
                     param.setValue(ctrl, val)
                     
                     self.ctrls[param.keyword] = ctrl
@@ -788,7 +787,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         
     def update(self):
         hier = self.obj.classprefs._getMRO()
-        dprint(hier)
+        self.dprint(hier)
         updated = {}
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
@@ -802,7 +801,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 ctrl = self.ctrls[param.keyword]
                 val = param.getValue(ctrl)
                 if val != self.orig[param.keyword]:
-                    dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
+                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
                     self.obj.classprefs._set(param.keyword, val)
                 updated[param.keyword] = True
 
