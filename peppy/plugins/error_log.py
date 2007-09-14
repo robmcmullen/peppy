@@ -14,8 +14,36 @@ from wx.lib.pubsub import Publisher
 from peppy.stcinterface import PeppySTC
 from peppy.trac.core import *
 from peppy.sidebar import *
+from peppy.minor import *
 
-class ErrorLog(Sidebar, PeppySTC, debugmixin):
+class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
+    debuglevel = 0
+    
+    default_classprefs = (
+        BoolParam('show', False),
+        BoolParam('always_scroll', False),
+        )
+
+    def displayMessage(self, text):
+        scroll = False
+        if not self.classprefs.always_scroll:
+            # If we're at the end, scroll down as new lines are added.
+            # If we are scrolled back reading something else, don't
+            # scroll.
+            line = self.GetFirstVisibleLine()
+            visible = self.LinesOnScreen()
+            total = self.GetLineCount()
+            if line >= total - visible:
+                scroll = True
+            else:
+                scroll = False
+            #dprint("top line: %d, visible: %d, total=%d, scroll=%s" % (line, visible, total, scroll))
+            
+        self.AddText(text)
+        if scroll:
+            self.ScrollToLine(self.GetLineCount())
+
+class ErrorLogSidebar(Sidebar, ErrorLogMixin):
     """An error log using message passing.
 
     This is a global plugin that displays any messages it receives
@@ -34,7 +62,7 @@ class ErrorLog(Sidebar, PeppySTC, debugmixin):
 
     default_classprefs = (
         IntParam('best_width', 500),
-        IntParam('best_height', 50),
+        IntParam('best_height', 100),
         IntParam('min_width', 100),
         IntParam('min_height', 20),
         BoolParam('show', False),
@@ -55,30 +83,56 @@ class ErrorLog(Sidebar, PeppySTC, debugmixin):
         if not paneinfo.IsShown():
             paneinfo.Show(True)
             self.frame._mgr.Update()
+        self.displayMessage(message.data)
 
-        scroll = False
-        if not self.classprefs.always_scroll:
-            # If we're at the end, scroll down as new lines are added.
-            # If we are scrolled back reading something else, don't
-            # scroll.
-            line = self.GetFirstVisibleLine()
-            visible = self.LinesOnScreen()
-            total = self.GetLineCount()
-            if line >= total - visible:
-                scroll = True
-            else:
-                scroll = False
-            #dprint("top line: %d, visible: %d, total=%d, scroll=%s" % (line, visible, total, scroll))
-            
-        self.AddText(message.data)
-        if scroll:
-            self.ScrollToLine(self.GetLineCount())
+class OutputLogMinorMode(MinorMode, ErrorLogMixin):
+    """An error log using message passing.
 
+    This is a global plugin that displays any messages it receives
+    starting with 'peppy.log'.
+
+    Eventually, it could do different things depending on the subtype
+    of the message.  For example, 'peppy.log.error' messages could be
+    highlighted in red, or there could be different levels of log
+    messages and it could show only those messages above a certain
+    level.
+    """
+    debuglevel = 0
+    
+    keyword = "OutputLog"
+    caption = _("Output Log")
+
+    default_classprefs = (
+        IntParam('best_width', 500),
+        IntParam('best_height', 100),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        BoolParam('show', False),
+        BoolParam('always_scroll', False),
+        )
+    
+    def __init__(self, major, parent):
+        PeppySTC.__init__(self, parent)
+        self.major = major
+        
+    def paneInfoHook(self, paneinfo):
+        paneinfo.Bottom()
+
+    def showError(self, message=None):
+        paneinfo = self.major._mgr.GetPane(self)
+        if not paneinfo.IsShown():
+            paneinfo.Show(True)
+            self.major._mgr.Update()
+        self.displayMessage(message.data)
 
 class ErrorLogProvider(Component):
     """Plugin to advertize the presense of the ErrorLog sidebar
     """
     implements(ISidebarProvider)
+    implements(IMinorModeProvider)
 
     def getSidebars(self):
-        yield ErrorLog
+        yield ErrorLogSidebar
+        
+    def getMinorModes(self):
+        yield OutputLogMinorMode
