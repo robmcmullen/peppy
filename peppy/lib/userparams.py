@@ -3,7 +3,7 @@
 """Helpers to create editing widgets for user parameters.
 """
 
-import os, struct, time, re, types
+import os, struct, time, re, types, copy
 from cStringIO import StringIO
 from ConfigParser import ConfigParser
 import locale
@@ -147,9 +147,8 @@ class IntParam(Param):
     def textToValue(self, text):
         text = Param.textToValue(self, text)
         tmp = locale.atof(text)
-        dprint(tmp)
         val = int(tmp)
-        return str(val)
+        return val
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(str(value))
@@ -163,7 +162,7 @@ class FloatParam(Param):
     def textToValue(self, text):
         text = Param.textToValue(self, text)
         val = locale.atof(text)
-        return str(val)
+        return val
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(str(value))
@@ -419,6 +418,7 @@ class GlobalPrefs(debugmixin):
     debuglevel = 0
     
     default={}
+    params = {}
     user={}
     name_hierarchy={}
     class_hierarchy={}
@@ -436,10 +436,13 @@ class GlobalPrefs(debugmixin):
         with the default_classprefs, or there'll be trouble.
         """
         d = GlobalPrefs.default
+        p = GlobalPrefs.params
         for section, defaults in defs.iteritems():
             if section not in d:
                 d[section] = {}
             d[section].update(defaults)
+            if section not in p:
+                p[section] = {}
 
     @staticmethod
     def addHierarchy(leaf, classhier, namehier):
@@ -453,10 +456,13 @@ class GlobalPrefs(debugmixin):
         for klass in klasshier:
             if klass.__name__ not in GlobalPrefs.default:
                 defs={}
+                params = {}
                 if hasattr(klass,'default_classprefs'):
                     for p in klass.default_classprefs:
                         defs[p.keyword] = p.default
+                        params[p.keyword] = p
                 GlobalPrefs.default[klass.__name__]=defs
+                GlobalPrefs.params[klass.__name__] = params
             else:
                 # we've loaded application-specified defaults for this
                 # class before, but haven't actually checked the
@@ -464,10 +470,13 @@ class GlobalPrefs(debugmixin):
                 # existing prefs.
                 #print "!!!!! missed %s" % klass
                 if hasattr(klass,'default_classprefs'):
-                    g=GlobalPrefs.default[klass.__name__]
+                    gd = GlobalPrefs.default[klass.__name__]
+                    gp = GlobalPrefs.params[klass.__name__]
                     for p in klass.default_classprefs:
-                        if p.keyword not in g:
-                            g[p.keyword] = p.default
+                        if p.keyword not in gd:
+                            gd[p.keyword] = p.default
+                        if p.keyword not in gp:
+                            gp[p.keyword] = p
                     
             if klass.__name__ not in GlobalPrefs.user:
                 GlobalPrefs.user[klass.__name__]={}
@@ -490,33 +499,109 @@ class GlobalPrefs(debugmixin):
         return result
 
     @staticmethod
+    def findParam(section, option):
+        if section in GlobalPrefs.params and option in GlobalPrefs.params[section]:
+            param = GlobalPrefs.params[section][option]
+        else:
+            param = None
+        if GlobalPrefs.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
+        return param
+
+    @staticmethod
     def readConfig(fh):
         cfg=ConfigParser()
         cfg.optionxform=str
         cfg.readfp(fh)
         for section in cfg.sections():
             d={}
-            for option,value in cfg.items(section):
-                if GlobalPrefs.magic_conversion:
-                    d[option]=GlobalPrefs.convertValue(section,option,value)
+            for option, text in cfg.items(section):
+                # NOTE! text will be converted later, after all
+                # plugins are loaded and we know what type each
+                # parameter is supposed to be
+                d[option]=text
+            if section in GlobalPrefs.user:
+                GlobalPrefs.user[section].update(d)
+            else:
+                GlobalPrefs.user[section]=d
+
+    @staticmethod
+    def convertConfig():
+        # Need to copy dict to temporary one, because BadThings happen
+        # while trying to update a dictionary while iterating on it.
+        if GlobalPrefs.debuglevel > 0: dprint("before: %s" % GlobalPrefs.user)
+        d = {}
+        for section, options in GlobalPrefs.user.iteritems():
+            d[section] = {}
+            for option, text in options.iteritems():
+                param = GlobalPrefs.findParam(section, option)
+                if param is not None:
+                    val = param.textToValue(text)
+                    if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
                 else:
-                    d[option]=value
-            GlobalPrefs.user[section]=d
+                    val = text
+                d[section][option] = val
+        GlobalPrefs.user = d
+        if GlobalPrefs.debuglevel > 0: dprint("after: %s" % GlobalPrefs.user)
+
+        # Save a copy so we can tell if the user changed anything
+        GlobalPrefs.save_user = copy.deepcopy(GlobalPrefs.user)
+
+    @staticmethod
+    def isUserConfigChanged():
+        d = GlobalPrefs.user
+        saved = GlobalPrefs.save_user
+        for section, options in d.iteritems():
+            if GlobalPrefs.debuglevel > 0: dprint("checking section %s" % section)
+            if section not in saved:
+                # If we have a new section that didn't exist when we
+                # loaded the file, something's changed
+                return True
+            for option, val in options.iteritems():
+                if option not in saved[section]:
+                    # We have a new option in an existing section.
+                    # It's changed.
+                    return True
+                if val != saved[section][option]:
+                    # The value itself has changed.
+                    return True
+                if GlobalPrefs.debuglevel > 0: dprint("  nope, %s[%s] is still %s" % (section, option, val))
+        # For completeness, we should check to see if an option has
+        # been removed, but currently the interface doesn't provide
+        # that ability.
+        return False
 
     @staticmethod
     def configToText():
         if GlobalPrefs.debuglevel > 0: dprint("Saving user configuration: %s" % GlobalPrefs.user)
-        lines = ["# Automatically generated file!  Do not edit -- edit override.cfg instead"]
+        lines = ["# Automatically generated file!  Do not edit -- use one of the following",
+                 "# files instead:",
+                 "#",
+                 "# peppy.cfg        For general configuration on all platforms",
+                 "# [platform].cfg   For configuration on a specific platform, where [platform]",
+                 "#                  is one of the platforms returned by the command",
+                 "#                  python -c 'import platform; print platform.system()'",
+                 "# [machine].cfg    For configuration on a specific machine, where [machine]",
+                 "#                  is the hostname as returned by the command",
+                 "#                  python -c 'import platform; print platform.node()'",
+                 "",
+                 ]
+        
+        saved = GlobalPrefs.save_user
         sections = GlobalPrefs.user.keys()
         sections.sort()
         for section in sections:
-            kvpairs = GlobalPrefs.user[section]
-            if kvpairs:
-                lines.append("[%s]" % section)
-                keys = kvpairs.keys()
+            options = GlobalPrefs.user[section]
+            printed_section = False # flag to indicate if need to print header
+            if options:
+                keys = options.keys()
                 keys.sort()
-                for key in keys:
-                    lines.append("%s = %s" % (key, kvpairs[key]))
+                for option in keys:
+                    val = options[option]
+                    param = GlobalPrefs.findParam(section, option)
+                    if not printed_section:
+                        lines.append("[%s]" % section)
+                        printed_section = True
+                    lines.append("%s = %s" % (option, param.valueToText(val)))
                 lines.append("")
         text = os.linesep.join(lines)
         if GlobalPrefs.debuglevel > 0: dprint(text)
@@ -552,13 +637,13 @@ class PrefsProxy(debugmixin):
         if user:
             d=GlobalPrefs.user
             for klass in klasses:
-                assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d))
+                assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     return d[klass][name]
         if default:
             d=GlobalPrefs.default
             for klass in klasses:
-                assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d))
+                assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     return d[klass][name]
 
@@ -654,6 +739,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         self.sizer = wx.GridBagSizer(2,5)
 
         self.ctrls = {}
+        self.orig = {}
         self.create()
 
         self.SetSizer(self.sizer)
@@ -688,9 +774,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
                     
                     val = self.obj.classprefs(param.keyword)
+                    dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
                     param.setValue(ctrl, val)
                     
                     self.ctrls[param.keyword] = ctrl
+                    self.orig[param.keyword] = val
                     if not focused:
                         self.SetFocus()
                         ctrl.SetFocus()
@@ -711,10 +799,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     # Don't update with value in superclass
                     continue
                 
-                val = self.obj.classprefs(param.keyword)
-                dprint("updating %s = %s" % (param.keyword, val))
                 ctrl = self.ctrls[param.keyword]
-                param.setValue(ctrl, val)
+                val = param.getValue(ctrl)
+                if val != self.orig[param.keyword]:
+                    dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
+                    self.obj.classprefs._set(param.keyword, val)
                 updated[param.keyword] = True
 
 class PrefClassTree(wx.TreeCtrl):
@@ -799,20 +888,6 @@ class PrefClassTree(wx.TreeCtrl):
             self.SortRecurse(item)
             item, cookie = self.GetNextChild(parent, cookie)
 
-    def applyRecurse(self, parent=None):
-        if parent is None:
-            parent = self.GetRootItem()
-        cls = self.GetItemPyData(parent)
-        if 'preference_dialog_settings' in dir(cls):
-            for key, val in cls.preference_dialog_settings.iteritems():
-                dprint("setting %s[%s]=%s" % (cls.__name__, key, val))
-                cls.classprefs._set(key, val)
-            cls.preference_dialog_settings.clear()
-        item, cookie = self.GetFirstChild(parent)
-        while item:
-            self.applyRecurse(item)
-            item, cookie = self.GetNextChild(parent, cookie)
-    
     def OnCompareItems(self, item1, item2):
         t1 = self.GetItemText(item1)
         t2 = self.GetItemText(item2)
@@ -824,7 +899,7 @@ class PrefDialog(wx.Dialog):
     def __init__(self, parent, obj, title="Preferences"):
         wx.Dialog.__init__(self, parent, -1, title,
                            size=wx.DefaultSize, pos=wx.DefaultPosition, 
-                           style=wx.DEFAULT_DIALOG_STYLE)
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 
         self.obj = obj
 
@@ -893,7 +968,10 @@ class PrefDialog(wx.Dialog):
         evt.Skip()
 
     def applyPreferences(self):
-        self.tree.applyRecurse()
+        # Look at all the panels that have been created: this gives us
+        # an upper bound on what may have changed.
+        for cls, pref in self.pref_panels.iteritems():
+            pref.update()
 
 
 if __name__ == "__main__":

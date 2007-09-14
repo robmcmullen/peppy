@@ -4,7 +4,7 @@
 Main application class.
 """
 
-import os, sys
+import os, sys, platform
 import __builtin__
 
 import wx
@@ -44,9 +44,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     initial keyboard mapping, and other lower level initialization
     from the BufferApp superclass.
     """
-    debuglevel = 1
+    debuglevel = 0
     verbose = 0
     options = {}
+
+    base_preferences = "preferences.cfg"
+    override_preferences = "peppy.cfg"
 
     ##
     # This mapping controls the verbosity level required for debug
@@ -103,7 +106,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         self.initialConfig(self.minimal_config)
         self.i18nConfig()
-        self.loadConfig("peppy.cfg")
+        self.loadConfig()
 
         self.errors=[]
 
@@ -190,10 +193,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                                                  }
                                         }):
         GlobalPrefs.setDefaults(defaults)
-        dprint("port = %s, type=%s" % (self.classprefs.listen_port, type(self.classprefs.listen_port)))
+        #dprint("port = %s, type=%s" % (self.classprefs.listen_port, type(self.classprefs.listen_port)))
 
     def i18nConfig(self):
-        dprint("found home dir=%s" % self.config.dir)
+        #dprint("found home dir=%s" % self.config.dir)
 
         basedir = os.path.dirname(os.path.dirname(__file__))
 
@@ -211,16 +214,29 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         init_i18n(path, locale, self.options.i18n_catalog)
 
-    def loadConfig(self, filename):
-        try:
-            fh = self.config.open(filename)
-            GlobalPrefs.readConfig(fh)
-        except:
-            print "Failed opening config file %s" % filename
+    def loadConfig(self):
+        files = [self.base_preferences,
+                 "%s.cfg" % platform.system(),
+                 "%s.cfg" % platform.node(),
+                 self.override_preferences]
+
+        for filename in files:
+            self.loadConfigFile(filename)
 
         self.loadConfigPostHook()
+        GlobalPrefs.convertConfig()
         
         ConfigurationExtender(ComponentManager()).load(self)
+
+    def loadConfigFile(self, filename):
+        if self.config.exists(filename):
+            try:
+                fh = self.config.open(filename)
+                GlobalPrefs.readConfig(fh)
+            except:
+                print "Failed opening config file %s" % filename
+        else:
+            print "Configuration file %s not found" % self.config.fullpath(filename)
 
     def loadConfigPostHook(self):
         """
@@ -242,19 +258,22 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         ConfigurationExtender(ComponentManager()).save(self)
 
-        text = GlobalPrefs.configToText()
-        try:
-            fh = self.config.open(filename, "w")
-            fh.write(text)
-            retval=wx.ID_YES
-        except:
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "Unable to save configuration file\n%s\n\nQuit anyway?" % self.config.fullpath(filename), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-            retval=dlg.ShowModal()
-            dlg.Destroy()
+        if GlobalPrefs.isUserConfigChanged():
+            dprint("User configuration has changed!  Saving")
+            text = GlobalPrefs.configToText()
+            try:
+                fh = self.config.open(filename, "w")
+                fh.write(text)
+                retval=wx.ID_YES
+            except:
+                dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "Unable to save configuration file\n%s\n\nQuit anyway?" % self.config.fullpath(filename), "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                retval=dlg.ShowModal()
+                dlg.Destroy()
 
-        if retval==wx.ID_YES:
-            return True
-        return False
+            if retval==wx.ID_YES:
+                return True
+            return False
+        return True
 
     def loadPlugin(self, plugin, abort=True):
         """Import a plugin from a module name
@@ -391,7 +410,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             wx.GetApp().ExitMainLoop()
 
     def quitHook(self):
-        if not self.saveConfig("peppy.cfg"):
+        if not self.saveConfig(self.base_preferences):
             return False
         Publisher().sendMessage('peppy.shutdown')
         return True
