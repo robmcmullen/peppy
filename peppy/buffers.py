@@ -608,7 +608,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         major=self.getActiveMajorMode()
         if major:
             buffer=major.buffer
-            BufferApp.close(buffer)
+            wx.GetApp().close(buffer)
 
     def setTitle(self):
         major=self.getActiveMajorMode()
