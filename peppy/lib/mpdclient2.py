@@ -273,7 +273,7 @@ class response_fetcher(object):
             #print "one_object: %s, %s" % (key, val)
 
             if keywords is not None and key in keywords and key in entity:
-                print "returning"
+                #print "returning"
                 return entity
 
             if not type:
