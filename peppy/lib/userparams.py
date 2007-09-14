@@ -612,6 +612,9 @@ class GlobalPrefs(debugmixin):
                 for option in keys:
                     val = options[option]
                     param = GlobalPrefs.findParam(section, option)
+                    if param is None:
+                        dprint("Found a None param: %s[%s] = %s" % (section, option, val))
+                        continue
                     if not printed_section:
                         lines.append("[%s]" % section)
                         printed_section = True
