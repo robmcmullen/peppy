@@ -19,15 +19,21 @@ from peppy.about import AddCredit, AddCopyright
 
 SPECompat = None
 
+class _autoload_img_dict(object):
+    def __init__(self):
+        self.icons = getIconStorage()
+
+    def __getitem__(self, name):
+        if name in self.__dict__:
+            return self.__dict__[name]
+        icon = self.icons.get("icons/spe/" + name)
+        self.__dict__[name] = icon
+        return icon
+    
+
 class _SPECompat(object):
     def __init__(self):
-        icons = getIconStorage()
-        self.iconsListIndex = {}
-        
-        spedir = os.path.dirname(__file__)
-        for filename in os.listdir(spedir):
-            if filename.endswith(".png"):
-                self.iconsListIndex[filename] = icons.get(filename, spedir)
+        self.iconsListIndex = _autoload_img_dict()
 
 
 if SPECompat is None:

@@ -17,6 +17,39 @@ if sys.version >= '2.3' and sys.version < '2.4':
     warnings.filterwarnings('ignore', "hex/oct constants", FutureWarning)
 
 
+try:
+    import py2exe
+    USE_PY2EXE = True
+except:
+    USE_PY2EXE = False
+    
+# Manifest file to allow py2exe to use the winxp look and feel
+manifest = """
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
+manifestVersion="1.0">
+<assemblyIdentity
+    version="0.64.1.0"
+    processorArchitecture="x86"
+    name="Controls"
+    type="win32"
+/>
+<description>Your Application</description>
+<dependency>
+    <dependentAssembly>
+        <assemblyIdentity
+            type="win32"
+            name="Microsoft.Windows.Common-Controls"
+            version="6.0.0.0"
+            processorArchitecture="X86"
+            publicKeyToken="6595b64144ccf1df"
+            language="*"
+        />
+    </dependentAssembly>
+</dependency>
+</assembly>
+"""
+
 # use windows batch files if we're on windows
 scripts = ['scripts/peppy']
 from distutils import util
@@ -57,7 +90,9 @@ try:
 except ImportError:
     pass
 
-if HAVE_NUMPY:
+if HAVE_NUMPY and not USE_PY2EXE:
+    # Don't try building extension modules when using py2exe, because
+    # I don't have the correct microsoft compiler
     ext_modules.append(Extension('peppy.hsi._utils',
                                  sources = ['peppy/hsi/_utils.c'],
                                  include_dirs = include_dirs,
@@ -76,10 +111,13 @@ setup(name = '$prog',
       platforms='any',
       scripts=scripts,
       packages = $packages,
-      package_data={'peppy': ['icons/*'],
-                    },
       ext_modules = ext_modules,
       
+      windows = [{"script": "peppy.py",
+                  "other_resources": [(24,1,manifest)],
+                  "icon_resources": [(0, "peppy/icons/peppy.ico")],
+                  }
+                 ],
       classifiers=['Development Status :: 3 - Alpha',
                    'Environment :: MacOS X',
                    'Environment :: Win32 (MS Windows)',

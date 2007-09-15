@@ -4,7 +4,7 @@
 Main application class.
 """
 
-import os, sys, platform
+import os, sys, imp, platform
 import __builtin__
 
 import wx
@@ -17,6 +17,15 @@ from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 
 from trac.core import *
+
+#### py2exe support
+
+def main_is_frozen():
+    return (hasattr(sys, "frozen") or # new py2exe
+           hasattr(sys, "importers") # old py2exe
+           or imp.is_frozen("__main__")) # tools/freeze
+
+##### i18n
 
 def i18n_gettext(path):
     import gettext
@@ -107,6 +116,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.initialConfig(self.minimal_config)
         self.i18nConfig()
         self.loadConfig()
+
+        self.initGraphics()
 
         self.errors=[]
 
@@ -245,8 +256,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         self.startServer()
         self.autoloadImports()
-        self.autoloadStandardPlugins()
-        self.autoloadSetuptoolsPlugins()
+        if main_is_frozen():
+            import peppy.py2exe_plugins
+        else:
+            self.autoloadStandardPlugins()
+            self.autoloadSetuptoolsPlugins()
         self.parseConfigPlugins()
 ##        if cfg.has_section('debug'):
 ##            self.parseConfigDebug('debug',cfg)
@@ -355,6 +369,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if mods:
             self.loadPlugins(mods)
 
+    def initGraphics(self):
+        try:
+            import peppy.icons.iconmap
+            dprint("Imported icons!")
+        except:
+            pass
+        
     def deleteFrame(self,frame):
         #self.pendingframes.append((self.frames.getid(frame),frame))
         #self.frames.remove(frame)

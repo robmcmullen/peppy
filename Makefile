@@ -29,7 +29,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 GIT_LIST = $(shell git-ls-files)
-GIT_FILTER_OUT := %.in Makefile Makedoc.py peppy.bat setup.py svn-ls.py trac/% %/
+GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% %/
 GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
 DISTSRC := $(filter %.py,$(GIT_FILTERED))
 DISTFILES := README INSTALL $(GIT_FILTERED)
@@ -39,10 +39,10 @@ APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 .SUFFIXES:      .html.in .pre.in .html
 
 .html.in.html: template.html.in mainmenu.html.in
-	./Makedoc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n htmlBody $*.html.in -t template.html.in
+	./make-doc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n htmlBody $*.html.in -t template.html.in
 
 .pre.in.html: template.html.in mainmenu.html.in
-	./Makedoc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n preBody $*.pre.in -t template.html.in
+	./make-doc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n preBody $*.pre.in -t template.html.in
 
 
 
@@ -51,10 +51,10 @@ APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 all: doc
 
 README: README.pre.in ChangeLog
-	./Makedoc.py -m peppy -o README README.pre.in
+	./make-doc.py -m peppy -o README README.pre.in
 
 INSTALL: INSTALL.pre.in ChangeLog
-	./Makedoc.py -m peppy -o INSTALL INSTALL.pre.in
+	./make-doc.py -m peppy -o INSTALL INSTALL.pre.in
 
 doc: README INSTALL
 
@@ -86,28 +86,23 @@ distdir:
 	-chmod 777 $(distdir)
 	tar cf - $(DISTFILES) | (cd $(distdir); tar xf -)
 	chmod 644 $(distdir)/tests/*.py
-	./Makedoc.py -m peppy -o $(distdir)/README README.pre.in
-	./Makedoc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
-	./Makedoc.py -m peppy -o $(distdir)/setup.py setup.py.in
+	./make-doc.py -m peppy -o $(distdir)/README README.pre.in
+	./make-doc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
+	./make-doc.py -m peppy -o $(distdir)/setup.py setup.py.in
 	rm $(distdir)/$(DISTMAIN)
-	./Makedoc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
+	./make-doc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
 	sed -e "s/svn-devel/$(VERSION)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
 	rm $(distdir)/$(DISTMAIN).tmp
+
+	./make-icon-data.py -o $(distdir)/peppy/icons/iconmap.py
+	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py
 
 	mkdir $(distdir)/scripts
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts
 
-distmil: distmildir
-	-chmod -R a+r $(distdir)
-	$(TAR) cvf $(distdir).tar $(TAROPTS) $(distdir)
-	$(COMPRESS) $(distdir).tar
-	-rm -rf $(distdir)
-
-distmildir: distdir
-	./Makedoc.py -m peppy --mil -o $(distdir)/setup.py setup.py.in
-	mkdir $(distdir)/peppy/hsi/mil
-	cp -a peppy/hsi/mil/*.py $(distdir)/peppy/hsi/mil
+distmil: distdir
+	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py -s $(distdir)/peppy
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) | tee epydoc.out

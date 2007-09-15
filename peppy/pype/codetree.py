@@ -30,8 +30,10 @@ class TreeCtrl(wx.TreeCtrl):
                         wx.ArtProvider_GetBitmap(wx.ART_NORMAL_FILE, wx.ART_OTHER, isz)]
             
             for icf in ('icons/green.gif', 'icons/yellow.gif', 'icons/red.gif'):
-                icf = os.path.join(_pype.runpath, icf)
-                self.images.append(wx.BitmapFromImage(wx.Image(icf)))
+##                icf = os.path.join(_pype.runpath, icf)
+##                self.images.append(wx.BitmapFromImage(wx.Image(icf)))
+                from peppy.lib.iconstorage import getIconStorage
+                self.images.append(getIconStorage().getBitmap(icf))
             
             for i in self.images:
                 il.Add(i)
