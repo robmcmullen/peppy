@@ -210,8 +210,7 @@ class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield ImageViewMode
     
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(OpenImageViewer)),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenImageViewer)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

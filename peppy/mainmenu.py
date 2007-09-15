@@ -329,6 +329,8 @@ class MainMenu(Component):
                   (_("Window"),Separator(_("lastsep")).first()),
                   (_("Window"),MenuItem(FrameList).last()),
                   (None,Menu(_("&Help")).last().after(_("Window"))),
+                  (_("&Help"),Menu(_("&Tests"))),
+                  (_("&Help"),Menu(_("&Samples"))),
                   )
     def getMenuItems(self):
         wx.App_SetMacHelpMenuTitleName(_("&Help"))

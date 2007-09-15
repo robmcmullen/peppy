@@ -324,8 +324,7 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield PythonMode
     
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(SamplePython)),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SamplePython)),
 ##                  ("Python",None,Menu(_("Python")).after(_("Major Mode"))),
 ##                  ("Python",_("Python"),MenuItem(ShiftLeft)),
 ##                  ("Python",_("Python"),MenuItem(ShiftRight)),

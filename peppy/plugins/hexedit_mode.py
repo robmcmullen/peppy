@@ -871,8 +871,7 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield HexEditMode
 
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(OpenHexEditor)),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenHexEditor)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

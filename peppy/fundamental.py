@@ -791,8 +791,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield FundamentalMode
     
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(OpenFundamental).first()),
+    default_menu=((None,(_("&Help"),_("&Test")),MenuItem(OpenFundamental).first()),
                   ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
                   ("Fundamental",_("Edit"),MenuItem(FindText)),
                   ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
@@ -803,20 +802,20 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
                   ("Fundamental",_("View"),MenuItem(LineNumbers)),
                   ("Fundamental",_("View"),MenuItem(Folding)),
                   ("Fundamental",_("View"),Separator(_("cmdsep"))),
-                  ("Fundamental",None,Menu(_("Cmds")).after(_("Edit"))),
-                  ("Fundamental",_("Cmds"),MenuItem(ShiftLeft)),
-                  ("Fundamental",_("Cmds"),MenuItem(ShiftRight)),
-                  ("Fundamental",_("Cmds"),MenuItem(Reindent)),
-                  ("Fundamental",_("Cmds"),Separator(_("shift")).last()),
-                  ("Fundamental",_("Cmds"),MenuItem(CommentRegion)),
+                  ("Fundamental",None,Menu(_("&Transform")).after(_("Edit"))),
+                  ("Fundamental",_("&Transform"),MenuItem(ShiftLeft)),
+                  ("Fundamental",_("&Transform"),MenuItem(ShiftRight)),
+                  ("Fundamental",_("&Transform"),MenuItem(Reindent)),
+                  ("Fundamental",_("&Transform"),Separator(_("shift")).last()),
+                  ("Fundamental",_("&Transform"),MenuItem(CommentRegion)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("Fundamental",None,Menu(_("Cmds")).after(_("Major Mode"))),
-                   ("Fundamental",_("Cmds"),MenuItem(ShiftLeft)),
-                   ("Fundamental",_("Cmds"),MenuItem(ShiftRight)),
+    default_tools=(("Fundamental",None,Menu(_("&Transform")).after(_("Major Mode"))),
+                   ("Fundamental",_("&Transform"),MenuItem(ShiftLeft)),
+                   ("Fundamental",_("&Transform"),MenuItem(ShiftRight)),
                    )
     def getToolBarItems(self):
         for mode,menu,item in self.default_tools:

@@ -62,10 +62,9 @@ class SandboxPlugin(MajorModeMatcherBase,debugmixin):
     """
     implements(IMenuItemProvider)
 
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(FastProgressBarTest)),
-                  (None,_("Test"),MenuItem(SlowProgressBarTest)),
-                  (None,_("Test"),MenuItem(ShowStyles)),
+    default_menu=((None,(_("&Help"),_("&Tests")),MenuItem(FastProgressBarTest)),
+                  (None,(_("&Help"),_("&Tests")),MenuItem(SlowProgressBarTest)),
+                  (None,(_("&Help"),_("&Tests")),MenuItem(ShowStyles)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

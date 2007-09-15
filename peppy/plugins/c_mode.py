@@ -82,8 +82,7 @@ class CModePlugin(MajorModeMatcherBase,debugmixin):
    def possibleModes(self):
        yield CMode
 
-   default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                 (None,_("Test"),MenuItem(SampleCFile)),
+   default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleCFile)),
                  )
    def getMenuItems(self):
        for mode,menu,item in self.default_menu:

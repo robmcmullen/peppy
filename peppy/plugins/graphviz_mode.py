@@ -219,8 +219,7 @@ class GraphvizPlugin(MajorModeMatcherBase,debugmixin):
     def getMinorModes(self):
         yield GraphvizViewMinorMode
     
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(SampleDot)),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleDot)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:

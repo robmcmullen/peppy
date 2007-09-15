@@ -98,8 +98,7 @@ class MakefilePlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield MakefileMode
     
-    default_menu=((None,None,Menu(_("Test")).after(_("Minor Mode"))),
-                  (None,_("Test"),MenuItem(SampleMakefile)),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleMakefile)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
