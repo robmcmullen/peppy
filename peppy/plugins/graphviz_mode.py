@@ -60,6 +60,8 @@ class GraphvizMode(FundamentalMode):
     start_line_comment = "// "
 
     default_classprefs = (
+        StrParam('path', '/usr/local/bin'),
+
         StrParam('minor_modes', 'GraphvizView'),
         StrParam('sample_file', _sample_file),
         IntParam('stc_lexer', wx.stc.STC_LEX_CPP),
@@ -103,8 +105,6 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         IntParam('best_height', 300),
         IntParam('min_width', 300),
         IntParam('min_height', 300),
-        
-        StrParam('path', '/usr/local/bin'),
         )
 
     dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
@@ -154,7 +154,7 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         self.prog.Enable(not busy)
 
     def OnRegenerate(self, event):
-        prog = os.path.normpath(os.path.join(self.settings.path,self.prog.GetStringSelection()))
+        prog = os.path.normpath(os.path.join(self.major.classprefs.path,self.prog.GetStringSelection()))
         assert self.dprint("using %s to run graphviz" % repr(prog))
 
         cmd = "%s -Tpng" % prog
