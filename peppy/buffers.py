@@ -643,7 +643,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("after addViewer")
 
     def titleBuffer(self):
-        self.open('about:peppy')
+        self.open(wx.GetApp().classprefs.title_page)
 
     def showTitleIfNecessary(self):
         if len(BufferList.storage)==0:
