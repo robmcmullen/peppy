@@ -70,7 +70,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
         IntParam('min_width', 100),
         IntParam('min_height', 20),
         BoolParam('show', False),
-        BoolParam('show_on_error', False),
+        BoolParam('unhide_on_message', True),
         BoolParam('always_scroll', False),
         )
     
@@ -86,7 +86,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
 
     def showError(self, message=None):
         paneinfo = self.frame._mgr.GetPane(self)
-        if self.classprefs.show_on_error:
+        if self.classprefs.unhide_on_message:
             if not paneinfo.IsShown():
                 paneinfo.Show(True)
                 self.frame._mgr.Update()
@@ -99,6 +99,9 @@ class DebugLogSidebar(ErrorLogSidebar):
     message = 'peppy.log.debug'
     ready_message = 'peppy.ready.debug'
     
+    default_classprefs = (
+        BoolParam('unhide_on_message', False),
+        )
 
 class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     """An error log using message passing.

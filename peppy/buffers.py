@@ -650,6 +650,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.titleBuffer()
         
     def open(self,url,newTab=True,mode=None):
+        wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
             buffer=Buffer(url,stcparent=self.dummyframe,defaultmode=mode)
             # If we get an exception, it won't get added to the buffer list
@@ -664,9 +665,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 msg=mode.getWelcomeMessage()
         except Exception, e:
             import traceback
-            traceback.print_exc()
-            msg = "Failed opening %s" % url
+            error = traceback.format_exc()
+            msg = "Failed opening %s.  " % url
             Publisher().sendMessage('peppy.log.error', msg)
+            Publisher().sendMessage('peppy.log.error', error)
+        wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
         self.SetStatusText(msg)
 
     def save(self):        
