@@ -83,7 +83,7 @@ class BandFilter(object):
         minval=raw.min()
         maxval=raw.max()
         valrange=maxval-minval
-        print "data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange))
+        dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
         if valrange==0.0:
             gray=(raw-minval).astype(numpy.uint8)
         else:
@@ -101,7 +101,7 @@ class BandFilter(object):
 
         count=0
         for band in cubeband.bands:
-            print "getRGB: band=%s" % str(band)
+            dprint("getRGB: band=%s" % str(band))
             self.planes.append(self.getPlane(filt.getPlane(band[1])))
             if progress: progress.Update(50+((count+1)*50)/len(cubeband.bands))
             count+=1
@@ -111,7 +111,7 @@ class BandFilter(object):
                 self.rgb[:,:,i]=self.planes[i]
             for i in range(count,3,1):
                 self.rgb[:,:,i]=self.planes[0]
-        #print rgb[0,:,0]
+        #dprint(rgb[0,:,0])
         
         return self.rgb
 
@@ -131,18 +131,18 @@ class ContrastFilter(BandFilter):
         minval=raw.min()
         maxval=raw.max()
         valrange=maxval-minval
-        print "data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange))
+        dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
 
         h,bins=numpy.histogram(raw,self.bins,range=(minval,maxval+1))
-        print h
-        print "h[%d]=%d" % (self.bins-1,h[self.bins-1])
-        #print h
+        dprint(h)
+        dprint("h[%d]=%d" % (self.bins-1,h[self.bins-1]))
+        #dprint(h)
 
         shape=raw.shape
         numpixels=raw.size
         lo=numpixels*self.contraststretch
         hi=numpixels*(1.0-self.contraststretch)
-        print "lo=%d hi=%d" % (lo,hi)
+        dprint("lo=%d hi=%d" % (lo,hi))
         count=0
         for i in range(self.bins):
             if count>=lo:
@@ -155,21 +155,21 @@ class ContrastFilter(BandFilter):
                 break;
             count-=h[i]
         maxscaled=minval+valrange*i/self.bins
-        print "scaled: min=%d max=%d" % (minscaled,maxscaled)
+        dprint("scaled: min=%d max=%d" % (minscaled,maxscaled))
         if minscaled==maxscaled:
             gray=numpy.zeros(raw.shape,numpy.uint8)
         else:
             gray=(raw-minscaled)*(255.0/(maxscaled-minscaled))
             # orig=(raw-minval)*(255.0/(maxval-minval))
-            # print gray[0,:]
-            # print orig[0,:]
+            # dprint(gray[0,:])
+            # dprint(orig[0,:])
             gray=numpy.clip(gray,0,255).astype(numpy.uint8)
 
             # histogram uses min <= val < max, so we need to use 256 as
             # the max
             h,bins = numpy.histogram(gray,256,range=(0,256))
-            print "h[255]=%d" % h[255]
-            # print h
+            dprint("h[255]=%d" % h[255])
+            # dprint(h)
 
         return gray
 
@@ -309,7 +309,7 @@ class CubeBand(object):
         # determine type from the filename.
         image=wx.ImageFromBitmap(self.bitmap)
         type=getImageType(name)
-        print "saving image to %s with type=%d" % (name,type)
+        dprint("saving image to %s with type=%d" % (name,type))
         return image.SaveFile(name,type)
 
     def copyImageToClipboard(self):
@@ -355,7 +355,7 @@ class PrevBand(SelectAction):
         return True
 
     def action(self, pos=None):
-        print "Previous band!!!"
+        dprint("Previous band!!!")
         mode = self.frame.getActiveMajorMode()
         mode.prevBand()
 
@@ -375,7 +375,7 @@ class NextBand(SelectAction):
         return True
 
     def action(self, pos=None):
-        print "Next band!!!"
+        dprint("Next band!!!")
         mode = self.frame.getActiveMajorMode()
         mode.nextBand()
 
@@ -393,7 +393,7 @@ class PrevCube(SelectAction):
         return False
 
     def action(self, pos=None):
-        print "Prev cube!!!"
+        dprint("Prev cube!!!")
         mode = self.frame.getActiveMajorMode()
         mode.prevCube()
 
@@ -411,7 +411,7 @@ class NextCube(SelectAction):
         return False
 
     def action(self, pos=None):
-        print "Next cube!!!"
+        dprint("Next cube!!!")
         mode = self.frame.getActiveMajorMode()
         mode.nextCube()
 
@@ -456,7 +456,7 @@ class ContrastFilterAction(RadioAction):
     def getIndex(self):
         mode = self.frame.getActiveMajorMode()
         filt = mode.cubefilter
-        print filt
+        dprint(filt)
         if hasattr(filt, 'contraststretch'):
             val = filt.contraststretch
             if val > 0.0001 and abs(val - 0.1) < 0.0001:
@@ -516,7 +516,7 @@ class MedianFilterAction(RadioAction):
     def getIndex(self):
         mode = self.frame.getActiveMajorMode()
         filt = mode.filter
-        print filt
+        dprint(filt)
         return filt.pos
 
     def getItems(self):
@@ -618,7 +618,7 @@ class HSIMode(MajorMode):
         self.cubefilter = BandFilter()
         self.filter = GeneralFilter()
         #self.cube.open()
-        print self.cube
+        dprint(self.cube)
         self.cubeband.loadBands(self.bands)
 
     def nextCube(self):
@@ -654,7 +654,7 @@ class HSIMode(MajorMode):
         display=True
         # greyscale image only needs the first array value, rgb image
         # uses all 3
-        print "setBand: bands=%s" % newbands
+        dprint("setBand: bands=%s" % newbands)
 
         # first check the range
         for i in range(len(self.bands)):
@@ -727,7 +727,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
         
     def getLines(self, x, y):
         cubeband = self.major.cubeband
-        # print "SpectrumPlotProxy: (%d,%d)" % (x,y)
+        # dprint("SpectrumPlotProxy: (%d,%d)" % (x,y))
 
         data=numpy.zeros((cubeband.cube.bands,2))
         if cubeband.cube.wavelengths:
@@ -741,7 +741,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
             # getUpdatedExtrema is modified in place, so the compare
             # will always return true if we don't copy it.
             self.yaxis=yaxis[:]
-            # print "yaxis=%s" % self.yaxis
+            # dprint("yaxis=%s" % self.yaxis)
             self.updateListenerExtrema()
         line = plot.PolyLine(data, legend= '%d, %d' % (x, y), colour='blue')
         return [line]
@@ -782,7 +782,7 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
             # getUpdatedExtrema is modified in place, so the compare
             # will always return true if we don't copy it.
             self.yaxis=yaxis[:]
-            # print "yaxis=%s" % self.yaxis
+            # dprint("yaxis=%s" % self.yaxis)
             self.updateListenerExtrema()
         return lines
         
@@ -820,7 +820,7 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
             # getUpdatedExtrema is modified in place, so the compare
             # will always return true if we don't copy it.
             self.yaxis=yaxis[:]
-            # print "yaxis=%s" % self.yaxis
+            # dprint("yaxis=%s" % self.yaxis)
             self.updateListenerExtrema()
         return lines
 

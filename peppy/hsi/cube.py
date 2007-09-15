@@ -63,13 +63,13 @@ class HyperspectralFileFormat(Component):
             urlinfo = URLInfo(urlinfo)
         comp_mgr = ComponentManager()
         register = HyperspectralFileFormat(comp_mgr)
-        print "handlers: %s" % register.handlers
+        dprint("handlers: %s" % register.handlers)
         matches = []
         for loader in register.handlers:
             for format in loader.supportedFormats():
-                print "checking %s for %s format" % (urlinfo, format.format_name)
+                dprint("checking %s for %s format" % (urlinfo, format.format_name))
                 if format.identify(urlinfo):
-                    print "Possible match for %s format" % format.format_name
+                    dprint("Possible match for %s format" % format.format_name)
                     matches.append(format)
         order = []
         for match in matches:
@@ -79,11 +79,11 @@ class HyperspectralFileFormat(Component):
             # efficient than GDAL.  So, loop through the matches and
             # see if there is a specific class that should be used
             # instead of a generic one.
-            print "Checking %s for specific support of %s" % (match, urlinfo)
+            dprint("Checking %s for specific support of %s" % (match, urlinfo))
             name, ext = os.path.splitext(urlinfo.path)
             ext.lower()
             if ext in match.extensions:
-                print "Found specific support for %s in %s" % (ext, match)
+                dprint("Found specific support for %s in %s" % (ext, match))
                 order.append(match)
                 matches.remove(match)
         if len(matches)>0:
@@ -119,16 +119,16 @@ class HyperspectralFileFormat(Component):
         names.sort()
         wildcards=""
         for name in names:
-            print "%s: %s" % (name,pairs[name])
+            dprint("%s: %s" % (name,pairs[name]))
             shown=';'.join("*"+ext for ext in pairs[name])
             expandedexts=list(pairs[name])
             expandedexts.extend(ext.upper() for ext in pairs[name])
-            print expandedexts
+            dprint(expandedexts)
             expanded=';'.join("*"+ext for ext in expandedexts)
             wildcards+="%s (%s)|%s|" % (name,shown,expanded)
 
         wildcards+="All files (*.*)|*.*"
-        print wildcards
+        dprint(wildcards)
         return wildcards
 
 
@@ -182,7 +182,7 @@ class MetadataMixin(object):
     def __str__(self):
         fs=StringIO()
         order=self.keys()
-        if self.debug: print "keys in object: %s" % order
+        if self.debug: dprint("keys in object: %s" % order)
         order.sort()
         for key in order:
             val=self[key]
@@ -280,7 +280,7 @@ class Cube(object):
         return False
 
     def setURL(self, url=None):
-        #print "setting url to %s" % url
+        #dprint("setting url to %s" % url)
         if url:
             if isinstance(url, str):
                 url = URLInfo(url)
@@ -372,14 +372,14 @@ class Cube(object):
         # supply bad band list
         if not self.bbl:
             self.bbl=[1]*self.bands
-        # print "verifyAttributes: bands=%d bbl=%s" % (self.bands,self.bbl)
+        # dprint("verifyAttributes: bands=%d bbl=%s" % (self.bands,self.bbl))
 
         # guess wavelength units if not supplied
         if self.wavelengths and not self.wavelength_units:
             self.guessWavelengthUnits()
 
         if self.byte_order != nativeByteOrder:
-            #print "byteswapped data!"
+            #dprint("byteswapped data!")
             #self.swap=True
 
             # with numarray's byteorder parameter, we don't have to
@@ -506,7 +506,7 @@ class Cube(object):
         theseunits=utils.units_scale[units]
 ##        converted=val*cubeunits/theseunits
         converted=val*theseunits/cubeunits
-        #print "val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits))
+        #dprint("val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits)))
         return converted
 
     def normalizeUnitsTo(self,val,units):
@@ -518,7 +518,7 @@ class Cube(object):
         cubeunits=utils.units_scale[self.wavelength_units]
         theseunits=utils.units_scale[units]
         converted=val*cubeunits/theseunits
-        #print "val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits))
+        #dprint("val=%s converted=%s cubeunits=%s theseunits=%s" % (str(val),str(converted),str(cubeunits),str(theseunits)))
         return converted
 
     def getBandListByWavelength(self,wavelen_min,wavelen_max=-1,units='nm'):
@@ -533,7 +533,7 @@ class Cube(object):
             return bandlist
         
         for channel in range(self.bands):
-            # print "wavelen[%d]=%f" % (channel,self.wavelengths[channel])
+            # dprint("wavelen[%d]=%f" % (channel,self.wavelengths[channel]))
             if (self.bbl[channel]==1 and
                   self.wavelengths[channel]>=wavelen_min and
                   self.wavelengths[channel]<=wavelen_max):

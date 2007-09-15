@@ -44,6 +44,23 @@ def init_i18n(path, lang, catalog):
     else:
         __builtin__._ = str
 
+class errorRedirector(object):
+    def __init__(self, which='error'):
+        self.msg = "peppy.log.%s" % which
+        self.save = StringIO()
+        self.isready = False
+        Publisher().subscribe(self.ready, "peppy.ready.%s" % which)
+
+    def ready(self, msg):
+        Publisher().sendMessage(msg, self.save.getvalue())
+        self.isready = True
+        
+    def write(self, text):
+        if self.isready:
+            Publisher().sendMessage(self.msg, text)
+        else:
+            self.save.write(text)
+
 
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
@@ -119,8 +136,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         self.initGraphics()
 
-        self.errors=[]
-
         # set verbosity on any new plugins that may have been loaded
         # and set up the debug menu
         #self.setVerbosity(menu=DebugClass,reset=self.verbose)
@@ -132,8 +147,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         return True
 
     def processCommandLineOptions(self):
-        if self.options.logfile:
-            debuglog(self.options.logfile)
+        if not self.options.log_stderr:
+            debuglog(errorRedirector('debug'))
+            errorlog(errorRedirector('error'))
 
         if self.options.key_bindings:
             self.classprefs.key_bindings = self.options.key_bindings
@@ -244,11 +260,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             try:
                 fh = self.config.open(filename)
                 GlobalPrefs.readConfig(fh)
-                if self.verbose > 0: print "Loaded config file %s" % filename
+                if self.verbose > 0: dprint("Loaded config file %s" % filename)
             except:
-                print "Failed opening config file %s" % filename
+                eprint("Failed opening config file %s" % filename)
         else:
-            if self.verbose > 0: print "Configuration file %s not found" % self.config.fullpath(filename)
+            if self.verbose > 0: dprint("Configuration file %s not found" % self.config.fullpath(filename))
 
     def loadConfigPostHook(self):
         """
@@ -307,9 +323,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             try:
                 mod=__import__(plugin)
             except Exception,ex:
-                print "couldn't load plugin %s" % plugin
-                print ex
-                self.errors.append("couldn't load plugin %s" % plugin)
+                eprint("couldn't load plugin %s due to exception:" % plugin)
+                eprint(ex)
 
     def loadPlugins(self,plugins):
         """Import a list of plugins.
@@ -489,7 +504,7 @@ def main():
     parser=OptionParser(usage=usage)
     parser.add_option("-p", action="store_true", dest="profile", default=False)
     parser.add_option("-v", action="count", dest="verbose", default=0)
-    parser.add_option("-l", action="store", dest="logfile", default=None)
+    parser.add_option("--log-stderr", action="store_true", dest="log_stderr", default=False)
     parser.add_option("--config-dir", action="store", dest="confdir", default="")
     parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
     parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)

@@ -173,7 +173,7 @@ class Header(dict,MetadataMixin):
                 self.read(fh)
                 fh.close()
             else:
-                print "Couldn't open header!\n"
+                eprint("Couldn't open %s for reading.\n" % self.headerurl)
 
     def save(self,filename=None):
         if filename:
@@ -182,7 +182,7 @@ class Header(dict,MetadataMixin):
                 fh.write(str(self))
                 fh.close()
             else:
-                print "Couldn't open header!\n"
+                eprint("Couldn't open %s for writing.\n" % filename)
 
     def read(self,fh):
         """parse the header file for the ENVI key/value pairs."""
@@ -203,16 +203,16 @@ class Header(dict,MetadataMixin):
                     val+=txt
                     # remove trailing whitespace
                     self[key]=val.rstrip()
-                    if self.debug: print "mutiline: '%s':%s'%s'" % (key,os.linesep,self[key])
+                    if self.debug: dprint("mutiline: '%s':%s'%s'" % (key,os.linesep,self[key]))
                     state='nothing'
                 else:
                     val+=txt+os.linesep
             else:
                 if re.search('=',txt):
-                    if self.debug: print "txt=%s" % txt
+                    if self.debug: dprint("txt=%s" % txt)
                     key,val = [s.strip() for s in re.split('=\s*',txt,1)]
                     key=key.lower()
-                    if self.debug: print "matching: '%s'='%s'" % (key,val)
+                    if self.debug: dprint("matching: '%s'='%s'" % (key,val))
                     if val == "{":
                         state='bracket'
                         val=''
@@ -224,7 +224,7 @@ class Header(dict,MetadataMixin):
                             # remove garbage characters
                             val=re.sub('\{\}[ \r\n\t]*','',val)
                         self[key]=val
-                        if self.debug: print "stored: '%s'='%s'" % (key,self[key])
+                        if self.debug: dprint("stored: '%s'='%s'" % (key,self[key]))
         self.fixup()
 
     def fixup(self):
@@ -241,16 +241,16 @@ class Header(dict,MetadataMixin):
         determine if the final result should be reduced to a value
         instead of a one-element list."""
         file=StringIO(txt)
-        if self.debug: print "getList: parsing %s" % txt
+        if self.debug: dprint("getList: parsing %s" % txt)
         reader=csv.reader(file)
         count=0
         save=[]
         for row in reader:
             for col in row:
-                if self.debug: print "  col=%s" % col
+                if self.debug: dprint("  col=%s" % col)
                 if len(col)==0 or re.match("[ \n\r\t]+$",col): continue
                 save.append(converter(col))
-        if self.debug: print "getList: %s" % save
+        if self.debug: dprint("getList: %s" % save)
         if len(save)==1 and not isinstance(orig,list) :
             return save[0]
         else:
@@ -270,15 +270,15 @@ class Header(dict,MetadataMixin):
         exts=[".img",".IMG",il,il.lower(),il.upper(),il.title(),".dat",".DAT",".sli",".SLI",".bin",".BIN"]
         for ext in exts:
             check=filename+ext
-            if self.debug: print "checking %s\n" % check
+            if self.debug: dprint("checking %s\n" % check)
             if os.path.exists(check):
                 return check
         return None
 
     def getCube(self,filename=None,index=0):
-        #print self.cubeurl, self.headerurl
+        #dprint(self.cubeurl, self.headerurl)
         cube=newCube(self['interleave'],self.cubeurl)
-        #print cube
+        #dprint(cube)
         self.setCubeAttributes(cube)
         cube.open()
         cube.verifyAttributes()
@@ -309,16 +309,16 @@ class Header(dict,MetadataMixin):
                 item_id=self.getAttributeId(item_txt)
                 orig=getattr(cube,item_id,None)
 ##                if orig != None:
-##                    print " before: self.%s = %s" % (item_id,str(orig))
+##                    dprint(" before: self.%s = %s" % (item_id,str(orig)))
 
                 # if the text exists in the object's dictionary,
                 # convert it to its native form and store it as an
                 # object attribute in cube
                 if item_txt in self:
                     setattr(cube,item_id,self.convertList(orig,self[item_txt],converter))
-##                    print " after: cube.%s = %s" % (item_id,str(getattr(cube,item_id,None)))
+##                    dprint(" after: cube.%s = %s" % (item_id,str(getattr(cube,item_id,None))))
 ##                else:
-##                    print " item %s not found in header." % item_txt
+##                    dprint(" item %s not found in header." % item_txt)
 
     def getCubeAttributes(self,cube):
         """Create header strings from the attributes in the cube."""
@@ -327,7 +327,7 @@ class Header(dict,MetadataMixin):
                 item_id=self.getAttributeId(item_txt)
                 orig=getattr(cube,item_id,None)
                 if orig is not None:
-                    if self.debug: print "converting key='%s' orig='%s'" % (item_txt,orig)
+                    if self.debug: dprint("converting key='%s' orig='%s'" % (item_txt,orig))
                     for unconverter,unconvertkeys in self.unconvert:
                         if item_txt in unconvertkeys:
                             if isinstance(orig,list):
@@ -353,7 +353,7 @@ class Header(dict,MetadataMixin):
         fs=StringIO()
         fs.write("ENVI"+os.linesep)
         order=self.keys()
-        if self.debug: print "keys in object: %s" % order
+        if self.debug: dprint("keys in object: %s" % order)
         for key in self.outputorder:
             try:
                 i=order.index(key)
@@ -407,7 +407,7 @@ class TextROI(roi.ROIFile):
                     name, val = line[6:].split(':')
                     name = name.strip()
                     val = val.strip()
-                    print "name=%s val=%s" % (name, val)
+                    dprint("name=%s val=%s" % (name, val))
                     if name == 'name':
                         current = roi.ROI(val)
                         group.addROI(current)
@@ -416,7 +416,7 @@ class TextROI(roi.ROIFile):
                     elif name == 'rgb value':
                         current.setColor(val)
                     else:
-                        print current
+                        dprint(current)
                         current = None
                 elif line.startswith('; ID'):
                     index = 0
@@ -425,13 +425,13 @@ class TextROI(roi.ROIFile):
                 vals = line.split()
                 if len(vals)>0:
                     # ENVI roi coordinates start from 1, not zero
-                    print vals
+                    dprint(vals)
                     current.addPoint(int(vals[0]), int(vals[1])-1, int(vals[2])-1)
                 else:
                     index += 1
                     current = group.getROI(index)
 
-        print group
+        dprint(group)
         return group
 
 

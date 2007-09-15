@@ -25,8 +25,9 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
         )
 
     def displayMessage(self, text):
-        scroll = False
-        if not self.classprefs.always_scroll:
+        if self.classprefs.always_scroll:
+            scroll = True
+        else:
             # If we're at the end, scroll down as new lines are added.
             # If we are scrolled back reading something else, don't
             # scroll.
@@ -37,7 +38,7 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
                 scroll = True
             else:
                 scroll = False
-            #dprint("top line: %d, visible: %d, total=%d, scroll=%s" % (line, visible, total, scroll))
+            #print("top line: %d, visible: %d, total=%d, scroll=%s" % (line, visible, total, scroll))
             
         self.AddText(text)
         if scroll:
@@ -60,12 +61,16 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
     keyword = "error_log"
     caption = _("Error Log")
 
+    message = 'peppy.log.error'
+    ready_message = 'peppy.ready.error'
+
     default_classprefs = (
         IntParam('best_width', 500),
         IntParam('best_height', 100),
         IntParam('min_width', 100),
         IntParam('min_height', 20),
         BoolParam('show', False),
+        BoolParam('show_on_error', False),
         BoolParam('always_scroll', False),
         )
     
@@ -73,17 +78,27 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
         PeppySTC.__init__(self, parent)
         self.frame = parent
 
-        Publisher().subscribe(self.showError, 'peppy.log')
+        Publisher().subscribe(self.showError, self.message)
+        Publisher().sendMessage(self.ready_message)
         
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
 
     def showError(self, message=None):
         paneinfo = self.frame._mgr.GetPane(self)
-        if not paneinfo.IsShown():
-            paneinfo.Show(True)
-            self.frame._mgr.Update()
+        if self.classprefs.show_on_error:
+            if not paneinfo.IsShown():
+                paneinfo.Show(True)
+                self.frame._mgr.Update()
         self.displayMessage(message.data)
+
+class DebugLogSidebar(ErrorLogSidebar):
+    keyword = "debug_log"
+    caption = _("Debug Log")
+
+    message = 'peppy.log.debug'
+    ready_message = 'peppy.ready.debug'
+    
 
 class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     """An error log using message passing.
@@ -133,6 +148,7 @@ class ErrorLogProvider(Component):
 
     def getSidebars(self):
         yield ErrorLogSidebar
+        yield DebugLogSidebar
         
     def getMinorModes(self):
         yield OutputLogMinorMode

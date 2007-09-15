@@ -43,12 +43,12 @@ class PlotProxy(object):
         return []
 
     def updateLines(self, x, y):
-        # print "PlotProxy: update (%d,%d)" % (x,y)
+        # dprint("PlotProxy: update (%d,%d)" % (x,y))
         self.lines=self.getLines(x,y)
 
     def addListener(self, plotter):
         self.listeners.append(plotter)
-        # print "%s: listeners=%s" % (__name__,self.listeners)
+        # dprint("%s: listeners=%s" % (__name__,self.listeners))
 
     def getListeners(self):
         return self.listeners
@@ -56,11 +56,11 @@ class PlotProxy(object):
     def updateListeners(self,skip=[]):
         for listener in self.listeners:
             if listener in skip:
-                # print "skipping listener: %s" % str(listener)
+                # dprint("skipping listener: %s" % str(listener))
                 continue
             else:
-                # print "updating listener: %s" % str(listener)
-                # print "  shown: %s" % listener.IsShown()
+                # dprint("updating listener: %s" % str(listener))
+                # dprint("  shown: %s" % listener.IsShown())
                 listener.update()
 
     def updateListenerExtrema(self):
@@ -79,7 +79,7 @@ class TestPlotProxy(PlotProxy):
         self.yaxis=(0,10)
         
     def getLines(self, x, y):
-        # print "TestPlotProxy: (%d,%d)" % (x,y)
+        # dprint("TestPlotProxy: (%d,%d)" % (x,y))
         data=numpy.zeros((10,2))
         data[:,0]=numpy.arange(10)
         y = range(10)
@@ -146,7 +146,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
     def getExtrema(self,extrema):
         lo=min([a for a,b in extrema])
         hi=max([b for a,b in extrema])
-        # print "extrema: (%d,%d)" % (lo,hi)
+        # dprint("extrema: (%d,%d)" % (lo,hi))
         return (lo,hi)
 
     def getXAxis(self):
@@ -174,7 +174,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         self.yaxis=self.getYAxis()
 
     def update(self):
-        dprint("Found %d proxies" % len(self.proxies))
+        #dprint("Found %d proxies" % len(self.proxies))
         if len(self.proxies)==0: return
         
         lines=[]
@@ -203,7 +203,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
             line=o
             for i in range(1,shape[0]):
                 newdx=abs(x-o.points[i,0])
-                # print "index=%d dx=%.4f newdx=%.4f" % (i,dx,newdx)
+                # dprint("index=%d dx=%.4f newdx=%.4f" % (i,dx,newdx))
                 if newdx<dx:
                     index=i
                     line=o
@@ -216,23 +216,23 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         if len(nearlist)>1:
             nearest=nearlist[0]
             dy=abs(y-nearest['line'].points[nearest['index'],1])
-            # print "checking line #0: index=%d dy=%.4f" % (near['index'],dy)
+            # dprint("checking line #0: index=%d dy=%.4f" % (near['index'],dy))
             for i in range(1,len(nearlist)):
                 newnear=nearlist[i]
                 newdy=abs(y-newnear['line'].points[newnear['index'],1])
-                # print "checking line #%d: index=%d dy=%.4f" % (i,newnear['index'],newdy)
+                # dprint("checking line #%d: index=%d dy=%.4f" % (i,newnear['index'],newdy))
                 if newdy<dy:
                     nearest=newnear
                     dy=newdy
-                    # print "  line #%d is closer" % (index)
+                    # dprint("  line #%d is closer" % (index))
                     
-            # print "best match: index=%d dx=%.4f dy=%.4f" % (near['index'],near['dx'],dy)
+            # dprint("best match: index=%d dx=%.4f dy=%.4f" % (near['index'],near['dx'],dy))
         else:
             nearest=nearlist[0]
         nearest['pointXY']=(nearest['line'].points[nearest['index'],0],
                             nearest['line'].points[nearest['index'],1])
         (x,y)=self.PositionUserToScreen(nearest['pointXY'])
-        # print x,y
+        # dprint(x,y)
         nearest['scaledXY']=(x,y)
 
             

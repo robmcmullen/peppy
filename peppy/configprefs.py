@@ -37,7 +37,7 @@ class HomeConfigDir:
                         try:
                             self.create()
                         except:
-                            print "Can't create configuration directory"
+                            eprint("Can't create configuration directory %s" % self.dir)
                             self.dir = None
 
     def create(self):

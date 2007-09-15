@@ -270,7 +270,7 @@ class Buffer(debugmixin):
                 self.setURL(saveas)
             self.showModifiedAll()
         except:
-            print "Buffer: failed writing!"
+            eprint("Failed writing to %s" % self.url)
             raise
 
     def showModifiedAll(self):

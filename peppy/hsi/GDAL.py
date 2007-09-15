@@ -93,13 +93,13 @@ class GDALDataset(cube.MetadataMixin):
                 if dataset:
                     self.read(dataset)
                 else:
-                    print "Couldn't open header!\n"
+                    eprint("Couldn't open %s\n" % self.url.path)
             except TypeError:
                 dprint("type error opening GDAL.  Skipping")
 
     def save(self, url=None):
         if url:
-            print "Save not implemented yet!\n"           
+            dprint("Save not implemented yet!\n")
 
     def read(self,dataset):
         subset={}
@@ -112,7 +112,7 @@ class GDALDataset(cube.MetadataMixin):
         # assume everything has the same type as the first band.
         band=dataset.GetRasterBand(1)
         subset['data_type']=GDALDataType[band.DataType]
-        print subset
+        dprint(subset)
         self.subsets.append(subset)
 
     def setCubeAttributes(self,cube):
@@ -122,7 +122,7 @@ class GDALDataset(cube.MetadataMixin):
         cube.data_type=self.subsets[0]['data_type']
 
         cube.subcubes=len(self.subsets)
-        print "adjusted number of subcubes to %s" % cube.subcubes
+        dprint("adjusted number of subcubes to %s" % cube.subcubes)
         cube.setURL(self.url)
 
     def getCubeAttributes(self,cube):
@@ -133,7 +133,7 @@ class GDALDataset(cube.MetadataMixin):
         if filename is None:
             filename = self.url
         cube=GDALCube(filename)
-        print cube
+        dprint(cube)
         self.setCubeAttributes(cube)
         cube.verifyAttributes()
         cube.open()
@@ -196,7 +196,7 @@ class GDALCube(cube.Cube):
         for band in range(self.bands):
             b=self.dataset.GetRasterBand(band+1)
             color=b.GetRasterColorInterpretation()
-            print "checking band %d; color interp=%d" % (band,color)
+            dprint("checking band %d; color interp=%d" % (band,color))
             if color==gdal.GCI_RedBand:
                 rgb[0]=band
                 count+=1
@@ -208,7 +208,7 @@ class GDALCube(cube.Cube):
                 count+=1
         if count>=3:
             self.rgbbands=rgb
-        print self.rgbbands
+        dprint(self.rgbbands)
 
     def getPixel(self,line,sample,band):
         bytes=self.dataset.ReadRaster(sample, line, 1, 1, band_list=[band+1])

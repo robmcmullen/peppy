@@ -6,14 +6,26 @@ Debug mixin and debug printing based on class hierarchy.
 
 import os,sys,inspect
 
-logfh=sys.stderr
+dlogfh=sys.stderr
+elogfh=sys.stderr
 
-__all__ = ['debuglog','dprint','debugmixin','get_all_objects','get_all_referrers']
+__all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'debugmixin',
+           'get_all_objects', 'get_all_referrers']
 
 
 def debuglog(file):
-    global logfh
-    logfh=open(file,"w")
+    global dlogfh
+    if hasattr(file, 'write'):
+        dlogfh = file
+    else:
+        dlogfh=open(file,"w")
+
+def errorlog(file):
+    global elogfh
+    if hasattr(file, 'write'):
+        elogfh = file
+    else:
+        elogfh=open(file,"w")
 
 def dprint(str=''):
     caller=inspect.stack()[1]
@@ -22,7 +34,17 @@ def dprint(str=''):
         cls=namespace['self'].__class__.__name__+'.'
     else:
         cls=''
-    logfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    return True
+
+def eprint(str=''):
+    caller=inspect.stack()[1]
+    namespace=caller[0].f_locals
+    if 'self' in namespace:
+        cls=namespace['self'].__class__.__name__+'.'
+    else:
+        cls=''
+    elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     return True
 
 class debugmixin(object):
@@ -31,7 +53,7 @@ class debugmixin(object):
     def dprint(self,str='',level=1):
         if not hasattr(self,'debuglevel') or self.debuglevel>=level:
             caller=inspect.stack()[1]
-            logfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],caller[0].f_locals['self'].__class__.__name__,caller[3],str,os.linesep))
+            dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],caller[0].f_locals['self'].__class__.__name__,caller[3],str,os.linesep))
         return True
 
 # Get a list of "all" objects as seen by the garbage collector.
