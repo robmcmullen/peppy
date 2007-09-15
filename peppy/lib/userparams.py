@@ -120,6 +120,11 @@ class ParamCategory(Param):
 
 class BoolParam(Param):
     default = False
+
+    # For i18n support, load your i18n conversion stuff and change
+    # these class attributes
+    yes_values = ["yes", "true", "1"]
+    no_values = ["no", "false", "0"]
     
     def getCtrl(self, parent, initial=None):
         ctrl = wx.CheckBox(parent, -1, "")
@@ -127,14 +132,14 @@ class BoolParam(Param):
 
     def textToValue(self, text):
         text = Param.textToValue(self, text).lower()
-        if text in ["1", _("yes"), _("true")]:
+        if text in self.yes_values:
             return True
         return False
 
     def valueToText(self, value):
         if value:
-            return _("yes")
-        return _("no")
+            return self.yes_values[0]
+        return self.no_values[0]
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(value)
@@ -885,28 +890,10 @@ class PrefClassTree(wx.TreeCtrl):
         self.setIconForItem(self.GetRootItem())
 
     def setIconStorage(self):
-        # FIXME: this isn't portable
-        try:
-            import peppy.lib.iconstorage as icons
-            icons.getIconStorage().assign(self)
-        except:
-            pass
+        pass
 
     def setIconForItem(self, item, cls=None):
-        # FIXME: this isn't portable
-        try:
-            import peppy.lib.iconstorage as icons
-
-            icon = None
-            if item == self.GetRootItem():
-                icon = icons.getIconStorage("icons/wrench.png")
-            elif hasattr(cls, 'icon') and cls.icon is not None:
-                icon = icons.getIconStorage(cls.icon)
-
-            if icon is not None:
-                self.SetItemImage(item, icon)
-        except:
-            pass
+        pass
 
     def ExpandAll(self):
         self.ExpandAllChildren(self.GetFirstVisibleItem())
@@ -967,7 +954,12 @@ class PrefClassTree(wx.TreeCtrl):
         return 1
 
 class PrefDialog(wx.Dialog):
-    def __init__(self, parent, obj, title="Preferences"):
+    dialog_title = "Preferences"
+    static_title = "This is a placeholder for the Preferences dialog"
+    
+    def __init__(self, parent, obj, title=None):
+        if title is None:
+            title = self.dialog_title
         wx.Dialog.__init__(self, parent, -1, title,
                            size=(700, 500), pos=wx.DefaultPosition, 
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
@@ -976,12 +968,15 @@ class PrefDialog(wx.Dialog):
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        label = wx.StaticText(self, -1, _("This is a placeholder for the Preferences dialog"))
-        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        if self.static_title:
+            label = wx.StaticText(self, -1, self.static_title)
+            sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
         self.splitter = wx.SplitterWindow(self)
         self.splitter.SetMinimumPaneSize(50)
-        self.tree = self.createTree(self.obj.__class__)
+        self.tree = self.createTree(self.splitter)
+        self.populateTree()
+        
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
 
         self.pref_panels = {}
@@ -1007,16 +1002,17 @@ class PrefDialog(wx.Dialog):
 
         self.Layout()
 
-    def createTree(self, cls):
-        tree = PrefClassTree(self.splitter)
-        
-        classes = getAllSubclassesOf(ClassPrefs)
+    def createTree(self, parent):
+        tree = PrefClassTree(parent)
+        return tree
+
+    def populateTree(self, cls=ClassPrefs):
+        classes = getAllSubclassesOf(cls)
         dprint(classes)
         for cls in classes:
-            tree.AppendClass(cls)
-        tree.SortRecurse()
-        tree.ExpandAll()
-        return tree
+            self.tree.AppendClass(cls)
+        self.tree.SortRecurse()
+        self.tree.ExpandAll()
         
     def createPanel(self, cls):
         pref = PrefPanel(self.splitter, cls)
@@ -1046,9 +1042,6 @@ class PrefDialog(wx.Dialog):
 
 
 if __name__ == "__main__":
-    import __builtin__
-    __builtin__._ = str
-    
     class Test1(ClassPrefs):
         default_classprefs = (
             IntParam("test1", 5),

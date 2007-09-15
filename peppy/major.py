@@ -38,7 +38,6 @@ from wx.lib.pubsub import Publisher
 
 from menu import *
 from stcinterface import *
-from configprefs import *
 from debug import *
 from minor import *
 from iofilter import *

@@ -1,6 +1,7 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re
+from cStringIO import StringIO
 
 import wx
 import wx.aui
@@ -10,8 +11,7 @@ from menu import *
 from lib.wxemacskeybindings import *
 from lib.iconstorage import *
 from lib.controls import *
-
-from cStringIO import StringIO
+from lib.userparams import *
 
 from configprefs import *
 from stcinterface import *
