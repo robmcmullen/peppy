@@ -1,15 +1,25 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os, sys, re, glob
+import os, sys, imp, re, glob
+from cStringIO import StringIO
 
 import wx
 
 from peppy.debug import *
 
 __all__ = ['getIconStorage', 'getIconBitmap', 'addIconBitmap',
-           'addIconsFromDirectory']
+           'addIconsFromDirectory', 'addIconsFromDict',
+           'setInitialIconsDict']
+
+##### py2exe support
+
+def main_is_frozen():
+    return (hasattr(sys, "frozen") or # new py2exe
+           hasattr(sys, "importers") # old py2exe
+           or imp.is_frozen("__main__")) # tools/freeze
 
 #### Icons
+icondict = {}    # mapping from filename to string containing
 
 class IconStorage(debugmixin):
     def __init__(self):
@@ -19,7 +29,10 @@ class IconStorage(debugmixin):
 
         # FIXME: shouldn't depend on icons directory being one level
         # up from this dir.
-        self.basedir=os.path.dirname(os.path.dirname(__file__))
+        if not main_is_frozen():
+            self.basedir = os.path.dirname(os.path.dirname(__file__))
+        else:
+            self.basedir = None
 
     def set(self, filename, bitmap):
         self.bitmap[filename]=bitmap
@@ -28,6 +41,20 @@ class IconStorage(debugmixin):
         self.map[filename]=icon
 
     def load(self, path):
+        if path in icondict:
+            return self.loadLocal(path)
+        else:
+            return self.loadFile(path)
+
+    def loadLocal(self, path):
+        data = icondict[path]
+        stream = StringIO(data)
+        img = wx.ImageFromStream(stream)
+        img.Rescale(16, 16)
+        bitmap=wx.BitmapFromImage(img)
+        return bitmap
+
+    def loadFile(self, path):
         if os.path.exists(path) and wx.Image.CanRead(path):
             img = wx.ImageFromBitmap(wx.Bitmap(path))
         else:
@@ -41,13 +68,16 @@ class IconStorage(debugmixin):
 
     def get(self, filename, dir=None):
         if filename not in self.map:
-            if dir is not None:
-                # if a directory is specified, use the whole path name
-                # so as to not conflict with the standard icons
-                filename = os.path.join(dir, filename)
-                path = filename
+            if self.basedir is not None:
+                if dir is not None:
+                    # if a directory is specified, use the whole path name
+                    # so as to not conflict with the standard icons
+                    filename = os.path.join(dir, filename)
+                    path = filename
+                else:
+                    path = os.path.join(self.basedir,filename)
             else:
-                path = os.path.join(self.basedir,filename)
+                path = filename
             bitmap = self.load(path)
             self.set(filename, bitmap)
         else:
@@ -94,3 +124,11 @@ def addIconsFromDirectory(path):
         filename = os.path.basename(path)
         bitmap = store.load(path)
         store.set(filename, bitmap)
+
+def setInitialIconsDict(d):
+    global icondict
+    
+    icondict = d
+
+def addIconsFromDict(d):
+    icondict.update(d)
