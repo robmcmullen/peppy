@@ -559,7 +559,7 @@ class GlobalPrefs(debugmixin):
         params = GlobalPrefs.params
         if section in params and option in params[section]:
             param = params[section][option]
-        else:
+        elif section in GlobalPrefs.name_hierarchy:
             # Need to march up the class hierarchy to find the correct
             # Param
             klasses=GlobalPrefs.name_hierarchy[section]
@@ -569,6 +569,9 @@ class GlobalPrefs(debugmixin):
                 if name in params and option in params[name]:
                     param = params[name][option]
                     break
+        else:
+            dprint("Unknown configuration section: %s" % (section))
+            return None
         if GlobalPrefs.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
 
