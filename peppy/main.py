@@ -90,7 +90,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     
     minimal_config={'BufferFrame':{'width':800,
                                   'height':600,
-                                  'sidebars':'filebrowser,debug_list,error_log',
+                                  'sidebars':'filebrowser, debug_log, error_log, processes',
                                   },
                    'Peppy':{'plugins': '',
                             'recentfiles':'recentfiles.txt',
