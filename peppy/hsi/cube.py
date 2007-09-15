@@ -50,21 +50,6 @@ class HyperspectralFileFormat(Component):
             import GDAL
         except Exception, e:
             dprint("GDAL not available")
-        dprint("module name %s" % __name__)
-        modbase, ext = os.path.splitext(__name__)
-        
-        path = os.path.dirname(__file__)
-        files = glob.glob(os.path.join(path,'frmts','*.py'))
-        files.extend(glob.glob(os.path.join(path,'mil','*.py')))
-        for include in files:
-            sub = os.path.basename(os.path.dirname(include))
-            mod, ext = os.path.splitext(os.path.basename(include))
-            mod = '%s.%s.%s' % (modbase, sub, mod)
-            dprint('trying to load module %s' % mod)
-            try:
-                __import__(mod)
-            except Exception,e:
-                print e
 
         import peppy.lib.setuptools_utils
         peppy.lib.setuptools_utils.load_plugins("peppy.hsi.plugins")
