@@ -791,7 +791,7 @@ class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
     def possibleModes(self):
         yield FundamentalMode
     
-    default_menu=((None,(_("&Help"),_("&Test")),MenuItem(OpenFundamental).first()),
+    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenFundamental).first()),
                   ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
                   ("Fundamental",_("Edit"),MenuItem(FindText)),
                   ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
