@@ -872,13 +872,17 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 if param.keyword in updated:
                     # Don't update with value in superclass
                     continue
-                
-                ctrl = self.ctrls[param.keyword]
-                val = param.getValue(ctrl)
-                if val != self.orig[param.keyword]:
-                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
-                    self.obj.classprefs._set(param.keyword, val)
-                updated[param.keyword] = True
+
+                if param.isSettable():
+                    # It's possible that a keyword won't have an
+                    # associated control, so only deal with those
+                    # controls that are settable
+                    ctrl = self.ctrls[param.keyword]
+                    val = param.getValue(ctrl)
+                    if val != self.orig[param.keyword]:
+                        self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
+                        self.obj.classprefs._set(param.keyword, val)
+                    updated[param.keyword] = True
 
 class PrefClassTree(wx.TreeCtrl):
     def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
@@ -892,6 +896,8 @@ class PrefClassTree(wx.TreeCtrl):
         self.setIconStorage()
         self.setIconForItem(self.GetRootItem())
 
+        self.class_to_item = {}
+
     def setIconStorage(self):
         pass
 
@@ -901,7 +907,12 @@ class PrefClassTree(wx.TreeCtrl):
     def ExpandAll(self):
         self.ExpandAllChildren(self.GetFirstVisibleItem())
 
-    def FindParent(self, mro, parent=None):
+    def ensureClassVisible(self, cls):
+        item = self.class_to_item[cls]
+        self.EnsureVisible(item)
+        self.SelectItem(item)
+
+    def findParent(self, mro, parent=None):
         if parent is None:
             parent = self.GetRootItem()
         if len(mro)==0:
@@ -910,24 +921,25 @@ class PrefClassTree(wx.TreeCtrl):
         if 'default_classprefs' not in dir(cls):
             # ignore intermediate subclasses that don't have any
             # default settings
-            return self.FindParent(mro, parent)
+            return self.findParent(mro, parent)
         name = cls.__name__
         item, cookie = self.GetFirstChild(parent)
         while item:
             if self.GetItemText(item) == name:
-                return self.FindParent(mro, item)
+                return self.findParent(mro, item)
             item, cookie = self.GetNextChild(parent, cookie)
         return None
         
-    def AppendClass(self, cls):
+    def appendClass(self, cls):
         dprint("class=%s mro=%s" % (cls, cls.classprefs._getMRO()))
         mro = cls.classprefs._getMRO()
-        parent = self.FindParent(mro[1:])
+        parent = self.findParent(mro[1:])
         if parent is not None:
             dprint("  found parent = %s" % self.GetItemText(parent))
             item = self.AppendItem(parent, mro[0].__name__)
             self.setIconForItem(item, cls)
             self.SetPyData(item, cls)
+            self.class_to_item[cls] = item
 
 ##        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnItemExpanded, self.tree)
 ##        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed, self.trees)
@@ -940,13 +952,13 @@ class PrefClassTree(wx.TreeCtrl):
 ##        self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
 ##        self.tree.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
 
-    def SortRecurse(self, parent=None):
+    def sortRecurse(self, parent=None):
         if parent is None:
             parent = self.GetRootItem()
         self.SortChildren(parent)
         item, cookie = self.GetFirstChild(parent)
         while item:
-            self.SortRecurse(item)
+            self.sortRecurse(item)
             item, cookie = self.GetNextChild(parent, cookie)
 
     def OnCompareItems(self, item1, item2):
@@ -1013,9 +1025,9 @@ class PrefDialog(wx.Dialog):
         classes = getAllSubclassesOf(cls)
         dprint(classes)
         for cls in classes:
-            self.tree.AppendClass(cls)
-        self.tree.SortRecurse()
-        self.tree.ExpandAll()
+            self.tree.appendClass(cls)
+        self.tree.sortRecurse()
+        self.tree.ensureClassVisible(self.obj.__class__)
         
     def createPanel(self, cls):
         pref = PrefPanel(self.splitter, cls)
