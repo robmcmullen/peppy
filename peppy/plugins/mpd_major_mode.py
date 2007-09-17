@@ -66,16 +66,22 @@ def getArtist(track):
         artist = track['artist']
     return artist
 
-def getTime(track):
-    """Convenience function to return album of a track"""
-    seconds = int(track['time'])
+def getTimeString(seconds):
     if seconds < 60:
         minutes = 0
     else:
         minutes = seconds / 60
         seconds = seconds % 60
-    return "%d:%02d" % (minutes, seconds)
+    if minutes < 60:
+        return "%d:%02d" % (minutes, seconds)
+    hours = minutes / 60
+    minutes = minutes % 60
+    return "%d:%02d:%02d" % (hours, minutes, seconds)
 
+def getTime(track):
+    """Convenience function to return album of a track"""
+    seconds = int(track['time'])
+    return getTimeString(seconds)
 
 MpdSongChanged, EVT_MPD_SONG_CHANGED = wx.lib.newevent.NewEvent()
 MpdSongTime, EVT_MPD_SONG_TIME = wx.lib.newevent.NewEvent()
@@ -1040,7 +1046,7 @@ class MPDMode(MajorMode, debugmixin):
     stc_class = MPDSTC
 
     default_classprefs = (
-        IntParam('minor_modes', 'MPD Playlist, MPD Currently Playing, MPD Search Results'),
+        StrParam('minor_modes', 'MPD Playlist, MPD Currently Playing, MPD Search Results'),
         IntParam('update_interval', 1),
         IntParam('volume_step', 10),
         IntParam('list_font_size', 8),
@@ -1366,6 +1372,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         playlist = self.mpd.playlistinfo
         list_count = self.GetItemCount()
         index = 0
+        cumulative = 0
         cache = []
         show = -1
         for track in playlist:
@@ -1374,6 +1381,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
             self.SetStringItem(index, 1, getTitle(track))
             self.SetStringItem(index, 2, getArtist(track))
             self.SetStringItem(index, 3, getTime(track))
+            cumulative += int(track['time'])
             if track['file'] == visible:
                 show = index
             cache.append(int(track['id']))
@@ -1393,6 +1401,9 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
             self.highlightSong(self.pending_highlight)
             self.pending_highlight = -1
         self.resizeColumns([1,0,0,1])
+
+        self.paneinfo.Caption("Playlist: %d songs -- %s" % (index, getTimeString(cumulative)))
+        self.major._mgr.Update()
 
     def appendSong(self, message=None):
         assert self.dprint(message)
