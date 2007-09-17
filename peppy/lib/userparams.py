@@ -258,10 +258,13 @@ class PathParam(DirParam):
         evt.Skip()
 
 class ChoiceParam(Param):
-    def __init__(self, keyword, choices):
+    def __init__(self, keyword, choices, initial=None):
         Param.__init__(self, keyword)
         self.choices = choices
-        self.default = choices[0]
+        if initial is not None:
+            self.default = initial
+        else:
+            self.default = choices[0]
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
