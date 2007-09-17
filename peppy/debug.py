@@ -2,6 +2,11 @@
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
 Debug mixin and debug printing based on class hierarchy.
+
+NOTE: inspect.stack() is used to determine the class hierarchy at
+runtime.  When using py2exe this call takes a very long time, on the
+order of tenths of seconds!  So, beware to turn off most debug
+printing when deploying the application.
 """
 
 import os,sys,inspect

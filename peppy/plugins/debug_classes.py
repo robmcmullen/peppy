@@ -50,7 +50,6 @@ class DebugClass(ToggleListAction):
 
     @staticmethod
     def setup(msg):
-        dprint(msg)
         app = wx.GetApp()
         debuggable=getAllSubclassesOf()
         debuggable.sort(key=lambda s:s.__name__)

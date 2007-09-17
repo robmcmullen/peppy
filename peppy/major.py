@@ -785,7 +785,6 @@ class MajorModeMatcherDriver(Component, debugmixin):
             # magic bytes in the file
             capable = [m.verifyMagic(header) for m in modes]
             cm = zip(capable, modes)
-            dprint(cm)
 
             # If there's an exact match, make a note of it
             for c, m in cm:
@@ -864,7 +863,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         modes = []
         for plugin in self.plugins:
             for mode in plugin.possibleModes():
-                dprint("scanning %s" % mode)
+                self.dprint("scanning %s" % mode)
                 if mode.verifyProtocol(url):
                     modes.append(mode)
         return modes
@@ -918,7 +917,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         """
         
         modename, settings = parseEmacs(header)
-        dprint("modename = %s, settings = %s" % (modename, settings))
+        self.dprint("modename = %s, settings = %s" % (modename, settings))
         for plugin in self.plugins:
             for mode in plugin.possibleModes():
                 if modename == mode.keyword:

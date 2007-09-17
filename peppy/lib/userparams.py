@@ -192,20 +192,20 @@ class DateParam(Param):
         date_pattern = "(\d+)\D+(\d+)\D+(\d+)"
         match = re.search(date_pattern, text)
         if match:
-            dprint("ymd = %d/%d/%d" % (int(match.group(1)),
-                                       int(match.group(2)),
-                                       int(match.group(3))))
+            assert self.dprint("ymd = %d/%d/%d" % (int(match.group(1)),
+                                                   int(match.group(2)),
+                                                   int(match.group(3))))
             t = time.mktime([int(match.group(1)), int(match.group(2)),
                              int(match.group(3)), 12, 0, 0, 0, 0, 0])
             dt = wx.DateTimeFromTimeT(t)
         else:
             dt = wx.DateTime()
             dt.Today()
-        dprint(dt)
+        assert self.dprint(dt)
         return dt
 
     def valueToText(self, dt):
-        dprint(dt)
+        assert self.dprint(dt)
         text = "{ %d , %d , %d }" % (dt.GetYear(), dt.GetMonth() + 1,
                                      dt.GetDay())
         return text
@@ -239,7 +239,6 @@ class PathParam(DirParam):
         return c
 
     def callback(self, evt):
-        dprint(evt)
         # On MSW, a fake object can be sent to the callback, so check
         # to see if it is a real event before using it.
         if not hasattr(evt, 'GetEventObject'):
@@ -278,7 +277,7 @@ class ChoiceParam(Param):
         return text
 
     def setValue(self, ctrl, value):
-        dprint("%s in %s" % (value, self.choices))
+        #dprint("%s in %s" % (value, self.choices))
         try:
             index = self.choices.index(value)
         except ValueError:
@@ -566,7 +565,7 @@ class GlobalPrefs(debugmixin):
             # Need to march up the class hierarchy to find the correct
             # Param
             klasses=GlobalPrefs.name_hierarchy[section]
-            dprint(klasses)
+            #dprint(klasses)
             param = None
             for name in klasses[1:]:
                 if name in params and option in params[name]:
@@ -824,7 +823,6 @@ class PrefPanel(ScrolledPanel, debugmixin):
         self.Layout()
 
     def Layout(self):
-        dprint()
         ScrolledPanel.Layout(self)
         self.SetupScrolling()
         self.Scroll(0,0)
@@ -887,7 +885,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                         self.obj.classprefs._set(param.keyword, val)
                     updated[param.keyword] = True
 
-class PrefClassTree(wx.TreeCtrl):
+class PrefClassTree(wx.TreeCtrl, debugmixin):
     def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
         if wx.Platform != '__WXMSW__':
             style |= wx.TR_HIDE_ROOT
@@ -934,11 +932,11 @@ class PrefClassTree(wx.TreeCtrl):
         return None
         
     def appendClass(self, cls):
-        dprint("class=%s mro=%s" % (cls, cls.classprefs._getMRO()))
+        assert self.dprint("class=%s mro=%s" % (cls, cls.classprefs._getMRO()))
         mro = cls.classprefs._getMRO()
         parent = self.findParent(mro[1:])
         if parent is not None:
-            dprint("  found parent = %s" % self.GetItemText(parent))
+            assert self.dprint("  found parent = %s" % self.GetItemText(parent))
             item = self.AppendItem(parent, mro[0].__name__)
             self.setIconForItem(item, cls)
             self.SetPyData(item, cls)
@@ -1026,7 +1024,6 @@ class PrefDialog(wx.Dialog):
 
     def populateTree(self, cls=ClassPrefs):
         classes = getAllSubclassesOf(cls)
-        dprint(classes)
         for cls in classes:
             self.tree.appendClass(cls)
         self.tree.sortRecurse()
