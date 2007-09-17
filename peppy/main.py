@@ -89,7 +89,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                   }
     
     minimal_config={'BufferFrame':{'width':800,
-                                  'height':600,
+                                  'height':700,
                                   'sidebars':'filebrowser, debug_log, error_log, processes',
                                   },
                    'Peppy':{'plugins': '',
@@ -273,9 +273,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         self.startServer()
         self.autoloadImports()
-        if main_is_frozen():
-            import peppy.py2exe_plugins
-        else:
+        if not main_is_frozen():
             self.autoloadStandardPlugins()
             self.autoloadSetuptoolsPlugins()
         self.parseConfigPlugins()
@@ -342,6 +340,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             self.loadPlugin(plugin)
 
     def autoloadImports(self):
+        # py2exe imports go here.
+        if main_is_frozen():
+            import py2exe_plugins
         pass
     
     def autoloadStandardPlugins(self, plugindir='plugins'):

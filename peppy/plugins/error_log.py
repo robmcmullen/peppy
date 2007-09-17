@@ -122,9 +122,9 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
 
     default_classprefs = (
         IntParam('best_width', 500),
-        IntParam('best_height', 100),
+        IntParam('best_height', 200),
         IntParam('min_width', 100),
-        IntParam('min_height', 100),
+        IntParam('min_height', 200),
         BoolParam('show', False),
         BoolParam('always_scroll', False),
         )

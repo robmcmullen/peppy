@@ -112,7 +112,14 @@ setup(name = '$prog',
       scripts=scripts,
       packages = $packages,
       ext_modules = ext_modules,
-      
+
+      # FIXME: the excludes option still doesn't work.  py2exe still
+      # picks up a bunch of unnecessary stuff that I'm trying to get
+      # rid of.
+      options = {'py2exe': {'unbuffered': True,
+                            'excludes': ['TKinter', 'TKconstants', 'tcl', '_tkinter'],
+                            }
+                 },
       windows = [{"script": "peppy.py",
                   "other_resources": [(24,1,manifest)],
                   "icon_resources": [(0, "peppy/icons/peppy.ico")],

@@ -101,8 +101,8 @@ distdir:
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts
 
-distmil: distdir
-	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py -s $(distdir)/peppy
+mil: distdir
+	./make-mil.sh $(distdir)
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) | tee epydoc.out

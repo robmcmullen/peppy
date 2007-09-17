@@ -12,6 +12,7 @@ import urllib2
 
 import wx
 
+from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
@@ -58,6 +59,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 aboutfiles={}
 def SetAbout(path,text):
+    #eprint("Setting %s: %d bytes" % (path, len(text)))
     aboutfiles[path]=text
     
 class AboutHandler(urllib2.BaseHandler):
@@ -67,7 +69,7 @@ class AboutHandler(urllib2.BaseHandler):
         #dprint(url)
 
         if url not in aboutfiles:
-            raise urllib2.URLError("url %s not found")
+            raise urllib2.URLError("url %s not found" % url)
         text = aboutfiles[url]
         if text.find("%(") >= 0:
             text = text % substitutes
