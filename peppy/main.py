@@ -61,6 +61,14 @@ class errorRedirector(object):
         else:
             self.save.write(text)
 
+class GaugeSplash(wx.SplashScreen):
+    """Placeholder for a gauge-bar splash screen."""
+    def __init__(self, data):
+        wx.SplashScreen.__init__(self, data,
+                        wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT,
+                        5000, None, -1)
+        
+
 
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
@@ -89,12 +97,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                   }
     
     minimal_config={'BufferFrame':{'width':800,
-                                  'height':700,
-                                  'sidebars':'filebrowser, debug_log, error_log, processes',
-                                  },
-                   'Peppy':{'plugins': '',
-                            'recentfiles':'recentfiles.txt',
-                            },
+                                   'height':700,
+                                   'sidebars':'filebrowser, debug_log, error_log, processes',
+                                   },
                    }
     default_classprefs = (
         StrParam('plugins', ''),
@@ -105,6 +110,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         BoolParam('one_instance', True),
         IntParam('binary_percentage', 10),
         IntParam('magic_size', 1024),
+        BoolParam('show_splash', True),
         StrParam('default_text_mode', 'Fundamental'),
         StrParam('default_binary_mode', 'HexEdit'),
         )
@@ -118,6 +124,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         method in a wx application.
         """
         self.processCommandLineOptions()
+
         if self.verbose:
             self.setVerbosity()
         self.menu_actions=[]
@@ -131,9 +138,22 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.SetAppName(name)
         self.config = HomeConfigDir(self.options.confdir)
 
-        self.initialConfig(self.minimal_config)
+        GlobalPrefs.setDefaults(self.minimal_config)
         self.i18nConfig()
         self.loadConfig()
+
+        # Splash screen needs to know if its option is set, so convert
+        # as many configuration params as are currently known.
+        GlobalPrefs.convertConfig()
+        self.startSplash()
+        
+        self.processConfig()
+
+        # Now that the remaining plugins and classes are loaded, we
+        # can convert the rest of the configuration params
+        GlobalPrefs.convertConfig()
+        
+        ConfigurationExtender(ComponentManager()).load(self)
 
         self.initGraphics()
 
@@ -216,13 +236,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         assert self.dprint("found home dir=%s" % self.config.dir)
         return os.path.join(self.config.dir,filename)
 
-    def initialConfig(self,defaults={'Frame':{'width':400,
-                                                 'height':400,
-                                                 }
-                                        }):
-        GlobalPrefs.setDefaults(defaults)
-        #dprint("port = %s, type=%s" % (self.classprefs.listen_port, type(self.classprefs.listen_port)))
-
     def i18nConfig(self):
         #dprint("found home dir=%s" % self.config.dir)
 
@@ -251,11 +264,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         for filename in files:
             self.loadConfigFile(filename)
 
-        self.loadConfigPostHook()
-        GlobalPrefs.convertConfig()
-        
-        ConfigurationExtender(ComponentManager()).load(self)
-
     def loadConfigFile(self, filename):
         if self.config.exists(filename):
             try:
@@ -267,7 +275,23 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         else:
             if self.verbose > 0: dprint("Configuration file %s not found" % self.config.fullpath(filename))
 
-    def loadConfigPostHook(self):
+    def startSplash(self):
+        if self.classprefs.show_splash:
+            import splash_image
+            self.splash = GaugeSplash(splash_image.getBitmap())
+            self.splash.Show()
+            self.splash.Update()
+            wx.Yield()
+            self.splash.Update()
+            wx.Yield()
+        else:
+            self.splash = None
+        
+    def stopSplash(self):
+        if self.splash:
+            self.splash.Destroy()
+
+    def processConfig(self):
         """
         Main driver for any functions that need to look in the config file.
         """
@@ -491,7 +515,8 @@ def run(options={},args=None):
         
     if len(bad)>0:
         frame.SetStatusText("Failed loading %s" % ", ".join([f for f in bad]))
-    
+
+    peppy.stopSplash()
     peppy.MainLoop()
 
 def main():

@@ -477,6 +477,8 @@ class GlobalPrefs(debugmixin):
     
     default={}
     params = {}
+    convert_already_seen = {}
+    
     user={}
     name_hierarchy={}
     class_hierarchy={}
@@ -538,23 +540,8 @@ class GlobalPrefs(debugmixin):
                     
             if klass.__name__ not in GlobalPrefs.user:
                 GlobalPrefs.user[klass.__name__]={}
-        if GlobalPrefs.debuglevel > 0: dprint("default: %s" % GlobalPrefs.default)
-        if GlobalPrefs.debuglevel > 0: dprint("user: %s" % GlobalPrefs.user)
-
-    @staticmethod
-    def convertValue(section,option,value):
-        """Convert a string value to boolean or int if it seems like
-        it is a text representation of one of those types."""
-        lcval=value.lower()
-        if lcval in ['true','on','yes']:
-            result=True
-        elif lcval in ['false','off','no']:
-            result=False
-        elif value.isdigit():
-            result=int(value)
-        else:
-            result=value
-        return result
+        if GlobalPrefs.debuglevel > 1: dprint("default: %s" % GlobalPrefs.default)
+        if GlobalPrefs.debuglevel > 1: dprint("user: %s" % GlobalPrefs.user)
 
     @staticmethod
     def findParam(section, option):
@@ -572,7 +559,7 @@ class GlobalPrefs(debugmixin):
                     param = params[name][option]
                     break
         else:
-            dprint("Unknown configuration section: %s" % (section))
+            dprint("Unknown configuration %s[%s]" % (section, option))
             return None
         if GlobalPrefs.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
@@ -599,9 +586,29 @@ class GlobalPrefs(debugmixin):
         # Need to copy dict to temporary one, because BadThings happen
         # while trying to update a dictionary while iterating on it.
         if GlobalPrefs.debuglevel > 0: dprint("before: %s" % GlobalPrefs.user)
+        if GlobalPrefs.debuglevel > 0: dprint("name_hierarchy: %s" % GlobalPrefs.name_hierarchy)
+        if GlobalPrefs.debuglevel > 0: dprint("params: %s" % GlobalPrefs.params)
         d = {}
         for section, options in GlobalPrefs.user.iteritems():
             d[section] = {}
+            
+            if section not in GlobalPrefs.params or section in GlobalPrefs.convert_already_seen or not GlobalPrefs.params[section]:
+                # Don't process values before the param definition for
+                # the class is loaded.  Copy the existing text values
+                # and defer the conversion till the next time
+                # convertConfig is called.
+                if GlobalPrefs.debuglevel > 0:
+                    if section not in GlobalPrefs.params:
+                        dprint("haven't loaded class %s" % section)
+                    elif section in GlobalPrefs.convert_already_seen:
+                        dprint("already converted class %s" % section)
+                    elif not GlobalPrefs.params[section]:
+                        dprint("only defaults loaded, haven't loaded Params for class %s" % section)
+                d[section].update(options)
+                continue
+            
+            GlobalPrefs.convert_already_seen[section] = True
+                
             for option, text in options.iteritems():
                 param = GlobalPrefs.findParam(section, option)
                 if param is not None:
@@ -641,6 +648,7 @@ class GlobalPrefs(debugmixin):
         # For completeness, we should check to see if an option has
         # been removed, but currently the interface doesn't provide
         # that ability.
+        if GlobalPrefs.debuglevel > 0: dprint("nope, user configuration hasn't changed.")
         return False
 
     @staticmethod
