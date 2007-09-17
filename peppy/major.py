@@ -365,7 +365,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         their own listeners.
         """
         Publisher().subscribe(self.resetStatusBar, 'resetStatusBar')
-        Publisher().subscribe(self.settingsChanged, 'settingsChanged')
+        Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
 
     def createListenersPostHook(self):
         """Hook to add custom listeners.

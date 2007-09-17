@@ -52,7 +52,7 @@ class STCStyles(SelectAction):
                 dlg.ShowModal()
             finally:
                 dlg.Destroy()
-            Publisher().sendMessage('settingsChanged')
+            Publisher().sendMessage('peppy.preferences.changed')
 
 
 

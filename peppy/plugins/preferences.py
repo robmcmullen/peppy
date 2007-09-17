@@ -23,15 +23,24 @@ class Preferences(SelectAction):
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES
 
-    def action(self, pos=-1):
-        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        dlg = PeppyPrefDialog(self.frame, self.frame.getActiveMajorMode())
+    @classmethod
+    def showDialog(self, msg=None):
+        frame = wx.GetApp().GetTopWindow()
+        mode = frame.getActiveMajorMode()
+        dlg = PeppyPrefDialog(frame, mode)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             dlg.applyPreferences()
-            Publisher().sendMessage('settingsChanged')
+            Publisher().sendMessage('peppy.preferences.changed')
         dlg.Destroy()
 
+    def action(self, pos=-1):
+        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        self.showDialog()
+
+# FIXME: this is probably not the standard way I want to set up
+# messages, but it works for now.  Will refactor at some point.
+Publisher().subscribe(Preferences.showDialog, 'peppy.preferences.show')
 
 class PeppyPrefClassTree(PrefClassTree):
     """Add icon support to PrefClassTree"""
