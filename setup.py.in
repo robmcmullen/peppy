@@ -117,7 +117,7 @@ setup(name = '$prog',
       # picks up a bunch of unnecessary stuff that I'm trying to get
       # rid of.
       options = {'py2exe': {'unbuffered': True,
-                            'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'distutils', 'numpy.distutils', 'numpy.f2py', 'setuptools', 'email', 'matplotlib', 'doctest'],
+                            'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'distutils', 'numpy.distutils', 'numpy.f2py', 'setuptools', 'matplotlib', 'doctest'],
                             }
                  },
       windows = [{"script": "peppy.py",
