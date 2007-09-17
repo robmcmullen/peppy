@@ -54,9 +54,6 @@ class URLInfo(debugmixin):
             else:
                 self.url = "file://" + self.path
             self.netloc = ''
-            self.readonly = not os.access(self.path, os.W_OK)
-        else:
-            self.readonly = True
 
     def __repr__(self):
         return "%s %s" % (self.url, (self.protocol,
@@ -78,6 +75,12 @@ class URLInfo(debugmixin):
                 return True
             except urllib2.URLError:
                 return False
+
+    def readonly(self):
+        if self.protocol == "file":
+            return not os.access(self.path, os.W_OK)
+        else:
+            return True
 
     def getBasename(self):
         basename=os.path.basename(self.path)

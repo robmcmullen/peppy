@@ -39,10 +39,8 @@ class BufferList(GlobalList):
 
     @staticmethod
     def promptUnsaved(msg):
-        dprint("prompt for unsaved changes...")
         unsaved=[]
         for buf in BufferList.storage:
-            dprint("buf=%s modified=%s" % (buf,buf.modified))
             if buf.modified:
                 unsaved.append(buf)
         if len(unsaved)>0:
@@ -203,7 +201,6 @@ class Buffer(debugmixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
-        self.readonly = url.readonly
         self.name="Buffer #%d: %s" % (self.count,str(self.url))
 
         # Update UI because the filename associated with this buffer
@@ -227,9 +224,9 @@ class Buffer(debugmixin):
 
     def open(self, urlstring, stcparent):
         url = URLInfo(urlstring)
-        dprint("url: %s" % repr(url))
+        self.dprint("url: %s" % repr(url))
         self.defaultmode = MajorModeMatcherDriver.match(url)
-        dprint("mode=%s" % (str(self.defaultmode)))
+        self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(stcparent)
         self.stc.open(url)
@@ -240,7 +237,8 @@ class Buffer(debugmixin):
         if isinstance(self.stc,PeppySTC):
             self.initSTC()
 
-        self.modified=False
+        self.modified = False
+        self.readonly = self.url.readonly()
         self.stc.EmptyUndoBuffer()
 
         BufferHooks(ComponentManager()).openPostHook(self)
@@ -264,10 +262,10 @@ class Buffer(debugmixin):
             self.stc.writeTo(fh)
             fh.close()
             self.stc.SetSavePoint()
-            self.modified=False
-            self.readonly = False
             if url is not None and url!=self.url:
                 self.setURL(saveas)
+            self.modified = False
+            self.readonly = self.url.readonly()
             self.showModifiedAll()
         except:
             eprint("Failed writing to %s" % self.url)
