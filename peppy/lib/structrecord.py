@@ -1014,6 +1014,22 @@ class Record(Field):
         self.dprint("total length = %s" % bytes)
         return bytes
 
+    def _getString(self,indent=""):
+        lines=["%s%s %s:" % (indent,repr(self),self._name)]
+        if "_print_all" in self.__dict__ or self.print_all:
+            printall = True
+        else:
+            printall = False
+        for field in self.typedef:
+            name = field._name
+            # ignore all keys that start with an underscore
+            if name and not name.startswith("_") and name in self.__dict__:
+                value=self.__dict__[name]
+                lines.append(repr1(name,value,indent+base_indent, printall))
+        if "_" in self.__dict__.keys():
+            lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
+        return "\n".join(lines)
+                                 
 
 class RecordList(list):
     def __init__(self,parent):
