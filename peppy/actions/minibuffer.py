@@ -77,7 +77,7 @@ class TextMinibuffer(Minibuffer):
     """
     Dedicated subclass of Minibuffer that prompts for a text string
     """
-    debuglevel = 1
+    debuglevel = 0
     
     label = "Text"
     error = "Bad input."
@@ -102,11 +102,14 @@ class TextMinibuffer(Minibuffer):
         assert self.dprint("text=%s" % text)
         try:
             text = self.convert(text)
+        except:
+            self.mode.frame.SetStatusText(self.error)
+            text = None
+
+        if text is not None:
             error = self.action.processMinibuffer(self.mode, text)
             if error is not None:
                 self.mode.frame.SetStatusText(error)
-        except:
-            self.mode.frame.SetStatusText(self.error)
         self.removeFromParent()
 
 class IntMinibuffer(TextMinibuffer):

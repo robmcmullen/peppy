@@ -163,6 +163,12 @@ class STCInterface(object):
         """
         return 0, -1
 
+    def GotoPos(self, pos):
+        """Move the cursor to the specified position and scroll the
+        position into the view if necessary.
+        """
+        pass
+
 class STCProxy(object):
     """Proxy object to defer requests to a real STC.
 

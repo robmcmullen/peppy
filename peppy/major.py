@@ -573,7 +573,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
             self.minibuffer.focus()
 
     def removeMinibuffer(self, detach_only=False):
-        dprint(self.minibuffer)
+        self.dprint(self.minibuffer)
         if self.minibuffer is not None:
             box=self.GetSizer()
             box.Detach(self.minibuffer.win)

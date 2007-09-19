@@ -11,6 +11,7 @@ import wx.lib.newevent
 from peppy.menu import *
 from peppy.major import *
 from peppy.stcinterface import STCInterface
+from peppy.actions.minibuffer import *
 
 
 class OpenHexEditor(SelectAction):
@@ -25,6 +26,26 @@ class OpenHexEditor(SelectAction):
         assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
         self.frame.open("about:0x00-0xff")
 
+class GotoOffset(MinibufferAction):
+    """Goto an offset.
+    
+    Use minibuffer to request an offset, then move the cursor to that
+    location in the file.
+    """
+
+    name = "Goto Offset..."
+    tooltip = "Goto an offset."
+    key_bindings = {'default': 'M-G',}
+    minibuffer = IntMinibuffer
+    minibuffer_label = "Goto Offset:"
+
+    def processMinibuffer(self, mode, pos):
+        """
+        Callback function used to set the grid's cursor to the
+        specified byte offset.
+        """
+        #dprint("goto pos = %d" % pos)
+        mode.editwin.GotoPos(pos)
 
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
@@ -635,7 +656,7 @@ class WaitThread(Thread):
 
 
 
-class HugeTableGrid(Grid.Grid, STCInterface, debugmixin):
+class HugeTableGrid(STCInterface, Grid.Grid, debugmixin):
     debuglevel=0
     
     def __init__(self, parent, stc, format="@4f"):
@@ -678,9 +699,7 @@ class HugeTableGrid(Grid.Grid, STCInterface, debugmixin):
         self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
         if loc is not None:
-            (row,col)=self.GetTable().getCursorPosition(loc,self.GetGridCursorCol())
-            self.SetGridCursor(row,col)
-            self.MakeCellVisible(row,col)
+            self.GotoPos(loc)
 
     def OnRightDown(self, evt):
         assert self.dprint(self.GetSelectedRows())
@@ -733,6 +752,11 @@ class HugeTableGrid(Grid.Grid, STCInterface, debugmixin):
 
     def GetColumn(self, pos):
         return self.GetGridCursorCol()
+
+    def GotoPos(self, pos):
+        row, col=self.GetTable().getCursorPosition(pos, self.GetGridCursorCol())
+        self.SetGridCursor(row,col)
+        self.MakeCellVisible(row,col)
     
     def addUpdateUIEvent(self, callback):
         """Add the equivalent to STC_UPDATEUI event for UI changes.
@@ -872,6 +896,7 @@ class HexEditPlugin(MajorModeMatcherBase,debugmixin):
         yield HexEditMode
 
     default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenHexEditor)),
+                  ('HexEdit',_("Edit"),MenuItem(GotoOffset)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
