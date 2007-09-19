@@ -142,12 +142,22 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.i18nConfig()
         self.loadConfig()
 
-        # Splash screen needs to know if its option is set, so convert
-        # as many configuration params as are currently known.
+        # Splash screen and the peppy server need to know if its
+        # option is set, so convert as many configuration params as
+        # are currently known.
         GlobalPrefs.convertConfig()
+        
+        self.startServer()
+        if self.otherInstanceRunning():
+            return True
+
         self.startSplash()
         
-        self.processConfig()
+        self.autoloadImports()
+        if not main_is_frozen():
+            self.autoloadStandardPlugins()
+            self.autoloadSetuptoolsPlugins()
+        self.parseConfigPlugins()
 
         # Now that the remaining plugins and classes are loaded, we
         # can convert the rest of the configuration params
@@ -291,19 +301,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if self.splash:
             self.splash.Destroy()
 
-    def processConfig(self):
-        """
-        Main driver for any functions that need to look in the config file.
-        """
-        self.startServer()
-        self.autoloadImports()
-        if not main_is_frozen():
-            self.autoloadStandardPlugins()
-            self.autoloadSetuptoolsPlugins()
-        self.parseConfigPlugins()
-##        if cfg.has_section('debug'):
-##            self.parseConfigDebug('debug',cfg)
-
     def saveConfigPreHook(self):
         pass
 
@@ -427,13 +424,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def getTopFrame(self):
         frame = self.GetTopWindow()
-        if not isinstance(frame, BufferFrame):
+        if hasattr(frame, 'open'):
             # FIXME: can this ever happen?
-            dprint("Top window not a BufferFrame!")
+            dprint("Top window not a Peppy frame!")
             for frame in wx.GetTopLevelWindows():
-                if isinstance(frame, BufferFrame):
+                if hasattr(frame, 'open'):
                     return frame
-            dprint("No top level BufferFrames found!")
+            dprint("No top level Peppy frames found!")
         return frame
 
     def enableFrames(self):
