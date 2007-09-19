@@ -32,6 +32,7 @@ from peppy.stcinterface import NonResidentSTC
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 
+from peppy.lib.dropscroller import *
 from peppy.lib.nextpanel import *
 from peppy.lib.mpdclient2 import mpd_connection
 
@@ -1131,9 +1132,12 @@ class MPDMode(MajorMode, debugmixin):
 
 class SongDropTarget(wx.PyDropTarget, debugmixin):
     """Custom drop target modified from the wxPython demo."""
+    debuglevel = 0
+    
     def __init__(self, window):
         wx.PyDropTarget.__init__(self)
         self.dv = window
+        self.width, self.height = window.GetClientSizeTuple()
 
         # specify the type of data we will accept
         self.data = SongDataObject()
@@ -1146,13 +1150,18 @@ class SongDropTarget(wx.PyDropTarget, debugmixin):
 
     def OnLeave(self):
         assert self.dprint("OnLeave\n")
+        self.dv.finishListScroll()
 
     def OnDrop(self, x, y):
         assert self.dprint("OnDrop: %d %d\n" % (x, y))
+        self.dv.finishListScroll()
         return True
 
     def OnDragOver(self, x, y, d):
-        #assert self.dprint("OnDragOver: %d, %d, %d\n" % (x, y, d))
+        top = self.dv.GetTopItem()
+        assert self.dprint("OnDragOver: %d, %d, %d, top=%s" % (x, y, d, top))
+
+        self.dv.processListScroll(x, y)
 
         # The value returned here tells the source what kind of visual
         # feedback to give.  For example, if wxDragCopy is returned then
@@ -1162,13 +1171,12 @@ class SongDropTarget(wx.PyDropTarget, debugmixin):
         # which is based on whether the Ctrl key is pressed.
         return d
 
-
-
     # Called when OnDrop returns True.  We need to get the data and
     # do something with it.
     def OnData(self, x, y, d):
         assert self.dprint("OnData: %d, %d, %d\n" % (x, y, d))
 
+        self.dv.finishListScroll()
         # copy the data from the drag source to our data object
         if self.GetData():
             # convert it back to a list of lines and give it to the viewer
@@ -1180,8 +1188,7 @@ class SongDropTarget(wx.PyDropTarget, debugmixin):
         # case we just return the suggested value given to us.
         return d
 
-        
-class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
+class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, ListDropScrollerMixin, debugmixin):
     """Minor mode to display the current playlist and controls for
     music playing.
     """
@@ -1196,6 +1203,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
     def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
+        ListDropScrollerMixin.__init__(self)
 
         self.major = major
         self.mpd = major.mpd
@@ -1222,7 +1230,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
-        
+
         Publisher().subscribe(self.delete, 'mpd.deleteFromPlaylist')
 
         eventManager.Bind(self.OnSongChanged, EVT_MPD_SONG_CHANGED, win=wx.GetApp())
@@ -1233,7 +1241,6 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         
         eventManager.DeregisterListener(self.OnSongChanged)
         eventManager.DeregisterListener(self.OnPlaylistChanged)
-
 
     def createColumns(self):
         self.InsertColumn(0, "#")
@@ -1277,7 +1284,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         else:
             self.highlightSong(int(status['song']))
         evt.Skip()
-        
+
     def OnStartDrag(self, evt):
         index = evt.GetIndex()
         self.dprint("beginning drag of item %d" % index)
@@ -1294,34 +1301,8 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
         result = dropSource.DoDragDrop(wx.Drag_AllowMove)
         assert self.dprint("DragDrop completed: %d\n" % result)
 
-
-    def _getDropIndex(self, x, y):
-        """Find the index to insert the new item, given x & y coords."""
-
-        # Find insertion point.
-        index, flags = self.HitTest((x, y))
-
-        if index == wx.NOT_FOUND: # not clicked on an item
-            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)): # empty list or below last item
-                index = self.GetItemCount() # append to end of list
-            elif (self.GetItemCount() > 0):
-                if y <= self.GetItemRect(0).y: # clicked just above first item
-                    index = 0 # append to top of list
-                else:
-                    index = self.GetItemCount() + 1 # append to end of list
-        else: # clicked on an item
-            # Get bounding rectangle for the item the user is dropping over.
-            rect = self.GetItemRect(index)
-
-            # If the user is dropping into the lower half of the rect, we want to insert _after_ this item.
-            # Correct for the fact that there may be a heading involved
-            if y > (rect.y - self.GetItemRect(0).y + rect.height/2):
-                index = index + 1
-
-        return index
-
     def AddSongs(self, x, y, songs):
-        index = self._getDropIndex(x, y)
+        index = self.getDropIndex(x, y)
         assert self.dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
         # Looks like the MPD protocol is a bit limited in that you
         # can't add a song at a particular spot; only at the end.  So,
