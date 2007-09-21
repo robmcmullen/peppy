@@ -10,7 +10,8 @@
 # License:     wxPython
 #-----------------------------------------------------------------------------
 """
-Automatic scrolling mixin for a list control.
+Automatic scrolling mixin for a list control, including an indicator
+showing where the items will be dropped.
 
 It would be nice to have somethin similar for a tree control as well,
 but I haven't tackled that yet.
@@ -27,9 +28,19 @@ class ListDropScrollerMixin(object):
     only works for lists in report mode.
 
     Add this as a mixin in your list, and then call processListScroll
-    in your DropTarget's OnDragOver method.
+    in your DropTarget's OnDragOver method.  When the drop ends, call
+    finishListScroll to clean up the resources (i.e. the wx.Timer)
+    that the dropscroller uses and make sure that the insertion
+    indicator is erased.
+
+    The parameter interval is the delay time in milliseconds between
+    list scroll steps.
+
+    If indicator_width is negative, then the indicator will be the
+    width of the list.  If positive, the width will be that number of
+    pixels, and zero means to display no indicator.
     """
-    def __init__(self, interval=200):
+    def __init__(self, interval=200, width=-1):
         """Don't forget to call this mixin's init method in your List.
 
         Interval is in milliseconds.
@@ -38,10 +49,10 @@ class ListDropScrollerMixin(object):
         self._auto_scroll_interval = interval
         self._auto_scroll = 0
         self._auto_scroll_save_y = -1
-        self._auto_scroll_save_width = 0
+        self._auto_scroll_save_width = width
         self.Bind(wx.EVT_TIMER, self.OnAutoScrollTimer)
         
-    def startAutoScrollTimer(self, direction = 0):
+    def _startAutoScrollTimer(self, direction = 0):
         """Set the direction of the next scroll, and start the
         interval timer if it's not already running.
         """
@@ -50,13 +61,16 @@ class ListDropScrollerMixin(object):
             self._auto_scroll_timer.Start(self._auto_scroll_interval)
         self._auto_scroll = direction
 
-    def stopAutoScrollTimer(self):
+    def _stopAutoScrollTimer(self):
         """Clean up the timer resources.
         """
         self._auto_scroll_timer = None
         self._auto_scroll = 0
 
-    def getAutoScrollDirection(self, index):
+    def _getAutoScrollDirection(self, index):
+        """Determine the scroll step direction that the list should
+        move, based on the index reported by HitTest.
+        """
         first_displayed = self.GetTopItem()
 
         if first_displayed == index:
@@ -128,11 +142,11 @@ class ListDropScrollerMixin(object):
         """
         index, flags = self.HitTest((x, y))
 
-        direction = self.getAutoScrollDirection(index)
+        direction = self._getAutoScrollDirection(index)
         if direction == 0:
-            self.stopAutoScrollTimer()
+            self._stopAutoScrollTimer()
         else:
-            self.startAutoScrollTimer(direction)
+            self._startAutoScrollTimer(direction)
             
         drop_index = self.getDropIndex(x, y, index=index, flags=flags)
         count = self.GetItemCount()
@@ -151,15 +165,18 @@ class ListDropScrollerMixin(object):
 
         if self._auto_scroll_save_y == -1 or self._auto_scroll_save_y != y:
             #print "main window=%s, self=%s, pos=%s" % (self, self.GetMainWindow(), self.GetMainWindow().GetPositionTuple())
-            dc = self.getIndicatorDC()
-            self.eraseIndicator(dc)
-            dc.DrawLine(0, y, rect.width, y)
+            if self._auto_scroll_save_width < 0:
+                self._auto_scroll_save_width = rect.width
+            dc = self._getIndicatorDC()
+            self._eraseIndicator(dc)
+            dc.DrawLine(0, y, self._auto_scroll_save_width, y)
             self._auto_scroll_save_y = y
-            self._auto_scroll_save_width = rect.width
 
     def finishListScroll(self):
-        self.stopAutoScrollTimer()
-        self.eraseIndicator()
+        """Clean up timer resource and erase indicator.
+        """
+        self._stopAutoScrollTimer()
+        self._eraseIndicator()
         
     def OnAutoScrollTimer(self, evt):
         """Timer event handler to scroll the list in the requested
@@ -170,8 +187,8 @@ class ListDropScrollerMixin(object):
             # clean up timer resource
             self._auto_scroll_timer = None
         else:
-            dc = self.getIndicatorDC()
-            self.eraseIndicator(dc)
+            dc = self._getIndicatorDC()
+            self._eraseIndicator(dc)
             if self._auto_scroll < 0:
                 self.EnsureVisible(self.GetTopItem() + self._auto_scroll)
                 self._auto_scroll_timer.Start()
@@ -180,16 +197,16 @@ class ListDropScrollerMixin(object):
                 self._auto_scroll_timer.Start()
         evt.Skip()
 
-    def getIndicatorDC(self):
+    def _getIndicatorDC(self):
         dc = wx.ClientDC(self.GetMainWindow())
         dc.SetPen(wx.Pen(wx.WHITE, 3))
         dc.SetBrush(wx.TRANSPARENT_BRUSH)
         dc.SetLogicalFunction(wx.XOR)
         return dc
 
-    def eraseIndicator(self, dc=None):
+    def _eraseIndicator(self, dc=None):
         if dc is None:
-            dc = self.getIndicatorDC()
+            dc = self._getIndicatorDC()
         if self._auto_scroll_save_y >= 0:
             # erase the old line
             dc.DrawLine(0, self._auto_scroll_save_y,
