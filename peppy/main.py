@@ -16,6 +16,7 @@ from peppy.debug import *
 from peppy.yapsy.plugins import *
 from peppy.yapsy.VersionedPluginManager import *
 
+from peppy.lib.gaugesplash import *
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 
@@ -63,14 +64,6 @@ class errorRedirector(object):
             Publisher().sendMessage(self.msg, text)
         else:
             self.save.write(text)
-
-class GaugeSplash(wx.SplashScreen):
-    """Placeholder for a gauge-bar splash screen."""
-    def __init__(self, data):
-        wx.SplashScreen.__init__(self, data,
-                        wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT,
-                        5000, None, -1)
-        
 
 
 class Peppy(wx.App, ClassPrefs, debugmixin):
@@ -155,20 +148,29 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             return True
 
         self.startSplash()
+
+        count = self.countYapsyPlugins() + 6
+        self.splash.setTicks(count)
         
+        self.splash.tick("Loading standard plugins...")
         self.autoloadImports()
         if not main_is_frozen():
             self.autoloadStandardPlugins()
             self.autoloadYapsyPlugins()
+            self.splash.tick("Loading setuptools plugins...")
             self.autoloadSetuptoolsPlugins()
+            
+        self.splash.tick("Loading setuptools plugins...")
         self.parseConfigPlugins()
 
         # Now that the remaining plugins and classes are loaded, we
         # can convert the rest of the configuration params
+        self.splash.tick("Loading extra configuration...")
         GlobalPrefs.convertConfig()
         
         ConfigurationExtender(ComponentManager()).load(self)
 
+        self.splash.tick("Setting up graphics...")
         self.initGraphics()
 
         # set verbosity on any new plugins that may have been loaded
@@ -178,6 +180,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         Publisher().subscribe(self.quit, 'peppy.app.quit')
         
         Publisher().sendMessage('peppy.startup.complete')
+        self.splash.tick("Starting peppy...")
 
         return True
 
@@ -387,7 +390,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
                                                   plugin[:-3]))
 
-    def autoloadYapsyPlugins(self, plugindir='plugins'):
+    def gaugeCallback(self, plugin_info):
+        self.splash.tick("Loading %s..." % plugin_info.name)
+
+    def countYapsyPlugins(self, plugindir='plugins'):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
@@ -401,8 +407,19 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             directories_list=[autoloaddir],
             plugin_info_ext="peppy-plugin",
             )
-        # load the plugins that may be found
-        self.plugin_manager.collectPlugins()
+        # count the potential plugins that were be found
+        count = self.plugin_manager.locatePlugins()
+        return count
+        
+    def autoloadYapsyPlugins(self, plugindir='plugins'):
+        """Autoload plugins from peppy plugins directory.
+
+        All .py files that exist in the peppy.plugins directory are
+        loaded here.  Currently uses a naive approach by loading them
+        in the order returned by os.listdir.  No dependency ordering
+        is done.
+        """
+        self.plugin_manager.loadPlugins(self.gaugeCallback)
         
         cats = self.plugin_manager.getCategories()
         for cat in cats:
