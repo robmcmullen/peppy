@@ -1,5 +1,14 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        bufferedreader.py
+# Purpose:     buffering a streamed file
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """Buffered reading utilities.
 
 BufferedReader allows a streamed file to be accessed like a

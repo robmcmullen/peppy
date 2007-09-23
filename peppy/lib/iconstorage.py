@@ -1,5 +1,14 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        iconstorage.py
+# Purpose:     a centrally managed icon store for an application
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 import os, sys, imp, re, glob
 from cStringIO import StringIO
 

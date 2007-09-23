@@ -1,5 +1,14 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        setuptools-utils.py
+# Purpose:     utilities for the PEAK setuptools module
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """setuptools_utils -- utilities for use with setuptools.  Er, duh.
 
 """

@@ -1,5 +1,14 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        orderer.py
+# Purpose:     pseudo-constraint-solver for ordering of menu items
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """
 Mini-constraint-solver to attempt to order menu items by their
 relative positions.

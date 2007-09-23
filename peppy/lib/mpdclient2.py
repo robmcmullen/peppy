@@ -5,6 +5,9 @@
 # This software is released to the public
 # domain and is provided AS IS, with NO WARRANTY.
 
+# Modifications from the original by Rob McMullen, with no additional
+# licensing restrictions.
+
 import socket
 
 # a line is either:

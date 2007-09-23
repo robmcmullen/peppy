@@ -1,5 +1,14 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        nextpanel.py
+# Purpose:     multi-pane list like the NeXT file manager
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """Multi-pane list similar to the NeXT file-manager
 
 This widget is designed for hierarchical display of data, similar to

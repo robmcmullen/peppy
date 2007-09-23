@@ -1,10 +1,24 @@
-#!/usr/bin/env python
+#-----------------------------------------------------------------------------
+# Name:        wxemacskeybindings.py
+# Purpose:     multi-keystroke commands, ala emacs
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
+"""Multiple keystrokes for command processing.
+
+This module is based on demo program by Josiah Carlson found at
+http://wiki.wxpython.org/index.cgi/Using_Multi-key_Shortcuts that
+provides the ability to match an arbitrary sequence of keystrokes to a
+single command.
+"""
 
 import sys
 import wx
-
-# Based on demo program by Josiah Carlson found at
-# http://wiki.wxpython.org/index.cgi/Using_Multi-key_Shortcuts
 
 wxkeynames = (
     "BACK", "TAB", "RETURN", "ESCAPE", "SPACE", "DELETE", "START",
@@ -29,12 +43,15 @@ wxkeynames = (
 class DuplicateKeyError(Exception):
     pass
 
-##
-# This class represents a group of key mappings.  The KeyProcessor
-# class below uses multiple groups, one to represent global keymaps,
-# one for local keymaps, and an arbitrary number of other keymaps for
-# any additional minor modes that need other keymappings.
+
 class KeyMap(object):
+    """Group of key mappings.
+
+    This class represents a group of key mappings.  The KeyProcessor
+    class below uses multiple groups, one to represent global keymaps,
+    one for local keymaps, and an arbitrary number of other keymaps
+    for any additional minor modes that need other keymappings.
+    """    
     modifiers=['C-','S-','A-','M-']
     modaccelerator = {'C-': 'Ctrl-',
                       'S-': 'Shift-',
@@ -71,9 +88,10 @@ class KeyMap(object):
         self.cur=self.lookup
         self.function=None
 
-    ##
-    # return True if keystroke is processed by the handler
     def add(self, key):
+        """
+        return True if keystroke is processed by the handler
+        """
         if self.cur:
             if key in self.cur:
                 # get next item, either a dict of more possible
@@ -97,16 +115,16 @@ class KeyMap(object):
                 self.cur=None
         return False
 
-    ##
-    # Convience function to check whether the keystroke combo is an
-    # unknown combo.
     def isUnknown(self):
+        """Convience function to check whether the keystroke combo is an
+        unknown combo.
+        """        
         return self.cur==None and self.function==None
 
-    ##
-    # Find a modifier in the accerelator string
     @classmethod
     def matchModifier(self,str):
+        """Find a modifier in the accerelator string
+        """        
         for m in self.modifiers:
             if str.startswith(m):
                 return len(m),m
@@ -115,11 +133,12 @@ class KeyMap(object):
                 return len(m),self.modaliases[m]
         return 0,None
 
-    ##
-    # Find a keyname (not modifier name) in the accelerator string,
-    # matching any special keys or abbreviations of the special keys
     @classmethod
     def matchKey(self,str):
+        """Find a keyname (not modifier name) in the accelerator
+        string, matching any special keys or abbreviations of the
+        special keys
+        """
         key=None
         i=0
         for name in self.keyaliases:
@@ -133,12 +152,12 @@ class KeyMap(object):
             return i+1,str[i].upper()
         return i,None
 
-    ##
-    # Split the accelerator string (e.g. "C-X C-S") into individual
-    # keystrokes, expanding abbreviations and standardizing the order
-    # of modifier keys
     @classmethod
     def split(self,acc):
+        """Split the accelerator string (e.g. "C-X C-S") into
+        individual keystrokes, expanding abbreviations and
+        standardizing the order of modifier keys.
+        """
         if acc.find('\t')>=0:
             # match the original format from the wxpython wiki, where
             # keystrokes are delimited by tab characters
@@ -191,11 +210,10 @@ class KeyMap(object):
                 break
         return "".join(modifiers)
         
-                
-    ##
-    # Create the nested dicts that point to the function to be
-    # executed on the completion of the keystroke
     def define(self,acc,fcn):
+        """Create the nested dicts that point to the function to be
+        executed on the completion of the keystroke
+        """
         hotkeys = self.lookup
         if self.debug: print "define: acc=%s" % acc
         keystrokes = self.split(acc)
@@ -222,12 +240,13 @@ class KeyMap(object):
         return " ".join(keystrokes)
 
 
-
-##
-# Driver class for key processing.  Takes multiple keymaps and looks
-# at them in order, first the minor modes, then the local, and finally
-# if nothing matches, the global key maps.
 class KeyProcessor(object):
+    """Driver class for key processing.
+
+    Takes multiple keymaps and looks at them in order, first the minor
+    modes, then the local, and finally if nothing matches, the global
+    key maps.
+    """
     def __init__(self,status=None):
         self.debug=False
         
@@ -283,18 +302,18 @@ class KeyProcessor(object):
                 # have platform-specific code
                 self.wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
 
-    ##
-    # set up the search order of keymaps
     def fixmaps(self):
+        """set up the search order of keymaps
+        """
         self.keymaps=self.minorKeymaps+[self.localKeymap,self.globalKeymap]
         self.num=len(self.keymaps)
         self.reset()
 
-    ##
-    # Add the keymap to the list of keymaps recognized by this
-    # processor.  Minor mode keymaps are processed in the order that
-    # they are added.
     def addMinorKeyMap(self,keymap):
+        """Add the keymap to the list of keymaps recognized by this
+        processor.  Minor mode keymaps are processed in the order that
+        they are added.
+        """
         self.minorKeymaps.append(keymap)
         self.fixmaps()
 
@@ -320,11 +339,11 @@ class KeyProcessor(object):
         keymap=KeyMap()
         self.setLocalKeyMap(keymap)
 
-    ##
-    # Raw event processor that takes the keycode and produces a string
-    # that describes the key pressed.  The modifier keys are always
-    # returned in the order C-, S-, A-, M-
     def decode(self,evt):
+        """Raw event processor that takes the keycode and produces a
+        string that describes the key pressed.  The modifier keys are
+        always returned in the order C-, S-, A-, M-
+        """
         keycode = evt.GetKeyCode()
         raw = evt.GetRawKeyCode()
         keyname = self.wxkeys.get(keycode, None)
@@ -378,9 +397,9 @@ class KeyProcessor(object):
         if self.debug: print "keycode=%d raw=%d key=%s" % (keycode,raw,modifiers+keyname)
         return modifiers + keyname
 
-    ##
-    # reset the lookup table to the root in each keymap.
     def reset(self):
+        """reset the lookup table to the root in each keymap.
+        """
         if self.debug: print "reset"
         self.sofar = ''
         for keymap in self.keymaps:
@@ -397,22 +416,23 @@ class KeyProcessor(object):
         self.processingArgument=0
         self.args=''
 
-    ##
-    # Display the current keystroke processing in the status area
     def show(self,text):
+        """Display the current keystroke processing in the status area
+        """
         if self.status:
             self.status.SetStatusText(text)
             self.hasshown=True
 
-    ##
-    # Attempt to add this keystroke by processing all keymaps in
-    # parallel and stop at the first complete match.  The other way
-    # that processing stops is if the new keystroke is unknown in all
-    # keymaps.  Returns a tuple (skip,unknown,function), where skip is
-    # true if the keystroke should be skipped up to the next event
-    # handler, unknown is true if the partial keymap doesn't match
-    # anything, and function is either None or the function to execute.
     def add(self, key):
+        """Attempt to add this keystroke by processing all keymaps in
+        parallel and stop at the first complete match.  The other way
+        that processing stops is if the new keystroke is unknown in
+        all keymaps.  Returns a tuple (skip,unknown,function), where
+        skip is true if the keystroke should be skipped up to the next
+        event handler, unknown is true if the partial keymap doesn't
+        match anything, and function is either None or the function to
+        execute.
+        """
         unknown=0
         processed=0
         function=None
@@ -439,22 +459,22 @@ class KeyProcessor(object):
             if self.debug: print "add: sofar=%s processed=%d unknown=%d skipping %s" % (self.sofar,processed,unknown,key)
         return (processed==0,unknown==self.num,function)
 
-    ##
-    # This starts the emacs-style numeric arguments that are ended by
-    # the first non-numeric keystroke
     def startArgument(self, key=None):
+        """This starts the emacs-style numeric arguments that are
+        ended by the first non-numeric keystroke
+        """
         self.number=None
         self.scale=1
         if key is not None:
             self.args=key + ' '
         self.processingArgument=1
 
-    ##
-    # Helper function to decode a numeric argument keystroke.  It can
-    # be a number or, if the first keystroke, the '-' sign.  If C-U is
-    # used to start the argumen processing, the numbers don't have to
-    # have the Ctrl modifier pressed.
     def getNumber(self, key, musthavectrl=False):
+        """Helper function to decode a numeric argument keystroke.  It
+        can be a number or, if the first keystroke, the '-' sign.  If
+        C-U is used to start the argumen processing, the numbers don't
+        have to have the Ctrl modifier pressed.
+        """
         ctrl=False
         if key[0:2]=='C-':
             key=key[2:]
@@ -469,9 +489,9 @@ class KeyProcessor(object):
             return ord(key)-ord('0')
         return None
 
-    ##
-    # Process a numeric keystroke
     def argument(self, key):
+        """Process a numeric keystroke
+        """
         # allow control and a number to work as well
         num=self.getNumber(key)
         if num is None:
@@ -495,10 +515,10 @@ class KeyProcessor(object):
             self.args+=key + ' '
             self.processingArgument+=1
 
-    ##
-    # The main driver routine.  Get a keystroke and run through the
-    # processing chain.
     def process(self, evt):
+        """The main driver routine.  Get a keystroke and run through
+        the processing chain.
+        """
         key = self.decode(evt)
 
         if key == self.abortKey:

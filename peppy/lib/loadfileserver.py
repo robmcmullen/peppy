@@ -1,3 +1,14 @@
+#-----------------------------------------------------------------------------
+# Name:        loadfileserver.py
+# Purpose:     allow an application to talk to another instance of itself
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """
 Server and client code for passing a string to a running application.
 Adapted from the SimpleServer code at
