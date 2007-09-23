@@ -25,7 +25,6 @@ from wx.lib.mixins.listctrl import CheckListCtrlMixin
 
 from peppy.lib.userparams import *
 from peppy.lib.columnsizer import *
-from peppy.yapsy.VersionedPluginManager import *
 
 try:
     from peppy.debug import *
@@ -273,13 +272,14 @@ class PluginDialog(wx.Dialog):
 
 
 if __name__ == "__main__":
+    from peppy.yapsy.VersionedPluginManager import *
     import logging
     
     logging.basicConfig(level=logging.DEBUG)
 
     app = wx.PySimpleApp()
 
-    path = '../../tests/yapsy'
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../tests/yapsy')
     app.plugin_manager = VersionedPluginManager(
         directories_list=[path],
         plugin_info_ext="version-plugin",
