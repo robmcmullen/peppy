@@ -1,0 +1,9 @@
+[Core]
+Name = Crazy Plugin
+Module = CrazyPlugin
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.4.8
+Website = http://mathbench.sourceforge.net
+Description = A simple plugin for version testing

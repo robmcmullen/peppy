@@ -41,6 +41,7 @@ from stcinterface import *
 from debug import *
 from minor import *
 from iofilter import *
+from peppy.yapsy.plugins import *
 from peppy.lib.userparams import *
 
 from lib.iconstorage import *
@@ -93,7 +94,9 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
     def initPreHook(self):
         currentmode = self.frame.getActiveMajorMode()
-        modes = getAllSubclassesOf(MajorMode)
+        # FIXME: this should instead only get those major modes that
+        # are in active plugins
+        modes = MajorModeMatcherDriver.getActiveModes()
 
         # Only display those modes that use the same type of STC as
         # the current mode.
@@ -682,6 +685,29 @@ class MajorModeMatcherBase(Component):
         """
         return []
 
+class IMajorModePlugin(IPeppyPlugin):
+    def possibleModes(self):
+        """Return list of possible major modes.
+
+        A subclass that extends MajorModeMatcherBase should return a
+        list or generator of all the major modes that this matcher is
+        representing.  Generally, a matcher will only represent a
+        single mode, but it is possible to represent more.
+
+        @returns: list of MajorMode classes
+        """
+        return []
+
+    def isInUse(self):
+        modes = []
+        for frame in wx.GetTopLevelWindows():
+            if hasattr(frame, 'getAllModes'):
+                modes.extend(frame.getAllModes())
+        for mode in self.possibleModes():
+            if mode in modes:
+                return True
+        return False
+
 def parseEmacs(line):
     """
     Parse a potential emacs major mode specifier line into the
@@ -760,6 +786,22 @@ class MajorModeMatcherDriver(Component, debugmixin):
             yield (None,menu,item)
 
     @staticmethod
+    def getActiveModes():
+        comp_mgr=ComponentManager()
+        driver=MajorModeMatcherDriver(comp_mgr)
+
+        # Add Yapsy plugins into list
+        plugins = [p for p in driver.plugins]
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IMajorModePlugin)
+        dprint(yapsy)
+        plugins.extend(yapsy)
+        dprint(plugins)
+        modes = []
+        for plugin in plugins:
+            modes.extend(plugin.possibleModes())
+        return modes
+
+    @staticmethod
     def match(url, magic_size=None):
         comp_mgr=ComponentManager()
         driver=MajorModeMatcherDriver(comp_mgr)
@@ -768,13 +810,20 @@ class MajorModeMatcherDriver(Component, debugmixin):
         if magic_size is None:
             magic_size = app.classprefs.magic_size
 
+        # Add Yapsy plugins into list
+        plugins = [p for p in driver.plugins]
+        yapsy = app.plugin_manager.getActivePluginObjects(IMajorModePlugin)
+        dprint(yapsy)
+        plugins.extend(yapsy)
+        dprint(plugins)
+        
         # Try to match a specific protocol
-        modes = driver.scanProtocol(url)
+        modes = driver.scanProtocol(plugins, url)
         if modes:
             return modes[0]
 
         # ok, it's not a specific protocol.  Try to match a url pattern
-        modes = driver.scanURL(url)
+        modes = driver.scanURL(plugins, url)
         fh = url.getReader(magic_size)
         header = fh.read(magic_size)
 
@@ -802,18 +851,18 @@ class MajorModeMatcherDriver(Component, debugmixin):
         # Regardless if there's a match on the URL, try to match an
         # emacs mode specifier since a match here means that we should
         # override the match based on filename
-        emacs_match = driver.scanEmacs(header)
+        emacs_match = driver.scanEmacs(plugins, header)
         if emacs_match:
             return emacs_match
 
         # Like the emacs match, a match on a shell bangpath should
         # override anything determined out of the filename
-        bang_match = driver.scanShell(header)
+        bang_match = driver.scanShell(plugins, header)
         if bang_match:
             return bang_match
 
         # Try to match some magic bytes that identify the file
-        modes = driver.scanMagic(header)
+        modes = driver.scanMagic(plugins, header)
         if modes:
             # It is unlikely that multiple modes will match the same magic
             # values, so just load the first one that we find
@@ -827,28 +876,27 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
-        mode = driver.attemptOpen(url)
+        mode = driver.attemptOpen(plugins, url)
         if mode:
             return mode
 
         # If we fail all the tests, use a generic mode
         if guessBinary(header, app.classprefs.binary_percentage):
-            return MajorModeMatcherDriver.findModeByName(app.classprefs.default_binary_mode)
-        return MajorModeMatcherDriver.findModeByName(app.classprefs.default_text_mode)
+            return driver.findModeByName(plugins,
+                                         app.classprefs.default_binary_mode)
+        return driver.findModeByName(plugins,
+                                     app.classprefs.default_text_mode)
 
     @staticmethod
-    def findModeByName(name):
-        comp_mgr=ComponentManager()
-        driver=MajorModeMatcherDriver(comp_mgr)
-
-        for plugin in driver.plugins:
+    def findModeByName(plugins, name):
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 dprint("searching %s" % mode.keyword)
                 if mode.keyword == name:
                     return mode
         return None
 
-    def scanProtocol(self, url):
+    def scanProtocol(self, plugins, url):
         """Scan for url protocol match.
         
         Determine if the protocol is enough to specify the major mode.
@@ -861,14 +909,14 @@ class MajorModeMatcherDriver(Component, debugmixin):
         """
         
         modes = []
-        for plugin in self.plugins:
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 self.dprint("scanning %s" % mode)
                 if mode.verifyProtocol(url):
                     modes.append(mode)
         return modes
 
-    def scanURL(self, url):
+    def scanURL(self, plugins, url):
         """Scan for url filename match.
         
         Determine if the pathname matches some pattern that can
@@ -880,13 +928,13 @@ class MajorModeMatcherDriver(Component, debugmixin):
         """
         
         modes = []
-        for plugin in self.plugins:
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 if mode.verifyFilename(url.path):
                     modes.append(mode)
         return modes
 
-    def scanMagic(self, header):
+    def scanMagic(self, plugins, header):
         """Scan for a pattern match in the first bytes of the file.
         
         Determine if there is a 'magic' pattern in the first n bytes
@@ -898,13 +946,13 @@ class MajorModeMatcherDriver(Component, debugmixin):
         """
         
         modes = []
-        for plugin in self.plugins:
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 if mode.verifyMagic(header):
                     modes.append(mode)
         return modes
 
-    def scanEmacs(self, header):
+    def scanEmacs(self, plugins, header):
         """Scan the first two lines of a file for an emacs mode
         specifier.
         
@@ -918,7 +966,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         
         modename, settings = parseEmacs(header)
         self.dprint("modename = %s, settings = %s" % (modename, settings))
-        for plugin in self.plugins:
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 if modename == mode.keyword:
                     return mode
@@ -931,7 +979,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
                             return mode
         return None
         
-    def scanShell(self, header):
+    def scanShell(self, plugins, header):
         """Scan the first lines of a file for a shell 'bangpath'
         specifier.
         
@@ -946,7 +994,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         if header.startswith("#!"):
             lines = header.splitlines()
             bangpath = lines[0].lower()
-            for plugin in self.plugins:
+            for plugin in plugins:
                 for mode in plugin.possibleModes():
                     keyword = mode.keyword.lower()
 
@@ -960,7 +1008,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
                         return mode
         return None
     
-    def attemptOpen(self, url):
+    def attemptOpen(self, plugins, url):
         """Use the mode's attemptOpen method to see if it recognizes
         the url.
         
@@ -969,7 +1017,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
         @returns: matching L{MajorMode} subclass or None
         """
         
-        for plugin in self.plugins:
+        for plugin in plugins:
             for mode in plugin.possibleModes():
                 dprint("scanning %s" % mode)
                 if mode.attemptOpen(url):

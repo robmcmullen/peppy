@@ -455,6 +455,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.dropTarget=FrameDropTarget(self)
         self.SetDropTarget(self.dropTarget)        
         
+        Publisher().subscribe(self.pluginsChanged, 'peppy.plugins.changed')
         wx.GetApp().SetTopWindow(self)
         
     def addPane(self, win, paneinfo):
@@ -737,6 +738,23 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # "commit" all changes made to FrameManager   
         self._mgr.Update()
         wx.CallAfter(self.enableTools)
+
+    def getAllModes(self):
+        modes = []
+        for index in range(self.tabs.GetPageCount()):
+            page = self.tabs.GetPage(index)
+            modes.append(page.__class__)
+        return modes
+
+    def pluginsChanged(self, msg):
+        """Update the display after plugins changed, because it might
+        affect the menu or toolbar if new plugins were activated or
+        existing ones were deactivated.
+        """
+        # FIXME: check to make sure that any major modes currently in
+        # use haven't been deactivated.  If so, force them to be
+        # enabled again.  Or, perhaps check before disabling.
+        self.switchMode()
 
     def getTitle(self):
         return self.name

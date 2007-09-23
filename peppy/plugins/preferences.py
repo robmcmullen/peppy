@@ -16,6 +16,7 @@ from peppy.trac.core import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 from peppy.lib.iconstorage import *
+from peppy.lib.pluginmanager import *
 
 class Preferences(SelectAction):
     name = _("&Preferences...")
@@ -67,8 +68,29 @@ class PeppyPrefDialog(PrefDialog):
         return tree
     
 
+class Plugins(SelectAction):
+    name = _("&Plugins...")
+    tooltip = _("Plugin configuration")
+    icon = "icons/plugin.png"
+
+    @classmethod
+    def showDialog(self, msg=None):
+        frame = wx.GetApp().GetTopWindow()
+        dlg = PluginDialog(frame, wx.GetApp().plugin_manager)
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            dlg.applyPreferences()
+            Publisher().sendMessage('peppy.plugins.changed')
+        dlg.Destroy()
+
+    def action(self, pos=-1):
+        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+        self.showDialog()
+
+
 class PreferencesPlugin(Component):
     implements(IMenuItemProvider)
 
     def getMenuItems(self):
         yield (None,_("Edit"),MenuItem(Preferences).after(_("lastsep")))
+        yield (None,_("Edit"),MenuItem(Plugins).after(_("lastsep")))

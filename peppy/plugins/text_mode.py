@@ -59,10 +59,8 @@ class TextMode(FundamentalMode):
         )
     
 
-class TextModePlugin(MajorModeMatcherBase,debugmixin):
-    """Makefile plugin to register modes and user interface.
+class TextModePlugin(IMajorModePlugin, debugmixin):
+    """Yapsy plugin to register TextMode.
     """
-    implements(IMajorModeMatcher)
-
     def possibleModes(self):
         yield TextMode

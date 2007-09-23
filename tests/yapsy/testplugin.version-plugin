@@ -1,0 +1,9 @@
+[Core]
+Name = Test Plugin
+Module = TestPlugin
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.0.1
+Website = http://mathbench.sourceforge.net
+Description = A simple plugin for version testing

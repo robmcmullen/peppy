@@ -10,8 +10,11 @@ import __builtin__
 import wx
 from wx.lib.pubsub import Publisher
 
-from configprefs import *
-from debug import *
+from peppy.configprefs import *
+from peppy.debug import *
+
+from peppy.yapsy.plugins import *
+from peppy.yapsy.VersionedPluginManager import *
 
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
@@ -78,7 +81,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     initial keyboard mapping, and other lower level initialization
     from the BufferApp superclass.
     """
-    debuglevel = 0
+    debuglevel = 1
     verbose = 0
     options = {}
 
@@ -156,6 +159,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.autoloadImports()
         if not main_is_frozen():
             self.autoloadStandardPlugins()
+            self.autoloadYapsyPlugins()
             self.autoloadSetuptoolsPlugins()
         self.parseConfigPlugins()
 
@@ -377,9 +381,38 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         autoloaddir = os.path.join(os.path.dirname(__file__), plugindir)
         basemodule = self.__module__.rsplit('.', 1)[0]
         for plugin in os.listdir(autoloaddir):
+            dprint(os.path.join(autoloaddir, plugin[:-3]+".peppy-plugin"))
             if plugin.endswith(".py"):
-                self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
-                                              plugin[:-3]))
+                if not os.path.exists(os.path.join(autoloaddir, plugin[:-3]+".peppy-plugin")):
+                    self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
+                                                  plugin[:-3]))
+
+    def autoloadYapsyPlugins(self, plugindir='plugins'):
+        """Autoload plugins from peppy plugins directory.
+
+        All .py files that exist in the peppy.plugins directory are
+        loaded here.  Currently uses a naive approach by loading them
+        in the order returned by os.listdir.  No dependency ordering
+        is done.
+        """
+        autoloaddir = os.path.join(os.path.dirname(__file__), plugindir)
+        self.plugin_manager = VersionedPluginManager(
+            categories_filter={"Default": IPeppyPlugin},
+            directories_list=[autoloaddir],
+            plugin_info_ext="peppy-plugin",
+            )
+        # load the plugins that may be found
+        self.plugin_manager.collectPlugins()
+        
+        cats = self.plugin_manager.getCategories()
+        for cat in cats:
+            plugins = self.plugin_manager.getPluginsOfCategory(cat)
+            dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
+            for plugin in plugins:
+                dprint("  activating plugin %s" % plugin.plugin_object)
+                plugin.plugin_object.activate()
+                dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
+
 
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
