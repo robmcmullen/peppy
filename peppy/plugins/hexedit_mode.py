@@ -8,6 +8,7 @@ import wx.grid as Grid
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.stcinterface import STCInterface
@@ -884,13 +885,10 @@ class HexEditMode(MajorMode):
                 assert self.dprint("starting wait thread")
                 self.waiting=WaitThread(self.editwin)
                 self.waiting.start()
-        
 
 
-
-class HexEditPlugin(MajorModeMatcherBase,debugmixin):
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
+class HexEditPlugin(IPeppyPlugin, IMajorModePlugin, IMenuBarPlugin,
+                    debugmixin):
 
     def possibleModes(self):
         yield HexEditMode

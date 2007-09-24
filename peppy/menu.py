@@ -855,7 +855,7 @@ class MenuBarActionMap(debugmixin):
 
 
 class MenuItemLoader(Component,debugmixin):
-    debuglevel=1
+    debuglevel=0
     extensions=ExtensionPoint(IMenuItemProvider)
 
     def load(self, frame, majors=[], minors=[], create=True):

@@ -188,6 +188,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         return True
 
     def processCommandLineOptions(self):
+        import logging
+        logging.debug = dprint
+        
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
             errorlog(errorRedirector('error'))
