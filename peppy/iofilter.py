@@ -120,6 +120,12 @@ class URLHandler(debugmixin):
     """The URLHandler is the clearinghose for extensions to the
     urllib2 module to load other types of URLs.
     """
+    default_openers = []
+
+    @classmethod
+    def addDefaultOpener(cls, opener):
+        cls.default_openers.append(opener)
+        
     @classmethod
     def getOpener(cls):
         # Only call this once, unless forced to by removing the
@@ -128,7 +134,7 @@ class URLHandler(debugmixin):
             # urllib2 seems to want a complete set of handlers built at
             # once -- it doesn't work calling build_opener more than once,
             # because it forgets all the previous user defined handlers.
-            urlhandlers = []
+            urlhandlers = [h for h in cls.default_openers]
             plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
             for plugin in plugins:
                 urlhandlers.extend(plugin.getURLHandlers())
