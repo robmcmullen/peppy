@@ -10,6 +10,7 @@ import os
 import wx
 import wx.stc
 
+from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
@@ -59,7 +60,7 @@ class TextMode(FundamentalMode):
         )
     
 
-class TextModePlugin(IPeppyPlugin, IMajorModePlugin, debugmixin):
+class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.
     """
     def possibleModes(self):

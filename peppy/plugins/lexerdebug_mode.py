@@ -347,11 +347,9 @@ class LexerKeywords(MinibufferAction):
         mode.keywords = text
 
 
-class LexerDebugPlugin(MajorModeMatcherBase,debugmixin):
+class LexerDebugPlugin(IPeppyPlugin):
     """Plugin to register LexerDebug mode and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
 
     def possibleModes(self):
         yield LexerDebugMode

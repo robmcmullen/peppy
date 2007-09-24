@@ -1,0 +1,9 @@
+[Core]
+Name = C/C++ Mode
+Module = c_mode
+
+[Documentation]
+Author = Julian Back
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Major mode for editing C, C++, and similarly styled files

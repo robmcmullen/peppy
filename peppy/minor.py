@@ -170,7 +170,12 @@ class MinorModeLoader(Component, debugmixin):
         # Create the class attribute
         MinorModeLoader.modekeys={}
         
-        for ext in self.extensions:
+        plugins = [p for p in self.extensions]
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
+        dprint(yapsy)
+        plugins.extend(yapsy)
+        dprint(plugins)
+        for ext in plugins:
             for minor in ext.getMinorModes():
                 assert self.dprint("Registering minor mode %s" % minor.keyword)
                 MinorModeLoader.modekeys[minor.keyword]=minor

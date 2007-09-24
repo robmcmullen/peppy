@@ -11,9 +11,9 @@ import os
 
 import wx
 
+from peppy.yapsy.plugins import *
 from peppy.minor import *
 from peppy.menu import *
-from peppy.trac.core import *
 
 
 class SizeReporterMinorMode(MinorMode, wx.PyControl):
@@ -87,8 +87,6 @@ class SizeReporterMinorMode(MinorMode, wx.PyControl):
         event.Skip()
 
 
-class SizeReporterProvider(Component):
-    implements(IMinorModeProvider)
-
+class SizeReporterPlugin(IPeppyPlugin):
     def getMinorModes(self):
         yield SizeReporterMinorMode

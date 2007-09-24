@@ -198,8 +198,7 @@ class ImageViewMode(MajorMode):
 
 
 
-class ImageViewPlugin(IPeppyPlugin, IMajorModePlugin, IMenuBarPlugin,
-                      IToolBarPlugin, debugmixin):
+class ImageViewPlugin(IPeppyPlugin, debugmixin):
     """
     Image viewer plugin that registers the major mode and supplies the
     user interface actions so we can use the mode.

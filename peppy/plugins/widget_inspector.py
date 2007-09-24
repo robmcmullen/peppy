@@ -7,8 +7,8 @@ for debugging layout of wxpython widgets.
 """
 import os
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
 
 class WidgetInspector(SelectAction):
     name=_("Widget Inspector...")
@@ -24,8 +24,6 @@ class WidgetInspector(SelectAction):
             InspectionTool().Init()
         InspectionTool().Show(self.frame, True)
 
-class WidgetInspectorMenuProvider(Component):
-    implements(IMenuItemProvider)
-
+class WidgetInspectorPlugin(IPeppyPlugin):
     def getMenuItems(self):
         yield (None,_("&Help"),MenuItem(WidgetInspector).last())

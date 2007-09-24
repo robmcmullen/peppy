@@ -8,10 +8,10 @@ its getFunctionList method will be able to work with this minor mode.
 
 import os
 
+from peppy.yapsy.plugins import *
 from peppy.minor import *
 from peppy.stcinterface import STCProxy
 from peppy.menu import *
-from peppy.trac.core import *
 
 import peppy.pype
 from peppy.pype.codetree import hierCodeTreePanel
@@ -45,8 +45,6 @@ class PyPEFuncList(MinorMode, hierCodeTreePanel):
         return 1,s
         
 
-class FuncListProvider(Component):
-    implements(IMinorModeProvider)
-
+class PyPEFuncListPlugin(IPeppyPlugin):
     def getMinorModes(self):
         yield PyPEFuncList

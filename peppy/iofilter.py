@@ -2,15 +2,15 @@
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 import os,re,urlparse
 import urllib2
-
 from cStringIO import StringIO
+
+import wx
 
 from lib.bufferedreader import *
 
-from trac.core import *
 from debug import *
 
-__all__ = [ 'URLInfo', 'IURLHandler', 'URLHandler' ]
+__all__ = [ 'URLInfo', 'URLHandler' ]
 
 
 class URLInfo(debugmixin):
@@ -105,72 +105,53 @@ class URLInfo(debugmixin):
         return self.bfh
 
     def getDirectReader(self):
-        comp_mgr = ComponentManager()
-        handler = URLHandler(comp_mgr)
-        fh = handler.urlreader(self)
+        fh = URLHandler.urlreader(self)
         if self.protocol == 'file':
             fh.tell = fh.fp.tell
             fh.seek = fh.fp.seek
         return fh
 
     def getWriter(self):
-        comp_mgr = ComponentManager()
-        handler = URLHandler(comp_mgr)
-        fh = handler.urlwriter(self)
+        fh = URLHandler.urlwriter(self)
         return fh
 
 
-
-#### The URLHandler and IURLHandler define extensions to the
-#### urllib2 module to load other types of URLs.
-
-class IURLHandler(Interface):
-    """Interface for IO plugins.  A plugin that implements this
-    interface takes a URL in the form of protocol://path/to/some/file
-    and implements two methods that return a file-like object that can
-    be used to either read from or write to the datastore that is
-    pointed to by the URL.  Some protocols, like http, will typically
-    be read-only, which means the getWriter method may be omitted from
-    the plugin."""
-
-    def getURLHandlers():
-        """Return a list of urllib2 handlers defining new protocol
-        support."""
-
-
-class URLHandler(Component, debugmixin):
-    handlers = ExtensionPoint(IURLHandler)
-
-    def __init__(self):
+class URLHandler(debugmixin):
+    """The URLHandler is the clearinghose for extensions to the
+    urllib2 module to load other types of URLs.
+    """
+    @classmethod
+    def getOpener(cls):
         # Only call this once, unless forced to by removing the
         # attribute 'opener' from the class namespace.
-        if hasattr(URLHandler,'opener'):
-            return self
+        if not hasattr(cls, 'opener'):
+            # urllib2 seems to want a complete set of handlers built at
+            # once -- it doesn't work calling build_opener more than once,
+            # because it forgets all the previous user defined handlers.
+            urlhandlers = []
+            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+            for plugin in plugins:
+                urlhandlers.extend(plugin.getURLHandlers())
 
-        # urllib2 seems to want a complete set of handlers built at
-        # once -- it doesn't work calling build_opener more than once,
-        # because it forgets all the previous user defined handlers.
-        urlhandlers = []
-        for handler in self.handlers:
-            urlhandlers.extend(handler.getURLHandlers())
-
-        assert self.dprint(urlhandlers)
-        URLHandler.opener = urllib2.build_opener(*urlhandlers)
+            assert dprint(urlhandlers)
+            cls.opener = urllib2.build_opener(*urlhandlers)
+        return cls.opener
 
     @classmethod
     def clearHandlers(cls):
         """Force handlers to be reloaded next time a handler is requested."""
-        
-        if hasattr(URLHandler,'opener'):
-            delattr(URLHandler,'opener')
+        if hasattr(cls, 'opener'):
+            delattr(cls, 'opener')
 
-    def urlreader(self, info):
+    @classmethod
+    def urlreader(cls, info):
         """Get a file-like object for reading from this url."""
-        fh = URLHandler.opener.open(info.url)
+        fh = cls.getOpener().open(info.url)
         fh.urlinfo = info
         return fh
 
-    def urlwriter(self, info):
+    @classmethod
+    def urlwriter(cls, info):
         """Get a file-like object for (binary) writing to this url.
 
         Currently, only file:// style urls are supported for writing.

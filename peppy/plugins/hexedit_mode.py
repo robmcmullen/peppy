@@ -887,9 +887,7 @@ class HexEditMode(MajorMode):
                 self.waiting.start()
 
 
-class HexEditPlugin(IPeppyPlugin, IMajorModePlugin, IMenuBarPlugin,
-                    debugmixin):
-
+class HexEditPlugin(IPeppyPlugin, debugmixin):
     def possibleModes(self):
         yield HexEditMode
 

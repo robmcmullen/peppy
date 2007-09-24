@@ -104,28 +104,6 @@ class NewFrame(SelectAction):
 
 #### Buffers
 
-
-class IBufferOpenPostHook(Interface):
-    """
-    Used to add new hook after a buffer has been successfully opened
-    and the data read in..
-    """
-
-    def openPostHook(buffer):
-        """
-        Method to manipulate the buffer after the buffer has been
-        loaded.
-        """
-
-class BufferHooks(Component):
-    openPostHooks=ExtensionPoint(IBufferOpenPostHook)
-
-    def openPostHook(self,buffer):
-        for hook in self.openPostHooks:
-            hook.openPostHook(buffer)
-
-
-
 class Buffer(debugmixin):
     count=0
     debuglevel=0
@@ -241,7 +219,9 @@ class Buffer(debugmixin):
         self.readonly = self.url.readonly()
         self.stc.EmptyUndoBuffer()
 
-        BufferHooks(ComponentManager()).openPostHook(self)
+        # Send a message to any interested plugins that a new buffer
+        # has been successfully opened.
+        Publisher().sendMessage('buffer.opened', self)
     
     def revert(self):
         fh=self.url.getReader()

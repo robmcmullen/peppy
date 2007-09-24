@@ -11,6 +11,7 @@ import os
 import wx
 import wx.stc
 
+from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
@@ -73,11 +74,9 @@ class CMode(FundamentalMode):
        )
 
 
-class CModePlugin(MajorModeMatcherBase,debugmixin):
+class CModePlugin(IPeppyPlugin):
    """C plugin to register modes and user interface.
    """
-   implements(IMajorModeMatcher)
-   implements(IMenuItemProvider)
 
    def possibleModes(self):
        yield CMode

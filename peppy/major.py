@@ -685,28 +685,6 @@ class MajorModeMatcherBase(Component):
         """
         return []
 
-class IMajorModePlugin(object):
-    def possibleModes(self):
-        """Return list of possible major modes.
-
-        A subclass that extends MajorModeMatcherBase should return a
-        list or generator of all the major modes that this matcher is
-        representing.  Generally, a matcher will only represent a
-        single mode, but it is possible to represent more.
-
-        @returns: list of MajorMode classes
-        """
-        return []
-
-    def isInUse(self):
-        modes = []
-        for frame in wx.GetTopLevelWindows():
-            if hasattr(frame, 'getAllModes'):
-                modes.extend(frame.getAllModes())
-        for mode in self.possibleModes():
-            if mode in modes:
-                return True
-        return False
 
 def parseEmacs(line):
     """
@@ -792,7 +770,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         # Add Yapsy plugins into list
         plugins = [p for p in driver.plugins]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IMajorModePlugin)
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
         dprint(yapsy)
         plugins.extend(yapsy)
         dprint(plugins)
@@ -812,7 +790,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         # Add Yapsy plugins into list
         plugins = [p for p in driver.plugins]
-        yapsy = app.plugin_manager.getActivePluginObjects(IMajorModePlugin)
+        yapsy = app.plugin_manager.getActivePluginObjects()
         dprint(yapsy)
         plugins.extend(yapsy)
         dprint(plugins)

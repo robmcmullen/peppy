@@ -9,6 +9,7 @@ import os, sys
 import wx
 from wx.lib.pubsub import Publisher
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.debug import *
 from peppy.configprefs import *
@@ -98,13 +99,11 @@ class KeyboardConf(ClassPrefs, debugmixin):
             lines.append("%s = %s" % (name, keymap[name]))
         fh.write(os.linesep.join(lines) + os.linesep)
 
-class KeyboardConfExtender(Component):
-    implements(IConfigurationExtender)
-    
-    def loadConf(self,app):
-        KeyboardConf.platform = app.classprefs.key_bindings
+class KeyboardConfExtender(IPeppyPlugin):
+    def loadConf(self):
+        KeyboardConf.platform = wx.GetApp().classprefs.key_bindings
         KeyboardConf.load()
     
-    def saveConf(self,app):
+    def saveConf(self):
         pass
     

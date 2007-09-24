@@ -11,10 +11,10 @@ import os, re
 
 from wx.lib.evtmgr import eventManager
 
+from peppy.yapsy.plugins import *
 from peppy.minor import *
 from peppy.debug import *
 from peppy.menu import *
-from peppy.trac.core import *
 from peppy.lib.iconstorage import *
 
 from peppy.spe.realtime import TreeCtrl
@@ -294,8 +294,6 @@ class SPEFuncList(MinorMode, TreeCtrl):
 
 
 
-class SPEFuncListProvider(Component):
-    implements(IMinorModeProvider)
-
+class SPEFuncListPlugin(IPeppyPlugin):
     def getMinorModes(self):
         yield SPEFuncList

@@ -1,0 +1,9 @@
+[Core]
+Name = STC Style Editor
+Module = boa_stcstyleeditor
+
+[Documentation]
+Author = Riaan Booysen
+Version = 0.1
+Website = http://boa-constructor.sourceforge.net
+Description = User interface to change fonts, colors, and styles of the STC editor

@@ -168,8 +168,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # can convert the rest of the configuration params
         self.splash.tick("Loading extra configuration...")
         GlobalPrefs.convertConfig()
-        
-        ConfigurationExtender(ComponentManager()).load(self)
+
+        # Send message to any plugins that are interested that all the
+        # configuration information has been loaded.
+        Publisher().sendMessage('peppy.config.load')
 
         self.splash.tick("Setting up graphics...")
         self.initGraphics()
@@ -320,7 +322,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def saveConfig(self, filename):
         self.saveConfigPreHook()
         
-        ConfigurationExtender(ComponentManager()).save(self)
+        # Send message to any interested plugins that configuration
+        # information is about to be saved and provide them with an
+        # opportunity to save any auxillary config files.
+        Publisher().sendMessage('peppy.config.save')
 
         if GlobalPrefs.isUserConfigChanged():
             dprint("User configuration has changed!  Saving")

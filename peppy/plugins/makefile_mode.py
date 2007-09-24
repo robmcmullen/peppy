@@ -89,12 +89,10 @@ class MakefileMode(FundamentalMode):
         )
 
 
-class MakefilePlugin(MajorModeMatcherBase,debugmixin):
+class MakefilePlugin(IPeppyPlugin):
     """Makefile plugin to register modes and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
-
+    
     def possibleModes(self):
         yield MakefileMode
     

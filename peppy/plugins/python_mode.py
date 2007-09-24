@@ -10,6 +10,7 @@ import keyword
 import wx
 import wx.stc
 
+from peppy.yapsy.plugins import *
 from peppy.about import SetAbout
 from peppy.menu import *
 from peppy.major import *
@@ -315,11 +316,7 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
         return flist
 
 
-class PythonPlugin(MajorModeMatcherBase,debugmixin):
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
-##    implements(IToolBarItemProvider)
-    implements(IKeyboardItemProvider)
+class PythonPlugin(IPeppyPlugin):
 
     def possibleModes(self):
         yield PythonMode
@@ -333,14 +330,14 @@ class PythonPlugin(MajorModeMatcherBase,debugmixin):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("Python",None,Menu(_("Python")).after(_("Major Mode"))),
-##                   ("Python",_("Python"),MenuItem(ShiftLeft)),
-##                   ("Python",_("Python"),MenuItem(ShiftRight)),
-                   )
-    def getToolBarItems(self):
-        for mode,menu,item in self.default_tools:
-            yield (mode,menu,item)
-    
+##    default_tools=(("Python",None,Menu(_("Python")).after(_("Major Mode"))),
+####                   ("Python",_("Python"),MenuItem(ShiftLeft)),
+####                   ("Python",_("Python"),MenuItem(ShiftRight)),
+##                   )
+##    def getToolBarItems(self):
+##        for mode,menu,item in self.default_tools:
+##            yield (mode,menu,item)
+
     default_keys=(("Python",ElectricColon),
                   )
     def getKeyboardItems(self):

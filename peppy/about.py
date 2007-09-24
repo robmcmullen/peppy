@@ -236,11 +236,7 @@ class BlankMode(MajorMode):
         return win
 
 
-class AboutPlugin(MajorModeMatcherBase):
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
-    implements(IURLHandler)
-
+class AboutPlugin(IPeppyPlugin):
     def getURLHandlers(self):
         return [AboutHandler]
 

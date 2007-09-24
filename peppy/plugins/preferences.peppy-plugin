@@ -1,0 +1,9 @@
+[Core]
+Name = Preference Dialogs
+Module = preferences
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = User interface for preference dialogs

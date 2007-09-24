@@ -15,6 +15,7 @@ import wx.html
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
+from peppy.yapsy.plugins import *
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
@@ -145,7 +146,7 @@ class HTMLViewMode(MajorMode):
 
 
 
-class HTMLViewPlugin(MajorModeMatcherBase,debugmixin):
+class HTMLViewPlugin(IPeppyPlugin):
     """
     Image viewer plugin that registers the major mode and supplies the
     user interface actions so we can use the mode.

@@ -53,41 +53,6 @@ class IKeyboardItemProvider(Interface):
         """Return the list of actions that are grouped together in the
         user interface."""
 
-# Yapsy plugin interfaces
-class IMenuBarPlugin(object):
-    """Interface used to add user actions to the menu bar."""
-    def getMenuItems():
-        """Return a 3-tuple (mode,menu,item), where each element is
-        defined as follows:
-
-        mode is a string or None.  A string specifies the major mode
-        by referring to its keyword, and None means it is a global
-        menu item and will appear in all major modes.
-
-        menu is a string that specifies the menu under which this item
-        will appear.
-
-        item is an instance of Menu, MenuItem, MenuItemGroup, or
-        Separator that is a wrapper around the action to be performed
-        when this menu item is selected."""
-        return []
-
-class IToolBarPlugin(object):
-    """Interface for a group of actions that are always available
-    through the user interface regardless of the L{MajorMode}."""
-    def getToolBarItems():
-        """Return the list of actions that are grouped together in the
-        user interface."""
-        return []
-
-class IKeyboardPlugin(object):
-    """Interface for keyboard actions that don't have equivalents
-    through the menu or toolbar interfaces."""
-    def getKeyboardItems(self):
-        """Return the list of actions that are grouped together in the
-        user interface."""
-        return []
-
 
 class Separator(DelayedOrderer):
     def __init__(self,name="-separator-",mode=None):
@@ -871,7 +836,7 @@ class MenuItemLoader(Component,debugmixin):
         menumap=MenuBarActionMap(frame)
 
         extensions = [e for e in self.extensions]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IMenuBarPlugin)
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
         extensions.extend(yapsy)
         assert self.dprint(extensions)
 
@@ -927,7 +892,7 @@ class ToolBarItemLoader(Component,debugmixin):
         toolmap=MenuBarActionMap(frame)
 
         extensions = [e for e in self.extensions]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IToolBarPlugin)
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
         extensions.extend(yapsy)
         assert self.dprint(extensions)
         
@@ -963,7 +928,7 @@ class KeyboardItemLoader(Component,debugmixin):
         KeyboardItemLoader.globalkeys=[]
         KeyboardItemLoader.modekeys={}
         
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IKeyboardPlugin)
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
         self.extensions.extend(yapsy)
         for extension in self.extensions:
             assert self.dprint("collecting from extension %s" % extension)

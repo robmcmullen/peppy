@@ -29,6 +29,7 @@ from peppy.major import *
 from peppy.iofilter import *
 from peppy.stcinterface import NonResidentSTC
 
+from peppy.yapsy.plugins import *
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.columnsizer import *
@@ -1472,8 +1473,6 @@ class MPDHandler(urllib2.BaseHandler, debugmixin):
             port = 6600
         assert self.dprint(parts)
 
-        comp_mgr = ComponentManager()
-        handler = MPDPlugin(comp_mgr)
         fh = MPDComm(host, port)
         fh.geturl = lambda :"mpd:%s" % url
         fh.info = lambda :{'Content-type': 'text/plain',
@@ -1484,15 +1483,9 @@ class MPDHandler(urllib2.BaseHandler, debugmixin):
         return fh
 
 
-class MPDPlugin(MajorModeMatcherBase,debugmixin):
+class MPDPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMinorModeProvider)
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
-    implements(IURLHandler)
-
     def getURLHandlers(self):
         return [MPDHandler]
 

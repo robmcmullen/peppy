@@ -15,6 +15,7 @@ import time
 
 import wx
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.major import *
 
@@ -57,10 +58,9 @@ class ShowStyles(SelectAction):
             mode.stc.showStyle()
 
 
-class SandboxPlugin(MajorModeMatcherBase,debugmixin):
+class SandboxPlugin(IPeppyPlugin):
     """Plugin to register sandbox tests.
     """
-    implements(IMenuItemProvider)
 
     default_menu=((None,(_("&Help"),_("&Tests")),MenuItem(FastProgressBarTest)),
                   (None,(_("&Help"),_("&Tests")),MenuItem(SlowProgressBarTest)),

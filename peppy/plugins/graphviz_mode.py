@@ -17,6 +17,7 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
+from peppy.yapsy.plugins import *
 from peppy.lib.bitmapscroller import *
 from peppy.lib.processmanager import ProcessManager, JobOutputMixin
 from peppy.menu import *
@@ -206,13 +207,9 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 
 
 
-class GraphvizPlugin(MajorModeMatcherBase,debugmixin):
+class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMinorModeProvider)
-    implements(IMenuItemProvider)
-
     def possibleModes(self):
         yield GraphvizMode
 

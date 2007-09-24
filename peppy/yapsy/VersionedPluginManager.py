@@ -89,7 +89,8 @@ class VersionedPluginManager(PluginManager):
 			print "checking plugin %s for interface %s" % (plugin.name, interface)
 			obj = plugin.plugin_object
 			if obj.is_activated:
-				print "  plugin %s activated!: mro=%s" % (obj, obj.__class__.__mro__)
+				print "  plugin %s activated!: class=%s" % (obj, obj.__class__)
+				print "     mro=%s" % str(obj.__class__.__mro__)
 				if interface is not None:
 					if isinstance(obj, interface):
 						active.append(obj)

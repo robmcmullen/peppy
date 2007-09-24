@@ -11,17 +11,15 @@ from cStringIO import StringIO
 
 import wx
 
-from peppy.trac.core import *
-from peppy.plugins.shell_mode import *
+from peppy.yapsy.plugins import *
+from peppy.debug import *
 
 from peppy.nltk_lite.chat import *
 
 from peppy.about import AddCopyright
 AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "2001-2006", "University of Pennsylvania", "Eliza and the other chatbot implementations")
 
-class ChatShell(Component):
-    implements(ShellPipePlugin)
-
+class ChatPlugin(IShellPipePlugin):
     def supportedShells(self):
         return chatbots.keys()
 

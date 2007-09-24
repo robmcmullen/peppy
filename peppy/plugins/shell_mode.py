@@ -8,42 +8,27 @@ import wx
 import wx.stc
 import wx.lib.newevent
 
+from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.menu import *
 from peppy.iofilter import *
-from peppy.trac.core import *
 from peppy.fundamental import FundamentalMode
 from peppy.stcinterface import PeppySTC
 
-class ShellPipePlugin(Interface):
-    """
-    Interface for shells that take a line of input and return a response.
-    """
-
-    def supportedShells():
-        """
-        Return a list of shells that this interface supports, e.g. a
-        bash shell should return ['bash'] or python should return
-        ['python'].
-        """
-        
-    def getPipe(filename):
-        """
-        Return a file-like object that is the interface to the shell.
-        Typically this will act like a pipe to an object: stuff that
-        is written to this file handle will get sent through the pipe
-        to the shell, and when data is available it can be read from
-        this object.
-        """
-
 class ShellHandler(urllib2.BaseHandler):
+    def find_pipe(self, url):
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects(IShellPipePlugin)
+        for plugin in plugins:
+            if url in plugin.supportedShells():
+                fh=plugin.getPipe(url)
+                return fh
+        raise IOError("shell %s not found" % url)
+        
     def shell_open(self, req):
         url = req.get_selector()
         dprint(url)
-
-        comp_mgr = ComponentManager()
-        handler = ShellPlugin(comp_mgr)
-        fh = handler.find(url)
+    
+        fh = self.find_pipe(url)
         fh.geturl = lambda :"shell:%s" % url
         fh.info = lambda :{'Content-type': 'text/plain',
                             'Content-length': 0,
@@ -193,21 +178,9 @@ class ShellMode(ShellReturnMixin, FundamentalMode):
         
 
 
-class ShellPlugin(MajorModeMatcherBase,debugmixin):
-    implements(IMajorModeMatcher)
-    implements(IKeyboardItemProvider)
-    implements(IURLHandler)
-    shells=ExtensionPoint(ShellPipePlugin)
-
+class ShellPlugin(IPeppyPlugin):
     def getURLHandlers(self):
         return [ShellHandler]
-    
-    def find(self, url):
-        for shell in self.shells:
-            if url in shell.supportedShells():
-                fh=shell.getPipe(url)
-                return fh
-        raise IOError("shell %s not found" % url)        
     
     def possibleModes(self):
         yield ShellMode

@@ -9,8 +9,8 @@ import os
 
 from wx.lib.pubsub import Publisher
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
 import peppy.boa as boa
 
 from peppy.about import AddCopyright
@@ -56,8 +56,6 @@ class STCStyles(SelectAction):
 
 
 
-class STCStylesMenuProvider(Component):
-    implements(IMenuItemProvider)
-
+class STCStylesMenuProvider(IPeppyPlugin):
     def getMenuItems(self):
         yield (None,_("Format"),MenuItem(STCStyles).last())

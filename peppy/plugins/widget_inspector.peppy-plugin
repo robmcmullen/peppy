@@ -1,0 +1,9 @@
+[Core]
+Name = Widget Inspector
+Module = widget_inspector
+
+[Documentation]
+Author = Robin Dunn
+Version = 0.1
+Website = http://www.wxpython.org
+Description = Widget inspector from the wxPython demo

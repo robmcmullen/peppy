@@ -9,9 +9,10 @@ and save process.
 """
 import os
 
+from wx.lib.pubsub import Publisher
+
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
-from peppy.buffers import *
 from peppy.lib.userparams import *
 
 
@@ -79,17 +80,27 @@ class OpenRecent(GlobalList, ClassPrefs):
 
 
 
-class OpenRecentConfExtender(Component):
-    implements(IConfigurationExtender)
-    implements(IMenuItemProvider)
-    implements(IBufferOpenPostHook)
+class RecentFilesPlugin(IPeppyPlugin):
+    def activate(self):
+        IPeppyPlugin.activate(self)
+        Publisher().subscribe(self.loadConf, 'peppy.config.load')
+        Publisher().subscribe(self.saveConf, 'peppy.config.save')
+        Publisher().subscribe(self.bufferOpened, 'buffer.opened')
 
-    def loadConf(self,app):
+    def deactivate(self):
+        IPeppyPlugin.deactivate(self)
+        Publisher().unsubscribe(self.loadConf)
+        Publisher().unsubscribe(self.saveConf)
+        Publisher().unsubscribe(self.bufferOpened)
+
+    def loadConf(self, msg):
+        app = wx.GetApp()
         filename=app.classprefs.recentfiles
         pathname=app.getConfigFilePath(filename)
         OpenRecent.load(pathname)
     
-    def saveConf(self,app):
+    def saveConf(self, msg):
+        app = wx.GetApp()
         filename=app.classprefs.recentfiles
         pathname=app.getConfigFilePath(filename)
         OpenRecent.save(pathname)        
@@ -97,6 +108,6 @@ class OpenRecentConfExtender(Component):
     def getMenuItems(self):
         yield (None,_("File"),MenuItem(OpenRecent).after(_("&Open File...")).before("opensep"))
 
-    def openPostHook(self,buffer):
+    def bufferOpened(self, msg):
+        buffer = msg.data
         OpenRecent.append(buffer.url)
-        

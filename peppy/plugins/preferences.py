@@ -11,8 +11,8 @@ import os
 from wx.lib.pubsub import Publisher
 import wx.grid
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 from peppy.lib.iconstorage import *
@@ -88,9 +88,7 @@ class Plugins(SelectAction):
         self.showDialog()
 
 
-class PreferencesPlugin(Component):
-    implements(IMenuItemProvider)
-
+class PreferencesPlugin(IPeppyPlugin):
     def getMenuItems(self):
         yield (None,_("Edit"),MenuItem(Preferences).after(_("lastsep")))
         yield (None,_("Edit"),MenuItem(Plugins).after(_("lastsep")))
