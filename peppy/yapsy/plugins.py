@@ -61,6 +61,14 @@ class IPeppyPlugin(IPlugin, object):
         """
         return []
 
+    def getSidebars(self):
+        """Return list of sidebars provided by the plugin.
+        
+        Return iterator containing list of frame sidebars that are
+        provided by this plugin.
+        """
+        return []
+
     def getMenuItems(self):
         """Return list of menu items.
 

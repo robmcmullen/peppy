@@ -11,8 +11,8 @@ import os
 import wx
 from wx.lib.pubsub import Publisher
 
+from peppy.yapsy.plugins import *
 from peppy.stcinterface import PeppySTC
-from peppy.trac.core import *
 from peppy.sidebar import *
 from peppy.minor import *
 
@@ -143,12 +143,10 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
             self.major._mgr.Update()
         self.displayMessage(message.data)
 
-class ErrorLogProvider(Component):
+class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar
     """
-    implements(ISidebarProvider)
-    implements(IMinorModeProvider)
-
+    
     def getSidebars(self):
         yield ErrorLogSidebar
         yield DebugLogSidebar

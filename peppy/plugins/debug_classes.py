@@ -10,8 +10,8 @@ sync if this is shown on two different frames.
 
 import os
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
 from peppy.sidebar import *
 
 from wx.lib.pubsub import Publisher
@@ -121,7 +121,7 @@ class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
         assert self.dprint("index=%d checked=%s" % (index, self.debuglist.isChecked(index)))
         self.Check(index, self.debuglist.isChecked(index))
 
-class DebugClassProvider(Component):
+class DebugClassPlugin(IPeppyPlugin):
     """Plugin to show all classes capable of debug printing.
 
     This plugin manages the debug list and the debug menu.  Note that
@@ -130,9 +130,6 @@ class DebugClassProvider(Component):
     are hidden behind asserts, and asserts are removed when running in
     optimize mode.
     """
-    implements(ISidebarProvider)
-    implements(IMenuItemProvider)
-
     use_menu = False
 
     def getSidebars(self):

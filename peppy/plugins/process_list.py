@@ -11,8 +11,8 @@ import os
 import wx
 from wx.lib.pubsub import Publisher
 
+from peppy.yapsy.plugins import *
 from peppy.lib.processmanager import *
-from peppy.trac.core import *
 from peppy.sidebar import *
 
 class ProcessSidebar(Sidebar, ProcessList, debugmixin):
@@ -43,10 +43,8 @@ class ProcessSidebar(Sidebar, ProcessList, debugmixin):
         paneinfo.Bottom()
 
 
-class ProcessSidebarProvider(Component):
+class ProcessSidebarPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar
     """
-    implements(ISidebarProvider)
-
     def getSidebars(self):
         yield ProcessSidebar

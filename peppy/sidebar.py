@@ -18,10 +18,8 @@ import os,re
 
 import wx
 
-from trac.core import *
-
-from menu import *
-from debug import *
+from peppy.menu import *
+from peppy.debug import *
 from peppy.lib.userparams import *
 
 class SidebarShow(ToggleListAction):
@@ -115,7 +113,10 @@ class SidebarLoader(Component, debugmixin):
         
         SidebarLoader.sidebarmap={}
         
-        for ext in self.extensions:
+        plugins = [p for p in self.extensions]
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
+        plugins.extend(yapsy)
+        for ext in plugins:
             for sidebar in ext.getSidebars():
                 assert self.dprint("Registering frame sidebar %s" % sidebar.keyword)
                 SidebarLoader.sidebarmap[sidebar.keyword]=sidebar

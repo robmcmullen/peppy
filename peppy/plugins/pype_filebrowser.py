@@ -7,8 +7,8 @@ Adapter class around PyPE's FilesystemBrowser sidebar widget.
 
 import os
 
+from peppy.yapsy.plugins import *
 from peppy.menu import *
-from peppy.trac.core import *
 from peppy.sidebar import *
 
 import peppy.pype
@@ -41,8 +41,6 @@ class PyPEFileBrowser(FilesystemBrowser, Sidebar):
             self.frame.open(file)
         
 
-class FileBrowserProvider(Component):
-    implements(ISidebarProvider)
-
+class FileBrowserPlugin(IPeppyPlugin):
     def getSidebars(self):
         yield PyPEFileBrowser
