@@ -15,8 +15,6 @@ from peppy.debug import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 
-from peppy.trac.core import *
-
 class KeyboardConf(ClassPrefs, debugmixin):
     """Loader for keyboard configurations.
 
@@ -99,11 +97,22 @@ class KeyboardConf(ClassPrefs, debugmixin):
             lines.append("%s = %s" % (name, keymap[name]))
         fh.write(os.linesep.join(lines) + os.linesep)
 
+
 class KeyboardConfExtender(IPeppyPlugin):
-    def loadConf(self):
+    def activate(self):
+        IPeppyPlugin.activate(self)
+        Publisher().subscribe(self.loadConf, 'peppy.config.load')
+        Publisher().subscribe(self.saveConf, 'peppy.config.save')
+
+    def deactivate(self):
+        IPeppyPlugin.deactivate(self)
+        Publisher().unsubscribe(self.loadConf)
+        Publisher().unsubscribe(self.saveConf)
+
+    def loadConf(self, msg):
         KeyboardConf.platform = wx.GetApp().classprefs.key_bindings
         KeyboardConf.load()
     
-    def saveConf(self):
+    def saveConf(self, msg):
         pass
     
