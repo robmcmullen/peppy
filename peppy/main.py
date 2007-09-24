@@ -109,6 +109,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         BoolParam('show_splash', True),
         StrParam('default_text_mode', 'Fundamental'),
         StrParam('default_binary_mode', 'HexEdit'),
+        StrParam('default_text_encoding', 'latin1'),
         )
 
     config = None
@@ -181,6 +182,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         Publisher().sendMessage('peppy.startup.complete')
         self.splash.tick("Starting peppy...")
+
+        wx.SetDefaultPyEncoding(self.classprefs.default_text_encoding)
 
         return True
 
