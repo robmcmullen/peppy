@@ -86,7 +86,7 @@ class VersionedPluginManager(PluginManager):
 		"""
 		active = []
 		for plugin in self.all_plugins:
-			print "checking plugin %s" % plugin.name
+			print "checking plugin %s for interface %s" % (plugin.name, interface)
 			obj = plugin.plugin_object
 			if obj.is_activated:
 				print "  plugin %s activated!: mro=%s" % (obj, obj.__class__.__mro__)

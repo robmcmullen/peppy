@@ -198,15 +198,12 @@ class ImageViewMode(MajorMode):
 
 
 
-class ImageViewPlugin(MajorModeMatcherBase,debugmixin):
+class ImageViewPlugin(IPeppyPlugin, IMajorModePlugin, IMenuBarPlugin,
+                      IToolBarPlugin, debugmixin):
     """
     Image viewer plugin that registers the major mode and supplies the
     user interface actions so we can use the mode.
     """
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
-
     def possibleModes(self):
         yield ImageViewMode
     

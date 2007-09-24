@@ -685,7 +685,7 @@ class MajorModeMatcherBase(Component):
         """
         return []
 
-class IMajorModePlugin(IPeppyPlugin):
+class IMajorModePlugin(object):
     def possibleModes(self):
         """Return list of possible major modes.
 

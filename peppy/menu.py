@@ -20,6 +20,8 @@ from lib.iconstorage import *
 from lib.orderer import *
 from lib.wxemacskeybindings import *
 
+from peppy.yapsy.plugins import *
+
 class IMenuItemProvider(Interface):
     """Interface used to add user actions to the menu bar."""
     def getMenuItems():
@@ -50,6 +52,41 @@ class IKeyboardItemProvider(Interface):
     def getKeyboardItems():
         """Return the list of actions that are grouped together in the
         user interface."""
+
+# Yapsy plugin interfaces
+class IMenuBarPlugin(object):
+    """Interface used to add user actions to the menu bar."""
+    def getMenuItems():
+        """Return a 3-tuple (mode,menu,item), where each element is
+        defined as follows:
+
+        mode is a string or None.  A string specifies the major mode
+        by referring to its keyword, and None means it is a global
+        menu item and will appear in all major modes.
+
+        menu is a string that specifies the menu under which this item
+        will appear.
+
+        item is an instance of Menu, MenuItem, MenuItemGroup, or
+        Separator that is a wrapper around the action to be performed
+        when this menu item is selected."""
+        return []
+
+class IToolBarPlugin(object):
+    """Interface for a group of actions that are always available
+    through the user interface regardless of the L{MajorMode}."""
+    def getToolBarItems():
+        """Return the list of actions that are grouped together in the
+        user interface."""
+        return []
+
+class IKeyboardPlugin(object):
+    """Interface for keyboard actions that don't have equivalents
+    through the menu or toolbar interfaces."""
+    def getKeyboardItems(self):
+        """Return the list of actions that are grouped together in the
+        user interface."""
+        return []
 
 
 class Separator(DelayedOrderer):
@@ -818,7 +855,7 @@ class MenuBarActionMap(debugmixin):
 
 
 class MenuItemLoader(Component,debugmixin):
-    debuglevel=0
+    debuglevel=1
     extensions=ExtensionPoint(IMenuItemProvider)
 
     def load(self, frame, majors=[], minors=[], create=True):
@@ -833,9 +870,13 @@ class MenuItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         menumap=MenuBarActionMap(frame)
 
-        assert self.dprint(self.extensions)
-        later=[]
-        for extension in self.extensions:
+        extensions = [e for e in self.extensions]
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IMenuBarPlugin)
+        extensions.extend(yapsy)
+        assert self.dprint(extensions)
+
+        later = []
+        for extension in extensions:
             assert self.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getMenuItems():
                 if mode is None:
@@ -885,9 +926,13 @@ class ToolBarItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         toolmap=MenuBarActionMap(frame)
 
-        assert self.dprint(self.extensions)
+        extensions = [e for e in self.extensions]
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IToolBarPlugin)
+        extensions.extend(yapsy)
+        assert self.dprint(extensions)
+        
         later=[]
-        for extension in self.extensions:
+        for extension in extensions:
             assert self.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getToolBarItems():
                 if mode is None:
@@ -918,6 +963,8 @@ class KeyboardItemLoader(Component,debugmixin):
         KeyboardItemLoader.globalkeys=[]
         KeyboardItemLoader.modekeys={}
         
+        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects(IKeyboardPlugin)
+        self.extensions.extend(yapsy)
         for extension in self.extensions:
             assert self.dprint("collecting from extension %s" % extension)
             for mode,action in extension.getKeyboardItems():

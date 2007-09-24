@@ -59,7 +59,7 @@ class TextMode(FundamentalMode):
         )
     
 
-class TextModePlugin(IMajorModePlugin, debugmixin):
+class TextModePlugin(IPeppyPlugin, IMajorModePlugin, debugmixin):
     """Yapsy plugin to register TextMode.
     """
     def possibleModes(self):
