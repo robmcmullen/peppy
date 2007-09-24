@@ -40,6 +40,7 @@ import wx
 import wx.stc as stc
 import wx.lib.newevent
 
+from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import FloatMinibuffer
 from peppy.menu import *
 from peppy.major import *
@@ -50,7 +51,7 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
-from peppy.plugins.image_mode import *
+from peppy.plugins.image_mode import ZoomIn, ZoomOut, RectangularSelect
 
 from peppy.hsi import *
 
@@ -825,13 +826,9 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
         return lines
 
 
-class HSIPlugin(MajorModeMatcherBase,debugmixin):
+class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
-    implements(IMajorModeMatcher)
-    implements(IMinorModeProvider)
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
 
     def possibleModes(self):
         yield HSIMode

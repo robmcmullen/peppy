@@ -80,6 +80,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
+    standard_plugin_dirs = ['plugins', 'hsi']
 
     ##
     # This mapping controls the verbosity level required for debug
@@ -99,6 +100,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                    }
     default_classprefs = (
         StrParam('plugins', ''),
+        StrParam('plugin_dirs', ''),
         StrParam('recentfiles', 'recentfiles.txt'),
         StrParam('title_page', 'about:peppy'),
         StrParam('key_bindings', 'win'),
@@ -404,7 +406,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def gaugeCallback(self, plugin_info):
         self.splash.tick("Loading %s..." % plugin_info.name)
 
-    def countYapsyPlugins(self, plugindir='plugins'):
+    def countYapsyPlugins(self, userdirs=[]):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
@@ -412,17 +414,19 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         in the order returned by os.listdir.  No dependency ordering
         is done.
         """
-        autoloaddir = os.path.join(os.path.dirname(__file__), plugindir)
+        paths = [os.path.join(os.path.dirname(__file__), p) for p in self.standard_plugin_dirs]
+        paths.extend(userdirs)
+        
         self.plugin_manager = VersionedPluginManager(
             categories_filter={"Default": IPeppyPlugin},
-            directories_list=[autoloaddir],
+            directories_list=paths,
             plugin_info_ext="peppy-plugin",
             )
         # count the potential plugins that were be found
         count = self.plugin_manager.locatePlugins()
         return count
         
-    def autoloadYapsyPlugins(self, plugindir='plugins'):
+    def autoloadYapsyPlugins(self):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
