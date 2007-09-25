@@ -8,7 +8,8 @@ of versions of plugins
 
 import sys, os
 
-from peppy.yapsy.VersionedPluginManager import VersionedPluginManager
+from peppy.lib.userparams import getAllSubclassesOf
+from peppy.yapsy.VersionedPluginManager import VersionedPluginManager, VersionedPluginInfo
 
 class PeppyPluginManager(VersionedPluginManager):
 	"""
@@ -24,6 +25,24 @@ class PeppyPluginManager(VersionedPluginManager):
 					all.append(item)
 			self.all_plugins = all
 		return self.all_plugins
+
+	def activateBuiltins(self):
+		"""Activate any builtins.
+
+		Builtins are yapsy plugins that are imported directly into the
+		code, rather than loaded by searching through the filesystem.
+		This also makes it possible to load yapsy plugins through
+		other means, like through setuptools plugins.
+		"""
+		for cat, interface in self.categories_interfaces.iteritems():
+			subclasses = getAllSubclassesOf(interface)
+			for element in subclasses:
+				plugin_info = VersionedPluginInfo(element.__name__, "<builtin>")
+				plugin_info.plugin_object = element()
+				plugin_info.category = cat
+				self.category_mapping[cat].append(plugin_info)
+
+				plugin_info.plugin_object.activate()
 
 	def getActivePluginObjects(self, interface=None):
 		"""

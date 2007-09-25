@@ -160,9 +160,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.autoloadImports()
         if not main_is_frozen():
             self.autoloadStandardPlugins()
-            self.autoloadYapsyPlugins()
             self.splash.tick("Loading setuptools plugins...")
             self.autoloadSetuptoolsPlugins()
+            self.autoloadYapsyPlugins()
             
         self.splash.tick("Loading setuptools plugins...")
         self.parseConfigPlugins()
@@ -441,6 +441,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         in the order returned by os.listdir.  No dependency ordering
         is done.
         """
+        self.plugin_manager.activateBuiltins()
+        
         self.plugin_manager.loadPlugins(self.gaugeCallback)
         
         cats = self.plugin_manager.getCategories()
@@ -451,7 +453,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 dprint("  activating plugin %s" % plugin.plugin_object)
                 plugin.plugin_object.activate()
                 dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
-
 
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
