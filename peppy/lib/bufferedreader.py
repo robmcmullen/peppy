@@ -85,6 +85,10 @@ class BufferedReplacementReader(object):
         if self.debug: print "read %s from %d (%s)" % (size, self.pos, repr(txt))
         return txt
 
+    def close(self):
+        self.fh.close()
+        self.fh = None
+
 
 class BufferedReader(BufferedReplacementReader):
     """Buffered file-like object wrapper that reads the first n bytes
