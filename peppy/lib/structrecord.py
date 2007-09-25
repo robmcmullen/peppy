@@ -513,6 +513,30 @@ class Anchor(ComputeUnpack):
     def pack(self,fh,obj):
         setattr(obj,self._name,fh.tell())
 
+class UBInt32Checksum(ComputeUnpack):
+    debuglevel=0
+    _fmt = '>%dI'
+    
+    def __init__(self, name, anchor):
+        ComputeUnpack.__init__(self, name, None, 0)
+        self._anchor = anchor
+
+    def unpack(self, fh, obj):
+        save = fh.tell()
+        pos = getattr(obj, self._anchor)
+        fh.seek(pos)
+        bytes = fh.read(save - pos)
+        nums = struct.unpack(self._fmt % (len(bytes)/4), bytes)
+        #print nums
+        total = reduce(lambda a,b: a+b, nums)
+        total = (~total + 1) & 0xffffffff
+        setattr(obj, self._name, total)
+
+    def pack(self, fh, obj):
+        pass
+
+class ULInt32Checksum(UBInt32Checksum):
+    _fmt = '<%dI'
 
 class Pointer(Wrapper):
     debuglevel=0

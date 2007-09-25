@@ -909,6 +909,35 @@ class Testformatfields(BaseTest):
         BFloat64=5.6263470235565435e-221,
         )
 
+class Testchecksum(BaseTest):
+    typedef=(
+        Anchor('start'),
+        SLInt16('SLInt16'),
+        SBInt16('SBInt16'),
+        ULInt16('ULInt16'),
+        UBInt16('UBInt16'),
+        SLInt32('SLInt32'),
+        SBInt32('SBInt32'),
+        ULInt32('ULInt32'),
+        UBInt32('UBInt32'),
+        UBInt32Checksum('checksum', 'start'),
+        )
+    raw=''.join([
+        '\xfe\xff\xff\xfe\xfe\xff\xff\xfe',
+        '\xfe\xff\xff\xff\xff\xff\xff\xfe\xfe\xff\xff\xff\xff\xff\xff\xfe',
+        ])
+    values=ExampleData(
+        SLInt16=-2,
+        SBInt16=-2,
+        ULInt16=65534,
+        UBInt16=65534,
+        SLInt32=-2,
+        SBInt32=-2,
+        ULInt32=256*256*256*256-2,
+        UBInt32=256*256*256*256-2,
+        checksum=67108874,
+        )
+
 
     
 if __name__ == "__main__":
