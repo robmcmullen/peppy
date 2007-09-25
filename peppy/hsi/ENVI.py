@@ -10,7 +10,6 @@ data contained in the corresponding data file.
 import os,os.path,sys,re,csv,textwrap
 
 from peppy.iofilter import *
-from peppy.trac.core import *
 
 from cube import *
 import utils
@@ -436,13 +435,6 @@ class TextROI(roi.ROIFile):
 
 
 HyperspectralFileFormat.addDefaultHandler(Header)
-
-##class ENVIFormatProvider(Component):
-##    implements(IHyperspectralFileFormat)
-##    implements(roi.IHyperspectralROIFormat)
-    
-##    def supportedFormats(self):
-##        return [Header]
 
 ##    def supportedROIFormats(self):
 ##        return [TextROI]

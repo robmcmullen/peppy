@@ -21,8 +21,6 @@ from peppy.lib.gaugesplash import *
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 
-from trac.core import *
-
 #### py2exe support
 
 def main_is_frozen():
@@ -159,14 +157,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.splash.tick("Loading standard plugins...")
         self.autoloadImports()
         if not main_is_frozen():
-            self.autoloadStandardPlugins()
             self.splash.tick("Loading setuptools plugins...")
             self.autoloadSetuptoolsPlugins()
             self.autoloadYapsyPlugins()
             
-        self.splash.tick("Loading setuptools plugins...")
-        self.parseConfigPlugins()
-
         # Now that the remaining plugins and classes are loaded, we
         # can convert the rest of the configuration params
         self.splash.tick("Loading extra configuration...")
@@ -347,63 +341,17 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             return False
         return True
 
-    def loadPlugin(self, plugin, abort=True):
-        """Import a plugin from a module name
-
-        Given a module name (e.g. 'peppy.plugins.example_plugin',
-        import the module and trap any import errors.
-
-        @param: name of plugin to load
-        """
-        assert self.dprint("loading plugins from module=%s" % str(plugin))
-        # FIXME: make abort's default state be dependent on some
-        # configuration parameter
-        if abort:
-            mod=__import__(plugin)
-        else:
-            try:
-                mod=__import__(plugin)
-            except Exception,ex:
-                eprint("couldn't load plugin %s due to exception:" % plugin)
-                eprint(ex)
-
-    def loadPlugins(self,plugins):
-        """Import a list of plugins.
-
-        From either a list or a comma separated string, import a group
-        of plugins.
-
-        @param plugins: list or comma separated string of plugins to
-        load
-        """
-        if not isinstance(plugins,list):
-            plugins=[p.strip() for p in plugins.split(',')]
-        for plugin in plugins:
-            self.loadPlugin(plugin)
-
     def autoloadImports(self):
+        # FIXME: Could make mainmenu a plugin, but at least have to
+        # defer main menu loading till after the i18n '_' method is
+        # defined.
+        import mainmenu
+        
         # py2exe imports go here.
         if main_is_frozen():
             import py2exe_plugins
         pass
     
-    def autoloadStandardPlugins(self, plugindir='plugins'):
-        """Autoload plugins from peppy plugins directory.
-
-        All .py files that exist in the peppy.plugins directory are
-        loaded here.  Currently uses a naive approach by loading them
-        in the order returned by os.listdir.  No dependency ordering
-        is done.
-        """
-        autoloaddir = os.path.join(os.path.dirname(__file__), plugindir)
-        basemodule = self.__module__.rsplit('.', 1)[0]
-        for plugin in os.listdir(autoloaddir):
-            dprint(os.path.join(autoloaddir, plugin[:-3]+".peppy-plugin"))
-            if plugin.endswith(".py"):
-                if not os.path.exists(os.path.join(autoloaddir, plugin[:-3]+".peppy-plugin")):
-                    self.loadPlugin("%s.%s.%s" % (basemodule, plugindir,
-                                                  plugin[:-3]))
-
     def gaugeCallback(self, plugin_info):
         self.splash.tick("Loading %s..." % plugin_info.name)
 
@@ -450,7 +398,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
             dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
             for plugin in plugins:
-                dprint("  activating plugin %s" % plugin.plugin_object)
+                dprint("  activating plugin %s: %s" % (plugin.name, plugin.plugin_object.__class__.__mro__))
                 plugin.plugin_object.activate()
                 dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
 
@@ -462,23 +410,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         import peppy.lib.setuptools_utils
         peppy.lib.setuptools_utils.load_plugins(entry_point)
-
-    def parseConfigPlugins(self):
-        """Load plugins specified in the config file.
-
-        Additional plugins specified in the 'plugins' setting in the
-        Peppy setting of the config file, e.g.:
-
-          [Peppy]
-          plugins = pluginlib.plugin1, alternate.plugin.lib.pluginX
-
-        which means that the plugins must reside somewhere in the
-        PYTHONPATH.
-        """
-        mods=self.classprefs.plugins
-        assert self.dprint(mods)
-        if mods:
-            self.loadPlugins(mods)
 
     def initGraphics(self):
         try:

@@ -10,7 +10,6 @@ import cPickle as pickle
 
 import wx
 
-from trac.core import *
 from debug import *
 
 class HomeConfigDir:
@@ -74,53 +73,6 @@ class HomeConfigDir:
         fd = self.open(name, 'wb')
         pickle.dump(item, fd)
         fd.close()
-
-
-## Configuration extender interface for hooking into the load/save
-## configuration file process
-
-class IConfigurationExtender(Interface):
-    """Interface to add new configuration options to the application.
-
-    Implement L{loadConf} to add to the configuration settings before
-    the first frame appears.  Could also be used to load additional
-    settings not in the main configuration file.
-
-    Implement L{saveConf} to adjust configuration settings before any
-    are saved.  Could also be used to save additional settings not in
-    the main configuration file.
-    """
-
-    def loadConf(app):
-        """Load some configuration settings, possibly from an external
-        source like a file.
-
-        This is called after the application has loaded all the
-        plugins and the main configuration file.
-        """
-
-    def saveConf(app):
-        """Save configuration settings, possibly to an external file.
-
-        This is called before the main configuration file is written,
-        so additions to it are possible.
-        """
-
-class ConfigurationExtender(Component):
-    """ExtensionPoint that loads L{IConfigurationExtenders}.
-
-    Driver class that is used to call all the registered
-    IConfigurationExtenders during application init and shutdown.
-    """
-    extensions=ExtensionPoint(IConfigurationExtender)
-
-    def load(self,app):
-        for ext in self.extensions:
-            ext.loadConf(app)
-
-    def save(self,app):
-        for ext in self.extensions:
-            ext.saveConf(app)
 
 
 if __name__=='__main__':

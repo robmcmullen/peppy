@@ -8,11 +8,11 @@ import os
 
 import wx
 
+from peppy.yapsy.plugins import *
 from major import *
 from menu import *
 from buffers import *
 from debug import *
-from trac.core import *
 
 
 class NewTab(SelectAction):
@@ -278,15 +278,95 @@ class Paste(BufferModificationAction):
         return mode.stc.Paste()
 
 
+class MajorModeSelect(BufferBusyActionMixin, RadioAction):
+    name=_("Major Mode")
+    inline=False
+    tooltip=_("Switch major mode")
 
-class MainMenu(Component):
+    modes=None
+    items=None
+
+    def initPreHook(self):
+        currentmode = self.frame.getActiveMajorMode()
+        # FIXME: this should instead only get those major modes that
+        # are in active plugins
+        modes = MajorModeMatcherDriver.getActiveModes()
+
+        # Only display those modes that use the same type of STC as
+        # the current mode.
+        modes = [m for m in modes if m.stc_class == currentmode.stc_class]
+        
+        modes.sort(key=lambda s:s.keyword)
+        assert self.dprint(modes)
+        MajorModeSelect.modes = modes
+        names = [m.keyword for m in modes]
+        MajorModeSelect.items = names
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+
+    def getIndex(self):
+        modecls = self.frame.getActiveMajorMode().__class__
+        assert self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
+        if modecls is not None.__class__:
+            return MajorModeSelect.modes.index(modecls)
+        return 0
+                                           
+    def getItems(self):
+        return MajorModeSelect.items
+
+    def action(self, index=0, old=-1):
+        self.frame.changeMajorMode(MajorModeSelect.modes[index])
+
+
+class MinorModeShow(ToggleListAction):
+    name = _("Minor Modes")
+    inline = False
+    tooltip = _("Show or hide minor mode windows")
+
+    def getItems(self):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            return [m.caption for m in major.minor_panes]
+        return []
+
+    def isChecked(self, index):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            return major.minor_panes[index].IsShown()
+        return False
+
+    def action(self, index=0, old=-1):
+        major = self.frame.getActiveMajorMode()
+        if major is not None:
+            major.minor_panes[index].Show(not major.minor_panes[index].IsShown())
+            major._mgr.Update()
+
+
+class SidebarShow(ToggleListAction):
+    name=_("Sidebars")
+    inline=False
+    tooltip=_("Show or hide sidebar windows")
+
+    def getItems(self):
+        return [m.caption for m in self.frame.sidebar_panes]
+
+    def isChecked(self, index):
+        return self.frame.sidebar_panes[index].IsShown()
+
+    def action(self, index=0, old=-1):
+        self.frame.sidebar_panes[index].Show(not self.frame.sidebar_panes[index].IsShown())
+        self.frame._mgr.Update()
+
+
+
+
+class MainMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
     This provides the base menubar and toolbar that all major modes
     build upon.
     """
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
 
     default_menu=((None,Menu(_("File")).first()),
                   (_("File"),Menu(_("New")).first()),
@@ -314,8 +394,11 @@ class MainMenu(Component):
                   (_("Edit"),Separator(_("lastsep")).last()),
                   (None,Menu(_("Format")).after(_("Edit")).first()),
                   (None,Menu(_("View")).before(_("Major Mode"))),
-                  (_("View"),Separator(_("modes"))),
-                  (_("View"),Separator(_("sidebars"))),
+                  (_("View"),MenuItem(MajorModeSelect).first()),
+                  (_("View"),MenuItem(MinorModeShow).first()),
+                  (_("View"),Separator(_("modes")).first()),
+                  (_("View"),MenuItem(SidebarShow).first()),
+                  (_("View"),Separator(_("sidebars")).first()),
                   (_("View"),Separator(_("menusep"))),
                   (_("View"),Separator(_("end")).last()),
                   (None,Menu(_("Major Mode")).hide()),

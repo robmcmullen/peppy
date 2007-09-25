@@ -12,7 +12,6 @@ from cStringIO import StringIO
 
 from peppy.debug import *
 from peppy.iofilter import *
-from peppy.trac.core import *
 
 import numpy
 

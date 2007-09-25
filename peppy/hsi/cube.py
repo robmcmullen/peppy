@@ -13,7 +13,6 @@ import utils
 
 from peppy.debug import *
 
-from peppy.trac.core import *
 from peppy.iofilter import *
 
 from numpy.core.numerictypes import *

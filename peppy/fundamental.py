@@ -782,12 +782,7 @@ class FundamentalMode(BraceHighlightMixin,
 
 
 
-class FundamentalPlugin(MajorModeMatcherBase,debugmixin):
-    implements(IMajorModeMatcher)
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
-    implements(IKeyboardItemProvider)
-    
+class FundamentalPlugin(IPeppyPlugin):
     def possibleModes(self):
         yield FundamentalMode
     

@@ -13,7 +13,6 @@ import wx
 
 import weakref
 
-from trac.core import *
 from debug import *
 
 from lib.iconstorage import *
@@ -21,38 +20,6 @@ from lib.orderer import *
 from lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
-
-class IMenuItemProvider(Interface):
-    """Interface used to add user actions to the menu bar."""
-    def getMenuItems():
-        """Return a 3-tuple (mode,menu,item), where each element is
-        defined as follows:
-
-        mode is a string or None.  A string specifies the major mode
-        by referring to its keyword, and None means it is a global
-        menu item and will appear in all major modes.
-
-        menu is a string that specifies the menu under which this item
-        will appear.
-
-        item is an instance of Menu, MenuItem, MenuItemGroup, or
-        Separator that is a wrapper around the action to be performed
-        when this menu item is selected."""
-
-class IToolBarItemProvider(Interface):
-    """Interface for a group of actions that are always available
-    through the user interface regardless of the L{MajorMode}."""
-    def getToolBarItems():
-        """Return the list of actions that are grouped together in the
-        user interface."""
-
-class IKeyboardItemProvider(Interface):
-    """Interface for keyboard actions that don't have equivalents
-    through the menu or toolbar interfaces."""
-    def getKeyboardItems():
-        """Return the list of actions that are grouped together in the
-        user interface."""
-
 
 class Separator(DelayedOrderer):
     def __init__(self,name="-separator-",mode=None):
@@ -819,15 +786,16 @@ class MenuBarActionMap(debugmixin):
             
 
 
-class MenuItemLoader(Component,debugmixin):
-    debuglevel=0
-    extensions=ExtensionPoint(IMenuItemProvider)
-
-    def load(self, frame, majors=[], minors=[], create=True):
+class UserInterfaceLoader(debugmixin):
+    debuglevel = 0
+    
+    @classmethod
+    def loadMenu(cls, frame, majors=[], minors=[], create=True):
         """Load the global actions into the menu system.
 
-        Any L{Component} that implements the L{IMenuItemProvider}
-        interface will be loaded here and stuffed into the GUI.
+        Any L{IPeppyPlugin} that returns menu items through the
+        getMenuItems() method will be loaded here and stuffed into the
+        GUI.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
@@ -835,24 +803,22 @@ class MenuItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         menumap=MenuBarActionMap(frame)
 
-        extensions = [e for e in self.extensions]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
-        extensions.extend(yapsy)
-        assert self.dprint(extensions)
+        extensions = wx.GetApp().plugin_manager.getActivePluginObjects()
+        assert cls.dprint(extensions)
 
         later = []
         for extension in extensions:
-            assert self.dprint("collecting from extension %s" % extension)
+            assert cls.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getMenuItems():
                 if mode is None:
-                    assert self.dprint("global menu %s: processing group %s" % (menu,group))
+                    assert cls.dprint("global menu %s: processing group %s" % (menu,group))
                     menumap.addMenuItems(menu,group)
                 elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
         for menu,group in later:
-            assert self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
+            assert cls.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
             menumap.addMenuItems(menu,group)
 
         # create the menubar
@@ -872,18 +838,13 @@ class MenuItemLoader(Component,debugmixin):
 
         return menumap
 
-
-
-
-class ToolBarItemLoader(Component,debugmixin):
-    debuglevel=0
-    extensions=ExtensionPoint(IToolBarItemProvider)
-
-    def load(self,frame,majors=[],minors=[]):
+    @classmethod
+    def loadToolbar(cls, frame,majors=[],minors=[]):
         """Load actions into the toolbar system.
 
-        Any L{Component} that implements the L{IMenuItemProvider}
-        interface will be loaded here and stuffed into the GUI.
+        Any L{IPeppyPlugin} that returns toolbar items through the
+        getToolBarItems() method will be loaded here and stuffed into
+        the GUI.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
@@ -891,87 +852,84 @@ class ToolBarItemLoader(Component,debugmixin):
         # Generate the menu bar mapper
         toolmap=MenuBarActionMap(frame)
 
-        extensions = [e for e in self.extensions]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
-        extensions.extend(yapsy)
-        assert self.dprint(extensions)
+        extensions = wx.GetApp().plugin_manager.getActivePluginObjects()
+        assert cls.dprint(extensions)
         
         later=[]
         for extension in extensions:
-            assert self.dprint("collecting from extension %s" % extension)
+            assert cls.dprint("collecting from extension %s" % extension)
             for mode,menu,group in extension.getToolBarItems():
                 if mode is None:
-                    assert self.dprint("global menu %s: processing group %s" % (menu,group))
+                    assert cls.dprint("global menu %s: processing group %s" % (menu,group))
                     toolmap.addMenuItems(menu,group)
                 elif mode in majors or mode in minors:
                     # save the major mode & minor mode until the
                     # global menu is populated
                     later.append((menu,group))
         for menu,group in later:
-            assert self.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
+            assert cls.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
             toolmap.addMenuItems(menu,group)
 
         # create the menubar
         toolmap.populateToolBars()
 
         return toolmap
-    
-class KeyboardItemLoader(Component,debugmixin):
-    debuglevel=0
-    extensions=ExtensionPoint(IKeyboardItemProvider)
 
-    def __init__(self):
+    @classmethod
+    def setupKeys(cls):
         # Only call this once.
-        if hasattr(KeyboardItemLoader,'globalkeys'):
-            return self
+        if hasattr(cls, 'globalkeys'):
+            return
         
-        KeyboardItemLoader.globalkeys=[]
-        KeyboardItemLoader.modekeys={}
+        cls.globalkeys=[]
+        cls.modekeys={}
         
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
-        self.extensions.extend(yapsy)
-        for extension in self.extensions:
-            assert self.dprint("collecting from extension %s" % extension)
+        extensions = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for extension in extensions:
+            assert cls.dprint("collecting from extension %s" % extension)
             for mode,action in extension.getKeyboardItems():
                 if action.keyboard is None:
                     continue
                 
                 if mode is None:
-                    assert self.dprint("found global key %s" % (action.keyboard))
-                    KeyboardItemLoader.globalkeys.append(action)
+                    assert cls.dprint("found global key %s" % (action.keyboard))
+                    cls.globalkeys.append(action)
                 else:
-                    if mode not in KeyboardItemLoader.modekeys:
-                        KeyboardItemLoader.modekeys[mode]=[]
-                    assert self.dprint("found mode %s, key %s" % (mode,action.keyboard))
-                    KeyboardItemLoader.modekeys[mode].append(action)
+                    if mode not in cls.modekeys:
+                        cls.modekeys[mode]=[]
+                    assert cls.dprint("found mode %s, key %s" % (mode,action.keyboard))
+                    cls.modekeys[mode].append(action)
 
-    def load(self,frame,majors=[],minors=[]):
+    @classmethod
+    def loadKeys(cls, frame, majors=[], minors=[]):
         """Load actions into the keyboard handler.
 
-        Any L{Component} that implements the L{IKeyboardItemProvider}
-        interface will be loaded here and stuffed into the keyboard
-        handler.
+        Any L{IPeppyPlugin} that returns toolbar items through the
+        getKeyboardItems() method will be loaded here and stuffed into
+        the GUI.
 
         @param app: the main application object
         @type app: L{BufferApp<buffers.BufferApp>}
         """
+        cls.setupKeys()
+        
         # Generate the keyboard mapping
         keymap=KeyMap()
 
         # Global keymappings first
-        for action in KeyboardItemLoader.globalkeys:
+        for action in cls.globalkeys:
              keymap.define(action.keyboard,action(frame))
 
         # loop through major modes
         for mode in majors:
-            if mode in KeyboardItemLoader.modekeys:
-                for action in KeyboardItemLoader.modekeys[mode]:
+            if mode in cls.modekeys:
+                for action in cls.modekeys[mode]:
                     keymap.define(action.keyboard,action(frame))
 
         # loop through minor modes
         for mode in minors:
-            if mode in KeyboardItemLoader.modekeys:
-                for action in KeyboardItemLoader.modekeys[mode]:
+            if mode in cls.modekeys:
+                for action in cls.modekeys[mode]:
                     keymap.define(action.keyboard,action(frame))
 
         return keymap

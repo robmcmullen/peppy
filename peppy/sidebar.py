@@ -8,10 +8,9 @@ can exist outside of) a major mode.
 A sidebar is created by subclassing from some wx.Window object and
 using the Sidebar mixin.
 
-Registering your sidebar means creating a trac.core.Component that
-implements the L{ISidebarProvider} interface.  This Component can
-also implement L{IMenuItemProvider} and L{IToolBarItemProvider} to
-provide other user interface elements.
+Registering your sidebar means creating a yapsy plugin extending the
+IPeppyPlugin interface that returns a list of sidebars through the
+getSidebars method.
 """
 
 import os,re
@@ -22,24 +21,8 @@ from peppy.menu import *
 from peppy.debug import *
 from peppy.lib.userparams import *
 
-class SidebarShow(ToggleListAction):
-    name=_("Sidebars")
-    inline=False
-    tooltip=_("Show or hide sidebar windows")
 
-    def getItems(self):
-        return [m.caption for m in self.frame.sidebar_panes]
-
-    def isChecked(self, index):
-        return self.frame.sidebar_panes[index].IsShown()
-
-    def action(self, index=0, old=-1):
-        self.frame.sidebar_panes[index].Show(not self.frame.sidebar_panes[index].IsShown())
-        self.frame._mgr.Update()
-
-
-
-class Sidebar(ClassPrefs):
+class Sidebar(ClassPrefs, debugmixin):
     """Mixin class for all frame sidebars.
 
     A frame sidebar is generally used to create a new UI window in a
@@ -56,7 +39,35 @@ class Sidebar(ClassPrefs):
         IntParam('min_height', 100),
         BoolParam('show', True),
         )
-    
+
+    @classmethod
+    def getSidebarMap(cls):
+        # Only call this once.
+        if hasattr(Sidebar,'sidebarmap'):
+            return cls.sidebarmap
+        
+        cls.sidebarmap={}
+        
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for ext in plugins:
+            for sidebar in ext.getSidebars():
+                #dprint("Registering frame sidebar %s" % sidebar.keyword)
+                cls.sidebarmap[sidebar.keyword]=sidebar
+        return cls.sidebarmap
+
+    @classmethod
+    def getClasses(cls, frame, sidebarlist=[]):
+        #dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
+        classes = []
+        sidebarmap = cls.getSidebarMap()
+        for keyword in sidebarlist:
+            keyword = keyword.strip()
+            if keyword in sidebarmap:
+                #self.dprint("found %s" % keyword)
+                sidebar = sidebarmap[keyword]
+                classes.append(sidebar)
+        return classes
+
     def __init__(self, frame):
         self.frame=frame
         
@@ -87,56 +98,3 @@ class Sidebar(ClassPrefs):
         does anything with it.
         """
         pass
-    
-
-
-class ISidebarProvider(Interface):
-    """
-    Add a frame sidebar to a new frame.
-    """
-
-    def getSidebars():
-        """
-        Return iterator containing list of frame sidebars.
-        """
-
-class SidebarLoader(Component, debugmixin):
-    debuglevel=0
-    
-    extensions=ExtensionPoint(ISidebarProvider)
-    implements(IMenuItemProvider)
-
-    def __init__(self):
-        # Only call this once.
-        if hasattr(SidebarLoader,'sidebarmap'):
-            return self
-        
-        SidebarLoader.sidebarmap={}
-        
-        plugins = [p for p in self.extensions]
-        yapsy = wx.GetApp().plugin_manager.getActivePluginObjects()
-        plugins.extend(yapsy)
-        for ext in plugins:
-            for sidebar in ext.getSidebars():
-                assert self.dprint("Registering frame sidebar %s" % sidebar.keyword)
-                SidebarLoader.sidebarmap[sidebar.keyword]=sidebar
-
-    default_menu=((_("View"), MenuItem(SidebarShow).first().after(_("sidebars"))),
-                  )
-
-    def getMenuItems(self):
-        for menu, item in self.default_menu:
-            yield (None, menu, item)
-
-
-    def getClasses(self,frame,sidebarlist=[]):
-        assert self.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
-        classes = []
-        for keyword in sidebarlist:
-            keyword = keyword.strip()
-            if keyword in SidebarLoader.sidebarmap:
-                assert self.dprint("found %s" % keyword)
-                sidebar = SidebarLoader.sidebarmap[keyword]
-                classes.append(sidebar)
-        return classes
-

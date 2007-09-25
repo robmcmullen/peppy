@@ -17,9 +17,8 @@ from configprefs import *
 from stcinterface import *
 from iofilter import *
 from major import *
-from sidebar import SidebarLoader
+from sidebar import *
 from debug import *
-from trac.core import *
 from dialogs import *
 
 class BufferList(GlobalList):
@@ -447,7 +446,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if sidebar_list is not None:
             sidebar_names = sidebar_list.split(',')
             assert self.dprint("loading %s" % sidebar_names)
-            sidebars = SidebarLoader(ComponentManager()).getClasses(self,sidebar_names)
+            sidebars = Sidebar.getClasses(self,sidebar_names)
             for sidebarcls in sidebars:
                 self.createSidebar(sidebarcls)
             self.createSidebarList()
@@ -512,18 +511,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         bar.Show()
     
     def setKeys(self,majormodes=[],minormodes=[]):
-        comp_mgr=ComponentManager()
-        keyloader=KeyboardItemLoader(comp_mgr)
-        keymap=keyloader.load(self,majormodes,minormodes)
+        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
         self.keys.setGlobalKeyMap(keymap)
         self.keys.clearMinorKeyMaps()
         
     def setMenumap(self,majormodes=[],minormodes=[]):
-        comp_mgr=ComponentManager()
-        menuloader=MenuItemLoader(comp_mgr)
         #MenuItemLoader.debuglevel=1
         #MenuBarActionMap.debuglevel=1
-        self.menumap=menuloader.load(self,majormodes,minormodes)
+        self.menumap=UserInterfaceLoader.loadMenu(self,majormodes,minormodes)
         self.keys.addMinorKeyMap(self.menumap.keymap)
         #get_all_referrers(SelectAction)
 
@@ -559,9 +554,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self._mgr.DetachPane(tb)
                 tb.Destroy()
                 
-        comp_mgr=ComponentManager()
-        toolloader=ToolBarItemLoader(comp_mgr)
-        self.toolmap=toolloader.load(self,majormodes,minormodes)
+        self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
         self.keys.addMinorKeyMap(self.toolmap.keymap)
 
         for tb in self.toolmap.toolbars:

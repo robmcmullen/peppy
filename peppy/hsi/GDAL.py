@@ -16,7 +16,6 @@ import cube
 import gdal
 
 from peppy.debug import *
-from peppy.trac.core import *
 from peppy.iofilter import *
 
 import numpy
@@ -232,12 +231,6 @@ class GDALCube(cube.Cube):
         return s
 
 HyperspectralFileFormat.addDefaultHandler(GDALDataset)
-##class GDALFormatProvider(Component):
-##    implements(cube.IHyperspectralFileFormat)
-    
-##    def supportedFormats(self):
-##        return [GDALDataset]
-
 
 
 if __name__ == "__main__":
