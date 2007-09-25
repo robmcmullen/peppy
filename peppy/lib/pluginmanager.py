@@ -53,7 +53,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
             print plugins
             self.plugins.extend(plugins)
-        print self.plugins
+        dprint(self.plugins)
         # Sort first by name, then by version number
         self.plugins.sort(key=lambda s:(s.name, s.version))
         
@@ -83,12 +83,12 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
         index = 0
         list_count = self.GetItemCount()
         for plugin in self.plugins:
-            print plugin.name
+            dprint(plugin.name)
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, plugin.name)
             else:
                 self.SetStringItem(index, 0, plugin.name)
-            print plugin.version
+            dprint(plugin.version)
             self.SetStringItem(index, 1, str(plugin.version))
 
             self.CheckItem(index, plugin.plugin_object.is_activated)
@@ -167,7 +167,8 @@ class PluginPanel(PrefPanel):
         
     def create(self):
         row = 0
-        order = ['name', 'path', 'author', 'version', 'website', 'copyright']
+        order = ['name', 'path', 'author', 'version', 'website', 'copyright',
+                 'description']
         for info in order:
             title = wx.StaticText(self, -1, info)
             self.sizer.Add(title, (row,0))
@@ -290,7 +291,7 @@ if __name__ == "__main__":
     cats = app.plugin_manager.getCategories()
     for cat in cats:
         plugins = app.plugin_manager.getPluginsOfCategory(cat)
-        print plugins
+        dprint(plugins)
 
     dlg = PluginDialog(None, app.plugin_manager)
     dlg.Show(True)

@@ -14,7 +14,7 @@ from peppy.configprefs import *
 from peppy.debug import *
 
 from peppy.yapsy.plugins import *
-from peppy.yapsy.VersionedPluginManager import *
+from peppy.yapsy.PeppyPluginManager import *
 
 from peppy.iofilter import *
 from peppy.lib.gaugesplash import *
@@ -418,7 +418,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         paths = [os.path.join(os.path.dirname(__file__), p) for p in self.standard_plugin_dirs]
         paths.extend(userdirs)
         
-        self.plugin_manager = VersionedPluginManager(
+        self.plugin_manager = PeppyPluginManager(
             categories_filter={"Default": IPeppyPlugin},
             directories_list=paths,
             plugin_info_ext="peppy-plugin",
