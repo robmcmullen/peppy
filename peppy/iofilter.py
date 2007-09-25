@@ -4,8 +4,6 @@ import os,re,urlparse
 import urllib2
 from cStringIO import StringIO
 
-import wx
-
 from lib.bufferedreader import *
 
 from debug import *
@@ -122,9 +120,15 @@ class URLHandler(debugmixin):
     """
     default_openers = []
 
+    plugin_manager = None
+
     @classmethod
     def addDefaultOpener(cls, opener):
         cls.default_openers.append(opener)
+        
+    @classmethod
+    def setPluginManager(cls, pm):
+        cls.plugin_manager = pm
         
     @classmethod
     def getOpener(cls):
@@ -135,9 +139,10 @@ class URLHandler(debugmixin):
             # once -- it doesn't work calling build_opener more than once,
             # because it forgets all the previous user defined handlers.
             urlhandlers = [h for h in cls.default_openers]
-            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-            for plugin in plugins:
-                urlhandlers.extend(plugin.getURLHandlers())
+            if cls.plugin_manager is not None:
+                plugins = cls.plugin_manager.getActivePluginObjects()
+                for plugin in plugins:
+                    urlhandlers.extend(plugin.getURLHandlers())
 
             assert dprint(urlhandlers)
             cls.opener = urllib2.build_opener(*urlhandlers)
