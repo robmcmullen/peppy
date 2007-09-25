@@ -231,12 +231,12 @@ class GDALCube(cube.Cube):
         s=numpy.frombuffer(bytes, self.data_type)
         return s
 
-
-class GDALFormatProvider(Component):
-    implements(cube.IHyperspectralFileFormat)
+HyperspectralFileFormat.addDefaultHandler(GDALDataset)
+##class GDALFormatProvider(Component):
+##    implements(cube.IHyperspectralFileFormat)
     
-    def supportedFormats(self):
-        return [GDALDataset]
+##    def supportedFormats(self):
+##        return [GDALDataset]
 
 
 

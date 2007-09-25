@@ -435,16 +435,17 @@ class TextROI(roi.ROIFile):
         return group
 
 
+HyperspectralFileFormat.addDefaultHandler(Header)
 
-class ENVIFormatProvider(Component):
-    implements(IHyperspectralFileFormat)
-    implements(roi.IHyperspectralROIFormat)
+##class ENVIFormatProvider(Component):
+##    implements(IHyperspectralFileFormat)
+##    implements(roi.IHyperspectralROIFormat)
     
-    def supportedFormats(self):
-        return [Header]
+##    def supportedFormats(self):
+##        return [Header]
 
-    def supportedROIFormats(self):
-        return [TextROI]
+##    def supportedROIFormats(self):
+##        return [TextROI]
 
 if __name__ == "__main__":
     from optparse import OptionParser

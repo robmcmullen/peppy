@@ -4,8 +4,8 @@ from utils import *
 
 __all__ = ['Cube', 'MetadataMixin', 'normalizeUnits',
            'LittleEndian', 'BigEndian',
-           'IHyperspectralFileFormat', 'HyperspectralFileFormat',
+           'HyperspectralFileFormat',
            'ROI', 'ROIFile',
-           'IHyperspectralROIFormat', 'HyperspectralROIFormat',
+           'HyperspectralROIFormat',
            'spectralAngle', 'resample',
            ]

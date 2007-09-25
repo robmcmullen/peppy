@@ -29,20 +29,24 @@ else:
 byteordertext=['<','>']
 
 
-# Trac plugin for registering new HSI readers
-
-class IHyperspectralFileFormat(Interface):
-    def supportedFormats():
-        """Return a list of classes that this plugin defines.
-        """
-    
-class HyperspectralFileFormat(Component):
-    handlers = ExtensionPoint(IHyperspectralFileFormat)
-
+class HyperspectralFileFormat(object):
     loaded = False
 
-    @staticmethod
-    def discover():
+    default_handlers = []
+    handlers = []
+
+    plugin_manager = None
+
+    @classmethod
+    def addDefaultHandler(cls, handler):
+        cls.default_handlers.append(handler)
+
+    @classmethod
+    def setPluginManager(cls, pm):
+        cls.plugin_manager = pm
+        
+    @classmethod
+    def discover(cls):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
@@ -53,24 +57,28 @@ class HyperspectralFileFormat(Component):
 
         import peppy.lib.setuptools_utils
         peppy.lib.setuptools_utils.load_plugins("peppy.hsi.plugins")
+
+        cls.handlers = [h for h in cls.default_handlers]
+        if cls.plugin_manager is not None:
+            plugins = cls.plugin_manager.getActivePluginObjects()
+            for plugin in plugins:
+                cls.handlers.extend(plugin.supportedFormats())
         
         HyperspectralFileFormat.loaded = True
 
-    @staticmethod
-    def identifyall(urlinfo):
-        HyperspectralFileFormat.discover()
+    @classmethod
+    def identifyall(cls, urlinfo):
+        cls.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
-        comp_mgr = ComponentManager()
-        register = HyperspectralFileFormat(comp_mgr)
-        dprint("handlers: %s" % register.handlers)
+        
+        dprint("handlers: %s" % cls.handlers)
         matches = []
-        for loader in register.handlers:
-            for format in loader.supportedFormats():
-                dprint("checking %s for %s format" % (urlinfo, format.format_name))
-                if format.identify(urlinfo):
-                    dprint("Possible match for %s format" % format.format_name)
-                    matches.append(format)
+        for format in cls.handlers:
+            dprint("checking %s for %s format" % (urlinfo, format.format_name))
+            if format.identify(urlinfo):
+                dprint("Possible match for %s format" % format.format_name)
+                matches.append(format)
         order = []
         for match in matches:
             # It is possible that the file can be loaded as more than
@@ -90,19 +98,19 @@ class HyperspectralFileFormat(Component):
             order.extend(matches)
         return order
 
-    @staticmethod
-    def identify(urlinfo):
-        matches = HyperspectralFileFormat.identifyall(urlinfo)
+    @classmethod
+    def identify(cls, urlinfo):
+        matches = cls.identifyall(urlinfo)
         if len(matches)>0:
             return matches[0]
         return None
 
-    @staticmethod
-    def load(urlinfo):
-        HyperspectralFileFormat.discover()
+    @classmethod
+    def load(cls, urlinfo):
+        cls.discover()
         if not isinstance(urlinfo, URLInfo):
             urlinfo = URLInfo(urlinfo)
-        matches = HyperspectralFileFormat.identifyall(urlinfo)
+        matches = cls.identifyall(urlinfo)
         for format in matches:
             dprint("Loading %s format cube" % format.format_name)
             dataset = format(urlinfo)

@@ -15,20 +15,17 @@ from peppy.hsi.utils import *
 
 from peppy.debug import *
 from peppy.iofilter import *
-from peppy.trac.core import *
 
 import numpy
 
 # Trac plugin for registering new HSI readers
 
-class IHyperspectralROIFormat(Interface):
-    def supportedROIFormats():
-        """Return a list of classes that this plugin defines.
-        """
-    
-class HyperspectralROIFormat(Component):
-    handlers = ExtensionPoint(IHyperspectralROIFormat)
-
+##class IHyperspectralROIFormat(Interface):
+##    def supportedROIFormats():
+##        """Return a list of classes that this plugin defines.
+##        """
+   
+class HyperspectralROIFormat(object):
     @staticmethod
     def identify(urlinfo):
         if not isinstance(urlinfo, URLInfo):

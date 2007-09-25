@@ -790,6 +790,7 @@ class MajorModeMatcherDriver(Component, debugmixin):
 
         # Add Yapsy plugins into list
         plugins = [p for p in driver.plugins]
+        dprint(plugins)
         yapsy = app.plugin_manager.getActivePluginObjects()
         dprint(yapsy)
         plugins.extend(yapsy)
