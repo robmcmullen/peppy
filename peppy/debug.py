@@ -54,12 +54,19 @@ def eprint(str=''):
 
 class debugmixin(object):
     debuglevel=0
-        
-    def dprint(self,str='',level=1):
-        if not hasattr(self,'debuglevel') or self.debuglevel>=level:
+
+    @classmethod
+    def dprint(cls,str='',level=1):
+        if not hasattr(cls, 'debuglevel') or cls.debuglevel>=level:
             caller=inspect.stack()[1]
-            dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],caller[0].f_locals['self'].__class__.__name__,caller[3],str,os.linesep))
+            dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls.__name__,caller[3],str,os.linesep))
         return True
+
+##    def dprint(self,str='',level=1):
+##        if not hasattr(self,'debuglevel') or self.debuglevel>=level:
+##            caller=inspect.stack()[1]
+##            dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],caller[0].f_locals['self'].__class__.__name__,caller[3],str,os.linesep))
+##        return True
 
 # Get a list of "all" objects as seen by the garbage collector.
 # Snarfed this code from
