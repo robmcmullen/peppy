@@ -346,6 +346,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # defer main menu loading till after the i18n '_' method is
         # defined.
         import mainmenu
+        import fundamental
         
         # py2exe imports go here.
         if main_is_frozen():
