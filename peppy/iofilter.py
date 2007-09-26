@@ -169,9 +169,9 @@ class URLHandler(debugmixin):
         Theoretically, webdav can be used to write to an http scheme
         url, but I haven't figured that out yet.
         """
-        assert self.dprint("trying to open %s" % info.url)
+        assert cls.dprint("trying to open %s" % info.url)
         if info.protocol == "file":
-            assert self.dprint("saving to file %s" % info.path)
+            assert cls.dprint("saving to file %s" % info.path)
             fh = open(info.path, "wb")
             return fh
         raise IOError("protocol %s not supported for writing" % info.protocol)
