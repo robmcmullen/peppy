@@ -552,17 +552,9 @@ class PeppySTC(PeppyBaseSTC):
 
 
     def OnModified(self, evt):
-##        assert self.dprint("""OnModified
-##        Mod type:     %s
-##        At position:  %d
-##        Lines added:  %d
-##        Text Length:  %d
-##        Text:         %s\n""" % ( self.transModType(evt.GetModificationType()),
-##                                  evt.GetPosition(),
-##                                  evt.GetLinesAdded(),
-##                                  evt.GetLength(),
-##                                  repr(evt.GetText()) ))
-        assert self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+        # NOTE: on really big insertions, evt.GetText can cause a
+        # MemoryError on MSW, so I've commented this dprint out.
+        #assert self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
 
         # Since the stc doesn't store the EOL state as an undoable
         # parameter, we have to check for it.
