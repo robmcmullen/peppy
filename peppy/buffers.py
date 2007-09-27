@@ -135,16 +135,11 @@ class Buffer(debugmixin):
     def initSTC(self):
         self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
-    def createMajorMode(self,frame,modeclass=None):
-        if modeclass:
-            viewer=modeclass(self,frame)
-        else:
-            viewer=self.defaultmode(self,frame) # create new view
-        self.viewers.append(viewer) # keep track of views
+    def addViewer(self, mode):
+        self.viewers.append(mode) # keep track of views
         assert self.dprint("views of %s: %s" % (self,self.viewers))
-        return viewer
 
-    def remove(self,view):
+    def removeViewer(self,view):
         assert self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
@@ -313,15 +308,15 @@ class LoadingBuffer(debugmixin):
         self.busy = True
         self.readonly = False
         self.modified = False
+        self.defaultmode = LoadingMode
 
-    def createMajorMode(self, frame, modeclass=None):
-        mode = LoadingMode(self, frame) # create new view
-        return mode
-
-    def save(self, url):
+    def addViewer(self, mode):
         pass
 
-    def remove(self, mode):
+    def removeViewer(self, mode):
+        pass
+
+    def save(self, url):
         pass
 
     def getTabName(self):
@@ -671,21 +666,28 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.setTitle()
         self.tabs.updateTitle(major)
 
+    def createMajorMode(self, buffer, requested=None):
+        if not requested:
+            requested = buffer.defaultmode
+        mode = requested(buffer, self)
+        buffer.addViewer(mode)
+        return mode
+
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
-        mode=buffer.createMajorMode(self)
+        mode=self.createMajorMode(buffer)
         assert self.dprint("setting buffer to new view %s" % mode)
         self.tabs.replaceCurrentTab(mode)
 
-    def changeMajorMode(self,requested):
-        mode=self.getActiveMajorMode()
+    def changeMajorMode(self, requested):
+        mode = self.getActiveMajorMode()
         if mode:
-            newmode=mode.buffer.createMajorMode(self,requested)
+            newmode = self.createMajorMode(mode.buffer, requested)
             assert self.dprint("new mode=%s" % newmode)
             self.tabs.replaceCurrentTab(newmode)
 
     def newBuffer(self,buffer):
-        mode=buffer.createMajorMode(self)
+        mode=self.createMajorMode(buffer)
         assert self.dprint("major mode=%s" % mode)
         self.tabs.addTab(mode)
         assert self.dprint("after addViewer")
@@ -715,7 +717,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             # If we get an exception, it won't get added to the buffer list
         
             BufferList.addBuffer(buffer)
-            newmode=buffer.createMajorMode(self)
+            newmode = self.createMajorMode(buffer)
             assert self.dprint("major mode=%s" % newmode)
             self.tabs.replaceTab(oldmode, newmode)
             assert self.dprint("after addViewer")
