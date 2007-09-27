@@ -17,6 +17,25 @@ elogfh=sys.stderr
 __all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'debugmixin',
            'get_all_objects', 'get_all_referrers']
 
+# Found an obscure bug while working on Windows: the call to dprint
+# was failing in Peppy.getConfigFilePath when called from
+# boa.getUserConfigFile because the call to inspect.callers() was
+# throwing an IndexError.  Found a reference to that being a bug in
+# Python's inspect module:
+
+# http://lists.xensource.com/archives/html/xen-users/2007-03/msg00713.html
+# Work around a bug in Python's inspect module: findsource is supposed
+# raise IOError if it fails, with other functions in that module
+# coping with that, but some people are seeing IndexError raised from
+# there.
+if hasattr(inspect, 'findsource'):
+    real_findsource = getattr(inspect, 'findsource')
+    def findsource(*args, **kwargs):
+        try:
+            return real_findsource(*args, **kwargs)
+        except IndexError, exn:
+            raise IOError(exn)
+    inspect.findsource = findsource
 
 def debuglog(file):
     global dlogfh
