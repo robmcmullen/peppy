@@ -107,6 +107,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         BoolParam('one_instance', True),
         IntParam('binary_percentage', 10),
         IntParam('magic_size', 1024),
+        BoolParam('load_threaded', True),
         BoolParam('show_splash', True),
         StrParam('default_text_mode', 'Fundamental'),
         StrParam('default_binary_mode', 'HexEdit'),

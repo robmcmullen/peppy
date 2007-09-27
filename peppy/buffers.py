@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os,re
+import os, re, threading
 from cStringIO import StringIO
 
 import wx
@@ -226,7 +226,8 @@ class Buffer(debugmixin):
         self.openGUIThreadSuccess()
 
     def revert(self):
-        fh=self.url.getReader()
+        # don't use the buffered reader: get a new file handle
+        fh=self.url.getDirectReader()
         self.stc.ClearAll()
         self.stc.readFrom(fh)
         self.modified=False
@@ -306,7 +307,7 @@ class LoadingMode(MajorMode):
 
     def createPostHook(self):
         self.showBusy(True)
-        wx.CallAfter(self.frame.openReplace, self.stc.url, self)
+        wx.CallAfter(self.frame.openStart, self.stc.url, self)
 
 class LoadingBuffer(debugmixin):
     def __init__(self, url):
@@ -329,7 +330,30 @@ class LoadingBuffer(debugmixin):
     def getTabName(self):
         return _("Loading...")
 
+class BufferLoadThread(threading.Thread, debugmixin):
+    """Background file loading thread.
+    """
+    def __init__(self, frame, buffer, mode_to_replace):
+        threading.Thread.__init__(self)
+        
+        self.frame = frame
+        self.buffer = buffer
+        self.mode_to_replace = mode_to_replace
 
+        self.start()
+
+    def run(self):
+        dprint("starting to load %s" % self.buffer.url)
+        try:
+            self.buffer.openBackgroundThread()
+            wx.CallAfter(self.frame.openSuccess, self.buffer,
+                         self.mode_to_replace)
+            dprint("successfully loaded %s" % self.buffer.url)
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
+            dprint("Exception: %s" % str(e))
+            wx.CallAfter(self.frame.openFailure, self.buffer, str(e))
 
 
 
@@ -715,52 +739,34 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         buffer = LoadingBuffer(url)
         self.newBuffer(buffer)
 
-    def openReplace(self, url, oldmode):
-        """Replace the displayed mode with the new mode"""
-        
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
-        try:
-            buffer=Buffer(url)
-            buffer.open(self.dummyframe)
-            # If we get an exception, it won't get added to the buffer list
-        
-            BufferList.addBuffer(buffer)
-            newmode = self.createMajorMode(buffer)
-            assert self.dprint("major mode=%s" % newmode)
-            self.tabs.replaceTab(oldmode, newmode)
-            assert self.dprint("after addViewer")
-            msg=newmode.getWelcomeMessage()
-        except Exception, e:
-            import traceback
-            error = traceback.format_exc()
-            msg = "Failed opening %s.  " % url
-            Publisher().sendMessage('peppy.log.error', msg)
-            Publisher().sendMessage('peppy.log.error', error)
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+    def openStart(self, url, mode_to_replace):
+        buffer = Buffer(url)
+        buffer.openGUIThreadStart(self.dummyframe)
+        if wx.GetApp().classprefs.load_threaded:
+            thread = BufferLoadThread(self, buffer, mode_to_replace)
+        else:
+            wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
+            try:
+                buffer.openBackgroundThread()
+                self.openSuccess(buffer, mode_to_replace)
+            except Exception, e:
+                self.openFailure(buffer, str(e))
+            wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+
+    def openSuccess(self, buffer, mode_to_replace):
+        buffer.openGUIThreadSuccess()
+        BufferList.addBuffer(buffer)
+        mode = self.createMajorMode(buffer)
+        assert self.dprint("major mode=%s" % mode)
+        self.tabs.replaceTab(mode_to_replace, mode)
+        assert self.dprint("after addViewer")
+        msg = mode.getWelcomeMessage()
         self.SetStatusText(msg)
-        
-    def openNonThreaded(self,url,newTab=True,mode=None):
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
-        try:
-            buffer=Buffer(url, mode)
-            buffer.open(self.dummyframe)
-            # If we get an exception, it won't get added to the buffer list
-        
-            mode=self.getActiveMajorMode()
-            BufferList.addBuffer(buffer)
-            if not newTab or (mode is not None and mode.temporary):
-                self.setBuffer(buffer)
-            else:
-                self.newBuffer(buffer)
-                mode=self.getActiveMajorMode()
-                msg=mode.getWelcomeMessage()
-        except Exception, e:
-            import traceback
-            error = traceback.format_exc()
-            msg = "Failed opening %s.  " % url
-            Publisher().sendMessage('peppy.log.error', msg)
-            Publisher().sendMessage('peppy.log.error', error)
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+
+    def openFailure(self, buffer, error):
+        msg = "Failed opening %s.  " % buffer.url
+        Publisher().sendMessage('peppy.log.error', msg)
+        Publisher().sendMessage('peppy.log.error', error)
         self.SetStatusText(msg)
 
     def save(self):        
