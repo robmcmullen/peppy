@@ -156,10 +156,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         self.splash.tick("Loading standard plugins...")
         self.autoloadImports()
-        if not main_is_frozen():
-            self.splash.tick("Loading setuptools plugins...")
-            self.autoloadSetuptoolsPlugins()
-            self.autoloadYapsyPlugins()
+        self.splash.tick("Loading setuptools plugins...")
+        self.autoloadSetuptoolsPlugins()
+        self.autoloadYapsyPlugins()
             
         # Now that the remaining plugins and classes are loaded, we
         # can convert the rest of the configuration params
