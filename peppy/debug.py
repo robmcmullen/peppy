@@ -53,22 +53,28 @@ def errorlog(file):
 
 def dprint(str=''):
     caller=inspect.stack()[1]
-    namespace=caller[0].f_locals
-    if 'self' in namespace:
-        cls=namespace['self'].__class__.__name__+'.'
-    else:
-        cls=''
-    dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    try:
+        namespace=caller[0].f_locals
+        if 'self' in namespace:
+            cls=namespace['self'].__class__.__name__+'.'
+        else:
+            cls=''
+        dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    finally:
+        del caller
     return True
 
 def eprint(str=''):
     caller=inspect.stack()[1]
-    namespace=caller[0].f_locals
-    if 'self' in namespace:
-        cls=namespace['self'].__class__.__name__+'.'
-    else:
-        cls=''
-    elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    try:
+        namespace=caller[0].f_locals
+        if 'self' in namespace:
+            cls=namespace['self'].__class__.__name__+'.'
+        else:
+            cls=''
+        elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+    finally:
+        del caller
     return True
 
 class debugmixin(object):
@@ -78,7 +84,10 @@ class debugmixin(object):
     def dprint(cls,str='',level=1):
         if not hasattr(cls, 'debuglevel') or cls.debuglevel>=level:
             caller=inspect.stack()[1]
-            dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls.__name__,caller[3],str,os.linesep))
+            try:
+                dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls.__name__,caller[3],str,os.linesep))
+            finally:
+                del caller
         return True
 
 ##    def dprint(self,str='',level=1):
