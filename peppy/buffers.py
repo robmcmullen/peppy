@@ -109,7 +109,7 @@ class Buffer(debugmixin):
 
     filenames={}
     
-    def __init__(self,url=None,fh=None,mystc=None,stcparent=None,defaultmode=None):
+    def __init__(self, url, defaultmode=None):
         Buffer.count+=1
         self.busy = False
         self.readonly = False
@@ -124,13 +124,10 @@ class Buffer(debugmixin):
 
         self.modified=False
 
-        if mystc:
-            self.initSTC(mystc,stcparent)
-        else:
-            # defer STC initialization until we know the subclass
-            self.stc=None
+        self.stc=None
 
-        self.open(url, stcparent)
+        self.setURL(url)
+        #self.open(url, stcparent)
 
     def initSTC(self):
         self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
@@ -164,8 +161,12 @@ class Buffer(debugmixin):
     def setURL(self, url):
         if not url:
             url=URLInfo("file://untitled")
+        elif not isinstance(url, URLInfo):
+            url = URLInfo(url)
         self.url = url
-        basename=url.getBasename()
+
+    def setName(self):
+        basename=self.url.getBasename()
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count
@@ -194,19 +195,19 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self, url, stcparent):
-        if not isinstance(url, URLInfo):
-            url = URLInfo(url)
-        self.dprint("url: %s" % repr(url))
+    def openGUIThreadStart(self, stcparent):
+        self.dprint("url: %s" % repr(self.url))
         if self.defaultmode is None:
-            self.defaultmode = MajorModeMatcherDriver.match(url)
+            self.defaultmode = MajorModeMatcherDriver.match(self.url)
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(stcparent)
-        self.stc.open(url)
 
-        # if no exceptions, it must have worked.
-        self.setURL(url)
+    def openBackgroundThread(self):
+        self.stc.open(self.url)
+
+    def openGUIThreadSuccess(self):
+        self.setName()
 
         if isinstance(self.stc,PeppySTC):
             self.initSTC()
@@ -218,7 +219,12 @@ class Buffer(debugmixin):
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.
         Publisher().sendMessage('buffer.opened', self)
-    
+
+    def open(self, stcparent):
+        self.openGUIThreadStart(stcparent)
+        self.openBackgroundThread()
+        self.openGUIThreadSuccess()
+
     def revert(self):
         fh=self.url.getReader()
         self.stc.ClearAll()
@@ -240,6 +246,7 @@ class Buffer(debugmixin):
             self.stc.SetSavePoint()
             if url is not None and url!=self.url:
                 self.setURL(saveas)
+                self.setName()
             self.modified = False
             self.readonly = self.url.readonly()
             self.showModifiedAll()
@@ -302,7 +309,7 @@ class LoadingMode(MajorMode):
         wx.CallAfter(self.frame.openReplace, self.stc.url, self)
 
 class LoadingBuffer(debugmixin):
-    def __init__(self, url=None, stcparent=None):
+    def __init__(self, url):
         self.url = url
         self.stc = LoadingSTC(url)
         self.busy = True
@@ -705,7 +712,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 ##        self.newBuffer(buffer)
 
     def open(self, url):
-        buffer = LoadingBuffer(url, stcparent=self.dummyframe)
+        buffer = LoadingBuffer(url)
         self.newBuffer(buffer)
 
     def openReplace(self, url, oldmode):
@@ -713,7 +720,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
-            buffer=Buffer(url, stcparent=self.dummyframe)
+            buffer=Buffer(url)
+            buffer.open(self.dummyframe)
             # If we get an exception, it won't get added to the buffer list
         
             BufferList.addBuffer(buffer)
@@ -734,7 +742,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def openNonThreaded(self,url,newTab=True,mode=None):
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
-            buffer=Buffer(url,stcparent=self.dummyframe,defaultmode=mode)
+            buffer=Buffer(url, mode)
+            buffer.open(self.dummyframe)
             # If we get an exception, it won't get added to the buffer list
         
             mode=self.getActiveMajorMode()
