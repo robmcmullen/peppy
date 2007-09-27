@@ -10,8 +10,9 @@ import sys, os
 
 from peppy.lib.userparams import getAllSubclassesOf
 from peppy.yapsy.VersionedPluginManager import VersionedPluginManager, VersionedPluginInfo
+from peppy.debug import *
 
-class PeppyPluginManager(VersionedPluginManager):
+class PeppyPluginManager(VersionedPluginManager, debugmixin):
 	"""
 	Manage several plugins by ordering them in several categories with
 	versioning capabilities.
@@ -34,8 +35,10 @@ class PeppyPluginManager(VersionedPluginManager):
 		This also makes it possible to load yapsy plugins through
 		other means, like through setuptools plugins.
 		"""
+		#dprint("checking %s" % self.categories_interfaces)
 		for cat, interface in self.categories_interfaces.iteritems():
 			subclasses = getAllSubclassesOf(interface)
+			#dprint("subclasses = %s" % subclasses)
 			for element in subclasses:
 				plugin_info = VersionedPluginInfo(element.__name__, "<builtin>")
 				plugin_info.plugin_object = element()
