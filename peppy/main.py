@@ -502,20 +502,8 @@ def run(options={},args=None):
         sys.exit()
 
     from buffers import BufferFrame
-    frame=BufferFrame(peppy)
+    frame=BufferFrame(args)
     frame.Show(True)
-    bad=[]
-    if args:
-        for filename in args:
-            try:
-                frame.open(filename)
-            except IOError:
-                bad.append(filename)
-
-    frame.showTitleIfNecessary()
-        
-    if len(bad)>0:
-        frame.SetStatusText("Failed loading %s" % ", ".join([f for f in bad]))
 
     peppy.stopSplash()
     peppy.MainLoop()

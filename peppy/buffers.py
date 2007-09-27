@@ -199,10 +199,12 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def open(self, urlstring, stcparent):
-        url = URLInfo(urlstring)
+    def open(self, url, stcparent):
+        if not isinstance(url, URLInfo):
+            url = URLInfo(url)
         self.dprint("url: %s" % repr(url))
-        self.defaultmode = MajorModeMatcherDriver.match(url)
+        if self.defaultmode is None:
+            self.defaultmode = MajorModeMatcherDriver.match(url)
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(stcparent)
@@ -273,7 +275,60 @@ class Buffer(debugmixin):
         if changed!=self.modified:
             self.modified=changed
             wx.CallAfter(self.showModifiedAll)
-        
+
+
+
+class LoadingSTC(NonResidentSTC):
+    def __init__(self, url):
+        self.url = url
+
+    def GetText(self):
+        return str(self.url)
+    
+class LoadingMode(MajorMode):
+    """
+    A temporary Major Mode to load another mode in the background
+    """
+    keyword = 'Loading...'
+    temporary = True
+    
+    stc_class = LoadingSTC
+
+    def createEditWindow(self,parent):
+        win=wx.Window(parent, -1)
+        text=self.buffer.stc.GetText()
+        lines=wx.StaticText(win, -1, text, (10,10))
+        lines.Wrap(500)
+        self.stc = self.buffer.stc
+        return win 
+
+    def createPostHook(self):
+        self.showBusy(True)
+        wx.CallAfter(self.frame.openReplace, self.stc.url, self)
+
+class LoadingBuffer(debugmixin):
+    def __init__(self, url=None, stcparent=None):
+        self.url = url
+        self.stc = LoadingSTC(url)
+        self.busy = True
+        self.readonly = False
+        self.modified = False
+
+    def createMajorMode(self, frame, modeclass=None):
+        mode = LoadingMode(self, frame) # create new view
+        return mode
+
+    def save(self, url):
+        pass
+
+    def remove(self, mode):
+        pass
+
+    def getTabName(self):
+        return _("Loading...")
+
+
+
 
 
 
@@ -326,7 +381,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             # ourselves.
             self.frame.switchMode()
         
-    def replaceTab(self,mode):
+    def replaceCurrentTab(self,mode):
         index=self.GetSelection()
         if index<0:
             self.addTab(mode)
@@ -339,6 +394,20 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
                 oldmode.deleteWindow()
                 #del oldmode
             self.SetSelection(index)
+
+    def replaceTab(self, oldmode, newmode):
+        index = self.GetPageIndex(oldmode)
+        if index == wx.NOT_FOUND:
+            self.addTab(newmode)
+        else:
+            assert self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, newmode))
+            self.InsertPage(index, newmode, newmode.getTabName(), bitmap=getIconBitmap(newmode.icon))
+            oldmode=self.GetPage(index+1)
+            self.RemovePage(index+1)
+            if oldmode:
+                oldmode.deleteWindow()
+                #del oldmode
+            self.SetSelection(index)            
         
     def getCurrent(self):
         index = self.GetSelection()
@@ -393,7 +462,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         BufferFrame.dummyframe=wx.Frame(None)
         BufferFrame.dummyframe.Show(False)
 
-    def __init__(self, id=-1):
+    def __init__(self, urls=[], id=-1):
         BufferFrame.frameid+=1
         self.name="peppy: Frame #%d" % BufferFrame.frameid
 
@@ -436,6 +505,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         Publisher().subscribe(self.pluginsChanged, 'peppy.plugins.changed')
         wx.GetApp().SetTopWindow(self)
+
+        if urls:
+            for url in urls:
+                wx.CallAfter(self.open, url)
+        else:
+            wx.CallAfter(self.showTitleIfNecessary)
+                
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
@@ -599,14 +675,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # this gets a default view for the selected buffer
         mode=buffer.createMajorMode(self)
         assert self.dprint("setting buffer to new view %s" % mode)
-        self.tabs.replaceTab(mode)
+        self.tabs.replaceCurrentTab(mode)
 
     def changeMajorMode(self,requested):
         mode=self.getActiveMajorMode()
         if mode:
             newmode=mode.buffer.createMajorMode(self,requested)
             assert self.dprint("new mode=%s" % newmode)
-            self.tabs.replaceTab(newmode)
+            self.tabs.replaceCurrentTab(newmode)
 
     def newBuffer(self,buffer):
         mode=buffer.createMajorMode(self)
@@ -620,8 +696,40 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def showTitleIfNecessary(self):
         if len(BufferList.storage)==0:
             self.titleBuffer()
+
+##    def open(self, url):
+##        buffer = Buffer(url, stcparent=self.dummyframe,
+##                        defaultmode=LoadingMode)
+##        self.newBuffer(buffer)
+
+    def open(self, url):
+        buffer = LoadingBuffer(url, stcparent=self.dummyframe)
+        self.newBuffer(buffer)
+
+    def openReplace(self, url, oldmode):
+        """Replace the displayed mode with the new mode"""
         
-    def open(self,url,newTab=True,mode=None):
+        wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
+        try:
+            buffer=Buffer(url, stcparent=self.dummyframe)
+            # If we get an exception, it won't get added to the buffer list
+        
+            BufferList.addBuffer(buffer)
+            newmode=buffer.createMajorMode(self)
+            assert self.dprint("major mode=%s" % newmode)
+            self.tabs.replaceTab(oldmode, newmode)
+            assert self.dprint("after addViewer")
+            msg=newmode.getWelcomeMessage()
+        except Exception, e:
+            import traceback
+            error = traceback.format_exc()
+            msg = "Failed opening %s.  " % url
+            Publisher().sendMessage('peppy.log.error', msg)
+            Publisher().sendMessage('peppy.log.error', error)
+        wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
+        self.SetStatusText(msg)
+        
+    def openNonThreaded(self,url,newTab=True,mode=None):
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
             buffer=Buffer(url,stcparent=self.dummyframe,defaultmode=mode)
