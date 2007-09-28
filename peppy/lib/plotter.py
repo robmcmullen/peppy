@@ -1,11 +1,18 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+#-----------------------------------------------------------------------------
+# Name:        plotter.py
+# Purpose:     Plotting utilities on top of wx.lib.plot
+#
+# Author:      Rob McMullen
+#
+# Created:     2007
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2007 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
 """Plotting utilities on top of wx.lib.plot
 """
 
 import os,sys,re,random
-
-from peppy.debug import *
 
 import wx
 import wx.lib.plot as plot
@@ -18,42 +25,66 @@ except:
     # stubs so things that use peppy.debug can operate without peppy
     def dprint(txt=""):
         #print txt
-        pass
+        return True
 
     class debugmixin(object):
         def dprint(self, txt):
-            pass
+            #print txt
+            return True
 
 
 class PlotProxy(object):
+    """Proxy object that represents a bunch of lines to be plotted in
+    a MultiPlotter.
+    """
     def __init__(self):
         self.title='title'
         self.xlabel='xlabel'
         self.ylabel='ylabel'
         self.xaxis=[0,100]
         self.yaxis=[0,100]
-        self.rgblookup=['red','green','blue']
 
         self.lines=[]
 
         # listeners are MultiPlotters that are looking at this data
         self.listeners=[]
 
-    def getLines(self, x, y):
+    def getLines(self, x=0, y=0):
+        """Users should override this to return a list of
+        plot.Polyline instances that represent the data to be plotted.
+
+        The x and y values are optional and are dependent on the user
+        application to have passed them in through updateLines.
+        """
         return []
 
-    def updateLines(self, x, y):
+    def updateLines(self, x=0, y=0):
+        """Called by other objects to reset the internal state of the
+        PlotProxy.
+
+        Coordinates x and y can optionally be specified in case the
+        user proxy needs to do something on a user click of those
+        coordinates.
+        """
         # dprint("PlotProxy: update (%d,%d)" % (x,y))
         self.lines=self.getLines(x,y)
 
     def addListener(self, plotter):
+        """Add a MultiPlotter as a listener.
+
+        It's possible that more than one MultiPlotter will be
+        interested in the same data.  This keeps track of which
+        plotter is interested and updates them when the data changes.
+        """
         self.listeners.append(plotter)
         # dprint("%s: listeners=%s" % (__name__,self.listeners))
 
     def getListeners(self):
+        """Returns the list of MultiPlotter listeners"""
         return self.listeners
     
     def updateListeners(self,skip=[]):
+        """Force any listeners to update their plots"""
         for listener in self.listeners:
             if listener in skip:
                 # dprint("skipping listener: %s" % str(listener))
@@ -64,38 +95,20 @@ class PlotProxy(object):
                 listener.update()
 
     def updateListenerExtrema(self):
+        """Update the extrema of any listeners"""
         for listener in self.listeners:
             listener.updateExtrema()
 
 
-class TestPlotProxy(PlotProxy):
-    def __init__(self):
-        PlotProxy.__init__(self)
-        
-        self.title='Test'
-        self.xlabel='x'
-        self.ylabel='y'
-        self.xaxis=(0,10)
-        self.yaxis=(0,10)
-        
-    def getLines(self, x, y):
-        # dprint("TestPlotProxy: (%d,%d)" % (x,y))
-        data=numpy.zeros((10,2))
-        data[:,0]=numpy.arange(10)
-        y = range(10)
-        random.shuffle(y)
-        data[:,1]=numpy.array(y)
-        line = plot.PolyLine(data, legend= 'random', colour='orange')
-        return [line]
-
-
 class MultiPlotter(plot.PlotCanvas, debugmixin):
-    def __init__(self, parent, id=-1, proxy=None, grid=True, legend=True, fullscale=True, frame=None):
+    """Plot control that can handle multiple PlotProxy objects
+    """
+    
+    def __init__(self, parent, id=-1, proxy=None, grid=True, legend=True, fullscale=True, statusbarframe=None):
         plot.PlotCanvas.__init__(self, parent, id)
 
         self.proxies=[]
         self.setProxy(proxy)
-        self.rgblookup=['red','green','blue']
         self.graph=None
         self.xfullscale=fullscale
         self.yfullscale=fullscale
@@ -107,7 +120,11 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         self._snapToValues=True
         self._gridColour=wx.Colour(150,150,150)
 
-        self._frame = frame
+        if statusbarframe is not None:
+            self._statusbarframe = statusbarframe
+        elif hasattr(parent, 'SetStatusText'):
+            self._statusbarframe = parent
+            
         self.SetPointLabelFunc(self.drawPointLabel)
         # self.SetEnablePointLabel(True)
         self.last_PointLabel = None
@@ -125,12 +142,20 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         self.SetYSpec('auto')
 
     def setProxy(self, proxy, clear=True):
+        """Adds the PlotProxy, clearing the previous list of proxies
+        by default.
+
+        Unless clear is False, this will reset the list of proxies to
+        only contain the specified PlotProxy object.
+        """
         if clear:
             # FIXME: remove self from existing proxy listeners
             self.proxies=[]
         self.addProxy(proxy)
 
     def addProxy(self, proxy):
+        """Add the PlotProxy to the current list of proxies.
+        """
         if proxy is not None:
             if type(proxy) in [list,tuple]:
                 for p in proxy:
@@ -141,9 +166,10 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
                 proxy.addListener(self)
             self.setup()
 
-    # From a list of (min,max) pairs, return the overall min and max
-    # from the list
     def getExtrema(self,extrema):
+        """From a list of (min,max) pairs, return the overall min and
+        max from the list.
+        """
         lo=min([a for a,b in extrema])
         hi=max([b for a,b in extrema])
         # dprint("extrema: (%d,%d)" % (lo,hi))
@@ -174,6 +200,9 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         self.yaxis=self.getYAxis()
 
     def update(self):
+        """Force the control to recreate its list of lines and redraw
+        itself.
+        """
         #dprint("Found %d proxies" % len(self.proxies))
         if len(self.proxies)==0: return
         
@@ -193,6 +222,13 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
             self.Draw(self.graph,self.xaxis,self.yaxis)
 
     def findNearest(self, x, y):
+        """Find the nearest point to the cursor.
+
+        Instead of using a euclidian distance calculation, use a
+        faster method by first limiting the points to those closest to
+        the cursor in the x direction.  Then, chose the one closest in
+        the y direction.
+        """
         # first, find closest point in each line to the x coordinate
         nearlist=[]
         graphics, xAxis, yAxis= self.last_draw
@@ -239,6 +275,8 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         return nearest
 
     def OnMotion(self, evt):
+        """Show the crosshair if the left button is down."""
+        
         if self._snapToValues and evt.LeftIsDown():
             x,y=self.GetXY(evt)
             nearest=self.findNearest(x,y)
@@ -246,6 +284,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         plot.PlotCanvas.OnMotion(self, evt)
 
     def OnMouseLeftDown(self, evt):
+        """Start the crosshair display on left button press."""
         if self._snapToValues:
             x,y=self.GetXY(evt)
             nearest=self.findNearest(x,y)
@@ -253,6 +292,7 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         plot.PlotCanvas.OnMouseLeftDown(self, evt)
 
     def OnMouseLeftUp(self, evt):
+        """Stop the crosshair display"""
         if self._snapToValues:
             self.OnLeave(evt)
         plot.PlotCanvas.OnMouseLeftDown(self, evt)
@@ -272,25 +312,67 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
         dc.SetLogicalFunction(wx.COPY)
         
         x,y = nearest["pointXY"] # data values
-        if self._frame:
-            self._frame.SetStatusText("%s: x = %.4f, y = %.4f" % (nearest['legend'],x,y))
+        if self._statusbarframe:
+            self._statusbarframe.SetStatusText("%s: x = %.4f, y = %.4f" % (nearest['legend'],x,y))
 
 
 if __name__ == "__main__":
+    class TestPlotProxy(PlotProxy):
+        def __init__(self, legend):
+            PlotProxy.__init__(self)
+            self.legend = legend
+            self.title='Test'
+            self.xlabel='x'
+            self.ylabel='y'
+            self.xaxis=(0,500)
+            self.yaxis=(0,500)
+
+        def getLines(self, x, y):
+            # dprint("TestPlotProxy: (%d,%d)" % (x,y))
+            data=numpy.zeros((500,2))
+            data[:,0]=numpy.arange(500)
+            y = range(500)
+            random.shuffle(y)
+            data[:,1]=numpy.array(y)
+            line = plot.PolyLine(data, legend=self.legend, colour='orange')
+            return [line]
+
     app   = wx.PySimpleApp()
     frame = wx.Frame(None, -1, title='MultiPlotter and PlotProxy Test', size=(500,500))
-    
-    # Add a multiplotter
-    plotter = MultiPlotter(frame)
+    frame.CreateStatusBar()
     sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(plotter,  1, wx.EXPAND | wx.ALL, 5)
+    
+    # Add a static multiplotter
+    staticplot = MultiPlotter(frame)
+    sizer.Add(staticplot,  1, wx.EXPAND | wx.ALL, 5)
 
     # Add some proxies
-    t1 = TestPlotProxy()
-    plotter.addProxy(t1)
-    t1.update(0,0)
-    plotter.update()
+    t1 = TestPlotProxy('static')
+    staticplot.addProxy(t1)
+    t1.updateLines(0,0)
+    staticplot.update()
+
+    # Add a dynamic plotter
+    dynplot = MultiPlotter(frame)
+    sizer.Add(dynplot,  1, wx.EXPAND | wx.ALL, 5)
+    line = TestPlotProxy('dynamic')
+    line.updateLines(0,0)
+    dynplot.addProxy(line)
+    dynplot.update()
+
+    def OnNotify():
+        line.updateLines(0, 0)
+        line.updateListeners()
+        timer.Start(timeout)
     
+    timeout = 50
+    timer = wx.PyTimer(OnNotify)
+    timer.Start(timeout)
+
+    def OnClose(evt):
+        timer.Stop()
+        app.ExitMainLoop()
+    frame.Bind(wx.EVT_CLOSE,OnClose)
     frame.SetAutoLayout(1)
     frame.SetSizer(sizer)
     frame.Show(1)

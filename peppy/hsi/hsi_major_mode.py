@@ -689,7 +689,7 @@ class HSIPlotMinorMode(MinorMode, plotter.MultiPlotter, plotter.PlotProxy):
     plot_proxy = None
 
     def __init__(self, major, parent):
-        plotter.MultiPlotter.__init__(self, parent, frame=major.frame)
+        plotter.MultiPlotter.__init__(self, parent, statusbarframe=major.frame)
 
         self.major = major
 
