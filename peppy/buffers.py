@@ -203,8 +203,8 @@ class Buffer(debugmixin):
 
         self.stc = self.defaultmode.stc_class(stcparent)
 
-    def openBackgroundThread(self):
-        self.stc.open(self.url)
+    def openBackgroundThread(self, progress_message=None):
+        self.stc.open(self.url, progress_message)
 
     def openGUIThreadSuccess(self):
         self.setName()
@@ -333,27 +333,29 @@ class LoadingBuffer(debugmixin):
 class BufferLoadThread(threading.Thread, debugmixin):
     """Background file loading thread.
     """
-    def __init__(self, frame, buffer, mode_to_replace):
+    def __init__(self, frame, buffer, mode_to_replace, progress=None):
         threading.Thread.__init__(self)
         
         self.frame = frame
         self.buffer = buffer
         self.mode_to_replace = mode_to_replace
+        self.progress = progress
 
         self.start()
 
     def run(self):
         dprint("starting to load %s" % self.buffer.url)
         try:
-            self.buffer.openBackgroundThread()
+            self.buffer.openBackgroundThread(self.progress.message)
             wx.CallAfter(self.frame.openSuccess, self.buffer,
-                         self.mode_to_replace)
+                         self.mode_to_replace, self.progress)
             dprint("successfully loaded %s" % self.buffer.url)
         except Exception, e:
             import traceback
             traceback.print_exc()
             dprint("Exception: %s" % str(e))
-            wx.CallAfter(self.frame.openFailure, self.buffer, str(e))
+            wx.CallAfter(self.frame.openFailure, self.buffer, str(e),
+                         self.progress)
 
 
 
@@ -743,7 +745,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         buffer = Buffer(url)
         buffer.openGUIThreadStart(self.dummyframe)
         if wx.GetApp().classprefs.load_threaded:
-            thread = BufferLoadThread(self, buffer, mode_to_replace)
+            statusbar = mode_to_replace.getStatusBar()
+            statusbar.startProgress("Loading %s" % url, message=str(mode_to_replace))
+            thread = BufferLoadThread(self, buffer, mode_to_replace, statusbar)
         else:
             wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
             try:
@@ -753,7 +757,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.openFailure(buffer, str(e))
             wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
-    def openSuccess(self, buffer, mode_to_replace):
+    def openSuccess(self, buffer, mode_to_replace, progress):
         buffer.openGUIThreadSuccess()
         BufferList.addBuffer(buffer)
         mode = self.createMajorMode(buffer)
@@ -761,13 +765,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.tabs.replaceTab(mode_to_replace, mode)
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
-        self.SetStatusText(msg)
+        if progress:
+            progress.stopProgress(msg)
+        else:
+            self.SetStatusText(msg)
 
-    def openFailure(self, buffer, error):
+    def openFailure(self, buffer, error, progress):
         msg = "Failed opening %s.  " % buffer.url
         Publisher().sendMessage('peppy.log.error', msg)
         Publisher().sendMessage('peppy.log.error', error)
-        self.SetStatusText(msg)
+        if progress:
+            progress.stopProgress(msg)
+        else:
+            self.SetStatusText(msg)
 
     def save(self):        
         mode=self.getActiveMajorMode()

@@ -20,6 +20,7 @@ import os
 import wx
 from wx.lib import buttons
 from wx.lib import imageutils
+from wx.lib.pubsub import Publisher
 
 from iconstorage import *
 
@@ -134,7 +135,7 @@ class PeppyStatusBar(wx.StatusBar):
                 widget.SetSize((rect.width, rect.height))
         self.sizeChanged = False
 
-    def startProgress(self, text, max=100, cancel=False):
+    def startProgress(self, text, max=100, cancel=False, message=None):
         self.cancelled = False
         
         self.SetStatusText(text)
@@ -159,11 +160,22 @@ class PeppyStatusBar(wx.StatusBar):
             crect.width = tw
             grect.x -= tw
             self.overlays.append((button, crect))
+
+        if message:
+            Publisher().subscribe(self.updateMessage, message)
+            self.message = message
             
         self.Reposition()
 
     def updateProgress(self, value):
-        self.gauge.SetValue(value)
+        if value < 0:
+            self.gauge.Pulse()
+        else:
+            self.gauge.SetValue(value)
+
+    def updateMessage(self, msg):
+        value = msg.data
+        wx.CallAfter(self.updateProgress, value)
 
     def OnCancel(self, evt):
         self.cancelled = True
@@ -181,4 +193,6 @@ class PeppyStatusBar(wx.StatusBar):
             self.SetStatusText(text)
         self.overlays = []
         self.gauge = None
+        Publisher().unsubscribe(self.updateMessage)
+        self.message = None
         

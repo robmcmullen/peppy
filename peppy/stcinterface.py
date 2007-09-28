@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os,re
+import os, re, time
 
 import wx
 import wx.stc
@@ -109,12 +109,13 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
-    def open(self, url):
+    def open(self, url, message=None):
         """Read from the specified url to populate the STC.
         
         Abstract method that subclasses use to read data into the STC.
 
         @param url: URLInfo object used to read the file
+        @param message: optional message used to update a progress bar
         """
         pass
 
@@ -197,6 +198,8 @@ class STCProxy(object):
 class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
     """
+    debuglevel = 0
+    
     eol2int = {'\r': wx.stc.STC_EOL_CR,
                '\r\n': wx.stc.STC_EOL_CRLF,
                '\n': wx.stc.STC_EOL_LF,
@@ -235,24 +238,40 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     def removeSubordinate(self,otherstc):
         self.subordinates.remove(otherstc)
 
-    def open(self, url):
+    def open(self, url, message=None):
         fh = url.getReader()
-        self.readFrom(fh)
+        length = url.getLength()
+        chunk = 65536
+        if length/chunk > 100:
+            chunk *= 4
+        self.readFrom(fh, chunk=chunk, length=length, message=message)
         self.detectLineEndings()
     
-    def readFrom(self, fh, size=None):
-        if size is not None:
-            txt = fh.read(size)
-        else:
-            txt = fh.read()
-        assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
+    def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
+        total = 0
+        while amount is None or total<amount:
+            txt = fh.read(chunk)
+            assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
 
-        # Now, need to convert it to two bytes per character
-        if len(txt) > 0:
-            styledtxt = '\0'.join(txt)+'\0'
-            assert self.dprint("styledtxt: length=%d" % len(styledtxt))
-            
-            self.AddStyledText(styledtxt)
+            if len(txt) > 0:
+                total += len(txt)
+                if message:
+                    # Negative value will switch the progress bar to
+                    # pulse mode
+                    Publisher().sendMessage(message, (total*100)/length)
+                
+                # need to convert it to two bytes per character as
+                # that's the only way to load binary data into
+                # Scintilla.  First byte is the content, 2nd byte is
+                # styling (which we set to zero)
+                styledtxt = '\0'.join(txt)+'\0'
+                assert self.dprint("styledtxt: length=%d" % len(styledtxt))
+
+                self.AddStyledText(styledtxt)
+            else:
+                # stop when we reach the end.  An exception will be
+                # handled outside this class
+                break
     
     def writeTo(self, fh):
         numchars = self.GetTextLength()

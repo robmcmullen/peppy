@@ -93,6 +93,13 @@ class TestGetReader:
         eq_(url.protocol,'shell')
         eq_(url.path,'eliza')
 
+    def testFileSize(self):
+        url = URLInfo("file:samples/sample.txt")
+        fh = url.getDirectReader()
+        print fh.info()
+        eq_(url.getLength(), 1009)
+        eq_(url.getType(), 'text/plain')
+
 ##    def testWindowsFile(self):
 ##        fh=GetReader("file://c:/some/path.txt",usewin=True)
 ##        #eq_(url.url, "file:/c:/some/path.txt")

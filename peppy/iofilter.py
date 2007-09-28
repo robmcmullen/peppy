@@ -15,6 +15,7 @@ class URLInfo(debugmixin):
     def __init__(self, url, default="file", usewin=None):
         self.url = url
         self.bfh = None # Buffered file reader
+        self.info = {}
         
         (self.protocol, self.netloc, self.path, self.parameters,
          self.query_string, self.fragment) = urlparse.urlparse(self.url, default)
@@ -107,7 +108,20 @@ class URLInfo(debugmixin):
         if self.protocol == 'file':
             fh.tell = fh.fp.tell
             fh.seek = fh.fp.seek
+        for key in fh.info():
+            #print key
+            self.info[key] = fh.info()[key]
         return fh
+
+    def getLength(self):
+        if 'content-length' in self.info:
+            return int(self.info['content-length'])
+        return -1
+
+    def getType(self):
+        if 'content-type' in self.info:
+            return self.info['content-type']
+        return None
 
     def getWriter(self):
         fh = URLHandler.urlwriter(self)
