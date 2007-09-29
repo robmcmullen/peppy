@@ -500,6 +500,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         IntParam('width', 800),
         IntParam('height', 600),
         StrParam('sidebars', ''),
+        BoolParam('show_toolbar', True),
         )
 
     def __init__(self, urls=[], id=-1):
@@ -531,6 +532,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.SetMenuBar(wx.MenuBar())
         self.menumap=None
         self.toolmap=None
+        self.show_toolbar = self.classprefs.show_toolbar
         
         self.keys=KeyProcessor(self)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
@@ -648,6 +650,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         This is called using the STC_UPDATEUI event now.  I think this
         is more efficient, anyway.
         """
+        if not self.show_toolbar:
+            return
+        
         BufferFrame.enablecount += 1
         count = BufferFrame.enablecount
         #print
@@ -666,16 +671,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             for tb in self.toolmap.toolbars:
                 self._mgr.DetachPane(tb)
                 tb.Destroy()
-                
-        self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
-        self.keys.addMinorKeyMap(self.toolmap.keymap)
 
-        for tb in self.toolmap.toolbars:
-            tb.Realize()
-            self._mgr.AddPane(tb, wx.aui.AuiPaneInfo().
-                              Name(tb.label).Caption(tb.label).
-                              ToolbarPane().Top().
-                              LeftDockable(False).RightDockable(False))
+        if self.show_toolbar:
+            self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
+            self.keys.addMinorKeyMap(self.toolmap.keymap)
+
+            for tb in self.toolmap.toolbars:
+                tb.Realize()
+                self._mgr.AddPane(tb, wx.aui.AuiPaneInfo().
+                                  Name(tb.label).Caption(tb.label).
+                                  ToolbarPane().Top().
+                                  LeftDockable(False).RightDockable(False))
+        else:
+            self.toolmap = None
         
     def getActiveMajorMode(self):
         major=self.tabs.getCurrent()
@@ -871,6 +879,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # FIXME: check to make sure that any major modes currently in
         # use haven't been deactivated.  If so, force them to be
         # enabled again.  Or, perhaps check before disabling.
+
+        # FIXME: what to do in the case of a classpref changing that
+        # affects an attribute?  E.g. if classpref.show_toolbar
+        # changes, should self.show_toolbar also change?  Or, prompt
+        # the user to say "global setting <blah> has changed.  Update
+        # all instances?"
         self.switchMode()
 
     def getTitle(self):

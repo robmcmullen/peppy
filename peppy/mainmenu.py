@@ -359,6 +359,20 @@ class SidebarShow(ToggleListAction):
         self.frame._mgr.Update()
 
 
+class ToolbarShow(ToggleAction):
+    name = _("&Show Toolbars")
+    tooltip = _("Enable or disable toolbar display in this frame")
+    icon = wx.ART_TOOLBAR
+
+    def isChecked(self):
+        return self.frame.show_toolbar
+    
+    def action(self, pos=-1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.frame.show_toolbar = not self.frame.show_toolbar
+        self.frame.switchMode()
+    
+
 
 
 class MainMenu(IPeppyPlugin):
@@ -399,6 +413,7 @@ class MainMenu(IPeppyPlugin):
                   (_("View"),Separator(_("modes")).first()),
                   (_("View"),MenuItem(SidebarShow).first()),
                   (_("View"),Separator(_("sidebars")).first()),
+                  (_("View"),MenuItem(ToolbarShow).first()),
                   (_("View"),Separator(_("menusep"))),
                   (_("View"),Separator(_("end")).last()),
                   (None,Menu(_("Major Mode")).hide()),
