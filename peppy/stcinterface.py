@@ -210,7 +210,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                }
     
     def __init__(self, parent, refstc=None, copy=None):
-        wx.stc.StyledTextCtrl.__init__(self, parent, -1)
+        wx.stc.StyledTextCtrl.__init__(self, parent, -1, pos=(9000,9000))
         self.ClearAll()
         
         if refstc is not None:

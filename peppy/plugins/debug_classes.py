@@ -108,7 +108,7 @@ class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
 ##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
         self.debuglist = DebugClass(parent)
         items = self.debuglist.getItems()
-        wx.CheckListBox.__init__(self, parent, choices=items)
+        wx.CheckListBox.__init__(self, parent, choices=items, pos=(9000,9000))
         
         assert self.dprint(items)
         for i in range(len(items)):

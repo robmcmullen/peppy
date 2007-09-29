@@ -129,7 +129,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         self.minor_panes = []
         self.statusbar = None
         
-        wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER)
+        wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER, pos=(9000,9000))
         self.createWindow()
         self.createWindowPostHook()
         self.loadMinorModes()
@@ -475,7 +475,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         pass
 
     def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
+        win=wx.Window(parent, -1, pos=(9000,9000))
         win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
         text=self.buffer.stc.GetText()
         wx.StaticText(win, -1, text, (10,10))

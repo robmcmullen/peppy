@@ -320,7 +320,7 @@ class LoadingMode(MajorMode):
     stc_class = LoadingSTC
 
     def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
+        win=wx.Window(parent, -1, pos=(9000,9000))
         text=self.buffer.stc.GetText()
         lines=wx.StaticText(win, -1, text, (10,10))
         lines.Wrap(500)
@@ -386,7 +386,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     debuglevel = 0
     
     def __init__(self, parent, size=wx.DefaultSize):
-        wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS)
+        wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
         
         self.frame=parent
         self.lastActivePage=None

@@ -36,7 +36,7 @@ class ProcessSidebar(Sidebar, ProcessList, debugmixin):
         )
     
     def __init__(self, parent):
-        ProcessList.__init__(self, parent)
+        ProcessList.__init__(self, parent, pos=(9000,9000))
         self.frame = parent
         
     def paneInfoHook(self, paneinfo):

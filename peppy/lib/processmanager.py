@@ -212,8 +212,8 @@ class ProcessList(wx.ListCtrl, debugmixin):
     """Display all processes
     """
 
-    def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+    def __init__(self, parent, **kwargs):
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT, **kwargs)
         self.createColumns()
 
         self.Bind(wx.EVT_IDLE, self.OnIdle)
