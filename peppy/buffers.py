@@ -109,8 +109,21 @@ class Buffer(debugmixin):
 
     filenames={}
     
+    dummyframe = None
+    
+    @classmethod
+    def initDummyFrame(cls):
+        # the Buffer objects have an stc as the base, and they need a
+        # frame in which to work.  So, we create a dummy frame here
+        # that is never shown.
+        Buffer.dummyframe=wx.Frame(None)
+        Buffer.dummyframe.Show(False)
+
     def __init__(self, url, defaultmode=None):
         Buffer.count+=1
+        if Buffer.dummyframe is None:
+            Buffer.initDummyFrame()
+
         self.busy = False
         self.readonly = False
         self.defaultmode=defaultmode
@@ -129,6 +142,9 @@ class Buffer(debugmixin):
         self.setURL(url)
         #self.open(url, stcparent)
 
+    def __del__(self):
+        dprint("cleaning up buffer %s" % self.url)
+
     def initSTC(self):
         self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
@@ -146,7 +162,7 @@ class Buffer(debugmixin):
             raise ValueError("Bug somewhere.  Major mode %s not found in Buffer %s" % (view,self))
         assert self.dprint("views remaining of %s: %s" % (self,self.viewers))
 
-    def removeAllViews(self):
+    def removeAllViewsAndDelete(self):
         # Have to make a copy of self.viewers, because when the viewer
         # closes itself, it removes itself from this list of viewers,
         # so unless you make a copy the for statement is operating on
@@ -157,6 +173,12 @@ class Buffer(debugmixin):
             assert self.dprint("removing view %s of %s" % (viewer,self))
             viewer.frame.tabs.closeTab(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
+        BufferList.remove(self)
+
+        # Need to destroy the base STC or self will never get garbage
+        # collected
+        self.stc.Destroy()
+        dprint("removed buffer %s" % self.url)
 
     def setURL(self, url):
         if not url:
@@ -195,13 +217,13 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
-    def openGUIThreadStart(self, stcparent):
+    def openGUIThreadStart(self):
         self.dprint("url: %s" % repr(self.url))
         if self.defaultmode is None:
             self.defaultmode = MajorModeMatcherDriver.match(self.url)
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
-        self.stc = self.defaultmode.stc_class(stcparent)
+        self.stc = self.defaultmode.stc_class(self.dummyframe)
 
     def openBackgroundThread(self, progress_message=None):
         self.stc.open(self.url, progress_message)
@@ -472,8 +494,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     debuglevel=0
     frameid=0
     
-    dummyframe = None
-    
     perspectives={}
 
     default_classprefs = (
@@ -482,20 +502,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         StrParam('sidebars', ''),
         )
 
-    @classmethod
-    def initDummyFrame(cls):
-        # the Buffer objects have an stc as the base, and they need a
-        # frame in which to work.  So, we create a dummy frame here
-        # that is never shown.
-        BufferFrame.dummyframe=wx.Frame(None)
-        BufferFrame.dummyframe.Show(False)
-
     def __init__(self, urls=[], id=-1):
         BufferFrame.frameid+=1
         self.name="peppy: Frame #%d" % BufferFrame.frameid
-
-        if BufferFrame.dummyframe is None:
-            BufferFrame.initDummyFrame()
 
         size=(int(self.classprefs.width),int(self.classprefs.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
@@ -743,7 +752,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def openStart(self, url, mode_to_replace):
         buffer = Buffer(url)
-        buffer.openGUIThreadStart(self.dummyframe)
+        buffer.openGUIThreadStart()
         if wx.GetApp().classprefs.load_threaded:
             statusbar = mode_to_replace.getStatusBar()
             statusbar.startProgress("Loading %s" % url, message=str(mode_to_replace))

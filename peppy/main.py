@@ -466,8 +466,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             retval=wx.ID_YES
 
         if retval==wx.ID_YES:
-            buffer.removeAllViews()
-            BufferList.removeBuffer(buffer)
+            buffer.removeAllViewsAndDelete()
 
     def quit(self, msg):
         doit=self.quitHook()
