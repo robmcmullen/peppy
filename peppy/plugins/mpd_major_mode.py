@@ -1367,13 +1367,6 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        # NOTE: the standard wx.StaticText automatically word wrapped
-        # text even though I set Wrap(-1).  Fixed by using the
-        # GenStaticText control
-        self.title = wx.lib.stattext.GenStaticText(self, -1, ' ', style=wx.ALIGN_LEFT|wx.ST_NO_AUTORESIZE)
-        
-        self.sizer.Add(self.title, 0, wx.EXPAND)
-
         self.slider = wx.Slider(self)
         self.sizer.Add(self.slider, flag=wx.EXPAND)
 
@@ -1430,14 +1423,15 @@ class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
                 title = track['title']
                 if 'artist' in track:
                     title += " -- %s" % track['artist']
-            self.title.SetLabel(title)
+            self.paneinfo.Caption(title)
             self.slider.SetRange(0, int(track['time']))
             self.songid = int(track['id'])
         else:
-            self.title.SetLabel('')
+            self.paneinfo.Caption(self.keyword)
             self.slider.SetRange(0,1)
             self.slider.SetValue(0)
             self.songid = -1
+        self.major._mgr.Update() # force AUI to update the pane caption
         self.user_scrolling = False
 
     def songTime(self, msg=None):
