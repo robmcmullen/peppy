@@ -120,7 +120,15 @@ class IntMinibuffer(TextMinibuffer):
     error = "Not an integer."
     
     def convert(self, text):
-        number = int(self.text.GetValue())
+        text = self.text.GetValue().strip().lower()
+        if text.startswith("0x"):
+            base = 16
+        elif text.endswith("h"):
+            base = 16
+            text = text[:-1]
+        else:
+            base = 10
+        number = int(text, base)
         assert self.dprint("number=%s" % number)
         return number
 
