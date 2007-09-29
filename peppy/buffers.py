@@ -120,7 +120,6 @@ class Buffer(debugmixin):
         Buffer.dummyframe.Show(False)
 
     def __init__(self, url, defaultmode=None):
-        Buffer.count+=1
         if Buffer.dummyframe is None:
             Buffer.initDummyFrame()
 
@@ -229,6 +228,9 @@ class Buffer(debugmixin):
         self.stc.open(self.url, progress_message)
 
     def openGUIThreadSuccess(self):
+        # Only increment count on successful buffer loads
+        Buffer.count+=1
+        
         self.setName()
 
         if isinstance(self.stc,PeppySTC):
