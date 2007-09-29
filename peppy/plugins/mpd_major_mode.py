@@ -558,7 +558,7 @@ class MPDSTC(NonResidentSTC):
     def CanSave(self):
         return False
     
-    def open(self, url):
+    def open(self, url, progress_message=None):
         """Save the file handle, which is really the mpd connection"""
         fh = url.getDirectReader()
         self.mpd = fh
