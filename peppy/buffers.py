@@ -305,21 +305,14 @@ class Buffer(debugmixin):
 
 
 
-class LoadingSTC(NonResidentSTC):
-    def __init__(self, url):
-        self.url = url
-
-    def GetText(self):
-        return str(self.url)
-    
-class LoadingMode(MajorMode):
+class BlankMode(MajorMode):
     """
     A temporary Major Mode to load another mode in the background
     """
-    keyword = 'Loading...'
+    keyword = "about:blank"
     temporary = True
     
-    stc_class = LoadingSTC
+    stc_class = NonResidentSTC
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1, pos=(9000,9000))
@@ -327,13 +320,52 @@ class LoadingMode(MajorMode):
         lines=wx.StaticText(win, -1, text, (10,10))
         lines.Wrap(500)
         self.stc = self.buffer.stc
-        return win 
+        return win
+
+class BlankBuffer(debugmixin):
+    def __init__(self):
+        self.defaultmode = BlankMode
+        self.stc = self.defaultmode.stc_class()
+        self.busy = True
+        self.readonly = False
+        self.modified = False
+
+    def addViewer(self, mode):
+        pass
+
+    def removeViewer(self, mode):
+        pass
+
+    def removeAllViewsAndDelete(self):
+        pass
+    
+    def save(self, url):
+        pass
+
+    def getTabName(self):
+        return self.defaultmode.keyword
+
+
+class LoadingSTC(NonResidentSTC):
+    def __init__(self, url):
+        self.url = url
+
+    def GetText(self):
+        return str(self.url)
+    
+class LoadingMode(BlankMode):
+    """
+    A temporary Major Mode to load another mode in the background
+    """
+    keyword = 'Loading...'
+    
+    stc_class = LoadingSTC
 
     def createPostHook(self):
         self.showBusy(True)
         wx.CallAfter(self.frame.openStart, self.stc.url, self)
 
-class LoadingBuffer(debugmixin):
+class LoadingBuffer(BlankBuffer):
     def __init__(self, url):
         self.url = url
         self.stc = LoadingSTC(url)
@@ -342,17 +374,6 @@ class LoadingBuffer(debugmixin):
         self.modified = False
         self.defaultmode = LoadingMode
 
-    def addViewer(self, mode):
-        pass
-
-    def removeViewer(self, mode):
-        pass
-
-    def save(self, url):
-        pass
-
-    def getTabName(self):
-        return _("Loading...")
 
 class BufferLoadThread(threading.Thread, debugmixin):
     """Background file loading thread.
@@ -380,7 +401,6 @@ class BufferLoadThread(threading.Thread, debugmixin):
             dprint("Exception: %s" % str(e))
             wx.CallAfter(self.frame.openFailure, self.buffer, str(e),
                          self.progress)
-
 
 
 
@@ -413,6 +433,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         mode = self.GetPage(index)
         assert self.dprint("closing tab # %d: mode %s" % (index,mode))
         mode.deleteWindowPre()
+        if self.GetPageCount() == 1:
+            wx.CallAfter(self.frame.open, "about:blank")
         evt.Skip()
 
     def closeTab(self, mode):
@@ -420,6 +442,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         index=self.GetPageIndex(mode)
         self.RemovePage(index)
         mode.deleteWindow()
+        if self.GetPageCount() == 0:
+           self.frame.open("about:blank")
 
     def addTab(self,mode):
         before = self.GetPageCount()
@@ -741,7 +765,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def newBuffer(self,buffer):
         mode=self.createMajorMode(buffer)
         assert self.dprint("major mode=%s" % mode)
-        self.tabs.addTab(mode)
+        current = self.getActiveMajorMode()
+        if current and current.temporary:
+            self.tabs.replaceCurrentTab(mode)
+        else:
+            self.tabs.addTab(mode)
         assert self.dprint("after addViewer")
 
     def titleBuffer(self):
@@ -757,7 +785,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 ##        self.newBuffer(buffer)
 
     def open(self, url):
-        buffer = LoadingBuffer(url)
+        if url == "about:blank":
+            buffer = BlankBuffer()
+        else:
+            buffer = LoadingBuffer(url)
         self.newBuffer(buffer)
 
     def openStart(self, url, mode_to_replace):

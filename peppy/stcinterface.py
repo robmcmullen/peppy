@@ -88,6 +88,9 @@ class STCInterface(object):
     def Redo(self):
         pass
 
+    def GetText(self):
+        return ''
+
     def GetModify(self):
         return False
 
