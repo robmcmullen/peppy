@@ -38,4 +38,4 @@ def load_plugins(entry_point):
     if USE_SETUPTOOLS:
         for entrypoint in pkg_resources.iter_entry_points(entry_point):
             plugin_class = entrypoint.load()
-            dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
+            #dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))

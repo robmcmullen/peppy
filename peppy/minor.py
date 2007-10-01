@@ -63,7 +63,7 @@ class MinorMode(ClassPrefs, debugmixin):
         MinorMode.modekeys={}
         
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        dprint(plugins)
+        assert cls.dprint(plugins)
         for ext in plugins:
             for minor in ext.getMinorModes():
                 assert cls.dprint("Registering minor mode %s" % minor.keyword)

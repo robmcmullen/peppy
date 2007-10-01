@@ -389,16 +389,16 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.start()
 
     def run(self):
-        dprint("starting to load %s" % self.buffer.url)
+        self.dprint("starting to load %s" % self.buffer.url)
         try:
             self.buffer.openBackgroundThread(self.progress.message)
             wx.CallAfter(self.frame.openSuccess, self.buffer,
                          self.mode_to_replace, self.progress)
-            dprint("successfully loaded %s" % self.buffer.url)
+            self.dprint("successfully loaded %s" % self.buffer.url)
         except Exception, e:
             import traceback
             traceback.print_exc()
-            dprint("Exception: %s" % str(e))
+            self.dprint("Exception: %s" % str(e))
             wx.CallAfter(self.frame.openFailure, self.buffer, str(e),
                          self.progress)
 

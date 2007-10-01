@@ -158,7 +158,7 @@ class URLHandler(debugmixin):
                 for plugin in plugins:
                     urlhandlers.extend(plugin.getURLHandlers())
 
-            assert dprint(urlhandlers)
+            assert cls.dprint(urlhandlers)
             cls.opener = urllib2.build_opener(*urlhandlers)
         return cls.opener
 

@@ -34,7 +34,7 @@ except:
                 dprint(txt)
             return True
 
-class ColumnSizerMixin(object):
+class ColumnSizerMixin(debugmixin):
     """Enhancement to ListCtrl to handle column resizing.
 
     Resizes columns to a fixed size or based on the size of the
@@ -49,7 +49,7 @@ class ColumnSizerMixin(object):
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, evt):
-        dprint(evt.GetSize())
+        #dprint(evt.GetSize())
         if self._last_size is None or self._last_size != evt.GetSize():
             self._resize_dirty = True
             self._last_size = evt.GetSize()

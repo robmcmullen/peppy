@@ -73,7 +73,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     initial keyboard mapping, and other lower level initialization
     from the BufferApp superclass.
     """
-    debuglevel = 1
+    debuglevel = 0
     verbose = 0
     options = {}
 
@@ -188,7 +188,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def processCommandLineOptions(self):
         import logging
-        logging.debug = dprint
+        #logging.debug = dprint
         
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
@@ -397,11 +397,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         cats = self.plugin_manager.getCategories()
         for cat in cats:
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
-            dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
+            self.dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
             for plugin in plugins:
-                dprint("  activating plugin %s: %s" % (plugin.name, plugin.plugin_object.__class__.__mro__))
+                self.dprint("  activating plugin %s: %s" % (plugin.name, plugin.plugin_object.__class__.__mro__))
                 plugin.plugin_object.activate()
-                dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
+                self.dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
 
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
@@ -415,7 +415,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def initGraphics(self):
         try:
             import peppy.icons.iconmap
-            dprint("Imported icons!")
+            self.dprint("Imported icons!")
         except:
             pass
         

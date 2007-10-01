@@ -143,8 +143,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         self._mgr.Update()
 
     def __del__(self):
-        dprint("deleting %s: buffer=%s" % (self.__class__.__name__,self.buffer))
-        dprint("deleting %s: %s" % (self.__class__.__name__,self.getTabName()))
+        dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
         self.removeListeners()
         self.removeListenersPostHook()
         self.deleteWindowPostHook()
@@ -671,11 +670,13 @@ def guessBinary(text, percentage):
         return True
     return False
 
-class MajorModeMatcherDriver(object):
-    @staticmethod
-    def getActiveModes():
+class MajorModeMatcherDriver(debugmixin):
+    debuglevel = 0
+    
+    @classmethod
+    def getActiveModes(cls):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        dprint(plugins)
+        cls.dprint(plugins)
         modes = []
         for plugin in plugins:
             modes.extend(plugin.possibleModes())
@@ -688,7 +689,7 @@ class MajorModeMatcherDriver(object):
             magic_size = app.classprefs.magic_size
 
         plugins = app.plugin_manager.getActivePluginObjects()
-        dprint(plugins)
+        cls.dprint(plugins)
         
         # Try to match a specific protocol
         modes = cls.scanProtocol(plugins, url)
@@ -762,11 +763,11 @@ class MajorModeMatcherDriver(object):
 
     @classmethod
     def findModeByName(cls, plugins, name):
-        dprint("checking plugins %s" % plugins)
+        cls.dprint("checking plugins %s" % plugins)
         for plugin in plugins:
-            dprint("checking plugin %s" % str(plugin.__class__.__mro__))
+            cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
             for mode in plugin.possibleModes():
-                dprint("searching %s" % mode.keyword)
+                cls.dprint("searching %s" % mode.keyword)
                 if mode.keyword == name:
                     return mode
         return None
@@ -787,7 +788,7 @@ class MajorModeMatcherDriver(object):
         modes = []
         for plugin in plugins:
             for mode in plugin.possibleModes():
-                dprint("scanning %s" % mode)
+                cls.dprint("scanning %s" % mode)
                 if mode.verifyProtocol(url):
                     modes.append(mode)
         return modes
@@ -844,7 +845,7 @@ class MajorModeMatcherDriver(object):
         """
         
         modename, settings = parseEmacs(header)
-        dprint("modename = %s, settings = %s" % (modename, settings))
+        cls.dprint("modename = %s, settings = %s" % (modename, settings))
         for plugin in plugins:
             for mode in plugin.possibleModes():
                 if modename == mode.keyword:
@@ -900,7 +901,7 @@ class MajorModeMatcherDriver(object):
         
         for plugin in plugins:
             for mode in plugin.possibleModes():
-                dprint("scanning %s" % mode)
+                cls.dprint("scanning %s" % mode)
                 if mode.attemptOpen(url):
                     return mode
         return None
