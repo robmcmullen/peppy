@@ -58,7 +58,7 @@ class ShellSTC(PeppySTC):
         self.filter=1
         self.more=0
 
-    def open(self, url):
+    def open(self, url, progress_message):
         """Save the file handle, which is really the mpd connection"""
         self.pipe = url.getDirectReader()
         self.readFrom(self.pipe)
@@ -67,7 +67,7 @@ class ShellSTC(PeppySTC):
         self.AddText('\n')
         self.prompt()
         
-        self.pipe.setNotifyWindow(self)
+        self.pipe.setNotifyWindow(self, ShellUpdateEvent)
         self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
 
     def prompt(self):
@@ -120,6 +120,9 @@ class ShellSTC(PeppySTC):
 
     def OnModified(self, evt):
         PeppySTC.OnModified(self,evt)
+
+    def GetModify(self):
+        return False
 
 # FIXME: this is hidden by Fundamental's ElectricReturn action...  To
 # workaround this, have to create an electric return mixin for ShellMode

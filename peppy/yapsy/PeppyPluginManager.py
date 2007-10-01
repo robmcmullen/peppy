@@ -10,6 +10,7 @@ import sys, os
 
 from peppy.lib.userparams import getAllSubclassesOf
 from peppy.yapsy.VersionedPluginManager import VersionedPluginManager, VersionedPluginInfo
+from peppy.yapsy.plugins import *
 from peppy.debug import *
 
 class PeppyPluginManager(VersionedPluginManager, debugmixin):
@@ -47,7 +48,7 @@ class PeppyPluginManager(VersionedPluginManager, debugmixin):
 
 				plugin_info.plugin_object.activate()
 
-	def getActivePluginObjects(self, interface=None):
+	def getActivePluginObjects(self, interface=IPeppyPlugin):
 		"""
 		Return the list of all plugins.
 		"""
