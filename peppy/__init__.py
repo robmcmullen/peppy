@@ -37,6 +37,7 @@ L{IMajorModeMatcher<major.IMajorModeMatcher>}s.
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
 __version__ = "svn-devel"
+__codename__ = "svn-codename"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://www.flipturn.org/peppy/"

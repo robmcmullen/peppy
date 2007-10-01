@@ -12,7 +12,8 @@ TAROPTS = --exclude=.git --exclude=.svn --exclude='*.pyc' --exclude='*~'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
-VERSION := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2)
+VERSION_CODENAME := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2|cut -d '"' -f 2)
+VERSION := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2|cut -d ' ' -f 1)
 
 EPYDOC = epydoc -v -v -v --no-sourcecode
 
@@ -76,6 +77,8 @@ publish: api release
 
 dist: distdir
 	-chmod -R a+r $(distdir)
+	rm -f $(distdir)/peppy/icons/iconmap.py
+	rm -f $(distdir)/peppy/py2exe_plugins.py
 	$(TAR) cvf $(distdir).tar $(TAROPTS) $(distdir)
 	$(COMPRESS) $(distdir).tar
 	-rm -rf $(distdir)
@@ -91,7 +94,7 @@ distdir:
 	./make-doc.py -m peppy -o $(distdir)/setup.py setup.py.in
 	rm $(distdir)/$(DISTMAIN)
 	./make-doc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
-	sed -e "s/svn-devel/$(VERSION)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
+	sed -e "s/svn-devel/$(VERSION)/" -e "s/svn-codename/$(VERSION_CODENAME)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
 	rm $(distdir)/$(DISTMAIN).tmp
 
 	./make-icon-data.py -o $(distdir)/peppy/icons/iconmap.py

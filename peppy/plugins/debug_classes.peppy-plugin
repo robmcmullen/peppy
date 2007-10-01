@@ -1,0 +1,9 @@
+[Core]
+Name = Debug Print Manager
+Module = debug_classes
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Sidebar for turning on/off the display of debug printing for individual classes

@@ -57,8 +57,8 @@ PREREQUISITES
 python 2.4 or later
 wxPython 2.8 or later
 
-Currently developed on Python 2.5.1 and wxPython 2.8.1.4 on Linux, and
-Python 2.5 and wxPython 2.8.1.4 on Windows.
+Currently developed on Python 2.5.1 and wxPython 2.8.4.0 on Linux, and
+Python 2.5 and wxPython 2.8.6.0 on Windows.
 
 Peppy requires such a new version of wxPython because it's using the
 AUI (Advanced User Interface) set of widgets for the main frame and
@@ -68,11 +68,12 @@ the notebook.
 Optional Modules
 ----------------
 
-The hyperspectral image view mode has additional requirements:
+The optional hyperspectral image view mode has additional
+requirements:
 
 numpy 1.0 or later
 
-and optionally:
+and additional functionality will be enabled if it finds:
 
 scipy 0.5.2 or later
 gdal 1.4.0 or later

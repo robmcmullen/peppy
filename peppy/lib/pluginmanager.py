@@ -51,7 +51,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
         self.plugins = []
         for cat in cats:
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
-            print plugins
+            #print plugins
             self.plugins.extend(plugins)
         dprint(self.plugins)
         # Sort first by name, then by version number

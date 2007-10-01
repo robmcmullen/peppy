@@ -1,0 +1,9 @@
+[Core]
+Name = PyPE File Browser
+Module = pype_filebrowser
+
+[Documentation]
+Author = Josiah Carlson
+Version = 0.1
+Website = http://pype.sourceforge.net
+Description = File browser in a sidebar

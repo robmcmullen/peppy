@@ -13,6 +13,8 @@ def gen(filename):
     return printable
 
 def entry(filename, out):
+    if filename.endswith('.py') or filename.endswith('.pyc'):
+        return
     data = gen(filename)
     out.write("'%s':\n%s,\n" % (filename, data))
 

@@ -10,3 +10,6 @@ the most basic classes).
 # tell epydoc that the documentation is in the reStructuredText format
 __docformat__ = "restructuredtext en"
 
+from peppy.about import AddCredit
+
+AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the MathBench project at http://mathbench.sourceforge.net/yapsy/doc/presentation.html")

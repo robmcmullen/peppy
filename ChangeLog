@@ -1,3 +1,26 @@
+2007-10-01  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.6.5 "Where's the sports?"
+	* Converted to yapsy plugins instead of trac plugins
+	* Added splash screen with progress bar
+	* Import i18n dependencies inside PeppyApp
+	* Added version numbering to major modes
+	* Added indicator on dnd in playlist
+	* Added autoscrolling to lists on drop
+	* Renamed the Cmds menu to Transforms
+	* Made toolbar hideable
+	* Changed preferences & settings to use custom editors depending on type
+	* Added py2exe support
+	* User-definable startup page
+	* Buffers now (optionally) loaded in separate thread
+	* Busy cursor now displayed if not loading in separate thread
+	* MPDMode: Add count of songs and total time
+	* MPDMode: fixed problem where it wouldn't show files in directory that has both dirs and files
+	* Added goto offset capability in hex edit
+	* Added ability to specify integers in different bases
+	* Now use wx methods for determining user's homedir
+	* Fixed bug on windows, where can't up an new tab after closing the last tab of a view
+
 2007-09-08  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.4

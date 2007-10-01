@@ -11,6 +11,13 @@ Thanks to:
 
 * Stani Michiels for the pyxides discussions
 
+* Thibauld Nion for the yapsy plugin framework, available at
+  http://mathbench.sourceforge.net/yapsy/doc/presentation.html
+  under the BSD license, whereas the yapsy code in peppy has been
+  infected with the GPL virus and can't be relicensed under BSD.
+  However, all changes I make are submitted back upstream to Thibauld
+  for possible integration into the BSD-licensed version of yapsy if
+  he deems it applicable to the general case.
 
 
 
