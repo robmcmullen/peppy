@@ -73,27 +73,7 @@ class HelpManual(SelectAction):
         self.frame.open("about:User Manual")
         
 
-class BlankMode(MajorMode):
-    keyword='Blank'
-    icon='icons/application.png'
-    regex="about:blank"
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1)
-        text=self.buffer.stc.GetText()
-        lines=wx.StaticText(win, -1, text, (10,10))
-        lines.Wrap(500)
-        self.stc = self.buffer.stc
-        return win
-
-
 class HelpPlugin(IPeppyPlugin):
-    def scanFilename(self,filename):
-        if filename=='about:blank':
-            return MajorModeMatch(BlankMode,exact=True)
-        else:
-            return None
-
     default_menu=((None,None,Menu(_("&Help")).last()),
                   (None,_("&Help"),MenuItem(HelpAbout).first()),
                   (None,_("&Help"),Separator(_("manual")).first()),

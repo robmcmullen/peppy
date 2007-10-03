@@ -382,6 +382,9 @@ class MainMenu(IPeppyPlugin):
     build upon.
     """
 
+    def possibleModes(self):
+        yield BlankMode
+    
     default_menu=((None,Menu(_("File")).first()),
                   (_("File"),Menu(_("New")).first()),
                   ((_("File"),_("New")),MenuItem(NewTab).first()),

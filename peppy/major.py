@@ -100,6 +100,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     
     regex = None
     temporary = False # True if it is a temporary view
+    allow_threaded_loading = True
 
     # stc_class is used to associate this major mode with a storage
     # mechanism (implementing the STCInterface).  The default is

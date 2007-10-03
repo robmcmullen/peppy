@@ -88,6 +88,7 @@ URLHandler.addDefaultOpener(AboutHandler)
 
 SetAbout('untitled','')
 SetAbout('blank','')
+SetAbout('scratch','')
 
 SetAbout('peppy',"""\
 <!-- -*- HTMLView -*- -->

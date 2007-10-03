@@ -36,11 +36,20 @@ class BufferList(GlobalList):
     def removeBuffer(self, buffer):
         BufferList.remove(buffer)
 
+    @classmethod
+    def findBufferByURL(self, url):
+        if not isinstance(url, URLInfo):
+            url = URLInfo(url)
+        for buf in BufferList.storage:
+            if buf.isURL(url):
+                return buf
+        return None
+
     @staticmethod
     def promptUnsaved(msg):
         unsaved=[]
         for buf in BufferList.storage:
-            if buf.modified:
+            if buf.modified and not buf.permanent:
                 unsaved.append(buf)
         if len(unsaved)>0:
             dlg = QuitDialog(wx.GetApp().GetTopWindow(), unsaved)
@@ -98,7 +107,6 @@ class NewFrame(SelectAction):
     
     def action(self, pos=-1):
         frame=BufferFrame()
-        frame.titleBuffer()
         frame.Show(True)
 
 #### Buffers
@@ -119,6 +127,13 @@ class Buffer(debugmixin):
         Buffer.dummyframe=wx.Frame(None)
         Buffer.dummyframe.Show(False)
 
+    @classmethod
+    def loadPermanent(cls, url):
+        buffer = cls(url)
+        buffer.open()
+        buffer.permanent = True
+        BufferList.addBuffer(buffer)
+
     def __init__(self, url, defaultmode=None):
         if Buffer.dummyframe is None:
             Buffer.initDummyFrame()
@@ -135,6 +150,7 @@ class Buffer(debugmixin):
         self.viewers=[]
 
         self.modified=False
+        self.permanent = False
 
         self.stc=None
 
@@ -172,12 +188,13 @@ class Buffer(debugmixin):
             assert self.dprint("removing view %s of %s" % (viewer,self))
             viewer.frame.tabs.closeTab(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
-        BufferList.remove(self)
 
-        # Need to destroy the base STC or self will never get garbage
-        # collected
-        self.stc.Destroy()
-        dprint("removed buffer %s" % self.url)
+        if not self.permanent:
+            BufferList.remove(self)
+            # Need to destroy the base STC or self will never get garbage
+            # collected
+            self.stc.Destroy()
+            dprint("removed buffer %s" % self.url)
 
     def setURL(self, url):
         if not url:
@@ -185,6 +202,13 @@ class Buffer(debugmixin):
         elif not isinstance(url, URLInfo):
             url = URLInfo(url)
         self.url = url
+
+    def isURL(self, url):
+        if not isinstance(url, URLInfo):
+            url = URLInfo(url)
+        if url == self.url:
+            return True
+        return False
 
     def setName(self):
         basename=self.url.getBasename()
@@ -244,8 +268,8 @@ class Buffer(debugmixin):
         # has been successfully opened.
         Publisher().sendMessage('buffer.opened', self)
 
-    def open(self, stcparent):
-        self.openGUIThreadStart(stcparent)
+    def open(self):
+        self.openGUIThreadStart()
         self.openBackgroundThread()
         self.openGUIThreadSuccess()
 
@@ -304,15 +328,25 @@ class Buffer(debugmixin):
             wx.CallAfter(self.showModifiedAll)
 
 
-
 class BlankMode(MajorMode):
     """
     A temporary Major Mode to load another mode in the background
     """
     keyword = "about:blank"
+    icon='icons/application.png'
     temporary = True
+    allow_threaded_loading = False
     
     stc_class = NonResidentSTC
+
+    @classmethod
+    def verifyProtocol(cls, url):
+        # Use the verifyProtocol to hijack the loading process and
+        # immediately return the match if we're trying to load
+        # about:blank
+        if url.protocol == 'about' and url.path == 'blank':
+            return True
+        return False
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1, pos=(9000,9000))
@@ -320,15 +354,39 @@ class BlankMode(MajorMode):
         lines=wx.StaticText(win, -1, text, (10,10))
         lines.Wrap(500)
         self.stc = self.buffer.stc
+        self.buffer.stc.is_permanent = True
         return win
 
-class BlankBuffer(debugmixin):
-    def __init__(self):
-        self.defaultmode = BlankMode
-        self.stc = self.defaultmode.stc_class()
+
+class LoadingSTC(NonResidentSTC):
+    def __init__(self, url, modecls):
+        self.url = url
+        self.modecls = modecls
+
+    def GetText(self):
+        return str(self.url)
+    
+class LoadingMode(BlankMode):
+    """
+    A temporary Major Mode to load another mode in the background
+    """
+    keyword = 'Loading...'
+    
+    stc_class = LoadingSTC
+
+    def createPostHook(self):
+        self.showBusy(True)
+        wx.CallAfter(self.frame.openStart, self.stc.url, self.stc.modecls,
+                     mode_to_replace=self)
+
+class LoadingBuffer(debugmixin):
+    def __init__(self, url, modecls):
+        self.url = url
+        self.stc = LoadingSTC(url, modecls)
         self.busy = True
         self.readonly = False
         self.modified = False
+        self.defaultmode = LoadingMode
 
     def addViewer(self, mode):
         pass
@@ -344,35 +402,6 @@ class BlankBuffer(debugmixin):
 
     def getTabName(self):
         return self.defaultmode.keyword
-
-
-class LoadingSTC(NonResidentSTC):
-    def __init__(self, url):
-        self.url = url
-
-    def GetText(self):
-        return str(self.url)
-    
-class LoadingMode(BlankMode):
-    """
-    A temporary Major Mode to load another mode in the background
-    """
-    keyword = 'Loading...'
-    
-    stc_class = LoadingSTC
-
-    def createPostHook(self):
-        self.showBusy(True)
-        wx.CallAfter(self.frame.openStart, self.stc.url, self)
-
-class LoadingBuffer(BlankBuffer):
-    def __init__(self, url):
-        self.url = url
-        self.stc = LoadingSTC(url)
-        self.busy = True
-        self.readonly = False
-        self.modified = False
-        self.defaultmode = LoadingMode
 
 
 class BufferLoadThread(threading.Thread, debugmixin):
@@ -571,11 +600,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         Publisher().subscribe(self.pluginsChanged, 'peppy.plugins.changed')
         wx.GetApp().SetTopWindow(self)
 
+        dprint(urls)
         if urls:
             for url in urls:
+                dprint("Opening %s" % url)
                 wx.CallAfter(self.open, url)
         else:
-            wx.CallAfter(self.showTitleIfNecessary)
+            wx.CallAfter(self.titleBuffer)
                 
         
     def addPane(self, win, paneinfo):
@@ -727,7 +758,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         major=self.getActiveMajorMode()
         if major:
             buffer=major.buffer
-            wx.GetApp().close(buffer)
+            if buffer.permanent:
+                self.tabs.closeTab(major)
+            else:
+                wx.GetApp().close(buffer)
 
     def setTitle(self):
         major=self.getActiveMajorMode()
@@ -775,26 +809,25 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def titleBuffer(self):
         self.open(wx.GetApp().classprefs.title_page)
 
-    def showTitleIfNecessary(self):
-        if len(BufferList.storage)==0:
-            self.titleBuffer()
-
-##    def open(self, url):
-##        buffer = Buffer(url, stcparent=self.dummyframe,
-##                        defaultmode=LoadingMode)
-##        self.newBuffer(buffer)
-
     def open(self, url):
-        if url == "about:blank":
-            buffer = BlankBuffer()
+        buffer = BufferList.findBufferByURL(url)
+        if buffer is not None and buffer.permanent:
+            #dprint("found permanent buffer")
+            self.newBuffer(buffer)
         else:
-            buffer = LoadingBuffer(url)
-        self.newBuffer(buffer)
+            if not isinstance(url, URLInfo):
+                url = URLInfo(url)
+            modecls = MajorModeMatcherDriver.match(url)
+            if modecls.allow_threaded_loading:
+                buffer = LoadingBuffer(url, modecls)
+                self.newBuffer(buffer)
+            else:
+                self.openStart(url, modecls, threaded=False)
 
-    def openStart(self, url, mode_to_replace):
-        buffer = Buffer(url)
+    def openStart(self, url, modecls, mode_to_replace=None, threaded=True):
+        buffer = Buffer(url, modecls)
         buffer.openGUIThreadStart()
-        if wx.GetApp().classprefs.load_threaded:
+        if threaded and wx.GetApp().classprefs.load_threaded:
             statusbar = mode_to_replace.getStatusBar()
             statusbar.startProgress("Loading %s" % url, message=str(mode_to_replace))
             thread = BufferLoadThread(self, buffer, mode_to_replace, statusbar)
@@ -807,12 +840,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.openFailure(buffer, str(e))
             wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
-    def openSuccess(self, buffer, mode_to_replace, progress):
+    def openSuccess(self, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
         BufferList.addBuffer(buffer)
         mode = self.createMajorMode(buffer)
         assert self.dprint("major mode=%s" % mode)
-        self.tabs.replaceTab(mode_to_replace, mode)
+        if mode_to_replace:
+            self.tabs.replaceTab(mode_to_replace, mode)
+        else:
+            current = self.getActiveMajorMode()
+            if current and current.temporary:
+                self.tabs.replaceCurrentTab(mode)
+            else:
+                self.tabs.addTab(mode)
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
         if progress:
@@ -820,7 +860,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.SetStatusText(msg)
 
-    def openFailure(self, buffer, error, progress):
+    def openFailure(self, buffer, error, progress=None):
         msg = "Failed opening %s.  " % buffer.url
         Publisher().sendMessage('peppy.log.error', msg)
         Publisher().sendMessage('peppy.log.error', error)

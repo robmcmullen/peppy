@@ -65,6 +65,18 @@ class URLInfo(debugmixin):
     def __str__(self):
         return self.url
 
+    def __eq__(self, other):
+        return (self.protocol, self.netloc, self.path, self.parameters,
+                self.query_string, self.fragment) == \
+                (other.protocol, other.netloc, other.path, other.parameters,
+                other.query_string, other.fragment)
+
+    def __ne__(self, other):
+        return (self.protocol, self.netloc, self.path, self.parameters,
+                self.query_string, self.fragment) != \
+                (other.protocol, other.netloc, other.path, other.parameters,
+                other.query_string, other.fragment)
+
     def exists(self):
         if self.protocol == 'file':
             return os.path.exists(self.path)
