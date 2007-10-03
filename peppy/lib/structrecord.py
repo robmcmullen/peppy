@@ -1062,7 +1062,7 @@ class RecordList(list):
         
     def append(self,item):
         #print "before: current length=%d" % len(self)
-        print "item=%s" % item
+        #print "item=%s" % item
         if isinstance(item, Field):
             item._=self.parent
             item._listindex=len(self)
