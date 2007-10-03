@@ -251,7 +251,7 @@ class PythonElectricReturnMixin(debugmixin):
 class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
                  FundamentalMode):
     keyword='Python'
-    icon='icons/py.ico'
+    icon='icons/py.png'
     regex="\.(py|pyx)$"
 
     start_line_comment = "##"
