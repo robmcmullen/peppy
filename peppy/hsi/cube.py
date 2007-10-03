@@ -382,7 +382,7 @@ class Cube(object):
         # dprint("verifyAttributes: bands=%d bbl=%s" % (self.bands,self.bbl))
 
         # guess wavelength units if not supplied
-        if self.wavelengths and not self.wavelength_units:
+        if len(self.wavelengths)>0 and not self.wavelength_units:
             self.guessWavelengthUnits()
 
         if self.byte_order != nativeByteOrder:
@@ -416,7 +416,7 @@ class Cube(object):
     def guessDisplayBands(self):
         """Guess the best bands to display a false-color RGB image
         using the wavelength info from the cube's metadata."""
-        if self.bands>=3 and self.wavelengths:
+        if self.bands>=3 and len(self.wavelengths)>0:
             # bands=[random.randint(0,self.bands-1) for i in range(3)]
             bands=[self.getBandListByWavelength(wl)[0] for wl in (660,550,440)]
 
@@ -536,7 +536,7 @@ class Cube(object):
             wavelen_max=wavelen_min
         wavelen_min=self.normalizeUnits(wavelen_min,units)
         wavelen_max=self.normalizeUnits(wavelen_max,units)
-        if not self.wavelengths:
+        if len(self.wavelengths)==0:
             return bandlist
         
         for channel in range(self.bands):
@@ -742,7 +742,7 @@ def newCube(interleave,url=None):
         raise ValueError("Interleave format %s not supported." % interleave)
     return cube
 
-def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByteOrder,scalefactor=10000.0):
+def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByteOrder,scalefactor=10000.0, data=None):
     cube=newCube(interleave,None)
     cube.interleave=interleave
     cube.samples=samples
@@ -751,7 +751,10 @@ def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByt
     cube.data_type=datatype
     cube.byte_order=byteorder
     cube.scale_factor=scalefactor
-    cube.raw=numpy.zeros((samples*lines*bands),dtype=datatype)
+    if data:
+        cube.raw = numpy.frombuffer(data, datatype)
+    else:
+        cube.raw=numpy.zeros((samples*lines*bands),dtype=datatype)
     cube.mmap=True
     cube.initialize(datatype,byteorder)
     return cube
