@@ -610,7 +610,7 @@ class HSIMode(MajorMode):
 
     def setCube(self, index=0):
         self.dataset_index = index
-        self.cube = self.dataset.getCube(index)
+        self.cube = self.dataset.getCube(index=index)
         self.bands = self.cube.guessDisplayBands()
         if not self.classprefs.display_rgb and len(self.bands)>1:
             self.bands = [self.bands[0]]
