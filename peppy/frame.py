@@ -227,13 +227,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         wx.GetApp().SetTopWindow(self)
 
         dprint(urls)
+        
+        # counter to make sure the title buffer is shown if we attempt
+        # to load files and they all fail.
+        self.initial_load = 0
+        
         if urls:
             for url in urls:
                 dprint("Opening %s" % url)
                 wx.CallAfter(self.open, url)
+                self.initial_load += 1
         else:
             wx.CallAfter(self.titleBuffer)
-                
+        
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
@@ -443,7 +449,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             if not isinstance(url, URLInfo):
                 url = URLInfo(url)
-            modecls = MajorModeMatcherDriver.match(url)
+            try:
+                modecls = MajorModeMatcherDriver.match(url)
+            except Exception, e:
+                self.openFailure(url, str(e))
+                return
+            
             if modecls.allow_threaded_loading:
                 buffer = LoadingBuffer(url, modecls)
                 self.newBuffer(buffer)
@@ -463,7 +474,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 buffer.openBackgroundThread()
                 self.openSuccess(buffer, mode_to_replace)
             except Exception, e:
-                self.openFailure(buffer, str(e))
+                self.openFailure(buffer.url, str(e))
             wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
     def openSuccess(self, buffer, mode_to_replace=None, progress=None):
@@ -486,14 +497,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.SetStatusText(msg)
 
-    def openFailure(self, buffer, error, progress=None):
-        msg = "Failed opening %s.  " % buffer.url
+    def openFailure(self, url, error, progress=None):
+        msg = "Failed opening %s.\n" % url
         Publisher().sendMessage('peppy.log.error', msg)
-        Publisher().sendMessage('peppy.log.error', error)
+        Publisher().sendMessage('peppy.log.error', error + "\n")
         if progress:
             progress.stopProgress(msg)
         else:
             self.SetStatusText(msg)
+
+        if self.initial_load > 0:
+            self.initial_load -= 1
+            if self.initial_load == 0:
+                self.titleBuffer()
 
     def save(self):        
         mode=self.getActiveMajorMode()

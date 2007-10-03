@@ -388,5 +388,5 @@ class BufferLoadThread(threading.Thread, debugmixin):
             import traceback
             traceback.print_exc()
             self.dprint("Exception: %s" % str(e))
-            wx.CallAfter(self.frame.openFailure, self.buffer, str(e),
+            wx.CallAfter(self.frame.openFailure, self.buffer.url, str(e),
                          self.progress)
