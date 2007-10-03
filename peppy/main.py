@@ -502,7 +502,8 @@ def run(options={},args=None):
                 peppy.sendToOtherInstance(filename)
         sys.exit()
 
-    from buffers import Buffer, BufferFrame
+    from buffers import Buffer
+    from frame import BufferFrame
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')

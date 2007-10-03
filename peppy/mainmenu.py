@@ -12,6 +12,7 @@ from peppy.yapsy.plugins import *
 from major import *
 from menu import *
 from buffers import *
+from frame import *
 from debug import *
 
 
