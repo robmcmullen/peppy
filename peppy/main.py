@@ -60,7 +60,7 @@ class errorRedirector(object):
         
     def write(self, text):
         if self.isready:
-            Publisher().sendMessage(self.msg, text)
+            wx.CallAfter(Publisher().sendMessage, self.msg, text)
         else:
             self.save.write(text)
 
