@@ -32,7 +32,7 @@ class FrameList(GlobalList):
     def getItems(self):
         return [frame.getTitle() for frame in FrameList.storage]
 
-    def action(self,state=None,index=0):
+    def action(self, index=0):
         assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
         wx.GetApp().SetTopWindow(FrameList.storage[index])
         wx.CallAfter(FrameList.storage[index].Raise)
@@ -41,7 +41,7 @@ class DeleteFrame(SelectAction):
     name = "&Delete Frame"
     tooltip = "Delete current window"
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         self.frame.closeWindow(None)
 
     def isEnabled(self):
@@ -54,7 +54,7 @@ class NewFrame(SelectAction):
     tooltip = "Open a new window"
     key_bindings = {'emacs': "C-X 5 2",}
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         frame=BufferFrame()
         frame.Show(True)
 
@@ -348,9 +348,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         #print
         #print
         assert self.dprint("---------- %d id=%s" % (count, id(self.toolmap)))
-        for action in self.toolmap.actions:
-            assert self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
-            action.Enable()
+
+        current = self.getActiveMajorMode()
+        if len(self.toolmap.actions) > 0:
+            if self.toolmap.actions[0].mode != current:
+                # Now that I'm saving the major mode in each action,
+                # it's possible that some old actions can be hanging
+                # around before the next event is processed that
+                # creates the new major mode.
+                #dprint("FOUND OLD MODE!!!! ABORTING!!!")
+                return
+            
+            for action in self.toolmap.actions:
+                assert self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
+                action.Enable()
 
     def setToolmap(self,majormodes=[],minormodes=[]):
         if self.toolmap is not None:

@@ -36,8 +36,7 @@ class OpenImageViewer(SelectAction):
     tooltip = _("Open an Image Viewer")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, pos=-1):
-        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
         self.frame.open("about:red.png")
 
 class ZoomIn(SelectAction):
@@ -46,10 +45,8 @@ class ZoomIn(SelectAction):
     icon = 'icons/zoom_in.png'
     keyboard = "="
     
-    def action(self, pos=None):
-        dprint()
-        mode = self.frame.getActiveMajorMode()
-        mode.editwin.zoomIn()
+    def action(self, index=-1):
+        self.mode.editwin.zoomIn()
 
 class ZoomOut(SelectAction):
     name = _("Zoom Out")
@@ -57,10 +54,8 @@ class ZoomOut(SelectAction):
     icon = 'icons/zoom_out.png'
     keyboard = "-"
     
-    def action(self, pos=None):
-        dprint()
-        mode = self.frame.getActiveMajorMode()
-        mode.editwin.zoomOut()
+    def action(self, index=-1):
+        self.mode.editwin.zoomOut()
 
 class RectangularSelect(ToggleAction):
     name = _("Select Rect")
@@ -71,9 +66,9 @@ class RectangularSelect(ToggleAction):
         mode = self.frame.getActiveMajorMode()
         return mode.editwin.use_selector == RubberBand
 
-    def action(self, pos=None):
+    def action(self, index=-1):
         print "Select mode!!!"
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         if mode.editwin.use_selector == RubberBand:
             mode.editwin.setSelector(Crosshair)
         else:

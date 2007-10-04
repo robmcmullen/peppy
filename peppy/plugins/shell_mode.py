@@ -136,11 +136,9 @@ class ProcessShellLine(SelectAction):
     tooltip = "Process a shell command."
     key_bindings = {'default': 'RET', }
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            viewer.buffer.stc.process(viewer)
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mode.buffer.stc.process(self.mode)
 
 class ShellReturnMixin(object):
     def electricReturn(self):

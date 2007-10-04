@@ -55,12 +55,9 @@ class BufferBusyActionMixin(object):
     you lose the buffer busy test.
     """
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
-        if mode is not None:
-            return not mode.buffer.busy and self.isActionAvailable(mode)
-        return False
+        return not self.mode.buffer.busy and self.isActionAvailable()
 
-    def isActionAvailable(self, mode):
+    def isActionAvailable(self):
         return True
 
 class BufferModificationAction(BufferBusyActionMixin, SelectAction):
@@ -70,18 +67,7 @@ class BufferModificationAction(BufferBusyActionMixin, SelectAction):
     would change the buffer when the buffer is in the process of being
     modified by a long-running process.
     """
-    # Set up a new run() method to pass the viewer
-    def action(self, pos=-1):
-        assert self.dprint("id=%s name=%s" % (id(self),self.name))
-        self.modify(self.frame.getActiveMajorMode(),pos)
-
-    def modify(self, mode, pos=-1):
-        raise NotImplementedError
-
-    # Set up a new keyboard callback to also pass the viewer
-    def __call__(self, evt, number=None):
-        assert self.dprint("%s called by keybindings" % self)
-        self.modify(self.frame.getActiveMajorMode())
+    pass
 
 
 #### MajorMode base class

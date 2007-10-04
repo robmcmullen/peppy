@@ -53,9 +53,7 @@ class ShowStyles(SelectAction):
     key_bindings = {'default': 'M-S',}
     
     def action(self, pos=-1):
-        mode = self.frame.getActiveMajorMode()
-        if mode:
-            mode.stc.showStyle()
+        self.mode.stc.showStyle()
 
 
 class SandboxPlugin(IPeppyPlugin):

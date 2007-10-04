@@ -410,11 +410,11 @@ class Login(SelectAction):
     keyboard = "-"
     
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         return mode.isConnected()
 
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         wx.CallAfter(mode.loginPassword)
 
 class OpenMPD(OpenDialog):
@@ -440,7 +440,7 @@ class PlayingAction(SelectAction):
     server is playing (or paused).
     """
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         return mode.mpd.isPlaying()
 
 class ConnectedAction(SelectAction):
@@ -450,7 +450,7 @@ class ConnectedAction(SelectAction):
     of the play/pause state of the server.
     """
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         return mode.isConnected() and mode.mpd.isLoggedIn()
 
 class PrevSong(PlayingAction):
@@ -459,9 +459,9 @@ class PrevSong(PlayingAction):
     icon = 'icons/control_start.png'
     keyboard = "-"
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         assert self.dprint("Previous song!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.mpd.prevSong()
         mode.update()
 
@@ -471,9 +471,9 @@ class NextSong(PlayingAction):
     icon = 'icons/control_end.png'
     keyboard = "="
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         assert self.dprint("Next song!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.mpd.nextSong()
         mode.update()
 
@@ -483,9 +483,9 @@ class StopSong(PlayingAction):
     icon = 'icons/control_stop.png'
     keyboard = "S"
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         assert self.dprint("Stop playing!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.mpd.stopPlaying()
         mode.update()
 
@@ -495,9 +495,9 @@ class PlayPause(ConnectedAction):
     icon = 'icons/control_play.png'
     keyboard = "SPC"
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         assert self.dprint("Play song!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.mpd.playPause()
         mode.update()
 
@@ -507,8 +507,8 @@ class Mute(ConnectedAction):
     icon = 'icons/sound_mute.png'
     keyboard = "\\"
     
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         mode.mpd.setMute()
         mode.update()
 
@@ -518,8 +518,8 @@ class VolumeUp(ConnectedAction):
     icon = 'icons/sound.png'
     keyboard = "\\"
     
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         mode.mpd.volumeUp(mode.classprefs.volume_step)
         mode.update()
 
@@ -529,8 +529,8 @@ class VolumeDown(ConnectedAction):
     icon = 'icons/sound_low.png'
     keyboard = "\\"
     
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         mode.mpd.volumeDown(mode.classprefs.volume_step)
         mode.update()
 
@@ -540,8 +540,8 @@ class UpdateDatabase(ConnectedAction):
     icon = 'icons/sound_low.png'
     keyboard = "C-U"
     
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         status = mode.mpd.cmd('update')
 
 class DeleteFromPlaylist(ConnectedAction):
@@ -550,8 +550,8 @@ class DeleteFromPlaylist(ConnectedAction):
     icon = 'icons/sound_low.png'
     keyboard = "BACK"
     
-    def action(self, pos=None):
-        mode = self.frame.getActiveMajorMode()
+    def action(self, index=-1):
+        mode = self.mode
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 
 class MPDSTC(NonResidentSTC):

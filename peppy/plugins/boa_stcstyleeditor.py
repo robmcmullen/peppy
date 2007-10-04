@@ -29,30 +29,28 @@ class STCStyles(SelectAction):
         return False
 
     def action(self, pos=-1):
-        mode=self.frame.getActiveMajorMode()
-        if mode:
-            config=boa.getUserConfigFile(wx.GetApp())
-            dprint(config)
-            name = mode.keyword
-            lang = mode.keyword.lower()
-            dlg = boa.STCStyleEditDlg(self.frame, name, lang, config)
+        config=boa.getUserConfigFile(wx.GetApp())
+        dprint(config)
+        name = self.mode.keyword
+        lang = self.mode.keyword.lower()
+        dlg = boa.STCStyleEditDlg(self.frame, name, lang, config)
 
-            # special case: the LexerDebug mode needs to set the
-            # sample text to whatever is currently in the buffer.  It
-            # also needs to set the lexer, so we have to break the
-            # black-box model and poke around in the internals of the
-            # boa dialog to do it.
-            if mode.classprefs.stc_boa_use_current_text:
-                dlg.stc.SetText(mode.stc.GetText())
-                dlg.lexer = mode.stc.GetLexer()
-                dlg._blockUpdate = False
-                dlg.setStyles()
-                
-            try:
-                dlg.ShowModal()
-            finally:
-                dlg.Destroy()
-            Publisher().sendMessage('peppy.preferences.changed')
+        # special case: the LexerDebug mode needs to set the
+        # sample text to whatever is currently in the buffer.  It
+        # also needs to set the lexer, so we have to break the
+        # black-box model and poke around in the internals of the
+        # boa dialog to do it.
+        if self.mode.classprefs.stc_boa_use_current_text:
+            dlg.stc.SetText(self.mode.stc.GetText())
+            dlg.lexer = self.mode.stc.GetLexer()
+            dlg._blockUpdate = False
+            dlg.setStyles()
+
+        try:
+            dlg.ShowModal()
+        finally:
+            dlg.Destroy()
+        Publisher().sendMessage('peppy.preferences.changed')
 
 
 

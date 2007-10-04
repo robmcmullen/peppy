@@ -318,11 +318,9 @@ class LexerSelect(RadioAction):
     def getItems(self):
         return _stc_lexer_names
     
-    def action(self, index=0, old=-1):
-        mode = self.frame.getActiveMajorMode()
-        if mode:
-            assert self.dprint("changing to index=%d" % index)
-            mode.changeLexer(_stc_lexer[_stc_lexer_names[index]])
+    def action(self, index=0):
+        assert self.dprint("changing to index=%d" % index)
+        self.mode.changeLexer(_stc_lexer[_stc_lexer_names[index]])
 
 class LexerKeywords(MinibufferAction):
     """Get a string specifying the lexer keywords.

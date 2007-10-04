@@ -68,7 +68,15 @@ class SelectAction(debugmixin):
     def __init__(self, frame, menu=None, toolbar=None):
         self.widget=None
         self.tool=None
-        self.frame=frame
+
+        # Each action is always associated with a particular frame and
+        # major mode
+        self.frame = frame
+        self.mode = frame.getActiveMajorMode()
+        if self.mode:
+            dprint("%s %s %s" % (self.mode.keyword, menu, toolbar))
+        else:
+            dprint("%s is None! %s %s" % (self.mode, menu, toolbar))
 
         self.initPreHook()
         
@@ -151,12 +159,15 @@ class SelectAction(debugmixin):
         assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
 
-    def action(self, state=None, index=-1):
+    def action(self, index=-1):
         pass
+
+    def keyAction(self, number=None):
+        self.action()
 
     def __call__(self, evt, number=None):
         assert self.dprint("%s called by keybindings" % self)
-        self.action()
+        self.keyAction(number)
 
     def Enable(self):
         assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))
@@ -369,12 +380,12 @@ class RadioAction(ListAction):
         self.count+=1
 
     def OnMenuSelected(self,evt):
-        old=self.getIndex()
+        #old=self.getIndex()
         self.id=evt.GetId()
         index=self.id2index[self.id]
         assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
         self.saveIndex(index)
-        self.action(index=index,old=old)
+        self.action(index=index)
 
     def OnUpdateUI(self,evt):
         assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))

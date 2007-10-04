@@ -35,8 +35,7 @@ class Preferences(SelectAction):
             Publisher().sendMessage('peppy.preferences.changed')
         dlg.Destroy()
 
-    def action(self, pos=-1):
-        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
         self.showDialog()
 
 # FIXME: this is probably not the standard way I want to set up
@@ -83,8 +82,7 @@ class Plugins(SelectAction):
             Publisher().sendMessage('peppy.plugins.changed')
         dlg.Destroy()
 
-    def action(self, pos=-1):
-        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
         self.showDialog()
 
 

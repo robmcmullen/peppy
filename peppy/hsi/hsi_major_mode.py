@@ -347,7 +347,7 @@ class PrevBand(SelectAction):
     keyboard = "C-P"
     
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         for band in mode.bands:
             # check if any of the display bands is at the low limit
             if band < 1:
@@ -357,7 +357,7 @@ class PrevBand(SelectAction):
 
     def action(self, pos=None):
         dprint("Previous band!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.prevBand()
 
 class NextBand(SelectAction):
@@ -367,7 +367,7 @@ class NextBand(SelectAction):
     keyboard = "C-N"
     
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         for band in mode.bands:
             # check if any of the display bands is at the high limit
             if band >= (mode.cube.bands-1):
@@ -377,7 +377,7 @@ class NextBand(SelectAction):
 
     def action(self, pos=None):
         dprint("Next band!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.nextBand()
 
 class PrevCube(SelectAction):
@@ -386,7 +386,7 @@ class PrevCube(SelectAction):
     icon = 'icons/hsi-cube-prev.png'
 
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         index = mode.dataset_index
         num = mode.dataset.getNumCubes()
         if index>0:
@@ -395,7 +395,7 @@ class PrevCube(SelectAction):
 
     def action(self, pos=None):
         dprint("Prev cube!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.prevCube()
 
 class NextCube(SelectAction):
@@ -404,7 +404,7 @@ class NextCube(SelectAction):
     icon = 'icons/hsi-cube-next.png'
 
     def isEnabled(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         index = mode.dataset_index
         num = mode.dataset.getNumCubes()
         if index < (num-1):
@@ -413,7 +413,7 @@ class NextCube(SelectAction):
 
     def action(self, pos=None):
         dprint("Next cube!!!")
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.nextCube()
 
 class SelectCube(RadioAction):
@@ -427,17 +427,17 @@ class SelectCube(RadioAction):
         # do nothing here: it's actually changed in action
 
     def getIndex(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         return mode.dataset_index
 
     def getItems(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         self.dprint("datasets = %s" % mode.dataset.getCubeNames())
         return mode.dataset.getCubeNames()
 
-    def action(self, index=0, old=-1):
+    def action(self, index=0):
         assert self.dprint("index=%d" % index)
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         mode.setCube(index)
         dprint("mode.dataset_index = %d" % mode.dataset_index)
         wx.CallAfter(mode.update)
@@ -455,7 +455,7 @@ class ContrastFilterAction(RadioAction):
         # do nothing here: it's actually changed in action
 
     def getIndex(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         filt = mode.cubefilter
         dprint(filt)
         if hasattr(filt, 'contraststretch'):
@@ -472,9 +472,9 @@ class ContrastFilterAction(RadioAction):
     def getItems(self):
         return self.__class__.items
 
-    def action(self, index=0, old=-1):
+    def action(self, index=0):
         assert self.dprint("index=%d" % index)
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         if index == 0:
             filt = BandFilter()
         elif index == 1:
@@ -515,7 +515,7 @@ class MedianFilterAction(RadioAction):
         # do nothing here: it's actually changed in action
 
     def getIndex(self):
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         filt = mode.filter
         dprint(filt)
         return filt.pos
@@ -523,9 +523,9 @@ class MedianFilterAction(RadioAction):
     def getItems(self):
         return self.__class__.items
 
-    def action(self, index=0, old=-1):
+    def action(self, index=0):
         assert self.dprint("index=%d" % index)
-        mode = self.frame.getActiveMajorMode()
+        mode = self.mode
         if index == 0:
             filt = GeneralFilter(pos=0)
         elif index == 1:

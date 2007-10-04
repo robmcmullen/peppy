@@ -9,6 +9,8 @@ import os
 import wx
 
 from peppy.yapsy.plugins import *
+from peppy.actions.minibuffer import *
+
 from major import *
 from menu import *
 from buffers import *
@@ -21,8 +23,8 @@ class NewTab(SelectAction):
     tooltip = _("Open a new tab")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:blank")
 
 class New(SelectAction):
@@ -31,10 +33,65 @@ class New(SelectAction):
     icon = "icons/page.png"
     key_bindings = {'win': "C-N", }
 
-    def action(self, pos=-1):
+    def action(self, index=-1):
         self.frame.open("about:untitled")
 
 
+class URLMinibuffer(TextMinibuffer):
+    def createWindow(self):
+        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        prompt = wx.StaticText(self.win, -1, self.label)
+        sizer.Add(prompt, 0, wx.CENTER)
+        self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
+        sizer.Add(self.text, 1, wx.EXPAND)
+        self.win.SetSizer(sizer)
+
+        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+        self.text.Bind(wx.EVT_TEXT, self.OnText)
+        self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+
+        if self.initial:
+            self.text.ChangeValue(self.initial)
+
+        self.win.saveSetFocus = self.win.SetFocus
+        self.win.SetFocus = self.SetFocus
+
+    def SetFocus(self):
+        self.win.saveSetFocus()
+        self.text.SetInsertionPointEnd()
+
+    def OnText(self, evt):
+        text = evt.GetString()
+        if text.endswith('~') and text[:-1] == self.initial:
+            self.text.ChangeValue('~')
+            self.text.SetInsertionPointEnd()
+            return
+        #dprint(text)
+        evt.Skip()
+
+    def OnKeyDown(self, evt):
+        skip = True
+        key = evt.GetKeyCode()
+        #dprint(key)
+        if key == wx.WXK_TAB:
+            self.mode.frame.SetStatusText("Tab completion coming soon!!!")
+            
+        # NOTE: don't check for ~ here, because on most keyboards it's
+        # a shifted value and doesn't show up in the keycodes.  You
+        # actually have to check for ord("`") and the shift key, but
+        # that's under the assumption that the user hasn't rearranged
+        # the keyboard
+
+        if skip:
+            evt.Skip()
+
+    def convert(self, text):
+        if text.startswith("~/"):
+            text = os.path.join(wx.StandardPaths.Get().GetDocumentsDir(),
+                                text[2:])
+        return text
 
 class OpenFile(SelectAction):
     name = _("&File...")
@@ -42,9 +99,7 @@ class OpenFile(SelectAction):
     icon = "icons/folder_page.png"
     key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-
+    def action(self, index=-1):
         wildcard="*"
         cwd=self.frame.cwd()
         dlg = wx.FileDialog(
@@ -66,11 +121,21 @@ class OpenFile(SelectAction):
         # BAD things can happen otherwise!
         dlg.Destroy()
 
+    def keyAction(self, number=None):
+        cwd=self.frame.cwd() + os.sep
+        minibuffer = URLMinibuffer(self.mode, self, label="Find file:",
+                                    initial = cwd)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, mode, text):
+        self.frame.open(text)
+
+
 class OpenDialog(SelectAction):
     dialog_message = "Open..."
     
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
 
         dlg = wx.TextEntryDialog(
             self.frame, message=self.dialog_message, defaultValue="",
@@ -106,7 +171,7 @@ class Exit(SelectAction):
     tooltip = _("Quit the program.")
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         Publisher().sendMessage('peppy.request.quit')
 
 class Close(SelectAction):
@@ -117,8 +182,8 @@ class Close(SelectAction):
     def isEnabled(self):
         return self.frame.isOpen()
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.close()
 
 class Revert(SelectAction):
@@ -127,15 +192,11 @@ class Revert(SelectAction):
     icon = "icons/page_refresh.png"
 
     def isEnabled(self):
-        mode=self.frame.getActiveMajorMode()
-        if mode and mode.buffer.stc.CanEdit():
-            return True
-        return False
+        return self.mode.buffer.stc.CanEdit()
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        mode=self.frame.getActiveMajorMode()
-        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % self.mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
         retval=dlg.ShowModal()
         dlg.Destroy()
             
@@ -149,18 +210,13 @@ class Save(SelectAction):
     key_bindings = {'win': "C-S", 'emacs': "C-X C-S",}
 
     def isEnabled(self):
-        mode=self.frame.getActiveMajorMode()
-        if mode:
-            if mode.buffer.readonly or not mode.buffer.stc.CanSave():
-                return False
-            return True
-        return False
+        if self.mode.buffer.readonly or not self.mode.buffer.stc.CanSave():
+            return False
+        return True
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        mode=self.frame.getActiveMajorMode()
-        if mode:
-            mode.save()
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mode.save()
 
 class SaveAs(SelectAction):
     name = _("Save &As...")
@@ -169,17 +225,13 @@ class SaveAs(SelectAction):
     key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
     
     def isEnabled(self):
-        mode=self.frame.getActiveMajorMode()
-        if mode:
-            return mode.buffer.stc.CanSave()
-        return False
+        return self.mode.buffer.stc.CanSave()
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
 
-        mode=self.frame.getActiveMajorMode()
         paths=None
-        if mode and mode.buffer:
+        if self.mode.buffer:
             saveas=mode.buffer.getFilename()
             cwd = self.frame.cwd()
             assert self.dprint("cwd = %s, path = %s" % (cwd, saveas))
@@ -218,12 +270,12 @@ class Undo(BufferModificationAction):
     icon = "icons/arrow_turn_left.png"
     key_bindings = {'win': "C-Z", 'emacs': "C-/",}
     
-    def isActionAvailable(self, mode):
-        return mode.stc.CanUndo()
+    def isActionAvailable(self):
+        return self.mode.stc.CanUndo()
 
-    def modify(self, mode, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        return mode.stc.Undo()
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        return self.mode.stc.Undo()
 
 
 class Redo(BufferModificationAction):
@@ -232,12 +284,12 @@ class Redo(BufferModificationAction):
     icon = "icons/arrow_turn_right.png"
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
     
-    def isActionAvailable(self, mode):
-        return mode.stc.CanRedo()
+    def isActionAvailable(self):
+        return self.mode.stc.CanRedo()
 
-    def modify(self, mode, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        return mode.stc.Redo()
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        return self.mode.stc.Redo()
 
 class Cut(BufferModificationAction):
     name = _("Cut")
@@ -245,12 +297,12 @@ class Cut(BufferModificationAction):
     icon = "icons/cut.png"
     key_bindings = {'win': "C-X"}
 
-    def isActionAvailable(self, mode):
-        return mode.stc.CanCut()
+    def isActionAvailable(self):
+        return self.mode.stc.CanCut()
 
-    def modify(self, mode, pos=-1):
-        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
-        return mode.stc.Cut()
+    def action(self, index=-1):
+        dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
+        return self.mode.stc.Cut()
 
 class Copy(BufferModificationAction):
     name = _("Copy")
@@ -258,12 +310,12 @@ class Copy(BufferModificationAction):
     icon = "icons/page_copy.png"
     key_bindings = {'win': "C-C"}
 
-    def isActionAvailable(self, mode):
-        return mode.stc.CanCopy()
+    def isActionAvailable(self):
+        return self.mode.stc.CanCopy()
 
-    def modify(self, mode, pos=-1):
-        assert self.dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
-        return mode.stc.Copy()
+    def action(self, index=-1):
+        assert self.dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
+        return self.mode.stc.Copy()
 
 class Paste(BufferModificationAction):
     name = _("Paste")
@@ -271,12 +323,12 @@ class Paste(BufferModificationAction):
     icon = "icons/paste_plain.png"
     key_bindings = {'win': "C-V"}
 
-    def isActionAvailable(self, mode):
-        return mode.stc.CanEdit()
+    def isActionAvailable(self):
+        return self.mode.stc.CanEdit()
 
-    def modify(self, mode, pos=-1):
-        dprint("rectangle=%s" % mode.stc.SelectionIsRectangle())
-        return mode.stc.Paste()
+    def action(self, index=-1):
+        dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
+        return self.mode.stc.Paste()
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
@@ -288,7 +340,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     items=None
 
     def initPreHook(self):
-        currentmode = self.frame.getActiveMajorMode()
+        currentmode = self.mode
         # FIXME: this should instead only get those major modes that
         # are in active plugins
         modes = MajorModeMatcherDriver.getActiveModes()
@@ -307,7 +359,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
 
     def getIndex(self):
-        modecls = self.frame.getActiveMajorMode().__class__
+        modecls = self.mode.__class__
         assert self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
         if modecls is not None.__class__:
             return MajorModeSelect.modes.index(modecls)
@@ -316,7 +368,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     def getItems(self):
         return MajorModeSelect.items
 
-    def action(self, index=0, old=-1):
+    def action(self, index=0):
         self.frame.changeMajorMode(MajorModeSelect.modes[index])
 
 
@@ -326,22 +378,14 @@ class MinorModeShow(ToggleListAction):
     tooltip = _("Show or hide minor mode windows")
 
     def getItems(self):
-        major = self.frame.getActiveMajorMode()
-        if major is not None:
-            return [m.caption for m in major.minor_panes]
-        return []
+        return [m.caption for m in self.mode.minor_panes]
 
     def isChecked(self, index):
-        major = self.frame.getActiveMajorMode()
-        if major is not None:
-            return major.minor_panes[index].IsShown()
-        return False
+        return self.mode.minor_panes[index].IsShown()
 
-    def action(self, index=0, old=-1):
-        major = self.frame.getActiveMajorMode()
-        if major is not None:
-            major.minor_panes[index].Show(not major.minor_panes[index].IsShown())
-            major._mgr.Update()
+    def action(self, index=0):
+        self.mode.minor_panes[index].Show(not self.mode.minor_panes[index].IsShown())
+        self.mode._mgr.Update()
 
 
 class SidebarShow(ToggleListAction):
@@ -355,7 +399,7 @@ class SidebarShow(ToggleListAction):
     def isChecked(self, index):
         return self.frame.sidebar_panes[index].IsShown()
 
-    def action(self, index=0, old=-1):
+    def action(self, index=0):
         self.frame.sidebar_panes[index].Show(not self.frame.sidebar_panes[index].IsShown())
         self.frame._mgr.Update()
 
@@ -368,7 +412,7 @@ class ToolbarShow(ToggleAction):
     def isChecked(self):
         return self.frame.show_toolbar
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.frame.show_toolbar = not self.frame.show_toolbar
         self.frame.switchMode()

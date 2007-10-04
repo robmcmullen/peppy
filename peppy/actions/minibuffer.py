@@ -31,7 +31,7 @@ class Minibuffer(debugmixin):
     label = "Input:"
     error = "Bad input."
     
-    def __init__(self, mode, action, label=None, error=None):
+    def __init__(self, mode, action, label=None, error=None, initial=None):
         self.win=None
         self.mode=mode
         self.action = action
@@ -39,6 +39,7 @@ class Minibuffer(debugmixin):
             self.error = error
         if label is not None:
             self.label = label
+        self.initial = initial
         self.createWindow()
         
     def createWindow(self):
@@ -93,6 +94,9 @@ class TextMinibuffer(Minibuffer):
         self.win.SetSizer(sizer)
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+
+        if self.initial:
+            self.text.ChangeValue(self.initial)
 
     def convert(self, text):
         return text

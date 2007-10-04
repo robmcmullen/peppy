@@ -23,8 +23,7 @@ class OpenHexEditor(SelectAction):
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
 
-    def action(self, pos=-1):
-        assert self.dprint("exec: id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
         self.frame.open("about:0x00-0xff")
 
 class GotoOffset(MinibufferAction):

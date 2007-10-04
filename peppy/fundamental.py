@@ -20,8 +20,8 @@ class OpenFundamental(SelectAction):
     tooltip = _("Open some sample text")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:demo.txt")
 
 class WordWrap(ToggleAction):
@@ -30,16 +30,11 @@ class WordWrap(ToggleAction):
     icon = wx.ART_TOOLBAR
 
     def isChecked(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.classprefs.word_wrap
-        return False
+        return self.mode.classprefs.word_wrap
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            viewer.setWordWrap(not viewer.classprefs.word_wrap)
+        self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
     
 class LineNumbers(ToggleAction):
     name = _("&Line Numbers")
@@ -47,16 +42,11 @@ class LineNumbers(ToggleAction):
     icon = wx.ART_TOOLBAR
 
     def isChecked(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.classprefs.line_numbers
-        return False
+        return self.mode.classprefs.line_numbers
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            viewer.setLineNumbers(not viewer.classprefs.line_numbers)
+        self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
 
 class Folding(ToggleAction):
     name = _("&Folding")
@@ -64,23 +54,18 @@ class Folding(ToggleAction):
     icon = wx.ART_TOOLBAR
 
     def isChecked(self):
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            return viewer.classprefs.folding
-        return False
+        return self.mode.classprefs.folding
     
-    def action(self, pos=-1):
+    def action(self, index=-1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            viewer.setFolding(not viewer.classprefs.folding)
+        self.mode.setFolding(not self.mode.classprefs.folding)
 
 class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
 
-    def modify(self, mode, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        mode.stc.CmdKeyExecute(self.cmd)
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mode.stc.CmdKeyExecute(self.cmd)
 
 class BeginningOfLine(ScintillaCmdKeyExecute):
     name = _("Cursor to Start of Line")
@@ -156,11 +141,9 @@ class WordOrRegionMutateMixin(object):
         s.EndUndoAction()
         s.GotoPos(end)
 
-    def action(self, pos=-1):
-        assert self.dprint("id=%x name=%s pos=%s" % (id(self),self.name,str(pos)))
-        viewer=self.frame.getActiveMajorMode()
-        if viewer:
-            self.mutateSelection(viewer.stc)
+    def action(self, index=-1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mutateSelection(self.mode.stc)
             
 class CapitalizeWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Title-case the current word and move the cursor to the start of
@@ -298,9 +281,9 @@ class CommentRegion(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'emacs': 'C-C C-C',}
 
-    def modify(self, mode, pos=-1):
-        if hasattr(mode, 'comment') and mode.comment is not None:
-            mode.comment(True)
+    def action(self, index=-1):
+        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
+            self.mode.comment(True)
 
 
 class StandardReturnMixin(debugmixin):
@@ -353,8 +336,8 @@ class ElectricReturn(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'RET',}
 
-    def modify(self, mode, pos=-1):
-        mode.electricReturn()
+    def action(self, index=-1):
+        self.mode.electricReturn()
 
 
 class ReindentBase(debugmixin):
@@ -455,12 +438,12 @@ class Reindent(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'C-TAB',}
 
-    def modify(self, mode, pos=-1):
-        s = mode.stc
+    def action(self, index=-1):
+        s = self.mode.stc
 
         # save cursor information so the cursor can be maintained at
         # the same relative location in the text after the indention
-        pos = mode.reindent()
+        pos = self.mode.reindent()
         s.GotoPos(pos)
 
 
@@ -469,10 +452,8 @@ class PasteAtColumn(Paste):
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
 
-    def action(self, pos=-1):
-        mode = self.frame.getActiveMajorMode()
-        if mode:
-            mode.stc.PasteAtColumn()
+    def action(self, index=-1):
+        self.mode.stc.PasteAtColumn()
 
 
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
@@ -487,16 +468,14 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
 
     def getIndex(self):
-        mode = self.frame.getActiveMajorMode()
-        eol = mode.stc.GetEOLMode()
+        eol = self.mode.stc.GetEOLMode()
         return EOLModeSelect.modes.index(eol)
                                            
     def getItems(self):
         return EOLModeSelect.items
 
-    def action(self, index=0, old=-1):
-        mode = self.frame.getActiveMajorMode()
-        mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
+    def action(self, index=0):
+        self.mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
         Publisher().sendMessage('resetStatusBar')
 
 

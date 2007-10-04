@@ -12,6 +12,7 @@ from lib.iconstorage import *
 from lib.controls import *
 from lib.userparams import *
 
+from dialogs import *
 from stcinterface import *
 from iofilter import *
 from major import *

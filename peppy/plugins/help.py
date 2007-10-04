@@ -30,7 +30,7 @@ class HelpAbout(SelectAction):
     about = "Test program"
     title = "Test program title"
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         from wx.lib.wordwrap import wordwrap
         
         info = wx.AboutDialogInfo()
@@ -69,7 +69,7 @@ class HelpManual(SelectAction):
     stock_id = wx.ID_HELP
     key_bindings = {'default': "F1",}
     
-    def action(self, pos=None):
+    def action(self, index=-1):
         self.frame.open("about:User Manual")
         
 
