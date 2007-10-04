@@ -10,7 +10,7 @@ import cPickle as pickle
 
 import wx
 
-from debug import *
+from peppy.debug import *
 
 class HomeConfigDir:
     """Simple loader for config files in the home directory.

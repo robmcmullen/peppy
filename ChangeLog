@@ -1,3 +1,8 @@
+2007-10-03  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.6.5.1 "I'm not left-handed either."
+	* fixed mixed relative and absolute imports
+
 2007-10-01  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.5 "Where's the sports?"

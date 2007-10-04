@@ -22,7 +22,7 @@ from wx.lib import buttons
 from wx.lib import imageutils
 from wx.lib.pubsub import Publisher
 
-from iconstorage import *
+from peppy.lib.iconstorage import *
 
 
 class StatusBarButton(wx.lib.buttons.GenBitmapButton):

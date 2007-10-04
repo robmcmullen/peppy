@@ -11,11 +11,11 @@ import wx
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
 
-from major import *
-from menu import *
-from buffers import *
-from frame import *
-from debug import *
+from peppy.major import *
+from peppy.menu import *
+from peppy.buffers import *
+from peppy.frame import *
+from peppy.debug import *
 
 
 class NewTab(SelectAction):

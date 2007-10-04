@@ -4,9 +4,9 @@ import os,re,urlparse
 import urllib2
 from cStringIO import StringIO
 
-from lib.bufferedreader import *
+from peppy.lib.bufferedreader import *
 
-from debug import *
+from peppy.debug import *
 
 __all__ = [ 'URLInfo', 'URLHandler' ]
 

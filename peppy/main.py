@@ -299,8 +299,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def startSplash(self):
         if self.classprefs.show_splash:
-            import splash_image
-            self.splash = GaugeSplash(splash_image.getBitmap())
+            import peppy.splash_image
+            self.splash = GaugeSplash(peppy.splash_image.getBitmap())
             self.splash.Show()
             self.splash.Update()
             wx.Yield()
@@ -345,12 +345,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # FIXME: Could make mainmenu a plugin, but at least have to
         # defer main menu loading till after the i18n '_' method is
         # defined.
-        import mainmenu
-        import fundamental
+        import peppy.mainmenu
+        import peppy.fundamental
         
         # py2exe imports go here.
         if main_is_frozen():
-            import py2exe_plugins
+            import peppy.py2exe_plugins
         pass
     
     def gaugeCallback(self, plugin_info):
@@ -492,7 +492,7 @@ def run(options={},args=None):
     peppy = Peppy(redirect=False)
     
     if options.sample_config:
-        from keyboard import KeyboardConf
+        from peppy.keyboard import KeyboardConf
         KeyboardConf.configDefault()
         sys.exit()
 
@@ -502,8 +502,8 @@ def run(options={},args=None):
                 peppy.sendToOtherInstance(filename)
         sys.exit()
 
-    from buffers import Buffer
-    from frame import BufferFrame
+    from peppy.buffers import Buffer
+    from peppy.frame import BufferFrame
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')

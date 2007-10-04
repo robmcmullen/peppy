@@ -7,16 +7,16 @@ import wx
 import wx.aui
 import wx.stc
 
-from menu import *
-from lib.iconstorage import *
-from lib.controls import *
-from lib.userparams import *
+from peppy.menu import *
+from peppy.lib.iconstorage import *
+from peppy.lib.controls import *
+from peppy.lib.userparams import *
 
-from dialogs import *
-from stcinterface import *
-from iofilter import *
-from major import *
-from debug import *
+from peppy.dialogs import *
+from peppy.stcinterface import *
+from peppy.iofilter import *
+from peppy.major import *
+from peppy.debug import *
 
 class BufferList(GlobalList):
     debuglevel = 0

@@ -36,16 +36,16 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from menu import *
-from stcinterface import *
-from debug import *
-from minor import *
-from iofilter import *
+from peppy.menu import *
+from peppy.stcinterface import *
+from peppy.debug import *
+from peppy.minor import *
+from peppy.iofilter import *
 from peppy.yapsy.plugins import *
 from peppy.lib.userparams import *
 
-from lib.iconstorage import *
-from lib.controls import *
+from peppy.lib.iconstorage import *
+from peppy.lib.controls import *
 
 class BufferBusyActionMixin(object):
     """Mixin to disable an action when the buffer is being modified.

@@ -8,7 +8,7 @@ from wx.lib.pubsub import Publisher
 
 from cStringIO import StringIO
 
-from debug import *
+from peppy.debug import *
 
 
 def GetClipboardText():
@@ -422,7 +422,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.EndUndoAction()
 
     def detectLineEndings(self, num=1024):
-        from pype.parsers import detectLineEndings
+        from peppy.pype.parsers import detectLineEndings
         if num > self.GetTextLength():
             num = self.GetTextLength()
         linesep = detectLineEndings(self.GetTextRange(0,num))

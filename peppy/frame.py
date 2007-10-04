@@ -7,19 +7,19 @@ import wx
 import wx.aui
 import wx.stc
 
-from menu import *
-from lib.wxemacskeybindings import *
-from lib.iconstorage import *
-from lib.controls import *
-from lib.userparams import *
+from peppy.menu import *
+from peppy.lib.wxemacskeybindings import *
+from peppy.lib.iconstorage import *
+from peppy.lib.controls import *
+from peppy.lib.userparams import *
 
-from configprefs import *
-from stcinterface import *
-from iofilter import *
-from major import *
-from sidebar import *
-from debug import *
-from buffers import *
+from peppy.configprefs import *
+from peppy.stcinterface import *
+from peppy.iofilter import *
+from peppy.major import *
+from peppy.sidebar import *
+from peppy.debug import *
+from peppy.buffers import *
 
     
 class FrameList(GlobalList):

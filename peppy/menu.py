@@ -13,11 +13,11 @@ import wx
 
 import weakref
 
-from debug import *
+from peppy.debug import *
 
-from lib.iconstorage import *
-from lib.orderer import *
-from lib.wxemacskeybindings import *
+from peppy.lib.iconstorage import *
+from peppy.lib.orderer import *
+from peppy.lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
 
@@ -73,10 +73,10 @@ class SelectAction(debugmixin):
         # major mode
         self.frame = frame
         self.mode = frame.getActiveMajorMode()
-        if self.mode:
-            dprint("%s %s %s" % (self.mode.keyword, menu, toolbar))
-        else:
-            dprint("%s is None! %s %s" % (self.mode, menu, toolbar))
+##        if self.mode:
+##            dprint("%s %s %s" % (self.mode.keyword, menu, toolbar))
+##        else:
+##            dprint("%s is None! %s %s" % (self.mode, menu, toolbar))
 
         self.initPreHook()
         

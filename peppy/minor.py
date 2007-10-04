@@ -22,8 +22,8 @@ import os,re
 import wx
 
 from peppy.yapsy.plugins import *
-from menu import *
-from debug import *
+from peppy.menu import *
+from peppy.debug import *
 from peppy.lib.userparams import *
 
 class MinorModeIncompatibilityError(Exception):
