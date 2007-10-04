@@ -56,9 +56,10 @@ class GaugeSplash(wx.Frame):
         sizer.Add(self.gauge, 0, flag=wx.EXPAND|wx.ALL, border=self.border)
 
         self.CenterOnScreen()
-        
+
+        self.timeout = timeout
         self._splashtimer = wx.PyTimer(self.OnNotify)
-        self._splashtimer.Start(timeout)
+        self._splashtimer.Start(self.timeout)
         self.count = 0
 
         self.visible = True
@@ -74,10 +75,13 @@ class GaugeSplash(wx.Frame):
 
     def OnNotify(self):
         """ Handles The Timer Expiration, And Calls The Close() Method. """
+        # If we've taken too long and the object is dead, just return
+        if not self:
+            return
 
         # If we still have ticks remaining, don't close the window
         if self.count < self.gauge.GetRange():
-            self._splashtimer.Start(timeout/10)
+            self._splashtimer.Start(self.timeout/10)
         else:
             self.Close()
 
