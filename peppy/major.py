@@ -511,27 +511,33 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         self.statusbar.reset()
         self.createStatusIcons()
 
-    def setMinibuffer(self,minibuffer=None):
+    def setMinibuffer(self, minibuffer=None):
         self.removeMinibuffer()
         if minibuffer is not None:
-            self.minibuffer=minibuffer
-            box=self.GetSizer()
-            box.Add(self.minibuffer.win,0,wx.EXPAND)
+            self.minibuffer = minibuffer
+            box = self.GetSizer()
+            box.Add(self.minibuffer.win, 0, wx.EXPAND)
             self.Layout()
             self.minibuffer.win.Show()
             self.minibuffer.focus()
 
-    def removeMinibuffer(self, detach_only=False):
+    def removeMinibuffer(self, specific=None, detach_only=False):
         self.dprint(self.minibuffer)
         if self.minibuffer is not None:
-            box=self.GetSizer()
+            if specific is not None and specific != self.minibuffer:
+                # A minibuffer calling another minibuffer has already
+                # cleaned up the last minibuffer.  Don't clean it up
+                # again.
+                return
+            
+            box = self.GetSizer()
             box.Detach(self.minibuffer.win)
             if not detach_only:
                 # for those cases where you still want to keep a
                 # pointer around to the minibuffer and close it later,
                 # use detach_only
                 self.minibuffer.close()
-            self.minibuffer=None
+            self.minibuffer = None
             self.Layout()
             self.focus()
 

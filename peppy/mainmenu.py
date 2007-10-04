@@ -4,7 +4,7 @@
 Main menu and actions.
 """
 
-import os
+import os, glob
 
 import wx
 
@@ -20,6 +20,7 @@ from peppy.debug import *
 
 class NewTab(SelectAction):
     name = _("&Tab")
+    alias = _("new-tab")
     tooltip = _("Open a new tab")
     icon = wx.ART_FILE_OPEN
 
@@ -29,6 +30,7 @@ class NewTab(SelectAction):
 
 class New(SelectAction):
     name = _("&Text file")
+    alias = _("new-file")
     tooltip = _("New plain text file")
     icon = "icons/page.png"
     key_bindings = {'win': "C-N", }
@@ -37,55 +39,39 @@ class New(SelectAction):
         self.frame.open("about:untitled")
 
 
-class URLMinibuffer(TextMinibuffer):
-    def createWindow(self):
-        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+class URLMinibuffer(CompletionMinibuffer):
+    def setDynamicChoices(self):
+        text = self.text.GetValue()
         
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        prompt = wx.StaticText(self.win, -1, self.label)
-        sizer.Add(prompt, 0, wx.CENTER)
-        self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
-        sizer.Add(self.text, 1, wx.EXPAND)
-        self.win.SetSizer(sizer)
-
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
-        self.text.Bind(wx.EVT_TEXT, self.OnText)
-        self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-        if self.initial:
-            self.text.ChangeValue(self.initial)
-
-        self.win.saveSetFocus = self.win.SetFocus
-        self.win.SetFocus = self.SetFocus
-
-    def SetFocus(self):
-        self.win.saveSetFocus()
-        self.text.SetInsertionPointEnd()
-
-    def OnText(self, evt):
-        text = evt.GetString()
+        # NOTE: checking for ~ here rather than in OnKeyDown, because
+        # OnKeyDown uses keyboard codes instead of strings.  On most
+        # keyboards "~" is a shifted value and doesn't show up in the
+        # keycodes.  You actually have to check for ord("`") and the
+        # shift key, but that's under the assumption that the user
+        # hasn't rearranged the keyboard
         if text.endswith('~') and text[:-1] == self.initial:
             self.text.ChangeValue('~')
             self.text.SetInsertionPointEnd()
-            return
-        #dprint(text)
-        evt.Skip()
+        CompletionMinibuffer.setDynamicChoices(self)
 
-    def OnKeyDown(self, evt):
-        skip = True
-        key = evt.GetKeyCode()
-        #dprint(key)
-        if key == wx.WXK_TAB:
-            self.mode.frame.SetStatusText("Tab completion coming soon!!!")
-            
-        # NOTE: don't check for ~ here, because on most keyboards it's
-        # a shifted value and doesn't show up in the keycodes.  You
-        # actually have to check for ord("`") and the shift key, but
-        # that's under the assumption that the user hasn't rearranged
-        # the keyboard
-
-        if skip:
-            evt.Skip()
+    def complete(self, text):
+        if text.startswith("~/") or text.startswith("~\\"):
+            prefix = wx.StandardPaths.Get().GetDocumentsDir()
+            replace = len(prefix) + 1
+            text = os.path.join(prefix, text[2:])
+        else:
+            replace = 0
+        # FIXME: need to make this general by putting it in URLInfo
+        paths = []
+        for path in glob.glob(text+"*"):
+            if os.path.isdir(path):
+                path += os.sep
+            #dprint(path)
+            if replace > 0:
+                path = "~" + os.sep + path[replace:]
+            paths.append(path)
+        paths.sort()
+        return paths
 
     def convert(self, text):
         if text.startswith("~/"):
@@ -95,6 +81,7 @@ class URLMinibuffer(TextMinibuffer):
 
 class OpenFile(SelectAction):
     name = _("&File...")
+    alias = _("find-file")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
     key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
@@ -123,11 +110,12 @@ class OpenFile(SelectAction):
 
     def keyAction(self, number=None):
         cwd=self.frame.cwd() + os.sep
+        self.dprint(cwd)
         minibuffer = URLMinibuffer(self.mode, self, label="Find file:",
                                     initial = cwd)
         self.mode.setMinibuffer(minibuffer)
 
-    def processMinibuffer(self, mode, text):
+    def processMinibuffer(self, minibuffer, mode, text):
         self.frame.open(text)
 
 
@@ -176,6 +164,7 @@ class Exit(SelectAction):
 
 class Close(SelectAction):
     name = _("&Close Buffer")
+    alias = _("close-buffer")
     tooltip = _("Close current buffer")
     icon = "icons/cross.png"
 
@@ -418,6 +407,54 @@ class ToolbarShow(ToggleAction):
         self.frame.switchMode()
     
 
+class ActionNameMinibuffer(CompletionMinibuffer):
+    def createPostHook(self):
+        frame = self.action.frame
+        dprint(frame.menumap.actions)
+        dprint(frame.toolmap.actions)
+        # FIXME: ignoring those actions that only have keyboard
+        # equivalents
+        #dprint(frame.keys.actions)
+        self.map = {}
+        for actions in [frame.menumap.actions, frame.toolmap.actions]:
+            if actions is None:
+                continue
+            for action in actions:
+                dprint("name = %s" % action.name)
+                if action.alias and action.alias not in self.map:
+                    self.map[action.alias] = action
+                if action.name not in self.map:
+                    self.map[action.name] = action
+        self.sorted = self.map.keys()
+        self.sorted.sort()
+        
+    def complete(self, text):
+        found = []
+        for match in self.sorted:
+            if match.startswith(text):
+                found.append(match)
+        return found
+
+class ExecuteCommandByName(SelectAction):
+    name = _("&Execute Command")
+    tooltip = _("Execute a command by name")
+    key_bindings = {'win': "M-X", 'emacs': "M-X", }
+
+    def action(self, index=-1):
+        self.keyAction(1)
+
+    def keyAction(self, number=None):
+        # FIXME: ignoring number right now
+        minibuffer = ActionNameMinibuffer(self.mode, self, label="M-X")
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        if text in minibuffer.map:
+            action = minibuffer.map[text]
+            print "executing %s: %s" % (text, action)
+            wx.CallAfter(action.keyAction)
+        else:
+            print "%s not found" % text
 
 
 class MainMenu(IPeppyPlugin):
@@ -501,3 +538,9 @@ class MainMenu(IPeppyPlugin):
     def getToolBarItems(self):
         for menu,item in self.default_tools:
             yield (None,menu,item)
+            
+    default_keys=((None, ExecuteCommandByName),
+                  )
+    def getKeyboardItems(self):
+        for mode,action in self.default_keys:
+            yield (mode,action)

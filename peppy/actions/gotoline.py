@@ -28,7 +28,7 @@ class GotoLine(MinibufferAction):
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
 
-    def processMinibuffer(self, mode, line):
+    def processMinibuffer(self, minibuffer, mode, line):
         """
         Callback function used to set the stc to the correct line.
         """

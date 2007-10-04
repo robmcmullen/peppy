@@ -7,7 +7,7 @@ import wx.stc
 
 from peppy.major import *
 from peppy.debug import *
-
+from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 
 class MinibufferAction(BufferModificationAction):
     minibuffer_label = None
@@ -17,7 +17,7 @@ class MinibufferAction(BufferModificationAction):
         #print minibuffer.win
         mode.setMinibuffer(minibuffer)
 
-    def processMinibuffer(self, mode, text):
+    def processMinibuffer(self, minibuffer, mode, text):
         assert self.dprint("processing %s" % text)
 
 
@@ -41,6 +41,7 @@ class Minibuffer(debugmixin):
             self.label = label
         self.initial = initial
         self.createWindow()
+        self.createPostHook()
         
     def createWindow(self):
         """
@@ -48,6 +49,12 @@ class Minibuffer(debugmixin):
         self.win to that window.
         """
         raise NotImplementedError
+
+    def createPostHook(self):
+        """
+        Hook for subclasses to override and provide additional functionality.
+        """
+        pass
 
     def focus(self):
         """
@@ -69,7 +76,7 @@ class Minibuffer(debugmixin):
         Convenience routine to destroy minibuffer after the event loop
         exits.
         """
-        wx.CallAfter(self.mode.removeMinibuffer)
+        wx.CallAfter(self.mode.removeMinibuffer, self)
         
 
 
@@ -111,7 +118,7 @@ class TextMinibuffer(Minibuffer):
             text = None
 
         if text is not None:
-            error = self.action.processMinibuffer(self.mode, text)
+            error = self.action.processMinibuffer(self, self.mode, text)
             if error is not None:
                 self.mode.frame.SetStatusText(error)
         self.removeFromParent()
@@ -148,3 +155,90 @@ class FloatMinibuffer(TextMinibuffer):
         number = float(self.text.GetValue())
         assert self.dprint("number=%s" % number)
         return number
+
+
+class InPlaceCompletionMinibuffer(TextMinibuffer):
+    def createWindow(self):
+        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        prompt = wx.StaticText(self.win, -1, self.label)
+        sizer.Add(prompt, 0, wx.CENTER)
+        self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
+        sizer.Add(self.text, 1, wx.EXPAND)
+        self.win.SetSizer(sizer)
+
+        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+        self.text.Bind(wx.EVT_TEXT, self.OnText)
+        self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+
+        if self.initial:
+            self.text.ChangeValue(self.initial)
+
+        self.win.saveSetFocus = self.win.SetFocus
+        self.win.SetFocus = self.SetFocus
+        
+    def SetFocus(self):
+        self.win.saveSetFocus()
+        self.text.SetInsertionPointEnd()
+
+    def OnText(self, evt):
+        text = evt.GetString()
+        dprint(text)
+        evt.Skip()
+
+    def complete(self, text):
+        raise NotImplementedError
+
+    def processCompletion(self, text):
+        guesses = self.complete(text)
+        if guesses:
+            self.text.SetValue(guesses[0])
+            self.text.SetSelection(len(text), -1)
+
+    def OnKeyDown(self, evt):
+        key = evt.GetKeyCode()
+        #dprint(key)
+        if key == wx.WXK_TAB:
+            self.processCompletion(self.text.GetValue())
+            # don't call Skip() here.  That way wx knows not to
+            # continue on to the EVT_TEXT callback
+            return
+        evt.Skip()
+
+class CompletionMinibuffer(TextMinibuffer):
+    def createWindow(self):
+        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        prompt = wx.StaticText(self.win, -1, self.label)
+        sizer.Add(prompt, 0, wx.CENTER)
+        self.text = TextCtrlAutoComplete(self.win, choices=[], size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
+        sizer.Add(self.text, 1, wx.EXPAND)
+        self.win.SetSizer(sizer)
+
+        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+
+        if self.initial:
+            self.text.ChangeValue(self.initial)
+            self.text.SetChoices(self.complete(self.initial))
+        self.text.SetEntryCallback(self.setDynamicChoices)
+
+        self.win.saveSetFocus = self.win.SetFocus
+        self.win.SetFocus = self.SetFocus
+        
+    def SetFocus(self):
+        self.win.saveSetFocus()
+        self.text.SetInsertionPointEnd()
+
+    def complete(self, text):
+        raise NotImplementedError
+        
+    def setDynamicChoices(self):
+        ctrl = self.text
+        text = ctrl.GetValue()
+        current_choices = ctrl.GetChoices()
+        choices = self.complete(text)
+        self.dprint(choices)
+        if choices != current_choices:
+            ctrl.SetChoices(choices)

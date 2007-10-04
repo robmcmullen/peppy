@@ -487,7 +487,7 @@ class ContrastFilterAction(RadioAction):
         mode.cubefilter = filt
         wx.CallAfter(mode.update)
 
-    def processMinibuffer(self, mode, percentage):
+    def processMinibuffer(self, minibuffer, mode, percentage):
         dprint("returned percentage = %f" % percentage)
         filt = ContrastFilter(percentage)
         mode.cubefilter = filt

@@ -56,6 +56,7 @@ class SelectAction(debugmixin):
     debuglevel=0
     use_accelerators = True
     name=None
+    alias = ""
     help=""
     icon=None
     tooltip=""

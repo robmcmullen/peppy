@@ -335,7 +335,7 @@ class LexerKeywords(MinibufferAction):
     minibuffer = TextMinibuffer
     minibuffer_label = "Keywords:"
 
-    def processMinibuffer(self, mode, text):
+    def processMinibuffer(self, minibuffer, mode, text):
         """
         Callback function used to set the keywords
         """

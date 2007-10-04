@@ -39,7 +39,7 @@ class GotoOffset(MinibufferAction):
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Offset:"
 
-    def processMinibuffer(self, mode, pos):
+    def processMinibuffer(self, minibuffer, mode, pos):
         """
         Callback function used to set the grid's cursor to the
         specified byte offset.
