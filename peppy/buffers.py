@@ -253,7 +253,7 @@ class Buffer(debugmixin):
             self.stc.writeTo(fh)
             fh.close()
             self.stc.SetSavePoint()
-            if url is not None and url!=self.url:
+            if saveas != self.url:
                 self.setURL(saveas)
                 self.setName()
             self.modified = False
