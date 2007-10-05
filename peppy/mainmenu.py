@@ -409,6 +409,12 @@ class ToolbarShow(ToggleAction):
 
 class ActionNameMinibuffer(CompletionMinibuffer):
     def createPostHook(self):
+        """Generate list of possible names to complete.
+
+        For all the currently active actions, find all the names and
+        aliases under which the action could be called, and add them
+        to the list of possible completions.
+        """
         frame = self.action.frame
         dprint(frame.menumap.actions)
         dprint(frame.toolmap.actions)
@@ -420,15 +426,18 @@ class ActionNameMinibuffer(CompletionMinibuffer):
             if actions is None:
                 continue
             for action in actions:
-                dprint("name = %s" % action.name)
-                if action.alias and action.alias not in self.map:
-                    self.map[action.alias] = action
-                if action.name not in self.map:
-                    self.map[action.name] = action
+                # look at the emacs alias, the class name, and the
+                # possibility of the translated class namex
+                for name in [action.alias, action.__class__.__name__,
+                             _(action.__class__.__name__)]:
+                    #dprint("name = %s" % name)
+                    if name and name not in self.map:
+                        self.map[name] = action
         self.sorted = self.map.keys()
         self.sorted.sort()
         
     def complete(self, text):
+        """Return the list of completions that start with the given text"""
         found = []
         for match in self.sorted:
             if match.startswith(text):
