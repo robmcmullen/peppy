@@ -12,10 +12,11 @@ from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 class MinibufferAction(BufferModificationAction):
     minibuffer_label = None
     
-    def modify(self, mode, pos=-1):
-        minibuffer=self.minibuffer(mode, self, label=self.minibuffer_label)
+    def action(self, index=-1):
+        minibuffer=self.minibuffer(self.mode, self,
+                                   label=self.minibuffer_label)
         #print minibuffer.win
-        mode.setMinibuffer(minibuffer)
+        self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
         assert self.dprint("processing %s" % text)
