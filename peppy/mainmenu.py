@@ -407,15 +407,19 @@ class ToolbarShow(ToggleAction):
         self.frame.switchMode()
     
 
-class ActionNameMinibuffer(CompletionMinibuffer):
-    def createPostHook(self):
+class ExecuteCommandByName(SelectAction):
+    name = _("&Execute Command")
+    tooltip = _("Execute a command by name")
+    key_bindings = {'win': "M-X", 'emacs': "M-X", }
+
+    def createList(self):
         """Generate list of possible names to complete.
 
         For all the currently active actions, find all the names and
         aliases under which the action could be called, and add them
         to the list of possible completions.
         """
-        frame = self.action.frame
+        frame = self.frame
         dprint(frame.menumap.actions)
         dprint(frame.toolmap.actions)
         # FIXME: ignoring those actions that only have keyboard
@@ -435,31 +439,21 @@ class ActionNameMinibuffer(CompletionMinibuffer):
                         self.map[name] = action
         self.sorted = self.map.keys()
         self.sorted.sort()
-        
-    def complete(self, text):
-        """Return the list of completions that start with the given text"""
-        found = []
-        for match in self.sorted:
-            if match.startswith(text):
-                found.append(match)
-        return found
-
-class ExecuteCommandByName(SelectAction):
-    name = _("&Execute Command")
-    tooltip = _("Execute a command by name")
-    key_bindings = {'win': "M-X", 'emacs': "M-X", }
 
     def action(self, index=-1):
         self.keyAction(1)
 
     def keyAction(self, number=None):
         # FIXME: ignoring number right now
-        minibuffer = ActionNameMinibuffer(self.mode, self, label="M-X")
+        self.createList()
+        minibuffer = StaticListCompletionMinibuffer(self.mode, self,
+                                                    label="M-X",
+                                                    list = self.sorted)
         self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
-        if text in minibuffer.map:
-            action = minibuffer.map[text]
+        if text in self.map:
+            action = self.map[text]
             print "executing %s: %s" % (text, action)
             wx.CallAfter(action.keyAction)
         else:

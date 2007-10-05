@@ -31,7 +31,8 @@ class Minibuffer(debugmixin):
     label = "Input:"
     error = "Bad input."
     
-    def __init__(self, mode, action, label=None, error=None, initial=None):
+    def __init__(self, mode, action, label=None, error=None, initial=None,
+                 **kwargs):
         self.win=None
         self.mode=mode
         self.action = action
@@ -41,7 +42,6 @@ class Minibuffer(debugmixin):
             self.label = label
         self.initial = initial
         self.createWindow()
-        self.createPostHook()
         
     def createWindow(self):
         """
@@ -49,12 +49,6 @@ class Minibuffer(debugmixin):
         self.win to that window.
         """
         raise NotImplementedError
-
-    def createPostHook(self):
-        """
-        Hook for subclasses to override and provide additional functionality.
-        """
-        pass
 
     def focus(self):
         """
@@ -158,6 +152,16 @@ class FloatMinibuffer(TextMinibuffer):
 
 
 class InPlaceCompletionMinibuffer(TextMinibuffer):
+    """Base class for a simple autocompletion minibuffer.
+
+    This completion style is like Outlook's email address completion
+    where it suggests the best completion ahead of the cursor,
+    adjusting as you type.  There is no dropdown list; everything is
+    handled in the text ctrl.
+
+    This class doesn't implement the complete method, leaving its
+    implementation to subclasses.
+    """
     def createWindow(self):
         self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
@@ -188,6 +192,11 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         evt.Skip()
 
     def complete(self, text):
+        """Generate the completion list.
+
+        The best guess should be returned as the first item in the
+        list, with each subsequent entry being less probable.
+        """
         raise NotImplementedError
 
     def processCompletion(self, text):
@@ -207,6 +216,12 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         evt.Skip()
 
 class CompletionMinibuffer(TextMinibuffer):
+    """Base class for a minibuffer based on the TextCtrlAutoComplete
+    widget from the wxpython list.
+
+    This class doesn't implement the complete method, leaving its
+    implementation to subclasses.
+    """
     def createWindow(self):
         self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
@@ -242,3 +257,25 @@ class CompletionMinibuffer(TextMinibuffer):
         self.dprint(choices)
         if choices != current_choices:
             ctrl.SetChoices(choices)
+
+class StaticListCompletionMinibuffer(CompletionMinibuffer):
+    """Completion minibuffer where the list of possibilities doesn't change.
+
+    This is used to complete on a static list of items.  This doesn't
+    handle cases like searching through the filesystem where a new
+    list of matches is generated when you hit a new directory.
+    """
+    def __init__(self, *args, **kwargs):
+        if 'list' in kwargs:
+            self.sorted = kwargs['list']
+        else:
+            self.sorted = []
+        CompletionMinibuffer.__init__(self, *args, **kwargs)
+        
+    def complete(self, text):
+        """Return the list of completions that start with the given text"""
+        found = []
+        for match in self.sorted:
+            if match.startswith(text):
+                found.append(match)
+        return found
