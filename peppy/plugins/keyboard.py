@@ -61,14 +61,19 @@ class KeyboardConf(ClassPrefs, debugmixin):
         found_emacs = False
         for action in actions:
             #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.classprefs._get(action.__name__)))
-            acc = cls.classprefs._get(action.__name__)
-            if acc is not None and acc.lower() != 'default':
-                if acc.lower() == "none":
-                    # if the text is None, don't bind it to anything.
-                    action.keyboard = None
-                else:
-                    action.keyboard = acc
-            else:
+
+            # Use the action key binding from the configuration, if it exists
+            found = False
+            if hasattr(cls.classprefs, action.__name__):
+                acc = cls.classprefs._get(action.__name__)
+                if acc.lower() != 'default':
+                    if acc.lower() == "none":
+                        # if the text is None, don't bind it to anything.
+                        action.keyboard = None
+                    else:
+                        action.keyboard = acc
+                    found = True
+            if not found:
                 action.keyboard = cls.getKey(action)
 
             # Determine up the accelerator text here, up front, rather

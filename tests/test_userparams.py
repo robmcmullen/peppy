@@ -86,6 +86,13 @@ class testClassHierarchy(object):
         truck = Truck()
         eq_(18, truck.classprefs.wheels)
 
+    def testExistance(self):
+        vehicle = Vehicle()
+        assert hasattr(vehicle.classprefs, 'wheels')
+##        print hasattr(vehicle.classprefs, 'ray_gun')
+##        print vehicle.classprefs.ray_gun
+        assert not hasattr(vehicle.classprefs, 'ray_gun')
+
     def testReadConfig(self):
         text = """\
 [Vehicle]
@@ -100,9 +107,9 @@ wheels = 1800
         
         vehicle = Vehicle()
         assert vehicle.classprefs.wheels
-        eq_(99, vehicle.classprefs.wheels)
+        eq_('99', vehicle.classprefs.wheels)
         eq_('no wings on this puppy', vehicle.classprefs.wings)
 
         truck = Truck()
-        eq_(1800, truck.classprefs.wheels)
+        eq_('1800', truck.classprefs.wheels)
         

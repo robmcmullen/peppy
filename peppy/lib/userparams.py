@@ -745,7 +745,7 @@ class PrefsProxy(debugmixin):
             assert self.dprint("checking %s for %s in default_classprefs" % (klass,name))
             if hasattr(klass,'default_classprefs') and name in klass.default_classprefs:
                 return klass.default_classprefs[name]
-        return None
+        raise AttributeError("%s not found in %s.classprefs" % (name, self.__dict__['_startSearch']))
 
     def __setattr__(self,name,value):
         GlobalPrefs.user[self.__dict__['_startSearch']][name]=value

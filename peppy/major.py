@@ -94,6 +94,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     stc_class = PeppySTC
 
     default_classprefs = (
+        StrParam('minor_modes', ""),
         IntParam('line_number_offset', 1),
         IntParam('column_number_offset', 1),
         )
