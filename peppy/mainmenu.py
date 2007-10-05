@@ -56,6 +56,10 @@ class URLMinibuffer(CompletionMinibuffer):
             elif text.endswith('/') or text.endswith(os.sep):
                 self.text.ChangeValue(os.sep)
                 self.text.SetInsertionPointEnd()
+        elif wx.Platform == "__WXMSW__" and text[:-2] == self.initial:
+            if text.endswith(':') and text[-2].isalpha():
+                self.text.ChangeValue(text[-2:] + os.sep)
+                self.text.SetInsertionPointEnd()
         CompletionMinibuffer.setDynamicChoices(self)
 
     def complete(self, text):
@@ -78,7 +82,7 @@ class URLMinibuffer(CompletionMinibuffer):
         return paths
 
     def convert(self, text):
-        if text.startswith("~/"):
+        if text.startswith("~/") or text.startswith("~\\"):
             text = os.path.join(wx.StandardPaths.Get().GetDocumentsDir(),
                                 text[2:])
         return text
@@ -113,7 +117,9 @@ class OpenFile(SelectAction):
         dlg.Destroy()
 
     def keyAction(self, number=None):
-        cwd=self.frame.cwd() + os.sep
+        cwd=self.frame.cwd()
+        if not cwd.endswith(os.sep):
+            cwd += os.sep
         self.dprint(cwd)
         minibuffer = URLMinibuffer(self.mode, self, label="Find file:",
                                     initial = cwd)
