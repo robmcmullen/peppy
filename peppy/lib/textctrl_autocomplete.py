@@ -316,7 +316,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         if sys.version.startswith("2.3"):
             self._choices.sort(lambda x, y: cmp(x.lower(), y.lower()))
         else:
-            self._choices.sort(key=lambda x: locale.strxfrm(x).lower())
+            try:
+                self._choices.sort(key=lambda x: locale.strxfrm(x).lower())
+            except UnicodeEncodeError:
+                self._choices.sort(key=lambda x: locale.strxfrm(x.encode("UTF-8")).lower())
         self._updateDataList(self._choices)
         self.dropdownlistbox.InsertColumn(0, "")
         for num, colVal in enumerate(self._choices):
