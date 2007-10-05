@@ -126,6 +126,10 @@ class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonRei
         self.stc = getSTC(lexer=wx.stc.STC_LEX_PYTHON)
         self.reindentAction = Reindent(self)
 
+    def getActiveMajorMode(self):
+        """dummy method to satisfy new action requirements"""
+        return self
+
     def checkReturn(self, pair):
         prepareSTC(self.stc, pair)
         self.electricReturn()
@@ -162,7 +166,7 @@ class blah:
     def checkReindentAction(self, pair):
         prepareSTC(self.stc, pair)
         #self.stc.showStyle()
-        self.reindentAction.modify(self)
+        self.reindentAction.action(self)
         #self.stc.showStyle()
         assert checkSTC(self.stc, pair)
 
