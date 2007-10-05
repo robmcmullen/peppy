@@ -21,6 +21,12 @@ class Truck(Vehicle):
         ReadOnlyParam('primes', [11,13,17,19]),
         )
 
+class TrailerMixin(ClassPrefs):
+    default_classprefs = (
+        StrParam('hitch', 'ball'),
+        BoolParam('brakes', True),
+        )
+
 class PickupTruck(Truck):
     default_classprefs = (
         IntParam('wheels', 4),
@@ -30,6 +36,12 @@ class PickupTruck(Truck):
 
 class ShortBedPickupTruck(Truck):
     pass
+
+class EighteenWheeler(TrailerMixin, Truck):
+    default_classprefs = (
+        IntParam('wheels', 18),
+        StrParam('hitch', '5th wheel'),
+        )
 
 def_save = copy.deepcopy(GlobalPrefs.default)
 print def_save
@@ -87,13 +99,22 @@ class testClassHierarchy(object):
         truck = Truck()
         eq_(18, truck.classprefs.wheels)
 
-    def testExistance(self):
+    def testExistence(self):
         vehicle = Vehicle()
         assert hasattr(vehicle.classprefs, 'wheels')
 ##        print hasattr(vehicle.classprefs, 'ray_gun')
 ##        print vehicle.classprefs.ray_gun
         assert not hasattr(vehicle.classprefs, 'ray_gun')
         assert hasattr(vehicle.classprefs, 'license_plate')
+
+    def testMixin(self):
+        vehicle = EighteenWheeler()
+        print getClassHierarchy(vehicle.__class__, 1)
+        eq_(['EighteenWheeler', 'TrailerMixin', 'Truck', 'Vehicle'],
+            getNameHierarchy(vehicle, debug=True))
+        assert hasattr(vehicle.classprefs, 'wheels')
+        assert hasattr(vehicle.classprefs, 'hitch')
+        assert hasattr(vehicle.classprefs, 'brakes')
 
     def testReadConfig(self):
         text = """\

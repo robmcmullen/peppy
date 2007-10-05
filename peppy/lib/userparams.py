@@ -425,7 +425,7 @@ def getClassHierarchy(klass,debug=0):
         hierarchy=parentclasses[klass]
         if debug: dprint("Found class hierarchy: %s" % hierarchy)
     else:
-        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__name__.endswith('Mixin') and not k.__module__.startswith('wx.')]
+        hierarchy=[k for k in parents(klass) if k.__name__ not in skipclasses and not k.__module__.startswith('wx.')]
         if debug: dprint("Created class hierarchy: %s" % hierarchy)
         parentclasses[klass]=hierarchy
     return hierarchy
@@ -903,6 +903,8 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     updated[param.keyword] = True
 
 class PrefClassTree(wx.TreeCtrl, debugmixin):
+    debuglevel = 1
+    
     def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
         if wx.Platform != '__WXMSW__':
             style |= wx.TR_HIDE_ROOT
@@ -1041,6 +1043,7 @@ class PrefDialog(wx.Dialog):
 
     def populateTree(self, cls=ClassPrefs):
         classes = getAllSubclassesOf(cls)
+        dprint(classes)
         for cls in classes:
             self.tree.appendClass(cls)
         self.tree.sortRecurse()
