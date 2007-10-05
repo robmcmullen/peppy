@@ -49,9 +49,13 @@ class URLMinibuffer(CompletionMinibuffer):
         # keycodes.  You actually have to check for ord("`") and the
         # shift key, but that's under the assumption that the user
         # hasn't rearranged the keyboard
-        if text.endswith('~') and text[:-1] == self.initial:
-            self.text.ChangeValue('~')
-            self.text.SetInsertionPointEnd()
+        if text[:-1] == self.initial:
+            if text.endswith('~'):
+                self.text.ChangeValue('~')
+                self.text.SetInsertionPointEnd()
+            elif text.endswith('/') or text.endswith(os.sep):
+                self.text.ChangeValue(os.sep)
+                self.text.SetInsertionPointEnd()
         CompletionMinibuffer.setDynamicChoices(self)
 
     def complete(self, text):
