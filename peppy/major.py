@@ -30,7 +30,7 @@ element of the tuple returned by getMenuItems or getToolBarItems will
 be the C{keyword} attribute of your major mode.
 """
 
-import os,sys,re
+import os, stat, sys, re
 
 import wx
 import wx.stc
@@ -43,7 +43,7 @@ from peppy.minor import *
 from peppy.iofilter import *
 from peppy.yapsy.plugins import *
 from peppy.lib.userparams import *
-
+from peppy.lib.processmanager import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 
@@ -594,6 +594,98 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         else:
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
         self.editwin.SetCursor(cursor)
+
+
+
+class JobControlMixin(JobOutputMixin, ClassPrefs):
+    default_classprefs = (
+        PathParam('interpreter_exe', ''),
+        BoolParam('autosave_before_run', True),
+        )
+
+    def getCommandLineArguments(self):
+        return ""
+
+    def getCommandLine(self, bangpath=False, direct=False):
+        script = self.buffer.url.path
+        if bangpath or direct:
+            mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
+            os.chmod(script, mode)
+            cmd = "%s %s" % (script, self.getCommandLineArguments())
+        else:
+            cmd = "%s %s %s" % (self.classprefs.interpreter_exe, script,
+                             self.getCommandLineArguments())
+        dprint(cmd)
+        return cmd
+        
+    def startInterpreter(self):
+        if self.buffer.readonly or not self.classprefs.autosave_before_run:
+            msg = "You must save this file before you\ncan run it through the interpreter."
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
+            retval=dlg.ShowModal()
+            return
+        else:
+            self.save()
+
+        bangpath = False
+        direct = False
+        if wx.Platform == '__WXMSW__':
+            # FIXME: direct execution of a python script in Windows
+            # doesn't seem to work.
+            #direct = True
+            pass
+        elif self.stc.GetLine(0).startswith("#!"):
+            bangpath = True
+            
+        msg = None
+        path = self.classprefs.interpreter_exe
+        if not bangpath and not direct:
+            if not path:
+                msg = "No interpreter executable set.\nMust set the full path to the\nexecutable in preferences."
+            elif os.path.exists(path):
+                if os.path.isdir(path):
+                    msg = "Interpreter executable:\n\n%s\n\nis not a valid file.  Locate the\ncorrect executable in the preferences." % path
+            else:
+                msg = "Interpreter executable not found:\n\n%s\n\nLocate the correct path to the executable\nin the preferences." % path
+
+        if msg:
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Problem with interpreter executable", wx.OK | wx.ICON_ERROR )
+            retval=dlg.ShowModal()
+            Publisher().sendMessage('peppy.preferences.show')
+        else:
+            cmd = self.getCommandLine(bangpath, direct)
+            ProcessManager().run(cmd, self)
+
+    def stopInterpreter(self):
+        if hasattr(self, 'process'):
+            self.process.kill()
+    
+    def startupCallback(self, job):
+        self.process = job
+        self.log = self.findMinorMode("OutputLog")
+        if self.log:
+            self.log.showMessage("\n" + _("Started %s on %s") %
+                                 (job.cmd,
+                                  time.asctime(time.localtime(time.time()))) +
+                                 "\n")
+
+    def stdoutCallback(self, job, text):
+        if self.log:
+            self.log.showMessage(text)
+
+    def stderrCallback(self, job, text):
+        if self.log:
+            self.log.showMessage(text)
+
+    def finishedCallback(self, job):
+        assert self.dprint()
+        del self.process
+        if self.log:
+            self.log.showMessage(_("Finished %s on %s") %
+                                 (job.cmd,
+                                  time.asctime(time.localtime(time.time()))) +
+                                 "\n")
+
 
 
 def parseEmacs(line):

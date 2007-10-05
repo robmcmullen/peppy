@@ -200,7 +200,7 @@ class Revert(SelectAction):
         dlg.Destroy()
             
         if retval==wx.ID_YES:
-            mode.buffer.revert()
+            self.mode.buffer.revert()
 
 class Save(SelectAction):
     name = _("&Save...")
@@ -231,7 +231,7 @@ class SaveAs(SelectAction):
 
         paths=None
         if self.mode.buffer:
-            saveas=mode.buffer.getFilename()
+            saveas = self.mode.buffer.getFilename()
             cwd = self.frame.cwd()
             assert self.dprint("cwd = %s, path = %s" % (cwd, saveas))
             saveas=os.path.basename(saveas)
@@ -257,11 +257,40 @@ class SaveAs(SelectAction):
                     saveas=paths[0]
                     assert self.dprint("save file %s:" % saveas)
 
-                    mode.save(saveas)
+                    self.mode.save(saveas)
                 elif paths!=None:
                     raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
 
             dlg.Destroy()
+
+
+class RunScript(SelectAction):
+    alias = _("run-script")
+    name = _("Run")
+    tooltip = _("Run this script through the interpreter")
+    icon = 'icons/control_start.png'
+    key_bindings = {'win': "F5", 'emacs': "F5", }
+    
+    def isEnabled(self):
+        return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
+
+    def action(self, index=-1):
+        self.mode.startInterpreter()
+
+
+class StopScript(SelectAction):
+    alias = _("stop-script")
+    name = _("Stop")
+    tooltip = _("Stop the currently running script")
+    icon = 'icons/control_stop.png'
+    key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", }
+    
+    def isEnabled(self):
+        return hasattr(self.mode, 'startInterpreter') and hasattr(self.mode, 'process')
+
+    def action(self, index=-1):
+        self.mode.stopInterpreter()
+
 
 class Undo(BufferModificationAction):
     name = _("Undo")
@@ -514,6 +543,11 @@ class MainMenu(IPeppyPlugin):
                   (_("View"),MenuItem(ToolbarShow).first()),
                   (_("View"),Separator(_("menusep"))),
                   (_("View"),Separator(_("end")).last()),
+                  (None,Menu(_("Tools")).after(_("View")).before(_("Major Mode"))),
+                  (_("Tools"),MenuItem(RunScript).first()),
+                  (_("Tools"),MenuItem(StopScript).first()),
+                  (_("Tools"),Separator(_("run")).first()),
+                  (_("Tools"),Separator(_("end")).last()),
                   (None,Menu(_("Major Mode")).hide()),
                   (None,Menu(_("Minor Mode")).hide().after(_("Major Mode"))),
                   (None,Menu(_("Buffers")).last()),

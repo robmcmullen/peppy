@@ -248,7 +248,7 @@ class PythonElectricReturnMixin(debugmixin):
 
 
 class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
-                 FundamentalMode):
+                 JobControlMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
     regex="\.(py|pyx)$"
@@ -256,6 +256,7 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
     start_line_comment = "##"
 
     default_classprefs = (
+        PathParam('interpreter_exe', 'c:/Python25/python.exe'),
         StrParam('tab_style', 'spaces'),
         BoolParam('word_wrap', True),
         StrParam('minor_modes', 'pype_funclist, funcmenu,spe_funclist'),
