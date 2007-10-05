@@ -10,6 +10,7 @@ class Vehicle(ClassPrefs):
         IntParam('wheels', 0),
         IntParam('doors', 0),
         StrParam('wings', 'no wings on this puppy'),
+        StrParam('license_plate', ''),
         ReadOnlyParam('primes', [2,3,5,7]),
         )
 
@@ -48,7 +49,7 @@ class testClassHierarchy(object):
         eq_(['ShortBedPickupTruck', 'Truck', 'Vehicle'],
             getNameHierarchy(vehicle, debug=True))
         assert vehicle.classprefs.wheels
-        eq_(None, vehicle.classprefs.mudflaps)
+        assert not hasattr(vehicle.classprefs, 'mudflaps')
         vehicle.classprefs.mudflaps=True
         assert vehicle.classprefs.mudflaps
         assert vehicle.classprefs.wheels
@@ -92,6 +93,7 @@ class testClassHierarchy(object):
 ##        print hasattr(vehicle.classprefs, 'ray_gun')
 ##        print vehicle.classprefs.ray_gun
         assert not hasattr(vehicle.classprefs, 'ray_gun')
+        assert hasattr(vehicle.classprefs, 'license_plate')
 
     def testReadConfig(self):
         text = """\
