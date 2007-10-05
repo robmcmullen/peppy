@@ -350,19 +350,26 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     def loadMinorModes(self):
         """Find the listof minor modes to load and create them."""
         
-        minor_list = self.classprefs.minor_modes
-        assert self.dprint(minor_list)
-        if minor_list is not None:
-            minor_names=minor_list.split(',')
-            assert self.dprint("loading %s" % minor_names)
+        minors = MinorMode.getValidMinorModes(self)
+        dprint("major = %s, minors = %s" % (self, minors))
 
-            # convert the list of strings into the corresponding list
-            # of classes
-            minors = MinorMode.getClasses(self, minor_names)
-            assert self.dprint("found class list: %s" % str(minors))
-            for minorcls in minors:
-                self.createMinorMode(minorcls)
-            self.createMinorPaneList()
+        # get list of minor modes that should be displayed at startup
+        minor_list = self.classprefs.minor_modes
+        if minor_list is not None:
+            minor_names = [m.strip() for m in minor_list.split(',')]
+            assert self.dprint("showing minor modes %s" % minor_names)
+        else:
+            minor_names = []
+
+        # if the class name or the keyword of the minor mode shows up
+        # in the list, turn it on.
+        for minorcls in minors:
+            minor = self.createMinorMode(minorcls)
+            if minorcls.__name__ in minor_names or minorcls.keyword in minor_names:
+                minor.paneinfo.Show(True)
+            else:
+                minor.paneinfo.Show(False)
+        self.createMinorPaneList()
 
     def loadMinorModesPostHook(self):
         """User hook after all minor modes have been loaded.
@@ -374,20 +381,18 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
 
     def createMinorMode(self, minorcls):
         """Create minor modes and register them with the AUI Manager."""
-        try:
-            minor=minorcls(self, self.splitter)
-            # register minor mode here
-            if isinstance(minor, wx.Window):
-                paneinfo = minor.getPaneInfo()
-                self._mgr.AddPane(minor, paneinfo)
-            self.minors.append(minor)
+        minor=minorcls(self, self.splitter)
+        # register minor mode here
+        if isinstance(minor, wx.Window):
+            paneinfo = minor.getPaneInfo()
+            self._mgr.AddPane(minor, paneinfo)
+        self.minors.append(minor)
 
-            # A different paneinfo object is stored in the AUIManager,
-            # so we have to get it's version rather than using the
-            # paneinfo we generate
-            minor.paneinfo = self._mgr.GetPane(minor)
-        except MinorModeIncompatibilityError:
-            pass
+        # A different paneinfo object is stored in the AUIManager,
+        # so we have to get its version rather than using the
+        # paneinfo we generate
+        minor.paneinfo = self._mgr.GetPane(minor)
+        return minor
 
     def createMinorPaneList(self):
         """Create alphabetized list of minor modes.
@@ -589,14 +594,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         else:
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
         self.editwin.SetCursor(cursor)
-
-    def getFunctionList(self):
-        '''
-        Return a list of tuples, where each tuple contains information
-        about a notable line in the source code corresponding to a
-        class, a function, a todo item, etc.
-        '''
-        return ([], [], {}, [])
 
 
 def parseEmacs(line):

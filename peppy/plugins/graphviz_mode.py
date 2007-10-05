@@ -109,6 +109,12 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 
     dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
 
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if mode.__class__ == GraphvizMode:
+            return True
+        return False
+
     def __init__(self, major, parent):
         wx.Panel.__init__(self, parent)
         self.major = major

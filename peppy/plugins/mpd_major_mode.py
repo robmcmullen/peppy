@@ -569,8 +569,15 @@ class SongDataObject(wx.CustomDataObject):
         wx.CustomDataObject.__init__(self, "SongData")
 
 
+class MPDMinorModeMixin(MinorMode):
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if mode.__class__ == MPDMode:
+            return True
+        return False
 
-class MPDSearchResults(MinorMode, wx.ListCtrl, ColumnSizerMixin, debugmixin):
+class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
+                       debugmixin):
     """Minor mode to display the results of a file search.
     """
     keyword = "MPD Search Results"
@@ -1098,7 +1105,8 @@ class SongDropTarget(wx.PyDropTarget, debugmixin):
         # case we just return the suggested value given to us.
         return d
 
-class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, ListDropScrollerMixin, debugmixin):
+class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
+                  ListDropScrollerMixin, debugmixin):
     """Minor mode to display the current playlist and controls for
     music playing.
     """
@@ -1347,7 +1355,7 @@ class MPDPlaylist(MinorMode, wx.ListCtrl, ColumnSizerMixin, ListDropScrollerMixi
 
 
 
-class MPDCurrentlyPlaying(MinorMode, wx.Panel, debugmixin):
+class MPDCurrentlyPlaying(MPDMinorModeMixin, wx.Panel, debugmixin):
     """Minor mode to display the current title, artist, and album,
     with controls for position in the song and play/pause controls.
     """

@@ -66,6 +66,12 @@ class SPEFuncList(MinorMode, TreeCtrl):
         IntParam('min_height', 100),
         )
     
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if hasattr(mode, 'getFunctionList'):
+            return True
+        return False
+    
     def __init__(self, major, parent):
         self.parentPanel = SPECompat
         TreeCtrl.__init__(self, parent=parent,

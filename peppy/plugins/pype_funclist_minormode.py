@@ -25,6 +25,12 @@ class PyPEFuncList(MinorMode, hierCodeTreePanel):
         IntParam('min_width', 100),
         IntParam('min_height', 100),
         )
+
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if hasattr(mode, 'getFunctionList'):
+            return True
+        return False
     
     def __init__(self, major, parent):
         hierCodeTreePanel.__init__(self, self, parent, False)

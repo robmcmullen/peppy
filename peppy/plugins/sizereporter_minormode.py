@@ -26,6 +26,10 @@ class SizeReporterMinorMode(MinorMode, wx.PyControl):
     """
     keyword="Size Reporter"
 
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        return True
+
     def __init__(self, major, parent, id=wx.ID_ANY, pos=wx.DefaultPosition,
                  size=wx.DefaultSize):
 

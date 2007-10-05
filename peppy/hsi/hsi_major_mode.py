@@ -597,9 +597,10 @@ class HSIMode(MajorMode):
         
     def OnUpdateUIHook(self, evt):
         for minor in self.minors:
-            plotproxy = minor.proxies[0]
-            plotproxy.updateLines(*evt.imageCoords)
-            plotproxy.updateListeners()
+            if hasattr(minor, 'proxies'):
+                plotproxy = minor.proxies[0]
+                plotproxy.updateLines(*evt.imageCoords)
+                plotproxy.updateListeners()
 
     def update(self, refresh=True):
         self.cubeband.show(self.filter, self.cubefilter, bands=self.bands)
@@ -671,7 +672,15 @@ class HSIMode(MajorMode):
         return display
 
 
-class HSIPlotMinorMode(MinorMode, plotter.MultiPlotter, plotter.PlotProxy):
+class HSIMinorModeMixin(MinorMode):
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if mode.__class__ == HSIMode:
+            return True
+        return False
+
+class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
+                       plotter.PlotProxy):
     """Abstract base class for x-y plot of cube data.
 
     This displays a plot using the plotter.MultiPlotter class.  The

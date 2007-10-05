@@ -106,14 +106,9 @@ class DebugLogSidebar(ErrorLogSidebar):
 class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     """An error log using message passing.
 
-    This is a global plugin that displays any messages it receives
-    starting with 'peppy.log'.
-
-    Eventually, it could do different things depending on the subtype
-    of the message.  For example, 'peppy.log.error' messages could be
-    highlighted in red, or there could be different levels of log
-    messages and it could show only those messages above a certain
-    level.
+    This log is designed to be associated with one major mode.  In
+    general, you should bind an event method or a listener to the
+    showError method to display messages as they occur.
     """
     debuglevel = 0
     
@@ -128,6 +123,12 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
         BoolParam('show', False),
         BoolParam('always_scroll', False),
         )
+
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        if hasattr(mode.classprefs, 'interpreter_exe'):
+            return True
+        return False
     
     def __init__(self, major, parent):
         PeppySTC.__init__(self, parent)

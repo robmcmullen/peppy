@@ -26,9 +26,6 @@ from peppy.menu import *
 from peppy.debug import *
 from peppy.lib.userparams import *
 
-class MinorModeIncompatibilityError(Exception):
-    pass
-
 class MinorMode(ClassPrefs, debugmixin):
     """
     Mixin class for all minor modes.  A minor mode should generally be
@@ -54,37 +51,36 @@ class MinorMode(ClassPrefs, debugmixin):
         )
 
     @classmethod
-    def getModekeys(cls):
+    def getAllMinorModes(cls):
         # Only call this once.  Check for presense of class attribute
-        if hasattr(MinorMode, 'modekeys'):
-            return cls.modekeys
+        if hasattr(MinorMode, 'all_minor_modes'):
+            return cls.all_minor_modes
 
         # Create the class attribute
-        MinorMode.modekeys={}
-        
+        minors = []
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         assert cls.dprint(plugins)
         for ext in plugins:
             for minor in ext.getMinorModes():
                 assert cls.dprint("Registering minor mode %s" % minor.keyword)
-                MinorMode.modekeys[minor.keyword]=minor
-        return MinorMode.modekeys
+                minors.append(minor)
+        MinorMode.all_minor_modes = minors
+        dprint(minors)
+        return minors
 
     @classmethod
-    def getClasses(cls, major, minorlist=[]):
-        """Return a list of classes corresponding to the minor mode names"""
-        
-        assert cls.dprint("Loading minor modes %s for %s" % (str(minorlist), major))
+    def getValidMinorModes(cls, mode):
+        minors = cls.getAllMinorModes()
+        valid = []
+        for minor in minors:
+            if minor.worksWithMajorMode(mode):
+                valid.append(minor)
+        dprint(valid)
+        return valid
 
-        classes = []
-        modekeys = cls.getModekeys()
-        for keyword in minorlist:
-            keyword = keyword.strip()
-            if keyword in modekeys:
-                assert cls.dprint("found %s" % keyword)
-                minor = modekeys[keyword]
-                classes.append(minor)
-        return classes
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        raise NotImplementedError("Must override this each minor mode subclass to determine if it can work with specified major mode")
     
     def __init__(self, major, parent):
         """Classes using this mixin should call this method, or at

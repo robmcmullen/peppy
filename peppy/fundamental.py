@@ -494,6 +494,7 @@ class FundamentalMode(BraceHighlightMixin,
     end_line_comment = ''
 
     default_classprefs = (
+        PathParam('interpreter_exe', ''),
         IntParam('tab_size', 4),
         StrParam('tab_style', 'mixed'),
         BoolParam('line_numbers', True),
@@ -758,6 +759,14 @@ class FundamentalMode(BraceHighlightMixin,
             self.stc.InsertText(end, self.start_line_comment)
             end += elen
         return end + len(self.stc.getLinesep())
+
+    def getFunctionList(self):
+        '''
+        Return a list of tuples, where each tuple contains information
+        about a notable line in the source code corresponding to a
+        class, a function, a todo item, etc.
+        '''
+        return ([], [], {}, [])
 
 
 
