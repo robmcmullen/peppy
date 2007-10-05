@@ -223,19 +223,23 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
             print self._choices
             if self._choices:
                 self._showDropDown ()
+
+                # Find the largest common match in the list of choices
+                # and expand to that
                 start = len(self.GetValue())
                 matched = self._choices[0]
                 most = len(matched)
+                #print "before start=%d most=%d" % (start, most)
                 for match in self._choices[1:]:
                     for j in range(start, most):
                         if match[j] != matched[j]:
-                            most = j - 1
+                            most = j
                             break
-                    #print "after %s: %d" % (match, most)
+                    #print "after %s: start=%d most=%d" % (match, start, most)
                     if most == start:
                         break
                 if most > start:
-                    self.AppendText(matched[start:most+1])
+                    self.AppendText(matched[start:most])
                     self.SetInsertionPointEnd()
             skip = False
         if visible :
