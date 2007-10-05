@@ -24,7 +24,7 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
         BoolParam('always_scroll', False),
         )
 
-    def displayMessage(self, text):
+    def addMessage(self, text):
         if self.classprefs.always_scroll:
             scroll = True
         else:
@@ -90,7 +90,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
             if not paneinfo.IsShown():
                 paneinfo.Show(True)
                 self.frame._mgr.Update()
-        self.displayMessage(message.data)
+        self.addMessage(message.data)
 
 class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"
@@ -106,9 +106,10 @@ class DebugLogSidebar(ErrorLogSidebar):
 class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     """An error log using message passing.
 
-    This log is designed to be associated with one major mode.  In
-    general, you should bind an event method or a listener to the
-    showError method to display messages as they occur.
+    This log is designed to be associated with a major mode that
+    implements the JobOutputMixin.  In the stdoutCallback and
+    stderrCallback of the JobOutputMixin, you should call showMessage
+    to display the output in the log.
     """
     debuglevel = 0
     
@@ -126,7 +127,11 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
 
     @classmethod
     def worksWithMajorMode(self, mode):
-        if hasattr(mode.classprefs, 'interpreter_exe'):
+        """Designed to work with a major mode that inherits the
+        JobOutputMixin, so only works when it can find the
+        stdoutCallback method in the major mode
+        """
+        if hasattr(mode, 'stdoutCallback'):
             return True
         return False
     
@@ -137,12 +142,19 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
 
-    def showError(self, message=None):
+    def showMessage(self, text):
+        """Display a message and raise the output log if it is hidden."""
         paneinfo = self.major._mgr.GetPane(self)
         if not paneinfo.IsShown():
             paneinfo.Show(True)
             self.major._mgr.Update()
-        self.displayMessage(message.data)
+        self.addMessage(text)
+
+    def showPubsubMessage(self, message=None):
+        """Same as showMessage, but designed to be used as the target
+        of a wx.lib.pubsub.sendMessage call.
+        """
+        self.showMessage(message.data)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar
