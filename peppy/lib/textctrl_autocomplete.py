@@ -78,6 +78,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self._entryCallback = entryCallback
         self._matchFunction = matchFunction
         self._screenheight = wx.SystemSettings.GetMetric( wx.SYS_SCREEN_Y )
+        self._tabCount = 0
         #sort variable needed by listmix
         self.itemDataMap = dict()
         #Load and sort data
@@ -241,7 +242,30 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                 if most > start:
                     self.AppendText(matched[start:most])
                     self.SetInsertionPointEnd()
+                self._tabCount += 1
+                if self._tabCount > 1:
+                    # scroll the list on multiple consecutive tabs
+                    dd = self.dropdownlistbox
+                    count = dd.GetItemCount()
+                    page = dd.GetCountPerPage()
+                    sel = dd.GetFirstSelected()
+                    sel += page
+                    if sel >= count:
+                        sel = 0
+                    dd.Select(sel)
+                    dd.EnsureVisible(sel)
+
+                    # Lacking some "EnsureVisibleIsAtTop" method, make
+                    # the selected item at the top of the list by
+                    # forcing some more entries to be visible.
+                    bot = sel + page - 1
+                    if bot >= count:
+                        bot = count - 1
+                    dd.EnsureVisible(bot)
+                        
             skip = False
+        else:
+            self._tabCount = 0
         if visible :
             if event.GetKeyCode() == wx.WXK_RETURN :
                 self._setValueFromSelected()
