@@ -21,12 +21,12 @@ class GotoLine(MinibufferAction):
     Use minibuffer to request a line number, then go to that line in
     the stc.
     """
-
-    name = "Goto Line..."
-    tooltip = "Goto a line in the text."
+    alias = _("goto-line")
+    name = _("Goto Line...")
+    tooltip = _("Goto a line in the text.")
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
-    minibuffer_label = "Goto Line:"
+    minibuffer_label = _("Goto Line:")
 
     def processMinibuffer(self, minibuffer, mode, line):
         """
@@ -34,5 +34,5 @@ class GotoLine(MinibufferAction):
         """
         
         # stc counts lines from zero, but displayed starting at 1.
-        dprint("goto line = %d" % line)
-        mode.stc.GotoLine(line-1)
+        #dprint("goto line = %d" % line)
+        mode.stc.GotoLine(line - 1)

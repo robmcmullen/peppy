@@ -9,6 +9,8 @@ from wx.lib.pubsub import Publisher
 from peppy.mainmenu import Paste
 from peppy.menu import *
 
+from peppy.lib.processmanager import *
+
 from peppy.actions.minibuffer import *
 from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
@@ -25,6 +27,7 @@ class OpenFundamental(SelectAction):
         self.frame.open("about:demo.txt")
 
 class WordWrap(ToggleAction):
+    alias = _("word-wrap")
     name = _("&Word Wrap")
     tooltip = _("Toggle word wrap in this view")
     icon = wx.ART_TOOLBAR
@@ -37,6 +40,7 @@ class WordWrap(ToggleAction):
         self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
     
 class LineNumbers(ToggleAction):
+    alias = _("line-numbers")
     name = _("&Line Numbers")
     tooltip = _("Toggle line numbers in this view")
     icon = wx.ART_TOOLBAR
@@ -49,6 +53,7 @@ class LineNumbers(ToggleAction):
         self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
 
 class Folding(ToggleAction):
+    alias = _("code-folding")
     name = _("&Folding")
     tooltip = _("Toggle folding in this view")
     icon = wx.ART_TOOLBAR
@@ -60,6 +65,22 @@ class Folding(ToggleAction):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.mode.setFolding(not self.mode.classprefs.folding)
 
+class BeginningOfBuffer(SelectAction):
+    alias = _("beginning-of-buffer")
+    name = _("Cursor to first character in the buffer")
+    tooltip = _("Move the cursor to the start of the buffer")
+        
+    def action(self, index=-1):
+        self.mode.stc.DocumentStart()
+
+class EndOfBuffer(SelectAction):
+    alias = _("end-of-buffer")
+    name = _("Cursor to end of the buffer")
+    tooltip = _("Move the cursor to the end of the buffer")
+        
+    def action(self, index=-1):
+        self.mode.stc.DocumentEnd()
+
 class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
 
@@ -68,29 +89,34 @@ class ScintillaCmdKeyExecute(BufferModificationAction):
         self.mode.stc.CmdKeyExecute(self.cmd)
 
 class BeginningOfLine(ScintillaCmdKeyExecute):
+    alias = _("beginning-of-line")
     name = _("Cursor to Start of Line")
     tooltip = _("Move the cursor to the start of the current line")
     cmd = wx.stc.STC_CMD_HOMEDISPLAY
         
 class BeginningTextOfLine(ScintillaCmdKeyExecute):
+    alias = _("beginning-text-of-line")
     name = _("Cursor to first non-blank character in the line")
     tooltip = _("Move the cursor to the start of the current line")
     key_bindings = {'emacs': 'C-A',}
     cmd = wx.stc.STC_CMD_VCHOME
         
 class EndOfLine(ScintillaCmdKeyExecute):
+    alias = _("end-of-line")
     name = _("Cursor to End of Line")
     tooltip = _("Move the cursor to the end of the current line")
     key_bindings = {'emacs': 'C-E',}
     cmd = wx.stc.STC_CMD_LINEEND
 
 class PreviousLine(ScintillaCmdKeyExecute):
+    alias = _("previous-line")
     name = _("Cursor to previous line")
     tooltip = _("Move the cursor up a line")
     key_bindings = {'emacs': 'C-P',}
     cmd = wx.stc.STC_CMD_LINEUP
 
 class NextLine(ScintillaCmdKeyExecute):
+    alias = _("next-line")
     name = _("Cursor to next line")
     tooltip = _("Move the cursor down a line")
     key_bindings = {'emacs': 'C-N',}
@@ -149,7 +175,7 @@ class CapitalizeWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Title-case the current word and move the cursor to the start of
     the next word.
     """
-
+    alias = _("capitalize-region-or-word")
     name = _("Capitalize word")
     tooltip = _("Capitalize current word")
     key_bindings = {'emacs': 'M-C',}
@@ -164,7 +190,7 @@ class UpcaseWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Upcase the current word and move the cursor to the start of the
     next word.
     """
-
+    alias = _("upcase-region-or-word")
     name = _("Upcase word")
     tooltip = _("Upcase current word")
     key_bindings = {'emacs': 'M-U',}
@@ -178,7 +204,7 @@ class DowncaseWord(WordOrRegionMutateMixin, BufferModificationAction):
     """Downcase the current word and move the cursor to the start of the
     next word.
     """
-
+    alias = _("downcase-region-or-word")
     name = _("Downcase word")
     tooltip = _("Downcase current word")
     key_bindings = {'emacs': 'M-L',}
@@ -235,12 +261,14 @@ class BraceHighlightMixin(object):
 
 
 class ShiftLeft(ScintillaCmdKeyExecute):
+    alias = _("unindent-region")
     name = _("Shift &Left")
     tooltip = _("Unindent a line region")
     icon = 'icons/text_indent_remove_rob.png'
     cmd = wx.stc.STC_CMD_BACKTAB
 
 class ShiftRight(ScintillaCmdKeyExecute):
+    alias = _("indent-region")
     name = _("Shift &Right")
     tooltip = _("Indent a line or region")
     icon = 'icons/text_indent_rob.png'
@@ -276,6 +304,7 @@ class StandardCommentMixin(debugmixin):
             s.EndUndoAction()
 
 class CommentRegion(BufferModificationAction):
+    alias = _("comment-region")
     name = _("&Comment Region")
     tooltip = _("Comment a line or region")
     icon = 'icons/text_indent_rob.png'
@@ -331,6 +360,7 @@ class StandardReturnMixin(debugmixin):
         s.GotoPos(pos + len(newline))
 
 class ElectricReturn(BufferModificationAction):
+    alias = _("electric-return")
     name = _("Electric Return")
     tooltip = _("Indent the next line following a return")
     icon = 'icons/text_indent_rob.png'
@@ -433,6 +463,7 @@ class FoldingReindentMixin(debugmixin):
 
 
 class Reindent(BufferModificationAction):
+    alias = _("reindent-region")
     name = _("Reindent")
     tooltip = _("Reindent a line or region")
     icon = 'icons/text_indent_rob.png'
@@ -448,6 +479,7 @@ class Reindent(BufferModificationAction):
 
 
 class PasteAtColumn(Paste):
+    alias = _("paste-at-column")
     name = _("Paste at Column")
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
@@ -812,6 +844,8 @@ class FundamentalPlugin(IPeppyPlugin):
                   ("Fundamental",UpcaseWord),
                   ("Fundamental",DowncaseWord),
                   ("Fundamental",ElectricReturn),
+                  ("Fundamental",BeginningOfBuffer),
+                  ("Fundamental",EndOfBuffer),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:

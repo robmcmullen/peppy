@@ -19,8 +19,8 @@ from peppy.debug import *
 
 
 class NewTab(SelectAction):
-    name = _("&Tab")
     alias = _("new-tab")
+    name = _("&Tab")
     tooltip = _("Open a new tab")
     icon = wx.ART_FILE_OPEN
 
@@ -29,8 +29,8 @@ class NewTab(SelectAction):
         self.frame.open("about:blank")
 
 class New(SelectAction):
-    name = _("&Text file")
     alias = _("new-file")
+    name = _("&Text file")
     tooltip = _("New plain text file")
     icon = "icons/page.png"
     key_bindings = {'win': "C-N", }
@@ -88,8 +88,8 @@ class URLMinibuffer(CompletionMinibuffer):
         return text
 
 class OpenFile(SelectAction):
-    name = _("&File...")
     alias = _("find-file")
+    name = _("&File...")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
     key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
@@ -165,6 +165,7 @@ class OpenURL(OpenDialog):
 
 
 class Exit(SelectAction):
+    alias = _("exit-peppy-to-return-again-soon")
     name = _("E&xit")
     tooltip = _("Quit the program.")
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
@@ -173,8 +174,8 @@ class Exit(SelectAction):
         Publisher().sendMessage('peppy.request.quit')
 
 class Close(SelectAction):
-    name = _("&Close Buffer")
     alias = _("close-buffer")
+    name = _("&Close Buffer")
     tooltip = _("Close current buffer")
     icon = "icons/cross.png"
 
@@ -186,6 +187,7 @@ class Close(SelectAction):
         self.frame.close()
 
 class Revert(SelectAction):
+    alias = _("revert-buffer")
     name = _("&Revert")
     tooltip = _("Revert to last saved version")
     icon = "icons/page_refresh.png"
@@ -203,6 +205,7 @@ class Revert(SelectAction):
             self.mode.buffer.revert()
 
 class Save(SelectAction):
+    alias = _("save-buffer")
     name = _("&Save...")
     tooltip = _("Save the current file")
     icon = "icons/disk.png"
@@ -218,6 +221,7 @@ class Save(SelectAction):
         self.mode.save()
 
 class SaveAs(SelectAction):
+    alias = _("save-buffer-as")
     name = _("Save &As...")
     tooltip = _("Save as a new file")
     icon = "icons/disk_edit.png"
@@ -293,6 +297,7 @@ class StopScript(SelectAction):
 
 
 class Undo(BufferModificationAction):
+    alias = _("undo")
     name = _("Undo")
     tooltip = _("Undo")
     icon = "icons/arrow_turn_left.png"
@@ -307,6 +312,7 @@ class Undo(BufferModificationAction):
 
 
 class Redo(BufferModificationAction):
+    alias = _("redo")
     name = _("Redo")
     tooltip = _("Redo")
     icon = "icons/arrow_turn_right.png"
@@ -320,6 +326,7 @@ class Redo(BufferModificationAction):
         return self.mode.stc.Redo()
 
 class Cut(BufferModificationAction):
+    alias = _("cut-primary-selection")
     name = _("Cut")
     tooltip = _("Cut")
     icon = "icons/cut.png"
@@ -333,6 +340,7 @@ class Cut(BufferModificationAction):
         return self.mode.stc.Cut()
 
 class Copy(BufferModificationAction):
+    alias = _("copy-primary-selection")
     name = _("Copy")
     tooltip = _("Copy")
     icon = "icons/page_copy.png"
@@ -346,6 +354,7 @@ class Copy(BufferModificationAction):
         return self.mode.stc.Copy()
 
 class Paste(BufferModificationAction):
+    alias = _("paste-from-clipboard")
     name = _("Paste")
     tooltip = _("Paste")
     icon = "icons/paste_plain.png"
@@ -433,6 +442,7 @@ class SidebarShow(ToggleListAction):
 
 
 class ToolbarShow(ToggleAction):
+    alias = _("show-toolbar")
     name = _("&Show Toolbars")
     tooltip = _("Enable or disable toolbar display in this frame")
     icon = wx.ART_TOOLBAR
