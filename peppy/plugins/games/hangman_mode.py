@@ -23,7 +23,7 @@ Have fun with it,
 Harm van der Heijden (H.v.d.Heijden@phys.tue.nl)
 """
 
-import os
+import os, random
 from cStringIO import StringIO
 
 import wx
