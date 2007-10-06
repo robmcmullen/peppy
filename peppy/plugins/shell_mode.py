@@ -17,7 +17,7 @@ from peppy.stcinterface import PeppySTC
 
 class ShellHandler(urllib2.BaseHandler):
     def find_pipe(self, url):
-        plugins = wx.GetApp().plugin_manager.getActivePluginObjects(IShellPipePlugin)
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
             if url in plugin.supportedShells():
                 fh=plugin.getPipe(url)

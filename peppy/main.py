@@ -368,8 +368,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         paths.extend(userdirs)
         
         self.plugin_manager = PeppyPluginManager(
-            categories_filter={"Default": IPeppyPlugin,
-                               "shells": IShellPipePlugin},
+            categories_filter={"Default": IPeppyPlugin},
             directories_list=paths,
             plugin_info_ext="peppy-plugin",
             )

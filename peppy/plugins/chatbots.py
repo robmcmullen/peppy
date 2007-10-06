@@ -13,13 +13,41 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.debug import *
+from peppy.menu import *
 
 from peppy.nltk_lite.chat import *
 
 from peppy.about import AddCopyright
 AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "2001-2006", "University of Pennsylvania", "Eliza and the other chatbot implementations")
 
-class ChatPlugin(IShellPipePlugin):
+
+def action(self, index=-1):
+    """Dynamically created method for the Chatbot classes"""
+    self.frame.open(self.bot_url)
+
+def getActionClass(name):
+    """Create a subclass of Action used to activate a chatbot.
+
+    For each chatbot passed in to this function, return a dynamically
+    created class that can be used as a menu item.
+    """
+    clsname = "Chatbot%s" % name.title()
+    attrs = {
+        "bot_url": "shell:%s" % name,
+        "alias": _("chatbot-%s") % name,
+        "name": _("Psychoanalyst (%s)" % name.title()),
+        "tooltop": "Chat with the %s chatbot" % name,
+        "action": action,
+        }
+
+    # Create the new class using SelectAction as the base class and
+    # using the attributes specified by the dictionary.
+    cls = type(clsname, SelectAction.__mro__, attrs)
+    return cls
+
+
+
+class ChatPlugin(IPeppyPlugin):
     def supportedShells(self):
         return chatbots.keys()
 
@@ -27,6 +55,35 @@ class ChatPlugin(IShellPipePlugin):
         if filename in chatbots.keys():
             return ChatWrapper(*chatbots[filename])
 
+    actions = None
+    default_menu = [(_("Tools"),Separator(_("gamessep"))),
+                    (_("Tools"),Menu(_("Games")).after(_("gamessep"))),
+                    ]
+
+    def getMenuItems(self):
+        """Create a global menu item for each chatbot.
+
+        Since we don't want to hard-code the chatbots, we have to
+        dynamically create an Action class for each chatbot.  This is
+        used to create the menu.  The class and menu creation is only
+        done once, subsequent passes through here returns the cached
+        menu.
+        """
+        if ChatPlugin.actions is None:
+            menu = (_("Tools"),_("Games"))
+            
+            actions = {}
+            bots = chatbots.keys()
+            bots.sort()
+            for bot in chatbots.keys():
+                actioncls = getActionClass(bot)
+                actions[bot] = actioncls
+                item = MenuItem(actioncls)
+                ChatPlugin.default_menu.append((menu, item))
+            ChatPlugin.actions = actions
+        
+        for menu,item in self.default_menu:
+            yield (None,menu,item)
 
 class ChatWrapper(debugmixin):
     debuglevel=0

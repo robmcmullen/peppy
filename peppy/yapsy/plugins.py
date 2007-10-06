@@ -123,11 +123,9 @@ class IPeppyPlugin(IPlugin, object):
         """
         return []
 
-
-class IShellPipePlugin(IPlugin, object):
-    """
-    Interface for shells that take a line of input and return a response.
-    """
+#-----
+# The next two methods are to provide an interface for shells that
+# take a line of input and return a response.
 
     def supportedShells(self):
         """
