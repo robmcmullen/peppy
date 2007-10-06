@@ -6,7 +6,7 @@ This plugin implements the preferences dialog that is used to modify
 the default settings of objects that inherit from the ClassPrefs
 class.
 """
-import os
+import os, sys
 
 from wx.lib.pubsub import Publisher
 import wx.grid
@@ -42,29 +42,37 @@ class Preferences(SelectAction):
 # messages, but it works for now.  Will refactor at some point.
 Publisher().subscribe(Preferences.showDialog, 'peppy.preferences.show')
 
-class PeppyPrefClassTree(PrefClassTree):
+class PeppyPrefClassList(PrefClassList):
     """Add icon support to PrefClassTree"""
 
     def setIconStorage(self):
-        getIconStorage().assign(self)
+        getIconStorage().assignList(self)
 
-    def setIconForItem(self, item, cls=None):
+    def getIcon(self, cls):
         icon = None
-        if item == self.GetRootItem():
-            icon = getIconStorage("icons/wrench.png")
-        elif hasattr(cls, 'icon') and cls.icon is not None:
+        if hasattr(cls, 'icon') and cls.icon is not None:
             icon = getIconStorage(cls.icon)
-        
-        if icon is not None:
-            self.SetItemImage(item, icon)
+        return icon
+    
+    def appendItem(self, cls):
+        icon = self.getIcon(cls)
+        if icon is None:
+            icon = -1
+        self.InsertImageStringItem(sys.maxint, cls.__name__, icon)
+            
+    def setItem(self, index, cls):
+        icon = self.getIcon(cls)
+        if icon is None:
+            icon = -1
+        self.SetStringItem(sys.maxint, cls.__name__, icon)
 
 class PeppyPrefDialog(PrefDialog):
     dialog_title = _("Peppy Global Preferences")
     static_title = ""
 
-    def createTree(self, parent):
-        tree = PeppyPrefClassTree(parent)
-        return tree
+    def createList(self, parent):
+        list = PeppyPrefClassList(parent)
+        return list
     
 
 class Plugins(SelectAction):

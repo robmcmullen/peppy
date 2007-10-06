@@ -97,13 +97,16 @@ class IconStorage(debugmixin):
         self.get(filename, dir)
         return self.bitmap[filename]
 
-    def assign(self,notebook):
+    def assign(self, notebook):
         # Don't use AssignImageList because the notebook takes
         # ownership of the image list and will delete it when the
         # notebook is deleted.  We're sharing the list, so we don't
         # want the notebook to delete it if the notebook itself
         # deletes it.
         notebook.SetImageList(self.il)
+
+    def assignList(self, list):
+        list.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
 _iconStorage=None
 def getIconStorage(icon=None, path=None):

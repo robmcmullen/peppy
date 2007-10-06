@@ -12,7 +12,7 @@
 """Helpers to create editing widgets for user parameters.
 """
 
-import os, struct, time, re, types, copy
+import os, sys, struct, time, re, types, copy
 from cStringIO import StringIO
 from ConfigParser import ConfigParser
 import locale
@@ -902,91 +902,67 @@ class PrefPanel(ScrolledPanel, debugmixin):
                         self.obj.classprefs._set(param.keyword, val)
                     updated[param.keyword] = True
 
-class PrefClassTree(wx.TreeCtrl, debugmixin):
-    debuglevel = 1
-    
-    def __init__(self, parent, style=wx.TR_HAS_BUTTONS):
-        if wx.Platform != '__WXMSW__':
-            style |= wx.TR_HIDE_ROOT
-        wx.TreeCtrl.__init__(self, parent, -1, size=(200,400), style=style)
 
-        self.AddRoot("Preferences")
-        self.SetPyData(self.GetRootItem(), None)
-        
+class PrefClassList(wx.ListCtrl, debugmixin):
+    def __init__(self, parent):
+        wx.ListCtrl.__init__(self, parent, size=(200,400), style=wx.LC_REPORT)
+
         self.setIconStorage()
-        self.setIconForItem(self.GetRootItem())
+        
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
-        self.class_to_item = {}
+        self.skip_verify = False
+
+        self.createColumns()
+        self.classes = []
 
     def setIconStorage(self):
         pass
 
-    def setIconForItem(self, item, cls=None):
-        pass
+    def appendItem(self, cls):
+        self.InsertStringItem(sys.maxint, cls.__name__)
 
-    def ExpandAll(self):
-        self.ExpandAllChildren(self.GetFirstVisibleItem())
+    def setItem(self, index, cls):
+        self.SetStringItem(index, 0, cls.__name__)
+
+    def createColumns(self):
+        info = wx.ListItem()
+        info.m_mask = wx.LIST_MASK_TEXT | wx.LIST_MASK_IMAGE | wx.LIST_MASK_FORMAT
+        info.m_image = -1
+        info.m_format = 0
+        info.m_text = "Class"
+        self.InsertColumnInfo(0, info)
+
+    def OnItemActivated(self, evt):
+        index = evt.GetIndex()
+        dprint("selected plugin %d: %s" % (index, self.plugins[index]))
+        evt.Skip()
+
+    def reset(self, classes):
+        self.classes = classes
+        index = 0
+        list_count = self.GetItemCount()
+        for cls in self.classes:
+            if index >= list_count:
+                self.appendItem(cls)
+            else:
+                self.setItem(index, cls)
+            index += 1
+
+        if index < list_count:
+            for i in range(index, list_count):
+                # always delete the first item because the list gets
+                # shorter by one each time.
+                self.DeleteItem(index)
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+
+    def getClass(self, index):
+        return self.classes[index]
 
     def ensureClassVisible(self, cls):
-        item = self.class_to_item[cls]
-        self.EnsureVisible(item)
-        self.SelectItem(item)
-
-    def findParent(self, mro, parent=None):
-        if parent is None:
-            parent = self.GetRootItem()
-        if len(mro)==0:
-            return parent
-        cls = mro.pop()
-        if 'default_classprefs' not in dir(cls):
-            # ignore intermediate subclasses that don't have any
-            # default settings
-            return self.findParent(mro, parent)
-        name = cls.__name__
-        item, cookie = self.GetFirstChild(parent)
-        while item:
-            if self.GetItemText(item) == name:
-                return self.findParent(mro, item)
-            item, cookie = self.GetNextChild(parent, cookie)
-        return None
-        
-    def appendClass(self, cls):
-        assert self.dprint("class=%s mro=%s" % (cls, cls.classprefs._getMRO()))
-        mro = cls.classprefs._getMRO()
-        parent = self.findParent(mro[1:])
-        if parent is not None:
-            assert self.dprint("  found parent = %s" % self.GetItemText(parent))
-            item = self.AppendItem(parent, mro[0].__name__)
-            self.setIconForItem(item, cls)
-            self.SetPyData(item, cls)
-            self.class_to_item[cls] = item
-
-##        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnItemExpanded, self.tree)
-##        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed, self.trees)
-##        self.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
-##        self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit, self.tree)
-##        self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit, self.tree)
-##        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate, self.tree)
-
-##        self.tree.Bind(wx.EVT_LEFT_DCLICK, self.OnLeftDClick)
-##        self.tree.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
-##        self.tree.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
-
-    def sortRecurse(self, parent=None):
-        if parent is None:
-            parent = self.GetRootItem()
-        self.SortChildren(parent)
-        item, cookie = self.GetFirstChild(parent)
-        while item:
-            self.sortRecurse(item)
-            item, cookie = self.GetNextChild(parent, cookie)
-
-    def OnCompareItems(self, item1, item2):
-        t1 = self.GetItemText(item1)
-        t2 = self.GetItemText(item2)
-        if t1 < t2: return -1
-        if t1 == t2: return 0
-        return 1
+        index = self.classes.index(cls)
+        self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+        self.EnsureVisible(index)
 
 class PrefDialog(wx.Dialog):
     dialog_title = "Preferences"
@@ -1009,15 +985,15 @@ class PrefDialog(wx.Dialog):
 
         self.splitter = wx.SplitterWindow(self)
         self.splitter.SetMinimumPaneSize(50)
-        self.tree = self.createTree(self.splitter)
-        self.populateTree()
+        self.list = self.createList(self.splitter)
+        self.populateList()
         
-        self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.tree)
+        self.list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, self.list)
 
         self.pref_panels = {}
         pref = self.createPanel(self.obj.__class__)
 
-        self.splitter.SplitVertically(self.tree, pref, -500)
+        self.splitter.SplitVertically(self.list, pref, -500)
         sizer.Add(self.splitter, 1, wx.EXPAND)
 
         btnsizer = wx.StdDialogButtonSizer()
@@ -1037,17 +1013,16 @@ class PrefDialog(wx.Dialog):
 
         self.Layout()
 
-    def createTree(self, parent):
-        tree = PrefClassTree(parent)
-        return tree
+    def createList(self, parent):
+        list = PrefClassList(parent)
+        return list
 
-    def populateTree(self, cls=ClassPrefs):
+    def populateList(self, cls=ClassPrefs):
         classes = getAllSubclassesOf(cls)
         dprint(classes)
-        for cls in classes:
-            self.tree.appendClass(cls)
-        self.tree.sortRecurse()
-        self.tree.ensureClassVisible(self.obj.__class__)
+        classes.sort(key=lambda x: x.__name__)
+        self.list.reset(classes)
+        self.list.ensureClassVisible(self.obj.__class__)
         
     def createPanel(self, cls):
         pref = PrefPanel(self.splitter, cls)
@@ -1055,9 +1030,9 @@ class PrefDialog(wx.Dialog):
         return pref
 
     def OnSelChanged(self, evt):
-        self.item = evt.GetItem()
-        if self.item:
-            cls = self.tree.GetItemPyData(self.item)
+        index = evt.GetIndex()
+        if index >= 0:
+            cls = self.list.getClass(index)
             if cls in self.pref_panels:
                 pref = self.pref_panels[cls]
             else:
