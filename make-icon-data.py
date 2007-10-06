@@ -44,7 +44,7 @@ icondict = {
     out.write("""\
 }
 
-setInitialIconsDict(icondict)
+addIconsFromDict(icondict)
 """)
     os.chdir('..')
 

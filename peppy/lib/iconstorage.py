@@ -17,8 +17,7 @@ import wx
 from peppy.debug import *
 
 __all__ = ['getIconStorage', 'getIconBitmap', 'addIconBitmap',
-           'addIconsFromDirectory', 'addIconsFromDict',
-           'setInitialIconsDict']
+           'addIconsFromDirectory', 'addIconsFromDict']
 
 ##### py2exe support
 
@@ -77,7 +76,9 @@ class IconStorage(debugmixin):
 
     def get(self, filename, dir=None):
         if filename not in self.map:
-            if self.basedir is not None:
+            if filename in icondict:
+                path = filename
+            elif self.basedir is not None:
                 if dir is not None:
                     # if a directory is specified, use the whole path name
                     # so as to not conflict with the standard icons
@@ -137,10 +138,6 @@ def addIconsFromDirectory(path):
         bitmap = store.load(path)
         store.set(filename, bitmap)
 
-def setInitialIconsDict(d):
-    global icondict
-    
-    icondict = d
-
 def addIconsFromDict(d):
+    global icondict
     icondict.update(d)
