@@ -42,6 +42,10 @@ class BufferList(GlobalList):
                 return buf
         return None
 
+    @classmethod
+    def getBuffers(self):
+        return [buf for buf in BufferList.storage]
+
     @staticmethod
     def promptUnsaved(msg):
         unsaved=[]

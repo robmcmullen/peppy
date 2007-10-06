@@ -510,6 +510,8 @@ def run(options={},args=None):
     frame.Show(True)
 
     peppy.stopSplash()
+    Publisher().sendMessage('peppy.starting.mainloop')
+    wx.CallAfter(Publisher().sendMessage, 'peppy.in.mainloop')
     peppy.MainLoop()
 
 def main():

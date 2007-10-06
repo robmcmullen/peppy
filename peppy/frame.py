@@ -29,6 +29,10 @@ class FrameList(GlobalList):
     storage=[]
     others=[]
     
+    @classmethod
+    def getFrames(self):
+        return [frame for frame in FrameList.storage]
+
     def getItems(self):
         return [frame.getTitle() for frame in FrameList.storage]
 
@@ -156,6 +160,12 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if index>=0:
             self.SetPageText(index,mode.getTabName())
 
+    def getAll(self):
+        pages = []
+        for index in range(0, self.GetPageCount()):
+            pages.append(self.GetPage(index))
+        return pages
+
 
 ## BufferFrames
 
@@ -233,7 +243,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # counter to make sure the title buffer is shown if we attempt
         # to load files and they all fail.
         self.initial_load = 0
-        
+        self.loadList(urls)
+
+    def loadList(self, urls):
         if urls:
             for url in urls:
                 dprint("Opening %s" % url)
@@ -241,7 +253,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.initial_load += 1
         else:
             wx.CallAfter(self.titleBuffer)
-        
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)
@@ -390,6 +401,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def getActiveMajorMode(self):
         major=self.tabs.getCurrent()
         return major
+
+    def getAllMajorModes(self):
+        modes = self.tabs.getAll()
+        return modes
     
     def isOpen(self):
         major=self.getActiveMajorMode()
@@ -453,6 +468,16 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def titleBuffer(self):
         self.open(wx.GetApp().classprefs.title_page)
+
+    def isTitleBufferOnly(self):
+        if len(self.getAllMajorModes()) > 1:
+            return False
+        mode = self.getActiveMajorMode()
+        url = URLInfo(wx.GetApp().classprefs.title_page)
+        dprint("%s == %s => %s" % (url, mode.buffer.url, mode.buffer.url == url))
+        if mode.buffer.url == url:
+            return True
+        return False
 
     def open(self, url):
         buffer = BufferList.findBufferByURL(url)
