@@ -466,6 +466,20 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         """
         pass
 
+    def OnContextMenu(self, evt):
+        """Hook to display a context menu relevant to this major mode.
+
+        Currently, this event gets triggered when it happens over the
+        major mode AND the minor modes.  So, that means the minor
+        modes won't get their own EVT_CONTEXT_MENU events unless
+        evt.Skip() is called here.
+
+        This may or may not be the best behavior to implement.  I'll
+        have to see as I get further into it.
+        """
+        dprint("context menu for %s" % self)
+        pass
+
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1, pos=(9000,9000))
         win.SetBackgroundColour(wx.ColorRGB(0xabcdef))

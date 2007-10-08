@@ -76,6 +76,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
 
     def OnTabChanged(self, evt):
         newpage = evt.GetSelection()
@@ -97,6 +98,12 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if self.GetPageCount() == 1:
             wx.CallAfter(self.frame.open, "about:blank")
         evt.Skip()
+
+    def OnContextMenu(self, evt):
+        dprint("Context menu over all tab contents (major and minor modes)")
+        # allow further processing for debugging
+        page = self.getCurrent()
+        page.OnContextMenu(evt)
 
     def closeTab(self, mode):
         assert self.dprint("closing tab: mode %s" % mode)
