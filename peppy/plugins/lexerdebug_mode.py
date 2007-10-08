@@ -349,7 +349,7 @@ class LexerDebugPlugin(IPeppyPlugin):
     """Plugin to register LexerDebug mode and user interface.
     """
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield LexerDebugMode
     
     default_menu=(("LexerDebug",None,Menu(_("Lexer")).after(_("Minor Mode"))),

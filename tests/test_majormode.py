@@ -62,7 +62,7 @@ class MockMode(MajorMode):
 class MockPlugin(MajorModeMatcherBase,debugmixin):
     implements(IMajorModeMatcher)
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield MockMode
     
 class TestMatcherBase:
@@ -72,7 +72,7 @@ class TestMatcherBase:
         self.driver=MajorModeMatcherDriver(comp_mgr)
 
     def testEmacs(self):
-        for mode in self.base.possibleModes():
+        for mode in self.base.getMajorModes():
             eq_(MockMode, mode)
         eq_(MockMode, self.driver.scanEmacs("-*- mock -*-"))
         eq_(MockMode, self.driver.scanEmacs("-*- mach -*-"))

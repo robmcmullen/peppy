@@ -38,12 +38,12 @@ class IPeppyPlugin(IPlugin, object):
         for frame in wx.GetTopLevelWindows():
             if hasattr(frame, 'getAllModes'):
                 modes.extend(frame.getAllModes())
-        for mode in self.possibleModes():
+        for mode in self.getMajorModes():
             if mode in modes:
                 return True
         return False
 
-    def possibleModes(self):
+    def getMajorModes(self):
         """Return list of major modes provided by the plugin.
 
         If this plugin provides any major modes, return a list or

@@ -776,7 +776,7 @@ class MajorModeMatcherDriver(debugmixin):
         cls.dprint(plugins)
         modes = []
         for plugin in plugins:
-            modes.extend(plugin.possibleModes())
+            modes.extend(plugin.getMajorModes())
         return modes
 
     @classmethod
@@ -863,7 +863,7 @@ class MajorModeMatcherDriver(debugmixin):
         cls.dprint("checking plugins %s" % plugins)
         for plugin in plugins:
             cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 cls.dprint("searching %s" % mode.keyword)
                 if mode.keyword == name:
                     return mode
@@ -884,7 +884,7 @@ class MajorModeMatcherDriver(debugmixin):
         
         modes = []
         for plugin in plugins:
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 cls.dprint("scanning %s" % mode)
                 if mode.verifyProtocol(url):
                     modes.append(mode)
@@ -904,7 +904,7 @@ class MajorModeMatcherDriver(debugmixin):
         
         modes = []
         for plugin in plugins:
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 if mode.verifyFilename(url.path):
                     modes.append(mode)
         return modes
@@ -923,7 +923,7 @@ class MajorModeMatcherDriver(debugmixin):
         
         modes = []
         for plugin in plugins:
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 if mode.verifyMagic(header):
                     modes.append(mode)
         return modes
@@ -944,7 +944,7 @@ class MajorModeMatcherDriver(debugmixin):
         modename, settings = parseEmacs(header)
         cls.dprint("modename = %s, settings = %s" % (modename, settings))
         for plugin in plugins:
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 if modename == mode.keyword:
                     return mode
                 if mode.emacs_synonyms:
@@ -973,7 +973,7 @@ class MajorModeMatcherDriver(debugmixin):
             lines = header.splitlines()
             bangpath = lines[0].lower()
             for plugin in plugins:
-                for mode in plugin.possibleModes():
+                for mode in plugin.getMajorModes():
                     keyword = mode.keyword.lower()
 
                     # only match words that are bounded by some sort
@@ -997,7 +997,7 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         for plugin in plugins:
-            for mode in plugin.possibleModes():
+            for mode in plugin.getMajorModes():
                 cls.dprint("scanning %s" % mode)
                 if mode.attemptOpen(url):
                     return mode

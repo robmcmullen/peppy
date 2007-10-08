@@ -516,7 +516,7 @@ class MainMenu(IPeppyPlugin):
     build upon.
     """
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield BlankMode
     
     default_menu=((None,Menu(_("File")).first()),

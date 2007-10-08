@@ -318,7 +318,7 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
 
 class PythonPlugin(IPeppyPlugin):
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield PythonMode
     
     default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SamplePython)),

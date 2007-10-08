@@ -151,6 +151,6 @@ class HTMLViewPlugin(IPeppyPlugin):
     Image viewer plugin that registers the major mode and supplies the
     user interface actions so we can use the mode.
     """
-    def possibleModes(self):
+    def getMajorModes(self):
         yield HTMLViewMode
     

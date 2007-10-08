@@ -215,7 +215,7 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
     """
-    def possibleModes(self):
+    def getMajorModes(self):
         yield GraphvizMode
 
     def getMinorModes(self):

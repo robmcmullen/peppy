@@ -1502,7 +1502,7 @@ class MPDPlugin(IPeppyPlugin):
     def getURLHandlers(self):
         return [MPDHandler]
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield MPDMode
     
     def getMinorModes(self):

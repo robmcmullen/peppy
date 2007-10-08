@@ -183,7 +183,7 @@ class ShellPlugin(IPeppyPlugin):
     def getURLHandlers(self):
         return [ShellHandler]
     
-    def possibleModes(self):
+    def getMajorModes(self):
         yield ShellMode
     
     default_keys=(("Shell",ProcessShellLine),

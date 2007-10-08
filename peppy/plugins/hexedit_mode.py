@@ -887,7 +887,7 @@ class HexEditMode(MajorMode):
 
 
 class HexEditPlugin(IPeppyPlugin, debugmixin):
-    def possibleModes(self):
+    def getMajorModes(self):
         yield HexEditMode
 
     default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenHexEditor)),

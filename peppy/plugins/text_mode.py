@@ -63,5 +63,5 @@ class TextMode(FundamentalMode):
 class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.
     """
-    def possibleModes(self):
+    def getMajorModes(self):
         yield TextMode

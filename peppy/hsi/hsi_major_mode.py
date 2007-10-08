@@ -839,7 +839,7 @@ class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
 
-    def possibleModes(self):
+    def getMajorModes(self):
         yield HSIMode
 
     def getMinorModes(self):

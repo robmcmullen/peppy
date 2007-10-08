@@ -77,7 +77,7 @@ class CModePlugin(IPeppyPlugin):
    """C plugin to register modes and user interface.
    """
 
-   def possibleModes(self):
+   def getMajorModes(self):
        yield CMode
 
    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleCFile)),

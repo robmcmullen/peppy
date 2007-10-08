@@ -803,7 +803,7 @@ class FundamentalMode(BraceHighlightMixin,
 
 
 class FundamentalPlugin(IPeppyPlugin):
-    def possibleModes(self):
+    def getMajorModes(self):
         yield FundamentalMode
     
     default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenFundamental).first()),
