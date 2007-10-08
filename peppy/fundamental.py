@@ -526,26 +526,35 @@ class FundamentalMode(BraceHighlightMixin,
     end_line_comment = ''
 
     default_classprefs = (
-        PathParam('interpreter_exe', ''),
-        IntParam('tab_size', 4),
-        StrParam('tab_style', 'mixed'),
-        BoolParam('line_numbers', True),
-        IntParam('line_number_margin_width', 40),
-        BoolParam('symbols', False),
-        IntParam('symbols_margin_width', 16),
-        BoolParam('folding', False),
-        IntParam('folding_margin_width', 16),
-        BoolParam('word_wrap', False),
+        PathParam('interpreter_exe', '',
+                  'Full path to a program that can interpret this text\nand return results on standard output'),
+        BoolParam('use_tab_characters', False,
+                  'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
+        IntParam('tab_size', 4, 'Number of spaces in each tab'),
+        ChoiceParam('tab_highlight_style',
+                         ['ignore', 'inconsistent', 'mixed', 'spaces are bad', 'tabs are bad'],
+                         'mixed', 'Highlight bad intentation'),
+        BoolParam('line_numbers', True, 'Show line numbers in the margin?'),
+        IntParam('line_number_margin_width', 40, 'Margin width in pixels'),
+        BoolParam('symbols', False, 'Show symbols margin'),
+        IntParam('symbols_margin_width', 16, 'Symbols margin width in pixels'),
+        BoolParam('folding', False, 'Show the code folding margin?'),
+        IntParam('folding_margin_width', 16, 'Code folding margin width in pixels'),
+        BoolParam('word_wrap', False, 'True: use word wrapping\nFalse: show horizontal scrollbars'),
         BoolParam('backspace_unindents', True),
-        BoolParam('indentation_guides', True),
-        IntParam('highlight_column', 30),
-        IntParam('edge_column', 80),
-        Param('edge_indicator', 'line'),
-        IntParam('caret_blink_rate', 0),
-        IntParam('caret_width', 2),
-        BoolParam('caret_line_highlight', False),
+        BoolParam('indentation_guides', True, 'Show indentation guides at multiples of the tab_size'),
+        IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.\nNote: uses the BRACELIGHT color to highlight'),
+        IntParam('edge_column', 80, 'Column at which to show the edge (i.e. long line) indicator'),
+        KeyedIndexChoiceParam('edge_indicator',
+                              [(wx.stc.STC_EDGE_NONE, 'none'),
+                               (wx.stc.STC_EDGE_LINE, 'line'),
+                               (wx.stc.STC_EDGE_BACKGROUND, 'background'),
+                               ], 'line', help='Long line indication mode'),
+        IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking'),
+        IntParam('caret_width', 2, help='Caret width in pixels'),
+        BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
         StrParam('sample_file', "Fundamental mode is the base for all other modes that use the STC to view text."),
-        IntParam('stc_lexer', wx.stc.STC_LEX_NULL),
+        ReadOnlyParam('stc_lexer', wx.stc.STC_LEX_NULL),
         StrParam('stc_keywords', ""),
         StrParam('stc_boa_braces', "{}"),
         ReadOnlyParam('stc_boa_style_names', {}),
@@ -698,25 +707,15 @@ class FundamentalMode(BraceHighlightMixin,
 
     def setTabStyle(self):
         self.stc.SetIndent(self.classprefs.tab_size)
-        styles = ['ignore', 'consistent', 'mixed', 'tabs', 'spaces']
-        if self.classprefs.tab_style in styles:
-            i = styles.index(self.classprefs.tab_style)
-            self.stc.SetProperty('tab.timmy.whinge.level', str(i))
-            if i==4:
-                self.stc.SetUseTabs(False)
-            else:
-                self.stc.SetUseTabs(True)
+        self.stc.SetProperty('tab.timmy.whinge.level', self.classprefs.tab_highlight_style)
+        self.stc.SetUseTabs(self.classprefs.use_tab_characters)
 
     def setEdgeStyle(self):
-        if self.classprefs.edge_column > 0:
-            self.stc.SetEdgeColumn(self.classprefs.edge_column)
-            if self.classprefs.edge_indicator == 'line':
-                self.stc.SetEdgeMode(wx.stc.STC_EDGE_LINE)
-            else:
-                self.stc.SetEdgeMode(wx.stc.STC_EDGE_BACKGROUND)
-        else:
+        self.stc.SetEdgeMode(self.classprefs.edge_indicator)
+        if self.classprefs.edge_indicator == wx.stc.STC_EDGE_NONE:
             self.stc.SetEdgeColumn(0)
-            self.stc.SetEdgeMode(wx.stc.STC_EDGE_NONE)
+        else:
+            self.stc.SetEdgeColumn(self.classprefs.edge_column)
 
     def setCaretStyle(self):
         self.stc.SetCaretPeriod(self.classprefs.caret_blink_rate)
