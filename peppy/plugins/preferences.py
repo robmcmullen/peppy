@@ -52,6 +52,8 @@ class PeppyPrefClassList(PrefClassList):
         icon = None
         if hasattr(cls, 'icon') and cls.icon is not None:
             icon = getIconStorage(cls.icon)
+        else:
+            icon = getIconStorage("icons/blank.png")
         return icon
     
     def appendItem(self, cls):
