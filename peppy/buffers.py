@@ -336,7 +336,7 @@ class LoadingMode(BlankMode):
     A temporary Major Mode to load another mode in the background
     """
     keyword = 'Loading...'
-    
+    temporary = False
     stc_class = LoadingSTC
 
     def createPostHook(self):
