@@ -9,7 +9,82 @@
 # Copyright:   (c) 2007 Rob McMullen
 # License:     wxWidgets
 #-----------------------------------------------------------------------------
-"""Helpers to create editing widgets for user parameters.
+"""Helpers to create user preferences for class attribute defaults and
+editing widgets for user modification of preferences.
+
+This module is used to create preferences that can be easily saved to
+configuration files.  It is designed to be class-based, not instance
+based.
+
+Classes need to inherit from ClassPrefs and then define a class
+attribute called default_classprefs that is a tuple of Param objects.
+Subclasses will inherit the preferences of their parent classes, and
+can either redefine the defaults or add new parameters.  For example:
+
+  class Vehicle(ClassPrefs):
+      default_classprefs = (
+          IntParam('wheels', 0, 'Number of wheels on the vehicle'),
+          IntParam('doors', 0, 'Number of doors on the vehicle'),
+          BoolParam('operational', True, 'Is it running?'),
+          BoolParam('engine', False, 'Does it have a motor?'),
+          )
+
+  class Car(Vehicle):
+      default_classprefs = (
+          IntParam('wheels', 4),
+          IntParam('doors', 4),
+          BoolParam('engine', True),
+          StrParam('license_state', '', 'State in which registered'),
+          StrParam('license_plate', '', 'License plate number'),
+          )
+
+  class WxCar(wx.Window, Car):
+      default_classprefs = (
+          IntParam('pixel_height', 400),
+          IntParam('pixel_width', 600),
+          )
+
+The metaclass for ClassPrefs processes the default_classprefs and adds
+another class attribute called classprefs that is a proxy object into
+a global preferences object.
+
+The global preferences object GlobalPrefs uses the ConfigParser module
+to serialize and unserialize user preferences.  Since the user
+preferences are stored in text files, the Param objects turn the user
+text into the expected type of the Param so that your python code only
+has to deal with the expected type and doesn't have to do any conversion
+itself.
+
+The user configuration for the above example could look like this:
+
+  [Vehicle]
+  operational = False
+  
+  [Car]
+  license_state = CA
+  doors = 2
+  
+  [WxCar]
+  pixel_width = 300
+  pixel_height = 200
+
+and the GlobalPrefs.readConfig method will parse the file,
+interpreting the section name as the class.  It will set
+Vehicle.classprefs.operational to be the boolean value False,
+Car.classprefs.license_state to the string 'CA', Car.classprefs.doors to
+the integer value 2, etc.
+
+Your code doesn't need to know anything about the conversion from the
+string to the expected type -- it's all handled by the ClassPrefs and
+GlobalPrefs.
+
+The PrefDialog class provides the user interface dialog to modify
+class parameters.  It creates editing widgets that correspond to the
+Param class -- for BoolParam it creates a checkbox, IntParam a text
+entry widget, ChoiceParam a pulldown list, etc.  The help text is
+displayed as a tooltip over the editing widget.  User subclasses of
+Param are possible as well.
+
 """
 
 import os, sys, struct, time, re, types, copy
@@ -72,21 +147,65 @@ class DirBrowseButton2(DirBrowseButton):
 
 
 class Param(debugmixin):
-    def __init__(self, keyword, default=None):
+    """Generic param interface.
+
+    Param objects follow the lifetime of the class, and so are not
+    typically destroyed until the end of the program.  That also means
+    that they operate as flyweight objects with their state stored
+    extrinsically.  They are also factories for creating editing
+    widgets (the getCtrl method) and as visitors to process the
+    conversion between the user interface representation of the value
+    and the user code's representation of the value (the get/setValue
+    methods).
+
+    It's important to understand the two representations of the param.
+    What I call "text" is the textual representation that is stored in
+    the user configuration file, and what I call "value" is the result
+    of the conversion into the correct python type.  The value is what
+    the python code operates on, and doesn't need to know anything about
+    the textual representation.  These conversions are handled by the
+    textToValue and valueToText methods.
+
+    Note that depending on the wx control used to display the value,
+    additional conversion may be necessary to show the value.  This is
+    handled by the getValue and setValue methods.
+
+    The default Param is a string param, and no restriction on the
+    value of the string is imposed.
+    """
+
+    # class default to be used as the instance default if no other
+    # default is provided.
+    default = None
+    
+    def __init__(self, keyword, default=None, help=''):
         self.keyword = keyword
-        self.category = None
         if default is not None:
             self.default = default
+        self.help = help
 
     def isSettable(self):
+        """True if the user can set this parameter"""
         return True
 
     def getCtrl(self, parent, initial=None):
+        """Create and editing control.
+
+        Given the parent window, create a user interface element to
+        edit the param.
+        """
         ctrl = wx.TextCtrl(parent, -1, size=(125, -1),
                            style=wx.TE_PROCESS_ENTER)
         return ctrl
 
     def textToValue(self, text):
+        """Convert the user's config text to the type expected by the
+        python code.
+
+        Subclasses should return the type expected by the user code.
+        """
+        # The default implementation just returns a string with any
+        # delimiting quotation marks removed.
         if text.startswith("'") or text.startswith('"'):
             text = text[1:]
         if text.endswith("'") or text.endswith('"'):
@@ -94,40 +213,53 @@ class Param(debugmixin):
         return text
 
     def valueToText(self, value):
+        """Convert the user value to a string suitable to be written
+        to the config file.
+
+        Subclasses should convert the value to a string that is
+        acceptable to textToValue.
+        """
+        # The default string implementation adds quotation characters
+        # to the string.
         if isinstance(value, str):
             value = '"%s"' % value
         return value
 
     def setValue(self, ctrl, value):
+        """Populate the control given the user value.
+
+        If any conversion is needed to show the user value in the
+        control, do it here.
+        """
+        # The default string edit control doesn't need any conversion.
         ctrl.SetValue(value)
 
     def getValue(self, ctrl):
+        """Get the user value from the control.
+
+        If the control doesn't automatically return a value of the
+        correct type, convert it here.
+        """
+        # The default string edit control simply returns the string.
         return str(ctrl.GetValue())
 
 class ReadOnlyParam(debugmixin):
-    def __init__(self, keyword, default=None):
+    """Read-only parameter for display only."""
+    def __init__(self, keyword, default=None, help=''):
         self.keyword = keyword
-        self.category = None
         if default is not None:
             self.default = default
+        self.help = ''
 
     def isSettable(self):
         return False
-
-class ParamCategory(Param):
-    def __init__(self, keyword, default=None):
-        self.keyword = keyword
-        self.category = keyword
-
-    def isSettable(self):
-        return False
-
-    def getCtrl(self, parent, initial=None):
-        box = wx.StaticBox(parent, -1, self.keyword)
-        ctrl = wx.StaticBoxSizer(box, wx.VERTICAL)
-        return ctrl
 
 class BoolParam(Param):
+    """Boolean parameter that displays a checkbox as its user interface.
+
+    Text uses one of 'yes', 'true', or '1' to represent the bool True,
+    and anything else to represent False.
+    """
     default = False
 
     # For i18n support, load your i18n conversion stuff and change
@@ -136,27 +268,38 @@ class BoolParam(Param):
     no_values = ["no", "false", "0"]
     
     def getCtrl(self, parent, initial=None):
+        """Return a checkbox control"""
         ctrl = wx.CheckBox(parent, -1, "")
         return ctrl
 
     def textToValue(self, text):
+        """Return True if one of the yes values, otherwise False"""
         text = Param.textToValue(self, text).lower()
         if text in self.yes_values:
             return True
         return False
 
     def valueToText(self, value):
+        """Convert the boolean value to a string"""
         if value:
             return self.yes_values[0]
         return self.no_values[0]
 
     def setValue(self, ctrl, value):
+        # the control operates on boolean values directly, so no
+        # conversion is needed.
         ctrl.SetValue(value)
 
     def getValue(self, ctrl):
+        # The control returns booleans, which is what we want
         return ctrl.GetValue()
 
 class IntParam(Param):
+    """Int parameter that displays a text entry field as its user interface.
+
+    The text is converted through the locale atof conversion, then
+    cast to an integer.
+    """
     default = 0
     
     def textToValue(self, text):
@@ -172,6 +315,10 @@ class IntParam(Param):
         return int(ctrl.GetValue())
 
 class FloatParam(Param):
+    """Int parameter that displays a text entry field as its user interface.
+
+    The text is converted through the locale atof conversion.
+    """
     default = 0.0
     
     def textToValue(self, text):
@@ -186,10 +333,19 @@ class FloatParam(Param):
         return float(ctrl.GetValue())
 
 class StrParam(Param):
+    """String parameter that displays a text entry field as its user interface.
+
+    This is an alias to the Param class.
+    """
     default = ""
     pass
 
 class DateParam(Param):
+    """Date parameter that displays a DatePickerCtrl as its user
+    interface.
+
+    The wx.DateTime class is used as the value.
+    """
     default = wx.DateTime().Today()
     
     def getCtrl(self, parent, initial=None):
@@ -223,6 +379,12 @@ class DateParam(Param):
         return ctrl.GetValue()
 
 class DirParam(Param):
+    """Directory parameter that displays a DirBrowseButton2 as its
+    user interface.
+
+    A string that represents a directory path is used as the value.
+    It will always be a normalized path.
+    """
     default = os.path.dirname(os.getcwd())
     
     def getCtrl(self, parent, initial=None):
@@ -236,6 +398,11 @@ class DirParam(Param):
         ctrl.SetValue(os.path.normpath(value))
 
 class PathParam(DirParam):
+    """Directory parameter that displays a FileBrowseButton as its
+    user interface.
+
+    A string that represents a path to a file is used as the value.
+    """
     default = os.getcwd()
     
     def getCtrl(self, parent, initial=None):
@@ -248,6 +415,9 @@ class PathParam(DirParam):
         return c
 
     def callback(self, evt):
+        # FIXME: this possibly can be used to maintain a history, but
+        # haven't worked it out yet.
+        
         # On MSW, a fake object can be sent to the callback, so check
         # to see if it is a real event before using it.
         if not hasattr(evt, 'GetEventObject'):
@@ -266,24 +436,22 @@ class PathParam(DirParam):
         evt.Skip()
 
 class ChoiceParam(Param):
-    def __init__(self, keyword, choices, initial=None):
-        Param.__init__(self, keyword)
+    """Parameter that is restricted to a string from a list of choices.
+
+    A Choice control is its user interface, and the currently selected
+    string is used as the value.
+    """
+    def __init__(self, keyword, choices, default=None, help=''):
+        Param.__init__(self, keyword, help=help)
         self.choices = choices
-        if initial is not None:
-            self.default = initial
+        if default is not None:
+            self.default = default
         else:
             self.default = choices[0]
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
         return ctrl
-
-    def textToValue(self, text):
-        if text.startswith("'") or text.startswith('"'):
-            text = text[1:]
-        if text.endswith("'") or text.endswith('"'):
-            text = text[:-1]
-        return text
 
     def setValue(self, ctrl, value):
         #dprint("%s in %s" % (value, self.choices))
@@ -298,13 +466,24 @@ class ChoiceParam(Param):
         return self.choices[index]
 
 class IndexChoiceParam(Param):
-    def __init__(self, keyword, choices):
-        Param.__init__(self, keyword)
+    """Parameter that is restricted to a string from a list of
+    choices, but using the index of the string as the value.
+
+    A Choice control is its user interface, and the index of the
+    currently selected string is used as the value.
+    """
+    def __init__(self, keyword, choices, default=None, help=''):
+        Param.__init__(self, keyword, help=help)
         self.choices = choices
-        self.default = choices[0]
+        if default is not None and default in self.choices:
+            self.default = self.choices.index(default)
+        else:
+            self.default = 0
 
     def getCtrl(self, parent, initial=None):
+        dprint("self.choices=%s, default=%s" % (self.choices, self.default))
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        ctrl.SetSelection(self.default)
         return ctrl
 
     def textToValue(self, text):
@@ -323,31 +502,60 @@ class IndexChoiceParam(Param):
         return index
 
 class KeyedIndexChoiceParam(IndexChoiceParam):
-    def __init__(self, keyword, choices):
-        Param.__init__(self, keyword)
+    """Parameter that is restricted to a string from a list of
+    choices, but using a key corresponding to the string as the value.
+
+    A Choice control is its user interface, and the key of the
+    currently selected string is used as the value.
+
+    An example:
+    
+        KeyedIndexChoiceParam('edge_indicator',
+                              [(wx.stc.STC_EDGE_NONE, 'none'),
+                               (wx.stc.STC_EDGE_LINE, 'line'),
+                               (wx.stc.STC_EDGE_BACKGROUND, 'background'),
+                               ], 'line', help='Long line indication mode'),
+
+    means that the user code deals with wx.stc.STC_EDGE_NONE,
+    wx.stc.STC_EDGE_LINE, and wx.stc.STC_EDGE_BACKGROUND, but stored
+    in the configuration will be 'none', 'line', or 'background'.  The
+    strings 'none', 'line', or 'background' are the items that will be
+    displayed in the choice control.
+    """
+    def __init__(self, keyword, choices, default=None, help=''):
+        Param.__init__(self, keyword, help='')
         self.choices = [entry[1] for entry in choices]
         self.keys = [entry[0] for entry in choices]
-        self.default = choices[0]
+        if default is not None and default in self.choices:
+            self.default = self.keys[self.choices.index(default)]
+        else:
+            self.default = self.keys(0)
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        index = self.keys.index(self.default)
+        ctrl.SetSelection(index)
         return ctrl
 
     def textToValue(self, text):
         text = Param.textToValue(self, text)
-        tmp = locale.atof(text)
-        val = int(tmp)
         try:
-            index = self.keys.index(val)
+            index = self.choices.index(text)
         except ValueError:
             index = 0
-        return index
+        return self.keys[index]
 
     def valueToText(self, value):
-        return str(self.keys[value])
+        index = self.keys.index(value)
+        return str(self.choices[index])
 
+    def setValue(self, ctrl, value):
+        index = self.keys.index(value)
+        ctrl.SetSelection(index)
 
-
+    def getValue(self, ctrl):
+        index = ctrl.GetSelection()
+        return self.keys[index]
 
 
 
@@ -859,10 +1067,14 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     continue
                 
                 title = wx.StaticText(self, -1, param.keyword)
+                if param.help:
+                    title.SetToolTipString(param.help)
                 self.sizer.Add(title, (row,0))
 
                 if param.isSettable():
                     ctrl = param.getCtrl(self)
+                    if param.help:
+                        ctrl.SetToolTipString(param.help)
                     self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
                     
                     val = self.obj.classprefs(param.keyword)
