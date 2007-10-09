@@ -21,6 +21,8 @@ class SessionSave(ClassPrefs):
         BoolParam('restore_on_start', True),
         )
     
+    restore_session_cmdline = True
+    
     @classmethod
     def getFile(cls):
         filename=cls.classprefs.session_file
@@ -30,7 +32,10 @@ class SessionSave(ClassPrefs):
     
     @classmethod
     def restore(cls, msg):
-        dprint("Restoring session if %s == True" % cls.classprefs.restore_on_start)
+        if not cls.restore_session_cmdline:
+            # command line overrules all
+            return
+        
         if not cls.classprefs.restore_on_start:
             return
         
@@ -111,3 +116,13 @@ class SessionSavingPlugin(IPeppyPlugin):
         IPeppyPlugin.deactivate(self)
         Publisher().unsubscribe(SessionSave.restore)
         Publisher().unsubscribe(SessionSave.save)
+
+    def addCommandLineOptions(self, parser):
+        dprint()
+        parser.add_option("--no-session", action="store_false",
+                          dest="restore_session", default=True,
+                          help="Do not restore saved session")
+
+    def processCommandLineOptions(self, options):
+        dprint(options.restore_session)
+        SessionSave.restore_session_cmdline = options.restore_session
