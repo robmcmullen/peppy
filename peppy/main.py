@@ -76,6 +76,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     debuglevel = 0
     verbose = 0
     options = {}
+    args = []
 
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
@@ -121,23 +122,19 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         Called by the wx framework and used instead of the __init__
         method in a wx application.
         """
-        self.processCommandLineOptions()
+        name = self.__class__.__name__
+        if wx.Platform not in ["__WXMAC__", "__WXMSW__"]:
+            name = name.lower()
+        self.SetAppName(name)
 
-        if self.verbose:
-            self.setVerbosity()
+        self.bootstrapCommandLineOptions()
+
         self.menu_actions=[]
         self.toolbar_actions=[]
         self.keyboard_actions=[]
         self.bufferhandlers=[]
         
-        name = self.__class__.__name__
-        if wx.Platform not in ["__WXMAC__", "__WXMSW__"]:
-            name = name.lower()
-        self.SetAppName(name)
-        self.config = HomeConfigDir(self.options.confdir)
-
         GlobalPrefs.setDefaults(self.minimal_config)
-        self.i18nConfig()
         self.loadConfig()
 
         # Splash screen and the peppy server need to know if its
@@ -165,6 +162,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.splash.tick("Loading extra configuration...")
         GlobalPrefs.convertConfig()
 
+        # Command line args can now be processed
+        self.splash.tick("Processing command line arguments...")
+        self.processCommandLineOptions()
+
         # Send message to any plugins that are interested that all the
         # configuration information has been loaded.
         Publisher().sendMessage('peppy.config.load')
@@ -185,18 +186,84 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         return True
 
+    def bootstrapCommandLineOptions(self):
+        """Process a small number of configuration options before
+        plugins are loaded.
+
+        Plugins can also define command line options, which obviously
+        delays full command line processing until plugins are loaded.
+        However, a few options must be parsed before further
+        processing takes place.  These are processed here.
+        """
+        dprint("argv before: %s" % (sys.argv,))
+
+        # Check for -v flag for the verbosity level
+        self.verbose = 0
+        while "-v" in sys.argv:
+            index = sys.argv.index("-v")
+            self.verbose += 1
+            del sys.argv[index]
+            index = sys.argv.index("-v")
+            
+        if self.verbose:
+            self.setVerbosity()
+
+        confdir = ""
+        if "-c" in sys.argv:
+            index = sys.argv.index("-c")
+            if len(sys.argv) > index:
+                confdir = sys.argv[index + 1]
+                del sys.argv[index:index + 2]
+        self.config = HomeConfigDir(confdir)
+        dprint(self.config.dir)
+
+        catalog = "peppy"
+        if "--i18n-catalog" in sys.argv:
+            index = sys.argv.index("--i18n-catalog")
+            if len(sys.argv) > index:
+                catalog = sys.argv[index + 1]
+                del sys.argv[index:index + 2]
+        self.i18nConfig(catalog)
+
+        dprint("argv after: %s" % (sys.argv,))
+
     def processCommandLineOptions(self):
+        """Process the bulk of the command line options.
+
+        Because eventually it will be possible to load command line
+        options from plugins, most of the command line parsing happens
+        after plugins are loaded.  The bootstrap options are repeated
+        here so that a usage statement will show the options.
+        """
+        from optparse import OptionParser
+
+        usage="usage: %prog file [files...]"
+        #print sys.argv[1:]
+        parser=OptionParser(usage=usage)
+        parser.add_option("-p", action="store_true", dest="profile", default=False)
+        parser.add_option("-v", action="count", dest="verbose", default=0)
+        parser.add_option("--log-stderr", action="store_true", dest="log_stderr", default=False)
+        parser.add_option("-c", action="store", dest="confdir", default="")
+        parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
+        parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
+        parser.add_option("--key-bindings", action="store", dest="key_bindings", default='')
+        Peppy.options, Peppy.args = parser.parse_args()
+        #dprint(Peppy.options)
+        
         import logging
         #logging.debug = dprint
         
+        if self.options.sample_config:
+            from peppy.keyboard import KeyboardConf
+            KeyboardConf.configDefault()
+            sys.exit()
+
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
             errorlog(errorRedirector('error'))
 
         if self.options.key_bindings:
             self.classprefs.key_bindings = self.options.key_bindings
-            
-        self.verbose = self.options.verbose
 
     def setVerboseLevel(self,kls):
         """
@@ -257,7 +324,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         assert self.dprint("found home dir=%s" % self.config.dir)
         return os.path.join(self.config.dir,filename)
 
-    def i18nConfig(self):
+    def i18nConfig(self, catalog):
         #dprint("found home dir=%s" % self.config.dir)
 
         basedir = os.path.dirname(os.path.dirname(__file__))
@@ -274,7 +341,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         locale = defaults.get('locale', 'en')
         path = defaults.get('dir', os.path.join(basedir, 'locale'))
 
-        init_i18n(path, locale, self.options.i18n_catalog)
+        init_i18n(path, locale, catalog)
 
     def loadConfig(self):
         files = [self.base_preferences,
@@ -479,24 +546,17 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         return True
     
 
-def run(options={},args=None):
+def run():
     """Start an instance of the application.
 
     @param options: OptionParser option class
     @param args: command line argument list
     """
-    
-    Peppy.options = options
     peppy = Peppy(redirect=False)
     
-    if options.sample_config:
-        from peppy.keyboard import KeyboardConf
-        KeyboardConf.configDefault()
-        sys.exit()
-
     if peppy.otherInstanceRunning():
-        if args:
-            for filename in args:
+        if peppy.args:
+            for filename in peppy.args:
                 peppy.sendToOtherInstance(filename)
         sys.exit()
 
@@ -505,7 +565,7 @@ def run(options={},args=None):
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')
-    frame=BufferFrame(args)
+    frame=BufferFrame(peppy.args)
     frame.Show(True)
 
     peppy.stopSplash()
@@ -519,25 +579,13 @@ def main():
     This is called from a script outside the package, parses the
     command line, and starts up a new wx.App.
     """
-    from optparse import OptionParser
 
-    usage="usage: %prog file [files...]"
-    parser=OptionParser(usage=usage)
-    parser.add_option("-p", action="store_true", dest="profile", default=False)
-    parser.add_option("-v", action="count", dest="verbose", default=0)
-    parser.add_option("--log-stderr", action="store_true", dest="log_stderr", default=False)
-    parser.add_option("--config-dir", action="store", dest="confdir", default="")
-    parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
-    parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
-    parser.add_option("--key-bindings", action="store", dest="key_bindings", default='win')
-    (options, args) = parser.parse_args()
-    #print options
-
-    if options.profile:
+    try:
+        index = sys.argv.index("-p")
         import profile
         profile.run('run()','profile.out')
-    else:
-        run(options,args)
+    except ValueError:
+        run()
 
 
 
