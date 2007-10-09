@@ -247,6 +247,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
         parser.add_option("--key-bindings", action="store", dest="key_bindings", default='')
+
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for plugin in plugins:
+            plugin.addCommandLineOptions(parser)
+        
         Peppy.options, Peppy.args = parser.parse_args()
         #dprint(Peppy.options)
         
@@ -265,6 +270,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if self.options.key_bindings:
             self.classprefs.key_bindings = self.options.key_bindings
 
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for plugin in plugins:
+            plugin.processCommandLineOptions(Peppy.options)
+        
     def setVerboseLevel(self,kls):
         """
         Set the class's debuglevel if the verbosity level is high

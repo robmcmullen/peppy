@@ -43,6 +43,24 @@ class IPeppyPlugin(IPlugin, object):
                 return True
         return False
 
+    def addCommandLineOptions(self, parser):
+        """Add any options to the OptionParser instance.
+
+        If the plugin defines any command line options, add each
+        option to the OptionParser instance passed into this method.
+        """
+        return
+
+    def processCommandLineOptions(self, options):
+        """Process the results of any command line options of interest.
+
+        The options dict that results from OptionPorser.parse_args()
+        is passed in to this method, so if the plugin defined any
+        options in addCommandLineOptions, it should process the
+        results here.
+        """
+        return
+
     def getMajorModes(self):
         """Return list of major modes provided by the plugin.
 
