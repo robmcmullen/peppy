@@ -613,11 +613,16 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):
     default_classprefs = (
-        PathParam('interpreter_exe', ''),
-        BoolParam('autosave_before_run', True),
+        PathParam('interpreter_exe', '',
+                  'Full path to a program that can interpret this text\nand return results on standard output'),
+        BoolParam('autosave_before_run', True,
+                  'Automatically save without prompting before running script'),
         )
 
-    def getCommandLineArguments(self):
+    def getCommandLineArgs(self):
+        dprint(hasattr(self, "commandLineArgs"))
+        if hasattr(self, "commandLineArgs"):
+            return self.commandLineArgs
         return ""
 
     def getCommandLine(self, bangpath=False, direct=False):
@@ -625,14 +630,17 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         if bangpath or direct:
             mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
             os.chmod(script, mode)
-            cmd = "%s %s" % (script, self.getCommandLineArguments())
+            cmd = "%s %s" % (script, self.getCommandLineArgs())
         else:
             cmd = "%s %s %s" % (self.classprefs.interpreter_exe, script,
-                             self.getCommandLineArguments())
+                             self.getCommandLineArgs())
         dprint(cmd)
         return cmd
         
-    def startInterpreter(self):
+    def startInterpreter(self, argstring=None):
+        if argstring is not None:
+            self.commandLineArgs = argstring
+            
         if self.buffer.readonly or not self.classprefs.autosave_before_run:
             msg = "You must save this file before you\ncan run it through the interpreter."
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )

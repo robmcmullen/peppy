@@ -526,8 +526,6 @@ class FundamentalMode(BraceHighlightMixin,
     end_line_comment = ''
 
     default_classprefs = (
-        PathParam('interpreter_exe', '',
-                  'Full path to a program that can interpret this text\nand return results on standard output'),
         BoolParam('use_tab_characters', False,
                   'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
         IntParam('tab_size', 4, 'Number of spaces in each tab'),

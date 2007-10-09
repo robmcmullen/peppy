@@ -289,6 +289,22 @@ class RunScript(SelectAction):
         self.mode.startInterpreter()
 
 
+class RunScriptWithArgs(SelectAction):
+    alias = _("run-script-with-args")
+    name = _("Run with Args")
+    tooltip = _("Open a file")
+    icon = "icons/folder_page.png"
+    key_bindings = {'default': "C-F5", }
+
+    def action(self, index=-1, multiplier=1):
+        minibuffer = TextMinibuffer(self.mode, self, label="Arguments:",
+                                    initial = self.mode.getCommandLineArgs())
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        self.mode.startInterpreter(text)
+
+
 class StopScript(SelectAction):
     alias = _("stop-script")
     name = _("Stop")
@@ -571,6 +587,7 @@ class MainMenu(IPeppyPlugin):
                   (_("View"),Separator(_("end")).last()),
                   (None,Menu(_("Tools")).after(_("View")).before(_("Major Mode"))),
                   (_("Tools"),MenuItem(RunScript).first()),
+                  (_("Tools"),MenuItem(RunScriptWithArgs).first()),
                   (_("Tools"),MenuItem(StopScript).first()),
                   (_("Tools"),Separator(_("run")).first()),
                   (_("Tools"),Separator(_("end")).last()),
