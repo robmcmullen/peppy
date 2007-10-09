@@ -266,6 +266,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         """
         self.deleteWindowPreHook()
         self.deleteMinorModes()
+        self.deleteStatusBar()
 
         # remove the mode as one of the buffer's listeners
         self.buffer.removeViewer(self)
@@ -530,6 +531,11 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         """
         self.statusbar.reset()
         self.createStatusIcons()
+    
+    def deleteStatusBar(self):
+        if self.statusbar:
+            self.statusbar.Destroy()
+            self.statusbar = None
 
     def setMinibuffer(self, minibuffer=None):
         self.removeMinibuffer()

@@ -217,8 +217,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         self.Bind(wx.EVT_CLOSE,self.OnClose)
         
-        self.CreateStatusBar()
-        self.SetStatusText("This is the statusbar")
+        self.SetStatusBar(None)
 
         # tell FrameManager to manage this frame        
         self._mgr = wx.aui.AuiManager()
@@ -316,21 +315,22 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if major is not None:
             major.SetFocus()
         
-    def CreateStatusBar(self):
-        self.statusbar=PeppyStatusBar(self)
-        self.SetStatusBar(self.statusbar)
-
+    def SetStatusText(self, text, index=0):
+        if self.GetStatusBar() is not None:
+            self.GetStatusBar().SetStatusText(text, index)
+    
     # non-wx methods
 
     def setStatusBar(self):
         #self.statusbar.reset()
         oldbar = self.GetStatusBar()
-        oldbar.Hide()
+        if oldbar is not None:
+            oldbar.Hide()
         mode=self.getActiveMajorMode()
         if mode is not None:
             bar = mode.getStatusBar()
         else:
-            bar = self.statusbar
+            bar = None
         self.SetStatusBar(bar)
         bar.Show()
     

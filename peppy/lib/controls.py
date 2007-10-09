@@ -15,7 +15,7 @@ This file contains various wx controls that don't have any
 dependencies on other parts of peppy.
 """
 
-import os
+import os, weakref
 
 import wx
 from wx.lib import buttons
@@ -53,6 +53,8 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
 
 
 class PeppyStatusBar(wx.StatusBar):
+    instances = []
+    
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent, -1)
 
@@ -73,7 +75,19 @@ class PeppyStatusBar(wx.StatusBar):
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-
+        PeppyStatusBar.instances.append(weakref.ref(self))
+        
+    @classmethod
+    def debugInstances(cls):
+        index = 0
+        for ref in PeppyStatusBar.instances:
+            bar = ref()
+            if (bar):
+                print("PeppyStatusBar[%d]: %s: %s, %s" % (index, hex(id(bar)), bar.GetStatusText(), bar.GetParent()))
+            else:
+                print("PeppyStatusBar[%d]: deleted" % index)
+            index += 1
+                
     def setWidths(self):
         self.widths = [i for i in self.default_widths]
         for widget in self.controls:
