@@ -513,6 +513,17 @@ class ExecuteCommandByName(SelectAction):
             print "%s not found" % text
 
 
+class CancelMinibuffer(SelectAction):
+    alias = _("cancel-minibuffer")
+    name = _("Cancel Minibuffer")
+    tooltip = _("Cancel any currently active minibuffer")
+    icon = 'icons/control_stop.png'
+    key_bindings = {'default': "M-ESC ESC", }
+    
+    def action(self, index=-1, multiplier=1):
+        self.mode.removeMinibuffer()
+
+
 class MainMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -602,6 +613,7 @@ class MainMenu(IPeppyPlugin):
             yield (None,menu,item)
             
     default_keys=((None, ExecuteCommandByName),
+                  (None, CancelMinibuffer),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:

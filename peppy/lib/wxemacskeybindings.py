@@ -144,7 +144,10 @@ class KeyMap(object):
         for name in self.keyaliases:
             if str.startswith(name):
                 val=self.keyaliases[name]
-                return i+len(val),val
+                if str.startswith(val):
+                    return i+len(val), val
+                else:
+                    return i+len(name), val
         for name in wxkeynames:
             if str.startswith(name):
                 return i+len(name),name
@@ -182,16 +185,18 @@ class KeyMap(object):
                         flags[m]=True
                     else:
                         break
-                if self.debug: print "modifiers found: %s" % str(flags)
+                if self.debug: print "modifiers found: %s.  remaining='%s'" % (str(flags), acc[j:])
                 
                 chars,key=self.matchKey(acc[j:])
                 if key is not None:
-                    if self.debug: print "key found: %s" % key
+                    if self.debug: print "key found: %s, chars=%d" % (key, chars)
                     keys="".join([m for m in self.modifiers if flags[m]])+key
                     if self.debug: print "keystroke = %s" % keys
                     keystrokes.append(keys)
                 else:
                     if self.debug: print "unknown key %s" % acc[j:j+chars]
+                if j+chars < len(acc):
+                    if self.debug: print "remaining='%s'" % acc[j+chars:]
                 i=j+chars
         if self.debug: print "keystrokes: %s" % keystrokes
         return keystrokes
@@ -254,6 +259,7 @@ class KeyProcessor(object):
         self.minorKeymaps=[]
         self.globalKeymap=KeyMap()
         self.localKeymap=KeyMap()
+        self.escapeKeymap = KeyMap()
         
         self.num=0
         self.status=status
@@ -274,6 +280,9 @@ class KeyProcessor(object):
         self.stickyMeta="ESCAPE"
         self.metaNext=False
         self.nextStickyMetaCancel=False
+        # Always add the ESC-ESC-ESC quit key sequence
+        self.escapeKeymap.define("M-"+self.stickyMeta + " " + self.stickyMeta,
+                                 None)
 
         self.number=None
         self.defaultNumber=4 # for some reason, XEmacs defaults to 4
@@ -305,7 +314,9 @@ class KeyProcessor(object):
     def fixmaps(self):
         """set up the search order of keymaps
         """
-        self.keymaps=self.minorKeymaps+[self.localKeymap,self.globalKeymap]
+        self.keymaps=self.minorKeymaps+[self.localKeymap,
+                                        self.globalKeymap,
+                                        self.escapeKeymap]
         self.num=len(self.keymaps)
         self.reset()
 
@@ -322,8 +333,6 @@ class KeyProcessor(object):
         self.fixmaps()
 
     def setGlobalKeyMap(self,keymap):
-        # Always add the ESC-ESC-ESC quit key sequence
-        keymap.define("M-"+self.stickyMeta+" "+self.stickyMeta,None)
         self.globalKeymap=keymap
         self.fixmaps()
 
@@ -520,7 +529,10 @@ class KeyProcessor(object):
         the processing chain.
         """
         key = self.decode(evt)
-
+        if self.debug:
+            for keymap in self.keymaps:
+                print keymap.cur
+        
         if key == self.abortKey:
             self.reset()
             self.show("Quit")
@@ -528,8 +540,19 @@ class KeyProcessor(object):
             # this must be processed before the check for metaNext,
             # otherwise we'll never be able to process the ESC-ESC-ESC
             # quit sequence
+            
+            if self.processingArgument:
+                # If we are in the middle of a keystroke, just cancel
+                # the keystroke.
+                function = None
+            else:
+                # If we're not in the middle of the keystroke, also
+                # perform the cancel function if there is one.
+                skip, unknown, function = self.add(key)
             self.reset()
             self.show("Quit")
+            if function:
+                function(evt)
         elif self.metaNext:
             # OK, the meta sticky key is down, but it's not a quit
             # sequence
@@ -670,6 +693,8 @@ if __name__ == '__main__':
             self.menuAdd(lmap, "Meta-X\tM-x", "meta-x", StatusUpdater(self, "pressed meta-x"))
             self.menuAdd(lmap, "Meta-nothing\tM-", "meta-nothing", StatusUpdater(self, "pressed meta-nothing"))
             self.menuAdd(lmap, "Double Meta-nothing\tM- M-", "meta-nothing", StatusUpdater(self, "pressed meta-nothing"))
+            self.menuAdd(lmap, "ESC\tM-ESC ESC", "M-ESC ESC", StatusUpdater(self, "Meta-Escape-Escape"))
+            self.menuAdd(lmap, "ESC\tM-ESC A", "M-ESC A", StatusUpdater(self, "Meta-Escape-A"))
 
             #print self.lookup
             self.Show(1)
@@ -719,7 +744,7 @@ if __name__ == '__main__':
             menu.SetHelpString(id, desc)
 
         def menuAddM(self, parent, menu, name, help=''):
-            if isinstance(parent, wx.Menu) or isinstance(parent, wx.MenuPtr):
+            if isinstance(parent, wx.Menu):
                 id = wx.NewId()
                 parent.AppendMenu(id, "TEMPORARYNAME", menu, help)
 
