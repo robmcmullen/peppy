@@ -22,7 +22,7 @@ class OpenFundamental(SelectAction):
     tooltip = _("Open some sample text")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:demo.txt")
 
@@ -35,7 +35,7 @@ class WordWrap(ToggleAction):
     def isChecked(self):
         return self.mode.classprefs.word_wrap
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
     
@@ -48,7 +48,7 @@ class LineNumbers(ToggleAction):
     def isChecked(self):
         return self.mode.classprefs.line_numbers
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
 
@@ -61,7 +61,7 @@ class Folding(ToggleAction):
     def isChecked(self):
         return self.mode.classprefs.folding
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.mode.setFolding(not self.mode.classprefs.folding)
 
@@ -70,7 +70,7 @@ class BeginningOfBuffer(SelectAction):
     name = _("Cursor to first character in the buffer")
     tooltip = _("Move the cursor to the start of the buffer")
         
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentStart()
 
 class EndOfBuffer(SelectAction):
@@ -78,13 +78,13 @@ class EndOfBuffer(SelectAction):
     name = _("Cursor to end of the buffer")
     tooltip = _("Move the cursor to the end of the buffer")
         
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentEnd()
 
 class ScintillaCmdKeyExecute(BufferModificationAction):
     cmd = 0
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.stc.CmdKeyExecute(self.cmd)
 
@@ -167,7 +167,7 @@ class WordOrRegionMutateMixin(object):
         s.EndUndoAction()
         s.GotoPos(end)
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mutateSelection(self.mode.stc)
             
@@ -310,7 +310,7 @@ class CommentRegion(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'emacs': 'C-C C-C',}
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         if hasattr(self.mode, 'comment') and self.mode.comment is not None:
             self.mode.comment(True)
 
@@ -366,7 +366,7 @@ class ElectricReturn(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'RET',}
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.electricReturn()
 
 
@@ -469,7 +469,7 @@ class Reindent(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'C-TAB',}
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         s = self.mode.stc
 
         # save cursor information so the cursor can be maintained at
@@ -484,7 +484,7 @@ class PasteAtColumn(Paste):
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.PasteAtColumn()
 
 
@@ -506,7 +506,7 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     def getItems(self):
         return EOLModeSelect.items
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
         Publisher().sendMessage('resetStatusBar')
 

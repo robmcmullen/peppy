@@ -414,7 +414,7 @@ class Login(SelectAction):
         mode = self.mode
         return mode.isConnected()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         wx.CallAfter(mode.loginPassword)
 
@@ -462,7 +462,7 @@ class PrevSong(PlayingAction):
     icon = 'icons/control_start.png'
     key_bindings = {'default': ','}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("Previous song!!!")
         mode = self.mode
         mode.mpd.prevSong()
@@ -475,7 +475,7 @@ class NextSong(PlayingAction):
     icon = 'icons/control_end.png'
     key_bindings = {'default': '.'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("Next song!!!")
         mode = self.mode
         mode.mpd.nextSong()
@@ -488,7 +488,7 @@ class StopSong(PlayingAction):
     icon = 'icons/control_stop.png'
     key_bindings = {'default': 'S'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("Stop playing!!!")
         mode = self.mode
         mode.mpd.stopPlaying()
@@ -501,7 +501,7 @@ class PlayPause(ConnectedAction):
     icon = 'icons/control_play.png'
     key_bindings = {'default': 'P'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("Play song!!!")
         mode = self.mode
         mode.mpd.playPause()
@@ -514,7 +514,7 @@ class Mute(ConnectedAction):
     icon = 'icons/sound_mute.png'
     key_bindings = {'default': 'M'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         mode.mpd.setMute()
         mode.update()
@@ -526,7 +526,7 @@ class VolumeUp(ConnectedAction):
     icon = 'icons/sound.png'
     key_bindings = {'default': '='}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         mode.mpd.volumeUp(mode.classprefs.volume_step)
         mode.update()
@@ -538,7 +538,7 @@ class VolumeDown(ConnectedAction):
     icon = 'icons/sound_low.png'
     key_bindings = {'default': '-'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         mode.mpd.volumeDown(mode.classprefs.volume_step)
         mode.update()
@@ -550,7 +550,7 @@ class UpdateDatabase(ConnectedAction):
     icon = 'icons/sound_low.png'
     key_bindings = {'default': 'C-D'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         status = mode.mpd.cmd('update')
 
@@ -561,7 +561,7 @@ class DeleteFromPlaylist(ConnectedAction):
     icon = 'icons/sound_low.png'
     key_bindings = {'default': 'DEL'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         mode = self.mode
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 

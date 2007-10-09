@@ -18,7 +18,7 @@ class WidgetInspector(SelectAction):
     def isEnabled(self):
         return True
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         from wx.lib.inspection import InspectionTool
         if not InspectionTool().initialized:
             InspectionTool().Init()

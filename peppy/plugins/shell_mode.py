@@ -136,7 +136,7 @@ class ProcessShellLine(SelectAction):
     tooltip = "Process a shell command."
     key_bindings = {'default': 'RET', }
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.buffer.stc.process(self.mode)
 

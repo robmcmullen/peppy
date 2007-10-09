@@ -318,7 +318,7 @@ class LexerSelect(RadioAction):
     def getItems(self):
         return _stc_lexer_names
     
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("changing to index=%d" % index)
         self.mode.changeLexer(_stc_lexer[_stc_lexer_names[index]])
 

@@ -25,7 +25,7 @@ class SlowProgressBarTest(SelectAction):
     tooltip = _("Test the progress bar")
     delay = .2
 
-    def action(self, pos=-1):
+    def action(self, index=-1, multiplier=1):
         wx.CallAfter(self.statusbarTest)
 
     def statusbarTest(self):
@@ -52,7 +52,7 @@ class ShowStyles(SelectAction):
     tooltip = _("Show the styling information of the current line")
     key_bindings = {'default': 'M-S',}
     
-    def action(self, pos=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.showStyle()
 
 

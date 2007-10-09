@@ -35,7 +35,7 @@ class Preferences(SelectAction):
             Publisher().sendMessage('peppy.preferences.changed')
         dlg.Destroy()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.showDialog()
 
 # FIXME: this is probably not the standard way I want to set up
@@ -92,7 +92,7 @@ class Plugins(SelectAction):
             Publisher().sendMessage('peppy.plugins.changed')
         dlg.Destroy()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.showDialog()
 
 

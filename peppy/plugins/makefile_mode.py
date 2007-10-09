@@ -47,7 +47,7 @@ class SampleMakefile(SelectAction):
     tooltip = _("Open a sample Makefile")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.frame.open("about:sample.mak")
 
 

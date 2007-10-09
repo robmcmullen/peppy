@@ -28,7 +28,7 @@ class STCStyles(SelectAction):
             return mode.has_stc_styling
         return False
 
-    def action(self, pos=-1):
+    def action(self, index=-1, multiplier=1):
         config=boa.getUserConfigFile(wx.GetApp())
         dprint(config)
         name = self.mode.keyword

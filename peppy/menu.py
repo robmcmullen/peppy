@@ -160,15 +160,13 @@ class SelectAction(debugmixin):
         assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
         self.Enable()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         pass
 
-    def keyAction(self, number=None):
-        self.action()
-
     def __call__(self, evt, number=None):
-        assert self.dprint("%s called by keybindings" % self)
-        self.keyAction(number)
+        #assert self.
+        dprint("%s called by keybindings -- multiplier=%s" % (self, number))
+        self.action(0, number)
 
     def Enable(self):
         assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))

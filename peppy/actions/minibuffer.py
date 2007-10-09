@@ -12,7 +12,7 @@ from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 class MinibufferAction(BufferModificationAction):
     minibuffer_label = None
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         minibuffer=self.minibuffer(self.mode, self,
                                    label=self.minibuffer_label)
         #print minibuffer.win

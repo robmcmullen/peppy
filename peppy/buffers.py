@@ -65,7 +65,7 @@ class BufferList(GlobalList):
     def getItems(self):
         return [buf.name for buf in BufferList.storage]
 
-    def action(self,state=None,index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
         self.frame.setBuffer(BufferList.storage[index])
 

@@ -355,7 +355,7 @@ class PrevBand(SelectAction):
         # nope, still room to decrement all bands
         return True
 
-    def action(self, pos=None):
+    def action(self, index=-1, multiplier=1):
         dprint("Previous band!!!")
         mode = self.mode
         mode.prevBand()
@@ -375,7 +375,7 @@ class NextBand(SelectAction):
         # nope, still room to advance all bands
         return True
 
-    def action(self, pos=None):
+    def action(self, index=-1, multiplier=1):
         dprint("Next band!!!")
         mode = self.mode
         mode.nextBand()
@@ -393,7 +393,7 @@ class PrevCube(SelectAction):
             return True
         return False
 
-    def action(self, pos=None):
+    def action(self, index=-1, multiplier=1):
         dprint("Prev cube!!!")
         mode = self.mode
         mode.prevCube()
@@ -411,7 +411,7 @@ class NextCube(SelectAction):
             return True
         return False
 
-    def action(self, pos=None):
+    def action(self, index=-1, multiplier=1):
         dprint("Next cube!!!")
         mode = self.mode
         mode.nextCube()
@@ -435,7 +435,7 @@ class SelectCube(RadioAction):
         self.dprint("datasets = %s" % mode.dataset.getCubeNames())
         return mode.dataset.getCubeNames()
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         mode.setCube(index)
@@ -472,7 +472,7 @@ class ContrastFilterAction(RadioAction):
     def getItems(self):
         return self.__class__.items
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         if index == 0:
@@ -523,7 +523,7 @@ class MedianFilterAction(RadioAction):
     def getItems(self):
         return self.__class__.items
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         if index == 0:

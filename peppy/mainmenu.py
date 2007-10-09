@@ -24,7 +24,7 @@ class NewTab(SelectAction):
     tooltip = _("Open a new tab")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:blank")
 
@@ -35,7 +35,7 @@ class New(SelectAction):
     icon = "icons/page.png"
     key_bindings = {'win': "C-N", }
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.frame.open("about:untitled")
 
 
@@ -87,14 +87,14 @@ class URLMinibuffer(CompletionMinibuffer):
                                 text[2:])
         return text
 
-class OpenFile(SelectAction):
-    alias = _("find-file")
+class OpenFileGUI(SelectAction):
+    alias = _("gui-find-file")
     name = _("&File...")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
-    key_bindings = {'win': "C-O", 'emacs': "C-X C-F", }
+    key_bindings = {'win': "C-O" }
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         wildcard="*"
         cwd=self.frame.cwd()
         dlg = wx.FileDialog(
@@ -116,7 +116,14 @@ class OpenFile(SelectAction):
         # BAD things can happen otherwise!
         dlg.Destroy()
 
-    def keyAction(self, number=None):
+class OpenFile(SelectAction):
+    alias = _("find-file")
+    name = _("&File using Minibuffer...")
+    tooltip = _("Open a file")
+    icon = "icons/folder_page.png"
+    key_bindings = {'emacs': "C-X C-F", }
+
+    def action(self, index=-1, multiplier=1):
         cwd=self.frame.cwd()
         if not cwd.endswith(os.sep):
             cwd += os.sep
@@ -132,7 +139,7 @@ class OpenFile(SelectAction):
 class OpenDialog(SelectAction):
     dialog_message = "Open..."
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
 
         dlg = wx.TextEntryDialog(
@@ -170,7 +177,7 @@ class Exit(SelectAction):
     tooltip = _("Quit the program.")
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         Publisher().sendMessage('peppy.request.quit')
 
 class Close(SelectAction):
@@ -182,7 +189,7 @@ class Close(SelectAction):
     def isEnabled(self):
         return self.frame.isOpen()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.close()
 
@@ -195,7 +202,7 @@ class Revert(SelectAction):
     def isEnabled(self):
         return self.mode.buffer.stc.CanEdit()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % self.mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
         retval=dlg.ShowModal()
@@ -216,7 +223,7 @@ class Save(SelectAction):
             return False
         return True
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.save()
 
@@ -230,7 +237,7 @@ class SaveAs(SelectAction):
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
 
         paths=None
@@ -278,7 +285,7 @@ class RunScript(SelectAction):
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.startInterpreter()
 
 
@@ -292,7 +299,7 @@ class StopScript(SelectAction):
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and hasattr(self.mode, 'process')
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stopInterpreter()
 
 
@@ -306,7 +313,7 @@ class Undo(BufferModificationAction):
     def isActionAvailable(self):
         return self.mode.stc.CanUndo()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         return self.mode.stc.Undo()
 
@@ -321,7 +328,7 @@ class Redo(BufferModificationAction):
     def isActionAvailable(self):
         return self.mode.stc.CanRedo()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         return self.mode.stc.Redo()
 
@@ -335,7 +342,7 @@ class Cut(BufferModificationAction):
     def isActionAvailable(self):
         return self.mode.stc.CanCut()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Cut()
 
@@ -349,7 +356,7 @@ class Copy(BufferModificationAction):
     def isActionAvailable(self):
         return self.mode.stc.CanCopy()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Copy()
 
@@ -363,7 +370,7 @@ class Paste(BufferModificationAction):
     def isActionAvailable(self):
         return self.mode.stc.CanEdit()
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Paste()
 
@@ -405,7 +412,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     def getItems(self):
         return MajorModeSelect.items
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         self.frame.changeMajorMode(MajorModeSelect.modes[index])
 
 
@@ -420,7 +427,7 @@ class MinorModeShow(ToggleListAction):
     def isChecked(self, index):
         return self.mode.minor_panes[index].IsShown()
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         self.mode.minor_panes[index].Show(not self.mode.minor_panes[index].IsShown())
         self.mode._mgr.Update()
 
@@ -436,7 +443,7 @@ class SidebarShow(ToggleListAction):
     def isChecked(self, index):
         return self.frame.sidebar_panes[index].IsShown()
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         self.frame.sidebar_panes[index].Show(not self.frame.sidebar_panes[index].IsShown())
         self.frame._mgr.Update()
 
@@ -450,7 +457,7 @@ class ToolbarShow(ToggleAction):
     def isChecked(self):
         return self.frame.show_toolbar
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.frame.show_toolbar = not self.frame.show_toolbar
         self.frame.switchMode()
@@ -489,10 +496,7 @@ class ExecuteCommandByName(SelectAction):
         self.sorted = self.map.keys()
         self.sorted.sort()
 
-    def action(self, index=-1):
-        self.keyAction(1)
-
-    def keyAction(self, number=None):
+    def action(self, index=-1, multiplier=1):
         # FIXME: ignoring number right now
         self.createList()
         minibuffer = StaticListCompletionMinibuffer(self.mode, self,
@@ -504,7 +508,7 @@ class ExecuteCommandByName(SelectAction):
         if text in self.map:
             action = self.map[text]
             print "executing %s: %s" % (text, action)
-            wx.CallAfter(action.keyAction)
+            wx.CallAfter(action.action)
         else:
             print "%s not found" % text
 
@@ -524,6 +528,7 @@ class MainMenu(IPeppyPlugin):
                   ((_("File"),_("New")),MenuItem(NewTab).first()),
                   ((_("File"),_("New")),MenuItem(New).first()),
                   (_("File"),Menu(_("Open")).after(_("New"))),
+                  ((_("File"),_("Open")),MenuItem(OpenFileGUI).first()),
                   ((_("File"),_("Open")),MenuItem(OpenFile).first()),
                   ((_("File"),_("Open")),MenuItem(OpenURL).first()),
                   (_("File"),Separator(_("opensep")).after(_("Open"))),

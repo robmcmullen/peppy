@@ -74,7 +74,7 @@ class OpenRecent(GlobalList, ClassPrefs):
             #print "saving %s to %s" % (file,pathname)
             fh.write("%s%s" % (file,os.linesep))
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("opening file %s" % (self.storage[index]))
         self.frame.open(self.storage[index])
 

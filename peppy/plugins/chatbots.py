@@ -21,7 +21,7 @@ from peppy.about import AddCopyright
 AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "2001-2006", "University of Pennsylvania", "Eliza and the other chatbot implementations")
 
 
-def action(self, index=-1):
+def action(self, index=-1, multiplier=1):
     """Dynamically created method for the Chatbot classes"""
     self.frame.open(self.bot_url)
 

@@ -69,7 +69,7 @@ class DebugClass(ToggleListAction):
     def isChecked(self, index):
         return DebugClass.itemlist[index]['checked']
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         """
         Turn on or off the debug logging for the selected class
         """

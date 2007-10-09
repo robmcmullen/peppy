@@ -36,7 +36,7 @@ class FrameList(GlobalList):
     def getItems(self):
         return [frame.getTitle() for frame in FrameList.storage]
 
-    def action(self, index=0):
+    def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
         wx.GetApp().SetTopWindow(FrameList.storage[index])
         wx.CallAfter(FrameList.storage[index].Raise)
@@ -46,7 +46,7 @@ class DeleteFrame(SelectAction):
     name = _("&Delete Frame")
     tooltip = _("Delete current window")
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.frame.closeWindow(None)
 
     def isEnabled(self):
@@ -60,7 +60,7 @@ class NewFrame(SelectAction):
     tooltip = _("Open a new window")
     key_bindings = {'emacs': "C-X 5 2",}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         frame=BufferFrame()
         frame.Show(True)
 
