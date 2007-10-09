@@ -275,8 +275,8 @@ class PluginManager(object):
 			try:
 				execfile(candidate_filepath+".py",candidate_globals)
 			except Exception,e:
-				logging.debug("Unable to execute the code in plugin: %s" % candidate_filepath)
-				logging.debug("\t The following problem occured: %s %s " % (os.linesep, e))
+				logging.error("Unable to execute the code in plugin: %s" % candidate_filepath)
+				logging.error("\t The following problem occured: %s %s " % (os.linesep, e))
 
 			# now try to find and initialise the first subclass of the correct plugin interface
 			for element in candidate_globals.values():
