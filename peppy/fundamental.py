@@ -285,6 +285,10 @@ class StandardCommentMixin(debugmixin):
         """
         s = self.stc
         eol_len = len(s.getLinesep())
+        if add:
+            func = self.commentLine
+        else:
+            func = self.uncommentLine
         
         s.BeginUndoAction()
         line, lineend = s.GetLineRegion()
@@ -296,7 +300,7 @@ class StandardCommentMixin(debugmixin):
             start = selstart
             end = s.GetLineEndPosition(line)
             while line <= lineend:
-                start = self.commentLine(start, end)
+                start = func(start, end)
                 line += 1
                 end = s.GetLineEndPosition(line)
             s.SetSelection(selstart, start - eol_len)
@@ -311,8 +315,19 @@ class CommentRegion(BufferModificationAction):
     key_bindings = {'emacs': 'C-C C-C',}
 
     def action(self, index=-1, multiplier=1):
+        dprint(multiplier)
         if hasattr(self.mode, 'comment') and self.mode.comment is not None:
-            self.mode.comment(True)
+            self.mode.comment(multiplier != 4)
+
+class UncommentRegion(BufferModificationAction):
+    alias = _("uncomment-region")
+    name = _("&Uncomment Region")
+    tooltip = _("Uncomment a line or region")
+    icon = 'icons/text_indent_rob.png'
+
+    def action(self, index=-1, multiplier=1):
+        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
+            self.mode.comment(False)
 
 
 class StandardReturnMixin(debugmixin):
@@ -789,6 +804,35 @@ class FundamentalMode(BraceHighlightMixin,
             end += elen
         return end + len(self.stc.getLinesep())
 
+    def uncommentLine(self, start, end):
+        """Remove comment to the line specified by start and end.
+
+        Generic method that uses the start_line_comment and
+        end_line_comment class attributes to comment a line.  This is
+        to be called within a loop that adds comment characters to the
+        line.  start and end are assumed to be the endpoints of the
+        current line, so no further checking of the line is necessary.
+
+        @param start: first character in line
+        @param end: last character in line before line ending
+
+        @returns: new position of last character before line ending
+        """
+        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
+        slen = len(self.start_line_comment)
+        if self.stc.GetTextRange(start, start+slen) == self.start_line_comment:
+            self.stc.SetSelection(start, start+slen)
+            self.stc.ReplaceSelection("")
+            end -= slen
+
+        elen = len(self.end_line_comment)
+        if elen > 0:
+            if self.stc.GetTextRange(end-elen, end) == self.end_line_comment:
+                self.stc.SetSelection(start, start+slen)
+                self.stc.ReplaceSelection("")
+                end -= elen
+        return end + len(self.stc.getLinesep())
+
     def getFunctionList(self):
         '''
         Return a list of tuples, where each tuple contains information
@@ -820,6 +864,7 @@ class FundamentalPlugin(IPeppyPlugin):
                   ("Fundamental",_("&Transform"),MenuItem(Reindent)),
                   ("Fundamental",_("&Transform"),Separator(_("shift")).last()),
                   ("Fundamental",_("&Transform"),MenuItem(CommentRegion)),
+                  ("Fundamental",_("&Transform"),MenuItem(UncommentRegion)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
