@@ -42,6 +42,20 @@ class IPeppyPlugin(IPlugin, object):
             if mode in modes:
                 return True
         return False
+    
+    def aboutFiles(self):
+        """Add entries to the about filesystem.
+        
+        The plugin may define additions to the about filesystem by
+        returning a dict here.  The about filesystem is a pseudo-
+        filesystem that returns data from about: urls, and is used
+        mostly for storing read-only help files or sample files.  It
+        is useful for adding help text for your plugin.
+    
+        The dict is keyed on the filename, and the value is the contents
+        of the file.
+        """
+        return {}
 
     def addCommandLineOptions(self, parser):
         """Add any options to the OptionParser instance.

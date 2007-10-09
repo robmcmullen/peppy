@@ -24,18 +24,12 @@ from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-from peppy.about import SetAbout
-
-_sample_file = """\
-// Sample graphviz source file
+_sample_file = """// Sample graphviz source file
 digraph G {
    Hello->World;
    peppy->"is here";
 }
 """
-
-SetAbout('sample.dot',_sample_file)
-
 
 class SampleDot(SelectAction):
     name = _("&Open Sample Graphviz dot file")
@@ -215,6 +209,9 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
     """
+    def aboutFiles(self):
+        return {'sample.dot': _sample_file}
+    
     def getMajorModes(self):
         yield GraphvizMode
 

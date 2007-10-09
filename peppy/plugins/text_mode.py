@@ -14,8 +14,6 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-from peppy.about import SetAbout
-
 _sample_file="""\
 Life is what happens while you're busy making other plans.
 -- John Lennon
@@ -42,9 +40,6 @@ Always use the bathroom when you can, because you never know when you'll get ano
 -- Winston Churchill
 """
 
-SetAbout('sample.txt',_sample_file)
-
-
 
 class TextMode(FundamentalMode):
     """Major mode for editing text files.
@@ -63,5 +58,8 @@ class TextMode(FundamentalMode):
 class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.
     """
+    def aboutFiles(self):
+        return {'sample.txt': _sample_file}
+    
     def getMajorModes(self):
         yield TextMode

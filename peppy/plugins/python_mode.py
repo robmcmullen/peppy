@@ -11,7 +11,6 @@ import wx
 import wx.stc
 
 from peppy.yapsy.plugins import *
-from peppy.about import SetAbout
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import *
@@ -41,8 +40,6 @@ class Foo(Bar):
             raise TypeError("stuff")
         return
 '''
-SetAbout('sample.py',_sample_file)
-
 
 class SamplePython(SelectAction):
     name = _("&Open Sample Python")
@@ -317,7 +314,9 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
 
 
 class PythonPlugin(IPeppyPlugin):
-
+    def aboutFiles(self):
+        return {'sample.py': _sample_file}
+    
     def getMajorModes(self):
         yield PythonMode
     

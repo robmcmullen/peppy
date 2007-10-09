@@ -62,16 +62,27 @@ aboutfiles={}
 def SetAbout(path,text):
     #eprint("Setting %s: %d bytes" % (path, len(text)))
     aboutfiles[path]=text
-    
+
+def findAbout(path):
+    if path in aboutfiles:
+        return aboutfiles[path]
+    plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+    for plugin in plugins:
+        #dprint("checking plugin %s" % plugin)
+        files = plugin.aboutFiles()
+        if path in files:
+            return files[path]
+    return None
+
 class AboutHandler(urllib2.BaseHandler):
     # Use local file or FTP depending on form of URL
     def about_open(self, req):
         url = req.get_selector()
         #dprint(url)
-
-        if url not in aboutfiles:
+        
+        text = findAbout(url)
+        if text is None:
             raise urllib2.URLError("url %s not found" % url)
-        text = aboutfiles[url]
         if text.find("%(") >= 0:
             text = text % substitutes
         fh=StringIO()

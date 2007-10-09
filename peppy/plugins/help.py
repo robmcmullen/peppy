@@ -1,10 +1,8 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-"""Definition and storage of the 'about:' protocol.
+"""Help text and convenience functions for the help menu.
 
-This provides the about: protocol handling (a read-only protocol) for
-built-in storage of data.  It also provides some global user interface
-elements for the help menu and other testing menu items.
+This provides the About dialog box and the user manual.
 """
 
 import os,os.path,sys,re,time,commands,glob,random
@@ -16,11 +14,18 @@ from peppy.yapsy.plugins import *
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.about import SetAbout, credits, substitutes, gpl_text
+from peppy.about import credits, substitutes, gpl_text
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
 from peppy import __url__
+
+_user_manual = """<!-- -*- HTMLView -*- -->
+<h2>User Manual for %(prog)s %(version)s</h2>
+<p>Copyright (c) %(yearrange)s %(author)s (%(author_email)s)</p>
+
+<p>Well, not so much a user's manual as a placeholder for one.
+"""
 
 class HelpAbout(SelectAction):
     name = _("&About...")
@@ -55,14 +60,6 @@ class HelpAbout(SelectAction):
         # Then we call wx.AboutBox giving it that info object
         wx.AboutBox(info)
 
-
-SetAbout('User Manual',"""\
-<!-- -*- HTMLView -*- -->
-<h2>User Manual for %(prog)s %(version)s</h2>
-<p>Copyright (c) %(yearrange)s %(author)s (%(author_email)s)</p>
-
-<p>Well, not so much a user's manual as a placeholder for one.
-""")
 class HelpManual(SelectAction):
     name = _("&Help...")
     tooltip = _("User manual")
@@ -74,6 +71,9 @@ class HelpManual(SelectAction):
         
 
 class HelpPlugin(IPeppyPlugin):
+    def aboutFiles(self):
+        return {'User Manual': _user_manual}
+    
     default_menu=((None,None,Menu(_("&Help")).last()),
                   (None,_("&Help"),MenuItem(HelpAbout).first()),
                   (None,_("&Help"),Separator(_("manual")).first()),

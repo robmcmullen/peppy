@@ -30,7 +30,6 @@ from peppy.iofilter import *
 from peppy.stcinterface import NonResidentSTC
 
 from peppy.yapsy.plugins import *
-from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.columnsizer import *
 from peppy.lib.dropscroller import *

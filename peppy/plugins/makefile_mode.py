@@ -16,8 +16,6 @@ from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-from peppy.about import SetAbout
-
 _sample_file = """\
 VAR = something
 OTHER = $(VAR)
@@ -38,8 +36,6 @@ clean:
 
 print-%: ; @ echo $* = $($*)
 """
-
-SetAbout('sample.mak',_sample_file)
 
 
 class SampleMakefile(SelectAction):
@@ -91,7 +87,9 @@ class MakefileMode(FundamentalMode):
 class MakefilePlugin(IPeppyPlugin):
     """Makefile plugin to register modes and user interface.
     """
-    
+    def aboutFiles(self):
+        return {'sample.mak': MakefileMode.classprefs.sample_file}
+        
     def getMajorModes(self):
         yield MakefileMode
     
