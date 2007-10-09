@@ -16,11 +16,12 @@ from peppy.menu import *
 from peppy.lib.userparams import *
 
 
-class OpenRecent(GlobalList, ClassPrefs):
+class RecentFiles(GlobalList, ClassPrefs):
     name=_("Open Recent")
     inline=False
 
     default_classprefs = (
+        StrParam('history_file', 'recentfiles.txt'),
         IntParam('list_length', 10),
         )
 
@@ -28,7 +29,16 @@ class OpenRecent(GlobalList, ClassPrefs):
     others=[]
 
     @classmethod
-    def append(cls, url):
+    def getFile(cls):
+        filename=cls.classprefs.history_file
+        app = wx.GetApp()
+        pathname=app.getConfigFilePath(filename)
+        return pathname
+    
+    @classmethod
+    def append(cls, msg):
+        buffer = msg.data
+        url = buffer.url
 ##        dprint("BEFORE: storage: %s" % cls.storage)
 ##        dprint("BEFORE: others: %s" % cls.others)
         
@@ -57,7 +67,8 @@ class OpenRecent(GlobalList, ClassPrefs):
 ##        dprint("AFTER: others: %s" % cls.others)
         
     @classmethod
-    def load(cls,pathname):
+    def load(cls, msg):
+        pathname = cls.getFile()
         try:
             fh=open(pathname)
             cls.storage=[]
@@ -68,7 +79,8 @@ class OpenRecent(GlobalList, ClassPrefs):
             pass
 
     @classmethod
-    def save(cls,pathname):
+    def save(cls, msg):
+        pathname = cls.getFile()
         fh=open(pathname,'w')
         for file in cls.storage:
             #print "saving %s to %s" % (file,pathname)
@@ -83,31 +95,15 @@ class OpenRecent(GlobalList, ClassPrefs):
 class RecentFilesPlugin(IPeppyPlugin):
     def activate(self):
         IPeppyPlugin.activate(self)
-        Publisher().subscribe(self.loadConf, 'peppy.config.load')
-        Publisher().subscribe(self.saveConf, 'peppy.config.save')
-        Publisher().subscribe(self.bufferOpened, 'buffer.opened')
+        Publisher().subscribe(RecentFiles.load, 'peppy.config.load')
+        Publisher().subscribe(RecentFiles.save, 'peppy.config.save')
+        Publisher().subscribe(RecentFiles.append, 'buffer.opened')
 
     def deactivate(self):
         IPeppyPlugin.deactivate(self)
-        Publisher().unsubscribe(self.loadConf)
-        Publisher().unsubscribe(self.saveConf)
-        Publisher().unsubscribe(self.bufferOpened)
-
-    def loadConf(self, msg):
-        app = wx.GetApp()
-        filename=app.classprefs.recentfiles
-        pathname=app.getConfigFilePath(filename)
-        OpenRecent.load(pathname)
-    
-    def saveConf(self, msg):
-        app = wx.GetApp()
-        filename=app.classprefs.recentfiles
-        pathname=app.getConfigFilePath(filename)
-        OpenRecent.save(pathname)        
+        Publisher().unsubscribe(RecentFiles.load)
+        Publisher().unsubscribe(RecentFiles.save)
+        Publisher().unsubscribe(RecentFiles.append)
 
     def getMenuItems(self):
-        yield (None,_("File"),MenuItem(OpenRecent).after(_("&Open File...")).before("opensep"))
-
-    def bufferOpened(self, msg):
-        buffer = msg.data
-        OpenRecent.append(buffer.url)
+        yield (None,_("File"),MenuItem(RecentFiles).after(_("&Open File...")).before("opensep"))

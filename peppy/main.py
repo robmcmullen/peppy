@@ -100,7 +100,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     default_classprefs = (
         StrParam('plugins', ''),
         StrParam('plugin_dirs', ''),
-        StrParam('recentfiles', 'recentfiles.txt'),
         StrParam('title_page', 'about:peppy'),
         StrParam('key_bindings', 'win'),
         IntParam('listen_port', 55555),
