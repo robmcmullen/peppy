@@ -710,7 +710,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
 
 
 
-def parseEmacs(line):
+def parseEmacs(header):
     """
     Parse a potential emacs major mode specifier line into the
     mode and the optional variables.  The mode may appears as any
@@ -720,11 +720,17 @@ def parseEmacs(line):
       -*- mode: Python; -*-
       -*- mode: Ksh; var1:value1; var3:value9; -*-
 
-    @param line: first or second line in text file
-    @type line: string
+    @param header: first x bytes of the file to be loaded
     @return: two-tuple of the mode and a dict of the name/value pairs.
     @rtype: tuple
     """
+    lines = header.splitlines()
+    if len(lines) == 0:
+        return None, None
+    elif len(lines) > 1:
+        line = lines[0] + lines[1]
+    else:
+        line = lines[0]
     match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
     if match:
         vars={}
