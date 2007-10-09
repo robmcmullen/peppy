@@ -488,7 +488,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def open(self, url):
         buffer = BufferList.findBufferByURL(url)
-        if buffer is not None and buffer.permanent:
+        if buffer is not None:
             #dprint("found permanent buffer")
             self.newBuffer(buffer)
         else:
