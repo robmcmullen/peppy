@@ -167,14 +167,20 @@ class PluginPanel(PrefPanel):
         
     def create(self):
         row = 0
-        order = ['name', 'path', 'author', 'version', 'website', 'copyright',
+        order = ['path', 'author', 'version', 'website', 'copyright',
                  'description']
+        box = wx.StaticBox(self, -1, self.plugin_info.name)
+        bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        self.sizer.Add(bsizer)
+        grid = wx.GridBagSizer(2,5)
+        bsizer.Add(grid, 0, wx.EXPAND)
+                
         for info in order:
             title = wx.StaticText(self, -1, info)
-            self.sizer.Add(title, (row,0))
+            grid.Add(title, (row,0))
 
             value = wx.StaticText(self, -1, str(getattr(self.plugin_info, info)))
-            self.sizer.Add(value, (row,1), flag=wx.EXPAND)
+            grid.Add(value, (row,1), flag=wx.EXPAND)
 
             row += 1
 
