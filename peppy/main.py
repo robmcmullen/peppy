@@ -592,7 +592,7 @@ def main():
     try:
         index = sys.argv.index("-p")
         import profile
-        profile.run('run()','profile.out')
+        profile.run('peppy.main.run()','profile.out')
     except ValueError:
         run()
 
