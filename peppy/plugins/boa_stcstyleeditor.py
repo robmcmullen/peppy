@@ -23,9 +23,8 @@ class STCStyles(SelectAction):
     icon = "icons/style_edit.png"
 
     def isEnabled(self):
-        mode=self.frame.getActiveMajorMode()
-        if mode and hasattr(mode, 'has_stc_styling'):
-            return mode.has_stc_styling
+        if hasattr(self.mode, 'has_stc_styling'):
+            return self.mode.has_stc_styling
         return False
 
     def action(self, index=-1, multiplier=1):
@@ -40,7 +39,7 @@ class STCStyles(SelectAction):
         # also needs to set the lexer, so we have to break the
         # black-box model and poke around in the internals of the
         # boa dialog to do it.
-        if self.mode.classprefs.stc_boa_use_current_text:
+        if hasattr(self.mode, 'stc_boa_use_current_text') and self.mode.classprefs.stc_boa_use_current_text:
             dlg.stc.SetText(self.mode.stc.GetText())
             dlg.lexer = self.mode.stc.GetLexer()
             dlg._blockUpdate = False
