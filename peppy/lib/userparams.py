@@ -1038,12 +1038,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
         self.parent = parent
         self.obj = obj
         
-        self.sizer = wx.GridBagSizer(2,5)
-
         self.ctrls = {}
         self.orig = {}
+        
+        # self.sizer = wx.GridBagSizer(2,5)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.create()
-
         self.SetSizer(self.sizer)
         self.Layout()
 
@@ -1060,22 +1060,30 @@ class PrefPanel(ScrolledPanel, debugmixin):
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
-            
+
+            row = 0
             for param in cls.default_classprefs:
                 if param.keyword in self.ctrls:
                     # Don't put another control if it exists in a superclass
                     continue
+
+                if row == 0:
+                    box = wx.StaticBox(self, -1, cls.__name__)
+                    bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+                    self.sizer.Add(bsizer)
+                    grid = wx.GridBagSizer(2,5)
+                    bsizer.Add(grid, 0, wx.EXPAND)
                 
                 title = wx.StaticText(self, -1, param.keyword)
                 if param.help:
                     title.SetToolTipString(param.help)
-                self.sizer.Add(title, (row,0))
+                grid.Add(title, (row,0))
 
                 if param.isSettable():
                     ctrl = param.getCtrl(self)
                     if param.help:
                         ctrl.SetToolTipString(param.help)
-                    self.sizer.Add(ctrl, (row,1), flag=wx.EXPAND)
+                    grid.Add(ctrl, (row,1), flag=wx.EXPAND)
                     
                     val = self.obj.classprefs(param.keyword)
                     self.dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
