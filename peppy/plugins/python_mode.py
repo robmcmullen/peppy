@@ -122,14 +122,14 @@ class ElectricColon(BufferModificationAction):
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
 
-    def modify(self, mode, pos=-1):
-        s = mode.stc
+    def action(self, index=-1, multiplier=1):
+        s = self.mode.stc
         s.ReplaceSelection(":")
         # folding info not automatically updated after a Replace, so
         # do it manually
         linestart = s.PositionFromLine(s.GetCurrentLine())
         s.Colourise(linestart, s.GetSelectionEnd())
-        mode.reindent()
+        self.mode.reindent()
         pass
         
 
