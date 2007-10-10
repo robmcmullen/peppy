@@ -32,14 +32,11 @@ import wx.stc
 from peppy.menu import *
 from peppy.major import *
 from peppy.stcinterface import *
-from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
-
 
 _sample_file="""\
 albatros  banana  electrometer  eggshell
 """
-SetAbout('words.hangman',_sample_file)
 
 icondict = {
 'hangman.png':
@@ -63,7 +60,9 @@ class PlayHangman(SelectAction):
     tooltip = _("Start a hangman game")
     icon = wx.ART_FILE_OPEN
 
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
+        # FIXME: if the current buffer is based on the PeppySTC, it should open
+        # the game using the current stc rather than the small word list
         self.frame.open("about:words.hangman")
 
 
@@ -73,7 +72,7 @@ class RestartGame(SelectAction):
     tooltip = _("Restart Game")
     key_bindings = {'default': 'C-R'}
     
-    def action(self, index=-1):
+    def action(self, index=-1, multiplier=1):
         self.mode.stc.restart()
 
 
@@ -315,7 +314,10 @@ class HangmanPlugin(IPeppyPlugin, debugmixin):
     Image viewer plugin that registers the major mode and supplies the
     user interface actions so we can use the mode.
     """
-    def possibleModes(self):
+    def aboutFiles(self):
+        return {"words.hangman": _sample_file}
+    
+    def getMajorModes(self):
         yield HangmanMode
     
     default_menu=((None,(_("Tools"),_("Games")),MenuItem(PlayHangman)),
