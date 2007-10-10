@@ -289,7 +289,7 @@ class RunScript(SelectAction):
         self.mode.startInterpreter()
 
 
-class RunScriptWithArgs(SelectAction):
+class RunScriptWithArgs(RunScript):
     alias = _("run-script-with-args")
     name = _("Run with Args")
     tooltip = _("Open a file")
