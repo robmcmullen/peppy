@@ -1,3 +1,11 @@
+2007-10-09  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.6.6 "Wait for it..."
+	* Non-announced release, to allow iteration 7 and version 0.7.0 to
+	announce my dogfooding code
+	* Yes, this is totally "marketing" driven to have a .0 release be
+	announced rather than 0.6.6 which people may not pay attention to
+
 2007-10-03  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.5.1 "I'm not left-handed either."
@@ -20,11 +28,13 @@
 	* Buffers now (optionally) loaded in separate thread
 	* Busy cursor now displayed if not loading in separate thread
 	* MPDMode: Add count of songs and total time
-	* MPDMode: fixed problem where it wouldn't show files in directory that has both dirs and files
+	* MPDMode: fixed problem where it wouldn't show files in directory that
+	has both dirs and files
 	* Added goto offset capability in hex edit
 	* Added ability to specify integers in different bases
 	* Now use wx methods for determining user's homedir
-	* Fixed bug on windows, where can't up an new tab after closing the last tab of a view
+	* Fixed bug on windows, where can't up an new tab after closing the
+	last tab of a view
 
 2007-09-08  Rob McMullen  <robm@users.sourceforge.net>
 
