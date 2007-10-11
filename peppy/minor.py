@@ -51,30 +51,13 @@ class MinorMode(ClassPrefs, debugmixin):
         )
 
     @classmethod
-    def getAllMinorModes(cls):
-        # Only call this once.  Check for presense of class attribute
-        if hasattr(MinorMode, 'all_minor_modes'):
-            return cls.all_minor_modes
-
-        # Create the class attribute
-        minors = []
-        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        assert cls.dprint(plugins)
-        for ext in plugins:
-            for minor in ext.getMinorModes():
-                assert cls.dprint("Registering minor mode %s" % minor.keyword)
-                minors.append(minor)
-        MinorMode.all_minor_modes = minors
-        dprint(minors)
-        return minors
-
-    @classmethod
     def getValidMinorModes(cls, mode):
-        minors = cls.getAllMinorModes()
         valid = []
-        for minor in minors:
-            if minor.worksWithMajorMode(mode):
-                valid.append(minor)
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for plugin in plugins:
+            for minor in plugin.getMinorModes():
+                if minor.worksWithMajorMode(mode):
+                    valid.append(minor)
         dprint(valid)
         return valid
 
