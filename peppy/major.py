@@ -47,30 +47,6 @@ from peppy.lib.processmanager import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 
-class BufferBusyActionMixin(object):
-    """Mixin to disable an action when the buffer is being modified.
-
-    If a subclass needs to supply more information about its enable
-    state, override isActionAvailable instead of isEnabled, or else
-    you lose the buffer busy test.
-    """
-    def isEnabled(self):
-        return not self.mode.buffer.busy and self.isActionAvailable()
-
-    def isActionAvailable(self):
-        return True
-
-class BufferModificationAction(BufferBusyActionMixin, SelectAction):
-    """Base class for any action that changes the bytes in the buffer.
-
-    This uses the BufferBusyActionMixin to disable any action that
-    would change the buffer when the buffer is in the process of being
-    modified by a long-running process.
-    """
-    pass
-
-
-#### MajorMode base class
 
 class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     """

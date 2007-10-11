@@ -8,9 +8,11 @@ from wx.lib.pubsub import Publisher
 
 from peppy.mainmenu import Paste
 from peppy.menu import *
+from peppy.major import *
 
 from peppy.lib.processmanager import *
 
+from peppy.actions.base import *
 from peppy.actions.minibuffer import *
 from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
@@ -65,155 +67,6 @@ class Folding(ToggleAction):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
         self.mode.setFolding(not self.mode.classprefs.folding)
 
-class BeginningOfBuffer(SelectAction):
-    alias = _("beginning-of-buffer")
-    name = _("Cursor to first character in the buffer")
-    tooltip = _("Move the cursor to the start of the buffer")
-        
-    def action(self, index=-1, multiplier=1):
-        self.mode.stc.DocumentStart()
-
-class EndOfBuffer(SelectAction):
-    alias = _("end-of-buffer")
-    name = _("Cursor to end of the buffer")
-    tooltip = _("Move the cursor to the end of the buffer")
-        
-    def action(self, index=-1, multiplier=1):
-        self.mode.stc.DocumentEnd()
-
-class ScintillaCmdKeyExecute(BufferModificationAction):
-    cmd = 0
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mode.stc.CmdKeyExecute(self.cmd)
-
-class BeginningOfLine(ScintillaCmdKeyExecute):
-    alias = _("beginning-of-line")
-    name = _("Cursor to Start of Line")
-    tooltip = _("Move the cursor to the start of the current line")
-    cmd = wx.stc.STC_CMD_HOMEDISPLAY
-        
-class BeginningTextOfLine(ScintillaCmdKeyExecute):
-    alias = _("beginning-text-of-line")
-    name = _("Cursor to first non-blank character in the line")
-    tooltip = _("Move the cursor to the start of the current line")
-    key_bindings = {'emacs': 'C-A',}
-    cmd = wx.stc.STC_CMD_VCHOME
-        
-class EndOfLine(ScintillaCmdKeyExecute):
-    alias = _("end-of-line")
-    name = _("Cursor to End of Line")
-    tooltip = _("Move the cursor to the end of the current line")
-    key_bindings = {'emacs': 'C-E',}
-    cmd = wx.stc.STC_CMD_LINEEND
-
-class PreviousLine(ScintillaCmdKeyExecute):
-    alias = _("previous-line")
-    name = _("Cursor to previous line")
-    tooltip = _("Move the cursor up a line")
-    key_bindings = {'emacs': 'C-P',}
-    cmd = wx.stc.STC_CMD_LINEUP
-
-class NextLine(ScintillaCmdKeyExecute):
-    alias = _("next-line")
-    name = _("Cursor to next line")
-    tooltip = _("Move the cursor down a line")
-    key_bindings = {'emacs': 'C-N',}
-    cmd = wx.stc.STC_CMD_LINEDOWN
-
-
-class WordOrRegionMutateMixin(object):
-    """Mixin class to operate on a word or the selected region.
-    """
-
-    def mutate(self, txt):
-        """Operate on specified text and return new text.
-
-        Method designed to be overridden by subclasses to provide the
-        text operation desired by the subclass.
-
-        @param txt: input text
-        @returns: text resulting from the desired processing
-        """
-        return txt
-
-    def mutateSelection(self, s):
-        """Change the current word or highlighted region.
-
-        Perform some text operation on the current word or region.  If
-        a region is active in the STC, use it; otherwise, use the word
-        as defined by the text from the current cursor position to the
-        end of the word.  The end of the word is defined by the STC's
-        STC_CMD_WORDRIGHT.
-
-        The operation is performed by the C{mutate} method, which
-        subclasses will override to provide the functionality.
-
-        Side effect: moves the cursor to the end of the region if it
-        operated on the region, or to the start of the next word.
-        
-        @param s: styled text control
-        """
-        s.BeginUndoAction()
-        (pos, end) = s.GetSelection()
-        if pos==end:
-            s.CmdKeyExecute(wx.stc.STC_CMD_WORDRIGHT)
-            end = s.GetCurrentPos()
-        word = s.GetTextRange(pos, end)
-        s.SetTargetStart(pos)
-        s.SetTargetEnd(end)
-        s.ReplaceTarget(self.mutate(word))
-        s.EndUndoAction()
-        s.GotoPos(end)
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mutateSelection(self.mode.stc)
-            
-class CapitalizeWord(WordOrRegionMutateMixin, BufferModificationAction):
-    """Title-case the current word and move the cursor to the start of
-    the next word.
-    """
-    alias = _("capitalize-region-or-word")
-    name = _("Capitalize word")
-    tooltip = _("Capitalize current word")
-    key_bindings = {'emacs': 'M-C',}
-
-    def mutate(self, txt):
-        """Change to title case -- first letter capitalized, rest
-        lower case.
-        """
-        return txt.title()
-
-class UpcaseWord(WordOrRegionMutateMixin, BufferModificationAction):
-    """Upcase the current word and move the cursor to the start of the
-    next word.
-    """
-    alias = _("upcase-region-or-word")
-    name = _("Upcase word")
-    tooltip = _("Upcase current word")
-    key_bindings = {'emacs': 'M-U',}
-
-    def mutate(self, txt):
-        """Change to all upper case.
-        """
-        return txt.upper()
-
-class DowncaseWord(WordOrRegionMutateMixin, BufferModificationAction):
-    """Downcase the current word and move the cursor to the start of the
-    next word.
-    """
-    alias = _("downcase-region-or-word")
-    name = _("Downcase word")
-    tooltip = _("Downcase current word")
-    key_bindings = {'emacs': 'M-L',}
-
-    def mutate(self, txt):
-        """Change to all lower case.
-        """
-        return txt.lower()
-
 
 class BraceHighlightMixin(object):
     """Brace highlighting mixin for code modes.
@@ -258,76 +111,6 @@ class BraceHighlightMixin(object):
         else:
             s.BraceHighlight(braceAtCaret, braceOpposite)
         
-
-
-class ShiftLeft(ScintillaCmdKeyExecute):
-    alias = _("unindent-region")
-    name = _("Shift &Left")
-    tooltip = _("Unindent a line region")
-    icon = 'icons/text_indent_remove_rob.png'
-    cmd = wx.stc.STC_CMD_BACKTAB
-
-class ShiftRight(ScintillaCmdKeyExecute):
-    alias = _("indent-region")
-    name = _("Shift &Right")
-    tooltip = _("Indent a line or region")
-    icon = 'icons/text_indent_rob.png'
-    cmd = wx.stc.STC_CMD_TAB
-
-
-class StandardCommentMixin(debugmixin):
-    def comment(self, add=True):
-        """Comment or uncomment a region.
-
-        Comment or uncomment a region.
-
-        @param add: True to add comments, False to remove them
-        """
-        s = self.stc
-        eol_len = len(s.getLinesep())
-        if add:
-            func = s.addLinePrefixAndSuffix
-        else:
-            func = s.removeLinePrefixAndSuffix
-        
-        s.BeginUndoAction()
-        line, lineend = s.GetLineRegion()
-        assert self.dprint("lines: %d - %d" % (line, lineend))
-        try:
-            selstart, selend = s.GetSelection()
-            assert self.dprint("selection: %d - %d" % (selstart, selend))
-
-            start = selstart
-            end = s.GetLineEndPosition(line)
-            while line <= lineend:
-                start = func(start, end, self.start_line_comment, self.end_line_comment)
-                line += 1
-                end = s.GetLineEndPosition(line)
-            s.SetSelection(selstart, start - eol_len)
-        finally:
-            s.EndUndoAction()
-
-class CommentRegion(BufferModificationAction):
-    alias = _("comment-region")
-    name = _("&Comment Region")
-    tooltip = _("Comment a line or region")
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'emacs': 'C-C C-C',}
-
-    def action(self, index=-1, multiplier=1):
-        dprint(multiplier)
-        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
-            self.mode.comment(multiplier != 4)
-
-class UncommentRegion(BufferModificationAction):
-    alias = _("uncomment-region")
-    name = _("&Uncomment Region")
-    tooltip = _("Uncomment a line or region")
-    icon = 'icons/text_indent_rob.png'
-
-    def action(self, index=-1, multiplier=1):
-        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
-            self.mode.comment(False)
 
 
 class StandardReturnMixin(debugmixin):
@@ -477,22 +260,6 @@ class FoldingReindentMixin(debugmixin):
         s.ReplaceTarget(s.GetIndentString(fold))
 
 
-class Reindent(BufferModificationAction):
-    alias = _("reindent-region")
-    name = _("Reindent")
-    tooltip = _("Reindent a line or region")
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'C-TAB',}
-
-    def action(self, index=-1, multiplier=1):
-        s = self.mode.stc
-
-        # save cursor information so the cursor can be maintained at
-        # the same relative location in the text after the indention
-        pos = self.mode.reindent()
-        s.GotoPos(pos)
-
-
 class PasteAtColumn(Paste):
     alias = _("paste-at-column")
     name = _("Paste at Column")
@@ -526,8 +293,7 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
         Publisher().sendMessage('resetStatusBar')
 
 
-class FundamentalMode(BraceHighlightMixin,
-                      StandardCommentMixin, StandardReturnMixin,
+class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
                       StandardReindentMixin, MajorMode):
     """
     The base view of most (if not all) of the views that use the STC
@@ -791,6 +557,34 @@ class FundamentalMode(BraceHighlightMixin,
         # be exploited, but currently it isn't.
         return self.stc.fold_explorer_root
 
+    def comment(self, add=True):
+        """Comment or uncomment a region.
+
+        @param add: True to add comments, False to remove them
+        """
+        s = self.stc
+        eol_len = len(s.getLinesep())
+        if add:
+            func = s.addLinePrefixAndSuffix
+        else:
+            func = s.removeLinePrefixAndSuffix
+        
+        s.BeginUndoAction()
+        line, lineend = s.GetLineRegion()
+        assert self.dprint("lines: %d - %d" % (line, lineend))
+        try:
+            selstart, selend = s.GetSelection()
+            assert self.dprint("selection: %d - %d" % (selstart, selend))
+
+            start = selstart
+            end = s.GetLineEndPosition(line)
+            while line <= lineend:
+                start = func(start, end, self.start_line_comment, self.end_line_comment)
+                line += 1
+                end = s.GetLineEndPosition(line)
+            s.SetSelection(selstart, start - eol_len)
+        finally:
+            s.EndUndoAction()
 
 
 class FundamentalPlugin(IPeppyPlugin):
@@ -809,35 +603,12 @@ class FundamentalPlugin(IPeppyPlugin):
                   ("Fundamental",_("View"),MenuItem(Folding)),
                   ("Fundamental",_("View"),Separator(_("cmdsep"))),
                   ("Fundamental",None,Menu(_("&Transform")).after(_("Edit"))),
-                  ("Fundamental",_("&Transform"),MenuItem(ShiftLeft)),
-                  ("Fundamental",_("&Transform"),MenuItem(ShiftRight)),
-                  ("Fundamental",_("&Transform"),MenuItem(Reindent)),
-                  ("Fundamental",_("&Transform"),Separator(_("shift")).last()),
-                  ("Fundamental",_("&Transform"),MenuItem(CommentRegion)),
-                  ("Fundamental",_("&Transform"),MenuItem(UncommentRegion)),
                   )
     def getMenuItems(self):
         for mode,menu,item in self.default_menu:
             yield (mode,menu,item)
 
-    default_tools=(("Fundamental",None,Menu(_("&Transform")).after(_("Major Mode"))),
-                   ("Fundamental",_("&Transform"),MenuItem(ShiftLeft)),
-                   ("Fundamental",_("&Transform"),MenuItem(ShiftRight)),
-                   )
-    def getToolBarItems(self):
-        for mode,menu,item in self.default_tools:
-            yield (mode,menu,item)
-
-    default_keys=(("Fundamental",BeginningTextOfLine),
-                  ("Fundamental",EndOfLine),
-                  ("Fundamental",PreviousLine),
-                  ("Fundamental",NextLine),
-                  ("Fundamental",CapitalizeWord),
-                  ("Fundamental",UpcaseWord),
-                  ("Fundamental",DowncaseWord),
-                  ("Fundamental",ElectricReturn),
-                  ("Fundamental",BeginningOfBuffer),
-                  ("Fundamental",EndOfBuffer),
+    default_keys=(("Fundamental",ElectricReturn),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:

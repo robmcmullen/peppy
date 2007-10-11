@@ -5,7 +5,7 @@ import os
 import wx
 import wx.stc
 
-from peppy.major import *
+from peppy.actions.base import *
 from peppy.debug import *
 from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 
