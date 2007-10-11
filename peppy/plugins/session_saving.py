@@ -14,32 +14,50 @@ from peppy.lib.userparams import *
 from peppy.buffers import *
 from peppy.frame import *
 
-class SessionSave(ClassPrefs):
+class SessionManagerPlugin(IPeppyPlugin):
     default_classprefs = (
-        StrParam('session_file', 'session.txt'),
-        BoolParam('save_on_exit', True),
-        BoolParam('restore_on_start', True),
+        StrParam('session_file', 'session.txt', 'Filename used in the peppy configuration directory\nto store the session information.'),
+        BoolParam('save_on_exit', True, 'Whether to save the session on exit'),
+        BoolParam('restore_on_start', True, 'Whether to restore the session on startup'),
         )
     
     restore_session_cmdline = True
     
-    @classmethod
-    def getFile(cls):
-        filename=cls.classprefs.session_file
+    def activate(self):
+        IPeppyPlugin.activate(self)
+        # Can't use regular initialActivation method, because we need
+        # to wait until the GUI is initialized
+        Publisher().subscribe(self.restore, 'peppy.in.mainloop')
+
+    def deactivate(self):
+        IPeppyPlugin.deactivate(self)
+        Publisher().unsubscribe(self.restore)
+
+    def addCommandLineOptions(self, parser):
+        dprint()
+        parser.add_option("--no-session", action="store_false",
+                          dest="restore_session", default=True,
+                          help="Do not restore saved session")
+
+    def processCommandLineOptions(self, options):
+        dprint(options.restore_session)
+        self.restore_session_cmdline = options.restore_session
+
+    def getFile(self):
+        filename=self.classprefs.session_file
         app = wx.GetApp()
         pathname=app.getConfigFilePath(filename)
         return pathname
     
-    @classmethod
-    def restore(cls, msg):
-        if not cls.restore_session_cmdline:
+    def restore(self, msg):
+        if not self.restore_session_cmdline:
             # command line overrules all
             return
         
-        if not cls.classprefs.restore_on_start:
+        if not self.classprefs.restore_on_start:
             return
         
-        pathname = cls.getFile()
+        pathname = self.getFile()
         try:
             fh=open(pathname)
         except:
@@ -80,10 +98,9 @@ class SessionSave(ClassPrefs):
                 frame = BufferFrame(args)
                 frame.Show()
 
-    @classmethod
-    def save(cls, msg):
-        pathname = cls.getFile()
-        if cls.classprefs.save_on_exit:
+    def requestedShutdown(self):
+        pathname = self.getFile()
+        if self.classprefs.save_on_exit:
             fh=open(pathname,'w')
 
             buffers = BufferList.getBuffers()
@@ -106,23 +123,3 @@ class SessionSave(ClassPrefs):
                 except:
                     pass
 
-class SessionSavingPlugin(IPeppyPlugin):
-    def activate(self):
-        IPeppyPlugin.activate(self)
-        Publisher().subscribe(SessionSave.restore, 'peppy.in.mainloop')
-        Publisher().subscribe(SessionSave.save, 'peppy.config.save')
-
-    def deactivate(self):
-        IPeppyPlugin.deactivate(self)
-        Publisher().unsubscribe(SessionSave.restore)
-        Publisher().unsubscribe(SessionSave.save)
-
-    def addCommandLineOptions(self, parser):
-        dprint()
-        parser.add_option("--no-session", action="store_false",
-                          dest="restore_session", default=True,
-                          help="Do not restore saved session")
-
-    def processCommandLineOptions(self, options):
-        dprint(options.restore_session)
-        SessionSave.restore_session_cmdline = options.restore_session

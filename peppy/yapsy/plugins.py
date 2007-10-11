@@ -3,24 +3,33 @@ Base class for peppy plugins
 """
 import wx
 
+from peppy.lib.userparams import *
 from peppy.yapsy.IPlugin import IPlugin
 
-class IPeppyPlugin(IPlugin, object):
+class IPeppyPlugin(IPlugin, ClassPrefs):
     """
     Some peppy-specific methods in addition to the yapsy plugin methods.
     """
+    default_classprefs = (
+        BoolParam('disable_at_startup', False, 'Plugins are enabled by default at startup.\nSet this to True to disable the plugin.'),
+    )
 
     def __init__(self):
         """
         Set the basic variables.
         """
         self.is_activated = False
+        self._performed_initial_activation = False
 
     def activate(self):
         """
         Called at plugin activation.
         """
-        self.is_activated = True
+        if not self.classprefs.disable_at_startup:
+            self.is_activated = True
+            if not self._performed_initial_activation:
+                self.initialActivation()
+                self._performed_initial_activation = True
 
     def deactivate(self):
         """
@@ -42,21 +51,25 @@ class IPeppyPlugin(IPlugin, object):
             if mode in modes:
                 return True
         return False
-    
-    def aboutFiles(self):
-        """Add entries to the about filesystem.
-        
-        The plugin may define additions to the about filesystem by
-        returning a dict here.  The about filesystem is a pseudo-
-        filesystem that returns data from about: urls, and is used
-        mostly for storing read-only help files or sample files.  It
-        is useful for adding help text for your plugin.
-    
-        The dict is keyed on the filename, and the value is the contents
-        of the file.
-        """
-        return {}
 
+    ##### Lifecycle control methods
+    
+    def initialActivation(self):
+        """Give the plugin a chance to configure itself the first time
+        it is activated.
+        
+        Called during the plugin's first call to the activate method,
+        which is typically during application initialization, after
+        the application has loaded all its configuration information,
+        but before the command line has been processed.    
+
+        It can also occur later in the application lifecycle if the
+        plugin is loaded by some other means.
+        
+        This is for one-time initialization.
+        """
+        pass
+    
     def addCommandLineOptions(self, parser):
         """Add any options to the OptionParser instance.
 
@@ -74,6 +87,39 @@ class IPeppyPlugin(IPlugin, object):
         results here.
         """
         return
+
+    def requestedShutdown(self):
+        """Give the plugin a chance to revoke a shutdown.
+        
+        Throw an exception to revoke a shutdown.  The error message will
+        be displayed to the user.
+        """
+        pass
+    
+    def finalShutdown(self):
+        """Non-revokable shutdown.
+        
+        Called after a shutdown has been accepted.  All exceptions are caught
+        and ignored in the calling code, so this should only be used for
+        shutdown items that don't require user interaction.
+        """
+        pass
+
+    ##### Feature providing methods
+    
+    def aboutFiles(self):
+        """Add entries to the about filesystem.
+        
+        The plugin may define additions to the about filesystem by
+        returning a dict here.  The about filesystem is a pseudo-
+        filesystem that returns data from about: urls, and is used
+        mostly for storing read-only help files or sample files.  It
+        is useful for adding help text for your plugin.
+    
+        The dict is keyed on the filename, and the value is the contents
+        of the file.
+        """
+        return {}
 
     def getMajorModes(self):
         """Return list of major modes provided by the plugin.

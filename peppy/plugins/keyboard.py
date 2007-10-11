@@ -15,7 +15,7 @@ from peppy.debug import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 
-class KeyboardConf(ClassPrefs, debugmixin):
+class KeyboardConf(IPeppyPlugin):
     """Loader for keyboard configurations.
 
     Keyboard accelerator settings are made in the application
@@ -38,34 +38,51 @@ class KeyboardConf(ClassPrefs, debugmixin):
     the application's default value (which is specified in the source
     code.)
     """
-    default_classprefs = ()
+    default_classprefs = (
+        ChoiceParam('key_bindings', ['win', 'emacs', 'mac'], 'win', 'Platform type from which to emulate the\ndefault keybindings.'),
+        )
     platform = 'win'
     
     ignore_list = ['MajorAction', 'MinibufferAction']
 
-    @classmethod
-    def getKey(cls, action):
+    def addCommandLineOptions(self, parser):
+        dprint()
+        parser.add_option("--key-bindings", action="store",
+                          dest="key_bindings", default='')
+
+    def processCommandLineOptions(self, options):
+        dprint(options.key_bindings)
+        if options.key_bindings:
+            self.platform = options.key_bindings
+        else:
+            self.platform = self.classprefs.key_bindings
+        self.load()
+    
+    def requestedShutdown(self):
+        # configuration file would be saved here
+        pass
+
+    def getKey(self, action):
         keyboard = None
         bindings = action.key_bindings
         if isinstance(bindings, dict):
-            if cls.platform in bindings:
-                keyboard = bindings[cls.platform]
+            if self.platform in bindings:
+                keyboard = bindings[self.platform]
             elif 'default' in bindings:
                 keyboard = bindings['default']
         return keyboard
     
-    @classmethod
-    def load(cls):
+    def load(self):
         actions = getAllSubclassesOf(SelectAction)
         #dprint(actions)
         found_emacs = False
         for action in actions:
-            #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, cls.classprefs._get(action.__name__)))
+            #dprint("%s: default=%s new=%s" % (action.__name__, action.keyboard, self.classprefs._get(action.__name__)))
 
             # Use the action key binding from the configuration, if it exists
             found = False
-            if hasattr(cls.classprefs, action.__name__):
-                acc = cls.classprefs._get(action.__name__)
+            if hasattr(self.classprefs, action.__name__):
+                acc = self.classprefs._get(action.__name__)
                 if acc.lower() != 'default':
                     if acc.lower() == "none":
                         # if the text is None, don't bind it to anything.
@@ -74,7 +91,7 @@ class KeyboardConf(ClassPrefs, debugmixin):
                         action.keyboard = acc
                     found = True
             if not found:
-                action.keyboard = cls.getKey(action)
+                action.keyboard = self.getKey(action)
 
             # Determine up the accelerator text here, up front, rather
             # than computing it every time the menu is displayed.
@@ -88,36 +105,15 @@ class KeyboardConf(ClassPrefs, debugmixin):
             for action in actions:
                 action.setAcceleratorText(force_emacs=True)
 
-    @classmethod
     def configDefault(cls, fh=sys.stdout):
         lines = []
-        lines.append("[%s]" % cls.__name__)
+        lines.append("[%s]" % self.__class__.__name__)
         keymap = {}
         for action in getAllSubclassesOf(SelectAction):
-            if not issubclass(action, ToggleAction) and not issubclass(action, ListAction) and action.__name__ not in cls.ignore_list:
-                keymap[action.__name__] = cls.getKey(action)
+            if not issubclass(action, ToggleAction) and not issubclass(action, ListAction) and action.__name__ not in self.ignore_list:
+                keymap[action.__name__] = self.getKey(action)
         names = keymap.keys()
         names.sort()
         for name in names:
             lines.append("%s = %s" % (name, keymap[name]))
         fh.write(os.linesep.join(lines) + os.linesep)
-
-
-class KeyboardConfExtender(IPeppyPlugin):
-    def activate(self):
-        IPeppyPlugin.activate(self)
-        Publisher().subscribe(self.loadConf, 'peppy.config.load')
-        Publisher().subscribe(self.saveConf, 'peppy.config.save')
-
-    def deactivate(self):
-        IPeppyPlugin.deactivate(self)
-        Publisher().unsubscribe(self.loadConf)
-        Publisher().unsubscribe(self.saveConf)
-
-    def loadConf(self, msg):
-        KeyboardConf.platform = wx.GetApp().classprefs.key_bindings
-        KeyboardConf.load()
-    
-    def saveConf(self, msg):
-        pass
-    

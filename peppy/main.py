@@ -102,7 +102,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         StrParam('plugins', ''),
         StrParam('plugin_dirs', ''),
         StrParam('title_page', 'about:peppy'),
-        StrParam('key_bindings', 'win'),
         IntParam('listen_port', 55555),
         BoolParam('one_instance', True),
         IntParam('binary_percentage', 10),
@@ -148,7 +147,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         self.startSplash()
 
-        count = self.countYapsyPlugins() + 6
+        count = self.countYapsyPlugins() + 7
         self.splash.setTicks(count)
         
         self.splash.tick("Loading standard plugins...")
@@ -162,13 +161,14 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.splash.tick("Loading extra configuration...")
         GlobalPrefs.convertConfig()
 
+        # Send message to any plugins that are interested that all the
+        # configuration information has been loaded.
+        self.splash.tick("Initializing plugins...")
+        self.activatePlugins()
+
         # Command line args can now be processed
         self.splash.tick("Processing command line arguments...")
         self.processCommandLineOptions()
-
-        # Send message to any plugins that are interested that all the
-        # configuration information has been loaded.
-        Publisher().sendMessage('peppy.config.load')
 
         self.splash.tick("Setting up graphics...")
         self.initGraphics()
@@ -246,7 +246,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("-c", action="store", dest="confdir", default="")
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
-        parser.add_option("--key-bindings", action="store", dest="key_bindings", default='')
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -266,9 +265,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
             errorlog(errorRedirector('error'))
-
-        if self.options.key_bindings:
-            self.classprefs.key_bindings = self.options.key_bindings
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -388,17 +384,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if self.splash:
             self.splash.Destroy()
 
-    def saveConfigPreHook(self):
-        pass
-
     def saveConfig(self, filename):
-        self.saveConfigPreHook()
-        
-        # Send message to any interested plugins that configuration
-        # information is about to be saved and provide them with an
-        # opportunity to save any auxillary config files.
-        Publisher().sendMessage('peppy.config.save')
-
         if GlobalPrefs.isUserConfigChanged():
             dprint("User configuration has changed!  Saving")
             text = GlobalPrefs.configToText()
@@ -465,18 +451,27 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         in the order returned by os.listdir.  No dependency ordering
         is done.
         """
+        # Have to activate builtins before loading plugins, because
+        # builtins scan the python namespace for subclasses of
+        # IPeppyPlugin, and if you wait till after plugins are loaded
+        # from the filesystem, two copies will exist.
         self.plugin_manager.activateBuiltins()
         
         self.plugin_manager.loadPlugins(self.gaugeCallback)
         
+    def activatePlugins(self):
         cats = self.plugin_manager.getCategories()
         for cat in cats:
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
             self.dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
-            for plugin in plugins:
-                self.dprint("  activating plugin %s: %s" % (plugin.name, plugin.plugin_object.__class__.__mro__))
-                plugin.plugin_object.activate()
-                self.dprint("  plugin activation = %s" % plugin.plugin_object.is_activated)
+            for plugininfo in plugins:
+                self.dprint("  activating plugin %s: %s" % (plugininfo.name,
+                    plugininfo.plugin_object.__class__.__mro__))
+                try:
+                    plugininfo.plugin_object.activate()
+                    self.dprint("  plugin activation = %s" % plugininfo.plugin_object.is_activated)
+                except:
+                    eprint("Plugin %s failed with exception %s" % (plugininfo.name, str(e)))
 
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
@@ -551,7 +546,27 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def quitHook(self):
         if not self.saveConfig(self.base_preferences):
             return False
-        Publisher().sendMessage('peppy.shutdown')
+        plugins = self.plugin_manager.getActivePluginObjects()
+        exceptions = []
+        for plugin in plugins:
+            try:
+                plugin.requestedShutdown()
+            except Exception, e:
+                exceptions.append(e)
+        if exceptions:
+            text = os.linesep().join([str(e) for e in exceptions])
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(),
+                "Errors shutting down plugins:\n%s\n\nQuit anyway?" % text,
+                "Shutdown Errors", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+            if retval != wx.ID_YES:
+                return False
+        for plugin in plugins:
+            try:
+                plugin.finalShutdown()
+            except Exception, e:
+                pass
         return True
     
 
