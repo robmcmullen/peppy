@@ -286,9 +286,9 @@ class StandardCommentMixin(debugmixin):
         s = self.stc
         eol_len = len(s.getLinesep())
         if add:
-            func = self.commentLine
+            func = s.addLinePrefixAndSuffix
         else:
-            func = self.uncommentLine
+            func = s.removeLinePrefixAndSuffix
         
         s.BeginUndoAction()
         line, lineend = s.GetLineRegion()
@@ -300,7 +300,7 @@ class StandardCommentMixin(debugmixin):
             start = selstart
             end = s.GetLineEndPosition(line)
             while line <= lineend:
-                start = func(start, end)
+                start = func(start, end, self.start_line_comment, self.end_line_comment)
                 line += 1
                 end = s.GetLineEndPosition(line)
             s.SetSelection(selstart, start - eol_len)
@@ -678,6 +678,10 @@ class FundamentalMode(BraceHighlightMixin,
         self.setTabStyle()
         self.setEdgeStyle()
         self.setCaretStyle()
+        
+        # Turn this into a threaded operation if it takes too long
+        self.stc.Colourise(0, self.stc.GetTextLength())
+        self.stc.computeFoldHierarchy()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -778,60 +782,6 @@ class FundamentalMode(BraceHighlightMixin,
 
     def OnUpdateUIHook(self, evt):
         self.braceHighlight()
-
-    def commentLine(self, start, end):
-        """Add comment to the line specified by start and end.
-
-        Generic method that uses the start_line_comment and
-        end_line_comment class attributes to comment a line.  This is
-        to be called within a loop that adds comment characters to the
-        line.  start and end are assumed to be the endpoints of the
-        current line, so no further checking of the line is necessary.
-
-        @param start: first character in line
-        @param end: last character in line before line ending
-
-        @returns: new position of last character before line ending
-        """
-        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
-        slen = len(self.start_line_comment)
-        self.stc.InsertText(start, self.start_line_comment)
-        end += slen
-
-        elen = len(self.end_line_comment)
-        if elen > 0:
-            self.stc.InsertText(end, self.start_line_comment)
-            end += elen
-        return end + len(self.stc.getLinesep())
-
-    def uncommentLine(self, start, end):
-        """Remove comment to the line specified by start and end.
-
-        Generic method that uses the start_line_comment and
-        end_line_comment class attributes to comment a line.  This is
-        to be called within a loop that adds comment characters to the
-        line.  start and end are assumed to be the endpoints of the
-        current line, so no further checking of the line is necessary.
-
-        @param start: first character in line
-        @param end: last character in line before line ending
-
-        @returns: new position of last character before line ending
-        """
-        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.stc.GetTextRange(start,end)))
-        slen = len(self.start_line_comment)
-        if self.stc.GetTextRange(start, start+slen) == self.start_line_comment:
-            self.stc.SetSelection(start, start+slen)
-            self.stc.ReplaceSelection("")
-            end -= slen
-
-        elen = len(self.end_line_comment)
-        if elen > 0:
-            if self.stc.GetTextRange(end-elen, end) == self.end_line_comment:
-                self.stc.SetSelection(start, start+slen)
-                self.stc.ReplaceSelection("")
-                end -= elen
-        return end + len(self.stc.getLinesep())
 
     def getFunctionList(self):
         '''

@@ -197,6 +197,20 @@ class STCProxy(object):
             return getattr(self.stc, name)
         raise AttributeError
 
+class FoldNode:
+    def __init__(self,level,start,end,text,parent=None,styles=[]):
+        """Folding node as data for tree item."""
+        self.parent     = parent
+        self.level      = level
+        self.start      = start
+        self.end        = end
+        self.text       = text
+        self.styles     = styles #can be useful for icon detection
+        self.children   = []
+
+    def __str__(self):
+        return "L%d s%d e%d %s" % (self.level, self.start, self.end, self.text.rstrip())
+
 
 class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     """All the non-GUI enhancements to the STC are here.
@@ -275,6 +289,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 # stop when we reach the end.  An exception will be
                 # handled outside this class
                 break
+        # FIXME: Encoding should be handled here -- convert the binary data
+        # that has been read in to the correct encoding.
     
     def writeTo(self, fh):
         numchars = self.GetTextLength()
@@ -481,6 +497,103 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         else:
             return ind*' '
             
+    ##### Utility methods for modifying the contents of the STC
+    def addLinePrefixAndSuffix(self, start, end, prefix='', suffix=''):
+        """Add a prefix and/or suffix to the line specified by start and end.
+
+        Method to add characters to the start and end of the line. This is
+        typically called within a loop that adds comment characters to the
+        line.  start and end are assumed to be the endpoints of the
+        current line, so no further checking of the line is necessary.
+
+        @param start: first character in line
+        @param end: last character in line before line ending
+        @param prefix: optional prefix for the line
+        @param suffix: optional suffix for the line
+
+        @returns: new position of last character before line ending
+        """
+        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.GetTextRange(start,end)))
+        slen = len(prefix)
+        self.InsertText(start, prefix)
+        end += slen
+
+        elen = len(suffix)
+        if elen > 0:
+            self.InsertText(end, suffix)
+            end += elen
+        return end + len(self.getLinesep())
+
+    def removeLinePrefixAndSuffix(self, start, end, prefix='', suffix=''):
+        """Remove the specified prefix and suffix of the line.
+
+        Method to remove the specified prefix and suffix characters from the
+        line specified by start and end.  If the prefix or suffix doesn't match
+        the characters in the line, nothing is removed. This is typically
+        called within a loop that adds comment characters to the line.  start
+        and end are assumed to be the endpoints of the current line, so no
+        further checking of the line is necessary.
+
+        @param start: first character in line
+        @param end: last character in line before line ending
+        @param prefix: optional prefix for the line
+        @param suffix: optional suffix for the line
+
+        @returns: new position of last character before line ending
+        """
+        assert self.dprint("commenting %d - %d: '%s'" % (start, end, self.GetTextRange(start,end)))
+        slen = len(prefix)
+        if self.GetTextRange(start, start+slen) == prefix:
+            self.SetSelection(start, start+slen)
+            self.ReplaceSelection("")
+            end -= slen
+
+        elen = len(suffix)
+        if elen > 0:
+            if self.GetTextRange(end-elen, end) == suffix:
+                self.SetSelection(start, start+slen)
+                self.ReplaceSelection("")
+                end -= elen
+        return end + len(self.getLinesep())
+
+    ## Stani's Fold Explorer
+    def computeFoldHierarchy(self):
+        #[(level,line,text,parent,[children]),]
+        n               = self.GetLineCount()+1
+        prevNode        = root  = FoldNode(level=0,start=0,end=n,text='root',parent=None)
+        for line in range(n-1):
+            foldBits    = self.GetFoldLevel(line)
+            if foldBits&wx.stc.STC_FOLDLEVELHEADERFLAG:
+                #folding point
+                prevLevel       = prevNode.level
+                level           = foldBits&wx.stc.STC_FOLDLEVELNUMBERMASK
+                text            = self.GetLine(line)
+                node            = FoldNode(level=level,start=line,end=n,text=text)
+                print node
+                if level == prevLevel:
+                    #say hello to new brother or sister
+                    node.parent = prevNode.parent
+                    node.parent.children.append(node)
+                    prevNode.end= line
+                elif level>prevLevel:
+                    #give birth to child (only one level deep)
+                    node.parent = prevNode
+                    prevNode.children.append(node)
+                else:
+                    #find your uncles and aunts (can be several levels up)
+                    while level < prevNode.level:
+                        prevNode.end = line
+                        prevNode  = prevNode.parent
+                    if prevNode.parent == None:
+                        node.parent = root
+                    else:
+                        node.parent = prevNode.parent
+                    node.parent.children.append(node)
+                    prevNode.end= line
+                prevNode        = node
+        prevNode.end    = line
+        self.fold_explorer_root = root
+
 
 class PeppySTC(PeppyBaseSTC):
     """
