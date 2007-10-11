@@ -13,7 +13,13 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
     default_classprefs = (
         BoolParam('disable_at_startup', False, 'Plugins are enabled by default at startup.\nSet this to True to disable the plugin.'),
     )
-
+    
+    _startup_complete = False
+    
+    @classmethod
+    def setStartupComplete(cls):
+        cls._startup_complete = True
+    
     def __init__(self):
         """
         Set the basic variables.
@@ -25,7 +31,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         """
         Called at plugin activation.
         """
-        if not self.classprefs.disable_at_startup:
+        if not self.classprefs.disable_at_startup or self._startup_complete:
             self.is_activated = True
             if not self._performed_initial_activation:
                 self.initialActivation()

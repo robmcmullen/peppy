@@ -472,7 +472,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     self.dprint("  plugin activation = %s" % plugininfo.plugin_object.is_activated)
                 except:
                     eprint("Plugin %s failed with exception %s" % (plugininfo.name, str(e)))
-
+        self.plugin_manager.startupCompleted()
+        
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
 
