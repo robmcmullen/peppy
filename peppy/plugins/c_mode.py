@@ -38,7 +38,7 @@ class CMode(FundamentalMode):
     """
     keyword='C'
     icon='icons/page_white_c.png'
-    regex="(\.c|\.h)$"
+    regex="(\.c|\.cc|\.cpp|\.h|\.hh\.hpp)$"
     
     default_classprefs = (
        StrParam('sample_file', _sample_file),
