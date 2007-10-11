@@ -475,6 +475,14 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 ##        for i in range(len(line)):
 ##            dprint("  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) ))
 
+    def showLine(self, line):
+        # expand folding if any
+        self.EnsureVisible(line)
+        self.GotoLine(line)
+        self.ScrollToLine(line + self.LinesOnScreen() - 3)
+        self.GotoLine(line)
+        self.ScrollToColumn(0)
+
     # --- line indentation stuff
     
     def GetFoldColumn(self, linenum):

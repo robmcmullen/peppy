@@ -1,9 +1,0 @@
-[Core]
-Name = SPE Function List
-Module = spe_funclist_minormode
-
-[Documentation]
-Author = Stani Michiels
-Version = 0.1
-Website = http://pythonide.blogspot.com
-Description = Class browsing minor mode from the SPE editor

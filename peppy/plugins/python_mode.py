@@ -254,9 +254,6 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
 
     default_classprefs = (
         PathParam('interpreter_exe', 'c:/Python25/python.exe'),
-        StrParam('tab_style', 'spaces'),
-        BoolParam('word_wrap', True),
-        StrParam('minor_modes', 'pype_funclist, funcmenu,spe_funclist'),
         StrParam('sample_file', _sample_file),
         IntParam('stc_lexer', wx.stc.STC_LEX_PYTHON),
         StrParam('stc_keywords', 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self'),
@@ -305,12 +302,6 @@ class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
     
         #get info about the current line's indentation
         ind = s.GetLineIndentation(linenum)
-
-    def getFunctionList(self):
-        import peppy.pype.parsers
-        flist=peppy.pype.parsers.slower_parser(self.stc.GetText(),'\n',3,lambda:None)
-        assert self.dprint(flist)
-        return flist
 
 
 class PythonPlugin(IPeppyPlugin):

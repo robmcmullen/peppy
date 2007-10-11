@@ -678,10 +678,6 @@ class FundamentalMode(BraceHighlightMixin,
         self.setTabStyle()
         self.setEdgeStyle()
         self.setCaretStyle()
-        
-        # Turn this into a threaded operation if it takes too long
-        self.stc.Colourise(0, self.stc.GetTextLength())
-        self.stc.computeFoldHierarchy()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -783,13 +779,17 @@ class FundamentalMode(BraceHighlightMixin,
     def OnUpdateUIHook(self, evt):
         self.braceHighlight()
 
-    def getFunctionList(self):
-        '''
-        Return a list of tuples, where each tuple contains information
-        about a notable line in the source code corresponding to a
-        class, a function, a todo item, etc.
-        '''
-        return ([], [], {}, [])
+    def getFoldHierarchy(self):
+        """Get the fold hierarchy using Stani's fold explorer algorithm.
+        """
+        # Turn this into a threaded operation if it takes too long
+        self.stc.Colourise(0, self.stc.GetTextLength())
+        self.stc.computeFoldHierarchy()
+        
+        # FIXME: Note that different views of the same buffer *using the
+        # same major mode* will have the same fold hierarchy.  This should
+        # be exploited, but currently it isn't.
+        return self.stc.fold_explorer_root
 
 
 

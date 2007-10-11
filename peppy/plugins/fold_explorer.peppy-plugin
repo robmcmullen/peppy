@@ -1,0 +1,9 @@
+[Core]
+Name = Fold Explorer
+Module = fold_explorer
+
+[Documentation]
+Author = Rob McMullen, Stani Michiels
+Version = 0.1
+Website = http://pythonide.blogspot.com
+Description = Class browsing code borrowed from Stani's Fold Explorer demo

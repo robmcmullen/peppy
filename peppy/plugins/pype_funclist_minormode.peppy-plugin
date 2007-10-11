@@ -1,9 +1,0 @@
-[Core]
-Name = PyPE Function List
-Module = pype_funclist_minormode
-
-[Documentation]
-Author = Josiah Carlson
-Version = 0.1
-Website = http://pype.sourceforge.net
-Description = Class browsing minor mode from the PyPE editor
