@@ -544,9 +544,9 @@ class FundamentalMode(BraceHighlightMixin,
         BoolParam('use_tab_characters', False,
                   'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
         IntParam('tab_size', 4, 'Number of spaces in each tab'),
-        ChoiceParam('tab_highlight_style',
+        IndexChoiceParam('tab_highlight_style',
                          ['ignore', 'inconsistent', 'mixed', 'spaces are bad', 'tabs are bad'],
-                         'mixed', 'Highlight bad intentation'),
+                         4, 'Highlight bad intentation'),
         BoolParam('line_numbers', True, 'Show line numbers in the margin?'),
         IntParam('line_number_margin_width', 40, 'Margin width in pixels'),
         BoolParam('symbols', False, 'Show symbols margin'),
@@ -720,7 +720,7 @@ class FundamentalMode(BraceHighlightMixin,
 
     def setTabStyle(self):
         self.stc.SetIndent(self.classprefs.tab_size)
-        self.stc.SetProperty('tab.timmy.whinge.level', self.classprefs.tab_highlight_style)
+        self.stc.SetProperty('tab.timmy.whinge.level', str(self.classprefs.tab_highlight_style))
         self.stc.SetUseTabs(self.classprefs.use_tab_characters)
 
     def setEdgeStyle(self):
