@@ -32,7 +32,7 @@ class FrameList(GlobalList):
     @classmethod
     def getFrames(self):
         return [frame for frame in FrameList.storage]
-
+    
     def getItems(self):
         return [frame.getTitle() for frame in FrameList.storage]
 
@@ -47,7 +47,7 @@ class DeleteFrame(SelectAction):
     tooltip = _("Delete current window")
     
     def action(self, index=-1, multiplier=1):
-        self.frame.closeWindow(None)
+        self.frame.closeWindow()
 
     def isEnabled(self):
         if len(FrameList.storage)>1:
@@ -111,7 +111,13 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         self.RemovePage(index)
         mode.deleteWindow()
         if self.GetPageCount() == 0:
-           self.frame.open("about:blank")
+            self.frame.open("about:blank")
+    
+    def closeAllTabs(self):
+        for index in range(0, self.GetPageCount()):
+            mode = self.GetPage(0)
+            self.RemovePage(0)
+            mode.deleteWindow()
 
     def addTab(self,mode):
         before = self.GetPageCount()
@@ -241,17 +247,24 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         Publisher().subscribe(self.pluginsChanged, 'peppy.plugins.changed')
         wx.GetApp().SetTopWindow(self)
+        self.bindEvents()
         
-        self.Bind(wx.EVT_CLOSE,self.OnClose)
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
-        self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
-
         dprint(urls)
         
         # counter to make sure the title buffer is shown if we attempt
         # to load files and they all fail.
         self.initial_load = 0
         self.loadList(urls)
+        
+    def bindEvents(self):
+        self.Bind(wx.EVT_CLOSE,self.OnClose)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
+    
+    def unbindEvents(self):
+        self.Unbind(wx.EVT_CLOSE)
+        self.Unbind(wx.EVT_IDLE)
+        self.Unbind(wx.EVT_ACTIVATE)
 
     def loadList(self, urls):
         if urls:
@@ -312,11 +325,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
     def OnClose(self, evt=None):
         assert self.dprint(evt)
-        if len(FrameList.storage)==1:
-            wx.CallAfter(Publisher().sendMessage, 'peppy.request.quit')
-        else:
-            FrameList.remove(self)
-            self.Destroy()
+        self.closeWindow()
+        if len(FrameList.storage)==0:
+            wx.GetApp().quit()
 
     def OnKeyPressed(self, evt):
         self.keys.process(evt)
@@ -436,8 +447,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def isTopWindow(self):
         return wx.GetApp().GetTopWindow()==self
+    
+    def closeWindow(self):
+        self.unbindEvents()
+        FrameList.remove(self)
+        self.tabs.closeAllTabs()
+        self.Destroy()
 
-    def close(self):
+    @classmethod
+    def closeAllWindows(cls):
+        frames = FrameList.getFrames()
+        for frame in frames:
+            frame.closeWindow()
+    
+    def closeBuffer(self):
         major=self.getActiveMajorMode()
         if major:
             buffer=major.buffer

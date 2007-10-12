@@ -177,8 +177,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # and set up the debug menu
         #self.setVerbosity(menu=DebugClass,reset=self.verbose)
 
-        Publisher().subscribe(self.quit, 'peppy.app.quit')
-        
         Publisher().sendMessage('peppy.startup.complete')
         self.splash.tick("Starting peppy...")
 
@@ -542,9 +540,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if retval==wx.ID_YES:
             buffer.removeAllViewsAndDelete()
 
-    def quit(self, msg):
+    def quit(self):
         doit=self.quitHook()
         if doit:
+            frame = self.getTopFrame()
+            frame.closeAllWindows()
             wx.GetApp().ExitMainLoop()
 
     def quitHook(self):

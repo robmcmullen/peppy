@@ -178,7 +178,7 @@ class Exit(SelectAction):
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, index=-1, multiplier=1):
-        Publisher().sendMessage('peppy.request.quit')
+        wx.GetApp().quit()
 
 class Close(SelectAction):
     alias = _("close-buffer")
@@ -191,7 +191,7 @@ class Close(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.close()
+        self.frame.closeBuffer()
 
 class Revert(SelectAction):
     alias = _("revert-buffer")
