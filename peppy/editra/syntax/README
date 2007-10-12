@@ -1,0 +1,50 @@
+Syntax Plugin Specifications
+
+Included in this document are the specifications of what is needed to write a 
+plugin to extend the syntax highlighting functionality of the editor. TO add a
+new syntax file grab the syntax_mod template from the templates directory and fill
+it out to match the specs of the language you want to provide highlighting for.
+
+0: Before you begin
+    - Editra uses Scintilla for its text control. Since documentation is not
+      readily available, I suggest you grab the Scintilla sources and see what
+      settings are available for each language.
+
+1: File Specifications
+    - The plugin file is a python module that provides the editor with the 
+      information that it needs to properly setup the lexer.
+
+2: What the plugin needs to provide
+
+    METHODS:
+      - FUNCTION: Keywords(type=0)
+        DESC: Provides a set of language keywords and their level to set in
+              the editor.
+        PARAM: integer "type" is an optional parameter for requesting a
+               particular subset of keywords or for specifying a certain dialect
+               of a language. This allows for modules to handle multiple related
+               but different syntax sets.
+        RETURN: An ordered/unorder list of tuples.
+        SPECIFICATIONS:
+            The tuples in the list each contain two items.
+                -The first item is an integer value specifying the Scintilla
+                 keyword type to set for the Lexer.
+                -The second is a string of space separated keywords.
+        EXAMPLE RETURN: [(0, "spam ni"), (1, "monty python")]
+
+      - FUNCTION: Parameters()
+        DESC:
+        PARAM:
+        RETURN:
+        SPECIFICATIONS:
+        EXAMPLE RETURN: 
+
+      - FUNCTION: KeywordString(option=0)
+        DESC: Provided primarly for other syntax modules that may wish to request
+              resources from this module.
+        PARAM: integer "option", is an optional argument for requesting a subset
+               or particular keyword string.
+        RETURN: A string of keywords
+        SPECIFICATIONS:
+        EXAMPLE RETURN: "int double short"
+

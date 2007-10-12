@@ -572,6 +572,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             except Exception, e:
                 pass
         return True
+        
+    def GetLog(self):
+        """Return logger for Editra compatibility.
+        """
+        
+        return dprint
     
 
 def run():

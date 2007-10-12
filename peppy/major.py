@@ -775,7 +775,7 @@ def guessBinary(text, percentage):
     return False
 
 class MajorModeMatcherDriver(debugmixin):
-    debuglevel = 1
+    debuglevel = 0
     
     @classmethod
     def getActiveModes(cls):
