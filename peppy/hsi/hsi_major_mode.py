@@ -41,7 +41,7 @@ import wx.stc as stc
 import wx.lib.newevent
 
 from peppy.yapsy.plugins import *
-from peppy.actions.minibuffer import FloatMinibuffer
+from peppy.actions.minibuffer import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
@@ -342,13 +342,8 @@ class SpatialSelect(RectangularSelect):
     name = _("Spatial Select")
     tooltip = _("Select subcube spatially.")
     
-
-class PrevBand(SelectAction):
-    name = _("Prev Band")
-    tooltip = _("Previous Band")
-    icon = 'icons/hsi-band-prev.png'
-    keyboard = "C-P"
     
+class BandEnabledMixin(object):
     def isEnabled(self):
         mode = self.mode
         for band in mode.bands:
@@ -358,36 +353,49 @@ class PrevBand(SelectAction):
         # nope, still room to decrement all bands
         return True
 
+class BandAction(BandEnabledMixin, SelectAction):
+    pass
+
+class PrevBand(BandAction):
+    name = _("Prev Band")
+    tooltip = _("Previous Band")
+    icon = 'icons/hsi-band-prev.png'
+    keyboard = "C-P"
+    
     def action(self, index=-1, multiplier=1):
         dprint("Previous band!!!")
         mode = self.mode
         mode.prevBand()
 
-class NextBand(SelectAction):
+class NextBand(BandAction):
     name = _("Next Band")
     tooltip = _("Next Band")
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
-    def isEnabled(self):
-        mode = self.mode
-        for band in mode.bands:
-            # check if any of the display bands is at the high limit
-            if band >= (mode.cube.bands-1):
-                return False
-        # nope, still room to advance all bands
-        return True
-
     def action(self, index=-1, multiplier=1):
         dprint("Next band!!!")
         mode = self.mode
         mode.nextBand()
 
-class PrevCube(SelectAction):
-    name = _("Prev Cube")
-    tooltip = _("Previous data cube in dataset")
-    icon = 'icons/hsi-cube-prev.png'
+class GotoBand(BandEnabledMixin, MinibufferAction):
+    name = _("Goto Band")
+    tooltip = _("Go to a particular band in the cube")
+    
+    key_bindings = {'default': 'M-G',}
+    minibuffer = IntMinibuffer
+    minibuffer_label = _("Goto Band:")
 
+    def processMinibuffer(self, minibuffer, mode, band):
+        """
+        Callback function used to set the stc to the correct line.
+        """
+        
+        # stc counts lines from zero, but displayed starting at 1.
+        #dprint("goto line = %d" % line)
+        mode.gotoBand(band)
+
+class CubeAction(SelectAction):
     def isEnabled(self):
         mode = self.mode
         index = mode.dataset_index
@@ -396,23 +404,20 @@ class PrevCube(SelectAction):
             return True
         return False
 
+class PrevCube(CubeAction):
+    name = _("Prev Cube")
+    tooltip = _("Previous data cube in dataset")
+    icon = 'icons/hsi-cube-prev.png'
+
     def action(self, index=-1, multiplier=1):
         dprint("Prev cube!!!")
         mode = self.mode
         mode.prevCube()
 
-class NextCube(SelectAction):
+class NextCube(CubeAction):
     name = _("Next Cube")
     tooltip = _("Next data cube in dataset")
     icon = 'icons/hsi-cube-next.png'
-
-    def isEnabled(self):
-        mode = self.mode
-        index = mode.dataset_index
-        num = mode.dataset.getNumCubes()
-        if index < (num-1):
-            return True
-        return False
 
     def action(self, index=-1, multiplier=1):
         dprint("Next cube!!!")
@@ -655,6 +660,10 @@ class HSIMode(MajorMode):
             newbands.append(self.bands[i]-1)
         return self.setBand(newbands)
 
+    def gotoBand(self, band):
+        newbands=[band]
+        return self.setBand(newbands)
+
     def setBand(self,newbands):
         display=True
         # greyscale image only needs the first array value, rgb image
@@ -856,6 +865,7 @@ class HSIPlugin(IPeppyPlugin):
                   ("HSI",_("Dataset"),Separator("dataset")),
                   ("HSI",_("Dataset"),MenuItem(PrevBand)),
                   ("HSI",_("Dataset"),MenuItem(NextBand)),
+                  ("HSI",_("Dataset"),MenuItem(GotoBand)),
                   ("HSI",_("Dataset"),Separator("this dataset")),
                   ("HSI",_("Dataset"),MenuItem(SpatialSelect)),
                   ("HSI",_("View"),MenuItem(ContrastFilterAction)),
