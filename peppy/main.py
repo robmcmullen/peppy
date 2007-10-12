@@ -81,6 +81,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
     standard_plugin_dirs = ['plugins', 'hsi']
+    preferences_plugin_dir = "plugins"
 
     ##
     # This mapping controls the verbosity level required for debug
@@ -93,24 +94,23 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                   '.*Filter':3,
                   }
     
-    minimal_config={'BufferFrame':{'width':800,
+    minimal_config={'BufferFrame':{'width':900,
                                    'height':700,
                                    'sidebars':'filebrowser, debug_log, error_log, processes',
                                    },
                    }
     default_classprefs = (
-        StrParam('plugins', ''),
-        StrParam('plugin_dirs', ''),
-        StrParam('title_page', 'about:peppy'),
-        IntParam('listen_port', 55555),
-        BoolParam('one_instance', True),
-        IntParam('binary_percentage', 10),
-        IntParam('magic_size', 1024),
-        BoolParam('load_threaded', True),
-        BoolParam('show_splash', True),
-        StrParam('default_text_mode', 'Fundamental'),
-        StrParam('default_binary_mode', 'HexEdit'),
-        StrParam('default_text_encoding', 'latin1'),
+        StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search\nfor additional plugins'),
+        StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
+        IntParam('listen_port', 55555, 'Port to listen on to determine if another peppy\ninstance is running'),
+        BoolParam('one_instance', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
+        IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results\nin peppy guessing that the file is binary'),
+        IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
+        BoolParam('load_threaded', True, 'Load files in a separate thread?'),
+        BoolParam('show_splash', True, 'Show the splash screen on start?'),
+        StrParam('default_text_mode', 'Fundamental', 'Name of the default text mode if peppy\ncan\'t guess the correct type'),
+        StrParam('default_binary_mode', 'HexEdit', 'Name of the default binary viewing mode if peppy\ncan\'t guess the correct type'),
+        StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
         )
 
     config = None
@@ -417,7 +417,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def gaugeCallback(self, plugin_info):
         self.splash.tick("Loading %s..." % plugin_info.name)
 
-    def countYapsyPlugins(self, userdirs=[]):
+    def countYapsyPlugins(self):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
@@ -426,7 +426,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         is done.
         """
         paths = [os.path.join(os.path.dirname(__file__), p) for p in self.standard_plugin_dirs]
-        paths.extend(userdirs)
+        paths.append(os.path.join(self.config.dir, self.preferences_plugin_dir))
+        userdirs = self.classprefs.plugin_search_path.split(os.pathsep)
+        for path in userdirs:
+            paths.append(path)
         
         self.plugin_manager = PeppyPluginManager(
             categories_filter={"Default": IPeppyPlugin},

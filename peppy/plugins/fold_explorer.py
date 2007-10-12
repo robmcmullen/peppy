@@ -26,6 +26,11 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
     keyword="Fold Explorer"
+    
+    default_classprefs = (
+        IntParam('best_width', 200),
+        IntParam('min_width', 200),
+    )
 
     @classmethod
     def worksWithMajorMode(self, mode):
