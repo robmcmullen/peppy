@@ -465,7 +465,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def activatePlugins(self):
         cats = self.plugin_manager.getCategories()
         for cat in cats:
-            plugins = self.plugin_manager.getPluginsOfCategory(cat)
+            plugins = self.plugin_manager.getLatestPluginsOfCategory(cat)
             self.dprint("Yapsy plugins in %s category: %s" % (cat, plugins))
             for plugininfo in plugins:
                 self.dprint("  activating plugin %s: %s" % (plugininfo.name,

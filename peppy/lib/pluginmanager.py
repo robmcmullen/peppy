@@ -91,8 +91,6 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
             dprint(plugin.version)
             self.SetStringItem(index, 1, str(plugin.version))
 
-            self.CheckItem(index, plugin.plugin_object.is_activated)
-
             index += 1
 
         if index < list_count:
@@ -100,6 +98,13 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
                 # always delete the first item because the list gets
                 # shorter by one each time.
                 self.DeleteItem(index)
+        
+        # Once all the plugin items are in the list, set the checkbox
+        # state to indicate which are active
+        index = 0
+        for plugin in self.plugins:
+            self.CheckItem(index, plugin.plugin_object.is_activated)
+            index += 1
 
     def OnCheckItem(self, index, flag):
         if flag:
