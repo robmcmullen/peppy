@@ -30,7 +30,7 @@ element of the tuple returned by getMenuItems or getToolBarItems will
 be the C{keyword} attribute of your major mode.
 """
 
-import os, stat, sys, re
+import os, stat, sys, re, time
 
 import wx
 import wx.stc
@@ -280,7 +280,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         self.editwin.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
 
         self.idle_update_menu = False
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
 
     def createEventBindingsPostHook(self):
         pass
@@ -428,7 +427,8 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     def OnUpdateUIHook(self, evt):
         pass
 
-    def OnIdle(self, evt):
+    def idleHandler(self):
+        #dprint("Idle starting for %s at %f" % (self.buffer.url, time.time()))
         if self.idle_update_menu:
             # FIXME: calling the toolbar enable here is better than in
             # the update UI loop, but it still seems to cause flicker
@@ -436,7 +436,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
             self.frame.enableTools()
             self.idle_update_menu = False
         self.idlePostHook()
-        evt.Skip()
+        #dprint("Idle finished for %s at %f" % (self.buffer.url, time.time()))
 
     def idlePostHook(self):
         """Hook for subclasses to process during idle time.

@@ -215,8 +215,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         FrameList.append(self)
         
-        self.Bind(wx.EVT_CLOSE,self.OnClose)
-        
         self.SetStatusBar(None)
 
         # tell FrameManager to manage this frame        
@@ -243,6 +241,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         Publisher().subscribe(self.pluginsChanged, 'peppy.plugins.changed')
         wx.GetApp().SetTopWindow(self)
+        
+        self.Bind(wx.EVT_CLOSE,self.OnClose)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
 
         dprint(urls)
         
@@ -294,6 +296,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
 
     # Overrides of wx methods
+    def OnIdle(self, evt):
+        if wx.GetApp().GetTopWindow() != self:
+            self.dprint("idle events only on top window: top=%s self=%s" % (wx.GetApp().GetTopWindow().name, self.name))
+            pass
+        else:
+            mode = self.getActiveMajorMode()
+            mode.idleHandler()
+        evt.Skip()
+        
+    def OnRaise(self, evt):
+        self.dprint("Focus! %s" % self.name)
+        wx.GetApp().SetTopWindow(self)
+        evt.Skip()
+        
     def OnClose(self, evt=None):
         assert self.dprint(evt)
         if len(FrameList.storage)==1:
