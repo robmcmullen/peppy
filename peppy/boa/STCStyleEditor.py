@@ -1173,14 +1173,19 @@ def parsePropLine(prop):
     name, value = prop.split('=')
     return int(name.split('.')[-1]), value
 
+from peppy.debug import *
+import time
 def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
     styleDict = {}
     styleNumIdxMap = {}
+    start = time.time()
+    dprint("starting setSTCStyles at %0.5fs" % start)
 
     # build style dict based on given styles
     for numStyle in styles:
         num, style = parsePropLine(numStyle)
         styleDict[num] = style
+    dprint("#1 in %0.5fs" % (time.time() - start))
 
     # Add blank style entries for undefined styles
     newStyles = []
@@ -1193,6 +1198,7 @@ def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
             styleDict[num] = ''
         newStyles.append(writeProp(num, styleDict[num], lang))
         idx = idx + 1
+    dprint("#2 in %0.5fs" % (time.time() - start))
 
     # Set background colour to reduce flashing effect on refresh or page switch
     bkCol = None
@@ -1204,15 +1210,22 @@ def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
     if bkCol is None:
         bkCol = wx.WHITE
     stc.SetBackgroundColour(bkCol)
+    dprint("#3 in %0.5fs" % (time.time() - start))
 
     # Set the styles on the wxSTC
     stc.StyleResetDefault()
+    dprint("#4 in %0.5fs" % (time.time() - start))
     stc.ClearDocumentStyle()
+    dprint("#5 in %0.5fs" % (time.time() - start))
     stc.SetLexer(lexer)
+    dprint("#6 in %0.5fs" % (time.time() - start))
     stc.SetKeyWords(0, keywords)
+    dprint("#7 in %0.5fs" % (time.time() - start))
     stc.StyleSetSpec(wx.stc.STC_STYLE_DEFAULT,
           styleDict[wx.stc.STC_STYLE_DEFAULT] % commonDefs)
+    dprint("#8 in %0.5fs" % (time.time() - start))
     stc.StyleClearAll()
+    dprint("#9 in %0.5fs" % (time.time() - start))
 
     for num, style in styleDict.items():
         if num >= 0:
@@ -1223,8 +1236,10 @@ def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
             setCursorColour(stc, style % commonDefs)
         elif num == -3:
             setEdgeColour(stc, style % commonDefs)
+    dprint("#10 in %0.5fs" % (time.time() - start))
 
     stc.Colourise(0, stc.GetTextLength())
+    dprint("#11 in %0.5fs" % (time.time() - start))
 
     return newStyles, styleDict, styleNumIdxMap
 

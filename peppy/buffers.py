@@ -281,7 +281,7 @@ class Buffer(debugmixin):
         wx.GetApp().enableFrames()
 
     def OnChanged(self, evt):
-        dprint("stc = %s" % self.stc)
+        #dprint("stc = %s" % self.stc)
         if self.stc.GetModify():
             assert self.dprint("modified!")
             changed=True

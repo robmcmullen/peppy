@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os, shutil
+import os, shutil, time
 
 import wx
 import wx.stc
@@ -379,14 +379,23 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         per-user basis, and in the peppy/config directory on a
         site-wide basis.
         """
+        start = time.time()
+        dprint("starting createSTC at %0.5fs" % start)
         self.stc=PeppySTC(parent,refstc=self.buffer.stc)
+        dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         self.applySettings()
+        dprint("applySettings done in %0.5fs" % (time.time() - start))
 
     def applySettings(self):
+        start = time.time()
+        dprint("starting applySettings at %0.5fs" % start)
         self.applyDefaultSettings()
+        dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         if self.styleSTC():
+            dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
             self.has_stc_styling = True
         else:
+            dprint("styleSTC (if False) done in %0.5fs" % (time.time() - start))
             # If the style file fails to load, it probably means that
             # the style definition doesn't exist in the style file.
             # So, add the default style settings supplied by the major
@@ -400,6 +409,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
                 # dialog won't be available.
                 self.has_stc_styling = False
                 self.styleSTC('text')
+        dprint("applySettings returning in %0.5fs" % (time.time() - start))
 
     def styleDefault(self):
         """Create entry in stc configuration file for this mode.
@@ -531,12 +541,16 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
 
         @param lang: language keyword to look up in the file
         """
+        start = time.time()
+        dprint("starting boa styling at %0.5fs" % start)
         config=boa.getUserConfigFile(wx.GetApp())
+        dprint("boa.getUserConfigFile done in %0.5fs" % (time.time() - start))
         if lang is None:
             lang = self.keyword
             
         try:
             boa.initSTC(self.stc, config, lang)
+            dprint("boa.initSTC done in %0.5fs" % (time.time() - start))
         except SyntaxError:
             dprint("no STC style defined for %s" % lang)
             return False
@@ -549,7 +563,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         """Get the fold hierarchy using Stani's fold explorer algorithm.
         """
         # Turn this into a threaded operation if it takes too long
+        t = time.time()
         self.stc.Colourise(0, self.stc.GetTextLength())
+        dprint("Finished colourise: %0.5f" % (time.time() - t))
         self.stc.computeFoldHierarchy()
         
         # FIXME: Note that different views of the same buffer *using the

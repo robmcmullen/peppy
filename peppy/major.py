@@ -94,15 +94,26 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         self.statusbar = None
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER, pos=(9000,9000))
+        start = time.time()
+        dprint("starting __init__ at 0.00000s")
         self.createWindow()
+        dprint("createWindow done in %0.5fs" % (time.time() - start))
         self.createWindowPostHook()
+        dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
         self.loadMinorModes()
+        dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
         self.loadMinorModesPostHook()
+        dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
         self.createEventBindings()
+        dprint("createEventBindings done in %0.5fs" % (time.time() - start))
         self.createEventBindingsPostHook()
+        dprint("createEventBindingsPostHook done in %0.5fs" % (time.time() - start))
         self.createListeners()
+        dprint("createListeners done in %0.5fs" % (time.time() - start))
         self.createListenersPostHook()
+        dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
         self.createPostHook()
+        dprint("Created major mode in %0.5fs" % (time.time() - start))
         
         self._mgr.Update()
 
@@ -764,7 +775,7 @@ def guessBinary(text, percentage):
     return False
 
 class MajorModeMatcherDriver(debugmixin):
-    debuglevel = 0
+    debuglevel = 1
     
     @classmethod
     def getActiveModes(cls):

@@ -566,6 +566,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     ## Stani's Fold Explorer
     def computeFoldHierarchy(self):
+        t = time.time()
         #[(level,line,text,parent,[children]),]
         n               = self.GetLineCount()+1
         prevNode        = root  = FoldNode(level=0,start=0,end=n,text='root',parent=None)
@@ -577,7 +578,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 level           = foldBits&wx.stc.STC_FOLDLEVELNUMBERMASK
                 text            = self.GetLine(line)
                 node            = FoldNode(level=level,start=line,end=n,text=text)
-                print node
+                #print node
                 if level == prevLevel:
                     #say hello to new brother or sister
                     node.parent = prevNode.parent
@@ -601,7 +602,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 prevNode        = node
         prevNode.end    = line
         self.fold_explorer_root = root
-
+        dprint("Finished fold node creation: %0.5fs" % (time.time() - t))
+        
 
 class PeppySTC(PeppyBaseSTC):
     """
