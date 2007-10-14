@@ -6,7 +6,6 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy.mainmenu import Paste
 from peppy.menu import *
 from peppy.fundamental import *
 from peppy.major import *
@@ -17,7 +16,7 @@ from peppy.editra import *
 class PeppyEditraSTC(PeppySTC, ed_style.StyleMgr):
     def __init__(self, parent, refstc=None):
         PeppySTC.__init__(self, parent, refstc)
-        ed_style.StyleMgr.__init__(self, '/tmp/blah')
+        ed_style.StyleMgr.__init__(self, EditraStyledMode.getStyleFile())
         
         self.LOG = dprint
         self._synmgr = syntax.SyntaxMgr()
@@ -243,7 +242,9 @@ class EditraStyledMode(FundamentalMode):
     start_line_comment = ''
     end_line_comment = ''
 
-    default_classprefs = ( )
+    default_classprefs = (
+        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
+    )
     
     @classmethod
     def verifyFilename(cls, filename):
@@ -266,6 +267,12 @@ class EditraStyledMode(FundamentalMode):
             if stc_type != synglob.LANG_TXT:
                 return ext
         return False
+    
+    @classmethod
+    def getStyleFile(cls):
+        filename = wx.GetApp().getConfigFilePath(cls.classprefs.editra_style_sheet)
+        dprint(filename)
+        return filename
     
     def createEditWindow(self,parent):
         assert self.dprint("creating new EditraStyled window")
@@ -295,7 +302,7 @@ class EditraStyledMode(FundamentalMode):
     def applySettings(self):
         start = time.time()
         dprint("starting applySettings at %0.5fs" % start)
-        #self.applyDefaultSettings()
+        self.applyDefaultSettings()
         #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         self.editra_ext = self.verifyFilename(self.buffer.url.path)
@@ -317,7 +324,6 @@ class EditraStyledMode(FundamentalMode):
         else:
             self.stc.SetMarginWidth(2, 0)
 
-        self.stc.SetProperty("fold", "1")
         self.stc.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
         self.stc.SetIndentationGuides(self.classprefs.indentation_guides)
         self.stc.SetHighlightGuide(self.classprefs.highlight_column)
@@ -355,14 +361,6 @@ class EditraStyledMode(FundamentalMode):
             self.stc.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
             self.stc.SetMarginSensitive(2, True)
             self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
-            # Marker definitions from PyPE
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL, wx.stc.STC_MARK_TCORNER,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,    wx.stc.STC_MARK_LCORNER,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
             self.stc.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
         else:
             self.stc.SetMarginWidth(2, 0)
