@@ -58,7 +58,6 @@ import syntax.syntax as syntax
 
 from peppy.major import *
 from peppy.fundamental import *
-from peppy.plugins.styled_mode import PeppyEditraSTC
 
 # Function Aliases
 _ = wx.GetTranslation
@@ -100,7 +99,7 @@ class StyleEditor(wx.Dialog):
         self.LOG = wx.GetApp().GetLog()
 ##        self.preview = ed_stc.EDSTC(self, wx.ID_ANY, size=(-1, 200),
 ##                                    style=wx.SUNKEN_BORDER, use_dt=False)
-        self.preview = PeppyEditraSTC(self, None, size=(-1, 200))
+        self.preview = FundamentalSTC(self, None, size=(-1, 200))
         self.styles_new = self.preview.GetStyleSet()
         self.styles_orig = self.DuplicateStyleDict(self.styles_new)
         self.settings_enabled = True

@@ -4,22 +4,15 @@ import os, shutil, time
 
 import wx
 import wx.stc
-from wx.lib.pubsub import Publisher
-
-from peppy.menu import *
-from peppy.fundamental import *
-from peppy.major import *
-from peppy.stcinterface import *
 
 from peppy.editra import *
 import peppy.editra.util as util
 
-class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
-    def __init__(self, parent, refstc=None, **kwargs):
-        PeppySTC.__init__(self, parent, refstc, **kwargs)
-        ed_style.StyleMgr.__init__(self, EditraStyledMode.getStyleFile())
+class EditraSTCMixin(ed_style.StyleMgr):
+    def __init__(self, stylefile):
+        ed_style.StyleMgr.__init__(self, stylefile)
         
-        self.LOG = dprint
+        self.LOG = wx.GetApp().GetLog()
         self._synmgr = syntax.SyntaxMgr()
         self.syntax_set = list()
         self._use_autocomp = False
@@ -70,8 +63,8 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
 
         """
         syn_data = self._synmgr.SyntaxData(file_ext)
-        dprint(file_ext)
-        dprint(syn_data)
+        self.LOG(file_ext)
+        self.LOG(syn_data)
 
         # Set the ID of the selected lexer
         try:
@@ -81,7 +74,7 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
             self.lang_id = 0
 
         lexer = syn_data[syntax.LEXER]
-        dprint("lexer = %s" % lexer)
+        self.LOG("lexer = %s" % lexer)
         # Check for special cases
         if lexer in [ wx.stc.STC_LEX_HTML, wx.stc.STC_LEX_XML]:
             self.SetStyleBits(7)
@@ -91,7 +84,7 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
             self.SetLexer(lexer)
             self.ClearDocumentStyle()
             self.UpdateBaseStyles()
-            dprint("NULL!!!!")
+            self.LOG("NULL!!!!")
             return True
         else:
             self.SetStyleBits(5)
@@ -130,7 +123,7 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
         self.SetProperties(props)
         # Set Comment Pattern
         self.setCommentDelimiters(*comment)
-        dprint("GetLexer = %d" % self.GetLexer())
+        self.LOG("GetLexer = %d" % self.GetLexer())
         return True
 
     def SetKeyWords(self, kw_lst):
@@ -167,7 +160,7 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
         """
         # Parses Syntax Specifications list, ignoring all bad values
         self.UpdateBaseStyles()
-        dprint(syn_lst)
+        self.LOG(syn_lst)
         valid_settings = list()
         for syn in syn_lst:
             if len(syn) != 2:
@@ -184,7 +177,7 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
                              str(syn[1]))
                     continue
                 else:
-                    dprint("setting %s to %s" % (syn[0], self.GetStyleByName(syn[1])))
+                    self.LOG("setting %s to %s" % (syn[0], self.GetStyleByName(syn[1])))
                     self.StyleSetSpec(getattr(wx.stc, syn[0]), \
                                       self.GetStyleByName(syn[1]))
                     valid_settings.append(syn)
@@ -307,172 +300,3 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
             if style_id == getattr(wx.stc, data[0]):
                 return data[1]
         return 'default_style'
-
-
-class EditraStyledMode(FundamentalMode):
-    """
-    The base view of most (if not all) of the views that use the STC
-    to directly edit the text.  Views (like the HexEdit view or an
-    image viewer) that only use the STC as the backend storage are
-    probably not based on this view.
-    """
-    debuglevel = 1
-    
-    keyword = 'Styled'
-
-    start_line_comment = ''
-    end_line_comment = ''
-
-    default_classprefs = (
-        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
-    )
-    
-    @classmethod
-    def verifyEditraType(cls, ext, file_type):
-        dprint("ext=%s file_type=%s" % (ext, file_type))
-        if file_type is not None:
-            dprint("FOUND %s!!!!!" % file_type)
-            return True
-        return False
-    
-    @classmethod
-    def getStyleFile(cls):
-        filename = wx.GetApp().getConfigFilePath(cls.classprefs.editra_style_sheet)
-        dprint(filename)
-        return filename
-    
-    def createEditWindow(self,parent):
-        assert self.dprint("creating new EditraStyled window")
-        self.createSTC(parent)
-        win=self.stc
-        return win
-
-    def createSTC(self,parent):
-        """Create the STC and apply styling settings.
-
-        Everything that subclasses from EditraStyledMode will use an
-        STC instance for displaying the user interaction window.
-        
-        Styling information is loaded from the stc-styles.rc.cfg files
-        that the boa styling editor uses.  This file is located in the
-        default configuration directory of the application on a
-        per-user basis, and in the peppy/config directory on a
-        site-wide basis.
-        """
-        start = time.time()
-        dprint("starting createSTC at %0.5fs" % start)
-        self.stc=PeppyEditraSTC(parent,refstc=self.buffer.stc)
-        dprint("PeppySTC done in %0.5fs" % (time.time() - start))
-        self.applySettings()
-        dprint("applySettings done in %0.5fs" % (time.time() - start))
-
-    def applySettings(self):
-        start = time.time()
-        dprint("starting applySettings at %0.5fs" % start)
-        self.applyDefaultSettings()
-        #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
-        
-        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
-        self.editra_ext = ext
-        self.stc.ConfigureLexer(self.editra_ext)
-        dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
-        self.has_stc_styling = True
-        dprint("applySettings returning in %0.5fs" % (time.time() - start))
-
-    def applyDefaultSettings(self):
-        # turn off symbol margin
-        if self.classprefs.symbols:
-            self.stc.SetMarginWidth(1, self.classprefs.symbols_margin_width)
-        else:
-            self.stc.SetMarginWidth(1, 0)
-
-        # turn off folding margin
-        if self.classprefs.folding:
-            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
-        else:
-            self.stc.SetMarginWidth(2, 0)
-
-        self.stc.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
-        self.stc.SetIndentationGuides(self.classprefs.indentation_guides)
-        self.stc.SetHighlightGuide(self.classprefs.highlight_column)
-
-        self.setWordWrap()
-        self.setLineNumbers()
-        self.setFolding()
-        self.setTabStyle()
-        self.setEdgeStyle()
-        self.setCaretStyle()
-
-    def setWordWrap(self,enable=None):
-        if enable is not None:
-            self.classprefs.word_wrap=enable
-        if self.classprefs.word_wrap:
-            self.stc.SetWrapMode(wx.stc.STC_WRAP_CHAR)
-            self.stc.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
-        else:
-            self.stc.SetWrapMode(wx.stc.STC_WRAP_NONE)
-
-    def setLineNumbers(self,enable=None):
-        if enable is not None:
-            self.classprefs.line_numbers=enable
-        if self.classprefs.line_numbers:
-            self.stc.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0,  self.classprefs.line_number_margin_width)
-        else:
-            self.stc.SetMarginWidth(0,0)
-
-    def setFolding(self,enable=None):
-        if enable is not None:
-            self.classprefs.folding=enable
-        if self.classprefs.folding:
-            self.stc.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
-            self.stc.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
-            self.stc.SetMarginSensitive(2, True)
-            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
-            self.stc.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
-        else:
-            self.stc.SetMarginWidth(2, 0)
-            self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
-
-    def setTabStyle(self):
-        self.stc.SetIndent(self.classprefs.tab_size)
-        self.stc.SetProperty('tab.timmy.whinge.level', str(self.classprefs.tab_highlight_style))
-        self.stc.SetUseTabs(self.classprefs.use_tab_characters)
-
-    def setEdgeStyle(self):
-        self.stc.SetEdgeMode(self.classprefs.edge_indicator)
-        if self.classprefs.edge_indicator == wx.stc.STC_EDGE_NONE:
-            self.stc.SetEdgeColumn(0)
-        else:
-            self.stc.SetEdgeColumn(self.classprefs.edge_column)
-
-    def setCaretStyle(self):
-        self.stc.SetCaretPeriod(self.classprefs.caret_blink_rate)
-        self.stc.SetCaretLineVisible(self.classprefs.caret_line_highlight)
-        self.stc.SetCaretWidth(self.classprefs.caret_width)
-
-    def onMarginClick(self, evt):
-        # fold and unfold as needed
-        if evt.GetMargin() == 2:
-            if evt.GetShift() and evt.GetControl():
-                self.stc.FoldAll()
-            else:
-                lineClicked = self.stc.LineFromPosition(evt.GetPosition())
-                if self.stc.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
-                    if evt.GetShift():
-                        self.stc.SetFoldExpanded(lineClicked, True)
-                        self.stc.Expand(lineClicked, True, True, 1)
-                    elif evt.GetControl():
-                        if self.stc.GetFoldExpanded(lineClicked):
-                            self.stc.SetFoldExpanded(lineClicked, False)
-                            self.stc.Expand(lineClicked, False, True, 0)
-                        else:
-                            self.stc.SetFoldExpanded(lineClicked, True)
-                            self.stc.Expand(lineClicked, True, True, 100)
-                    else:
-                        self.stc.ToggleFold(lineClicked)
-
-
-class EditraStyledPlugin(IPeppyPlugin):
-    def getMajorModes(self):
-        yield EditraStyledMode

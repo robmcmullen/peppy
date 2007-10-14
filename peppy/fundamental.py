@@ -9,7 +9,8 @@ from wx.lib.pubsub import Publisher
 from peppy.menu import *
 from peppy.major import *
 
-import peppy.boa as boa
+from peppy.editra import *
+from peppy.editra.stcmixin import *
 
 class BraceHighlightMixin(object):
     """Brace highlighting mixin for STC
@@ -242,12 +243,14 @@ class GenericFoldHierarchyMixin(object):
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
                     StandardReindentMixin, StandardCommentMixin,
-                    GenericFoldHierarchyMixin, PeppySTC):
+                    GenericFoldHierarchyMixin, EditraSTCMixin, PeppySTC):
     
     start_line_comment = ''
     end_line_comment = ''
-    
-    pass
+
+    def __init__(self, parent, refstc=None, **kwargs):
+        PeppySTC.__init__(self, parent, refstc, **kwargs)
+        EditraSTCMixin.__init__(self, FundamentalMode.getStyleFile())
 
 
 class FundamentalMode(MajorMode):
@@ -264,6 +267,7 @@ class FundamentalMode(MajorMode):
     stc_viewer_class = FundamentalSTC
 
     default_classprefs = (
+        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
         BoolParam('use_tab_characters', False,
                   'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
         IntParam('tab_size', 4, 'Number of spaces in each tab'),
@@ -290,25 +294,22 @@ class FundamentalMode(MajorMode):
         IntParam('caret_width', 2, help='Caret width in pixels'),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
         StrParam('sample_file', "Fundamental mode is the base for all other modes that use the STC to view text."),
-        ReadOnlyParam('stc_lexer', wx.stc.STC_LEX_NULL),
-        StrParam('stc_keywords', ""),
-        StrParam('stc_boa_braces', "{}"),
-        ReadOnlyParam('stc_boa_style_names', {}),
-        ReadOnlyParam('stc_lexer_styles', {}),
-
-        # Note: 1 tends to be the comment style, but not in all cases.
-        ReadOnlyParam('stc_lexer_default_styles', {0: '',
-                                     1: 'fore:%(comment-col)s,italic',
-                                     wx.stc.STC_STYLE_DEFAULT: 'face:%(mono)s,size:%(size)d',
-                                     wx.stc.STC_STYLE_LINENUMBER: 'face:%(ln-font)s,size:%(ln-size)d',
-                                     
-                                     wx.stc.STC_STYLE_BRACEBAD: '',
-                                     wx.stc.STC_STYLE_BRACELIGHT: '',
-                                     wx.stc.STC_STYLE_CONTROLCHAR: '',
-                                     wx.stc.STC_STYLE_INDENTGUIDE: '',
-                                     }),
         )
-
+    
+    @classmethod
+    def verifyEditraType(cls, ext, file_type):
+        dprint("ext=%s file_type=%s" % (ext, file_type))
+        if file_type is not None:
+            dprint("FOUND %s!!!!!" % file_type)
+            return True
+        return False
+    
+    @classmethod
+    def getStyleFile(cls):
+        filename = wx.GetApp().getConfigFilePath(cls.classprefs.editra_style_sheet)
+        dprint(filename)
+        return filename
+    
     def createEditWindow(self,parent):
         assert self.dprint("creating new Fundamental window")
         self.createSTC(parent)
@@ -342,51 +343,20 @@ class FundamentalMode(MajorMode):
         dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         self.applySettings()
         dprint("applySettings done in %0.5fs" % (time.time() - start))
-    
+        
     def applySettings(self):
         start = time.time()
         dprint("starting applySettings at %0.5fs" % start)
         self.applyDefaultSettings()
-        dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
-        if self.styleSTC():
-            dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
-            self.has_stc_styling = True
-        else:
-            dprint("styleSTC (if False) done in %0.5fs" % (time.time() - start))
-            # If the style file fails to load, it probably means that
-            # the style definition doesn't exist in the style file.
-            # So, add the default style settings supplied by the major
-            # mode to the file and try again.
-            self.styleDefault()
-            if self.styleSTC():
-                self.has_stc_styling = True
-            else:
-                # If the file still doesn't load, fall back to a style
-                # that hopefully does exist.  The boa stc styling
-                # dialog won't be available.
-                self.has_stc_styling = False
-                self.styleSTC('text')
+        #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
+        
+        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
+        self.editra_ext = ext
+        self.stc.ConfigureLexer(self.editra_ext)
+        dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
+        self.has_stc_styling = True
         dprint("applySettings returning in %0.5fs" % (time.time() - start))
-
-    def styleDefault(self):
-        """Create entry in stc configuration file for this mode.
-
-        If the style definitions don't exist in the stc configuration
-        file, use the defaults supplied by the major mode to add them
-        to the file.
-
-        FIXME: The format itself is a bit fragile and will cause
-        exceptions if a keyword is missing.  Need to have a robust way
-        of handling errors in a user-edited style file.
-
-        See the L{peppy.boa.STCStyleEditor} documentation for more
-        information on the format of the configuration file.
-        """
-        if not self.classprefs.stc_lexer:
-            dprint("no STC styling information for major mode %s" % self.keyword)
-            return
-        boa.updateConfigFile(wx.GetApp(), self)
-
+    
     def applyDefaultSettings(self):
         # turn off symbol margin
         if self.classprefs.symbols:
@@ -488,30 +458,6 @@ class FundamentalMode(MajorMode):
                             self.stc.Expand(lineClicked, True, True, 100)
                     else:
                         self.stc.ToggleFold(lineClicked)
-
-    def styleSTC(self, lang=None):
-        """Style the STC using the information in the styling config file.
-
-        Call the boa method of styling the stc that reads the styling
-        information (including the lexer type) out of its format
-        config file.
-
-        @param lang: language keyword to look up in the file
-        """
-        start = time.time()
-        dprint("starting boa styling at %0.5fs" % start)
-        config=boa.getUserConfigFile(wx.GetApp())
-        dprint("boa.getUserConfigFile done in %0.5fs" % (time.time() - start))
-        if lang is None:
-            lang = self.keyword
-            
-        try:
-            boa.initSTC(self.stc, config, lang)
-            dprint("boa.initSTC done in %0.5fs" % (time.time() - start))
-        except SyntaxError:
-            dprint("no STC style defined for %s" % lang)
-            return False
-        return True
 
     def OnUpdateUIHook(self, evt):
         self.stc.braceHighlight()

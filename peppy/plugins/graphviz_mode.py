@@ -58,28 +58,6 @@ class GraphvizMode(FundamentalMode):
 
         StrParam('minor_modes', 'GraphvizView'),
         StrParam('sample_file', _sample_file),
-        IntParam('stc_lexer', wx.stc.STC_LEX_CPP),
-        StrParam('stc_keywords', 'strict graph digraph graph node edge subgraph'),
-        ReadOnlyParam('stc_boa_style_names', {wx.stc.STC_C_DEFAULT: 'Default',
-                                wx.stc.STC_C_COMMENT: 'Comment',
-                                wx.stc.STC_C_COMMENTLINE: 'Comment line',
-                                wx.stc.STC_C_COMMENTDOC: 'Comment doc',
-                                wx.stc.STC_C_NUMBER: 'Number',
-                                wx.stc.STC_C_WORD: 'Keyword',
-                                wx.stc.STC_C_STRING: 'String',
-                                wx.stc.STC_C_PREPROCESSOR: 'Preprocessor',
-                                wx.stc.STC_C_OPERATOR: 'Operator',
-                                wx.stc.STC_C_STRINGEOL: 'EOL unclosed string',
-                                }),
-        ReadOnlyParam('stc_lexer_styles', {wx.stc.STC_C_COMMENTLINE: wx.stc.STC_C_COMMENT,
-                             wx.stc.STC_C_COMMENTDOC: wx.stc.STC_C_COMMENT,
-                             wx.stc.STC_C_NUMBER: 'fore:#0076AE',
-                             wx.stc.STC_C_WORD: 'bold,fore:#004080',
-                             wx.stc.STC_C_STRING: 'fore:#800080',
-                             wx.stc.STC_C_PREPROCESSOR: 'fore:#808000',
-                             wx.stc.STC_C_OPERATOR: 'bold',
-                             wx.stc.STC_C_STRINGEOL: 'back:#FFD5FF',
-                             }),
         )
     
 
