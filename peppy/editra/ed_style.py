@@ -51,12 +51,7 @@ __revision__ = "$Revision: 551 $"
 import os
 import re
 import wx
-##import util
-class util(object):
-    @classmethod
-    def GetFileReader(cls, filename):
-        fh = open(filename, 'rb')
-        return fh
+import util
 ##from profiler import Profile_Get as _PGET
 ##from profiler import Profile_Set as _PSET
 def _PGET(a, b, c):

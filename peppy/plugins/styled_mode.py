@@ -12,15 +12,58 @@ from peppy.major import *
 from peppy.stcinterface import *
 
 from peppy.editra import *
+import peppy.editra.util as util
 
 class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
-    def __init__(self, parent, refstc=None):
-        PeppySTC.__init__(self, parent, refstc)
+    def __init__(self, parent, refstc=None, **kwargs):
+        PeppySTC.__init__(self, parent, refstc, **kwargs)
         ed_style.StyleMgr.__init__(self, EditraStyledMode.getStyleFile())
         
         self.LOG = dprint
         self._synmgr = syntax.SyntaxMgr()
-        
+        self.syntax_set = list()
+        self._use_autocomp = False
+
+    def FindLexer(self, set_ext=u''):
+        """Sets Text Controls Lexer Based on File Extension
+        @param set_ext: explicit extension to use in search
+        @postcondition: lexer is configured for file
+
+        """
+        if set_ext != u'':
+            ext = set_ext.lower()
+        else:
+            ext = util.GetExtension(self.filename).lower()
+        self.ClearDocumentStyle()
+
+        # Configure Lexer from File Extension
+        self.ConfigureLexer(ext)
+
+        # If syntax auto detection fails from file extension try to
+        # see if there is an interpreter line that can be parsed.
+        if self.GetLexer() in [0, wx.stc.STC_LEX_NULL]:
+            interp = self.GetLine(0)
+            if interp != wx.EmptyString:
+                interp = interp.split(u"/")[-1]
+                interp = interp.strip().split()
+                if len(interp) and interp[-1][0] != "-":
+                    interp = interp[-1]
+                elif len(interp):
+                    interp = interp[0]
+                else:
+                    interp = u''
+                ex_map = { "python" : "py", "wish" : "tcl", "ruby" : "rb",
+                           "bash" : "sh", "csh" : "csh", "perl" : "pl",
+                           "ksh" : "ksh", "php" : "php" }
+                self.ConfigureLexer(ex_map.get(interp, interp))
+        self.Colourise(0, -1)
+
+        # Configure Autocompletion
+        # NOTE: must be done after syntax configuration
+        if self._use_autocomp:
+            self.ConfigureAutoComp()
+        return 0
+    
     def ConfigureLexer(self, file_ext):
         """Sets Lexer and Lexer Keywords for the specifed file extension
         @param file_ext: a file extension to configure the lexer from
@@ -165,6 +208,20 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
                     self.SetProperty(prop[0], prop[1])
         return True
         
+    def RefreshStyles(self):
+        """Refreshes the colorization of the window by reloading any 
+        style tags that may have been modified.
+        @postcondition: all style settings are refreshed in the control
+
+        """
+        self.Freeze()
+        self.StyleClearAll()
+        self.UpdateBaseStyles()
+        self.SetSyntax(self.syntax_set)
+        self.DefineMarkers()
+        self.Thaw()
+        self.Refresh()
+
     def StyleDefault(self):
         """Clears the editor styles to default
         @postcondition: style is reset to default
@@ -200,6 +257,19 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
         self.SetCaretForeground(self.GetDefaultForeColour())
         self.DefineMarkers()
         self.Colourise(0, -1)
+    
+    def UpdateAllStyles(self, spec_style=None):
+        """Refreshes all the styles and attributes of the control
+        @param spec_style: style scheme name
+        @postcondtion: style scheme is set to specified style
+
+        """
+        if spec_style != self.style_set:
+            self.LoadStyleSheet(self.GetStyleSheet(spec_style), force=True)
+        self.UpdateBaseStyles()
+        self.SetSyntax(self.syntax_set)
+        self.DefineMarkers()
+        self.Refresh()
 
     def DefineMarkers(self):
         """Defines the folder and bookmark icons for this control
@@ -226,6 +296,17 @@ class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
         self.SetFoldMarginHiColour(True, fore)
         self.SetFoldMarginColour(True, fore)
 
+    def FindTagById(self, style_id):
+        """Find the style tag that is associated with the given
+        Id. If not found it returns an empty string.
+        @param style_id: id of tag to look for
+        @return: style tag string
+
+        """
+        for data in self.syntax_set:
+            if style_id == getattr(wx.stc, data[0]):
+                return data[1]
+        return 'default_style'
 
 
 class EditraStyledMode(FundamentalMode):

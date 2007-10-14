@@ -44,13 +44,21 @@ import os
 import glob
 import wx
 import wx.lib.colourselect as  csel
-import ed_glob
-from profiler import Profile_Get, Profile_Set
-import ed_stc
+#import ed_glob
+class ed_glob:
+    ID_LEXER = wx.NewId()
+    ID_PREF_SYNTHEME = wx.NewId()
+    
+#from profiler import Profile_Get, Profile_Set
+#import ed_stc
 from ed_style import StyleItem, StyleMgr
-import ed_event
+#import ed_event
 import util
 import syntax.syntax as syntax
+
+from peppy.major import *
+from peppy.fundamental import *
+from peppy.plugins.styled_mode import PeppyEditraSTC
 
 # Function Aliases
 _ = wx.GetTranslation
@@ -85,13 +93,14 @@ class StyleEditor(wx.Dialog):
         """
         wx.Dialog.__init__(self, parent, id_, title, style=style)
 
-        if wx.Platform == '__WXMAC__' and Profile_Get('METAL', 'bool', False):
-            self.SetExtraStyle(wx.DIALOG_EX_METAL)
+##        if wx.Platform == '__WXMAC__' and Profile_Get('METAL', 'bool', False):
+##            self.SetExtraStyle(wx.DIALOG_EX_METAL)
 
         # Attributes
         self.LOG = wx.GetApp().GetLog()
-        self.preview = ed_stc.EDSTC(self, wx.ID_ANY, size=(-1, 200),
-                                    style=wx.SUNKEN_BORDER, use_dt=False)
+##        self.preview = ed_stc.EDSTC(self, wx.ID_ANY, size=(-1, 200),
+##                                    style=wx.SUNKEN_BORDER, use_dt=False)
+        self.preview = PeppyEditraSTC(self, None, size=(-1, 200))
         self.styles_new = self.preview.GetStyleSet()
         self.styles_orig = self.DuplicateStyleDict(self.styles_new)
         self.settings_enabled = True
@@ -166,7 +175,7 @@ class StyleEditor(wx.Dialog):
         self.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_LISTBOX, self.OnListBox)
-        self.Bind(ed_event.EVT_NOTIFY, self.OnColor)
+        #self.Bind(ed_event.EVT_NOTIFY, self.OnColor)
         self.preview.Bind(wx.EVT_LEFT_UP, self.OnTextRegion)
         self.preview.Bind(wx.EVT_KEY_UP, self.OnTextRegion)
     #--- End Init ---#
@@ -296,7 +305,7 @@ class StyleEditor(wx.Dialog):
         ss_choice = wx.Choice(self.ctrl_pane, ed_glob.ID_PREF_SYNTHEME,
                               choices=ss_lst)
         ss_choice.SetToolTip(wx.ToolTip(_("Base new theme of existing one")))
-        ss_choice.SetStringSelection(Profile_Get('SYNTHEME', 'str'))
+##        ss_choice.SetStringSelection(Profile_Get('SYNTHEME', 'str'))
         ss_new = wx.CheckBox(self.ctrl_pane, wx.ID_NEW, _("New"))
         ss_new.SetToolTip(wx.ToolTip(_("Start a blank new style")))
         ss_sizer.AddMany([((10, 10)), (ss_lbl, 0, wx.ALIGN_CENTER_VERTICAL), 
@@ -378,59 +387,59 @@ class StyleEditor(wx.Dialog):
             ctrl.Enable(enable)
         self.settings_enabled = enable
 
-    def ExportStyleSheet(self):
-        """Writes the style sheet data out to a style sheet
-        @return: whether style sheet was exported properly or not
-
-        """
-        if ed_glob.CONFIG['STYLES_DIR'] == ed_glob.CONFIG['SYS_STYLES_DIR']:
-            user_config = os.path.join(wx.GetHomeDir(), 
-                                        "." + ed_glob.PROG_NAME, 'styles')
-            if not os.path.exists(user_config):
-                try:
-                    os.mkdir(user_config)
-                except (OSError, IOError), msg:
-                    self.LOG("[style_editor][err] %s" % msg)
-                else:
-                    ed_glob.CONFIG['STYLES_DIR'] = user_config
-
-        dlg = wx.FileDialog(self, _("Export Style Sheet"),
-                            ed_glob.CONFIG['STYLES_DIR'],
-                            wildcard=_("Editra Style Sheet") + " (*.ess)|*.ess",
-                            style=wx.FD_SAVE | wx.OVERWRITE_PROMPT)
-        dlg.CenterOnParent()
-        result = dlg.ShowModal()
-
-        if result == wx.ID_OK:
-            sheet_path = dlg.GetPath()
-            if u'ess' != sheet_path.split(u'.')[-1]:
-                sheet_path += u".ess"
-            dlg.Destroy()
-
-            try:
-                writer = util.GetFileWriter(sheet_path)
-                writer.write(self.GenerateStyleSheet())
-                writer.close()
-            except (AttributeError, IOError), msg:
-                self.LOG('[style_editor][err] Failed to export style sheet')
-                self.LOG('[style_editor][sys error] %s' % msg)
-            else:
-                # Update Style Sheet Control
-                sheet = os.path.basename(sheet_path).split(u'.')[0]
-                ss_c = self.FindWindowById(ed_glob.ID_PREF_SYNTHEME)
-                ss_c.SetItems(util.GetResourceFiles(u'styles', get_all=True))
-                ss_c.SetStringSelection(sheet)
-                self.styles_orig = self.DuplicateStyleDict(self.styles_new)
-
-                if sheet_path.startswith(ed_glob.CONFIG['STYLES_DIR']) or \
-                   sheet_path.startswith(ed_glob.CONFIG['SYS_STYLES_DIR']):
-                    # Update editor windows to use new style sheet
-                    Profile_Set('SYNTHEME', sheet)
-                    for mainw in wx.GetApp().GetMainWindows():
-                        mainw.nb.UpdateTextControls()
-                        mainw.SetStatusText(_("Changed color scheme to %s") % \
-                                            sheet, ed_glob.SB_INFO)
-        return result
+##    def ExportStyleSheet(self):
+##        """Writes the style sheet data out to a style sheet
+##        @return: whether style sheet was exported properly or not
+##
+##        """
+##        if ed_glob.CONFIG['STYLES_DIR'] == ed_glob.CONFIG['SYS_STYLES_DIR']:
+##            user_config = os.path.join(wx.GetHomeDir(), 
+##                                        "." + ed_glob.PROG_NAME, 'styles')
+##            if not os.path.exists(user_config):
+##                try:
+##                    os.mkdir(user_config)
+##                except (OSError, IOError), msg:
+##                    self.LOG("[style_editor][err] %s" % msg)
+##                else:
+##                    ed_glob.CONFIG['STYLES_DIR'] = user_config
+##
+##        dlg = wx.FileDialog(self, _("Export Style Sheet"),
+##                            ed_glob.CONFIG['STYLES_DIR'],
+##                            wildcard=_("Editra Style Sheet") + " (*.ess)|*.ess",
+##                            style=wx.FD_SAVE | wx.OVERWRITE_PROMPT)
+##        dlg.CenterOnParent()
+##        result = dlg.ShowModal()
+##
+##        if result == wx.ID_OK:
+##            sheet_path = dlg.GetPath()
+##            if u'ess' != sheet_path.split(u'.')[-1]:
+##                sheet_path += u".ess"
+##            dlg.Destroy()
+##
+##            try:
+##                writer = util.GetFileWriter(sheet_path)
+##                writer.write(self.GenerateStyleSheet())
+##                writer.close()
+##            except (AttributeError, IOError), msg:
+##                self.LOG('[style_editor][err] Failed to export style sheet')
+##                self.LOG('[style_editor][sys error] %s' % msg)
+##            else:
+##                # Update Style Sheet Control
+##                sheet = os.path.basename(sheet_path).split(u'.')[0]
+##                ss_c = self.FindWindowById(ed_glob.ID_PREF_SYNTHEME)
+##                ss_c.SetItems(util.GetResourceFiles(u'styles', get_all=True))
+##                ss_c.SetStringSelection(sheet)
+##                self.styles_orig = self.DuplicateStyleDict(self.styles_new)
+##
+##                if sheet_path.startswith(ed_glob.CONFIG['STYLES_DIR']) or \
+##                   sheet_path.startswith(ed_glob.CONFIG['SYS_STYLES_DIR']):
+##                    # Update editor windows to use new style sheet
+##                    Profile_Set('SYNTHEME', sheet)
+##                    for mainw in wx.GetApp().GetMainWindows():
+##                        mainw.nb.UpdateTextControls()
+##                        mainw.SetStatusText(_("Changed color scheme to %s") % \
+##                                            sheet, ed_glob.SB_INFO)
+##        return result
 
     def GenerateStyleSheet(self):
         """Generates a style sheet from the dialogs style data
@@ -601,12 +610,14 @@ class StyleEditor(wx.Dialog):
         fname = fname.replace(u"/", u"_")
         if fname != u"makefile":
             try:
-                fname = glob.glob(ed_glob.CONFIG['TEST_DIR'] + fname + ".*")[0]
+                pattern = os.path.join(os.path.dirname(__file__), 'tests', fname) + ".*"
+                self.LOG(pattern)
+                fname = glob.glob(pattern)[0]
             except IndexError:
                 self.LOG('[style_editor][err] File %s Does not exist' % fname)
                 return False
         else:
-            fname = ed_glob.CONFIG['TEST_DIR'] + fname
+            fname = os.path.join(os.path.dirname(__file__), fname)
 
         if fname == '' or fname == None:
             return False
@@ -737,8 +748,9 @@ class ColourSetter(wx.Panel):
 
     def __PostEvent(self):
         """Notify the parent window of any value changes to the control"""
-        evt = ed_event.NotificationEvent(ed_event.edEVT_NOTIFY, self.GetId())
-        wx.PostEvent(self.GetParent(), evt)
+##        evt = ed_event.NotificationEvent(ed_event.edEVT_NOTIFY, self.GetId())
+##        wx.PostEvent(self.GetParent(), evt)
+        pass
 
     def _DoLayout(self):
         """Layout the controls"""

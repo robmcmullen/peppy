@@ -1,0 +1,149 @@
+default_style {
+		fore: #FFFFFF;
+		back: #000000;
+		face: %(primary)s;
+		size: %(size)d;
+}
+
+array_style {
+		fore: #EE8B02 bold;
+		face: %(secondary)s;
+}
+
+btick_style {
+		fore: #8959F6 bold;
+}
+
+calltip { 
+           fore: #FFE200;
+           back: #09026A;
+}
+
+char_style {
+		fore: #FF3AFF;
+}
+
+class_style {
+		fore: #2E8B57 bold;
+}
+
+class2_style {
+		fore: #2E8B57 bold;
+}
+
+ctrl_char {
+		fore: #FFFFFF;
+		back: #000000;
+		face: %(primary)s;
+}
+
+comment_style {
+		fore: #0033CC;
+		face: %(primary)s;
+}
+
+directive_style {
+		fore: #0000FF;
+		face: %(secondary)s;
+}
+
+dockey_style {
+		fore: #0000FF;
+}
+
+error_style {
+		fore: #DD0101;
+		face: %(secondary)s;
+}
+
+funct_style {
+		fore: #008B8B italic;
+}
+
+global_style {
+		fore: #007F7F bold;
+		face: %(secondary)s;
+}
+
+here_style {
+		fore: #CA61CA bold;
+		face: %(secondary)s;
+}
+
+ideol_style {
+		fore: #E0C0E0;
+		face: %(secondary)s;
+}
+
+keyword_style {
+		fore: #A52B2B bold;
+}
+
+keyword2_style {
+		fore: #2E8B57 bold;
+}
+
+keyword3_style {
+		fore: #008B8B bold;
+}
+
+keyword4_style {
+		fore: #9D2424;
+}
+
+line_num {
+		size: %(size3)d;
+}
+
+number_style {
+		fore: #DD0101;
+}
+
+number2_style {
+		fore: #DD0101 bold;
+}
+
+operator_style {
+		fore: #FFFFFF bold;
+}
+
+pre_style {
+		fore: #AB39F2 bold;
+}
+
+pre2_style {
+	 fore: #AB39F2 bold;
+                back: #666666
+}
+
+regex_style {
+		fore: #008B8B bold;
+}
+
+scalar_style {
+		fore: #AB37F2 bold;
+		face: %(secondary)s;
+}
+
+scalar2_style {
+		fore: #AB37F2;
+		face: %(secondary)s;
+}
+
+string_style {
+		fore: #FF3AFF bold;
+}
+
+stringeol_style {
+		fore: #000000 bold;
+		back: #EEC0EE;
+		face: %(secondary)s;
+		size: %(size)d eol;
+}
+
+unknown_style {
+		fore: #FFFFFF bold;
+		back: #DD0101 eol;
+		face: %(secondary)s;
+}
+

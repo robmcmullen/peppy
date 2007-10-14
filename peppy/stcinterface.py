@@ -226,8 +226,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                wx.stc.STC_EOL_LF: '\n',
                }
     
-    def __init__(self, parent, refstc=None, copy=None):
-        wx.stc.StyledTextCtrl.__init__(self, parent, -1, pos=(9000,9000))
+    def __init__(self, parent, refstc=None, copy=None, **kwargs):
+        wx.stc.StyledTextCtrl.__init__(self, parent, -1, pos=(9000,9000), **kwargs)
         self.ClearAll()
         
         if refstc is not None:
@@ -612,8 +612,8 @@ class PeppySTC(PeppyBaseSTC):
     """
     debuglevel=0
     
-    def __init__(self, parent, refstc=None, copy=None):
-        PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy)
+    def __init__(self, parent, refstc=None, copy=None, **kwargs):
+        PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy, **kwargs)
 
         self.Bind(wx.stc.EVT_STC_DO_DROP, self.OnDoDrop)
         self.Bind(wx.stc.EVT_STC_DRAG_OVER, self.OnDragOver)
