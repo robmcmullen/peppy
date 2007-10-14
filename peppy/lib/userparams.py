@@ -694,6 +694,7 @@ class GlobalPrefs(debugmixin):
     
     default={}
     params = {}
+    seen = {} # has the default_classprefs been seen for the class?
     convert_already_seen = {}
     
     user={}
@@ -735,6 +736,7 @@ class GlobalPrefs(debugmixin):
                 defs={}
                 params = {}
                 if hasattr(klass,'default_classprefs'):
+                    GlobalPrefs.seen[klass.__name__] = True
                     for p in klass.default_classprefs:
                         defs[p.keyword] = p.default
                         params[p.keyword] = p
@@ -809,7 +811,7 @@ class GlobalPrefs(debugmixin):
         for section, options in GlobalPrefs.user.iteritems():
             d[section] = {}
             
-            if section not in GlobalPrefs.params or section in GlobalPrefs.convert_already_seen or not GlobalPrefs.params[section]:
+            if section not in GlobalPrefs.params or section in GlobalPrefs.convert_already_seen or section not in GlobalPrefs.seen:
                 # Don't process values before the param definition for
                 # the class is loaded.  Copy the existing text values
                 # and defer the conversion till the next time
@@ -819,7 +821,7 @@ class GlobalPrefs(debugmixin):
                         dprint("haven't loaded class %s" % section)
                     elif section in GlobalPrefs.convert_already_seen:
                         dprint("already converted class %s" % section)
-                    elif not GlobalPrefs.params[section]:
+                    elif section not in GlobalPrefs.seen:
                         dprint("only defaults loaded, haven't loaded Params for class %s" % section)
                 d[section].update(options)
                 continue
