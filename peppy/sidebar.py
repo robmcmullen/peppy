@@ -29,6 +29,8 @@ class Sidebar(ClassPrefs, debugmixin):
     frame that is outside the purview of the major mode.  It is a
     constant regardless of which major mode is selected.
     """
+    debuglevel = 0
+    
     keyword = None
     caption = None
 
@@ -41,31 +43,15 @@ class Sidebar(ClassPrefs, debugmixin):
         )
 
     @classmethod
-    def getSidebarMap(cls):
-        # Only call this once.
-        if hasattr(Sidebar,'sidebarmap'):
-            return cls.sidebarmap
-        
-        cls.sidebarmap={}
-        
-        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        for ext in plugins:
-            for sidebar in ext.getSidebars():
-                #dprint("Registering frame sidebar %s" % sidebar.keyword)
-                cls.sidebarmap[sidebar.keyword]=sidebar
-        return cls.sidebarmap
-
-    @classmethod
     def getClasses(cls, frame, sidebarlist=[]):
-        #dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
+        cls.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
         classes = []
-        sidebarmap = cls.getSidebarMap()
-        for keyword in sidebarlist:
-            keyword = keyword.strip()
-            if keyword in sidebarmap:
-                #self.dprint("found %s" % keyword)
-                sidebar = sidebarmap[keyword]
-                classes.append(sidebar)
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        for plugin in plugins:
+            for sidebar in plugin.getSidebars():
+                if sidebar.keyword in sidebarlist:
+                    cls.dprint("found %s" % sidebar.keyword)
+                    classes.append(sidebar)
         return classes
 
     def __init__(self, frame):

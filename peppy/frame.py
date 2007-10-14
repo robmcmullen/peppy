@@ -282,7 +282,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         sidebar_list = self.classprefs.sidebars
         assert self.dprint(sidebar_list)
         if sidebar_list is not None:
-            sidebar_names = sidebar_list.split(',')
+            sidebar_names = [s.strip() for s in sidebar_list.split(',')]
             assert self.dprint("loading %s" % sidebar_names)
             sidebars = Sidebar.getClasses(self,sidebar_names)
             for sidebarcls in sidebars:
