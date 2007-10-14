@@ -59,8 +59,6 @@ class PythonReindentMixin(ReindentBase):
         bunch of heuristics based on the previous lines to determine
         the indention level of the current line.
         """
-        s = self.stc
-        
         # folding says this should be the current indention.  The
         # limitation of Scintilla's folding logic, though, is that
         # folding tells the indention position of the line as it is,
@@ -75,10 +73,10 @@ class PythonReindentMixin(ReindentBase):
         # python the 3rd line should be at fold level 4.  So, we're
         # forced to add a whole bunch of additional logic to figure
         # out which indention level should be used.
-        fold = s.GetFoldColumn(linenum)
+        fold = self.GetFoldColumn(linenum)
 
         # get indention of previous (non-blank) line
-        prev, prevline = s.GetPrevLineIndentation(linenum)
+        prev, prevline = self.GetPrevLineIndentation(linenum)
         if fold>=prev:
             # OK, line is indented with respect to the previous line,
             # so we need to honor the fact that it is indented.
@@ -86,32 +84,32 @@ class PythonReindentMixin(ReindentBase):
             # little.
 
             # FIXME: this doesn't handle comments
-            line = s.GetLine(prevline).rstrip()
+            line = self.GetLine(prevline).rstrip()
             print "previous line %d = %s" % (prevline, line)
             if line.endswith(':'):
-                fold = prev + s.GetIndent()
+                fold = prev + self.GetIndent()
             else:
                 fold = prev
-        elif fold > prev - s.GetIndent():
+        elif fold > prev - self.GetIndent():
             # line is partially indented, but not at the usual indent
             # level.  We force this to be indented to match the indent
             # level
             fold = prev
 
         # get line without indention
-        line = s.GetLine(linenum)[before-linestart:]
+        line = self.GetLine(linenum)[before-linestart:]
         dprint(line)
 
         # the keywords elif or else should be unindented if the
         # previous line is at the same level
-        style = s.GetStyleAt(before)
+        style = self.GetStyleAt(before)
         dprint("linenum=%d cursor=%d before=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, before, style, ind, fold, repr(line)))
         if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
             dprint("prev = %s" % prev)
             if prev == ind:
-                fold-=s.GetIndent()
+                fold-=self.GetIndent()
 
-        return s.GetIndentString(fold)
+        return self.GetIndentString(fold)
 
 
 class ElectricColon(BufferModificationAction):
@@ -127,7 +125,7 @@ class ElectricColon(BufferModificationAction):
         # do it manually
         linestart = s.PositionFromLine(s.GetCurrentLine())
         s.Colourise(linestart, s.GetSelectionEnd())
-        self.mode.reindent()
+        s.reindentLine()
         pass
         
 
@@ -135,12 +133,10 @@ class PythonElectricReturnMixin(debugmixin):
     debuglevel = 0
     
     def findIndent(self, linenum):
-        s=self.stc
-
-        linestart = s.PositionFromLine(linenum)
-        lineend = s.GetLineEndPosition(linenum)
-        line = s.GetTextRange(linestart, lineend)
-        ind = s.GetLineIndentation(linenum)
+        linestart = self.PositionFromLine(linenum)
+        lineend = self.GetLineEndPosition(linenum)
+        line = self.GetTextRange(linestart, lineend)
+        ind = self.GetLineIndentation(linenum)
         assert self.dprint("line (%d-%d) = %s" % (linestart, lineend, repr(line)))
         xtra = 0
         colon = ord(':')
@@ -148,16 +144,16 @@ class PythonElectricReturnMixin(debugmixin):
         if (line.find(':')>-1):
             assert self.dprint("found a ':'")
             for i in xrange(linestart, lineend):
-                styl = s.GetStyleAt(i)
-                assert self.dprint("pos=%d char=%s style=%d" % (i, repr(s.GetCharAt(i)), styl))
+                styl = self.GetStyleAt(i)
+                assert self.dprint("pos=%d char=%s style=%d" % (i, repr(self.GetCharAt(i)), styl))
                 if not xtra:
-                    if (styl==10) and (s.GetCharAt(i) == colon):
+                    if (styl==10) and (self.GetCharAt(i) == colon):
                         xtra = 1
                 elif (styl == 1):
                     assert self.dprint("in comment")
                     #it is a comment, ignore the character
                     pass
-                elif (styl == 0) and (s.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
+                elif (styl == 0) and (self.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
                     #is not a comment, but is the space before a comment
                     #or the end of a line, ignore the character
                     pass
@@ -181,12 +177,12 @@ class PythonElectricReturnMixin(debugmixin):
                     if found: found = min(found)
                     else:     found = -1
                     if (found > -1) and\
-                    (s.GetStyleAt(s.GetLineEndPosition(linenum)-len(line)+found)==5) and\
-                    (s.GetLineIndentation(linenum) == found):
-                        ind = s.GetLineIndentation(linenum)
+                    (self.GetStyleAt(self.GetLineEndPosition(linenum)-len(line)+found)==5) and\
+                    (self.GetLineIndentation(linenum) == found):
+                        ind = self.GetLineIndentation(linenum)
                         break
                     linenum -= 1
-                    line = s.GetLine(linenum)
+                    line = self.GetLine(linenum)
         #if we were to do indentation for ()[]{}, it would be here
         if not xtra:
             #yep, right here.
@@ -203,7 +199,7 @@ class PythonElectricReturnMixin(debugmixin):
                     start = 0
                     while a > -1:
                         start += a+1
-                        if s.GetStyleAt(start+linestart-1)==10:
+                        if self.GetStyleAt(start+linestart-1)==10:
                             seq.append((start, i))
                         a = line[start:].find(i)
                 seq.sort()
@@ -241,17 +237,21 @@ class PythonElectricReturnMixin(debugmixin):
             if (ls[:6] == 'return') or (ls[:4] == 'pass') or (ls[:5] == 'break') or (ls[:8] == 'continue'):
                 xtra = -1
 
-        dprint("indent = %d" % int(ind+xtra*s.GetIndent()))
-        return max(ind+xtra*s.GetIndent(), 0)
+        dprint("indent = %d" % int(ind+xtra*self.GetIndent()))
+        return max(ind+xtra*self.GetIndent(), 0)
 
 
-class PythonMode(PythonElectricReturnMixin, PythonReindentMixin,
-                 JobControlMixin, FundamentalMode):
+class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin, FundamentalSTC):
+    start_line_comment = "##"
+    
+    pass
+
+class PythonMode(JobControlMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
     regex="\.(py|pyx)$"
 
-    start_line_comment = "##"
+    stc_viewer_class = PythonSTC
 
     default_classprefs = (
         PathParam('interpreter_exe', 'c:/Python25/python.exe'),

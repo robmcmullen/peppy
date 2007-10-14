@@ -40,8 +40,7 @@ class CommentRegion(BufferModificationAction):
     key_bindings = {'emacs': 'C-C C-C',}
 
     def action(self, index=-1, multiplier=1):
-        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
-            self.mode.comment(multiplier != 4)
+        self.mode.stc.commentRegion(multiplier != 4)
 
 class UncommentRegion(BufferModificationAction):
     alias = _("uncomment-region")
@@ -49,8 +48,7 @@ class UncommentRegion(BufferModificationAction):
     tooltip = _("Uncomment a line or region")
 
     def action(self, index=-1, multiplier=1):
-        if hasattr(self.mode, 'comment') and self.mode.comment is not None:
-            self.mode.comment(False)
+        self.mode.stc.commentRegion(False)
 
 class Tabify(LineOrRegionMutateAction):
     alias = _("tabify")
@@ -144,7 +142,7 @@ class Reindent(BufferModificationAction):
 
         # save cursor information so the cursor can be maintained at
         # the same relative location in the text after the indention
-        pos = self.mode.reindent()
+        pos = s.reindentLine()
         s.GotoPos(pos)
 
 

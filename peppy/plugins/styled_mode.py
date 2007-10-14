@@ -13,7 +13,7 @@ from peppy.stcinterface import *
 
 from peppy.editra import *
 
-class PeppyEditraSTC(PeppySTC, ed_style.StyleMgr):
+class PeppyEditraSTC(FundamentalSTC, ed_style.StyleMgr):
     def __init__(self, parent, refstc=None):
         PeppySTC.__init__(self, parent, refstc)
         ed_style.StyleMgr.__init__(self, EditraStyledMode.getStyleFile())
@@ -86,7 +86,7 @@ class PeppyEditraSTC(PeppySTC, ed_style.StyleMgr):
         # Set Extra Properties
         self.SetProperties(props)
         # Set Comment Pattern
-        self._comment = comment
+        self.setCommentDelimiters(*comment)
         dprint("GetLexer = %d" % self.GetLexer())
         return True
 

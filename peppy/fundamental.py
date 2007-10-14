@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os, shutil, time
+import os, shutil, time, new
 
 import wx
 import wx.stc
@@ -12,7 +12,7 @@ from peppy.major import *
 import peppy.boa as boa
 
 class BraceHighlightMixin(object):
-    """Brace highlighting mixin for code modes.
+    """Brace highlighting mixin for STC
 
     Highlight matching braces or flag mismatched braces.  This is
     called during the EVT_STC_UPDATEUI event handler.
@@ -22,17 +22,15 @@ class BraceHighlightMixin(object):
     the Major Mode, controllable by a setting.
     """
     def braceHighlight(self):
-        s = self.stc
-
         # check for matching braces
         braceAtCaret = -1
         braceOpposite = -1
         charBefore = None
-        caretPos = s.GetCurrentPos()
+        caretPos = self.GetCurrentPos()
 
         if caretPos > 0:
-            charBefore = s.GetCharAt(caretPos - 1)
-            styleBefore = s.GetStyleAt(caretPos - 1)
+            charBefore = self.GetCharAt(caretPos - 1)
+            styleBefore = self.GetStyleAt(caretPos - 1)
 
         # check before
         if charBefore and chr(charBefore) in "[]{}()" and styleBefore == wx.stc.STC_P_OPERATOR:
@@ -40,23 +38,23 @@ class BraceHighlightMixin(object):
 
         # check after
         if braceAtCaret < 0:
-            charAfter = s.GetCharAt(caretPos)
-            styleAfter = s.GetStyleAt(caretPos)
+            charAfter = self.GetCharAt(caretPos)
+            styleAfter = self.GetStyleAt(caretPos)
 
             if charAfter and chr(charAfter) in "[]{}()" and styleAfter == wx.stc.STC_P_OPERATOR:
                 braceAtCaret = caretPos
 
         if braceAtCaret >= 0:
-            braceOpposite = s.BraceMatch(braceAtCaret)
+            braceOpposite = self.BraceMatch(braceAtCaret)
 
         if braceAtCaret != -1  and braceOpposite == -1:
-            s.BraceBadLight(braceAtCaret)
+            self.BraceBadLight(braceAtCaret)
         else:
-            s.BraceHighlight(braceAtCaret, braceOpposite)
+            self.BraceHighlight(braceAtCaret, braceOpposite)
         
 
 
-class StandardReturnMixin(debugmixin):
+class StandardReturnMixin(object):
     def findIndent(self, linenum):
         """Find proper indention of next line given a line number.
 
@@ -64,63 +62,61 @@ class StandardReturnMixin(debugmixin):
         current line, figure out what the indention should be for the
         next line.
         """
-        return self.stc.GetLineIndentation(linenum)
+        return self.GetLineIndentation(linenum)
         
     def electricReturn(self):
         """Add a newline and indent to the proper tab level.
 
         Indent to the level of the line above.
         """
-        s = self.stc
-        linesep = s.getLinesep()
+        linesep = self.getLinesep()
 
         # reindent current line (if necessary), then process the return
-        pos = self.reindent()
+        pos = self.reindentLine()
         
-        linenum = s.GetCurrentLine()
-        #pos = s.GetCurrentPos()
-        col = s.GetColumn(pos)
-        linestart = s.PositionFromLine(linenum)
-        line = s.GetLine(linenum)[:pos-linestart]
+        linenum = self.GetCurrentLine()
+        #pos = self.GetCurrentPos()
+        col = self.GetColumn(pos)
+        linestart = self.PositionFromLine(linenum)
+        line = self.GetLine(linenum)[:pos-linestart]
     
         #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)
+        ind = self.GetLineIndentation(linenum)
 
         dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
 
-        s.SetTargetStart(pos)
-        s.SetTargetEnd(pos)
+        self.SetTargetStart(pos)
+        self.SetTargetEnd(pos)
         if col <= ind:
-            newline = linesep+s.GetIndentString(col)
+            newline = linesep+self.GetIndentString(col)
         elif not pos:
             newline = linesep
         else:
             ind = self.findIndent(linenum)
-            newline = linesep+s.GetIndentString(ind)
-        s.ReplaceTarget(newline)
-        s.GotoPos(pos + len(newline))
+            newline = linesep+self.GetIndentString(ind)
+        self.ReplaceTarget(newline)
+        self.GotoPos(pos + len(newline))
 
 
-class ReindentBase(debugmixin):
-    def reindent(self, linenum=None):
+class ReindentBase(object):
+    def reindentLine(self, linenum=None):
         """Reindent the specified line to the correct level.
 
         Given a line, indent to the previous line
         """
-        s = self.stc
         if linenum is None:
-            linenum = s.GetCurrentLine()
+            linenum = self.GetCurrentLine()
         if linenum == 0:
             # first line is always indented correctly
-            return s.GetCurrentPos()
+            return self.GetCurrentPos()
         
-        linestart = s.PositionFromLine(linenum)
+        linestart = self.PositionFromLine(linenum)
 
         # actual indention of current line
-        indcol = s.GetLineIndentation(linenum) # columns
-        pos = s.GetCurrentPos()
-        indpos = s.GetLineIndentPosition(linenum) # absolute character position
-        col = s.GetColumn(pos)
+        indcol = self.GetLineIndentation(linenum) # columns
+        pos = self.GetCurrentPos()
+        indpos = self.GetLineIndentPosition(linenum) # absolute character position
+        col = self.GetColumn(pos)
         dprint("linestart=%d pos=%d indpos=%d col=%d indcol=%d" % (linestart, pos, indpos, col, indcol))
 
         indstr = self.getReindentString(linenum, linestart, pos, indpos, col, indcol)
@@ -129,14 +125,14 @@ class ReindentBase(debugmixin):
         
         # the target to be replaced is the leading indention of the
         # current line
-        s.SetTargetStart(linestart)
-        s.SetTargetEnd(indpos)
-        s.ReplaceTarget(indstr)
+        self.SetTargetStart(linestart)
+        self.SetTargetEnd(indpos)
+        self.ReplaceTarget(indstr)
 
         # recalculate cursor position, because it may have moved if it
         # was within the target
-        after = s.GetLineIndentPosition(linenum)
-        dprint("after: indent=%d cursor=%d" % (after, s.GetCurrentPos()))
+        after = self.GetLineIndentPosition(linenum)
+        dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
         if pos < linestart:
             return pos
         newpos = pos - indpos + after
@@ -154,10 +150,8 @@ class ReindentBase(debugmixin):
 
 class StandardReindentMixin(ReindentBase):
     def getReindentString(self, linenum, linestart, pos, indpos, col, indcol):
-        s = self.stc
-        
         # look at indention of previous line
-        prevind, prevline = s.GetPrevLineIndentation(linenum)
+        prevind, prevline = self.GetPrevLineIndentation(linenum)
         if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
             # if there's blank lines before this and the previous
             # non-blank line is indented less than this one, ignore
@@ -166,35 +160,97 @@ class StandardReindentMixin(ReindentBase):
 
         # previous line is not blank, so indent line to previous
         # line's level
-        return s.GetIndentString(prevind)
+        return self.GetIndentString(prevind)
 
 
-class FoldingReindentMixin(debugmixin):
-    def reindent(self, linenum=None):
+class FoldingReindentMixin(object):
+    def reindentLine(self, linenum=None):
         """Reindent the specified line to the correct level.
 
         Given a line, use Scintilla's built-in folding to determine
         the indention level of the current line.
         """
-        s = self.stc
         if linenum is None:
-            linenum = s.GetCurrentLine()
-        linestart = s.PositionFromLine(linenum)
+            linenum = self.GetCurrentLine()
+        linestart = self.PositionFromLine(linenum)
 
         # actual indention of current line
-        ind = s.GetLineIndentation(linenum) # columns
-        pos = s.GetLineIndentPosition(linenum) # absolute character position
+        ind = self.GetLineIndentation(linenum) # columns
+        pos = self.GetLineIndentPosition(linenum) # absolute character position
 
         # folding says this should be the current indention
-        fold = s.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        fold = self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
         dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
-        s.SetTargetStart(linestart)
-        s.SetTargetEnd(pos)
-        s.ReplaceTarget(s.GetIndentString(fold))
+        self.SetTargetStart(linestart)
+        self.SetTargetEnd(pos)
+        self.ReplaceTarget(self.GetIndentString(fold))
+
+class StandardCommentMixin(object):
+    def setCommentDelimiters(self, start='', end=''):
+        """Set instance-specific comment characters
+        
+        If the instance uses different comment characters that the class
+        attributes, set the instance attributes here which will override
+        the class attributes.
+        """
+        self.start_line_comment = start
+        self.end_line_comment = end
+        
+    def commentRegion(self, add=True):
+        """Comment or uncomment a region.
+
+        @param add: True to add comments, False to remove them
+        """
+        eol_len = len(self.getLinesep())
+        if add:
+            func = self.addLinePrefixAndSuffix
+        else:
+            func = self.removeLinePrefixAndSuffix
+        
+        self.BeginUndoAction()
+        line, lineend = self.GetLineRegion()
+        assert self.dprint("lines: %d - %d" % (line, lineend))
+        try:
+            selstart, selend = self.GetSelection()
+            assert self.dprint("selection: %d - %d" % (selstart, selend))
+
+            start = selstart
+            end = self.GetLineEndPosition(line)
+            while line <= lineend:
+                start = func(start, end, self.start_line_comment, self.end_line_comment)
+                line += 1
+                end = self.GetLineEndPosition(line)
+            self.SetSelection(selstart, start - eol_len)
+        finally:
+            self.EndUndoAction()
+    
+class GenericFoldHierarchyMixin(object):
+    def getFoldHierarchy(self):
+        """Get the fold hierarchy using Stani's fold explorer algorithm.
+        """
+        # Turn this into a threaded operation if it takes too long
+        t = time.time()
+        self.Colourise(0, self.GetTextLength())
+        dprint("Finished colourise: %0.5f" % (time.time() - t))
+        self.computeFoldHierarchy()
+        
+        # FIXME: Note that different views of the same buffer *using the
+        # same major mode* will have the same fold hierarchy.  This should
+        # be exploited, but currently it isn't.
+        return self.fold_explorer_root
 
 
-class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
-                      StandardReindentMixin, MajorMode):
+class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
+                    StandardReindentMixin, StandardCommentMixin,
+                    GenericFoldHierarchyMixin, PeppySTC):
+    
+    start_line_comment = ''
+    end_line_comment = ''
+    
+    pass
+
+
+class FundamentalMode(MajorMode):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
@@ -203,8 +259,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
     """
     keyword = 'Fundamental'
 
-    start_line_comment = ''
-    end_line_comment = ''
+    # STC class used as the viewer (note: differs from stc_class, which is
+    # the STC class used as the storage backend)
+    stc_viewer_class = FundamentalSTC
 
     default_classprefs = (
         BoolParam('use_tab_characters', False,
@@ -281,11 +338,11 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         """
         start = time.time()
         dprint("starting createSTC at %0.5fs" % start)
-        self.stc=PeppySTC(parent,refstc=self.buffer.stc)
+        self.stc=self.stc_viewer_class(parent,refstc=self.buffer.stc)
         dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         self.applySettings()
         dprint("applySettings done in %0.5fs" % (time.time() - start))
-
+    
     def applySettings(self):
         start = time.time()
         dprint("starting applySettings at %0.5fs" % start)
@@ -457,47 +514,4 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         return True
 
     def OnUpdateUIHook(self, evt):
-        self.braceHighlight()
-
-    def getFoldHierarchy(self):
-        """Get the fold hierarchy using Stani's fold explorer algorithm.
-        """
-        # Turn this into a threaded operation if it takes too long
-        t = time.time()
-        self.stc.Colourise(0, self.stc.GetTextLength())
-        dprint("Finished colourise: %0.5f" % (time.time() - t))
-        self.stc.computeFoldHierarchy()
-        
-        # FIXME: Note that different views of the same buffer *using the
-        # same major mode* will have the same fold hierarchy.  This should
-        # be exploited, but currently it isn't.
-        return self.stc.fold_explorer_root
-
-    def comment(self, add=True):
-        """Comment or uncomment a region.
-
-        @param add: True to add comments, False to remove them
-        """
-        s = self.stc
-        eol_len = len(s.getLinesep())
-        if add:
-            func = s.addLinePrefixAndSuffix
-        else:
-            func = s.removeLinePrefixAndSuffix
-        
-        s.BeginUndoAction()
-        line, lineend = s.GetLineRegion()
-        assert self.dprint("lines: %d - %d" % (line, lineend))
-        try:
-            selstart, selend = s.GetSelection()
-            assert self.dprint("selection: %d - %d" % (selstart, selend))
-
-            start = selstart
-            end = s.GetLineEndPosition(line)
-            while line <= lineend:
-                start = func(start, end, self.start_line_comment, self.end_line_comment)
-                line += 1
-                end = s.GetLineEndPosition(line)
-            s.SetSelection(selstart, start - eol_len)
-        finally:
-            s.EndUndoAction()
+        self.stc.braceHighlight()

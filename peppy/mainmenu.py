@@ -461,7 +461,7 @@ class ElectricReturn(BufferModificationAction):
     key_bindings = {'default': 'RET',}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.electricReturn()
+        self.mode.stc.electricReturn()
 
 
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):

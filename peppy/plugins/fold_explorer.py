@@ -34,7 +34,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
 
     @classmethod
     def worksWithMajorMode(self, mode):
-        return hasattr(mode, 'getFoldHierarchy')
+        return hasattr(mode.stc, 'getFoldHierarchy')
 
     def __init__(self, major, parent):
         wx.TreeCtrl.__init__(self, parent, -1, style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
@@ -47,7 +47,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
         
     def update(self, event=None):
         """Update tree with the source code of the editor"""
-        hierarchy = self.major.getFoldHierarchy()
+        hierarchy = self.major.stc.getFoldHierarchy()
         dprint(hierarchy)
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
