@@ -1,0 +1,9 @@
+[Core]
+Name = Editra Style Editor
+Module = editra_styleeditor
+
+[Documentation]
+Author = Cody Precord
+Version = 0.1
+Website = http://www.editra.org
+Description = User interface to change fonts, colors, and styles of the STC editor
