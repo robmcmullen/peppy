@@ -247,25 +247,11 @@ class EditraStyledMode(FundamentalMode):
     )
     
     @classmethod
-    def verifyFilename(cls, filename):
-        """Hook to verify filename matches the default regular
-        expression for this mode.
-
-        @param filename: the pathname part of the url (i.e. not the
-        protocol, port number, query string, or anything else)
-
-        @returns: True if the filename matches
-        """
-        name, ext = os.path.splitext(filename)
-        if ext.startswith('.'):
-            ext = ext[1:]
-            dprint("ext = %s, filename = %s" % (ext, filename))
-            extreg = syntax.ExtensionRegister()
-            dprint(extreg.GetAllExtensions())
-            stc_type = extreg.FileTypeFromExt(ext)
-            dprint(stc_type)
-            if stc_type != synglob.LANG_TXT:
-                return ext
+    def verifyEditraType(cls, ext, file_type):
+        dprint("ext=%s file_type=%s" % (ext, file_type))
+        if file_type is not None:
+            dprint("FOUND %s!!!!!" % file_type)
+            return True
         return False
     
     @classmethod
@@ -305,7 +291,8 @@ class EditraStyledMode(FundamentalMode):
         self.applyDefaultSettings()
         #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
-        self.editra_ext = self.verifyFilename(self.buffer.url.path)
+        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
+        self.editra_ext = ext
         self.stc.ConfigureLexer(self.editra_ext)
         dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True

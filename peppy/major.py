@@ -42,6 +42,8 @@ from peppy.debug import *
 from peppy.minor import *
 from peppy.iofilter import *
 from peppy.yapsy.plugins import *
+from peppy.editra import *
+
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.iconstorage import *
@@ -157,6 +159,18 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
             match=re.search(cls.regex, filename)
             if match:
                 return True
+        return False
+
+    @classmethod
+    def verifyEditraType(cls, ext, file_type):
+        """Hook to verify the mode can handle the specified Editra type.
+
+        @param ext: filename extension without the '.', or an empty string
+        @param file_type: Editra file type string, or None if not recognized
+        by Editra
+
+        @returns: True if the filename matches
+        """
         return False
 
     @classmethod
@@ -800,8 +814,11 @@ class MajorModeMatcherDriver(debugmixin):
         if modes:
             return modes[0]
 
-        # ok, it's not a specific protocol.  Try to match a url pattern
+        # ok, it's not a specific protocol.  Try to match a url pattern and
+        # generate a list of possible modes
         modes = cls.scanURL(plugins, url)
+        
+        #
         fh = url.getReader(magic_size)
         header = fh.read(magic_size)
 
@@ -896,6 +913,21 @@ class MajorModeMatcherDriver(debugmixin):
                 if mode.verifyProtocol(url):
                     modes.append(mode)
         return modes
+    
+    @classmethod
+    def getEditraType(cls, pathname):
+        # Also scan Editra extensions
+        name, ext = os.path.splitext(pathname)
+        if ext.startswith('.'):
+            ext = ext[1:]
+            dprint("ext = %s, filename = %s" % (ext, pathname))
+            extreg = syntax.ExtensionRegister()
+            dprint(extreg.GetAllExtensions())
+            if ext in extreg.GetAllExtensions():
+                editra_type = extreg.FileTypeFromExt(ext)
+                dprint(editra_type)
+                return ext, editra_type
+        return ext, None
 
     @classmethod
     def scanURL(cls, plugins, url):
@@ -910,10 +942,15 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         modes = []
+        
+        ext, editra_type = cls.getEditraType(url.path)
         for plugin in plugins:
             for mode in plugin.getMajorModes():
                 if mode.verifyFilename(url.path):
                     modes.append(mode)
+                if mode.verifyEditraType(ext, editra_type):
+                    modes.append(mode)
+        
         return modes
 
     @classmethod
