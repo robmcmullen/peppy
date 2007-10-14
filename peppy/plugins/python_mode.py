@@ -14,6 +14,7 @@ from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.major import *
 from peppy.fundamental import *
+from peppy.actions.base import *
 
 _sample_file='''\
 #!/usr/bin/env python

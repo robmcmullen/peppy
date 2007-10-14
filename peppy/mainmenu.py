@@ -9,9 +9,15 @@ import os, glob
 import wx
 
 from peppy.yapsy.plugins import *
+from peppy.actions.base import *
 from peppy.actions.minibuffer import *
+from peppy.actions.gotoline import *
+from peppy.actions.pypefind import *
+
+from peppy.lib.processmanager import *
 
 from peppy.major import *
+from peppy.fundamental import *
 from peppy.menu import *
 from peppy.buffers import *
 from peppy.frame import *
@@ -274,6 +280,53 @@ class SaveAs(SelectAction):
 
             dlg.Destroy()
 
+class OpenFundamental(SelectAction):
+    name = _("&Open Sample Text")
+    tooltip = _("Open some sample text")
+    icon = wx.ART_FILE_OPEN
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.frame.open("about:demo.txt")
+
+class WordWrap(ToggleAction):
+    alias = _("word-wrap")
+    name = _("&Word Wrap")
+    tooltip = _("Toggle word wrap in this view")
+    icon = wx.ART_TOOLBAR
+
+    def isChecked(self):
+        return self.mode.classprefs.word_wrap
+    
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
+    
+class LineNumbers(ToggleAction):
+    alias = _("line-numbers")
+    name = _("&Line Numbers")
+    tooltip = _("Toggle line numbers in this view")
+    icon = wx.ART_TOOLBAR
+
+    def isChecked(self):
+        return self.mode.classprefs.line_numbers
+    
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
+
+class Folding(ToggleAction):
+    alias = _("code-folding")
+    name = _("&Folding")
+    tooltip = _("Toggle folding in this view")
+    icon = wx.ART_TOOLBAR
+
+    def isChecked(self):
+        return self.mode.classprefs.folding
+    
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.mode.setFolding(not self.mode.classprefs.folding)
 
 class RunScript(SelectAction):
     alias = _("run-script")
@@ -389,6 +442,49 @@ class Paste(BufferModificationAction):
     def action(self, index=-1, multiplier=1):
         dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Paste()
+
+class PasteAtColumn(Paste):
+    alias = _("paste-at-column")
+    name = _("Paste at Column")
+    tooltip = _("Paste selection indented to the cursor's column")
+    icon = "icons/paste_plain.png"
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.stc.PasteAtColumn()
+
+
+class ElectricReturn(BufferModificationAction):
+    alias = _("electric-return")
+    name = _("Electric Return")
+    tooltip = _("Indent the next line following a return")
+    icon = 'icons/text_indent_rob.png'
+    key_bindings = {'default': 'RET',}
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.electricReturn()
+
+
+class EOLModeSelect(BufferBusyActionMixin, RadioAction):
+    name="Line Endings"
+    inline=False
+    tooltip="Switch line endings"
+
+    items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
+    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
+
+    def saveIndex(self,index):
+        assert self.dprint("index=%d" % index)
+
+    def getIndex(self):
+        eol = self.mode.stc.GetEOLMode()
+        return EOLModeSelect.modes.index(eol)
+                                           
+    def getItems(self):
+        return EOLModeSelect.items
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
+        Publisher().sendMessage('resetStatusBar')
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
@@ -548,89 +644,103 @@ class MainMenu(IPeppyPlugin):
     """
 
     def getMajorModes(self):
-        yield BlankMode
+        yield FundamentalMode
     
-    default_menu=((None,Menu(_("File")).first()),
-                  (_("File"),Menu(_("New")).first()),
-                  ((_("File"),_("New")),MenuItem(NewTab).first()),
-                  ((_("File"),_("New")),MenuItem(New).first()),
-                  (_("File"),Menu(_("Open")).after(_("New"))),
-                  ((_("File"),_("Open")),MenuItem(OpenFileGUI).first()),
-                  ((_("File"),_("Open")),MenuItem(OpenFile).first()),
-                  ((_("File"),_("Open")),MenuItem(OpenURL).first()),
-                  (_("File"),Separator(_("opensep")).after(_("Open"))),
-                  (_("File"),MenuItem(Save).after(_("opensep"))),
-                  (_("File"),MenuItem(SaveAs).after(_("opensep"))),
-                  (_("File"),MenuItem(Close).after(_("opensep"))),
-                  (_("File"),Separator(_("closesep")).after(_("opensep"))),
-                  (_("File"),MenuItem(Revert).after(_("opensep"))),
-                  (_("File"),Separator(_("quit")).after(_("opensep"))),
-                  (_("File"),MenuItem(Exit).last()),
-                  (None,Menu(_("Edit")).after(_("File")).first()),
-                  (_("Edit"),MenuItem(Undo).first()),
-                  (_("Edit"),MenuItem(Redo).first()),
-                  (_("Edit"),Separator(_("cut")).first()),
-                  (_("Edit"),MenuItem(Cut).first()),
-                  (_("Edit"),MenuItem(Copy).first()),
-                  (_("Edit"),MenuItem(Paste).first()),
-                  (_("Edit"),Separator(_("paste")).first()),
-                  (_("Edit"),Separator(_("lastsep")).last()),
-                  (None,Menu(_("Format")).after(_("Edit")).first()),
-                  (None,Menu(_("View")).before(_("Major Mode"))),
-                  (_("View"),MenuItem(MajorModeSelect).first()),
-                  (_("View"),MenuItem(MinorModeShow).first()),
-                  (_("View"),Separator(_("modes")).first()),
-                  (_("View"),MenuItem(SidebarShow).first()),
-                  (_("View"),Separator(_("sidebars")).first()),
-                  (_("View"),MenuItem(ToolbarShow).first()),
-                  (_("View"),Separator(_("menusep"))),
-                  (_("View"),Separator(_("end")).last()),
-                  (None,Menu(_("Tools")).after(_("View")).before(_("Major Mode"))),
-                  (_("Tools"),MenuItem(RunScript).first()),
-                  (_("Tools"),MenuItem(RunScriptWithArgs).first()),
-                  (_("Tools"),MenuItem(StopScript).first()),
-                  (_("Tools"),Separator(_("run")).first()),
-                  (_("Tools"),Separator(_("end")).last()),
-                  (None,Menu(_("Major Mode")).hide()),
-                  (None,Menu(_("Minor Mode")).hide().after(_("Major Mode"))),
-                  (None,Menu(_("Buffers")).last()),
-                  (_("Buffers"),MenuItem(BufferList).first()),
-                  (None,Menu(_("Window")).last().after(_("Buffers"))),
-                  (_("Window"),Separator(_("tabs")).first()),
-                  (_("Window"),MenuItem(NewFrame).first()),
-                  (_("Window"),MenuItem(DeleteFrame).first()),
-                  (_("Window"),Separator(_("lastsep")).first()),
-                  (_("Window"),MenuItem(FrameList).last()),
-                  (None,Menu(_("&Help")).last().after(_("Window"))),
-                  (_("&Help"),Menu(_("&Tests"))),
-                  (_("&Help"),Menu(_("&Samples"))),
+    default_menu=((None,None,Menu(_("File")).first()),
+                  (None,_("File"),Menu(_("New")).first()),
+                  (None,(_("File"),_("New")),MenuItem(NewTab).first()),
+                  (None,(_("File"),_("New")),MenuItem(New).first()),
+                  (None,_("File"),Menu(_("Open")).after(_("New"))),
+                  (None,(_("File"),_("Open")),MenuItem(OpenFileGUI).first()),
+                  (None,(_("File"),_("Open")),MenuItem(OpenFile).first()),
+                  (None,(_("File"),_("Open")),MenuItem(OpenURL).first()),
+                  (None,_("File"),Separator(_("opensep")).after(_("Open"))),
+                  (None,_("File"),MenuItem(Save).after(_("opensep"))),
+                  (None,_("File"),MenuItem(SaveAs).after(_("opensep"))),
+                  (None,_("File"),MenuItem(Close).after(_("opensep"))),
+                  (None,_("File"),Separator(_("closesep")).after(_("opensep"))),
+                  (None,_("File"),MenuItem(Revert).after(_("opensep"))),
+                  (None,_("File"),Separator(_("quit")).after(_("opensep"))),
+                  (None,_("File"),MenuItem(Exit).last()),
+                  (None,None,Menu(_("Edit")).after(_("File")).first()),
+                  (None,_("Edit"),MenuItem(Undo).first()),
+                  (None,_("Edit"),MenuItem(Redo).first()),
+                  (None,_("Edit"),Separator(_("cut")).first()),
+                  (None,_("Edit"),MenuItem(Cut).first()),
+                  (None,_("Edit"),MenuItem(Copy).first()),
+                  (None,_("Edit"),MenuItem(Paste).first()),
+                  (None,_("Edit"),Separator(_("paste")).first()),
+                  (None,_("Edit"),Separator(_("lastsep")).last()),
+                  (None,None,Menu(_("Format")).after(_("Edit")).first()),
+                  (None,None,Menu(_("View")).before(_("Major Mode"))),
+                  (None,_("View"),MenuItem(MajorModeSelect).first()),
+                  (None,_("View"),MenuItem(MinorModeShow).first()),
+                  (None,_("View"),Separator(_("modes")).first()),
+                  (None,_("View"),MenuItem(SidebarShow).first()),
+                  (None,_("View"),Separator(_("sidebars")).first()),
+                  (None,_("View"),MenuItem(ToolbarShow).first()),
+                  (None,_("View"),Separator(_("menusep"))),
+                  (None,_("View"),Separator(_("end")).last()),
+                  (None,None,Menu(_("Tools")).after(_("View")).before(_("Major Mode"))),
+                  (None,_("Tools"),MenuItem(RunScript).first()),
+                  (None,_("Tools"),MenuItem(RunScriptWithArgs).first()),
+                  (None,_("Tools"),MenuItem(StopScript).first()),
+                  (None,_("Tools"),Separator(_("run")).first()),
+                  (None,_("Tools"),Separator(_("end")).last()),
+                  (None,None,Menu(_("Major Mode")).hide()),
+                  (None,None,Menu(_("Minor Mode")).hide().after(_("Major Mode"))),
+                  (None,None,Menu(_("Buffers")).last()),
+                  (None,_("Buffers"),MenuItem(BufferList).first()),
+                  (None,None,Menu(_("Window")).last().after(_("Buffers"))),
+                  (None,_("Window"),Separator(_("tabs")).first()),
+                  (None,_("Window"),MenuItem(NewFrame).first()),
+                  (None,_("Window"),MenuItem(DeleteFrame).first()),
+                  (None,_("Window"),Separator(_("lastsep")).first()),
+                  (None,_("Window"),MenuItem(FrameList).last()),
+                  (None,None,Menu(_("&Help")).last().after(_("Window"))),
+                  (None,_("&Help"),Menu(_("&Tests"))),
+                  (None,_("&Help"),Menu(_("&Samples"))),
+                  (None,(_("&Help"),_("&Samples")),MenuItem(OpenFundamental).first()),
+                  ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
+                  ("Fundamental",_("Edit"),MenuItem(FindText)),
+                  ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
+                  ("Fundamental",_("Edit"),MenuItem(GotoLine)),
+                  ("Fundamental",_("Format"),MenuItem(EOLModeSelect)),
+                  ("Fundamental",_("Format"),Separator()),
+                  ("Fundamental",_("View"),MenuItem(WordWrap)),
+                  ("Fundamental",_("View"),MenuItem(LineNumbers)),
+                  ("Fundamental",_("View"),MenuItem(Folding)),
+                  ("Fundamental",_("View"),Separator(_("cmdsep"))),
+                  ("Fundamental",None,Menu(_("&Transform")).after(_("Edit"))),
                   )
+    
     def getMenuItems(self):
         wx.App_SetMacHelpMenuTitleName(_("&Help"))
-        for menu,item in self.default_menu:
-            yield (None,menu,item)
+        for mode, menu, item in self.default_menu:
+            yield (mode,menu,item)
 
-    default_tools=((None,Menu(_("File")).first()),
-                  (_("File"),MenuItem(New).first()),
-                  (_("File"),MenuItem(OpenFile).first()),
-                  (_("File"),Separator(_("save")).first()),
-                  (_("File"),MenuItem(Save).first()),
-                  (_("File"),MenuItem(SaveAs).first()),
-                  (_("File"),MenuItem(Close).first()),
-                  (None,Menu(_("Edit")).after(_("File")).first()),
-                  (_("Edit"),MenuItem(Cut).first()),
-                  (_("Edit"),MenuItem(Copy).first()),
-                  (_("Edit"),MenuItem(Paste).first()),
-                  (_("Edit"),Separator(_("cut")).first()),
-                  (_("Edit"),MenuItem(Undo).first()),
-                  (_("Edit"),MenuItem(Redo).first()),
+    default_tools=((None,None,Menu(_("File")).first()),
+                  (None,_("File"),MenuItem(New).first()),
+                  (None,_("File"),MenuItem(OpenFile).first()),
+                  (None,_("File"),Separator(_("save")).first()),
+                  (None,_("File"),MenuItem(Save).first()),
+                  (None,_("File"),MenuItem(SaveAs).first()),
+                  (None,_("File"),MenuItem(Close).first()),
+                  (None,None,Menu(_("Edit")).after(_("File")).first()),
+                  (None,_("Edit"),MenuItem(Cut).first()),
+                  (None,_("Edit"),MenuItem(Copy).first()),
+                  (None,_("Edit"),MenuItem(Paste).first()),
+                  (None,_("Edit"),Separator(_("cut")).first()),
+                  (None,_("Edit"),MenuItem(Undo).first()),
+                  (None,_("Edit"),MenuItem(Redo).first()),
                   )
     def getToolBarItems(self):
-        for menu,item in self.default_tools:
-            yield (None,menu,item)
+        for mode, menu, item in self.default_tools:
+            yield (mode, menu, item)
             
     default_keys=((None, ExecuteCommandByName),
                   (None, CancelMinibuffer),
+                  ("Fundamental",ElectricReturn),
                   )
     def getKeyboardItems(self):
         for mode,action in self.default_keys:

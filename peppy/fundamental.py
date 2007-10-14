@@ -6,67 +6,10 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy.mainmenu import Paste
 from peppy.menu import *
 from peppy.major import *
 
-from peppy.lib.processmanager import *
-
-from peppy.actions.base import *
-from peppy.actions.minibuffer import *
-from peppy.actions.gotoline import *
-from peppy.actions.pypefind import *
 import peppy.boa as boa
-
-
-class OpenFundamental(SelectAction):
-    name = _("&Open Sample Text")
-    tooltip = _("Open some sample text")
-    icon = wx.ART_FILE_OPEN
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.open("about:demo.txt")
-
-class WordWrap(ToggleAction):
-    alias = _("word-wrap")
-    name = _("&Word Wrap")
-    tooltip = _("Toggle word wrap in this view")
-    icon = wx.ART_TOOLBAR
-
-    def isChecked(self):
-        return self.mode.classprefs.word_wrap
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
-    
-class LineNumbers(ToggleAction):
-    alias = _("line-numbers")
-    name = _("&Line Numbers")
-    tooltip = _("Toggle line numbers in this view")
-    icon = wx.ART_TOOLBAR
-
-    def isChecked(self):
-        return self.mode.classprefs.line_numbers
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
-
-class Folding(ToggleAction):
-    alias = _("code-folding")
-    name = _("&Folding")
-    tooltip = _("Toggle folding in this view")
-    icon = wx.ART_TOOLBAR
-
-    def isChecked(self):
-        return self.mode.classprefs.folding
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setFolding(not self.mode.classprefs.folding)
-
 
 class BraceHighlightMixin(object):
     """Brace highlighting mixin for code modes.
@@ -156,16 +99,6 @@ class StandardReturnMixin(debugmixin):
             newline = linesep+s.GetIndentString(ind)
         s.ReplaceTarget(newline)
         s.GotoPos(pos + len(newline))
-
-class ElectricReturn(BufferModificationAction):
-    alias = _("electric-return")
-    name = _("Electric Return")
-    tooltip = _("Indent the next line following a return")
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'RET',}
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.electricReturn()
 
 
 class ReindentBase(debugmixin):
@@ -258,39 +191,6 @@ class FoldingReindentMixin(debugmixin):
         s.SetTargetStart(linestart)
         s.SetTargetEnd(pos)
         s.ReplaceTarget(s.GetIndentString(fold))
-
-
-class PasteAtColumn(Paste):
-    alias = _("paste-at-column")
-    name = _("Paste at Column")
-    tooltip = _("Paste selection indented to the cursor's column")
-    icon = "icons/paste_plain.png"
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.stc.PasteAtColumn()
-
-
-class EOLModeSelect(BufferBusyActionMixin, RadioAction):
-    name="Line Endings"
-    inline=False
-    tooltip="Switch line endings"
-
-    items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
-    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
-
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
-
-    def getIndex(self):
-        eol = self.mode.stc.GetEOLMode()
-        return EOLModeSelect.modes.index(eol)
-                                           
-    def getItems(self):
-        return EOLModeSelect.items
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
-        Publisher().sendMessage('resetStatusBar')
 
 
 class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
@@ -601,39 +501,3 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
             s.SetSelection(selstart, start - eol_len)
         finally:
             s.EndUndoAction()
-
-
-class FundamentalPlugin(IPeppyPlugin):
-    def getMajorModes(self):
-        yield FundamentalMode
-    
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenFundamental).first()),
-                  ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
-                  ("Fundamental",_("Edit"),MenuItem(FindText)),
-                  ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
-                  ("Fundamental",_("Edit"),MenuItem(GotoLine)),
-                  ("Fundamental",_("Format"),MenuItem(EOLModeSelect)),
-                  ("Fundamental",_("Format"),Separator()),
-                  ("Fundamental",_("View"),MenuItem(WordWrap)),
-                  ("Fundamental",_("View"),MenuItem(LineNumbers)),
-                  ("Fundamental",_("View"),MenuItem(Folding)),
-                  ("Fundamental",_("View"),Separator(_("cmdsep"))),
-                  ("Fundamental",None,Menu(_("&Transform")).after(_("Edit"))),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
-    default_keys=(("Fundamental",ElectricReturn),
-                  )
-    def getKeyboardItems(self):
-        for mode,action in self.default_keys:
-            yield (mode,action)
-
-
-if __name__ == "__main__":
-    app=testapp(0)
-    frame=RootFrame(app.main)
-    frame.Show(True)
-    app.MainLoop()
-
