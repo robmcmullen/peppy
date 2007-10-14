@@ -57,13 +57,13 @@ class EditraSTCMixin(ed_style.StyleMgr):
             self.ConfigureAutoComp()
         return 0
     
-    def ConfigureLexer(self, file_ext):
+    def ConfigureLexer(self, lang):
         """Sets Lexer and Lexer Keywords for the specifed file extension
         @param file_ext: a file extension to configure the lexer from
 
         """
-        syn_data = self._synmgr.SyntaxData(file_ext)
-        self.LOG(file_ext)
+        syn_data = self._synmgr.SyntaxData(lang)
+        self.LOG(lang)
         self.LOG(syn_data)
 
         # Set the ID of the selected lexer

@@ -58,12 +58,29 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     """
     debuglevel = 0
     
+    # Pointer to the icon representing this major mode
     icon = 'icons/page_white.png'
-    keyword = 'Abstract Major Mode'
+    
+    # The single-word keyword representing this major mode
+    keyword = 'Abstract_Major_Mode'
+    
+    # If there are additional emacs synonyms for this mode, list them here
+    # as a string for a single synonym, or in a list of strings for multiple.
+    # For instance, see hexedit_mode.py: in emacs the hex edit mode is called
+    # 'hexl', but in peppy, it's called 'HexEdit'.  'hexl' is listed as in
+    # emacs_synomyms in that file.
     emacs_synonyms = None
     
+    # Filenames are matched against this regex in the class method
+    # verifyFilename when peppy tries to determine which mode to use
+    # to edit the file.  If no specific filenames, set to None
     regex = None
-    temporary = False # True if it is a temporary view
+    
+    # If this mode represents a temporary view and should be replaced by
+    # a new tab, make this True
+    temporary = False
+    
+    # If this mode allows threading loading, set this True
     allow_threaded_loading = True
 
     # stc_class is used to associate this major mode with a storage
@@ -166,10 +183,15 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         """Hook to verify the mode can handle the specified Editra type.
 
         @param ext: filename extension without the '.', or an empty string
-        @param file_type: Editra file type string, or None if not recognized
-        by Editra
+        @param file_type: Editra file type string as given in the file
+        peppy/editra/synglob.py, or None if not recognized by Editra
 
-        @returns: True if the filename matches
+        @returns: either the boolean False, indicating Editra doesn't support
+        this mode, or a string.  The string can either be the same as the
+        input value ext if it matches a specific type supported by this mode
+        or 'generic' if Editra supports the mode but if the mode doesn't
+        provide any additional functionality (this usually only happens in
+        Fundamental mode).
         """
         return False
 
@@ -942,15 +964,18 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         modes = []
-        
+        generics = []
         ext, editra_type = cls.getEditraType(url.path)
         for plugin in plugins:
             for mode in plugin.getMajorModes():
                 if mode.verifyFilename(url.path):
                     modes.append(mode)
-                if mode.verifyEditraType(ext, editra_type):
+                editra = mode.verifyEditraType(ext, editra_type)
+                if editra == 'generic':
+                    generics.append(mode)
+                elif isinstance(editra, str):
                     modes.append(mode)
-        
+        modes.extend(generics)
         return modes
 
     @classmethod

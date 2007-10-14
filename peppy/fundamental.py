@@ -261,6 +261,12 @@ class FundamentalMode(MajorMode):
     probably not based on this view.
     """
     keyword = 'Fundamental'
+    
+    # If the editra file_type (defined as the LANG_* keywords in the
+    # editra source file peppy/editra/synglob.py) doesn't match the keyword
+    # above, specify the editra file type here.  In other words, None here
+    # means that the editra file_type *does* match the keyword
+    editra_synonym = None
 
     # STC class used as the viewer (note: differs from stc_class, which is
     # the STC class used as the storage backend)
@@ -299,10 +305,21 @@ class FundamentalMode(MajorMode):
     @classmethod
     def verifyEditraType(cls, ext, file_type):
         dprint("ext=%s file_type=%s" % (ext, file_type))
-        if file_type is not None:
-            dprint("FOUND %s!!!!!" % file_type)
-            return True
-        return False
+        if file_type is None:
+            # Not recognized at all by Editra.
+            return False
+        
+        # file_type is a human readable string given in peppy.editra.synglob.py
+        # If file_type is the same as the major mode keyword or an alias,
+        # mark this as a specific match.
+        if file_type == cls.keyword or file_type == cls.editra_synonym:
+            dprint("Specific match of %s" % file_type)
+            return ext
+        
+        # Otherwise, if the file type is recognized but not specific to this
+        # mode, mark it as generic.
+        dprint("generic match of %s" % file_type)
+        return "generic"
     
     @classmethod
     def getStyleFile(cls):
@@ -351,8 +368,17 @@ class FundamentalMode(MajorMode):
         #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
-        self.editra_ext = ext
-        self.stc.ConfigureLexer(self.editra_ext)
+        dprint("ext=%s file_type=%s" % (ext, file_type))
+        if file_type == 'generic' or file_type is None:
+            if self.editra_synonym is not None:
+                file_type = self.editra_synonym
+            elif self.keyword is not 'Fundamental':
+                file_type = self.keyword
+            else:
+                file_type = ext
+        self.editra_lang = file_type
+        dprint("ext=%s file_type=%s" % (ext, file_type))
+        self.stc.ConfigureLexer(self.editra_lang)
         dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
         dprint("applySettings returning in %0.5fs" % (time.time() - start))

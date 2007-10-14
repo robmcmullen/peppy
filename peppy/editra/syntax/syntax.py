@@ -175,7 +175,7 @@ class SyntaxMgr(object):
         file_h.close()
         return True
 
-    def SyntaxData(self, ext):
+    def SyntaxData(self, lang):
         """Fetches the language data based on a file extention string.
         The file extension is used to look up the default lexer actions from the
         EXT_REG dictionary (@see L{synglob.py}).
@@ -185,7 +185,9 @@ class SyntaxMgr(object):
         """
         # The Return Value
         syn_data = dict()
-        lex_cfg = synglob.LANG_MAP[self._extreg.FileTypeFromExt(ext)]
+        if lang not in synglob.LANG_MAP:
+            lang = self._extreg.FileTypeFromExt(lang)
+        lex_cfg = synglob.LANG_MAP[lang]
 
         syn_data[LEXER] = lex_cfg[LEXER_ID]
         if lex_cfg[LANG_ID] == synglob.ID_LANG_TXT:
