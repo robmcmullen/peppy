@@ -47,7 +47,7 @@ class BufferList(GlobalList):
         return [buf for buf in BufferList.storage]
 
     @staticmethod
-    def promptUnsaved(msg):
+    def promptUnsaved():
         unsaved=[]
         for buf in BufferList.storage:
             if buf.modified and not buf.permanent:
@@ -60,7 +60,8 @@ class BufferList(GlobalList):
             retval=wx.ID_OK
 
         if retval==wx.ID_OK:
-            Publisher().sendMessage('peppy.app.quit')
+            return True
+        return False
             
     def getItems(self):
         return [buf.name for buf in BufferList.storage]
@@ -68,9 +69,6 @@ class BufferList(GlobalList):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
         self.frame.setBuffer(BufferList.storage[index])
-
-Publisher.subscribe(BufferList.promptUnsaved, 'peppy.request.quit')
-
     
 
 #### Buffers
@@ -342,7 +340,7 @@ class LoadingMode(BlankMode):
 
     def createPostHook(self):
         self.showBusy(True)
-        wx.CallAfter(self.frame.openStart, self.stc.url, self.stc.modecls,
+        wx.CallAfter(self.frame.openThreaded, self.stc.url, self.stc.modecls,
                      mode_to_replace=self)
 
 class LoadingBuffer(debugmixin):

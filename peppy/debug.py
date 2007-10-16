@@ -14,8 +14,10 @@ import os,sys,inspect
 dlogfh=sys.stderr
 elogfh=sys.stderr
 
+TRACING = False
+
 __all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'debugmixin',
-           'get_all_objects', 'get_all_referrers']
+           'get_all_objects', 'get_all_referrers', 'traceon', 'traceoff']
 
 # Found an obscure bug while working on Windows: the call to dprint
 # was failing in Peppy.getConfigFilePath when called from
@@ -52,6 +54,7 @@ def errorlog(file):
         elogfh=open(file,"w")
 
 def dprint(str=''):
+    if TRACING: _traceoff()
     caller=inspect.stack()[1]
     try:
         namespace=caller[0].f_locals
@@ -62,9 +65,11 @@ def dprint(str=''):
         dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     finally:
         del caller
+    if TRACING: _traceon()
     return True
 
 def eprint(str=''):
+    if TRACING: _traceoff()
     caller=inspect.stack()[1]
     try:
         namespace=caller[0].f_locals
@@ -75,6 +80,7 @@ def eprint(str=''):
         elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     finally:
         del caller
+    if TRACING: _traceon()
     return True
 
 class debugmixin(object):
@@ -83,11 +89,13 @@ class debugmixin(object):
     @classmethod
     def dprint(cls,str='',level=1):
         if not hasattr(cls, 'debuglevel') or cls.debuglevel>=level:
+            if TRACING: _traceoff()
             caller=inspect.stack()[1]
             try:
                 dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls.__name__,caller[3],str,os.linesep))
             finally:
                 del caller
+            if TRACING: _traceon()
         return True
 
 ##    def dprint(self,str='',level=1):
@@ -149,7 +157,45 @@ def get_all_referrers(subclassof=None):
             else:
                 others.append(ref.__class__)
         print ">>>    %s" % str(others)
+
+# Tracing routine borrowed from:
+# http://www.dalkescientific.com/writings/diary/archive/2005/04/20/tracing_python_code.html
+import sys
+import linecache
+
+def traceit(frame, event, arg):
+    if event == "line":
+        lineno = frame.f_lineno
+        if "__file__" in frame.f_globals:
+            filename = frame.f_globals["__file__"]
+        else:
+            filename = "unknown"
+        if (filename.endswith(".pyc") or
+            filename.endswith(".pyo")):
+            filename = filename[:-1]
+        if "__name__" in frame.f_globals:
+            name = frame.f_globals["__name__"]
+        else:
+            name = "unknown"
+        line = linecache.getline(filename, lineno)
+        print "%s:%s: %s" % (name, lineno, line.rstrip())
+    return traceit
+
+def traceon():
+    global TRACING
+    TRACING = True
+    _traceon()
     
+def _traceon():
+    sys.settrace(traceit)
+
+def traceoff():
+    global TRACING
+    _traceoff()
+    TRACING = False
+
+def _traceoff():
+    sys.settrace(None)
 
 if __name__=="__main__":
     dprint('testing')

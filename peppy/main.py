@@ -550,6 +550,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def quitHook(self):
         if not self.saveConfig(self.base_preferences):
             return False
+        import peppy.buffers
+        if not peppy.buffers.BufferList.promptUnsaved():
+            return False
         plugins = self.plugin_manager.getActivePluginObjects()
         exceptions = []
         for plugin in plugins:
