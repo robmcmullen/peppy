@@ -21,6 +21,7 @@ from peppy.debug import *
 class BufferList(GlobalList):
     debuglevel = 0
     name = "Buffers"
+    default_menu = ("Buffers", 0)
 
     storage = []
     others = []

@@ -34,32 +34,40 @@ class OpenImageViewer(SelectAction):
     """
     name = _("&Open Image Viewer...")
     tooltip = _("Open an Image Viewer")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:red.png")
 
-class ZoomIn(SelectAction):
+class ImageActionMixin(object):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode.editwin, BitmapScroller)
+
+class ZoomIn(ImageActionMixin, SelectAction):
     name = _("Zoom In")
     tooltip = _("Zoom in (magnify) image")
+    default_menu = ("View", -500)
     icon = 'icons/zoom_in.png'
     keyboard = "="
     
     def action(self, index=-1, multiplier=1):
         self.mode.editwin.zoomIn()
 
-class ZoomOut(SelectAction):
+class ZoomOut(ImageActionMixin, SelectAction):
     name = _("Zoom Out")
     tooltip = _("Zoom out (demagnify) image")
+    default_menu = ("View", 501)
     icon = 'icons/zoom_out.png'
     keyboard = "-"
     
     def action(self, index=-1, multiplier=1):
         self.mode.editwin.zoomOut()
 
-class RectangularSelect(ToggleAction):
+class RectangularSelect(ImageActionMixin, ToggleAction):
     name = _("Select Rect")
     tooltip = _("Select rectangular region.")
+    default_menu = ("Edit", -501)
     icon = 'icons/shape_square_rect_select.png'
     
     def isChecked(self):
@@ -201,17 +209,5 @@ class ImageViewPlugin(IPeppyPlugin, debugmixin):
     def getMajorModes(self):
         yield ImageViewMode
     
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenImageViewer)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
-    default_tools=(("ImageView",None,Menu(_("Image")).after(_("Major Mode"))),
-                   ("ImageView",_("Image"),MenuItem(ZoomIn)),
-                   ("ImageView",_("Image"),MenuItem(ZoomOut)),
-                   ("ImageView",_("Image"),MenuItem(RectangularSelect)),
-                   )
-    def getToolBarItems(self):
-        for mode,menu,item in self.default_tools:
-            yield (mode,menu,item)
+    def getActions(self):
+        return [OpenImageViewer, ZoomIn, ZoomOut, RectangularSelect]

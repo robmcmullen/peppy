@@ -28,7 +28,7 @@ class NewTab(SelectAction):
     alias = _("new-tab")
     name = _("&Tab")
     tooltip = _("Open a new tab")
-    icon = wx.ART_FILE_OPEN
+    default_menu = (("File/New", 1), 1.0)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -39,11 +39,11 @@ class New(SelectAction):
     name = _("&Text file")
     tooltip = _("New plain text file")
     icon = "icons/page.png"
+    default_menu = ("File/New", 1.1)
     key_bindings = {'win': "C-N", }
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:untitled")
-
 
 class URLMinibuffer(CompletionMinibuffer):
     def setDynamicChoices(self):
@@ -98,6 +98,7 @@ class OpenFileGUI(SelectAction):
     name = _("&File...")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
+    default_menu = (("File/Open", 2), 1) 
     key_bindings = {'win': "C-O" }
 
     def action(self, index=-1, multiplier=1):
@@ -126,7 +127,7 @@ class OpenFile(SelectAction):
     alias = _("find-file")
     name = _("&File using Minibuffer...")
     tooltip = _("Open a file")
-    icon = "icons/folder_page.png"
+    default_menu = (_("File/Open"), 2)
     key_bindings = {'emacs': "C-X C-F", }
 
     def action(self, index=-1, multiplier=1):
@@ -171,7 +172,7 @@ class OpenDialog(SelectAction):
 class OpenURL(OpenDialog):
     name = _("&URL...")
     tooltip = _("Open a buffer using a URL")
-    icon = "icons/folder_page.png"
+    default_menu = ("File/Open", 3)
     key_bindings = {'emacs': "C-X C-A", }
 
     dialog_message = "Open URL"
@@ -181,6 +182,7 @@ class Exit(SelectAction):
     alias = _("exit-peppy-to-return-again-soon")
     name = _("E&xit")
     tooltip = _("Quit the program.")
+    default_menu = (_("File"), -1000)
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, index=-1, multiplier=1):
@@ -190,6 +192,7 @@ class Close(SelectAction):
     alias = _("close-buffer")
     name = _("&Close Buffer")
     tooltip = _("Close current buffer")
+    default_menu = ("File", 809)
     icon = "icons/cross.png"
 
     def isEnabled(self):
@@ -203,6 +206,7 @@ class Revert(SelectAction):
     alias = _("revert-buffer")
     name = _("&Revert")
     tooltip = _("Revert to last saved version")
+    default_menu = ("File", -900)
     icon = "icons/page_refresh.png"
 
     def isEnabled(self):
@@ -222,6 +226,7 @@ class Save(SelectAction):
     name = _("&Save...")
     tooltip = _("Save the current file")
     icon = "icons/disk.png"
+    default_menu = ("File", -801)
     key_bindings = {'win': "C-S", 'emacs': "C-X C-S",}
 
     def isEnabled(self):
@@ -238,6 +243,7 @@ class SaveAs(SelectAction):
     name = _("Save &As...")
     tooltip = _("Save as a new file")
     icon = "icons/disk_edit.png"
+    default_menu = ("File", 802)
     key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
     
     def isEnabled(self):
@@ -283,7 +289,7 @@ class SaveAs(SelectAction):
 class OpenFundamental(SelectAction):
     name = _("&Open Sample Text")
     tooltip = _("Open some sample text")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -293,7 +299,11 @@ class WordWrap(ToggleAction):
     alias = _("word-wrap")
     name = _("&Word Wrap")
     tooltip = _("Toggle word wrap in this view")
-    icon = wx.ART_TOOLBAR
+    default_menu = ("View", 301)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'setWordWrap')
 
     def isChecked(self):
         return self.mode.classprefs.word_wrap
@@ -306,7 +316,11 @@ class LineNumbers(ToggleAction):
     alias = _("line-numbers")
     name = _("&Line Numbers")
     tooltip = _("Toggle line numbers in this view")
-    icon = wx.ART_TOOLBAR
+    default_menu = ("View", -300)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'setLineNumbers')
 
     def isChecked(self):
         return self.mode.classprefs.line_numbers
@@ -319,7 +333,11 @@ class Folding(ToggleAction):
     alias = _("code-folding")
     name = _("&Folding")
     tooltip = _("Toggle folding in this view")
-    icon = wx.ART_TOOLBAR
+    default_menu = ("View", 302)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'setFolding')
 
     def isChecked(self):
         return self.mode.classprefs.folding
@@ -333,7 +351,12 @@ class RunScript(SelectAction):
     name = _("Run")
     tooltip = _("Run this script through the interpreter")
     icon = 'icons/control_start.png'
+    default_menu = ("Tools", 1)
     key_bindings = {'win': "F5", 'emacs': "F5", }
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'startInterpreter')
     
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
@@ -347,6 +370,7 @@ class RunScriptWithArgs(RunScript):
     name = _("Run with Args")
     tooltip = _("Open a file")
     icon = "icons/folder_page.png"
+    default_menu = ("Tools", 2)
     key_bindings = {'default': "C-F5", }
 
     def action(self, index=-1, multiplier=1):
@@ -358,25 +382,24 @@ class RunScriptWithArgs(RunScript):
         self.mode.startInterpreter(text)
 
 
-class StopScript(SelectAction):
+class StopScript(RunScript):
     alias = _("stop-script")
     name = _("Stop")
     tooltip = _("Stop the currently running script")
     icon = 'icons/control_stop.png'
+    default_menu = ("Tools", 3)
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", }
     
-    def isEnabled(self):
-        return hasattr(self.mode, 'startInterpreter') and hasattr(self.mode, 'process')
-
     def action(self, index=-1, multiplier=1):
         self.mode.stopInterpreter()
 
 
-class Undo(BufferModificationAction):
+class Undo(STCModificationAction):
     alias = _("undo")
     name = _("Undo")
     tooltip = _("Undo")
     icon = "icons/arrow_turn_left.png"
+    default_menu = ("Edit", 0)
     key_bindings = {'win': "C-Z", 'emacs': "C-/",}
     
     def isActionAvailable(self):
@@ -387,11 +410,12 @@ class Undo(BufferModificationAction):
         return self.mode.stc.Undo()
 
 
-class Redo(BufferModificationAction):
+class Redo(STCModificationAction):
     alias = _("redo")
     name = _("Redo")
     tooltip = _("Redo")
     icon = "icons/arrow_turn_right.png"
+    default_menu = ("Edit", 1)
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
     
     def isActionAvailable(self):
@@ -401,11 +425,12 @@ class Redo(BufferModificationAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         return self.mode.stc.Redo()
 
-class Cut(BufferModificationAction):
+class Cut(STCModificationAction):
     alias = _("cut-primary-selection")
     name = _("Cut")
     tooltip = _("Cut")
     icon = "icons/cut.png"
+    default_menu = ("Edit", -100)
     key_bindings = {'win': "C-X"}
 
     def isActionAvailable(self):
@@ -415,11 +440,12 @@ class Cut(BufferModificationAction):
         dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Cut()
 
-class Copy(BufferModificationAction):
+class Copy(STCModificationAction):
     alias = _("copy-primary-selection")
     name = _("Copy")
     tooltip = _("Copy")
     icon = "icons/page_copy.png"
+    default_menu = ("Edit", 101)
     key_bindings = {'win': "C-C"}
 
     def isActionAvailable(self):
@@ -429,11 +455,12 @@ class Copy(BufferModificationAction):
         assert self.dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
         return self.mode.stc.Copy()
 
-class Paste(BufferModificationAction):
+class Paste(STCModificationAction):
     alias = _("paste-from-clipboard")
     name = _("Paste")
     tooltip = _("Paste")
     icon = "icons/paste_plain.png"
+    default_menu = ("Edit", 102)
     key_bindings = {'win': "C-V"}
 
     def isActionAvailable(self):
@@ -448,12 +475,17 @@ class PasteAtColumn(Paste):
     name = _("Paste at Column")
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
+    default_menu = ("Edit", 103)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode.editwin, 'PasteAtColumn')
 
     def action(self, index=-1, multiplier=1):
         self.mode.stc.PasteAtColumn()
 
 
-class ElectricReturn(BufferModificationAction):
+class ElectricReturn(TextModificationAction):
     alias = _("electric-return")
     name = _("Electric Return")
     tooltip = _("Indent the next line following a return")
@@ -468,9 +500,14 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     name="Line Endings"
     inline=False
     tooltip="Switch line endings"
+    default_menu = ("Format", 0)
 
     items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
     modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode.editwin, 'GetEOLMode')
 
     def saveIndex(self,index):
         assert self.dprint("index=%d" % index)
@@ -491,6 +528,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     name=_("Major Mode")
     inline=False
     tooltip=_("Switch major mode")
+    default_menu = ("View", 0)
 
     modes=None
     items=None
@@ -532,6 +570,7 @@ class MinorModeShow(ToggleListAction):
     name = _("Minor Modes")
     inline = False
     tooltip = _("Show or hide minor mode windows")
+    default_menu = ("View", 1)
 
     def getItems(self):
         return [m.caption for m in self.mode.minor_panes]
@@ -548,6 +587,7 @@ class SidebarShow(ToggleListAction):
     name=_("Sidebars")
     inline=False
     tooltip=_("Show or hide sidebar windows")
+    default_menu = ("View", -100)
 
     def getItems(self):
         return [m.caption for m in self.frame.sidebar_panes]
@@ -564,7 +604,7 @@ class ToolbarShow(ToggleAction):
     alias = _("show-toolbar")
     name = _("&Show Toolbars")
     tooltip = _("Enable or disable toolbar display in this frame")
-    icon = wx.ART_TOOLBAR
+    default_menu = ("View", -200)
 
     def isChecked(self):
         return self.frame.show_toolbar
@@ -645,103 +685,28 @@ class MainMenu(IPeppyPlugin):
 
     def getMajorModes(self):
         yield FundamentalMode
-    
-    default_menu=((None,None,Menu(_("File")).first()),
-                  (None,_("File"),Menu(_("New")).first()),
-                  (None,(_("File"),_("New")),MenuItem(NewTab).first()),
-                  (None,(_("File"),_("New")),MenuItem(New).first()),
-                  (None,_("File"),Menu(_("Open")).after(_("New"))),
-                  (None,(_("File"),_("Open")),MenuItem(OpenFileGUI).first()),
-                  (None,(_("File"),_("Open")),MenuItem(OpenFile).first()),
-                  (None,(_("File"),_("Open")),MenuItem(OpenURL).first()),
-                  (None,_("File"),Separator(_("opensep")).after(_("Open"))),
-                  (None,_("File"),MenuItem(Save).after(_("opensep"))),
-                  (None,_("File"),MenuItem(SaveAs).after(_("opensep"))),
-                  (None,_("File"),MenuItem(Close).after(_("opensep"))),
-                  (None,_("File"),Separator(_("closesep")).after(_("opensep"))),
-                  (None,_("File"),MenuItem(Revert).after(_("opensep"))),
-                  (None,_("File"),Separator(_("quit")).after(_("opensep"))),
-                  (None,_("File"),MenuItem(Exit).last()),
-                  (None,None,Menu(_("Edit")).after(_("File")).first()),
-                  (None,_("Edit"),MenuItem(Undo).first()),
-                  (None,_("Edit"),MenuItem(Redo).first()),
-                  (None,_("Edit"),Separator(_("cut")).first()),
-                  (None,_("Edit"),MenuItem(Cut).first()),
-                  (None,_("Edit"),MenuItem(Copy).first()),
-                  (None,_("Edit"),MenuItem(Paste).first()),
-                  (None,_("Edit"),Separator(_("paste")).first()),
-                  (None,_("Edit"),Separator(_("lastsep")).last()),
-                  (None,None,Menu(_("Format")).after(_("Edit")).first()),
-                  (None,None,Menu(_("View")).before(_("Major Mode"))),
-                  (None,_("View"),MenuItem(MajorModeSelect).first()),
-                  (None,_("View"),MenuItem(MinorModeShow).first()),
-                  (None,_("View"),Separator(_("modes")).first()),
-                  (None,_("View"),MenuItem(SidebarShow).first()),
-                  (None,_("View"),Separator(_("sidebars")).first()),
-                  (None,_("View"),MenuItem(ToolbarShow).first()),
-                  (None,_("View"),Separator(_("menusep"))),
-                  (None,_("View"),Separator(_("end")).last()),
-                  (None,None,Menu(_("Tools")).after(_("View")).before(_("Major Mode"))),
-                  (None,_("Tools"),MenuItem(RunScript).first()),
-                  (None,_("Tools"),MenuItem(RunScriptWithArgs).first()),
-                  (None,_("Tools"),MenuItem(StopScript).first()),
-                  (None,_("Tools"),Separator(_("run")).first()),
-                  (None,_("Tools"),Separator(_("end")).last()),
-                  (None,None,Menu(_("Major Mode")).hide()),
-                  (None,None,Menu(_("Minor Mode")).hide().after(_("Major Mode"))),
-                  (None,None,Menu(_("Buffers")).last()),
-                  (None,_("Buffers"),MenuItem(BufferList).first()),
-                  (None,None,Menu(_("Window")).last().after(_("Buffers"))),
-                  (None,_("Window"),Separator(_("tabs")).first()),
-                  (None,_("Window"),MenuItem(NewFrame).first()),
-                  (None,_("Window"),MenuItem(DeleteFrame).first()),
-                  (None,_("Window"),Separator(_("lastsep")).first()),
-                  (None,_("Window"),MenuItem(FrameList).last()),
-                  (None,None,Menu(_("&Help")).last().after(_("Window"))),
-                  (None,_("&Help"),Menu(_("&Tests"))),
-                  (None,_("&Help"),Menu(_("&Samples"))),
-                  (None,(_("&Help"),_("&Samples")),MenuItem(OpenFundamental).first()),
-                  ("Fundamental",_("Edit"),MenuItem(PasteAtColumn).after(_("Paste")).before(_("paste"))),
-                  ("Fundamental",_("Edit"),MenuItem(FindText)),
-                  ("Fundamental",_("Edit"),MenuItem(ReplaceText)),
-                  ("Fundamental",_("Edit"),MenuItem(GotoLine)),
-                  ("Fundamental",_("Format"),MenuItem(EOLModeSelect)),
-                  ("Fundamental",_("Format"),Separator()),
-                  ("Fundamental",_("View"),MenuItem(WordWrap)),
-                  ("Fundamental",_("View"),MenuItem(LineNumbers)),
-                  ("Fundamental",_("View"),MenuItem(Folding)),
-                  ("Fundamental",_("View"),Separator(_("cmdsep"))),
-                  ("Fundamental",None,Menu(_("&Transform")).after(_("Edit"))),
-                  )
-    
-    def getMenuItems(self):
-        wx.App_SetMacHelpMenuTitleName(_("&Help"))
-        for mode, menu, item in self.default_menu:
-            yield (mode,menu,item)
 
-    default_tools=((None,None,Menu(_("File")).first()),
-                  (None,_("File"),MenuItem(New).first()),
-                  (None,_("File"),MenuItem(OpenFile).first()),
-                  (None,_("File"),Separator(_("save")).first()),
-                  (None,_("File"),MenuItem(Save).first()),
-                  (None,_("File"),MenuItem(SaveAs).first()),
-                  (None,_("File"),MenuItem(Close).first()),
-                  (None,None,Menu(_("Edit")).after(_("File")).first()),
-                  (None,_("Edit"),MenuItem(Cut).first()),
-                  (None,_("Edit"),MenuItem(Copy).first()),
-                  (None,_("Edit"),MenuItem(Paste).first()),
-                  (None,_("Edit"),Separator(_("cut")).first()),
-                  (None,_("Edit"),MenuItem(Undo).first()),
-                  (None,_("Edit"),MenuItem(Redo).first()),
-                  )
-    def getToolBarItems(self):
-        for mode, menu, item in self.default_tools:
-            yield (mode, menu, item)
-            
-    default_keys=((None, ExecuteCommandByName),
-                  (None, CancelMinibuffer),
-                  ("Fundamental",ElectricReturn),
-                  )
-    def getKeyboardItems(self):
-        for mode,action in self.default_keys:
-            yield (mode,action)
+    def getActions(self):
+        return [NewTab, New,
+                OpenFileGUI, OpenFile, OpenURL,
+                Save, SaveAs, Close, Revert, Exit,
+
+                Undo, Redo, Cut, Copy, Paste, PasteAtColumn,
+
+                RunScript, RunScriptWithArgs, StopScript,
+
+                MajorModeSelect, MinorModeShow, SidebarShow,
+                ToolbarShow, 
+
+                EOLModeSelect, WordWrap, LineNumbers, Folding,
+
+                BufferList,
+
+                NewFrame, DeleteFrame, FrameList,
+
+                FindText, ReplaceText, GotoLine,
+                
+                ExecuteCommandByName, CancelMinibuffer, ElectricReturn,
+
+                OpenFundamental,
+                ]

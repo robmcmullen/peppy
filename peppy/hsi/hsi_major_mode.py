@@ -51,8 +51,6 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
-from peppy.plugins.image_mode import ZoomIn, ZoomOut, RectangularSelect
-
 from peppy.hsi import *
 
 # hsi mode requires numpy, the check for which is handled by the major
@@ -337,13 +335,12 @@ class HyperspectralSTC(NonResidentSTC):
     def Destroy(self):
         self.dataset = None
 
+class HSIActionMixin(object):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode, HSIMode)
 
-class SpatialSelect(RectangularSelect):
-    name = _("Spatial Select")
-    tooltip = _("Select subcube spatially.")
-    
-    
-class BandEnabledMixin(object):
+class BandEnabledMixin(HSIActionMixin):
     def isEnabled(self):
         mode = self.mode
         for band in mode.bands:
@@ -359,6 +356,7 @@ class BandAction(BandEnabledMixin, SelectAction):
 class PrevBand(BandAction):
     name = _("Prev Band")
     tooltip = _("Previous Band")
+    default_menu = ("Dataset", -200)
     icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
     
@@ -370,6 +368,7 @@ class PrevBand(BandAction):
 class NextBand(BandAction):
     name = _("Next Band")
     tooltip = _("Next Band")
+    default_menu = ("Dataset", 201)
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
@@ -381,6 +380,7 @@ class NextBand(BandAction):
 class GotoBand(BandEnabledMixin, MinibufferAction):
     name = _("Goto Band")
     tooltip = _("Go to a particular band in the cube")
+    default_menu = ("Dataset", 202)
     
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
@@ -395,7 +395,7 @@ class GotoBand(BandEnabledMixin, MinibufferAction):
         #dprint("goto line = %d" % line)
         mode.gotoBand(band)
 
-class CubeAction(SelectAction):
+class CubeAction(HSIActionMixin, SelectAction):
     def isEnabled(self):
         mode = self.mode
         index = mode.dataset_index
@@ -407,6 +407,7 @@ class CubeAction(SelectAction):
 class PrevCube(CubeAction):
     name = _("Prev Cube")
     tooltip = _("Previous data cube in dataset")
+    default_menu = ("Dataset", -100)
     icon = 'icons/hsi-cube-prev.png'
 
     def action(self, index=-1, multiplier=1):
@@ -417,6 +418,7 @@ class PrevCube(CubeAction):
 class NextCube(CubeAction):
     name = _("Next Cube")
     tooltip = _("Next data cube in dataset")
+    default_menu = ("Dataset", 101)
     icon = 'icons/hsi-cube-next.png'
 
     def action(self, index=-1, multiplier=1):
@@ -424,10 +426,11 @@ class NextCube(CubeAction):
         mode = self.mode
         mode.nextCube()
 
-class SelectCube(RadioAction):
+class SelectCube(HSIActionMixin, RadioAction):
     debuglevel = 1
     name = _("Select Cube")
     tooltip = _("Select a cube from the dataset")
+    default_menu = ("Dataset", 102)
     icon = 'icons/hsi-cube.png'
 
     def saveIndex(self,index):
@@ -450,10 +453,11 @@ class SelectCube(RadioAction):
         dprint("mode.dataset_index = %d" % mode.dataset_index)
         wx.CallAfter(mode.update)
         
-class ContrastFilterAction(RadioAction):
+class ContrastFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 1
     name = _("Contrast")
     tooltip = _("Contrast adjustment method")
+    default_menu = ("Dataset", -300)
     icon = 'icons/hsi-cube-next.png'
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
@@ -505,11 +509,11 @@ class ContrastFilterAction(RadioAction):
         minibuffer = FloatMinibuffer(mode, self, label="Contrast [0.0 - 1.0]")
         mode.setMinibuffer(minibuffer)
         
-class MedianFilterAction(RadioAction):
+class MedianFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 1
     name = _("Median Filter")
     tooltip = _("Median filter")
-    icon = 'icons/hsi-cube-next.png'
+    default_menu = ("Dataset", 301)
 
     items = ['No median',
              'Median 3x1 pixel', 'Median 1x3 pixel', 'Median 3x3 pixel',
@@ -858,36 +862,8 @@ class HSIPlugin(IPeppyPlugin):
         for mode in [HSIXProfileMinorMode, HSIYProfileMinorMode, HSISpectrumMinorMode]:
             yield mode
     
-    default_menu=(("HSI",None,Menu(_("Dataset")).after("Major Mode")),
-                  ("HSI",_("Dataset"),MenuItem(PrevCube)),
-                  ("HSI",_("Dataset"),MenuItem(NextCube)),
-                  ("HSI",_("Dataset"),MenuItem(SelectCube)),
-                  ("HSI",_("Dataset"),Separator("dataset")),
-                  ("HSI",_("Dataset"),MenuItem(PrevBand)),
-                  ("HSI",_("Dataset"),MenuItem(NextBand)),
-                  ("HSI",_("Dataset"),MenuItem(GotoBand)),
-                  ("HSI",_("Dataset"),Separator("this dataset")),
-                  ("HSI",_("Dataset"),MenuItem(SpatialSelect)),
-                  ("HSI",_("View"),MenuItem(ContrastFilterAction)),
-                  ("HSI",_("View"),MenuItem(MedianFilterAction)),
-                  ("HSI",_("View"),Separator("after filters")),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
-    default_tools=(("HSI",None,Menu(_("Dataset")).after("Major Mode")),
-                   ("HSI",_("Dataset"),MenuItem(PrevCube)),
-                   ("HSI",_("Dataset"),MenuItem(NextCube)),
-                   ("HSI",_("Dataset"),Separator("dataset")),
-                   ("HSI",_("Dataset"),MenuItem(PrevBand)),
-                   ("HSI",_("Dataset"),MenuItem(NextBand)),
-                   ("HSI",_("Dataset"),Separator("this dataset")),
-                   ("HSI",_("Dataset"),MenuItem(ZoomOut)),
-                   ("HSI",_("Dataset"),MenuItem(ZoomIn)),
-                   ("HSI",_("Dataset"),MenuItem(SpatialSelect)),
-                   )
-    def getToolBarItems(self):
-        for mode,menu,item in self.default_tools:
-            yield (mode,menu,item)
-
+    def getActions(self):
+        return [PrevCube, NextCube, SelectCube,
+                PrevBand, NextBand, GotoBand,
+                ContrastFilterAction, MedianFilterAction,
+                ]

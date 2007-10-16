@@ -153,46 +153,16 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         """
         return []
 
-    def getMenuItems(self):
-        """Return list of menu items.
+    def getActions(self):
+        """Return list of actions provided by the plugin.
 
-        If the plugin implements any menu actions, return a 3-tuple
-        (mode,menu,item) for each menu action, where each element is
-        defined as follows:
-
-        mode is a string or None.  A string specifies the major mode
-        by referring to its keyword, and None means it is a global
-        menu item and will appear in all major modes.
-
-        menu is a string that specifies the menu under which this item
-        will appear.  Submenus can be indicated by a tuple of strings.
-
-        item is an instance of Menu, MenuItem, MenuItemGroup, or
-        Separator that is a wrapper around the action to be performed
-        when this menu item is selected.
+        Return an iterator containing the list of actions that are
+        provided by this plugin.  Actions are defined as subclasses
+        of the SelectAction class in menu.py.  They define the
+        menubar, toolbar, and keyboard control commands.
         """
         return []
 
-    def getToolBarItems(self):
-        """Return list of toolbar items.
-
-        If the plugin implements any toolbar actions, return a 3-tuple
-        (mode, menu, item) for each action, where the elements are
-        defined as in getMenuItems().
-        """
-        return []
-
-    def getKeyboardItems(self):
-        """Return list of keyboard actions that don't have equivalents
-        through the menu or toolbar interfaces.
-
-        If the plugin implements any keyboard actions, return a
-        2-tuple (mode, action) for each action, where the mode is as
-        defined in getMenuItems() and action is the class representing
-        the action.
-        """
-        return []
-    
     def getURLHandlers(self):
         """Return list of urllib2 handlers if provided by the plugin.
 

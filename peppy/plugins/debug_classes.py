@@ -29,6 +29,7 @@ class DebugClass(ToggleListAction):
     name = _("DebugClassMenu")
     empty = "< list of classes >"
     tooltip = _("Turn on/off debugging for listed classes")
+    default_menu = "Debug"
     categories = False
     inline = True
 
@@ -139,13 +140,9 @@ class DebugClassPlugin(IPeppyPlugin):
         else:
             raise StopIteration
 
-    default_menu=((None,Menu(_("Debug")).after(_("Minor Mode")).before(_("&Help"))),
-                  (_("Debug"),MenuItem(DebugClass).first()),
-                  )
-    def getMenuItems(self):
+    def getActions(self):
         # Don't show menu if in optimize mode
         if self.use_menu and __debug__:
-            for menu,item in self.default_menu:
-                yield (None,menu,item)
+            yield DebugClass
         else:
             raise StopIteration

@@ -18,6 +18,7 @@ import peppy.editra.style_editor as style_editor
 class EditraStyles(SelectAction):
     name=_("Text Styles...")
     tooltip = _("Open the STC Style Editor to edit the current mode's text display.")
+    default_menu = ("Format", 1000)
     icon = "icons/style_edit.png"
 
     def isEnabled(self):
@@ -42,5 +43,5 @@ class EditraStyles(SelectAction):
 
 
 class EditraStylesMenuProvider(IPeppyPlugin):
-    def getMenuItems(self):
-        yield (None,_("Format"),MenuItem(EditraStyles).last())
+    def geActions(self):
+        return [EditraStyles]

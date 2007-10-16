@@ -9,6 +9,7 @@ import wx
 import wx.stc
 
 from peppy.menu import *
+from peppy.fundamental import *
 
 class BufferBusyActionMixin(object):
     """Mixin to disable an action when the buffer is being modified.
@@ -23,23 +24,36 @@ class BufferBusyActionMixin(object):
     def isActionAvailable(self):
         return True
 
-class BufferModificationAction(BufferBusyActionMixin, SelectAction):
+class STCModificationAction(BufferBusyActionMixin, SelectAction):
     """Base class for any action that changes the bytes in the buffer.
 
     This uses the BufferBusyActionMixin to disable any action that
     would change the buffer when the buffer is in the process of being
     modified by a long-running process.
     """
-    pass
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode.stc, 'CanUndo')
 
-class ScintillaCmdKeyExecute(BufferModificationAction):
+class TextModificationAction(BufferBusyActionMixin, SelectAction):
+    """Base class for any action that changes the bytes in the buffer.
+
+    This uses the BufferBusyActionMixin to disable any action that
+    would change the buffer when the buffer is in the process of being
+    modified by a long-running process.
+    """
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode, FundamentalMode)
+
+class ScintillaCmdKeyExecute(TextModificationAction):
     cmd = 0
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.stc.CmdKeyExecute(self.cmd)
 
-class WordOrRegionMutateAction(BufferModificationAction):
+class WordOrRegionMutateAction(TextModificationAction):
     """Mixin class to operate on a word or the selected region.
     """
 
@@ -87,7 +101,7 @@ class WordOrRegionMutateAction(BufferModificationAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mutateSelection(self.mode.stc)
         
-class LineOrRegionMutateAction(BufferModificationAction):
+class LineOrRegionMutateAction(TextModificationAction):
     """Mixin class to operate on a line or the selected region extended
     to include full lines
     """

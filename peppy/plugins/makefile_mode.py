@@ -41,7 +41,7 @@ print-%: ; @ echo $* = $($*)
 class SampleMakefile(SelectAction):
     name = _("&Open Sample Makefile")
     tooltip = _("Open a sample Makefile")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:sample.mak")
@@ -75,9 +75,7 @@ class MakefilePlugin(IPeppyPlugin):
     def getMajorModes(self):
         yield MakefileMode
     
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleMakefile)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
+    def geActions(self):
+        return [SampleMakefile]
+    
 

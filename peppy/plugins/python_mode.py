@@ -45,7 +45,7 @@ class Foo(Bar):
 class SamplePython(SelectAction):
     name = _("&Open Sample Python")
     tooltip = _("Open a sample Python file")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:sample.py")
@@ -112,11 +112,14 @@ class PythonReindentMixin(ReindentBase):
         return self.GetIndentString(fold)
 
 
-class ElectricColon(BufferModificationAction):
+class ElectricColon(TextModificationAction):
     name = _("Electric Colon")
     tooltip = _("Indent the current line when a colon is pressed")
-    icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return mode.keyword == 'Python'
 
     def action(self, index=-1, multiplier=1):
         s = self.mode.stc
@@ -281,26 +284,6 @@ class PythonPlugin(IPeppyPlugin):
     
     def getMajorModes(self):
         yield PythonMode
-    
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SamplePython)),
-##                  ("Python",None,Menu(_("Python")).after(_("Major Mode"))),
-##                  ("Python",_("Python"),MenuItem(ShiftLeft)),
-##                  ("Python",_("Python"),MenuItem(ShiftRight)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
 
-##    default_tools=(("Python",None,Menu(_("Python")).after(_("Major Mode"))),
-####                   ("Python",_("Python"),MenuItem(ShiftLeft)),
-####                   ("Python",_("Python"),MenuItem(ShiftRight)),
-##                   )
-##    def getToolBarItems(self):
-##        for mode,menu,item in self.default_tools:
-##            yield (mode,menu,item)
-
-    default_keys=(("Python",ElectricColon),
-                  )
-    def getKeyboardItems(self):
-        for mode,action in self.default_keys:
-            yield (mode,action)
+    def getActions(self):
+        return [SamplePython, ElectricColon]

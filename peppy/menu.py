@@ -16,11 +16,11 @@ import weakref
 from peppy.debug import *
 
 from peppy.lib.iconstorage import *
-from peppy.lib.orderer import *
 from peppy.lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
 
+from peppy.lib.orderer import *
 class Separator(DelayedOrderer):
     def __init__(self,name="-separator-",mode=None):
         DelayedOrderer.__init__(self,name)
@@ -49,8 +49,7 @@ class MenuItemGroup(DelayedOrderer):
         DelayedOrderer.__init__(self,name)
         self.actions=actions
         assert self.dprint(self.actions)
-
-
+    
 
 class SelectAction(debugmixin):
     debuglevel=0
@@ -61,14 +60,26 @@ class SelectAction(debugmixin):
     icon=None
     tooltip=""
     keyboard=None
+    default_menu = ()
+    default_toolbar = ()
     key_bindings = None # map of platform to default keybinding
     _accelerator_text = None # This is not set by the user
-    stock_id=None
+    stock_id = None
+    global_id = None
     submenu=None
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return True
     
     def __init__(self, frame, menu=None, toolbar=None):
         self.widget=None
         self.tool=None
+        if self.global_id is None:
+            if self.stock_id is not None:
+                self.__class__.global_id = self.stock_id
+            else:
+                self.__class__.global_id = wx.NewId()
 
         # Each action is always associated with a particular frame and
         # major mode
@@ -96,6 +107,9 @@ class SelectAction(debugmixin):
 
     def initPostHook(self):
         pass
+    
+    def getSubIds(self):
+        return []
 
     @classmethod
     def setAcceleratorText(cls, force_emacs=False):
@@ -123,49 +137,17 @@ class SelectAction(debugmixin):
 
     def getTooltip(self, id=None, name=None):
         if id is None:
-            id = self.id
+            id = self.global_id
         if name is None:
             name = self.name
         return "%s ('%s', id=%d)" % (self.tooltip, name, id)
 
-    def insertIntoMenu(self,menu):
-        if self.stock_id:
-            self.id=self.stock_id
-        else:
-            self.id=wx.NewId()
-        self.widget=menu.Append(self.id, self.getMenuItemName(), self.getTooltip())
-        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
-        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
+    def insertIntoMenu(self, menu):
+        self.widget=menu.Append(self.global_id, self.getMenuItemName(), self.getTooltip())
         
-    def insertIntoToolBar(self,toolbar):
-        self.id=wx.NewId()
+    def insertIntoToolbar(self, toolbar):
         self.tool=toolbar
-        toolbar.AddLabelTool(self.id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
-        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
-
-    def disconnectFromMenu(self):
-        if self.frame is not None:
-            status1 = self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)
-            status2 = self.frame.Disconnect(self.id, -1, wx.wxEVT_UPDATE_UI)
-            dprint("removing %s (widget id=%d) connections removed: cmd=%s update=%s" % (self.name, self.id, status1, status2))
-        else:
-            dprint("item %s (widget id=%d) does not have a frame" % (self.name, self.id))
-        self.widget = None
-        self.tool = None
-        self.frame = None
-        self.mode = None
-    disconnectFromToolbar = disconnectFromMenu
-    
-    def OnMenuSelected(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
-        self.action()
-
-    def OnUpdateUI(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
-        self.Enable()
+        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
 
     def action(self, index=-1, multiplier=1):
         pass
@@ -175,56 +157,60 @@ class SelectAction(debugmixin):
         dprint("%s called by keybindings -- multiplier=%s" % (self, number))
         self.action(0, number)
 
-    def Enable(self):
-        assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name,self.id,self.isEnabled()))
+    def showEnable(self):
+        state = self.isEnabled()
         if self.widget is not None:
-            self.widget.Enable(self.isEnabled())
+            assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
+            self.widget.Enable(state)
         if self.tool is not None:
-            assert self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name,self.id,self.isEnabled(), self.tool))
-            self.tool.EnableTool(self.id,self.isEnabled())
+            assert self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
+            self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
         return True
 
 class ToggleAction(SelectAction):
     def insertIntoMenu(self,menu):
-        self.id=wx.NewId()
-        self.widget=menu.AppendCheckItem(self.id, self.name, self.getTooltip())
-        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
-        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
-        self.Check()
+        self.widget=menu.AppendCheckItem(self.global_id, self.name, self.getTooltip())
 
     def insertIntoToolBar(self,toolbar):
-        self.id=wx.NewId()
         self.tool=toolbar
-        toolbar.AddCheckTool(self.id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.getTooltip())
-        self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
-        self.frame.Connect(self.id,-1,wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
-        self.Check()
+        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.getTooltip())
         
-    def OnMenuSelected(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
-        self.action()
-        self.Check()
-
-    def OnUpdateUI(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
-        self.Enable()
-        self.Check()
-
+    def showEnable(self):
+        SelectAction.showEnable(self)
+        self.showCheck()
+        
     def isChecked(self):
         raise NotImplementedError
 
-    def Check(self):
+    def showCheck(self):
+        state = self.isChecked()
         if self.widget is not None:
-            self.widget.Check(self.isChecked())
+            self.widget.Check(state)
         if self.tool is not None:
-            self.tool.ToggleTool(self.id,self.isChecked())
-    
+            dprint("%s, %s" % (self.tool, self.global_id))
+            self.tool.ToggleTool(self.global_id, state)
+
+
+class IdCache(object):
+    def __init__(self, first):
+        self.first = first
+        self.cache = [self.first]
+        self.resetIndex()
+        
+    def resetIndex(self):
+        self.index = 0
+        
+    def getNewId(self):
+        if self.index >= len(self.cache):
+            id = wx.NewId()
+            self.cache.append(id)
+        else:
+            id = self.cache[self.index]
+        self.index += 1
+        return id
+
 class ListAction(SelectAction):
     menumax=20
     inline=False
@@ -240,10 +226,20 @@ class ListAction(SelectAction):
         self.menu=None
 
         SelectAction.__init__(self,frame,menu,toolbar)
-
+        self.cache = IdCache(self.global_id)
+    
+    def getSubIds(self):
+        ids = self.id2index.keys()
+        ids.extend(self.toplevel)
+        ids.sort()
+        return ids
+    
+    def getIndexOfId(self, id):
+        return self.id2index[id]
+    
     def insertIntoMenu(self,menu,pos=None):
+        self.cache.resetIndex()
         self.menu=menu
-        self.id=-1
 
         # start off adding entries to the top level menu
         is_toplevel=True
@@ -266,15 +262,8 @@ class ListAction(SelectAction):
         
         self._insertItems(menu,pos,is_toplevel)
 
-        # One menu item in this group has to have the EVT_UPDATE_UI
-        # event in order to keep the state of the menu synced with the
-        # application
-        if len(self.toplevel)>0:
-            self.frame.Connect(self.toplevel[0],-1,wx.wxEVT_UPDATE_UI,
-                               self.OnUpdateUI)
-
     def _insertItems(self,menu,pos,is_toplevel=False):
-        items=self.getItems()
+        items = self.getItems()
         
         self.count=0
         if self.menumax>0 and len(items)>self.menumax:
@@ -296,29 +285,18 @@ class ListAction(SelectAction):
         self.savehash=self.getHash()
 
     def _insert(self,menu,pos,name,is_toplevel=False):
-        id=wx.NewId()
+        id = self.cache.getNewId()
         widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
-        self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
         self.count+=1
 
     def _insertMenu(self,menu,pos,child,name,is_toplevel=False):
-        id=wx.NewId()
+        id = self.cache.getNewId()
         widget=menu.InsertMenu(pos,id,name,child)
         if is_toplevel:
             self.toplevel.append(id)
-
-    def OnMenuSelected(self,evt):
-        self.id=evt.GetId()
-        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
-        self.action(index=self.id2index[self.id])
-
-    def OnUpdateUI(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
-        self.Enable()
 
     def getHash(self):
         return self.count
@@ -337,14 +315,13 @@ class ListAction(SelectAction):
             pos+=1
         assert self.dprint("inserting items at pos=%d" % pos)
         for id in self.toplevel:
-            assert self.dprint("disconnecting widget %d" % id)
-            self.frame.Disconnect(id,-1,wx.wxEVT_UPDATE_UI)
             assert self.dprint("deleting widget %d" % id)
             self.menu.Delete(id)
         self.toplevel=[]
         self.id2index={}
         assert self.dprint("inserting new widgets at %d" % pos)
         self.insertIntoMenu(self.menu,pos)
+        self.frame.menumap.reconnectEvents()
 
     def getItems(self):
         raise NotImplementedError
@@ -352,7 +329,7 @@ class ListAction(SelectAction):
     def getIcons(self):
         raise NotImplementedError
 
-    def Enable(self):
+    def showEnable(self):
         if self.toplevel:
             assert self.dprint("Enabling all items: %s" % str(self.toplevel))
             for id in self.toplevel:
@@ -373,32 +350,21 @@ class RadioAction(ListAction):
         ListAction.insertIntoMenu(self,menu,pos)
         for id,index in self.id2index.iteritems():
             self.index2id[index]=id
-        self.Check()
+        self.showCheck()
 
     def _insert(self,menu,pos,name,is_toplevel=False):
-        id=wx.NewId()
+        id = self.cache.getNewId()
         widget=menu.InsertRadioItem(pos,id,name, self.getTooltip(id, name))
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
-        self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
         self.count+=1
-
-    def OnMenuSelected(self,evt):
-        #old=self.getIndex()
-        self.id=evt.GetId()
-        index=self.id2index[self.id]
-        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
-        self.saveIndex(index)
-        self.action(index=index)
-
-    def OnUpdateUI(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
-        self.Enable()
-        self.Check()
-
-    def Check(self):
+    
+    def showEnable(self):
+        ListAction.showEnable(self)
+        self.showCheck()
+        
+    def showCheck(self):
         if self.index2id:
             index=self.getIndex()
             assert self.dprint("checking %d" % (index))
@@ -418,7 +384,7 @@ class ToggleListAction(ListAction):
         ListAction.__init__(self,frame,menu,toolbar)
 
     def _insert(self,menu,pos,name,is_toplevel=False):
-        id=wx.NewId()
+        id = self.cache.getNewId()
         widget=menu.InsertCheckItem(pos,id,name, self.getTooltip())
         self.id2index[id]=self.count
         if is_toplevel:
@@ -438,7 +404,7 @@ class ToggleListAction(ListAction):
         self.Enable()
         self.Check()
 
-    def Check(self):
+    def showCheck(self):
         if self.toplevel:
             assert self.dprint("Checking all items: %s" % str(self.toplevel))
             for id in self.toggles:
@@ -462,7 +428,7 @@ class GlobalList(ListAction):
     # changes.
     #others=[]
     
-    def __init__(self, frame, menu):
+    def __init__(self, frame, menu=None):
         ListAction.__init__(self, frame, menu)
         self.__class__.others.append(weakref.ref(self))
         assert self.dprint("others: %s" % self.__class__.others)
@@ -535,362 +501,364 @@ class GlobalList(ListAction):
         return self.__class__.storage
 
 
-class MenuBarActionMap(debugmixin):
+class UserActionMap(debugmixin):
+    """Creates a mapping of actions for a frame.
+    
+    This class creates the ordering of the menubar, and maps actions to menu
+    items.  Note that the order of the menu titles is required here and can't
+    be added to later.
+    """
     debuglevel=0
     
-    def __init__(self,frame,menus=[]):
-        """Creates a menu map for a frame.  This class creates the
-        ordering of the menubar, and maps actions to menu items.  Note
-        that the order of the menu titles is required here and can't
-        be added to later.
-
-        @param frame: parent Frame object
-        @type frame: Frame
-        @param menus: list of Menu objects
-        @type menus: Menu
-        """
-        self.frame=frame
-        self.actions=[]
-        self.dirty=False
-        self.submenus={}
-        self.rootmenus=[]
-
-        self.toolbars=[]
-
-        self.keymap=KeyMap()
-
-        # Create order of menu titles
-        self.hier={}
-        self.gethier(('root',))
-
-        # each menu title has a list of menu items below it
-        self.menumap={}
-
-    def __del__(self):
-        dprint("DELETING %s" % self)
-
-    def getkey(self,parent,name=None):
-        if parent is None:
-            return tuple(('root',name))
-        elif isinstance(parent,str):
-            if name is None:
-                if parent=='root':
-                    return ('root',)
-                return tuple(('root',parent))
-            else:
-                if parent=='root':
-                    return tuple((parent,name))
-                else:
-                    return tuple(('root',parent,name))
-        elif isinstance(parent,tuple) or isinstance(parent,list):
-            temp=list(parent)
-            if temp[0]!='root':
-                temp[0:0]=['root']
-            if name is not None:
-                temp.append(name)
-            return tuple(temp)
-        raise TypeError("Unrecognized menu definition %s" % parent)
-
-    def gethier(self,menukey):
-        hier=self.hier
-        for name in menukey[:-1]:
-            if name not in hier:
-                hier[name]={'submenus':{}, 'items':[], 'sorted':[]}
-            hier=hier[name]['submenus']
-        if menukey[-1] not in hier:
-            hier[menukey[-1]]={'submenus':{}, 'items':[], 'sorted':[]}
-        return hier[menukey[-1]]
-
-    def setorderer(self,menukey,menu):
-        hier=self.gethier(menukey)
-        hier['order']=menu
-        
-    def addMenu(self,parent,menu):
-        menukey=self.getkey(parent,menu.name)
-        self.setorderer(menukey,menu)
-        
-        assert self.dprint("Adding %s to menu %s: key=%s" % (menu,parent,str(menukey)))
-        if menukey not in self.menumap:
-            # if the menuname doesn't exist yet, make a
-            # placeholder under the assumption that the menu will
-            # be defined later.
-            self.menumap[menukey]=[]
-        self.dirty=True
-        
-    def addMenuItems(self,menuname,group):
-        """Add a menu item (or group) to a menu.
-
-        @param menuname: name of menu title to add to
-        @type menuname: str
-        @param group: group of menu items
-        @type group: MenuItemGroup
-        """
-        if group.actions is None:
-            self.addMenu(menuname,group)
-        else:
-            menukey=self.getkey(menuname)
-            hier=self.gethier(menukey)
-            hier['items'].append(group)
-            self.dirty=True
-
-    def sortHierarchy(self,hier):
-        # Both submenus and items should be sorted together
-        for menu in hier.keys():
-            assert self.dprint("sorting: %s" % str(menu))
-            submenus=hier[menu]['submenus']
-            assert self.dprint("submenus: %s" % str(submenus))
-            menus = []
-            for i in submenus.keys():
-                if 'order' in submenus[i]:
-                    menus.append(submenus[i]['order'])
-                else:
-                    dprint("submenu %s of %s not ordered" % (i, hier))
-            menus.extend(hier[menu]['items'])
-            order=Orderer(menus)
-            menus=order.sort()
-            hier[menu]['sorted']=menus
-            assert self.dprint("sorted:  %s" % hier[menu]['sorted'])
-
-            self.sortHierarchy(hier[menu]['submenus'])
-
-    def sort(self):
-        """Sorts the list of menu items within each menu.  This is not
-        called in the constructor because items are added using the
-        L{addMenuItem} method of this object.
-        """
-        if not self.dirty:
-            return
-
-        assert self.dprint(self.hier)
-
-        self.sortHierarchy(self.hier)
-        self.dirty=False
-
-    def populateMenu(self,parent,hier):
-        # Both submenus and items should be sorted together
-        for menu in hier.keys():
-            currentkey=self.getkey(parent,menu)
-            order=hier[menu]['sorted']
-            assert self.dprint("populating: %s with %s" % (menu,order))
-            assert self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
-            if 'widget' in hier[menu]:
-                widget=hier[menu]['widget']
-                addsep=False
-                for itemgroup in hier[menu]['sorted']:
-                    assert self.dprint("  processing itemgroup %s" % itemgroup)
-                    if itemgroup.actions is None:
-                        submenu=wx.Menu()
-                        widget.AppendMenu(-1,itemgroup.name,submenu)
-                        menukey=self.getkey(currentkey,itemgroup.name)
-                        h=self.gethier(menukey)
-                        h['widget']=submenu
-                        assert self.dprint("  submenu menukey %s: %s" % (str(menukey),h))
-                    else:
-                        for action in itemgroup.actions:
-                            if action is None:
-                                addsep=True
-                            else:
-                                if addsep:
-                                    # Don't allow multiple separators or the
-                                    # menu to end on a separator
-                                    widget.AppendSeparator()
-                                a=action(self.frame,menu=widget)
-                                self.actions.append(a)
-                                addsep=False
-
-                                # define keyboard equivalent
-                                if action.keyboard is not None:
-                                    self.keymap.define(action.keyboard,
-                                                       action(self.frame))
-            if len(hier[menu]['submenus'])>0:
-                self.populateMenu(self.getkey(parent,menu),hier[menu]['submenus'])
-
-
-    def populateMenuBar(self, menubar):
-        """Populates the frame's menubar with the current definition.
-        This replaces the current menubar in the frame.
-        """
-        self.sort()
-        index=0
-        count=menubar.GetMenuCount()
-        hier=self.hier['root']
-        parent=None
-        for menu in hier['sorted']:
-            label=menu.name
-            if menu.hidden:
-                assert self.dprint("  skipping hidden menu %s" % label)
-                continue
-            assert self.dprint("  processing menu %s" % label)
-            menu = wx.Menu()
-            if index<count:
-                menubar.Replace(index, menu, label)
-            else:
-                menubar.Append(menu, label)
-
-            menukey=self.getkey(parent,label)
-            h=self.gethier(menukey)
-            h['widget']=menu
-            index+=1
-           
-        assert self.dprint(hier)
-        self.populateMenu('root',hier['submenus'])
-
-        while index<count:
-            menubar.Remove(index)
-            index+=1
-        assert self.dprint("count=%d" % menubar.GetMenuCount())
-
-
-    def populateTools(self,parent,hier):
-        for menu in hier.keys():
-            currentkey=self.getkey(parent,menu)
-            order=hier[menu]['sorted']
-            assert self.dprint("populating: %s with %s" % (menu,order))
-            assert self.dprint("  parent=%s, hier=%s" % (str(parent),str(hier)))
-            if 'widget' in hier[menu]:
-                widget=hier[menu]['widget']
-                addsep=False
-                for itemgroup in hier[menu]['sorted']:
-                    assert self.dprint("  processing itemgroup %s" % itemgroup)
-                    if itemgroup.actions is None:
-                        # Currently, submenus are ignored it toolbars!
-                        pass
-                    else:
-                        for action in itemgroup.actions:
-                            if action is None:
-                                addsep=True
-                            else:
-                                if addsep:
-                                    # Don't allow multiple separators or the
-                                    # menu to end on a separator
-                                    widget.AddSeparator()
-                                a=action(self.frame,toolbar=widget)
-                                self.actions.append(a)
-                                addsep=False
-
-                                # define keyboard equivalent
-                                if action.keyboard is not None:
-                                    self.keymap.define(action.keyboard,
-                                                       action(self.frame))
-
-    def populateToolBars(self):
-        """Populates the frame's menubar with the current definition.
-        This replaces the current menubar in the frame.
-        """
-        self.sort()
-        hier=self.hier['root']
-        parent=None
-        self.toolbars=[]
-        for menu in hier['sorted']:
-            label=menu.name
-            if menu.hidden:
-                assert self.dprint("  skipping hidden toolbar %s" % label)
-                continue
-            assert self.dprint("  processing toolbar %s" % label)
-            tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
-                            wx.TB_FLAT | wx.TB_NODIVIDER)
-            tb.label=label
-            
-            tb.SetToolBitmapSize(wx.Size(16,16))
-            self.toolbars.append(tb)
-            
-            menukey=self.getkey(parent,label)
-            h=self.gethier(menukey)
-            h['widget']=tb
-           
-        assert self.dprint(hier)
-        self.populateTools('root',hier['submenus'])
-            
-
-
-class UserInterfaceLoader(debugmixin):
-    debuglevel = 0
+    default_menu_weights = {}
     
     @classmethod
-    def loadMenu(cls, frame, majors=[], minors=[], create=True):
-        """Load the global actions into the menu system.
-
-        Any L{IPeppyPlugin} that returns menu items through the
-        getMenuItems() method will be loaded here and stuffed into the
-        GUI.
-
-        @param app: the main application object
-        @type app: L{BufferApp<buffers.BufferApp>}
+    def setDefaultMenuBarWeights(cls, weights, override=False):
+        """Set the default menubar weights.
+        
+        Weights is a mapping of the menu name to the sort order of the
+        menu name.  By default the sort order of the menu ranges from
+        0 to 1000, and floating-point numbers are OK.
         """
-        # Generate the menu bar mapper
-        menumap=MenuBarActionMap(frame)
+        if override:
+            cls.default_menu_weights.clear()
+        if not cls.default_menu_weights:
+            cls.default_menu_weights.update(weights)
+    
+    def __init__(self, frame, action_classes, modes):
+        """Initialize the mapping with the new set of actions.
+        
+        The ordering of the menu items is set here, but nothing is actually
+        mapped to a menubar or a toolbar until either updateMenuActions or
+        updateToolbarActions is called.
+        
+        @param frame: parent Frame object
+        @param menus: list of action classes (i.e. not instantiated classes,
+        but the classes themselves.  They will be instantiated when they are
+        mapped to a menubar and another copy will be instantiated when mapped
+        to a toolbar
+        """
+        self.frame = frame
+        self.actions = {}
+        self.index_actions = {}
+        self.menus = {'root':[]}
+        self.title_to_menu = {}
+        self.title_to_toolbar = {}
+        self.sortActions(action_classes, modes)
 
-        extensions = wx.GetApp().plugin_manager.getActivePluginObjects()
-        assert cls.dprint(extensions)
-
-        later = []
-        for extension in extensions:
-            assert cls.dprint("collecting from extension %s" % extension)
-            for mode,menu,group in extension.getMenuItems():
-                if mode is None:
-                    assert cls.dprint("global menu %s: processing group %s" % (menu,group))
-                    menumap.addMenuItems(menu,group)
-                elif mode in majors or mode in minors:
-                    # save the major mode & minor mode until the
-                    # global menu is populated
-                    later.append((menu,group))
-        for menu,group in later:
-            assert cls.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
-            menumap.addMenuItems(menu,group)
-
-        # create the menubar
-        if create:
-            bar = wx.MenuBar()
+    def getInfo(self, action):
+        """Get menu ordering info from the action
+        
+        The class attribute default_menu is decoded here into the mode
+        (either a text string or None indicating the action is applicable
+        to all major modes), the menu title, menu weight (sorting order of
+        the menu itself) and the item weight (sorting order of the action
+        within the menu).
+        """
+        if len(action.default_menu) == 0:
+            raise AttributeError('Menu position not specified for %s' % action.name)
+        info = action.default_menu
+        dprint("action: name=%s info=%s" % (action.name, info))
+        if isinstance(info, str):
+            menu_title = info
+            menu_weight = None
+            weight = 500
         else:
-            bar = frame.GetMenuBar()
+            if isinstance(info[0], list) or isinstance(info[0], tuple):
+                menu_title = info[0][0]
+                menu_weight = info[0][1]
+            else:
+                menu_title = info[0]
+                menu_weight = None
+            weight = info[1]
+        return menu_title, menu_weight, weight
+    
+    def getParent(self, menu_title):
+        """Get the parent menu title.
+        
+        Submenus are indicated by a / in the menu title
+        """
+        hier = menu_title.split('/')
+        if len(hier) == 1:
+            return 'root'
+        else:
+            return '/'.join(hier[0:-1])
+    
+    def sortActions(self, action_classes, mode):
+        """Sort the actions into a hierarchy of menus
+        
+        Menus and menu items are sorted here by the weights given
+        in the default_menu attribute of the action.
+        """
+        # list to hold the sort order of top-level menubar entries and
+        # pull-right menus
+        menu_weights = {}
+        
+        # First, loop through to get all actions matched to their
+        # menu title
+        for actioncls in action_classes:
+            # Only if the action works with the major mode do we want
+            # it to be an action that fires events
+            if not actioncls.worksWithMajorMode(mode):
+                continue
             
+            action = actioncls(self.frame)
+            self.actions[action.global_id] = action
+            dprint("%s in current mode list" % action)
+
+            if action.default_menu is None or len(action.default_menu) == 0:
+                # It's a command event only, not a menu or toolbar
+                continue
+            
+            menu_title, menu_weight, weight = self.getInfo(actioncls)
+            if menu_title not in self.menus:
+                self.menus[menu_title] = []
+                menu_weights[menu_title] = 500
+
+            # If the item weight is less than zero, a separator will
+            # be added to the menu before the item
+            self.menus[menu_title].append((abs(weight), action, weight<0))
+            if menu_weight is not None:
+                menu_weights[menu_title] = menu_weight
+            elif menu_title in self.default_menu_weights:
+                menu_weights[menu_title] = self.default_menu_weights[menu_title]
+        
+        # Give weights to the top level menus and all pull-right submenus
+        for menu_title, menu_weight in menu_weights.iteritems():
+            parent = self.getParent(menu_title)
+
+            # Corner case when you've created a submenu, but nothing
+            # in the parent menu
+            if parent not in self.menus:
+                dprint("PARENT NOT IN MENUS: %s" % parent)
+                self.menus[parent] = []
+                search = parent
+                while search != 'root':
+                    submenu = search.split('/')[-1]
+                    search = self.getParent(search)
+                    dprint("submenu = %s, search = %s" % (submenu, search))
+                    dprint(self.menus[search])
+                    found = False
+                    for weight, action, sep in self.menus[search]:
+                        if isinstance(action, str) and action == submenu:
+                            found = True
+                            break
+                    if not found:
+                        # Need to make sure all intermediate menus are
+                        # created, and if it's a default menu, make sure
+                        # we're using the correct weight
+                        if submenu in self.default_menu_weights:
+                            weight = self.default_menu_weights[submenu]
+                        else:
+                            weight = 500
+                        self.menus[search].append((weight, submenu, False))
+            
+            self.menus[parent].append((menu_weight, menu_title, False))
+        
+        # For each menu, sort all the items within that group
+        sorted = {}
+        for title, items in self.menus.iteritems():
+            items.sort()
+            sorted[title] = items
+        self.menus = sorted
+        dprint(self.menus.keys())
+    
+    def updateMinMax(self, min, max):
+        """Update the min and max menu ids
+        
+        The range of menu Ids are used in the menu event handlers so that
+        you don't have to bind events individually.
+        """
+        if self.min_id is None:
+            self.min_id = min
+        elif min < self.min_id:
+            self.min_id = min
+            
+        if self.max_id is None:
+            self.max_id = max
+        elif max > self.max_id:
+            self.max_id = max
+    
+    def updateMenuActions(self, menubar):
+        """Populates the frame's menubar with the current actions.
+        
+        This replaces the current menubar in the frame with the menus
+        defined by the current list of actions.
+        """
+        self.min_id = None
+        self.max_id = None
+        for title, items in self.menus.iteritems():
+            if title == 'root':
+                # Save the root menu for later, since wx.MenuBar uses a
+                # different interface than wx.Menu for adding stuff
+                continue
+            if title not in self.title_to_menu:
+                menu = wx.Menu()
+                self.title_to_menu[title] = menu
+            else:
+                menu = self.title_to_menu[title]
+            
+            for weight, action, separator in items:
+                if isinstance(action, str):
+                    submenu_parts = action.split('/')
+                    dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
+                    if action not in self.title_to_menu:
+                        submenu = wx.Menu()
+                        self.title_to_menu[action] = submenu
+                    else:
+                        submenu = self.title_to_menu[action]
+                        
+                    menu.AppendMenu(-1, submenu_parts[-1], submenu)
+                else:
+                    if separator and menu.GetMenuItemCount() > 0:
+                        menu.AppendSeparator()
+                    action.insertIntoMenu(menu)
+                    self.updateMinMax(action.global_id, action.global_id)
+                    subids = action.getSubIds()
+                    if subids:
+                        self.updateMinMax(subids[0], subids[-1])
+                        for id in subids:
+                            self.index_actions[id] = action
+        
         if wx.Platform == '__WXMAC__':
             # turn off the automatic generation of the Window menu.
             # We generate one ourselves
             wx.MenuBar.SetAutoWindowMenu(False)
-            
-        menumap.populateMenuBar(bar)
-        if create:
-            frame.SetMenuBar(bar)
+        pos = 0
+        for weight, title, separator in self.menus['root']:
+            dprint("root menu title: %s" % title)
+            if pos < menubar.GetMenuCount():
+                menubar.Replace(pos, self.title_to_menu[title], title)
+            else:
+                menubar.Append(self.title_to_menu[title], title)
+            pos += 1
+        while (pos < menubar.GetMenuCount()):
+            menubar.Remove(pos)
+        self.connectEvents()
+        
+    def updateToolbarActions(self, auimgr):
+        needed = {}
+        order = []
+        for title, items in self.menus.iteritems():
+            if title == 'root':
+                # Ignore the root menu -- it only contains other menus
+                continue
 
-        return menumap
+            # Change the toolbar title to only the first title --
+            # e.g. rather than splitting up File and File/Submenu into
+            # two toolbars, all of the File toolbars are kept together
+            title = title.split('/')[0]
+            for weight, action, separator in items:
+                if isinstance(action, str):
+                    # Ignore submenu definitions -- toolbars don't have subtoolbars
+                    pass
+                elif action.icon is not None:
+                    # Delay construction of toolbars until now, when
+                    # we know that the toolbar is needed
+                    if title not in needed:
+                        needed[title] = True
+                        order.append(title)
+                    if title not in self.title_to_toolbar:
+                        tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
+                            wx.TB_FLAT | wx.TB_NODIVIDER)
+                        tb.SetToolBitmapSize(wx.Size(16,16))
+                        self.title_to_toolbar[title] = tb
+                        dprint(tb)
+                    toolbar = self.title_to_toolbar[title]
+                    if separator and toolbar.GetToolsCount() > 0:
+                        toolbar.AddSeparator()
+                    action.insertIntoToolbar(toolbar)
+                    
+        for title in order:
+            tb = self.title_to_toolbar[title]
+            tb.Realize()
+            dprint("Realized %s: %s" % (title, tb))
+            auimgr.AddPane(tb, wx.aui.AuiPaneInfo().
+                                  Name(title).Caption(title).
+                                  ToolbarPane().Top().
+                                  LeftDockable(False).RightDockable(False))
+    
+    def cleanupPrevious(self, auimgr):
+        self.disconnectEvents()
+        for tb in self.title_to_toolbar.values():
+            auimgr.DetachPane(tb)
+            tb.Destroy()
+        self.title_to_toolbar = {}
+
+    def reconnectEvents(self):
+        """Update event handlers if the menu has been dynamically updated
+        
+        Sub-ids may have changed after a dynamic menu change, so update the
+        min-max list, and update the event handlers.
+        """
+        self.disconnectEvents()
+        self.index_actions = {}
+        for action in self.actions.values():
+            # Global ids can't have changed dynamically, so ignore them.
+            # We're only interested in the sub-ids
+            subids = action.getSubIds()
+            if subids:
+                self.updateMinMax(subids[0], subids[-1])
+                for id in subids:
+                    self.index_actions[id] = action
+        self.connectEvents()
+
+    def disconnectEvents(self):
+        """Remove the event handlers for the range of menu ids"""
+        self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_COMMAND_MENU_SELECTED)
+        self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI)
+    
+    def connectEvents(self):
+        """Add event handlers for the range of menu ids"""
+        self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_COMMAND_MENU_SELECTED,
+                           self.OnMenuSelected)
+        self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI,
+                           self.OnUpdateUI)
+    
+    def OnMenuSelected(self, evt):
+        """Process a menu selection event"""
+        self.dprint(evt)
+        id = evt.GetId()
+        
+        if id in self.actions:
+            # The id is in the list of single-event actions
+            action = self.actions[id]
+            self.dprint(action)
+            action.action()
+        elif id in self.index_actions:
+            # Some actions are associated with more than one id, like list
+            # actions.  These are dispatched here.
+            action = self.index_actions[id]
+            index = action.getIndexOfId(id)
+            self.dprint("index %d of %s" % (index, action))
+            action.action(index=index)
+        
+    def OnUpdateUI(self, evt):
+        """Update the state of the menu items.
+        
+        This event gets fired just before wx shows the menu, giving us a
+        chance to update the status before the user sees it.
+        """
+        self.dprint(evt)
+        id = evt.GetId()
+        if id in self.actions:
+            # We're only interested in one id per Action, because list
+            # actions will set the state for all their sub-ids given a
+            # single id
+            action = self.actions[id]
+            self.dprint(action)
+            action.showEnable()
 
     @classmethod
-    def loadToolbar(cls, frame,majors=[],minors=[]):
-        """Load actions into the toolbar system.
+    def getActiveActions(cls):
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        assert cls.dprint(plugins)
 
-        Any L{IPeppyPlugin} that returns toolbar items through the
-        getToolBarItems() method will be loaded here and stuffed into
-        the GUI.
-
-        @param app: the main application object
-        @type app: L{BufferApp<buffers.BufferApp>}
-        """
-        # Generate the menu bar mapper
-        toolmap=MenuBarActionMap(frame)
-
-        extensions = wx.GetApp().plugin_manager.getActivePluginObjects()
-        assert cls.dprint(extensions)
-        
-        later=[]
-        for extension in extensions:
-            assert cls.dprint("collecting from extension %s" % extension)
-            for mode,menu,group in extension.getToolBarItems():
-                if mode is None:
-                    assert cls.dprint("global menu %s: processing group %s" % (menu,group))
-                    toolmap.addMenuItems(menu,group)
-                elif mode in majors or mode in minors:
-                    # save the major mode & minor mode until the
-                    # global menu is populated
-                    later.append((menu,group))
-        for menu,group in later:
-            assert cls.dprint("mode %s, menu %s: processing group %s" % (mode,menu,group))
-            toolmap.addMenuItems(menu,group)
-
-        # create the menubar
-        toolmap.populateToolBars()
-
-        return toolmap
+        actions = []
+        for plugin in plugins:
+            assert cls.dprint("collecting from plugin %s" % plugin)
+            actions.extend(plugin.getActions())
+        return actions
 
     @classmethod
     def setupKeys(cls):

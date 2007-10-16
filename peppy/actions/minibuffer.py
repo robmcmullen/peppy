@@ -9,7 +9,7 @@ from peppy.actions.base import *
 from peppy.debug import *
 from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 
-class MinibufferAction(BufferModificationAction):
+class MinibufferAction(TextModificationAction):
     minibuffer_label = None
     
     def action(self, index=-1, multiplier=1):

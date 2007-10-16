@@ -36,7 +36,8 @@ def getActionClass(name):
         "bot_url": "shell:%s" % name,
         "alias": _("chatbot-%s") % name,
         "name": _("Psychoanalyst (%s)" % name.title()),
-        "tooltop": "Chat with the %s chatbot" % name,
+        "tooltip": "Chat with the %s chatbot" % name,
+        "default_menu": "Tools/Games",
         "action": action,
         }
 
@@ -55,12 +56,10 @@ class ChatPlugin(IPeppyPlugin):
         if filename in chatbots.keys():
             return ChatWrapper(*chatbots[filename])
 
+    # will become a dictionary mapping the bot name to the class
     actions = None
-    default_menu = [(_("Tools"),Separator(_("gamessep"))),
-                    (_("Tools"),Menu(_("Games")).after(_("gamessep"))),
-                    ]
 
-    def getMenuItems(self):
+    def getActions(self):
         """Create a global menu item for each chatbot.
 
         Since we don't want to hard-code the chatbots, we have to
@@ -70,20 +69,16 @@ class ChatPlugin(IPeppyPlugin):
         menu.
         """
         if ChatPlugin.actions is None:
-            menu = (_("Tools"),_("Games"))
-            
             actions = {}
             bots = chatbots.keys()
             bots.sort()
             for bot in chatbots.keys():
                 actioncls = getActionClass(bot)
                 actions[bot] = actioncls
-                item = MenuItem(actioncls)
-                ChatPlugin.default_menu.append((menu, item))
             ChatPlugin.actions = actions
-        
-        for menu,item in self.default_menu:
-            yield (None,menu,item)
+
+        actions = ChatPlugin.actions.values()
+        return actions
 
 class ChatWrapper(debugmixin):
     debuglevel=0

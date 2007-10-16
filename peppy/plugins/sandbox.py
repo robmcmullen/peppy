@@ -23,6 +23,7 @@ from peppy.major import *
 class SlowProgressBarTest(SelectAction):
     name = _("Slow test of the progress bar")
     tooltip = _("Test the progress bar")
+    default_menu = "&Help/Tests"
     delay = .2
 
     def action(self, index=-1, multiplier=1):
@@ -45,12 +46,18 @@ class SlowProgressBarTest(SelectAction):
         
 class FastProgressBarTest(SlowProgressBarTest):
     name = _("Fast test of the progress bar")
+    default_menu = "&Help/Tests"
     delay = .01
 
 class ShowStyles(SelectAction):
     name = _("Show Line Style")
     tooltip = _("Show the styling information of the current line")
+    default_menu = "&Help/Tests"
     key_bindings = {'default': 'M-S',}
+
+    @classmethod
+    def worksWithMajorMode(self, mode):
+        return hasattr(mode.stc, 'showStyle')
     
     def action(self, index=-1, multiplier=1):
         self.mode.stc.showStyle()
@@ -60,11 +67,5 @@ class SandboxPlugin(IPeppyPlugin):
     """Plugin to register sandbox tests.
     """
 
-    default_menu=((None,(_("&Help"),_("&Tests")),MenuItem(FastProgressBarTest)),
-                  (None,(_("&Help"),_("&Tests")),MenuItem(SlowProgressBarTest)),
-                  (None,(_("&Help"),_("&Tests")),MenuItem(ShowStyles)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
+    def getActions(self):
+        return [SlowProgressBarTest, FastProgressBarTest, ShowStyles]

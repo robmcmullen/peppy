@@ -18,7 +18,7 @@ from peppy.actions.minibuffer import *
 class OpenHexEditor(SelectAction):
     name = _("&Open Hex Editor...")
     tooltip = _("Open a Hex Editor")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
 ##    def isEnabled(self, state=None):
 ##        return not self.frame.isOpen()
@@ -35,9 +35,14 @@ class GotoOffset(MinibufferAction):
 
     name = "Goto Offset..."
     tooltip = "Goto an offset."
+    default_menu = ("Edit", 500)
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Offset:"
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return mode.keyword == 'HexEdit'
 
     def processMinibuffer(self, minibuffer, mode, pos):
         """
@@ -890,10 +895,5 @@ class HexEditPlugin(IPeppyPlugin, debugmixin):
     def getMajorModes(self):
         yield HexEditMode
 
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(OpenHexEditor)),
-                  ('HexEdit',_("Edit"),MenuItem(GotoOffset)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
+    def getActions(self):
+        return [OpenHexEditor, GotoOffset]

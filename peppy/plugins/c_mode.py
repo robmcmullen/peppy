@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 class SampleCFile(SelectAction):
     name = _("&Open Sample C File")
     tooltip = _("Open a sample C file")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:hello.c")
@@ -55,8 +55,5 @@ class CModePlugin(IPeppyPlugin):
     def getMajorModes(self):
         yield CMode
 
-    default_menu=((None,(_("&Help"),_("&Samples")),MenuItem(SampleCFile)),
-                 )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
+    def getActions(self):
+        return [SampleCFile]

@@ -25,6 +25,7 @@ from peppy.buffers import *
 class FrameList(GlobalList):
     debuglevel=0
     name="Frames"
+    default_menu = ("Window", -100)
 
     storage=[]
     others=[]
@@ -44,6 +45,7 @@ class FrameList(GlobalList):
 class DeleteFrame(SelectAction):
     alias = _("delete-frame")
     name = _("&Delete Frame")
+    default_menu = ("Window", 1)
     tooltip = _("Delete current window")
     
     def action(self, index=-1, multiplier=1):
@@ -58,6 +60,7 @@ class NewFrame(SelectAction):
     alias = _("new-frame")
     name = _("&New Frame")
     tooltip = _("Open a new window")
+    default_menu = ("Window", 0)
     key_bindings = {'emacs': "C-X 5 2",}
     
     def action(self, index=-1, multiplier=1):
@@ -209,6 +212,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         BoolParam('show_toolbar', True),
         )
 
+    default_menubar = {
+        "File": 0,
+        "Edit": 0.001,
+        "Format": 0.002,
+        "View": 0.003,
+        "Tools": 0.004,
+        "Transform": 0.005,
+        "Buffers": 1000.1,
+        "Window": 1000.2,
+        "&Help": 1000.3,
+        }
+
+
     def __init__(self, urls=[], id=-1):
         BufferFrame.frameid+=1
         self.name="peppy: Frame #%d" % BufferFrame.frameid
@@ -231,10 +247,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
         self.sidebar_panes = []
-        
+
+        UserActionMap.setDefaultMenuBarWeights(self.default_menubar)
+        wx.App_SetMacHelpMenuTitleName(_("&Help"))
+
         self.SetMenuBar(wx.MenuBar())
         self.menumap=None
-        self.toolmap=None
         self.show_toolbar = self.classprefs.show_toolbar
         
         self.keys=KeyProcessor(self)
@@ -362,16 +380,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         bar.Show()
     
     def setKeys(self,majormodes=[],minormodes=[]):
-        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
-        self.keys.setGlobalKeyMap(keymap)
-        self.keys.clearMinorKeyMaps()
+##        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
+##        self.keys.setGlobalKeyMap(keymap)
+##        self.keys.clearMinorKeyMaps()
+        pass
         
-    def setMenumap(self,majormodes=[],minormodes=[]):
-        #MenuItemLoader.debuglevel=1
-        #MenuBarActionMap.debuglevel=1
-        self.menumap=UserInterfaceLoader.loadMenu(self,majormodes,minormodes)
-        self.keys.addMinorKeyMap(self.menumap.keymap)
-        #get_all_referrers(SelectAction)
+    def setMenumap(self, mode):
+        if self.menumap is not None:
+            self.menumap.cleanupPrevious(self._mgr)
+        actions = UserActionMap.getActiveActions()
+        self.menumap = UserActionMap(self, actions, mode)
+        self.menumap.updateMenuActions(self.GetMenuBar())
+        if self.show_toolbar:
+            self.menumap.updateToolbarActions(self._mgr)
+        self._mgr.Update()
 
     enablecount = 0
     def enableTools(self):
@@ -387,6 +409,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         is more efficient, anyway.
         """
         if not self.show_toolbar:
+            return
+
+        # Skip this for now
+        if True:
             return
         
         BufferFrame.enablecount += 1
@@ -410,27 +436,27 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 assert self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
                 action.Enable()
 
-    def setToolmap(self,majormodes=[],minormodes=[]):
-        if self.toolmap is not None:
-            for action in self.toolmap.actions:
-                action.disconnectFromToolbar()
-            assert self.dprint(self.toolmap.actions)
-            for tb in self.toolmap.toolbars:
-                self._mgr.DetachPane(tb)
-                tb.Destroy()
+##    def setToolmap(self,majormodes=[],minormodes=[]):
+##        if self.toolmap is not None:
+##            for action in self.toolmap.actions:
+##                action.disconnectFromToolbar()
+##            assert self.dprint(self.toolmap.actions)
+##            for tb in self.toolmap.toolbars:
+##                self._mgr.DetachPane(tb)
+##                tb.Destroy()
 
-        if self.show_toolbar:
-            self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
-            self.keys.addMinorKeyMap(self.toolmap.keymap)
+##        if self.show_toolbar:
+##            self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
+##            self.keys.addMinorKeyMap(self.toolmap.keymap)
 
-            for tb in self.toolmap.toolbars:
-                tb.Realize()
-                self._mgr.AddPane(tb, wx.aui.AuiPaneInfo().
-                                  Name(tb.label).Caption(tb.label).
-                                  ToolbarPane().Top().
-                                  LeftDockable(False).RightDockable(False))
-        else:
-            self.toolmap = None
+##            for tb in self.toolmap.toolbars:
+##                tb.Realize()
+##                self._mgr.AddPane(tb, wx.aui.AuiPaneInfo().
+##                                  Name(tb.label).Caption(tb.label).
+##                                  ToolbarPane().Top().
+##                                  LeftDockable(False).RightDockable(False))
+##        else:
+##            self.toolmap = None
         
     def getActiveMajorMode(self):
         major=self.tabs.getCurrent()
@@ -631,22 +657,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
-        hierarchy=getSubclassHierarchy(mode,MajorMode)
-        assert self.dprint("Mode hierarchy: %s" % hierarchy)
-        # Get the major mode names for the hierarchy (but don't
-        # include the last one which is the abstract MajorMode)
-        majors=[m.keyword for m in hierarchy[:-1]]
-        assert self.dprint("Major mode names: %s" % majors)
-        
-##        if last:
-##            assert self.dprint("saving settings for mode %s" % last)
-##            BufferFrame.perspectives[last.buffer.filename] = self._mgr.SavePerspective()
-        
         mode.focus()
         self.setTitle()
-        self.setKeys(majors)
-        self.setMenumap(majors)
-        self.setToolmap(majors)
+        #self.setKeys(majors)
+        self.setMenumap(mode)
         self.setStatusBar()
 
 ##        if mode.buffer.filename in BufferFrame.perspectives:

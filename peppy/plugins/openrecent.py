@@ -18,6 +18,7 @@ from peppy.lib.userparams import *
 
 class RecentFiles(GlobalList):
     name=_("Open Recent")
+    default_menu = ("File", 10)
     inline=False
 
     storage=[]
@@ -99,5 +100,5 @@ class RecentFilesPlugin(IPeppyPlugin):
             #print "saving %s to %s" % (file,pathname)
             fh.write("%s%s" % (file,os.linesep))
 
-    def getMenuItems(self):
-        yield (None,_("File"),MenuItem(RecentFiles).after(_("&Open File...")).before("opensep"))
+    def getActions(self):
+        yield RecentFiles

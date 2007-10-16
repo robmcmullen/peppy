@@ -21,6 +21,7 @@ from peppy.lib.pluginmanager import *
 class Preferences(SelectAction):
     name = _("&Preferences...")
     tooltip = _("Preferences, settings, and configurations...")
+    default_menu = ("Edit", 1000.1)
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES
 
@@ -80,6 +81,7 @@ class PeppyPrefDialog(PrefDialog):
 class Plugins(SelectAction):
     name = _("&Plugins...")
     tooltip = _("Plugin configuration")
+    default_menu = ("Edit", 1000.2)
     icon = "icons/plugin.png"
 
     @classmethod
@@ -97,6 +99,6 @@ class Plugins(SelectAction):
 
 
 class PreferencesPlugin(IPeppyPlugin):
-    def getMenuItems(self):
-        yield (None,_("Edit"),MenuItem(Preferences).after(_("lastsep")))
-        yield (None,_("Edit"),MenuItem(Plugins).after(_("lastsep")))
+    def getActions(self):
+        return [Preferences, Plugins]
+    

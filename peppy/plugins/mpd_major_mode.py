@@ -401,12 +401,16 @@ class MPDComm(debugmixin):
             self.save_mute = -1
         self.cmd('setvol', vol)
 
-
-class Login(SelectAction):
+class MPDActionMixin(object):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode, MPDMode)
+    
+class Login(MPDActionMixin, SelectAction):
     alias = _("mpd-login")
     name = _("Login")
     tooltip = _("Login")
-    icon = 'icons/control_start.png'
+    default_menu = ("MPD", -800)
     key_bindings = {'default': 'L'}
     
     def isEnabled(self):
@@ -421,7 +425,7 @@ class OpenMPD(OpenDialog):
     alias = _("mpd-open-server")
     name = _("MPD Server...")
     tooltip = _("Open an MPD server through a URL")
-    icon = "icons/folder_page.png"
+    default_menu = ("File/Open", 500)
 
     dialog_message = "Open MPD server.  Specify host[:port]"
 
@@ -434,7 +438,7 @@ class OpenMPD(OpenDialog):
         dprint("Attempting to open mpd url: %s" % url)
         self.frame.open(url)
 
-class PlayingAction(SelectAction):
+class PlayingAction(MPDActionMixin, SelectAction):
     """Base class for actions that are valid only while playing music.
 
     Anything that subclasses this action only makes sense while the
@@ -444,7 +448,7 @@ class PlayingAction(SelectAction):
         mode = self.mode
         return mode.mpd.isPlaying()
 
-class ConnectedAction(SelectAction):
+class ConnectedAction(MPDActionMixin, SelectAction):
     """Base class for actions that only need a working mpd.
 
     Anything that subclasses this action can still function regardless
@@ -458,6 +462,7 @@ class PrevSong(PlayingAction):
     alias = _("previous-song")
     name = _("Prev Song")
     tooltip = _("Previous Song")
+    default_menu = ("MPD", 100)
     icon = 'icons/control_start.png'
     key_bindings = {'default': ','}
     
@@ -471,6 +476,7 @@ class NextSong(PlayingAction):
     alias = _("next-song")
     name = _("Next Song")
     tooltip = _("Next Song")
+    default_menu = ("MPD", 103)
     icon = 'icons/control_end.png'
     key_bindings = {'default': '.'}
     
@@ -484,6 +490,7 @@ class StopSong(PlayingAction):
     alias = _("stop")
     name = _("Stop")
     tooltip = _("Stop")
+    default_menu = ("MPD", 101)
     icon = 'icons/control_stop.png'
     key_bindings = {'default': 'S'}
     
@@ -497,6 +504,7 @@ class PlayPause(ConnectedAction):
     alias = _("play-or-pause")
     name = _("Play/Pause Song")
     tooltip = _("Play/Pause Song")
+    default_menu = ("MPD", 102)
     icon = 'icons/control_play.png'
     key_bindings = {'default': 'P'}
     
@@ -510,6 +518,7 @@ class Mute(ConnectedAction):
     alias = _("mute")
     name = _("Mute")
     tooltip = _("Mute the volume")
+    default_menu = ("MPD", 202)
     icon = 'icons/sound_mute.png'
     key_bindings = {'default': 'M'}
     
@@ -522,6 +531,7 @@ class VolumeUp(ConnectedAction):
     alias = _("volume-up")
     name = _("Increase Volume")
     tooltip = _("Increase the volume")
+    default_menu = ("MPD", -200)
     icon = 'icons/sound.png'
     key_bindings = {'default': '='}
     
@@ -534,6 +544,7 @@ class VolumeDown(ConnectedAction):
     alias = _("volume-down")
     name = _("Decrease Volume")
     tooltip = _("Decrease the volume")
+    default_menu = ("MPD", 201)
     icon = 'icons/sound_low.png'
     key_bindings = {'default': '-'}
     
@@ -546,7 +557,7 @@ class UpdateDatabase(ConnectedAction):
     alias = _("update-mpd-database")
     name = _("Update Database")
     tooltip = _("Rescan the filesystem and update the MPD database")
-    icon = 'icons/sound_low.png'
+    default_menu = ("MPD", 801)
     key_bindings = {'default': 'C-D'}
     
     def action(self, index=-1, multiplier=1):
@@ -557,7 +568,7 @@ class DeleteFromPlaylist(ConnectedAction):
     alias = _("delete-playlist-entry")
     name = _("Delete Playlist Entry")
     tooltip = _("Delete selected songs from playlist")
-    icon = 'icons/sound_low.png'
+    default_menu = ("MPD", -300)
     key_bindings = {'default': 'DEL'}
     
     def action(self, index=-1, multiplier=1):
@@ -1508,37 +1519,8 @@ class MPDPlugin(IPeppyPlugin):
         for mode in [MPDPlaylist, MPDCurrentlyPlaying, MPDSearchResults]:
             yield mode
     
-    default_menu=((None,(_("File"),_("Open")),MenuItem(OpenMPD).first()),
-                  ("MPD",None,Menu(_("MPD")).after("Major Mode")),
-                  ("MPD",_("MPD"),MenuItem(StopSong)),
-                  ("MPD",_("MPD"),MenuItem(PlayPause)),
-                  ("MPD",_("MPD"),MenuItem(PrevSong)),
-                  ("MPD",_("MPD"),MenuItem(NextSong)),
-                  ("MPD",_("MPD"),Separator("volume")),
-                  ("MPD",_("MPD"),MenuItem(VolumeUp)),
-                  ("MPD",_("MPD"),MenuItem(VolumeDown)),
-                  ("MPD",_("MPD"),MenuItem(Mute)),
-                  ("MPD",_("MPD"),Separator("playlist")),
-                  ("MPD",_("MPD"),MenuItem(DeleteFromPlaylist)),
-                  ("MPD",_("MPD"),Separator("database")),
-                  ("MPD",_("MPD"),MenuItem(Login)),
-                  ("MPD",_("MPD"),MenuItem(UpdateDatabase)),
-                   )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
-
-    default_tools=(("MPD",None,Menu(_("MPD")).after("Major Mode")),
-                  ("MPD",_("MPD"),MenuItem(PrevSong)),
-                  ("MPD",_("MPD"),MenuItem(StopSong)),
-                  ("MPD",_("MPD"),MenuItem(PlayPause)),
-                  ("MPD",_("MPD"),MenuItem(NextSong)),
-                  ("MPD",_("MPD"),Separator("volume")),
-                  ("MPD",_("MPD"),MenuItem(VolumeDown)),
-                  ("MPD",_("MPD"),MenuItem(VolumeUp)),
-                  ("MPD",_("MPD"),MenuItem(Mute)),
-                   )
-    def getToolBarItems(self):
-        for mode,menu,item in self.default_tools:
-            yield (mode,menu,item)
-
+    def getActions(self):
+        return [OpenMPD, StopSong, PlayPause, PrevSong, NextSong,
+                VolumeUp, VolumeDown, Mute,
+                DeleteFromPlaylist, Login, UpdateDatabase,
+                ]

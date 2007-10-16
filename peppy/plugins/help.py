@@ -31,6 +31,7 @@ class HelpAbout(SelectAction):
     name = _("&About...")
     tooltip = _("About this program")
     stock_id = wx.ID_ABOUT
+    default_menu = ("&Help", 0)
 
     about = "Test program"
     title = "Test program title"
@@ -64,6 +65,7 @@ class HelpManual(SelectAction):
     name = _("&Help...")
     tooltip = _("User manual")
     stock_id = wx.ID_HELP
+    default_menu = ("&Help", -100)
     key_bindings = {'default': "F1",}
     
     def action(self, index=-1, multiplier=1):
@@ -73,14 +75,7 @@ class HelpManual(SelectAction):
 class HelpPlugin(IPeppyPlugin):
     def aboutFiles(self):
         return {'User Manual': _user_manual}
-    
-    default_menu=((None,None,Menu(_("&Help")).last()),
-                  (None,_("&Help"),MenuItem(HelpAbout).first()),
-                  (None,_("&Help"),Separator(_("manual")).first()),
-                  (None,_("&Help"),MenuItem(HelpManual).first()),
-                  (None,_("&Help"),Separator(_("debug")).first()),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
+
+    def getActions(self):
+        return [HelpAbout, HelpManual]
 

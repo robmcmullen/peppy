@@ -13,6 +13,7 @@ from peppy.menu import *
 class WidgetInspector(SelectAction):
     name=_("Widget Inspector...")
     tooltip = _("Open the wxPython widget inspector.")
+    default_menu = ("&Help", -700)
     icon = "icons/style_edit.png"
 
     def isEnabled(self):
@@ -25,5 +26,5 @@ class WidgetInspector(SelectAction):
         InspectionTool().Show(self.frame, True)
 
 class WidgetInspectorPlugin(IPeppyPlugin):
-    def getMenuItems(self):
-        yield (None,_("&Help"),MenuItem(WidgetInspector).last())
+    def getActions(self):
+        return [WidgetInspector]
