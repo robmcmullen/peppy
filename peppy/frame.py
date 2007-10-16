@@ -413,7 +413,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def setToolmap(self,majormodes=[],minormodes=[]):
         if self.toolmap is not None:
             for action in self.toolmap.actions:
-                action.remove()
+                action.disconnectFromToolbar()
             assert self.dprint(self.toolmap.actions)
             for tb in self.toolmap.toolbars:
                 self._mgr.DetachPane(tb)

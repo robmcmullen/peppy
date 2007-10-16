@@ -89,7 +89,7 @@ class SelectAction(debugmixin):
         self.initPostHook()
 
     def __del__(self):
-        assert self.dprint("DELETING action %s" % self.name)
+        dprint("DELETING action %s" % self.name)
 
     def initPreHook(self):
         pass
@@ -146,12 +146,19 @@ class SelectAction(debugmixin):
         self.frame.Connect(self.id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
                            self.OnMenuSelected)
 
-    def remove(self):
-        assert self.dprint("removing %s (widget id=%d) result=%s" % (self.name, self.id, self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)))
+    def disconnectFromMenu(self):
+        if self.frame is not None:
+            status1 = self.frame.Disconnect(self.id, -1, wx.wxEVT_COMMAND_MENU_SELECTED)
+            status2 = self.frame.Disconnect(self.id, -1, wx.wxEVT_UPDATE_UI)
+            dprint("removing %s (widget id=%d) connections removed: cmd=%s update=%s" % (self.name, self.id, status1, status2))
+        else:
+            dprint("item %s (widget id=%d) does not have a frame" % (self.name, self.id))
         self.widget = None
         self.tool = None
         self.frame = None
-        
+        self.mode = None
+    disconnectFromToolbar = disconnectFromMenu
+    
     def OnMenuSelected(self,evt):
         assert self.dprint("menu item %s (widget id=%d) selected on frame=%s" % (self.name,self.id,self.frame))
         self.action()
@@ -560,7 +567,7 @@ class MenuBarActionMap(debugmixin):
         self.menumap={}
 
     def __del__(self):
-        assert self.dprint("DELETING %s" % self)
+        dprint("DELETING %s" % self)
 
     def getkey(self,parent,name=None):
         if parent is None:
