@@ -27,10 +27,16 @@ class EditraStyles(SelectAction):
         return False
 
     def action(self, index=-1, multiplier=1):
-        config = self.mode.getStyleFile()
-        dprint(config)
+        stylesheet = self.mode.getStyleFile()
+        dprint(stylesheet)
         dlg = style_editor.StyleEditor(self.frame, -1)
-        dlg.ShowModal()
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            sheet = dlg.GenerateStyleSheet()
+            dprint(sheet)
+            fh = wx.GetApp().config.open(stylesheet, 'wb')
+            fh.write(sheet)
+        dlg.Destroy()
         Publisher().sendMessage('peppy.preferences.changed')
 
 

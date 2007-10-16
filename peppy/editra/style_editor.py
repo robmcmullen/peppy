@@ -151,10 +151,11 @@ class StyleEditor(wx.Dialog):
         # Create Buttons
         b_sizer = wx.BoxSizer(wx.HORIZONTAL)
         cancel_b = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
-        save_b = wx.Button(self, wx.ID_SAVE, _("Export"))
+        #save_b = wx.Button(self, wx.ID_SAVE, _("Export"))
         ok_b = wx.Button(self, wx.ID_OK, _("Ok"))
         ok_b.SetDefault()
-        b_sizer.AddMany([cancel_b, save_b, ok_b])
+        #b_sizer.AddMany([cancel_b, save_b, ok_b])
+        b_sizer.AddMany([cancel_b, ok_b])
         self.sizer.Add(b_sizer, 0, wx.ALIGN_RIGHT | \
                                    wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -167,9 +168,9 @@ class StyleEditor(wx.Dialog):
         self.EnableSettings(False)
 
         # Event Handlers
-        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
-        self.Bind(wx.EVT_BUTTON, self.OnOk, id=wx.ID_OK)
-        self.Bind(wx.EVT_BUTTON, self.OnExport, id=wx.ID_SAVE)
+#        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
+#        self.Bind(wx.EVT_BUTTON, self.OnOk, id=wx.ID_OK)
+#        self.Bind(wx.EVT_BUTTON, self.OnExport, id=wx.ID_SAVE)
         self.Bind(wx.EVT_CHOICE, self.OnChoice)
         self.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
