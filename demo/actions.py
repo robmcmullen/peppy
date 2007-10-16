@@ -8,44 +8,60 @@ from cStringIO import StringIO
 import wx
 import wx.aui
 
-from peppy.lib.orderer import *
-from peppy.trac.core import *
 from peppy.debug import *
 
-from peppy.menu import *
-
+from ngmenu import *
+_ = str
 
 class NewFrame(SelectAction):
     name="New Frame"
     tooltip="Open a new window."
+    icon = "icons/tux.png"
+    default_menu = (None, ('File', 0), -1)
+    key_bindings = {'win': "C-N", }
 
     def action(self, pos=-1):
         self.frame.app.NewFrame()
 
 class CloseFrame(SelectAction):
     name="Close Frame"
-    tooltip="Quit the program."
-
+    tooltip="Close the current Frame."
+    icon="icons/cross.png"
+    default_menu = (None, 'File', 10)
+    
+    def isEnabled(self):
+        if len(FrameList.frames) > 1:
+            return True
+        return False
+    
     def action(self, pos=-1):
         self.frame.OnClose()
+        
+class ShowToolbar(ToggleAction):
+    name="Show Toolbar"
+    tooltip="Enable display of toolbar"
+    default_menu = (None, 'File', -300)
+
+    def isChecked(self):
+        return self.frame.settings['toolbar']
+
+    def action(self):
+        self.frame.settings['toolbar'] = not self.frame.settings['toolbar']
+        self.frame.setMenumap()
 
 class Exit(SelectAction):
     name="Exit"
     tooltip="Quit the program."
+    icon = "icons/bug.png"
+    default_menu = (None, 'File', -1000)
 
     def action(self, pos=-1):
         self.frame.app.Exit()
 
-class NoMode(SelectAction):
-    name="No Mode"
-    tooltip="Switch to default mode."
-
-    def action(self, pos=-1):
-        self.frame.switchMode('none')
-
 class Python(SelectAction):
     name="Python Mode"
     tooltip="Switch to Python Mode."
+    default_menu = (None, 'Modes', 300)
 
     def action(self, pos=-1):
         self.frame.switchMode('Python')
@@ -53,6 +69,7 @@ class Python(SelectAction):
 class CPlusPlus(SelectAction):
     name="C++ Mode"
     tooltip="Switch to C++ Mode."
+    default_menu = (None, 'Modes', 300)
 
     def action(self,  pos=-1):
         self.frame.switchMode('C++')
@@ -61,6 +78,7 @@ class MajorModeSelect(RadioAction):
     name="Major Mode"
     inline=False
     tooltip="Switch major mode"
+    default_menu = (None, 'Modes', 200)
 
     items=['none','Fundamental','C++','Python']
 
@@ -77,8 +95,7 @@ class MajorModeSelect(RadioAction):
         return MajorModeSelect.items
 
     def action(self, index=0, old=-1):
-        self.frame.switchMode(MajorModeSelect.items[index],
-                              MajorModeSelect.items[old])
+        self.frame.switchMode(MajorModeSelect.items[index])
 
 class MajorModeSelect2(MajorModeSelect):
     inline=True
@@ -86,55 +103,34 @@ class MajorModeSelect2(MajorModeSelect):
 class PythonShiftRight(SelectAction):
     name="Shift Region Right"
     icon=wx.ART_WARNING
+    default_menu = ('Python', 'Edit', 100)
 
 class PythonShiftLeft(SelectAction):
     name="Shift Region Left"
     icon=wx.ART_QUESTION
-
-class PythonMenuItems(Component):
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
-    
-    def getMenuItems(self):
-        yield ("Python",None,Menu("Python"))
-        for action in PythonShiftRight,PythonShiftLeft,None:
-            yield ("Python","Python",MenuItem(action))
-
-    def getToolBarItems(self):
-        yield ("Python",None,Menu("Python"))
-        for action in PythonShiftRight,PythonShiftLeft,None:
-            yield ("Python","Python",MenuItem(action))
-
-
-
-class MenuSwitchers(Component):
-    implements(IMenuItemProvider)
-
-    default_items=(("File",MenuItem(NoMode).after("save")),
-                   ("File",MenuItem(Python).after("save")),
-                   ("File",MenuItem(CPlusPlus).after("save")),
-                   ("File",Separator("mode switching")),
-                   )
-    def getMenuItems(self):
-        for menu,item in self.default_items:
-            yield (None,menu,item)
+    default_menu = ('Python', 'Edit', 200)
 
 class Mercury(SelectAction):
     name="Mercury"
     tooltip="This text in statusbar if in menu or tooltip if in toolbar"
+    default_menu = (None, ('Planets', 10), 0)
 
 class Venus(SelectAction):
     name="Venus"
+    default_menu = (None, 'Planets', 100)
 
 class Earth(SelectAction):
     name="Earth"
+    default_menu = (None, 'Planets', 101)
 
 class Mars(SelectAction):
     name="Mars"
+    default_menu = (None, 'Planets', 102)
 
 class ShowAsteroids(ToggleAction):
     name="Asteroids"
     tooltip="Enable display of asteroids"
+    default_menu = (None, 'Planets', -103)
 
     def isChecked(self):
         return self.frame.settings['asteroids']
@@ -144,6 +140,7 @@ class ShowAsteroids(ToggleAction):
 
 class Ceres(SelectAction):
     name="Ceres"
+    default_menu = (None, 'Planets', 104)
 
     def isEnabled(self):
         return self.frame.settings['asteroids']
@@ -151,6 +148,7 @@ class Ceres(SelectAction):
 class ShowOuterPlanets(ToggleAction):
     name="Outer Planets"
     tooltip="Enable display of outer planets"
+    default_menu = (None, 'Planets', -200)
 
     def isChecked(self):
         return self.frame.settings['outer planets']
@@ -164,61 +162,47 @@ class OuterPlanet(SelectAction):
 
 class Jupiter(OuterPlanet):
     name="Jupiter"
+    default_menu = (None, 'Planets', 205)
 
 class Saturn(OuterPlanet):
     name="Saturn"
+    default_menu = (None, 'Planets', 206)
 
 class Uranus(OuterPlanet):
     name="Uranus"
+    default_menu = (None, 'Planets', 207)
 
 class Neptune(OuterPlanet):
     name="Neptune"
+    default_menu = (None, 'Planets', 208)
 
 class Pluto(OuterPlanet):
     name="Pluto"
+    default_menu = (None, 'Planets', 209)
 
 class PlanetTen(OuterPlanet):
     name="Planet 10"
+    default_menu = (None, 'Planets', 210)
 
     def isEnabled(self):
         return False
 
-class InnerPlanets(Component):
-    implements(IMenuItemProvider)
-
-    def getMenuItems(self):
-        yield (None,None,Menu("Planets").before("Elements"))
-        yield (None,"Planets",MenuItemGroup("inner",Mercury,Venus,Earth,Mars,None).first())
-
-class Asteroids(Component):
-    implements(IMenuItemProvider)
-
-    def getMenuItems(self):
-        yield (None,"Planets",MenuItemGroup("asteroids",ShowAsteroids,Ceres,None).after("inner"))
-
-class OuterPlanets(Component):
-    implements(IMenuItemProvider)
-
-    def getMenuItems(self):
-        yield (None,"Planets",MenuItemGroup("outer",ShowOuterPlanets,Jupiter,Saturn,Uranus,Neptune,Pluto,None,PlanetTen,None).after("asteroids"))
-
-
-
-
 class OpenRecent(ListAction):
     name="Open Recent"
-    
+    default_menu = (None, 'File', 100)
+
     def getItems(self):
         return ['file1.txt','file2.txt','file3.txt']
 
 class FrameList(ListAction):
     name="Frames"
+    default_menu = (None, ('Window', 990), 100)
 
     frames=[]
     others=[]
     
-    def __init__(self, menumap, menu):
-        ListAction.__init__(self,menumap,menu)
+    def __init__(self, *args, **kwargs):
+        ListAction.__init__(self, *args, **kwargs)
         FrameList.others.append(self)
 
     @staticmethod
@@ -264,60 +248,14 @@ class FrameList(ListAction):
         wx.CallAfter(FrameList.frames[index].Raise)
 
 class FrameList2(FrameList):
-    name="Frames"
+    name="Frames2"
     inline=True
-
-class GlobalMenu(Component):
-    implements(IMenuItemProvider)
-    implements(IToolBarItemProvider)
-
-    default_menu=((None,Menu("File").first()),
-                  ("File",Separator("open")),
-                  ("File",MenuItem(NewFrame).after("open")),
-                  ("File",MenuItem(FrameList).after("New Frame")),
-                  ("File",MenuItem(FrameList2).after("New Frame")),
-                  ("File",MenuItem(OpenRecent).after("New Frame")),
-                  ("File",Separator("save").after("Open Recent")),
-                  ("File",Separator("quit").after("save")),
-                  ("File",MenuItem(CloseFrame).after("quit")),
-                  ("File",MenuItem(Exit).last()),
-                  (None,Menu("Edit").after("File").first()),
-                  ("Edit",Menu("More Edits").first()),
-                  (("Edit","More Edits"),MenuItem(OpenRecent).first()),
-                  ("Edit",MenuItem(MajorModeSelect).first()),
-                  ("Edit",MenuItem(MajorModeSelect2).first()),
-                  (None,Menu("Elements").before("Major Mode")),
-                  ("Elements",Menu("Metals")),
-                  (None,Menu("Major Mode").hide()),
-                  (None,Menu("Lists").after("Major Mode")),
-                  (None,Menu("Minor Mode").hide().after("Major Mode")),
-                  (None,Menu("Fun").after("Minor Mode")),
-                  (None,Menu("Help").last()),
-                  )
-    def getMenuItems(self):
-        for menu,item in self.default_menu:
-            yield (None,menu,item)
-
-    default_tools=((None,Menu("File").first()),
-                  ("File",Separator("open")),
-                  ("File",MenuItem(NewFrame).after("open")),
-                  ("File",Separator("save").after("open")),
-                  ("File",Separator("quit").after("save")),
-                  ("File",MenuItem(CloseFrame).after("quit")),
-                  ("File",MenuItem(Exit).last()),
-                  (None,Menu("Edit").after("File").first()),
-                  ("Edit",MenuItem(MajorModeSelect).first()),
-                  ("Edit",MenuItem(MajorModeSelect2).first()),
-                  (None,Menu("Planets").after("Edit").first()),
-                  ("Planets",MenuItem(ShowAsteroids).first()),
-                  ("Planets",MenuItem(ShowOuterPlanets).first()),
-                  )
-    def getToolBarItems(self):
-        for menu,item in self.default_tools:
-            yield (None,menu,item)
+    global_id = wx.NewId()
+    default_menu = (None, 'Window', 200)
 
 class ShowElements(ToggleAction):
     name="Show Elements"
+    default_menu = (None, ('Stuff', 300), 10)
 
     def isChecked(self):
         return self.frame.app.settings['elements']
@@ -327,12 +265,14 @@ class ShowElements(ToggleAction):
 
 class Hydrogen(SelectAction):
     name="Hydrogen"
+    default_menu = (None, 'Stuff', 100)
     
     def isEnabled(self):
         return self.frame.app.settings['elements']
 
 class NobleGasses(ListAction):
     name='Inert'
+    default_menu = (None, 'Stuff', 200)
 
     def isEnabled(self):
         return self.frame.app.settings['elements']
@@ -342,7 +282,8 @@ class NobleGasses(ListAction):
 
 class Alkalis(ListAction):
     name='Alkalis'
-    
+    default_menu = (None, 'Stuff/Metals', 100)
+
     def isEnabled(self):
         return self.frame.app.settings['elements']
     
@@ -351,29 +292,18 @@ class Alkalis(ListAction):
 
 class AlkaliEarth(ListAction):
     name='Alkali Earth'
-    
+    default_menu = (None, 'Stuff/Metals', 200)
+
     def isEnabled(self):
         return self.frame.app.settings['elements']
     
     def getItems(self):
         return ['Beryllium','Magnesium','Calcium']
 
-class ElementsMenuItems(Component):
-    implements(IMenuItemProvider)
-
-    default_items=((None,"Elements",MenuItem(ShowElements).first()),
-                   (None,"Elements",Separator("element list")),
-                   (None,"Elements",MenuItem(Hydrogen)),
-                   (None,"Elements",MenuItem(NobleGasses)),
-                   (None,("Elements","Metals"),MenuItemGroup("alkalis",Alkalis,AlkaliEarth)),
-                   )
-    def getMenuItems(self):
-        for i in self.default_items:
-            yield i
-
 class SmallList(ListAction):
     inline=True
-    
+    default_menu = (None, 'Lists', 800)
+
     def getItems(self):
         items=[]
         for i in range(10):
@@ -382,17 +312,20 @@ class SmallList(ListAction):
 
 class BigList(ListAction):
     inline=True
-    
+    default_menu = (None, 'Lists', 810)
+
     def getItems(self):
         items=[]
         for i in range(100):
             items.append("Number %d" % i)
         return items
 
-class ListMenuItems(Component):
-    implements(IMenuItemProvider)
-
-    def getMenuItems(self):
-        yield (None,"Lists",MenuItemGroup("lists",SmallList,None,BigList))
-
-
+def getActions():
+    return [NewFrame, CloseFrame, Exit, ShowToolbar,
+        MajorModeSelect, Python, CPlusPlus,
+        PythonShiftLeft, PythonShiftRight,
+        Mercury, Venus, Earth, Mars,
+        ShowAsteroids, Ceres, ShowOuterPlanets, Jupiter, Saturn, Uranus,
+        Neptune, Pluto, PlanetTen, OpenRecent, FrameList, FrameList2,
+        SmallList, BigList, ShowElements, Hydrogen, NobleGasses, Alkalis,
+        AlkaliEarth]
