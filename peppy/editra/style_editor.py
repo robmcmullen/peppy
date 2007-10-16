@@ -52,7 +52,7 @@ class ed_glob:
 #from profiler import Profile_Get, Profile_Set
 #import ed_stc
 from ed_style import StyleItem, StyleMgr
-#import ed_event
+import ed_event
 import util
 import syntax.syntax as syntax
 
@@ -174,7 +174,7 @@ class StyleEditor(wx.Dialog):
         self.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_LISTBOX, self.OnListBox)
-        #self.Bind(ed_event.EVT_NOTIFY, self.OnColor)
+        self.Bind(ed_event.EVT_NOTIFY, self.OnColor)
         self.preview.Bind(wx.EVT_LEFT_UP, self.OnTextRegion)
         self.preview.Bind(wx.EVT_KEY_UP, self.OnTextRegion)
     #--- End Init ---#
@@ -747,8 +747,8 @@ class ColourSetter(wx.Panel):
 
     def __PostEvent(self):
         """Notify the parent window of any value changes to the control"""
-##        evt = ed_event.NotificationEvent(ed_event.edEVT_NOTIFY, self.GetId())
-##        wx.PostEvent(self.GetParent(), evt)
+        evt = ed_event.NotificationEvent(ed_event.edEVT_NOTIFY, self.GetId())
+        wx.PostEvent(self.GetParent(), evt)
         pass
 
     def _DoLayout(self):
