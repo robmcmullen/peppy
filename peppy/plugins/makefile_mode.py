@@ -42,11 +42,11 @@ print-%: ; @ echo $* = $($*)
 # minimum amount of code that you need to create an action
 class SampleMakefile(SelectAction):
     # name is required, otherwise the action won't be created
-    name = _("&Open Sample Makefile")
+    name = "&Open Sample Makefile"
     
     # tooltip is optional, but if present will appear in the statusbar
     # when hovering over the menu item or toolbar entry.
-    tooltip = _("Open a sample Makefile")
+    tooltip = "Open a sample Makefile"
     
     # default_menu is required in order to appear in the menu bar.
     default_menu = "&Help/Samples"

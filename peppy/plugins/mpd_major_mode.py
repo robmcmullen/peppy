@@ -407,9 +407,9 @@ class MPDActionMixin(object):
         return isinstance(mode, MPDMode)
     
 class Login(MPDActionMixin, SelectAction):
-    alias = _("mpd-login")
-    name = _("Login")
-    tooltip = _("Login")
+    alias = "mpd-login"
+    name = "Login"
+    tooltip = "Login"
     default_menu = ("MPD", -800)
     key_bindings = {'default': 'L'}
     
@@ -422,9 +422,9 @@ class Login(MPDActionMixin, SelectAction):
         wx.CallAfter(mode.loginPassword)
 
 class OpenMPD(OpenDialog):
-    alias = _("mpd-open-server")
-    name = _("MPD Server...")
-    tooltip = _("Open an MPD server through a URL")
+    alias = "mpd-open-server"
+    name = "MPD Server..."
+    tooltip = "Open an MPD server through a URL"
     default_menu = ("File/Open", 500)
 
     dialog_message = "Open MPD server.  Specify host[:port]"
@@ -459,9 +459,9 @@ class ConnectedAction(MPDActionMixin, SelectAction):
         return mode.isConnected() and mode.mpd.isLoggedIn()
 
 class PrevSong(PlayingAction):
-    alias = _("previous-song")
-    name = _("Prev Song")
-    tooltip = _("Previous Song")
+    alias = "previous-song"
+    name = "Prev Song"
+    tooltip = "Previous Song"
     default_menu = ("MPD", 100)
     icon = 'icons/control_start.png'
     key_bindings = {'default': ','}
@@ -473,9 +473,9 @@ class PrevSong(PlayingAction):
         mode.update()
 
 class NextSong(PlayingAction):
-    alias = _("next-song")
-    name = _("Next Song")
-    tooltip = _("Next Song")
+    alias = "next-song"
+    name = "Next Song"
+    tooltip = "Next Song"
     default_menu = ("MPD", 103)
     icon = 'icons/control_end.png'
     key_bindings = {'default': '.'}
@@ -487,9 +487,9 @@ class NextSong(PlayingAction):
         mode.update()
 
 class StopSong(PlayingAction):
-    alias = _("stop")
-    name = _("Stop")
-    tooltip = _("Stop")
+    alias = "stop"
+    name = "Stop"
+    tooltip = "Stop"
     default_menu = ("MPD", 101)
     icon = 'icons/control_stop.png'
     key_bindings = {'default': 'S'}
@@ -501,9 +501,9 @@ class StopSong(PlayingAction):
         mode.update()
 
 class PlayPause(ConnectedAction):
-    alias = _("play-or-pause")
-    name = _("Play/Pause Song")
-    tooltip = _("Play/Pause Song")
+    alias = "play-or-pause"
+    name = "Play/Pause Song"
+    tooltip = "Play/Pause Song"
     default_menu = ("MPD", 102)
     icon = 'icons/control_play.png'
     key_bindings = {'default': 'P'}
@@ -515,9 +515,9 @@ class PlayPause(ConnectedAction):
         mode.update()
 
 class Mute(ConnectedAction):
-    alias = _("mute")
-    name = _("Mute")
-    tooltip = _("Mute the volume")
+    alias = "mute"
+    name = "Mute"
+    tooltip = "Mute the volume"
     default_menu = ("MPD", 202)
     icon = 'icons/sound_mute.png'
     key_bindings = {'default': 'M'}
@@ -528,9 +528,9 @@ class Mute(ConnectedAction):
         mode.update()
 
 class VolumeUp(ConnectedAction):
-    alias = _("volume-up")
-    name = _("Increase Volume")
-    tooltip = _("Increase the volume")
+    alias = "volume-up"
+    name = "Increase Volume"
+    tooltip = "Increase the volume"
     default_menu = ("MPD", -200)
     icon = 'icons/sound.png'
     key_bindings = {'default': '='}
@@ -541,9 +541,9 @@ class VolumeUp(ConnectedAction):
         mode.update()
 
 class VolumeDown(ConnectedAction):
-    alias = _("volume-down")
-    name = _("Decrease Volume")
-    tooltip = _("Decrease the volume")
+    alias = "volume-down"
+    name = "Decrease Volume"
+    tooltip = "Decrease the volume"
     default_menu = ("MPD", 201)
     icon = 'icons/sound_low.png'
     key_bindings = {'default': '-'}
@@ -554,9 +554,9 @@ class VolumeDown(ConnectedAction):
         mode.update()
 
 class UpdateDatabase(ConnectedAction):
-    alias = _("update-mpd-database")
-    name = _("Update Database")
-    tooltip = _("Rescan the filesystem and update the MPD database")
+    alias = "update-mpd-database"
+    name = "Update Database"
+    tooltip = "Rescan the filesystem and update the MPD database"
     default_menu = ("MPD", 801)
     key_bindings = {'default': 'C-D'}
     
@@ -565,9 +565,9 @@ class UpdateDatabase(ConnectedAction):
         status = mode.mpd.cmd('update')
 
 class DeleteFromPlaylist(ConnectedAction):
-    alias = _("delete-playlist-entry")
-    name = _("Delete Playlist Entry")
-    tooltip = _("Delete selected songs from playlist")
+    alias = "delete-playlist-entry"
+    name = "Delete Playlist Entry"
+    tooltip = "Delete selected songs from playlist"
     default_menu = ("MPD", -300)
     key_bindings = {'default': 'DEL'}
     

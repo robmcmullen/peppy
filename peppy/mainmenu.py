@@ -25,9 +25,9 @@ from peppy.debug import *
 
 
 class NewTab(SelectAction):
-    alias = _("new-tab")
-    name = _("&Tab")
-    tooltip = _("Open a new tab")
+    alias = "new-tab"
+    name = "&Tab"
+    tooltip = "Open a new tab"
     default_menu = (("File/New", 1), 1.0)
 
     def action(self, index=-1, multiplier=1):
@@ -35,9 +35,9 @@ class NewTab(SelectAction):
         self.frame.open("about:blank")
 
 class New(SelectAction):
-    alias = _("new-file")
-    name = _("&Text file")
-    tooltip = _("New plain text file")
+    alias = "new-file"
+    name = "&Text file"
+    tooltip = "New plain text file"
     icon = "icons/page.png"
     default_menu = ("File/New", 1.1)
     key_bindings = {'win': "C-N", }
@@ -94,9 +94,9 @@ class URLMinibuffer(CompletionMinibuffer):
         return text
 
 class OpenFileGUI(SelectAction):
-    alias = _("gui-find-file")
-    name = _("&File...")
-    tooltip = _("Open a file")
+    alias = "gui-find-file"
+    name = "&File..."
+    tooltip = "Open a file"
     icon = "icons/folder_page.png"
     default_menu = (("File/Open", 2), 1) 
     key_bindings = {'win': "C-O" }
@@ -124,10 +124,10 @@ class OpenFileGUI(SelectAction):
         dlg.Destroy()
 
 class OpenFile(SelectAction):
-    alias = _("find-file")
-    name = _("&File using Minibuffer...")
-    tooltip = _("Open a file")
-    default_menu = (_("File/Open"), 2)
+    alias = "find-file"
+    name = "&File using Minibuffer..."
+    tooltip = "Open a file"
+    default_menu = ("File/Open", 2)
     key_bindings = {'emacs': "C-X C-F", }
 
     def action(self, index=-1, multiplier=1):
@@ -170,8 +170,8 @@ class OpenDialog(SelectAction):
         
 
 class OpenURL(OpenDialog):
-    name = _("&URL...")
-    tooltip = _("Open a buffer using a URL")
+    name = "&URL..."
+    tooltip = "Open a buffer using a URL"
     default_menu = ("File/Open", 3)
     key_bindings = {'emacs': "C-X C-A", }
 
@@ -179,19 +179,19 @@ class OpenURL(OpenDialog):
 
 
 class Exit(SelectAction):
-    alias = _("exit-peppy-to-return-again-soon")
-    name = _("E&xit")
-    tooltip = _("Quit the program.")
-    default_menu = (_("File"), -1000)
+    alias = "exit-peppy-to-return-again-soon"
+    name = "E&xit"
+    tooltip = "Quit the program."
+    default_menu = ("File", -1000)
     key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()
 
 class Close(SelectAction):
-    alias = _("close-buffer")
-    name = _("&Close Buffer")
-    tooltip = _("Close current buffer")
+    alias = "close-buffer"
+    name = "&Close Buffer"
+    tooltip = "Close current buffer"
     default_menu = ("File", 809)
     icon = "icons/cross.png"
 
@@ -203,9 +203,9 @@ class Close(SelectAction):
         self.frame.closeBuffer()
 
 class Revert(SelectAction):
-    alias = _("revert-buffer")
-    name = _("&Revert")
-    tooltip = _("Revert to last saved version")
+    alias = "revert-buffer"
+    name = "&Revert"
+    tooltip = "Revert to last saved version"
     default_menu = ("File", -900)
     default_toolbar = False
     icon = "icons/page_refresh.png"
@@ -223,9 +223,9 @@ class Revert(SelectAction):
             self.mode.buffer.revert()
 
 class Save(SelectAction):
-    alias = _("save-buffer")
-    name = _("&Save...")
-    tooltip = _("Save the current file")
+    alias = "save-buffer"
+    name = "&Save..."
+    tooltip = "Save the current file"
     icon = "icons/disk.png"
     default_menu = ("File", -801)
     key_bindings = {'win': "C-S", 'emacs': "C-X C-S",}
@@ -240,9 +240,9 @@ class Save(SelectAction):
         self.mode.save()
 
 class SaveAs(SelectAction):
-    alias = _("save-buffer-as")
-    name = _("Save &As...")
-    tooltip = _("Save as a new file")
+    alias = "save-buffer-as"
+    name = "Save &As..."
+    tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     default_menu = ("File", 802)
     key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
@@ -288,8 +288,8 @@ class SaveAs(SelectAction):
             dlg.Destroy()
 
 class OpenFundamental(SelectAction):
-    name = _("&Open Sample Text")
-    tooltip = _("Open some sample text")
+    name = "&Open Sample Text"
+    tooltip = "Open some sample text"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
@@ -297,9 +297,9 @@ class OpenFundamental(SelectAction):
         self.frame.open("about:demo.txt")
 
 class WordWrap(ToggleAction):
-    alias = _("word-wrap")
-    name = _("&Word Wrap")
-    tooltip = _("Toggle word wrap in this view")
+    alias = "word-wrap"
+    name = "&Word Wrap"
+    tooltip = "Toggle word wrap in this view"
     default_menu = ("View", 301)
 
     @classmethod
@@ -314,9 +314,9 @@ class WordWrap(ToggleAction):
         self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
     
 class LineNumbers(ToggleAction):
-    alias = _("line-numbers")
-    name = _("&Line Numbers")
-    tooltip = _("Toggle line numbers in this view")
+    alias = "line-numbers"
+    name = "&Line Numbers"
+    tooltip = "Toggle line numbers in this view"
     default_menu = ("View", -300)
 
     @classmethod
@@ -331,9 +331,9 @@ class LineNumbers(ToggleAction):
         self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
 
 class Folding(ToggleAction):
-    alias = _("code-folding")
-    name = _("&Folding")
-    tooltip = _("Toggle folding in this view")
+    alias = "code-folding"
+    name = "&Folding"
+    tooltip = "Toggle folding in this view"
     default_menu = ("View", 302)
 
     @classmethod
@@ -348,9 +348,9 @@ class Folding(ToggleAction):
         self.mode.setFolding(not self.mode.classprefs.folding)
 
 class RunScript(SelectAction):
-    alias = _("run-script")
-    name = _("Run")
-    tooltip = _("Run this script through the interpreter")
+    alias = "run-script"
+    name = "Run"
+    tooltip = "Run this script through the interpreter"
     icon = 'icons/script_go.png'
     default_menu = ("Tools", 1)
     key_bindings = {'win': "F5", 'emacs': "F5", }
@@ -367,9 +367,9 @@ class RunScript(SelectAction):
 
 
 class RunScriptWithArgs(RunScript):
-    alias = _("run-script-with-args")
-    name = _("Run with Args")
-    tooltip = _("Open a file")
+    alias = "run-script-with-args"
+    name = "Run with Args"
+    tooltip = "Open a file"
     icon = "icons/script_edit.png"
     default_menu = ("Tools", 2)
     
@@ -388,9 +388,9 @@ class RunScriptWithArgs(RunScript):
 
 
 class StopScript(RunScript):
-    alias = _("stop-script")
-    name = _("Stop")
-    tooltip = _("Stop the currently running script")
+    alias = "stop-script"
+    name = "Stop"
+    tooltip = "Stop the currently running script"
     icon = 'icons/stop.png'
     default_menu = ("Tools", 3)
     global_id = None
@@ -404,9 +404,9 @@ class StopScript(RunScript):
 
 
 class Undo(STCModificationAction):
-    alias = _("undo")
-    name = _("Undo")
-    tooltip = _("Undo")
+    alias = "undo"
+    name = "Undo"
+    tooltip = "Undo"
     icon = "icons/arrow_turn_left.png"
     default_menu = ("Edit", 0)
     key_bindings = {'win': "C-Z", 'emacs': "C-/",}
@@ -420,9 +420,9 @@ class Undo(STCModificationAction):
 
 
 class Redo(STCModificationAction):
-    alias = _("redo")
-    name = _("Redo")
-    tooltip = _("Redo")
+    alias = "redo"
+    name = "Redo"
+    tooltip = "Redo"
     icon = "icons/arrow_turn_right.png"
     default_menu = ("Edit", 1)
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
@@ -435,9 +435,9 @@ class Redo(STCModificationAction):
         return self.mode.stc.Redo()
 
 class Cut(STCModificationAction):
-    alias = _("cut-primary-selection")
-    name = _("Cut")
-    tooltip = _("Cut")
+    alias = "cut-primary-selection"
+    name = "Cut"
+    tooltip = "Cut"
     icon = "icons/cut.png"
     default_menu = ("Edit", -100)
     key_bindings = {'win': "C-X"}
@@ -450,9 +450,9 @@ class Cut(STCModificationAction):
         return self.mode.stc.Cut()
 
 class Copy(STCModificationAction):
-    alias = _("copy-primary-selection")
-    name = _("Copy")
-    tooltip = _("Copy")
+    alias = "copy-primary-selection"
+    name = "Copy"
+    tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
     key_bindings = {'win': "C-C"}
@@ -465,9 +465,9 @@ class Copy(STCModificationAction):
         return self.mode.stc.Copy()
 
 class Paste(STCModificationAction):
-    alias = _("paste-from-clipboard")
-    name = _("Paste")
-    tooltip = _("Paste")
+    alias = "paste-from-clipboard"
+    name = "Paste"
+    tooltip = "Paste"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 102)
     key_bindings = {'win': "C-V"}
@@ -480,9 +480,9 @@ class Paste(STCModificationAction):
         return self.mode.stc.Paste()
 
 class PasteAtColumn(Paste):
-    alias = _("paste-at-column")
-    name = _("Paste at Column")
-    tooltip = _("Paste selection indented to the cursor's column")
+    alias = "paste-at-column"
+    name = "Paste at Column"
+    tooltip = "Paste selection indented to the cursor's column"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 103)
     default_toolbar = False
@@ -497,9 +497,9 @@ class PasteAtColumn(Paste):
 
 
 class ElectricReturn(TextModificationAction):
-    alias = _("electric-return")
-    name = _("Electric Return")
-    tooltip = _("Indent the next line following a return")
+    alias = "electric-return"
+    name = "Electric Return"
+    tooltip = "Indent the next line following a return"
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'RET',}
 
@@ -536,9 +536,9 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
-    name=_("Major Mode")
+    name="Major Mode"
     inline=False
-    tooltip=_("Switch major mode")
+    tooltip="Switch major mode"
     default_menu = ("View", 0)
 
     modes=None
@@ -578,9 +578,9 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MinorModeShow(ToggleListAction):
-    name = _("Minor Modes")
+    name = "Minor Modes"
     inline = False
-    tooltip = _("Show or hide minor mode windows")
+    tooltip = "Show or hide minor mode windows"
     default_menu = ("View", 1)
 
     def getItems(self):
@@ -595,9 +595,9 @@ class MinorModeShow(ToggleListAction):
 
 
 class SidebarShow(ToggleListAction):
-    name=_("Sidebars")
+    name="Sidebars"
     inline=False
-    tooltip=_("Show or hide sidebar windows")
+    tooltip="Show or hide sidebar windows"
     default_menu = ("View", -100)
 
     def getItems(self):
@@ -612,9 +612,9 @@ class SidebarShow(ToggleListAction):
 
 
 class ToolbarShow(ToggleAction):
-    alias = _("show-toolbar")
-    name = _("&Show Toolbars")
-    tooltip = _("Enable or disable toolbar display in this frame")
+    alias = "show-toolbar"
+    name = "&Show Toolbars"
+    tooltip = "Enable or disable toolbar display in this frame"
     default_menu = ("View", -200)
 
     def isChecked(self):
@@ -627,8 +627,8 @@ class ToolbarShow(ToggleAction):
     
 
 class ExecuteCommandByName(SelectAction):
-    name = _("&Execute Command")
-    tooltip = _("Execute a command by name")
+    name = "&Execute Command"
+    tooltip = "Execute a command by name"
     key_bindings = {'win': "M-X", 'emacs': "M-X", }
 
     def createList(self):
@@ -671,9 +671,9 @@ class ExecuteCommandByName(SelectAction):
 
 
 class CancelMinibuffer(SelectAction):
-    alias = _("cancel-minibuffer")
-    name = _("Cancel Minibuffer")
-    tooltip = _("Cancel any currently active minibuffer")
+    alias = "cancel-minibuffer"
+    name = "Cancel Minibuffer"
+    tooltip = "Cancel any currently active minibuffer"
     icon = 'icons/control_stop.png'
     key_bindings = {'default': "M-ESC ESC", }
     

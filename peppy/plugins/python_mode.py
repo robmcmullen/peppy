@@ -27,7 +27,7 @@ print "Working dir = %s" % os.getcwd()
 # Default to 100 repetitions
 num = 100
 
-# If we've given it an argument using the Run With Args command, process
+# If we have given it an argument using the Run With Args command, process
 # it here
 if len(sys.argv) > 1:
     num = int(sys.argv[1])
@@ -40,8 +40,8 @@ for x in range(num):
 '''
 
 class SamplePython(SelectAction):
-    name = _("&Open Sample Python")
-    tooltip = _("Open a sample Python file")
+    name = "&Open Sample Python"
+    tooltip = "Open a sample Python file"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
@@ -49,8 +49,8 @@ class SamplePython(SelectAction):
 
 
 class ElectricColon(TextModificationAction):
-    name = _("Electric Colon")
-    tooltip = _("Indent the current line when a colon is pressed")
+    name = "Electric Colon"
+    tooltip = "Indent the current line when a colon is pressed"
     key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
 
     @classmethod

@@ -101,7 +101,7 @@ class SelectAction(debugmixin):
     
     def getMenuItemName(self):
         if self.use_accelerators and self.keyboard:
-            return "%s%s" % (self.name, self._accelerator_text)
+            return "%s%s" % (_(self.name), self._accelerator_text)
         else:
             return self.name
 
@@ -110,7 +110,7 @@ class SelectAction(debugmixin):
             id = self.global_id
         if name is None:
             name = self.name
-        return "%s ('%s', id=%d)" % (self.tooltip, name, id)
+        return "%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
 
     def insertIntoMenu(self, menu):
         self.widget=menu.Append(self.global_id, self.getMenuItemName(), self.getTooltip())

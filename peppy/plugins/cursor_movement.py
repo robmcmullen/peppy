@@ -19,51 +19,51 @@ from peppy.debug import *
 
 
 class BeginningOfLine(ScintillaCmdKeyExecute):
-    alias = _("beginning-of-line")
-    name = _("Cursor to Start of Line")
-    tooltip = _("Move the cursor to the start of the current line")
+    alias = "beginning-of-line"
+    name = "Cursor to Start of Line"
+    tooltip = "Move the cursor to the start of the current line"
     cmd = wx.stc.STC_CMD_HOMEDISPLAY
         
 class BeginningTextOfLine(ScintillaCmdKeyExecute):
-    alias = _("beginning-text-of-line")
-    name = _("Cursor to first non-blank character in the line")
-    tooltip = _("Move the cursor to the start of the current line")
+    alias = "beginning-text-of-line"
+    name = "Cursor to first non-blank character in the line"
+    tooltip = "Move the cursor to the start of the current line"
     key_bindings = {'emacs': 'C-A',}
     cmd = wx.stc.STC_CMD_VCHOME
         
 class EndOfLine(ScintillaCmdKeyExecute):
-    alias = _("end-of-line")
-    name = _("Cursor to End of Line")
-    tooltip = _("Move the cursor to the end of the current line")
+    alias = "end-of-line"
+    name = "Cursor to End of Line"
+    tooltip = "Move the cursor to the end of the current line"
     key_bindings = {'emacs': 'C-E',}
     cmd = wx.stc.STC_CMD_LINEEND
 
 class PreviousLine(ScintillaCmdKeyExecute):
-    alias = _("previous-line")
-    name = _("Cursor to previous line")
-    tooltip = _("Move the cursor up a line")
+    alias = "previous-line"
+    name = "Cursor to previous line"
+    tooltip = "Move the cursor up a line"
     key_bindings = {'emacs': 'C-P',}
     cmd = wx.stc.STC_CMD_LINEUP
 
 class NextLine(ScintillaCmdKeyExecute):
-    alias = _("next-line")
-    name = _("Cursor to next line")
-    tooltip = _("Move the cursor down a line")
+    alias = "next-line"
+    name = "Cursor to next line"
+    tooltip = "Move the cursor down a line"
     key_bindings = {'emacs': 'C-N',}
     cmd = wx.stc.STC_CMD_LINEDOWN
 
 class BeginningOfBuffer(SelectAction):
-    alias = _("beginning-of-buffer")
-    name = _("Cursor to first character in the buffer")
-    tooltip = _("Move the cursor to the start of the buffer")
+    alias = "beginning-of-buffer"
+    name = "Cursor to first character in the buffer"
+    tooltip = "Move the cursor to the start of the buffer"
         
     def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentStart()
 
 class EndOfBuffer(SelectAction):
-    alias = _("end-of-buffer")
-    name = _("Cursor to end of the buffer")
-    tooltip = _("Move the cursor to the end of the buffer")
+    alias = "end-of-buffer"
+    name = "Cursor to end of the buffer"
+    tooltip = "Move the cursor to the end of the buffer"
         
     def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentEnd()

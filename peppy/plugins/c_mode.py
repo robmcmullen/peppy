@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
 """
 
 class SampleCFile(SelectAction):
-    name = _("&Open Sample C File")
-    tooltip = _("Open a sample C file")
+    name = "&Open Sample C File"
+    tooltip = "Open a sample C file"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):

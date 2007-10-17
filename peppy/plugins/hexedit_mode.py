@@ -16,8 +16,8 @@ from peppy.actions.minibuffer import *
 
 
 class OpenHexEditor(SelectAction):
-    name = _("&Open Hex Editor...")
-    tooltip = _("Open a Hex Editor")
+    name = "&Open Hex Editor..."
+    tooltip = "Open a Hex Editor"
     default_menu = "&Help/Samples"
 
 ##    def isEnabled(self, state=None):

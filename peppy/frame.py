@@ -43,10 +43,10 @@ class FrameList(GlobalList):
         wx.CallAfter(FrameList.storage[index].Raise)
 
 class DeleteFrame(SelectAction):
-    alias = _("delete-frame")
-    name = _("&Delete Frame")
+    alias = "delete-frame"
+    name = "&Delete Frame"
     default_menu = ("Window", 1)
-    tooltip = _("Delete current window")
+    tooltip = "Delete current window"
     
     def action(self, index=-1, multiplier=1):
         self.frame.closeWindow()
@@ -57,9 +57,9 @@ class DeleteFrame(SelectAction):
         return False
 
 class NewFrame(SelectAction):
-    alias = _("new-frame")
-    name = _("&New Frame")
-    tooltip = _("Open a new window")
+    alias = "new-frame"
+    name = "&New Frame"
+    tooltip = "Open a new window"
     default_menu = ("Window", 0)
     key_bindings = {'emacs': "C-X 5 2",}
     

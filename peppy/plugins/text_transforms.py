@@ -19,26 +19,26 @@ from peppy.debug import *
 
 
 class ShiftLeft(ScintillaCmdKeyExecute):
-    alias = _("unindent-region")
-    name = _("Shift &Left")
-    tooltip = _("Unindent a line region")
+    alias = "unindent-region"
+    name = "Shift &Left"
+    tooltip = "Unindent a line region"
     default_menu = ("Transform", -500)
     icon = 'icons/text_indent_remove_rob.png'
     cmd = wx.stc.STC_CMD_BACKTAB
 
 class ShiftRight(ScintillaCmdKeyExecute):
-    alias = _("indent-region")
-    name = _("Shift &Right")
-    tooltip = _("Indent a line or region")
+    alias = "indent-region"
+    name = "Shift &Right"
+    tooltip = "Indent a line or region"
     default_menu = ("Transform", 501)
     icon = 'icons/text_indent_rob.png'
     cmd = wx.stc.STC_CMD_TAB
 
 
 class CommentRegion(TextModificationAction):
-    alias = _("comment-region")
-    name = _("&Comment Region")
-    tooltip = _("Comment a line or region")
+    alias = "comment-region"
+    name = "&Comment Region"
+    tooltip = "Comment a line or region"
     default_menu = ("Transform", -600)
     key_bindings = {'emacs': 'C-C C-C',}
 
@@ -46,18 +46,18 @@ class CommentRegion(TextModificationAction):
         self.mode.stc.commentRegion(multiplier != 4)
 
 class UncommentRegion(TextModificationAction):
-    alias = _("uncomment-region")
-    name = _("&Uncomment Region")
-    tooltip = _("Uncomment a line or region")
+    alias = "uncomment-region"
+    name = "&Uncomment Region"
+    tooltip = "Uncomment a line or region"
     default_menu = ("Transform", 601)
 
     def action(self, index=-1, multiplier=1):
         self.mode.stc.commentRegion(False)
 
 class Tabify(LineOrRegionMutateAction):
-    alias = _("tabify")
-    name = _("&Tabify")
-    tooltip = _("Replace spaces with tabs at the start of lines")
+    alias = "tabify"
+    name = "&Tabify"
+    tooltip = "Replace spaces with tabs at the start of lines"
     default_menu = ("Transform", -700)
 
     def mutateLines(self, lines):
@@ -73,9 +73,9 @@ class Tabify(LineOrRegionMutateAction):
         return out
 
 class Untabify(LineOrRegionMutateAction):
-    alias = _("untabify")
-    name = _("&Untabify")
-    tooltip = _("Replace tabs with spaces at the start of lines")
+    alias = "untabify"
+    name = "&Untabify"
+    tooltip = "Replace tabs with spaces at the start of lines"
     default_menu = ("Transform", 701)
 
     def mutateLines(self, lines):
@@ -95,9 +95,9 @@ class CapitalizeWord(WordOrRegionMutateAction):
     """Title-case the current word and move the cursor to the start of
     the next word.
     """
-    alias = _("capitalize-region-or-word")
-    name = _("Capitalize word")
-    tooltip = _("Capitalize current word")
+    alias = "capitalize-region-or-word"
+    name = "Capitalize word"
+    tooltip = "Capitalize current word"
     key_bindings = {'emacs': 'M-C',}
 
     def mutate(self, txt):
@@ -110,9 +110,9 @@ class UpcaseWord(WordOrRegionMutateAction):
     """Upcase the current word and move the cursor to the start of the
     next word.
     """
-    alias = _("upcase-region-or-word")
-    name = _("Upcase word")
-    tooltip = _("Upcase current word")
+    alias = "upcase-region-or-word"
+    name = "Upcase word"
+    tooltip = "Upcase current word"
     key_bindings = {'emacs': 'M-U',}
 
     def mutate(self, txt):
@@ -124,9 +124,9 @@ class DowncaseWord(WordOrRegionMutateAction):
     """Downcase the current word and move the cursor to the start of the
     next word.
     """
-    alias = _("downcase-region-or-word")
-    name = _("Downcase word")
-    tooltip = _("Downcase current word")
+    alias = "downcase-region-or-word"
+    name = "Downcase word"
+    tooltip = "Downcase current word"
     key_bindings = {'emacs': 'M-L',}
 
     def mutate(self, txt):
@@ -136,9 +136,9 @@ class DowncaseWord(WordOrRegionMutateAction):
 
 
 class Reindent(TextModificationAction):
-    alias = _("reindent-region")
-    name = _("Reindent")
-    tooltip = _("Reindent a line or region")
+    alias = "reindent-region"
+    name = "Reindent"
+    tooltip = "Reindent a line or region"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'C-TAB',}
 

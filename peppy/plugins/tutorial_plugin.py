@@ -90,7 +90,7 @@ class InsertHelloWorld(SelectAction):
         # repeat the action 'multiplier' number of times.  It's currently
         # possible that multiplier could be zero or negative.
         
-        hello = _("Hello, world")
+        hello = "Hello, world"
         # It doesn't make sense for all actions to respond to the multiplier,
         # so you may ignore it if you wish.  I'll handle it here:
         for i in range(0, multiplier):

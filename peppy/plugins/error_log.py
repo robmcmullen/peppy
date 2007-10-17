@@ -59,7 +59,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
     debuglevel = 0
     
     keyword = "error_log"
-    caption = _("Error Log")
+    caption = "Error Log"
 
     message = 'peppy.log.error'
     ready_message = 'peppy.ready.error'
@@ -94,7 +94,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
 
 class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"
-    caption = _("Debug Log")
+    caption = "Debug Log"
 
     message = 'peppy.log.debug'
     ready_message = 'peppy.ready.debug'
@@ -114,7 +114,7 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     debuglevel = 0
     
     keyword = "OutputLog"
-    caption = _("Output Log")
+    caption = "Output Log"
 
     default_classprefs = (
         IntParam('best_width', 500),

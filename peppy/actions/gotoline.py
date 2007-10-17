@@ -21,12 +21,12 @@ class GotoLine(MinibufferAction):
     Use minibuffer to request a line number, then go to that line in
     the stc.
     """
-    alias = _("goto-line")
-    name = _("Goto Line...")
-    tooltip = _("Goto a line in the text.")
+    alias = "goto-line"
+    name = "Goto Line..."
+    tooltip = "Goto a line in the text."
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
-    minibuffer_label = _("Goto Line:")
+    minibuffer_label = "Goto Line:"
 
     def processMinibuffer(self, minibuffer, mode, line):
         """

@@ -11,8 +11,8 @@ from peppy.yapsy.plugins import *
 from peppy.menu import *
 
 class WidgetInspector(SelectAction):
-    name=_("Widget Inspector...")
-    tooltip = _("Open the wxPython widget inspector.")
+    name = "Widget Inspector..."
+    tooltip = "Open the wxPython widget inspector."
     default_menu = ("&Help", -700)
 
     def isEnabled(self):

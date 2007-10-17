@@ -19,8 +19,8 @@ from peppy.lib.iconstorage import *
 from peppy.lib.pluginmanager import *
 
 class Preferences(SelectAction):
-    name = _("&Preferences...")
-    tooltip = _("Preferences, settings, and configurations...")
+    name = "&Preferences..."
+    tooltip = "Preferences, settings, and configurations..."
     default_menu = ("Edit", -1000.1)
     default_toolbar = False
     icon = "icons/wrench.png"
@@ -73,7 +73,7 @@ class PeppyPrefClassList(PrefClassList):
         self.SetStringItem(sys.maxint, name, icon)
 
 class PeppyPrefDialog(PrefDialog):
-    dialog_title = _("Peppy Global Preferences")
+    dialog_title = "Peppy Global Preferences"
     static_title = ""
 
     def createList(self, parent):
@@ -82,8 +82,8 @@ class PeppyPrefDialog(PrefDialog):
     
 
 class Plugins(SelectAction):
-    name = _("&Plugins...")
-    tooltip = _("Plugin configuration")
+    name = "&Plugins..."
+    tooltip = "Plugin configuration"
     default_menu = ("Edit", 1000.2)
     default_toolbar = False
     icon = "icons/plugin.png"

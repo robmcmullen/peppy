@@ -28,8 +28,8 @@ _user_manual = """<!-- -*- HTMLView -*- -->
 """
 
 class HelpAbout(SelectAction):
-    name = _("&About...")
-    tooltip = _("About this program")
+    name = "&About..."
+    tooltip = "About this program"
     stock_id = wx.ID_ABOUT
     default_menu = ("&Help", 0)
 
@@ -62,8 +62,8 @@ class HelpAbout(SelectAction):
         wx.AboutBox(info)
 
 class HelpManual(SelectAction):
-    name = _("&Help...")
-    tooltip = _("User manual")
+    name = "&Help..."
+    tooltip = "User manual"
     stock_id = wx.ID_HELP
     default_menu = ("&Help", -100)
     key_bindings = {'default': "F1",}

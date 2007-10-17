@@ -26,9 +26,9 @@ class DebugClass(ToggleListAction):
     """
     debuglevel=0
     
-    name = _("DebugClassMenu")
+    name = "DebugClassMenu"
     empty = "< list of classes >"
-    tooltip = _("Turn on/off debugging for listed classes")
+    tooltip = "Turn on/off debugging for listed classes"
     default_menu = "Debug"
     categories = False
     inline = True
@@ -95,7 +95,7 @@ class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
     debuglevel = 0
     
     keyword = "debug_list"
-    caption = _("Debug Printing")
+    caption = "Debug Printing"
 
     default_classprefs = (
         IntParam('best_width', 200),

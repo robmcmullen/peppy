@@ -16,7 +16,7 @@ from peppy.pype.browser import FilesystemBrowser
 
 class PyPEFileBrowser(FilesystemBrowser, Sidebar):
     keyword = "filebrowser"
-    caption = _("File List (from PyPE)")
+    caption = "File List (from PyPE)"
 
     default_classprefs = (
         IntParam('best_width', 200),

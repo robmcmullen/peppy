@@ -21,8 +21,8 @@ from peppy.major import *
 
 
 class SlowProgressBarTest(SelectAction):
-    name = _("Slow test of the progress bar")
-    tooltip = _("Test the progress bar")
+    name = "Slow test of the progress bar"
+    tooltip = "Test the progress bar"
     default_menu = "&Help/Tests"
     delay = .2
 
@@ -34,7 +34,7 @@ class SlowProgressBarTest(SelectAction):
         if mode is not None:
             mode.buffer.setBusy(True)
             statusbar = mode.statusbar
-            statusbar.startProgress(_("Testing..."), 100, True)
+            statusbar.startProgress("Testing...", 100, True)
             for i in range(100):
                 if statusbar.isCancelled():
                     break
@@ -45,13 +45,13 @@ class SlowProgressBarTest(SelectAction):
             mode.buffer.setBusy(False)
         
 class FastProgressBarTest(SlowProgressBarTest):
-    name = _("Fast test of the progress bar")
+    name = "Fast test of the progress bar"
     default_menu = "&Help/Tests"
     delay = .01
 
 class ShowStyles(SelectAction):
-    name = _("Show Line Style")
-    tooltip = _("Show the styling information of the current line")
+    name = "Show Line Style"
+    tooltip = "Show the styling information of the current line"
     default_menu = "&Help/Tests"
     key_bindings = {'default': 'M-S',}
 

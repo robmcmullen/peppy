@@ -354,8 +354,8 @@ class BandAction(BandEnabledMixin, SelectAction):
     pass
 
 class PrevBand(BandAction):
-    name = _("Prev Band")
-    tooltip = _("Previous Band")
+    name = "Prev Band"
+    tooltip = "Previous Band"
     default_menu = ("Dataset", -200)
     icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
@@ -366,8 +366,8 @@ class PrevBand(BandAction):
         mode.prevBand()
 
 class NextBand(BandAction):
-    name = _("Next Band")
-    tooltip = _("Next Band")
+    name = "Next Band"
+    tooltip = "Next Band"
     default_menu = ("Dataset", 201)
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
@@ -378,13 +378,13 @@ class NextBand(BandAction):
         mode.nextBand()
 
 class GotoBand(BandEnabledMixin, MinibufferAction):
-    name = _("Goto Band")
-    tooltip = _("Go to a particular band in the cube")
+    name = "Goto Band"
+    tooltip = "Go to a particular band in the cube"
     default_menu = ("Dataset", 202)
     
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
-    minibuffer_label = _("Goto Band:")
+    minibuffer_label = "Goto Band:"
 
     def processMinibuffer(self, minibuffer, mode, band):
         """
@@ -405,8 +405,8 @@ class CubeAction(HSIActionMixin, SelectAction):
         return False
 
 class PrevCube(CubeAction):
-    name = _("Prev Cube")
-    tooltip = _("Previous data cube in dataset")
+    name = "Prev Cube"
+    tooltip = "Previous data cube in dataset"
     default_menu = ("Dataset", -100)
     icon = 'icons/hsi-cube-prev.png'
 
@@ -416,8 +416,8 @@ class PrevCube(CubeAction):
         mode.prevCube()
 
 class NextCube(CubeAction):
-    name = _("Next Cube")
-    tooltip = _("Next data cube in dataset")
+    name = "Next Cube"
+    tooltip = "Next data cube in dataset"
     default_menu = ("Dataset", 101)
     icon = 'icons/hsi-cube-next.png'
 
@@ -428,8 +428,8 @@ class NextCube(CubeAction):
 
 class SelectCube(HSIActionMixin, RadioAction):
     debuglevel = 1
-    name = _("Select Cube")
-    tooltip = _("Select a cube from the dataset")
+    name = "Select Cube"
+    tooltip = "Select a cube from the dataset"
     default_menu = ("Dataset", 102)
     icon = 'icons/hsi-cube.png'
 
@@ -455,8 +455,8 @@ class SelectCube(HSIActionMixin, RadioAction):
         
 class ContrastFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 1
-    name = _("Contrast")
-    tooltip = _("Contrast adjustment method")
+    name = "Contrast"
+    tooltip = "Contrast adjustment method"
     default_menu = ("Dataset", -300)
     icon = 'icons/hsi-cube-next.png'
 
@@ -511,8 +511,8 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         
 class MedianFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 1
-    name = _("Median Filter")
-    tooltip = _("Median filter")
+    name = "Median Filter"
+    tooltip = "Median filter"
     default_menu = ("Dataset", 301)
 
     items = ['No median',
