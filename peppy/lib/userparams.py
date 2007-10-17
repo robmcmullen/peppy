@@ -1075,6 +1075,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         focused = False
         hier = self.obj.classprefs._getMRO()
         self.dprint(hier)
+        first = True
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
@@ -1086,7 +1087,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     continue
 
                 if row == 0:
-                    box = wx.StaticBox(self, -1, cls.__name__)
+                    if first:
+                        name = cls.__name__
+                        first = False
+                    else:
+                        name = "Inherited from %s" % cls.__name__
+                    box = wx.StaticBox(self, -1, name)
                     bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
                     self.sizer.Add(bsizer)
                     grid = wx.GridBagSizer(2,5)
