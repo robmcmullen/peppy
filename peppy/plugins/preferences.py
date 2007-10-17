@@ -58,17 +58,19 @@ class PeppyPrefClassList(PrefClassList):
             icon = getIconStorage("icons/blank.png")
         return icon
     
-    def appendItem(self, cls):
+    def appendItem(self, name):
+        cls = self.class_map[name]
         icon = self.getIcon(cls)
         if icon is None:
             icon = -1
-        self.InsertImageStringItem(sys.maxint, cls.__name__, icon)
+        self.InsertImageStringItem(sys.maxint, name, icon)
             
-    def setItem(self, index, cls):
+    def setItem(self, index, name):
+        cls = self.class_map[name]
         icon = self.getIcon(cls)
         if icon is None:
             icon = -1
-        self.SetStringItem(sys.maxint, cls.__name__, icon)
+        self.SetStringItem(sys.maxint, name, icon)
 
 class PeppyPrefDialog(PrefDialog):
     dialog_title = _("Peppy Global Preferences")

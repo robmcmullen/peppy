@@ -579,21 +579,26 @@ def getAllSubclassesOf(parent=debugmixin, subclassof=None):
     """
     if subclassof is None:
         subclassof=parent
-    subclasses=[]
+    subclasses={}
 
     # this call only returns immediate (child) subclasses, not
     # grandchild subclasses where there is an intermediate class
     # between the two.
     classes=parent.__subclasses__()
     for kls in classes:
+        # FIXME: this seems to return multiple copies of the same class,
+        # but I probably just don't understand enough about how python
+        # creates subclasses
+        # dprint("%s id=%s" % (kls, id(kls)))
         if issubclass(kls,subclassof):
-            subclasses.append(kls)
+            subclasses[kls] = 1
         # for each subclass, recurse through its subclasses to
         # make sure we're not missing any descendants.
         subs=getAllSubclassesOf(parent=kls)
         if len(subs)>0:
-            subclasses.extend(subs)
-    return subclasses
+            for kls in subs:
+                subclasses[kls] = 1
+    return subclasses.keys()
 
 def parents(c, seen=None):
     """Python class base-finder.
@@ -1142,21 +1147,20 @@ class PrefClassList(wx.ListCtrl, debugmixin):
 
         self.setIconStorage()
         
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-
         self.skip_verify = False
 
         self.createColumns()
-        self.classes = []
+        self.class_names = []
+        self.class_map = {}
 
     def setIconStorage(self):
         pass
 
-    def appendItem(self, cls):
-        self.InsertStringItem(sys.maxint, cls.__name__)
+    def appendItem(self, name):
+        self.InsertStringItem(sys.maxint, name)
 
-    def setItem(self, index, cls):
-        self.SetStringItem(index, 0, cls.__name__)
+    def setItem(self, index, name):
+        self.SetStringItem(index, 0, name)
 
     def createColumns(self):
         info = wx.ListItem()
@@ -1166,20 +1170,26 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         info.m_text = "Class"
         self.InsertColumnInfo(0, info)
 
-    def OnItemActivated(self, evt):
-        index = evt.GetIndex()
-        dprint("selected plugin %d: %s" % (index, self.plugins[index]))
-        evt.Skip()
-
     def reset(self, classes):
-        self.classes = classes
+        # Because getAllSubclassesOf can return multiple classes that
+        # really refer to the same class (still don't understand how this
+        # is possible) we need to sort on class name and make that the
+        # key instead of the class object itself.
+        unique = {}
+        for cls in classes:
+            unique[cls.__name__] = cls
+        self.class_map = unique
+        classes = unique.values()
+        classes.sort(key=lambda x: x.__name__)
+        self.class_names = [x.__name__ for x in classes]
+        
         index = 0
         list_count = self.GetItemCount()
-        for cls in self.classes:
+        for name in self.class_names:
             if index >= list_count:
-                self.appendItem(cls)
+                self.appendItem(name)
             else:
-                self.setItem(index, cls)
+                self.setItem(index, name)
             index += 1
 
         if index < list_count:
@@ -1190,10 +1200,10 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
     def getClass(self, index):
-        return self.classes[index]
+        return self.class_map[self.class_names[index]]
 
     def ensureClassVisible(self, cls):
-        index = self.classes.index(cls)
+        index = self.class_names.index(cls.__name__)
         self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
         self.EnsureVisible(index)
 
@@ -1252,8 +1262,9 @@ class PrefDialog(wx.Dialog):
 
     def populateList(self, cls=ClassPrefs):
         classes = getAllSubclassesOf(cls)
-        dprint(classes)
-        classes.sort(key=lambda x: x.__name__)
+#        dprint(classes)
+#        for cls in classes:
+#            dprint("%s: mro=%s" % (cls, cls.__mro__))
         self.list.reset(classes)
         self.list.ensureClassVisible(self.obj.__class__)
         
