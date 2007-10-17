@@ -555,6 +555,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             frame = self.getTopFrame()
             frame.closeAllWindows()
             wx.GetApp().ExitMainLoop()
+            
+            # FIXME: something is holding the application open; there must be
+            # a reference to something that isn't being cleaned up.  This
+            # explicit call to sys.exit shouldn't be necessary.
+            sys.exit()
 
     def quitHook(self):
         if not self.saveConfig(self.base_preferences):

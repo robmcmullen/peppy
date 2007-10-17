@@ -9,6 +9,12 @@ $url
 INSTALLATION
 ============
 
+NOTE!  I don't actually recommend installing peppy to the site-packages
+directory; instead, I recommend you just unpack the source and run it
+from there.  But if you really really want to unpack it to the system-wide
+site-packages directory, read on...
+
+
 Unix Installation Instructions
 ------------------------------
 
