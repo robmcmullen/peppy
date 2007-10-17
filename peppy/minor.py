@@ -32,9 +32,8 @@ class MinorMode(ClassPrefs, debugmixin):
     a subclass of wx.Window (windowless minor modes are coming in the
     future).  Minor modes may also have associated with them:
 
-    * menu, toolbar items -- but note that these will be created using
-      the IMenuBarItemProvider and IToolBarItemProvider interfaces,
-      not the minor mode itself.
+    * menu, toolbar items -- by associating a check for the existence
+      of the minor mode in the actions's worksWithMajorMode classmethod
 
     * status buttons in the frame's statusbar (ala Mozilla) - not
       implemented yet, but it's coming.
@@ -58,7 +57,7 @@ class MinorMode(ClassPrefs, debugmixin):
             for minor in plugin.getMinorModes():
                 if minor.worksWithMajorMode(mode):
                     valid.append(minor)
-        dprint(valid)
+        cls.dprint(valid)
         return valid
 
     @classmethod

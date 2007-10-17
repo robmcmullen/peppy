@@ -308,7 +308,7 @@ class FundamentalMode(MajorMode):
     
     @classmethod
     def verifyEditraType(cls, ext, file_type):
-        dprint("ext=%s file_type=%s" % (ext, file_type))
+        cls.dprint("ext=%s file_type=%s" % (ext, file_type))
         if file_type is None:
             # Not recognized at all by Editra.
             return False
@@ -317,12 +317,12 @@ class FundamentalMode(MajorMode):
         # If file_type is the same as the major mode keyword or an alias,
         # mark this as a specific match.
         if file_type == cls.keyword or file_type == cls.editra_synonym:
-            dprint("Specific match of %s" % file_type)
+            cls.dprint("Specific match of %s" % file_type)
             return ext
         
         # Otherwise, if the file type is recognized but not specific to this
         # mode, mark it as generic.
-        dprint("generic match of %s" % file_type)
+        cls.dprint("generic match of %s" % file_type)
         return "generic"
     
     @classmethod

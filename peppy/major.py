@@ -439,10 +439,9 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
 
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
-        dprint()
         while len(self.minors)>0:
             minor = self.minors.pop()
-            dprint("deleting minor mode %s" % (minor.keyword))
+            self.dprint("deleting minor mode %s" % (minor.keyword))
             minor.deletePreHook()
             if self._mgr.GetPane(minor):
                 self._mgr.DetachPane(minor)
@@ -942,12 +941,12 @@ class MajorModeMatcherDriver(debugmixin):
         name, ext = os.path.splitext(pathname)
         if ext.startswith('.'):
             ext = ext[1:]
-            dprint("ext = %s, filename = %s" % (ext, pathname))
+            cls.dprint("ext = %s, filename = %s" % (ext, pathname))
             extreg = syntax.ExtensionRegister()
-            dprint(extreg.GetAllExtensions())
+            cls.dprint(extreg.GetAllExtensions())
             if ext in extreg.GetAllExtensions():
                 editra_type = extreg.FileTypeFromExt(ext)
-                dprint(editra_type)
+                cls.dprint(editra_type)
                 return ext, editra_type
         return ext, None
 

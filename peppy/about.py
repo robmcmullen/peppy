@@ -35,7 +35,12 @@ substitutes = {
     'license': "Licensed under the GPL",
     'warning': """This is still alpha software, so please treat accordingly. :)
 
-May be unstable and crash without warning, so don't use this to edit important stuff.  Or, at least make lots of backups.  It probably will save what you're working on, but you never know.  I'm not using this as my primary editor yet, so it hasn't had much of a workout.  By the end of the 0.6.x series of releases, I intend to be using this as my primary editor, so I'll have much more confidence in it by then.
+This is now my primary editor, but that's not to say that it is totally 100%
+bullet-proofingly rock solid.  Or even solidish.  It is definitely still alpha
+code, but for the most part it has replaced XEmacs for me.
+
+Save your work often and file a bug report at http://trac.flipturn.org/newticket
+if you notice something that shouldn't be happening.
     """,
     'thanks': "",
     'gpl_code': "",
