@@ -14,7 +14,6 @@ class WidgetInspector(SelectAction):
     name=_("Widget Inspector...")
     tooltip = _("Open the wxPython widget inspector.")
     default_menu = ("&Help", -700)
-    icon = "icons/style_edit.png"
 
     def isEnabled(self):
         return True

@@ -20,36 +20,6 @@ from peppy.lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
 
-from peppy.lib.orderer import *
-class Separator(DelayedOrderer):
-    def __init__(self,name="-separator-",mode=None):
-        DelayedOrderer.__init__(self,name)
-        self.mode=mode
-        self.actions=(None,)
-
-class Menu(DelayedOrderer):
-    def __init__(self,name,mode=None):
-        DelayedOrderer.__init__(self,name)
-        self.mode=mode
-        self.actions=None
-
-class MenuItem(DelayedOrderer):
-    def __init__(self,action):
-        if action is None:
-            name="-separator-"
-        else:
-            name=action.name
-        DelayedOrderer.__init__(self,name)
-            
-        self.actions=(action,)
-        assert self.dprint(self.actions)
-
-class MenuItemGroup(DelayedOrderer):
-    def __init__(self,name,*actions):
-        DelayedOrderer.__init__(self,name)
-        self.actions=actions
-        assert self.dprint(self.actions)
-    
 
 class SelectAction(debugmixin):
     debuglevel=0

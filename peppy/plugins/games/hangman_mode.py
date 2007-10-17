@@ -58,7 +58,7 @@ class PlayHangman(SelectAction):
     alias = _("hangman")
     name = _("Hangman")
     tooltip = _("Start a hangman game")
-    icon = wx.ART_FILE_OPEN
+    default_menu = "Tools/Games"
 
     def action(self, index=-1, multiplier=1):
         # FIXME: if the current buffer is based on the PeppySTC, it should open
@@ -70,7 +70,12 @@ class RestartGame(SelectAction):
     alias = _("restart-game")
     name = _("Restart Game")
     tooltip = _("Restart Game")
+    default_menu = ("Hangman", 100)
     key_bindings = {'default': 'C-R'}
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode, HangmanMode)
     
     def action(self, index=-1, multiplier=1):
         self.mode.stc.restart()
@@ -320,10 +325,5 @@ class HangmanPlugin(IPeppyPlugin, debugmixin):
     def getMajorModes(self):
         yield HangmanMode
     
-    default_menu=((None,(_("Tools"),_("Games")),MenuItem(PlayHangman)),
-                  ("Hangman",None,Menu(_("Hangman")).after("Major Mode")),
-                  ("Hangman",_("Hangman"),MenuItem(RestartGame)),
-                  )
-    def getMenuItems(self):
-        for mode,menu,item in self.default_menu:
-            yield (mode,menu,item)
+    def getActions(self):
+        return [PlayHangman, RestartGame]

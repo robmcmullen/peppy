@@ -350,7 +350,7 @@ class RunScript(SelectAction):
     alias = _("run-script")
     name = _("Run")
     tooltip = _("Run this script through the interpreter")
-    icon = 'icons/control_start.png'
+    icon = 'icons/script_go.png'
     default_menu = ("Tools", 1)
     key_bindings = {'win': "F5", 'emacs': "F5", }
 
@@ -369,7 +369,7 @@ class RunScriptWithArgs(RunScript):
     alias = _("run-script-with-args")
     name = _("Run with Args")
     tooltip = _("Open a file")
-    icon = "icons/folder_page.png"
+    icon = "icons/script_edit.png"
     default_menu = ("Tools", 2)
     key_bindings = {'default': "C-F5", }
 
@@ -386,7 +386,7 @@ class StopScript(RunScript):
     alias = _("stop-script")
     name = _("Stop")
     tooltip = _("Stop the currently running script")
-    icon = 'icons/control_stop.png'
+    icon = 'icons/stop.png'
     default_menu = ("Tools", 3)
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", }
     
