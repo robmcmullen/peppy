@@ -408,7 +408,10 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         # register minor mode here
         if isinstance(minor, wx.Window):
             paneinfo = minor.getPaneInfo()
-            self._mgr.AddPane(minor, paneinfo)
+            try:
+                self._mgr.AddPane(minor, paneinfo)
+            except Exception, e:
+                dprint("Failed adding minor mode %s: error: %s" % (minor, str(e)))
         self.minors.append(minor)
 
         # A different paneinfo object is stored in the AUIManager,
