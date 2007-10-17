@@ -37,7 +37,7 @@ class FrameList(GlobalList):
     def getItems(self):
         return [frame.getTitle() for frame in FrameList.storage]
 
-    def action(self, index=-1, multiplier=1):
+    def action(self, index=0, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
         wx.GetApp().SetTopWindow(FrameList.storage[index])
         wx.CallAfter(FrameList.storage[index].Raise)
@@ -329,7 +329,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     # Overrides of wx methods
     def OnIdle(self, evt):
         if wx.GetApp().GetTopWindow() != self:
-            self.dprint("idle events only on top window: top=%s self=%s" % (wx.GetApp().GetTopWindow().name, self.name))
+            self.dprint("idle events only on top window: top=%s self=%s" % (wx.GetApp().GetTopWindow(), self.name))
             pass
         else:
             mode = self.getActiveMajorMode()
