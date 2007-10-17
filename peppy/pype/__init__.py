@@ -30,6 +30,7 @@ if PyPECompat is None:
     else:
         __builtins__._pype = PyPECompat()
 
-    AddCopyright("PyPE", "http://pype.sourceforge.net/", "Josiah Carlson", "2003-2006")
+    AddCopyright("PyPE", "http://pype.sourceforge.net/", "Josiah Carlson", "2003-2007",
+    "Search bar, file browsing sidebar, and other code from")
 
 __all__ = ['PyPECompat']

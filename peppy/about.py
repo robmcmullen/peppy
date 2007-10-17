@@ -162,23 +162,23 @@ SetAbout('red.png',
 \xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82")
 
 
-credits=[]
-
+credits={}
 def AddCredit(author, contribution):
-    credits.append((author, contribution))
-    substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits])
+    credits[author] = contribution
+    substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
         
 AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
 AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
 AddCredit("Julian Back", "for the framework for the C edit mode")
+AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the MathBench project at http://mathbench.sourceforge.net/yapsy/doc/presentation.html")
+AddCredit("Peter Damoc", "for the feature suggestions")
 
-copyrights = []
-def AddCopyright(project, website, author, date, reason=None):
-    copyrights.append({'website': website,
+copyrights = {}
+def AddCopyright(project, website, author, date, reason=""):
+    copyrights[project] = ({'website': website,
                        'project': project,
                        'author': author,
                        'date': date,
                        'reason': reason,
                        })
-    substitutes['gpl_code']="\n".join(["<li><a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights])
-        
+    substitutes['gpl_code']="\n".join(["<li>%(reason)s <a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights.values()])

@@ -15,6 +15,11 @@ from peppy.menu import *
 from peppy.editra import *
 import peppy.editra.style_editor as style_editor
 
+from peppy.about import AddCopyright
+
+AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2007", "The styling dialog and syntax definitions for over 30 languages from")
+
+
 class EditraStyles(SelectAction):
     name=_("Text Styles...")
     tooltip = _("Open the STC Style Editor to edit the current mode's text display.")
