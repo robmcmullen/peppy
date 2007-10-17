@@ -54,7 +54,7 @@ class InsertHelloWorld(SelectAction):
     # Key bindings are specified in this dictionary, where any number
     # of platform strings may be specified.  A platform named 'default'
     # may also be included
-    key_bindings = {'win': "Ctrl-Alt-F10", 'emacs': "C-F9 C-F9",}
+    key_bindings = {'win': "Ctrl-F9", 'emacs': "C-F9 C-F9",}
     
     # Don't forget to declare worksWithMajorMode a classmethod!  It is used
     # before the instance of the action is created
@@ -76,9 +76,10 @@ class InsertHelloWorld(SelectAction):
     # state information here -- all state information must be stored
     # extrinsically.
     def isEnabled(self):
-        # If the buffer is read-only, we won't be able to insert a string,
-        # so only allow insertion if it's not read-only
-        return not self.mode.buffer.readonly
+        # Only allow the action if the buffer is currently not busy with
+        # some other action.  This can happen with some long running
+        # action in a different view of the major mode.
+        return not self.mode.buffer.busy
     
     # Here's where the action is actually performed.  This same method is
     # called regardless of how the action was initiated by the user: menubar,
