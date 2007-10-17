@@ -25,7 +25,7 @@ from peppy.menu import *
 class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
-    keyword="Fold Explorer"
+    keyword="Stani's Fold Explorer"
     
     default_classprefs = (
         IntParam('best_width', 200),
