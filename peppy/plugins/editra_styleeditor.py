@@ -23,14 +23,11 @@ AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2007", "Th
 class EditraStyles(SelectAction):
     name=_("Text Styles...")
     tooltip = _("Open the STC Style Editor to edit the current mode's text display.")
-    default_menu = ("Format", 1000)
+    default_menu = ("Format", -1000)
     icon = "icons/style_edit.png"
-
+    
     def isEnabled(self):
-        if hasattr(self.mode.classprefs, 'editra_style_sheet'):
-            dprint(self.mode.classprefs.editra_style_sheet)
-            return True
-        return False
+        return hasattr(self.mode.classprefs, 'editra_style_sheet')
 
     def action(self, index=-1, multiplier=1):
         stylesheet = self.mode.getStyleFile()
@@ -47,6 +44,6 @@ class EditraStyles(SelectAction):
 
 
 
-class EditraStylesMenuProvider(IPeppyPlugin):
-    def geActions(self):
+class EditraStylesPlugin(IPeppyPlugin):
+    def getActions(self):
         return [EditraStyles]
