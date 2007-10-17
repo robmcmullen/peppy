@@ -1,9 +1,0 @@
-[Core]
-Name = Smiley Face Minor Mode
-Module = smiley
-
-[Documentation]
-Author = Rob McMullen
-Version = 0.1
-Website = http://www.flipturn.org/peppy
-Description = Minor mode providing a smiley face

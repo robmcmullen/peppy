@@ -1,9 +1,12 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-"""Simple smiley face minor mode.
+"""Tutorial plugin.
 
-This is about as simple as a minor mode as you can get.  No user interaction
-at all, just a window that hopefully adds a bit of fun to your day.
+This tutorial shows some simple examples about how to start extending Peppy.
+
+It currently includes an action and a minor mode, but will be expanded as
+time goes on.  The goal is to show as many common features as I can, so you
+won't be surprised as much when you try to create more complicated examples.
 """
 
 import os
@@ -19,7 +22,9 @@ class SmileyFaceMinorMode(MinorMode, wx.PyControl):
     """Draws a smiley face centered in the window.
     
     This is a simple example of a minor mode that can be used as a template
-    for a minor mode that draws graphics to the window.
+    for a minor mode that draws graphics to the window.  It is about as simple
+    as a minor mode as you can get.  No user interaction at all, just a window
+    that hopefully adds a bit of fun to your day.
     """
     # All minor modes need a unique keyword
     keyword="Smiley"
@@ -100,8 +105,8 @@ class SmileyFaceMinorMode(MinorMode, wx.PyControl):
         evt.Skip()
 
 
-class SmileyFacePlugin(IPeppyPlugin):
-    """The plugin object for the Smiley minor mode.
+class TutorialPlugin(IPeppyPlugin):
+    """The plugin object for the tutorial.
     
     The plugin object describes the additional functionality that is provided
     by this code.  There are a variety of interface methods provided by the
@@ -109,6 +114,6 @@ class SmileyFacePlugin(IPeppyPlugin):
     plugin need to be defined here.  All others default to no-ops.
     """
     def getMinorModes(self):
-        # All we have is the one minor mode defined by the plugin, so
-        # return it here.
+        # We have just one minor mode, so you can return it as a list of one
+        # element, or you can yield it.
         yield SmileyFaceMinorMode
