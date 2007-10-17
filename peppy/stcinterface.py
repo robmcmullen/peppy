@@ -438,10 +438,24 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.EndUndoAction()
 
     def detectLineEndings(self, num=1024):
-        from peppy.pype.parsers import detectLineEndings
+        def whichLinesep(text):
+            # line ending counting function borrowed from PyPE
+            crlf_ = text.count('\r\n')
+            lf_ = text.count('\n')
+            cr_ = text.count('\r')
+            mx = max(lf_, cr_)
+            if not mx:
+                return os.linesep
+            elif crlf_ >= mx/2:
+                return '\r\n'
+            elif lf_ is mx:
+                return '\n'
+            else:# cr_ is mx:
+                return '\r'
+        
         if num > self.GetTextLength():
             num = self.GetTextLength()
-        linesep = detectLineEndings(self.GetTextRange(0,num))
+        linesep = whichLinesep(self.GetTextRange(0,num))
         mode = self.eol2int[linesep]
         self.SetEOLMode(mode)
 
