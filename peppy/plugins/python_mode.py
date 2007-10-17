@@ -22,6 +22,8 @@ import time, sys
 Sample file to demonstrate running a python script from the editor.
 """
 
+print "Working dir = %s" % os.getcwd()
+
 # Default to 100 repetitions
 num = 100
 
