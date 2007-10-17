@@ -630,24 +630,18 @@ class ExecuteCommandByName(SelectAction):
         """
         frame = self.frame
         dprint(frame.menumap.actions)
-        dprint(frame.toolmap.actions)
-        # FIXME: ignoring those actions that only have keyboard
-        # equivalents
-        #dprint(frame.keys.actions)
         self.map = {}
-        for actions in [frame.menumap.actions, frame.toolmap.actions]:
-            if actions is None:
-                continue
-            for action in actions:
-                # look at the emacs alias, the class name, and the
-                # possibility of the translated class namex
-                for name in [action.alias, action.__class__.__name__,
-                             _(action.__class__.__name__)]:
-                    #dprint("name = %s" % name)
-                    if name and name not in self.map:
-                        self.map[name] = action
+        for action in frame.menumap.actions.itervalues():
+            # look at the emacs alias, the class name, and the
+            # possibility of the translated class namex
+            for name in [action.alias, action.__class__.__name__,
+                         _(action.__class__.__name__)]:
+                #dprint("name = %s" % name)
+                if name and name not in self.map:
+                    self.map[name] = action
         self.sorted = self.map.keys()
         self.sorted.sort()
+        dprint(self.sorted)
 
     def action(self, index=-1, multiplier=1):
         # FIXME: ignoring number right now

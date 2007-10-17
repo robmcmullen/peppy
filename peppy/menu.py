@@ -704,7 +704,6 @@ class UserActionMap(debugmixin):
             pos += 1
         while (pos < menubar.GetMenuCount()):
             menubar.Remove(pos)
-        self.connectEvents()
         
     def updateToolbarActions(self, auimgr):
         needed = {}
@@ -738,7 +737,11 @@ class UserActionMap(debugmixin):
                     if separator and toolbar.GetToolsCount() > 0:
                         toolbar.AddSeparator()
                     action.insertIntoToolbar(toolbar)
-                    
+
+        # FIXME: Add toolbars in reverse order, because apparently aui
+        # inserts toolbars from the left and pushes everything else to
+        # the right.  There must be a better way to do this.
+        order.reverse()
         for title in order:
             tb = self.title_to_toolbar[title]
             tb.Realize()
@@ -747,6 +750,23 @@ class UserActionMap(debugmixin):
                                   Name(title).Caption(title).
                                   ToolbarPane().Top().
                                   LeftDockable(False).RightDockable(False))
+
+    def getKeyboardActions(self):
+        keymap = KeyMap()
+        #keymap.debug = True
+        for action in self.actions.values():
+            if action.keyboard is None:
+                continue
+            keymap.define(action.keyboard, action)
+        return keymap
+            
+    def updateActions(self, toolbar=True):
+        self.updateMenuActions(self.frame.GetMenuBar())
+        if toolbar:
+            self.updateToolbarActions(self.frame._mgr)
+        keymap = self.getKeyboardActions()
+        self.connectEvents()
+        return keymap
     
     def cleanupPrevious(self, auimgr):
         self.disconnectEvents()

@@ -390,9 +390,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.menumap.cleanupPrevious(self._mgr)
         actions = UserActionMap.getActiveActions()
         self.menumap = UserActionMap(self, actions, mode)
-        self.menumap.updateMenuActions(self.GetMenuBar())
-        if self.show_toolbar:
-            self.menumap.updateToolbarActions(self._mgr)
+        keymap = self.menumap.updateActions(self.show_toolbar)
+        self.keys.setGlobalKeyMap(keymap)
         self._mgr.Update()
 
     enablecount = 0
@@ -476,6 +475,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def closeWindow(self):
         self.unbindEvents()
+        if self.menumap is not None:
+            self.menumap.cleanupPrevious(self._mgr)
         FrameList.remove(self)
         self.tabs.closeAllTabs()
         self.Destroy()
