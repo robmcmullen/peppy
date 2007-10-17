@@ -235,7 +235,7 @@ class CompletionMinibuffer(TextMinibuffer):
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
 
-        if self.initial:
+        if self.initial is not None:
             self.text.ChangeValue(self.initial)
             self.text.SetChoices(self.complete(self.initial))
         self.text.SetEntryCallback(self.setDynamicChoices)

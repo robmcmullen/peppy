@@ -639,7 +639,7 @@ class ExecuteCommandByName(SelectAction):
         to the list of possible completions.
         """
         frame = self.frame
-        dprint(frame.menumap.actions)
+        self.dprint(frame.menumap.actions)
         self.map = {}
         for action in frame.menumap.actions.itervalues():
             # look at the emacs alias, the class name, and the
@@ -651,23 +651,24 @@ class ExecuteCommandByName(SelectAction):
                     self.map[name] = action
         self.sorted = self.map.keys()
         self.sorted.sort()
-        dprint(self.sorted)
+        self.dprint(self.sorted)
 
     def action(self, index=-1, multiplier=1):
         # FIXME: ignoring number right now
         self.createList()
         minibuffer = StaticListCompletionMinibuffer(self.mode, self,
                                                     label="M-X",
-                                                    list = self.sorted)
+                                                    list = self.sorted,
+                                                    initial = "")
         self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.map:
             action = self.map[text]
-            print "executing %s: %s" % (text, action)
+            self.dprint("executing %s: %s" % (text, action))
             wx.CallAfter(action.action)
         else:
-            print "%s not found" % text
+            self.frame.SetStatusText("%s not a known action" % text)
 
 
 class CancelMinibuffer(SelectAction):
