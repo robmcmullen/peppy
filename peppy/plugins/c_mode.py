@@ -41,7 +41,6 @@ class CMode(FundamentalMode):
     regex="(\.c|\.cc|\.cpp|\.h|\.hh\.hpp)$"
     
     default_classprefs = (
-       StrParam('sample_file', _sample_file),
        )
 
 

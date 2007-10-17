@@ -53,7 +53,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
             plugins = self.plugin_manager.getPluginsOfCategory(cat)
             #print plugins
             self.plugins.extend(plugins)
-        dprint(self.plugins)
+        self.dprint(self.plugins)
         # Sort first by name, then by version number
         self.plugins.sort(key=lambda s:(s.name, s.version))
         
@@ -83,12 +83,12 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
         index = 0
         list_count = self.GetItemCount()
         for plugin in self.plugins:
-            dprint(plugin.name)
+            self.dprint(plugin.name)
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, plugin.name)
             else:
                 self.SetStringItem(index, 0, plugin.name)
-            dprint(plugin.version)
+            self.dprint(plugin.version)
             self.SetStringItem(index, 1, str(plugin.version))
 
             index += 1
@@ -111,7 +111,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
             what = "checked"
         else:
             what = "unchecked"
-        dprint("toggling plugin %d: %s = %s" % (index, self.plugins[index],
+        self.dprint("toggling plugin %d: %s = %s" % (index, self.plugins[index],
                                                 what))
         if not self.skip_verify:
             # If we aren't currently verifying another item, verify

@@ -51,7 +51,6 @@ class TextMode(FundamentalMode):
     default_classprefs = (
         StrParam('minor_modes', ''),
         BoolParam('word_wrap', True),
-        StrParam('sample_file', _sample_file),
         )
     
 

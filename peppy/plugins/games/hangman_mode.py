@@ -32,7 +32,6 @@ import wx.stc
 from peppy.menu import *
 from peppy.major import *
 from peppy.stcinterface import *
-from peppy.lib.iconstorage import *
 
 _sample_file="""\
 albatros  banana  electrometer  eggshell
@@ -48,12 +47,15 @@ icondict = {
 \xc9\x1e\x03\x88+h\xf6\xdbY\xc1#\xfc\x04_ 8u\x10Ma\xa6\x87\x9b\x90z\xb1\x03\
 \x03\xaaO\xfa\xd1L{_\x00\x00\x00\x00IEND\xaeB`\x82'
 }
+from peppy.lib.iconstorage import *
 addIconsFromDict(icondict)
 
 
 class PlayHangman(SelectAction):
-    """
-    Start a game of hangman.
+    """Start a game of hangman.
+    
+    This creates a new major mode of Hangman using the current mode's buffer
+    as the source for the wordlist.
     """
     alias = _("hangman")
     name = _("Hangman")
@@ -72,6 +74,10 @@ class PlayHangman(SelectAction):
 
 
 class RestartGame(SelectAction):
+    """Restart the current game with a new word.
+    
+    Reset the gallows and pick a new word.
+    """
     alias = _("restart-game")
     name = _("Restart Game")
     tooltip = _("Restart Game")
@@ -320,9 +326,7 @@ class HangmanMode(MajorMode):
 
 
 class HangmanPlugin(IPeppyPlugin, debugmixin):
-    """
-    Image viewer plugin that registers the major mode and supplies the
-    user interface actions so we can use the mode.
+    """Peppy plugin that registers the Hangman mode and its actions.
     """
     def aboutFiles(self):
         return {"words.hangman": _sample_file}

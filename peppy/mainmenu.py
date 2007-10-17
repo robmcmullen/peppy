@@ -372,6 +372,10 @@ class RunScriptWithArgs(RunScript):
     tooltip = _("Open a file")
     icon = "icons/script_edit.png"
     default_menu = ("Tools", 2)
+    
+    # If subclassing another action, make sure to reset global_id, or the
+    # menu system will use the existing global id for the new action
+    global_id = None
     key_bindings = {'default': "C-F5", }
 
     def action(self, index=-1, multiplier=1):
@@ -389,8 +393,12 @@ class StopScript(RunScript):
     tooltip = _("Stop the currently running script")
     icon = 'icons/stop.png'
     default_menu = ("Tools", 3)
+    global_id = None
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", }
     
+    def isEnabled(self):
+        return hasattr(self.mode, 'startInterpreter') and hasattr(self.mode, 'process')
+
     def action(self, index=-1, multiplier=1):
         self.mode.stopInterpreter()
 

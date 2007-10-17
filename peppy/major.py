@@ -89,9 +89,9 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     stc_class = PeppySTC
 
     default_classprefs = (
-        StrParam('minor_modes', ""),
-        IntParam('line_number_offset', 1),
-        IntParam('column_number_offset', 1),
+        StrParam('minor_modes', '', 'List of minor mode keywords that should be\ndisplayed when starting this major mode'),
+        IntParam('line_number_offset', 1, 'Number to add to the line number reported\nby the mode\'s stc in order to display'),
+        IntParam('column_number_offset', 1, 'Number to add to the column number reported\nby the mode\'s stc in order to display'),
         )
 
     # Need one keymap per subclass, so we can't use the settings.
@@ -114,25 +114,25 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         
         wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER, pos=(9000,9000))
         start = time.time()
-        dprint("starting __init__ at 0.00000s")
+        self.dprint("starting __init__ at 0.00000s")
         self.createWindow()
-        dprint("createWindow done in %0.5fs" % (time.time() - start))
+        self.dprint("createWindow done in %0.5fs" % (time.time() - start))
         self.createWindowPostHook()
-        dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
+        self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
         self.loadMinorModes()
-        dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
+        self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
         self.loadMinorModesPostHook()
-        dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
+        self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
         self.createEventBindings()
-        dprint("createEventBindings done in %0.5fs" % (time.time() - start))
+        self.dprint("createEventBindings done in %0.5fs" % (time.time() - start))
         self.createEventBindingsPostHook()
-        dprint("createEventBindingsPostHook done in %0.5fs" % (time.time() - start))
+        self.dprint("createEventBindingsPostHook done in %0.5fs" % (time.time() - start))
         self.createListeners()
-        dprint("createListeners done in %0.5fs" % (time.time() - start))
+        self.dprint("createListeners done in %0.5fs" % (time.time() - start))
         self.createListenersPostHook()
-        dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
+        self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
         self.createPostHook()
-        dprint("Created major mode in %0.5fs" % (time.time() - start))
+        self.dprint("Created major mode in %0.5fs" % (time.time() - start))
         
         self._mgr.Update()
 
@@ -671,7 +671,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.commandLineArgs = argstring
             
         if self.buffer.readonly or not self.classprefs.autosave_before_run:
-            msg = "You must save this file before you\ncan run it through the interpreter."
+            msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
             retval=dlg.ShowModal()
             return

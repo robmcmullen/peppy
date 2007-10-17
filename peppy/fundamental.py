@@ -193,6 +193,9 @@ class StandardCommentMixin(object):
         If the instance uses different comment characters that the class
         attributes, set the instance attributes here which will override
         the class attributes.
+        
+        This is typically called by the Editra stc mixin to set the
+        comment characters encoded by the Editra style manager.
         """
         self.start_line_comment = start
         self.end_line_comment = end
@@ -245,6 +248,8 @@ class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
                     StandardReindentMixin, StandardCommentMixin,
                     GenericFoldHierarchyMixin, EditraSTCMixin, PeppySTC):
     
+    # Default comment characters in case the Editra styling database
+    # doesn't have any information about the mode
     start_line_comment = ''
     end_line_comment = ''
 
@@ -299,7 +304,6 @@ class FundamentalMode(MajorMode):
         IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking'),
         IntParam('caret_width', 2, help='Caret width in pixels'),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
-        StrParam('sample_file', "Fundamental mode is the base for all other modes that use the STC to view text."),
         )
     
     @classmethod
@@ -355,20 +359,20 @@ class FundamentalMode(MajorMode):
         site-wide basis.
         """
         start = time.time()
-        dprint("starting createSTC at %0.5fs" % start)
+        self.dprint("starting createSTC at %0.5fs" % start)
         self.stc=self.stc_viewer_class(parent,refstc=self.buffer.stc)
-        dprint("PeppySTC done in %0.5fs" % (time.time() - start))
+        self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         self.applySettings()
-        dprint("applySettings done in %0.5fs" % (time.time() - start))
+        self.dprint("applySettings done in %0.5fs" % (time.time() - start))
         
     def applySettings(self):
         start = time.time()
-        dprint("starting applySettings at %0.5fs" % start)
+        self.dprint("starting applySettings at %0.5fs" % start)
         self.applyDefaultSettings()
         #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
-        dprint("ext=%s file_type=%s" % (ext, file_type))
+        self.dprint("ext=%s file_type=%s" % (ext, file_type))
         if file_type == 'generic' or file_type is None:
             if self.editra_synonym is not None:
                 file_type = self.editra_synonym
@@ -377,11 +381,11 @@ class FundamentalMode(MajorMode):
             else:
                 file_type = ext
         self.editra_lang = file_type
-        dprint("ext=%s file_type=%s" % (ext, file_type))
+        self.dprint("ext=%s file_type=%s" % (ext, file_type))
         self.stc.ConfigureLexer(self.editra_lang)
-        dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
+        self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
-        dprint("applySettings returning in %0.5fs" % (time.time() - start))
+        self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):
         # turn off symbol margin
