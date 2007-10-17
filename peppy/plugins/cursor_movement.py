@@ -69,20 +69,12 @@ class EndOfBuffer(SelectAction):
         self.mode.stc.DocumentEnd()
 
 
-
 class CursorMovementPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
     actions.
     """
 
-    default_keys=((None, BeginningOfLine),
-                  (None, BeginningTextOfLine),
-                  (None, EndOfLine),
-                  (None, PreviousLine),
-                  (None, NextLine),
-                  (None, BeginningOfBuffer),
-                  (None, EndOfBuffer),
-                  )
-    def getKeyboardItems(self):
-        for mode,action in self.default_keys:
-            yield (mode,action)
+    def getActions(self):
+        return [BeginningOfLine, BeginningTextOfLine, EndOfLine, PreviousLine,
+            NextLine, BeginningOfBuffer, EndOfBuffer
+            ]
