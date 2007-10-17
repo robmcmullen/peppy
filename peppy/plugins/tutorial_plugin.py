@@ -18,6 +18,85 @@ from peppy.minor import *
 from peppy.menu import *
 
 
+class InsertHelloWorld(SelectAction):
+    """Simple example of an action that modifies the buffer
+    
+    This is an action that depends on the current buffer being a text file,
+    and inserts the string "Hello, world" into the text at the current
+    position
+    """
+    # This alias holds an emacs style name that is used during M-X processing
+    # If you don't want this action to have an emacs style name, don't
+    # include this or set it equal to None
+    alias = "insert-hello-world"
+    
+    # This is the name of the menu entry as it appears in the menu bar
+    # i18n processing happens within the menu system, so no need here to
+    # wrap this in a call to the _ function
+    name = "Hello World Action"
+    
+    # Tooltip that is displayed when the mouse is hovering over the menu
+    # entry
+    tooltip = "Insert 'Hello, world' at the current cursor position"
+    
+    # If there is an icon associated with this action, name it here.  Icons
+    # are referred to by path name relative to the peppy directory.  A toolbar
+    # entry will be automatically created if the icon is specified here, unless
+    # you specify default_toolbar = False
+    icon = None
+    
+    # The default menu location is specified here as a tuple containing
+    # the menu path (separated by / characters) and a number between 1 and
+    # 1000 representing the position within the menu.  A negative number
+    # means that a separator should appear before the item
+    default_menu = ("&Help/Tests", -801)
+    
+    # Key bindings are specified in this dictionary, where any number
+    # of platform strings may be specified.  A platform named 'default'
+    # may also be included
+    key_bindings = {'win': "Ctrl-Alt-F10", 'emacs': "C-F9 C-F9",}
+    
+    # Don't forget to declare worksWithMajorMode a classmethod!  It is used
+    # before the instance of the action is created
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        """This action requires that we're editing using something with
+        the ability to insert a string.
+        """
+        # This class method is used before creating the action to report
+        # if the action will work with the major mode.  We could hard-code
+        # the requirement to work with FundamentalMode, but who knows if
+        # that will be too limiting in the future.  We can also check for
+        # specific attributes of the editing window, which is what I'm
+        # doing here.
+        return hasattr(mode.editwin, 'AddText')
+    
+    # The enable state of the menu or toolbar entry is controlled here
+    # Actions are created and destroyed all the time, so don't save any
+    # state information here -- all state information must be stored
+    # extrinsically.
+    def isEnabled(self):
+        # If the buffer is read-only, we won't be able to insert a string,
+        # so only allow insertion if it's not read-only
+        return not self.mode.buffer.readonly
+    
+    # Here's where the action is actually performed.  This same method is
+    # called regardless of how the action was initiated by the user: menubar,
+    # toolbar, or keyboard
+    def action(self, index=-1, multiplier=1):
+        # Note: index is only used if the action is part of a list or radio
+        # button list, and ignored otherwise.  multiplier is used in response
+        # to an emacs-style universal argument -- a keyboard request to
+        # repeat the action 'multiplier' number of times.  It's currently
+        # possible that multiplier could be zero or negative.
+        
+        hello = _("Hello, world")
+        # It doesn't make sense for all actions to respond to the multiplier,
+        # so you may ignore it if you wish.  I'll handle it here:
+        for i in range(0, multiplier):
+            self.mode.editwin.AddText(hello)
+
+
 class SmileyFaceMinorMode(MinorMode, wx.PyControl):
     """Draws a smiley face centered in the window.
     
@@ -28,6 +107,13 @@ class SmileyFaceMinorMode(MinorMode, wx.PyControl):
     """
     # All minor modes need a unique keyword
     keyword="Smiley"
+    
+    # classprefs are inherited from all the parent classes that descend from
+    # a subclass of ClassPrefs.  The class attribute default_classprefs
+    # describes the type, initial default value, and any help text that
+    # goes along with a configuration variable.  Any configuration variable
+    # can be saved in the main peppy configuration file with the section
+    # corresponding to the name of the class.
     
     # In addition to the classprefs listed in the MinorMode superclass,
     # you can define your own classprefs here.  You may also override any
@@ -113,6 +199,14 @@ class TutorialPlugin(IPeppyPlugin):
     superclass IPeppyPlugin, and only the interfaces actually used by the
     plugin need to be defined here.  All others default to no-ops.
     """
+    # All actions that you want to be visible to peppy should be returned
+    # in getActions
+    def getActions(self):
+        # You can return a list or yield the items individually
+        return [InsertHelloWorld]
+    
+    # All minor modes defined in the file that you want to be visible to
+    # peppy should be returned here
     def getMinorModes(self):
         # We have just one minor mode, so you can return it as a list of one
         # element, or you can yield it.

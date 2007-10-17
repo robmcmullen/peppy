@@ -122,7 +122,7 @@ class SelectAction(debugmixin):
     def action(self, index=-1, multiplier=1):
         pass
 
-    def __call__(self, evt, number=None):
+    def __call__(self, evt, number=1):
         assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, number))
         self.action(0, number)
 
