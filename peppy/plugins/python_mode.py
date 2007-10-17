@@ -17,7 +17,7 @@ from peppy.fundamental import *
 from peppy.actions.base import *
 
 _sample_file='''\
-import time, sys
+import os, sys, time
 """
 Sample file to demonstrate running a python script from the editor.
 """
@@ -35,7 +35,7 @@ print "Number of times to loop: %d" % num
 
 # Perform the loop
 for x in range(num):
-    print 'blah'
+    print 'loop %d: blah' % x
     time.sleep(1)
 '''
 
