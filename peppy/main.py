@@ -20,6 +20,7 @@ from peppy.iofilter import *
 from peppy.lib.gaugesplash import *
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
+from peppy.lib.processmanager import *
 
 #### py2exe support
 
@@ -181,8 +182,17 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.splash.tick("Starting peppy...")
 
         wx.SetDefaultPyEncoding(self.classprefs.default_text_encoding)
+        
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         return True
+    
+    def OnIdle(self, evt):
+        """Application-wide idle update events are processed here.
+        """
+        # The process manager is a global, so it should be updated here
+        ProcessManager().idle()
+        evt.Skip()
 
     def bootstrapCommandLineOptions(self):
         """Process a small number of configuration options before

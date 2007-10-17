@@ -339,7 +339,7 @@ if __name__ == '__main__':
             p = ProcessManager().run(self.cmd.GetValue(), self, """\
 import time
 
-for x in range(2):
+for x in range(5):
     print 'blah'
     time.sleep(1)
 """)
@@ -361,11 +361,6 @@ for x in range(2):
         app = wx.PySimpleApp()
         f = jobframe()
         f.Show()
-
-        def spin(p):
-            while not p.finished:
-                wx.Yield()
-                time.sleep(0.01)
 
         app.MainLoop()
 

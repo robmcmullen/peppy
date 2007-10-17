@@ -17,29 +17,24 @@ from peppy.fundamental import *
 from peppy.actions.base import *
 
 _sample_file='''\
-#!/usr/bin/env python
-""" doc string """
-import os
-from cStringIO import StringIO
+import time, sys
+"""
+Sample file to demonstrate running a python script from the editor.
+"""
 
-globalvar="string"
-listvar=[2, 3, 5, 7, 11]
-dictvar={\'a\':1, \'b\':2, \'z\'=3333}
+# Default to 100 repetitions
+num = 100
 
-class Foo(Bar):
-    \'\'\'
-    Multi-line
-    doc string
-    \'\'\'
-    classvar=\'stuff\'
-    def __init__(self):
-        self.baz="zippy"
-        if self.baz=str(globalvar):
-            ## FIXME! - stuff and things
-            open(self.baz)
-        else:
-            raise TypeError("stuff")
-        return
+# If we've given it an argument using the Run With Args command, process
+# it here
+if len(sys.argv) > 1:
+    num = int(sys.argv[1])
+print "Number of times to loop: %d" % num
+
+# Perform the loop
+for x in range(num):
+    print 'blah'
+    time.sleep(1)
 '''
 
 class SamplePython(SelectAction):
@@ -50,6 +45,26 @@ class SamplePython(SelectAction):
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:sample.py")
 
+
+class ElectricColon(TextModificationAction):
+    name = _("Electric Colon")
+    tooltip = _("Indent the current line when a colon is pressed")
+    key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return mode.keyword == 'Python'
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode.stc
+        s.ReplaceSelection(":")
+        # folding info not automatically updated after a Replace, so
+        # do it manually
+        linestart = s.PositionFromLine(s.GetCurrentLine())
+        s.Colourise(linestart, s.GetSelectionEnd())
+        s.reindentLine()
+        pass
+        
 
 class PythonReindentMixin(ReindentBase):
     def getReindentString(self, linenum, linestart, pos, before, col, ind):
@@ -111,26 +126,6 @@ class PythonReindentMixin(ReindentBase):
 
         return self.GetIndentString(fold)
 
-
-class ElectricColon(TextModificationAction):
-    name = _("Electric Colon")
-    tooltip = _("Indent the current line when a colon is pressed")
-    key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return mode.keyword == 'Python'
-
-    def action(self, index=-1, multiplier=1):
-        s = self.mode.stc
-        s.ReplaceSelection(":")
-        # folding info not automatically updated after a Replace, so
-        # do it manually
-        linestart = s.PositionFromLine(s.GetCurrentLine())
-        s.Colourise(linestart, s.GetSelectionEnd())
-        s.reindentLine()
-        pass
-        
 
 class PythonElectricReturnMixin(debugmixin):
     debuglevel = 0
@@ -245,8 +240,6 @@ class PythonElectricReturnMixin(debugmixin):
 
 
 class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin, FundamentalSTC):
-    start_line_comment = "##"
-    
     pass
 
 class PythonMode(JobControlMixin, FundamentalMode):
@@ -257,25 +250,7 @@ class PythonMode(JobControlMixin, FundamentalMode):
     stc_viewer_class = PythonSTC
 
     default_classprefs = (
-        PathParam('interpreter_exe', 'c:/Python25/python.exe'),
-        StrParam('sample_file', _sample_file),
         )
-
-    ##
-    # tab the line to the correct indent (matching the line above)
-    def electricTab(self):
-        s=self.stc
-        
-        # From PyPE:
-        #get information about the current cursor position
-        linenum = s.GetCurrentLine()
-        pos = s.GetCurrentPos()
-        col = s.GetColumn(pos)
-        linestart = s.PositionFromLine(linenum)
-        line = s.GetLine(linenum)[:pos-linestart]
-    
-        #get info about the current line's indentation
-        ind = s.GetLineIndentation(linenum)
 
 
 class PythonPlugin(IPeppyPlugin):

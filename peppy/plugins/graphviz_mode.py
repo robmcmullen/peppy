@@ -54,10 +54,9 @@ class GraphvizMode(FundamentalMode):
     start_line_comment = "// "
 
     default_classprefs = (
-        StrParam('path', '/usr/local/bin'),
+        StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
         StrParam('minor_modes', 'GraphvizView'),
-        StrParam('sample_file', _sample_file),
         )
     
 
@@ -110,7 +109,6 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         self.sizer.Add(self.drawing, 1, wx.EXPAND)
 
         self.process = None
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.Layout()
@@ -146,10 +144,6 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 
     def stdoutCallback(self, job, text):
         self.preview.write(text)
-
-    def OnIdle(self, evt):
-        ProcessManager().idle()
-        evt.Skip()
 
     def finishedCallback(self, job):
         assert self.dprint()
