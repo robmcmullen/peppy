@@ -14,7 +14,7 @@ from peppy.yapsy.plugins import *
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.about import credits, substitutes, gpl_text
+from peppy.about import credits, copyrights, substitutes, gpl_text
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
@@ -50,8 +50,14 @@ class HelpAbout(SelectAction):
                  "",
                  _("Contributions by:"),
                  ]
-        dprint([a for a,c in credits])
-        devs.extend([a for a,c in credits])
+        people = {}
+        for author in credits.keys():
+            people[author] = 1
+        for copyright in copyrights.values():
+            dprint(copyright)
+            people[copyright['author']] = 1
+        #dprint(people.keys())
+        devs.extend(people.keys())
         devs.extend(("", _("See the file THANKS for more credits")))
         info.Developers = devs
         dprint(info.Developers)

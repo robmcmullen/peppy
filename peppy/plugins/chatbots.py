@@ -18,7 +18,7 @@ from peppy.menu import *
 from peppy.nltk_lite.chat import *
 
 from peppy.about import AddCopyright
-AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "2001-2006", "University of Pennsylvania", "Eliza and the other chatbot implementations from")
+AddCopyright("Natural Language Toolkit", "http://nltk.sourceforge.net/", "University of Pennsylvania", "2001-2006", "Eliza and the other chatbot implementations from")
 
 
 def action(self, index=-1, multiplier=1):
