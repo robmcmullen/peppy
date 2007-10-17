@@ -1,3 +1,19 @@
+2007-10-17  Rob McMullen  <robm@users.sourceforge.net>
+	* Released peppy-0.7.0 "Kibbles 'n' Snouts"
+	* Dogfooding release!  Used peppy to edit peppy
+	* Added minibuffer filename loading with tab completion
+	* Added M-x keystroke processing and tab completion
+	* Removed the Boa style editor and replaced with the Editra style
+	editor and style sheet system
+	* Fixed menu system that was causing massive slowdowns as a result
+	of event connections that were not removed
+	* Added documentation and samples of major modes, minor modes,
+	and plugins
+	* Added session saving
+	* Run and stop scripts from the editor
+	* Emacs-style lower-case-with-hyphen aliases are available for most
+	actions
+
 2007-10-09  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.6.6 "Wait for it..."

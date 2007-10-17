@@ -485,6 +485,8 @@ class PasteAtColumn(Paste):
     tooltip = _("Paste selection indented to the cursor's column")
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 103)
+    default_toolbar = False
+    key_bindings = None
 
     @classmethod
     def worksWithMajorMode(cls, mode):

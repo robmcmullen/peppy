@@ -33,14 +33,17 @@ substitutes = {
     'author_email': __author_email__,
     'url': __url__,
     'license': "Licensed under the GPL",
-    'warning': """This is still alpha software, so please treat accordingly. :)
+    'warning': """<P>I'm dogfooding!  This is now my primary editor,
+but caveat emptor: it is not totally 100% bullet-proofingly rock solid.
+Perhaps solid-like, maybe even solidish: it's better than gelatinous but
+not yet crunchy.
 
-This is now my primary editor, but that's not to say that it is totally 100%
-bullet-proofingly rock solid.  Or even solidish.  It is definitely still alpha
-code, but for the most part it has replaced XEmacs for me.
+<P>It is definitely still alpha code, and missing tons o' features but for
+the most part it has replaced XEmacs as my daily editor.
 
-Save your work often and file a bug report at http://trac.flipturn.org/newticket
-if you notice something that shouldn't be happening.
+Save your work often and file a bug report at
+http://trac.flipturn.org/newticket if you notice something that shouldn't
+be happening.
     """,
     'thanks': "",
     'gpl_code': "",
@@ -177,6 +180,7 @@ AddCredit("Chris Barker", "for testing on the Mac and many bug reports and featu
 AddCredit("Julian Back", "for the framework for the C edit mode")
 AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the MathBench project at http://mathbench.sourceforge.net/yapsy/doc/presentation.html")
 AddCredit("Peter Damoc", "for the feature suggestions")
+AddCredit("Stani Michiels", "for the scintilla fold explorer he shared with the pyxides mailing list")
 
 copyrights = {}
 def AddCopyright(project, website, author, date, reason=""):
