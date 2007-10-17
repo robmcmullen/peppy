@@ -65,7 +65,7 @@ class SelectAction(debugmixin):
         if menu is not None:
             self.insertIntoMenu(menu)
         if toolbar is not None:
-            self.insertIntoToolBar(toolbar)
+            self.insertIntoToolbar(toolbar)
 
         self.initPostHook()
 
@@ -143,7 +143,7 @@ class ToggleAction(SelectAction):
     def insertIntoMenu(self,menu):
         self.widget=menu.AppendCheckItem(self.global_id, self.name, self.getTooltip())
 
-    def insertIntoToolBar(self,toolbar):
+    def insertIntoToolbar(self,toolbar):
         self.tool=toolbar
         toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.getTooltip())
         
@@ -159,7 +159,7 @@ class ToggleAction(SelectAction):
         if self.widget is not None:
             self.widget.Check(state)
         if self.tool is not None:
-            dprint("%s, %s" % (self.tool, self.global_id))
+            #dprint("%s, %s, %s" % (self.tool, self.global_id, state))
             self.tool.ToggleTool(self.global_id, state)
 
 
