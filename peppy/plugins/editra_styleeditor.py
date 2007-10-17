@@ -24,7 +24,6 @@ class EditraStyles(SelectAction):
     name=_("Text Styles...")
     tooltip = _("Open the STC Style Editor to edit the current mode's text display.")
     default_menu = ("Format", -1000)
-    icon = "icons/style_edit.png"
     
     def isEnabled(self):
         return hasattr(self.mode.classprefs, 'editra_style_sheet')
