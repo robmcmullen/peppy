@@ -206,10 +206,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     perspectives={}
 
     default_classprefs = (
-        IntParam('width', 800),
-        IntParam('height', 600),
-        StrParam('sidebars', ''),
-        BoolParam('show_toolbar', True),
+        IntParam('width', 800, 'Width of the main frame in pixels'),
+        IntParam('height', 600, 'Height of the main frame in pixels'),
+        StrParam('sidebars', '', 'List of sidebars to activate with the frame'),
+        BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
         )
 
     default_menubar = {

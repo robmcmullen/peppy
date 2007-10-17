@@ -39,14 +39,19 @@ class MinorMode(ClassPrefs, debugmixin):
       implemented yet, but it's coming.
     
     """
-
+    # Keyword should be overriden in subclasses to give this minor mode
+    # a unique name among all other minor modes
+    keyword = "Abstract Minor Mode"
+    
     default_classprefs = (
         # Set default size here.  Probably should override best_*
-        # sizes in subclass
-        IntParam('best_width', 100),
-        IntParam('best_height', 100),
-        IntParam('min_width', 100),
-        IntParam('min_height', 100),
+        # sizes in subclass.
+        # FIXME: the AUI manager always seems to go with the minimum size
+        # on the initial setup.  Don't know why this is yet...
+        IntParam('best_width', 100, 'Desired width of minor mode in pixels'),
+        IntParam('best_height', 100, 'Desired height of minor mode in pixels'),
+        IntParam('min_width', 100, 'Minimum width of minor mode in pixels\nenforced by the AuiManager'),
+        IntParam('min_height', 100, 'Minimum height of minor mode in pixels\nenforced by the AuiManager'),
         )
 
     @classmethod

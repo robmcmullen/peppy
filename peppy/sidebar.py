@@ -35,10 +35,12 @@ class Sidebar(ClassPrefs, debugmixin):
     caption = None
 
     default_classprefs = (
-        IntParam('best_width', 100),
-        IntParam('best_height', 200),
-        IntParam('min_width', 100),
-        IntParam('min_height', 100),
+        # FIXME: the AUI manager always seems to go with the minimum size
+        # on the initial setup.  Don't know why this is yet...
+        IntParam('best_width', 100, 'Desired width of sidebar in pixels'),
+        IntParam('best_height', 100, 'Desired height of sidebar in pixels'),
+        IntParam('min_width', 100, 'Minimum width of sidebar in pixels\nenforced by the AuiManager'),
+        IntParam('min_height', 100, 'Minimum height of sidebar in pixels\nenforced by the AuiManager'),
         BoolParam('show', True),
         )
 
