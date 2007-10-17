@@ -17,8 +17,8 @@ from peppy.frame import *
 class SessionManagerPlugin(IPeppyPlugin):
     default_classprefs = (
         StrParam('session_file', 'session.txt', 'Filename used in the peppy configuration directory\nto store the session information.'),
-        BoolParam('save_on_exit', True, 'Whether to save the session on exit'),
-        BoolParam('restore_on_start', True, 'Whether to restore the session on startup'),
+        BoolParam('save_on_exit', False, 'Whether to save the session on exit'),
+        BoolParam('restore_on_start', False, 'Whether to restore the session on startup'),
         )
     
     restore_session_cmdline = True
