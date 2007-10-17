@@ -72,20 +72,26 @@ class JobOutputMixin(object):
 class Job(debugmixin):
     debuglevel = 0
     
-    def __init__(self, cmd, job_output):
+    def __init__(self, cmd, working_dir, job_output):
         self.pid = None
         self.process = None
         self.cmd = cmd
+        self.working_dir = working_dir
         self.jobout = job_output
         self.handler = wx.GetApp()
         self.stdout = None
         self.stderr = None
 
     def run(self, text=""):
-        assert self.dprint()
-        self.process = wx.Process(self.handler)
-        self.process.Redirect();
-        self.pid = wx.Execute(self.cmd, wx.EXEC_ASYNC, self.process)
+        assert self.dprint("Running %s in %s" % (self.cmd, self.working_dir))
+        savecwd = os.getcwd()
+        try:
+            os.chdir(self.working_dir)
+            self.process = wx.Process(self.handler)
+            self.process.Redirect();
+            self.pid = wx.Execute(self.cmd, wx.EXEC_ASYNC, self.process)
+        finally:
+            os.chdir(savecwd)
         if self.pid==0:
             assert self.dprint("startup failed")
             self.process = None
@@ -157,8 +163,8 @@ class _ProcessManager(debugmixin):
             if job.process:
                 job.readStreams()
     
-    def run(self, cmd, job_output, input=""):
-        job = Job(cmd, job_output)
+    def run(self, cmd, working_dir, job_output, input=""):
+        job = Job(cmd, working_dir, job_output)
         self.jobs.append(job)
         assert self.dprint("Running job %s" % cmd)
         job.run(input)

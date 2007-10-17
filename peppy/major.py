@@ -707,7 +707,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             Publisher().sendMessage('peppy.preferences.show')
         else:
             cmd = self.getCommandLine(bangpath, direct)
-            ProcessManager().run(cmd, self)
+            ProcessManager().run(cmd, self.buffer.cwd(), self)
 
     def stopInterpreter(self):
         if hasattr(self, 'process'):
