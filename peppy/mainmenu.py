@@ -207,6 +207,7 @@ class Revert(SelectAction):
     name = _("&Revert")
     tooltip = _("Revert to last saved version")
     default_menu = ("File", -900)
+    default_toolbar = False
     icon = "icons/page_refresh.png"
 
     def isEnabled(self):

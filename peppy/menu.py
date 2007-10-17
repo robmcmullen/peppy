@@ -31,7 +31,7 @@ class SelectAction(debugmixin):
     tooltip=""
     keyboard=None
     default_menu = ()
-    default_toolbar = ()
+    default_toolbar = True # or False if don't want the toolbar appear
     key_bindings = None # map of platform to default keybinding
     _accelerator_text = None # This is not set by the user
     stock_id = None
@@ -70,7 +70,7 @@ class SelectAction(debugmixin):
         self.initPostHook()
 
     def __del__(self):
-        dprint("DELETING action %s" % self.name)
+        self.dprint("DELETING action %s" % self.name)
 
     def initPreHook(self):
         pass
@@ -528,7 +528,7 @@ class UserActionMap(debugmixin):
         if len(action.default_menu) == 0:
             raise AttributeError('Menu position not specified for %s' % action.name)
         info = action.default_menu
-        dprint("action: name=%s info=%s" % (action.name, info))
+        self.dprint("action: name=%s info=%s" % (action.name, info))
         if isinstance(info, str):
             menu_title = info
             menu_weight = None
@@ -574,7 +574,7 @@ class UserActionMap(debugmixin):
             
             action = actioncls(self.frame)
             self.actions[action.global_id] = action
-            dprint("%s in current mode list" % action)
+            self.dprint("%s in current mode list" % action)
 
             if action.default_menu is None or len(action.default_menu) == 0:
                 # It's a command event only, not a menu or toolbar
@@ -600,14 +600,14 @@ class UserActionMap(debugmixin):
             # Corner case when you've created a submenu, but nothing
             # in the parent menu
             if parent not in self.menus:
-                dprint("PARENT NOT IN MENUS: %s" % parent)
+                self.dprint("PARENT NOT IN MENUS: %s" % parent)
                 self.menus[parent] = []
                 search = parent
                 while search != 'root':
                     submenu = search.split('/')[-1]
                     search = self.getParent(search)
-                    dprint("submenu = %s, search = %s" % (submenu, search))
-                    dprint(self.menus[search])
+                    self.dprint("submenu = %s, search = %s" % (submenu, search))
+                    self.dprint(self.menus[search])
                     found = False
                     for weight, action, sep in self.menus[search]:
                         if isinstance(action, str) and action == submenu:
@@ -631,7 +631,7 @@ class UserActionMap(debugmixin):
             items.sort()
             sorted[title] = items
         self.menus = sorted
-        dprint(self.menus.keys())
+        self.dprint(self.menus.keys())
     
     def updateMinMax(self, min, max):
         """Update the min and max menu ids
@@ -671,7 +671,7 @@ class UserActionMap(debugmixin):
             for weight, action, separator in items:
                 if isinstance(action, str):
                     submenu_parts = action.split('/')
-                    dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
+                    self.dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
                     if action not in self.title_to_menu:
                         submenu = wx.Menu()
                         self.title_to_menu[action] = submenu
@@ -696,7 +696,7 @@ class UserActionMap(debugmixin):
             wx.MenuBar.SetAutoWindowMenu(False)
         pos = 0
         for weight, title, separator in self.menus['root']:
-            dprint("root menu title: %s" % title)
+            self.dprint("root menu title: %s" % title)
             if pos < menubar.GetMenuCount():
                 menubar.Replace(pos, self.title_to_menu[title], title)
             else:
@@ -722,7 +722,7 @@ class UserActionMap(debugmixin):
                 if isinstance(action, str):
                     # Ignore submenu definitions -- toolbars don't have subtoolbars
                     pass
-                elif action.icon is not None:
+                elif action.icon is not None and action.default_toolbar:
                     # Delay construction of toolbars until now, when
                     # we know that the toolbar is needed
                     if title not in needed:
@@ -733,7 +733,7 @@ class UserActionMap(debugmixin):
                             wx.TB_FLAT | wx.TB_NODIVIDER)
                         tb.SetToolBitmapSize(wx.Size(16,16))
                         self.title_to_toolbar[title] = tb
-                        dprint(tb)
+                        self.dprint(tb)
                     toolbar = self.title_to_toolbar[title]
                     if separator and toolbar.GetToolsCount() > 0:
                         toolbar.AddSeparator()
@@ -742,7 +742,7 @@ class UserActionMap(debugmixin):
         for title in order:
             tb = self.title_to_toolbar[title]
             tb.Realize()
-            dprint("Realized %s: %s" % (title, tb))
+            self.dprint("Realized %s: %s" % (title, tb))
             auimgr.AddPane(tb, wx.aui.AuiPaneInfo().
                                   Name(title).Caption(title).
                                   ToolbarPane().Top().
