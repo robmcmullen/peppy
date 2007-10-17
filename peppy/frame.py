@@ -529,8 +529,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             assert self.dprint("new mode=%s" % newmode)
             self.tabs.replaceCurrentTab(newmode)
 
-    def newBuffer(self,buffer):
-        mode=self.createMajorMode(buffer)
+    def newBuffer(self, buffer, modecls=None):
+        mode=self.createMajorMode(buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         current = self.getActiveMajorMode()
         if current and current.temporary:
@@ -552,19 +552,21 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return True
         return False
 
-    def open(self, url):
+    def open(self, url, modecls=None):
         buffer = BufferList.findBufferByURL(url)
         if buffer is not None:
             #dprint("found permanent buffer")
-            self.newBuffer(buffer)
+            self.newBuffer(buffer, modecls)
         else:
             if not isinstance(url, URLInfo):
                 url = URLInfo(url)
-            try:
-                modecls = MajorModeMatcherDriver.match(url)
-            except Exception, e:
-                self.openFailure(url, str(e))
-                return
+            if modecls is None:
+                try:
+                    modecls = MajorModeMatcherDriver.match(url)
+                except Exception, e:
+                    self.openFailure(url, str(e))
+                    return
+            dprint(modecls)
             
             if wx.GetApp().classprefs.load_threaded and modecls.allow_threaded_loading:
                 buffer = LoadingBuffer(url, modecls)

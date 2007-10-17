@@ -61,9 +61,14 @@ class PlayHangman(SelectAction):
     default_menu = "Tools/Games"
 
     def action(self, index=-1, multiplier=1):
-        # FIXME: if the current buffer is based on the PeppySTC, it should open
-        # the game using the current stc rather than the small word list
-        self.frame.open("about:words.hangman")
+        if isinstance(self.mode.stc, PeppySTC) or isinstance(self.mode, HangmanMode):
+            # if the current buffer is based on the PeppySTC or is Hangman
+            # itself, it will open a new frame using that buffer as the
+            # source for the wordlist
+            url = self.mode.buffer.url
+            self.frame.open(url, HangmanMode)
+        else:
+            self.frame.open("about:words.hangman")
 
 
 class RestartGame(SelectAction):
