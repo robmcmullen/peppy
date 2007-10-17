@@ -12,7 +12,7 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.menu import *
 from peppy.iofilter import *
-from peppy.fundamental import FundamentalMode
+from peppy.fundamental import *
 from peppy.stcinterface import PeppySTC
 
 class ShellHandler(urllib2.BaseHandler):
@@ -50,8 +50,8 @@ class ShellSTC(PeppySTC):
     """
     debuglevel=0
 
-    def __init__(self, parent, copy=None):
-        PeppySTC.__init__(self, parent, copy=copy)
+    def __init__(self, parent, **kwargs):
+        PeppySTC.__init__(self, parent, **kwargs)
         self.pipe=None
         self.waiting=False
         self.promptPosEnd=0
@@ -105,7 +105,7 @@ class ShellSTC(PeppySTC):
             # update their cursor positions.
             self.sendEvents(ShellUpdateEvent)
 
-    def process(self,viewer):
+    def process(self):
         startpos = self.promptPosEnd
         endpos = self.GetTextLength()
         
@@ -116,7 +116,6 @@ class ShellSTC(PeppySTC):
         self.promptPosEnd = endpos + 1
         self.SetCurrentPos(self.promptPosEnd)
         self.send(tosend)
-        
 
     def OnModified(self, evt):
         PeppySTC.OnModified(self,evt)
@@ -124,27 +123,22 @@ class ShellSTC(PeppySTC):
     def GetModify(self):
         return False
 
-# FIXME: this is hidden by Fundamental's ElectricReturn action...  To
-# workaround this, have to create an electric return mixin for ShellMode
-# A better way to work around is to have the most recent major mode with
-# a duplicate key binding override the superclass's action for that
-# keybinding.
-class ProcessShellLine(SelectAction):
-    debuglevel = 0
+
+class ShellViewerSTC(FundamentalSTC):
+    """This is the viewer STC that is the front-end to the user.
     
-    name = "Process a shell command"
-    tooltip = "Process a shell command."
-    key_bindings = {'default': 'RET', }
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mode.buffer.stc.process(self.mode)
-
-class ShellReturnMixin(object):
+    This STC handles the display and interaction, overriding
+    FundamentalMode's electricReturn in order to handle the user
+    interaction. 
+    """
     def electricReturn(self):
-        self.buffer.stc.process(self)
+        # Call the reference stc's (i.e. the ShellSTC instance)
+        # process command, because it is the reference STC that
+        # knows how to communicate with the shell process
+        self.refstc.process()
 
-class ShellMode(ShellReturnMixin, FundamentalMode):
+
+class ShellMode(FundamentalMode):
     debuglevel=0
     
     keyword='Shell'
@@ -152,6 +146,7 @@ class ShellMode(ShellReturnMixin, FundamentalMode):
     regex = None
     
     stc_class = ShellSTC
+    stc_viewer_class = ShellViewerSTC
     
     @classmethod
     def verifyProtocol(cls, url):
@@ -185,9 +180,3 @@ class ShellPlugin(IPeppyPlugin):
     
     def getMajorModes(self):
         yield ShellMode
-    
-    default_keys=(("Shell",ProcessShellLine),
-                  )
-    def getKeyboardItems(self):
-        for mode,action in self.default_keys:
-            yield (mode,action)
