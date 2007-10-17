@@ -332,8 +332,8 @@ class StyleMgr(object):
 
         """
         def_dict = \
-            {'brace_good' : StyleItem("#FFFFFF", "#0000FF,bold"),
-             'brace_bad'  : StyleItem(back="#FF0000,bold"),
+            {'brace_good' : StyleItem(back="#75FFA3,bold"),
+             'brace_bad'  : StyleItem(back="#FF0090,bold"),
              'calltip'    : StyleItem("#404040", "#FFFFB8"),
              'ctrl_char'  : StyleItem(),
              'line_num'   : StyleItem(back="#C0C0C0", face="%(secondary)s", \
@@ -343,9 +343,9 @@ class StyleMgr(object):
              'default_style': StyleItem("#000000", "#F6F6F6", \
                                         "%(primary)s", "%(size)d"),
              'char_style' : StyleItem("#FF3AFF"),
-             'class_style' : StyleItem("#2E8B57,bold"),
+             'class_style' : StyleItem("#0000FF,bold,italic"),
              'class2_style' : StyleItem("#2E8B57,bold"),
-             'comment_style' : StyleItem("#838383"),
+             'comment_style' : StyleItem("#FF0000,bold"),
              'directive_style' : StyleItem("#0000FF,bold", 
                                            face="%(secondary)s"),
              'dockey_style' : StyleItem("#0000FF"),
@@ -353,14 +353,14 @@ class StyleMgr(object):
              'funct_style' : StyleItem("#008B8B,italic"),
              'global_style' : StyleItem("#007F7F,bold", face="%(secondary)s"), 
              'here_style' : StyleItem("#CA61CA,bold", face="%(secondary)s"),
-             'ideol_style' : StyleItem("#E0C0E0", face="%(secondary)s"),
-             'keyword_style' : StyleItem("#A52B2B,bold"),
+             'ideol_style' : StyleItem("#E0C0E0"),
+             'keyword_style' : StyleItem("#000000,bold"),
              'keyword2_style' : StyleItem("#2E8B57,bold"),
-             'keyword3_style' : StyleItem("#008B8B,bold"),
+             'keyword3_style' : StyleItem("#0000FF,bold"),
              'keyword4_style' : StyleItem("#9D2424"),
              'marker_style' : StyleItem("#FFFFFF", "#000000"),
              'folder_style' : StyleItem("#FFFFFF", "#000000"),
-             'number_style' : StyleItem("#DD0101"),
+             'number_style' : StyleItem("#387082"),
              'number2_style' : StyleItem("#DD0101,bold"),
              'operator_style' : StyleItem("#000000", face="%(primary)s,bold"),
              'pre_style' : StyleItem("#AB39F2,bold"),               
@@ -368,7 +368,7 @@ class StyleMgr(object):
              'regex_style' : StyleItem("#008B8B"),
              'scalar_style' : StyleItem("#AB37F2,bold", face="%(secondary)s"),
              'scalar2_style' : StyleItem("#AB37F2", face="%(secondary)s"),
-             'string_style' : StyleItem("#FF3AFF,bold"),
+             'string_style' : StyleItem("#1A701A"),
              'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol", \
                                            "%(secondary)s"),
              'unknown_style' : StyleItem("#FFFFFF,bold", "#DD0101,eol", \
