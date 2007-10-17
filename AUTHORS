@@ -1,3 +1,10 @@
 peppy was written by Rob McMullen, starting in September of 2006.
 
-See the website at http://www.flipturn.org/peppy for contact information.
+I have borrowed code from other projects; see the file THANKS in this
+directory.
+
+In contrast to the code I have pulled from other projects and merged into
+the project, other people have written code specifically for inclusion
+into peppy.  Thanks to:
+
+Julian Back

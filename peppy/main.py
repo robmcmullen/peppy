@@ -203,7 +203,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         However, a few options must be parsed before further
         processing takes place.  These are processed here.
         """
-        dprint("argv before: %s" % (sys.argv,))
+        self.dprint("argv before: %s" % (sys.argv,))
 
         # Check for -v flag for the verbosity level
         self.verbose = 0
@@ -223,7 +223,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 confdir = sys.argv[index + 1]
                 del sys.argv[index:index + 2]
         self.config = HomeConfigDir(confdir)
-        dprint(self.config.dir)
 
         catalog = "peppy"
         if "--i18n-catalog" in sys.argv:
@@ -233,7 +232,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 del sys.argv[index:index + 2]
         self.i18nConfig(catalog)
 
-        dprint("argv after: %s" % (sys.argv,))
+        self.dprint("argv after: %s" % (sys.argv,))
 
     def processCommandLineOptions(self):
         """Process the bulk of the command line options.

@@ -144,10 +144,16 @@ $ python peppy.py
 KNOWN ISSUES
 ============
 
-This editor is still in heavy development, so I wouldn't recommend
-that you do anything mission critical with it.  It tends to be in a
-good mood most of the time and therefore is likely save your files,
-but it might crash unexpectedly.
+This editor is still in heavy development, but I am using it as my
+primary editor and have felt that it is stable enough that it has
+replaced XEmacs in my daily life.
+
+The only time 0.7.0 has ever crashed was due to an obscure AUI bug
+that I have not been able to track down.  It was caused by splitting
+the notebook by dragging a tab to form a new notebook, then dragging
+the tab back to the original notebook.  I've not been able to
+duplicate it, but if you experiment with the AUI tab dragging feature,
+I'd suggest saving your work before trying it.
 
 
 

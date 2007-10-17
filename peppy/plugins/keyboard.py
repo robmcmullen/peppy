@@ -46,12 +46,11 @@ class KeyboardConf(IPeppyPlugin):
     ignore_list = ['MajorAction', 'MinibufferAction']
 
     def addCommandLineOptions(self, parser):
-        dprint()
         parser.add_option("--key-bindings", action="store",
                           dest="key_bindings", default='')
 
     def processCommandLineOptions(self, options):
-        dprint(options.key_bindings)
+        #dprint(options.key_bindings)
         if options.key_bindings:
             self.platform = options.key_bindings
         else:
@@ -59,7 +58,7 @@ class KeyboardConf(IPeppyPlugin):
         self.load()
     
     def requestedShutdown(self):
-        # configuration file would be saved here
+        # FIXME: configuration file should be saved here
         pass
 
     def getKey(self, action):

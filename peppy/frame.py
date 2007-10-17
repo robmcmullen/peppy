@@ -566,7 +566,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 except Exception, e:
                     self.openFailure(url, str(e))
                     return
-            dprint(modecls)
             
             if wx.GetApp().classprefs.load_threaded and modecls.allow_threaded_loading:
                 buffer = LoadingBuffer(url, modecls)

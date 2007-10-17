@@ -34,13 +34,12 @@ class SessionManagerPlugin(IPeppyPlugin):
         Publisher().unsubscribe(self.restore)
 
     def addCommandLineOptions(self, parser):
-        dprint()
         parser.add_option("--no-session", action="store_false",
                           dest="restore_session", default=True,
                           help="Do not restore saved session")
 
     def processCommandLineOptions(self, options):
-        dprint(options.restore_session)
+        #dprint(options.restore_session)
         self.restore_session_cmdline = options.restore_session
 
     def getFile(self):

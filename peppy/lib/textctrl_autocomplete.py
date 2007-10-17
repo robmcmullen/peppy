@@ -221,7 +221,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                 self._colSearch += 1
             self._showDropDown()
         if KC == wx.WXK_TAB:
-            print self._choices
+            #print self._choices
             if self._choices:
                 self._showDropDown ()
 
