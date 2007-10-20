@@ -8,13 +8,38 @@ FIXME: this doesn't yet update between frames, so items may be out of
 sync if this is shown on two different frames.
 """
 
-import os
+import os, gc
 
 from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.sidebar import *
 
 from wx.lib.pubsub import Publisher
+
+USE_DEBUG_LEAK = False
+if USE_DEBUG_LEAK:
+    gc.enable()
+    gc.set_debug(gc.DEBUG_LEAK)
+
+class DebugGarbage(SelectAction):
+    alias = "debug-gc"
+    name = "Garbage Objects"
+    tooltip = "Show uncollectable objects"
+    default_menu = ("Tools/Debug", 900)
+    key_bindings = {'default': "C-X C-D", }
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        # force collection
+        print "\nGARBAGE:"
+        gc.collect()
+
+        print "\nGARBAGE OBJECTS:"
+        for x in gc.garbage:
+            s = str(x)
+            if len(s) > 80: s = s[:80]
+            print type(x),hex(id(x)),":", s
+        print "--summary: %d objects" % (len(gc.garbage))
 
 
 class DebugClass(ToggleListAction):
@@ -142,7 +167,9 @@ class DebugClassPlugin(IPeppyPlugin):
 
     def getActions(self):
         # Don't show menu if in optimize mode
-        if self.use_menu and __debug__:
-            yield DebugClass
+        if __debug__:
+            yield DebugGarbage
+            if self.use_menu:
+                yield DebugClass
         else:
             raise StopIteration
