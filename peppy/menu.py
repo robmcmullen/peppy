@@ -689,10 +689,6 @@ class UserActionMap(debugmixin):
                         for id in subids:
                             self.index_actions[id] = action
         
-        if wx.Platform == '__WXMAC__':
-            # turn off the automatic generation of the Window menu.
-            # We generate one ourselves
-            wx.MenuBar.SetAutoWindowMenu(False)
         pos = 0
         for weight, title, separator in self.menus['root']:
             self.dprint("root menu title: %s" % title)

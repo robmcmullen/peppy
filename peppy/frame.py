@@ -249,9 +249,18 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.sidebar_panes = []
 
         UserActionMap.setDefaultMenuBarWeights(self.default_menubar)
-        wx.App_SetMacHelpMenuTitleName(_("&Help"))
-
-        self.SetMenuBar(wx.MenuBar())
+        menubar = wx.MenuBar()
+        if wx.Platform == '__WXMAC__':
+            # turn off the automatic generation of the Window menu.
+            # We generate one ourselves
+            wx.MenuBar.SetAutoWindowMenu(False)
+            # Replace the system Help menu with ours by creating this
+            # small fake menu in order to register the help menu
+            help = wx.Menu()
+            menubar.Append(_("&Help"), help)
+            wx.App_SetMacHelpMenuTitleName(_("&Help"))
+        self.SetMenuBar(menubar)
+        
         self.menumap=None
         self.show_toolbar = self.classprefs.show_toolbar
         
