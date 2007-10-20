@@ -26,7 +26,6 @@ class SelectAction(debugmixin):
     use_accelerators = True
     name=None
     alias = ""
-    help=""
     icon=None
     tooltip=""
     keyboard=None
@@ -41,6 +40,12 @@ class SelectAction(debugmixin):
     @classmethod
     def worksWithMajorMode(cls, mode):
         return True
+    
+    @classmethod
+    def getHelp(cls):
+        #dprint(dir(cls))
+        help = "\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation:\n%s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
+        return help
     
     def __init__(self, frame, menu=None, toolbar=None):
         self.widget=None

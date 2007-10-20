@@ -626,11 +626,13 @@ class ToolbarShow(ToggleAction):
         self.frame.switchMode()
     
 
-class ExecuteCommandByName(SelectAction):
-    name = "&Execute Command"
-    tooltip = "Execute a command by name"
-    key_bindings = {'win': "M-X", 'emacs': "M-X", }
-
+class ActionNameMinibufferMixin(object):
+    def __init__(self, label):
+        self.label = label
+        
+    def getActionList(self):
+        raise NotImplementedError
+        
     def createList(self):
         """Generate list of possible names to complete.
 
@@ -638,10 +640,9 @@ class ExecuteCommandByName(SelectAction):
         aliases under which the action could be called, and add them
         to the list of possible completions.
         """
-        frame = self.frame
-        self.dprint(frame.menumap.actions)
         self.map = {}
-        for action in frame.menumap.actions.itervalues():
+        actions = self.getActionList()
+        for action in actions:
             # look at the emacs alias, the class name, and the
             # possibility of the translated class namex
             for name in [action.alias, action.__class__.__name__,
@@ -657,16 +658,67 @@ class ExecuteCommandByName(SelectAction):
         # FIXME: ignoring number right now
         self.createList()
         minibuffer = StaticListCompletionMinibuffer(self.mode, self,
-                                                    label="M-X",
+                                                    label = self.label,
                                                     list = self.sorted,
                                                     initial = "")
         self.mode.setMinibuffer(minibuffer)
 
+class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
+    name = "&Execute Action"
+    alias = "execute-action"
+    tooltip = "Execute an action by name"
+    key_bindings = {'win': "M-X", 'emacs': "M-X", }
+    
+    def __init__(self, *args, **kwargs):
+        ActionNameMinibufferMixin.__init__(self, self.keyboard)
+        SelectAction.__init__(self, *args, **kwargs)
+
+    def getActionList(self):
+        """Generate list of possible names to complete.
+
+        For all the currently active actions, find all the names and
+        aliases under which the action could be called, and add them
+        to the list of possible completions.
+        """
+        frame = self.frame
+        self.dprint(frame.menumap.actions)
+        actions = frame.menumap.actions.itervalues()
+        return actions
+    
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.map:
             action = self.map[text]
             self.dprint("executing %s: %s" % (text, action))
             wx.CallAfter(action.action)
+        else:
+            self.frame.SetStatusText("%s not a known action" % text)
+
+
+class DescribeAction(ActionNameMinibufferMixin, SelectAction):
+    name = "&Describe Action"
+    alias = "describe-action"
+    tooltip = "Describe an action by name"
+
+    def __init__(self, *args, **kwargs):
+        ActionNameMinibufferMixin.__init__(self, self.alias)
+        SelectAction.__init__(self, *args, **kwargs)
+
+    def getActionList(self):
+        """Generate list of possible names to complete.
+
+        For all the currently active actions, find all the names and
+        aliases under which the action could be called, and add them
+        to the list of possible completions.
+        """
+        actions = UserActionMap.getActiveActions()
+        return actions
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        dprint("HERE!!!")
+        if text in self.map:
+            action = self.map[text]
+            dprint("looking up docs for %s: %s" % (text, action))
+            Publisher().sendMessage('peppy.log.info', action.getHelp())
         else:
             self.frame.SetStatusText("%s not a known action" % text)
 
@@ -712,7 +764,9 @@ class MainMenu(IPeppyPlugin):
 
                 FindText, ReplaceText, GotoLine,
                 
-                ExecuteCommandByName, CancelMinibuffer, ElectricReturn,
+                ExecuteActionByName, DescribeAction,
+                
+                CancelMinibuffer, ElectricReturn,
 
                 OpenFundamental,
                 ]

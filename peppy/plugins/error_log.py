@@ -85,12 +85,13 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
         paneinfo.Bottom()
 
     def showError(self, message=None):
-        paneinfo = self.frame._mgr.GetPane(self)
-        if self.classprefs.unhide_on_message:
-            if not paneinfo.IsShown():
-                paneinfo.Show(True)
-                self.frame._mgr.Update()
-        self.addMessage(message.data)
+        if self.frame == wx.GetApp().GetTopWindow():
+            paneinfo = self.frame._mgr.GetPane(self)
+            if self.classprefs.unhide_on_message:
+                if not paneinfo.IsShown():
+                    paneinfo.Show(True)
+                    self.frame._mgr.Update()
+            self.addMessage(message.data)
 
 class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"
@@ -103,6 +104,20 @@ class DebugLogSidebar(ErrorLogSidebar):
         BoolParam('unhide_on_message', False),
         )
 
+class InfoLogSidebar(ErrorLogSidebar):
+    keyword = "info_log"
+    caption = "Information"
+
+    message = 'peppy.log.info'
+    ready_message = 'peppy.ready.info'
+
+    default_classprefs = (
+        IntParam('best_width', 500),
+        IntParam('best_height', 200),
+        IntParam('min_width', 100),
+        IntParam('min_height', 20),
+    )
+    
 class OutputLogMinorMode(MinorMode, ErrorLogMixin):
     """An error log using message passing.
 
@@ -163,6 +178,7 @@ class ErrorLogPlugin(IPeppyPlugin):
     def getSidebars(self):
         yield ErrorLogSidebar
         yield DebugLogSidebar
+        yield InfoLogSidebar
         
     def getMinorModes(self):
         yield OutputLogMinorMode

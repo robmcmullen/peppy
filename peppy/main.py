@@ -97,7 +97,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     
     minimal_config={'BufferFrame':{'width':900,
                                    'height':700,
-                                   'sidebars':'filebrowser, debug_log, error_log, processes',
+                                   'sidebars':'filebrowser, debug_log, error_log, info_log, processes',
                                    },
                    }
     default_classprefs = (
@@ -144,7 +144,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         self.startServer()
         if self.otherInstanceRunning():
-            return True
+            return self
 
         self.startSplash()
 
