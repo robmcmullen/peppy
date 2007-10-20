@@ -736,11 +736,12 @@ class UserActionMap(debugmixin):
                     if separator and toolbar.GetToolsCount() > 0:
                         toolbar.AddSeparator()
                     action.insertIntoToolbar(toolbar)
-
-        # FIXME: Add toolbars in reverse order, because apparently aui
-        # inserts toolbars from the left and pushes everything else to
-        # the right.  There must be a better way to do this.
-        order.reverse()
+        
+        if wx.Platform == '__WXGTK__':
+            # FIXME: On GTK, add toolbars in reverse order, because apparently
+            # aui inserts toolbars from the left and pushes everything else to
+            # the right.  There must be a better way to do this.
+            order.reverse()
         for title in order:
             tb = self.title_to_toolbar[title]
             tb.Realize()
