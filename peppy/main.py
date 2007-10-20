@@ -112,6 +112,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
         BoolParam('show_splash', True, 'Show the splash screen on start?'),
+        IntParam('primary_editing_font', wx.FONTFAMILY_MODERN, 'Font name of the primary editing font'),
+        IntParam('primary_editing_font_size', 10, 'Font name of the primary editing font'),
+        IntParam('secondary_editing_font', wx.FONTFAMILY_SWISS, 'Font name of the secondary scintilla font'),
+        IntParam('secondary_editing_font_size', 10, 'Font name of the secondary scintilla font'),
         StrParam('default_text_mode', 'Fundamental', 'Name of the default text mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_binary_mode', 'HexEdit', 'Name of the default binary viewing mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
@@ -235,6 +239,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 del sys.argv[index:index + 2]
         self.i18nConfig(catalog)
 
+        if "--no-server" in sys.argv:
+            index = sys.argv.index("--no-server")
+            del sys.argv[index:index + 1]
+            self.no_server_option = False
+
         self.dprint("argv after: %s" % (sys.argv,))
     
     def getOptionParser(self):
@@ -249,6 +258,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("-c", action="store", dest="confdir", default="")
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
+        parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -270,10 +280,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         import logging
         #logging.debug = dprint
         
-        if self.options.sample_config:
-            from peppy.keyboard import KeyboardConf
-            KeyboardConf.configDefault()
-            sys.exit()
+#        if self.options.sample_config:
+#            from peppy.keyboard import KeyboardConf
+#            KeyboardConf.configDefault()
+#            sys.exit()
 
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
@@ -321,7 +331,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         #sys.exit()
 
     def startServer(self):
-        if self.classprefs.request_server:
+        if self.classprefs.request_server and not hasattr(self, 'no_server_option'):
             self.server = LoadFileProxy(port=self.classprefs.listen_port)
             if not self.server.find():
                 self.remote_args = []
@@ -442,7 +452,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         # py2exe imports go here.
         if main_is_frozen():
-            import peppy.py2exe_plugins
+            try:
+                import peppy.py2exe_plugins
+            except:
+                pass
         pass
     
     def gaugeCallback(self, plugin_info):

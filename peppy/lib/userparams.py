@@ -831,12 +831,15 @@ class GlobalPrefs(debugmixin):
         d = {}
         for option, text in options.iteritems():
             param = GlobalPrefs.findParam(section, option)
-            if param is not None:
-                val = param.textToValue(text)
-                if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
-            else:
-                val = text
-            d[option] = val
+            try:
+                if param is not None:
+                    val = param.textToValue(text)
+                    if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
+                else:
+                    val = text
+                d[option] = val
+            except Exception, e:
+                eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
         GlobalPrefs.user[section] = d
     
     @staticmethod

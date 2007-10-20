@@ -608,16 +608,19 @@ class StyleEditor(wx.Dialog):
         """
         fname = file_lbl.replace(u" ", u"_").lower()
         fname = fname.replace(u"/", u"_")
-        if fname != u"makefile":
-            try:
-                pattern = os.path.join(os.path.dirname(__file__), 'tests', fname) + ".*"
-                self.LOG(pattern)
-                fname = glob.glob(pattern)[0]
-            except IndexError:
-                self.LOG('[style_editor][err] File %s Does not exist' % fname)
-                return False
-        else:
-            fname = os.path.join(os.path.dirname(__file__), fname)
+        pattern = os.path.join(util.GetResourceDir('tests'), fname) + ".*"
+        self.LOG(pattern)
+        fname = glob.glob(pattern)[0]
+#        if fname != u"makefile":
+#            try:
+#                pattern = os.path.join(os.path.dirname(__file__), 'tests', fname) + ".*"
+#                self.LOG(pattern)
+#                fname = glob.glob(pattern)[0]
+#            except IndexError:
+#                self.LOG('[style_editor][err] File %s Does not exist' % fname)
+#                return False
+#        else:
+#            fname = os.path.join(os.path.dirname(__file__), fname)
 
         if fname == '' or fname == None:
             return False

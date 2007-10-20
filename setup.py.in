@@ -98,6 +98,11 @@ if HAVE_NUMPY and not USE_PY2EXE:
                                  include_dirs = include_dirs,
                                  ))
 
+# Create the data files for Editra's styling
+DATA_FILES = [("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")),
+              ("peppy/editra/tests", glob.glob("peppy/editra/tests/*")),
+              ("peppy/editra/syntax", glob.glob("peppy/editra/syntax/*.*"))]
+
 setup(name = '$prog',
       version = '$version',
       description = '$description',
@@ -126,6 +131,7 @@ setup(name = '$prog',
                   "icon_resources": [(0, "peppy/icons/peppy.ico")],
                   }
                  ],
+      data_files = DATA_FILES,
       classifiers=['Development Status :: 3 - Alpha',
                    'Environment :: MacOS X',
                    'Environment :: Win32 (MS Windows)',

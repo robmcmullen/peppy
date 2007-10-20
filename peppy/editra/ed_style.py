@@ -54,11 +54,8 @@ import wx
 import util
 ##from profiler import Profile_Get as _PGET
 ##from profiler import Profile_Set as _PSET
-def _PGET(a, b, c):
-    return None
-
-def _PSET(a, b, c):
-    return None
+_PGET = util.PGET
+_PSET = util.PSET
 
 # Globals
 STY_ATTRIBUTES     = u"face fore back size"

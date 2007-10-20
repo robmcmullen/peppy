@@ -81,6 +81,8 @@ if __name__ == "__main__":
 
     os.chdir('peppy')
     process('plugins', out)
+    # Need to force the importing of the editra style definition files
+    process('editra/syntax', out)
     os.chdir('..')
 
     savepath = os.getcwd()

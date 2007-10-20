@@ -1,9 +1,43 @@
 # Misc utility files from Editra that don't have any other dependencies
-import os
+import os, sys
+import wx
+from peppy.debug import *
+
+def PGET(index, fmt=None, default=None):
+    app = wx.GetApp()
+    if index == 'FONT1':
+        face = app.classprefs.primary_editing_font
+        size = app.classprefs.primary_editing_font_size
+        font = wx.Font(size, face, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        return font
+    elif index == 'FONT2':
+        face = app.classprefs.secondary_editing_font
+        size = app.classprefs.secondary_editing_font_size
+        font = wx.Font(size, face, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        return font
+    return None
+
+def PSET(index, val, fmt):
+    return None
 
 def GetFileReader(filename):
-    fh = open(filename, 'rb')
-    return fh
+    try:
+        fh = open(filename, 'rb')
+        return fh
+    except:
+        return -1
+
+def GetResourceDir(resource):
+    base_dir = os.path.dirname(__file__)
+    dprint(base_dir)
+    dprint(sys.executable)
+    if base_dir.find("library.zip") != -1:
+        # in a py2exe frozen executable!  Remove the library.zip and use
+        # the rest of the path
+        base_dir = os.path.normpath(base_dir.replace("library.zip",""))
+    rec_dir = os.path.join(base_dir, resource)
+    dprint(rec_dir)
+    return rec_dir
 
 def GetResourceFiles(resource, trim=True, get_all=False):
     """Gets a list of resource files from a directory and trims the
@@ -19,8 +53,7 @@ def GetResourceFiles(resource, trim=True, get_all=False):
     
 
     """
-    rec_dir = os.path.join(os.path.dirname(__file__), resource)
-    print rec_dir
+    rec_dir = GetResourceDir(resource)
     rec_list = list()
     if not os.path.exists(rec_dir):
         return -1
