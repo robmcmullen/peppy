@@ -661,10 +661,22 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         if bangpath or direct:
             mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
             os.chmod(script, mode)
+            
+            # FIXME: Don't think you can directly execute on MSW.  Mac???
+            if wx.Platform != '__WXMSW__':
+                script = script.replace(' ', '\ ')
             cmd = "%s %s" % (script, self.getCommandLineArgs())
         else:
-            cmd = "%s %s %s" % (self.classprefs.interpreter_exe, script,
-                             self.getCommandLineArgs())
+            interpreter = self.classprefs.interpreter_exe
+            if wx.Platform == '__WXMSW__':
+                interpreter = '"%s"' % interpreter
+                script = '"%s"' % script
+            else:
+                # Assuming that Mac is like GTK...
+                interpreter = interpreter.replace(' ', '\ ')
+                script = script.replace(' ', '\ ')
+                pass
+            cmd = "%s %s %s" % (interpreter, script, self.getCommandLineArgs())
         dprint(cmd)
         return cmd
         
