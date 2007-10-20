@@ -99,6 +99,8 @@ from wx.lib.evtmgr import eventManager
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.filebrowsebutton import *
 
+from peppy.lib.controls import FontBrowseButton
+
 try:
     from peppy.debug import *
 except:
@@ -557,6 +559,34 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
         index = ctrl.GetSelection()
         return self.keys[index]
 
+class FontParam(Param):
+    """Font parameter that pops up a font dialog.
+
+    The wx.Font class is used as the value.
+    """
+    
+    def getCtrl(self, parent, initial=None):
+        btn = FontBrowseButton(parent)
+        return btn
+
+    def textToValue(self, text):
+        face, size = text.split(',')
+        face = face.strip()
+        size = int(size.strip())
+        font = wx.FFont(size, wx.DEFAULT, face=face)
+        return font
+
+    def valueToText(self, font):
+        assert self.dprint(font)
+        text = "%s, %d" % (font.GetFaceName(), font.GetPointSize())
+        return text
+
+    def setValue(self, ctrl, value):
+        ctrl.setFont(value)
+
+    def getValue(self, ctrl):
+        return ctrl.getFont()
+
 
 
 parentclasses={}
@@ -854,9 +884,23 @@ class GlobalPrefs(debugmixin):
             GlobalPrefs.convertSection(section)
         if GlobalPrefs.debuglevel > 0: dprint("after: %s" % GlobalPrefs.user)
 
-        # Save a copy so we can tell if the user changed anything
-        GlobalPrefs.save_user = copy.deepcopy(GlobalPrefs.user)
-
+        # Save a copy so we can tell if the user changed anything.  Can't
+        # use copy.deepcopy(GlobalPrefs.user) anymore because wx.Font objects
+        # are now param types and get a type exception trying to deepcopy them.
+        saved = {}
+        for section, options in GlobalPrefs.user.iteritems():
+            saved[section] = {}
+            for option, val in options.iteritems():
+                try:
+                    saved[section][option] = copy.deepcopy(val)
+                except Exception, e:
+                    # wx swig objects can't be deepcopied, but they are also
+                    # unlikely to be modified in place, so setting the saved
+                    # value to the same reference is probably OK.
+                    #dprint(str(e))
+                    saved[section][option] = val
+        GlobalPrefs.save_user = saved
+            
     @staticmethod
     def isUserConfigChanged():
         d = GlobalPrefs.user
@@ -901,7 +945,6 @@ class GlobalPrefs(debugmixin):
                  "",
                  ]
         
-        saved = GlobalPrefs.save_user
         sections = GlobalPrefs.user.keys()
         sections.sort()
         for section in sections:

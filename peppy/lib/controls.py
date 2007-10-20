@@ -20,6 +20,7 @@ import os, weakref
 import wx
 from wx.lib import buttons
 from wx.lib import imageutils
+from wx.lib import stattext
 from wx.lib.pubsub import Publisher
 
 from peppy.lib.iconstorage import *
@@ -209,4 +210,98 @@ class PeppyStatusBar(wx.StatusBar):
         self.gauge = None
         Publisher().unsubscribe(self.updateMessage)
         self.message = None
+
+
+class FontBrowseButton(wx.Panel):
+    """Simple panel and button to choose and display a new font.
+    
+    Borrowed from the wxPython demo.
+    """
+    
+    def __init__(self, parent, font=None):
+        wx.Panel.__init__(self, parent, -1)
+
+        btn = wx.Button(self, -1, "Select Font")
+        self.Bind(wx.EVT_BUTTON, self.OnSelectFont, btn)
+
+        self.sampleText = stattext.GenStaticText(self, -1, "Sample Text", size=(150,-1))
+        self.sampleText.SetBackgroundColour(wx.WHITE)
         
+        if font is None:
+            self.curFont = self.sampleText.GetFont()
+        else:
+            self.curFont = font
+        self.curClr = wx.BLACK
+        
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(btn, 0, wx.EXPAND)
+        sizer.Add(self.sampleText, 1, wx.EXPAND)
+
+        self.SetSizer(sizer)
+        self.UpdateUI()
+
+    def UpdateUI(self):
+        self.sampleText.SetFont(self.curFont)
+        self.sampleText.SetForegroundColour(self.curClr)
+        self.sampleText.SetLabel("%s %s" % (self.curFont.GetFaceName(),
+                                            self.curFont.GetPointSize()))
+#        self.ps.SetLabel(str(self.curFont.GetPointSize()))
+#        self.family.SetLabel(self.curFont.GetFamilyString())
+#        self.style.SetLabel(self.curFont.GetStyleString())
+#        self.weight.SetLabel(self.curFont.GetWeightString())
+#        self.face.SetLabel(self.curFont.GetFaceName())
+#        self.nfi.SetLabel(self.curFont.GetNativeFontInfo().ToString())
+        self.Layout()
+
+    def OnSelectFont(self, evt):
+        data = wx.FontData()
+        data.EnableEffects(True)
+        data.SetColour(self.curClr)         # set colour
+        data.SetInitialFont(self.curFont)
+
+        dlg = wx.FontDialog(self, data)
+        
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetFontData()
+            font = data.GetChosenFont()
+            colour = data.GetColour()
+
+#            print('You selected: "%s", %d points, color %s\n' %
+#                               (font.GetFaceName(), font.GetPointSize(),
+#                                colour.Get()))
+
+            self.curFont = font
+            self.curClr = colour
+            self.UpdateUI()
+
+        # Don't destroy the dialog until you get everything you need from the
+        # dialog!
+        dlg.Destroy()
+        
+    def getFont(self):
+        return self.curFont
+        
+    def setFont(self, font):
+        if font is not None:
+            self.curFont = font
+        self.UpdateUI()
+
+
+if __name__ == "__main__":
+    app   = wx.PySimpleApp()
+    frame = wx.Frame(None, -1, title='Font Button Test')
+    frame.CreateStatusBar()
+    
+    # Add a panel that the rubberband will work on.
+    #panel = NeXTTest(frame)
+    panel = FontBrowseButton(frame)
+
+    # Layout the frame
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(panel, 0, wx.EXPAND)
+    
+    frame.SetAutoLayout(1)
+    frame.SetSizer(sizer)
+    frame.Show(1)
+    
+    app.MainLoop()
