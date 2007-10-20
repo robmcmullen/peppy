@@ -176,7 +176,10 @@ class SmileyFaceMinorMode(MinorMode, wx.PyControl):
         
         # Draw the smile as an ellipse, slightly offset from center
         radsmile = radius*3/5
-        dc.DrawEllipticArc(cx - radsmile, cy, 2 * radsmile, radsmile, 0.0, -180.0)
+        
+        # Draw from 180 to 360 to work around a Windows bug (windows can't
+        # draw clockwise arcs as of 2.8.6.0)
+        dc.DrawEllipticArc(cx - radsmile, cy, 2 * radsmile, radsmile, 180, 360)
         
     def OnEraseBackground(self, evt):
         dc = evt.GetDC()
