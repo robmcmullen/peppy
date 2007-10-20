@@ -19,26 +19,32 @@ from peppy.debug import *
 
 
 class ShiftLeft(ScintillaCmdKeyExecute):
+    """Unindent a line or region"""
     alias = "unindent-region"
     name = "Shift &Left"
-    tooltip = "Unindent a line region"
     default_menu = ("Transform", -500)
     icon = 'icons/text_indent_remove_rob.png'
     cmd = wx.stc.STC_CMD_BACKTAB
 
 class ShiftRight(ScintillaCmdKeyExecute):
+    """Indent a line or region"""
     alias = "indent-region"
     name = "Shift &Right"
-    tooltip = "Indent a line or region"
     default_menu = ("Transform", 501)
     icon = 'icons/text_indent_rob.png'
     cmd = wx.stc.STC_CMD_TAB
 
 
 class CommentRegion(TextModificationAction):
+    """Comment a line or region.
+    
+    This will use the current mode's comment characters to comment out
+    entire blocks of lines.  The comment will start in column zero, and
+    if there is an end comment delimiter, it will appear as the last
+    character(s) before the end of line indicatior.
+    """
     alias = "comment-region"
     name = "&Comment Region"
-    tooltip = "Comment a line or region"
     default_menu = ("Transform", -600)
     key_bindings = {'emacs': 'C-C C-C',}
 
@@ -46,18 +52,23 @@ class CommentRegion(TextModificationAction):
         self.mode.stc.commentRegion(multiplier != 4)
 
 class UncommentRegion(TextModificationAction):
+    """Uncomment a line or region.
+    
+    This will use the current mode's comment characters to identify the
+    lines in the region that have been commented out, and will remove
+    the comment character(s) from the line.
+    """
     alias = "uncomment-region"
     name = "&Uncomment Region"
-    tooltip = "Uncomment a line or region"
     default_menu = ("Transform", 601)
 
     def action(self, index=-1, multiplier=1):
         self.mode.stc.commentRegion(False)
 
 class Tabify(LineOrRegionMutateAction):
+    """Replace spaces with tabs at the start of lines."""
     alias = "tabify"
     name = "&Tabify"
-    tooltip = "Replace spaces with tabs at the start of lines"
     default_menu = ("Transform", -700)
 
     def mutateLines(self, lines):
@@ -73,9 +84,9 @@ class Tabify(LineOrRegionMutateAction):
         return out
 
 class Untabify(LineOrRegionMutateAction):
+    """Replace tabs with spaces at the start of lines."""
     alias = "untabify"
     name = "&Untabify"
-    tooltip = "Replace tabs with spaces at the start of lines"
     default_menu = ("Transform", 701)
 
     def mutateLines(self, lines):
@@ -92,12 +103,12 @@ class Untabify(LineOrRegionMutateAction):
 
 
 class CapitalizeWord(WordOrRegionMutateAction):
-    """Title-case the current word and move the cursor to the start of
-    the next word.
+    """Title-case the current word.
+    
+    This will also move the cursor to the start of the next word.
     """
     alias = "capitalize-region-or-word"
     name = "Capitalize word"
-    tooltip = "Capitalize current word"
     key_bindings = {'emacs': 'M-C',}
 
     def mutate(self, txt):
@@ -107,12 +118,12 @@ class CapitalizeWord(WordOrRegionMutateAction):
         return txt.title()
 
 class UpcaseWord(WordOrRegionMutateAction):
-    """Upcase the current word and move the cursor to the start of the
-    next word.
+    """Upcase the current word.
+    
+    This will alse move the cursor to the start of the next word.
     """
     alias = "upcase-region-or-word"
     name = "Upcase word"
-    tooltip = "Upcase current word"
     key_bindings = {'emacs': 'M-U',}
 
     def mutate(self, txt):
@@ -121,12 +132,12 @@ class UpcaseWord(WordOrRegionMutateAction):
         return txt.upper()
 
 class DowncaseWord(WordOrRegionMutateAction):
-    """Downcase the current word and move the cursor to the start of the
-    next word.
+    """Downcase the current word.
+    
+    This will also move the cursor to the start of the next word.
     """
     alias = "downcase-region-or-word"
     name = "Downcase word"
-    tooltip = "Downcase current word"
     key_bindings = {'emacs': 'M-L',}
 
     def mutate(self, txt):
@@ -138,7 +149,6 @@ class Rot13(RegionMutateAction):
     """Convert the region using the rot13 encoding."""
     alias = "rot13-region"
     name = "Rot13"
-    tooltip = "Convert current region using rot13"
     default_menu = ("Transform", -800)
 
     def mutate(self, txt):
@@ -148,9 +158,9 @@ class Rot13(RegionMutateAction):
 
 
 class Reindent(TextModificationAction):
+    """Reindent a line or region."""
     alias = "reindent-region"
     name = "Reindent"
-    tooltip = "Reindent a line or region"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'C-TAB',}
 

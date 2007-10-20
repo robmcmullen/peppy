@@ -23,19 +23,61 @@ from peppy.yapsy.plugins import *
 
 class SelectAction(debugmixin):
     debuglevel=0
-    use_accelerators = True
-    name=None
+    
+    # This is the name of the menu entry as it appears in the menu bar.
+    # i18n processing happens within the menu system, so no need to
+    # wrap this string in a call to the _ function
+    name = None
+    
+    # This alias holds an emacs style name that is used during M-X processing
+    # If you don't want this action to have an emacs style name, don't
+    # include this or set it equal to None
     alias = ""
-    icon=None
-    tooltip=""
-    keyboard=None
+    
+    # Tooltip that is displayed when the mouse is hovering over the menu
+    # entry.  If the tooltip is None, the tooltip is taken from the first
+    # line of the docstring, if it exists.
+    tooltip = None
+    
+    # The default menu location is specified here as a tuple containing
+    # the menu path (separated by / characters) and a number between 1 and
+    # 1000 representing the position within the menu.  A negative number
+    # means that a separator should appear before the item
     default_menu = ()
-    default_toolbar = True # or False if don't want the toolbar appear
-    key_bindings = None # map of platform to default keybinding
-    _accelerator_text = None # This is not set by the user
+    
+    # If there is an icon associated with this action, name it here.  Icons
+    # are referred to by path name relative to the peppy directory.  A toolbar
+    # entry will be automatically created if the icon is specified here, unless
+    # you specify default_toolbar = False
+    icon = None
+    default_toolbar = True
+    
+    # Map of platform to default keybinding.  This is used to assign the
+    # class attribute keyboard, which is the current keybinding.  Currently,
+    # the defined platforms are named "win", "mac", and "emacs".  A platform
+    # named 'default' may also be included that will be the default key
+    # unless overridden by a specific platform
+    key_bindings = None
+    keyboard = None
+    
+    # If this menu action has a stock wx id, such as wx.ID_ABOUT or
+    # wx.ID_PREFERENCES, add it here and the wx menu system can do some
+    # special things to it, like automatically give it the correct
+    # location on WXMAC.
     stock_id = None
+    
+    # If the action doesn't use a stock id, it will automatically get assigned
+    # a global id here.  Note that if you are subclassing an action, you
+    # should explicitly assign a global id (or None) to your subclass's
+    # global_id attribute, otherwise the menu system will get confused
+    # and attempt to use the superclass's global_id
     global_id = None
-    submenu=None
+
+    
+    # The rest of these class attributes aren't for individual class
+    # customization
+    _use_accelerators = True
+    _accelerator_text = None # This is not set by the user
 
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -44,7 +86,7 @@ class SelectAction(debugmixin):
     @classmethod
     def getHelp(cls):
         #dprint(dir(cls))
-        help = "\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation:\n%s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
+        help = "\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
         return help
     
     def __init__(self, frame, menu=None, toolbar=None):
@@ -105,7 +147,7 @@ class SelectAction(debugmixin):
         return 0
     
     def getMenuItemName(self):
-        if self.use_accelerators and self.keyboard:
+        if self._use_accelerators and self.keyboard:
             return "%s%s" % (_(self.name), self._accelerator_text)
         else:
             return self.name
@@ -115,6 +157,10 @@ class SelectAction(debugmixin):
             id = self.global_id
         if name is None:
             name = self.name
+        if self.tooltip is None:
+            if self.__doc__ is not None:
+                lines = self.__doc__.splitlines()
+                self.__class__.tooltip = lines[0]
         return "%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
 
     def insertIntoMenu(self, menu):
