@@ -24,8 +24,8 @@ from threading import Thread
 
 # The LoadFileRequestHandler class uses this to parse command lines.
 class LoadFileCommandProcessor:
-    def __init__(self,proxy):
-        self.proxy=proxy
+    def __init__(self, proxy):
+        self.proxy = proxy
 
     def process(self, line, request):
         """Process a command"""
@@ -34,7 +34,7 @@ class LoadFileCommandProcessor:
         args = args[1:]
 
         print "Request for file: %s" % command
-        wx.CallAfter(self.proxy.loadFile,command)
+        wx.CallAfter(self.proxy, command)
         return True
 
 # LoadFileServer extends the TCPServer, using the threading mix in
@@ -127,6 +127,8 @@ class ThreadedLoadFileServer(Thread):
             return
 
 class LoadFileProxy(object):
+    EOF = "\x00"
+    
     def __init__(self,host='127.0.0.1',port=55555):
         self.host=host
         self.port=port
@@ -143,18 +145,18 @@ class LoadFileProxy(object):
             self.socket=None
         return False
 
-    def start(self,proxy):
-        self.threadedServer=ThreadedLoadFileServer(proxy)
+    def start(self, proxy):
+        self.threadedServer = ThreadedLoadFileServer(proxy)
         self.threadedServer.start()
 
     def stop(self):
         pass
         
-    def send(self,name):
+    def send(self, name=None):
         try:
             # do not change files of form [prot]://[path]
-            if name.find('://') == -1:
-                name = os.path.abspath(name)
+            if name is None:
+                name = self.EOF
             name+=os.linesep
             bytes=self.socket.send(name)
             print "sent: %s (%d bytes of %d)" % (name,bytes,len(name))

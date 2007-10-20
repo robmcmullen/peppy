@@ -10,6 +10,8 @@ import __builtin__
 import wx
 from wx.lib.pubsub import Publisher
 
+from peppy.buffers import *
+from peppy.frame import BufferFrame
 from peppy.configprefs import *
 from peppy.debug import *
 
@@ -104,7 +106,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
         IntParam('listen_port', 55555, 'Port to listen on to determine if another peppy\ninstance is running'),
-        BoolParam('one_instance', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
+        BoolParam('request_server', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
+        BoolParam('requests_in_new_frame', True, 'File open requests will appear in\na new frame if True, or as a new tab in\nan existing frame if False'),
         IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results\nin peppy guessing that the file is binary'),
         IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
@@ -144,7 +147,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         self.startServer()
         if self.otherInstanceRunning():
-            return self
+            return True
 
         self.startSplash()
 
@@ -233,15 +236,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.i18nConfig(catalog)
 
         self.dprint("argv after: %s" % (sys.argv,))
-
-    def processCommandLineOptions(self):
-        """Process the bulk of the command line options.
-
-        Because eventually it will be possible to load command line
-        options from plugins, most of the command line parsing happens
-        after plugins are loaded.  The bootstrap options are repeated
-        here so that a usage statement will show the options.
-        """
+    
+    def getOptionParser(self):
         from optparse import OptionParser
 
         usage="usage: %prog file [files...]"
@@ -257,7 +253,17 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
             plugin.addCommandLineOptions(parser)
-        
+        return parser
+
+    def processCommandLineOptions(self):
+        """Process the bulk of the command line options.
+
+        Because eventually it will be possible to load command line
+        options from plugins, most of the command line parsing happens
+        after plugins are loaded.  The bootstrap options are repeated
+        here so that a usage statement will show the options.
+        """
+        parser = self.getOptionParser()
         Peppy.options, Peppy.args = parser.parse_args()
         #dprint(Peppy.options)
         
@@ -315,10 +321,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         #sys.exit()
 
     def startServer(self):
-        if self.classprefs.one_instance:
+        if self.classprefs.request_server:
             self.server = LoadFileProxy(port=self.classprefs.listen_port)
             if not self.server.find():
-                self.server.start(self)
+                self.remote_args = []
+                self.server.start(self.loadRemoteArgs)
         else:
             self.server = None
 
@@ -327,10 +334,27 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def sendToOtherInstance(self, filename):
         self.server.send(filename)
-
-    def loadFile(self, filename):
-        frame = self.getTopFrame()
-        frame.open(filename)
+    
+    def loadRemoteArgs(self, arg):
+        dprint(arg)
+        if arg != LoadFileProxy.EOF:
+            self.remote_args.append(arg)
+            dprint(self.remote_args)
+        else:
+            dprint("Processing %s" % self.remote_args)
+            parser = self.getOptionParser()
+            opnions, args = parser.parse_args(self.remote_args)
+            # throw away options, only look at args
+            dprint(args)
+            
+            if self.classprefs.requests_in_new_frame:
+                frame = BufferFrame(args)
+                frame.Show(True)
+            else:
+                frame = self.getTopFrame()
+                for filename in args:
+                    frame.open(filename)
+            self.remote_args = []
         
     def getConfigFilePath(self,filename):
         assert self.dprint("found home dir=%s" % self.config.dir)
@@ -564,8 +588,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def quitHook(self):
         if not self.saveConfig(self.base_preferences):
             return False
-        import peppy.buffers
-        if not peppy.buffers.BufferList.promptUnsaved():
+        if not BufferList.promptUnsaved():
             return False
         plugins = self.plugin_manager.getActivePluginObjects()
         exceptions = []
@@ -608,13 +631,20 @@ def run():
     peppy = Peppy(redirect=False)
     
     if peppy.otherInstanceRunning():
-        if peppy.args:
-            for filename in peppy.args:
+        dprint("Found other instance")
+        if len(sys.argv) > 1:
+            dprint(sys.argv)
+            for filename in sys.argv[1:]:
+                if filename.find('://') == -1 and not filename.startswith('/') and not filename.startswith('-'):
+                    # handle filenames that are relative to the current
+                    # directory of the new instance, but since the current
+                    # directory of the old instance may be different, we
+                    # need to use an absolute path
+                    filename = os.path.abspath(filename)
                 peppy.sendToOtherInstance(filename)
+            peppy.sendToOtherInstance(None)
         sys.exit()
 
-    from peppy.buffers import Buffer
-    from peppy.frame import BufferFrame
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')
