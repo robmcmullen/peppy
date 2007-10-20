@@ -334,12 +334,12 @@ class Wrapper(Field):
     def storeDefault(self,obj):
         proxy=self.getProxy(obj)
         if isinstance(proxy,Record):
-            self.dprint("calling %s.storeDefault(obj.%s)" % (str(proxy),proxy._name))
+            assert self.dprint("calling %s.storeDefault(obj.%s)" % (str(proxy),proxy._name))
             setattr(obj,self._name,proxy.getCopy(obj))
-            self.dprint("copy of %s = %s" % (self._name,getattr(obj,self._name)))
+            assert self.dprint("copy of %s = %s" % (self._name,getattr(obj,self._name)))
             child=getattr(obj,self._name)
             # set obj._ to be obj for parent object reference
-            self.dprint("child=%s" % child.__class__.__name__)
+            assert self.dprint("child=%s" % child.__class__.__name__)
             setattr(child,"_",obj)
         else:
             proxy.storeDefault(obj)
@@ -347,7 +347,7 @@ class Wrapper(Field):
     def getNumBytes(self,obj):
         proxy=self.getProxy(obj)
         if isinstance(proxy,Record):
-            self.dprint("calling %s.getNumBytes(obj.%s) proxy._name=%s" % (str(proxy),self._name,proxy._name))
+            assert self.dprint("calling %s.getNumBytes(obj.%s) proxy._name=%s" % (str(proxy),self._name,proxy._name))
             length=proxy.getNumBytes(getattr(obj,self._name))
         else:
             length=proxy.getNumBytes(obj)
@@ -361,10 +361,10 @@ class Wrapper(Field):
             # the proxy object.
             current=getattr(obj,self._name)
             if not isinstance(current,proxy.__class__):
-                self.dprint("proxy has changed from %s to %s" % (current.__class__.__name__,proxy.__class__.__name__))
+                assert self.dprint("proxy has changed from %s to %s" % (current.__class__.__name__,proxy.__class__.__name__))
                 self.storeDefault(obj)
             
-            self.dprint("calling %s.unpack(obj.%s)" % (str(proxy),proxy._name))
+            assert self.dprint("calling %s.unpack(obj.%s)" % (str(proxy),proxy._name))
             proxy.unpack(fh,getattr(obj,self._name))
         else:
             proxy.unpack(fh,obj)
@@ -372,7 +372,7 @@ class Wrapper(Field):
     def pack(self,fh,obj):
         proxy=self.getProxy(obj)
         if isinstance(proxy,Record):
-            self.dprint("calling %s.pack(obj.%s)" % (str(proxy),proxy._name))
+            assert self.dprint("calling %s.pack(obj.%s)" % (str(proxy),proxy._name))
             proxy.pack(fh,getattr(obj,self._name))
         else:
             proxy.pack(fh,obj)
@@ -394,18 +394,18 @@ class Switch(Wrapper):
 
     def renameSwitch(self):
         for key,field in self._proxy.iteritems():
-            self.dprint("renaming switch %s: from %s to %s" % (str(key),field._name,self._name))
+            assert self.dprint("renaming switch %s: from %s to %s" % (str(key),field._name,self._name))
             field._name=self._name
         self._default._name=self._name
 
     def getProxy(self,obj):
-        self.dprint("switch obj=%s" % obj)
+        assert self.dprint("switch obj=%s" % obj)
         val=self._func(obj)
         if val in self._proxy:
             proxy=self._proxy[val]
         else:
             proxy=self._default
-        self.dprint("switch found proxy=%s" % proxy)
+        assert self.dprint("switch found proxy=%s" % proxy)
         return proxy
         
 
@@ -592,13 +592,13 @@ class IfElse(Wrapper):
             self._else.debuglevel=1
 
     def getProxy(self,obj):
-        self.dprint("switch obj=%s" % obj)
+        assert self.dprint("switch obj=%s" % obj)
         val=self._func(obj)
         if val:
             proxy=self._proxy
         else:
             proxy=self._else
-        self.dprint("switch found proxy=%s" % proxy._name)
+        assert self.dprint("switch found proxy=%s" % proxy._name)
         return proxy
 
 class If(IfElse):
@@ -652,16 +652,16 @@ class MetaSizeList(Adapter):
         proxy=self._itemproxy
         data=[]
         length=len(value)
-        self.dprint("overall length=%d, obj=%s" % (length,obj))
+        assert self.dprint("overall length=%d, obj=%s" % (length,obj))
         fh=StringIO(value)
         i=0
         while fh.tell()<len(value):
             copy=proxy.getCopy(obj)
             setattr(copy,"_",obj)
-            self.dprint("attempting to read primitive object %s.%s" % (obj.__class__.__name__,proxy._name))
+            assert self.dprint("attempting to read primitive object %s.%s" % (obj.__class__.__name__,proxy._name))
             setattr(copy,"_listindex",i)
             proxy.unpack(fh,copy)
-            self.dprint("primitive copy=%s" % copy)
+            assert self.dprint("primitive copy=%s" % copy)
             if isinstance(proxy,Record):
                 data.append(copy)
             else:
@@ -675,9 +675,9 @@ class MetaSizeList(Adapter):
         proxy=self._itemproxy
         num=len(value)
         fh=StringIO()
-        self.dprint("looping %d times for proxy %s" % (num,proxy._name))
+        assert self.dprint("looping %d times for proxy %s" % (num,proxy._name))
         for i in range(num):
-            self.dprint("value[%d]=%s" % (i,value[i]))
+            assert self.dprint("value[%d]=%s" % (i,value[i]))
             if isinstance(proxy,Record):
                 proxy.pack(fh,value[i])
             else:
@@ -702,7 +702,7 @@ class CookedInt(Adapter):
     # Unpack: call the proxy to get the raw data, then translate to
     # the required user data type
     def decode(self,value,obj):
-        self.dprint("converting %s to int" % value)
+        assert self.dprint("converting %s to int" % value)
         try:
             return int(value)
         except ValueError:
@@ -735,7 +735,7 @@ class CookedFloat(Adapter):
     # Unpack: call the proxy to get the raw data, then translate to
     # the required user data type
     def decode(self,value,obj):
-        self.dprint("converting %s to float" % value)
+        assert self.dprint("converting %s to float" % value)
         try:
             return float(value)
         except ValueError:
@@ -773,26 +773,26 @@ class List(Wrapper):
 ##        return self.getRepeats(obj)*proxy.getNumBytes(obj)
         size=0
         num=self.getRepeats(obj)
-        self.dprint("looping %s times for proxy %s (type %s)" % (str(num),proxy._name,proxy.__class__.__name__))
+        assert self.dprint("looping %s times for proxy %s (type %s)" % (str(num),proxy._name,proxy.__class__.__name__))
         if isinstance(proxy,Record):
             array=getattr(obj,proxy._name)
             for i in range(num):
                 # call superclass unpack that handles Record subclasses
-                self.dprint("attempting to get size %s.%s" % (obj.__class__.__name__,proxy._name))
+                assert self.dprint("attempting to get size %s.%s" % (obj.__class__.__name__,proxy._name))
                 #copy=proxy.getCopy(obj)
-                self.dprint(array[i])
+                assert self.dprint(array[i])
                 dup=copy.copy(array[i])
-                self.dprint(dup)
+                assert self.dprint(dup)
                 setattr(dup,"_",obj)
                 setattr(dup,"_listindex",i)
-                self.dprint("obj = %s\ncopy = %s" % (obj,dup))
+                assert self.dprint("obj = %s\ncopy = %s" % (obj,dup))
                 size+=proxy.getNumBytes(dup)
         else:
             dup=proxy.getCopy(obj)
             setattr(dup,"_",obj)
             for i in range(num):
                 # call superclass unpack that handles Record subclasses
-                self.dprint("attempting to get size of primivite object %s.%s" % (obj.__class__.__name__,proxy._name))
+                assert self.dprint("attempting to get size of primivite object %s.%s" % (obj.__class__.__name__,proxy._name))
                 setattr(dup,"_listindex",i)
                 size+=Wrapper.getNumBytes(self,dup)
         return size
@@ -801,11 +801,11 @@ class List(Wrapper):
         proxy=self.getProxy(obj)
         data=[]
         num=self.getRepeats(obj)
-        self.dprint("looping %d times for proxy %s" % (num,proxy._name))
+        assert self.dprint("looping %d times for proxy %s" % (num,proxy._name))
         if isinstance(proxy,Record):
             for i in range(num):
                 # call superclass unpack that handles Record subclasses
-                self.dprint("attempting to read %s.%s" % (obj.__class__.__name__,proxy._name))
+                assert self.dprint("attempting to read %s.%s" % (obj.__class__.__name__,proxy._name))
                 copy=proxy.getCopy(obj)
                 setattr(copy,"_",obj)
                 setattr(copy,"_listindex",i)
@@ -816,10 +816,10 @@ class List(Wrapper):
             setattr(copy,"_",obj)
             for i in range(num):
                 # call superclass unpack that handles Record subclasses
-                self.dprint("attempting to read primitive object %s.%s" % (obj.__class__.__name__,proxy._name))
+                assert self.dprint("attempting to read primitive object %s.%s" % (obj.__class__.__name__,proxy._name))
                 setattr(copy,"_listindex",i)
                 Wrapper.unpack(self,fh,copy)
-                self.dprint("primitive copy=%s" % copy)
+                assert self.dprint("primitive copy=%s" % copy)
                 data.append(getattr(copy,proxy._name))
             
             
@@ -830,10 +830,10 @@ class List(Wrapper):
         proxy=self.getProxy(obj)
         save=getattr(obj,proxy._name)
         num=self.getRepeats(obj)
-        self.dprint("looping %d times for proxy %s; save=%s" % (num,proxy._name,save))
+        assert self.dprint("looping %d times for proxy %s; save=%s" % (num,proxy._name,save))
         try:
             for i in range(num):
-                self.dprint("save[%d]=%s" % (i,save[i]))
+                assert self.dprint("save[%d]=%s" % (i,save[i]))
                 if isinstance(proxy,Record):
                     proxy.pack(fh,save[i])
                 else:
@@ -907,21 +907,21 @@ class Record(Field):
         self.storeDefault(self)
 
     def storeDefault(self,obj):
-        self.dprint("storing defaults for %s" % self.__class__.__name__)
+        assert self.dprint("storing defaults for %s" % self.__class__.__name__)
         for field in self.typedef:
             self._currentlyprocessing=field
-            self.dprint("  typedef=%s" % field)
+            assert self.dprint("  typedef=%s" % field)
             if isinstance(field,Record):
                 # set temporary reference of subobject to None
                 setattr(obj,field._name,field.getCopy(obj))
-                self.dprint("  copy of %s = %s" % (field._name,getattr(obj,field._name)))
+                assert self.dprint("  copy of %s = %s" % (field._name,getattr(obj,field._name)))
                 child=getattr(obj,field._name)
                 # set obj._ to be obj for parent object reference
-                self.dprint("  child=%s" % child.__class__.__name__)
+                assert self.dprint("  child=%s" % child.__class__.__name__)
                 setattr(child,"_",obj)
                 #field.storeDefault(child)
             else:
-                self.dprint("  primitive object %s, store in %s" % (field._name,obj))
+                assert self.dprint("  primitive object %s, store in %s" % (field._name,obj))
                 if isinstance(self._default,dict) and field._name in self._default:
                     if isinstance(field,Wrapper):
                         proxy=field.getProxy(obj)
@@ -929,8 +929,8 @@ class Record(Field):
                     else:
                         field._default=self._default[field._name]
                 field.storeDefault(obj)
-            self.dprint("  setting %s.%s=%s" % (field.__class__.__name__,field._name,field))
-        self.dprint("defaults for %s" % (str(obj)))
+            assert self.dprint("  setting %s.%s=%s" % (field.__class__.__name__,field._name,field))
+        assert self.dprint("defaults for %s" % (str(obj)))
         self._currentlyprocessing=None
 
 
@@ -944,44 +944,44 @@ class Record(Field):
             self._currentlyprocessing=field
             if isinstance(field,Record):
                 bytes=field.getNumBytes(getattr(obj,field._name))
-                self.dprint("%s.getNumBytes(values[%s])=%d" % (str(field),field._name,bytes))
+                assert self.dprint("%s.getNumBytes(values[%s])=%d" % (str(field),field._name,bytes))
                 length+=bytes
             else:
                 bytes=field.getNumBytes(obj)
-                self.dprint("%s.getNumBytes(values[%s])=%d" % (str(field),field._name,bytes))
+                assert self.dprint("%s.getNumBytes(values[%s])=%d" % (str(field),field._name,bytes))
                 length+=bytes
 ##            length+=field.getNumBytes(obj)
-        self.dprint("length=%d" % length)
+        assert self.dprint("length=%d" % length)
         self._currentlyprocessing=None
         return length
     
     def unpack(self,fh,obj):
-        self.dprint("fh.tell()=%s before=%s" % (fh.tell(),obj))
+        assert self.dprint("fh.tell()=%s before=%s" % (fh.tell(),obj))
         for field in self.typedef:
             self._currentlyprocessing=field
-            self.dprint("field=%s" % str(field))
+            assert self.dprint("field=%s" % str(field))
             if isinstance(field,Record):
-                self.dprint("calling %s.unpack(obj.%s)" % (str(field),field._name))
+                assert self.dprint("calling %s.unpack(obj.%s)" % (str(field),field._name))
                 field.unpack(fh,getattr(obj,field._name))
             else:
-                self.dprint("field=%s" % str(field))
+                assert self.dprint("field=%s" % str(field))
                 field.unpack(fh,obj)
 ##            field.unpack(fh,obj)
-            self.dprint("unpacked %s=%s" % (field._name,field._name and getattr(obj,field._name) or "None"))
-        self.dprint("fh.tell()=%s after=%s" % (fh.tell(),obj))
+            assert self.dprint("unpacked %s=%s" % (field._name,field._name and getattr(obj,field._name) or "None"))
+        assert self.dprint("fh.tell()=%s after=%s" % (fh.tell(),obj))
         self._currentlyprocessing=None
 
     def pack(self,fh,obj):
         #fh=StringIO()
         for field in self.typedef:
             self._currentlyprocessing=field
-            self.dprint("field=%s" % str(field))
+            assert self.dprint("field=%s" % str(field))
             if isinstance(field,Record):
                 field.pack(fh,getattr(obj,field._name))
             else:
-                self.dprint("packing %s" % field)
+                assert self.dprint("packing %s" % field)
                 field.pack(fh,obj)
-##            self.dprint("packed %s=%s" % (field._name,repr(bytes)))
+##            assert self.dprint("packed %s=%s" % (field._name,repr(bytes)))
 ##            fh.write(bytes)
 ##        return fh.getvalue()
         self._currentlyprocessing=None
@@ -1024,18 +1024,18 @@ class Record(Field):
         for field in i:
             #print field._name
             if field._name==start:
-                self.dprint("starting at field=%s" % field._name)
+                assert self.dprint("starting at field=%s" % field._name)
                 typedefs.append(field)
                 break
         for field in i:
-            self.dprint("including field=%s" % field._name)
+            assert self.dprint("including field=%s" % field._name)
             typedefs.append(field)
             if field._name==end:
-                self.dprint("stopping at field=%s" % field._name)
+                assert self.dprint("stopping at field=%s" % field._name)
                 break
 
         bytes=self.getNumBytes(self,subtypedefs=typedefs)
-        self.dprint("total length = %s" % bytes)
+        assert self.dprint("total length = %s" % bytes)
         return bytes
 
     def _getString(self,indent=""):
