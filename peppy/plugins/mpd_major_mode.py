@@ -1131,6 +1131,8 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
     """Minor mode to display the current playlist and controls for
     music playing.
     """
+    debuglevel = 0
+    
     keyword = "MPD Playlist"
     default_classprefs = (
         IntParam('best_width', 400),
@@ -1254,8 +1256,12 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
             if type(song) == int:
                 sid = self.playlist_cache[song]
                 assert self.dprint("Moving id=%d (index=%d) to %d" % (sid, song, index))
-                self.mpd.sync('moveid', sid, index)
-                if song >= index:
+                if song == index:
+                    pass
+                else:
+                    if song < index:
+                        index -= 1
+                    self.mpd.sync('moveid', sid, index)
                     index += 1
                 highlight.append(sid)
             else:
@@ -1264,7 +1270,9 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
                 self.mpd.cmd('moveid', sid, index)
                 index += 1
                 highlight.append(sid)
-        self.setSelected(highlight)
+        # FIXME: should update the playlist cache here, so in the meantime,
+        # don't highlight anything
+        self.setSelected([])
 
     def setSelected(self, ids):
         list_count = self.GetItemCount()
