@@ -53,6 +53,54 @@ class ScintillaCmdKeyExecute(TextModificationAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.stc.CmdKeyExecute(self.cmd)
 
+class RegionMutateAction(TextModificationAction):
+    """Mixin class to operate only on a selected region.
+    """
+
+    def isActionAvailable(self):
+        """The action is only available if a region is selected."""
+        (pos, end) = self.mode.stc.GetSelection()
+        return pos != end
+
+    def mutate(self, txt):
+        """Operate on specified text and return new text.
+
+        Method designed to be overridden by subclasses to provide the
+        text operation desired by the subclass.
+
+        @param txt: input text
+        @returns: text resulting from the desired processing
+        """
+        return txt
+
+    def mutateSelection(self, s):
+        """Change the highlighted region.
+
+        Perform some text operation on the region.  If a region is not
+        active in the STC, the action will not be performed.
+
+        The operation is performed by the C{mutate} method, which
+        subclasses will override to provide the functionality.
+
+        Side effect: moves the cursor to the end of the region.
+        
+        @param s: styled text control
+        """
+        (pos, end) = s.GetSelection()
+        if pos==end:
+            return
+        s.BeginUndoAction()
+        word = s.GetTextRange(pos, end)
+        s.SetTargetStart(pos)
+        s.SetTargetEnd(end)
+        s.ReplaceTarget(self.mutate(word))
+        s.GotoPos(end)
+        s.EndUndoAction()
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mutateSelection(self.mode.stc)
+        
 class WordOrRegionMutateAction(TextModificationAction):
     """Mixin class to operate on a word or the selected region.
     """
@@ -94,8 +142,8 @@ class WordOrRegionMutateAction(TextModificationAction):
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
         s.ReplaceTarget(self.mutate(word))
-        s.EndUndoAction()
         s.GotoPos(end)
+        s.EndUndoAction()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -156,10 +204,10 @@ class LineOrRegionMutateAction(TextModificationAction):
         #dprint(newlines)
         text = "".join(newlines)
         s.ReplaceTarget(text)
-        s.EndUndoAction()
         end = pos + len(text)
         s.GotoPos(end + offset)
         s.SetSelection(pos, end + offset)
+        s.EndUndoAction()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))

@@ -134,6 +134,18 @@ class DowncaseWord(WordOrRegionMutateAction):
         """
         return txt.lower()
 
+class Rot13(RegionMutateAction):
+    """Convert the region using the rot13 encoding."""
+    alias = "rot13-region"
+    name = "Rot13"
+    tooltip = "Convert current region using rot13"
+    default_menu = ("Transform", -800)
+
+    def mutate(self, txt):
+        """Change to all lower case.
+        """
+        return txt.encode('rot13')
+
 
 class Reindent(TextModificationAction):
     alias = "reindent-region"
@@ -162,4 +174,6 @@ class TextTransformPlugin(IPeppyPlugin):
                 Reindent, CommentRegion, UncommentRegion,
 
                 Tabify, Untabify,
+                
+                Rot13,
                 ]
