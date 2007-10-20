@@ -140,7 +140,6 @@ class SyntaxMgr(object):
         @param modname: name of module to lookup
 
         """
-        print modname
         if modname in sys.modules or modname in self._loaded:
             return True
         else:
