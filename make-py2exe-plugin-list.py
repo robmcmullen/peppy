@@ -12,7 +12,7 @@ def entry(filename, out, copythese=None):
     if filename.endswith(".py"):
         if copythese is not None:
             copythese.append(filename)
-        if not filename.endswith("__init__.py"):
+        if not filename.endswith("__init__.py") or True:
             module = filename[:-3].replace('/', '.').replace('\\', '.')
             out.write("import %s\n" % (module))
 
