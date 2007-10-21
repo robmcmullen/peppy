@@ -382,8 +382,8 @@ class FundamentalMode(MajorMode):
                 file_type = ext
         self.editra_lang = file_type
         self.dprint("ext=%s file_type=%s" % (ext, file_type))
-        self.stc.SetStyleFont(wx.GetApp().classprefs.primary_editing_font)
-        self.stc.SetStyleFont(wx.GetApp().classprefs.secondary_editing_font, False)
+        self.stc.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
+        self.stc.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
         self.stc.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True

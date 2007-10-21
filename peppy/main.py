@@ -68,6 +68,21 @@ class errorRedirector(object):
             self.save.write(text)
 
 
+class Fonts(ClassPrefs):
+    preferences_tab = "General"
+    default_classprefs = (
+        FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
+        FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
+    )
+    
+    def __init__(self):
+        # Can't set fonts in the default_classprefs, because at module load
+        # time, the wx.App object hasn't been created yet.
+        if self.classprefs.primary_editing_font is None:
+            self.classprefs.primary_editing_font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        if self.classprefs.secondary_editing_font is None:
+            self.classprefs.secondary_editing_font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+    
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
 
@@ -102,6 +117,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                                    'sidebars':'filebrowser, debug_log, error_log, info_log, processes',
                                    },
                    }
+    preferences_tab = "General"
     default_classprefs = (
         StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
@@ -112,8 +128,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
         BoolParam('show_splash', True, 'Show the splash screen on start?'),
-        FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
-        FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
         StrParam('default_text_mode', 'Fundamental', 'Name of the default text mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_binary_mode', 'HexEdit', 'Name of the default binary viewing mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
@@ -534,6 +548,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             self.dprint("Imported icons!")
         except:
             pass
+        self.fonts = Fonts()
         
     def deleteFrame(self,frame):
         #self.pendingframes.append((self.frames.getid(frame),frame))

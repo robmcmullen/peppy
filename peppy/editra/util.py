@@ -6,10 +6,10 @@ from peppy.debug import *
 def PGET(index, fmt=None, default=None):
     app = wx.GetApp()
     if index == 'FONT1':
-        font = app.classprefs.primary_editing_font
+        font = app.fonts.classprefs.primary_editing_font
         return font
     elif index == 'FONT2':
-        font = app.classprefs.secondary_editing_font
+        font = app.fonts.classprefs.secondary_editing_font
         return font
     return None
 
