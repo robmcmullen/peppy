@@ -193,76 +193,44 @@ class PluginPanel(PrefPanel):
         # update preferences here
         pass
             
-
-class PluginDialog(wx.Dialog):
-    dialog_title = "Plugin Control Panel and Preferences"
-    static_title = "Activate and deactivate plugins and change plugin preferences using this panel."
-    
-    def __init__(self, parent, pm, title=None):
-        if title is None:
-            title = self.dialog_title
-        wx.Dialog.__init__(self, parent, -1, title,
-                           size=(700, 500), pos=wx.DefaultPosition, 
-                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-
+class PluginPage(wx.SplitterWindow):
+    def __init__(self, parent, pm, *args, **kwargs):
+        wx.SplitterWindow.__init__(self, parent, -1, *args, **kwargs)
+        self.SetMinimumPaneSize(50)
+        
         self.plugin_manager = pm
-
-        sizer = wx.BoxSizer(wx.VERTICAL)
-
-        if self.static_title:
-            label = wx.StaticText(self, -1, self.static_title)
-            sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-
-        self.splitter = wx.SplitterWindow(self)
-        self.splitter.SetMinimumPaneSize(50)
-        self.list = self.createList(self.splitter)
         
         self.panels = {}
-        pref = self.createPanel(self.list.getPlugin(0))
+        list = self.createList()
+        pref = self.createPanel(list.getPlugin(0))
 
-        self.splitter.SplitVertically(self.list, pref, -500)
-        self.splitter.SetSashGravity(0.4)
-        sizer.Add(self.splitter, 1, wx.EXPAND)
+        self.SplitVertically(list, pref, -500)
+        self.SetSashGravity(0.4)
 
-        btnsizer = wx.StdDialogButtonSizer()
-        
-        btn = wx.Button(self, wx.ID_OK)
-        btn.SetDefault()
-        btnsizer.AddButton(btn)
+        list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        list.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
-        btn = wx.Button(self, wx.ID_CANCEL)
-        btnsizer.AddButton(btn)
-        btnsizer.Realize()
-
-        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-
-        self.list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self.list.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-        self.SetSizer(sizer)
-        sizer.Fit(self)
-
-        self.Layout()
-
-    def createList(self, parent):
-        list = PluginList(parent, self.plugin_manager)
+    def createList(self):
+        list = PluginList(self, self.plugin_manager)
         list.SetItemState(0, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
         return list
         
     def createPanel(self, plugin_info):
-        pref = PluginPanel(self.splitter, plugin_info)
+        pref = PluginPanel(self, plugin_info)
         self.panels[plugin_info] = pref
         return pref
 
     def OnItemSelected(self, evt):
         index = evt.GetIndex()
-        plugin_info = self.list.getPlugin(index)
+        list = evt.GetEventObject()
+        plugin_info = list.getPlugin(index)
         if plugin_info:
             if plugin_info in self.panels:
                 pref = self.panels[plugin_info]
             else:
                 pref = self.createPanel(plugin_info)
-            old = self.splitter.GetWindow2()
-            self.splitter.ReplaceWindow(old, pref)
+            old = self.GetWindow2()
+            self.ReplaceWindow(old, pref)
             old.Hide()
             pref.Show()
             pref.Layout()
@@ -279,7 +247,47 @@ class PluginDialog(wx.Dialog):
 
         # After the preferences have been changed, activate or
         # deactivate plugins as required
-        self.list.update()
+        self.GetWindow1().update()
+
+
+class PluginDialog(wx.Dialog):
+    dialog_title = "Plugin Control Panel and Preferences"
+    static_title = "Activate and deactivate plugins and change plugin preferences using this panel."
+    
+    def __init__(self, parent, pm, title=None):
+        if title is None:
+            title = self.dialog_title
+        wx.Dialog.__init__(self, parent, -1, title,
+                           size=(700, 500), pos=wx.DefaultPosition, 
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        if self.static_title:
+            label = wx.StaticText(self, -1, self.static_title)
+            sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        self.page = PluginPage(self, pm)
+        sizer.Add(self.page, 1, wx.EXPAND)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+
+        self.Layout()
+
+    def applyPreferences(self):
+        self.page.applyPreferences()
 
 
 
