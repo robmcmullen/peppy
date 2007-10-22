@@ -1194,7 +1194,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
 
 
 class PrefClassList(wx.ListCtrl, debugmixin):
-    def __init__(self, parent):
+    def __init__(self, parent, classes):
         wx.ListCtrl.__init__(self, parent, size=(200,400), style=wx.LC_REPORT)
 
         self.setIconStorage()
@@ -1202,6 +1202,7 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         self.skip_verify = False
 
         self.createColumns()
+        self.reset(classes)
 
     def setIconStorage(self):
         pass
@@ -1258,6 +1259,59 @@ class PrefClassList(wx.ListCtrl, debugmixin):
             # item not in list. skip it.
             pass
 
+class PrefPage(wx.SplitterWindow):
+    """Notebook page to hold preferences for one notebook tab"""
+    
+    def __init__(self, parent, classes, *args, **kwargs):
+        wx.SplitterWindow.__init__(self, parent, -1, *args, **kwargs)
+        self.SetMinimumPaneSize(50)
+        
+        self.pref_panels = {}
+        list = self.createList(classes)
+        dum = wx.Window(self, -1)
+        self.SplitVertically(list, dum, -500)
+        list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, list)
+
+    def OnSelChanged(self, evt):
+        index = evt.GetIndex()
+        list = evt.GetEventObject()
+        if index >= 0:
+            cls = list.getClass(index)
+            self.changePanel(cls)
+        evt.Skip()
+
+    def createList(self, classes):
+        list = PrefClassList(self, classes)
+        return list
+        
+    def showClass(self, cls):
+        self.GetWindow1().ensureClassVisible(cls)
+    
+    def getPanel(self, cls=None):
+        if cls is None:
+            cls = self.GetWindow1().getClass()
+        if cls.__name__ in self.pref_panels:
+            pref = self.pref_panels[cls.__name__]
+        else:
+            pref = PrefPanel(self, cls)
+            self.pref_panels[cls.__name__] = pref
+        return pref
+    
+    def changePanel(self, cls=None):
+        old = self.GetWindow2()
+        pref = self.getPanel(cls)
+        self.ReplaceWindow(old, pref)
+        old.Hide()
+        pref.Show()
+        pref.Layout()
+
+    def applyPreferences(self):
+        # Look at all the panels that have been created: this gives us
+        # an upper bound on what may have changed.
+        for cls, pref in self.pref_panels.iteritems():
+            pref.update()
+
+
 class PrefDialog(wx.Dialog):
     dialog_title = "Preferences"
     static_title = "This is a placeholder for the Preferences dialog"
@@ -1287,20 +1341,11 @@ class PrefDialog(wx.Dialog):
         self.tab_to_page = {}
         count = 0
         for tab in names:
-            splitter = wx.SplitterWindow(self.notebook)
-            splitter.SetMinimumPaneSize(50)
-            list = self.createList(splitter)
-            self.fillList(list, tab)
+            splitter = self.createPage(tab, self.tab_map[tab])
             self.notebook.AddPage(splitter, tab)
-            dum = wx.Window(splitter, -1)
-            splitter.SplitVertically(list, dum, -500)
-            list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, list)
             self.tab_to_page[tab] = count
             count += 1
-
-        self.pref_panels = {}
-        pref = self.changePanel(self.obj.__class__)
-
+        
         btnsizer = wx.StdDialogButtonSizer()
         
         btn = wx.Button(self, wx.ID_OK)
@@ -1316,26 +1361,20 @@ class PrefDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
 
+        index = self.getPageIndex(self.obj.__class__)
+        self.notebook.SetSelection(index)
+        page = self.notebook.GetPage(index)
+        page.showClass(self.obj.__class__)
+
         self.Layout()
     
     def OnTabChanged(self, evt):
         dprint()
         val = evt.GetSelection()
-        splitter = self.notebook.GetPage(val)
-        list = splitter.GetWindow1()
-        cls = list.getClass()
-        self.changePanel(cls)
+        page = self.notebook.GetPage(val)
+        page.changePanel()
         evt.Skip()
 
-    def createList(self, parent):
-        list = PrefClassList(parent)
-        return list
-        
-    def fillList(self, list, tab_name):
-        classes = self.tab_map[tab_name]
-        list.reset(classes)
-        list.ensureClassVisible(self.obj.__class__)
-    
     def createClassMap(self):
         classes = getAllSubclassesOf(ClassPrefs)
         # Because getAllSubclassesOf can return multiple classes that
@@ -1363,53 +1402,21 @@ class PrefDialog(wx.Dialog):
         dprint(self.tab_map)
         dprint(self.class_to_tab)
         self.class_names = [x.__name__ for x in classes]
-
-    def populateList(self, cls=ClassPrefs):
-        classes = getAllSubclassesOf(cls)
-#        dprint(classes)
-#        for cls in classes:
-#            dprint("%s: mro=%s" % (cls, cls.__mro__))
-        self.list.reset(classes)
-        self.list.ensureClassVisible(self.obj.__class__)
-        
-    def getSplitter(self, cls):
-        tab = self.class_to_tab[cls.__name__]
-        page = self.tab_to_page[tab]
-        splitter = self.notebook.GetPage(page)
-        return page, splitter
-
-    def getPanel(self, cls):
-        page, splitter = self.getSplitter(cls)
-        if cls.__name__ in self.pref_panels:
-            pref = self.pref_panels[cls.__name__]
-        else:
-            pref = PrefPanel(splitter, cls)
-            self.pref_panels[cls.__name__] = pref
-        return pref
     
-    def changePanel(self, cls):
-        page, splitter = self.getSplitter(cls)
-        self.notebook.SetSelection(page)
-        old = splitter.GetWindow2()
-        pref = self.getPanel(cls)
-        splitter.ReplaceWindow(old, pref)
-        old.Hide()
-        pref.Show()
-        pref.Layout()
+    def createPage(self, tab, classes):
+        splitter = PrefPage(self.notebook, tab, classes)
+        return splitter
 
-    def OnSelChanged(self, evt):
-        index = evt.GetIndex()
-        list = evt.GetEventObject()
-        if index >= 0:
-            cls = list.getClass(index)
-            self.changePanel(cls)
-        evt.Skip()
+    def getPageIndex(self, cls):
+        tab = self.class_to_tab[cls.__name__]
+        index = self.tab_to_page[tab]
+        return index
 
     def applyPreferences(self):
-        # Look at all the panels that have been created: this gives us
-        # an upper bound on what may have changed.
-        for cls, pref in self.pref_panels.iteritems():
-            pref.update()
+        # For every notebook page, update the preferences for that notebook
+        for index in range(self.notebook.GetPageCount()):
+            page = self.notebook.GetPage(index)
+            page.applyPreferences()
 
 
 if __name__ == "__main__":

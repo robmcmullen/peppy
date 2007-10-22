@@ -72,13 +72,18 @@ class PeppyPrefClassList(PrefClassList):
             icon = -1
         self.SetStringItem(sys.maxint, name, icon)
 
+class PeppyPrefPage(PrefPage):
+    def createList(self, classes):
+        list = PeppyPrefClassList(self, classes)
+        return list
+
 class PeppyPrefDialog(PrefDialog):
     dialog_title = "Peppy Global Preferences"
     static_title = ""
 
-    def createList(self, parent):
-        list = PeppyPrefClassList(parent)
-        return list
+    def createPage(self, tab, classes):
+        page = PeppyPrefPage(self.notebook, classes)
+        return page
     
 
 class Plugins(SelectAction):
