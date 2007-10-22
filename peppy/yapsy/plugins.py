@@ -10,6 +10,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
     """
     Some peppy-specific methods in addition to the yapsy plugin methods.
     """
+    preferences_tab = "Plugins"
     default_classprefs = (
         BoolParam('disable_at_startup', False, 'Plugins are enabled by default at startup.\nSet this to True to disable the plugin.'),
     )

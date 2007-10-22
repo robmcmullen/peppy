@@ -1202,8 +1202,6 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         self.skip_verify = False
 
         self.createColumns()
-        self.class_names = []
-        self.class_map = {}
 
     def setIconStorage(self):
         pass
@@ -1223,21 +1221,14 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         self.InsertColumnInfo(0, info)
 
     def reset(self, classes):
-        # Because getAllSubclassesOf can return multiple classes that
-        # really refer to the same class (still don't understand how this
-        # is possible) we need to sort on class name and make that the
-        # key instead of the class object itself.
-        unique = {}
-        for cls in classes:
-            unique[cls.__name__] = cls
-        self.class_map = unique
-        classes = unique.values()
-        classes.sort(key=lambda x: x.__name__)
-        self.class_names = [x.__name__ for x in classes]
-        
         index = 0
         list_count = self.GetItemCount()
-        for name in self.class_names:
+        self.class_names = []
+        self.class_map = {}
+        for cls in classes:
+            name = cls.__name__
+            self.class_names.append(name)
+            self.class_map[name] = cls
             if index >= list_count:
                 self.appendItem(name)
             else:
@@ -1251,13 +1242,21 @@ class PrefClassList(wx.ListCtrl, debugmixin):
                 self.DeleteItem(index)
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
 
-    def getClass(self, index):
+    def getClass(self, index=-1):
+        if index == -1:
+            index = self.GetNextItem(-1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+        if index == -1:
+            index = 0
         return self.class_map[self.class_names[index]]
 
     def ensureClassVisible(self, cls):
-        index = self.class_names.index(cls.__name__)
-        self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-        self.EnsureVisible(index)
+        try:
+            index = self.class_names.index(cls.__name__)
+            self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            self.EnsureVisible(index)
+        except:
+            # item not in list. skip it.
+            pass
 
 class PrefDialog(wx.Dialog):
     dialog_title = "Preferences"
@@ -1278,18 +1277,29 @@ class PrefDialog(wx.Dialog):
             label = wx.StaticText(self, -1, self.static_title)
             sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
-        self.splitter = wx.SplitterWindow(self)
-        self.splitter.SetMinimumPaneSize(50)
-        self.list = self.createList(self.splitter)
-        self.populateList()
+        self.createClassMap()
         
-        self.list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, self.list)
+        self.notebook = wx.Notebook(self)
+        sizer.Add(self.notebook, 1, wx.EXPAND)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+        
+        names = self.tab_map.keys()
+        self.tab_to_page = {}
+        count = 0
+        for tab in names:
+            splitter = wx.SplitterWindow(self.notebook)
+            splitter.SetMinimumPaneSize(50)
+            list = self.createList(splitter)
+            self.fillList(list, tab)
+            self.notebook.AddPage(splitter, tab)
+            dum = wx.Window(splitter, -1)
+            splitter.SplitVertically(list, dum, -500)
+            list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, list)
+            self.tab_to_page[tab] = count
+            count += 1
 
         self.pref_panels = {}
-        pref = self.createPanel(self.obj.__class__)
-
-        self.splitter.SplitVertically(self.list, pref, -500)
-        sizer.Add(self.splitter, 1, wx.EXPAND)
+        pref = self.changePanel(self.obj.__class__)
 
         btnsizer = wx.StdDialogButtonSizer()
         
@@ -1307,10 +1317,52 @@ class PrefDialog(wx.Dialog):
         sizer.Fit(self)
 
         self.Layout()
+    
+    def OnTabChanged(self, evt):
+        dprint()
+        val = evt.GetSelection()
+        splitter = self.notebook.GetPage(val)
+        list = splitter.GetWindow1()
+        cls = list.getClass()
+        self.changePanel(cls)
+        evt.Skip()
 
     def createList(self, parent):
         list = PrefClassList(parent)
         return list
+        
+    def fillList(self, list, tab_name):
+        classes = self.tab_map[tab_name]
+        list.reset(classes)
+        list.ensureClassVisible(self.obj.__class__)
+    
+    def createClassMap(self):
+        classes = getAllSubclassesOf(ClassPrefs)
+        # Because getAllSubclassesOf can return multiple classes that
+        # really refer to the same class (still don't understand how this
+        # is possible) we need to sort on class name and make that the
+        # key instead of the class object itself.
+        unique = {}
+        for cls in classes:
+            unique[cls.__name__] = cls
+        self.class_map = unique
+        classes = unique.values()
+        classes.sort(key=lambda x: x.__name__)
+        
+        self.tab_map= {}
+        self.class_to_tab = {}
+        for cls in classes:
+            if hasattr(cls, 'preferences_tab'):
+                tab = cls.preferences_tab
+            else:
+                tab = "Misc"
+            if tab not in self.tab_map:
+                self.tab_map[tab] = []
+            self.tab_map[tab].append(cls)
+            self.class_to_tab[cls.__name__] = tab
+        dprint(self.tab_map)
+        dprint(self.class_to_tab)
+        self.class_names = [x.__name__ for x in classes]
 
     def populateList(self, cls=ClassPrefs):
         classes = getAllSubclassesOf(cls)
@@ -1320,24 +1372,37 @@ class PrefDialog(wx.Dialog):
         self.list.reset(classes)
         self.list.ensureClassVisible(self.obj.__class__)
         
-    def createPanel(self, cls):
-        pref = PrefPanel(self.splitter, cls)
-        self.pref_panels[cls] = pref
+    def getSplitter(self, cls):
+        tab = self.class_to_tab[cls.__name__]
+        page = self.tab_to_page[tab]
+        splitter = self.notebook.GetPage(page)
+        return page, splitter
+
+    def getPanel(self, cls):
+        page, splitter = self.getSplitter(cls)
+        if cls.__name__ in self.pref_panels:
+            pref = self.pref_panels[cls.__name__]
+        else:
+            pref = PrefPanel(splitter, cls)
+            self.pref_panels[cls.__name__] = pref
         return pref
+    
+    def changePanel(self, cls):
+        page, splitter = self.getSplitter(cls)
+        self.notebook.SetSelection(page)
+        old = splitter.GetWindow2()
+        pref = self.getPanel(cls)
+        splitter.ReplaceWindow(old, pref)
+        old.Hide()
+        pref.Show()
+        pref.Layout()
 
     def OnSelChanged(self, evt):
         index = evt.GetIndex()
+        list = evt.GetEventObject()
         if index >= 0:
-            cls = self.list.getClass(index)
-            if cls in self.pref_panels:
-                pref = self.pref_panels[cls]
-            else:
-                pref = self.createPanel(cls)
-            old = self.splitter.GetWindow2()
-            self.splitter.ReplaceWindow(old, pref)
-            old.Hide()
-            pref.Show()
-            pref.Layout()
+            cls = list.getClass(index)
+            self.changePanel(cls)
         evt.Skip()
 
     def applyPreferences(self):
