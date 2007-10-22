@@ -1,3 +1,8 @@
+2007-10-22  Rob McMullen  <robm@users.sourceforge.net>
+	* Released peppy-0.7.0.1 update to "Kibbles 'n' Snouts"
+	* Added font configuration in preferences
+	* spaces now allowed in pathnames when running scripts
+
 2007-10-17  Rob McMullen  <robm@users.sourceforge.net>
 	* Released peppy-0.7.0 "Kibbles 'n' Snouts"
 	* Dogfooding release!  Used peppy to edit peppy
