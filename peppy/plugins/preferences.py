@@ -77,37 +77,28 @@ class PeppyPrefPage(PrefPage):
         list = PeppyPrefClassList(self, classes)
         return list
 
+class PeppyPluginPage(PluginPage):
+    def applyPreferences(self):
+        PluginPage.applyPreferences(self)
+        # Send the plugin changed message when the plugin settings are
+        # applied
+        Publisher().sendMessage('peppy.plugins.changed')
+
 class PeppyPrefDialog(PrefDialog):
     dialog_title = "Peppy Global Preferences"
     static_title = ""
 
     def createPage(self, tab, classes):
-        page = PeppyPrefPage(self.notebook, classes)
+        if tab == "Plugins":
+            # Show a plugin control page which augments the standard
+            # preference page
+            page = PeppyPluginPage(self.notebook, wx.GetApp().plugin_manager)
+        else:
+            page = PeppyPrefPage(self.notebook, classes)
         return page
-    
-
-class Plugins(SelectAction):
-    name = "&Plugins..."
-    tooltip = "Plugin configuration"
-    default_menu = ("Edit", 1000.2)
-    default_toolbar = False
-    icon = "icons/plugin.png"
-
-    @classmethod
-    def showDialog(self, msg=None):
-        frame = wx.GetApp().GetTopWindow()
-        dlg = PluginDialog(frame, wx.GetApp().plugin_manager)
-        retval = dlg.ShowModal()
-        if retval == wx.ID_OK:
-            dlg.applyPreferences()
-            Publisher().sendMessage('peppy.plugins.changed')
-        dlg.Destroy()
-
-    def action(self, index=-1, multiplier=1):
-        self.showDialog()
 
 
 class PreferencesPlugin(IPeppyPlugin):
     def getActions(self):
-        return [Preferences, Plugins]
+        return [Preferences]
     

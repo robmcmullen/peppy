@@ -1270,9 +1270,9 @@ class PrefPage(wx.SplitterWindow):
         list = self.createList(classes)
         dum = wx.Window(self, -1)
         self.SplitVertically(list, dum, -500)
-        list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelChanged, list)
+        list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected, list)
 
-    def OnSelChanged(self, evt):
+    def OnItemSelected(self, evt):
         index = evt.GetIndex()
         list = evt.GetEventObject()
         if index >= 0:
@@ -1281,13 +1281,17 @@ class PrefPage(wx.SplitterWindow):
         evt.Skip()
 
     def createList(self, classes):
+        """Create the ListCtrl that holds the list of classes"""
         list = PrefClassList(self, classes)
         return list
         
     def showClass(self, cls):
+        """Make sure the requested class is highlighted and its pref panel
+        is shown."""
         self.GetWindow1().ensureClassVisible(cls)
     
     def getPanel(self, cls=None):
+        """Get or create the requested class's pref panel"""
         if cls is None:
             cls = self.GetWindow1().getClass()
         if cls.__name__ in self.pref_panels:
@@ -1298,6 +1302,7 @@ class PrefPage(wx.SplitterWindow):
         return pref
     
     def changePanel(self, cls=None):
+        """Change the currently shown pref panel to the requested"""
         old = self.GetWindow2()
         pref = self.getPanel(cls)
         self.ReplaceWindow(old, pref)
@@ -1306,6 +1311,7 @@ class PrefPage(wx.SplitterWindow):
         pref.Layout()
 
     def applyPreferences(self):
+        """On an OK from the dialog, process any updates to the plugins"""
         # Look at all the panels that have been created: this gives us
         # an upper bound on what may have changed.
         for cls, pref in self.pref_panels.iteritems():
