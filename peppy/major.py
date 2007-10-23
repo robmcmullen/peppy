@@ -643,6 +643,15 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
 
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):
+    """Process handling mixin to run scripts based on the current major mode.
+    
+    This mixin provides some common interfacing to run scripts that are
+    tied to a major mode.  An interpreter classpref is provided that links
+    a major mode to a binary file to run scripts in that mode.  Actions
+    like RunScript and StopScript are tied to the presense of this mixin
+    and will be automatically enabled when they find a mode has the
+    interpreter_exe classpref.
+    """
     default_classprefs = (
         PathParam('interpreter_exe', '',
                   'Full path to a program that can interpret this text\nand return results on standard output'),
@@ -650,13 +659,27 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                   'Automatically save without prompting before running script'),
         )
 
-    def getCommandLineArgs(self):
-        dprint(hasattr(self, "commandLineArgs"))
-        if hasattr(self, "commandLineArgs"):
-            return self.commandLineArgs
+    def getInterpreterArgs(self):
+        """Hook to pass arguments to the command interpreter"""
+        dprint(hasattr(self, "interpreterArgs"))
+        if hasattr(self, "interpreterArgs"):
+            return self.interpreterArgs
         return ""
 
+    def getScriptArgs(self):
+        """Hook to specify any arguments passed to the script itself"""
+        dprint(hasattr(self, "scriptArgs"))
+        if hasattr(self, "scriptArgs"):
+            return self.scriptArgs
+        return ""
+    
     def getCommandLine(self, bangpath=False, direct=False):
+        """Return the entire command line of the job to be started.
+        
+        If allowed by the operating system, the script is parsed for a
+        bangpath and will be executed directly if it exists.  Otherwise,
+        the command interpreter will be used to start the script.
+        """
         script = self.buffer.url.path
         if bangpath or direct:
             mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
@@ -665,7 +688,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             # FIXME: Don't think you can directly execute on MSW.  Mac???
             if wx.Platform != '__WXMSW__':
                 script = script.replace(' ', '\ ')
-            cmd = "%s %s" % (script, self.getCommandLineArgs())
+            cmd = "%s %s" % (script, self.getScriptArgs())
         else:
             interpreter = self.classprefs.interpreter_exe
             if wx.Platform == '__WXMSW__':
@@ -676,13 +699,20 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                 interpreter = interpreter.replace(' ', '\ ')
                 script = script.replace(' ', '\ ')
                 pass
-            cmd = "%s %s %s" % (interpreter, script, self.getCommandLineArgs())
+            cmd = "%s %s %s %s" % (interpreter, self.getInterpreterArgs(),
+                                   script, self.getScriptArgs())
         dprint(cmd)
         return cmd
         
     def startInterpreter(self, argstring=None):
+        """Interface used by actions to start the interpreter.
+        
+        This method is the outside interface to the job control mixin to
+        start the interpreter.  See the RunScript action for an example
+        of its usage in practice.
+        """
         if argstring is not None:
-            self.commandLineArgs = argstring
+            self.scriptArgs = argstring
             
         if self.buffer.readonly or not self.classprefs.autosave_before_run:
             msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
@@ -722,10 +752,19 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             ProcessManager().run(cmd, self.buffer.cwd(), self)
 
     def stopInterpreter(self):
+        """Interface used by actions to kill the currently running job.
+        
+        This method is the outside interface to the job control mixin to
+        stop the currently running job.  See the StopScript action for an
+        example of its usage in practice.
+        """
         if hasattr(self, 'process'):
             self.process.kill()
     
     def startupCallback(self, job):
+        """Callback from the JobOutputMixin when a job is successfully
+        started.
+        """
         self.process = job
         self.log = self.findMinorMode("OutputLog")
         if self.log:
@@ -735,14 +774,17 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                                  "\n")
 
     def stdoutCallback(self, job, text):
+        """Callback from the JobOutputMixin for a block of text on stdout."""
         if self.log:
             self.log.showMessage(text)
 
     def stderrCallback(self, job, text):
+        """Callback from the JobOutputMixin for a block of text on stderr."""
         if self.log:
             self.log.showMessage(text)
 
     def finishedCallback(self, job):
+        """Callback from the JobOutputMixin when the job terminates."""
         assert self.dprint()
         del self.process
         if self.log:
