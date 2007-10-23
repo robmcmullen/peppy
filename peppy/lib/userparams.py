@@ -115,7 +115,26 @@ except:
                 dprint(txt)
             return True
 
-
+class FileBrowseButton2(FileBrowseButton):
+    """Small enhancements to FileBrowseButton"""
+    def createDialog(self, *args, **kwargs):
+        """Automatically hide the label because it's not used here"""
+        FileBrowseButton.createDialog(self, *args, **kwargs)
+        self.label.Hide()
+        
+    def SetToolTipString(self, text):
+        dprint(text)
+        self.textControl.SetToolTipString(text)
+        
+    def IsEnabled(self):
+        """Make IsEnabled work by returning the enabled state of the
+        text control
+        """
+        # FileBrowseButton never sets the enabled state of the panel
+        # itself, so it always returns True.  Make it return the state
+        # of the text control, which should indicate the real enabled state.
+        return self.textControl.IsEnabled()
+    
 class DirBrowseButton2(DirBrowseButton):
     """Update to dir browse button to browse to the currently set
     directory instead of always using the initial directory.
@@ -185,7 +204,6 @@ class Param(debugmixin):
         if default is not None:
             self.default = default
         self.help = help
-        dprint(kwargs)
         if 'next_on_same_line' in kwargs or 'join' in kwargs:
             self.next_on_same_line = True
         else:
@@ -423,7 +441,7 @@ class PathParam(DirParam):
     def getCtrl(self, parent, initial=None):
         if initial is None:
             initial = os.getcwd()
-        c = FileBrowseButton(parent, -1, size=(300, -1),
+        c = FileBrowseButton2(parent, -1, size=(300, -1),
                                         labelText = '',
                                         startDirectory=initial,
                                         changeCallback = self.callback)
@@ -1133,72 +1151,90 @@ class PrefPanel(ScrolledPanel, debugmixin):
         ScrolledPanel.Layout(self)
         self.SetupScrolling()
         self.Scroll(0,0)
+    
+    @staticmethod
+    def populateGrid(parent, sizer, name, params, ctrls, orig, default_getter=None):
+        """Static method to populate some sizer with classprefs.
         
+        This is a static method because it can be used by outside functions
+        that use params but aren't classprefs.  For example, generic dialog
+        boxes can be created by setting up a list of params, and then
+        populating the dialog with the controls.
+        
+        parent: parent of all the controls to be generated
+        sizer: sizer in which to add all the grid sizer
+        name: name of the StaticBox that wraps the grid sizer
+        ctrls: dict keyed on param to add the created controls
+        orig: dict keyed on param to store the original values
+        default_getter: optional functor to return a default value for the keyword
+        """
+        row = 0
+        col = 0
+        for param in params:
+            if param.keyword in ctrls:
+                # Don't put another control if it exists in a superclass
+                continue
+
+            if row == 0 and col == 0:
+                box = wx.StaticBox(parent, -1, name)
+                bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+                sizer.Add(bsizer)
+                grid = wx.GridBagSizer(2,5)
+                bsizer.Add(grid, 0, wx.EXPAND)
+            
+            width = 1
+            if param.alt_label is not False:
+                if param.alt_label is None:
+                    title = wx.StaticText(parent, -1, param.keyword)
+                else:
+                    title = wx.StaticText(parent, -1, param.alt_label)
+                if param.help:
+                    title.SetToolTipString(param.help)
+                grid.Add(title, (row,col))
+                col += 1
+            else:
+                width = 2
+
+            if param.isSettable():
+                ctrl = param.getCtrl(parent)
+                ctrls[param] = ctrl
+                if param.help:
+                    ctrl.SetToolTipString(param.help)
+                grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
+                col += 1
+                
+                if default_getter is not None:
+                    val = default_getter(param.keyword)
+                    #dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
+                    param.setValue(ctrl, val)
+                    orig[param] = val
+                
+            if not param.next_on_same_line:
+                row += 1
+                col = 0
+
     def create(self):
+        """Create the list of classprefs, organized by MRO.
+        
+        Creates a group of StaticBoxes, each one representing the classprefs
+        of a class in the MRO (method resolution order).
+        """
         row = 0
         focused = False
-        hier = self.obj.classprefs._getMRO()
+        hier = [c for c in self.obj.classprefs._getMRO() if 'default_classprefs' in dir(c)]
         self.dprint(hier)
         first = True
         for cls in hier:
-            if 'default_classprefs' not in dir(cls):
-                continue
-
-            row = 0
-            col = 0
-            for param in cls.default_classprefs:
-                if param.keyword in self.ctrls:
-                    # Don't put another control if it exists in a superclass
-                    continue
-
-                if row == 0 and col == 0:
-                    if first:
-                        name = cls.__name__
-                        first = False
-                    else:
-                        name = "Inherited from %s" % cls.__name__
-                    box = wx.StaticBox(self, -1, name)
-                    bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
-                    self.sizer.Add(bsizer)
-                    grid = wx.GridBagSizer(2,5)
-                    bsizer.Add(grid, 0, wx.EXPAND)
-                
-                width = 1
-                if param.alt_label is not False:
-                    if param.alt_label is None:
-                        title = wx.StaticText(self, -1, param.keyword)
-                    else:
-                        title = wx.StaticText(self, -1, param.alt_label)
-                    if param.help:
-                        title.SetToolTipString(param.help)
-                    grid.Add(title, (row,col))
-                    col += 1
-                else:
-                    width = 2
-
-                if param.isSettable():
-                    ctrl = param.getCtrl(self)
-                    if param.help:
-                        ctrl.SetToolTipString(param.help)
-                    grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
-                    col += 1
-                    
-                    val = self.obj.classprefs(param.keyword)
-                    self.dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
-                    param.setValue(ctrl, val)
-                    
-                    self.ctrls[param.keyword] = ctrl
-                    self.orig[param.keyword] = val
-                    if not focused:
-                        self.SetFocus()
-                        ctrl.SetFocus()
-                        focused = True
-                dprint(param)
-                if not param.next_on_same_line:
-                    row += 1
-                    col = 0
+            if first:
+                name = cls.__name__
+                first = False
+            else:
+                name = "Inherited from %s" % cls.__name__
+            self.populateGrid(self, self.sizer, name, cls.default_classprefs,
+                              self.ctrls, self.orig, self.obj.classprefs)
         
     def update(self):
+        """Update the class with the changed preferences."""
         hier = self.obj.classprefs._getMRO()
         self.dprint(hier)
         updated = {}
@@ -1207,7 +1243,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 continue
             
             for param in cls.default_classprefs:
-                if param.keyword in updated:
+                if param in updated:
                     # Don't update with value in superclass
                     continue
 
@@ -1215,12 +1251,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     # It's possible that a keyword won't have an
                     # associated control, so only deal with those
                     # controls that are settable
-                    ctrl = self.ctrls[param.keyword]
+                    ctrl = self.ctrls[param]
                     val = param.getValue(ctrl)
-                    if val != self.orig[param.keyword]:
+                    if val != self.orig[param]:
                         self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param.keyword], type(self.orig[param.keyword]), val, type(val)))
                         self.obj.classprefs._set(param.keyword, val)
-                    updated[param.keyword] = True
+                    updated[param] = True
 
 
 class PrefClassList(wx.ListCtrl, debugmixin):
