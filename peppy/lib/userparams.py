@@ -180,11 +180,24 @@ class Param(debugmixin):
     # default is provided.
     default = None
     
-    def __init__(self, keyword, default=None, help=''):
+    def __init__(self, keyword, default=None, help='', **kwargs):
         self.keyword = keyword
         if default is not None:
             self.default = default
         self.help = help
+        dprint(kwargs)
+        if 'next_on_same_line' in kwargs or 'join' in kwargs:
+            self.next_on_same_line = True
+        else:
+            self.next_on_same_line = False
+        if 'label' in kwargs:
+            self.alt_label = kwargs['label']
+        else:
+            self.alt_label = None
+    
+    def __str__(self):
+        return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
+        self.default, self.next_on_same_line, self.alt_label, self.help)
 
     def isSettable(self):
         """True if the user can set this parameter"""
@@ -443,8 +456,8 @@ class ChoiceParam(Param):
     A Choice control is its user interface, and the currently selected
     string is used as the value.
     """
-    def __init__(self, keyword, choices, default=None, help=''):
-        Param.__init__(self, keyword, help=help)
+    def __init__(self, keyword, choices, default=None, help='', **kwargs):
+        Param.__init__(self, keyword, help=help, **kwargs)
         self.choices = choices
         if default is not None:
             self.default = default
@@ -474,8 +487,8 @@ class IndexChoiceParam(Param):
     A Choice control is its user interface, and the index of the
     currently selected string is used as the value.
     """
-    def __init__(self, keyword, choices, default=None, help=''):
-        Param.__init__(self, keyword, help=help)
+    def __init__(self, keyword, choices, default=None, help='', **kwargs):
+        Param.__init__(self, keyword, help=help, **kwargs)
         self.choices = choices
         if default is not None and default in self.choices:
             self.default = self.choices.index(default)
@@ -524,8 +537,8 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
     strings 'none', 'line', or 'background' are the items that will be
     displayed in the choice control.
     """
-    def __init__(self, keyword, choices, default=None, help=''):
-        Param.__init__(self, keyword, help='')
+    def __init__(self, keyword, choices, default=None, help='', **kwargs):
+        Param.__init__(self, keyword, help='', **kwargs)
         self.choices = [entry[1] for entry in choices]
         self.keys = [entry[0] for entry in choices]
         if default is not None and default in self.choices:
@@ -732,6 +745,10 @@ class GlobalPrefs(debugmixin):
     seen = {} # has the default_classprefs been seen for the class?
     convert_already_seen = {}
     
+    # configuration has been loaded from text for this class, but not
+    # converted yet.
+    needs_conversion = {}
+    
     user={}
     name_hierarchy={}
     class_hierarchy={}
@@ -828,6 +845,7 @@ class GlobalPrefs(debugmixin):
         cfg.optionxform=str
         cfg.readfp(fh)
         for section in cfg.sections():
+            GlobalPrefs.needs_conversion[section] = True
             d={}
             for option, text in cfg.items(section):
                 # NOTE! text will be converted later, after all
@@ -856,21 +874,21 @@ class GlobalPrefs(debugmixin):
             return
         
         GlobalPrefs.convert_already_seen[section] = True
-        
-        options = GlobalPrefs.user[section]
-        d = {}
-        for option, text in options.iteritems():
-            param = GlobalPrefs.findParam(section, option)
-            try:
-                if param is not None:
-                    val = param.textToValue(text)
-                    if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
-                else:
-                    val = text
-                d[option] = val
-            except Exception, e:
-                eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
-        GlobalPrefs.user[section] = d
+        if section in GlobalPrefs.needs_conversion:
+            options = GlobalPrefs.user[section]
+            d = {}
+            for option, text in options.iteritems():
+                param = GlobalPrefs.findParam(section, option)
+                try:
+                    if param is not None:
+                        val = param.textToValue(text)
+                        if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
+                    else:
+                        val = text
+                    d[option] = val
+                except Exception, e:
+                    eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
+            GlobalPrefs.user[section] = d
     
     @staticmethod
     def convertConfig():
@@ -1001,7 +1019,7 @@ class PrefsProxy(debugmixin):
                 assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     if klass not in GlobalPrefs.convert_already_seen:
-                        dprint("bug: GlobalPrefs[%s] not converted yet." % klass)
+                        dprint("warning: GlobalPrefs[%s] not converted yet." % klass)
                         GlobalPrefs.convertSection(klass)
                         d = GlobalPrefs.user
                     return d[klass][name]
@@ -1127,12 +1145,13 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 continue
 
             row = 0
+            col = 0
             for param in cls.default_classprefs:
                 if param.keyword in self.ctrls:
                     # Don't put another control if it exists in a superclass
                     continue
 
-                if row == 0:
+                if row == 0 and col == 0:
                     if first:
                         name = cls.__name__
                         first = False
@@ -1144,16 +1163,25 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     grid = wx.GridBagSizer(2,5)
                     bsizer.Add(grid, 0, wx.EXPAND)
                 
-                title = wx.StaticText(self, -1, param.keyword)
-                if param.help:
-                    title.SetToolTipString(param.help)
-                grid.Add(title, (row,0))
+                width = 1
+                if param.alt_label is not False:
+                    if param.alt_label is None:
+                        title = wx.StaticText(self, -1, param.keyword)
+                    else:
+                        title = wx.StaticText(self, -1, param.alt_label)
+                    if param.help:
+                        title.SetToolTipString(param.help)
+                    grid.Add(title, (row,col))
+                    col += 1
+                else:
+                    width = 2
 
                 if param.isSettable():
                     ctrl = param.getCtrl(self)
                     if param.help:
                         ctrl.SetToolTipString(param.help)
-                    grid.Add(ctrl, (row,1), flag=wx.EXPAND)
+                    grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
+                    col += 1
                     
                     val = self.obj.classprefs(param.keyword)
                     self.dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
@@ -1165,8 +1193,10 @@ class PrefPanel(ScrolledPanel, debugmixin):
                         self.SetFocus()
                         ctrl.SetFocus()
                         focused = True
-
-                row += 1
+                dprint(param)
+                if not param.next_on_same_line:
+                    row += 1
+                    col = 0
         
     def update(self):
         hier = self.obj.classprefs._getMRO()
@@ -1410,7 +1440,7 @@ class PrefDialog(wx.Dialog):
         self.class_names = [x.__name__ for x in classes]
     
     def createPage(self, tab, classes):
-        splitter = PrefPage(self.notebook, tab, classes)
+        splitter = PrefPage(self.notebook, classes)
         return splitter
 
     def getPageIndex(self, cls):
@@ -1437,9 +1467,12 @@ if __name__ == "__main__":
     
     class Test2(Test1):
         default_classprefs = (
-            IntParam("test1", 7),
+            IntParam("test1", 7, join=True),
             FloatParam("testfloat", 6.0),
             StrParam("teststr", "BLAH!"),
+            IntParam("col1", 1, next_on_same_line=True),
+            IntParam("col2", 2),
+            IntParam("col1again", 3, label=False),
             )
 
     class TestA(ClassPrefs):
