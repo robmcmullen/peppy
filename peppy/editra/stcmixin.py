@@ -126,13 +126,19 @@ class EditraSTCMixin(ed_style.StyleMgr):
         self.LOG("GetLexer = %d" % self.GetLexer())
         return True
 
-    def SetKeyWords(self, kw_lst):
+    def SetKeyWords(self, kw_lst, orig_interface_keywords=None):
         """Sets the keywords from a list of keyword sets
         @param kw_lst: [ (KWLVL, "KEWORDS"), (KWLVL2, "KEYWORDS2"), ect...]
         @todo: look into if the uniquifying of the list has a more optimal
                solution.
 
         """
+        if orig_interface_keywords is not None:
+            # If we get a 2nd argument, assume the keyword list conforms
+            # to the standard stc SetKeyWords interface
+            wx.stc.StyledTextCtrl.SetKeyWords(self, kw_lst, orig_interface_keywords)
+            return
+        
         # Parse Keyword Settings List simply ignoring bad values and badly
         # formed lists
         self.keywords = ""

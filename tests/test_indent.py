@@ -2,11 +2,12 @@ import os,sys,re
 from cStringIO import StringIO
 
 import wx.stc
-from tests.mock_wx import getSTC
+from tests.mock_wx import *
 
 from peppy.stcinterface import *
 from peppy.fundamental import *
 from peppy.plugins.python_mode import *
+from peppy.plugins.text_transforms import *
 
 from nose.tools import *
 
@@ -52,14 +53,13 @@ def splittests(text):
     print tests
     return tests
         
-
 class TestFundamentalIndent(StandardReturnMixin, StandardReindentMixin):
     def setUp(self):
-        self.stc = getSTC(lexer=wx.stc.STC_LEX_NULL)
+        self.stc = getSTC(stcclass=FundamentalSTC, lexer=wx.stc.STC_LEX_NULL)
 
     def checkReturn(self, pair):
         prepareSTC(self.stc, pair)
-        self.electricReturn()
+        self.stc.electricReturn()
         assert checkSTC(self.stc, pair)
 
     def testReturn(self):
@@ -123,7 +123,7 @@ back at column zero
 
 class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonReindentMixin):
     def setUp(self):
-        self.stc = getSTC(lexer=wx.stc.STC_LEX_PYTHON)
+        self.stc = getSTC(stcclass=PythonSTC, lexer=wx.stc.STC_LEX_PYTHON)
         self.reindentAction = Reindent(self)
 
     def getActiveMajorMode(self):
@@ -132,7 +132,7 @@ class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonRei
 
     def checkReturn(self, pair):
         prepareSTC(self.stc, pair)
-        self.electricReturn()
+        self.stc.electricReturn()
         assert checkSTC(self.stc, pair)
 
     def testReturn(self):
@@ -166,7 +166,7 @@ class blah:
     def checkReindentAction(self, pair):
         prepareSTC(self.stc, pair)
         #self.stc.showStyle()
-        self.reindentAction.action(self)
+        self.reindentAction.action()
         #self.stc.showStyle()
         assert checkSTC(self.stc, pair)
 

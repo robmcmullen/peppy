@@ -10,31 +10,39 @@ peppy.debug.logfh = sys.stdout
 
 from peppy.stcinterface import PeppyBaseSTC
 
+class MockApp(wx.App):
+    def getConfigFilePath(self, file):
+        return None
+    def GetLog(self):
+        return lambda x: True
+
 class MockWX(object):
-    app = wx.PySimpleApp()
+    app = MockApp()
     frame = wx.Frame(None, -1)
 
-MockSTC = PeppyBaseSTC(MockWX.frame)
+class MockSTC(PeppyBaseSTC):
+    pass
 
 __builtin__._ = str
     
 
-def getSTC(init=None, count=1, lexer=wx.stc.STC_LEX_PYTHON, tab_size=4, use_tabs=False):
-    MockSTC.SetLexer(lexer)
+def getSTC(init=None, stcclass=MockSTC, count=1, lexer=wx.stc.STC_LEX_PYTHON, tab_size=4, use_tabs=False):
+    stc = stcclass(MockWX.frame)
+    stc.SetLexer(lexer)
     if lexer == wx.stc.STC_LEX_PYTHON:
         # FIXME: this is a duplicate of the keyword string from
         # PythonMode.  Find a way to NotRepeatMyself instead of this.
-        MockSTC.SetKeyWords(0, 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self')
+        stc.SetKeyWords(0, 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self')
 
-    MockSTC.SetText("")
-    MockSTC.SetEOLMode(wx.stc.STC_EOL_LF)
-    MockSTC.SetProperty("fold", "1")
-    MockSTC.SetIndent(tab_size)
-    MockSTC.SetUseTabs(use_tabs)   
+    stc.SetText("")
+    stc.SetEOLMode(wx.stc.STC_EOL_LF)
+    stc.SetProperty("fold", "1")
+    stc.SetIndent(tab_size)
+    stc.SetUseTabs(use_tabs)   
     if init == 'py':
-        MockSTC.SetText("python source goes here")
+        stc.SetText("python source goes here")
     elif init == 'columns':
         for i in range(count):
-            MockSTC.AddText('%04d-0123456789\n' % i)
-    MockSTC.Colourise(0, MockSTC.GetTextLength())
-    return MockSTC
+            stc.AddText('%04d-0123456789\n' % i)
+    stc.Colourise(0, stc.GetTextLength())
+    return stc

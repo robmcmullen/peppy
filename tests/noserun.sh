@@ -1,4 +1,4 @@
 #!/bin/bash
 
 PYTHONPATH=$PWD/..
-nosetests --exe
+nosetests --exe $*
