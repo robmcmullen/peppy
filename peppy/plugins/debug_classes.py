@@ -25,7 +25,7 @@ class DebugGarbage(SelectAction):
     alias = "debug-gc"
     name = "Garbage Objects"
     tooltip = "Show uncollectable objects"
-    default_menu = ("Tools/Debug", 900)
+    default_menu = (("Tools/Debug", -1000), 500)
     key_bindings = {'default': "C-X C-D", }
 
     def action(self, index=-1, multiplier=1):

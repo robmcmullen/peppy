@@ -672,8 +672,12 @@ class UserActionMap(debugmixin):
                         else:
                             weight = 500
                         self.menus[search].append((weight, submenu, False))
-            
-            self.menus[parent].append((menu_weight, menu_title, False))
+            if menu_weight < 0:
+                menu_weight = abs(menu_weight)
+                sep = True
+            else:
+                sep = False
+            self.menus[parent].append((menu_weight, menu_title, sep))
         
         # For each menu, sort all the items within that group
         sorted = {}
@@ -720,6 +724,8 @@ class UserActionMap(debugmixin):
             
             for weight, action, separator in items:
                 if isinstance(action, str):
+                    if separator and menu.GetMenuItemCount() > 0:
+                        menu.AppendSeparator()
                     submenu_parts = action.split('/')
                     self.dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
                     if action not in self.title_to_menu:

@@ -37,7 +37,7 @@ def getActionClass(name):
         "alias": _("chatbot-%s") % name,
         "name": _("Psychoanalyst (%s)" % name.title()),
         "tooltip": "Chat with the %s chatbot" % name,
-        "default_menu": "Tools/Games",
+        "default_menu": (("Tools/Games", -900), 900),
         "action": action,
         }
 
