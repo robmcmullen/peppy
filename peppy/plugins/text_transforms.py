@@ -12,6 +12,7 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
+from peppy.lib.wordwrap import texwrap
 
 from peppy.actions.base import *
 from peppy.menu import *
@@ -98,8 +99,6 @@ class Untabify(LineOrRegionMutateAction):
             else:
                 out.append(line)
         return out
-        
-
 
 
 class CapitalizeWord(WordOrRegionMutateAction):
@@ -173,6 +172,21 @@ class Reindent(TextModificationAction):
         s.GotoPos(pos)
 
 
+class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
+    """Word-wrap the current paragraph or region."""
+    alias = "fill-paragraph-or-region"
+    name = "Fill Paragraph"
+    default_menu = ("Transform", 603)
+    key_bindings = {'default': 'M-Q',}
+
+    def mutateLines(self, lines):
+        """Word wrap the current paragraph using the TeX algorithm."""
+        dprint(lines)
+        txt = "\n".join(texwrap(lines))
+        dprint(txt)
+        return txt
+
+
 class TextTransformPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text transformation actions.
     """
@@ -182,6 +196,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 ShiftLeft, ShiftRight,
 
                 Reindent, CommentRegion, UncommentRegion,
+                FillParagraphOrRegion,
 
                 Tabify, Untabify,
                 

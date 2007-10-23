@@ -11,49 +11,7 @@ from peppy.plugins.text_transforms import *
 
 from nose.tools import *
 
-def prepareSTC(stc, pair):
-    before, after = pair
-    print "*** before ***\n%s" % before
-    cursor = before.find("|")
-    stc.SetText(before)
-
-    # change "|" to the cursor
-    stc.SetTargetStart(cursor)
-    stc.SetTargetEnd(cursor+1)
-    stc.ReplaceTarget("")
-    stc.GotoPos(cursor)
-    
-    stc.Colourise(0, stc.GetTextLength())
-    stc.showStyle()
-
-def checkSTC(stc, pair):
-    stc.showStyle()
-    before, after = pair
-
-    # change cursor to "|"
-    stc.ReplaceSelection("|")
-    text = stc.GetText()
-    if after == text:
-        print "Matched:\n*** stc ***\n%s\n***\n%s\n***" % (text, after)
-        return True
-    print "Not matched:\n*** stc ***: repr=%s\n%s\n***\n*** should be ***: repr=%s\n%s\n***" % (repr(text), text, repr(after), after)
-    return False
-
-def splittests(text):
-    tests = []
-
-    # at least 4 '-' characters delimits a test
-    groups = re.split('[\r\n]+-----*[\r\n]+', text)
-    print groups
-    for test in groups:
-        # 2 '-' characters delimits the before and after pair
-        pair = re.split('[\r\n]+--[\r\n]+', test)
-        if len(pair) == 2:
-            tests.append(pair)
-    print tests
-    return tests
-        
-class TestFundamentalIndent(StandardReturnMixin, StandardReindentMixin):
+class TestFundamentalIndent(object):
     def setUp(self):
         self.stc = getSTC(stcclass=FundamentalSTC, lexer=wx.stc.STC_LEX_NULL)
 

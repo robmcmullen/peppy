@@ -212,3 +212,68 @@ class LineOrRegionMutateAction(TextModificationAction):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mutateSelection(self.mode.stc)
+
+
+class ParagraphOrRegionMutateAction(TextModificationAction):
+    """Mixin class to operate on the current paragraph, as defined by the
+    current major mode.
+    """
+
+    def mutateLines(self, lines):
+        """Operate on the list of lines and return a new list of lines.
+
+        Method designed to be overridden by subclasses to provide the
+        text operation desired by the subclass.
+
+        @param lines: array of lines from the selected region
+        @returns: array of lines resulting from the desired processing
+        """
+        return txt
+
+    def mutateSelection(self, s):
+        """Change the current paragraph or highlighted region.
+
+        Perform some text operation on the current line or region.  If
+        a region is active in the STC, use it after making sure that it
+        is made up of complete lines; otherwise, use the line as defined
+        by STC_CMD_HOME and STC_CMD_LINEEND.
+
+        The operation is performed by the C{mutateLines} method, which
+        subclasses will override to provide the functionality.
+
+        Side effect: moves the cursor to the end of the region if it
+        operated on the region, or to the start of the next line.
+        
+        @param s: styled text control
+        """
+        s.BeginUndoAction()
+        (pos, end) = s.GetSelection()
+        s.GotoPos(pos)
+        s.CmdKeyExecute(wx.stc.STC_CMD_HOME)
+        pos = s.GetCurrentPos()
+        # If end of the selection is on a line by itself, move the end back
+        # by one so we don't end up picking up an additional line
+        if s.GetColumn(end) == 0:
+            offset = 1
+        else:
+            offset = 0
+        s.GotoPos(end - offset)
+        s.CmdKeyExecute(wx.stc.STC_CMD_LINEEND)
+        end = s.GetCurrentPos()
+        text = s.GetTextRange(pos, end)
+        s.SetTargetStart(pos)
+        s.SetTargetEnd(end)
+        lines = text.splitlines(True) # keep line endings on
+        #dprint(lines)
+        newlines = self.mutateLines(lines)
+        #dprint(newlines)
+        text = "".join(newlines)
+        s.ReplaceTarget(text)
+        end = pos + len(text)
+        s.GotoPos(end + offset)
+        s.SetSelection(pos, end + offset)
+        s.EndUndoAction()
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mutateSelection(self.mode.stc)

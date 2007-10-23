@@ -244,9 +244,19 @@ class GenericFoldHierarchyMixin(object):
         return self.fold_explorer_root
 
 
+class StandardParagraphMixin(object):
+    """Locate the start and end of a paragraph, given a point within it."""
+    def findParagraphStart(self, pos):
+        return pos
+        
+    def findParagraphEnd(self, pos):
+        return pos
+
+
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
                     StandardReindentMixin, StandardCommentMixin,
-                    GenericFoldHierarchyMixin, EditraSTCMixin, PeppySTC):
+                    GenericFoldHierarchyMixin, StandardParagraphMixin,
+                    EditraSTCMixin, PeppySTC):
     
     # Default comment characters in case the Editra styling database
     # doesn't have any information about the mode
