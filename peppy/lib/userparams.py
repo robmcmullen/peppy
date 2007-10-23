@@ -500,18 +500,40 @@ class ChoiceParam(Param):
 
 class IndexChoiceParam(Param):
     """Parameter that is restricted to a string from a list of
-    choices, but using the index of the string as the value.
+    choices, but using an integer as the value.
 
-    A Choice control is its user interface, and the index of the
-    currently selected string is used as the value.
+    The user interface presents a list of strings, but the value is either
+    the index of the string within the list in the simple case, or using a map
+    of index to another integer.  If the choices are a simple text string,
+    index mode is used; however, if the choices are each tuples of an int
+    and a string, the int in the tuple is used as the value.
+    
+    For example, IndexChoiceParam('Citrus', ['Lemon','Lime','Grapefruit']) is
+    a simple index lookup, from the set {0, 1, 2}, where the following uses a
+    keyed lookup and represents the value as the integer in the first element
+    of each tuple:
+        
+      IndexChoiceParam('coins', [(1, 'penny'), (5, 'nickel'), (10, 'dime')])
     """
     def __init__(self, keyword, choices, default=None, help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
-        self.choices = choices
-        if default is not None and default in self.choices:
-            self.default = self.choices.index(default)
+        if isinstance(choices[0], list) or isinstance(choices[0], tuple):
+            self.choices = []
+            self.index_to_value = {}
+            self.value_to_index = {}
+            index = 0
+            for c in choices:
+                self.index_to_value[index] = c[0]
+                self.value_to_index[c[0]] = index
+                self.choices.append(c[1])
+                index += 1
         else:
-            self.default = 0
+            self.choices = choices
+            self.index_to_value = self.value_to_index = range(0, len(choices))
+        if default is not None and default in self.choices:
+            self.default = self.index_to_value[self.choices.index(default)]
+        else:
+            self.default = self.index_to_value[0]
 
     def getCtrl(self, parent, initial=None):
         dprint("self.choices=%s, default=%s" % (self.choices, self.default))
@@ -520,19 +542,25 @@ class IndexChoiceParam(Param):
         return ctrl
 
     def textToValue(self, text):
-        text = Param.textToValue(self, text)
-        tmp = locale.atof(text)
-        val = int(tmp)
+        try:
+            text = Param.textToValue(self, text)
+            tmp = locale.atof(text)
+            val = int(tmp)
+            if val not in self.value_to_index:
+                val = self.default
+        except:
+            val = self.default
         return val
 
     def setValue(self, ctrl, value):
-        if value >= len(self.choices):
-            value = 0
-        ctrl.SetSelection(value)
+        index = self.value_to_index[value]
+        if index >= len(self.choices):
+            index = 0
+        ctrl.SetSelection(index)
 
     def getValue(self, ctrl):
         index = ctrl.GetSelection()
-        return index
+        return self.index_to_value[index]
 
 class KeyedIndexChoiceParam(IndexChoiceParam):
     """Parameter that is restricted to a string from a list of
