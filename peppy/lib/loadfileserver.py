@@ -29,9 +29,7 @@ class LoadFileCommandProcessor:
 
     def process(self, line, request):
         """Process a command"""
-        args = line.split(' ')
-        command = args[0].lower()
-        args = args[1:]
+        command = line.strip()
 
         print "Request for file: %s" % command
         wx.CallAfter(self.proxy, command)
