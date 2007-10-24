@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os, shutil, time, new
+import os, shutil, time, new, re
 
 import wx
 import wx.stc
@@ -188,17 +188,37 @@ class FoldingReindentMixin(object):
 
 class StandardCommentMixin(object):
     def setCommentDelimiters(self, start='', end=''):
-        """Set instance-specific comment characters
+        """Set instance-specific comment characters and comment regex
         
         If the instance uses different comment characters that the class
         attributes, set the instance attributes here which will override
         the class attributes.
+        
+        A regex is created that will match a line with the comment characters.
+        The regex returns a 3-tuple of whitespace followed by the opening
+        comment character, the body of the line, and then the closing comment
+        including any trailing whitespace.  If the language doesn't have a
+        closing comment character, the final tuple element will always be
+        an empty string.
         
         This is typically called by the Editra stc mixin to set the
         comment characters encoded by the Editra style manager.
         """
         self.start_line_comment = start
         self.end_line_comment = end
+        if start:
+            if end:
+                regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
+                dprint(regex)
+                self.comment_regex = re.compile(regex)
+            else:
+                regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
+                dprint(regex)
+                self.comment_regex = re.compile(regex)
+        else:
+            regex = r"^(\s*)(.*)($)"
+            dprint(regex)
+            self.comment_regex = re.compile(regex)
         
     def commentRegion(self, add=True):
         """Comment or uncomment a region.
@@ -227,6 +247,20 @@ class StandardCommentMixin(object):
             self.SetSelection(selstart, start - eol_len)
         finally:
             self.EndUndoAction()
+            
+    def splitCommentLine(self, line):
+        """Split the line into the whitespace leader and body of the line.
+        
+        Return a tuple containing the leading whitespace and comment
+        character(s), the body of the line, and any trailing comment
+        character(s)
+        """
+        match = self.comment_regex.match(line)
+        if match is None:
+            return ("", line, "")
+        dprint(match.groups())
+        return match.group(1, 2, 3)
+
     
 class GenericFoldHierarchyMixin(object):
     def getFoldHierarchy(self):
@@ -246,11 +280,13 @@ class GenericFoldHierarchyMixin(object):
 
 class StandardParagraphMixin(object):
     """Locate the start and end of a paragraph, given a point within it."""
-    def findParagraphStart(self, pos):
-        return pos
-        
-    def findParagraphEnd(self, pos):
-        return pos
+    def findParagraph(self, start, end=-1):
+        if end == -1:
+            end = start
+        linenum = self.LineFromPosition(start)
+        line = self.GetLine(linenum)
+        leader, line, trailer = self.splitCommentLine(line)
+        return [line]
 
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,

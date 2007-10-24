@@ -84,6 +84,7 @@ class EditraSTCMixin(ed_style.StyleMgr):
             self.SetLexer(lexer)
             self.ClearDocumentStyle()
             self.UpdateBaseStyles()
+            self.setCommentDelimiters()
             self.LOG("NULL!!!!")
             return True
         else:

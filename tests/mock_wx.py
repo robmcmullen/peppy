@@ -14,7 +14,7 @@ class MockApp(wx.App):
     def getConfigFilePath(self, file):
         return None
     def GetLog(self):
-        return lambda x: True
+        return peppy.debug.dprint
 
 class MockWX(object):
     app = MockApp()
@@ -26,13 +26,14 @@ class MockSTC(PeppyBaseSTC):
 __builtin__._ = str
     
 
-def getSTC(init=None, stcclass=MockSTC, count=1, lexer=wx.stc.STC_LEX_PYTHON, tab_size=4, use_tabs=False):
+def getSTC(init=None, stcclass=MockSTC, count=1, lexer="Python", tab_size=4, use_tabs=False):
     stc = stcclass(MockWX.frame)
-    stc.SetLexer(lexer)
-    if lexer == wx.stc.STC_LEX_PYTHON:
-        # FIXME: this is a duplicate of the keyword string from
-        # PythonMode.  Find a way to NotRepeatMyself instead of this.
-        stc.SetKeyWords(0, 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self')
+    #stc.SetLexer(lexer)
+    stc.ConfigureLexer(lexer)
+#    if lexer == wx.stc.STC_LEX_PYTHON:
+#        # FIXME: this is a duplicate of the keyword string from
+#        # PythonMode.  Find a way to NotRepeatMyself instead of this.
+#        stc.SetKeyWords(0, 'and as assert break class continue def del elif else except exec finally for from global if import in is lambda not or pass print raise return try while True False None self')
 
     stc.SetText("")
     stc.SetEOLMode(wx.stc.STC_EOL_LF)
