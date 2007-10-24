@@ -65,9 +65,9 @@ class TestFundamentalFill(object):
     def checkFind(self, test):
         prepareSTC(self.stc, test['source'])
         info = self.stc.findParagraph(self.stc.GetCurrentPos())
-        dprint(info.lines)
+        dprint(info.getLines())
         shouldbe = test['lines'].splitlines()
-        eq_(shouldbe, info.lines)
+        eq_(shouldbe, info.getLines())
         self.wrap.action()
         assert checkSTC(self.stc, test['source'], test['fill'])
 

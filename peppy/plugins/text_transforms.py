@@ -186,8 +186,8 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
             # no space at the end of the prefix!  Add one
             prefix += " "
         column = self.mode.classprefs.edge_column - len(prefix) - 1
-        dprint(info.lines)
-        lines = texwrap(info.lines, column)
+        dprint(info.getLines())
+        lines = texwrap(info.getLines(), column)
         dprint(lines)
         newlines = [prefix + line for line in lines]
         return newlines

@@ -279,15 +279,26 @@ class GenericFoldHierarchyMixin(object):
 
 
 class ParagraphInfo(object):
+    """Summary object about the currently selected paragraph.
+    
+    This object is built up as the paragraph mixin is searching through the
+    file looking for the boundaries of the paragraph.  It is then used as
+    input to the paragraph fill and other commands.
+    """
     def __init__(self, stc, linenum):
+        """Initialize the structure by specifying a line that belongs to the
+        paragraph.
+        """
         self.s = stc
         self.cursor_linenum = linenum
         line = self.s.GetLine(linenum)
         self.leader_pattern, line, self.trailer = self.s.splitCommentLine(line)
         
         # The line list is maintained in reverse when searching backward,
-        # then is reversed before searching forward.
-        self.lines = [line]
+        # then is reversed before being added to the final list
+        self._startlines = [line]
+        self._endlines = []
+        self._lines = []
         
         # set initial region start and end positions
         self.start = self.s.PositionFromLine(linenum)
@@ -295,18 +306,23 @@ class ParagraphInfo(object):
         
     def addStartLine(self, linenum, line):
         """Add the line to the list and update the starting position"""
-        self.lines.append(line)
+        self._startlines.append(line)
         self.start = self.s.PositionFromLine(linenum)
-        
-    def completedStart(self):
-        # have been adding the lines in reverse order (because prepending
-        # to a list is expensive in python), so reverse them
-        self.lines.reverse()
         
     def addEndLine(self, linenum, line):
         """Add the line to the list and update the starting position"""
-        self.lines.append(line)
+        self._endlines.append(line)
         self.end = self.s.GetLineEndPosition(linenum)
+        
+    def getLines(self):
+        """Get the list of lines in the paragraph"""
+        if not self._lines:
+            # The starting lines are stored in reverse order for easy appending
+            self._startlines.reverse()
+            self._lines.extend(self._startlines)
+            self._lines.extend(self._endlines)
+        return self._lines
+
 
 class StandardParagraphMixin(object):
     """Locate the start and end of a paragraph, given a point within it."""
@@ -363,10 +379,6 @@ class StandardParagraphMixin(object):
             linenum -= 1
             if not self.findParagraphStart(linenum, info):
                 break
-        
-        # have been adding the lines in reverse order (because prepending
-        # to a list is expensive in python), so reverse them
-        info.completedStart()
         
         endlinenum = self.LineFromPosition(end)
         if endlinenum > info.cursor_linenum:
