@@ -288,21 +288,30 @@ class StandardParagraphMixin(object):
         leader_pattern, line, trailer = self.splitCommentLine(line)
         lines = [line]
         
+        linenum = startlinenum
+        
+        # mark the start of the region now in case we don't match any
+        # previous lines
+        newstart = self.PositionFromLine(linenum)
+        
         # find the start of the paragraph by searching backwards till the
         # prefix changes or we find a line with only whitespace in it
-        linenum = startlinenum
         while linenum > 0:
             linenum -= 1
             leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
             if leader != leader_pattern or len(line.strip())==0:
                 break
+            
+            # OK, the line is good.  Add it and update the start position
             lines.append(line)
-            start = self.PositionFromLine(linenum)
+            newstart = self.PositionFromLine(linenum)
+        
         # have been adding the lines in reverse order (because prepending
         # to a list is expensive in python), so reverse them
         lines.reverse()
         
         endlinenum = self.LineFromPosition(end)
+        newend = self.GetLineEndPosition(endlinenum)
         if endlinenum > startlinenum:
             # find all the lines in the middle, doing the best to strip off any
             # leading comment chars from the line
@@ -321,8 +330,8 @@ class StandardParagraphMixin(object):
             if leader != leader_pattern or len(line.strip())==0:
                 break
             lines.append(line)
-            end = self.GetLineEndPosition(endlinenum)
-        return leader_pattern, lines, start, end
+            newend = self.GetLineEndPosition(endlinenum)
+        return leader_pattern, lines, newstart, newend
 
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,

@@ -14,7 +14,7 @@ class MockApp(wx.App):
     def getConfigFilePath(self, file):
         return None
     def GetLog(self):
-        return dprint
+        return lambda x: True
 
 class MockWX(object):
     app = MockApp()
@@ -95,9 +95,17 @@ def splittestdict(text):
     tests = []
 
     # at least 4 '-' characters delimits a test
-    test_groups = re.split('[\r\n]+-----*[\r\n]+', text)
+    test_groups = re.split('([\r\n]+)-----*[\r\n]+', text)
     dprint(test_groups)
-    for test in test_groups:
+    test_count = 0
+    while test_count < len(test_groups):
+        test = test_groups[test_count]
+        test_count += 1
+        if test_count < len(test_groups):
+            # If there's a return character, add it
+            test += test_groups[test_count]
+            test_count += 1
+            
         # 2 '-' characters delimits the before and after pair
         groups = re.split('([\r\n]+)(--\s*(\S+)).*[\r\n]+', test)
         dprint(groups)

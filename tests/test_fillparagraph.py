@@ -74,15 +74,43 @@ line at column zero
   line
   at
   column|
-  one
+  two
 -- lines
 line
 at
 column
-one
+two
 -- fill
 line at column zero
-  line at column one|
+  line at column two|
+------
+line at column zero
+  line
+  at
+    column|
+    four
+-- lines
+column
+four
+-- fill
+line at column zero
+  line
+  at
+    column four|
+------
+line at column zero
+  line
+  at
+    column
+    four|
+-- lines
+column
+four
+-- fill
+line at column zero
+  line
+  at
+    column four|
 """
 
         for test in splittestdict(tests):
