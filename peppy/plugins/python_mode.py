@@ -241,7 +241,53 @@ class PythonElectricReturnMixin(debugmixin):
         return max(ind+xtra*self.GetIndent(), 0)
 
 
-class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin, FundamentalSTC):
+class PythonParagraphMixin(StandardParagraphMixin):
+    def findParagraphStart(self, linenum, info):
+        """Check to see if a previous line should be included in the
+        paragraph match.
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        stripped = line.strip()
+        if stripped == "'''" or stripped == '"""':
+            # triple quotes on line by themselves: don't include
+            return False
+        info.addStartLine(linenum, line)
+        
+        # Triple quotes embedded in the string are included, but then
+        # we're done
+        if line.startswith("'''") or line.startswith('"""'):
+            return False
+        return True
+    
+    def findParagraphEnd(self, linenum, info):
+        """Check to see if a following line should be included in the
+        paragraph match.
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        stripped = line.strip()
+        if stripped == "'''" or stripped == '"""':
+            # triple quotes on line by themselves: don't include
+            return False
+        info.addEndLine(linenum, line)
+        
+        # A triple quote at the end of the line will be included in the
+        # word wrap, but this ends the search
+        if line.startswith("'''") or line.startswith('"""'):
+            return False
+        line = line.rstrip()
+        if line.endswith("'''") or line.endswith('"""'):
+            return False
+        return True
+
+
+class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin,
+                PythonParagraphMixin, FundamentalSTC):
     pass
 
 class PythonMode(JobControlMixin, FundamentalMode):

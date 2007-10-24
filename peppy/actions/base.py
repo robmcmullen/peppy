@@ -248,14 +248,19 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
         """
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
-        prefix, lines, start, end = s.findParagraph(pos, end)
-        s.SetSelection(start, end)
-        lines = self.mutateLines(lines, prefix, self.mode.classprefs.edge_column - len(prefix))
-        s.SetTargetStart(start)
-        s.SetTargetEnd(end)
+        info = s.findParagraph(pos, end)
+        s.SetSelection(info.start, info.end)
+        prefix = info.leader_pattern
+        if len(prefix.rstrip()) == len(prefix):
+            # no space at the end of the prefix!  Add one
+            prefix += " "
+        column = self.mode.classprefs.edge_column - len(prefix)
+        lines = self.mutateLines(info.lines, prefix, column)
+        s.SetTargetStart(info.start)
+        s.SetTargetEnd(info.end)
         text = "\n".join(lines)
         s.ReplaceTarget(text)
-        end = start + len(text)
+        end = info.start + len(text)
         s.GotoPos(end)
         s.EndUndoAction()
 

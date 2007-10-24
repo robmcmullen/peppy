@@ -6,7 +6,7 @@ import wx
 import wx.stc
 
 from peppy.debug import *
-logfh = sys.stderr
+debuglog(sys.stdout)
 
 from peppy.stcinterface import PeppyBaseSTC
 

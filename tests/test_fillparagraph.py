@@ -23,7 +23,7 @@ class TestFundamentalCommentDelimiters(object):
 
 class TestPythonCommentDelimiters(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer="Python")
+        self.stc = getSTC(stcclass=PythonSTC, lexer="Python")
     
     def testCommentDelim(self):
         eq_(("#", "blah blah", ""), self.stc.splitCommentLine("#blah blah"))
@@ -51,8 +51,11 @@ class DumClassPrefs(object):
     edge_column = 80
     
 class TestFundamentalFill(object):
+    lexer = "None"
+    stcclass = FundamentalSTC
+    
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer="None")
+        self.stc = getSTC(stcclass=self.stcclass, lexer=self.lexer)
         self.wrap = FillParagraphOrRegion(self)
         self.classprefs = DumClassPrefs
         
@@ -61,15 +64,27 @@ class TestFundamentalFill(object):
         
     def checkFind(self, test):
         prepareSTC(self.stc, test['source'])
-        prefix, lines, start, end = self.stc.findParagraph(self.stc.GetCurrentPos())
-        dprint(lines)
+        info = self.stc.findParagraph(self.stc.GetCurrentPos())
+        dprint(info.lines)
         shouldbe = test['lines'].splitlines()
-        eq_(shouldbe, lines)
+        eq_(shouldbe, info.lines)
         self.wrap.action()
         assert checkSTC(self.stc, test['source'], test['fill'])
 
     def testFind(self):
         tests = """\
+  line
+  at
+  column|
+  two
+-- lines
+line
+at
+column
+two
+-- fill
+  line at column two|
+------
 line at column zero
   line
   at
@@ -111,6 +126,104 @@ line at column zero
   line
   at
     column four|
+------
+  line
+  at
+    column
+    four|
+line at column zero
+-- lines
+column
+four
+-- fill
+  line
+  at
+    column four|
+line at column zero
+"""
+
+        for test in splittestdict(tests):
+            yield self.checkFind, test
+
+class TestPythonFill(TestFundamentalFill):
+    lexer = "Python"
+    stcclass = PythonSTC
+    
+    def testPythonFind(self):
+        tests = """\
+# line
+# at
+# column|
+# two
+-- lines
+ line
+ at
+ column
+ two
+-- fill
+# line at column two|
+------
+line at column zero
+  #line
+  #at
+  #column|
+  #two
+-- lines
+line
+at
+column
+two
+-- fill
+line at column zero
+  # line at column two|
+------
+line at column zero
+  line
+  at
+    ## column|
+    ## four
+-- lines
+ column
+ four
+-- fill
+line at column zero
+  line
+  at
+    ## column four|
+------
+line at column zero
+  line
+  at
+    '''column
+    four|
+    '''
+-- lines
+'''column
+four
+-- fill
+line at column zero
+  line
+  at
+    '''column four|
+    '''
+------
+  line
+  at
+    '''
+    column
+    four|
+    '''
+    another line at column four
+-- lines
+column
+four
+-- fill
+  line
+  at
+    '''
+    column four|
+    '''
+    another line at column four
 """
 
         for test in splittestdict(tests):

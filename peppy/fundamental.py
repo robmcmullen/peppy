@@ -278,60 +278,115 @@ class GenericFoldHierarchyMixin(object):
         return self.fold_explorer_root
 
 
+class ParagraphInfo(object):
+    def __init__(self, stc, linenum):
+        self.s = stc
+        self.cursor_linenum = linenum
+        line = self.s.GetLine(linenum)
+        self.leader_pattern, line, self.trailer = self.s.splitCommentLine(line)
+        
+        # The line list is maintained in reverse when searching backward,
+        # then is reversed before searching forward.
+        self.lines = [line]
+        
+        # set initial region start and end positions
+        self.start = self.s.PositionFromLine(linenum)
+        self.end = self.s.GetLineEndPosition(linenum)
+        
+    def addStartLine(self, linenum, line):
+        """Add the line to the list and update the starting position"""
+        self.lines.append(line)
+        self.start = self.s.PositionFromLine(linenum)
+        
+    def completedStart(self):
+        # have been adding the lines in reverse order (because prepending
+        # to a list is expensive in python), so reverse them
+        self.lines.reverse()
+        
+    def addEndLine(self, linenum, line):
+        """Add the line to the list and update the starting position"""
+        self.lines.append(line)
+        self.end = self.s.GetLineEndPosition(linenum)
+
 class StandardParagraphMixin(object):
     """Locate the start and end of a paragraph, given a point within it."""
+    def findParagraphStart(self, linenum, info):
+        """Check to see if a previous line should be included in the
+        paragraph match.
+        
+        Routine designed to be overridden by subclasses to evaluate
+        if a line should be included in the list of lines that belong with
+        the current paragraph.
+        
+        Add the line to the ParagraphInfo class using addStartLine if it
+        belongs.
+        
+        Return True if findParagraph should continue searching; otherwise
+        return False
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        info.addStartLine(linenum, line)
+        return True
+    
+    def findParagraphEnd(self, linenum, info):
+        """Check to see if a following line should be included in the
+        paragraph match.
+        
+        Routine designed to be overridden by subclasses to evaluate
+        if a line should be included in the list of lines that belong with
+        the current paragraph.
+        
+        Add the line to the ParagraphInfo class using addEndLine if it belongs.
+        
+        Return True if findParagraph should continue searching; otherwise
+        return False
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        info.addEndLine(linenum, line)
+        return True
+        
     def findParagraph(self, start, end=-1):
         if end == -1:
             end = start
-        startlinenum = self.LineFromPosition(start)
-        line = self.GetLine(startlinenum)
-        leader_pattern, line, trailer = self.splitCommentLine(line)
-        lines = [line]
-        
-        linenum = startlinenum
-        
-        # mark the start of the region now in case we don't match any
-        # previous lines
-        newstart = self.PositionFromLine(linenum)
+        linenum = self.LineFromPosition(start)
+        info = ParagraphInfo(self, linenum)
         
         # find the start of the paragraph by searching backwards till the
         # prefix changes or we find a line with only whitespace in it
         while linenum > 0:
             linenum -= 1
-            leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-            if leader != leader_pattern or len(line.strip())==0:
+            if not self.findParagraphStart(linenum, info):
                 break
-            
-            # OK, the line is good.  Add it and update the start position
-            lines.append(line)
-            newstart = self.PositionFromLine(linenum)
         
         # have been adding the lines in reverse order (because prepending
         # to a list is expensive in python), so reverse them
-        lines.reverse()
+        info.completedStart()
         
         endlinenum = self.LineFromPosition(end)
-        newend = self.GetLineEndPosition(endlinenum)
-        if endlinenum > startlinenum:
+        if endlinenum > info.cursor_linenum:
             # find all the lines in the middle, doing the best to strip off any
             # leading comment chars from the line
+            linenum = info.cursor_linenum
             while linenum < endlinenum:
                 linenum += 1
                 leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-                lines.append(line)
+                info.addEndLine(linenum, line)
                 
         # Now, find the end of the paragraph by searching forward until the
         # comment prefix changes or we find only white space
         lastlinenum = self.GetLineCount()
-        dprint("start=%d count=%d end=%d" % (startlinenum, lastlinenum, endlinenum))
+        dprint("start=%d count=%d end=%d" % (info.cursor_linenum, lastlinenum, endlinenum))
         while endlinenum < lastlinenum:
             endlinenum += 1
-            leader, line, trailer = self.splitCommentLine(self.GetLine(endlinenum))
-            if leader != leader_pattern or len(line.strip())==0:
+            if not self.findParagraphEnd(endlinenum, info):
                 break
-            lines.append(line)
-            newend = self.GetLineEndPosition(endlinenum)
-        return leader_pattern, lines, newstart, newend
+        return info
 
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
