@@ -219,13 +219,14 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
     current major mode.
     """
 
-    def mutateLines(self, lines, prefix, columns):
-        """Operate on the list of lines and return a new list of lines.
+    def mutateParagraph(self, info):
+        """Operate on the paragraph and return a new list of lines.
 
         Method designed to be overridden by subclasses to provide the
         text operation desired by the subclass.
 
-        @param lines: array of lines from the selected region
+        @param info: ParagraphInfo instance representing the currently
+        selected paragraph
         @returns: array of lines resulting from the desired processing
         """
         return lines
@@ -247,15 +248,9 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
         @param s: styled text control
         """
         s.BeginUndoAction()
-        (pos, end) = s.GetSelection()
+        (pos, end) = s.GetSelection2()
         info = s.findParagraph(pos, end)
-        s.SetSelection(info.start, info.end)
-        prefix = info.leader_pattern
-        if len(prefix.rstrip()) == len(prefix):
-            # no space at the end of the prefix!  Add one
-            prefix += " "
-        column = self.mode.classprefs.edge_column - len(prefix)
-        lines = self.mutateLines(info.lines, prefix, column)
+        lines = self.mutateParagraph(info)
         s.SetTargetStart(info.start)
         s.SetTargetEnd(info.end)
         text = "\n".join(lines)

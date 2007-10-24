@@ -179,10 +179,15 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     default_menu = ("Transform", 603)
     key_bindings = {'default': 'M-Q',}
 
-    def mutateLines(self, lines, prefix, column):
+    def mutateParagraph(self, info):
         """Word wrap the current paragraph using the TeX algorithm."""
-        dprint(lines)
-        lines = texwrap(lines, column)
+        prefix = info.leader_pattern
+        if len(prefix.rstrip()) == len(prefix) and len(prefix) > 0:
+            # no space at the end of the prefix!  Add one
+            prefix += " "
+        column = self.mode.classprefs.edge_column - len(prefix) - 1
+        dprint(info.lines)
+        lines = texwrap(info.lines, column)
         dprint(lines)
         newlines = [prefix + line for line in lines]
         return newlines

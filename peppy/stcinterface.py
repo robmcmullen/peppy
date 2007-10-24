@@ -381,6 +381,30 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if binary>(endpos/percentage):
             return True
         return False
+    
+    def GetSelection2(self):
+        """Get the current region, but don't return an empty last line if the
+        cursor is at column zero of the last line.
+        
+        The STC seems to make entire line selections by placing the cursor
+        on the left margin of the next line, rather than the end of the
+        last highlighted line.  This causes any use of GetLineEndPosition
+        to use this line with only the cursor to mean a real part of the
+        selection, which is never what I indend, at least.  So, this version of
+        GetSelection handles this case.
+        """
+        start, end = self.GetSelection()
+        if start == end:
+            return start, end
+        if self.GetColumn(end) == 0:
+            line = self.LineFromPosition(end - 1)
+            newend = self.GetLineEndPosition(line)
+            # If the new end is still greater than the start, then we'll assume
+            # that this is going to work; otherwise, it wouldn't be possible to
+            # select only the newline
+            if newend > start:
+                return start, newend
+        return start, end
         
     def GetLineRegion(self):
         """Get current region, extending to current line if no region
