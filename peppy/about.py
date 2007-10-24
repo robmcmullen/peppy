@@ -178,7 +178,7 @@ def AddCredit(author, contribution):
 AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
 AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
 AddCredit("Julian Back", "for the framework for the C edit mode")
-AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the MathBench project at http://mathbench.sourceforge.net/yapsy/doc/presentation.html")
+AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from at http://yapsy.sourceforge.net/")
 AddCredit("Peter Damoc", "for the feature suggestions")
 AddCredit("Stani Michiels", "for the scintilla fold explorer he shared with the pyxides mailing list")
 
