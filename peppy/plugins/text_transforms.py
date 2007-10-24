@@ -179,12 +179,13 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     default_menu = ("Transform", 603)
     key_bindings = {'default': 'M-Q',}
 
-    def mutateLines(self, lines):
+    def mutateLines(self, lines, prefix, column):
         """Word wrap the current paragraph using the TeX algorithm."""
         dprint(lines)
-        txt = "\n".join(texwrap(lines))
-        dprint(txt)
-        return txt
+        lines = texwrap(lines, column)
+        dprint(lines)
+        newlines = [prefix + line for line in lines]
+        return newlines
 
 
 class TextTransformPlugin(IPeppyPlugin):

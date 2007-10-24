@@ -283,10 +283,46 @@ class StandardParagraphMixin(object):
     def findParagraph(self, start, end=-1):
         if end == -1:
             end = start
-        linenum = self.LineFromPosition(start)
-        line = self.GetLine(linenum)
-        leader, line, trailer = self.splitCommentLine(line)
-        return [line]
+        startlinenum = self.LineFromPosition(start)
+        line = self.GetLine(startlinenum)
+        leader_pattern, line, trailer = self.splitCommentLine(line)
+        lines = [line]
+        
+        # find the start of the paragraph by searching backwards till the
+        # prefix changes or we find a line with only whitespace in it
+        linenum = startlinenum
+        while linenum > 0:
+            linenum -= 1
+            leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+            if leader != leader_pattern or len(line.strip())==0:
+                break
+            lines.append(line)
+            start = self.PositionFromLine(linenum)
+        # have been adding the lines in reverse order (because prepending
+        # to a list is expensive in python), so reverse them
+        lines.reverse()
+        
+        endlinenum = self.LineFromPosition(end)
+        if endlinenum > startlinenum:
+            # find all the lines in the middle, doing the best to strip off any
+            # leading comment chars from the line
+            while linenum < endlinenum:
+                linenum += 1
+                leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+                lines.append(line)
+                
+        # Now, find the end of the paragraph by searching forward until the
+        # comment prefix changes or we find only white space
+        lastlinenum = self.GetLineCount()
+        dprint("start=%d count=%d end=%d" % (startlinenum, lastlinenum, endlinenum))
+        while endlinenum < lastlinenum:
+            endlinenum += 1
+            leader, line, trailer = self.splitCommentLine(self.GetLine(endlinenum))
+            if leader != leader_pattern or len(line.strip())==0:
+                break
+            lines.append(line)
+            end = self.GetLineEndPosition(endlinenum)
+        return leader_pattern, lines, start, end
 
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,

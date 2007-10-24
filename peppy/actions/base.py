@@ -163,7 +163,7 @@ class LineOrRegionMutateAction(TextModificationAction):
         @param lines: array of lines from the selected region
         @returns: array of lines resulting from the desired processing
         """
-        return txt
+        return lines
 
     def mutateSelection(self, s):
         """Change the current line or highlighted region.
@@ -219,7 +219,7 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
     current major mode.
     """
 
-    def mutateLines(self, lines):
+    def mutateLines(self, lines, prefix, columns):
         """Operate on the list of lines and return a new list of lines.
 
         Method designed to be overridden by subclasses to provide the
@@ -228,7 +228,7 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
         @param lines: array of lines from the selected region
         @returns: array of lines resulting from the desired processing
         """
-        return txt
+        return lines
 
     def mutateSelection(self, s):
         """Change the current paragraph or highlighted region.
@@ -248,30 +248,15 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
         """
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
-        s.GotoPos(pos)
-        s.CmdKeyExecute(wx.stc.STC_CMD_HOME)
-        pos = s.GetCurrentPos()
-        # If end of the selection is on a line by itself, move the end back
-        # by one so we don't end up picking up an additional line
-        if s.GetColumn(end) == 0:
-            offset = 1
-        else:
-            offset = 0
-        s.GotoPos(end - offset)
-        s.CmdKeyExecute(wx.stc.STC_CMD_LINEEND)
-        end = s.GetCurrentPos()
-        text = s.GetTextRange(pos, end)
-        s.SetTargetStart(pos)
+        prefix, lines, start, end = s.findParagraph(pos, end)
+        s.SetSelection(start, end)
+        lines = self.mutateLines(lines, prefix, self.mode.classprefs.edge_column - len(prefix))
+        s.SetTargetStart(start)
         s.SetTargetEnd(end)
-        lines = text.splitlines(True) # keep line endings on
-        #dprint(lines)
-        newlines = self.mutateLines(lines)
-        #dprint(newlines)
-        text = "".join(newlines)
+        text = "\n".join(lines)
         s.ReplaceTarget(text)
-        end = pos + len(text)
-        s.GotoPos(end + offset)
-        s.SetSelection(pos, end + offset)
+        end = start + len(text)
+        s.GotoPos(end)
         s.EndUndoAction()
 
     def action(self, index=-1, multiplier=1):

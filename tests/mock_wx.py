@@ -5,8 +5,8 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-import peppy.debug
-peppy.debug.logfh = sys.stdout
+from peppy.debug import *
+logfh = sys.stderr
 
 from peppy.stcinterface import PeppyBaseSTC
 
@@ -14,7 +14,7 @@ class MockApp(wx.App):
     def getConfigFilePath(self, file):
         return None
     def GetLog(self):
-        return peppy.debug.dprint
+        return dprint
 
 class MockWX(object):
     app = MockApp()
@@ -48,9 +48,9 @@ def getSTC(init=None, stcclass=MockSTC, count=1, lexer="Python", tab_size=4, use
     stc.Colourise(0, stc.GetTextLength())
     return stc
 
-def prepareSTC(stc, pair):
-    before, after = pair
-    print "*** before ***\n%s" % before
+def prepareSTC(stc, *pair):
+    before = pair[0]
+    print "*** before *** repr=%s\n%s" % (repr(before), before)
     cursor = before.find("|")
     stc.SetText(before)
 
@@ -63,9 +63,10 @@ def prepareSTC(stc, pair):
     stc.Colourise(0, stc.GetTextLength())
     stc.showStyle()
 
-def checkSTC(stc, pair):
+def checkSTC(stc, *pair):
     stc.showStyle()
-    before, after = pair
+    before = pair[0]
+    after = pair[1]
 
     # change cursor to "|"
     stc.ReplaceSelection("|")
@@ -87,5 +88,40 @@ def splittests(text):
         pair = re.split('[\r\n]+--[\r\n]+', test)
         if len(pair) == 2:
             tests.append(pair)
+    print tests
+    return tests
+
+def splittestdict(text):
+    tests = []
+
+    # at least 4 '-' characters delimits a test
+    test_groups = re.split('[\r\n]+-----*[\r\n]+', text)
+    dprint(test_groups)
+    for test in test_groups:
+        # 2 '-' characters delimits the before and after pair
+        groups = re.split('([\r\n]+)(--\s*(\S+)).*[\r\n]+', test)
+        dprint(groups)
+        block = {}
+        block['source'] = groups[0] + groups[1]
+        count = 2
+        while count < len(groups):
+            if groups[count].startswith('--'):
+                count += 1
+                key = groups[count]
+                count += 1
+                block[key] = groups[count]
+                count += 1
+                if count < len(groups):
+                    # If there's a return character, add it
+                    block[key] += groups[count]
+                    count += 1
+            else:
+                block['text'] = groups[count]
+                count += 1
+                if count < len(groups):
+                    # If there's a return character, add it
+                    block['text'] += groups[count]
+                    count += 1
+        tests.append(block)
     print tests
     return tests
