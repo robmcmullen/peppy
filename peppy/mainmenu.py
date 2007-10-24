@@ -487,6 +487,7 @@ class PasteAtColumn(Paste):
     default_menu = ("Edit", 103)
     default_toolbar = False
     key_bindings = None
+    global_id = None
 
     @classmethod
     def worksWithMajorMode(cls, mode):
