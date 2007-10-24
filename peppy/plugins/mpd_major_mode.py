@@ -12,7 +12,7 @@ position in the current playlist, and "id" and "songid" refer to the
 position in the original unshuffled playlist.
 """
 
-import os, struct, mmap, Queue, threading, time, socket
+import os, struct, mmap, Queue, threading, time, socket, random
 import urllib2
 from cStringIO import StringIO
 import cPickle as pickle
@@ -28,6 +28,7 @@ from peppy.menu import *
 from peppy.major import *
 from peppy.iofilter import *
 from peppy.stcinterface import NonResidentSTC
+from peppy.actions.minibuffer import *
 
 from peppy.yapsy.plugins import *
 from peppy.lib.iconstorage import *
@@ -575,6 +576,30 @@ class DeleteFromPlaylist(ConnectedAction):
         mode = self.mode
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 
+class RandomPlaylist(ConnectedAction):
+    alias = "mpd-random-playlist"
+    name = "Random Playlist"
+    tooltip = "Generate a random playlist"
+    default_menu = ("MPD", 301)
+    key_bindings = {'default': 'C-M-R'}
+    
+    def action(self, index=-1, multiplier=1):
+        minibuffer = IntMinibuffer(self.mode, self, label="Number of songs:")
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, count):
+        mpd = self.mode.mpd
+        all = mpd.sync('listall')
+        files = [a['file'] for a in all if a['type'] == 'file']
+        #print files
+        random.shuffle(files)
+        subset = files[0:count]
+        #print subset
+        mpd.sync('clear')
+        for file in subset:
+            mpd.sync('add', file)
+        mpd.reset()
+
 class MPDSTC(NonResidentSTC):
     def CanSave(self):
         return False
@@ -980,7 +1005,7 @@ class MPDMode(MajorMode, debugmixin):
     """
     debug_level = 0
     keyword='MPD'
-    icon='icons/mpd.ico'
+    icon='icons/mpd.png'
 
     stc_class = MPDSTC
 
@@ -1530,5 +1555,5 @@ class MPDPlugin(IPeppyPlugin):
     def getActions(self):
         return [OpenMPD, StopSong, PlayPause, PrevSong, NextSong,
                 VolumeUp, VolumeDown, Mute,
-                DeleteFromPlaylist, Login, UpdateDatabase,
+                DeleteFromPlaylist, RandomPlaylist, Login, UpdateDatabase,
                 ]
