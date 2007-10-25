@@ -135,7 +135,8 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
 
         cmd = "%s -Tpng" % prog
 
-        ProcessManager().run(cmd, self, self.major.buffer.stc.GetText())
+        ProcessManager().run(cmd, self.major.buffer.cwd(), self,
+            self.major.buffer.stc.GetText())
 
     def startupCallback(self, job):
         self.process = job
