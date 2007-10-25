@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
-import os
+import os, re
 
 import wx
 import wx.stc
@@ -119,22 +119,23 @@ class TextMinibuffer(Minibuffer):
         self.removeFromParent()
 
 class IntMinibuffer(TextMinibuffer):
-    """
-    Dedicated subclass of Minibuffer that prompts for an integer.
+    """Dedicated subclass of Minibuffer that prompts for an integer.
+    
+    Can handle python expressions, with the enhancement that it recognizez
+    hex numbers in the msw format of abcd1234h; i.e.  with a 'h' after the
+    hex digits.
     """
     label = "Integer"
-    error = "Not an integer."
+    error = "Not an integer expression."
     
+    # Regular expression that matches MSW hex format
+    msw_hex = re.compile("[0-9a-fA-F]+h")
+
     def convert(self, text):
-        text = self.text.GetValue().strip().lower()
-        if text.startswith("0x"):
-            base = 16
-        elif text.endswith("h"):
-            base = 16
-            text = text[:-1]
-        else:
-            base = 10
-        number = int(text, base)
+        # replace each occurrence of a MSW-style hex number to 0x style so that
+        # eval can parse it.
+        text = self.msw_hex.sub(lambda s: "0x%s" % s.group(0)[:-1], self.text.GetValue())
+        number = int(eval(text))
         assert self.dprint("number=%s" % number)
         return number
 
@@ -144,10 +145,10 @@ class FloatMinibuffer(TextMinibuffer):
     number.
     """
     label = "Floating Point"
-    error = "Not a number."
+    error = "Not a numeric expression."
     
     def convert(self, text):
-        number = float(self.text.GetValue())
+        number = float(eval(self.text.GetValue()))
         assert self.dprint("number=%s" % number)
         return number
 
