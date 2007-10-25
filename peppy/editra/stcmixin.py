@@ -255,8 +255,8 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.StyleSetSpec(wx.stc.STC_STYLE_BRACEBAD, \
                           self.GetStyleByName('brace_bad'))
         calltip = self.GetItemByName('calltip')
-        #self.CallTipSetBackground(calltip.GetBack())
-        #self.CallTipSetForeground(calltip.GetFore())
+        self.CallTipSetBackground(calltip.GetBack())
+        self.CallTipSetForeground(calltip.GetFore())
         self.SetCaretForeground(self.GetDefaultForeColour())
         self.DefineMarkers()
         self.Colourise(0, -1)
