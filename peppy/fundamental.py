@@ -423,6 +423,8 @@ class FundamentalMode(MajorMode):
     image viewer) that only use the STC as the backend storage are
     probably not based on this view.
     """
+    debuglevel = 1
+    
     keyword = 'Fundamental'
     
     # If the editra file_type (defined as the LANG_* keywords in the

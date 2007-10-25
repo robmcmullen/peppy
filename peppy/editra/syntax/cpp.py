@@ -134,7 +134,7 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if type == synglob.ID_LANG_CPP:
+    if lang_id == synglob.ID_LANG_CPP:
         return [u'//']
     else:
         return [u'/*', u'*/']

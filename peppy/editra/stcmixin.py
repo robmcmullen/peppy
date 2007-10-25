@@ -7,12 +7,15 @@ import wx.stc
 
 from peppy.editra import *
 import peppy.editra.util as util
+from peppy.debug import *
 
-class EditraSTCMixin(ed_style.StyleMgr):
+class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
+    debuglevel = 0
+    
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
         
-        self.LOG = wx.GetApp().GetLog()
+        self.LOG = self.dprint
         self._synmgr = syntax.SyntaxMgr()
         self.syntax_set = list()
         self._use_autocomp = False
