@@ -95,6 +95,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     verbose = 0
     options = {}
     args = []
+    
+    icon = "icons/peppy.png"
 
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
