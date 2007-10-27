@@ -551,7 +551,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             import peppy.iconmap
             self.dprint("Imported icons!")
         except:
-            raise
+            pass
         self.fonts = Fonts()
         
     def deleteFrame(self,frame):
