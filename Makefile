@@ -101,7 +101,10 @@ distdir:
 	rm $(distdir)/$(DISTMAIN).tmp
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
+	
 	cp graphics/peppy.ico $(distdir)
+	cp peppy.nsi $(distdir)
+	
 	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py
 
 	mkdir $(distdir)/scripts
