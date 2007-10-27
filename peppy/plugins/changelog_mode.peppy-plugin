@@ -1,0 +1,9 @@
+[Core]
+Name = ChangeLog Mode
+Module = changelog_mode
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Major mode for editing ChangeLogs

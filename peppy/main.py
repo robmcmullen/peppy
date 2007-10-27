@@ -121,6 +121,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                    }
     preferences_tab = "General"
     default_classprefs = (
+        StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
+        StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
         IntParam('listen_port', 55555, 'Port to listen on to determine if another peppy\ninstance is running'),
