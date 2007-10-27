@@ -673,7 +673,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             return self.scriptArgs
         return ""
     
-    def getCommandLine(self, bangpath=False, direct=False):
+    def getCommandLine(self, bangpath=None):
         """Return the entire command line of the job to be started.
         
         If allowed by the operating system, the script is parsed for a
@@ -681,14 +681,26 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         the command interpreter will be used to start the script.
         """
         script = self.buffer.url.path
-        if bangpath or direct:
-            mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
-            os.chmod(script, mode)
+        if bangpath:
+            if wx.Platform == '__WXMSW__':
+                # MSW doesn't pass to a shell, so simulate a bangpath by pulling
+                # out the script name and using that as the interpreter.
+                interpreter = bangpath.rstrip()
+                tmp = interpreter.lower()
+                i = interpreter.find(".exe")
+                if i > -1:
+                    args = interpreter[i + 4:]
+                    interpreter = interpreter[:i + 4]
+                else:
+                    args = self.getInterpreterArgs()
+                cmd = '"%s" %s "%s" %s' % (interpreter, args,
+                                       script, self.getScriptArgs())
+            else:
+                mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
+                os.chmod(script, mode)
             
-            # FIXME: Don't think you can directly execute on MSW.  Mac???
-            if wx.Platform != '__WXMSW__':
                 script = script.replace(' ', '\ ')
-            cmd = "%s %s" % (script, self.getScriptArgs())
+                cmd = "%s %s" % (script, self.getScriptArgs())
         else:
             interpreter = self.classprefs.interpreter_exe
             if wx.Platform == '__WXMSW__':
@@ -722,19 +734,14 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         else:
             self.save()
 
-        bangpath = False
-        direct = False
-        if wx.Platform == '__WXMSW__':
-            # FIXME: direct execution of a python script in Windows
-            # doesn't seem to work.
-            #direct = True
-            pass
-        elif self.stc.GetLine(0).startswith("#!"):
-            bangpath = True
+        bangpath = None
+        first = self.stc.GetLine(0)
+        if first.startswith("#!"):
+            bangpath = first[2:]
             
         msg = None
         path = self.classprefs.interpreter_exe
-        if not bangpath and not direct:
+        if bangpath is None:
             if not path:
                 msg = "No interpreter executable set.\nMust set the full path to the\nexecutable in preferences."
             elif os.path.exists(path):
@@ -748,7 +755,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             retval=dlg.ShowModal()
             Publisher().sendMessage('peppy.preferences.show')
         else:
-            cmd = self.getCommandLine(bangpath, direct)
+            cmd = self.getCommandLine(bangpath)
             ProcessManager().run(cmd, self.buffer.cwd(), self)
 
     def stopInterpreter(self):
