@@ -30,7 +30,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 GIT_LIST = $(shell git-ls-files)
-GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% peppy/icons/% %/
+GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/
 GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
 DISTSRC := $(filter %.py,$(GIT_FILTERED))
 DISTFILES := README INSTALL $(GIT_FILTERED)
@@ -99,9 +99,9 @@ distdir:
 	./make-doc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
 	sed -e "s/svn-devel/$(VERSION)/" -e "s/svn-codename/$(VERSION_CODENAME)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
 	rm $(distdir)/$(DISTMAIN).tmp
-
-	./make-icon-data.py -o $(distdir)/peppy/icons/iconmap.py
-	cp graphics/peppy.ico $(distdir)/peppy/icons/
+	
+	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
+	cp graphics/peppy.ico $(distdir)
 	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py
 
 	mkdir $(distdir)/scripts

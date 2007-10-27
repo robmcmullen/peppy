@@ -128,7 +128,7 @@ setup(name = '$prog',
                  },
       windows = [{"script": "peppy.py",
                   "other_resources": [(24,1,manifest)],
-                  "icon_resources": [(0, "peppy/icons/peppy.ico")],
+                  "icon_resources": [(2, "peppy.ico")],
                   }
                  ],
       data_files = DATA_FILES,

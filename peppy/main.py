@@ -548,10 +548,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def initGraphics(self):
         try:
-            import peppy.icons.iconmap
+            import peppy.iconmap
             self.dprint("Imported icons!")
         except:
-            pass
+            raise
         self.fonts = Fonts()
         
     def deleteFrame(self,frame):
