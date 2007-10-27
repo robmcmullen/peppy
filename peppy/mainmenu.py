@@ -380,7 +380,7 @@ class RunScriptWithArgs(RunScript):
 
     def action(self, index=-1, multiplier=1):
         minibuffer = TextMinibuffer(self.mode, self, label="Arguments:",
-                                    initial = self.mode.getCommandLineArgs())
+                                    initial = self.mode.getScriptArgs())
         self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
