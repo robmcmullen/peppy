@@ -48,7 +48,7 @@ class GraphvizMode(FundamentalMode):
     graphviz .dot files are similar in structure to C++ files.
     """
     keyword='Graphviz'
-    icon='icons/graphviz.ico'
+    icon='icons/graphviz.png'
     regex="\.dot$"
 
     start_line_comment = "// "

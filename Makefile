@@ -30,7 +30,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 GIT_LIST = $(shell git-ls-files)
-GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% peppy/icons/%.png peppy/icons/%.ico %/
+GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% peppy/icons/% %/
 GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
 DISTSRC := $(filter %.py,$(GIT_FILTERED))
 DISTFILES := README INSTALL $(GIT_FILTERED)
@@ -70,6 +70,9 @@ publish_api: api
 release: dist
 	-mkdir -p archive
 	mv $(distdir).tar.bz2 archive
+	
+splash:
+	img2py -u graphics/peppy-splash.png peppy/splash_image.py
 
 publish: api release
 	rsync -avuz api archive robm351@www.flipturn.org:flipturn.org/peppy/
@@ -98,6 +101,7 @@ distdir:
 	rm $(distdir)/$(DISTMAIN).tmp
 
 	./make-icon-data.py -o $(distdir)/peppy/icons/iconmap.py
+	cp graphics/peppy.ico $(distdir)/peppy/icons/
 	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py
 
 	mkdir $(distdir)/scripts
