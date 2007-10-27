@@ -257,7 +257,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             # Replace the system Help menu with ours by creating this
             # small fake menu in order to register the help menu
             help = wx.Menu()
-            menubar.Append(_("&Help"), help)
+            menubar.Append(help, _("&Help"))
             wx.App_SetMacHelpMenuTitleName(_("&Help"))
         self.SetMenuBar(menubar)
         
