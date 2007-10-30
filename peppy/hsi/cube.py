@@ -322,12 +322,19 @@ class Cube(object):
 
     def initialize(self,datatype=None,byteorder=None):
         self.initializeSizes(datatype,byteorder)
+        self.initializeOffset()
         self.initializeMmap()
         self.initializeRaw()
         if self.raw!=None:
             self.shape()
 
         self.verifyAttributes()
+
+    def initializeOffset(self):
+        if self.header_offset>0 or self.file_offset>0:
+            if self.data_offset==0:
+                # if it's not already set, set it
+                self.data_offset=self.file_offset+self.header_offset
 
     def initializeSizes(self,datatype=None,byteorder=None):
         if datatype:
@@ -392,11 +399,6 @@ class Cube(object):
             # with numarray's byteorder parameter, we don't have to
             # actually perform any swapping by hand.
             pass
-
-        if self.header_offset>0 or self.file_offset>0:
-            if self.data_offset==0:
-                # if it's not already set, set it
-                self.data_offset=self.file_offset+self.header_offset
 
         if self.url is not None:
             self.file_date = os.path.getmtime(self.url.path)
@@ -742,7 +744,7 @@ def newCube(interleave,url=None):
         raise ValueError("Interleave format %s not supported." % interleave)
     return cube
 
-def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByteOrder,scalefactor=10000.0, data=None):
+def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByteOrder,scalefactor=10000.0, data=None, dummy=False):
     cube=newCube(interleave,None)
     cube.interleave=interleave
     cube.samples=samples
@@ -751,11 +753,15 @@ def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByt
     cube.data_type=datatype
     cube.byte_order=byteorder
     cube.scale_factor=scalefactor
-    if data:
-        cube.raw = numpy.frombuffer(data, datatype)
+    if not dummy:
+        if data:
+            cube.raw = numpy.frombuffer(data, datatype)
+        else:
+            cube.raw=numpy.zeros((samples*lines*bands),dtype=datatype)
+        cube.mmap=True
     else:
-        cube.raw=numpy.zeros((samples*lines*bands),dtype=datatype)
-    cube.mmap=True
+        cube.raw = None
+        cube.mmap = True
     cube.initialize(datatype,byteorder)
     return cube
 
