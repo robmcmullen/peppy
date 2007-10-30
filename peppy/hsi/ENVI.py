@@ -341,8 +341,11 @@ class Header(dict,MetadataMixin):
                             initial_indent='  ',
                             subsequent_indent='  ')
                     self[item_txt]=val
-        if self['wavelength'] and not self['band names']:
-            self['band names'] = str(self['wavelength'])
+        
+        # FIXME: why was this needed?  Seems like it unnecessarily
+        # adds redundant data to the file
+##        if self['wavelength'] and not self['band names']:
+##            self['band names'] = str(self['wavelength'])
 
     def str_string(self,key,val):
         return "%s = {%s%s}%s" % (key,os.linesep,val,os.linesep)
