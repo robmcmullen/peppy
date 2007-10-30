@@ -494,6 +494,24 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         mode = self.GetEOLMode()
         return self.int2eol[mode]
 
+    # Styling stuff
+    
+    def isStyleString(self, style):
+        """Is the style a string?
+        
+        Designed to be overridded by subclasses to map styling info to useful
+        status checks.
+        """
+        return False
+    
+    def isStyleComment(self, style):
+        """Is the style a comment?
+        
+        Designed to be overridded by subclasses to map styling info to useful
+        status checks.
+        """
+        return False
+
     def showStyle(self, linenum=None):
         if linenum is None:
             linenum = self.GetCurrentLine()

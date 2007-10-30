@@ -168,8 +168,10 @@ class Reindent(TextModificationAction):
 
         # save cursor information so the cursor can be maintained at
         # the same relative location in the text after the indention
+        s.BeginUndoAction()
         pos = s.reindentLine()
         s.GotoPos(pos)
+        s.EndUndoAction()
 
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):

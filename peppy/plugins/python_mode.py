@@ -59,14 +59,18 @@ class ElectricColon(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         s = self.mode.stc
+        style = s.GetStyleAt(s.GetSelectionEnd())
+        if s.isStyleComment(style) or s.isStyleString(style):
+            dprint("within comment or string: not indenting")
+            return
+        s.BeginUndoAction()
         s.ReplaceSelection(":")
         # folding info not automatically updated after a Replace, so
         # do it manually
         linestart = s.PositionFromLine(s.GetCurrentLine())
         s.Colourise(linestart, s.GetSelectionEnd())
         s.reindentLine()
-        pass
-        
+        s.EndUndoAction()
 
 class PythonReindentMixin(ReindentBase):
     def getReindentString(self, linenum, linestart, pos, before, col, ind):
@@ -288,7 +292,12 @@ class PythonParagraphMixin(StandardParagraphMixin):
 
 class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin,
                 PythonParagraphMixin, FundamentalSTC):
-    pass
+                    
+    def isStyleString(self, style):
+        return style == 3 or style == 7 or style == 6 or style == 4
+        
+    def isStyleComment(self, style):
+        return style == 1
 
 class PythonMode(JobControlMixin, FundamentalMode):
     keyword='Python'

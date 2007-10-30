@@ -71,12 +71,13 @@ class StandardReturnMixin(object):
         Indent to the level of the line above.
         """
         linesep = self.getLinesep()
-
+        
+        self.BeginUndoAction()
         # reindent current line (if necessary), then process the return
-        pos = self.reindentLine()
+        #pos = self.reindentLine()
         
         linenum = self.GetCurrentLine()
-        #pos = self.GetCurrentPos()
+        pos = self.GetCurrentPos()
         col = self.GetColumn(pos)
         linestart = self.PositionFromLine(linenum)
         line = self.GetLine(linenum)[:pos-linestart]
@@ -97,7 +98,7 @@ class StandardReturnMixin(object):
             newline = linesep+self.GetIndentString(ind)
         self.ReplaceTarget(newline)
         self.GotoPos(pos + len(newline))
-
+        self.EndUndoAction()
 
 class ReindentBase(object):
     def reindentLine(self, linenum=None):
