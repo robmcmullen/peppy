@@ -59,7 +59,7 @@ class PeppyStatusBar(wx.StatusBar):
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent, -1)
 
-        self.default_widths = [-1,100]
+        self.default_widths = [-1,150]
         if wx.Platform == '__WXGTK__':
             self.spacing = 3
         else:
