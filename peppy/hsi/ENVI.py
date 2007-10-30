@@ -367,8 +367,11 @@ class Header(dict,MetadataMixin):
         order.sort()
         for key in order:
             val=self[key]
-            if key in self.lists or key in self.strings: 
-                fs.write(self.str_string(key,val))
+            if key in self.lists or key in self.strings:
+                if val:
+                    # only write the list if the list has something in
+                    # it
+                    fs.write(self.str_string(key,val))
             else:
                 fs.write("%s = %s%s" % (key,val,os.linesep))
         return fs.getvalue()
