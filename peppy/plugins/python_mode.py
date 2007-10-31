@@ -60,16 +60,17 @@ class ElectricColon(TextModificationAction):
     def action(self, index=-1, multiplier=1):
         s = self.mode.stc
         style = s.GetStyleAt(s.GetSelectionEnd())
-        if s.isStyleComment(style) or s.isStyleString(style):
-            dprint("within comment or string: not indenting")
-            return
         s.BeginUndoAction()
         s.ReplaceSelection(":")
-        # folding info not automatically updated after a Replace, so
-        # do it manually
-        linestart = s.PositionFromLine(s.GetCurrentLine())
-        s.Colourise(linestart, s.GetSelectionEnd())
-        s.reindentLine()
+        if s.isStyleComment(style) or s.isStyleString(style):
+            dprint("within comment or string: not indenting")
+            pass
+        else:
+            # folding info not automatically updated after a Replace, so
+            # do it manually
+            linestart = s.PositionFromLine(s.GetCurrentLine())
+            s.Colourise(linestart, s.GetSelectionEnd())
+            s.reindentLine()
         s.EndUndoAction()
 
 class PythonReindentMixin(ReindentBase):
