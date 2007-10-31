@@ -199,11 +199,18 @@ class Param(debugmixin):
     # default is provided.
     default = None
     
-    def __init__(self, keyword, default=None, help='', **kwargs):
+    # Event to be used as the callback trigger when the user changes the
+    # control.  Subclasses should override this class attribute to correspond
+    # to whatever event is appropriate for the control
+    callback_event = wx.EVT_TEXT
+    
+    def __init__(self, keyword, default=None, help='',
+                 save_to_file=True, **kwargs):
         self.keyword = keyword
         if default is not None:
             self.default = default
         self.help = help
+        self.save_to_file = save_to_file
         if 'next_on_same_line' in kwargs or 'join' in kwargs:
             self.next_on_same_line = True
         else:
@@ -230,6 +237,50 @@ class Param(debugmixin):
         ctrl = wx.TextCtrl(parent, -1, size=(125, -1),
                            style=wx.TE_PROCESS_ENTER)
         return ctrl
+    
+    def processCallback(self, evt, ctrl, ctrl_list):
+        """Subclasses should override this to provide functionality.
+        
+        This callback is the class-specific callback in response to the
+        event named in the class attribute 'callback_event'.
+        
+        evt: event object
+        ctrl: control from evt.GetEventObject
+        ctrl_list: dict mapping param objects to their corresponding controls
+        """
+        evt.Skip()
+    
+    def OnCallback(self, evt):
+        """Callback driver for the control"""
+        ctrl = evt.GetEventObject()
+        self.processCallback(evt, ctrl, ctrl.ctrl_list)
+    
+    def setCallback(self, ctrl, ctrl_list):
+        """Set the callback that responds to changes inthe state of the control
+        
+        This is called during control creation to set the callback in response
+        to the class attribute 'callback_event' that is particular to the type
+        of control being created.  Subclasses should change the callback_event
+        to an event that is fired in response to the user changing the state
+        of the control.
+        
+        Some controls have multiple events that can be fired; for now, only
+        a single event is handled.
+        """
+        if self.callback_event is not None:
+            ctrl.ctrl_list = ctrl_list
+            ctrl.Bind(self.callback_event, self.OnCallback)
+    
+    def setInitialState(self, ctrl, ctrl_list):
+        """Set the initial state of the control.
+        
+        Callback to set the initial state of the widget based on the state of
+        all the other controls in the collection of params.  This must only
+        be called after all of the controls in the param collection have
+        been created, because the the ctrl_list dict must contain the entire
+        mapping of params to controls.
+        """
+        pass
 
     def textToValue(self, text):
         """Convert the user's config text to the type expected by the
@@ -278,6 +329,8 @@ class Param(debugmixin):
 
 class ReadOnlyParam(debugmixin):
     """Read-only parameter for display only."""
+    callback_event = None
+    
     def __init__(self, keyword, default=None, help=''):
         self.keyword = keyword
         if default is not None:
@@ -294,6 +347,7 @@ class BoolParam(Param):
     and anything else to represent False.
     """
     default = False
+    callback_event = wx.EVT_CHECKBOX
 
     # For i18n support, load your i18n conversion stuff and change
     # these class attributes
@@ -380,6 +434,7 @@ class DateParam(Param):
     The wx.DateTime class is used as the value.
     """
     default = wx.DateTime().Today()
+    callback_event = None
     
     def getCtrl(self, parent, initial=None):
         dpc = wx.DatePickerCtrl(parent, size=(120,-1),
@@ -419,7 +474,8 @@ class DirParam(Param):
     It will always be a normalized path.
     """
     default = os.path.dirname(os.getcwd())
-    
+    callback_event = None
+
     def getCtrl(self, parent, initial=None):
         if initial is None:
             initial = os.getcwd()
@@ -444,10 +500,10 @@ class PathParam(DirParam):
         c = FileBrowseButton2(parent, -1, size=(300, -1),
                                         labelText = '',
                                         startDirectory=initial,
-                                        changeCallback = self.callback)
+                                        changeCallback = self.changeCallback)
         return c
 
-    def callback(self, evt):
+    def changeCallback(self, evt):
         # FIXME: this possibly can be used to maintain a history, but
         # haven't worked it out yet.
         
@@ -474,6 +530,8 @@ class ChoiceParam(Param):
     A Choice control is its user interface, and the currently selected
     string is used as the value.
     """
+    callback_event = wx.EVT_CHOICE
+    
     def __init__(self, keyword, choices, default=None, help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
         self.choices = choices
@@ -515,6 +573,8 @@ class IndexChoiceParam(Param):
         
       IndexChoiceParam('coins', [(1, 'penny'), (5, 'nickel'), (10, 'dime')])
     """
+    callback_event = wx.EVT_CHOICE
+    
     def __init__(self, keyword, choices, default=None, help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
         if isinstance(choices[0], list) or isinstance(choices[0], tuple):
@@ -1226,6 +1286,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
             if param.isSettable():
                 ctrl = param.getCtrl(parent)
                 ctrls[param] = ctrl
+                param.setCallback(ctrl, ctrls)
                 if param.help:
                     ctrl.SetToolTipString(param.help)
                 grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
