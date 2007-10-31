@@ -24,6 +24,10 @@ class AddChangeLogEntry(STCModificationAction):
     default_menu = ("Tools", 500)
     key_bindings = {'emacs': "C-C C-N",}
     
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return isinstance(mode, ChangeLogMode)
+    
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         date = time.strftime(self.mode.classprefs.date_format_str)
