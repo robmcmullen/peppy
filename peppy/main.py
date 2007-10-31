@@ -132,7 +132,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     default_classprefs = (
         StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
-        StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search\nfor additional plugins'),
+        StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
         IntParam('listen_port', 55555, 'Port to listen on to determine if another peppy\ninstance is running'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
@@ -497,9 +497,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         paths = [os.path.join(os.path.dirname(__file__), p) for p in self.standard_plugin_dirs]
         paths.append(os.path.join(self.config.dir, self.preferences_plugin_dir))
-        userdirs = self.classprefs.plugin_search_path.split(os.pathsep)
-        for path in userdirs:
-            paths.append(path)
+        if self.classprefs.plugin_search_path:
+            userdirs = self.classprefs.plugin_search_path.split(os.pathsep)
+            for path in userdirs:
+                paths.append(path)
         
         self.plugin_manager = PeppyPluginManager(
             categories_filter={"Default": IPeppyPlugin},
