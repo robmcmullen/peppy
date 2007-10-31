@@ -675,7 +675,8 @@ class PeppySTC(PeppyBaseSTC):
         self.Bind(wx.stc.EVT_STC_DRAG_OVER, self.OnDragOver)
         self.Bind(wx.stc.EVT_STC_START_DRAG, self.OnStartDrag)
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
-
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+    
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         self.debug_dnd=False
@@ -713,7 +714,24 @@ class PeppySTC(PeppyBaseSTC):
         wx.TheClipboard.Flush()
         evt.Skip()
 
-
+    def OnMouseWheel(self, evt):
+        """Handle mouse wheel scrolling.
+        """
+        mouse = wx.GetApp().mouse
+        assert self.dprint("Wheel! delta=%s rotation=%s" % (evt.GetWheelDelta(), evt.GetWheelRotation()))
+        if mouse.classprefs.mouse_wheel_scroll_style == 'lines':
+            num = mouse.classprefs.mouse_wheel_scroll_lines
+        else:
+            num = self.LinesOnScreen()
+            if mouse.classprefs.mouse_wheel_scroll_style == 'half':
+                num /= 2
+        if evt.GetWheelRotation() > 0:
+            # positive means scrolling up, which is a negative number of lines
+            # to scroll
+            num = -num
+        self.LineScroll(0, num)
+        #evt.Skip()
+    
     def OnStartDrag(self, evt):
         assert self.dprint("OnStartDrag: %d, %s\n"
                        % (evt.GetDragAllowMove(), evt.GetDragText()))

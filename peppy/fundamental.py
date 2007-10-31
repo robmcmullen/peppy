@@ -446,8 +446,6 @@ class FundamentalMode(MajorMode):
         IndexChoiceParam('tab_highlight_style',
                          ['ignore', 'inconsistent', 'mixed', 'spaces are bad', 'tabs are bad'],
                          4, 'Highlight bad intentation'),
-        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'page', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
-        IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel\nis in line scrolling mode'),
         BoolParam('line_numbers', True, 'Show line numbers in the margin?'),
         IntParam('line_number_margin_width', 40, 'Margin width in pixels'),
         BoolParam('symbols', False, 'Show symbols margin'),
@@ -499,27 +497,6 @@ class FundamentalMode(MajorMode):
         self.createSTC(parent)
         win=self.stc
         return win
-    
-    def createEventBindings(self):
-        MajorMode.createEventBindings(self)
-        self.editwin.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-    
-    def OnMouseWheel(self, evt):
-        """Handle mouse wheel scrolling.
-        """
-        assert self.dprint("Wheel! delta=%s rotation=%s" % (evt.GetWheelDelta(), evt.GetWheelRotation()))
-        if self.classprefs.mouse_wheel_scroll_style == 'lines':
-            num = self.classprefs.mouse_wheel_scroll_lines
-        else:
-            num = self.editwin.LinesOnScreen()
-            if self.classprefs.mouse_wheel_scroll_style == 'half':
-                num /= 2
-        if evt.GetWheelRotation() > 0:
-            # positive means scrolling up, which is a negative number of lines
-            # to scroll
-            num = -num
-        self.editwin.LineScroll(0, num)
-        #evt.Skip()
     
     def createStatusIcons(self):
         linesep = self.stc.getLinesep()

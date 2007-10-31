@@ -82,7 +82,16 @@ class Fonts(ClassPrefs):
             self.classprefs.primary_editing_font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         if self.classprefs.secondary_editing_font is None:
             self.classprefs.secondary_editing_font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+
+
+class Mouse(ClassPrefs):
+    preferences_tab = "General"
+    default_classprefs = (
+        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'page', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
+        IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel\nis in line scrolling mode'),
+    )
     
+
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
 
@@ -136,7 +145,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         StrParam('default_binary_mode', 'HexEdit', 'Name of the default binary viewing mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
         )
-
+    mouse = Mouse()
+    
     config = None
     
     def OnInit(self):
