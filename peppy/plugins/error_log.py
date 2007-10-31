@@ -39,8 +39,11 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
             else:
                 scroll = False
             #print("top line: %d, visible: %d, total=%d, scroll=%s" % (line, visible, total, scroll))
-            
-        self.AddText(text)
+        
+        pos = self.GetLength()
+        self.SetTargetStart(pos)
+        self.SetTargetEnd(pos)
+        self.ReplaceTarget(text)
         if scroll:
             self.ScrollToLine(self.GetLineCount())
 
