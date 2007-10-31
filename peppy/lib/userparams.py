@@ -228,6 +228,18 @@ class Param(debugmixin):
         """True if the user can set this parameter"""
         return True
 
+    def getLabel(self, parent):
+        if self.alt_label == False:
+            return None
+        
+        if self.alt_label is None:
+            title = wx.StaticText(parent, -1, self.keyword)
+        else:
+            title = wx.StaticText(parent, -1, self.alt_label)
+        if self.help:
+            title.SetToolTipString(self.help)
+        return title
+
     def getCtrl(self, parent, initial=None):
         """Create and editing control.
 
@@ -1271,13 +1283,8 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 bsizer.Add(grid, 0, wx.EXPAND)
             
             width = 1
-            if param.alt_label is not False:
-                if param.alt_label is None:
-                    title = wx.StaticText(parent, -1, param.keyword)
-                else:
-                    title = wx.StaticText(parent, -1, param.alt_label)
-                if param.help:
-                    title.SetToolTipString(param.help)
+            title = param.getLabel(parent)
+            if title is not None:
                 grid.Add(title, (row,col))
                 col += 1
             else:
