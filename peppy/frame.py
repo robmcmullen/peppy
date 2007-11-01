@@ -276,7 +276,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         wx.GetApp().SetTopWindow(self)
         self.bindEvents()
         
-        dprint(urls)
+        #dprint(urls)
         
         # counter to make sure the title buffer is shown if we attempt
         # to load files and they all fail.

@@ -608,7 +608,6 @@ class IndexChoiceParam(Param):
             self.default = self.index_to_value[0]
 
     def getCtrl(self, parent, initial=None):
-        dprint("self.choices=%s, default=%s" % (self.choices, self.default))
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
         ctrl.SetSelection(self.default)
         return ctrl
