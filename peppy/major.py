@@ -1116,7 +1116,8 @@ class MajorModeMatcherDriver(debugmixin):
                     # mode is "test", it will match "/usr/bin/test" or
                     # "/usr/bin/test.exe" or "/usr/bin/env test", but
                     # not /usr/bin/testing or /usr/bin/attested
-                    match=re.search(r'[\W]%s([\W]|$)' % keyword, bangpath)
+                    regex = r'[\W]%s([\W]|$)' % re.escape(keyword)
+                    match=re.search(regex, bangpath)
                     if match:
                         return mode
         return None

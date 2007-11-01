@@ -573,7 +573,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 try:
                     modecls = MajorModeMatcherDriver.match(url)
                 except Exception, e:
-                    self.openFailure(url, str(e))
+                    import traceback
+                    error = traceback.format_exc()
+                    self.openFailure(url, error)
                     return
             
             if wx.GetApp().classprefs.load_threaded and modecls.allow_threaded_loading:
