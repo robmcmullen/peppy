@@ -6,7 +6,7 @@ Small sidebar to show error messages, since showing multiple errors
 isn't possible in the status bar.
 """
 
-import os, re
+import os, re, sys
 
 import wx
 from wx.lib.pubsub import Publisher
@@ -26,6 +26,8 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
 
     def __init__(self, *args, **kwargs):
         PeppySTC.__init__(self, *args, **kwargs)
+        self.Bind(wx.stc.EVT_STC_DOUBLECLICK, self.OnDoubleClick)
+        
         self.IndicatorSetStyle(0, wx.stc.STC_INDIC_SQUIGGLE)
         self.IndicatorSetForeground(0, wx.RED)
         
@@ -59,7 +61,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
         
         pos = self.last_matched_filename
         text = self.GetTextRange(pos, self.GetTextLength())
-        dprint(text)
+        #dprint(text)
 
         # FIXME: currently hard-coded for Python output
         filere = re.compile("  File \"(.+)\", line ([0-9]+)")
@@ -73,8 +75,13 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             i = match.start(1)
             self.StartStyling(pos + i, wx.stc.STC_INDICS_MASK)
             self.SetStyling(len(filename), wx.stc.STC_INDIC0_MASK)
-            self.last_matched_filename = pos + len(filename)
             i = match.end(0)
+            sys.stdout.write("match ends at %d" % i)
+            self.last_matched_filename = pos + i
+
+    def OnDoubleClick(self, evt):
+        dprint("x=%d y=%d pos=%d" % (evt.GetX(), evt.GetY(), evt.GetPosition()))
+
 
 class ErrorLogSidebar(Sidebar, LoggingSTC):
     """An error log using message passing.
