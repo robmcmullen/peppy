@@ -85,7 +85,7 @@ class StandardReturnMixin(object):
         #get info about the current line's indentation
         ind = self.GetLineIndentation(linenum)
 
-        dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
+        self.dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
 
         self.SetTargetStart(pos)
         self.SetTargetEnd(pos)
@@ -94,7 +94,7 @@ class StandardReturnMixin(object):
         elif not pos:
             newline = linesep
         else:
-            ind = self.findIndent(linenum)
+            ind = self.findIndent(linenum + 1)
             newline = linesep+self.GetIndentString(ind)
         self.ReplaceTarget(newline)
         self.GotoPos(pos + len(newline))
@@ -119,7 +119,7 @@ class ReindentBase(object):
         pos = self.GetCurrentPos()
         indpos = self.GetLineIndentPosition(linenum) # absolute character position
         col = self.GetColumn(pos)
-        dprint("linestart=%d pos=%d indpos=%d col=%d indcol=%d" % (linestart, pos, indpos, col, indcol))
+        self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
 
         indstr = self.getReindentString(linenum, linestart, pos, indpos, col, indcol)
         if indstr is None:
@@ -127,6 +127,7 @@ class ReindentBase(object):
         
         # the target to be replaced is the leading indention of the
         # current line
+        self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
         self.SetTargetStart(linestart)
         self.SetTargetEnd(indpos)
         self.ReplaceTarget(indstr)
@@ -134,7 +135,7 @@ class ReindentBase(object):
         # recalculate cursor position, because it may have moved if it
         # was within the target
         after = self.GetLineIndentPosition(linenum)
-        dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
+        self.dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
         if pos < linestart:
             return pos
         newpos = pos - indpos + after
@@ -182,7 +183,7 @@ class FoldingReindentMixin(object):
 
         # folding says this should be the current indention
         fold = self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
-        dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
+        self.dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
         self.SetTargetStart(linestart)
         self.SetTargetEnd(pos)
         self.ReplaceTarget(self.GetIndentString(fold))
@@ -210,15 +211,15 @@ class StandardCommentMixin(object):
         if start:
             if end:
                 regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
-                dprint(regex)
+                self.dprint(regex)
                 self.comment_regex = re.compile(regex)
             else:
                 regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
-                dprint(regex)
+                self.dprint(regex)
                 self.comment_regex = re.compile(regex)
         else:
             regex = r"^(\s*)(.*)($)"
-            dprint(regex)
+            self.dprint(regex)
             self.comment_regex = re.compile(regex)
         
     def commentRegion(self, add=True):
@@ -259,7 +260,7 @@ class StandardCommentMixin(object):
         match = self.comment_regex.match(line)
         if match is None:
             return ("", line, "")
-        dprint(match.groups())
+        self.dprint(match.groups())
         return match.group(1, 2, 3)
 
     
@@ -270,7 +271,7 @@ class GenericFoldHierarchyMixin(object):
         # Turn this into a threaded operation if it takes too long
         t = time.time()
         self.Colourise(0, self.GetTextLength())
-        dprint("Finished colourise: %0.5f" % (time.time() - t))
+        self.dprint("Finished colourise: %0.5f" % (time.time() - t))
         self.computeFoldHierarchy()
         
         # FIXME: Note that different views of the same buffer *using the
@@ -342,7 +343,7 @@ class StandardParagraphMixin(object):
         return False
         """
         leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        dprint(line)
+        self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
         info.addStartLine(linenum, line)
@@ -362,7 +363,7 @@ class StandardParagraphMixin(object):
         return False
         """
         leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        dprint(line)
+        self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
         info.addEndLine(linenum, line)
@@ -394,7 +395,7 @@ class StandardParagraphMixin(object):
         # Now, find the end of the paragraph by searching forward until the
         # comment prefix changes or we find only white space
         lastlinenum = self.GetLineCount()
-        dprint("start=%d count=%d end=%d" % (info.cursor_linenum, lastlinenum, endlinenum))
+        self.dprint("start=%d count=%d end=%d" % (info.cursor_linenum, lastlinenum, endlinenum))
         while endlinenum < lastlinenum:
             endlinenum += 1
             if not self.findParagraphEnd(endlinenum, info):
@@ -489,7 +490,7 @@ class FundamentalMode(MajorMode):
     @classmethod
     def getStyleFile(cls):
         filename = wx.GetApp().getConfigFilePath(cls.classprefs.editra_style_sheet)
-        dprint(filename)
+        cls.dprint(filename)
         return filename
     
     def createEditWindow(self,parent):

@@ -16,6 +16,9 @@ from peppy.major import *
 from peppy.fundamental import *
 from peppy.actions.base import *
 
+import idlelib.PyParse as PyParse
+
+
 _sample_file='''\
 import os, sys, time
 """
@@ -63,7 +66,7 @@ class ElectricColon(TextModificationAction):
         s.BeginUndoAction()
         s.ReplaceSelection(":")
         if s.isStyleComment(style) or s.isStyleString(style):
-            dprint("within comment or string: not indenting")
+            self.dprint("within comment or string: not indenting")
             pass
         else:
             # folding info not automatically updated after a Replace, so
@@ -73,7 +76,7 @@ class ElectricColon(TextModificationAction):
             s.reindentLine()
         s.EndUndoAction()
 
-class PythonReindentMixin(ReindentBase):
+class PythonFoldingReindentMixin(ReindentBase):
     def getReindentString(self, linenum, linestart, pos, before, col, ind):
         """Reindent the specified line to the correct level.
 
@@ -134,7 +137,7 @@ class PythonReindentMixin(ReindentBase):
         return self.GetIndentString(fold)
 
 
-class PythonElectricReturnMixin(debugmixin):
+class PyPEElectricReturnMixin(debugmixin):
     debuglevel = 0
     
     def findIndent(self, linenum):
@@ -246,13 +249,135 @@ class PythonElectricReturnMixin(debugmixin):
         return max(ind+xtra*self.GetIndent(), 0)
 
 
+class IDLEReindentMixin(ReindentBase):
+    def getReindentString(self, linenum, linestart, pos, before, col, ind):
+        """Reindent the specified line to the correct level.
+
+        Given a line, IDLE's parsing module to find the correct indention level
+        """
+        # Use the current line number, which will find the indention based on
+        # the previous line
+        indent = self.findIndent(linenum)
+        
+        # The text begins at indpos; check some special cases to see if there
+        # should be a dedent
+        style = self.GetStyleAt(before)
+        end = self.GetLineEndPosition(linenum)
+        cmd = self.GetTextRange(before, end)
+        #dprint("checking %s" % cmd)
+        if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
+            #dprint("Found a dedent: %s" % cmd)
+            indent -= self.GetIndent()
+        return self.GetIndentString(indent)
+
+# Helper functions required by IDLE's PyParse routine
+def is_char_in_string(stc, pos):
+    """Return True if the position is within a string"""
+    style = stc.GetStyleAt(pos)
+    #dprint("style %d at pos %d" % (style, pos))
+    if style == 3 or style == 7 or style == 6 or style == 4:
+        return True
+    return False
+
+def build_char_in_string_func(stc, startindex):
+    """Factory to create a specific is_char_in_string function that also
+    includes an offset.
+    """
+    def inner(offset, _startindex=startindex, _stc=stc, _icis=is_char_in_string):
+        #dprint("offset=%d, startindex=%d" % (offset, _startindex))
+        return _icis(_stc, _startindex + offset)
+    return inner
+
+class IDLEElectricReturnMixin(debugmixin):
+    debuglevel = 0
+    
+    def findIndent(self, linenum):
+        """Gets indentation of what the line containing pos should be, not taking
+        into account any dedenting as a result of compound blocks like else,
+        finally, etc.
+        """
+        indentwidth = self.GetIndent()
+        tabwidth = 87
+        indent = self.GetLineIndentation(linenum)
+        y = PyParse.Parser(indentwidth, tabwidth)
+        # FIXME: context line hack straight from IDLE
+        for context in [50, 500, 5000000]:
+            firstline = linenum - context
+            if firstline < 0:
+                firstline = 0
+            start = self.PositionFromLine(firstline)
+            end = self.PositionFromLine(linenum)
+            rawtext = self.GetTextRange(start, end)+"\n"
+            y.set_str(rawtext)
+            bod = y.find_good_parse_start(build_char_in_string_func(self, start))
+            if bod is not None or firstline == 0:
+                break
+        #dprint(rawtext)
+        self.dprint("bod = %s" % bod)
+        y.set_lo(bod or 0)
+
+        c = y.get_continuation_type()
+        self.dprint("continuation type: %s" % c)
+        if c != PyParse.C_NONE:
+            # The current stmt hasn't ended yet.
+            if c == PyParse.C_STRING_FIRST_LINE:
+                # after the first line of a string; do not indent at all
+                print "C_STRING_FIRST_LINE"
+                pass
+            elif c == PyParse.C_STRING_NEXT_LINES:
+                # inside a string which started before this line;
+                # just mimic the current indent
+                #text.insert("insert", indent)
+                print "C_STRING_NEXT_LINES"
+                pass
+            elif c == PyParse.C_BRACKET:
+                # line up with the first (if any) element of the
+                # last open bracket structure; else indent one
+                # level beyond the indent of the line with the
+                # last open bracket
+                print "C_BRACKET"
+                #self.reindent_to(y.compute_bracket_indent())
+                indent = y.compute_bracket_indent()
+            elif c == PyParse.C_BACKSLASH:
+                # if more than one line in this stmt already, just
+                # mimic the current indent; else if initial line
+                # has a start on an assignment stmt, indent to
+                # beyond leftmost =; else to beyond first chunk of
+                # non-whitespace on initial line
+                if y.get_num_lines_in_stmt() > 1:
+                    pass
+                else:
+                    indent = y.compute_backslash_indent()
+            else:
+                assert 0, "bogus continuation type %r" % (c,)
+            return indent
+
+        # This line starts a brand new stmt; indent relative to
+        # indentation of initial line of closest preceding
+        # interesting stmt.
+        indentstr = y.get_base_indent_string()
+        indent = len(indentstr.expandtabs(tabwidth))
+    #    text.insert("insert", indent)
+        if y.is_block_opener():
+            self.dprint("block opener")
+            indent += indentwidth
+    #        self.smart_indent_event(event)
+        elif indent and y.is_block_closer():
+            self.dprint("block dedent")
+    #        self.smart_backspace_event(event)
+            indent = ((indent-1)//indentwidth) * indentwidth
+    #    return "break"
+        self.dprint("indent = %d" % indent)
+        return indent
+
+
 class PythonParagraphMixin(StandardParagraphMixin):
     def findParagraphStart(self, linenum, info):
         """Check to see if a previous line should be included in the
         paragraph match.
         """
         leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        dprint(line)
+        self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
         stripped = line.strip()
@@ -272,7 +397,7 @@ class PythonParagraphMixin(StandardParagraphMixin):
         paragraph match.
         """
         leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        dprint(line)
+        self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
         stripped = line.strip()
@@ -291,7 +416,7 @@ class PythonParagraphMixin(StandardParagraphMixin):
         return True
 
 
-class PythonSTC(PythonElectricReturnMixin, PythonReindentMixin,
+class PythonSTC(IDLEElectricReturnMixin, IDLEReindentMixin,
                 PythonParagraphMixin, FundamentalSTC):
                     
     def isStyleString(self, style):

@@ -8,17 +8,19 @@ from peppy.stcinterface import *
 from peppy.fundamental import *
 from peppy.plugins.python_mode import *
 from peppy.plugins.text_transforms import *
+from peppy.debug import *
 
 from nose.tools import *
 
 class TestFundamentalIndent(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer=wx.stc.STC_LEX_NULL)
+        self.stc = getSTC(stcclass=FundamentalSTC, lexer="Plain Text")
 
     def checkReturn(self, pair):
-        prepareSTC(self.stc, pair)
+        dprint(pair)
+        prepareSTC(self.stc, pair[0])
         self.stc.electricReturn()
-        assert checkSTC(self.stc, pair)
+        assert checkSTC(self.stc, pair[0], pair[1])
 
     def testReturn(self):
         tests = """\
@@ -36,8 +38,8 @@ line at column zero
     line at column 4|
 --
 line at column zero
-line at column 4
-|
+    line at column 4
+    |
 --------
 line at column zero
 
@@ -81,7 +83,7 @@ back at column zero
 
 class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonReindentMixin):
     def setUp(self):
-        self.stc = getSTC(stcclass=PythonSTC, lexer=wx.stc.STC_LEX_PYTHON)
+        self.stc = getSTC(stcclass=PythonSTC, lexer="Python")
         self.reindentAction = Reindent(self)
 
     def getActiveMajorMode(self):
@@ -89,9 +91,10 @@ class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonRei
         return self
 
     def checkReturn(self, pair):
-        prepareSTC(self.stc, pair)
+        dprint(pair)
+        prepareSTC(self.stc, pair[0])
         self.stc.electricReturn()
-        assert checkSTC(self.stc, pair)
+        assert checkSTC(self.stc, pair[0], pair[1])
 
     def testReturn(self):
         tests = """\
@@ -122,11 +125,12 @@ class blah:
             yield self.checkReturn, test
 
     def checkReindentAction(self, pair):
-        prepareSTC(self.stc, pair)
+        dprint(pair)
+        prepareSTC(self.stc, pair[0])
         #self.stc.showStyle()
         self.reindentAction.action()
         #self.stc.showStyle()
-        assert checkSTC(self.stc, pair)
+        assert checkSTC(self.stc, pair[0], pair[1])
 
     def testReindentAction(self):
         tests = """\

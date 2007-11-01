@@ -161,7 +161,7 @@ class Reindent(TextModificationAction):
     alias = "reindent-region"
     name = "Reindent"
     default_menu = ("Transform", 602)
-    key_bindings = {'default': 'C-TAB',}
+    key_bindings = {'default': 'TAB',}
 
     def action(self, index=-1, multiplier=1):
         s = self.mode.stc

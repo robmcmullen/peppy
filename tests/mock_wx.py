@@ -48,8 +48,7 @@ def getSTC(init=None, stcclass=MockSTC, count=1, lexer="Python", tab_size=4, use
     stc.Colourise(0, stc.GetTextLength())
     return stc
 
-def prepareSTC(stc, *pair):
-    before = pair[0]
+def prepareSTC(stc, before):
     print "*** before *** repr=%s\n%s" % (repr(before), before)
     cursor = before.find("|")
     stc.SetText(before)
@@ -63,10 +62,8 @@ def prepareSTC(stc, *pair):
     stc.Colourise(0, stc.GetTextLength())
     stc.showStyle()
 
-def checkSTC(stc, *pair):
+def checkSTC(stc, before, after):
     stc.showStyle()
-    before = pair[0]
-    after = pair[1]
 
     # change cursor to "|"
     stc.ReplaceSelection("|")
@@ -81,14 +78,19 @@ def splittests(text):
     tests = []
 
     # at least 4 '-' characters delimits a test
-    groups = re.split('[\r\n]+-----*[\r\n]+', text)
-    print groups
+    groups = re.split('[\r\n]-----*[\r\n]', text)
+    #print groups
     for test in groups:
         # 2 '-' characters delimits the before and after pair
-        pair = re.split('[\r\n]+--[\r\n]+', test)
+        pair = re.split('[\r\n]--[\r\n]', test)
         if len(pair) == 2:
             tests.append(pair)
-    print tests
+        else:
+            print test
+            print pair
+            sys.exit(1)
+            tests.append((pair[0], ''))
+    #print tests
     return tests
 
 def splittestdict(text):
