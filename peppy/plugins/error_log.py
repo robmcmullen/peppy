@@ -6,7 +6,7 @@ Small sidebar to show error messages, since showing multiple errors
 isn't possible in the status bar.
 """
 
-import os
+import os, re
 
 import wx
 from wx.lib.pubsub import Publisher
@@ -16,7 +16,7 @@ from peppy.stcinterface import PeppySTC
 from peppy.sidebar import *
 from peppy.minor import *
 
-class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
+class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
     debuglevel = 0
     
     default_classprefs = (
@@ -24,6 +24,11 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
         BoolParam('always_scroll', False),
         )
 
+    def __init__(self, *args, **kwargs):
+        PeppySTC.__init__(self, *args, **kwargs)
+        self.IndicatorSetStyle(0, wx.stc.STC_INDIC_SQUIGGLE)
+        self.IndicatorSetForeground(0, wx.RED)
+        
     def addMessage(self, text):
         if self.classprefs.always_scroll:
             scroll = True
@@ -46,8 +51,32 @@ class ErrorLogMixin(PeppySTC, ClassPrefs, debugmixin):
         self.ReplaceTarget(text)
         if scroll:
             self.ScrollToLine(self.GetLineCount())
+        self.scanForFilenames()
+    
+    def scanForFilenames(self):
+        if not hasattr(self, 'last_matched_filename'):
+            self.last_matched_filename = 0
+        
+        pos = self.last_matched_filename
+        text = self.GetTextRange(pos, self.GetTextLength())
+        dprint(text)
 
-class ErrorLogSidebar(Sidebar, ErrorLogMixin):
+        # FIXME: currently hard-coded for Python output
+        filere = re.compile("  File \"(.+)\", line ([0-9]+)")
+        i = 0
+        while i < len(text):
+            match = filere.search(text, i)
+            if not match:
+                break
+            
+            filename = match.group(1)
+            i = match.start(1)
+            self.StartStyling(pos + i, wx.stc.STC_INDICS_MASK)
+            self.SetStyling(len(filename), wx.stc.STC_INDIC0_MASK)
+            self.last_matched_filename = pos + len(filename)
+            i = match.end(0)
+
+class ErrorLogSidebar(Sidebar, LoggingSTC):
     """An error log using message passing.
 
     This is a global plugin that displays any messages it receives
@@ -78,7 +107,7 @@ class ErrorLogSidebar(Sidebar, ErrorLogMixin):
         )
     
     def __init__(self, parent):
-        PeppySTC.__init__(self, parent)
+        LoggingSTC.__init__(self, parent)
         self.frame = parent
 
         Publisher().subscribe(self.showError, self.message)
@@ -121,7 +150,7 @@ class InfoLogSidebar(ErrorLogSidebar):
         IntParam('min_height', 20),
     )
     
-class OutputLogMinorMode(MinorMode, ErrorLogMixin):
+class OutputLogMinorMode(MinorMode, LoggingSTC):
     """An error log using message passing.
 
     This log is designed to be associated with a major mode that
@@ -154,7 +183,7 @@ class OutputLogMinorMode(MinorMode, ErrorLogMixin):
         return False
     
     def __init__(self, major, parent):
-        PeppySTC.__init__(self, parent)
+        LoggingSTC.__init__(self, parent)
         self.major = major
         
     def paneInfoHook(self, paneinfo):
