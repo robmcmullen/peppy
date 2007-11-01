@@ -131,32 +131,6 @@ SetAbout('peppy',"""\
 </ul>
 <p>See the file THANKS for more credits.</p>
 """)
-SetAbout('demo.txt',"""\
-This editor is provided by a class named wx.StyledTextCtrl.  As
-the name suggests, you can define styles that can be applied to
-sections of text.  This will typically be used for things like
-syntax highlighting code editors, but I'm sure that there are other
-applications as well.  A style is a combination of font, point size,
-foreground and background colours.  The editor can handle
-proportional fonts just as easily as monospaced fonts, and various
-styles can use different sized fonts.
-
-There are a few canned language lexers and colourizers included,
-(see the next demo) or you can handle the colourization yourself.
-If you do you can simply register an event handler and the editor
-will let you know when the visible portion of the text needs
-styling.
-
-wx.StyledTextEditor also supports setting markers in the margin...
-
-
-
-
-...and indicators within the text.  You can use these for whatever
-you want in your application.  Cut, Copy, Paste, Drag and Drop of
-text works, as well as virtually unlimited Undo and Redo
-capabilities, (right click to try it out.)
-""")
 SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
 SetAbout('red.png',
 "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
@@ -175,12 +149,13 @@ def AddCredit(author, contribution):
     credits[author] = contribution
     substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
         
-AddCredit("Mark James", "the free silk icon set (http://www.famfamfam.com/lab/icons/silk/)")
+AddCredit("Mark James", "the free silk icon set available at http://www.famfamfam.com/lab/icons/silk/")
 AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
 AddCredit("Julian Back", "for the framework for the C edit mode")
 AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from at http://yapsy.sourceforge.net/")
 AddCredit("Peter Damoc", "for the feature suggestions")
 AddCredit("Stani Michiels", "for the scintilla fold explorer he shared with the pyxides mailing list")
+AddCredit("David Eppstein", "for his public domain python implementation of the TeX word wrapping algorithm")
 
 copyrights = {}
 def AddCopyright(project, website, author, date, reason=""):
