@@ -101,7 +101,7 @@ class StandardReturnMixin(object):
         self.EndUndoAction()
 
 class ReindentBase(object):
-    def reindentLine(self, linenum=None):
+    def reindentLine(self, linenum=None, dedent_only=False):
         """Reindent the specified line to the correct level.
 
         Given a line, indent to the previous line
@@ -121,12 +121,15 @@ class ReindentBase(object):
         col = self.GetColumn(pos)
         self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
 
-        indstr = self.getReindentString(linenum, linestart, pos, indpos, col, indcol)
-        if indstr is None:
+        newind = self.getReindentColumn(linenum, linestart, pos, indpos, col, indcol)
+        if newind is None:
             return pos
-        
+        if dedent_only and newind > indcol:
+            return pos
+            
         # the target to be replaced is the leading indention of the
         # current line
+        indstr = self.GetIndentString(newind)
         self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
         self.SetTargetStart(linestart)
         self.SetTargetEnd(indpos)
@@ -147,12 +150,12 @@ class ReindentBase(object):
             return after
         return newpos
 
-    def getReindentString(self, linenum, linestart, pos, indpos, col, indcol):
+    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
         return None
 
 
 class StandardReindentMixin(ReindentBase):
-    def getReindentString(self, linenum, linestart, pos, indpos, col, indcol):
+    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
         # look at indention of previous line
         prevind, prevline = self.GetPrevLineIndentation(linenum)
         if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
@@ -163,11 +166,11 @@ class StandardReindentMixin(ReindentBase):
 
         # previous line is not blank, so indent line to previous
         # line's level
-        return self.GetIndentString(prevind)
+        return prevind
 
 
 class FoldingReindentMixin(object):
-    def reindentLine(self, linenum=None):
+    def reindentLine(self, linenum=None, dedent_only=False):
         """Reindent the specified line to the correct level.
 
         Given a line, use Scintilla's built-in folding to determine

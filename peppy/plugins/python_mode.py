@@ -73,11 +73,11 @@ class ElectricColon(TextModificationAction):
             # do it manually
             linestart = s.PositionFromLine(s.GetCurrentLine())
             s.Colourise(linestart, s.GetSelectionEnd())
-            s.reindentLine()
+            s.reindentLine(dedent_only=True)
         s.EndUndoAction()
 
 class PythonFoldingReindentMixin(ReindentBase):
-    def getReindentString(self, linenum, linestart, pos, before, col, ind):
+    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
         """Reindent the specified line to the correct level.
 
         Given a line, use Scintilla's built-in folding and a whole
@@ -134,7 +134,7 @@ class PythonFoldingReindentMixin(ReindentBase):
             if prev == ind:
                 fold-=self.GetIndent()
 
-        return self.GetIndentString(fold)
+        return fold
 
 
 class PyPEElectricReturnMixin(debugmixin):
@@ -250,7 +250,7 @@ class PyPEElectricReturnMixin(debugmixin):
 
 
 class IDLEReindentMixin(ReindentBase):
-    def getReindentString(self, linenum, linestart, pos, before, col, ind):
+    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
         """Reindent the specified line to the correct level.
 
         Given a line, IDLE's parsing module to find the correct indention level
@@ -268,7 +268,7 @@ class IDLEReindentMixin(ReindentBase):
         if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
             #dprint("Found a dedent: %s" % cmd)
             indent -= self.GetIndent()
-        return self.GetIndentString(indent)
+        return indent
 
 # Helper functions required by IDLE's PyParse routine
 def is_char_in_string(stc, pos):
