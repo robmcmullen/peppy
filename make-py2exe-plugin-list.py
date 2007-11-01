@@ -7,16 +7,17 @@ from optparse import OptionParser
 
 __builtin__._ = str
 
-def entry(filename, out, copythese=None):
+def entry(filename, out=None, copythese=None):
     print "Processing filename %s" % filename
     if filename.endswith(".py"):
         if copythese is not None:
             copythese.append(filename)
         if not filename.endswith("__init__.py") or True:
             module = filename[:-3].replace('/', '.').replace('\\', '.')
-            out.write("import %s\n" % (module))
+            if out:
+                out.write("import %s\n" % (module))
 
-def process(path, out, copythese=None):
+def process(path, out=None, copythese=None):
     files = glob.glob('%s/*' % path)
     for path in files:
         if os.path.isdir(path):
@@ -25,8 +26,13 @@ def process(path, out, copythese=None):
             entry(path, out, copythese)
 
 def load_setuptools_plugins(entry_point_name):
+    modules_seen = {}
+    
     for entrypoint in pkg_resources.iter_entry_points(entry_point_name):
-        plugin_class = entrypoint.load()
+        print entrypoint
+        # Don't load plugin class becasue classprefs depend on wx
+        #plugin_class = entrypoint.load()
+        plugin_class = None
         print entrypoint.module_name
         print entrypoint, entrypoint.name, plugin_class
         print entrypoint.name
@@ -34,7 +40,7 @@ def load_setuptools_plugins(entry_point_name):
         # find the parent of the loaded module
         moduleparent, module = entrypoint.module_name.rsplit('.', 1)
         print moduleparent
-
+        
         # import that module (which, since it's a module, imports
         # its __init__.py)
         m = __import__(moduleparent)
@@ -47,45 +53,49 @@ def load_setuptools_plugins(entry_point_name):
         # go up one directory
         path = os.path.dirname(path)
         print path
+        if path in modules_seen:
+            print "Already seen %s" % path
+            continue
+        modules_seen[path] = True
 
         os.chdir(path)
         copythese = []
-        process(moduleparent, out, copythese)
+        process(moduleparent, None, copythese)
         os.chdir(savepath)
 
         print copythese
         for py in copythese:
             source = os.path.join(path, py)
-            dest = os.path.join(options.setuptools, py)
+            dest = os.path.join(destdir, py)
             try:
                 os.makedirs(os.path.dirname(dest))
             except:
                 pass
             shutil.copy(source, dest)
             print "cp %s %s" % (os.path.join(path, py),
-                                os.path.join(options.setuptools, py))
+                                os.path.join(destdir, py))
     
 
 if __name__ == "__main__":
     usage="usage: %prog [-s dir] [-o file]"
     parser=OptionParser(usage=usage)
-    parser.add_option("-s", action="store", dest="setuptools",
-                      default = "",
+    parser.add_option("-s", action="store_true", dest="setuptools",
                       help="copy and include setuptools plugins")
+    parser.add_option("-i", action="store", dest="input",
+                      default="peppy", help="base input directory")
+    parser.add_option("-d", action="store", dest="importdir",
+                      default="builtins", help="import directory within base directory")
     parser.add_option("-o", action="store", dest="output",
-                      default="peppy/py2exe_plugins.py", help="output filename")
+                      default="py2exe_plugins.py", help="output filename")
     (options, args) = parser.parse_args()
 
     out = StringIO()
     out.write("# Automatically generated, and only used when creating a py2exe distribution\n")
 
-    os.chdir('peppy')
-    process('plugins', out)
-    # Need to force the importing of the editra style definition files
-    process('editra/syntax', out)
-    os.chdir('..')
-
+    os.chdir(options.input)
     savepath = os.getcwd()
+    destdir = os.path.join(savepath, options.importdir)
+    print destdir
 
     if options.setuptools:
         try:
@@ -97,5 +107,9 @@ if __name__ == "__main__":
 
     os.chdir(savepath)
 
-    fh = open(options.output, 'w')
+    process(options.importdir, out)
+    # Need to force the importing of the editra style definition files
+    process('editra/syntax', out)
+
+    fh = open(os.path.join(savepath, options.output), 'w')
     fh.write(out.getvalue())

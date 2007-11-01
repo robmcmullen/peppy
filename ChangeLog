@@ -1,14 +1,24 @@
+2007-10-31  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.0.3 update to "Kibbles 'n' Snouts"
+	* added reindent code from IDLE
+	* added ChangeLog mode
+	* added mouse wheel settings (scroll by lines/page)
+
 2007-10-23  Rob McMullen  <robm@users.sourceforge.net>
+	
 	* Released peppy-0.7.0.2 update to "Kibbles 'n' Snouts"
         * Added fill-paragraph
         * Icons now bundled in iconmap.py for distribution
 
 2007-10-22  Rob McMullen  <robm@users.sourceforge.net>
+	
 	* Released peppy-0.7.0.1 update to "Kibbles 'n' Snouts"
 	* Added font configuration in preferences
 	* spaces now allowed in pathnames when running scripts
 
 2007-10-17  Rob McMullen  <robm@users.sourceforge.net>
+	
 	* Released peppy-0.7.0 "Kibbles 'n' Snouts"
 	* Dogfooding release!  Used peppy to edit peppy
 	* Added minibuffer filename loading with tab completion

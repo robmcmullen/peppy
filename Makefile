@@ -105,8 +105,6 @@ distdir:
 	cp graphics/peppy.ico $(distdir)
 	cp peppy.nsi $(distdir)
 	
-	./make-py2exe-plugin-list.py -o $(distdir)/peppy/py2exe_plugins.py
-
 	mkdir $(distdir)/scripts
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts

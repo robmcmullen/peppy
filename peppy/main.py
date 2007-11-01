@@ -477,13 +477,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         import peppy.fundamental
         
         # py2exe imports go here.
-        if main_is_frozen():
-            try:
-                import peppy.py2exe_plugins
-            except:
-                pass
-        pass
-    
+        try:
+            import peppy.py2exe_plugins
+        except:
+            pass
+
     def gaugeCallback(self, plugin_info):
         self.splash.tick("Loading %s..." % plugin_info.name)
 
