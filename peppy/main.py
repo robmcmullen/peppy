@@ -4,7 +4,7 @@
 Main application class.
 """
 
-import os, sys, imp, platform
+import os, sys, imp, platform, random
 import __builtin__
 
 import wx
@@ -111,6 +111,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     override_preferences = "peppy.cfg"
     standard_plugin_dirs = ['plugins', 'hsi']
     preferences_plugin_dir = "plugins"
+    server_port_filename = ".server.port"
 
     ##
     # This mapping controls the verbosity level required for debug
@@ -134,7 +135,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
-        IntParam('listen_port', 55555, 'Port to listen on to determine if another peppy\ninstance is running'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
         BoolParam('requests_in_new_frame', True, 'File open requests will appear in\na new frame if True, or as a new tab in\nan existing frame if False'),
         IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results\nin peppy guessing that the file is binary'),
@@ -175,9 +175,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # are currently known.
         GlobalPrefs.convertConfig()
         
-        self.startServer()
+        self.findRunningServer()
         if self.otherInstanceRunning():
             return True
+        else:
+            self.startServer()
 
         self.startSplash()
 
@@ -356,16 +358,74 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 menu.append(kls)
         #sys.exit()
 
+    def findRunningServer(self):
+        """Determine if a single instance server is running.
+        
+        If the server port specification file exists, try to open that file to
+        determine the port that is being used by the other running instance.
+        """
+        self.server = None
+        if self.classprefs.request_server and not hasattr(self, 'no_server_option'):
+            listen_port = None
+            name = self.server_port_filename
+            if self.config.exists(name):
+                dprint("found existing server port config file %s" % name)
+                try:
+                    fh = self.config.open(name)
+                    listen_port = int(fh.read())
+                except:
+                    # It's a bad file, so remove it.
+                    self.config.remove(name)
+                    dprint("removed server port file %s" % name)
+                    listen_port = None
+            if listen_port is not None:
+                server = LoadFileProxy(port=listen_port)
+                server.find()
+                if server.isActive():
+                    self.server = server
+                    dprint("socket = %s" % server.socket)
+                else:
+                    self.config.remove(name)
+                    dprint("removed server port file %s" % name)
+                    listen_port = None
+            dprint("found port = %s" % listen_port)
+        
+    def getServerPort(self, lo=50000, hi=60000, tries=10):
+        """Determine the port to use for the load file server.
+        
+        Find a port that is open (i.e. that doesn't respond when trying to
+        open it) in the specified range and return a LoadFileProxy for it.
+        """
+        listen_port = None
+        server = LoadFileProxy(port=listen_port)
+        tried_config = False
+        trying = 0
+        while trying < tries:
+            listen_port = random.randint(lo, hi)
+            dprint("trying port %d" % listen_port)
+            if not server.find(listen_port):
+                # OK, it didn't respond, so it's open.  Let's use it.
+                break
+            trying += 1
+        if not server.isActive():
+            fh = self.config.open(self.server_port_filename, "w")
+            fh.write(str(listen_port))
+            return server
+        return None
+        
     def startServer(self):
         if self.classprefs.request_server and not hasattr(self, 'no_server_option'):
-            self.server = LoadFileProxy(port=self.classprefs.listen_port)
-            if not self.server.find():
+            dprint(self.server)
+            if not self.server:
+                self.server = self.getServerPort()
+            if self.server:
                 self.remote_args = []
                 self.server.start(self.loadRemoteArgs)
         else:
             self.server = None
 
     def otherInstanceRunning(self):
+        dprint(self.server)
         return self.server is not None and self.server.socket is not None
 
     def sendToOtherInstance(self, filename):

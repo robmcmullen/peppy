@@ -132,19 +132,29 @@ class LoadFileProxy(object):
         self.port=port
         self.socket=None
         self.threadedServer=None
-        
-    def find(self):
+    
+    @classmethod
+    def getSocket(self, host, port):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((self.host, self.port))
-            self.socket=s
-            return True
-        except socket.error:
-            self.socket=None
-        return False
+            s.connect((host, port))
+            return s
+        except socket.error, e:
+            print e
+            pass
+        return None
+    
+    def find(self, port=None):
+        if port is not None:
+            self.port = port
+        self.socket = self.getSocket(self.host, self.port)
+        return self.socket is not None
+    
+    def isActive(self):
+        return self.socket is not None
 
     def start(self, proxy):
-        self.threadedServer = ThreadedLoadFileServer(proxy)
+        self.threadedServer = ThreadedLoadFileServer(proxy, self.host, self.port)
         self.threadedServer.start()
 
     def stop(self):
