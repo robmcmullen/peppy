@@ -60,6 +60,10 @@ class HomeConfigDir:
         path = self.fullpath(name)
         fd = open(path,mode)
         return fd
+    
+    def remove(self, name):
+        path = self.fullpath(name)
+        os.remove(path)
 
     def loadObject(self, name):
         item = None
