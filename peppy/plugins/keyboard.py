@@ -48,6 +48,8 @@ class KeyboardConf(IPeppyPlugin):
     def addCommandLineOptions(self, parser):
         parser.add_option("--key-bindings", action="store",
                           dest="key_bindings", default='')
+        parser.add_option("--show-key-bindings", action="store_true",
+                          dest="show_key_bindings")
 
     def processCommandLineOptions(self, options):
         #dprint(options.key_bindings)
@@ -56,6 +58,8 @@ class KeyboardConf(IPeppyPlugin):
         else:
             self.platform = self.classprefs.key_bindings
         self.load()
+        if options.show_key_bindings:
+            self.configDefault()
     
     def requestedShutdown(self):
         # FIXME: configuration file should be saved here
@@ -104,7 +108,7 @@ class KeyboardConf(IPeppyPlugin):
             for action in actions:
                 action.setAcceleratorText(force_emacs=True)
 
-    def configDefault(cls, fh=sys.stdout):
+    def configDefault(self, fh=sys.stdout):
         lines = []
         lines.append("[%s]" % self.__class__.__name__)
         keymap = {}
