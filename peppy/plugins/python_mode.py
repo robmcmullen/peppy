@@ -257,7 +257,7 @@ class IDLEReindentMixin(ReindentBase):
         """
         # Use the current line number, which will find the indention based on
         # the previous line
-        indent = self.findIndent(linenum)
+        indent, extra = self.findIndent(linenum, True)
         
         # The text begins at indpos; check some special cases to see if there
         # should be a dedent
@@ -267,7 +267,10 @@ class IDLEReindentMixin(ReindentBase):
         #dprint("checking %s" % cmd)
         if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
             #dprint("Found a dedent: %s" % cmd)
-            indent -= self.GetIndent()
+            if extra != "block dedent":
+                # If we aren't right after a return or something that already
+                # caused a dedent, dedent it
+                indent -= self.GetIndent()
         return indent
 
 # Helper functions required by IDLE's PyParse routine
@@ -291,10 +294,17 @@ def build_char_in_string_func(stc, startindex):
 class IDLEElectricReturnMixin(debugmixin):
     debuglevel = 0
     
-    def findIndent(self, linenum):
-        """Gets indentation of what the line containing pos should be, not taking
+    def findIndent(self, linenum, extra=None):
+        """Find what indentation of the line should be based on previous lines
+        
+        Gets indentation of what the line containing pos should be, not taking
         into account any dedenting as a result of compound blocks like else,
         finally, etc.
+        
+        linenum: line number to find indentation
+        
+        extra: include extra syntactic info as a result of the parsing; whether
+        the previous block included a return and was dedented, for instance.
         """
         indentwidth = self.GetIndent()
         tabwidth = 87
@@ -357,17 +367,19 @@ class IDLEElectricReturnMixin(debugmixin):
         # interesting stmt.
         indentstr = y.get_base_indent_string()
         indent = len(indentstr.expandtabs(tabwidth))
-    #    text.insert("insert", indent)
+    
+        extra_data = None
         if y.is_block_opener():
             self.dprint("block opener")
             indent += indentwidth
-    #        self.smart_indent_event(event)
+            extra_data = "block opener"
         elif indent and y.is_block_closer():
             self.dprint("block dedent")
-    #        self.smart_backspace_event(event)
             indent = ((indent-1)//indentwidth) * indentwidth
-    #    return "break"
+            extra_data = "block dedent"
         self.dprint("indent = %d" % indent)
+        if extra:
+            return (indent, extra_data)
         return indent
 
 
