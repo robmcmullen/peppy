@@ -328,6 +328,7 @@ class IDLEElectricReturnMixin(debugmixin):
 
         c = y.get_continuation_type()
         self.dprint("continuation type: %s" % c)
+        extra_data = None
         if c != PyParse.C_NONE:
             # The current stmt hasn't ended yet.
             if c == PyParse.C_STRING_FIRST_LINE:
@@ -360,23 +361,22 @@ class IDLEElectricReturnMixin(debugmixin):
                     indent = y.compute_backslash_indent()
             else:
                 assert 0, "bogus continuation type %r" % (c,)
-            return indent
-
-        # This line starts a brand new stmt; indent relative to
-        # indentation of initial line of closest preceding
-        # interesting stmt.
-        indentstr = y.get_base_indent_string()
-        indent = len(indentstr.expandtabs(tabwidth))
-    
-        extra_data = None
-        if y.is_block_opener():
-            self.dprint("block opener")
-            indent += indentwidth
-            extra_data = "block opener"
-        elif indent and y.is_block_closer():
-            self.dprint("block dedent")
-            indent = ((indent-1)//indentwidth) * indentwidth
-            extra_data = "block dedent"
+                
+        else:
+            # This line starts a brand new stmt; indent relative to
+            # indentation of initial line of closest preceding
+            # interesting stmt.
+            indentstr = y.get_base_indent_string()
+            indent = len(indentstr.expandtabs(tabwidth))
+        
+            if y.is_block_opener():
+                self.dprint("block opener")
+                indent += indentwidth
+                extra_data = "block opener"
+            elif indent and y.is_block_closer():
+                self.dprint("block dedent")
+                indent = ((indent-1)//indentwidth) * indentwidth
+                extra_data = "block dedent"
         self.dprint("indent = %d" % indent)
         if extra:
             return (indent, extra_data)
