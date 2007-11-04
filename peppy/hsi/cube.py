@@ -296,6 +296,7 @@ class Cube(object):
     def open(self,url=None):
         if url:
             self.setURL(url)
+            self.mmap = None
 
         if self.url:
             if self.url.protocol == 'file':

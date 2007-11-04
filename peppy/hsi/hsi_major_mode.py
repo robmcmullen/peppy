@@ -334,44 +334,47 @@ class HSIActionMixin(object):
     def worksWithMajorMode(cls, mode):
         return isinstance(mode, HSIMode)
 
-class BandEnabledMixin(HSIActionMixin):
-    def isEnabled(self):
-        mode = self.mode
-        for band in mode.bands:
-            # check if any of the display bands is at the low limit
-            if band < 1:
-                return False
-        # nope, still room to decrement all bands
-        return True
-
-class BandAction(BandEnabledMixin, SelectAction):
-    pass
-
-class PrevBand(BandAction):
+class PrevBand(HSIActionMixin, SelectAction):
     name = "Prev Band"
     tooltip = "Previous Band"
     default_menu = ("Dataset", -200)
     icon = 'icons/hsi-band-prev.png'
     keyboard = "C-P"
     
+    def isEnabled(self):
+        for band in self.mode.bands:
+            # check if any of the display bands is at the low limit
+            if band < 1:
+                return False
+        # nope, still room to decrement all bands
+        return True
+
     def action(self, index=-1, multiplier=1):
         dprint("Previous band!!!")
         mode = self.mode
         mode.prevBand()
 
-class NextBand(BandAction):
+class NextBand(HSIActionMixin, SelectAction):
     name = "Next Band"
     tooltip = "Next Band"
     default_menu = ("Dataset", 201)
     icon = 'icons/hsi-band-next.png'
     keyboard = "C-N"
     
+    def isEnabled(self):
+        for band in self.mode.bands:
+            # check if any of the display bands is at the high limit
+            if band >= (self.mode.cube.bands-1):
+                return False
+        # nope, still room to advance all bands
+        return True
+
     def action(self, index=-1, multiplier=1):
         dprint("Next band!!!")
         mode = self.mode
         mode.nextBand()
 
-class GotoBand(BandEnabledMixin, MinibufferAction):
+class GotoBand(HSIActionMixin, MinibufferAction):
     name = "Goto Band"
     tooltip = "Go to a particular band in the cube"
     default_menu = ("Dataset", 202)
@@ -421,7 +424,7 @@ class NextCube(CubeAction):
         mode.nextCube()
 
 class SelectCube(HSIActionMixin, RadioAction):
-    debuglevel = 1
+    debuglevel = 0
     name = "Select Cube"
     tooltip = "Select a cube from the dataset"
     default_menu = ("Dataset", 102)
@@ -448,7 +451,7 @@ class SelectCube(HSIActionMixin, RadioAction):
         wx.CallAfter(mode.update)
         
 class ContrastFilterAction(HSIActionMixin, RadioAction):
-    debuglevel = 1
+    debuglevel = 0
     name = "Contrast"
     tooltip = "Contrast adjustment method"
     default_menu = ("Dataset", -300)
@@ -463,7 +466,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
     def getIndex(self):
         mode = self.mode
         filt = mode.cubefilter
-        dprint(filt)
+        #dprint(filt)
         if hasattr(filt, 'contraststretch'):
             val = filt.contraststretch
             if val > 0.0001 and abs(val - 0.1) < 0.0001:
