@@ -272,6 +272,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             del sys.argv[index:index + 1]
             self.no_server_option = False
 
+        if "--no-setuptools" in sys.argv:
+            index = sys.argv.index("--no-setuptools")
+            del sys.argv[index:index + 1]
+            self.no_setuptools = True
+
         self.dprint("argv after: %s" % (sys.argv,))
     
     def getOptionParser(self):
@@ -287,6 +292,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
         parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
+        parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False)
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -612,8 +618,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         All setuptools plugins with the peppy entry point are loaded
         here, if setuptools is installed.
         """
-        import peppy.lib.setuptools_utils
-        peppy.lib.setuptools_utils.load_plugins(entry_point)
+        if not hasattr(self, 'no_setuptools'):
+            import peppy.lib.setuptools_utils
+            peppy.lib.setuptools_utils.load_plugins(entry_point)
 
     def initGraphics(self):
         try:

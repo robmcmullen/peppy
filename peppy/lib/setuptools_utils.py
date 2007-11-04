@@ -40,6 +40,9 @@ def load_plugins(entry_point):
             for entrypoint in pkg_resources.iter_entry_points(entry_point):
                 plugin_class = entrypoint.load()
                 #dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
+        except ImportError, e:
+            import traceback
+            dprint(traceback.format_exc())
         except:
             # For now, just skip loading until I figure out how to use versions
             # of setuptools that don't have iter_entry_points
