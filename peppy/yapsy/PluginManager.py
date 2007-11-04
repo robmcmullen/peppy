@@ -210,7 +210,7 @@ class PluginManager(object):
 						config_parser.read(candidate_infofile)
 					except:
 						logging.debug("Could not parse the plugin file %s" % candidate_infofile)					
- 						continue
+						continue
 					# check if the basic info is available
 					if not config_parser.has_section("Core"):
 						continue
@@ -295,6 +295,7 @@ class PluginManager(object):
 					if not (candidate_infofile in self._category_file_mapping[current_category]): 
 						# we found a new plugin: initialise it and search for the next one
 						plugin_info.plugin_object = element()
+						plugin_info.plugin_object._import_dir = os.path.dirname(candidate_filepath)
 						plugin_info.category = current_category
 						self.category_mapping[current_category].append(plugin_info)
 						self._category_file_mapping[current_category].append(candidate_infofile)

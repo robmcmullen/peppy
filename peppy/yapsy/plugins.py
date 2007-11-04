@@ -1,6 +1,8 @@
 """
 Base class for peppy plugins
 """
+import os, sys
+
 import wx
 
 from peppy.lib.userparams import *
@@ -27,6 +29,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         """
         self.is_activated = False
         self._performed_initial_activation = False
+        self._import_dir = None
 
     def activate(self):
         """
@@ -58,6 +61,23 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
             if mode in modes:
                 return True
         return False
+
+    def importModule(self, relative_module):
+        """Import a module relative to the plugin module."""
+        
+        # Save the old sys.path and modify it temporarily to include the
+        # directory in which the plugin was loaded
+        save = sys.path
+        #print save
+        sys.path = [self._import_dir]
+        sys.path.extend(save)
+        #print sys.path
+        try:
+            mod = __import__(relative_module)
+        except:
+            mod = None
+        sys.path = save
+        return mod
 
     ##### Lifecycle control methods
     

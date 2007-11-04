@@ -9,14 +9,12 @@ uncompressed formats) using memory mapped file access.
 import os,sys,re,random, glob
 from cStringIO import StringIO
 
+import numpy
 import utils
 
 from peppy.debug import *
-
 from peppy.iofilter import *
 
-from numpy.core.numerictypes import *
-import numpy
 
 # ENVI standard byte order: 0=little endian, 1=big endian
 LittleEndian=0
@@ -408,9 +406,9 @@ class Cube(object):
     def guessScaleFactor(self):
         """Try to supply a good guess as to the scale factor of the
         samples based on the type of the data"""
-        if self.data_type in [int8,int16,int32,uint16,uint32,int64,uint64]:
+        if self.data_type in [numpy.int8,numpy.int16,numpy.int32,numpy.uint16,numpy.uint32,numpy.int64,numpy.uint64]:
             self.scale_factor=10000.0
-        elif self.data_type in [float32,float64]:
+        elif self.data_type in [numpy.float32, numpy.float64]:
             self.scale_factor=1.0
         else:
             self.scale_factor=1.0
@@ -744,7 +742,9 @@ def newCube(interleave,url=None):
         raise ValueError("Interleave format %s not supported." % interleave)
     return cube
 
-def createCube(interleave,lines,samples,bands,datatype=int16,byteorder=nativeByteOrder,scalefactor=10000.0, data=None, dummy=False):
+def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByteOrder, scalefactor=10000.0, data=None, dummy=False):
+    if datatype == None:
+        datatype = numpy.int16
     cube=newCube(interleave,None)
     cube.interleave=interleave
     cube.samples=samples

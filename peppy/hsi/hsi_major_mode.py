@@ -40,7 +40,6 @@ import wx
 import wx.stc as stc
 import wx.lib.newevent
 
-from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
 from peppy.menu import *
 from peppy.major import *
@@ -53,15 +52,11 @@ from peppy.lib.bitmapscroller import *
 
 from peppy.hsi import *
 
-# hsi mode requires numpy, the check for which is handled by the major
-# mode wrapper
+# hsi mode and the plotting utilities require numpy, the check for which is
+# handled by the major mode wrapper
 import numpy
-
-# plotting requires NumPy, so only import these if NumPy is
-# around, otherwise the failure loading this module kills peppy.
 import wx.lib.plot as plot
 import peppy.lib.plotter as plotter
-
 
 # Some features require scipy, so set this flag to allow the features
 # that require scipi to be enabled at runtime
@@ -71,7 +66,6 @@ try:
     HAS_SCIPY = True
 except:
     HAS_SCIPY = False
-
 
 class BandFilter(object):
     def __init__(self):
@@ -729,7 +723,7 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
 
     def setupAxes(self):
         pass
-    
+
 class HSISpectrumMinorMode(HSIPlotMinorMode):
     """Display a spectrum at the current crosshair point.
     """
@@ -849,21 +843,3 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
             # dprint("yaxis=%s" % self.yaxis)
             self.updateListenerExtrema()
         return lines
-
-
-class HSIPlugin(IPeppyPlugin):
-    """HSI viewer plugin to register modes and user interface.
-    """
-
-    def getMajorModes(self):
-        yield HSIMode
-
-    def getMinorModes(self):
-        for mode in [HSIXProfileMinorMode, HSIYProfileMinorMode, HSISpectrumMinorMode]:
-            yield mode
-    
-    def getActions(self):
-        return [PrevCube, NextCube, SelectCube,
-                PrevBand, NextBand, GotoBand,
-                ContrastFilterAction, MedianFilterAction,
-                ]
