@@ -164,8 +164,12 @@ class SelectAction(debugmixin):
         return "%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
 
     def insertIntoMenu(self, menu):
-        self.widget=menu.Append(self.global_id, self.getMenuItemName(), self.getTooltip())
-        
+        self.widget = wx.MenuItem(menu, self.global_id, self.getMenuItemName(), self.getTooltip())
+        if self.icon:
+            bitmap = getIconBitmap(self.icon)
+            self.widget.SetBitmap(bitmap)
+        menu.AppendItem(self.widget)
+
     def insertIntoToolbar(self, toolbar):
         self.tool=toolbar
         toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
