@@ -2,7 +2,7 @@ import os,sys,re
 from cStringIO import StringIO
 
 import wx.stc
-from tests.mock_wx import *
+from mock_wx import *
 
 from peppy.stcinterface import *
 from peppy.fundamental import *
@@ -19,7 +19,9 @@ class TestFundamentalIndent(object):
     def checkReturn(self, pair):
         dprint(pair)
         prepareSTC(self.stc, pair[0])
+        dprint("after prepareSTC")
         self.stc.electricReturn()
+        dprint("after electricReturn")
         assert checkSTC(self.stc, pair[0], pair[1])
 
     def testReturn(self):
@@ -81,7 +83,7 @@ back at column zero
         for test in splittests(tests):
             yield self.checkReturn, test
 
-class TestPythonIndent(PythonElectricReturnMixin, StandardReturnMixin, PythonReindentMixin):
+class TestPythonIndent(IDLEElectricReturnMixin, StandardReturnMixin, IDLEReindentMixin):
     def setUp(self):
         self.stc = getSTC(stcclass=PythonSTC, lexer="Python")
         self.reindentAction = Reindent(self)

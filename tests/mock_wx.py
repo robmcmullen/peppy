@@ -85,10 +85,9 @@ def splittests(text):
         pair = re.split('[\r\n]--[\r\n]', test)
         if len(pair) == 2:
             tests.append(pair)
-        else:
+        elif test:
             print test
             print pair
-            sys.exit(1)
             tests.append((pair[0], ''))
     #print tests
     return tests

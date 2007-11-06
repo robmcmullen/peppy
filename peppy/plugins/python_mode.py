@@ -253,7 +253,8 @@ class IDLEReindentMixin(ReindentBase):
     def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
         """Reindent the specified line to the correct level.
 
-        Given a line, IDLE's parsing module to find the correct indention level
+        Given a line, use IDLE's parsing module to find the correct indention
+        level
         """
         # Use the current line number, which will find the indention based on
         # the previous line
@@ -339,8 +340,15 @@ class IDLEElectricReturnMixin(debugmixin):
                 # inside a string which started before this line;
                 # just mimic the current indent
                 #text.insert("insert", indent)
-                print "C_STRING_NEXT_LINES"
-                pass
+                s = self.GetStyleAt(end)
+                if s == 6 or s == 7:
+                    # Inside a triple quoted string (TQS)
+                    print "C_STRING_NEXT_LINES in TQS"
+                    indentstr = y.get_base_indent_string()
+                    indent = len(indentstr.expandtabs(tabwidth))
+                else:
+                    # FIXME: Does this ever happen without being in a TQS???
+                    print "C_STRING_NEXT_LINES"
             elif c == PyParse.C_BRACKET:
                 # line up with the first (if any) element of the
                 # last open bracket structure; else indent one
