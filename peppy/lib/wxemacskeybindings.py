@@ -53,20 +53,36 @@ class KeyMap(object):
     for any additional minor modes that need other keymappings.
     """    
     modifiers=['C-','S-','A-','M-']
-    modaccelerator = {'C-': 'Ctrl-',
-                      'S-': 'Shift-',
-                      'A-': 'Alt-',
-                      'M-': 'Alt-',
-                      }
-    modaliases={'Ctrl-':'C-',
-                'Shift-':'S-',
-                'Alt-':'A-',
-                'Meta-':'M-',
-                'Ctrl+':'C-',
-                'Shift+':'S-',
-                'Alt+':'A-',
-                'Meta+':'M-',
-                }
+    if wx.Platform == '__WXMAC__':
+        modaccelerator = {'C-': 'Cmd-',
+                          'S-': 'Shift-',
+                          'A-': 'Alt-',
+                          'M-': 'Alt-',
+                          }
+        modaliases={'Cmd-':'C-',
+                    'Shift-':'S-',
+                    'Alt-':'A-',
+                    'Meta-':'M-',
+                    'Cmd+':'C-',
+                    'Shift+':'S-',
+                    'Alt+':'A-',
+                    'Meta+':'M-',
+                    }
+    else:
+        modaccelerator = {'C-': 'Ctrl-',
+                          'S-': 'Shift-',
+                          'A-': 'Alt-',
+                          'M-': 'Alt-',
+                          }
+        modaliases={'Ctrl-':'C-',
+                    'Shift-':'S-',
+                    'Alt-':'A-',
+                    'Meta-':'M-',
+                    'Ctrl+':'C-',
+                    'Shift+':'S-',
+                    'Alt+':'A-',
+                    'Meta+':'M-',
+                    }
     keyaliases={'RET':'RETURN',
                 'SPC':'SPACE',
                 'ESC':'ESCAPE',
@@ -264,13 +280,6 @@ class KeyProcessor(object):
         self.num=0
         self.status=status
 
-        # I'm guessing here; I don't know what the Mac should default
-        # to.
-        if wx.Platform == '__WXMAC__':
-            self.remapMeta="Cmd" # or Cmd
-        else:
-            self.remapMeta="Alt" # or Cmd
-
         # XEmacs defaults to the Ctrl-G to abort keystroke processing
         self.abortKey="C-G"
 
@@ -301,7 +310,7 @@ class KeyProcessor(object):
     def wxkeymap(self):
         for i in wxkeynames:
             self.wxkeys[getattr(wx, "WXK_"+i)] = i
-        for i in ("SHIFT", "ALT", "CONTROL", "MENU"):
+        for i in ("SHIFT", "ALT", "COMMAND", "MENU"):
             if wx.Platform == '__WXMSW__':
                 self.wxkeys[getattr(wx, "WXK_"+i)] = ''
             else:
@@ -357,28 +366,18 @@ class KeyProcessor(object):
         raw = evt.GetRawKeyCode()
         keyname = self.wxkeys.get(keycode, None)
         modifiers = ""
-
-        # handle remapping of some modifier keys.  Should probably be
-        # written to be more general so that all modifier keys could
-        # be remapped.
-        if self.remapMeta=="Alt":
-            metadown=evt.AltDown()
-            altdown=False
-        else:
-            altdown=evt.AltDown()
-            if self.remapMeta=="Cmd":
-                metadown=evt.CmdDown()
-            else:
-                metadown=evt.MetaDown()
-
+        metadown = False
+        emods = evt.GetModifiers()
+        
         # Get the modifier string in order C-, S-, A-, M-
-        for mod, ch in ((evt.ControlDown(), 'C-'),
-                        (evt.ShiftDown(), 'S-'),
-                        (altdown, 'A-'),
-                        (metadown, 'M-')
-                        ):
-            if mod:
-                modifiers += ch
+        if emods & wx.MOD_CMD:
+            modifiers += "C-"
+        if emods & wx.MOD_SHIFT:
+            modifiers += "S-"
+        # A- not used currently; meta is called alt
+        if emods & wx.MOD_ALT:
+            modifiers += "M-"
+            metadown = True
 
         # Check the sticky-meta
         if self.metaNext:

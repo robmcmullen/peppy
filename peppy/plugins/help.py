@@ -72,7 +72,11 @@ class HelpManual(SelectAction):
     tooltip = "User manual"
     stock_id = wx.ID_HELP
     default_menu = ("&Help", -100)
-    key_bindings = {'default': "F1",}
+    
+    # mac should be cmd-?, but wx doesn't understand shifted keys as a target
+    # for keybindings, so have to specify shift-/, which on standard keyboard
+    # is the same as ?
+    key_bindings = {'default': "F1", 'mac': "C-S-/"}
     
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:User Manual")

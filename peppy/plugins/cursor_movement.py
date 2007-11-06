@@ -22,20 +22,21 @@ class BeginningOfLine(ScintillaCmdKeyExecute):
     alias = "beginning-of-line"
     name = "Cursor to Start of Line"
     tooltip = "Move the cursor to the start of the current line"
+    key_bindings = {'emacs': 'M-C-A',}
     cmd = wx.stc.STC_CMD_HOMEDISPLAY
         
 class BeginningTextOfLine(ScintillaCmdKeyExecute):
     alias = "beginning-text-of-line"
     name = "Cursor to first non-blank character in the line"
     tooltip = "Move the cursor to the start of the current line"
-    key_bindings = {'emacs': 'C-A',}
+    key_bindings = {'default': 'HOME', 'emacs': 'C-A',}
     cmd = wx.stc.STC_CMD_VCHOME
         
 class EndOfLine(ScintillaCmdKeyExecute):
     alias = "end-of-line"
     name = "Cursor to End of Line"
     tooltip = "Move the cursor to the end of the current line"
-    key_bindings = {'emacs': 'C-E',}
+    key_bindings = {'default': 'END', 'emacs': 'C-E',}
     cmd = wx.stc.STC_CMD_LINEEND
 
 class PreviousLine(ScintillaCmdKeyExecute):
@@ -56,7 +57,8 @@ class BeginningOfBuffer(SelectAction):
     alias = "beginning-of-buffer"
     name = "Cursor to first character in the buffer"
     tooltip = "Move the cursor to the start of the buffer"
-        
+    key_bindings = {'default': 'C-HOME'}
+
     def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentStart()
 
@@ -64,7 +66,8 @@ class EndOfBuffer(SelectAction):
     alias = "end-of-buffer"
     name = "Cursor to end of the buffer"
     tooltip = "Move the cursor to the end of the buffer"
-        
+    key_bindings = {'default': 'C-END'}
+
     def action(self, index=-1, multiplier=1):
         self.mode.stc.DocumentEnd()
 

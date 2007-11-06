@@ -25,6 +25,7 @@ class Preferences(SelectAction):
     default_toolbar = False
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES
+    key_bindings = {'mac': 'C-,', }
 
     @classmethod
     def showDialog(self, msg=None):

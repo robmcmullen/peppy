@@ -38,8 +38,9 @@ class KeyboardConf(IPeppyPlugin):
     the application's default value (which is specified in the source
     code.)
     """
+    valid_platforms = ['system default', 'win', 'emacs', 'mac']
     default_classprefs = (
-        ChoiceParam('key_bindings', ['win', 'emacs', 'mac'], 'win', 'Platform type from which to emulate the\ndefault keybindings.'),
+        ChoiceParam('key_bindings', valid_platforms, 'system default', 'Platform type from which to emulate the\ndefault keybindings.'),
         )
     platform = 'win'
     
@@ -57,6 +58,11 @@ class KeyboardConf(IPeppyPlugin):
             self.platform = options.key_bindings
         else:
             self.platform = self.classprefs.key_bindings
+        if self.platform == 'system default':
+            if wx.Platform == '__WXMAC__':
+                self.platform = 'mac'
+            else:
+                self.platform = 'win'
         self.load()
         if options.show_key_bindings:
             self.configDefault()

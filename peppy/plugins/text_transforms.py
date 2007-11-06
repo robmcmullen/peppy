@@ -25,6 +25,7 @@ class ShiftLeft(ScintillaCmdKeyExecute):
     name = "Shift &Left"
     default_menu = ("Transform", -500)
     icon = 'icons/text_indent_remove_rob.png'
+    key_bindings = {'default': 'C-[',}
     cmd = wx.stc.STC_CMD_BACKTAB
 
 class ShiftRight(ScintillaCmdKeyExecute):
@@ -33,6 +34,7 @@ class ShiftRight(ScintillaCmdKeyExecute):
     name = "Shift &Right"
     default_menu = ("Transform", 501)
     icon = 'icons/text_indent_rob.png'
+    key_bindings = {'default': 'C-]',}
     cmd = wx.stc.STC_CMD_TAB
 
 

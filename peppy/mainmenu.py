@@ -40,7 +40,7 @@ class New(SelectAction):
     tooltip = "New plain text file"
     icon = "icons/page.png"
     default_menu = ("File/New", 1.1)
-    key_bindings = {'win': "C-N", }
+    key_bindings = {'win': "C-N", 'mac': "C-N"}
 
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:untitled")
@@ -99,7 +99,7 @@ class OpenFileGUI(SelectAction):
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
     default_menu = (("File/Open", 2), 1) 
-    key_bindings = {'win': "C-O" }
+    key_bindings = {'default': "C-O", 'emacs': "C-X C-S-F" }
 
     def action(self, index=-1, multiplier=1):
         wildcard="*"
@@ -183,7 +183,7 @@ class Exit(SelectAction):
     name = "E&xit"
     tooltip = "Quit the program."
     default_menu = ("File", -1000)
-    key_bindings = {'win': "C-Q", 'emacs': "C-X C-C"}
+    key_bindings = {'default': "C-Q", 'emacs': "C-X C-C"}
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()
@@ -228,7 +228,7 @@ class Save(SelectAction):
     tooltip = "Save the current file"
     icon = "icons/disk.png"
     default_menu = ("File", -801)
-    key_bindings = {'win': "C-S", 'emacs': "C-X C-S",}
+    key_bindings = {'default': "C-S", 'emacs': "C-X C-S",}
 
     def isEnabled(self):
         if self.mode.buffer.readonly or not self.mode.buffer.stc.CanSave():
@@ -245,7 +245,7 @@ class SaveAs(SelectAction):
     tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     default_menu = ("File", 802)
-    key_bindings = {'win': "C-S-S", 'emacs': "C-X C-W",}
+    key_bindings = {'default': "C-S-S", 'emacs': "C-X C-W",}
     
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
@@ -353,7 +353,7 @@ class RunScript(SelectAction):
     tooltip = "Run this script through the interpreter"
     icon = 'icons/script_go.png'
     default_menu = ("Tools", 1)
-    key_bindings = {'win': "F5", 'emacs': "F5", }
+    key_bindings = {'default': "F5"}
 
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -376,7 +376,7 @@ class RunScriptWithArgs(RunScript):
     # If subclassing another action, make sure to reset global_id, or the
     # menu system will use the existing global id for the new action
     global_id = None
-    key_bindings = {'default': "C-F5", }
+    key_bindings = {'default': "C-F5"}
 
     def action(self, index=-1, multiplier=1):
         minibuffer = TextMinibuffer(self.mode, self, label="Arguments:",
@@ -394,7 +394,7 @@ class StopScript(RunScript):
     icon = 'icons/stop.png'
     default_menu = ("Tools", 3)
     global_id = None
-    key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", }
+    key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", 'mac': 'C-.'}
     
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and hasattr(self.mode, 'process')
@@ -409,7 +409,7 @@ class Undo(STCModificationAction):
     tooltip = "Undo"
     icon = "icons/arrow_turn_left.png"
     default_menu = ("Edit", 0)
-    key_bindings = {'win': "C-Z", 'emacs': "C-/",}
+    key_bindings = {'default': "C-Z", 'emacs': "C-/",}
     
     def isActionAvailable(self):
         return self.mode.stc.CanUndo()
@@ -425,7 +425,7 @@ class Redo(STCModificationAction):
     tooltip = "Redo"
     icon = "icons/arrow_turn_right.png"
     default_menu = ("Edit", 1)
-    key_bindings = {'win': "C-Y", 'emacs': "C-S-/",}
+    key_bindings = {'win': "C-Y", 'emacs': "C-S-/", 'mac': "C-S-Z"}
     
     def isActionAvailable(self):
         return self.mode.stc.CanRedo()
@@ -440,7 +440,7 @@ class Cut(STCModificationAction):
     tooltip = "Cut"
     icon = "icons/cut.png"
     default_menu = ("Edit", -100)
-    key_bindings = {'win': "C-X"}
+    key_bindings = {'win': "C-X", 'mac': "C-X"}
 
     def isActionAvailable(self):
         return self.mode.stc.CanCut()
@@ -455,7 +455,7 @@ class Copy(STCModificationAction):
     tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
-    key_bindings = {'win': "C-C"}
+    key_bindings = {'win': "C-C", 'mac': "C-C"}
 
     def isActionAvailable(self):
         return self.mode.stc.CanCopy()
@@ -470,7 +470,7 @@ class Paste(STCModificationAction):
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 102)
-    key_bindings = {'win': "C-V"}
+    key_bindings = {'win': "C-V", 'mac': "C-V"}
 
     def isActionAvailable(self):
         return self.mode.stc.CanEdit()
@@ -668,7 +668,7 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
     name = "&Execute Action"
     alias = "execute-action"
     tooltip = "Execute an action by name"
-    key_bindings = {'win': "M-X", 'emacs': "M-X", }
+    key_bindings = {'default': "M-X", }
     
     def __init__(self, *args, **kwargs):
         ActionNameMinibufferMixin.__init__(self, self.keyboard)
