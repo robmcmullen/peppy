@@ -656,5 +656,22 @@ class FundamentalMode(MajorMode):
                     else:
                         self.stc.ToggleFold(lineClicked)
 
-    def OnUpdateUIHook(self, evt):
+    def OnUpdateUI(self, evt):
+        """Specific OnUpdateUI callback for those modes that use an actual
+        STC for their edit window.
+        
+        Adds things like fold level and style display.
+        """
         self.stc.braceHighlight()
+        assert self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
+        linenum = self.editwin.GetCurrentLine()
+        pos = self.editwin.GetCurrentPos()
+        col = self.editwin.GetColumn(pos)
+        self.frame.SetStatusText("L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
+            col+self.classprefs.column_number_offset,
+            self.editwin.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE,
+            self.editwin.GetStyleAt(pos), pos),1)
+        self.idle_update_menu = True
+        self.OnUpdateUIHook(evt)
+        if evt is not None:
+            evt.Skip()
