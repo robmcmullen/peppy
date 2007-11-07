@@ -49,7 +49,7 @@ class PlotProxy(object):
         # listeners are MultiPlotters that are looking at this data
         self.listeners=[]
 
-    def getLines(self, x=0, y=0):
+    def getLines(self, *args):
         """Users should override this to return a list of
         plot.Polyline instances that represent the data to be plotted.
 
@@ -58,7 +58,7 @@ class PlotProxy(object):
         """
         return []
 
-    def updateLines(self, x=0, y=0):
+    def updateLines(self, *args):
         """Called by other objects to reset the internal state of the
         PlotProxy.
 
@@ -67,7 +67,7 @@ class PlotProxy(object):
         coordinates.
         """
         # dprint("PlotProxy: update (%d,%d)" % (x,y))
-        self.lines=self.getLines(x,y)
+        self.lines=self.getLines(*args)
 
     def addListener(self, plotter):
         """Add a MultiPlotter as a listener.

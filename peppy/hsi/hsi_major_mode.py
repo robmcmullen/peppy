@@ -87,18 +87,19 @@ class BandFilter(object):
     def getPlane(self,raw):
         return self.getGray(raw)
 
-    def getRGB(self, cubeband, filt, progress=None):
-        if not cubeband.cube: return None
+    def getRGB(self, cubeview, filt, progress=None):
+        if not cubeview.cube: return None
         
         self.planes=[]
 
         count=0
-        for band in cubeband.bands:
+        for band in cubeview.bands:
             dprint("getRGB: band=%s" % str(band))
             self.planes.append(self.getPlane(filt.getPlane(band[1])))
-            if progress: progress.Update(50+((count+1)*50)/len(cubeband.bands))
+            if progress: progress.Update(50+((count+1)*50)/len(cubeview.bands))
             count+=1
-        self.rgb=numpy.zeros((cubeband.cube.lines,cubeband.cube.samples,3),numpy.uint8)
+        self.rgb=numpy.zeros((cubeview.height, cubeview.width, 3),numpy.uint8)
+        dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, self.planes[0].shape))
         if count>0:
             for i in range(count):
                 self.rgb[:,:,i]=self.planes[i]
@@ -194,11 +195,21 @@ class MedianFilter1D(GeneralFilter):
             return filtered
         return raw
 
-class CubeBand(object):
-    def __init__(self, cube):
+class CubeView(object):
+    """Wrapper around a Cube object that provides a bitmap view.
+    
+    This class wraps a cube object and provides the interface needed by the
+    bitmap viewing code to generate the appropriate bitmaps to view the
+    selected bands in the cube.
+    """
+    name = "Image View"
+    xProfileXAxisLabel = 'sample'
+    yProfileXAxisLabel = 'line'
+
+    def __init__(self, cube, display_rgb=True):
+        self.display_rgb = display_rgb
         self.setCube(cube)
-
-
+    
     def setCube(self, cube):
         # list of tuples (band number, band) where band is an array as
         # returned from cube.getBand
@@ -214,85 +225,156 @@ class CubeBand(object):
         self.bitmap=None
         self.contraststretch=0.0 # percentage
 
-        self.cube=cube
-        if self.cube:
-            self.width=cube.samples
-            self.height=cube.lines
+        self.initBitmap(cube)
+        self.initDisplayIndexes()
+
+    def initBitmap(self, cube, width=None, height=None):
+        self.cube = cube
+        if cube:
+            if width:
+                self.width = width
+                self.height = height
+            else:
+                self.width = cube.samples
+                self.height = cube.lines
         else:
-            self.width=128
-            self.height=128
+            self.width = 128
+            self.height = 128
 
         # Delay loading real bitmap till requested.  Make an empty one
         # for now.
-        self.bitmap=wx.EmptyBitmap(self.width,self.height)
-            
-       
-    def loadBands(self,bands,progress=None):
+        self.bitmap=wx.EmptyBitmap(self.width, self.height)
+
+    def initDisplayIndexes(self):
+        if self.cube:
+            self.indexes = self.cube.guessDisplayBands()
+            if not self.display_rgb and len(self.indexes)>1:
+                self.indexes = [self.indexes[0]]
+            dprint("display indexes = %s" % str(self.bands))
+            self.max_index = self.cube.bands - 1
+        else:
+            self.indexes = [0]
+            self.max_index = 0
+
+    def loadBands(self, progress=None):
         if not self.cube: return
 
         self.bands=[]
         count=0
-        if isinstance(bands,tuple) or isinstance(bands,list):
-            emin=None
-            emax=None
-            for i in bands:
-                raw=self.cube.getBandInPlace(i)
-                minval=raw.min()
-                maxval=raw.max()
-                self.bands.append((i,raw,minval,maxval))
-                count+=1
-                if emin==None or minval<emin:
-                    emin=minval
-                if emax==None or maxval>emax:
-                    emax=maxval
-                if progress: progress.Update((count*50)/len(bands))
-            self.extrema=(emin,emax)
-            
-        elif isinstance(bands,int):
-            raw=self.cube.getBandInPlace(bands)
+        emin=None
+        emax=None
+        for i in self.indexes:
+            raw=self.cube.getBandInPlace(i)
             minval=raw.min()
             maxval=raw.max()
-            self.bands.append((bands,raw,minval,maxval))
-            if progress: progress.Update(100)
-            self.extrema=(minval,maxval)
+            self.bands.append((i,raw,minval,maxval))
+            count+=1
+            if emin==None or minval<emin:
+                emin=minval
+            if emax==None or maxval>emax:
+                emax=maxval
+            if progress: progress.Update((count*50)/len(bands))
+        self.extrema=(emin,emax)
 
-    # Get a list of horizontal profiles at the given line number
-    def getHorizontalProfiles(self,line):
+    def getHorizontalProfiles(self, y):
+        """Get the horizontal profiles at the given height"""
         if not self.cube: return
 
         profiles=[]
         for band in self.bands:
-            profile=band[1][line,:]
+            profile=band[1][y,:]
             profiles.append(profile)
         return profiles
 
-    def getVerticalProfiles(self,sample):
+    def getVerticalProfiles(self, x):
+        """Get the vertical profiles at the given width"""
         if not self.cube: return
 
         profiles=[]
         for band in self.bands:
-            profile=band[1][:,sample]
+            profile=band[1][:,x]
             profiles.append(profile)
         return profiles
+    
+    def getDepthXAxisLabel(self):
+        if self.cube.wavelengths:
+            label = self.cube.wavelength_units
+        else:
+            label='band'
+        return label
 
-    def show(self, prefilter, colorfilter, bands=None,progress=None):
+    def getDepthXAxisExtrema(self):
+        if self.cube.wavelengths:
+            axis = (self.cube.wavelengths[0],
+                    self.cube.wavelengths[-1])
+        else:
+            axis=(0,self.cube.bands)
+        return axis
+
+    def getDepthXAxis(self):
+        if self.cube.wavelengths:
+            values = self.cube.wavelengths
+        else:
+            values = numpy.arange(1, self.cube.bands+1, 1)
+        return values
+
+    def getDepthProfile(self, x, y):
+        """Get the profile into the monitor at the given x,y position"""
+        profile = self.cube.getSpectra(y,x)
+        return profile
+
+    def nextIndex(self):
+        newbands=[]
+        for i in range(len(self.indexes)):
+            newbands.append(self.indexes[i]+1)
+        return self.setIndexes(newbands)
+
+    def prevIndex(self):
+        newbands=[]
+        for i in range(len(self.indexes)):
+            newbands.append(self.indexes[i]-1)
+        return self.setIndexes(newbands)
+
+    def gotoIndex(self, band):
+        newbands=[band]
+        return self.setIndexes(newbands)
+
+    def setIndexes(self, newbands):
+        display=True
+        # greyscale image only needs the first array value, rgb image
+        # uses all 3
+        dprint("bands=%s" % newbands)
+
+        # first check the range
+        for i in range(len(self.indexes)):
+            if newbands[i]<0 or newbands[i]>=self.cube.bands:
+                display=False
+                break
+
+        # if all bands are in range, change the settings and display
+        if display:
+            for i in range(len(self.indexes)):
+                self.indexes[i]=newbands[i]
+        return display
+
+    def show(self, prefilter, colorfilter, progress=None):
         if not self.cube: return
 
         refresh=False
-        if bands:
-            if len(bands)!=len(self.bands):
+        if self.indexes:
+            if len(self.indexes)!=len(self.bands):
                 refresh=True
             else:
-                for i in range(len(bands)):
-                    if bands[i]!=self.bands[i][0]:
+                for i in range(len(self.indexes)):
+                    if self.indexes[i]!=self.bands[i][0]:
                         refresh=True
                         break
         
         if refresh or not self.bands:
-            self.loadBands(bands)
+            self.loadBands()
         
         self.rgb=colorfilter.getRGB(self, prefilter, progress)
-        image=wx.ImageFromData(self.cube.samples,self.cube.lines,self.rgb.tostring())
+        image=wx.ImageFromData(self.width, self.height, self.rgb.tostring())
         self.bitmap=wx.BitmapFromImage(image)
         # wx.StaticBitmap(self, -1, self.bitmap, (0,0), (self.cube.samples,self.cube.lines))
         # self.Refresh()
@@ -310,7 +392,71 @@ class CubeBand(object):
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(bmpdo)
             wx.TheClipboard.Close()
+
+    def getCoords(self, x, y):
+        """Convert the coordinates from the display x, y to sample, line, band.
         
+        In the standard cube view, x is samples, y is lines, and the band is
+        the first band in the indexes list.
+        """
+        return (y, x, self.indexes[0])
+
+class FocalPlaneView(CubeView):
+    name = "Focal Plane View"
+    xProfileXAxisLabel = 'sample'
+    yProfileXAxisLabel = 'band'
+
+    def initBitmap(self, cube):
+        if cube:
+            CubeView.initBitmap(self, cube, cube.samples, cube.bands)
+        else:
+            CubeView.initBitmap(self, cube)
+
+    def initDisplayIndexes(self):
+        self.indexes = [0]
+        if self.cube:
+            self.max_index = self.cube.lines - 1
+
+    def getCoords(self, x, y):
+        """In a focal plane view, x is samples and y is the band number.  The
+        line is the first element in the indexes list.
+        """
+        return (self.indexes[0], x, y)
+    
+    def loadBands(self, progress=None):
+        if not self.cube: return
+
+        self.bands=[]
+        count=0
+        emin=None
+        emax=None
+        for i in self.indexes:
+            raw=self.cube.getFocalPlaneInPlace(i)
+            minval=raw.min()
+            maxval=raw.max()
+            self.bands.append((i,raw,minval,maxval))
+            count+=1
+            if emin==None or minval<emin:
+                emin=minval
+            if emax==None or maxval>emax:
+                emax=maxval
+            if progress: progress.Update((count*50)/len(self.bands))
+        self.extrema=(emin,emax)
+
+    def getDepthXAxisLabel(self):
+        return 'line'
+
+    def getDepthXAxisExtrema(self):
+        return (0,self.cube.lines)
+
+    def getDepthXAxis(self):
+        return numpy.arange(1, self.cube.lines+1, 1)
+
+    def getDepthProfile(self, x, y):
+        """Get the profile into the monitor at the given x,y position"""
+        profile = self.cube.getFocalPlaneDepthInPlace(x, y)
+        return profile
+
 
 class CubeScroller(BitmapScroller):
     def __init__(self, parent, frame):
@@ -337,12 +483,12 @@ class HSIActionMixin(object):
 class PrevBand(HSIActionMixin, SelectAction):
     name = "Prev Band"
     tooltip = "Previous Band"
-    default_menu = ("Dataset", -200)
+    default_menu = ("View", -200)
     icon = 'icons/hsi-band-prev.png'
-    keyboard = "C-P"
+    key_bindings = {'default': "C-P"}
     
     def isEnabled(self):
-        for band in self.mode.bands:
+        for band in self.mode.cubeview.indexes:
             # check if any of the display bands is at the low limit
             if band < 1:
                 return False
@@ -352,19 +498,20 @@ class PrevBand(HSIActionMixin, SelectAction):
     def action(self, index=-1, multiplier=1):
         dprint("Previous band!!!")
         mode = self.mode
-        mode.prevBand()
+        if mode.cubeview.prevIndex():
+            mode.update()
 
 class NextBand(HSIActionMixin, SelectAction):
     name = "Next Band"
     tooltip = "Next Band"
-    default_menu = ("Dataset", 201)
+    default_menu = ("View", 201)
     icon = 'icons/hsi-band-next.png'
-    keyboard = "C-N"
+    key_bindings = {'default': "C-N"}
     
     def isEnabled(self):
-        for band in self.mode.bands:
+        for band in self.mode.cubeview.indexes:
             # check if any of the display bands is at the high limit
-            if band >= (self.mode.cube.bands-1):
+            if band > self.mode.cubeview.max_index:
                 return False
         # nope, still room to advance all bands
         return True
@@ -372,12 +519,13 @@ class NextBand(HSIActionMixin, SelectAction):
     def action(self, index=-1, multiplier=1):
         dprint("Next band!!!")
         mode = self.mode
-        mode.nextBand()
+        if mode.cubeview.nextIndex():
+            mode.update()
 
 class GotoBand(HSIActionMixin, MinibufferAction):
     name = "Goto Band"
     tooltip = "Go to a particular band in the cube"
-    default_menu = ("Dataset", 202)
+    default_menu = ("View", 202)
     
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
@@ -390,7 +538,8 @@ class GotoBand(HSIActionMixin, MinibufferAction):
         
         # stc counts lines from zero, but displayed starting at 1.
         #dprint("goto line = %d" % line)
-        mode.gotoBand(band)
+        if mode.cubeview.gotoIndex(band):
+            mode.update()
 
 class CubeAction(HSIActionMixin, SelectAction):
     def isEnabled(self):
@@ -454,7 +603,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 0
     name = "Contrast"
     tooltip = "Contrast adjustment method"
-    default_menu = ("Dataset", -300)
+    default_menu = ("View", -300)
     icon = 'icons/hsi-cube-next.png'
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
@@ -510,7 +659,7 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 1
     name = "Median Filter"
     tooltip = "Median filter"
-    default_menu = ("Dataset", 301)
+    default_menu = ("View", 301)
 
     items = ['No median',
              'Median 3x1 pixel', 'Median 1x3 pixel', 'Median 3x3 pixel',
@@ -551,7 +700,31 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
             filt = MedianFilter1D(5, 5, pos=index)
         mode.filter = filt
         wx.CallAfter(mode.update)
-        
+
+
+class CubeViewAction(HSIActionMixin, RadioAction):
+    debuglevel = 1
+    name = "View Direction"
+    tooltip = ""
+    default_menu = ("View", -600)
+
+    items = [CubeView, FocalPlaneView]
+
+    def getIndex(self):
+        cls = self.mode.cubeview.__class__
+        dprint(cls)
+        return self.items.index(cls)
+
+    def getItems(self):
+        return [c.name for c in self.items]
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("index=%d" % index)
+        cls = self.mode.cubeview.__class__
+        current = self.items.index(cls)
+        if current != index:
+            self.mode.setViewer(self.items[index])
+            wx.CallAfter(self.mode.update)
 
 
 class HSIMode(MajorMode):
@@ -607,28 +780,28 @@ class HSIMode(MajorMode):
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        line = evt.imageCoords[1]
-        sample = evt.imageCoords[0]
-        self.frame.SetStatusText("x=%d y=%d" % (sample, line), 1)
-        self.frame.SetStatusText("%s" % self.bands, 2)
-        pix = self.cube.getPixel(line, sample, self.bands[0])
+        line, sample, band = self.cubeview.getCoords(*evt.imageCoords)
+        self.frame.SetStatusText("x=%d y=%d" % (evt.imageCoords), 1)
+        self.frame.SetStatusText("S%d L%d B%d" % (sample, line, band), 2)
+        pix = self.cube.getPixel(line, sample, band)
         self.frame.SetStatusText("%s %s" % (pix, hex(pix)), 3)
-        pos = (self.cube.locationToFlat(line, sample, self.bands[0]) * self.cube.itemsize) + self.cube.data_offset
+        pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
         self.frame.SetStatusText("%s" % pos, 4)
-        self.OnUpdateUIHook(evt)
-        if evt is not None:
-            evt.Skip()
-        
-    def OnUpdateUIHook(self, evt):
         for minor in self.minors:
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.updateLines(*evt.imageCoords)
-                plotproxy.updateListeners()
+                try:
+                    plotproxy.updateListeners()
+                except Exception, e:
+                    import traceback
+                    dprint(traceback.format_exc())
+        if evt is not None:
+            evt.Skip()
 
     def update(self, refresh=True):
-        self.cubeband.show(self.filter, self.cubefilter, bands=self.bands)
-        self.editwin.setBitmap(self.cubeband.bitmap)
+        self.cubeview.show(self.filter, self.cubefilter)
+        self.editwin.setBitmap(self.cubeview.bitmap)
         if refresh:
             self.editwin.Refresh()
         self.idle_update_menu = True
@@ -636,16 +809,19 @@ class HSIMode(MajorMode):
     def setCube(self, index=0):
         self.dataset_index = index
         self.cube = self.dataset.getCube(index=index)
-        self.bands = self.cube.guessDisplayBands()
-        if not self.classprefs.display_rgb and len(self.bands)>1:
-            self.bands = [self.bands[0]]
-        dprint("display bands = %s" % str(self.bands))
-        self.cubeband = CubeBand(self.cube)
+        self.setViewer()
         self.cubefilter = BandFilter()
         self.filter = GeneralFilter()
         #self.cube.open()
         dprint(self.cube)
-        self.cubeband.loadBands(self.bands)
+    
+    def setViewer(self, viewcls=CubeView):
+        self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
+        self.cubeview.loadBands()
+        for minor in self.minors:
+            if hasattr(minor, 'proxies'):
+                plotproxy = minor.proxies[0]
+                plotproxy.setupAxes()
 
     def nextCube(self):
         index = self.dataset_index
@@ -663,41 +839,6 @@ class HSIMode(MajorMode):
             self.setCube(index)
             dprint("self.dataset_index = %d" % self.dataset_index)
             wx.CallAfter(self.update)
-
-    def nextBand(self):
-        newbands=[]
-        for i in range(len(self.bands)):
-            newbands.append(self.bands[i]+1)
-        return self.setBand(newbands)
-
-    def prevBand(self):
-        newbands=[]
-        for i in range(len(self.bands)):
-            newbands.append(self.bands[i]-1)
-        return self.setBand(newbands)
-
-    def gotoBand(self, band):
-        newbands=[band]
-        return self.setBand(newbands)
-
-    def setBand(self,newbands):
-        display=True
-        # greyscale image only needs the first array value, rgb image
-        # uses all 3
-        dprint("setBand: bands=%s" % newbands)
-
-        # first check the range
-        for i in range(len(self.bands)):
-            if newbands[i]<0 or newbands[i]>=self.cube.bands:
-                display=False
-                break
-
-        # if all bands are in range, change the settings and display
-        if display:
-            for i in range(len(self.bands)):
-                self.bands[i]=newbands[i]
-            self.update()
-        return display
 
 
 class HSIMinorModeMixin(MinorMode):
@@ -741,6 +882,20 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
 
     def setupAxes(self):
         pass
+    
+    def updateYAxis(self, yaxis):
+        #dprint(yaxis)
+        if yaxis != self.yaxis:
+            # make copy of list.  The list returned by
+            # getUpdatedExtrema is modified in place, so the compare
+            # will always return true if we don't copy it.
+            
+            # Note: the plot widget expects the extrema values to be in
+            # floating point, which isn't necessarily the case with the
+            # computed extrema values.  Cast them to float here to be sure.
+            self.yaxis=(float(yaxis[0]), float(yaxis[1]))
+            # dprint("yaxis=%s" % self.yaxis)
+            self.updateListenerExtrema()
 
 class HSISpectrumMinorMode(HSIPlotMinorMode):
     """Display a spectrum at the current crosshair point.
@@ -748,80 +903,60 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
     keyword = "Spectrum"
 
     def setupAxes(self):
-        cubeband = self.major.cubeband
-        if cubeband.cube.wavelengths:
-            self.xlabel = cubeband.cube.wavelength_units
-            self.xaxis = (cubeband.cube.wavelengths[0],
-                          cubeband.cube.wavelengths[-1])
-        else:
-            self.xlabel='band'
-            self.xaxis=(0,cubeband.cube.bands)
+        cubeview = self.major.cubeview
+        self.xlabel = cubeview.getDepthXAxisLabel()
+        self.xaxis = cubeview.getDepthXAxisExtrema()
         
         # syncing over the whole cube takes too long, so we'll grow
         # the axis as it gets bigger.  Start with the extrema of the
         # current band so we aren't too far off.
         self.ylabel='value'
-        self.yaxis=cubeband.extrema
+        self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeband = self.major.cubeband
+        cubeview = self.major.cubeview
         # dprint("SpectrumPlotProxy: (%d,%d)" % (x,y))
-
-        data=numpy.zeros((cubeband.cube.bands,2))
-        if cubeband.cube.wavelengths:
-            data[:,0]=cubeband.cube.wavelengths
-        else:
-            data[:,0]=numpy.arange(1,cubeband.cube.bands+1,1)
-        data[:,1] = cubeband.cube.getSpectra(y,x)
-        yaxis=cubeband.cube.getUpdatedExtrema()
-        if yaxis != self.yaxis:
-            # make copy of list.  The list returned by
-            # getUpdatedExtrema is modified in place, so the compare
-            # will always return true if we don't copy it.
-            self.yaxis=yaxis[:]
-            # dprint("yaxis=%s" % self.yaxis)
-            self.updateListenerExtrema()
+        profile = cubeview.getDepthProfile(x, y)
+        num = len(profile)
+        
+        data=numpy.zeros((num, 2))
+        data[:,0] = cubeview.getDepthXAxis()
+        data[:,1] = profile
+        yaxis=cubeview.cube.getUpdatedExtrema()
+        self.updateYAxis(yaxis)
         line = plot.PolyLine(data, legend= '%d, %d' % (x, y), colour='blue')
         return [line]
     
 
-        
 class HSIXProfileMinorMode(HSIPlotMinorMode):
     """Display the X profile at the current crosshair line.
     """
     keyword="X Profile"
     
     def setupAxes(self):
-        cubeband = self.major.cubeband
-
-        self.xlabel='sample'
-        self.xaxis=(0,cubeband.cube.samples)
+        cubeview = self.major.cubeview
+        self.xlabel = cubeview.xProfileXAxisLabel
+        self.xaxis=(0,cubeview.width)
 
         self.ylabel='value'
-        self.yaxis=cubeband.extrema
+        self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeband = self.major.cubeband
-        profiles=cubeband.getHorizontalProfiles(y)
+        cubeview = self.major.cubeview
+        profiles=cubeview.getHorizontalProfiles(y)
 
-        x=numpy.arange(1,cubeband.cube.samples+1,1)
+        x=numpy.arange(1,cubeview.width+1,1)
         colorindex=0
         lines=[]
         for values in profiles:
-            data=numpy.zeros((cubeband.cube.samples,2))
+            data=numpy.zeros((cubeview.width,2))
             data[:,0]=x
             data[:,1]=values
-            line=plot.PolyLine(data, legend= 'band #%d' % cubeband.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        yaxis=cubeband.cube.getUpdatedExtrema()
-        if yaxis != self.yaxis:
-            # make copy of list.  The list returned by
-            # getUpdatedExtrema is modified in place, so the compare
-            # will always return true if we don't copy it.
-            self.yaxis=yaxis[:]
-            # dprint("yaxis=%s" % self.yaxis)
-            self.updateListenerExtrema()
+        yaxis=cubeview.cube.getUpdatedExtrema()
+        self.updateYAxis(yaxis)
         return lines
         
 class HSIYProfileMinorMode(HSIPlotMinorMode):
@@ -830,34 +965,28 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
     keyword="Y Profile"
     
     def setupAxes(self):
-        cubeband = self.major.cubeband
+        cubeview = self.major.cubeview
 
-        self.xlabel='line'
-        self.xaxis=(0,cubeband.cube.lines)
+        self.xlabel = cubeview.yProfileXAxisLabel
+        self.xaxis=(0, cubeview.height)
 
         self.ylabel='value'
-        self.yaxis=cubeband.extrema
+        self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeband = self.major.cubeband
-        profiles=cubeband.getVerticalProfiles(x)
+        cubeview = self.major.cubeview
+        profiles=cubeview.getVerticalProfiles(x)
 
-        x=numpy.arange(1,cubeband.cube.lines+1,1)
+        x=numpy.arange(1,cubeview.height+1,1)
         colorindex=0
         lines=[]
         for values in profiles:
-            data=numpy.zeros((cubeband.cube.lines,2))
+            data=numpy.zeros((cubeview.height,2))
             data[:,0]=x
             data[:,1]=values
-            line=plot.PolyLine(data, legend= 'band #%d' % cubeband.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        yaxis=cubeband.cube.getUpdatedExtrema()
-        if yaxis != self.yaxis:
-            # make copy of list.  The list returned by
-            # getUpdatedExtrema is modified in place, so the compare
-            # will always return true if we don't copy it.
-            self.yaxis=yaxis[:]
-            # dprint("yaxis=%s" % self.yaxis)
-            self.updateListenerExtrema()
+        yaxis=cubeview.cube.getUpdatedExtrema()
+        self.updateYAxis(yaxis)
         return lines

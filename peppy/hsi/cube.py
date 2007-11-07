@@ -470,6 +470,28 @@ class Cube(object):
     def getBandRaw(self,band):
         pass
 
+    def getFocalPlaneInPlace(self, line):
+        """Get the slice of the data array (bands x samples) at the specified
+        line, which corresponds to a view of the data as the focal plane would
+        see it.  This points to the actual in-memory array.
+        """
+        s=self.getFocalPlaneRaw(line)
+        self.updateExtrema(s)
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        pass
+
+    def getFocalPlaneDepthInPlace(self, sample, band):
+        """Get the slice of the data array through the cube at the specified
+        sample and band.  This points to the actual in-memory array.
+        """
+        s=self.getFocalPlaneDepthRaw(sample, band)
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        pass
+
     def getSpectra(self,line,sample):
         """Get the spectra at the given pixel.  Calculate the extrema
         as we go along."""
@@ -625,6 +647,18 @@ class BIPCube(Cube):
         s=self.raw[line,sample,:]
         return s
 
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        # Note: transpose doesn't seem to automatically generate a copy, so
+        # we're safe with this transpose
+        s=self.raw[line,:,:].T
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s=self.raw[:,sample,band]
+        return s
+
     def getLineOfSpectraCopy(self,line):
         """Get the spectra along the given line"""
         s=self.raw[line,:,:].copy()
@@ -666,9 +700,21 @@ class BILCube(Cube):
         s=self.raw[line,:,sample]
         return s
     
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        s=self.raw[line,:,:]
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s=self.raw[:,band,sample]
+        return s
+
     def getLineOfSpectraCopy(self,line):
         """Get the spectra along the given line"""
-        s=numpy.transpose(self.raw[line,:,:])
+        # FIXME: transpose doesn't automatically generate a copy in the latest
+        # numpy?
+        s=numpy.transpose(self.raw[line,:,:].copy())
         return s
     
     def getBandBoundary(self):
@@ -708,9 +754,21 @@ class BSQCube(Cube):
         s=self.raw[:,line,sample]
         return s
 
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        s=self.raw[:,line,:]
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s=self.raw[band,:,sample]
+        return s
+
     def getLineOfSpectraCopy(self,line):
         """Get the spectra along the given line"""
-        s=numpy.transpose(self.raw[:,line,:])
+        # FIXME: transpose doesn't automatically generate a copy in the latest
+        # numpy?
+        s=numpy.transpose(self.raw[:,line,:].copy())
         return s
     
     def getBandBoundary(self):
