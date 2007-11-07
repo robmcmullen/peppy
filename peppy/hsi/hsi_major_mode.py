@@ -599,7 +599,10 @@ class HSIMode(MajorMode):
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        self.frame.SetStatusText("x=%d y=%d" % evt.imageCoords, 1)
+        line = evt.imageCoords[1]
+        sample = evt.imageCoords[0]
+        pos = self.cube.locationToFlat(line, sample, self.bands[0])
+        self.frame.SetStatusText("x=%d y=%d %s" % (sample, line, pos), 1)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
