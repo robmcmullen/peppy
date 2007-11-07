@@ -56,10 +56,10 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
 class PeppyStatusBar(wx.StatusBar):
     instances = []
     
-    def __init__(self, parent):
+    def __init__(self, parent, widths=[-1, 150]):
         wx.StatusBar.__init__(self, parent, -1)
 
-        self.default_widths = [-1,150]
+        self.default_widths = widths
         if wx.Platform == '__WXGTK__':
             self.spacing = 3
         else:

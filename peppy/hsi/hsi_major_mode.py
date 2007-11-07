@@ -597,12 +597,24 @@ class HSIMode(MajorMode):
         self.update(False) # initial case will refresh automatically
         self.stc = self.buffer.stc
 
+    def getStatusBar(self):
+        """Get the HSI status bar
+        """
+        if self.statusbar is None:
+            self.statusbar = PeppyStatusBar(self.frame, [-1, 100, 100, 100, 80])
+            self.createStatusIcons()
+        return self.statusbar
+
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
         line = evt.imageCoords[1]
         sample = evt.imageCoords[0]
-        pos = self.cube.locationToFlat(line, sample, self.bands[0])
-        self.frame.SetStatusText("x=%d y=%d %s" % (sample, line, pos), 1)
+        self.frame.SetStatusText("x=%d y=%d" % (sample, line), 1)
+        self.frame.SetStatusText("%s" % self.bands, 2)
+        pix = self.cube.getPixel(line, sample, self.bands[0])
+        self.frame.SetStatusText("%s %s" % (pix, hex(pix)), 3)
+        pos = (self.cube.locationToFlat(line, sample, self.bands[0]) * self.cube.itemsize) + self.cube.data_offset
+        self.frame.SetStatusText("%s" % pos, 4)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
