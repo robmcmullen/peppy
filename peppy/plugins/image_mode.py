@@ -47,7 +47,7 @@ class ImageActionMixin(object):
 class ZoomIn(ImageActionMixin, SelectAction):
     name = "Zoom In"
     tooltip = "Zoom in (magnify) image"
-    default_menu = ("View", -500)
+    default_menu = ("View", -800)
     icon = 'icons/zoom_in.png'
     keyboard = "="
     
@@ -57,7 +57,7 @@ class ZoomIn(ImageActionMixin, SelectAction):
 class ZoomOut(ImageActionMixin, SelectAction):
     name = "Zoom Out"
     tooltip = "Zoom out (demagnify) image"
-    default_menu = ("View", 501)
+    default_menu = ("View", 801)
     icon = 'icons/zoom_out.png'
     keyboard = "-"
     
