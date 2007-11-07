@@ -8,6 +8,8 @@ import wx
 from peppy.lib.userparams import *
 from peppy.yapsy.IPlugin import IPlugin
 
+from peppy.debug import *
+
 class IPeppyPlugin(IPlugin, ClassPrefs):
     """
     Some peppy-specific methods in addition to the yapsy plugin methods.
@@ -74,7 +76,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         #print sys.path
         try:
             mod = __import__(relative_module)
-        except:
+        except Exception, e:
+            import traceback
+            error = traceback.format_exc()
+            dprint(error)
             mod = None
         sys.path = save
         return mod
