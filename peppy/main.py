@@ -379,8 +379,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 try:
                     fh = self.config.open(name)
                     listen_port = int(fh.read())
+                    # Windows needs the file to be closed so that it could be
+                    # removed below if necessary.
+                    fh.close()
+                    fh = None
                 except:
-                    # It's a bad file, so remove it.
+                    # It's a bad file, so remove it.  (close it first if it's
+                    # still open for windows)
+                    if fh:
+                        fh.close()
                     self.config.remove(name)
                     dprint("removed server port file %s" % name)
                     listen_port = None
@@ -416,6 +423,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if not server.isActive():
             fh = self.config.open(self.server_port_filename, "w")
             fh.write(str(listen_port))
+            fh.close()
             return server
         return None
         
