@@ -616,7 +616,7 @@ class ToolbarShow(ToggleAction):
     alias = "show-toolbar"
     name = "&Show Toolbars"
     tooltip = "Enable or disable toolbar display in this frame"
-    default_menu = ("View", -200)
+    default_menu = ("View", -990)
 
     def isChecked(self):
         return self.frame.show_toolbar
