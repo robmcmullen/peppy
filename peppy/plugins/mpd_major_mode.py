@@ -576,6 +576,17 @@ class DeleteFromPlaylist(ConnectedAction):
         mode = self.mode
         Publisher().sendMessage('mpd.deleteFromPlaylist', mode.mpd)
 
+class ClearPlaylist(ConnectedAction):
+    alias = "clear-playlist"
+    name = "Clear Playlist"
+    tooltip = "Remove all songs from the current playlist"
+    default_menu = ("MPD", 302)
+    key_bindings = {'default': 'C-DEL'}
+    
+    def action(self, index=-1, multiplier=1):
+        mpd = self.mode.mpd
+        mpd.sync('clear')
+
 class RandomPlaylist(ConnectedAction):
     alias = "mpd-random-playlist"
     name = "Random Playlist"
@@ -1555,5 +1566,6 @@ class MPDPlugin(IPeppyPlugin):
     def getActions(self):
         return [OpenMPD, StopSong, PlayPause, PrevSong, NextSong,
                 VolumeUp, VolumeDown, Mute,
-                DeleteFromPlaylist, RandomPlaylist, Login, UpdateDatabase,
+                DeleteFromPlaylist, RandomPlaylist, ClearPlaylist,
+                Login, UpdateDatabase,
                 ]
