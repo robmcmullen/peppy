@@ -731,6 +731,25 @@ class CancelMinibuffer(SelectAction):
         self.mode.removeMinibuffer()
 
 
+class WordCount(SelectAction):
+    name = "&Word Count"
+    tooltip = "Word count in region or document"
+    default_menu = ("Tools", -500)
+    key_bindings = {'default': "M-=", }
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode.editwin
+        (start, end) = s.GetSelection()
+        if start==end:
+            text = s.GetText()
+        else:
+            text = s.GetTextRange(start, end)
+        chars = len(text)
+        words = len(text.split())
+        lines = len(text.splitlines())
+        self.frame.SetStatusText("%d chars, %d words, %d lines" % (chars, words, lines))
+
+
 class MainMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -768,3 +787,8 @@ class MainMenu(IPeppyPlugin):
 
                 OpenFundamental,
                 ]
+
+    def getCompatibleActions(self, mode):
+        if issubclass(mode, FundamentalMode):
+            return [WordCount]
+        return []
