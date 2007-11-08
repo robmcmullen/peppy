@@ -1,3 +1,9 @@
+2007-11-07  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.0.4 update to "Kibbles 'n' Snouts"
+	* fixed reindent code for more corner cases
+	* added some default mac keybindings
+
 2007-10-31  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.0.3 update to "Kibbles 'n' Snouts"

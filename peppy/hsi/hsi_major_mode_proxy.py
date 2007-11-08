@@ -10,7 +10,7 @@ class HSIPlugin(IPeppyPlugin):
     """
 
     def getMajorModes(self):
-        dprint("importdir=%s" % self._import_dir)
+        #dprint("importdir=%s" % self._import_dir)
         hsi_major_mode = self.importModule("hsi_major_mode")
         if hsi_major_mode:
             yield hsi_major_mode.HSIMode

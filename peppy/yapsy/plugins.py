@@ -67,13 +67,38 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
     def importModule(self, relative_module):
         """Import a module relative to the plugin module."""
         
+        save = sys.path
         # Save the old sys.path and modify it temporarily to include the
         # directory in which the plugin was loaded
-        save = sys.path
-        #print save
-        sys.path = [self._import_dir]
-        sys.path.extend(save)
-        #print sys.path
+        if hasattr(sys, 'frozen'): # py2exe
+            # in a py2exe module, yapsy plugins don't work, so the plugin will
+            # have been imported with a regular import statement.  But, check
+            # anyway.
+            if self.__class__.__module__ == "__builtin__":
+                # Don't know how to handle this yet.
+                raise ImportError("Can't locate relative import %s in a dynamicly loaded plugin" % relative_module)
+            if "." in relative_module:
+                # actually have a fully specified module
+                base = relative_module.rsplit(".", 1)
+                #dprint("base = %s" % base)
+                subdir = base[0].replace(".", "\\")
+                #dprint("subdir = %s" % subdir)
+                relative_module = base[1]
+            else:
+                # have a relative module.  Find the current "module path" and
+                # make that the first place import looks
+                base = self.__class__.__module__.rsplit(".", 1)
+                #dprint("base = %s" % base)
+                subdir = base[0].replace(".", "\\")
+                #dprint("subdir = %s" % subdir)
+            dir = os.path.join(sys.path[0], subdir)
+            sys.path = [dir]
+            sys.path.extend(save)
+        else:
+            # normal import; just prefix the path list with the local dir
+            sys.path = [self._import_dir]
+            sys.path.extend(save)
+            
         try:
             mod = __import__(relative_module)
         except Exception, e:
@@ -82,6 +107,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
             dprint(error)
             mod = None
         sys.path = save
+        #dprint("module = %s" % mod)
         return mod
 
     ##### Lifecycle control methods
