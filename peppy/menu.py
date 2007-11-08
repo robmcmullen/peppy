@@ -907,5 +907,5 @@ class UserActionMap(debugmixin):
                     actions.append(action)
 
             # new-style way of having the plugin check for compatibility
-            actions.extend(plugin.getCompatibleActions(mode))
+            actions.extend(plugin.getCompatibleActions(mode.__class__))
         return actions
