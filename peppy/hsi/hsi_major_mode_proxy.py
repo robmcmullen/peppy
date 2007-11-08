@@ -5,6 +5,8 @@ from peppy.yapsy.plugins import *
 
 from peppy.debug import *
 
+from peppy.hsi.loader import *
+
 class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
@@ -15,6 +17,15 @@ class HSIPlugin(IPeppyPlugin):
         if hsi_major_mode:
             yield hsi_major_mode.HSIMode
         raise StopIteration        
+
+    def attemptOpen(self, url):
+        hsi_major_mode = self.importModule("hsi_major_mode")
+        if hsi_major_mode:
+            format = HyperspectralFileFormat.identify(url)
+            if format:
+                dprint("found %s" % format)
+                return hsi_major_mode.HSIMode
+        return None
 
     def getMinorModes(self):
         hsi_major_mode = self.importModule("hsi_major_mode")

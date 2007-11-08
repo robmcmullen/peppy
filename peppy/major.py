@@ -211,19 +211,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         """
         return None
 
-    @classmethod
-    def attemptOpen(cls, url):
-        """Last resort to major mode matching: attempting to open the url.
-
-        This method is the last resort if all other pattern matching
-        and mode searching fails.  Typically, this is only an issue
-        with non-Scintilla editors that use third-party file loading
-        libraries.
-
-        @returns: True if the open was successful or False if not.
-        """
-        return False
-
     def save(self, url=None):
         veto = self.savePreHook(url)
         if veto == False:
@@ -1131,8 +1118,7 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         for plugin in plugins:
-            for mode in plugin.getMajorModes():
-                cls.dprint("scanning %s" % mode)
-                if mode.attemptOpen(url):
-                    return mode
+            mode = plugin.attemptOpen(url)
+            if mode:
+                return mode
         return None

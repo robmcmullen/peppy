@@ -742,14 +742,6 @@ class HSIMode(MajorMode):
         BoolParam('display_rgb', False),
         )
 
-    @classmethod
-    def attemptOpen(cls, url):
-        format = HyperspectralFileFormat.identify(url)
-        if format:
-            dprint("found %s" % format)
-            return True
-        return False
-    
     def createEditWindow(self,parent):
         """
         Create the bitmap viewer that is the main window of this major

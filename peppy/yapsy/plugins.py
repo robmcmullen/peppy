@@ -228,6 +228,21 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         protocol, the handler class would include an xyz_open method.
         """
         return []
+    
+    ##### New methods for on-demand plugin loading
+    
+    def attemptOpen(self, url):
+        """Last resort to major mode matching: attempting to open the url.
+
+        This method is the last resort if all other pattern matching
+        and mode searching fails.  Typically, this is only an issue
+        with non-Scintilla editors that use third-party file loading
+        libraries.
+
+        @returns: major mode class if successful in matching
+        """
+        return None
+
 
 #-----
 # The next two methods are to provide an interface for shells that
