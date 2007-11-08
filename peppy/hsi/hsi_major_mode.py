@@ -50,7 +50,7 @@ from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
-from peppy.hsi import *
+from peppy.hsi.common import *
 
 # hsi mode and the plotting utilities require numpy, the check for which is
 # handled by the major mode wrapper

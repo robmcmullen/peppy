@@ -13,9 +13,7 @@ from peppy.iofilter import *
 
 import numpy
 
-from cube import *
-import utils
-import roi
+from common import *
 
 from cStringIO import StringIO
 
@@ -110,7 +108,7 @@ class Header(dict,MetadataMixin):
             (int , ['samples','lines','bands','byte order','bbl','x start','header offset']),
             (float , ['wavelength','fwhm','sigma','reflectance scale factor']),
             (lambda s:s.lower() , ['interleave','sensor type']),
-            (utils.normalizeUnits, ['wavelength units']),
+            (normalizeUnits, ['wavelength units']),
             (lambda s:enviDataType[int(s)], ['data type']),
             (lambda s:s, ['description','band names','default bands']),
             )
@@ -381,7 +379,7 @@ class Header(dict,MetadataMixin):
         return fs.getvalue()
 
 
-class TextROI(roi.ROIFile):
+class TextROI(ROIFile):
     """ENVI Text format ROI file support.
 
     This format supports loading and saving of ENVI text format ROIs.
@@ -391,7 +389,7 @@ class TextROI(roi.ROIFile):
     format_name="ENVI ROI"
 
     def __init__(self,filename=None,debug=False):
-        roi.ROIFile.__init__(self, filename)
+        ROIFile.__init__(self, filename)
 
     @classmethod
     def identify(cls, urlinfo):
@@ -415,7 +413,7 @@ class TextROI(roi.ROIFile):
                     val = val.strip()
                     dprint("name=%s val=%s" % (name, val))
                     if name == 'name':
-                        current = roi.ROI(val)
+                        current = ROI(val)
                         group.addROI(current)
                     elif name == 'npts':
                         current.number = int(val)
