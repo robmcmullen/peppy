@@ -26,23 +26,26 @@ class BraceHighlightMixin(object):
         # check for matching braces
         braceAtCaret = -1
         braceOpposite = -1
+        braceStyle = None
         charBefore = None
         caretPos = self.GetCurrentPos()
 
+        # check before
         if caretPos > 0:
             charBefore = self.GetCharAt(caretPos - 1)
-            styleBefore = self.GetStyleAt(caretPos - 1)
+            braceStyle = self.GetStyleAt(caretPos - 1)
+            #dprint("before: char=%s style=%d" % (charBefore, braceStyle))
 
-        # check before
-        if charBefore and chr(charBefore) in "[]{}()" and styleBefore == wx.stc.STC_P_OPERATOR:
-            braceAtCaret = caretPos - 1
+            if charBefore and chr(charBefore) in "[]{}()":
+                braceAtCaret = caretPos - 1
 
         # check after
         if braceAtCaret < 0:
             charAfter = self.GetCharAt(caretPos)
-            styleAfter = self.GetStyleAt(caretPos)
+            braceStyle = self.GetStyleAt(caretPos)
+            #dprint("after: char=%s style=%d" % (charAfter, braceStyle))
 
-            if charAfter and chr(charAfter) in "[]{}()" and styleAfter == wx.stc.STC_P_OPERATOR:
+            if charAfter and chr(charAfter) in "[]{}()":
                 braceAtCaret = caretPos
 
         if braceAtCaret >= 0:
@@ -51,7 +54,10 @@ class BraceHighlightMixin(object):
         if braceAtCaret != -1  and braceOpposite == -1:
             self.BraceBadLight(braceAtCaret)
         else:
-            self.BraceHighlight(braceAtCaret, braceOpposite)
+            if braceStyle != self.GetStyleAt(braceOpposite):
+                self.BraceBadLight(braceAtCaret)
+            else:
+                self.BraceHighlight(braceAtCaret, braceOpposite)
         
 
 
