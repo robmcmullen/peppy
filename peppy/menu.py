@@ -549,18 +549,17 @@ class UserActionMap(debugmixin):
         if not cls.default_menu_weights:
             cls.default_menu_weights.update(weights)
     
-    def __init__(self, frame, action_classes, modes):
+    def __init__(self, frame, action_classes):
         """Initialize the mapping with the new set of actions.
         
         The ordering of the menu items is set here, but nothing is actually
         mapped to a menubar or a toolbar until either updateMenuActions or
         updateToolbarActions is called.
         
-        @param frame: parent Frame object
-        @param menus: list of action classes (i.e. not instantiated classes,
-        but the classes themselves.  They will be instantiated when they are
-        mapped to a menubar and another copy will be instantiated when mapped
-        to a toolbar
+        frame: parent Frame object
+        action_classes: list of possible action classes (i.e.  not instantiated
+        classes, but the classes themselves.  They will be instantiated when
+        they are mapped to a menubar or toolbar.
         """
         self.frame = frame
         self.actions = {}
@@ -568,7 +567,7 @@ class UserActionMap(debugmixin):
         self.menus = {'root':[]}
         self.title_to_menu = {}
         self.title_to_toolbar = {}
-        self.sortActions(action_classes, modes)
+        self.sortActions(action_classes)
 
     def getInfo(self, action):
         """Get menu ordering info from the action
@@ -608,7 +607,7 @@ class UserActionMap(debugmixin):
         else:
             return '/'.join(hier[0:-1])
     
-    def sortActions(self, action_classes, mode):
+    def sortActions(self, action_classes):
         """Sort the actions into a hierarchy of menus
         
         Menus and menu items are sorted here by the weights given
@@ -621,11 +620,6 @@ class UserActionMap(debugmixin):
         # First, loop through to get all actions matched to their
         # menu title
         for actioncls in action_classes:
-            # Only if the action works with the major mode do we want
-            # it to be an action that fires events
-            if not actioncls.worksWithMajorMode(mode):
-                continue
-            
             action = actioncls(self.frame)
             self.actions[action.global_id] = action
             self.dprint("%s in current mode list" % action)
@@ -897,12 +891,21 @@ class UserActionMap(debugmixin):
             action.showEnable()
 
     @classmethod
-    def getActiveActions(cls):
+    def getActiveActions(cls, mode):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         assert cls.dprint(plugins)
 
         actions = []
         for plugin in plugins:
             assert cls.dprint("collecting from plugin %s" % plugin)
-            actions.extend(plugin.getActions())
+            
+            # old-style way of checking each action for compatibility
+            for action in plugin.getActions():
+                if action.worksWithMajorMode(mode):
+                    # Only if the action works with the major mode do we want
+                    # it to be an action that fires events
+                    actions.append(action)
+
+            # new-style way of having the plugin check for compatibility
+            actions.extend(plugin.getCompatibleActions(mode))
         return actions

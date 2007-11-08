@@ -62,6 +62,9 @@ class MinorMode(ClassPrefs, debugmixin):
             for minor in plugin.getMinorModes():
                 if minor.worksWithMajorMode(mode):
                     valid.append(minor)
+            
+            # Also add minor modes from the new-style on-demand interface
+            valid.extend(plugin.getCompatibleMinorModes(mode))
         cls.dprint(valid)
         return valid
 

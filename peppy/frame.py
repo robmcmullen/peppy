@@ -397,8 +397,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def setMenumap(self, mode):
         if self.menumap is not None:
             self.menumap.cleanupPrevious(self._mgr)
-        actions = UserActionMap.getActiveActions()
-        self.menumap = UserActionMap(self, actions, mode)
+        actions = UserActionMap.getActiveActions(mode)
+        self.menumap = UserActionMap(self, actions)
         keymap = self.menumap.updateActions(self.show_toolbar)
         self.keys.setGlobalKeyMap(keymap)
         self._mgr.Update()

@@ -711,7 +711,9 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
         aliases under which the action could be called, and add them
         to the list of possible completions.
         """
-        actions = UserActionMap.getActiveActions()
+        frame = self.frame
+        self.dprint(frame.menumap.actions)
+        actions = frame.menumap.actions.itervalues()
         return actions
 
     def processMinibuffer(self, minibuffer, mode, text):
