@@ -11,14 +11,8 @@ class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
 
-    def getMajorModes(self):
-        #dprint("importdir=%s" % self._import_dir)
-        hsi_major_mode = self.importModule("hsi_major_mode")
-        if hsi_major_mode:
-            yield hsi_major_mode.HSIMode
-        raise StopIteration        
-
     def attemptOpen(self, url):
+        dprint("Trying to open url: %s" % url)
         hsi_major_mode = self.importModule("hsi_major_mode")
         if hsi_major_mode:
             format = HyperspectralFileFormat.identify(url)
@@ -26,6 +20,13 @@ class HSIPlugin(IPeppyPlugin):
                 dprint("found %s" % format)
                 return hsi_major_mode.HSIMode
         return None
+    
+    def getCompatibleMajorModes(self, stc_class):
+        if stc_class == HyperspectralSTC:
+            hsi_major_mode = self.importModule("hsi_major_mode")
+            if hsi_major_mode:
+                return [hsi_major_mode.HSIMode]
+        return []
 
     def getCompatibleMinorModes(self, cls):
         if cls.keyword == "HSI":

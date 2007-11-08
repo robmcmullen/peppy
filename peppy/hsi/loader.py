@@ -10,6 +10,16 @@ import os, sys, re, glob
 
 from peppy.debug import *
 from peppy.iofilter import *
+from peppy.stcinterface import *
+
+
+class HyperspectralSTC(NonResidentSTC):
+    def open(self, url, message=None):
+        self.dataset=HyperspectralFileFormat.load(url)
+        
+    def Destroy(self):
+        self.dataset = None
+
 
 class HyperspectralFileFormat(object):
     loaded = False

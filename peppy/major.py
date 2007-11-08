@@ -865,12 +865,16 @@ class MajorModeMatcherDriver(debugmixin):
     debuglevel = 0
     
     @classmethod
-    def getActiveModes(cls):
+    def getCompatibleMajorModes(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         cls.dprint(plugins)
         modes = []
         for plugin in plugins:
-            modes.extend(plugin.getMajorModes())
+            # Only display those modes that use the same type of STC as the
+            # current mode.
+            modes.extend([m for m in plugin.getMajorModes() if m.stc_class == stc_class])
+        
+            modes.extend(plugin.getCompatibleMajorModes(stc_class))
         return modes
 
     @classmethod

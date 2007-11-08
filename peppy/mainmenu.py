@@ -547,14 +547,8 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
     def initPreHook(self):
         currentmode = self.mode
-        # FIXME: this should instead only get those major modes that
-        # are in active plugins
-        modes = MajorModeMatcherDriver.getActiveModes()
+        modes = MajorModeMatcherDriver.getCompatibleMajorModes(currentmode.stc_class)
 
-        # Only display those modes that use the same type of STC as
-        # the current mode.
-        modes = [m for m in modes if m.stc_class == currentmode.stc_class]
-        
         modes.sort(key=lambda s:s.keyword)
         assert self.dprint(modes)
         MajorModeSelect.modes = modes
@@ -746,6 +740,7 @@ class MainMenu(IPeppyPlugin):
 
     def getMajorModes(self):
         yield FundamentalMode
+        yield BlankMode
 
     def getActions(self):
         return [NewTab, New,

@@ -242,6 +242,17 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         @returns: major mode class if successful in matching
         """
         return None
+    
+    def getCompatibleMajorModes(self, stc_class):
+        """Return list of major modes that are compatible to the given stc
+        class.
+        
+        Return an iterator containing the major mode classes if the stc backend
+        is compatible with the given stc.  This is used to provide the list
+        of allowable major modes when the user wants to switch the major mode
+        view.
+        """
+        return []
 
     def getCompatibleMinorModes(self, majorcls):
         """Return list of minor modes provided by the plugin that are

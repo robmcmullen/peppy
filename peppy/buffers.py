@@ -91,8 +91,8 @@ class Buffer(debugmixin):
         Buffer.dummyframe.Show(False)
 
     @classmethod
-    def loadPermanent(cls, url):
-        buffer = cls(url)
+    def loadPermanent(cls, url, defaultmode=None):
+        buffer = cls(url, defaultmode)
         buffer.open()
         buffer.permanent = True
         BufferList.addBuffer(buffer)

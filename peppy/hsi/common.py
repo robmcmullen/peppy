@@ -5,7 +5,7 @@ from loader import *
 
 __all__ = ['Cube', 'MetadataMixin', 'newCube',
            'LittleEndian', 'BigEndian',
-           'HyperspectralFileFormat',
+           'HyperspectralFileFormat', 'HyperspectralSTC',
            'ROI', 'ROIFile',
            'HyperspectralROIFormat',
            'spectralAngle', 'resample', 'normalizeUnits',

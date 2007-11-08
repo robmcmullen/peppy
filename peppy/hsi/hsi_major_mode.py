@@ -468,13 +468,6 @@ class CubeScroller(BitmapScroller):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)
 
 
-class HyperspectralSTC(NonResidentSTC):
-    def open(self, url, message=None):
-        self.dataset=HyperspectralFileFormat.load(url)
-        
-    def Destroy(self):
-        self.dataset = None
-
 class HSIActionMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
