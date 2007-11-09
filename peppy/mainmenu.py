@@ -760,6 +760,7 @@ class MainMenu(IPeppyPlugin):
     def getMajorModes(self):
         yield FundamentalMode
         yield BlankMode
+        yield BufferListMode
 
     def getActions(self):
         return [NewTab, New,
@@ -775,7 +776,7 @@ class MainMenu(IPeppyPlugin):
 
                 EOLModeSelect, WordWrap, LineNumbers, Folding,
 
-                BufferList,
+                BufferList, ListAllBuffers,
 
                 NewFrame, DeleteFrame, FrameList,
 
