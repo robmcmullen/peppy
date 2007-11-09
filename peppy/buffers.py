@@ -72,48 +72,6 @@ class BufferList(GlobalList):
         self.frame.setBuffer(BufferList.storage[index])
     
 
-class BufferListSTC(NonResidentSTC):
-    pass
-
-class BufferListMode(MajorMode):
-    """
-    A temporary Major Mode to load another mode in the background
-    """
-    keyword = "about:blank"
-    icon='icons/page_white_stack.png'
-    allow_threaded_loading = False
-    
-    stc_class = BufferListSTC
-
-    @classmethod
-    def verifyProtocol(cls, url):
-        # Use the verifyProtocol to hijack the loading process and
-        # immediately return the match if we're trying to load
-        # about:blank
-        if url.protocol == 'about' and url.path == 'buffers':
-            return True
-        return False
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1, pos=(9000,9000))
-        text=self.buffer.stc.GetText()
-        lines=wx.StaticText(win, -1, text, (10,10))
-        lines.Wrap(500)
-        self.stc = self.buffer.stc
-        self.buffer.stc.is_permanent = True
-        return win
-
-class ListAllBuffers(SelectAction):
-    alias = "list-all-buffers"
-    name = "List All Buffers"
-    tooltip = "Display a list of all buffers."
-    default_menu = ("Buffers", 100)
-    key_bindings = {'emacs': "C-X C-B", }
-
-    def action(self, index=-1, multiplier=1):
-        self.frame.open("about:buffers")
-
-
 #### Buffers
 
 class Buffer(debugmixin):
@@ -137,7 +95,6 @@ class Buffer(debugmixin):
         buffer = cls(url, defaultmode)
         buffer.open()
         buffer.permanent = True
-        BufferList.addBuffer(buffer)
 
     def __init__(self, url, defaultmode=None):
         if Buffer.dummyframe is None:
@@ -199,6 +156,7 @@ class Buffer(debugmixin):
             # Need to destroy the base STC or self will never get garbage
             # collected
             self.stc.Destroy()
+            Publisher().sendMessage('buffer.closed', self.url)
             dprint("removed buffer %s" % self.url)
 
     def setURL(self, url):
@@ -269,6 +227,9 @@ class Buffer(debugmixin):
         self.readonly = self.url.readonly()
         self.stc.EmptyUndoBuffer()
 
+        # Add to the currently-opened buffer list
+        BufferList.addBuffer(self)
+
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.
         Publisher().sendMessage('buffer.opened', self)
@@ -313,6 +274,7 @@ class Buffer(debugmixin):
             assert self.dprint("notifing: %s modified = %s" % (view, self.modified))
             view.showModified(self.modified)
         wx.GetApp().enableFrames()
+        Publisher().sendMessage('buffer.modified', self)
 
     def setBusy(self, state):
         self.busy = state
@@ -338,7 +300,7 @@ class BlankMode(MajorMode):
     """
     A temporary Major Mode to load another mode in the background
     """
-    keyword = "about:blank"
+    keyword = "Blank"
     icon='icons/application.png'
     temporary = True
     allow_threaded_loading = False

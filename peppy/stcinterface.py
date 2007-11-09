@@ -44,6 +44,9 @@ class STCInterface(object):
     STC<http://www.yellowbrain.com/stc/index.html>} for more info on
     the rest of the STC methods.
     """
+    def Destroy(self):
+        pass
+    
     def CanEdit(self):
         """PyPE compat to show read-only status"""
         return True
@@ -90,6 +93,11 @@ class STCInterface(object):
 
     def GetText(self):
         return ''
+    
+    def GetLength(self):
+        return 0
+    
+    GetTextLength = GetLength
 
     def GetModify(self):
         return False

@@ -15,7 +15,11 @@ from peppy.stcinterface import *
 
 class HyperspectralSTC(NonResidentSTC):
     def open(self, url, message=None):
+        self.url = url
         self.dataset=HyperspectralFileFormat.load(url)
+    
+    def GetLength(self):
+        return os.stat(self.url.path).st_size
         
     def Destroy(self):
         self.dataset = None

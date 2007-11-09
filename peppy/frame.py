@@ -593,7 +593,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             buffer.openBackgroundThread()
             self.openSuccess(buffer)
         except Exception, e:
-            self.openFailure(buffer.url, str(e))
+            import traceback
+            error = traceback.format_exc()
+            self.openFailure(buffer.url, error)
         wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
     def openThreaded(self, url, modecls, mode_to_replace=None):
@@ -606,7 +608,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def openSuccess(self, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
-        BufferList.addBuffer(buffer)
         mode = self.createMajorMode(buffer)
         assert self.dprint("major mode=%s" % mode)
         if mode_to_replace:
