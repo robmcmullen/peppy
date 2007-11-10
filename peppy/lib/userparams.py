@@ -219,6 +219,10 @@ class Param(debugmixin):
             self.alt_label = kwargs['label']
         else:
             self.alt_label = None
+        if 'disable' in kwargs:
+            self.enable = not kwargs['disable']
+        else:
+            self.enable = True
     
     def __str__(self):
         return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
@@ -248,6 +252,7 @@ class Param(debugmixin):
         """
         ctrl = wx.TextCtrl(parent, -1, size=(125, -1),
                            style=wx.TE_PROCESS_ENTER)
+        ctrl.Enable(self.enable)
         return ctrl
     
     def processCallback(self, evt, ctrl, ctrl_list):
