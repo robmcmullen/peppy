@@ -724,20 +724,15 @@ if __name__ == '__main__':
 
                 acc=acc.replace('\t',' ')
                 #print "acc=%s" % acc
-                if wx.Platform == '__WXMSW__':
-                    # If windows recognizes the accelerator (e.g. "Ctrl+A") OR
-                    # it doesn't recognize the whole accererator text but does
-                    # recognize the last part (e.g. "C-A" where it doesn't
-                    # know what the "C-" is but does see the "A", it will
-                    # automatically process the accelerator before we even see
-                    # it.  So, append an ascii zero to the end.
-                    menu.SetLabel(id, '%s\t%s\00'%(ns,acc))
-                else:
-                    # unix doesn't allow displaying arbitrary text as the
-                    # accelerator, so we have to just put it in the menu
-                    # itself.  This doesn't look very nice, but that's about
-                    # all we can do.
-                    menu.SetLabel(id, '%s (%s)'%(ns,acc))
+                
+                # The "append ascii zero to the end of the accelerator" trick
+                # no longer works for windows, so use the same hack below for
+                # all platforms.
+
+                # wx doesn't allow displaying arbitrary text as the accelerator,
+                # so we have to just put it in the menu itself.  This doesn't
+                # look very nice, but that's about all we can do.
+                menu.SetLabel(id, '%s (%s)'%(ns,acc))
             else:
                 menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
