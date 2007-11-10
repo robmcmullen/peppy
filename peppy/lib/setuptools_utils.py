@@ -36,6 +36,10 @@ except:
 
 def load_plugins(entry_point):
     if USE_SETUPTOOLS:
+        if not hasattr(pkg_resources, 'iter_entry_points'):
+            print "Need a newer version of setuptools to load setuptools plugins."
+            return
+        
         try:
             for entrypoint in pkg_resources.iter_entry_points(entry_point):
                 plugin_class = entrypoint.load()
@@ -46,4 +50,6 @@ def load_plugins(entry_point):
         except:
             # For now, just skip loading until I figure out how to use versions
             # of setuptools that don't have iter_entry_points
+            import traceback
+            dprint(traceback.format_exc())
             pass
