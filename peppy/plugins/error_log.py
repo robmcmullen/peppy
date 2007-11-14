@@ -22,15 +22,18 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
     default_classprefs = (
         BoolParam('show', False),
         BoolParam('always_scroll', False),
+        StrParam('filename_match_regex', "  File \"(.+)\", line ([0-9]+)", 'Regular expression used to match pathnames in the output'),
         )
 
     def __init__(self, *args, **kwargs):
         PeppySTC.__init__(self, *args, **kwargs)
-        self.Bind(wx.stc.EVT_STC_DOUBLECLICK, self.OnDoubleClick)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         
         self.IndicatorSetStyle(0, wx.stc.STC_INDIC_SQUIGGLE)
         self.IndicatorSetForeground(0, wx.RED)
         
+        self.filere = re.compile(self.classprefs.filename_match_regex)
+
     def addMessage(self, text):
         if self.classprefs.always_scroll:
             scroll = True
@@ -63,11 +66,9 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
         text = self.GetTextRange(pos, self.GetTextLength())
         #dprint(text)
 
-        # FIXME: currently hard-coded for Python output
-        filere = re.compile("  File \"(.+)\", line ([0-9]+)")
         i = 0
         while i < len(text):
-            match = filere.search(text, i)
+            match = self.filere.search(text, i)
             if not match:
                 break
             
@@ -76,11 +77,24 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             self.StartStyling(pos + i, wx.stc.STC_INDICS_MASK)
             self.SetStyling(len(filename), wx.stc.STC_INDIC0_MASK)
             i = match.end(0)
-            sys.stdout.write("match ends at %d" % i)
+            #sys.stdout.write("match ends at %d" % i)
             self.last_matched_filename = pos + i
 
     def OnDoubleClick(self, evt):
-        dprint("x=%d y=%d pos=%d" % (evt.GetX(), evt.GetY(), evt.GetPosition()))
+        #dprint("x=%d y=%d" % (evt.GetX(), evt.GetY()))
+        pos = self.PositionFromPointClose(evt.GetX(), evt.GetY())
+        #dprint("pos=%d" % pos)
+        if pos != wx.stc.STC_INVALID_POSITION:
+            line = self.LineFromPosition(pos)
+            text = self.GetLine(line)
+            #dprint("text=%s" % text)
+            match = self.filere.search(text)
+            if match:
+                filename = match.group(1)
+                self.open(filename)
+    
+    def open(self, filename):
+        dprint("filename = %s" % filename)
 
 
 class ErrorLogSidebar(Sidebar, LoggingSTC):
@@ -209,6 +223,9 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         of a wx.lib.pubsub.sendMessage call.
         """
         self.showMessage(message.data)
+    
+    def open(self, filename):
+        self.major.frame.open(filename)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar
