@@ -1,6 +1,6 @@
 [Core]
-Name = Fold Explorer
-Module = fold_explorer
+Name = Function Menu
+Module = function_menu
 
 [Documentation]
 Author = Rob McMullen, Stani Michiels

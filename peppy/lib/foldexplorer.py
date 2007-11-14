@@ -23,6 +23,30 @@ class FoldExplorerNode(object):
         
         self.show = True
         self.children   = []
+        
+        # Storage for a flattened version of the hierarchy for use in menus.
+        # This is typically only used in the root of the hierarchy.
+        self.flattened = None
+    
+    def _flatten(self, parent):
+        for node in parent.children:
+            if node.show:
+                self.flattened.append(node)
+                self._flatten(node)
+            else:
+                # Append children of a hidden node to the parent
+                self._flatten(node)
+
+    def flatten(self):
+        if not self.flattened:
+            self.flattened = []
+            self._flatten(self)
+        return self.flattened
+    
+    def findFlattenedNode(self, index):
+        flat = self.flatten()
+        node = flat[index]
+        return node
 
     def __str__(self):
         return "L%d s%d e%d %s" % (self.level, self.start, self.end, self.text.rstrip())

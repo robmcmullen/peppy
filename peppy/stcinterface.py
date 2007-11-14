@@ -251,17 +251,44 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.SetDocPointer(self.docptr)
             assert self.dprint("creating new document %s" % self.docptr)
             self.subordinates=[]
+
+            # If views can share info among similar classes, that info can be
+            # stored here.
+            self.stc_classes = []
+            self.stc_class_info = {}
+
             if copy is not None:
                 txt = copy.GetStyledText(0,copy.GetTextLength())
                 dprint("copying %s from old stc." % repr(txt))
                 self.AddStyledText(txt)
         self.maybe_undo_eolmode = None
 
+    def updateSubordinateClasses(self):
+        """Update the list of classes viewing this buffer."""
+        classes = {}
+        for view in self.subordinates:
+            classes[view.__class__] = True
+        self.stc_classses = classes.keys()
+    
+    def getSharedClassInfo(self, cls):
+        """Get the dict that can be used to store data common to viewers of
+        the specified class.
+        """
+        if self.refstc is None:
+            stc = self
+        else:
+            stc = self.refstc
+        if cls not in stc.stc_class_info:
+            stc.stc_class_info[cls] = {}
+        return stc.stc_class_info[cls]
+
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
+        self.updateSubordinateClasses()
 
     def removeSubordinate(self,otherstc):
         self.subordinates.remove(otherstc)
+        self.updateSubordinateClasses()
 
     def open(self, url, message=None):
         fh = url.getReader()
@@ -760,8 +787,12 @@ class PeppySTC(PeppyBaseSTC):
                 if stats['linesep'] == stats['total'] and stats['linesep'] >= self.GetLineCount()-1:
                     self.dprint("likely that this is a eol change")
                     stats['likely'] = True
-        
+        elif mod & wx.stc.STC_MOD_CHANGEFOLD:
+            self.OnFoldChanged(evt)
         evt.Skip()
+    
+    def OnFoldChanged(self, evt):
+        pass
 
     def OnUpdateUI(self, evt):
         dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))

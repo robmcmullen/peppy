@@ -272,22 +272,63 @@ class StandardCommentMixin(object):
             return ("", line, "")
         self.dprint(match.groups())
         return match.group(1, 2, 3)
-
     
+
 class GenericFoldHierarchyMixin(object):
-    def getFoldHierarchy(self):
-        """Get the fold hierarchy using Stani's fold explorer algorithm.
+    """Mixin for the scintilla fold processing.
+    
+    Scintilla's folding code is used to generate the function lists in some
+    major modes.  Scintilla doesn't support code folding in all its supported
+    languages, so major modes that aren't supported may mimic this interface to
+    provide similar functionality.
+    
+    This mixin depends on the FoldExplorerMixin in peppy.lib.foldexplorer
+    """
+    def OnFoldChanged(self, evt):
+        """Callback to process fold events.
+        
+        This callback is initiated from within the event handler of PeppySTC.
+        The events could be used to optimize the fold algorithm, but
+        currently this data is not used by anything.
         """
-        # Turn this into a threaded operation if it takes too long
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        if 'fold_hierarchy' in stc_class_info:
+            #dprint("changed fold at line=%d, pos=%d" % (evt.Line, evt.Position))
+            stc_class_info['fold_changed'].append(evt.Line)
+    
+    def getFoldHierarchy(self):
+        """Get the current fold hierarchy, returning the existing copy if there
+        are no changes, or updating if necessary.
+        """
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        if 'fold_hierarchy' not in stc_class_info or stc_class_info['fold_changed'] or self.GetLineCount() != stc_class_info['fold_line_count']:
+            #dprint("Fold hierarchy has changed.  Updating.")
+            self.updateFoldHierarchy()
+        fold_hier = stc_class_info['fold_hierarchy']
+        return fold_hier
+
+    def updateFoldHierarchy(self):
+        """Create the fold hierarchy using Stani's fold explorer algorithm.
+        """
+        # FIXME: Turn this into a threaded operation if it takes too long
         t = time.time()
         self.Colourise(0, self.GetTextLength())
         self.dprint("Finished colourise: %0.5f" % (time.time() - t))
-        hierarchy = self.computeFoldHierarchy()
         
-        # FIXME: Note that different views of the same buffer *using the
-        # same major mode* will have the same fold hierarchy.  This should
-        # be exploited, but currently it isn't.
-        return hierarchy
+        # Note that different views of the same buffer *using the same major
+        # mode* will have the same fold hierarchy.  So, we use the stc's
+        # getSharedClassInfo interface to store data common to all views of
+        # this buffer that use this major mode.
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        stc_class_info['fold_hierarchy'] = self.computeFoldHierarchy()
+        stc_class_info['fold_changed'] = []
+        
+        # Note: folding events aren't fired when only blank lines are inserted
+        # or deleted, so we keep track of the line count as a secondary method
+        # to indicate the folding needs to be recalculated
+        stc_class_info['fold_line_count'] = self.GetLineCount()
+        
+        return stc_class_info['fold_hierarchy']
 
 
 class ParagraphInfo(object):
@@ -415,8 +456,8 @@ class StandardParagraphMixin(object):
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
                      StandardReindentMixin, StandardCommentMixin,
-                     GenericFoldHierarchyMixin, StandardParagraphMixin,
-                     FoldExplorerMixin,
+                     StandardParagraphMixin,
+                     GenericFoldHierarchyMixin, FoldExplorerMixin,
                      EditraSTCMixin, PeppySTC):
     
     # Default comment characters in case the Editra styling database
