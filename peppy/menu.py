@@ -20,6 +20,16 @@ from peppy.lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
 
+class OnDemandActionMixin(object):
+    """Mixin to provide on-demand updating as the menubar is opened
+    
+    On-demand actions don't have to be created ahead of time -- the
+    updateOnDemand method is called immediately before the menu bar entry
+    is opened.
+    """
+    def updateOnDemand(self):
+        pass
+
 
 class SelectAction(debugmixin):
     debuglevel=0
@@ -855,40 +865,50 @@ class UserActionMap(debugmixin):
                            self.OnMenuSelected)
         self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI,
                            self.OnUpdateUI)
+        self.frame.Bind(wx.EVT_MENU_OPEN, self.frame.OnMenuOpen)
     
     def OnMenuSelected(self, evt):
         """Process a menu selection event"""
         self.dprint(evt)
         id = evt.GetId()
         
-        if id in self.actions:
-            # The id is in the list of single-event actions
-            action = self.actions[id]
-            self.dprint(action)
-            action.action()
-        elif id in self.index_actions:
+        # FIXME: Check for index actions first, because the global id for
+        # a list is used as the first item in a list and also shows up in
+        # self.actions.  Should the global id be used in lists???
+        if id in self.index_actions:
             # Some actions are associated with more than one id, like list
             # actions.  These are dispatched here.
             action = self.index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("index %d of %s" % (index, action))
             action.action(index=index)
-        
+        elif id in self.actions:
+            # The id is in the list of single-event actions
+            action = self.actions[id]
+            self.dprint(action)
+            action.action()
+     
     def OnUpdateUI(self, evt):
         """Update the state of the menu items.
         
         This event gets fired just before wx shows the menu, giving us a
         chance to update the status before the user sees it.
         """
-        self.dprint(evt)
+        if self.debuglevel > 1: self.dprint(evt)
         id = evt.GetId()
         if id in self.actions:
             # We're only interested in one id per Action, because list
             # actions will set the state for all their sub-ids given a
             # single id
             action = self.actions[id]
-            self.dprint(action)
+            if self.debuglevel > 1: self.dprint(action)
             action.showEnable()
+    
+    def updateOnDemandActions(self):
+        for action in self.actions.values():
+            #dprint(action)
+            if hasattr(action, 'updateOnDemand'):
+                action.updateOnDemand()
 
     @classmethod
     def getActiveActions(cls, mode):

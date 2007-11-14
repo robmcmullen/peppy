@@ -373,6 +373,17 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if self.GetStatusBar() is not None:
             self.GetStatusBar().SetStatusText(text, index)
     
+    def OnMenuOpen(self, evt):
+        """Callback when a menubar menu is about to be opened.
+        
+        Note that on Windows, this also happens when submenus are opened, but
+        gtk only happens when the top level menu gets opened.
+        
+        By trial and error, it seems to be safe to update dynamic menus here.
+        """
+        #dprint(evt)
+        self.menumap.updateOnDemandActions()
+
     # non-wx methods
 
     def setStatusBar(self):
