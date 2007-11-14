@@ -8,6 +8,7 @@ from wx.lib.pubsub import Publisher
 
 from peppy.menu import *
 from peppy.major import *
+from peppy.lib.foldexplorer import *
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
@@ -281,12 +282,12 @@ class GenericFoldHierarchyMixin(object):
         t = time.time()
         self.Colourise(0, self.GetTextLength())
         self.dprint("Finished colourise: %0.5f" % (time.time() - t))
-        self.computeFoldHierarchy()
+        hierarchy = self.computeFoldHierarchy()
         
         # FIXME: Note that different views of the same buffer *using the
         # same major mode* will have the same fold hierarchy.  This should
         # be exploited, but currently it isn't.
-        return self.fold_explorer_root
+        return hierarchy
 
 
 class ParagraphInfo(object):
@@ -413,9 +414,10 @@ class StandardParagraphMixin(object):
 
 
 class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
-                    StandardReindentMixin, StandardCommentMixin,
-                    GenericFoldHierarchyMixin, StandardParagraphMixin,
-                    EditraSTCMixin, PeppySTC):
+                     StandardReindentMixin, StandardCommentMixin,
+                     GenericFoldHierarchyMixin, StandardParagraphMixin,
+                     FoldExplorerMixin,
+                     EditraSTCMixin, PeppySTC):
     
     # Default comment characters in case the Editra styling database
     # doesn't have any information about the mode

@@ -628,46 +628,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 end -= elen
         return end + len(self.getLinesep())
 
-    ## Stani's Fold Explorer
-    def computeFoldHierarchy(self):
-        t = time.time()
-        #[(level,line,text,parent,[children]),]
-        n               = self.GetLineCount()+1
-        prevNode        = root  = FoldNode(level=0,start=0,end=n,text='root',parent=None)
-        for line in range(n-1):
-            foldBits    = self.GetFoldLevel(line)
-            if foldBits&wx.stc.STC_FOLDLEVELHEADERFLAG:
-                #folding point
-                prevLevel       = prevNode.level
-                level           = foldBits&wx.stc.STC_FOLDLEVELNUMBERMASK
-                text            = self.GetLine(line)
-                node            = FoldNode(level=level,start=line,end=n,text=text)
-                #print node
-                if level == prevLevel:
-                    #say hello to new brother or sister
-                    node.parent = prevNode.parent
-                    node.parent.children.append(node)
-                    prevNode.end= line
-                elif level>prevLevel:
-                    #give birth to child (only one level deep)
-                    node.parent = prevNode
-                    prevNode.children.append(node)
-                else:
-                    #find your uncles and aunts (can be several levels up)
-                    while level < prevNode.level:
-                        prevNode.end = line
-                        prevNode  = prevNode.parent
-                    if prevNode.parent == None:
-                        node.parent = root
-                    else:
-                        node.parent = prevNode.parent
-                    node.parent.children.append(node)
-                    prevNode.end= line
-                prevNode        = node
-        prevNode.end    = line
-        self.fold_explorer_root = root
-        dprint("Finished fold node creation: %0.5fs" % (time.time() - t))
-        
 
 class PeppySTC(PeppyBaseSTC):
     """

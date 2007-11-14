@@ -56,9 +56,13 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
     
     def appendChildren(self,wxParent,nodeParent):
         for nodeItem in nodeParent.children:
-            wxItem = self.AppendItem(wxParent,nodeItem.text.strip())
-            self.SetPyData(wxItem,nodeItem)
-            self.appendChildren(wxItem,nodeItem)
+            if nodeItem.show:
+                wxItem    = self.AppendItem(wxParent,nodeItem.text.strip())
+                self.SetPyData(wxItem,nodeItem)
+                self.appendChildren(wxItem,nodeItem)
+            else:
+                # Append children of a hidden node to the parent
+                self.appendChildren(wxParent, nodeItem)
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())
