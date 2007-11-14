@@ -135,7 +135,7 @@ class FoldExplorerMixin(object):
                 prevNode = node
 
         prevNode.end = line
-        print("Finished fold node creation: %0.5fs" % (time.time() - t))
+        #print("Finished fold node creation: %0.5fs" % (time.time() - t))
 
     def computeFoldHierarchy(self):
         t = time.time()

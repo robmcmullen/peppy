@@ -352,6 +352,10 @@ class BufferListEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
             # don't process if we're currently updating the list
             dprint("skipping an update while we're in the middle of an execute")
             return
+        
+        # FIXME: Freeze doesn't seem to work -- on windows, this list is built
+        # so slowly that you can see columns being resized.
+        self.Freeze()
         list_count = self.GetItemCount()
         index = 0
         cumulative = 0
@@ -384,6 +388,7 @@ class BufferListEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
             self.EnsureVisible(show)
 
         self.resizeColumns([-60,200,0,0,-200])
+        self.Thaw()
 
 
 class BufferListMode(MajorMode):

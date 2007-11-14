@@ -1,3 +1,12 @@
+2007-11-13  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.1 "The Winchester"
+	* Added function menu using the fold explorer backend
+	* Paths in python trackbacks are now clickable
+	* Added Buffer List mode ala emacs
+	* Alternate method to code plugins to allow on-demand loading (e.g.
+	prevents loading numpy until hyperspectral image mode is first used)
+
 2007-11-07  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.0.4 update to "Kibbles 'n' Snouts"

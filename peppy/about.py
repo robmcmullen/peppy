@@ -34,14 +34,13 @@ substitutes = {
     'url': __url__,
     'license': "Licensed under the GPL",
     'warning': """<P>I'm dogfooding!  This is now my primary editor,
-but caveat emptor: it is not totally 100% bullet-proofingly rock solid.
-Perhaps solid-like, maybe even solidish: it's better than gelatinous but
-not yet crunchy.
+but caveat emptor: it is still alpha code.  It has all of the basic features
+that I need for my day-to-day editing, and for the most part it has replaced
+XEmacs as my daily editor.  I've planned much more development, though,
+and I also intend to work on a lot of documentation to make it easier for
+contributors to extend the editor.
 
-<P>It is definitely still alpha code, and missing tons o' features but for
-the most part it has replaced XEmacs as my daily editor.
-
-Save your work often and file a bug report at
+<P>Save your work often and file a bug report at
 http://trac.flipturn.org/newticket if you notice something that shouldn't
 be happening.
     """,
