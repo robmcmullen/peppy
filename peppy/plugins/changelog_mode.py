@@ -31,7 +31,7 @@ class AddChangeLogEntry(STCModificationAction):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         date = time.strftime(self.mode.classprefs.date_format_str)
-        prefs = wx.GetApp().classprefs
+        prefs = wx.GetApp().user.classprefs
         
         s = self.mode.stc
         eol = s.getLinesep()

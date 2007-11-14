@@ -92,6 +92,14 @@ class Mouse(ClassPrefs):
     )
     
 
+class User(ClassPrefs):
+    preferences_tab = "General"
+    default_classprefs = (
+        StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
+        StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
+    )
+    
+
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
 
@@ -131,8 +139,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                    }
     preferences_tab = "General"
     default_classprefs = (
-        StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
-        StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
@@ -146,6 +152,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
         )
     mouse = Mouse()
+    user = User()
     
     config = None
     
