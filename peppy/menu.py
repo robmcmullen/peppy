@@ -246,7 +246,8 @@ class IdCache(object):
         return id
 
 class ListAction(SelectAction):
-    menumax=20
+    menumax = 30
+    abbrev_width = 16
     inline=False
     
     def __init__(self, frame, menu=None, toolbar=None):
@@ -303,7 +304,9 @@ class ListAction(SelectAction):
         if self.menumax>0 and len(items)>self.menumax:
             for group in range(0,len(items),self.menumax):
                 last=min(group+self.menumax,len(items))
-                groupname="%s ... %s" % (items[group],items[last-1])
+                str1 = items[group].strip()[0:self.abbrev_width]
+                str2 = items[last-1].strip()[0:self.abbrev_width]
+                groupname="%s ... %s" % (str1, str2)
                 child=wx.Menu()
                 i=0
                 for name in items[group:last]:
