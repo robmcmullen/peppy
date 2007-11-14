@@ -16,7 +16,7 @@ from peppy.major import *
 from peppy.fundamental import *
 from peppy.actions.base import *
 
-import idlelib.PyParse as PyParse
+import peppy.lib.PyParse as PyParse
 
 
 _sample_file='''\
