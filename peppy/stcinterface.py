@@ -120,6 +120,12 @@ class STCInterface(object):
     def GuessBinary(self,amount,percentage):
         return False
 
+    def getShortDisplayName(self, url):
+        """Return a short name for display in tabs or other context without
+        needing a pathname.
+        """
+        return url.getBasename()
+
     def open(self, url, message=None):
         """Read from the specified url to populate the STC.
         

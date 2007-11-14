@@ -174,7 +174,7 @@ class Buffer(debugmixin):
         return False
 
     def setName(self):
-        basename=self.url.getBasename()
+        basename=self.stc.getShortDisplayName(self.url)
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count

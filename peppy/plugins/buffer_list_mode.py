@@ -25,15 +25,15 @@ class ListAllBuffers(SelectAction):
     key_bindings = {'emacs': "C-X C-B", }
 
     def action(self, index=-1, multiplier=1):
-        self.frame.open("about:buffers")
+        self.frame.open("buffers:")
 
 
 class BufferListSTC(NonResidentSTC):
     """Dummy STC just to prevent other modes from being able to change their
     major mode to this one.
     """
-    pass
-    
+    def getShortDisplayName(self, url):
+        return "Buffer List"
 
 
 class FlagMixin(object):
@@ -59,14 +59,14 @@ class BufferListNext(FlagMixin, SelectAction):
     alias = "buffer-list-next"
     name = "Move to Next Item"
     tooltip = "Move the selection to the next item in the list."
-    default_menu = ("Tools", 100)
+    default_menu = ("Actions", 100)
     key_bindings = {'default': "N", }
 
 class BufferListPrevious(FlagBackwardsMixin, SelectAction):
     alias = "buffer-list-previous"
     name = "Move to Previous Item"
     tooltip = "Move the selection to the previous item in the list."
-    default_menu = ("Tools", 101)
+    default_menu = ("Actions", 101)
     key_bindings = {'default': "P", }
 
 
@@ -74,7 +74,7 @@ class BufferListDelete(FlagMixin, SelectAction):
     alias = "buffer-list-delete"
     name = "Mark for Deletion"
     tooltip = "Mark the selected buffer for deletion."
-    default_menu = ("Tools", 120)
+    default_menu = ("Actions", 120)
     key_bindings = {'default': "D", }
     flag = 'D'
 
@@ -82,7 +82,7 @@ class BufferListDeleteBackwards(FlagBackwardsMixin, SelectAction):
     alias = "buffer-list-delete-backwards"
     name = "Mark for Deletion and Move Backwards"
     tooltip = "Mark the selected buffer for deletion and move to the previous item."
-    default_menu = ("Tools", 121)
+    default_menu = ("Actions", 121)
     key_bindings = {'default': "C-D", }
     flag = 'D'
 
@@ -91,7 +91,7 @@ class BufferListSave(FlagMixin, SelectAction):
     alias = "buffer-list-save"
     name = "Mark for Save"
     tooltip = "Mark the selected buffer to be saved."
-    default_menu = ("Tools", -110)
+    default_menu = ("Actions", -110)
     key_bindings = {'default': "S", }
     flag = 'S'
 
@@ -99,7 +99,7 @@ class BufferListSaveBackwards(FlagBackwardsMixin, SelectAction):
     alias = "buffer-list-save-backwards"
     name = "Mark for Save and Move Backwards"
     tooltip = "Mark the selected buffer to be saved and move to the previous item."
-    default_menu = ("Tools", 111)
+    default_menu = ("Actions", 111)
     key_bindings = {'default': "C-S", }
     flag = 'S'
 
@@ -108,7 +108,7 @@ class BufferListMark(FlagMixin, SelectAction):
     alias = "buffer-list-mark"
     name = "Mark for Display"
     tooltip = "Mark the selected buffer to be displayed."
-    default_menu = ("Tools", 130)
+    default_menu = ("Actions", 130)
     key_bindings = {'default': "M", }
     flag = 'M'
 
@@ -116,7 +116,7 @@ class BufferListMarkBackwards(FlagBackwardsMixin, SelectAction):
     alias = "buffer-list-mark-backwards"
     name = "Mark for Display and Move Backwards"
     tooltip = "Mark the selected buffer to be displayed and move to the previous item."
-    default_menu = ("Tools", 130)
+    default_menu = ("Actions", 130)
     key_bindings = {'default': "C-M", }
     flag = 'M'
 
@@ -125,7 +125,7 @@ class BufferListClearFlags(SelectAction):
     alias = "buffer-list-clear-flags"
     name = "Clear Flags"
     tooltip = "Clear all flags from the selected item(s)."
-    default_menu = ("Tools", 199)
+    default_menu = ("Actions", 199)
     key_bindings = {'default': "U", }
 
     def action(self, index=-1, multiplier=1):
@@ -138,7 +138,7 @@ class BufferListExecute(SelectAction):
     alias = "buffer-list-execute"
     name = "Save or Delete Marked Buffers"
     tooltip = "Act on the marked buffers according to their flags."
-    default_menu = ("Tools", -300)
+    default_menu = ("Actions", -300)
     key_bindings = {'default': "X", }
 
     def action(self, index=-1, multiplier=1):
@@ -149,7 +149,7 @@ class BufferListShow(SelectAction):
     alias = "buffer-list-show"
     name = "Show Buffer"
     tooltip = "Show the buffer in a new tab."
-    default_menu = ("Tools", -400)
+    default_menu = ("Actions", -400)
     key_bindings = {'default': "O", }
 
     def action(self, index=-1, multiplier=1):
@@ -161,7 +161,7 @@ class BufferListReplace(SelectAction):
     alias = "buffer-list-replace"
     name = "Replace Buffer"
     tooltip = "Show the buffer in place of this tab."
-    default_menu = ("Tools", 401)
+    default_menu = ("Actions", 401)
     key_bindings = {'default': "F", }
 
     def action(self, index=-1, multiplier=1):
@@ -401,7 +401,7 @@ class BufferListMode(MajorMode):
         # Use the verifyProtocol to hijack the loading process and
         # immediately return the match if we're trying to load
         # about:blank
-        if url.protocol == 'about' and url.path == 'buffers':
+        if url.protocol == 'buffers':
             return True
         return False
 
@@ -416,9 +416,6 @@ class BufferListMode(MajorMode):
 class BufferListModePlugin(IPeppyPlugin):
     """Yapsy plugin to register BufferListMode
     """
-    def aboutFiles(self):
-        return {'buffers': ""}
-    
     def getMajorModes(self):
         yield BufferListMode
 
