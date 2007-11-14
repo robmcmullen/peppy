@@ -132,7 +132,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                   '.*Filter':3,
                   }
     
-    minimal_config={'BufferFrame':{'width':900,
+    minimal_config={'BufferFrame':{'width':700,
                                    'height':700,
                                    'sidebars':'filebrowser, debug_log, error_log, info_log, processes',
                                    },
@@ -382,7 +382,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             listen_port = None
             name = self.server_port_filename
             if self.config.exists(name):
-                dprint("found existing server port config file %s" % name)
+                self.dprint("found existing server port config file %s" % name)
                 try:
                     fh = self.config.open(name)
                     listen_port = int(fh.read())
@@ -396,19 +396,19 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     if fh:
                         fh.close()
                     self.config.remove(name)
-                    dprint("removed server port file %s" % name)
+                    self.dprint("removed server port file %s" % name)
                     listen_port = None
             if listen_port is not None:
                 server = LoadFileProxy(port=listen_port)
                 server.find()
                 if server.isActive():
                     self.server = server
-                    dprint("socket = %s" % server.socket)
+                    self.dprint("socket = %s" % server.socket)
                 else:
                     self.config.remove(name)
-                    dprint("removed server port file %s" % name)
+                    self.dprint("removed server port file %s" % name)
                     listen_port = None
-            dprint("found port = %s" % listen_port)
+            self.dprint("found port = %s" % listen_port)
         
     def getServerPort(self, lo=50000, hi=60000, tries=10):
         """Determine the port to use for the load file server.
@@ -422,7 +422,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         trying = 0
         while trying < tries:
             listen_port = random.randint(lo, hi)
-            dprint("trying port %d" % listen_port)
+            self.dprint("trying port %d" % listen_port)
             if not server.find(listen_port):
                 # OK, it didn't respond, so it's open.  Let's use it.
                 break
@@ -436,7 +436,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
     def startServer(self):
         if self.classprefs.request_server and not hasattr(self, 'no_server_option'):
-            dprint(self.server)
+            self.dprint(self.server)
             if not self.server:
                 self.server = self.getServerPort()
             if self.server:
@@ -446,7 +446,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             self.server = None
 
     def otherInstanceRunning(self):
-        dprint(self.server)
+        self.dprint(self.server)
         return self.server is not None and self.server.socket is not None
 
     def sendToOtherInstance(self, filename):

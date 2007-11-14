@@ -12,14 +12,6 @@
 """setuptools_utils -- utilities for use with setuptools.  Er, duh.
 
 """
-USE_SETUPTOOLS = False
-try:
-    import pkg_resources
-    USE_SETUPTOOLS = True
-except:
-    print """Failed loading pkg_resources from the setuptools package.
-    setuptools plugins will not be loaded."""
-    
 try:
     from peppy.debug import *
 except:
@@ -33,6 +25,15 @@ except:
             if self.debuglevel > 0:
                 dprint(txt)
             return True
+
+USE_SETUPTOOLS = False
+try:
+    import pkg_resources
+    USE_SETUPTOOLS = True
+except:
+    #dprint("Setuptools unavailable; setuptools plugins will not be loaded.")
+    pass
+
 
 def load_plugins(entry_point):
     if USE_SETUPTOOLS:

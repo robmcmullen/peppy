@@ -140,7 +140,7 @@ class LoadFileProxy(object):
             s.connect((host, port))
             return s
         except socket.error, e:
-            print e
+            #print e
             pass
         return None
     
