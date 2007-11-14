@@ -21,7 +21,7 @@ from peppy.lib.pluginmanager import *
 class Preferences(SelectAction):
     name = "&Preferences..."
     tooltip = "Preferences, settings, and configurations..."
-    default_menu = ("Edit", -1000.1)
+    default_menu = ("Edit", 1000.1)
     default_toolbar = False
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES

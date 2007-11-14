@@ -23,7 +23,7 @@ AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2007", "Th
 class EditraStyles(SelectAction):
     name = "Text Styles..."
     tooltip = "Open the STC Style Editor to edit the current mode's text display."
-    default_menu = ("Format", -1000)
+    default_menu = ("Edit", -1000)
     
     def isEnabled(self):
         return hasattr(self.mode.classprefs, 'editra_style_sheet')

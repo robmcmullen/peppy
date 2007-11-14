@@ -215,7 +215,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     default_menubar = {
         "File": 0,
         "Edit": 0.001,
-        "Format": 0.002,
         "View": 0.003,
         "Tools": 0.004,
         "Transform": 0.005,

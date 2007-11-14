@@ -512,7 +512,7 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     name="Line Endings"
     inline=False
     tooltip="Switch line endings"
-    default_menu = ("Format", 0)
+    default_menu = ("Transform", -999)
 
     items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
     modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
