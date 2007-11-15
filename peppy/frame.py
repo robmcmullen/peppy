@@ -351,9 +351,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
     def OnClose(self, evt=None):
         assert self.dprint(evt)
-        self.closeWindow()
-        if len(FrameList.storage)==0:
-            wx.GetApp().quit()
+        close = True
+        if len(FrameList.storage)==1:
+            # If attempting to close the last window, check to make sure that
+            # the user didn't cancel the quit
+            close = wx.GetApp().quit()
+        if close:
+            self.closeWindow()
 
     def OnKeyPressed(self, evt):
         self.keys.process(evt)

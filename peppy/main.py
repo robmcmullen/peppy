@@ -705,6 +705,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             # a reference to something that isn't being cleaned up.  This
             # explicit call to sys.exit shouldn't be necessary.
             sys.exit()
+        return False
 
     def quitHook(self):
         if not self.saveConfig(self.base_preferences):
