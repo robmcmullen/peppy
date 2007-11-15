@@ -1,3 +1,10 @@
+2007-11-14  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.1.1 update to "The Winchester"
+	* Included PyParse with peppy to guarantee compatible version
+	* Fixed indenting for windows-style line endings
+	* Fixed quit dialog problem on msw
+
 2007-11-13  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.1 "The Winchester"
