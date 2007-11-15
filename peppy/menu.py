@@ -189,7 +189,10 @@ class SelectAction(debugmixin):
 
     def __call__(self, evt, number=1):
         assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, number))
-        self.action(0, number)
+        # Make sure that the action is enabled before allowing it to be called
+        # using the keybinding
+        if self.isEnabled():
+            self.action(0, number)
 
     def showEnable(self):
         state = self.isEnabled()

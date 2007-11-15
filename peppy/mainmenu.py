@@ -683,8 +683,12 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.map:
             action = self.map[text]
-            self.dprint("executing %s: %s" % (text, action))
-            wx.CallAfter(action.action)
+            if action.isEnabled():
+                self.dprint("executing %s: %s" % (text, action))
+                wx.CallAfter(action.action)
+            else:
+                # FIXME: display the reason why the action is disabled
+                self.frame.SetStatusText("%s disabled for current buffer (FIXME: put reason why here)" % text)
         else:
             self.frame.SetStatusText("%s not a known action" % text)
 
