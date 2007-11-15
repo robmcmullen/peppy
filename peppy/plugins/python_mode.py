@@ -259,6 +259,7 @@ class IDLEReindentMixin(ReindentBase):
         # Use the current line number, which will find the indention based on
         # the previous line
         indent, extra = self.findIndent(linenum, True)
+        #dprint("linenum: %d indent=%d extra=%s" % (linenum, indent, extra))
         
         # The text begins at indpos; check some special cases to see if there
         # should be a dedent
@@ -318,8 +319,19 @@ class IDLEElectricReturnMixin(debugmixin):
                 firstline = 0
             start = self.PositionFromLine(firstline)
             end = self.PositionFromLine(linenum)
-            rawtext = self.GetTextRange(start, end)+"\n"
-            y.set_str(rawtext)
+            rawtext = self.GetTextRange(start, end)
+            
+            # FIXME: for now, rather than changing PyParse, I'm converting
+            # everything to newlines because PyParse is hardcoded for newlines
+            # only
+            if self.getLinesep() == "\r\n":
+                #dprint("Converting windows!")
+                rawtext = rawtext.replace("\r\n", "\n")
+            elif self.getLinesep() == "\r":
+                #dprint("Converting old mac!")
+                rawtext = rawtext.replace("\r", "\n")
+            y.set_str(rawtext+"\n")
+            
             bod = y.find_good_parse_start(build_char_in_string_func(self, start))
             if bod is not None or firstline == 0:
                 break
