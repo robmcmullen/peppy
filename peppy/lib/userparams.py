@@ -1122,13 +1122,18 @@ class GlobalPrefs(debugmixin):
                 for option in keys:
                     val = options[option]
                     param = GlobalPrefs.findParam(section, option)
-                    if param is None:
-                        dprint("Found a None param: %s[%s] = %s" % (section, option, val))
-                        continue
                     if not printed_section:
                         lines.append("[%s]" % section)
                         printed_section = True
-                    lines.append("%s = %s" % (option, param.valueToText(val)))
+                    if param is None:
+                        # No param means that the section doesn't correspond
+                        # to any loaded class, probably meaning that it was
+                        # a dynamically loaded class that just wasn't loaded
+                        # this time.  So, save the raw text since we don't
+                        # have a param to use to convert.
+                        lines.append("%s = %s" % (option, val))
+                    else:
+                        lines.append("%s = %s" % (option, param.valueToText(val)))
                 lines.append("")
         text = os.linesep.join(lines)
         if GlobalPrefs.debuglevel > 0: dprint(text)
