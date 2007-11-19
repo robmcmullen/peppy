@@ -94,6 +94,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
             dir = os.path.join(sys.path[0], subdir)
             sys.path = [dir]
             sys.path.extend(save)
+        elif self._import_dir is None:
+            # FIXME: hardcode for the builtins directory
+            sys.path = [os.path.join(sys.path[0], "peppy/builtins")]
+            sys.path.extend(save)
         else:
             # normal import; just prefix the path list with the local dir
             sys.path = [self._import_dir]
