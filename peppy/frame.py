@@ -535,6 +535,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def createMajorMode(self, buffer, requested=None):
         if not requested:
             requested = buffer.defaultmode
+        else:
+            # Change the default major mode if the old default is the most
+            # general major mode.
+            if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
+                dprint("Changing default mode of %s to %s" % (buffer, requested))
+                buffer.defaultmode = requested
         mode = requested(buffer, self)
         buffer.addViewer(mode)
         return mode
