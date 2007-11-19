@@ -223,6 +223,13 @@ class Param(debugmixin):
             self.enable = not kwargs['disable']
         else:
             self.enable = True
+        
+        # Flag to indicate if any callbacks should be processed.  When the
+        # value has been changed programmatically (i.e.  not by the user typing
+        # something), it may be desirable to turn off callbacks.  This happens
+        # if some params dynamically depend on the values in other params, and
+        # could lead to a race condition if callbacks are allowed to propagate
+        self.user_initiated_callback = True
     
     def __str__(self):
         return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
@@ -270,7 +277,8 @@ class Param(debugmixin):
     def OnCallback(self, evt):
         """Callback driver for the control"""
         ctrl = evt.GetEventObject()
-        self.processCallback(evt, ctrl, ctrl.ctrl_list)
+        if self.user_initiated_callback:
+            self.processCallback(evt, ctrl, ctrl.ctrl_list)
     
     def setCallback(self, ctrl, ctrl_list):
         """Set the callback that responds to changes inthe state of the control
@@ -334,6 +342,24 @@ class Param(debugmixin):
         """
         # The default string edit control doesn't need any conversion.
         ctrl.SetValue(value)
+
+    def setValueWithoutCallback(self, ctrl, value):
+        """Populate the control given the user value, but don't execute any
+        callbacks.
+
+        Callbacks are designed to be executed in response to the user changing
+        the value, not to a programmatic change.  If you don't care that
+        the callback might be triggered when using the setValue method, then
+        there's no problem with the program calling setValue.  However, if
+        you've extended a Param to depend on the value of another param; e.g.
+        you've created a processCallback or setInitialState that changes
+        in response to the values in another param, it is most safe to call
+        setValueWithoutCallback for programmatic changes, unless you take care
+        to guarantee the order of the setValue calls.
+        """
+        self.user_initiated_callback = False
+        self.setValue(ctrl, value)
+        self.user_initiated_callback = True
 
     def getValue(self, ctrl):
         """Get the user value from the control.
