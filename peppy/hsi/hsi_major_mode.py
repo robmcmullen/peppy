@@ -743,6 +743,9 @@ class HSIMode(MajorMode):
         @param parent: parent window in which to create this window 
         """
         self.dataset = self.buffer.stc.dataset
+        self.cubeview = None
+        self.cubefilter = BandFilter()
+        self.filter = GeneralFilter()
         self.setCube(0)
         win = CubeScroller(parent, self.frame)
         return win
@@ -793,14 +796,16 @@ class HSIMode(MajorMode):
 
     def setCube(self, index=0):
         self.dataset_index = index
+        if self.cubeview is not None:
+            viewcls = self.cubeview.__class__
+        else:
+            viewcls = CubeView
         self.cube = self.dataset.getCube(index=index)
-        self.setViewer()
-        self.cubefilter = BandFilter()
-        self.filter = GeneralFilter()
+        self.setViewer(viewcls)
         #self.cube.open()
         dprint(self.cube)
     
-    def setViewer(self, viewcls=CubeView):
+    def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
         self.cubeview.loadBands()
         for minor in self.minors:
