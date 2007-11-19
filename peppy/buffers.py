@@ -44,6 +44,14 @@ class BufferList(GlobalList):
         return None
 
     @classmethod
+    def findBuffersByBasename(self, basename):
+        bufs = []
+        for buf in BufferList.storage:
+            if buf.isBasename(basename):
+                bufs.append(buf)
+        return bufs
+
+    @classmethod
     def getBuffers(self):
         return [buf for buf in BufferList.storage]
 
@@ -152,12 +160,19 @@ class Buffer(debugmixin):
         assert self.dprint("final count=%d" % len(self.viewers))
 
         if not self.permanent:
+            basename=self.stc.getShortDisplayName(self.url)
+
             BufferList.remove(self)
             # Need to destroy the base STC or self will never get garbage
             # collected
             self.stc.Destroy()
             Publisher().sendMessage('buffer.closed', self.url)
             dprint("removed buffer %s" % self.url)
+            
+            # If we don't have any more buffers with this basename, reset the
+            # counter
+            if not BufferList.findBuffersByBasename(basename):
+                del self.filenames[basename]
 
     def setURL(self, url):
         if not url:
@@ -172,6 +187,9 @@ class Buffer(debugmixin):
         if url == self.url:
             return True
         return False
+    
+    def isBasename(self, basename):
+        return basename == self.stc.getShortDisplayName(self.url)
 
     def setName(self):
         basename=self.stc.getShortDisplayName(self.url)
