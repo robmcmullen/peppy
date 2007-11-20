@@ -585,7 +585,7 @@ class FundamentalMode(MajorMode):
         self.applyDefaultSettings()
         #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
-        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url.path)
+        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url)
         self.dprint("ext=%s file_type=%s" % (ext, file_type))
         if file_type == 'generic' or file_type is None:
             if self.editra_synonym is not None:

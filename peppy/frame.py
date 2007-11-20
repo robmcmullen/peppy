@@ -7,6 +7,8 @@ import wx
 import wx.aui
 import wx.stc
 
+import peppy.vfs as vfs
+
 from peppy.menu import *
 from peppy.lib.wxemacskeybindings import *
 from peppy.lib.iconstorage import *
@@ -15,7 +17,6 @@ from peppy.lib.userparams import *
 
 from peppy.configprefs import *
 from peppy.stcinterface import *
-from peppy.iofilter import *
 from peppy.major import *
 from peppy.sidebar import *
 from peppy.debug import *
@@ -575,7 +576,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if len(self.getAllMajorModes()) > 1:
             return False
         mode = self.getActiveMajorMode()
-        url = URLInfo(wx.GetApp().classprefs.title_page)
+        url = vfs.normalize(wx.GetApp().classprefs.title_page)
         dprint("%s == %s => %s" % (url, mode.buffer.url, mode.buffer.url == url))
         if mode.buffer.url == url:
             return True

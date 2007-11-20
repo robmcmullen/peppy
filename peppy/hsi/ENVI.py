@@ -9,7 +9,7 @@ data contained in the corresponding data file.
 
 import os,os.path,sys,re,csv,textwrap
 
-from peppy.iofilter import *
+import peppy.vfs as vfs
 
 import numpy
 
@@ -46,7 +46,7 @@ def verifyHeader(filename):
 
     if not hasext:
         for ext in _header_extensions:
-            if os.path.exists(filename+ext):
+            if vfs.exists(filename+ext):
                 filename+=ext
                 hasext=True
                 break
@@ -54,7 +54,7 @@ def verifyHeader(filename):
     if not hasext:
         name,ext=os.path.splitext(filename)
         for ext in _header_extensions:
-            if os.path.exists(name+ext):
+            if vfs.exists(name+ext):
                 filename=name+ext
                 break
 
@@ -63,14 +63,14 @@ def verifyHeader(filename):
 def findHeaders(url):
     urls = []
     for ext in _header_extensions:
-        header = URLInfo(str(url)+ext)
-        if header.exists():
+        header = vfs.normalize(str(url)+ext)
+        if vfs.exists(header):
             urls.append(header)
 
-    name,ext=os.path.splitext(str(url))
+    name,ext = os.path.splitext(str(url))
     for ext in _header_extensions:
-        header = URLInfo(name+ext)
-        if header.exists():
+        header = vfs.normalize(name+ext)
+        if vfs.exists(header):
             urls.append(header)
 
     return urls
@@ -128,11 +128,10 @@ class Header(dict,MetadataMixin):
             }
 
         if filename:
-            if isinstance(filename,Cube):
+            if isinstance(filename, Cube):
                 self.getCubeAttributes(filename)
             else:
-                if not isinstance(filename, URLInfo):
-                    filename = URLInfo(filename)
+                filename = vfs.normalize(filename)
                 self.headerurl, self.cubeurl = self.getFilePair(filename)
                 self.open(self.headerurl)
         else:
@@ -141,7 +140,7 @@ class Header(dict,MetadataMixin):
 
     @classmethod
     def getFilePair(cls, url):
-        fh = url.getDirectReader()
+        fh = vfs.open(url)
         line=fh.read(4)
         if line=='ENVI':
             # need to open the cube, not the header
@@ -149,7 +148,7 @@ class Header(dict,MetadataMixin):
         fh.close()
         headers = findHeaders(url)
         for header in headers:
-            fh = header.getDirectReader()
+            fh = vfs.open(header)
             line=fh.read(4)
             if line=='ENVI':
                 return (header, url)
@@ -166,7 +165,7 @@ class Header(dict,MetadataMixin):
     def open(self,filename=None):
         """Open the header file, and if successful parse it."""
         if self.headerurl:
-            fh=self.headerurl.getDirectReader()
+            fh = vfs.open(self.headerurl)
             if fh:
                 self.read(fh)
                 fh.close()
@@ -175,7 +174,8 @@ class Header(dict,MetadataMixin):
 
     def save(self,filename=None):
         if filename:
-            fh=open(filename,"w")
+            url = vfs.normalize(filename)
+            fh = vfs.open(url, vfs.WRITE)
             if fh:
                 fh.write(str(self))
                 fh.close()
@@ -393,7 +393,7 @@ class TextROI(ROIFile):
 
     @classmethod
     def identify(cls, urlinfo):
-        fh = urlinfo.getReader()
+        fh = vfs.open(urlinfo)
         line=fh.read(100)
         if line.startswith('; ENVI Output of ROIs'):
             return True
@@ -401,7 +401,7 @@ class TextROI(ROIFile):
 
     @classmethod
     def load(cls, urlinfo):
-        fh = urlinfo.getReader()
+        fh = vfs.open(urlinfo)
         group = ENVITextROI(urlinfo)
         current = None
         index = -1

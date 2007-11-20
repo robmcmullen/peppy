@@ -17,7 +17,6 @@ from peppy.lib.bufferedreader import *
 
 from peppy.dialogs import *
 from peppy.stcinterface import *
-from peppy.iofilter import *
 from peppy.major import *
 from peppy.debug import *
 
@@ -39,8 +38,7 @@ class BufferList(GlobalList):
 
     @classmethod
     def findBufferByURL(self, url):
-        if not isinstance(url, URLInfo):
-            url = URLInfo(url)
+        url = vfs.normalize(url)
         for buf in BufferList.storage:
             if buf.isURL(url):
                 return buf
@@ -180,14 +178,13 @@ class Buffer(debugmixin):
 
     def setURL(self, url):
         if not url:
-            url=URLInfo("file://untitled")
-        elif not isinstance(url, URLInfo):
-            url = URLInfo(url)
+            url = vfs.normalize("untitled")
+        else:
+            url = vfs.normalize(url)
         self.url = url
 
     def isURL(self, url):
-        if not isinstance(url, URLInfo):
-            url = URLInfo(url)
+        url = vfs.normalize(url)
         if url == self.url:
             return True
         return False
@@ -211,11 +208,11 @@ class Buffer(debugmixin):
         BufferList.update()
         
     def getFilename(self):
-        return self.url.path
+        return str(self.url.path)
 
     def cwd(self):
-        if self.url.protocol == 'file':
-            path = os.path.normpath(os.path.dirname(self.url.path))
+        if self.url.scheme == 'file':
+            path = os.path.normpath(os.path.dirname(str(self.url.path)))
         else:
             path = os.getcwd()
         return path
@@ -226,12 +223,17 @@ class Buffer(debugmixin):
         return self.displayname
 
     def getBufferedReader(self, size=1024):
-        dprint("opening %s" % str(self.url))
+        dprint("opening %s as %s" % (str(self.url), self.defaultmode))
         if self.bfh is None:
             fh = vfs.open(str(self.url))
             self.bfh = BufferedReader(fh, size)
         self.bfh.seek(0)
         return self.bfh
+    
+    def closeBufferedReader(self):
+        if self.bfh:
+            self.bfh.close()
+            self.bfh = None
 
     def openGUIThreadStart(self):
         self.dprint("url: %s" % repr(self.url))
@@ -242,11 +244,13 @@ class Buffer(debugmixin):
         self.stc = self.defaultmode.stc_class(self.dummyframe)
 
     def openBackgroundThread(self, progress_message=None):
-        self.stc.open(self.url, progress_message)
+        self.stc.open(self, progress_message)
 
     def openGUIThreadSuccess(self):
         # Only increment count on successful buffer loads
         Buffer.count+=1
+        
+        self.closeBufferedReader()
         
         self.setName()
 
@@ -254,7 +258,8 @@ class Buffer(debugmixin):
             self.initSTC()
 
         self.modified = False
-        self.readonly = self.url.readonly()
+        self.readonly = not vfs.can_write(self.url)
+        dprint("readonly = %s" % self.readonly)
         self.stc.EmptyUndoBuffer()
 
         # Add to the currently-opened buffer list
@@ -271,21 +276,24 @@ class Buffer(debugmixin):
 
     def revert(self):
         # don't use the buffered reader: get a new file handle
-        fh=self.url.getDirectReader()
+        fh = vfs.open(self.url)
         self.stc.ClearAll()
         self.stc.readFrom(fh)
         self.modified=False
         self.stc.EmptyUndoBuffer()
-        wx.CallAfter(self.showModifiedAll)  
+        wx.CallAfter(self.showModifiedAll)
         
     def save(self, url=None):
         assert self.dprint("Buffer: saving buffer %s" % (self.url))
         try:
             if url is None:
-                saveas=self.url
+                saveas = self.url
             else:
-                saveas=URLInfo(url)
-            fh=saveas.getWriter()
+                saveas = vfs.normalize(url)
+            if vfs.exists(saveas):
+                fh = vfs.open(saveas, vfs.WRITE)
+            else:
+                fh = vfs.make_file(saveas)
             self.stc.writeTo(fh)
             fh.close()
             self.stc.SetSavePoint()
@@ -293,7 +301,7 @@ class Buffer(debugmixin):
                 self.setURL(saveas)
                 self.setName()
             self.modified = False
-            self.readonly = self.url.readonly()
+            self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
         except:
             eprint("Failed writing to %s" % self.url)
@@ -342,7 +350,7 @@ class BlankMode(MajorMode):
         # Use the verifyProtocol to hijack the loading process and
         # immediately return the match if we're trying to load
         # about:blank
-        if url.protocol == 'about' and url.path == 'blank':
+        if url.scheme == 'about' and url.path == 'blank':
             return True
         return False
 
@@ -454,3 +462,5 @@ class BufferLoadThread(threading.Thread, debugmixin):
             self.dprint("Exception: %s" % str(e))
             wx.CallAfter(self.frame.openFailure, self.buffer.url, str(e),
                          self.progress)
+
+

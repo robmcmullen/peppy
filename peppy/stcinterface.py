@@ -8,6 +8,8 @@ from wx.lib.pubsub import Publisher
 
 from cStringIO import StringIO
 
+import peppy.vfs as vfs
+
 from peppy.debug import *
 
 
@@ -124,15 +126,16 @@ class STCInterface(object):
         """Return a short name for display in tabs or other context without
         needing a pathname.
         """
-        return url.getBasename()
+        return url.path.get_name()
 
-    def open(self, url, message=None):
+    def open(self, buffer, message=None):
         """Read from the specified url to populate the STC.
         
         Abstract method that subclasses use to read data into the STC.
 
-        @param url: URLInfo object used to read the file
-        @param message: optional message used to update a progress bar
+        buffer: buffer object used to read the file
+        
+        message: optional message used to update a progress bar
         """
         pass
 
@@ -296,9 +299,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.subordinates.remove(otherstc)
         self.updateSubordinateClasses()
 
-    def open(self, url, message=None):
-        fh = url.getReader()
-        length = url.getLength()
+    def open(self, buffer, message=None):
+        fh = buffer.getBufferedReader()
+        length = vfs.get_size(buffer.url)
         chunk = 65536
         if length/chunk > 100:
             chunk *= 4

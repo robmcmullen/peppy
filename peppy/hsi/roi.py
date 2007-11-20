@@ -11,10 +11,11 @@ performed on extracted data.
 import os,os.path,sys,re,struct,stat
 from cStringIO import StringIO
 
+import peppy.vfs as vfs
+
 from peppy.hsi.utils import *
 
 from peppy.debug import *
-from peppy.iofilter import *
 
 import numpy
 

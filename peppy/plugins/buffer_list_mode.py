@@ -406,7 +406,7 @@ class BufferListMode(MajorMode):
         # Use the verifyProtocol to hijack the loading process and
         # immediately return the match if we're trying to load
         # about:blank
-        if url.protocol == 'buffers':
+        if url.scheme == 'buffers':
             return True
         return False
 

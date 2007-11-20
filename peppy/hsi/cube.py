@@ -12,8 +12,9 @@ from cStringIO import StringIO
 import numpy
 import utils
 
+import peppy.vfs as vfs
+
 from peppy.debug import *
-from peppy.iofilter import *
 
 
 # ENVI standard byte order: 0=little endian, 1=big endian
@@ -165,7 +166,7 @@ class Cube(object):
         return s.getvalue()
 
     def fileExists(self):
-        return self.url.exists()
+        return vfs.exists(self.url)
                 
     def isDataLoaded(self):
         if isinstance(self.mmap,numpy.ndarray) or self.mmap or isinstance(self.raw,numpy.ndarray) or self.raw:
@@ -175,9 +176,7 @@ class Cube(object):
     def setURL(self, url=None):
         #dprint("setting url to %s" % url)
         if url:
-            if isinstance(url, str):
-                url = URLInfo(url)
-            self.url=url
+            self.url = vfs.normalize(url)
         else:
             self.url=None
 
@@ -187,9 +186,9 @@ class Cube(object):
             self.mmap = None
 
         if self.url:
-            if self.url.protocol == 'file':
+            if self.url.scheme == 'file':
                 if self.mmap is None: # don't try to reopen if already open
-                    self.mmap=numpy.memmap(self.url.path,mode="r")
+                    self.mmap=numpy.memmap(str(self.url.path),mode="r")
                     self.initialize()
             else:
                 raise IOError("Only file protocols supported for mmap")
@@ -288,7 +287,7 @@ class Cube(object):
             pass
 
         if self.url is not None:
-            self.file_date = os.path.getmtime(self.url.path)
+            self.file_date = vfs.get_mtime(self.url)
 
     
 

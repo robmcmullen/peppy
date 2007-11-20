@@ -35,7 +35,7 @@ class FileTestCase(TestCase):
     def test00_exists(self):
         exists = vfs.exists('vfs/hello.txt')
         self.assertEqual(exists, True)
-
+        self.assertEqual(True, vfs.can_read('vfs/hello.txt'))
 
     def test01_does_not_exist(self):
         exists = vfs.exists('vfs/fdsfsf')

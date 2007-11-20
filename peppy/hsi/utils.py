@@ -11,7 +11,6 @@ import os, sys, math
 from cStringIO import StringIO
 
 from peppy.debug import *
-from peppy.iofilter import *
 
 import numpy
 

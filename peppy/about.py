@@ -17,7 +17,6 @@ import peppy.vfs as vfs
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.iofilter import *
 
 # can't use cStringIO because we need to add attributes to it
 from StringIO import StringIO
@@ -132,28 +131,6 @@ class AboutFS(vfs.BaseFS):
 
 vfs.register_file_system('about', AboutFS)
 
-class AboutHandler(urllib2.BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def about_open(self, req):
-        url = req.get_selector()
-        #dprint(url)
-        
-        text = findAbout(url)
-        if text is None:
-            raise urllib2.URLError("url %s not found" % url)
-        if text.find("%(") >= 0:
-            text = text % substitutes
-        fh=StringIO()
-        fh.write(text)
-        fh.seek(0)
-        fh.geturl = lambda :"about:%s" % url
-        fh.info = lambda :{'Content-type': 'text/plain',
-                            'Content-length': len(text),
-                            'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
-                            }
-
-        return fh
-URLHandler.addDefaultOpener(AboutHandler)
 
 SetAbout('untitled','')
 SetAbout('blank','')

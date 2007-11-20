@@ -32,7 +32,7 @@ class RecentFiles(GlobalList):
 ##        dprint("BEFORE: others: %s" % cls.others)
         
         # skip files with the about: protocol
-        if url.protocol == 'about':
+        if url.scheme == 'about':
             return
 
         item = str(url)

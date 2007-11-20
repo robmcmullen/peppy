@@ -23,10 +23,11 @@ import wx.lib.newevent
 from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 
+import peppy.vfs as vfs
+
 from peppy.mainmenu import OpenDialog
 from peppy.menu import *
 from peppy.major import *
-from peppy.iofilter import *
 from peppy.stcinterface import NonResidentSTC
 from peppy.actions.minibuffer import *
 
@@ -615,9 +616,10 @@ class MPDSTC(NonResidentSTC):
     def CanSave(self):
         return False
     
-    def open(self, url, progress_message=None):
+    def open(self, buffer, progress_message=None):
         """Save the file handle, which is really the mpd connection"""
-        fh = url.getDirectReader()
+        dprint(buffer.url)
+        fh = vfs.open(buffer.url)
         self.mpd = fh
 
 
@@ -1031,7 +1033,7 @@ class MPDMode(MajorMode, debugmixin):
     
     @classmethod
     def verifyProtocol(cls, url):
-        if url.protocol == 'mpd':
+        if url.scheme == 'mpd':
             return True
         return False
     
@@ -1526,35 +1528,57 @@ class MPDCurrentlyPlaying(MPDMinorModeMixin, wx.Panel, debugmixin):
 
 
 
+class MPDFS(vfs.BaseFS):
+    @staticmethod
+    def exists(reference):
+        return True
 
+    @staticmethod
+    def is_file(reference):
+        return True
 
-class MPDHandler(urllib2.BaseHandler, debugmixin):
-    def mpd_open(self, req):
-        assert self.dprint(req)
-        url = req.get_host()
-        parts = url.split(":")
+    @classmethod
+    def is_folder(cls, reference):
+        return False
+
+    @staticmethod
+    def can_read(reference):
+        return True
+
+    @staticmethod
+    def can_write(reference):
+        return False
+
+    @staticmethod
+    def get_size(reference):
+        return 0
+
+    @classmethod
+    def open(cls, ref, mode=None):
+        # mpd isn't a supported protocol according to urlparse (which is used
+        # by vfs), so it puts the netloc stuff into path instead, and we have
+        # to parse it out.
+        parts = str(ref.path).strip("/").split(":")
         host = parts[0]
         if len(parts) > 1:
             port = int(parts[1])
         else:
             port = 6600
-        assert self.dprint(parts)
-
+        dprint(parts)
         fh = MPDComm(host, port)
-        fh.geturl = lambda :"mpd:%s" % url
-        fh.info = lambda :{'Content-type': 'text/plain',
-                           'Content-length': 0,
-                           'Last-modified': 'Sat, 17 Feb 2007 20:29:30 GMT',
-                            }
-        
         return fh
 
 
 class MPDPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
-    def getURLHandlers(self):
-        return [MPDHandler]
+    def activate(self):
+        IPeppyPlugin.activate(self)
+        vfs.register_file_system('mpd', MPDFS)
+
+    def deactivate(self):
+        IPeppyPlugin.deactivate(self)
+        vfs.deregister_file_system('mpd')
 
     def getMajorModes(self):
         yield MPDMode

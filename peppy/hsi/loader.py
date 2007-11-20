@@ -8,18 +8,19 @@ uncompressed formats) using memory mapped file access.
 
 import os, sys, re, glob
 
+import peppy.vfs as vfs
+
 from peppy.debug import *
-from peppy.iofilter import *
 from peppy.stcinterface import *
 
 
 class HyperspectralSTC(NonResidentSTC):
-    def open(self, url, message=None):
-        self.url = url
-        self.dataset=HyperspectralFileFormat.load(url)
+    def open(self, buffer, message=None):
+        self.url = buffer.url
+        self.dataset=HyperspectralFileFormat.load(self.url)
     
     def GetLength(self):
-        return os.stat(self.url.path).st_size
+        return vfs.get_size(self.url)
         
     def Destroy(self):
         self.dataset = None
@@ -63,16 +64,14 @@ class HyperspectralFileFormat(object):
         HyperspectralFileFormat.loaded = True
 
     @classmethod
-    def identifyall(cls, urlinfo):
+    def identifyall(cls, url):
         cls.discover()
-        if not isinstance(urlinfo, URLInfo):
-            urlinfo = URLInfo(urlinfo)
         
         dprint("handlers: %s" % cls.handlers)
         matches = []
         for format in cls.handlers:
-            dprint("checking %s for %s format" % (urlinfo, format.format_name))
-            if format.identify(urlinfo):
+            dprint("checking %s for %s format" % (url, format.format_name))
+            if format.identify(url):
                 dprint("Possible match for %s format" % format.format_name)
                 matches.append(format)
         order = []
@@ -83,8 +82,8 @@ class HyperspectralFileFormat(object):
             # efficient than GDAL.  So, loop through the matches and
             # see if there is a specific class that should be used
             # instead of a generic one.
-            dprint("Checking %s for specific support of %s" % (match, urlinfo))
-            name, ext = os.path.splitext(urlinfo.path)
+            dprint("Checking %s for specific support of %s" % (match, url))
+            name, ext = os.path.splitext(url.path.get_name())
             ext.lower()
             if ext in match.extensions:
                 dprint("Found specific support for %s in %s" % (ext, match))
@@ -95,21 +94,21 @@ class HyperspectralFileFormat(object):
         return order
 
     @classmethod
-    def identify(cls, urlinfo):
-        matches = cls.identifyall(urlinfo)
+    def identify(cls, url):
+        url = vfs.normalize(url)
+        matches = cls.identifyall(url)
         if len(matches)>0:
             return matches[0]
         return None
 
     @classmethod
-    def load(cls, urlinfo):
+    def load(cls, url):
         cls.discover()
-        if not isinstance(urlinfo, URLInfo):
-            urlinfo = URLInfo(urlinfo)
-        matches = cls.identifyall(urlinfo)
+        url = vfs.normalize(url)
+        matches = cls.identifyall(url)
         for format in matches:
             dprint("Loading %s format cube" % format.format_name)
-            dataset = format(urlinfo)
+            dataset = format(url)
             return dataset
         return None
 

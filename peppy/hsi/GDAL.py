@@ -15,8 +15,9 @@ import cube
 
 import gdal
 
+import peppy.vfs as vfs
+
 from peppy.debug import *
-from peppy.iofilter import *
 
 import numpy
 
@@ -61,10 +62,10 @@ class GDALDataset(cube.MetadataMixin):
 
     @classmethod
     def identify(cls, urlinfo):
-        if urlinfo.protocol == 'file':
-            dprint("trying gdal.Open(%s)" % urlinfo.path)
+        if urlinfo.scheme == 'file':
+            dprint("trying gdal.Open(%s)" % str(urlinfo.path))
             try:
-                dataset=gdal.Open(urlinfo.path, gdal.GA_ReadOnly)
+                dataset=gdal.Open(str(urlinfo.path), gdal.GA_ReadOnly)
                 if dataset:
                     dprint("found GDAL dataset")
                     return True
@@ -74,9 +75,7 @@ class GDALDataset(cube.MetadataMixin):
 
     def setURL(self, url=None):
         if url:
-            if not isinstance(url, URLInfo):
-                url = URLInfo(url)
-            self.url = url
+            self.url = vfs.normalize(url)
         else:
             self.url = None
 
@@ -88,11 +87,11 @@ class GDALDataset(cube.MetadataMixin):
         if self.url:
             dprint(self.url.path)
             try:
-                dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
+                dataset=gdal.Open(str(self.url.path), gdal.GA_ReadOnly)
                 if dataset:
                     self.read(dataset)
                 else:
-                    eprint("Couldn't open %s\n" % self.url.path)
+                    eprint("Couldn't open %s\n" % self.url)
             except TypeError:
                 dprint("type error opening GDAL.  Skipping")
 
@@ -170,7 +169,7 @@ class GDALCube(cube.Cube):
 
         if self.url:
             if not self.dataset: # don't try to reopen if already open
-                self.dataset=gdal.Open(self.url.path, gdal.GA_ReadOnly)
+                self.dataset=gdal.Open(str(self.url.path), gdal.GA_ReadOnly)
                 if not self.dataset:
                     raise TypeError
                 self.verifyAttributes()

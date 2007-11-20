@@ -18,7 +18,6 @@ from peppy.debug import *
 from peppy.yapsy.plugins import *
 from peppy.yapsy.PeppyPluginManager import *
 
-from peppy.iofilter import *
 from peppy.lib.gaugesplash import *
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
@@ -590,7 +589,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # To remove the dependency on wx in URLHandler, instead of it
         # using wx.GetApp().plugin_manager in URLHandler, we
         # explicitly set URLHandler's plugin manager
-        URLHandler.setPluginManager(self.plugin_manager)
+        #URLHandler.setPluginManager(self.plugin_manager)
         
         # count the potential plugins that were be found
         count = self.plugin_manager.locatePlugins()

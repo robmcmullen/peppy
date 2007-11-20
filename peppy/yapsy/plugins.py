@@ -219,20 +219,6 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         """
         return []
 
-    def getURLHandlers(self):
-        """Return list of urllib2 handlers if provided by the plugin.
-
-        If the plugin defines new urllib2 handlers that provide
-        support for new protocols, return that list here.  The
-        handlers should be a subclass of urllib2.BaseHandler, and
-        provide a method called [protocol]_open, where the string
-        [protocol] is replaced by text of the protocol.
-
-        For instance, if you were to write a handler for the xyz
-        protocol, the handler class would include an xyz_open method.
-        """
-        return []
-    
     ##### New methods for on-demand plugin loading
     
     def attemptOpen(self, url):

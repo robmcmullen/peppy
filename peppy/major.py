@@ -40,7 +40,6 @@ from peppy.menu import *
 from peppy.stcinterface import *
 from peppy.debug import *
 from peppy.minor import *
-from peppy.iofilter import *
 from peppy.yapsy.plugins import *
 from peppy.editra import *
 
@@ -156,7 +155,7 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         file is attempted to be opened, and attempting to read data
         here could mess up streaming files.
 
-        @param url: URLInfo object
+        @param url: vfs.Reference object
 
         @returns: True to short circuit and use this mode.
         """
@@ -886,15 +885,14 @@ class MajorModeMatcherDriver(debugmixin):
         plugins = app.plugin_manager.getActivePluginObjects()
         cls.dprint(plugins)
         
-        url = URLInfo(str(buffer.url))
         # Try to match a specific protocol
-        modes = cls.scanProtocol(plugins, url)
+        modes = cls.scanProtocol(plugins, buffer.url)
         if modes:
             return modes[0]
 
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
-        modes = cls.scanURL(plugins, url)
+        modes = cls.scanURL(plugins, buffer.url)
         
         #
         fh = buffer.getBufferedReader(magic_size)
@@ -949,7 +947,7 @@ class MajorModeMatcherDriver(debugmixin):
 
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
-        mode = cls.attemptOpen(plugins, url)
+        mode = cls.attemptOpen(plugins, buffer.url)
         if mode:
             return mode
 
@@ -979,7 +977,7 @@ class MajorModeMatcherDriver(debugmixin):
         This generally happens only when the major mode is a client of
         a specific server and not a generic editor.  (E.g. MPDMode)
 
-        @param url: URLInfo object to scan
+        @param url: vfs.Reference object to scan
         
         @returns: list of matching L{MajorMode} subclasses
         """
@@ -993,12 +991,13 @@ class MajorModeMatcherDriver(debugmixin):
         return modes
     
     @classmethod
-    def getEditraType(cls, pathname):
+    def getEditraType(cls, url):
+        filename = url.path.get_name()
         # Also scan Editra extensions
-        name, ext = os.path.splitext(pathname)
+        name, ext = os.path.splitext(filename)
         if ext.startswith('.'):
             ext = ext[1:]
-            cls.dprint("ext = %s, filename = %s" % (ext, pathname))
+            cls.dprint("ext = %s, filename = %s" % (ext, filename))
             extreg = syntax.ExtensionRegister()
             cls.dprint(extreg.GetAllExtensions())
             if ext in extreg.GetAllExtensions():
@@ -1014,17 +1013,17 @@ class MajorModeMatcherDriver(debugmixin):
         Determine if the pathname matches some pattern that can
         identify the corresponding major mode.
 
-        @param url: URLInfo object to scan
+        @param url: vfs.Reference object to scan
         
         @returns: list of matching L{MajorMode} subclasses
         """
         
         modes = []
         generics = []
-        ext, editra_type = cls.getEditraType(url.path)
+        ext, editra_type = cls.getEditraType(url)
         for plugin in plugins:
             for mode in plugin.getMajorModes():
-                if mode.verifyFilename(url.path):
+                if mode.verifyFilename(url.path.get_name()):
                     modes.append(mode)
                 editra = mode.verifyEditraType(ext, editra_type)
                 if editra == 'generic':
@@ -1117,7 +1116,7 @@ class MajorModeMatcherDriver(debugmixin):
         """Use the mode's attemptOpen method to see if it recognizes
         the url.
         
-        @param url: URLInfo object to scan
+        @param url: vfs.Reference object to scan
         
         @returns: matching L{MajorMode} subclass or None
         """
