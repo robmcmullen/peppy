@@ -81,6 +81,16 @@ class HTTPFS(BaseFS):
 
 
     @staticmethod
+    def can_read(reference):
+        return HTTPFS.exists(reference)
+
+
+    @staticmethod
+    def can_write(reference):
+        return False
+
+
+    @staticmethod
     def is_file(reference):
         return HTTPFS.exists(reference)
 
@@ -104,6 +114,13 @@ class HTTPFS(BaseFS):
         response = HTTPFS._head(reference)
         ctype = response.getheader('content-type')
         return ctype.split(';')[0]
+
+
+    @staticmethod
+    def get_size(reference):
+        response = HTTPFS._head(reference)
+        size = response.getheader('content-length')
+        return int(size)
 
 
     @staticmethod
