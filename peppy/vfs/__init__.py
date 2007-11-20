@@ -1,3 +1,5 @@
+import os
+
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
 from peppy.vfs.itools.vfs.registry import get_file_system
@@ -6,6 +8,22 @@ from peppy.vfs.itools.uri import *
 import peppy.vfs.mem
 import peppy.vfs.http
 import peppy.vfs.tar
+
+def normalize(ref, base=None):
+    """Normalize a url string into a reference"""
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
+    # Check the reference is absolute
+    if ref.scheme:
+        return ref
+    # Default to the current working directory
+    if base is None:
+        base = os.getcwd()
+    # URLs always use /
+    if os.path.sep == '\\':
+        base = base.replace(os.path.sep, '/')
+    baseref = get_reference('file://%s/' % base)
+    return baseref.resolve(ref)
 
 __all__ = [
     ##### From vfs:
@@ -40,4 +58,5 @@ __all__ = [
 
     ##### From uri:
     'get_reference',
+    'normalize',
     ]

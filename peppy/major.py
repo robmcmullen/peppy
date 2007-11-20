@@ -878,7 +878,7 @@ class MajorModeMatcherDriver(debugmixin):
         return modes
 
     @classmethod
-    def match(cls, url, magic_size=None):
+    def match(cls, buffer, magic_size=None):
         app = wx.GetApp()
         if magic_size is None:
             magic_size = app.classprefs.magic_size
@@ -886,6 +886,7 @@ class MajorModeMatcherDriver(debugmixin):
         plugins = app.plugin_manager.getActivePluginObjects()
         cls.dprint(plugins)
         
+        url = URLInfo(str(buffer.url))
         # Try to match a specific protocol
         modes = cls.scanProtocol(plugins, url)
         if modes:
@@ -896,7 +897,7 @@ class MajorModeMatcherDriver(debugmixin):
         modes = cls.scanURL(plugins, url)
         
         #
-        fh = url.getReader(magic_size)
+        fh = buffer.getBufferedReader(magic_size)
         header = fh.read(magic_size)
 
         url_match = None

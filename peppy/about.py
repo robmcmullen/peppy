@@ -12,6 +12,8 @@ import urllib2
 
 import wx
 
+import peppy.vfs as vfs
+
 from peppy.debug import *
 from peppy.menu import *
 from peppy.major import *
@@ -80,6 +82,55 @@ def findAbout(path):
         if path in files:
             return files[path]
     return None
+
+class AboutFS(vfs.BaseFS):
+    @staticmethod
+    def exists(reference):
+        path = str(reference.path)
+        text = findAbout(path)
+        return text is not None
+
+    @staticmethod
+    def is_file(reference):
+        return AboutFS.exists(reference)
+
+    @staticmethod
+    def is_folder(reference):
+        return False
+
+    @staticmethod
+    def can_read(reference):
+        return AboutFS.exists(reference)
+
+    @staticmethod
+    def can_write(reference):
+        return False
+
+    @staticmethod
+    def get_size(reference):
+        path = str(reference.path)
+        text = findAbout(path)
+        if text:
+            return len(text)
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
+
+    @staticmethod
+    def open(reference, mode=None):
+        path = str(reference.path)
+        #dprint(url)
+        
+        text = findAbout(path)
+        if text is None:
+            raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
+        if text.find("%(") >= 0:
+            text = text % substitutes
+        fh=StringIO()
+        fh.write(text)
+        fh.seek(0)
+
+        return fh
+
+vfs.register_file_system('about', AboutFS)
 
 class AboutHandler(urllib2.BaseHandler):
     # Use local file or FTP depending on form of URL

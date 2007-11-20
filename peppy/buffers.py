@@ -7,10 +7,13 @@ import wx
 import wx.aui
 import wx.stc
 
+import peppy.vfs as vfs
+
 from peppy.menu import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 from peppy.lib.userparams import *
+from peppy.lib.bufferedreader import *
 
 from peppy.dialogs import *
 from peppy.stcinterface import *
@@ -111,6 +114,7 @@ class Buffer(debugmixin):
         self.busy = False
         self.readonly = False
         self.defaultmode=defaultmode
+        self.bfh = None
 
         self.guessBinary=False
         self.guessLength=1024
@@ -221,10 +225,18 @@ class Buffer(debugmixin):
             return "*"+self.displayname
         return self.displayname
 
+    def getBufferedReader(self, size=1024):
+        dprint("opening %s" % str(self.url))
+        if self.bfh is None:
+            fh = vfs.open(str(self.url))
+            self.bfh = BufferedReader(fh, size)
+        self.bfh.seek(0)
+        return self.bfh
+
     def openGUIThreadStart(self):
         self.dprint("url: %s" % repr(self.url))
         if self.defaultmode is None:
-            self.defaultmode = MajorModeMatcherDriver.match(self.url)
+            self.defaultmode = MajorModeMatcherDriver.match(self)
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(self.dummyframe)
@@ -371,15 +383,28 @@ class LoadingBuffer(debugmixin):
         self.modified = False
         self.defaultmode = LoadingMode
         
-        if not isinstance(url, URLInfo):
-            url = URLInfo(url)
+        self.url = vfs.normalize(url)
+        self.bfh = None
+        
         if modecls:
             self.modecls = modecls
         else:
-            self.modecls = MajorModeMatcherDriver.match(url)
-        self.url = url
+            self.modecls = MajorModeMatcherDriver.match(self)
         self.stc = LoadingSTC(str(self.url))
     
+    def getBufferedReader(self, size=1024):
+        dprint("opening %s" % str(self.url))
+        dprint("scheme=%s authority=%s path=%s query=%s frag=%s" % (self.url.scheme,
+                                                                    self.url.authority,
+                                                                    self.url.path,
+                                                                    self.url.query,
+                                                                    self.url.fragment))
+        if self.bfh is None:
+            fh = vfs.open(str(self.url))
+            self.bfh = BufferedReader(fh, size)
+        self.bfh.seek(0)
+        return self.bfh
+
     def allowThreadedLoading(self):
         return self.modecls.allow_threaded_loading
     
