@@ -150,7 +150,7 @@ class FileFS(BaseFS):
         if mode == APPEND:
             return file(path, 'ab')
         # Open for write
-        return file(path, 'r+b')
+        return file(path, 'wb')
 
 
     @staticmethod
