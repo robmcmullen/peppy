@@ -677,7 +677,7 @@ class GenericDataType(object):
             # urlsplit also doesn't correctly handle windows path in url form
             # like "file:///c:/a/b" -- it thinks the path is "/c:/a/b", which
             # to be correct requires removing the leading slash.
-            path = "%s:%s" % (path[1], path[3:])
+            path = "%s:%s" % (path[1].lower(), path[3:])
         
         # The path
         if path:

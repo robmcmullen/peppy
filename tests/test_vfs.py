@@ -151,6 +151,18 @@ class FileTestCase(TestCase):
         vfs.remove('vfs/toto.txt')
 
 
+    def test21_write(self):
+        # Initialize
+        with vfs.make_file('vfs/truncate.txt') as file:
+            file.write('hello there\n')
+        # Test
+        with vfs.open('vfs/truncate.txt', vfs.WRITE) as file:
+            file.write('bye\n')
+        self.assertEqual(open('vfs/truncate.txt').read(), 'bye\n')
+        # Remove temporary file
+        vfs.remove('vfs/truncate.txt')
+
+
 
 class FSTestCase(TestCase):
 
@@ -172,6 +184,11 @@ class FSTestCase(TestCase):
         self.assertEqual('c:stuff/blah', uri.path)
         self.assertEqual('file', uri.scheme)
         uri = vfs.get_reference('file:///c:/stuff/blah')
+        self.assertEqual('c:/stuff/blah', uri.path)
+        self.assertEqual('file', uri.scheme)
+        
+    def test_windows_normalize(self):
+        uri = vfs.get_reference('C:/stuff/blah')
         self.assertEqual('c:/stuff/blah', uri.path)
         self.assertEqual('file', uri.scheme)
 

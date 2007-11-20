@@ -10,7 +10,7 @@ import peppy.vfs.http
 import peppy.vfs.tar
 
 def normalize(ref, base=None):
-    """Normalize a url string into a reference"""
+    """Normalize a url string into a reference and fix windows shenanigans"""
     if not isinstance(ref, Reference):
         ref = get_reference(ref)
     # Check the reference is absolute
@@ -19,9 +19,13 @@ def normalize(ref, base=None):
     # Default to the current working directory
     if base is None:
         base = os.getcwd()
+    
     # URLs always use /
     if os.path.sep == '\\':
         base = base.replace(os.path.sep, '/')
+    # Check windows drive letters
+    if base[1] == ':':
+        base = "%s:%s" (base[0].lower(), base[2:])
     baseref = get_reference('file://%s/' % base)
     return baseref.resolve(ref)
 
