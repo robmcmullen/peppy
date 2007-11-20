@@ -587,28 +587,24 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             #dprint("found permanent buffer")
             self.newBuffer(buffer, modecls)
         else:
-            if not isinstance(url, URLInfo):
-                url = URLInfo(url)
-            if modecls is None:
-                try:
-                    modecls = MajorModeMatcherDriver.match(url)
-                except Exception, e:
-                    import traceback
-                    error = traceback.format_exc()
-                    self.openFailure(url, error)
-                    return
-            
-            if wx.GetApp().classprefs.load_threaded and modecls.allow_threaded_loading:
+            try:
                 buffer = LoadingBuffer(url, modecls)
+            except Exception, e:
+                import traceback
+                error = traceback.format_exc()
+                self.openFailure(url, error)
+                return
+            
+            if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
                 self.newBuffer(buffer)
             else:
-                self.openStart(url, modecls)
+                self.openStart(buffer)
     
-    def openStart(self, url, modecls):
+    def openStart(self, loading_buffer):
         #traceon()
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
-            buffer = Buffer(url, modecls)
+            buffer = loading_buffer.clone()
             buffer.openGUIThreadStart()
             buffer.openBackgroundThread()
             self.openSuccess(buffer)
@@ -618,12 +614,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.openFailure(buffer.url, error)
         wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
-    def openThreaded(self, url, modecls, mode_to_replace=None):
+    def openThreaded(self, loading_buffer, mode_to_replace=None):
         #traceon()
-        buffer = Buffer(url, modecls)
+        buffer = loading_buffer.clone()
         buffer.openGUIThreadStart()
         statusbar = mode_to_replace.getStatusBar()
-        statusbar.startProgress("Loading %s" % url, message=str(mode_to_replace))
+        statusbar.startProgress("Loading %s" % buffer.url, message=str(mode_to_replace))
         thread = BufferLoadThread(self, buffer, mode_to_replace, statusbar)
 
     def openSuccess(self, buffer, mode_to_replace=None, progress=None):

@@ -345,12 +345,11 @@ class BlankMode(MajorMode):
 
 
 class LoadingSTC(NonResidentSTC):
-    def __init__(self, url, modecls):
-        self.url = url
-        self.modecls = modecls
+    def __init__(self, text):
+        self.text = text
 
     def GetText(self):
-        return str(self.url)
+        return self.text
 
 
 class LoadingMode(BlankMode):
@@ -363,17 +362,30 @@ class LoadingMode(BlankMode):
 
     def createPostHook(self):
         self.showBusy(True)
-        wx.CallAfter(self.frame.openThreaded, self.stc.url, self.stc.modecls,
-                     mode_to_replace=self)
+        wx.CallAfter(self.frame.openThreaded, self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(debugmixin):
     def __init__(self, url, modecls):
-        self.url = url
-        self.stc = LoadingSTC(url, modecls)
         self.busy = True
         self.readonly = False
         self.modified = False
         self.defaultmode = LoadingMode
+        
+        if not isinstance(url, URLInfo):
+            url = URLInfo(url)
+        if modecls:
+            self.modecls = modecls
+        else:
+            self.modecls = MajorModeMatcherDriver.match(url)
+        self.url = url
+        self.stc = LoadingSTC(str(self.url))
+    
+    def allowThreadedLoading(self):
+        return self.modecls.allow_threaded_loading
+    
+    def clone(self):
+        """Get a real Buffer instance from this temporary buffer"""
+        return Buffer(self.url, self.modecls)
 
     def addViewer(self, mode):
         pass
