@@ -25,8 +25,15 @@ def register_file_system(name, fs_handler):
     _file_systems[name] = fs_handler
 
 
+def deregister_file_system(name):
+    if name in _file_systems:
+        del _file_systems[name]
+
+
 def get_file_system(name):
     # 'c' means Windows' "c:\" and is a filesystem
     if len(name) == 1:
         return file.FileFS
+    if name not in _file_systems:
+        raise NotImplementedError
     return _file_systems[name]

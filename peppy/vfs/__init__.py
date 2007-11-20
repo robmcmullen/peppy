@@ -2,7 +2,7 @@ import os
 
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
-from peppy.vfs.itools.vfs.registry import get_file_system
+from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_system
 from peppy.vfs.itools.uri import *
 
 import peppy.vfs.mem
@@ -35,6 +35,7 @@ __all__ = [
     'APPEND',
     # Registry
     'register_file_system',
+    'deregister_file_system',
     'get_file_system',
     # Functions
     'exists',
