@@ -894,8 +894,15 @@ class MajorModeMatcherDriver(debugmixin):
         # generate a list of possible modes
         modes = cls.scanURL(plugins, buffer.url)
         
-        #
+        # get a buffered file handle to examine some bytes in the file
         fh = buffer.getBufferedReader(magic_size)
+        if not fh:
+            # ok, the file doesn't exist, meaning that we're creating a new
+            # file.  Return the best guess we have based on filename only.
+            if modes:
+                return modes[0]
+            else:
+                return cls.findModeByName(plugins, app.classprefs.default_text_mode)
         header = fh.read(magic_size)
 
         url_match = None

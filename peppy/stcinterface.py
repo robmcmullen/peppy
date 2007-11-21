@@ -301,12 +301,19 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     def open(self, buffer, message=None):
         fh = buffer.getBufferedReader()
-        length = vfs.get_size(buffer.url)
-        chunk = 65536
-        if length/chunk > 100:
-            chunk *= 4
-        self.readFrom(fh, chunk=chunk, length=length, message=message)
-        self.detectLineEndings()
+        if fh:
+            # if the file exists, read the contents.
+            length = vfs.get_size(buffer.url)
+            chunk = 65536
+            if length/chunk > 100:
+                chunk *= 4
+            self.readFrom(fh, chunk=chunk, length=length, message=message)
+            self.detectLineEndings()
+        else:
+            # FIXME: if we're creating the file, we should allow for a
+            # template.  The template will be major-mode dependent, so there
+            # will have to be some callback to the major mode
+            pass
     
     def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
         total = 0

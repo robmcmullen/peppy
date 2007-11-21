@@ -83,7 +83,51 @@ class BufferList(GlobalList):
 
 #### Buffers
 
-class Buffer(debugmixin):
+class BufferVFSMixin(debugmixin):
+    def __init__(self, url):
+        self.bfh = None
+        self.setURL(url)
+        
+    def setURL(self, url):
+        if not url:
+            url = vfs.normalize("untitled")
+        else:
+            url = vfs.normalize(url)
+        self.url = url
+
+    def isURL(self, url):
+        url = vfs.normalize(url)
+        if url == self.url:
+            return True
+        return False
+    
+    def getFilename(self):
+        return str(self.url.path)
+
+    def cwd(self):
+        if self.url.scheme == 'file':
+            path = os.path.normpath(os.path.dirname(str(self.url.path)))
+        else:
+            path = os.getcwd()
+        return path
+            
+    def getBufferedReader(self, size=1024):
+        dprint("opening %s as %s" % (str(self.url), self.defaultmode))
+        if self.bfh is None:
+            if vfs.exists(self.url):
+                fh = vfs.open(self.url)
+                self.bfh = BufferedReader(fh, size)
+        if self.bfh:
+            self.bfh.seek(0)
+        return self.bfh
+    
+    def closeBufferedReader(self):
+        if self.bfh:
+            self.bfh.close()
+            self.bfh = None
+
+
+class Buffer(BufferVFSMixin):
     count=0
     debuglevel=0
 
@@ -106,13 +150,14 @@ class Buffer(debugmixin):
         buffer.permanent = True
 
     def __init__(self, url, defaultmode=None):
+        BufferVFSMixin.__init__(self, url)
+        
         if Buffer.dummyframe is None:
             Buffer.initDummyFrame()
 
         self.busy = False
         self.readonly = False
         self.defaultmode=defaultmode
-        self.bfh = None
 
         self.guessBinary=False
         self.guessLength=1024
@@ -125,9 +170,6 @@ class Buffer(debugmixin):
         self.permanent = False
 
         self.stc=None
-
-        self.setURL(url)
-        #self.open(url, stcparent)
 
     def __del__(self):
         dprint("cleaning up buffer %s" % self.url)
@@ -176,19 +218,6 @@ class Buffer(debugmixin):
             if not BufferList.findBuffersByBasename(basename):
                 del self.filenames[basename]
 
-    def setURL(self, url):
-        if not url:
-            url = vfs.normalize("untitled")
-        else:
-            url = vfs.normalize(url)
-        self.url = url
-
-    def isURL(self, url):
-        url = vfs.normalize(url)
-        if url == self.url:
-            return True
-        return False
-    
     def isBasename(self, basename):
         return basename == self.stc.getShortDisplayName(self.url)
 
@@ -207,33 +236,10 @@ class Buffer(debugmixin):
         # may have changed and that needs to be reflected in the menu.
         BufferList.update()
         
-    def getFilename(self):
-        return str(self.url.path)
-
-    def cwd(self):
-        if self.url.scheme == 'file':
-            path = os.path.normpath(os.path.dirname(str(self.url.path)))
-        else:
-            path = os.getcwd()
-        return path
-            
     def getTabName(self):
         if self.modified:
             return "*"+self.displayname
         return self.displayname
-
-    def getBufferedReader(self, size=1024):
-        dprint("opening %s as %s" % (str(self.url), self.defaultmode))
-        if self.bfh is None:
-            fh = vfs.open(str(self.url))
-            self.bfh = BufferedReader(fh, size)
-        self.bfh.seek(0)
-        return self.bfh
-    
-    def closeBufferedReader(self):
-        if self.bfh:
-            self.bfh.close()
-            self.bfh = None
 
     def openGUIThreadStart(self):
         self.dprint("url: %s" % repr(self.url))
@@ -258,8 +264,12 @@ class Buffer(debugmixin):
             self.initSTC()
 
         self.modified = False
-        self.readonly = not vfs.can_write(self.url)
-        dprint("readonly = %s" % self.readonly)
+        
+        # If it doesn't exist, that means we are creating the file, so it
+        # should be writable.
+        self.readonly = not (vfs.can_write(self.url) or not vfs.exists(self.url))
+        #dprint("readonly = %s" % self.readonly)
+        
         self.stc.EmptyUndoBuffer()
 
         # Add to the currently-opened buffer list
@@ -384,15 +394,13 @@ class LoadingMode(BlankMode):
         self.showBusy(True)
         wx.CallAfter(self.frame.openThreaded, self.buffer, mode_to_replace=self)
 
-class LoadingBuffer(debugmixin):
+class LoadingBuffer(BufferVFSMixin):
     def __init__(self, url, modecls):
+        BufferVFSMixin.__init__(self, url)
         self.busy = True
         self.readonly = False
         self.modified = False
         self.defaultmode = LoadingMode
-        
-        self.url = vfs.normalize(url)
-        self.bfh = None
         
         if modecls:
             self.modecls = modecls
@@ -400,19 +408,6 @@ class LoadingBuffer(debugmixin):
             self.modecls = MajorModeMatcherDriver.match(self)
         self.stc = LoadingSTC(str(self.url))
     
-    def getBufferedReader(self, size=1024):
-        dprint("opening %s" % str(self.url))
-        dprint("scheme=%s authority=%s path=%s query=%s frag=%s" % (self.url.scheme,
-                                                                    self.url.authority,
-                                                                    self.url.path,
-                                                                    self.url.query,
-                                                                    self.url.fragment))
-        if self.bfh is None:
-            fh = vfs.open(str(self.url))
-            self.bfh = BufferedReader(fh, size)
-        self.bfh.seek(0)
-        return self.bfh
-
     def allowThreadedLoading(self):
         return self.modecls.allow_threaded_loading
     
