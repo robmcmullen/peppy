@@ -132,6 +132,7 @@ class MemFS(BaseFS):
         """
         parent = None
         fs = MemFS.root
+        #print fs
 
         path = MemFS._normalize_path(path)
         if not path:
@@ -140,11 +141,12 @@ class MemFS(BaseFS):
 
         # Skip over the root level since it is implicit in the storage
         for comp in components:
+            #print("path=%s comp=%s" % (path, comp))
+            if fs.is_file:
+                # if we've found a file but we've still got path
+                # components left, return error
+                return None, None, None
             if comp in fs:
-                if fs.is_file:
-                    # if we've found a file but we've still got path
-                    # components left, return error
-                    return None, None, None
                 parent = fs
                 fs = fs[comp]
             else:
@@ -166,13 +168,15 @@ class MemFS(BaseFS):
         fs = MemFS.root
         components = path.split('/')
         for comp in components:
+            if fs.is_file:
+                raise OSError("[Errno 20] Not a directory: '%s'" % path)
             if comp in fs:
-                if fs[comp].is_file:
-                    raise OSError, "[Errno 17] File exists: '%s'" % path
                 fs = fs[comp]
             else:
                 fs[comp] = MemDir()
                 fs = fs[comp]
+        if fs.is_file:
+            raise OSError("[Errno 20] Not a directory: '%s'" % path)
         #print "filesystem: %s" % MemFS.root
 
     @staticmethod
@@ -199,13 +203,11 @@ class MemFS(BaseFS):
 
     @staticmethod
     def can_read(reference):
-        path = str(reference.path)
-        return MemFS.is_file(path)
+        return MemFS.is_file(reference)
 
     @staticmethod
     def can_write(reference):
-        path = str(reference.path)
-        return MemFS.is_file(path)
+        return MemFS.is_file(reference)
 
     @staticmethod
     def get_size(reference):
@@ -221,16 +223,23 @@ class MemFS(BaseFS):
         #print reference
         folder_path = str(reference.path[:-1])
         file_path = str(reference.path)
-        #print "folder=%s file=%s" % (folder_path, file_path)
 
-        parent, item, file_name = MemFS._find(file_path)
+        parent, item, dummy = MemFS._find(file_path)
         if parent is not None:
+            if parent.is_file:
+                raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
             if item is not None:
-                raise OSError("File exists: '%s'" % reference)
+                raise OSError("[Errno 17] File exists: '%s'" % reference)
         else:
+            #print "making folders: %s" % folder_path
             MemFS._makedirs(folder_path)
-
+        
+        file_name = reference.path.get_name()
+        #print "folder=%s file=%s" % (folder_path, file_name)
+        #print "filesystem: %s" % MemFS.root.ls()
         parent, folder, folder_name = MemFS._find(folder_path)
+        if parent.is_file:
+            raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
         #print "file_name = %s" % file_name
         fh = TempFile(folder, file_name)
         return fh
@@ -238,6 +247,8 @@ class MemFS(BaseFS):
     @staticmethod
     def make_folder(reference):
         path = str(reference.path)
+        #print "folder=%s" % (path)
+        #print "filesystem: %s" % MemFS.root.ls()
         MemFS._makedirs(path)
 
     @staticmethod
@@ -261,6 +272,8 @@ class MemFS(BaseFS):
     def open(reference, mode=None):
         path = str(reference.path)
         parent, item, name = MemFS._find(path)
+        if not parent:
+            raise IOError("[Errno 20] Not a directory: '%s'" % reference)
         if not item:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
 

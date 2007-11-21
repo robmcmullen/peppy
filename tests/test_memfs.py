@@ -41,7 +41,7 @@ class MemTestCase(TestCase):
         if vfs.exists('mem:tmp'):
             vfs.remove('mem:tmp')
 
-    def test00_existance(self):
+    def test00_existence(self):
         exists = vfs.exists('mem:tmp')
         self.assertEqual(exists, True)
         exists = vfs.exists('mem:fdsfsf')
@@ -67,6 +67,21 @@ class MemTestCase(TestCase):
         url = 'mem:test/dir'
         vfs.make_folder(url)
         self.assertEqual(vfs.is_folder(url), True)
+        url = 'mem:dir1/dir2/dir3/file1'
+        fh = vfs.make_file(url)
+        fh.write("this is file1")
+        fh.close()
+        self.assertEqual(vfs.is_file(url), True)
+        
+        # this should raise an OSError because it's trying to make a file out
+        # of an existing folder
+        url = 'mem:dir1/dir2/dir3'
+        self.assertRaises(OSError, vfs.make_file, url)
+        
+        # this should raise an OSError because it's trying to make a file in
+        # another file
+        url = 'mem:dir1/dir2/dir3/file1/file2'
+        self.assertRaises(OSError, vfs.make_file, url)
 
     def test11_reading(self):
         file = vfs.open('mem:testfile.txt')
@@ -83,6 +98,27 @@ class MemTestCase(TestCase):
         file.close()
         file = vfs.open('mem:testfile.txt')
         self.assertEqual(file.read(), 'three\n')
+
+    def test13_folder_creation(self):
+        url = 'mem:testfile.txt/dir'
+        self.assertEqual(vfs.is_folder(url), False)
+        self.assertRaises(OSError, vfs.make_folder, url)
+        
+        # This should raise an OSError because we're trying to make a file
+        # inside another file
+        file = vfs.make_file('mem:blah1')
+        file.write("blah1\n")
+        file.close()
+        self.assertRaises(OSError, vfs.make_folder, 'mem:blah1/bad1')
+        
+        # This should raise OSError because we're trying to make a file with
+        # the same name as an existing folder
+        url = 'mem:blah2/file2'
+        file = vfs.make_file(url)
+        file.write("blah2\n")
+        file.close()
+        self.assertEqual(True, vfs.exists(url))
+        self.assertRaises(OSError, vfs.make_file, 'mem:blah2')
 
     def test20_move_file(self):
         vfs.copy('mem:testfile.txt', 'mem:testfile.txt.bak')

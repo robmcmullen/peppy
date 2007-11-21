@@ -301,7 +301,10 @@ class Buffer(BufferVFSMixin):
             else:
                 saveas = vfs.normalize(url)
             if vfs.exists(saveas):
-                fh = vfs.open(saveas, vfs.WRITE)
+                if vfs.is_file(saveas):
+                    fh = vfs.open(saveas, vfs.WRITE)
+                else:
+                    raise OSError("%s exists and is a directory; can't save as file" % saveas)
             else:
                 fh = vfs.make_file(saveas)
             self.stc.writeTo(fh)
