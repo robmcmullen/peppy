@@ -15,7 +15,7 @@ PACKAGE := peppy
 VERSION_CODENAME := $(shell grep Released ChangeLog|head -n1|cut -d '"' -f 2)
 VERSION := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2|cut -d ' ' -f 1)
 
-EPYDOC = epydoc -v -v -v --no-sourcecode
+EPYDOC = epydoc -v -v -v --no-sourcecode --debug
 
 srcdir = .
 top_srcdir = .
@@ -110,7 +110,7 @@ distdir:
 	cp $(WINBATCH) $(distdir)/scripts
 
 api: distdir
-	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) | tee epydoc.out
+	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) 2>&1 | tee epydoc.out
 
 
 
