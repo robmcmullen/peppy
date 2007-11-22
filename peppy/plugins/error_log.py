@@ -91,10 +91,11 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             match = self.filere.search(text)
             if match:
                 filename = match.group(1)
-                self.open(filename)
+                line = match.group(2)
+                self.open("%s#%s" % (filename, line))
     
-    def open(self, filename):
-        dprint("filename = %s" % filename)
+    def open(self, url):
+        dprint("url = %s" % url)
 
 
 class ErrorLogSidebar(Sidebar, LoggingSTC):
@@ -224,8 +225,8 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         """
         self.showMessage(message.data)
     
-    def open(self, filename):
-        self.major.frame.open(filename)
+    def open(self, url):
+        self.major.frame.open(url)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar

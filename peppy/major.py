@@ -670,7 +670,12 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         bangpath and will be executed directly if it exists.  Otherwise,
         the command interpreter will be used to start the script.
         """
-        script = self.buffer.url.path
+        if self.buffer.url.scheme != "file":
+            msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
+            retval=dlg.ShowModal()
+            return
+        script = str(self.buffer.url.path)
         if bangpath:
             if wx.Platform == '__WXMSW__':
                 # MSW doesn't pass to a shell, so simulate a bangpath by pulling
