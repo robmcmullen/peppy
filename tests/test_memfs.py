@@ -42,10 +42,16 @@ class MemTestCase(TestCase):
             vfs.remove('mem:tmp')
 
     def test00_existence(self):
-        exists = vfs.exists('mem:tmp')
-        self.assertEqual(exists, True)
         exists = vfs.exists('mem:fdsfsf')
         self.assertEqual(exists, False)
+        
+        # All the following should be synonyms
+        exists = vfs.exists('mem:tmp')
+        self.assertEqual(exists, True)
+        exists = vfs.exists('mem://tmp')
+        self.assertEqual(exists, True)
+        exists = vfs.exists('mem:///tmp')
+        self.assertEqual(exists, True)
 
     def test01_type_checking(self):
         is_file = vfs.is_file('mem:tmp/blah.txt')

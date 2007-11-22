@@ -110,8 +110,7 @@ class MemFS(BaseFS):
             path = path[1:]
 
         # strip off leading '/'; root of / is implicit
-        if path.startswith('/'):
-            path = path[1:]
+        path = path.lstrip('/')
             
         while path.endswith('/'):
             path = path[:-1]
@@ -138,6 +137,7 @@ class MemFS(BaseFS):
         if not path:
             return parent, fs, path
         components = path.split('/')
+        #print "components: %s" % components
 
         # Skip over the root level since it is implicit in the storage
         for comp in components:
@@ -238,7 +238,7 @@ class MemFS(BaseFS):
         #print "folder=%s file=%s" % (folder_path, file_name)
         #print "filesystem: %s" % MemFS.root.ls()
         parent, folder, folder_name = MemFS._find(folder_path)
-        if parent.is_file:
+        if parent and parent.is_file:
             raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
         #print "file_name = %s" % file_name
         fh = TempFile(folder, file_name)
