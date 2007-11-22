@@ -72,6 +72,7 @@ class Fonts(ClassPrefs):
     default_classprefs = (
         FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
         FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
+        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
     )
     
     def __init__(self):
@@ -82,6 +83,18 @@ class Fonts(ClassPrefs):
         if self.classprefs.secondary_editing_font is None:
             self.classprefs.secondary_editing_font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
+    def getStyleFile(self, mode=None):
+        if mode:
+            # Find style sheet override if the mode specifies it
+            filename = mode.classprefs.editra_style_sheet
+        else:
+            filename = ''
+        if not filename:
+            filename = self.classprefs.editra_style_sheet
+        pathname = wx.GetApp().getConfigFilePath(filename)
+        dprint(pathname)
+        return pathname
+    
 
 class Mouse(ClassPrefs):
     preferences_tab = "General"

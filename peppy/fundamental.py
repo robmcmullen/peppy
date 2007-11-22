@@ -459,7 +459,6 @@ class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
                      StandardParagraphMixin,
                      GenericFoldHierarchyMixin, FoldExplorerMixin,
                      EditraSTCMixin, PeppySTC):
-    
     # Default comment characters in case the Editra styling database
     # doesn't have any information about the mode
     start_line_comment = ''
@@ -467,7 +466,7 @@ class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
 
     def __init__(self, parent, refstc=None, **kwargs):
         PeppySTC.__init__(self, parent, refstc, **kwargs)
-        EditraSTCMixin.__init__(self, FundamentalMode.getStyleFile())
+        EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
 
 
 class FundamentalMode(MajorMode):
@@ -492,7 +491,7 @@ class FundamentalMode(MajorMode):
     stc_viewer_class = FundamentalSTC
 
     default_classprefs = (
-        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
+        StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing\nEditra style sheet information.  Used to override\ndefault styles with custom styles for this mode.'),
         BoolParam('use_tab_characters', False,
                   'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
         IntParam('tab_size', 4, 'Number of spaces in each tab'),
@@ -538,12 +537,6 @@ class FundamentalMode(MajorMode):
         # mode, mark it as generic.
         cls.dprint("generic match of %s" % file_type)
         return "generic"
-    
-    @classmethod
-    def getStyleFile(cls):
-        filename = wx.GetApp().getConfigFilePath(cls.classprefs.editra_style_sheet)
-        cls.dprint(filename)
-        return filename
     
     def createEditWindow(self,parent):
         assert self.dprint("creating new Fundamental window")

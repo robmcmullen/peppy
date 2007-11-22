@@ -151,11 +151,11 @@ class StyleEditor(wx.Dialog):
         # Create Buttons
         b_sizer = wx.BoxSizer(wx.HORIZONTAL)
         cancel_b = wx.Button(self, wx.ID_CANCEL, _("Cancel"))
-        #save_b = wx.Button(self, wx.ID_SAVE, _("Export"))
+        save_b = wx.Button(self, wx.ID_SAVE, _("Export"))
         ok_b = wx.Button(self, wx.ID_OK, _("Ok"))
         ok_b.SetDefault()
-        #b_sizer.AddMany([cancel_b, save_b, ok_b])
-        b_sizer.AddMany([cancel_b, ok_b])
+        b_sizer.AddMany([cancel_b, save_b, ok_b])
+        #b_sizer.AddMany([cancel_b, ok_b])
         self.sizer.Add(b_sizer, 0, wx.ALIGN_RIGHT | \
                                    wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
@@ -170,7 +170,7 @@ class StyleEditor(wx.Dialog):
         # Event Handlers
 #        self.Bind(wx.EVT_BUTTON, self.OnCancel, id=wx.ID_CANCEL)
 #        self.Bind(wx.EVT_BUTTON, self.OnOk, id=wx.ID_OK)
-#        self.Bind(wx.EVT_BUTTON, self.OnExport, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_BUTTON, self.OnExport2, id=wx.ID_SAVE)
         self.Bind(wx.EVT_CHOICE, self.OnChoice)
         self.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -599,6 +599,15 @@ class StyleEditor(wx.Dialog):
         self.LOG('[style_editor] [Save] Saving style changes')
         self.ExportStyleSheet()
         evt.Skip()
+
+    def OnExport2(self, evt):
+        """Catches save button event
+        @param evt: event that called this handler
+        @postcondition: export file dialog is opened
+
+        """
+        self.EndModal(wx.ID_SAVE)
+        #evt.Skip()
 
     def OpenPreviewFile(self, file_lbl):
         """Opens a file using the names in the Syntax Files choice

@@ -304,6 +304,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if fh:
             # if the file exists, read the contents.
             length = vfs.get_size(buffer.url)
+            assert self.dprint("Loading %d bytes" % length)
             chunk = 65536
             if length/chunk > 100:
                 chunk *= 4
@@ -328,14 +329,19 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                     # pulse mode
                     Publisher().sendMessage(message, (total*100)/length)
                 
-                # need to convert it to two bytes per character as
-                # that's the only way to load binary data into
-                # Scintilla.  First byte is the content, 2nd byte is
-                # styling (which we set to zero)
-                styledtxt = '\0'.join(txt)+'\0'
-                assert self.dprint("styledtxt: length=%d" % len(styledtxt))
-
-                self.AddStyledText(styledtxt)
+                if isinstance(txt, unicode):
+                    # This only seems to happen for unicode files written
+                    # to the mem: filesystem, but if it does happen to be
+                    # unicode, there's no need to convert the data
+                    self.AddText(txt)
+                else:
+                    # need to convert it to two bytes per character as
+                    # that's the only way to load binary data into
+                    # Scintilla.  First byte is the content, 2nd byte is
+                    # styling (which we set to zero)
+                    styledtxt = '\0'.join(txt)+'\0'
+                    assert self.dprint("styledtxt: length=%d" % len(styledtxt))
+                    self.AddStyledText(styledtxt)
             else:
                 # stop when we reach the end.  An exception will be
                 # handled outside this class

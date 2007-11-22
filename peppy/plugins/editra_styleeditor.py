@@ -9,6 +9,8 @@ import os
 
 from wx.lib.pubsub import Publisher
 
+import peppy.vfs as vfs
+
 from peppy.yapsy.plugins import *
 from peppy.menu import *
 
@@ -24,13 +26,10 @@ class EditraStyles(SelectAction):
     name = "Text Styles..."
     tooltip = "Open the STC Style Editor to edit the current mode's text display."
     default_menu = ("Edit", -1000)
+    export_count = 0
     
-    def isEnabled(self):
-        return hasattr(self.mode.classprefs, 'editra_style_sheet')
-
     def action(self, index=-1, multiplier=1):
-        stylesheet = self.mode.getStyleFile()
-        dprint(stylesheet)
+        stylesheet = wx.GetApp().fonts.getStyleFile()
         dlg = style_editor.StyleEditor(self.frame, -1)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
@@ -38,6 +37,17 @@ class EditraStyles(SelectAction):
             dprint(sheet)
             fh = wx.GetApp().config.open(stylesheet, 'wb')
             fh.write(sheet)
+        elif retval == wx.ID_SAVE:
+            sheet = dlg.GenerateStyleSheet()
+            dprint(sheet)
+            self.export_count += 1
+            url = "mem:///style-sheet-%d.ess" % self.export_count
+            fh = vfs.make_file(url)
+            fh.write(sheet)
+            fh.close()
+            fh = vfs.open(url)
+            dprint(fh.read())
+            self.frame.open(url)
         dlg.Destroy()
         Publisher().sendMessage('peppy.preferences.changed')
 
