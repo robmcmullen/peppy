@@ -627,6 +627,9 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
         self.editwin.SetCursor(cursor)
 
+    def showInitialPosition(self, url):
+        """Hook to scroll to a non-default initial position if desired."""
+        pass
 
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):

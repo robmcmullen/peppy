@@ -29,6 +29,15 @@ def normalize(ref, base=None):
     baseref = get_reference('file://%s/' % base)
     return baseref.resolve(ref)
 
+def canonical_reference(ref):
+    """Normalize a uri but remove any query string or fragments."""
+    # get a copy of the reference
+    ref = normalize(str(ref))
+    ref.query = {}
+    ref.fragment = ''
+    return ref
+    
+
 __all__ = [
     ##### From vfs:
     'BaseFS',
@@ -64,4 +73,5 @@ __all__ = [
     ##### From uri:
     'get_reference',
     'normalize',
+    'canonical_reference',
     ]

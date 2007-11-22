@@ -38,7 +38,7 @@ class BufferList(GlobalList):
 
     @classmethod
     def findBufferByURL(self, url):
-        url = vfs.normalize(url)
+        url = vfs.canonical_reference(url)
         for buf in BufferList.storage:
             if buf.isURL(url):
                 return buf
@@ -92,11 +92,11 @@ class BufferVFSMixin(debugmixin):
         if not url:
             url = vfs.normalize("untitled")
         else:
-            url = vfs.normalize(url)
+            url = vfs.canonical_reference(url)
         self.url = url
 
     def isURL(self, url):
-        url = vfs.normalize(url)
+        url = vfs.canonical_reference(url)
         if url == self.url:
             return True
         return False
@@ -395,10 +395,12 @@ class LoadingMode(BlankMode):
 
     def createPostHook(self):
         self.showBusy(True)
-        wx.CallAfter(self.frame.openThreaded, self.buffer, mode_to_replace=self)
+        wx.CallAfter(self.frame.openThreaded, self.buffer.user_url,
+                     self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(BufferVFSMixin):
     def __init__(self, url, modecls):
+        self.user_url = url
         BufferVFSMixin.__init__(self, url)
         self.busy = True
         self.readonly = False
@@ -409,7 +411,7 @@ class LoadingBuffer(BufferVFSMixin):
             self.modecls = modecls
         else:
             self.modecls = MajorModeMatcherDriver.match(self)
-        self.stc = LoadingSTC(str(self.url))
+        self.stc = LoadingSTC(str(url))
     
     def allowThreadedLoading(self):
         return self.modecls.allow_threaded_loading
@@ -437,10 +439,11 @@ class LoadingBuffer(BufferVFSMixin):
 class BufferLoadThread(threading.Thread, debugmixin):
     """Background file loading thread.
     """
-    def __init__(self, frame, buffer, mode_to_replace, progress=None):
+    def __init__(self, frame, user_url, buffer, mode_to_replace, progress=None):
         threading.Thread.__init__(self)
         
         self.frame = frame
+        self.user_url = user_url
         self.buffer = buffer
         self.mode_to_replace = mode_to_replace
         self.progress = progress
@@ -451,14 +454,14 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.dprint("starting to load %s" % self.buffer.url)
         try:
             self.buffer.openBackgroundThread(self.progress.message)
-            wx.CallAfter(self.frame.openSuccess, self.buffer,
+            wx.CallAfter(self.frame.openSuccess, self.user_url, self.buffer,
                          self.mode_to_replace, self.progress)
             self.dprint("successfully loaded %s" % self.buffer.url)
         except Exception, e:
             import traceback
             traceback.print_exc()
             self.dprint("Exception: %s" % str(e))
-            wx.CallAfter(self.frame.openFailure, self.buffer.url, str(e),
+            wx.CallAfter(self.frame.openFailure, self.user_url, str(e),
                          self.progress)
 
 

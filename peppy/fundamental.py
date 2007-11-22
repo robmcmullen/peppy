@@ -724,3 +724,10 @@ class FundamentalMode(MajorMode):
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
+
+    def showInitialPosition(self, url):
+        if url.fragment:
+            line = int(url.fragment)
+            line -= self.classprefs.line_number_offset
+            self.editwin.GotoLine(line)
+            self.editwin.EnsureVisible(line)

@@ -559,7 +559,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             assert self.dprint("new mode=%s" % newmode)
             self.tabs.replaceCurrentTab(newmode)
 
-    def newBuffer(self, buffer, modecls=None):
+    def newBuffer(self, user_url, buffer, modecls=None):
         mode=self.createMajorMode(buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         current = self.getActiveMajorMode()
@@ -568,6 +568,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.tabs.addTab(mode)
         assert self.dprint("after addViewer")
+        mode.showInitialPosition(user_url)
 
     def titleBuffer(self):
         self.open(wx.GetApp().classprefs.title_page)
@@ -583,47 +584,51 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         return False
 
     def open(self, url, modecls=None):
-        buffer = BufferList.findBufferByURL(url)
+        # The canonical url stored in the buffer will be without query string
+        # or fragment, so we need to keep track of the full url (with the
+        # query string and fragment) it separately.
+        user_url = vfs.normalize(url)
+        buffer = BufferList.findBufferByURL(user_url)
         if buffer is not None:
             #dprint("found permanent buffer")
-            self.newBuffer(buffer, modecls)
+            self.newBuffer(user_url, buffer, modecls)
         else:
             try:
-                buffer = LoadingBuffer(url, modecls)
+                buffer = LoadingBuffer(user_url, modecls)
             except Exception, e:
                 import traceback
                 error = traceback.format_exc()
-                self.openFailure(url, error)
+                self.openFailure(user_url, error)
                 return
             
             if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
-                self.newBuffer(buffer)
+                self.newBuffer(user_url, buffer)
             else:
-                self.openStart(buffer)
+                self.openStart(user_url, buffer)
     
-    def openStart(self, loading_buffer):
+    def openStart(self, user_url, loading_buffer):
         #traceon()
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
             buffer = loading_buffer.clone()
             buffer.openGUIThreadStart()
             buffer.openBackgroundThread()
-            self.openSuccess(buffer)
+            self.openSuccess(user_url, buffer)
         except Exception, e:
             import traceback
             error = traceback.format_exc()
-            self.openFailure(buffer.url, error)
+            self.openFailure(user_url, error)
         wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
-    def openThreaded(self, loading_buffer, mode_to_replace=None):
+    def openThreaded(self, user_url, loading_buffer, mode_to_replace=None):
         #traceon()
         buffer = loading_buffer.clone()
         buffer.openGUIThreadStart()
         statusbar = mode_to_replace.getStatusBar()
-        statusbar.startProgress("Loading %s" % buffer.url, message=str(mode_to_replace))
-        thread = BufferLoadThread(self, buffer, mode_to_replace, statusbar)
+        statusbar.startProgress("Loading %s" % user_url, message=str(mode_to_replace))
+        thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
 
-    def openSuccess(self, buffer, mode_to_replace=None, progress=None):
+    def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
         mode = self.createMajorMode(buffer)
         assert self.dprint("major mode=%s" % mode)
@@ -642,6 +647,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             progress.stopProgress(msg)
         else:
             self.SetStatusText(msg)
+        mode.showInitialPosition(user_url)
 
     def openFailure(self, url, error, progress=None):
         #traceoff()
