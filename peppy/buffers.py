@@ -404,6 +404,7 @@ class LoadingBuffer(BufferVFSMixin):
         BufferVFSMixin.__init__(self, url)
         self.busy = True
         self.readonly = False
+        self.permanent = False
         self.modified = False
         self.defaultmode = LoadingMode
         
