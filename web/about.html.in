@@ -1,0 +1,49 @@
+<P>This editor is an attempt to displace my dependency on <a
+href="http://www.xemacs.org">XEmacs</a>.  My goal is to produce a work-alike
+with the feel of emacs but based on <a href="http://www.python.org">Python</a>
+using the widget toolkit <a href="http://www.wxpython.org">wxPython</a>.  I
+love XEmacs, but my basic problem is this: I don't want to keep space in my
+brain to remember Emacs Lisp.
+
+<P>I tend not to write elisp code very much, so when I want to go back and
+write an enhancement to XEmacs, I have to try to relearn it.  (This doesn't
+even begin to address the fundamental lack of reference guides for elisp
+libraries.) Delving into elisp gets less and less appealing as time
+goes on and my brain gets filled up with other stuff.
+
+<P>If the editor were written in Python, I'd have no problem blasting out
+the enhancement.  Problem is, there are no Python editors that are enough
+like XEmacs to make me switch.  There are some IDEs out there that I
+like, including <a href="http://www.stani.be/python/spe">SPE</a> and <a
+href="http://pype.sourceforge.net">PyPE</a>, but for one reason or another
+they haven't convinced me to switch.  For instance, they all want to constrain
+me to a single window, and I like the multi-window, multi-tab interface like
+Firefox or XEmacs itself.
+
+<P>There are other editors that are in current development,
+like <a href="http://www.editra.org">Editra</a> and <a
+href="http://code.google.com/p/ulipad/">UliPad</a> but their goals focus on
+editing text.  While peppy also aims to be a text editor, like emacs it has
+a broader scope by providing major modes that use the MVC paradigm to present
+multiple editing interfaces to the same data.
+
+<P>When I talk about XEmacs feel, I mean the usability of the editor itself;
+I'm not going for any sort of compatibility with elisp or any of the naming
+conventions of the inner workings of XEmacs.  I don't aim to support or
+reimplement every elisp packages out there, especially those not related to
+editing text like reading email or news or showing phases of the moon or crazy
+quotes from Zippy.
+
+<P>Well, except Zippy.  And maybe Psychoanalyze Zippy! And hex edit.  Towers of
+Hanoi.  Tetris.  Hangman.  And possibly even phases of the moon.  But not all
+at once, and not right away.  First, I'll be focusing on source code editing.
+
+<P>But, hopefully the framework will be easy enough to understand that
+contributors like you will want to add a major mode that you liked from XEmacs
+and that doesn't exist in peppy.
+
+<h2>Off-site references</h2>
+<ul>
+<li>see the <a href="http://freshmeat.net/projects/peppy/">freshmeat entry</a>
+<li>see the <a href="http://cheeseshop.python.org/pypi/peppy">cheeseshop entry</a>
+</ul>

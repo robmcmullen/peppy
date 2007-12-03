@@ -1,0 +1,48 @@
+<span class="peppy">(ap)<b>P</b>roximated (x)<b>E</b>macs <b>P</b>owered by <b>Py</b>thon.</span>
+
+<P>-- an XEmacs-like editor in Python.  Eventually.
+
+<P>Latest version: $version "$codename".  <a href="download.html">Download here</a>
+
+<P>This project started out as my graduate school thesis, built
+as an educational experiment to attempt to demonstrate the <a
+href="pm/">modern software development process</a> using the <a
+href="http://readyset.tigris.org/">ReadySET project management templates</a>.
+However, the code that started out as a means-to-an-end has grown beyond its
+original purpose of demonstrating the software development process.  It's now
+quite usable and useful.
+
+<P>I suppose you're thinking that the world doesn't need another editor, and
+you might even be right.  In fact, a <a href="http://www.xemacs.org">really
+good editor</a> does already exist, but I'm not just trying to create another
+editor.  I'm looking for a way to build an extensible framework in Python that
+can support editing and viewing many different types of files, not <i>just</i>
+text files or source code.  But, having said that, the primary target is still
+source code editing; however, unlike other editors I'm not <i>limiting</i>
+myself to that, as evidenced by the hex edit mode and other esoteric modes
+like the hyperspectral image viewer.
+
+<P>A quick summary of features currently provided:
+
+<ul>
+<li>Multiple top-level windows
+<li>Multiple views of the same file (edit in one view and it shows up in the others)
+<li>Extensible file loading module (current support to load from http as well as file protocols)
+<li>Minibuffer ala XEmacs, including tab completion
+<li>Multiple language support: currently baseline implementations of Python, Makefile, C/C++ major modes
+<li>Other interesting major modes:
+<ul>
+<li>Hex edit mode
+<li>Hyperspectral image view mode
+<li>Music Player Daemon mode for controlling an
+<a href="http://mpd.wikia.com/wiki/Main_Page">MPD</a> server
+</ul>
+</ul>
+
+Development features:
+<ul>
+<li>Pure python source based on the <a href="http://www.wxpython.org">wxPython</a> widget toolkit
+<li>Most features coded as plugins - can enable or disable individual features at will
+<li>Scintilla styling code borrowed from <a href="http://www.editra.org">Editra</a>
+and I will continue to track Editra as more language lexers are supported
+</ul>

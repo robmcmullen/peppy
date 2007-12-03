@@ -1,0 +1,184 @@
+<h1>Version Numbers</h1>
+
+<p>$prog follows the Python standard of version numbers for modules:
+major.minor.patchlevel[subrelease].  From the <a
+href="http://docs.python.org/dist/meta-data.html">distutils
+docs</a>:</p>
+
+<div class="cite">
+The major number is 0 for initial, experimental releases of
+software. It is incremented for releases that represent major
+milestones in a package. The minor number is incremented when
+important new features are added to the package. The patch number
+increments when bug-fix releases are made. Additional trailing version
+information is sometimes used to indicate sub-releases. These are
+"a1,a2,...,aN" (for alpha releases, where functionality and API may
+change), "b1,b2,...,bN" (for beta releases, which only fix bugs)
+</div>
+
+<p>Obviously, I'm not starting at major number 0.  See below.
+
+
+<h1>History</h1>
+
+<dl>
+<dt>1.0 - <emph>Abandoned</emph></dt>
+<dd>
+
+<p>This was an almost-complete <a href="http://www.swig.org">SWIG</a>
+wrapper around <a href="http://libemf.sourceforge.net">libEMF</a>.
+But, it's harder to distribute a SWIG module that a pure python one,
+and I also wanted to support a few more features than were available
+in libEMF.</p>
+
+<p>Even though this was never released, I'm not wiping out the
+existence of pyemf 1.0.  See below.</p>
+
+</dd>
+
+
+
+<dt>2.0 - <emph>Currently in development at version $version</emph></dt>
+<dd>
+
+<p>This is the current version.  I had to change major numbers because
+the API changed from version 1.*.  At the time, I wasn't sure how long
+it would take me to code up version 2.* and was thinking that I might
+release version 1 in the interim.</p>
+
+<p>But, I was able to code up version 2.0.0 in a reasonable time,
+but by then I was far enough along in my thinking that I just left the
+version numbers alone.  A bit strange to release a version 2.* before
+a 1.* became public, but given the amount of time I invested in
+version 1.0.0 and debugging the SWIG interface, I at least want to
+give a nod to myself for some good effort.</p>
+
+</dd>
+
+<dt>2.1 - <emph>Future plans</emph></dt>
+<dd>
+
+<p>Things I'd like to support:</p>
+
+<ul>
+<li>understand the viewport origin and extent commands</li>
+<li>understand the window origin and extent commands</li>
+</ul>
+
+</dd>
+
+<p>&nbsp;</p>
+
+
+<dt>8.x - <emph>Way future plans</emph></dt>
+<dd>
+
+<p>Somewhere off in the distance...</p>
+
+<ul>
+<li>Font metrics.   Maybe.</li>
+</ul>
+
+</dd>
+</dl>
+
+
+<h1>Known Issues</h1>
+
+<dl>
+<dt>PolyPolyline and PolyPolygon missing</dt>
+<dd>
+
+<p class="ontarget">Target: fixed in 2.0.0b2</p>
+
+</dd>
+
+<dl>
+<dt>Methods that should return coordinates or colors not working</dt>
+<dd>
+
+<p class="plannedtarget">Target: fix in 2.1?</p>
+
+<p>According to the ECMA spec, some Set methods should return the
+previous color or location.  This requires that the internal
+representation of the device context keep track of everything, and in
+$version that isn't quite happening yet.</p>
+
+</dd>
+
+<dl>
+<dt>SaveDC/RestoreDC stack not maintained</dt>
+<dd>
+
+<p class="plannedtarget">Target: fix in 2.1?</p>
+
+<p>SaveDC may be called multiple times, so the device context
+parameters should be saved on a stack so that return values for
+functions will be correct.</p>
+
+</dd>
+
+<dl>
+<dt>Window and Viewport extents are not well understood</dt>
+<dd>
+
+<p class="plannedtarget">Target: fix in 2.1?</p>
+
+<p>I'm still trying to understand the various permutations of units
+set by SetMapMode and how they effect the viewport and window extents.
+So, all the functions [Set|Get|Scale][Viewport|Window][Org|Ext]Ex
+exist in pyemf, but they aren't guaranteed to do the right thing,
+unless you the user happen to know what the right thing is.</p>
+
+<p>I certainly don't know what the right thing is yet in all cases.  The
+ECMA spec is unclear, and the Microsoft docs are fuzzy at best.</p>
+
+</dd>
+
+<dt>Bitmap functions don't exist</dt>
+<dd>
+
+<p class="maybetarget">Target: fix sometime before the sun burns out?</p>
+
+<p>Since I wanted to support the vector graphics capabilities, bitmap
+support wasn't a high priority to me.  Patches welcome, however.</p>
+
+</dd>
+
+<dt>Text metrics functions don't exist</dt>
+<dd>
+
+<p class="maybetarget">Target: fix after the sun burns out?</p>
+
+<p>A full GDI implementation would include font metrics such that fine
+grained control over glyph placement is available.  To really do text
+extents properly, a complete font metrics package would need to be
+added.  This requires a module that could link to something like
+freetype.  There is a freetype module included in matplotlib that I
+may look at for some future release, and in fact for my matplotlib
+modifications, I've used the freetype module with a bit of hackery to
+be able to place text strings in relation to one another.</p>
+
+<p>So, only the basics of font support are included.  It seems to be a
+bit renderer dependent as to how the fonts will be chosen based on the
+specifications to CreateFontA.  For example, what happens when you
+request a font that isn't available on your target computer?  I
+suppose this problem isn't limited to pyemf, but to any EMF that uses
+fonts.</p>
+
+<p>Comparing the output on PowerPoint vs OpenOffice Impress seems to show
+that fonts render about the same, but in terms of precisely placing
+strings of text in relation to other strings (e.g. knowing where a
+string ends so you could append a string right after that), it seems
+that we're a bit out of luck for the moment unless we can integrate it
+with some external library for metrics.</p>
+
+<p>I'm still needing to do more research before I add font extents to
+pyemf.  If you're curious and want to figure out how this stuff works
+in GDI, the prime suspect is the function GetTextExtentPoint32A(),
+which should measure the width and height of a string.  But also of
+interest are how CreateFont and CreateFontIndirect and how they
+specify fonts.</p>
+
+</dd>
+</dl>

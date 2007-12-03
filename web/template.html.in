@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+
+<head>
+	<title>$prog - $description</title>
+	<link href="css/layout.css" rel="stylesheet" />
+	<link href="css/colors.css" rel="stylesheet" />
+	<script src="js/jquery.js" type="text/javascript"></script>
+	<script src="js/thickbox-flipturn.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="css/thickbox-flipturn.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="css/photo-album.css" type="text/css" media="screen" />
+</head>
+
+<body>
+
+	<div id="contentWrapper">
+		<div id="header">
+			<div id="titleLine">
+                            <img src="peppy-web-logo.png" alt="$prog - $description"/>
+			</div>
+		</div>
+		<div id="mainMenu">
+			$mainMenu
+		</div>
+		<div id="sidebar">
+			<div id="sidebarOptions"></div>
+			<div id="sidebarTabs"></div>
+		</div>
+		<div id="displayArea">
+			<div id="htmlBody">
+				$htmlBody
+			</div>
+			<div id="preBody">
+<pre>
+$preBody
+</pre>
+			</div>
+		</div>
+		<div id="footer">
+			<div id="signatureLine">
+                                Updated $today by $author &lt;robm at flipturn.org&gt;
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
+

@@ -1,6 +1,6 @@
 # Documentation builder stuff
 
-HTML = 
+HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html README.html
 PRE = 
 CSS = 
 IMAGES = 
@@ -39,11 +39,11 @@ APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
 
 .SUFFIXES:      .html.in .pre.in .html
 
-.html.in.html: template.html.in mainmenu.html.in
-	./make-doc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n htmlBody $*.html.in -t template.html.in
+.html.in.html: web/template.html.in web/mainmenu.html.in
+	./make-doc.py -m peppy -o $*.html -k codename "$(VERSION_CODENAME)" -n mainMenu web/mainmenu.html.in -n htmlBody $*.html.in -t web/template.html.in
 
-.pre.in.html: template.html.in mainmenu.html.in
-	./make-doc.py -m peppy -o $*.html -n mainMenu mainmenu.html.in -n preBody $*.pre.in -t template.html.in
+.pre.in.html: web/template.html.in web/mainmenu.html.in
+	./make-doc.py -m peppy -o $*.html -n mainMenu web/mainmenu.html.in -n preBody $*.pre.in -t web/template.html.in
 
 
 
@@ -60,6 +60,12 @@ INSTALL: INSTALL.pre.in ChangeLog
 doc: README INSTALL
 
 html: $(HTML) $(PRE)
+	cp README.html web/
+web/thanks.html.in:
+	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
+web/screenshots.html.in:
+	(cd web; photo-album.py --nodatedir 0.*; photo-index.py -a -b -r -o screenshots.html.in)
+$(HTML): web/template.html.in web/mainmenu.html.in
 
 publish_html: html
 	rsync -avuz $(WEBSITE) robm@peppy.sourceforge.net:/home/groups/p/py/peppy/htdocs

@@ -1,0 +1,153 @@
+body {
+	font-size: 9pt;
+	font-family: verdana,arial,helvetica;
+	margin: 0;
+	padding: 0;
+	position: relative;
+	z-index: 0;
+}
+
+#contentWrapper {
+	position: relative;
+}
+
+#titleLine {
+  padding: 1em 1em 1em 1em;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+}
+
+#siteTitle {
+	font-size: 26pt;
+}
+
+#siteSubtitle {
+	padding-left: 1em;
+	font-size: 10pt;
+}
+
+#mainMenu {
+	position: absolute;
+	left: 0em;
+	width: 10em;
+/*
+        line-height: 166%;
+*/	padding: 1em 0.5em 0.5em 0.5em;
+
+	font-size: 10pt;
+	text-align: left;
+}
+
+
+#mainMenu ul {
+  margin-left: 0;
+  padding-left: 1em;
+}
+/*
+#mainMenu li {
+  margin-top: 0;
+  padding: 0 0 0 0;
+  margin-bottom: 0;
+  background: #f0f;
+}
+*/
+#sidebar { 
+  display: none;
+}
+
+#displayArea {
+	margin: 1em 3em 1em 14em;
+}
+
+#htmlBody {
+	/*margin: 1em 17em 0em 14em;*/
+	padding: 0.5em;
+}
+
+
+/* padding hack for IE.  If I do padding: 4px here and no padding
+   on the signature line or logo, the top of the logo is chopped
+   off. */
+#footer { 
+  border-top-width: 1px;
+  border-top-style: solid;
+  padding: 0px 4px 0px 4px;
+  margin: 0;
+}
+
+#signatureLine { 
+  padding-top: 4px;
+  float: left;
+}
+
+#signatureLogo { 
+  padding-top: 0px;
+  margin-top: 2px;
+  float: right;
+}
+
+.code {
+  font-family: Lucida Console, Monaco5, monospace;
+}
+
+.faq dt {
+  font-weight: bold;
+}
+
+.faq dd {
+  padding-bottom: 1.0em;
+}
+
+.peppy { 
+  font-size: 2.0em;
+}
+
+
+.note { 
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.1em;
+
+  padding: .7em;
+  margin-left: 1em;
+  overflow: visible;
+}
+
+.note:before { 
+  content: "Note:";
+}
+
+.cite { 
+  border-width: 1px;
+  border-style: dashed;
+/*  line-height: 1.1em; */
+
+  padding: .7em 1em;
+  margin: 0 1em;
+  overflow: visible;
+}
+
+.ontarget { 
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.1em;
+
+  padding: .2em;
+}
+
+.plannedtarget { 
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.1em;
+
+  padding: .2em;
+}
+
+.maybetarget { 
+  border-width: 1px;
+  border-style: solid;
+  line-height: 1.1em;
+
+  padding: .2em;
+}
+

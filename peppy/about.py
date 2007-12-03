@@ -47,6 +47,14 @@ be happening.
     """,
     'thanks': "",
     'gpl_code': "",
+    'contributors': """<p>GPL code borrowed from the following projects:</p>
+<ul>
+%(gpl_code)s
+</ul>
+<p>Additional thanks to:</p>
+<ul>
+%(thanks)s
+</ul>"""
     }
 substitutes['copyright'] = 'Copyright (c) %(yearrange)s %(author)s (%(author_email)s)' % substitutes
 
@@ -121,8 +129,11 @@ class AboutFS(vfs.BaseFS):
         text = findAbout(path)
         if text is None:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
-        if text.find("%(") >= 0:
+        recurse_count = 100
+        while text.find("%(") >= 0 and recurse_count>0:
             text = text % substitutes
+            recurse_count -= 1
+        # FIXME: display error when recurse count is triggered???
         fh=StringIO()
         fh.write(text)
         fh.seek(0)
@@ -135,7 +146,9 @@ vfs.register_file_system('about', AboutFS)
 SetAbout('untitled','')
 SetAbout('blank','')
 SetAbout('scratch','-*- Fundamental -*-')
-
+SetAbout('thanks', """\
+%(contributors)s
+""")
 SetAbout('peppy',"""\
 <!-- -*- HTMLView -*- -->
 <h2>%(prog)s %(version)s \"%(codename)s\"</h2>
@@ -148,15 +161,7 @@ SetAbout('peppy',"""\
 
 <p>%(warning)s</p>
 
-<p>GPL code borrowed from the following projects:</p>
-<ul>
-%(gpl_code)s
-</ul>
-<p>Thanks to lots of folks:</p>
-<ul>
-%(thanks)s
-</ul>
-<p>See the file THANKS for more credits.</p>
+<p>%(contributors)s</p>
 """)
 SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
 SetAbout('red.png',
@@ -176,14 +181,15 @@ def AddCredit(author, contribution):
     credits[author] = contribution
     substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
         
-AddCredit("Mark James", "the free silk icon set available at http://www.famfamfam.com/lab/icons/silk/")
+AddCredit("Mark James", "for the <a href=\"http://www.famfamfam.com/lab/icons/silk/\">free silk icon set</a>")
 AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
 AddCredit("Julian Back", "for the framework for the C edit mode")
-AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from at http://yapsy.sourceforge.net/")
+AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the <a href=\"http://yapsy.sourceforge.net/\">yapsy homepage</a>")
 AddCredit("Peter Damoc", "for the feature suggestions")
 AddCredit("Stani Michiels", "for the scintilla fold explorer he shared with the pyxides mailing list")
 AddCredit("David Eppstein", "for his public domain python implementation of the TeX word wrapping algorithm")
-
+AddCredit("Robin Dunn", "for the omnipresence on the wxPython mailing list and the feature list on his blog")
+AddCredit("Dinu Gherman", "for the <a href=\"http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/68205\">Null object implementation</a>")
 copyrights = {}
 def AddCopyright(project, website, author, date, reason=""):
     copyrights[project] = ({'website': website,
@@ -193,3 +199,4 @@ def AddCopyright(project, website, author, date, reason=""):
                        'reason': reason,
                        })
     substitutes['gpl_code']="\n".join(["<li>%(reason)s <a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights.values()])
+AddCopyright("itools", "http://www.ikaaro.org/itools", "Juan David Ibanez Palomar et al.", "2002-2007", "Virtual filesystem implementation from")

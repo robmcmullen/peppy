@@ -1,0 +1,44 @@
+<P>There will be different ways to download peppy.  Currently, you can download
+the raw source code and run it yourself from the command line, but in the
+future you'll be able to download installers for windows or Mac OSX and run
+them as binary programs.
+
+<h2>Current Source Code</h2>
+
+<P>If you want to look at the source code before you download, you can browse
+it online using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or
+<a href="http://trac.flipturn.org/browser/">trac</a>.
+
+<P>There are two ways to get the source code: download the current release, or
+use subversion to get the current development snapshot.
+
+<dl>
+<dt><strong>Recommended:</strong> download current release: <a href="http://www.flipturn.org/peppy/archive/peppy-$version.tar.bz2">peppy-$version.tar.bz2</a>
+<dd>If you're using unix or linux:
+<ul>
+<li>tar xvf peppy-$version.tar.bz2
+<li>cd peppy-$version
+<li>python peppy.py
+</ul>
+<dd>If you're using windows:
+<ul>
+<li>extract the archive using winzip, 7zip, or another extracter
+<li>go to the extracted folder peppy-$version
+<li>double-click on peppy.py
+</ul>
+
+<dt><strong>Advanced:</strong> checkout using svn to get the current development snapshot.
+<dd>If you're using unix or linux:
+<ul>
+<li>svn co http://svn.flipturn.org/peppy/trunk peppy
+<li>cd peppy
+<li>python peppy.py
+</ul>
+</dl>
+
+
+<h2>Windows Installer</h2>
+<P>coming soon...
+
+<h2>Mac OSX Installer</h2>
+<P>coming less soon but hopefully not too far off...

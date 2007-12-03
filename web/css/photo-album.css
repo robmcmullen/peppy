@@ -1,0 +1,58 @@
+/* Picture frame layout technique as found in 
+http://alistapart.com/articles/practicalcss */
+
+body {
+  font-size: 9pt;
+  font-family: verdana,arial,helvetica;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 0;
+}
+
+h1 { 
+  font-size: 24pt;
+  font-family: verdana,arial,helvetica;
+  border-bottom-style: dotted;
+  border-bottom-width: 1px;
+  border-bottom-color: green;
+}
+
+.picframe {
+  margin: 10px 0px 0px 10px;
+  padding: 2px;
+  font-size: 9pt;
+  border-width: 1px;
+  border-style: solid;
+  display: inline;
+  float: left;
+  background-color: #eee;
+  overflow: hidden;
+  width: 120px;
+}
+
+.picframe .caption { 
+  padding: 0px;
+/* make the width really big so that we don't wrap text onto multiple lines */
+  width: 2000px;
+  overflow: hidden;
+/*  background-color: #400; */
+}
+
+.picimage { 
+/*  width: 120px; */
+  height: 90px;
+/*  background-color: #540; */
+}
+
+.picimage img { 
+  border-width: 0;
+  margin: 0px;
+  padding: 0px;
+
+  /* center the image by turning it into a block and setting margins to auto */
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+/*  background-color: #004; */
+}

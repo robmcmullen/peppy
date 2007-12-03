@@ -10,6 +10,8 @@ import __builtin__
 import wx
 from wx.lib.pubsub import Publisher
 
+import peppy.vfs as vfs
+
 from peppy.buffers import *
 from peppy.frame import BufferFrame
 from peppy.configprefs import *
@@ -296,6 +298,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             del sys.argv[index:index + 1]
             self.no_setuptools = True
 
+        if "--no-splash" in sys.argv:
+            index = sys.argv.index("--no-splash")
+            del sys.argv[index:index + 1]
+            self.no_splash = True
+
         self.dprint("argv after: %s" % (sys.argv,))
     
     def getOptionParser(self):
@@ -312,6 +319,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
         parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
         parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False)
+        parser.add_option("--no-splash", action="store_false", dest="splash", default=True)
+        parser.add_option("--thanks", action="store_true", dest="thanks", default=False)
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -341,6 +350,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if not self.options.log_stderr:
             debuglog(errorRedirector('debug'))
             errorlog(errorRedirector('error'))
+        
+        if self.options.thanks:
+            fh = vfs.open("about:thanks")
+            print fh.read()
+            sys.exit()
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -529,7 +543,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             if self.verbose > 0: dprint("Configuration file %s not found" % self.config.fullpath(filename))
 
     def startSplash(self):
-        if self.classprefs.show_splash:
+        if self.classprefs.show_splash and not hasattr(self, 'no_splash'):
             import peppy.splash_image
             self.splash = GaugeSplash(peppy.splash_image.getBitmap())
             self.splash.Show()
@@ -538,7 +552,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             self.splash.Update()
             wx.Yield()
         else:
-            self.splash = None
+            from peppy.lib.null import Null
+            self.splash = Null()
         
     def stopSplash(self):
         if self.splash:

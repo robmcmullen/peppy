@@ -19,6 +19,7 @@ namespace={
     'cvs_version':None,
     'release_version':None,
     'version':None,
+    'codename': None,
     'release_date':None, # should stat the file instead
     'release_file':None,
     'today':date.today().strftime("%d %B %Y"),
@@ -212,15 +213,16 @@ if __name__=='__main__':
 
     setnamespace(options.mil)
 
-    if options.namespace:
-        for keyword,filename in options.namespace:
-            # print "keyword=%s filename=%s" % (keyword,filename)
-            store(keyword,filename)
-
+    # Static value setting should happen before anything
     if options.keyvalue:
         for keyword,value in options.keyvalue:
             print "keyword=%s value=%s" % (keyword,value)
             remap(keyword,value)
+
+    if options.namespace:
+        for keyword,filename in options.namespace:
+            # print "keyword=%s filename=%s" % (keyword,filename)
+            store(keyword,filename)
 
     if options.remapkey:
         for key1,key2 in options.remapkey:

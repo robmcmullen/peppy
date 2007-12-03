@@ -58,7 +58,6 @@ class HelpAbout(SelectAction):
             people[copyright['author']] = 1
         #dprint(people.keys())
         devs.extend(people.keys())
-        devs.extend(("", _("See the file THANKS for more credits")))
         info.Developers = devs
         dprint(info.Developers)
 
