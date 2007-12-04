@@ -205,6 +205,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.startSplash()
 
         count = self.countYapsyPlugins() + 7
+        count += self.countImports()
         self.splash.setTicks(count)
         
         self.splash.tick("Loading standard plugins...")
@@ -577,6 +578,14 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             return False
         return True
 
+    def countImports(self):
+        try:
+            import peppy.py2exe_plugins_count
+            count = peppy.py2exe_plugins_count.count
+        except:
+            count = 0
+        return count
+
     def autoloadImports(self):
         # FIXME: Could make mainmenu a plugin, but at least have to
         # defer main menu loading till after the i18n '_' method is
@@ -591,7 +600,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             pass
 
     def gaugeCallback(self, plugin_info):
-        self.splash.tick("Loading %s..." % plugin_info.name)
+        if isinstance(plugin_info, str):
+            name = plugin_info
+        else:
+            name = plugin_info.name
+        self.splash.tick("Loading %s..." % name)
 
     def countYapsyPlugins(self):
         """Autoload plugins from peppy plugins directory.

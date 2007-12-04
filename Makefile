@@ -109,11 +109,15 @@ distdir:
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	
 	cp graphics/peppy.ico $(distdir)
-	cp peppy.nsi $(distdir)
+	cp win-executable.nsi $(distdir)
+	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
 	
 	mkdir $(distdir)/scripts
 	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
 	cp $(WINBATCH) $(distdir)/scripts
+
+nsis:
+	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) 2>&1 | tee epydoc.out

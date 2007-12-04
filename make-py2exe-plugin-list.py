@@ -7,6 +7,8 @@ from optparse import OptionParser
 
 __builtin__._ = str
 
+plugin_count = 0
+
 def entry(filename, out=None, copythese=None):
     print "Processing filename %s" % filename
     if filename.endswith(".py"):
@@ -15,6 +17,9 @@ def entry(filename, out=None, copythese=None):
         if not filename.endswith("__init__.py") or True:
             module = filename[:-3].replace('/', '.').replace('\\', '.')
             if out:
+                global plugin_count
+                plugin_count += 1
+                out.write("app.gaugeCallback('%s')\n" % module)
                 out.write("import %s\n" % (module))
 
 def process(path, out=None, copythese=None):
@@ -111,5 +116,13 @@ if __name__ == "__main__":
     # Need to force the importing of the editra style definition files
     process('editra/syntax', out)
 
-    fh = open(os.path.join(savepath, options.output), 'w')
+    filename = os.path.join(savepath, options.output)
+    fh = open(filename, 'w')
+    fh.write("import wx\napp = wx.GetApp()\n")
     fh.write(out.getvalue())
+    fh.close()
+    
+    countname = filename.replace(".py", "_count.py")
+    fh = open(countname, 'w')
+    fh.write("count = %d\n" % plugin_count)
+    fh.close()

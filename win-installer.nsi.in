@@ -1,0 +1,114 @@
+; Windows installer borrowed from editra
+
+; HM NIS Edit Wizard helper defines
+!define PRODUCT_NAME "$prog"
+!define PRODUCT_VERSION "$version"
+!define PRODUCT_PUBLISHER "$author"
+!define PRODUCT_WEB_SITE "$url"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\$prog.exe"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+
+SetCompressor lzma
+
+; MUI 1.67 compatible ------
+!include "MUI.nsh"
+
+; MUI Settings
+!define MUI_ABORTWARNING
+!define MUI_ICON "..\graphics\peppy48.ico"
+!define MUI_UNICON "..\graphics\peppy48.ico"
+
+; Welcome page
+!insertmacro MUI_PAGE_WELCOME
+; License page
+!insertmacro MUI_PAGE_LICENSE "LICENSE"
+; Directory page
+!insertmacro MUI_PAGE_DIRECTORY
+; Instfiles page
+!insertmacro MUI_PAGE_INSTFILES
+; Finish page
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "Run $prog"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchProg"
+!insertmacro MUI_PAGE_FINISH
+
+; Uninstaller pages
+!insertmacro MUI_UNPAGE_INSTFILES
+
+; Language files
+!insertmacro MUI_LANGUAGE "English"
+
+; Reserve files
+!insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+
+; MUI end ------
+
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+OutFile "$prog-$version-win32.exe"
+InstallDir "$PROGRAMFILES\$prog"
+InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
+ShowInstDetails show
+ShowUnInstDetails show
+
+; Section "MainSection" SEC01
+;   FindProcDLL::FindProc "$prog.exe"
+;   StrCmp $R0 0 continueInstall
+;     MessageBox MB_ICONSTOP|MB_OK "${PRODUCT_NAME} is still running please close all running instances and try to install again"
+;     Abort
+;   continueInstall:
+; SectionEnd
+
+Section "MainSection" SEC02
+  SetOverwrite try
+  SetOutPath "$INSTDIR\"
+  File /r "dist\*.*"
+  CreateDirectory "$SMPROGRAMS\$prog"
+  CreateShortCut "$SMPROGRAMS\$prog\$prog.lnk" "$INSTDIR\$prog.exe"
+  CreateShortCut "$DESKTOP\$prog.lnk" "$INSTDIR\$prog.exe"
+SectionEnd
+
+Section -AdditionalIcons
+  WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
+  CreateShortCut "$SMPROGRAMS\$prog\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  CreateShortCut "$SMPROGRAMS\$prog\Uninstall.lnk" "$INSTDIR\uninst.exe"
+SectionEnd
+
+Section -Post
+  WriteUninstaller "$INSTDIR\uninst.exe"
+  WriteRegStr HKLM "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\$prog.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\$prog.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+SectionEnd
+
+; Functions
+Function LaunchProg
+  Exec '"$INSTDIR\$prog.exe"'
+FunctionEnd
+
+Function un.onUninstSuccess
+  HideWindow
+  MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully removed from your computer."
+FunctionEnd
+
+Function un.onInit
+  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
+  Abort
+FunctionEnd
+
+Section Uninstall
+  RmDir /r "$INSTDIR\"
+  Delete "$SMPROGRAMS\$prog\Uninstall.lnk"
+  Delete "$SMPROGRAMS\$prog\Website.lnk"
+  Delete "$DESKTOP\$prog.lnk"
+  Delete "$SMPROGRAMS\$prog\$prog.lnk"
+  RMDir "$SMPROGRAMS\$prog"
+  DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
+  DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
+  SetAutoClose true
+SectionEnd
+
