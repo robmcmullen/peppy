@@ -46,7 +46,10 @@ web at http://trac.flipturn.org/roadmap
 DOCUMENTATION
 =============
 
-Currently a bit lacking.  See the web at http://www.flipturn.org/peppy
+Currently a bit lacking.  See the web at:
+
+  $url
+
 for what's available.
 
 
@@ -86,21 +89,15 @@ for more information.
 
 
 
-INSTALLATION
-============
+RUNNING THE PROGRAM
+===================
 
 This is still alpha software, so caveat emptor.  I recommend just
 running it out of the directory in which the software was unpacked.
 
-If you really want to install the software in the python site-packages
-directory, see the file INSTALL in this directory.  Since it is
-packaged using the standard Python distutils system, though, you can
-really just do:
-
-$ python setup.py install
-
-but again I don't necessarily recommend it as this is currently not
-what you'd call stable software.
+$ tar xfv peppy-$version.tar.bz2
+$ cd peppy-$version
+$ python peppy.py
 
 
 
@@ -124,23 +121,6 @@ in the tests/ directory.
 
 
 
-RUNNING THE PROGRAM
-===================
-
-If you installed the software, it should have put the command 'peppy'
-somewhere in your path, in which case you can start it right from the
-command line with:
-
-$ peppy
-
-Probably the better way to run peppy for the moment is not to install
-it, but run it right out of the directory that you just unpacked.
-This command is simply:
-
-$ python peppy.py
-
-
-
 KNOWN ISSUES
 ============
 
@@ -160,7 +140,8 @@ I'd suggest saving your work before trying it.
 CREDITS
 =======
 
-See the file THANKS in this directory.
+See the the web at $url/thanks.html
+for a complete list of contributors.
 
 
 

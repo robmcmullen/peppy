@@ -1,14 +1,30 @@
-<P>There will be different ways to download peppy.  Currently, you can download
-the raw source code and run it yourself from the command line, but in the
-future you'll be able to download installers for windows or Mac OSX and run
-them as binary programs.
+<h1>Prerequisites</h1>
 
-<h2>Current Source Code</h2>
+<P>Peppy requires <a href="http://www.python.org">Python</a> and the <a
+href="http://www.wxpython.org">wxPython</a> widget toolkit to operate.
 
-<P>If you want to look at the source code before you download, you can browse
-it online using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or
-<a href="http://trac.flipturn.org/browser/">trac</a>.
+<ul>
+<li>Install python following <a href="http://www.python.org/download/">these
+instructions</a> for your platform.
 
+<li>Install wxpython following <a
+href="http://www.wxpython.org/download.php">these instructions</a> for your
+platform.
+</ul>
+
+<P>Some of the optional major modes require <a
+href="http://numpy.scipy.org/">NumPy</a>, but NumPy is <strong>not</strong>
+required to run peppy.
+
+<h1>Download</h1>
+
+<h2>Windows Installer</h2>
+<P>coming soon...
+
+<h2>Mac OSX Installer</h2>
+<P>coming less soon but hopefully not too far off...
+
+<h2>Unix and Source Code Download</h2>
 <P>There are two ways to get the source code: download the current release, or
 use subversion to get the current development tree.
 
@@ -36,9 +52,8 @@ use subversion to get the current development tree.
 </ul>
 </dl>
 
+<h2>Current Source Code</h2>
 
-<h2>Windows Installer</h2>
-<P>coming soon...
-
-<h2>Mac OSX Installer</h2>
-<P>coming less soon but hopefully not too far off...
+<P>If you want to look at the source code before you download, you can browse
+it online using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or
+<a href="http://trac.flipturn.org/browser/">trac</a>.

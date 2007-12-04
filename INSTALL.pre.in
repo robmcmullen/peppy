@@ -9,32 +9,11 @@ $url
 INSTALLATION
 ============
 
-NOTE!  I don't actually recommend installing peppy to the site-packages
-directory; instead, I recommend you just unpack the source and run it
-from there.  But if you really really want to unpack it to the system-wide
-site-packages directory, read on...
+NOTE! Since peppy is an application and not a library, it is not installed in
+the site-packages directory.  I recommend you just unpack the source and run
+it from there.  See the README for more instructions.
 
-
-Unix Installation Instructions
-------------------------------
-
-peppy follows the standard python module installation process using
-distutils.  It installs the peppy module to site-packages, and the
-peppy script to the default binary directory.
-
-Depending on the permissions of your system, you may have to be root
-to install.
-
-$ python setup.py install
-
-
-Windows Installation Instructions
----------------------------------
-
-I'm currently not providing a windows installer, but that might change
-in the future.  For now, just follow the Unix installation
-instructions.  There are no compiled extensions, so there shouldn't be
-any differences between the two installation procedures.
+If you're looking for more info on how to install optional packages, read on...
 
 
 
