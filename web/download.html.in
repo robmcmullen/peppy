@@ -8,10 +8,10 @@ is contained within the installer.
 install from source code, as described below.
 
 <h2>Windows Installer</h2>
-<P>coming soon...
+<P><a href="http://peppy.flipturn.org/archive/peppy-$version-win32.exe">peppy-$version-win32.exe</a>
 
 <h2>Mac OSX Installer</h2>
-<P>coming less soon but hopefully not too far off...
+<P>coming soon (hopefully)...
 
 <h1>Source Code</h1>
 

@@ -1,3 +1,12 @@
+2007-12-04  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.1.2 update to "The Winchester"
+	* added virtual filesystem from itools
+	* added mem: virtual filesystem for temporary files
+	* fragments in urls are handled as line numbers in most modes (i.e.
+	file://blah/stuff.txt#223 will open the file to line number 223)
+	* clicking on file in python traceback goes to the correct line
+
 2007-11-14  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.1.1 update to "The Winchester"

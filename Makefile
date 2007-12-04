@@ -30,7 +30,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 GIT_LIST = $(shell git-ls-files)
-GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/
+GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/ web/%
 GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
 DISTSRC := $(filter %.py,$(GIT_FILTERED))
 DISTFILES := README INSTALL $(GIT_FILTERED)
@@ -65,13 +65,13 @@ web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
 web/screenshots.html.in:
 	(cd web; photo-album.py --nodatedir 0.*; photo-index.py -a -b -r -o screenshots.html.in)
-$(HTML): web/template.html.in web/mainmenu.html.in
+$(HTML): web/template.html.in web/mainmenu.html.in ChangeLog
 
 publish_html: html
 	rsync -avuz $(WEBSITE) robm351@www.flipturn.org:peppy.flipturn.org/
 
 publish_api: api
-	rsync -avuz api robm351@www.flipturn.org:flipturn.org/peppy/
+	rsync -avuz api robm351@www.flipturn.org:peppy.flipturn.org/
 
 release: dist
 	-mkdir -p archive
@@ -81,7 +81,7 @@ splash:
 	img2py -u graphics/peppy-splash.png peppy/splash_image.py
 
 publish: api release
-	rsync -avuz api archive robm351@www.flipturn.org:flipturn.org/peppy/
+	rsync -avuz $(WEBSITE) archive robm351@www.flipturn.org:peppy.flipturn.org/
 
 
 dist: distdir
