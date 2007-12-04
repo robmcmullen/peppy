@@ -77,7 +77,7 @@ body {
 
 #signatureLine { 
   padding-top: 4px;
-  float: left;
+  text-align: right;
 }
 
 #signatureLogo { 

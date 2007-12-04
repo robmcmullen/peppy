@@ -10,10 +10,10 @@ it online using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or
 <a href="http://trac.flipturn.org/browser/">trac</a>.
 
 <P>There are two ways to get the source code: download the current release, or
-use subversion to get the current development snapshot.
+use subversion to get the current development tree.
 
 <dl>
-<dt><strong>Recommended:</strong> download current release: <a href="http://www.flipturn.org/peppy/archive/peppy-$version.tar.bz2">peppy-$version.tar.bz2</a>
+<dt><strong>Recommended:</strong> download current release: <a href="http://peppy.flipturn.org/archive/peppy-$version.tar.bz2">peppy-$version.tar.bz2</a>
 <dd>If you're using unix or linux:
 <ul>
 <li>tar xvf peppy-$version.tar.bz2
@@ -27,7 +27,7 @@ use subversion to get the current development snapshot.
 <li>double-click on peppy.py
 </ul>
 
-<dt><strong>Advanced:</strong> checkout using svn to get the current development snapshot.
+<dt><strong>Advanced:</strong> checkout using svn to get the current development tree.
 <dd>If you're using unix or linux:
 <ul>
 <li>svn co http://svn.flipturn.org/peppy/trunk peppy

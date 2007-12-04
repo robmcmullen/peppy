@@ -1,9 +1,9 @@
 # Documentation builder stuff
 
-HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html README.html
+HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html
 PRE = 
-CSS = 
-IMAGES = 
+CSS = web/css web/js
+IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7
 WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
 
 # Distribution stuff
@@ -68,7 +68,7 @@ web/screenshots.html.in:
 $(HTML): web/template.html.in web/mainmenu.html.in
 
 publish_html: html
-	rsync -avuz $(WEBSITE) robm@peppy.sourceforge.net:/home/groups/p/py/peppy/htdocs
+	rsync -avuz $(WEBSITE) robm351@www.flipturn.org:peppy.flipturn.org/
 
 publish_api: api
 	rsync -avuz api robm351@www.flipturn.org:flipturn.org/peppy/
