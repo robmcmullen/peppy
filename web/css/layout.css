@@ -17,6 +17,10 @@ body {
   border-bottom-style: solid;
 }
 
+#titleLine img {
+  border: 0px;
+}
+
 #siteTitle {
 	font-size: 26pt;
 }

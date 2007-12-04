@@ -17,7 +17,7 @@
 	<div id="contentWrapper">
 		<div id="header">
 			<div id="titleLine">
-                            <img src="peppy-web-logo.png" alt="$prog - $description"/>
+                            <a href="$url"><img src="peppy-web-logo.png" alt="$prog - $description"/></a>
 			</div>
 		</div>
 		<div id="mainMenu">
