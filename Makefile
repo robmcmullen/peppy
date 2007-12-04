@@ -59,7 +59,7 @@ INSTALL: INSTALL.pre.in ChangeLog
 
 doc: README INSTALL
 
-html: $(HTML) $(PRE)
+html: $(HTML) $(PRE) README.html doc
 	cp README.html web/
 web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
