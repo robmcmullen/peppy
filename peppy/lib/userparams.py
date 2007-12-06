@@ -239,6 +239,10 @@ class Param(debugmixin):
         """True if the user can set this parameter"""
         return True
 
+    def isVisible(self):
+        """True if this item is to be displayed."""
+        return True
+
     def getLabel(self, parent):
         if self.alt_label == False:
             return None
@@ -383,6 +387,10 @@ class ReadOnlyParam(debugmixin):
     def isSettable(self):
         return False
 
+class ParamSection(ReadOnlyParam):
+    def isVisible(self):
+        return False
+    
 class BoolParam(Param):
     """Boolean parameter that displays a checkbox as its user interface.
 
@@ -469,6 +477,11 @@ class StrParam(Param):
     """
     default = ""
     pass
+
+class UnquotedStrParam(StrParam):
+    """String parameter that doesn't enclose the string in quotes"""
+    def valueToText(self, value):
+        return value
 
 class DateParam(Param):
     """Date parameter that displays a DatePickerCtrl as its user
@@ -1310,12 +1323,23 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 # Don't put another control if it exists in a superclass
                 continue
 
-            if row == 0 and col == 0:
+            if isinstance(param, ParamSection):
+                name = param.keyword
+                
+            if name:
                 box = wx.StaticBox(parent, -1, name)
                 bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
                 sizer.Add(bsizer)
                 grid = wx.GridBagSizer(2,5)
                 bsizer.Add(grid, 0, wx.EXPAND)
+                
+                # reset so it acts as a flag
+                name = None
+                row = 0
+                col = 0
+            
+            if not param.isVisible():
+                continue
             
             width = 1
             title = param.getLabel(parent)
