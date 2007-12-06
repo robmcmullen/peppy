@@ -25,7 +25,7 @@ def normalize(ref, base=None):
         base = base.replace(os.path.sep, '/')
     # Check windows drive letters
     if base[1] == ':':
-        base = "%s:%s" (base[0].lower(), base[2:])
+        base = "%s:%s" % (base[0].lower(), base[2:])
     baseref = get_reference('file://%s/' % base)
     return baseref.resolve(ref)
 
