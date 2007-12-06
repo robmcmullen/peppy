@@ -11,7 +11,7 @@ SetCompressor lzma
 Name 'Peppy'
 OutFile ${exe}
 SilentInstall silent
-Icon 'peppy.ico'
+Icon '..\graphics\peppy48.ico'
 
 Section
     InitPluginsDir
