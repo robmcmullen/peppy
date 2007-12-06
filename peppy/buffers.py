@@ -84,6 +84,9 @@ class BufferList(GlobalList):
 #### Buffers
 
 class BufferVFSMixin(debugmixin):
+    """Mixin class that compartmentalizes the interaction with the vfs
+    
+    """
     def __init__(self, url):
         self.bfh = None
         self.setURL(url)
@@ -128,6 +131,15 @@ class BufferVFSMixin(debugmixin):
 
 
 class Buffer(BufferVFSMixin):
+    """Abstraction around a file-like object obtained from a url.
+    
+    Each buffer instance corresponds a unique url, handles the interaction
+    between the file-like object that is used to read the data and the
+    STCInterface that is used to hold the representation in memory.
+    
+    The STCInterface provides the low-level access to the file, and there is a
+    one-to-one mapping from a buffer to an STCInterface instance.
+    """
     count=0
     debuglevel=0
 
@@ -242,7 +254,7 @@ class Buffer(BufferVFSMixin):
         return self.displayname
 
     def openGUIThreadStart(self):
-        self.dprint("url: %s" % repr(self.url))
+        self.dprint("url: %s" % str(self.url))
         if self.defaultmode is None:
             self.defaultmode = MajorModeMatcherDriver.match(self)
         self.dprint("mode=%s" % (str(self.defaultmode)))

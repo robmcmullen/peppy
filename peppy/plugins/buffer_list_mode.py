@@ -25,7 +25,7 @@ class ListAllBuffers(SelectAction):
     key_bindings = {'emacs': "C-X C-B", }
 
     def action(self, index=-1, multiplier=1):
-        self.frame.open("buffers:")
+        self.frame.open("about:buffers")
 
 
 class BufferListSTC(NonResidentSTC):
@@ -405,8 +405,8 @@ class BufferListMode(MajorMode):
     def verifyProtocol(cls, url):
         # Use the verifyProtocol to hijack the loading process and
         # immediately return the match if we're trying to load
-        # about:blank
-        if url.scheme == 'buffers':
+        # about:buffers
+        if url.scheme == 'about' and url.path == 'buffers':
             return True
         return False
 
