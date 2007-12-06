@@ -5,7 +5,7 @@
 Major mode for editing makefiles.
 """
 
-import os,struct
+import os, re
 import keyword
 from cStringIO import StringIO
 
@@ -14,7 +14,7 @@ import wx.stc
 
 from peppy.menu import *
 from peppy.major import *
-from peppy.fundamental import FundamentalMode
+from peppy.fundamental import *
 
 # A sample makefile is provided
 _sample_file = """\
@@ -57,6 +57,57 @@ class SampleMakefile(SelectAction):
         self.frame.open("about:sample.mak")
 
 
+class MakefileIndentMixin(object):
+    commandre = "[^\s\"\']+:"
+    
+    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
+        """Reindent the specified line to the correct level.
+
+        Given a line, use some regex matching to determine the correct indent
+        level.
+        """
+        # The text begins at indpos; check some special cases to see if there
+        # should be a dedent
+        end = self.GetLineEndPosition(linenum)
+        cmd = self.GetTextRange(before, end)
+        dprint(cmd)
+        
+        # skip blank lines
+        if len(cmd) > 0:
+            # don't reindent comments
+            if cmd[0] == "#": return ind
+            
+            match = re.match(self.commandre, cmd)
+            if match:
+                # it's a command, so it shouldn't be indented.
+                dprint("It's a command!  indent=0")
+                return 0
+        
+        # OK, not a command, so it depends on context.
+        while linenum > 0:
+            linenum -= 1
+            start = self.PositionFromLine(linenum)
+            style = self.GetStyleAt(start)
+            dprint("line=%d start=%d style=%d" % (linenum, start, style))
+            if style == 5:
+                # OK, it's a possible command.
+                end = self.GetLineEndPosition(linenum)
+                cmd = self.GetTextRange(start, end)
+                match = re.match(self.commandre, cmd)
+                if match:
+                    # Yep, a command.  This line should be tabbed
+                    dprint("tabbed!")
+                    return 8
+                return 0
+            elif style == 3:
+                return 0
+
+        return ind
+
+class MakefileSTC(MakefileIndentMixin, FundamentalSTC):
+    debuglevel = 1
+    pass
+
 # The Makefile major mode is descended from FundamentalMode, meaning that
 # it is an STC based editing window.  Currently, no particular additional
 # functionality is present in the mode except for overriding some
@@ -76,6 +127,8 @@ class MakefileMode(FundamentalMode):
     # Any files matching this regex will be candidates for this major
     # mode
     regex="(\.mak|[Mm]akefile.*)$"
+
+    stc_viewer_class = MakefileSTC
 
     default_classprefs = (
         # Overrides from FundamentalMode classprefs

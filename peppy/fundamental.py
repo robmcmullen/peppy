@@ -111,7 +111,10 @@ class ReindentBase(object):
     def reindentLine(self, linenum=None, dedent_only=False):
         """Reindent the specified line to the correct level.
 
-        Given a line, indent to the previous line
+        Given a line, indent to the previous line.
+        
+        Return the new cursor position, in case the cursor has moved as a
+        result of the indention.
         """
         if linenum is None:
             linenum = self.GetCurrentLine()
@@ -158,6 +161,20 @@ class ReindentBase(object):
         return newpos
 
     def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
+        """User hook to return the new indentation position.
+        
+        This routine should be overridden in subclasses to provide the correct
+        indentation of the first not-blank character of the line.
+        
+        linenum: current line number
+        linestart: position of character at column zero of line
+        pos: position of cursor
+        indpos: position of first non-blank character in line
+        col: column number of cursor
+        indcol: column number of first non-blank character
+        
+        return: the number of columns to indent, or None to leave as-is
+        """
         return None
 
 
