@@ -108,7 +108,6 @@ distdir:
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	
-	cp graphics/peppy.ico $(distdir)
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
 	
