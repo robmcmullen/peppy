@@ -67,15 +67,17 @@ class TarFS(BaseFS):
             #print("archive_path=%s" % archive_path)
             if os.path.exists(archive_path):
                 try:
-                    archive = BaseFS.find_cached('tar', archive_path)
+                    archive = BaseFS.find_local_cached('tar', archive_path)
                     if not archive:
                         archive = tarfile.open(archive_path)
                         if archive:
-                            BaseFS.store_cache('tar', archive_path, archive)
+                            BaseFS.store_local_cache('tar', archive_path, archive)
                     archive_found = True
                     break
                 except Exception, e:
-                    #print e
+                    #import traceback
+                    #traceback.print_exc()
+                    #print("Exception: %s" % str(e))
                     pass
         if archive_found:
             members = archive.getmembers()

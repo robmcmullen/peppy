@@ -10,6 +10,8 @@ import peppy.vfs.mem
 import peppy.vfs.http
 import peppy.vfs.tar
 
+from peppy.debug import *
+
 def normalize(ref, base=None):
     """Normalize a url string into a reference and fix windows shenanigans"""
     if not isinstance(ref, Reference):
@@ -43,22 +45,54 @@ def canonical_reference(ref):
     return ref
     
 
-# Simple cache of files.  FIXME: restrict the list to only keep the last few
-# files in memory.
+# Simple cache of wrappers around local filesystem objects.
 cache = {}
-def find_cached(fstype, path):
+max_cache = 5
+def remove_from_cache(fstype, path):
     if fstype in cache:
         subcache = cache[fstype]
-        if path in subcache:
-            return subcache[path]
-    return None
-BaseFS.find_cached = staticmethod(find_cached)
+        newlist = []
+        for saved_path, saved_mtime, obj in subcache:
+            if path != saved_path:
+                newlist.append((saved_path, saved_mtime, obj))
+        cache[fstype] = newlist
 
-def store_cache(fstype, path, obj):
+def find_local_cached(fstype, path):
+    if fstype in cache:
+        subcache = cache[fstype]
+        for i in range(len(subcache)):
+            saved_path, saved_mtime, obj = subcache[i]
+            #dprint("path=%s: checking %s: mtime=%s" % (path, saved_path, saved_mtime))
+            if path == saved_path:
+                try:
+                    mtime = os.path.getmtime(path)
+                    if mtime > saved_mtime:
+                        #dprint("modification time changed: %s to %s for %s" % (saved_mtime, mtime, path))
+                        remove_from_cache(fstype, path)
+                    else:
+                        #dprint("found match %s" % saved_path)
+                        return obj
+                except:
+                    import traceback
+                    #traceback.print_exc()
+                    #print("Exception: %s" % str(e))
+                    remove_from_cache(fstype, path)
+                return None
+    return None
+BaseFS.find_local_cached = staticmethod(find_local_cached)
+
+def store_local_cache(fstype, path, obj):
     if fstype not in cache:
-        cache[fstype] = {}
-    cache[fstype][path] = obj
-BaseFS.store_cache = staticmethod(store_cache)
+        cache[fstype] = []
+    subcache = cache[fstype]
+    # new items inserted at the beginning of the list
+    subcache[0:0] = [(path, os.path.getmtime(path), obj)]
+    print subcache
+    # truncate the list if it's getting too big.
+    if len(subcache) > max_cache:
+        subcache = subcache[0:max_cache]
+    
+BaseFS.store_local_cache = staticmethod(store_local_cache)
 
 
 __all__ = [
