@@ -43,6 +43,8 @@ class TarTestCase(TestCase):
     def test01_type_checking(self):
         self.assertEqual(True, vfs.is_file('file:vfs/sample.tar.bz2'))
         self.assertEqual(False, vfs.is_file('tar:vfs/sample.tar.bz2'))
+        self.assertEqual(True, vfs.is_folder('tar:vfs/sample.tar.bz2'))
+        self.assertEqual(True, vfs.is_folder('tar:vfs/sample.tar.bz2/'))
         self.assertEqual(True, vfs.is_file('tar:vfs/sample.tar.bz2/small.py'))
         self.assertEqual(True, vfs.is_folder('tar:vfs/sample.tar.bz2/dir1/'))
         self.assertEqual(True, vfs.is_file('tar:vfs/sample.tar.bz2/dir1/hello1.txt'))

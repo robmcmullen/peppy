@@ -46,6 +46,7 @@ class TarFS(BaseFS):
         """
         parent = None
         
+        path = path.rstrip('/')
         #print("_open: path=%s" % path)
         components = path.split('/')
         components.reverse()
@@ -113,8 +114,8 @@ class TarFS(BaseFS):
     def is_file(cls, reference):
         path = str(reference.path)
         archive, path, name = cls._open(path)
-        if archive and name:
-            m = archive.getmember(name)
+        m = cls._get_info(archive, name)
+        if m:
             return m.isfile()
         return False
 
@@ -122,6 +123,9 @@ class TarFS(BaseFS):
     def is_folder(cls, reference):
         path = str(reference.path)
         archive, path, name = cls._open(path)
+        if not name:
+            # the root of the archive is a folder
+            return True
         m = cls._get_info(archive, name)
         if m:
             return m.isdir()
@@ -129,8 +133,7 @@ class TarFS(BaseFS):
 
     @classmethod
     def can_read(cls, reference):
-        path = str(reference.path)
-        return cls.is_file(path)
+        return cls.is_file(reference)
 
     @classmethod
     def can_write(cls, reference):
