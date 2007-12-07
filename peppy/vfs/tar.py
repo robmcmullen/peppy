@@ -50,7 +50,11 @@ class TarFS(BaseFS):
         components = path.split('/')
         components.reverse()
         
-        archive_path = ''
+        # handle absolute and relative paths
+        if path.startswith('/'):
+            archive_path = '/'
+        else:
+            archive_path = ''
         archive_found = False
         member_path = ''
         archive = None
