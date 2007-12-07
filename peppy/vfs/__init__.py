@@ -4,6 +4,7 @@ from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
 from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_system
 from peppy.vfs.itools.uri import *
+from peppy.vfs.itools.vfs.base import BaseFS
 
 import peppy.vfs.mem
 import peppy.vfs.http
@@ -41,6 +42,24 @@ def canonical_reference(ref):
         ref.path.endswith_slash = True
     return ref
     
+
+# Simple cache of files.  FIXME: restrict the list to only keep the last few
+# files in memory.
+cache = {}
+def find_cached(fstype, path):
+    if fstype in cache:
+        subcache = cache[fstype]
+        if path in subcache:
+            return subcache[path]
+    return None
+BaseFS.find_cached = staticmethod(find_cached)
+
+def store_cache(fstype, path, obj):
+    if fstype not in cache:
+        cache[fstype] = {}
+    cache[fstype][path] = obj
+BaseFS.store_cache = staticmethod(store_cache)
+
 
 __all__ = [
     ##### From vfs:

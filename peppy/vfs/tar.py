@@ -67,7 +67,11 @@ class TarFS(BaseFS):
             #print("archive_path=%s" % archive_path)
             if os.path.exists(archive_path):
                 try:
-                    archive = tarfile.open(archive_path)
+                    archive = BaseFS.find_cached('tar', archive_path)
+                    if not archive:
+                        archive = tarfile.open(archive_path)
+                        if archive:
+                            BaseFS.store_cache('tar', archive_path, archive)
                     archive_found = True
                     break
                 except Exception, e:
@@ -171,18 +175,17 @@ class TarFS(BaseFS):
         if not archive:
             raise OSError('[Errno 20] Not a directory')
         names = []
+        if name and not name.endswith('/'):
+            name = name + '/'
         cut = len(name)
         for possible in archive.getnames():
             if possible.startswith(name):
                 # Only match stuff in this directory; not directories further
                 # down.
-                #print("possible match for %s: %s" % (name, possible))
-                tmp = possible[cut:]
-                if tmp[0] == '/':
-                    tmp = tmp[1:]
-                tmp = tmp.replace('//', '/').rstrip('/') # for py 2.5
+                print("possible match for %s: %s" % (name, possible))
+                tmp = possible[cut:].replace('//', '/').rstrip('/') # for py 2.5
                 comps = tmp.split('/')
-                #print("tmp=%s comps=%s" % (tmp, comps))
+                print("tmp=%s comps=%s" % (tmp, comps))
                 if tmp and len(comps)==1:
                     names.append(tmp)
         #print("matches: %s" % names)
