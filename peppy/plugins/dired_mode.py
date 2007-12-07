@@ -195,7 +195,9 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        dprint("clicked on %d" % index)
+        path = self.GetItem(index, 4).GetText()
+        self.dprint("clicked on %d: path=%s" % (index, path))
+        self.mode.frame.open(path)
 
     def setSelectedIndexes(self, indexes):
         """Highlight the rows contained in the indexes array"""
@@ -334,8 +336,15 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
                 self.updating = False
                 self.reset()
 
-    def getMode(self, url):
+    def getKey(self, name):
+        url = self.url.resolve2(name)
         mode = []
+        if vfs.is_folder(url):
+            url.path.endswith_slash = True
+            mode.append("d")
+        else:
+            url.path.endswith_slash = False
+            mode.append("-")
         if vfs.can_read(url):
             mode.append("r")
         else:
@@ -344,7 +353,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
             mode.append("w")
         else:
             mode.append("-")
-        return "".join(mode)
+        return url, "".join(mode)
 
     def reset(self, msg=None):
         """Reset the list.
@@ -365,7 +374,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         cache = []
         show = -1
         for name in vfs.get_names(self.url):
-            key = self.url.resolve2(name)
+            key, mode = self.getKey(name)
             flags = self.getFlags(key)
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, flags)
@@ -373,7 +382,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
                 self.SetStringItem(index, 0, flags)
             self.SetStringItem(index, 1, name)
             self.SetStringItem(index, 2, str(vfs.get_size(key)))
-            self.SetStringItem(index, 3, self.getMode(key))
+            self.SetStringItem(index, 3, mode)
             self.SetStringItem(index, 4, str(key))
 
             index += 1
