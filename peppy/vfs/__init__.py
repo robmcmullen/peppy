@@ -35,6 +35,10 @@ def canonical_reference(ref):
     ref = normalize(str(ref))
     ref.query = {}
     ref.fragment = ''
+    
+    # make sure that any path that points to a folder ends with a slash
+    if is_folder(ref):
+        ref.path.endswith_slash = True
     return ref
     
 
