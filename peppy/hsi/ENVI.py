@@ -157,9 +157,12 @@ class Header(dict,MetadataMixin):
 
     @classmethod
     def identify(cls, urlinfo):
-        pair = cls.getFilePair(urlinfo)
-        if pair is not None and pair[1] is not None:
-            return True
+        try:
+            pair = cls.getFilePair(urlinfo)
+            if pair is not None and pair[1] is not None:
+                return True
+        except:
+            pass
         return False
         
     def open(self,filename=None):
