@@ -957,20 +957,41 @@ class MPDListSearch(wx.Panel, debugmixin):
         pass
 
 
-class MPDDatabase(wx.Panel, debugmixin):
-    """Control to search through the MPD database by pathname.
-
-    Displays pathnames and puts files into the file list.
+class MPDMode(wx.Panel, MajorMode):
+    """Major mode for controlling a Music Player Daemon.
+    
+    Displays various search boxes used to populate the mpd playlist.
     """
     debuglevel = 0
 
-    def __init__(self, major, parent):
+    keyword='MPD'
+    icon='icons/mpd.png'
+
+    stc_class = MPDSTC
+
+    default_classprefs = (
+        StrParam('minor_modes', 'MPD Playlist, MPD Currently Playing, MPD Search Results'),
+        IntParam('update_interval', 1),
+        IntParam('volume_step', 10),
+        IntParam('list_font_size', 8),
+        IntParam('list_width', 100),
+        StrParam('password', None),
+        )
+    
+    @classmethod
+    def verifyProtocol(cls, url):
+        if url.scheme == 'mpd':
+            return True
+        return False
+    
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
         wx.Panel.__init__(self, parent)
-        self.major = major
-        self.mpd = major.mpd
+        self.stc = self.buffer.stc
+        self.mpd = self.stc.mpd
 
         self.default_font = self.GetFont()
-        self.font = wx.Font(major.classprefs.list_font_size, 
+        self.font = wx.Font(self.classprefs.list_font_size, 
                             self.default_font.GetFamily(),
                             self.default_font.GetStyle(),
                             self.default_font.GetWeight())
@@ -1009,52 +1030,14 @@ class MPDDatabase(wx.Panel, debugmixin):
         page = self.notebook.GetCurrentPage()
         page.reset()
 
-
-
-class MPDMode(MajorMode, debugmixin):
-    """Major mode for controlling a Music Player Daemon.
-
-    ...
-    """
-    debug_level = 0
-    keyword='MPD'
-    icon='icons/mpd.png'
-
-    stc_class = MPDSTC
-
-    default_classprefs = (
-        StrParam('minor_modes', 'MPD Playlist, MPD Currently Playing, MPD Search Results'),
-        IntParam('update_interval', 1),
-        IntParam('volume_step', 10),
-        IntParam('list_font_size', 8),
-        IntParam('list_width', 100),
-        StrParam('password', None),
-        )
-    
-    @classmethod
-    def verifyProtocol(cls, url):
-        if url.scheme == 'mpd':
-            return True
-        return False
-    
-    def createEditWindow(self,parent):
-        """Create the main MPD music search window.
-
-        @param parent: parent window in which to create this window 
-        """
-        self.stc = self.buffer.stc
-        self.mpd = self.stc.mpd
-        win = MPDDatabase(self, parent)
-        return win
-
-    def createPostHook(self):
+    def createListenerPostHook(self):
         Publisher().subscribe(self.showMessages, 'mpd')
         eventManager.Bind(self.OnLogin, EVT_MPD_LOGGED_IN, win=wx.GetApp())
         self.login_shown = False
 
         self.OnTimer()        
-        self.editwin.Bind(wx.EVT_TIMER, self.OnTimer)
-        self.update_timer = wx.Timer(self.editwin)
+        self.Bind(wx.EVT_TIMER, self.OnTimer)
+        self.update_timer = wx.Timer(self)
         self.update_timer.Start(self.classprefs.update_interval*1000)
 
     def loadMinorModesPostHook(self):
