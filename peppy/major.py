@@ -101,11 +101,10 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("starting __init__ at 0.00000s")
         self.editwin.createWindowPostHook()
         self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
-        # FIXME: not dealing with minor modes right now
-#        self.loadMinorModes()
-#        self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
-#        self.loadMinorModesPostHook()
-#        self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
+        self.loadMinorModes()
+        self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
+        self.editwin.loadMinorModesPostHook()
+        self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
         self.editwin.createEventBindings()
         self.dprint("createEventBindings done in %0.5fs" % (time.time() - start))
         self.editwin.createEventBindingsPostHook()
@@ -144,11 +143,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     def loadMinorModes(self):
         """Find the listof minor modes to load and create them."""
         
-        minors = MinorMode.getValidMinorModes(self)
-        dprint("major = %s, minors = %s" % (self, minors))
+        minors = MinorMode.getValidMinorModes(self.editwin)
+        dprint("major = %s, minors = %s" % (self.editwin, minors))
 
         # get list of minor modes that should be displayed at startup
-        minor_list = self.classprefs.minor_modes
+        minor_list = self.editwin.classprefs.minor_modes
         if minor_list is not None:
             minor_names = [m.strip() for m in minor_list.split(',')]
             assert self.dprint("showing minor modes %s" % minor_names)
@@ -165,17 +164,9 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 minor.paneinfo.Show(False)
         self.createMinorPaneList()
 
-    def loadMinorModesPostHook(self):
-        """User hook after all minor modes have been loaded.
-
-        Use this hook if you need to initialize the set of minor modes
-        after all of them have been loaded.
-        """
-        pass
-
     def createMinorMode(self, minorcls):
         """Create minor modes and register them with the AUI Manager."""
-        minor=minorcls(self, self.splitter)
+        minor=minorcls(self.editwin, self.splitter)
         # register minor mode here
         if isinstance(minor, wx.Window):
             paneinfo = minor.getPaneInfo()
@@ -534,6 +525,14 @@ class MajorMode(ClassPrefs, debugmixin):
 
         Any listeners added by subclasses in createListenersPostHook
         should be removed here.
+        """
+        pass
+
+    def loadMinorModesPostHook(self):
+        """User hook after all minor modes have been loaded.
+
+        Use this hook if you need to initialize the set of minor modes
+        after all of them have been loaded.
         """
         pass
 
