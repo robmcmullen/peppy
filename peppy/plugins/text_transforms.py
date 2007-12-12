@@ -102,6 +102,25 @@ class Untabify(LineOrRegionMutateAction):
                 out.append(line)
         return out
 
+class CollapseBlankLines(LineOrRegionMutateAction):
+    """Collapse lines that have only whitespace down to only a return character."""
+    alias = "collapse-blank-lines"
+    name = "Collapse blank lines"
+    tooltip = "Remove whitespace from blank lines"
+    default_menu = ("Transform", 710)
+
+    def mutateLines(self, lines):
+        regex = re.compile('([\t ]+)$')
+        out = []
+        for line in lines:
+            match = regex.match(line)
+            if match:
+                # Remove everything but the line ending (if it exists)
+                out.append(line[len(match.group(1)):])
+            else:
+                out.append(line)
+        return out
+
 
 class CapitalizeWord(WordOrRegionMutateAction):
     """Title-case the current word.
@@ -208,7 +227,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 Reindent, CommentRegion, UncommentRegion,
                 FillParagraphOrRegion,
 
-                Tabify, Untabify,
+                Tabify, Untabify, CollapseBlankLines,
                 
                 Rot13,
                 ]
