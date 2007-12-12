@@ -448,24 +448,20 @@ class PythonParagraphMixin(StandardParagraphMixin):
         return True
 
 
-class PythonSTC(IDLEElectricReturnMixin, IDLEReindentMixin,
-                PythonParagraphMixin, FundamentalSTC):
-                    
+class PythonMode(IDLEElectricReturnMixin, IDLEReindentMixin,
+                 PythonParagraphMixin, JobControlMixin, FundamentalMode):
+    keyword='Python'
+    icon='icons/py.png'
+    regex="\.(py|pyx)$"
+
+    default_classprefs = (
+        )
+
     def isStyleString(self, style):
         return style == 3 or style == 7 or style == 6 or style == 4
         
     def isStyleComment(self, style):
         return style == 1
-
-class PythonMode(JobControlMixin, FundamentalMode):
-    keyword='Python'
-    icon='icons/py.png'
-    regex="\.(py|pyx)$"
-
-    stc_viewer_class = PythonSTC
-
-    default_classprefs = (
-        )
 
 
 class PythonPlugin(IPeppyPlugin):

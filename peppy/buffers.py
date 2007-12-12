@@ -141,7 +141,7 @@ class Buffer(BufferVFSMixin):
     one-to-one mapping from a buffer to an STCInterface instance.
     """
     count=0
-    debuglevel=1
+    debuglevel=0
 
     filenames={}
     
@@ -411,7 +411,7 @@ class LoadingMode(BlankMode):
                      self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
-    debuglevel = 1
+    debuglevel = 0
     
     def __init__(self, url, modecls):
         self.user_url = url

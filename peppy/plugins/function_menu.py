@@ -30,25 +30,25 @@ class FoldExplorerMenu(ListAction, OnDemandActionMixin):
     default_menu = ("Functions", 100)
     
     def getItems(self):
-        fold = self.mode.editwin.getFoldHierarchy()
+        fold = self.mode.getFoldHierarchy()
         nodes = fold.flatten()
         flat = [node.text.rstrip() for node in nodes]
         #dprint(flat)
         return flat
     
     def getHash(self):
-        return (self.mode.editwin.getFoldHierarchy(), self.mode.editwin.GetLineCount())
+        return (self.mode.getFoldHierarchy(), self.mode.GetLineCount())
 
     def updateOnDemand(self):
         # Update the dynamic menu here
-        self.mode.editwin.getFoldHierarchy()
+        self.mode.getFoldHierarchy()
         self.dynamic()
 
     def action(self, index=-1, multiplier=1):
-        fold = self.mode.editwin.getFoldHierarchy()
+        fold = self.mode.getFoldHierarchy()
         node = fold.findFlattenedNode(index)
         #dprint("index=%d node=%s" % (index, node))
-        self.mode.editwin.showLine(node.start)
+        self.mode.showLine(node.start)
         self.mode.focus()
 
 
@@ -77,7 +77,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
         
     def update(self, event=None):
         """Update tree with the source code of the editor"""
-        hierarchy = self.major.editwin.getFoldHierarchy()
+        hierarchy = self.major.getFoldHierarchy()
         #dprint(hierarchy)
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
@@ -96,7 +96,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())
-        self.major.editwin.showLine(node.start)
+        self.major.showLine(node.start)
         self.major.focus()
 
 
@@ -105,6 +105,6 @@ class FunctionMenuPlugin(IPeppyPlugin):
         yield FoldExplorerMinorMode
     
     def getCompatibleActions(self, majorcls):
-        if hasattr(majorcls, 'stc_viewer_class') and hasattr(majorcls.stc_viewer_class, 'getFoldHierarchy'):
+        if hasattr(majorcls, 'getFoldHierarchy'):
             return [FoldExplorerMenu]
         return []
