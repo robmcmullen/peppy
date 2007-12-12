@@ -809,3 +809,17 @@ class MainMenu(IPeppyPlugin):
                 DiredExecute,
                 ]
         return []
+
+    def attemptOpen(self, buffer):
+        # get a copy because we are working on the url in the buffer
+        refcopy = vfs.get_reference(str(buffer.url))
+        print "url = %s" % str(refcopy)
+        if refcopy.scheme == "file" and vfs.exists(refcopy):
+            # change scheme and see if tar can open it
+            refcopy.scheme = "tar"
+            if vfs.exists(refcopy):
+                # OK, we do a bit of a trick here: rewrite the url in the
+                # buffer object to change the scheme to tar:
+                buffer.url.scheme = "tar"
+                return DiredMode
+        return None
