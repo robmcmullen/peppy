@@ -188,6 +188,9 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
 #        Publisher().subscribe(self.reset, 'buffer.modified')
 
         self.flags = {}
+        self.column_names = ["Flags", "Filename", "Size", "Mode", "Info", "URL"]
+        self.column_sizes = [-60,200,0,0,0,-200]
+        self.columns = {}
 
         self.createColumns()
         self.updating = False
@@ -199,15 +202,15 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
-        self.InsertColumn(0, "Flags")
-        self.InsertColumn(1, "Filename")
-        self.InsertColumn(2, "Size")
-        self.InsertColumn(3, "Mode")
-        self.InsertColumn(4, "URL")
+        index = 0
+        for name in self.column_names:
+            self.columns[name] = index
+            self.InsertColumn(index, name)
+            index += 1
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        path = self.GetItem(index, 4).GetText()
+        path = self.GetItem(index, 5).GetText()
         self.dprint("clicked on %d: path=%s" % (index, path))
         self.mode.frame.open(path)
 
@@ -237,7 +240,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         index = self.GetFirstSelected()
         if index == -1:
             return None
-        key = self.GetItem(index, 4).GetText()
+        key = self.GetItem(index, 5).GetText()
         buffer = Dired.findBufferByURL(key)
         return buffer
 
@@ -280,7 +283,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         """
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 4).GetText()
+            key = self.GetItem(index, 5).GetText()
             dprint("index=%d key=%s" % (index, key))
             flags = self.getFlags(key)
             if flag not in flags:
@@ -298,7 +301,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         """Clear all flags for the selected items."""
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 4).GetText()
+            key = self.GetItem(index, 5).GetText()
             self.flags[key] = ""
             self.SetStringItem(index, 0, self.flags[key])
     
@@ -311,7 +314,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         try:
             list_count = self.GetItemCount()
             for index in range(list_count):
-                key = self.GetItem(index, 4).GetText()
+                key = self.GetItem(index, 5).GetText()
                 flags = self.flags[key]
                 dprint("flags %s for %s" % (flags, key))
                 if not flags:
@@ -395,7 +398,8 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
             self.SetStringItem(index, 1, name)
             self.SetStringItem(index, 2, str(vfs.get_size(key)))
             self.SetStringItem(index, 3, mode)
-            self.SetStringItem(index, 4, str(key))
+            self.SetStringItem(index, 4, "info goes here")
+            self.SetStringItem(index, 5, str(key))
 
             index += 1
         
@@ -407,7 +411,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         if show >= 0:
             self.EnsureVisible(show)
 
-        self.resizeColumns([-60,200,0,0,-200])
+        self.resizeColumns(self.column_sizes)
         self.Thaw()
 
 
