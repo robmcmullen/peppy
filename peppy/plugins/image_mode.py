@@ -82,28 +82,6 @@ class RectangularSelect(ImageActionMixin, ToggleAction):
         else:
             mode.editwin.setSelector(RubberBand)
 
-class BitmapView(BitmapScroller):
-    """
-    Simple bitmap viewer that loads an image from the data in an STC.
-    """
-    def __init__(self, parent, frame, stc):
-        BitmapScroller.__init__(self, parent)
-        self.frame = frame
-        self.stc = stc
-        
-    def update(self):
-        fh = StringIO(self.stc.GetBinaryData(0,self.stc.GetTextLength()))
-
-        # Can't use wx.ImageFromStream(fh), because a malformed image
-        # causes python to crash.
-        img = wx.EmptyImage()
-        if img.LoadStream(fh):
-            self.setImage(img)
-        else:
-            self.setImage(None)
-            self.frame.SetStatusText("Invalid image")
-
-
 class ImageSTCWrapper(STCProxy):
     def __init__(self, stc, win):
         self.stc = stc
@@ -130,7 +108,7 @@ class ImageSTCWrapper(STCProxy):
     def CanRedo(self):
         return False
 
-class ImageViewMode(MajorMode):
+class ImageViewMode(BitmapScroller, MajorMode):
     """
     Major mode for viewing images.  Eventually this may contain more
     image manipulation commands like rotation, reflection, zooming,
@@ -138,41 +116,38 @@ class ImageViewMode(MajorMode):
     mean that the image will have to be decompressed into raw pixels.
     This mode leaves the image in its native format.
     """
-    
+    debuglevel=0
+
     keyword="ImageView"
     icon='icons/picture.png'
     regex="\.(jpg|jpeg|gif|bmp|png|ico)"
 
-    debuglevel=0
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        BitmapScroller.__init__(self, parent)
+        self.stc = ImageSTCWrapper(self.buffer.stc, self)
+        self.update()
+        
+    def update(self):
+        fh = StringIO(self.stc.GetBinaryData(0,self.stc.GetTextLength()))
 
-    def createEditWindow(self,parent):
-        """
-        Create the bitmap viewer that is the main window of this major
-        mode.
+        # Can't use wx.ImageFromStream(fh), because a malformed image
+        # causes python to crash.
+        img = wx.EmptyImage()
+        if img.LoadStream(fh):
+            self.setImage(img)
+        else:
+            self.setImage(None)
+            self.frame.SetStatusText("Invalid image")
 
-        @param parent: parent window in which to create this window 
-        """
-        assert self.dprint()
-
-        win=BitmapView(parent,self.frame,self.buffer.stc)        
-        #win=wx.Window(parent, -1)
-
-        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
+    def createListenerPostHook(self):
+        eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
+                          self.buffer.stc)
 
         # Thread stuff for the underlying change callback
         self.waiting=None
 
-        return win
-
-    def createWindowPostHook(self):
-        """
-        Initialize the bitmap viewer with the image contained in the
-        buffer.
-        """
-        self.stc = ImageSTCWrapper(self.buffer.stc, self.editwin)
-        self.editwin.update()
-
-    def deleteWindowPostHook(self):
+    def removeListenerPostHook(self):
         """
         Clean up the event manager hook that we needed to find out
         when the buffer had been changed by some other view of the
