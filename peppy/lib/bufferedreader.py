@@ -111,7 +111,7 @@ class WindowReader(object):
         self.offset = offset
         self.len = length
         self.pos = 0
-        self.debug = False
+        self.debug = True
 
         # set real file position to start of the window region
         try:
@@ -149,9 +149,11 @@ class WindowReader(object):
     def read(self, size=None):
         if size is None:
             size = self.len - self.pos
+        if size + self.pos > self.len:
+            size = self.len - self.pos
         txt=self.fh.read(size)
         self.pos+=len(txt)
-        if self.debug: print "read %s from %d (%s)" % (size, self.pos, repr(txt))
+        if self.debug: print "WindowReader: read %s from %d (%s)" % (size, self.pos, repr(txt))
         return txt
 
     def close(self):
