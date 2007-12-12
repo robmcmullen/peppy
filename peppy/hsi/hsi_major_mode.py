@@ -745,7 +745,12 @@ class HSIMode(MajorMode):
         self.cubeview = None
         self.cubefilter = BandFilter()
         self.filter = GeneralFilter()
-        self.setCube(0)
+#        self.setCube(0)
+        self.cube = self.dataset.getCube(self.buffer.url)
+        dprint(self.cube)
+        self.setViewer(CubeView)
+        #self.cube.open()
+        dprint(self.cube)
         win = CubeScroller(parent, self.frame)
         return win
 

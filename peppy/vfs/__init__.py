@@ -94,6 +94,15 @@ def store_local_cache(fstype, path, obj):
     
 BaseFS.store_local_cache = staticmethod(store_local_cache)
 
+# extension to vfs to return a numpy mmap reference
+def open_numpy_mmap(ref):
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
+    fs = get_file_system(ref.scheme)
+    if hasattr(fs, 'open_numpy_mmap'):
+        return fs.open_numpy_mmap(ref)
+    raise IOError('%s not supported for mmap access' % str(ref))
+
 
 __all__ = [
     ##### From vfs:
@@ -122,6 +131,7 @@ __all__ = [
     'make_folder',
     'remove',
     'open',
+    'open_numpy_mmap',
     'copy',
     'move',
     'get_names',

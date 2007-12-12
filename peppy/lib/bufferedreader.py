@@ -111,7 +111,7 @@ class WindowReader(object):
         self.offset = offset
         self.len = length
         self.pos = 0
-        self.debug = True
+        self.debug = False
 
         # set real file position to start of the window region
         try:

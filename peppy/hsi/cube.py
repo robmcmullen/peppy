@@ -186,12 +186,13 @@ class Cube(object):
             self.mmap = None
 
         if self.url:
-            if self.url.scheme == 'file':
-                if self.mmap is None: # don't try to reopen if already open
-                    self.mmap=numpy.memmap(str(self.url.path),mode="r")
-                    self.initialize()
-            else:
-                raise IOError("Only file protocols supported for mmap")
+            if self.mmap is None: # don't try to reopen if already open
+                dprint(self.url)
+                if self.url.scheme == "file":
+                    self.mmap = numpy.memmap(str(self.url.path), mode="r")
+                else:
+                    self.mmap = vfs.open_numpy_mmap(self.url)
+                self.initialize()
         else:
             raise IOError("No url specified.")
     

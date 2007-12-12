@@ -110,6 +110,12 @@ class HyperspectralFileFormat(object):
             dprint("Loading %s format cube" % format.format_name)
             dataset = format(url)
             return dataset
+        # OK, that didn't return a result, so see if there's a handler provided
+        # by the vfs:
+        fh = vfs.open(url)
+        dprint("checking for cube handler: %s" % dir(fh))
+        if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
+            return fh.metadata
         return None
 
     def wildcards(self):

@@ -1,6 +1,7 @@
 # peppy Copyright (c) 2006-2007 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 
+import peppy.vfs as vfs
 from peppy.yapsy.plugins import *
 
 from peppy.debug import *
@@ -19,6 +20,11 @@ class HSIPlugin(IPeppyPlugin):
             if format:
                 dprint("found %s" % format)
                 return hsi_major_mode.HSIMode
+            else:
+                fh = vfs.open(url)
+                dprint("checking for cube handler: %s" % dir(fh))
+                if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
+                    return hsi_major_mode.HSIMode
         return None
     
     def getCompatibleMajorModes(self, stc_class):
@@ -43,9 +49,9 @@ class HSIPlugin(IPeppyPlugin):
         if cls.keyword == "HSI":
             hsi_major_mode = self.importModule("hsi_major_mode")
             if hsi_major_mode:
-                return [hsi_major_mode.PrevCube,
-                        hsi_major_mode.NextCube,
-                        hsi_major_mode.SelectCube,
+                return [#hsi_major_mode.PrevCube,
+                        #hsi_major_mode.NextCube,
+                        #hsi_major_mode.SelectCube,
                         hsi_major_mode.PrevBand,
                         hsi_major_mode.NextBand,
                         hsi_major_mode.GotoBand,
