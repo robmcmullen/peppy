@@ -98,6 +98,7 @@ class FieldNameError(FieldError):
 class FieldAbortError(FieldError):
     pass
 
+
 class Field(debugmixin):
     debuglevel=0
     print_all = False
@@ -609,12 +610,14 @@ class Adapter(Wrapper):
     
     def __init__(self,proxy):
         Wrapper.__init__(self,proxy)
+        self._initial_offset = 0
 
     def decode(self,value,obj):
         raise NotImplementedError
 
     def unpack(self,fh,obj):
         proxy=self.getProxy(obj)
+        self._initial_offset = fh.tell()
         proxy.unpack(fh,obj)
         converted=self.decode(getattr(obj,proxy._name),obj)
         setattr(obj,proxy._name,converted)
@@ -630,6 +633,23 @@ class Adapter(Wrapper):
         proxy.pack(fh,obj)
         setattr(obj,proxy._name,save)
 
+class OffsetStringIO(object):
+    """Wrapper around StringIO to report the correct offset within the file
+    
+    When using the MetaSizeList, a StringIO instance is used to decode the
+    values, but that means that the file offset will be wrong if an Anchor is
+    used within the elements.  This class, and the _initial_offset attribute
+    of the adapter, is used to get around that problem.
+    """
+    def __init__(self, data, offset):
+        self.s = StringIO(data)
+        self.offset = offset
+    
+    def __getattr__(self, attr):
+        return getattr(self.s, attr)
+    
+    def tell(self):
+        return self.s.tell() + self.offset
 
 class MetaSizeList(Adapter):
     """
@@ -653,9 +673,9 @@ class MetaSizeList(Adapter):
         data=[]
         length=len(value)
         assert self.dprint("overall length=%d, obj=%s" % (length,obj))
-        fh=StringIO(value)
+        fh=OffsetStringIO(value, self._initial_offset)
         i=0
-        while fh.tell()<len(value):
+        while fh.tell() < len(value) + self._initial_offset:
             copy=proxy.getCopy(obj)
             setattr(copy,"_",obj)
             assert self.dprint("attempting to read primitive object %s.%s" % (obj.__class__.__name__,proxy._name))
