@@ -104,15 +104,11 @@ class MakefileIndentMixin(object):
 
         return ind
 
-class MakefileSTC(MakefileIndentMixin, FundamentalSTC):
-    debuglevel = 1
-    pass
-
 # The Makefile major mode is descended from FundamentalMode, meaning that
 # it is an STC based editing window.  Currently, no particular additional
 # functionality is present in the mode except for overriding some
 # classprefs
-class MakefileMode(FundamentalMode):
+class MakefileMode(MakefileIndentMixin, FundamentalMode):
     """Major mode for editing Makefiles.
     
     """
@@ -127,8 +123,6 @@ class MakefileMode(FundamentalMode):
     # Any files matching this regex will be candidates for this major
     # mode
     regex="(\.mak|[Mm]akefile.*)$"
-
-    stc_viewer_class = MakefileSTC
 
     default_classprefs = (
         # Overrides from FundamentalMode classprefs
