@@ -255,14 +255,15 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         self.updateWrapper(wrapper)
         mode.showInitialPosition(user_url)
 
-    def newMode(self, mode, mode_to_replace=None):
+    def newMode(self, buffer, mode_to_replace=None):
+        dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
         if mode_to_replace:
             wrapper = self.getWrapper(mode_to_replace)
         else:
             wrapper = self.getNewModeWrapper()
         mode = wrapper.createMajorMode(self.frame, buffer)
         self.updateWrapper(wrapper)
-
+        return mode
 
 
 ## BufferFrames
@@ -710,6 +711,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
+        assert self.dprint("buffer=%s" % buffer)
         
         mode = self.tabs.newMode(buffer, mode_to_replace)
         assert self.dprint("major mode=%s" % mode)

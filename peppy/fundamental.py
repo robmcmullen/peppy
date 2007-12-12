@@ -486,14 +486,19 @@ class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
 
 
-class FundamentalMode(MajorMode):
+class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
+                     StandardReindentMixin, StandardCommentMixin,
+                     StandardParagraphMixin,
+                     GenericFoldHierarchyMixin, FoldExplorerMixin,
+                     EditraSTCMixin, PeppySTC, MajorMode):
     """
     The base view of most (if not all) of the views that use the STC
     to directly edit the text.  Views (like the HexEdit view or an
     image viewer) that only use the STC as the backend storage are
     probably not based on this view.
     """
-    debuglevel = 0
+    debuglevel = 1
+    allow_threaded_loading = False
     
     keyword = 'Fundamental'
     
@@ -503,9 +508,10 @@ class FundamentalMode(MajorMode):
     # means that the editra file_type *does* match the keyword
     editra_synonym = None
 
-    # STC class used as the viewer (note: differs from stc_class, which is
-    # the STC class used as the storage backend)
-    stc_viewer_class = FundamentalSTC
+    # Default comment characters in case the Editra styling database
+    # doesn't have any information about the mode
+    start_line_comment = ''
+    end_line_comment = ''
 
     default_classprefs = (
         StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing\nEditra style sheet information.  Used to override\ndefault styles with custom styles for this mode.'),
@@ -536,6 +542,23 @@ class FundamentalMode(MajorMode):
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
         )
     
+    def __init__(self, parent, wrapper, buffer, frame):
+        """Create the STC and apply styling settings.
+
+        Everything that subclasses from FundamentalMode will use an
+        STC instance for displaying the user interaction window.
+        """
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        start = time.time()
+        self.dprint("starting PeppySTC at %0.5fs" % start)
+        PeppySTC.__init__(self, parent, refstc=self.buffer.stc)
+        self.stc = self
+        self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
+        EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
+        self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
+        self.applySettings()
+        self.dprint("applySettings done in %0.5fs" % (time.time() - start))
+
     @classmethod
     def verifyEditraType(cls, ext, file_type):
         cls.dprint("ext=%s file_type=%s" % (ext, file_type))
@@ -555,12 +578,6 @@ class FundamentalMode(MajorMode):
         cls.dprint("generic match of %s" % file_type)
         return "generic"
     
-    def createEditWindow(self,parent):
-        assert self.dprint("creating new Fundamental window")
-        self.createSTC(parent)
-        win=self.stc
-        return win
-    
     def createStatusIcons(self):
         linesep = self.stc.getLinesep()
         if linesep == '\r\n':
@@ -570,25 +587,6 @@ class FundamentalMode(MajorMode):
         else:
             self.statusbar.addIcon("icons/tux.png", "Unix line endings")
 
-    def createSTC(self,parent):
-        """Create the STC and apply styling settings.
-
-        Everything that subclasses from FundamentalMode will use an
-        STC instance for displaying the user interaction window.
-        
-        Styling information is loaded from the stc-styles.rc.cfg files
-        that the boa styling editor uses.  This file is located in the
-        default configuration directory of the application on a
-        per-user basis, and in the peppy/config directory on a
-        site-wide basis.
-        """
-        start = time.time()
-        self.dprint("starting createSTC at %0.5fs" % start)
-        self.stc=self.stc_viewer_class(parent,refstc=self.buffer.stc)
-        self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
-        self.applySettings()
-        self.dprint("applySettings done in %0.5fs" % (time.time() - start))
-        
     def applySettings(self):
         start = time.time()
         self.dprint("starting applySettings at %0.5fs" % start)

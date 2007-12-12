@@ -141,7 +141,7 @@ class Buffer(BufferVFSMixin):
     one-to-one mapping from a buffer to an STCInterface instance.
     """
     count=0
-    debuglevel=0
+    debuglevel=1
 
     filenames={}
     
@@ -410,7 +410,9 @@ class LoadingMode(BlankMode):
         wx.CallAfter(self.frame.openThreaded, self.buffer.user_url,
                      self.buffer, mode_to_replace=self)
 
-class LoadingBuffer(BufferVFSMixin):
+class LoadingBuffer(BufferVFSMixin, debugmixin):
+    debuglevel = 1
+    
     def __init__(self, url, modecls):
         self.user_url = url
         BufferVFSMixin.__init__(self, url)
@@ -424,6 +426,7 @@ class LoadingBuffer(BufferVFSMixin):
             self.modecls = modecls
         else:
             self.modecls = MajorModeMatcherDriver.match(self)
+            self.dprint("found major mode = %s" % self.modecls)
         self.stc = LoadingSTC(str(url))
     
     def allowThreadedLoading(self):
