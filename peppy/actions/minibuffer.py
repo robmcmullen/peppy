@@ -86,7 +86,7 @@ class TextMinibuffer(Minibuffer):
     error = "Bad input."
     
     def createWindow(self):
-        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, self.label)
@@ -165,7 +165,7 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
     implementation to subclasses.
     """
     def createWindow(self):
-        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, self.label)
@@ -225,7 +225,7 @@ class CompletionMinibuffer(TextMinibuffer):
     implementation to subclasses.
     """
     def createWindow(self):
-        self.win = wx.Panel(self.mode, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, self.label)

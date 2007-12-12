@@ -543,86 +543,6 @@ class MajorMode(ClassPrefs, debugmixin):
         """
         pass
 
-    def loadMinorModes(self):
-        """Find the listof minor modes to load and create them."""
-        
-        minors = MinorMode.getValidMinorModes(self)
-        dprint("major = %s, minors = %s" % (self, minors))
-
-        # get list of minor modes that should be displayed at startup
-        minor_list = self.classprefs.minor_modes
-        if minor_list is not None:
-            minor_names = [m.strip() for m in minor_list.split(',')]
-            assert self.dprint("showing minor modes %s" % minor_names)
-        else:
-            minor_names = []
-
-        # if the class name or the keyword of the minor mode shows up
-        # in the list, turn it on.
-        for minorcls in minors:
-            minor = self.createMinorMode(minorcls)
-            if minorcls.__name__ in minor_names or minorcls.keyword in minor_names:
-                minor.paneinfo.Show(True)
-            else:
-                minor.paneinfo.Show(False)
-        self.createMinorPaneList()
-
-    def loadMinorModesPostHook(self):
-        """User hook after all minor modes have been loaded.
-
-        Use this hook if you need to initialize the set of minor modes
-        after all of them have been loaded.
-        """
-        pass
-
-    def createMinorMode(self, minorcls):
-        """Create minor modes and register them with the AUI Manager."""
-        minor=minorcls(self, self.splitter)
-        # register minor mode here
-        if isinstance(minor, wx.Window):
-            paneinfo = minor.getPaneInfo()
-            try:
-                self._mgr.AddPane(minor, paneinfo)
-            except Exception, e:
-                dprint("Failed adding minor mode %s: error: %s" % (minor, str(e)))
-        self.minors.append(minor)
-
-        # A different paneinfo object is stored in the AUIManager,
-        # so we have to get its version rather than using the
-        # paneinfo we generate
-        minor.paneinfo = self._mgr.GetPane(minor)
-        return minor
-
-    def createMinorPaneList(self):
-        """Create alphabetized list of minor modes.
-
-        This is used by the menu system to display the list of minor
-        modes to the user.
-        """
-        self.minor_panes = []
-        panes = self._mgr.GetAllPanes()
-        for pane in panes:
-            assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))
-            if pane.name != "main":
-                self.minor_panes.append(pane)
-        self.minor_panes.sort(key=lambda s:s.caption)
-
-    def findMinorMode(self, name):
-        for minor in self.minors:
-            if minor.keyword == name:
-                return minor
-        return None
-
-    def deleteMinorModes(self):
-        """Remove the minor modes from the AUI Manager and delete them."""
-        while len(self.minors)>0:
-            minor = self.minors.pop()
-            self.dprint("deleting minor mode %s" % (minor.keyword))
-            minor.deletePreHook()
-            if self._mgr.GetPane(minor):
-                self._mgr.DetachPane(minor)
-                minor.Destroy()
-
     def OnUpdateUI(self, evt):
         """Callback to update user interface elements.
 
@@ -737,34 +657,12 @@ class MajorMode(ClassPrefs, debugmixin):
             self.statusbar = None
 
     def setMinibuffer(self, minibuffer=None):
-        self.removeMinibuffer()
-        if minibuffer is not None:
-            self.minibuffer = minibuffer
-            box = self.GetSizer()
-            box.Add(self.minibuffer.win, 0, wx.EXPAND)
-            self.Layout()
-            self.minibuffer.win.Show()
-            self.minibuffer.focus()
+        """Proxy the minibuffer requests up to the wrapper"""
+        self.wrapper.setMinibuffer(minibuffer)
 
     def removeMinibuffer(self, specific=None, detach_only=False):
-        self.dprint(self.minibuffer)
-        if self.minibuffer is not None:
-            if specific is not None and specific != self.minibuffer:
-                # A minibuffer calling another minibuffer has already
-                # cleaned up the last minibuffer.  Don't clean it up
-                # again.
-                return
-            
-            box = self.GetSizer()
-            box.Detach(self.minibuffer.win)
-            if not detach_only:
-                # for those cases where you still want to keep a
-                # pointer around to the minibuffer and close it later,
-                # use detach_only
-                self.minibuffer.close()
-            self.minibuffer = None
-            self.Layout()
-            self.focus()
+        """Proxy the minibuffer requests up to the wrapper"""
+        self.wrapper.removeMinibuffer(specific, detach_only)
 
     def addPopup(self,popup):
         self.popup=popup

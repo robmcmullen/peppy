@@ -74,7 +74,7 @@ class FindMinibuffer(Minibuffer):
     """
     def createWindow(self):
         # Create the find bar widget.
-        self.win=PypeFindBar(self.mode, self)
+        self.win=PypeFindBar(self.mode.wrapper, self)
         #print "findbar=%s" % self.win
 
     def focus(self):
@@ -111,7 +111,7 @@ class ReplaceMinibuffer(FindMinibuffer):
     features to the stuff already in the FindMinibuffer parent class.
     """
     def createWindow(self):
-        self.win=PypeReplaceBar(self.mode, self)
+        self.win=PypeReplaceBar(self.mode.wrapper, self)
         self.control=self
 
     def GetPageCount(self):
