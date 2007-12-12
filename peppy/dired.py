@@ -35,7 +35,7 @@ class DiredRefresh(SelectAction):
     key_bindings = {'default': "F5", }
 
     def action(self, index=-1, multiplier=1):
-        self.mode.editwin.reset()
+        self.mode.reset()
 
 
 class FlagMixin(object):
@@ -44,8 +44,8 @@ class FlagMixin(object):
     
     def action(self, index=-1, multiplier=1):
         if self.flag:
-            self.mode.editwin.setFlag(self.flag)
-        self.mode.editwin.moveSelected(multiplier)
+            self.mode.setFlag(self.flag)
+        self.mode.moveSelected(multiplier)
 
 class FlagBackwardsMixin(object):
     """Mixin to set a flag and move to the previous item in the list."""
@@ -53,8 +53,8 @@ class FlagBackwardsMixin(object):
     
     def action(self, index=-1, multiplier=1):
         if self.flag:
-            self.mode.editwin.setFlag(self.flag)
-        self.mode.editwin.moveSelected(-1)
+            self.mode.setFlag(self.flag)
+        self.mode.moveSelected(-1)
 
 
 class DiredNext(FlagMixin, SelectAction):
@@ -131,9 +131,9 @@ class DiredClearFlags(SelectAction):
     key_bindings = {'default': "U", }
 
     def action(self, index=-1, multiplier=1):
-        self.mode.editwin.clearFlags()
+        self.mode.clearFlags()
         if multiplier > 1: multiplier = -1
-        self.mode.editwin.moveSelected(multiplier)
+        self.mode.moveSelected(multiplier)
 
 
 class DiredExecute(SelectAction):
@@ -144,7 +144,7 @@ class DiredExecute(SelectAction):
     key_bindings = {'default': "X", }
 
     def action(self, index=-1, multiplier=1):
-        self.mode.editwin.execute()
+        self.mode.execute()
 
 
 class DiredShow(SelectAction):
@@ -155,7 +155,7 @@ class DiredShow(SelectAction):
     key_bindings = {'default': "O", }
 
     def action(self, index=-1, multiplier=1):
-        buffer = self.mode.editwin.getFirstSelectedBuffer()
+        buffer = self.mode.getFirstSelectedBuffer()
         if buffer:
             self.frame.newBuffer(buffer)
 
@@ -167,25 +167,39 @@ class DiredReplace(SelectAction):
     key_bindings = {'default': "F", }
 
     def action(self, index=-1, multiplier=1):
-        buffer = self.mode.editwin.getFirstSelectedBuffer()
+        buffer = self.mode.getFirstSelectedBuffer()
         if buffer:
             self.frame.setBuffer(buffer)
 
 
-class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
-    """ListCtrl to show list of buffers and operate on them.
+class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
+    """Directory viewing mode
+
+    Dired is a directory viewing mode that works like an extremely bare-bones
+    file manager.
     """
     debuglevel = 0
 
-    def __init__(self, parent, mode):
+    keyword = "Dired"
+    icon='icons/folder_explore.png'
+    allow_threaded_loading = False
+    
+    stc_class = DiredSTC
+
+    @classmethod
+    def verifyProtocol(cls, url):
+        # Use the verifyProtocol to hijack the loading process and
+        # immediately return the match is a folder
+        if vfs.is_folder(url):
+            return True
+        return False
+
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
         ColumnSizerMixin.__init__(self)
-        self.mode = mode
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-#        Publisher().subscribe(self.reset, 'buffer.opened')
-#        Publisher().subscribe(self.reset, 'buffer.closed')
-#        Publisher().subscribe(self.reset, 'buffer.modified')
 
         self.flags = {}
         self.column_names = ["Flags", "Filename", "Size", "Mode", "Info", "URL"]
@@ -194,11 +208,17 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
 
         self.createColumns()
         self.updating = False
-        self.url = self.mode.buffer.url
+        self.url = self.buffer.url
         self.reset()
         self.setSelectedIndexes([0])
     
-    def deletePreHook(self):
+    def createListenersPostHook(self):
+#        Publisher().subscribe(self.reset, 'buffer.opened')
+#        Publisher().subscribe(self.reset, 'buffer.closed')
+#        Publisher().subscribe(self.reset, 'buffer.modified')
+        pass
+
+    def removeListenersPostHook(self):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
@@ -212,7 +232,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         index = evt.GetIndex()
         path = self.GetItem(index, 5).GetText()
         self.dprint("clicked on %d: path=%s" % (index, path))
-        self.mode.frame.open(path)
+        self.frame.open(path)
 
     def setSelectedIndexes(self, indexes):
         """Highlight the rows contained in the indexes array"""
@@ -326,7 +346,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
                 if 'D' in flags:
                     if buffer.modified:
                         Publisher().sendMessage('peppy.log.error', "Buffer %s modified.  Not deleting.\n" % key)
-                    elif buffer == self.mode.buffer:
+                    elif buffer == self.buffer:
                         # BadThings happen if you try to delete this buffer
                         # in the middle of the delete process!
                         dprint("Deleting me!  Save till later")
@@ -338,7 +358,7 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
                         # been deleted.
                         continue
                 elif 'M' in flags:
-                    self.mode.frame.newBuffer(buffer)
+                    self.frame.newBuffer(buffer)
                 self.flags[key] = ""
         finally:
             if delete_self is not None:
@@ -413,29 +433,3 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
 
         self.resizeColumns(self.column_sizes)
         self.Thaw()
-
-
-class DiredMode(MajorMode):
-    """
-    A temporary Major Mode to load another mode in the background
-    """
-    keyword = "Dired"
-    icon='icons/folder_explore.png'
-    allow_threaded_loading = False
-    
-    stc_class = DiredSTC
-
-    @classmethod
-    def verifyProtocol(cls, url):
-        # Use the verifyProtocol to hijack the loading process and
-        # immediately return the match is a folder
-        if vfs.is_folder(url):
-            return True
-        return False
-
-    def createEditWindow(self,parent):
-        win = DiredEditor(parent, self)
-        return win
-    
-    def deleteWindowPreHook(self):
-        self.editwin.deletePreHook()
