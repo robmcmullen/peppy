@@ -205,12 +205,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 self.minor_panes.append(pane)
         self.minor_panes.sort(key=lambda s:s.caption)
 
-    def findMinorMode(self, name):
-        for minor in self.minors:
-            if minor.keyword == name:
-                return minor
-        return None
-
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
         while len(self.minors)>0:
@@ -664,6 +658,12 @@ class MajorMode(ClassPrefs, debugmixin):
         """Proxy the minibuffer requests up to the wrapper"""
         self.wrapper.removeMinibuffer(specific, detach_only)
 
+    def findMinorMode(self, name):
+        for minor in self.wrapper.minors:
+            if minor.keyword == name:
+                return minor
+        return None
+
     def addPopup(self,popup):
         self.popup=popup
         self.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
@@ -812,7 +812,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.save()
 
         bangpath = None
-        first = self.stc.GetLine(0)
+        first = self.GetLine(0)
         if first.startswith("#!"):
             bangpath = first[2:]
             
