@@ -597,14 +597,14 @@ class MinorModeShow(ToggleListAction):
     default_menu = ("View", 1)
 
     def getItems(self):
-        return [m.caption for m in self.mode.minor_panes]
+        return [m.caption for m in self.mode.wrapper.minor_panes]
 
     def isChecked(self, index):
-        return self.mode.minor_panes[index].IsShown()
+        return self.mode.wrapper.minor_panes[index].IsShown()
 
     def action(self, index=-1, multiplier=1):
-        self.mode.minor_panes[index].Show(not self.mode.minor_panes[index].IsShown())
-        self.mode._mgr.Update()
+        self.mode.wrapper.minor_panes[index].Show(not self.mode.wrapper.minor_panes[index].IsShown())
+        self.mode.wrapper._mgr.Update()
 
 
 class SidebarShow(ToggleListAction):

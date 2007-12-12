@@ -49,11 +49,243 @@ from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 
 
-class MajorMode(wx.Panel, debugmixin, ClassPrefs):
+class MajorModeWrapper(wx.Panel, debugmixin):
+    """Container around major mode that controls the AUI manager
+    
     """
-    Base class for all major modes.  Subclasses need to implement at
-    least createEditWindow that will return the main user interaction
-    window.
+    debuglevel = 0
+    
+    icon = "icons/blank.png"
+    
+    def __init__(self, parent):
+        self.editwin=None # user interface window
+        self.minibuffer=None
+        self.sidebar=None
+        self.stc=None # data store
+        self.minors=[]
+        self.minor_panes = []
+        self.statusbar = None
+        
+        wx.Panel.__init__(self, parent, -1, style=wx.NO_BORDER, pos=(9000,9000))
+        box=wx.BoxSizer(wx.VERTICAL)
+        self.SetAutoLayout(True)
+        self.SetSizer(box)
+        self.splitter=wx.Panel(self)
+        box.Add(self.splitter,1,wx.EXPAND)
+        self._mgr = wx.aui.AuiManager()
+        self._mgr.SetManagedWindow(self.splitter)
+        self._mgr.Update()
+
+    def __del__(self):
+        dprint("deleting %s: editwin=%s %s" % (self.__class__.__name__, self.editwin, self.editwin.getTabName()))
+        # FIXME: remove stuff here?
+
+    def createMajorMode(self, frame, buffer, requested=None):
+        # Remove the old mode if it exists
+        self.deleteMajorMode()
+        
+        if not requested:
+            requested = buffer.defaultmode
+        else:
+            # Change the default major mode if the old default is the most
+            # general major mode.
+            if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
+                dprint("Changing default mode of %s to %s" % (buffer, requested))
+                buffer.defaultmode = requested
+        self.editwin = requested(self.splitter, self, buffer, frame)
+        buffer.addViewer(self.editwin)
+        self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
+                          CenterPane())
+
+        start = time.time()
+        self.dprint("starting __init__ at 0.00000s")
+        self.editwin.createWindowPostHook()
+        self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
+        # FIXME: not dealing with minor modes right now
+#        self.loadMinorModes()
+#        self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
+#        self.loadMinorModesPostHook()
+#        self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
+        self.editwin.createEventBindings()
+        self.dprint("createEventBindings done in %0.5fs" % (time.time() - start))
+        self.editwin.createEventBindingsPostHook()
+        self.dprint("createEventBindingsPostHook done in %0.5fs" % (time.time() - start))
+        self.editwin.createListeners()
+        self.dprint("createListeners done in %0.5fs" % (time.time() - start))
+        self.editwin.createListenersPostHook()
+        self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
+        self.editwin.createPostHook()
+        self.dprint("Created major mode in %0.5fs" % (time.time() - start))
+        
+        self._mgr.Update()
+        return self.editwin
+    
+    def deleteMajorMode(self):
+        if self.editwin:
+            self.deleteMinorModes()
+            self._mgr.DetachPane(self.editwin)
+            self.editwin.deleteWindow()
+            self.editwin = None
+    
+    def getTabName(self):
+        if self.editwin:
+            return self.editwin.getTabName()
+        return "Empty"
+    
+    def getTabBitmap(self):
+        if self.editwin:
+            icon = self.editwin.icon
+        else:
+            icon = self.icon
+        return getIconBitmap(icon)
+    
+
+    def loadMinorModes(self):
+        """Find the listof minor modes to load and create them."""
+        
+        minors = MinorMode.getValidMinorModes(self)
+        dprint("major = %s, minors = %s" % (self, minors))
+
+        # get list of minor modes that should be displayed at startup
+        minor_list = self.classprefs.minor_modes
+        if minor_list is not None:
+            minor_names = [m.strip() for m in minor_list.split(',')]
+            assert self.dprint("showing minor modes %s" % minor_names)
+        else:
+            minor_names = []
+
+        # if the class name or the keyword of the minor mode shows up
+        # in the list, turn it on.
+        for minorcls in minors:
+            minor = self.createMinorMode(minorcls)
+            if minorcls.__name__ in minor_names or minorcls.keyword in minor_names:
+                minor.paneinfo.Show(True)
+            else:
+                minor.paneinfo.Show(False)
+        self.createMinorPaneList()
+
+    def loadMinorModesPostHook(self):
+        """User hook after all minor modes have been loaded.
+
+        Use this hook if you need to initialize the set of minor modes
+        after all of them have been loaded.
+        """
+        pass
+
+    def createMinorMode(self, minorcls):
+        """Create minor modes and register them with the AUI Manager."""
+        minor=minorcls(self, self.splitter)
+        # register minor mode here
+        if isinstance(minor, wx.Window):
+            paneinfo = minor.getPaneInfo()
+            try:
+                self._mgr.AddPane(minor, paneinfo)
+            except Exception, e:
+                dprint("Failed adding minor mode %s: error: %s" % (minor, str(e)))
+        self.minors.append(minor)
+
+        # A different paneinfo object is stored in the AUIManager,
+        # so we have to get its version rather than using the
+        # paneinfo we generate
+        minor.paneinfo = self._mgr.GetPane(minor)
+        return minor
+
+    def createMinorPaneList(self):
+        """Create alphabetized list of minor modes.
+
+        This is used by the menu system to display the list of minor
+        modes to the user.
+        """
+        self.minor_panes = []
+        panes = self._mgr.GetAllPanes()
+        for pane in panes:
+            assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))
+            if pane.name != "main":
+                self.minor_panes.append(pane)
+        self.minor_panes.sort(key=lambda s:s.caption)
+
+    def findMinorMode(self, name):
+        for minor in self.minors:
+            if minor.keyword == name:
+                return minor
+        return None
+
+    def deleteMinorModes(self):
+        """Remove the minor modes from the AUI Manager and delete them."""
+        while len(self.minors)>0:
+            minor = self.minors.pop()
+            self.dprint("deleting minor mode %s" % (minor.keyword))
+            minor.deletePreHook()
+            if self._mgr.GetPane(minor):
+                self._mgr.DetachPane(minor)
+                minor.Destroy()
+
+    def getStatusBar(self):
+        """Returns pointer to this mode's status bar.
+
+        Individual status bars are maintained by each instance of a
+        major mode.  The frame only shows the status bar of the active
+        mode and hides all the rest.  This means that modes may change
+        their status bars without checking if they are the active
+        mode.  This situation arizes when there is some background
+        processing going on (either with threads or using wx.Yield)
+        and the user switches to some other mode.
+        """
+        if self.statusbar is None:
+            self.statusbar = PeppyStatusBar(self.frame)
+            self.createStatusIcons()
+        return self.statusbar
+
+    def resetStatusBar(self, message=None):
+        """Updates the status bar.
+
+        This method clears and rebuilds the status bar, usually
+        because something requests an icon change.
+        """
+        self.statusbar.reset()
+        self.createStatusIcons()
+    
+    def deleteStatusBar(self):
+        if self.statusbar:
+            self.statusbar.Destroy()
+            self.statusbar = None
+
+    def setMinibuffer(self, minibuffer=None):
+        self.removeMinibuffer()
+        if minibuffer is not None:
+            self.minibuffer = minibuffer
+            box = self.GetSizer()
+            box.Add(self.minibuffer.win, 0, wx.EXPAND)
+            self.Layout()
+            self.minibuffer.win.Show()
+            self.minibuffer.focus()
+
+    def removeMinibuffer(self, specific=None, detach_only=False):
+        self.dprint(self.minibuffer)
+        if self.minibuffer is not None:
+            if specific is not None and specific != self.minibuffer:
+                # A minibuffer calling another minibuffer has already
+                # cleaned up the last minibuffer.  Don't clean it up
+                # again.
+                return
+            
+            box = self.GetSizer()
+            box.Detach(self.minibuffer.win)
+            if not detach_only:
+                # for those cases where you still want to keep a
+                # pointer around to the minibuffer and close it later,
+                # use detach_only
+                self.minibuffer.close()
+            self.minibuffer = None
+            self.Layout()
+            self.focus()
+
+
+class MajorMode(ClassPrefs, debugmixin):
+    """Mixin class for all major modes.
+    
+    Classes that use this mixin must create some subclass of wx.Window in the
+    __init__ method -- this forms the basis of the user interaction.
     """
     debuglevel = 0
     
@@ -98,42 +330,17 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
     
-    def __init__(self,buffer,frame):
-        self.splitter=None
-        self.editwin=None # user interface window
-        self.minibuffer=None
-        self.sidebar=None
-        self.stc=None # data store
-        self.buffer=buffer
-        self.frame=frame
+    def __init__(self, parent, wrapper, buffer, frame):
+        self.wrapper = wrapper
+        self.stc = None # data store
+        self.buffer = buffer
+        self.frame = frame
         self.popup=None
-        self.minors=[]
-        self.minor_panes = []
         self.statusbar = None
+        self.editwin = self
         
-        wx.Panel.__init__(self, frame.tabs, -1, style=wx.NO_BORDER, pos=(9000,9000))
-        start = time.time()
-        self.dprint("starting __init__ at 0.00000s")
-        self.createWindow()
-        self.dprint("createWindow done in %0.5fs" % (time.time() - start))
-        self.createWindowPostHook()
-        self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
-        self.loadMinorModes()
-        self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
-        self.loadMinorModesPostHook()
-        self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
-        self.createEventBindings()
-        self.dprint("createEventBindings done in %0.5fs" % (time.time() - start))
-        self.createEventBindingsPostHook()
-        self.dprint("createEventBindingsPostHook done in %0.5fs" % (time.time() - start))
-        self.createListeners()
-        self.dprint("createListeners done in %0.5fs" % (time.time() - start))
-        self.createListenersPostHook()
-        self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
-        self.createPostHook()
-        self.dprint("Created major mode in %0.5fs" % (time.time() - start))
-        
-        self._mgr.Update()
+        # Create a window here!
+        pass
 
     def __del__(self):
         dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
@@ -243,24 +450,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
     def getWelcomeMessage(self):
         return "%s major mode" % self.keyword
     
-    def createWindow(self):
-        """Non-user-callable routine to create the main window.
-
-        Users should override createEditWindow to generate the main
-        window, and can also override createWindowPostHook to add any
-        non-window resources to the major mode.
-        """
-        box=wx.BoxSizer(wx.VERTICAL)
-        self.SetAutoLayout(True)
-        self.SetSizer(box)
-        self.splitter=wx.Panel(self)
-        box.Add(self.splitter,1,wx.EXPAND)
-        self._mgr = wx.aui.AuiManager()
-        self._mgr.SetManagedWindow(self.splitter)
-        self.editwin=self.createEditWindow(self.splitter)
-        self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
-                          CenterPane())
-
     def createWindowPostHook(self):
         """User hook to add resources after the edit window is created.
         """
@@ -274,7 +463,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
         user code to the delete process.
         """
         self.deleteWindowPreHook()
-        self.deleteMinorModes()
         self.deleteStatusBar()
 
         # remove the mode as one of the buffer's listeners
@@ -578,9 +766,6 @@ class MajorMode(wx.Panel, debugmixin, ClassPrefs):
             self.minibuffer = None
             self.Layout()
             self.focus()
-
-    def reparent(self,parent):
-        self.Reparent(parent)
 
     def addPopup(self,popup):
         self.popup=popup

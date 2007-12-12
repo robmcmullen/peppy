@@ -182,6 +182,41 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         for index in range(0, self.GetPageCount()):
             pages.append(self.GetPage(index))
         return pages
+    
+    ##### New methods for MajorModeWrapper support
+    def getWrapper(self, mode):
+        for index in range(0, self.GetPageCount()):
+            if self.GetPage(index).editwin == mode:
+                return self.GetPage(index)
+        raise IndexError("No tab found for mode %s" % mode)
+    
+    def updateWrapperTitle(self, mode):
+        for index in range(0, self.GetPageCount()):
+            page = self.GetPage(index)
+            if page.editwin == mode:
+                self.SetPageText(index, page.getTabName())
+                break
+    
+    def newWrapper(self):
+        page = MajorModeWrapper(self)
+        self.AddPage(page, page.getTabName(), bitmap=page.getTabBitmap())
+        return page
+    
+    def closeWrapper(self, mode):
+        if self.GetPageCount() > 1:
+            for index in range(0, self.GetPageCount()):
+                page = self.GetPage(index)
+                if page.editwin == mode:
+                    page.deleteMajorMode()
+                    self.RemovePage(index)
+                    break
+        else:
+            page = self.GetPage(0)
+            page.deleteMajorMode()
+            buffer = BufferList.findBufferByURL("about:blank")
+            page.createMajorMode(self.frame, buffer)
+            self.SetPageText(index, page.getTabName())
+            self.SetPageBitmap(index, page.getTabBitmap())
 
 
 ## BufferFrames
@@ -482,8 +517,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 ##            self.toolmap = None
         
     def getActiveMajorMode(self):
-        major=self.tabs.getCurrent()
-        return major
+        wrapper = self.tabs.getCurrent()
+        if wrapper:
+            major=self.tabs.getCurrent().editwin
+            return major
+        return None
 
     def getAllMajorModes(self):
         modes = self.tabs.getAll()
@@ -516,7 +554,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if major:
             buffer=major.buffer
             if buffer.permanent:
-                self.tabs.closeTab(major)
+                self.tabs.closeWrapper(major)
             else:
                 wx.GetApp().close(buffer)
 
@@ -527,47 +565,38 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.SetTitle("peppy")
 
-    def showModified(self,major):
+    def showModified(self, major):
         current=self.getActiveMajorMode()
         if current:
             self.setTitle()
-        self.tabs.updateTitle(major)
-
-    def createMajorMode(self, buffer, requested=None):
-        if not requested:
-            requested = buffer.defaultmode
-        else:
-            # Change the default major mode if the old default is the most
-            # general major mode.
-            if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
-                dprint("Changing default mode of %s to %s" % (buffer, requested))
-                buffer.defaultmode = requested
-        mode = requested(buffer, self)
-        buffer.addViewer(mode)
-        return mode
+            self.tabs.updateWrapperTitle(major)
 
     def setBuffer(self,buffer):
         # this gets a default view for the selected buffer
-        mode=self.createMajorMode(buffer)
-        assert self.dprint("setting buffer to new view %s" % mode)
-        self.tabs.replaceCurrentTab(mode)
-
-    def changeMajorMode(self, requested):
-        mode = self.getActiveMajorMode()
-        if mode:
-            newmode = self.createMajorMode(mode.buffer, requested)
-            assert self.dprint("new mode=%s" % newmode)
-            self.tabs.replaceCurrentTab(newmode)
-
-    def newBuffer(self, user_url, buffer, modecls=None):
-        mode=self.createMajorMode(buffer, modecls)
-        assert self.dprint("major mode=%s" % mode)
+        wrapper = self.tabs.getCurrent()
+        mode = wrapper.createMajorMode(self, buffer)
+        assert self.dprint("set buffer to new view %s" % mode)
+    
+    def getNewModeWrapper(self):
         current = self.getActiveMajorMode()
         if current and current.temporary:
-            self.tabs.replaceCurrentTab(mode)
+            wrapper = self.tabs.getWrapper(current)
         else:
-            self.tabs.addTab(mode)
-        assert self.dprint("after addViewer")
+            wrapper = self.tabs.newWrapper()
+        return wrapper
+
+    def changeMajorMode(self, requested):
+        if 1:
+            raise NotImplementedError
+        mode = self.getActiveMajorMode()
+        if mode:
+            newmode = wrapper.createMajorMode(self, mode.buffer, requested)
+            assert self.dprint("new mode=%s" % newmode)
+
+    def newBuffer(self, user_url, buffer, modecls=None):
+        wrapper = self.getNewModeWrapper()
+        mode = wrapper.createMajorMode(self, buffer, modecls)
+        assert self.dprint("major mode=%s" % mode)
         mode.showInitialPosition(user_url)
 
     def titleBuffer(self):
@@ -651,16 +680,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
-        mode = self.createMajorMode(buffer)
-        assert self.dprint("major mode=%s" % mode)
+        
         if mode_to_replace:
-            self.tabs.replaceTab(mode_to_replace, mode)
+            wrapper = self.tabs.getWrapper(mode_to_replace)
         else:
-            current = self.getActiveMajorMode()
-            if current and current.temporary:
-                self.tabs.replaceCurrentTab(mode)
-            else:
-                self.tabs.addTab(mode)
+            wrapper = self.getNewModeWrapper()
+        mode = wrapper.createMajorMode(self, buffer)
+        assert self.dprint("major mode=%s" % mode)
+
         #raceoff()
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
@@ -705,6 +732,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             
     def switchMode(self):
         last=self.tabs.getPrevious()
+        if last:
+            last = last.editwin
         mode=self.getActiveMajorMode()
         if mode is None:
             # If there were multiple tabs open and they were all the
@@ -744,7 +773,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def getAllModes(self):
         modes = []
         for index in range(self.tabs.GetPageCount()):
-            page = self.tabs.GetPage(index)
+            page = self.tabs.GetPage(index).editwin
             modes.append(page.__class__)
         return modes
 

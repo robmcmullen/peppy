@@ -24,30 +24,6 @@ from peppy.stcinterface import *
 __all__ = ['HTMLViewPlugin']
 
 
-class HTMLWindow(wx.html.HtmlWindow, debugmixin):
-    def __init__(self, parent, mode):
-        wx.html.HtmlWindow.__init__(self, parent, -1, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.mode = mode
-        self.stc = mode.buffer.stc
-        if "gtk2" in wx.PlatformInfo:
-            self.SetStandardFonts()
-
-    def OnLinkClicked(self, linkinfo):
-        assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
-        self.mode.frame.open(linkinfo.GetHref())
-
-    def OnCellMouseHover(self, cell, x, y):
-        assert self.dprint('OnCellMouseHover: %s\n' % cell)
-        linkinfo = cell.GetLink()
-        if linkinfo is not None:
-            self.mode.frame.SetStatusText(linkinfo.GetHref())
-        else:
-            self.mode.frame.SetStatusText("")
-
-    def update(self):
-        self.SetPage(self.stc.GetText())
-
-
 class HTMLSTCWrapper(STCProxy):
     def __init__(self, stc, html):
         self.stc = stc
@@ -78,8 +54,7 @@ class HTMLSTCWrapper(STCProxy):
 
     
 
-
-class HTMLViewMode(MajorMode):
+class HTMLViewMode(MajorMode, wx.html.HtmlWindow, debugmixin):
     """Major mode for viewing HTML markup.
 
     Editing the markup should be done in an editing mode.
@@ -91,33 +66,38 @@ class HTMLViewMode(MajorMode):
 
     debuglevel=0
 
-    def createEditWindow(self,parent):
-        """
-        Create the bitmap viewer that is the main window of this major
-        mode.
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        wx.html.HtmlWindow.__init__(self, parent, -1, style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        if "gtk2" in wx.PlatformInfo:
+            self.SetStandardFonts()
+            
+        self.stc = HTMLSTCWrapper(self.buffer.stc, self)
+        
+        self.update()
 
-        @param parent: parent window in which to create this window 
-        """
-        assert self.dprint()
+    def OnLinkClicked(self, linkinfo):
+        assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
+        self.frame.open(linkinfo.GetHref())
 
-        win=HTMLWindow(parent, self)
+    def OnCellMouseHover(self, cell, x, y):
+        assert self.dprint('OnCellMouseHover: %s\n' % cell)
+        linkinfo = cell.GetLink()
+        if linkinfo is not None:
+            self.frame.SetStatusText(linkinfo.GetHref())
+        else:
+            self.frame.SetStatusText("")
 
-        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
+    def update(self):
+        self.SetPage(self.stc.GetText())
 
+    def createListenersPostHook(self):
+        eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
+                          self.buffer.stc)
         # Thread stuff for the underlying change callback
         self.waiting=None
 
-        return win
-
-    def createWindowPostHook(self):
-        """
-        Initialize the bitmap viewer with the image contained in the
-        buffer.
-        """
-        self.stc = HTMLSTCWrapper(self.buffer.stc, self.editwin)
-        self.editwin.update()
-
-    def deleteWindowPostHook(self):
+    def removeListenersPostHook(self):
         """
         Clean up the event manager hook that we needed to find out
         when the buffer had been changed by some other view of the
