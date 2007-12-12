@@ -111,6 +111,7 @@ __all__ = [
     # File modes
     'READ',
     'WRITE',
+    'READ_WRITE',
     'APPEND',
     # Registry
     'register_file_system',

@@ -20,12 +20,17 @@ from StringIO import StringIO
 
 # Import from itools
 from itools.uri import Path, Reference
-from itools.vfs import READ, WRITE, APPEND, copy
+from itools.vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from itools.vfs.base import BaseFS
 from itools.vfs.registry import register_file_system
 
+
 class MemDir(dict):
-    """Base class used for nested dictionaries representing directories."""
+    """Base class used for representing directories.
+    
+    Nested dictionaries are used to represent directories, and this subclass
+    of dict provides a few additional methods over simply using a dict.
+    """
     is_file = False
 
     def get_size(self):
@@ -45,8 +50,14 @@ class MemDir(dict):
                 s.write(contents)
         return s.getvalue()
 
+
 class MemFile(object):
-    """Class representing stored files in the memory filesystem."""
+    """Base class to represent files.
+    
+    Stored files are represented as objects in the memory filesystem.  To
+    minimize the memory footprint, the data itself is stored as a string
+    (rather than as a StringIO instance, for example).
+    """
     is_file = True
 
     def __init__(self, data):
@@ -55,9 +66,15 @@ class MemFile(object):
     def get_size(self):
         return len(self.data)
 
+
 class TempFile(StringIO):
     """Temporary file-like object that stores itself in the filesystem
     when closed or deleted.
+    
+    Since files are stored as a string, some file-like object must be used when
+    the user is reading or writing, and this is it.  It's a wrapper around the
+    data when reading/writing to an existing file, and automatically updates
+    the data storage when it is closed.
     """
     def __init__(self, folder, file_name, initial="", read_only=False):
         StringIO.__init__(self, initial)
@@ -80,15 +97,6 @@ class TempFile(StringIO):
         if not self._is_closed:
             self._close()
 
-    def __enter__(self):
-        # This is for use in 'with' statements; don't understand this
-        # yet.
-        return self
-
-    def __exit__(self, type, value, traceback):
-        # This is for use in 'with' statements; don't understand this
-        # yet.
-        pass
 
 class MemFS(BaseFS):
     """Memory filesystem based on nested dictionaries.
@@ -98,7 +106,7 @@ class MemFS(BaseFS):
     mechanism.
     """
 
-    # The rood of the filesystem
+    # The rood of the filesystem.  Only one of these per application.
     root = MemDir()
 
     @staticmethod
@@ -285,7 +293,7 @@ class MemFS(BaseFS):
         elif mode == APPEND:
             fh = TempFile(parent, file_name, item.data)
             fh.seek(item.get_size())
-        elif mode is None:
+        elif mode == READ_WRITE:
             # Open for read/write, but don't position at end of file,
             # i.e. "r+b"
             fh = TempFile(parent, file_name, item.data)
