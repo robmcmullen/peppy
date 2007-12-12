@@ -26,6 +26,18 @@ class DiredSTC(NonResidentSTC):
     pass
 
 
+class DiredRefresh(SelectAction):
+    """Refresh the current list"""
+    alias = "dired-refresh"
+    name = "Refresh"
+    tooltip = "Refresh the current view to show any changes."
+    default_menu = ("Actions", -1000)
+    key_bindings = {'default': "F5", }
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.editwin.reset()
+
+
 class FlagMixin(object):
     """Mixin to set a flag and move to the next item in the list"""
     flag = None
@@ -171,9 +183,9 @@ class DiredEditor(wx.ListCtrl, ColumnSizerMixin, debugmixin):
         self.mode = mode
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-        Publisher().subscribe(self.reset, 'buffer.opened')
-        Publisher().subscribe(self.reset, 'buffer.closed')
-        Publisher().subscribe(self.reset, 'buffer.modified')
+#        Publisher().subscribe(self.reset, 'buffer.opened')
+#        Publisher().subscribe(self.reset, 'buffer.closed')
+#        Publisher().subscribe(self.reset, 'buffer.modified')
 
         self.flags = {}
 
@@ -434,6 +446,7 @@ class DiredModePlugin(IPeppyPlugin):
     def getCompatibleActions(self, mode):
         if mode == DiredMode:
             return [
+                DiredRefresh,
                 DiredNext, DiredPrevious,
                 DiredSave, DiredSaveBackwards,
                 DiredDelete, DiredDeleteBackwards,
