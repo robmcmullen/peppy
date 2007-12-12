@@ -124,6 +124,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         if self.editwin:
             self.deleteMinorModes()
             self._mgr.DetachPane(self.editwin)
+            self.editwin.frame.clearMenumap()
             self.editwin.deleteWindow()
             self.editwin = None
     

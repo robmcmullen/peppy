@@ -70,7 +70,7 @@ class NewFrame(SelectAction):
 
 
 class MyNotebook(wx.aui.AuiNotebook,debugmixin):
-    debuglevel = 0
+    debuglevel = 1
     
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
@@ -211,6 +211,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def newWrapper(self):
         page = MajorModeWrapper(self)
         self.AddPage(page, page.getTabName(), bitmap=page.getTabBitmap())
+        index = self.GetPageIndex(page)
+        self.SetSelection(index)
         return page
     
     def closeWrapper(self, mode):
@@ -249,6 +251,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         mode = wrapper.createMajorMode(self.frame, buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         self.updateWrapper(wrapper)
+        self.frame.switchMode()
         mode.showInitialPosition(user_url)
 
     def newMode(self, mode, mode_to_replace=None):
@@ -258,6 +261,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper = self.getNewModeWrapper()
         mode = wrapper.createMajorMode(self.frame, buffer)
         self.updateWrapper(wrapper)
+        self.frame.switchMode()
 
 
 
@@ -463,7 +467,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         By trial and error, it seems to be safe to update dynamic menus here.
         """
         #dprint(evt)
-        self.menumap.updateOnDemandActions()
+        if self.menumap:
+            self.menumap.updateOnDemandActions()
 
     # non-wx methods
 
@@ -485,10 +490,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 ##        self.keys.setGlobalKeyMap(keymap)
 ##        self.keys.clearMinorKeyMaps()
         pass
-        
-    def setMenumap(self, mode):
+    
+    def clearMenumap(self):
         if self.menumap is not None:
             self.menumap.cleanupPrevious(self._mgr)
+            self.menumap = None
+
+    def setMenumap(self, mode):
+        self.clearMenumap()
         actions = UserActionMap.getActiveActions(mode)
         self.menumap = UserActionMap(self, actions)
         keymap = self.menumap.updateActions(self.show_toolbar)
@@ -579,8 +588,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def closeWindow(self):
         self.unbindEvents()
-        if self.menumap is not None:
-            self.menumap.cleanupPrevious(self._mgr)
+        self.clearMenumap()
         FrameList.remove(self)
         self.tabs.closeAllTabs()
         self.Destroy()
@@ -632,6 +640,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         mode = wrapper.createMajorMode(self, buffer)
         assert self.dprint("set buffer to new view %s" % mode)
         self.tabs.updateWrapper(wrapper)
+        self.switchMode()
     
     def open(self, url, modecls=None):
         # The canonical url stored in the buffer will be without query string
