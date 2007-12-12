@@ -178,7 +178,10 @@ class Header(dict,MetadataMixin):
     def save(self,filename=None):
         if filename:
             url = vfs.normalize(filename)
-            fh = vfs.make_file(url)
+            if vfs.is_file(url):
+                fh = vfs.open(url, vfs.WRITE)
+            else:
+                fh = vfs.make_file(url)
             if fh:
                 fh.write(str(self))
                 fh.close()
