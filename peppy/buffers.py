@@ -212,7 +212,7 @@ class Buffer(BufferVFSMixin):
         for viewer in viewers:
             assert self.dprint("count=%d" % len(self.viewers))
             assert self.dprint("removing view %s of %s" % (viewer,self))
-            viewer.frame.tabs.closeTab(viewer)
+            viewer.frame.tabs.closeWrapper(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
 
         if not self.permanent:

@@ -96,9 +96,9 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
 
     def OnTabClosed(self, evt):
         index = evt.GetSelection()
-        mode = self.GetPage(index)
-        assert self.dprint("closing tab # %d: mode %s" % (index,mode))
-        mode.deleteWindowPre()
+        wrapper = self.GetPage(index)
+        assert self.dprint("closing tab # %d: mode %s" % (index, wrapper.editwin))
+        wrapper.deleteMajorMode()
         if self.GetPageCount() == 1:
             wx.CallAfter(self.frame.open, "about:blank")
         evt.Skip()
@@ -119,9 +119,10 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):
-            mode = self.GetPage(0)
+            wrapper = self.GetPage(0)
             self.RemovePage(0)
-            mode.deleteWindow()
+            wrapper.deleteMajorMode()
+            wrapper.Destroy()
 
     def addTab(self,mode):
         before = self.GetPageCount()
@@ -200,7 +201,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if index>=0:
             self.SetPageText(index, wrapper.getTabName())
             self.SetPageBitmap(index, wrapper.getTabBitmap())
-    
+            self.frame.switchMode()
+
     def updateWrapperTitle(self, mode):
         for index in range(0, self.GetPageCount()):
             page = self.GetPage(index)
@@ -251,7 +253,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         mode = wrapper.createMajorMode(self.frame, buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         self.updateWrapper(wrapper)
-        self.frame.switchMode()
         mode.showInitialPosition(user_url)
 
     def newMode(self, mode, mode_to_replace=None):
@@ -261,7 +262,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper = self.getNewModeWrapper()
         mode = wrapper.createMajorMode(self.frame, buffer)
         self.updateWrapper(wrapper)
-        self.frame.switchMode()
 
 
 
@@ -607,7 +607,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.tabs.closeWrapper(major)
             else:
                 wx.GetApp().close(buffer)
-
+    
     def setTitle(self):
         major=self.getActiveMajorMode()
         if major:
