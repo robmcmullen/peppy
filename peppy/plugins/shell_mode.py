@@ -150,21 +150,13 @@ class ShellSTC(PeppySTC):
         return False
 
 
-class ShellViewerSTC(FundamentalSTC):
+class ShellMode(FundamentalMode):
     """This is the viewer STC that is the front-end to the user.
     
     This STC handles the display and interaction, overriding
     FundamentalMode's electricReturn in order to handle the user
     interaction. 
     """
-    def electricReturn(self):
-        # Call the reference stc's (i.e. the ShellSTC instance)
-        # process command, because it is the reference STC that
-        # knows how to communicate with the shell process
-        self.refstc.process()
-
-
-class ShellMode(FundamentalMode):
     debuglevel=0
     
     keyword='Shell'
@@ -172,7 +164,6 @@ class ShellMode(FundamentalMode):
     regex = None
     
     stc_class = ShellSTC
-    stc_viewer_class = ShellViewerSTC
     
     @classmethod
     def verifyProtocol(cls, url):
@@ -198,6 +189,11 @@ class ShellMode(FundamentalMode):
     def OnUpdate(self,evt=None):
         assert self.dprint("Updated!")
         
+    def electricReturn(self):
+        # Call the reference stc's (i.e. the ShellSTC instance)
+        # process command, because it is the reference STC that
+        # knows how to communicate with the shell process
+        self.refstc.process()
 
 
 class ShellPlugin(IPeppyPlugin):
