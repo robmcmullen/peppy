@@ -643,6 +643,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.tabs.updateWrapper(wrapper)
         self.switchMode()
     
+    def newBuffer(self, buffer):
+        # proxy it up to tabs
+        self.tabs.newBuffer(buffer.url, buffer)
+    
     def open(self, url, modecls=None):
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
