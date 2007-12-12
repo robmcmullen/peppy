@@ -588,7 +588,28 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # or fragment, so we need to keep track of the full url (with the
         # query string and fragment) it separately.
         user_url = vfs.normalize(url)
-        buffer = BufferList.findBufferByURL(user_url)
+        try:
+            buffer = BufferList.findBufferByURL(user_url)
+        except NotImplementedError:
+            # This means that the vfs implementation doesn't recognize the
+            # filesystem type.  This is the first place in the loading chain
+            # that the error can be encountered, so check for it here and load
+            # a new plugin if necessary.
+            found = False
+            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+            for plugin in plugins:
+                dprint("Checking %s" % plugin)
+                plugin.loadVirtualFileSystem(user_url)
+                try:
+                    buffer = BufferList.findBufferByURL(user_url)
+                    found = True
+                    break
+                except NotImplementedError:
+                    pass
+            if not found:
+                self.openFailure(user_url, "Unknown URI scheme")
+                return
+
         if buffer is not None:
             #dprint("found permanent buffer")
             self.newBuffer(user_url, buffer, modecls)

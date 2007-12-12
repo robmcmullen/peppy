@@ -221,6 +221,19 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
 
     ##### New methods for on-demand plugin loading
     
+    def loadVirtualFileSystem(self, url):
+        """Load vfs handler for the specified url scheme.
+
+        If an unknown vfs scheme is encountered during the file opening
+        process, this method is called with the offending url.  This is the
+        opportunity for a plugin to load the vfs handler for that scheme.
+        
+        There is no need for a return value from this method, as the loader
+        will attempt to load the url after calling this method in each plugin.
+        If it succeeds, it won't process any further.
+        """
+        return
+    
     def attemptOpen(self, url):
         """Last resort to major mode matching: attempting to open the url.
 
