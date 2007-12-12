@@ -497,6 +497,23 @@ class PasteAtColumn(Paste):
     def action(self, index=-1, multiplier=1):
         self.mode.stc.PasteAtColumn()
 
+class SelectAll(Paste):
+    alias = "select-all"
+    name = "Select All"
+    tooltip = "Select all text"
+    icon = None
+    default_menu = ("Edit", -125)
+    default_toolbar = False
+    key_bindings = {'win': "C-A", 'mac': "C-A", 'emacs': "C-X H"}
+    global_id = None
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode.editwin, 'SelectAll')
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.stc.SelectAll()
+
 
 class ElectricReturn(TextModificationAction):
     alias = "electric-return"
@@ -772,7 +789,7 @@ class MainMenu(IPeppyPlugin):
                 OpenFileGUI, OpenFile, OpenURL,
                 Save, SaveAs, Close, Revert, Exit,
 
-                Undo, Redo, Cut, Copy, Paste, PasteAtColumn,
+                Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 
                 RunScript, RunScriptWithArgs, StopScript,
 

@@ -389,6 +389,10 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     def CanCut(self):
         return True
+    
+    def SelectAll(self):
+        self.SetSelectionStart(0)
+        self.SetSelectionEnd(self.GetLength())
 
     def GetBinaryData(self,start,end):
         """
