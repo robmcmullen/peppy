@@ -54,17 +54,16 @@ class HTMLSTCWrapper(STCProxy):
 
     
 
-class HTMLViewMode(MajorMode, wx.html.HtmlWindow, debugmixin):
+class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
     """Major mode for viewing HTML markup.
 
     Editing the markup should be done in an editing mode.
     """
+    debuglevel = 0
     
     keyword='HTMLView'
     icon='icons/world.png'
     regex=""
-
-    debuglevel=0
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)

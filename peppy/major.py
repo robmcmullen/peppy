@@ -53,7 +53,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
     
     """
-    debuglevel = 0
+    debuglevel = 1
     
     icon = "icons/blank.png"
     
@@ -287,7 +287,7 @@ class MajorMode(ClassPrefs, debugmixin):
     Classes that use this mixin must create some subclass of wx.Window in the
     __init__ method -- this forms the basis of the user interaction.
     """
-    debuglevel = 0
+    debuglevel = 1
     
     # Pointer to the icon representing this major mode
     icon = 'icons/page_white.png'
@@ -497,9 +497,7 @@ class MajorMode(ClassPrefs, debugmixin):
     def createEventBindings(self):
         if hasattr(self.editwin,'addUpdateUIEvent'):
             self.editwin.addUpdateUIEvent(self.OnUpdateUI)
-        
         self.editwin.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
-
         self.idle_update_menu = False
 
     def createEventBindingsPostHook(self):

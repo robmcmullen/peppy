@@ -184,11 +184,22 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         return pages
     
     ##### New methods for MajorModeWrapper support
+    def getCurrentMode(self):
+        wrapper = self.getCurrent()
+        if wrapper:
+            return wrapper.editwin
+
     def getWrapper(self, mode):
         for index in range(0, self.GetPageCount()):
             if self.GetPage(index).editwin == mode:
                 return self.GetPage(index)
         raise IndexError("No tab found for mode %s" % mode)
+    
+    def updateWrapper(self, wrapper):
+        index=self.GetPageIndex(wrapper)
+        if index>=0:
+            self.SetPageText(index, wrapper.getTabName())
+            self.SetPageBitmap(index, wrapper.getTabBitmap())
     
     def updateWrapperTitle(self, mode):
         for index in range(0, self.GetPageCount()):
@@ -215,8 +226,39 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             page.deleteMajorMode()
             buffer = BufferList.findBufferByURL("about:blank")
             page.createMajorMode(self.frame, buffer)
-            self.SetPageText(index, page.getTabName())
-            self.SetPageBitmap(index, page.getTabBitmap())
+            self.updateWrapper(page)
+
+    def getNewModeWrapper(self):
+        current = self.getCurrentMode()
+        if current and current.temporary:
+            wrapper = self.getCurrent()
+        else:
+            wrapper = self.newWrapper()
+        return wrapper
+
+    def changeMajorMode(self, requested):
+        if 1:
+            raise NotImplementedError
+        mode = self.getActiveMajorMode()
+        if mode:
+            newmode = wrapper.createMajorMode(self.frame, mode.buffer, requested)
+            assert self.dprint("new mode=%s" % newmode)
+
+    def newBuffer(self, user_url, buffer, modecls=None):
+        wrapper = self.getNewModeWrapper()
+        mode = wrapper.createMajorMode(self.frame, buffer, modecls)
+        assert self.dprint("major mode=%s" % mode)
+        self.updateWrapper(wrapper)
+        mode.showInitialPosition(user_url)
+
+    def newMode(self, mode, mode_to_replace=None):
+        if mode_to_replace:
+            wrapper = self.getWrapper(mode_to_replace)
+        else:
+            wrapper = self.getNewModeWrapper()
+        mode = wrapper.createMajorMode(self.frame, buffer)
+        self.updateWrapper(wrapper)
+
 
 
 ## BufferFrames
@@ -236,7 +278,7 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 
 
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
-    debuglevel=0
+    debuglevel=1
     frameid=0
     
     perspectives={}
@@ -571,34 +613,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.setTitle()
             self.tabs.updateWrapperTitle(major)
 
-    def setBuffer(self,buffer):
-        # this gets a default view for the selected buffer
-        wrapper = self.tabs.getCurrent()
-        mode = wrapper.createMajorMode(self, buffer)
-        assert self.dprint("set buffer to new view %s" % mode)
-    
-    def getNewModeWrapper(self):
-        current = self.getActiveMajorMode()
-        if current and current.temporary:
-            wrapper = self.tabs.getWrapper(current)
-        else:
-            wrapper = self.tabs.newWrapper()
-        return wrapper
-
-    def changeMajorMode(self, requested):
-        if 1:
-            raise NotImplementedError
-        mode = self.getActiveMajorMode()
-        if mode:
-            newmode = wrapper.createMajorMode(self, mode.buffer, requested)
-            assert self.dprint("new mode=%s" % newmode)
-
-    def newBuffer(self, user_url, buffer, modecls=None):
-        wrapper = self.getNewModeWrapper()
-        mode = wrapper.createMajorMode(self, buffer, modecls)
-        assert self.dprint("major mode=%s" % mode)
-        mode.showInitialPosition(user_url)
-
     def titleBuffer(self):
         self.open(wx.GetApp().classprefs.title_page)
 
@@ -612,6 +626,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return True
         return False
 
+    def setBuffer(self, buffer):
+        # this gets a default view for the selected buffer
+        wrapper = self.tabs.getCurrent()
+        mode = wrapper.createMajorMode(self, buffer)
+        assert self.dprint("set buffer to new view %s" % mode)
+        self.tabs.updateWrapper(wrapper)
+    
     def open(self, url, modecls=None):
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
@@ -641,7 +662,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         if buffer is not None:
             #dprint("found permanent buffer")
-            self.newBuffer(user_url, buffer, modecls)
+            self.tabs.newBuffer(user_url, buffer, modecls)
         else:
             try:
                 buffer = LoadingBuffer(user_url, modecls)
@@ -652,7 +673,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 return
             
             if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
-                self.newBuffer(user_url, buffer)
+                self.tabs.newBuffer(user_url, buffer)
             else:
                 self.openStart(user_url, buffer)
     
@@ -681,11 +702,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
         buffer.openGUIThreadSuccess()
         
-        if mode_to_replace:
-            wrapper = self.tabs.getWrapper(mode_to_replace)
-        else:
-            wrapper = self.getNewModeWrapper()
-        mode = wrapper.createMajorMode(self, buffer)
+        mode = self.tabs.newMode(buffer, mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
 
         #raceoff()

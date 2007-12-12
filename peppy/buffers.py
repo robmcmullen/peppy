@@ -359,7 +359,7 @@ class Buffer(BufferVFSMixin):
             wx.CallAfter(self.showModifiedAll)
 
 
-class BlankMode(MajorMode):
+class BlankMode(MajorMode, wx.Window):
     """
     A temporary Major Mode to load another mode in the background
     """
@@ -370,6 +370,15 @@ class BlankMode(MajorMode):
     
     stc_class = NonResidentSTC
 
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        wx.Window.__init__(self, parent, -1, pos=(9000,9000))
+        text = self.buffer.stc.GetText()
+        lines = wx.StaticText(self, -1, text, (10,10))
+        lines.Wrap(500)
+        self.stc = self.buffer.stc
+        self.buffer.stc.is_permanent = True
+
     @classmethod
     def verifyProtocol(cls, url):
         # Use the verifyProtocol to hijack the loading process and
@@ -378,15 +387,6 @@ class BlankMode(MajorMode):
         if url.scheme == 'about' and url.path == 'blank':
             return True
         return False
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1, pos=(9000,9000))
-        text=self.buffer.stc.GetText()
-        lines=wx.StaticText(win, -1, text, (10,10))
-        lines.Wrap(500)
-        self.stc = self.buffer.stc
-        self.buffer.stc.is_permanent = True
-        return win
 
 
 class LoadingSTC(NonResidentSTC):
