@@ -435,24 +435,3 @@ class DiredMode(MajorMode):
     
     def deleteWindowPreHook(self):
         self.editwin.deletePreHook()
-
-
-class DiredModePlugin(IPeppyPlugin):
-    """Yapsy plugin to register DiredMode
-    """
-    def getMajorModes(self):
-        yield DiredMode
-
-    def getCompatibleActions(self, mode):
-        if mode == DiredMode:
-            return [
-                DiredRefresh,
-                DiredNext, DiredPrevious,
-                DiredSave, DiredSaveBackwards,
-                DiredDelete, DiredDeleteBackwards,
-                DiredMark, DiredMarkBackwards,
-                DiredClearFlags,
-                DiredShow, DiredReplace,
-                DiredExecute,
-                ]
-        return []

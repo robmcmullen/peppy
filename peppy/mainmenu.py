@@ -18,6 +18,7 @@ from peppy.lib.processmanager import *
 
 from peppy.major import *
 from peppy.fundamental import *
+from peppy.dired import *
 from peppy.menu import *
 from peppy.buffers import *
 from peppy.frame import *
@@ -764,6 +765,7 @@ class MainMenu(IPeppyPlugin):
     def getMajorModes(self):
         yield FundamentalMode
         yield BlankMode
+        yield DiredMode
 
     def getActions(self):
         return [NewTab, New,
@@ -795,4 +797,15 @@ class MainMenu(IPeppyPlugin):
     def getCompatibleActions(self, mode):
         if issubclass(mode, FundamentalMode):
             return [WordCount]
+        elif issubclass(mode, DiredMode):
+            return [
+                DiredRefresh,
+                DiredNext, DiredPrevious,
+                DiredSave, DiredSaveBackwards,
+                DiredDelete, DiredDeleteBackwards,
+                DiredMark, DiredMarkBackwards,
+                DiredClearFlags,
+                DiredShow, DiredReplace,
+                DiredExecute,
+                ]
         return []
