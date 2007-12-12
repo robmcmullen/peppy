@@ -498,7 +498,6 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
     probably not based on this view.
     """
     debuglevel = 1
-    allow_threaded_loading = False
     
     keyword = 'Fundamental'
     

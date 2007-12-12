@@ -240,14 +240,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper = self.newWrapper()
         return wrapper
 
-    def changeMajorMode(self, requested):
-        if 1:
-            raise NotImplementedError
-        mode = self.getActiveMajorMode()
-        if mode:
-            newmode = wrapper.createMajorMode(self.frame, mode.buffer, requested)
-            assert self.dprint("new mode=%s" % newmode)
-
     def newBuffer(self, user_url, buffer, modecls=None):
         wrapper = self.getNewModeWrapper()
         mode = wrapper.createMajorMode(self.frame, buffer, modecls)
@@ -641,12 +633,17 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         mode = wrapper.createMajorMode(self, buffer)
         assert self.dprint("set buffer to new view %s" % mode)
         self.tabs.updateWrapper(wrapper)
-        self.switchMode()
     
     def newBuffer(self, buffer):
         # proxy it up to tabs
         self.tabs.newBuffer(buffer.url, buffer)
     
+    def changeMajorMode(self, requested):
+        wrapper = self.tabs.getCurrent()
+        newmode = wrapper.createMajorMode(self, wrapper.editwin.buffer, requested)
+        assert self.dprint("new mode=%s" % newmode)
+        self.tabs.updateWrapper(wrapper)
+
     def open(self, url, modecls=None):
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
