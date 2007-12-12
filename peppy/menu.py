@@ -361,7 +361,10 @@ class ListAction(SelectAction):
         self.id2index={}
         assert self.dprint("inserting new widgets at %d" % pos)
         self.insertIntoMenu(self.menu,pos)
-        self.frame.menumap.reconnectEvents()
+        # FIXME: it seems that on app exit, frame.menumap can be None, so check
+        # for that here
+        if self.frame.menumap:
+            self.frame.menumap.reconnectEvents()
 
     def getItems(self):
         raise NotImplementedError
