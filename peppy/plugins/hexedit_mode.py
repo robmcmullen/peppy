@@ -50,7 +50,7 @@ class GotoOffset(MinibufferAction):
         specified byte offset.
         """
         #dprint("goto pos = %d" % pos)
-        mode.editwin.GotoPos(pos)
+        mode.GotoPos(pos)
 
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
@@ -661,13 +661,25 @@ class WaitThread(Thread):
 
 
 
-class HugeTableGrid(STCInterface, Grid.Grid, debugmixin):
+class HexEditMode(STCInterface, Grid.Grid, MajorMode):
+    """
+    View for editing in hexidecimal notation.
+    """
     debuglevel=0
-    
-    def __init__(self, parent, stc, format="@4f"):
-        Grid.Grid.__init__(self, parent, -1)
 
-        self.table = HugeTable(stc, format)
+    keyword = 'HexEdit'
+    emacs_synonyms = 'hexl'
+    
+    icon='icons/tux.png'
+    regex="\.(hex|bin|so|a|exe)$"
+
+    def __init__(self, parent, wrapper, buffer, frame):
+        """Create the HexEdit viewer
+        """
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        assert self.dprint("creating new HexEditMode window")
+        Grid.Grid.__init__(self, parent, -1)
+        self.table = HugeTable(self.buffer.stc, "16c")
 
         # The second parameter means that the grid is to take
         # ownership of the table and will destroy it when done.
@@ -689,6 +701,24 @@ class HugeTableGrid(STCInterface, Grid.Grid, debugmixin):
         self.Bind(EVT_WAIT_UPDATE,self.OnUnderlyingUpdate)
         self.Show(True)
 
+        self.stc = self.buffer.stc
+        self.Update(self.stc)
+
+    def createListenersPostHook(self):
+        # Thread stuff for the underlying change callback
+        self.waiting=None
+
+        # Multiple binds to the same handler, ie multiple HexEditModes
+        # trying to do self.buffer.stc.Bind(wx.stc.EVT_STC_MODIFIED,
+        # self.underlyingSTCChanged) don't work.  Need to use the
+        # event manager for multiple bindings.
+        eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
+                          self.buffer.stc)
+
+    def removeListenersPostHook(self):
+        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
+        eventManager.DeregisterListener(self.underlyingSTCChanged)
+        
     def Update(self,stc,format=None):
         assert self.dprint("Need to update grid")
         self.table.ResetView(self,stc,format)
@@ -781,46 +811,6 @@ class HugeTableGrid(STCInterface, Grid.Grid, debugmixin):
         if self.updateUICallback is not None:
             self.updateUICallback(None)
         
-
-
-class HexEditMode(MajorMode):
-    """
-    View for editing in hexidecimal notation.
-    """
-    
-    keyword = 'HexEdit'
-    emacs_synonyms = 'hexl'
-    
-    icon='icons/tux.png'
-    regex="\.(hex|bin|so|a|exe)$"
-
-    debuglevel=0
-
-    def createEditWindow(self,parent):
-        assert self.dprint("creating new HexEditMode window")
-        win=HugeTableGrid(parent,self.buffer.stc,"16c")        
-        return win
-
-    def createWindowPostHook(self):
-        # Thread stuff for the underlying change callback
-        self.waiting=None
-
-        # Multiple binds to the same handler, ie multiple HexEditModes
-        # trying to do self.buffer.stc.Bind(wx.stc.EVT_STC_MODIFIED,
-        # self.underlyingSTCChanged) don't work.  Need to use the
-        # event manager for multiple bindings.
-        eventManager.Bind(self.underlyingSTCChanged,wx.stc.EVT_STC_MODIFIED,self.buffer.stc)
-
-        # self.stc points to the data storage; self.editwin points to
-        # the user interface window.  In this case, they are
-        # different.
-        self.stc = self.buffer.stc
-        self.editwin.Update(self.stc)
-        
-    def deleteWindowPostHook(self):
-        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
-        eventManager.DeregisterListener(self.underlyingSTCChanged)
-        
     def transModType(self, modType):
         st = ""
         table = [(wx.stc.STC_MOD_INSERTTEXT, "InsertText"),
@@ -887,7 +877,7 @@ class HexEditMode(MajorMode):
             # started if we just destroyed the old thread.
             if not self.waiting:
                 assert self.dprint("starting wait thread")
-                self.waiting=WaitThread(self.editwin)
+                self.waiting=WaitThread(self)
                 self.waiting.start()
 
 
