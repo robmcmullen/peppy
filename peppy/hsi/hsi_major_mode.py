@@ -457,16 +457,6 @@ class FocalPlaneView(CubeView):
         return profile
 
 
-class CubeScroller(BitmapScroller):
-    def __init__(self, parent, frame):
-        BitmapScroller.__init__(self, parent)
-        self.parent = parent
-        self.frame = frame
-
-    def addUpdateUIEvent(self, callback):
-        self.Bind(EVT_CROSSHAIR_MOTION, callback)
-
-
 class HSIActionMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -719,7 +709,7 @@ class CubeViewAction(HSIActionMixin, RadioAction):
             wx.CallAfter(self.mode.update)
 
 
-class HSIMode(MajorMode):
+class HSIMode(BitmapScroller, MajorMode):
     """Major mode for hyperspectral image analysis.
 
     ...
@@ -734,13 +724,10 @@ class HSIMode(MajorMode):
         BoolParam('display_rgb', False),
         )
 
-    def createEditWindow(self,parent):
-        """
-        Create the bitmap viewer that is the main window of this major
-        mode.
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        BitmapScroller.__init__(self, parent)
 
-        @param parent: parent window in which to create this window 
-        """
         self.dataset = self.buffer.stc.dataset
         self.cubeview = None
         self.cubefilter = BandFilter()
@@ -751,16 +738,12 @@ class HSIMode(MajorMode):
         self.setViewer(CubeView)
         #self.cube.open()
         dprint(self.cube)
-        win = CubeScroller(parent, self.frame)
-        return win
 
-    def createWindowPostHook(self):
-        """
-        Initialize the bitmap viewer with the image contained in the
-        buffer.
-        """
         self.update(False) # initial case will refresh automatically
         self.stc = self.buffer.stc
+
+    def addUpdateUIEvent(self, callback):
+        self.Bind(EVT_CROSSHAIR_MOTION, callback)
 
     def getStatusBar(self):
         """Get the HSI status bar
@@ -779,7 +762,7 @@ class HSIMode(MajorMode):
         self.frame.SetStatusText("%s %s" % (pix, hex(pix)), 3)
         pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
         self.frame.SetStatusText("%s" % pos, 4)
-        for minor in self.minors:
+        for minor in self.wrapper.minors:
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.updateLines(*evt.imageCoords)
@@ -793,9 +776,9 @@ class HSIMode(MajorMode):
 
     def update(self, refresh=True):
         self.cubeview.show(self.filter, self.cubefilter)
-        self.editwin.setBitmap(self.cubeview.bitmap)
+        self.setBitmap(self.cubeview.bitmap)
         if refresh:
-            self.editwin.Refresh()
+            self.Refresh()
         self.idle_update_menu = True
 
     def setCube(self, index=0):
@@ -812,7 +795,7 @@ class HSIMode(MajorMode):
     def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
         self.cubeview.loadBands()
-        for minor in self.minors:
+        for minor in self.wrapper.minors:
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.setupAxes()
