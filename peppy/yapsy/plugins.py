@@ -234,13 +234,15 @@ class IPeppyPlugin(IPlugin, ClassPrefs):
         """
         return
     
-    def attemptOpen(self, url):
+    def attemptOpen(self, buffer):
         """Last resort to major mode matching: attempting to open the url.
 
         This method is the last resort if all other pattern matching
         and mode searching fails.  Typically, this is only an issue
         with non-Scintilla editors that use third-party file loading
         libraries.
+
+        buffer: the Buffer object to attempt to load
 
         @returns: major mode class if successful in matching
         """

@@ -962,7 +962,7 @@ class MajorModeMatcherDriver(debugmixin):
 
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
-        mode = cls.attemptOpen(plugins, buffer.url)
+        mode = cls.attemptOpen(plugins, buffer)
         if mode:
             return mode
 
@@ -1127,17 +1127,17 @@ class MajorModeMatcherDriver(debugmixin):
         return None
     
     @classmethod
-    def attemptOpen(cls, plugins, url):
+    def attemptOpen(cls, plugins, buffer):
         """Use the mode's attemptOpen method to see if it recognizes
         the url.
         
-        @param url: vfs.Reference object to scan
+        @param buffer: Buffer object to scan
         
         @returns: matching L{MajorMode} subclass or None
         """
         
         for plugin in plugins:
-            mode = plugin.attemptOpen(url)
+            mode = plugin.attemptOpen(buffer)
             if mode:
                 return mode
         return None

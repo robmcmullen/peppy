@@ -12,7 +12,8 @@ class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
 
-    def attemptOpen(self, url):
+    def attemptOpen(self, buffer):
+        url = buffer.url
         dprint("Trying to open url: %s" % url)
         hsi_major_mode = self.importModule("hsi_major_mode")
         if hsi_major_mode:
