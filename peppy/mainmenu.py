@@ -577,34 +577,31 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     tooltip="Switch major mode"
     default_menu = ("View", 0)
 
-    modes=None
-    items=None
-
     def initPreHook(self):
         currentmode = self.mode
         modes = MajorModeMatcherDriver.getCompatibleMajorModes(currentmode.stc_class)
 
         modes.sort(key=lambda s:s.keyword)
         assert self.dprint(modes)
-        MajorModeSelect.modes = modes
+        self.modes = modes
         names = [m.keyword for m in modes]
-        MajorModeSelect.items = names
+        self.items = names
 
     def saveIndex(self,index):
         assert self.dprint("index=%d" % index)
 
     def getIndex(self):
         modecls = self.mode.__class__
-        assert self.dprint("searching for %s in %s" % (modecls, MajorModeSelect.modes))
+        assert self.dprint("searching for %s in %s" % (modecls, self.modes))
         if modecls is not None.__class__:
-            return MajorModeSelect.modes.index(modecls)
+            return self.modes.index(modecls)
         return 0
                                            
     def getItems(self):
-        return MajorModeSelect.items
+        return self.items
 
     def action(self, index=-1, multiplier=1):
-        self.frame.changeMajorMode(MajorModeSelect.modes[index])
+        self.frame.changeMajorMode(self.modes[index])
 
 
 class MinorModeShow(ToggleListAction):
