@@ -268,9 +268,9 @@ class KeyProcessor(object):
     modes, then the local, and finally if nothing matches, the global
     key maps.
     """
+    debug = False
+    
     def __init__(self,status=None):
-        self.debug=False
-        
         self.keymaps=[]
         self.minorKeymaps=[]
         self.globalKeymap=KeyMap()
@@ -311,14 +311,14 @@ class KeyProcessor(object):
         for i in wxkeynames:
             self.wxkeys[getattr(wx, "WXK_"+i)] = i
         for i in ("SHIFT", "ALT", "COMMAND", "MENU"):
-            if wx.Platform == '__WXMSW__':
-                self.wxkeys[getattr(wx, "WXK_"+i)] = ''
-            else:
+            if wx.Platform == '__WXGTK__':
                 # unix doesn't create a keystroke when a modifier key
                 # is also modified by another modifier key, so we
                 # create entries here so that decode() doesn't have to
                 # have platform-specific code
                 self.wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
+            else:
+                self.wxkeys[getattr(wx, "WXK_"+i)] = ''
 
     def fixmaps(self):
         """set up the search order of keymaps
@@ -379,6 +379,7 @@ class KeyProcessor(object):
             modifiers += "M-"
             metadown = True
 
+
         # Check the sticky-meta
         if self.metaNext:
             if not metadown:
@@ -402,7 +403,7 @@ class KeyProcessor(object):
                 keyname = chr(keycode)
             else:
                 keyname = "(%s)unknown" % keycode
-        if self.debug: print "keycode=%d raw=%d key=%s" % (keycode,raw,modifiers+keyname)
+        if self.debug: print("modifiers: raw=%d processed='%s' keyname=%s keycode=%s key=%s" % (emods, modifiers, keyname, keycode, modifiers+keyname))
         return modifiers + keyname
 
     def reset(self):
@@ -528,9 +529,9 @@ class KeyProcessor(object):
         the processing chain.
         """
         key = self.decode(evt)
-        if self.debug:
-            for keymap in self.keymaps:
-                print keymap.cur
+#        if self.debug:
+#            for keymap in self.keymaps:
+#                print keymap.cur
         
         if key == self.abortKey:
             self.reset()
@@ -614,6 +615,8 @@ class KeyProcessor(object):
 
 if __name__ == '__main__':
     #a utility function and class
+    KeyProcessor.debug = True
+    
     class StatusUpdater:
         def __init__(self, frame, message):
             self.frame = frame
@@ -648,7 +651,7 @@ if __name__ == '__main__':
             self.CreateStatusBar()
             ctrl = self.ctrl = wx.TextCtrl(self, -1, style=wx.TE_MULTILINE|wx.WANTS_CHARS|wx.TE_RICH2)
             ctrl.SetFocus()
-            ctrl.Bind(wx.EVT_KEY_DOWN, self.KeyPressed, ctrl)
+            ctrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
 
             self.globalKeyMap=KeyMap()
             self.localKeyMap=KeyMap()
@@ -747,7 +750,8 @@ if __name__ == '__main__':
             else:
                 parent.Append(menu, name)
 
-        def KeyPressed(self, evt):
+        def OnKeyPressed(self, evt):
+            print "in OnKeyPressed"
             self.keys.process(evt)
     
     app = wx.PySimpleApp()
