@@ -13,10 +13,11 @@ import peppy.vfs as vfs
 from peppy.debug import *
 
 
-def GetClipboardText():
+def GetClipboardText(primary_selection=False):
     success = False
     do = wx.TextDataObject()
     if wx.TheClipboard.Open():
+        wx.TheClipboard.UsePrimarySelection(primary_selection)
         success = wx.TheClipboard.GetData(do)
         wx.TheClipboard.Close()
 
@@ -24,11 +25,11 @@ def GetClipboardText():
         return do.GetText()
     return None
 
-def SetClipboardText(txt):
+def SetClipboardText(txt, primary_selection=False):
     do = wx.TextDataObject()
     do.SetText(txt)
     if wx.TheClipboard.Open():
-        wx.TheClipboard.UsePrimarySelection(False)
+        wx.TheClipboard.UsePrimarySelection(primary_selection)
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
         return 1
@@ -700,7 +701,8 @@ class PeppySTC(PeppyBaseSTC):
         self.Bind(wx.stc.EVT_STC_START_DRAG, self.OnStartDrag)
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-    
+        self.Bind(wx.EVT_MIDDLE_UP, self.OnMousePaste)
+
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
         self.debug_dnd=False
@@ -756,6 +758,19 @@ class PeppySTC(PeppyBaseSTC):
         self.LineScroll(0, num)
         #evt.Skip()
     
+    def OnMousePaste(self, evt):
+        """Paste the primary selection (on unix) at the mouse cursor location
+        
+        This currently supports only the primary selection (not the normal
+        cut/paste clipboard) from a unix implementation.
+        """
+        pos = self.PositionFromPoint(wx.Point(evt.GetX(), evt.GetY()))
+        #print("x=%d y=%d pos=%d" % (evt.GetX(), evt.GetY(), pos))
+        if pos != wx.stc.STC_INVALID_POSITION:
+            text = GetClipboardText(True)
+            if text:
+                self.InsertText(pos, text)
+
     def OnStartDrag(self, evt):
         assert self.dprint("OnStartDrag: %d, %s\n"
                        % (evt.GetDragAllowMove(), evt.GetDragText()))
