@@ -202,7 +202,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
         self.flags = {}
-        self.column_names = ["Flags", "Filename", "Size", "Mode", "Info", "URL"]
+        self.column_names = ["Flags", "Filename", "Size", "Mode", "Description", "URL"]
         self.column_sizes = [-60,200,0,0,0,-200]
         self.columns = {}
 
@@ -411,14 +411,15 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         for name in vfs.get_names(self.url):
             key, mode = self.getKey(name)
             flags = self.getFlags(key)
+            metadata = vfs.get_metadata(key)
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, flags)
             else:
                 self.SetStringItem(index, 0, flags)
             self.SetStringItem(index, 1, name)
-            self.SetStringItem(index, 2, str(vfs.get_size(key)))
+            self.SetStringItem(index, 2, str(metadata['size']))
             self.SetStringItem(index, 3, mode)
-            self.SetStringItem(index, 4, "info goes here")
+            self.SetStringItem(index, 4, metadata['description'])
             self.SetStringItem(index, 5, str(key))
 
             index += 1

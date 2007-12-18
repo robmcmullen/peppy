@@ -91,6 +91,8 @@ def findAbout(path):
     return None
 
 class AboutFS(vfs.BaseFS):
+    mtime = time.time()
+    
     @staticmethod
     def exists(reference):
         path = str(reference.path)
@@ -122,6 +124,24 @@ class AboutFS(vfs.BaseFS):
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @staticmethod
+    def get_mtime(reference):
+        path = str(reference.path)
+        text = findAbout(path)
+        if text:
+            return AboutFS.mtime
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
+
+    @staticmethod
+    def get_mimetype(reference):
+        path = str(reference.path)
+        text = findAbout(path)
+        if text:
+            if text.strip()[0] == "<":
+                return "text/html"
+            return "text/plain"
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
+
+    @staticmethod
     def open(reference, mode=None):
         path = str(reference.path)
         #dprint(url)
@@ -150,7 +170,6 @@ SetAbout('thanks', """\
 %(contributors)s
 """)
 SetAbout('peppy',"""\
-<!-- -*- HTMLView -*- -->
 <h2>%(prog)s %(version)s \"%(codename)s\"</h2>
 
 <h3>%(description)s</h3>

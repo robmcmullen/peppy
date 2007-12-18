@@ -268,6 +268,11 @@ class MajorMode(ClassPrefs, debugmixin):
     # to edit the file.  If no specific filenames, set to None
     regex = None
     
+    # The VFS also provides metadata, including MIME type, and the MIME types
+    # supported by the major mode can be listed here.  The MIME types can be
+    # a single string or a list of strings for multiple types.
+    mimetype = None
+    
     # If this mode represents a temporary view and should be replaced by
     # a new tab, make this True
     temporary = False
@@ -341,6 +346,25 @@ class MajorMode(ClassPrefs, debugmixin):
             match=re.search(cls.regex, filename)
             if match:
                 return True
+        return False
+
+    @classmethod
+    def verifyMetadata(cls, metadata):
+        """Hook to allow the major mode to determine compatibility by file
+        metadata.
+
+        metadata: a dict containing the results of a call to vfs.get_metadata.
+        The MIME type will be in a key called 'mimetype'.
+
+        return: True if the mode supports the MIME type specified by the
+        metadata
+        """
+        if cls.mimetype:
+            if isinstance(cls.mimetype, str) and metadata['mimetype'] == cls.mimetype:
+                return True
+            for mime in cls.mimetype:
+                if metadata['mimetype'] == cls.mimetype:
+                    return True
         return False
 
     @classmethod
@@ -959,7 +983,8 @@ class MajorModeMatcherDriver(debugmixin):
 
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
-        modes = cls.scanURL(plugins, buffer.url)
+        metadata = vfs.get_metadata(buffer.url)
+        modes = cls.scanURL(plugins, buffer.url, metadata)
         
         # get a buffered file handle to examine some bytes in the file
         fh = buffer.getBufferedReader(magic_size)
@@ -1081,7 +1106,7 @@ class MajorModeMatcherDriver(debugmixin):
         return ext, None
 
     @classmethod
-    def scanURL(cls, plugins, url):
+    def scanURL(cls, plugins, url, metadata):
         """Scan for url filename match.
         
         Determine if the pathname matches some pattern that can
@@ -1097,6 +1122,8 @@ class MajorModeMatcherDriver(debugmixin):
         ext, editra_type = cls.getEditraType(url)
         for plugin in plugins:
             for mode in plugin.getMajorModes():
+                if mode.verifyMetadata(metadata):
+                    modes.append(mode)
                 if mode.verifyFilename(url.path.get_name()):
                     modes.append(mode)
                 editra = mode.verifyEditraType(ext, editra_type)

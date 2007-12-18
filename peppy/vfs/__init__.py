@@ -103,6 +103,20 @@ def open_numpy_mmap(ref):
         return fs.open_numpy_mmap(ref)
     raise IOError('%s not supported for mmap access' % str(ref))
 
+# extension to vfs to return dictionary containing metadata for the reference
+def get_metadata(ref):
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
+    fs = get_file_system(ref.scheme)
+    if hasattr(fs, 'get_metadata'):
+        return fs.get_metadata(ref)
+    return {
+        'mimetype': fs.get_mimetype(ref),
+        'description': 'description...',
+        'mtime': fs.get_mtime(ref),
+        'size': fs.get_size(ref),
+        }
+
 
 __all__ = [
     ##### From vfs:
@@ -133,6 +147,7 @@ __all__ = [
     'remove',
     'open',
     'open_numpy_mmap',
+    'get_metadata',
     'copy',
     'move',
     'get_names',
