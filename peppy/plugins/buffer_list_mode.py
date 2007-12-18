@@ -213,11 +213,11 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
-        self.InsertColumn(0, "Flags")
-        self.InsertColumn(1, "Buffer")
-        self.InsertColumn(2, "Size")
-        self.InsertColumn(3, "Mode")
-        self.InsertColumn(4, "URL")
+        self.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", scale=False)
+        self.InsertSizedColumn(1, "Buffer", min=100, scale=True)
+        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
+        self.InsertSizedColumn(3, "Mode")
+        self.InsertSizedColumn(4, "URL", can_scroll=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -335,7 +335,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
                 if 'D' in flags:
                     if buffer.modified:
                         Publisher().sendMessage('peppy.log.error', "Buffer %s modified.  Not deleting.\n" % key)
-                    elif buffer == self.mode.buffer:
+                    elif buffer == self.buffer:
                         # BadThings happen if you try to delete this buffer
                         # in the middle of the delete process!
                         dprint("Deleting me!  Save till later")
@@ -347,7 +347,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
                         # been deleted.
                         continue
                 elif 'M' in flags:
-                    self.mode.frame.newBuffer(buffer)
+                    self.frame.newBuffer(buffer)
                 self.flags[key] = ""
         finally:
             if delete_self is not None:
@@ -404,7 +404,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         if show >= 0:
             self.EnsureVisible(show)
 
-        self.resizeColumns([-60,200,0,0,-200])
+        self.resizeColumns()
         self.Thaw()
 
 

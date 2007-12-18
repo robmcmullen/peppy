@@ -11,12 +11,10 @@
 #-----------------------------------------------------------------------------
 """columnsizer -- a mixin to handle column resizing for list controls
 
-This mixin provides the capabibility to resize columns in a
-report-mode list control.  Integer flags are used for each column to
-indicate whether the column should be a fixed size or a width
-proportional to te length of the largest item in the column.  It also
-tries (with only some success) to avoid using a horizontal scrollbar
-if at all possible.
+This mixin provides the capabibility to resize columns in a report-mode list
+control.  Columns may have fixed or scalable widths, and optionally the first
+n columns can be constrained to fit in the visible portion of the window upon
+the initial sizing of the list.
 """
 import sys
 
@@ -39,10 +37,8 @@ except:
 class ColumnSizerMixin(debugmixin):
     """Enhancement to ListCtrl to handle column resizing.
 
-    Resizes columns to a fixed size or based on the size of the
-    contents, but constrains the whole width to the visible area of
-    the list.  Theoretically there won't be any horizontal scrollbars,
-    but this doesnt' yet work on GTK, at least.
+    Resizes columns to a size based on the contents, or with a minimum, a
+    maximum, or a fixed size.
     """
     def __init__(self, *args, **kw):
         self._resize_flags = None
@@ -79,35 +75,33 @@ class ColumnSizerMixin(debugmixin):
         self._resize_dirty = True
 
     def OnSize(self, evt):
-        #dprint(evt.GetSize())
         if self._last_size is None or self._last_size != evt.GetSize():
             self._resize_dirty = True
             self._last_size = evt.GetSize()
-            wx.CallAfter(self.resizeColumnsIfDirty)
+            if wx.Platform == '__WXGTK__':
+                self.resizeColumns()
+            else:
+                wx.CallAfter(self.resizeColumns)
         evt.Skip()
-        
-    def resizeColumnsIfDirty(self):
-        # OnSize gets called a lot, so only do the column resize one
-        # time unless the data has changed
-        if self._resize_dirty:
-            self._resizeColumns()
         
     def resizeColumns(self):
         if self:
+            # Have to check for object existence because an event might be
+            # scheduled between the time the OnSize event is called and when
+            # CallAfter gets around to executing the resizeColumns
             self._resize_dirty = True
             self._resizeColumns()
-        else:
-            # This happens because an event might be scheduled between
-            # the time the OnSize event is called and the CallAfter
-            # gets around to executing the resizeColumns
-            assert self.dprint("caught dead object error for %s" % self)
-            pass
         
     def _resizeColumns(self):
         if not self._resize_dirty:
             return
         self.Freeze()
-            
+        
+        # get font to measure text extents
+        font = self.GetFont()
+        dc = wx.ClientDC(self)
+        dc.SetFont(font)
+
         flags = self._resize_flags
         autosized_width = 0
         fixed_width = 0
@@ -132,13 +126,23 @@ class ColumnSizerMixin(debugmixin):
             flag = flags[col]
             if flag.scale:
                 resize = (before * w) / autosized_width
-                          
-            if flag.min and resize < flag.min:
-                resize = flag.min
-            elif flag.max and resize > flag.max:
-                resize = flag.max
+            
+            # setup min and max values.  The min and max may be specified as
+            # a string, which will be converted into pixels here, based on
+            # the current font.
+            small = flag.min
+            if isinstance(small, str):
+                small = dc.GetTextExtent(small)[0]
+            large = flag.max
+            if isinstance(large, str):
+                large = dc.GetTextExtent(large)[0]
+
+            if small and resize < small:
+                resize = small
+            elif large and resize > large:
+                resize = large
                 
-            assert self.dprint("col %d: before=%d resized=%d" % (col, before, resize))
+            dprint("col %d: before=%s resized=%s" % (col, before, resize))
             if resize != before:
                 self.SetColumnWidth(col, resize)
         self.Thaw()
@@ -163,7 +167,7 @@ if __name__ == "__main__":
             self.InsertSizedColumn(0, "Index")
             self.InsertSizedColumn(1, "Filename", min=100, max=200)
             self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
-            self.InsertSizedColumn(3, "Mode", max=100)
+            self.InsertSizedColumn(3, "Mode", max="MMM")
             self.InsertSizedColumn(4, "Description", min=100)
             self.InsertSizedColumn(5, "URL", can_scroll=True)
 
@@ -198,7 +202,7 @@ if __name__ == "__main__":
     frame.CreateStatusBar()
     
     panel = TestList(frame)
-
+    
     # Layout the frame
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(panel, 1, wx.EXPAND)
