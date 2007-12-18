@@ -115,6 +115,9 @@ class STCInterface(object):
     def Redo(self):
         pass
 
+    def SetSavePoint(self):
+        pass
+
     def GetText(self):
         return ''
     
