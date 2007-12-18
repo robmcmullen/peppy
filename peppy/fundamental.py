@@ -720,13 +720,13 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         """
         self.stc.braceHighlight()
         assert self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
-        linenum = self.editwin.GetCurrentLine()
-        pos = self.editwin.GetCurrentPos()
-        col = self.editwin.GetColumn(pos)
+        linenum = self.GetCurrentLine()
+        pos = self.GetCurrentPos()
+        col = self.GetColumn(pos)
         self.frame.SetStatusText("L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset,
-            self.editwin.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE,
-            self.editwin.GetStyleAt(pos), pos),1)
+            self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE,
+            self.GetStyleAt(pos), pos),1)
         self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
@@ -736,5 +736,5 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         if url.fragment:
             line = int(url.fragment)
             line -= self.classprefs.line_number_offset
-            self.editwin.GotoLine(line)
-            self.editwin.EnsureVisible(line)
+            self.GotoLine(line)
+            self.EnsureVisible(line)

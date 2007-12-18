@@ -120,7 +120,7 @@ class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
         # FIXME: don't actually perform the complete update right now
         # because it's probably too slow.  Queue it for later and put
         # it in a thread.
-        # self.editwin.update()
+        # self.update()
         pass
 
 

@@ -35,7 +35,7 @@ class SizeReporterMinorMode(MinorMode, wx.PyControl):
 
         wx.PyControl.__init__(self, parent, id, pos, size, wx.NO_BORDER)
             
-        self._mgr = major._mgr
+        self._mgr = major.wrapper._mgr
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)

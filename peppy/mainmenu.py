@@ -492,7 +492,7 @@ class PasteAtColumn(Paste):
 
     @classmethod
     def worksWithMajorMode(cls, mode):
-        return hasattr(mode.editwin, 'PasteAtColumn')
+        return hasattr(mode, 'PasteAtColumn')
 
     def action(self, index=-1, multiplier=1):
         self.mode.stc.PasteAtColumn()
@@ -509,7 +509,7 @@ class SelectAll(Paste):
 
     @classmethod
     def worksWithMajorMode(cls, mode):
-        return hasattr(mode.editwin, 'SelectAll')
+        return hasattr(mode, 'SelectAll')
 
     def action(self, index=-1, multiplier=1):
         self.mode.stc.SelectAll()
@@ -537,7 +537,7 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
     @classmethod
     def worksWithMajorMode(cls, mode):
-        return hasattr(mode.editwin, 'GetEOLMode')
+        return hasattr(mode, 'GetEOLMode')
 
     def saveIndex(self,index):
         assert self.dprint("index=%d" % index)
@@ -760,7 +760,7 @@ class WordCount(SelectAction):
     key_bindings = {'default': "M-=", }
 
     def action(self, index=-1, multiplier=1):
-        s = self.mode.editwin
+        s = self.mode
         (start, end) = s.GetSelection()
         if start==end:
             text = s.GetText()

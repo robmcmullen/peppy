@@ -1073,7 +1073,7 @@ class MPDMode(wx.Panel, MajorMode):
         return self.mpd is not None
 
     def loginPassword(self):
-        dlg = wx.TextEntryDialog(self.editwin,
+        dlg = wx.TextEntryDialog(self,
                                  'Enter MPD password for %s' % self.buffer.url.url,
                                  style=wx.OK | wx.CANCEL | wx.TE_PASSWORD)
         
@@ -1084,7 +1084,7 @@ class MPDMode(wx.Panel, MajorMode):
         dlg.Destroy()
 
     def OnLogin(self, evt=None):
-        self.editwin.reset()
+        self.reset()
         evt.Skip()
 
 

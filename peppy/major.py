@@ -323,7 +323,6 @@ class MajorMode(ClassPrefs, debugmixin):
         self.frame = frame
         self.popup=None
         self.statusbar = None
-        self.editwin = self
         
         # Create a window here!
         pass
@@ -481,9 +480,9 @@ class MajorMode(ClassPrefs, debugmixin):
         pass
 
     def createEventBindings(self):
-        if hasattr(self.editwin,'addUpdateUIEvent'):
-            self.editwin.addUpdateUIEvent(self.OnUpdateUI)
-        self.editwin.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
+        if hasattr(self, 'addUpdateUIEvent'):
+            self.addUpdateUIEvent(self.OnUpdateUI)
+        self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
         self.idle_update_menu = False
 
     def createEventBindingsPostHook(self):
@@ -550,9 +549,9 @@ class MajorMode(ClassPrefs, debugmixin):
         @param evt: some event of undetermined type
         """
         assert self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
-        linenum = self.editwin.GetCurrentLine()
-        pos = self.editwin.GetCurrentPos()
-        col = self.editwin.GetColumn(pos)
+        linenum = self.GetCurrentLine()
+        pos = self.GetCurrentPos()
+        col = self.GetColumn(pos)
         self.frame.SetStatusText("L%d C%d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset),1)
         self.idle_update_menu = True
@@ -695,7 +694,7 @@ class MajorMode(ClassPrefs, debugmixin):
 
     def focus(self):
         #assert self.dprint("View: setting focus to %s" % self)
-        self.editwin.SetFocus()
+        self.SetFocus()
         self.focusPostHook()
 
     def focusPostHook(self):
@@ -710,7 +709,7 @@ class MajorMode(ClassPrefs, debugmixin):
             cursor = wx.StockCursor(wx.CURSOR_WATCH)
         else:
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
-        self.editwin.SetCursor(cursor)
+        self.SetCursor(cursor)
 
     def showInitialPosition(self, url):
         """Hook to scroll to a non-default initial position if desired."""

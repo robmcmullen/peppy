@@ -69,7 +69,7 @@ class InsertHelloWorld(SelectAction):
         # that will be too limiting in the future.  We can also check for
         # specific attributes of the editing window, which is what I'm
         # doing here.
-        return hasattr(mode.editwin, 'AddText')
+        return hasattr(mode, 'AddText')
     
     # The enable state of the menu or toolbar entry is controlled here
     # Actions are created and destroyed all the time, so don't save any
@@ -95,7 +95,7 @@ class InsertHelloWorld(SelectAction):
         # It doesn't make sense for all actions to respond to the multiplier,
         # so you may ignore it if you wish.  I'll handle it here:
         for i in range(0, multiplier):
-            self.mode.editwin.AddText(hello)
+            self.mode.AddText(hello)
 
 
 class SmileyFaceMinorMode(MinorMode, wx.PyControl):

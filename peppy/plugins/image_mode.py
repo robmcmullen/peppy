@@ -42,7 +42,7 @@ class OpenImageViewer(SelectAction):
 class ImageActionMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
-        return isinstance(mode.editwin, BitmapScroller)
+        return isinstance(mode, BitmapScroller)
 
 class ZoomIn(ImageActionMixin, SelectAction):
     name = "Zoom In"
@@ -52,7 +52,7 @@ class ZoomIn(ImageActionMixin, SelectAction):
     keyboard = "="
     
     def action(self, index=-1, multiplier=1):
-        self.mode.editwin.zoomIn()
+        self.mode.zoomIn()
 
 class ZoomOut(ImageActionMixin, SelectAction):
     name = "Zoom Out"
@@ -62,7 +62,7 @@ class ZoomOut(ImageActionMixin, SelectAction):
     keyboard = "-"
     
     def action(self, index=-1, multiplier=1):
-        self.mode.editwin.zoomOut()
+        self.mode.zoomOut()
 
 class RectangularSelect(ImageActionMixin, ToggleAction):
     name = "Select Rect"
@@ -72,15 +72,15 @@ class RectangularSelect(ImageActionMixin, ToggleAction):
     
     def isChecked(self):
         mode = self.frame.getActiveMajorMode()
-        return mode.editwin.use_selector == RubberBand
+        return mode.use_selector == RubberBand
 
     def action(self, index=-1, multiplier=1):
         print "Select mode!!!"
         mode = self.mode
-        if mode.editwin.use_selector == RubberBand:
-            mode.editwin.setSelector(Crosshair)
+        if mode.use_selector == RubberBand:
+            mode.setSelector(Crosshair)
         else:
-            mode.editwin.setSelector(RubberBand)
+            mode.setSelector(RubberBand)
 
 class ImageSTCWrapper(STCProxy):
     def __init__(self, stc, win):
@@ -171,7 +171,7 @@ class ImageViewMode(BitmapScroller, MajorMode):
         # FIXME: don't actually perform the complete update right now
         # because it's probably too slow.  Queue it for later and put
         # it in a thread.
-        # self.editwin.update()
+        # self.update()
         pass
 
 
