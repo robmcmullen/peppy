@@ -665,9 +665,12 @@ class MajorMode(ClassPrefs, debugmixin):
         self.applySettings()       
 
     def focus(self):
-        #assert self.dprint("View: setting focus to %s" % self)
-        self.SetFocus()
-        self.focusPostHook()
+        # The active tab may have changed, so make sure that this mode is
+        # still in the active tab before setting focus.  Otherwise we might
+        # change tabs unexpectedly.
+        if self.frame.getActiveMajorMode() == self:
+            self.SetFocus()
+            self.focusPostHook()
 
     def focusPostHook(self):
         pass
