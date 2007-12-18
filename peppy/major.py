@@ -649,6 +649,10 @@ class MajorMode(ClassPrefs, debugmixin):
             self.statusbar.Destroy()
             self.statusbar = None
 
+    ##### Proxy services for the wrapper
+    def updateAui(self):
+        self.wrapper._mgr.Update()
+
     def setMinibuffer(self, minibuffer=None):
         """Proxy the minibuffer requests up to the wrapper"""
         self.wrapper.setMinibuffer(minibuffer)

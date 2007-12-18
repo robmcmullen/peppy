@@ -778,7 +778,7 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
     def showIfHidden(self):
         if not self.paneinfo.IsShown():
             self.paneinfo.Show(True)
-            self.major._mgr.Update()
+            self.major.updateAui()
 
     def update(self):
         self.reset()
@@ -793,9 +793,9 @@ class MPDListByGenre(NeXTPanel, debugmixin):
     """
     debuglevel = 0
 
-    def __init__(self, parent_win, parent):
+    def __init__(self, parent_win, major):
         NeXTPanel.__init__(self, parent_win)
-        self.parent = parent
+        self.major = major
 
         self.Bind(EVT_NEXTPANEL,self.OnPanelUpdate)
 
@@ -813,7 +813,7 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         list = self.GetList(index)
         if list is None:
             assert self.dprint("list at position %d not found!  Creating new list" % index)
-            list = self.AppendList(self.parent.major.classprefs.list_width, keyword)
+            list = self.AppendList(self.major.classprefs.list_width, keyword)
         names = {}
         for item in items:
             #assert self.dprint(item)
@@ -827,9 +827,9 @@ class MPDListByGenre(NeXTPanel, debugmixin):
 
     def getLevelItems(self, level, item):
         if level < 0:
-            return self.parent.mpd.sync("list", "genre")
+            return self.major.mpd.sync("list", "genre")
         if level < len(self.lists) - 1:
-            return self.parent.mpd.sync("list", self.lists[level+1], self.lists[level], item)
+            return self.major.mpd.sync("list", self.lists[level+1], self.lists[level], item)
         return None
 
     def rebuildLevels(self, level, list, selections):
@@ -848,7 +848,7 @@ class MPDListByGenre(NeXTPanel, debugmixin):
         else:
             artists = []
             albums = [list.GetString(i) for i in selections]
-            Publisher().sendMessage('mpd.searchResultsArtistsAlbums', (self.parent.mpd, artists, albums))
+            Publisher().sendMessage('mpd.searchResultsArtistsAlbums', (self.major.mpd, artists, albums))
 
     def OnPanelUpdate(self, evt):
         assert self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
@@ -856,9 +856,9 @@ class MPDListByGenre(NeXTPanel, debugmixin):
 
 
 class MPDListByPath(NeXTFileManager, debugmixin):
-    def __init__(self, parent_win, parent):
+    def __init__(self, parent_win, major):
         NeXTFileManager.__init__(self, parent_win)
-        self.parent = parent
+        self.major = major
         self.files = {}
         
     def getLevelItems(self, level, item):
@@ -868,7 +868,7 @@ class MPDListByPath(NeXTFileManager, debugmixin):
             path = '/'.join(self.dirtree[0:level+1])
         #assert self.dprint(self.dirtree)
         #assert self.dprint(path)
-        items = self.parent.mpd.sync('lsinfo', path)
+        items = self.major.mpd.sync('lsinfo', path)
         names = []
         tracks = []
         for item in items:
@@ -879,7 +879,7 @@ class MPDListByPath(NeXTFileManager, debugmixin):
                 tracks.append(item)
 
         Publisher().sendMessage('mpd.searchResultsTracks',
-                                (self.parent.mpd, tracks))
+                                (self.major.mpd, tracks))
         return names
 
 
@@ -888,9 +888,9 @@ class MPDListSearch(wx.Panel, debugmixin):
     """
     debuglevel = 0
 
-    def __init__(self, parent_win, parent):
+    def __init__(self, parent_win, major):
         wx.Panel.__init__(self, parent_win)
-        self.parent = parent
+        self.major = major
         
         self.sizer = wx.GridBagSizer(5,5)
         
@@ -932,7 +932,7 @@ class MPDListSearch(wx.Panel, debugmixin):
         self.search.SetMenu(self.MakeMenu())
         assert self.dprint("OnDoSearch: " + self.search.GetValue())
         category = self.category.GetStringSelection()
-        items = self.parent.mpd.sync('search', category, keyword, timeout=2.0)
+        items = self.major.mpd.sync('search', category, keyword, timeout=2.0)
         names = []
         tracks = []
         for item in items:
@@ -941,7 +941,7 @@ class MPDListSearch(wx.Panel, debugmixin):
                 tracks.append(item)
 
         Publisher().sendMessage('mpd.searchResultsTracks',
-                                (self.parent.mpd, tracks))
+                                (self.major.mpd, tracks))
 
     def MakeMenu(self):
         menu = wx.Menu()
@@ -1030,7 +1030,7 @@ class MPDMode(wx.Panel, MajorMode):
         page = self.notebook.GetCurrentPage()
         page.reset()
 
-    def createListenerPostHook(self):
+    def createListenersPostHook(self):
         Publisher().subscribe(self.showMessages, 'mpd')
         eventManager.Bind(self.OnLogin, EVT_MPD_LOGGED_IN, win=wx.GetApp())
         self.login_shown = False
@@ -1352,7 +1352,7 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         self.resizeColumns([1,0,0,1])
 
         self.paneinfo.Caption("Playlist: %d songs -- %s" % (index, getTimeString(cumulative)))
-        self.major._mgr.Update()
+        self.major.updateAui()
 
     def appendSong(self, message=None):
         assert self.dprint(message)
@@ -1489,7 +1489,7 @@ class MPDCurrentlyPlaying(MPDMinorModeMixin, wx.Panel, debugmixin):
             self.slider.SetRange(0,1)
             self.slider.SetValue(0)
             self.songid = -1
-        self.major._mgr.Update() # force AUI to update the pane caption
+        self.major.updateAui() # force AUI to update the pane caption
         self.user_scrolling = False
 
     def songTime(self, msg=None):

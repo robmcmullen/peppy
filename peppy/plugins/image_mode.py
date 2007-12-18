@@ -140,14 +140,14 @@ class ImageViewMode(BitmapScroller, MajorMode):
             self.setImage(None)
             self.frame.SetStatusText("Invalid image")
 
-    def createListenerPostHook(self):
+    def createListenersPostHook(self):
         eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
                           self.buffer.stc)
 
         # Thread stuff for the underlying change callback
         self.waiting=None
 
-    def removeListenerPostHook(self):
+    def removeListenersPostHook(self):
         """
         Clean up the event manager hook that we needed to find out
         when the buffer had been changed by some other view of the

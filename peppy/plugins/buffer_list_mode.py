@@ -204,12 +204,12 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         self.reset()
         self.setSelectedIndexes([0])
     
-    def createListenerPostHook(self):
+    def createListenersPostHook(self):
         Publisher().subscribe(self.reset, 'buffer.opened')
         Publisher().subscribe(self.reset, 'buffer.closed')
         Publisher().subscribe(self.reset, 'buffer.modified')
 
-    def removeListenerPostHook(self):
+    def removeListenersPostHook(self):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
