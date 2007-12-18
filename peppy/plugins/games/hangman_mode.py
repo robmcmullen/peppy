@@ -63,7 +63,7 @@ class PlayHangman(SelectAction):
     default_menu = "Tools/Games"
 
     def action(self, index=-1, multiplier=1):
-        if isinstance(self.mode.stc, PeppySTC) or isinstance(self.mode, HangmanMode):
+        if isinstance(self.mode, PeppySTC) or isinstance(self.mode, HangmanMode):
             # if the current buffer is based on the PeppySTC or is Hangman
             # itself, it will open a new frame using that buffer as the
             # source for the wordlist
@@ -89,54 +89,7 @@ class RestartGame(SelectAction):
         return isinstance(mode, HangmanMode)
     
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.restart()
-
-
-class HangmanSTCWrapper(STCProxy):
-    def __init__(self, stc, win, min_length=5):
-        self.stc = stc
-        self.win = win
-        self.min_length = min_length
-
-        # only look at the first 100K characters in the buffer
-        self.max_text_length = 100000
-        
-    def CanEdit(self):
-        return False
-
-    def CanCopy(self):
-        return False
-
-    def CanCut(self):
-        return False
-
-    def CanPaste(self):
-        return False
-
-    def CanUndo(self):
-        return False
-
-    def CanRedo(self):
-        return False
-
-    def getWord(self):
-        reg = re.compile('\s+([a-zA-Z]+)\s+')
-        n = 50 # safety valve; maximum number of tries to find a suitable word
-        num = self.stc.GetLength()
-        if num > self.max_text_length:
-            num = self.max_text_length
-        text = self.stc.GetTextRange(0, num)
-        while n:
-            index = int(random.random()*num)
-            m = reg.search(text[index:])
-            if m and len(m.groups()[0]) >= self.min_length: break
-            n = n - 1
-        if n: return m.groups()[0].lower()
-        return "error"
-
-    def restart(self):
-        word = self.getWord()
-        self.win.StartGame(word)
+        self.mode.restart()
 
 
 class HangmanWnd(wx.Window):
@@ -250,7 +203,7 @@ class HangmanWnd(wx.Window):
         self.Draw(dc)
 
 
-class HangmanMode(MajorMode):
+class HangmanMode(HangmanWnd, MajorMode):
     """
     Major mode for playing hangman.  It uses the normal stc buffer as
     a backend for the dictionary of words.
@@ -269,37 +222,31 @@ class HangmanMode(MajorMode):
     average = 0.0
     history = []
 
-    def createEditWindow(self, parent):
-        """Create the hangman window that is the user interface to this mode.
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        HangmanWnd.__init__(self, parent, -1)
 
-        @param parent: parent window in which to create this window 
-        """
-        assert self.dprint()
+        self.min_length = self.classprefs.min_word_length
 
-        win = HangmanWnd(parent, -1)        
-        return win
-
-    def createWindowPostHook(self):
-        """Initialize the hangman window."""
-        self.stc = HangmanSTCWrapper(self.buffer.stc, self.editwin,
-                                     self.classprefs.min_word_length)
-        self.stc.restart()
+        # only look at the first 100K characters in the buffer
+        self.max_text_length = 100000
+        self.restart()
 
     def createEventBindingsPostHook(self):
-        self.editwin.Bind(wx.EVT_CHAR, self.OnChar)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
 
     def UpdateAverages(self, has_won):
         if has_won:
             self.won = self.won + 1
         self.played = self.played+1
-        self.history.append(self.editwin.misses) # ugly
+        self.history.append(self.misses) # ugly
         total = 0.0
         for m in self.history:
             total = total + m
         self.average = float(total/len(self.history))
 
     def OnChar(self, evt):
-        if not self.editwin.InProgress():
+        if not self.InProgress():
             return
         key = evt.GetKeyCode();
         #print key
@@ -307,11 +254,11 @@ class HangmanMode(MajorMode):
             key = key + ord('a') - ord('A')
         key = chr(key)
         if key < 'a' or key > 'z':
-            event.Skip()
+            evt.Skip()
             return
-        res = self.editwin.HandleKey(key)
+        res = self.HandleKey(key)
         if res == 0:
-            self.frame.SetStatusText(self.editwin.message)
+            self.frame.SetStatusText(self.message)
         elif res == 1:
             self.UpdateAverages(0)
             self.frame.SetStatusText("Too bad, you're dead!",0)
@@ -323,6 +270,27 @@ class HangmanMode(MajorMode):
         else:
             percent = 0.0
         self.frame.SetStatusText("p %d, w %d (%g %%), av %g" % (self.played,self.won, percent, self.average),1)
+
+    def getWord(self):
+        s = self.buffer.stc
+        
+        reg = re.compile('\s+([a-zA-Z]+)\s+')
+        n = 50 # safety valve; maximum number of tries to find a suitable word
+        num = s.GetLength()
+        if num > self.max_text_length:
+            num = self.max_text_length
+        text = s.GetTextRange(0, num)
+        while n:
+            index = int(random.random()*num)
+            m = reg.search(text[index:])
+            if m and len(m.groups()[0]) >= self.min_length: break
+            n = n - 1
+        if n: return m.groups()[0].lower()
+        return "error"
+
+    def restart(self):
+        word = self.getWord()
+        self.StartGame(word)
 
 
 class HangmanPlugin(IPeppyPlugin, debugmixin):
