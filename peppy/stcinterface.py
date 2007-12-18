@@ -317,9 +317,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.subordinates.append(otherstc)
         self.updateSubordinateClasses()
 
-    def removeSubordinate(self,otherstc):
-        self.subordinates.remove(otherstc)
-        self.updateSubordinateClasses()
+    def removeDocumentView(self):
+        """Remove the reference of this view from its parent document"""
+        if self.refstc:
+            self.refstc.subordinates.remove(self)
+            self.refstc.updateSubordinateClasses()
 
     def open(self, buffer, message=None):
         fh = buffer.getBufferedReader()

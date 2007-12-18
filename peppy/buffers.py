@@ -197,8 +197,8 @@ class Buffer(BufferVFSMixin):
         assert self.dprint("removing view %s of %s" % (view,self))
         if view in self.viewers:
             self.viewers.remove(view)
-            if issubclass(view.__class__, PeppySTC) and view != self.stc:
-                self.stc.removeSubordinate(view)
+            if hasattr(view, 'removeDocumentView'):
+                view.removeDocumentView()
         else:
             raise ValueError("Bug somewhere.  Major mode %s not found in Buffer %s" % (view,self))
         assert self.dprint("views remaining of %s: %s" % (self,self.viewers))
