@@ -61,7 +61,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.editwin=None # user interface window
         self.minibuffer=None
         self.sidebar=None
-        self.stc=None # data store
         self.minors=[]
         self.minor_panes = []
         self.statusbar = None
@@ -264,7 +263,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 self.minibuffer.close()
             self.minibuffer = None
             self.Layout()
-            self.focus()
+            self.editwin.focus()
 
 
 class MajorMode(ClassPrefs, debugmixin):
@@ -318,7 +317,6 @@ class MajorMode(ClassPrefs, debugmixin):
     
     def __init__(self, parent, wrapper, buffer, frame):
         self.wrapper = wrapper
-        self.stc = None # data store
         self.buffer = buffer
         self.frame = frame
         self.popup=None
