@@ -96,7 +96,7 @@ class FindMinibuffer(Minibuffer):
 
     def GetWindow1(self):
         # Returns the stc of the major mode.
-        return self.mode.stc
+        return self.mode
 
     def Unsplit(self):
         # Pype's idiom for removing the widget from the screen.  It

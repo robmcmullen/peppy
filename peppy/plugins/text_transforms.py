@@ -52,7 +52,7 @@ class CommentRegion(TextModificationAction):
     key_bindings = {'emacs': 'C-C C-C',}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.commentRegion(multiplier != 4)
+        self.mode.commentRegion(multiplier != 4)
 
 class UncommentRegion(TextModificationAction):
     """Uncomment a line or region.
@@ -66,7 +66,7 @@ class UncommentRegion(TextModificationAction):
     default_menu = ("Transform", 601)
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.commentRegion(False)
+        self.mode.commentRegion(False)
 
 class Tabify(LineOrRegionMutateAction):
     """Replace spaces with tabs at the start of lines."""
@@ -185,7 +185,7 @@ class Reindent(TextModificationAction):
     key_bindings = {'default': 'TAB',}
 
     def action(self, index=-1, multiplier=1):
-        s = self.mode.stc
+        s = self.mode
 
         # save cursor information so the cursor can be maintained at
         # the same relative location in the text after the indention

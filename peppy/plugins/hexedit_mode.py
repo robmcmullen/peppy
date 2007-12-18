@@ -701,8 +701,7 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
         self.Bind(EVT_WAIT_UPDATE,self.OnUnderlyingUpdate)
         self.Show(True)
 
-        self.stc = self.buffer.stc
-        self.Update(self.stc)
+        self.Update(self.buffer.stc)
 
     def createListenersPostHook(self):
         # Thread stuff for the underlying change callback
@@ -862,7 +861,7 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
                                       evt.GetLength(),
                                       repr(evt.GetText()) ))
 
-            #self.win.underlyingUpdate(self.stc,evt.GetPosition())
+            #self.win.underlyingUpdate(self.buffer.stc,evt.GetPosition())
             if self.waiting:
                 if self.waiting.isAlive():
                     assert self.dprint("found active wait thread")

@@ -987,8 +987,7 @@ class MPDMode(wx.Panel, MajorMode):
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         wx.Panel.__init__(self, parent)
-        self.stc = self.buffer.stc
-        self.mpd = self.stc.mpd
+        self.mpd = self.buffer.stc.mpd
 
         self.default_font = self.GetFont()
         self.font = wx.Font(self.classprefs.list_font_size, 

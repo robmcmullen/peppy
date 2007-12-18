@@ -33,7 +33,7 @@ class STCModificationAction(BufferBusyActionMixin, SelectAction):
     """
     @classmethod
     def worksWithMajorMode(cls, mode):
-        return hasattr(mode.stc, 'CanUndo')
+        return hasattr(mode, 'CanUndo')
 
 class TextModificationAction(BufferBusyActionMixin, SelectAction):
     """Base class for any action that changes the bytes in the buffer.
@@ -51,7 +51,7 @@ class ScintillaCmdKeyExecute(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mode.stc.CmdKeyExecute(self.cmd)
+        self.mode.CmdKeyExecute(self.cmd)
 
 class RegionMutateAction(TextModificationAction):
     """Mixin class to operate only on a selected region.
@@ -59,7 +59,7 @@ class RegionMutateAction(TextModificationAction):
 
     def isActionAvailable(self):
         """The action is only available if a region is selected."""
-        (pos, end) = self.mode.stc.GetSelection()
+        (pos, end) = self.mode.GetSelection()
         return pos != end
 
     def mutate(self, txt):
@@ -99,7 +99,7 @@ class RegionMutateAction(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mutateSelection(self.mode.stc)
+        self.mutateSelection(self.mode)
         
 class WordOrRegionMutateAction(TextModificationAction):
     """Mixin class to operate on a word or the selected region.
@@ -147,7 +147,7 @@ class WordOrRegionMutateAction(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mutateSelection(self.mode.stc)
+        self.mutateSelection(self.mode)
         
 class LineOrRegionMutateAction(TextModificationAction):
     """Mixin class to operate on a line or the selected region extended
@@ -211,7 +211,7 @@ class LineOrRegionMutateAction(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mutateSelection(self.mode.stc)
+        self.mutateSelection(self.mode)
 
 
 class ParagraphOrRegionMutateAction(TextModificationAction):
@@ -261,4 +261,4 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mutateSelection(self.mode.stc)
+        self.mutateSelection(self.mode)

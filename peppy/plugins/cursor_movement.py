@@ -60,7 +60,7 @@ class BeginningOfBuffer(SelectAction):
     key_bindings = {'default': 'C-HOME'}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.DocumentStart()
+        self.mode.DocumentStart()
 
 class EndOfBuffer(SelectAction):
     alias = "end-of-buffer"
@@ -69,7 +69,7 @@ class EndOfBuffer(SelectAction):
     key_bindings = {'default': 'C-END'}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.DocumentEnd()
+        self.mode.DocumentEnd()
 
 
 class CursorMovementPlugin(IPeppyPlugin):

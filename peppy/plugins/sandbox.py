@@ -57,10 +57,10 @@ class ShowStyles(SelectAction):
 
     @classmethod
     def worksWithMajorMode(self, mode):
-        return hasattr(mode.stc, 'showStyle')
+        return hasattr(mode, 'showStyle')
     
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.showStyle()
+        self.mode.showStyle()
 
 
 class SandboxPlugin(IPeppyPlugin):

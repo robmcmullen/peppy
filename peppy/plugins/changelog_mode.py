@@ -33,7 +33,7 @@ class AddChangeLogEntry(STCModificationAction):
         date = time.strftime(self.mode.classprefs.date_format_str)
         prefs = wx.GetApp().user.classprefs
         
-        s = self.mode.stc
+        s = self.mode
         eol = s.getLinesep()
         pretext = "%s  %s  <%s>%s%s\t* " % (date, prefs.full_name, prefs.email,
             eol, eol)

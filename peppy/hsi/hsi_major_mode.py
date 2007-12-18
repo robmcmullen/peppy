@@ -740,7 +740,6 @@ class HSIMode(BitmapScroller, MajorMode):
         dprint(self.cube)
 
         self.update(False) # initial case will refresh automatically
-        self.stc = self.buffer.stc
 
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)

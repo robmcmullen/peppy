@@ -413,11 +413,11 @@ class Undo(STCModificationAction):
     key_bindings = {'default': "C-Z", 'emacs': "C-/",}
     
     def isActionAvailable(self):
-        return self.mode.stc.CanUndo()
+        return self.mode.CanUndo()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        return self.mode.stc.Undo()
+        return self.mode.Undo()
 
 
 class Redo(STCModificationAction):
@@ -429,11 +429,11 @@ class Redo(STCModificationAction):
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/", 'mac': "C-S-Z"}
     
     def isActionAvailable(self):
-        return self.mode.stc.CanRedo()
+        return self.mode.CanRedo()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        return self.mode.stc.Redo()
+        return self.mode.Redo()
 
 class Cut(STCModificationAction):
     alias = "cut-primary-selection"
@@ -444,11 +444,11 @@ class Cut(STCModificationAction):
     key_bindings = {'win': "C-X", 'mac': "C-X"}
 
     def isActionAvailable(self):
-        return self.mode.stc.CanCut()
+        return self.mode.CanCut()
 
     def action(self, index=-1, multiplier=1):
-        dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
-        return self.mode.stc.Cut()
+        dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
+        return self.mode.Cut()
 
 class Copy(STCModificationAction):
     alias = "copy-primary-selection"
@@ -459,11 +459,11 @@ class Copy(STCModificationAction):
     key_bindings = {'win': "C-C", 'mac': "C-C"}
 
     def isActionAvailable(self):
-        return self.mode.stc.CanCopy()
+        return self.mode.CanCopy()
 
     def action(self, index=-1, multiplier=1):
-        assert self.dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
-        return self.mode.stc.Copy()
+        assert self.dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
+        return self.mode.Copy()
 
 class Paste(STCModificationAction):
     alias = "paste-from-clipboard"
@@ -474,11 +474,11 @@ class Paste(STCModificationAction):
     key_bindings = {'win': "C-V", 'mac': "C-V"}
 
     def isActionAvailable(self):
-        return self.mode.stc.CanEdit()
+        return self.mode.CanEdit()
 
     def action(self, index=-1, multiplier=1):
-        dprint("rectangle=%s" % self.mode.stc.SelectionIsRectangle())
-        return self.mode.stc.Paste()
+        dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
+        return self.mode.Paste()
 
 class PasteAtColumn(Paste):
     alias = "paste-at-column"
@@ -495,7 +495,7 @@ class PasteAtColumn(Paste):
         return hasattr(mode, 'PasteAtColumn')
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.PasteAtColumn()
+        self.mode.PasteAtColumn()
 
 class SelectAll(Paste):
     alias = "select-all"
@@ -512,7 +512,7 @@ class SelectAll(Paste):
         return hasattr(mode, 'SelectAll')
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.SelectAll()
+        self.mode.SelectAll()
 
 
 class ElectricReturn(TextModificationAction):
@@ -523,7 +523,7 @@ class ElectricReturn(TextModificationAction):
     key_bindings = {'default': 'RET',}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.electricReturn()
+        self.mode.electricReturn()
 
 
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
@@ -543,14 +543,14 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
 
     def getIndex(self):
-        eol = self.mode.stc.GetEOLMode()
+        eol = self.mode.GetEOLMode()
         return EOLModeSelect.modes.index(eol)
                                            
     def getItems(self):
         return EOLModeSelect.items
 
     def action(self, index=-1, multiplier=1):
-        self.mode.stc.ConvertEOLs(EOLModeSelect.modes[index])
+        self.mode.ConvertEOLs(EOLModeSelect.modes[index])
         Publisher().sendMessage('resetStatusBar')
 
 

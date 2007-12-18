@@ -551,7 +551,6 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         start = time.time()
         self.dprint("starting PeppySTC at %0.5fs" % start)
         PeppySTC.__init__(self, parent, refstc=self.buffer.stc)
-        self.stc = self
         self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
@@ -578,7 +577,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         return "generic"
     
     def createStatusIcons(self):
-        linesep = self.stc.getLinesep()
+        linesep = self.getLinesep()
         if linesep == '\r\n':
             self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
         elif linesep == '\r':
@@ -603,9 +602,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
                 file_type = ext
         self.editra_lang = file_type
         self.dprint("ext=%s file_type=%s" % (ext, file_type))
-        self.stc.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
-        self.stc.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
-        self.stc.ConfigureLexer(self.editra_lang)
+        self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
+        self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
+        self.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
@@ -613,20 +612,20 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
     def applyDefaultSettings(self):
         # turn off symbol margin
         if self.classprefs.symbols:
-            self.stc.SetMarginWidth(1, self.classprefs.symbols_margin_width)
+            self.SetMarginWidth(1, self.classprefs.symbols_margin_width)
         else:
-            self.stc.SetMarginWidth(1, 0)
+            self.SetMarginWidth(1, 0)
 
         # turn off folding margin
         if self.classprefs.folding:
-            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
+            self.SetMarginWidth(2, self.classprefs.folding_margin_width)
         else:
-            self.stc.SetMarginWidth(2, 0)
+            self.SetMarginWidth(2, 0)
 
-        self.stc.SetProperty("fold", "1")
-        self.stc.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
-        self.stc.SetIndentationGuides(self.classprefs.indentation_guides)
-        self.stc.SetHighlightGuide(self.classprefs.highlight_column)
+        self.SetProperty("fold", "1")
+        self.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
+        self.SetIndentationGuides(self.classprefs.indentation_guides)
+        self.SetHighlightGuide(self.classprefs.highlight_column)
 
         self.setWordWrap()
         self.setLineNumbers()
@@ -639,78 +638,78 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         if enable is not None:
             self.classprefs.word_wrap=enable
         if self.classprefs.word_wrap:
-            self.stc.SetWrapMode(wx.stc.STC_WRAP_CHAR)
-            self.stc.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
+            self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
+            self.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
         else:
-            self.stc.SetWrapMode(wx.stc.STC_WRAP_NONE)
+            self.SetWrapMode(wx.stc.STC_WRAP_NONE)
 
     def setLineNumbers(self,enable=None):
         if enable is not None:
             self.classprefs.line_numbers=enable
         if self.classprefs.line_numbers:
-            self.stc.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-            self.stc.SetMarginWidth(0,  self.classprefs.line_number_margin_width)
+            self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
+            self.SetMarginWidth(0,  self.classprefs.line_number_margin_width)
         else:
-            self.stc.SetMarginWidth(0,0)
+            self.SetMarginWidth(0,0)
 
     def setFolding(self,enable=None):
         if enable is not None:
             self.classprefs.folding=enable
         if self.classprefs.folding:
-            self.stc.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
-            self.stc.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
-            self.stc.SetMarginSensitive(2, True)
-            self.stc.SetMarginWidth(2, self.classprefs.folding_margin_width)
+            self.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
+            self.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
+            self.SetMarginSensitive(2, True)
+            self.SetMarginWidth(2, self.classprefs.folding_margin_width)
             # Marker definitions from PyPE
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL, wx.stc.STC_MARK_TCORNER,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,    wx.stc.STC_MARK_LCORNER,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
-            self.stc.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
-            self.stc.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL, wx.stc.STC_MARK_TCORNER,  "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,    wx.stc.STC_MARK_LCORNER,  "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
+            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
+            self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
         else:
-            self.stc.SetMarginWidth(2, 0)
-            self.stc.Unbind(wx.stc.EVT_STC_MARGINCLICK)
+            self.SetMarginWidth(2, 0)
+            self.Unbind(wx.stc.EVT_STC_MARGINCLICK)
 
     def setTabStyle(self):
-        self.stc.SetIndent(self.classprefs.tab_size)
-        self.stc.SetProperty('tab.timmy.whinge.level', str(self.classprefs.tab_highlight_style))
-        self.stc.SetUseTabs(self.classprefs.use_tab_characters)
+        self.SetIndent(self.classprefs.tab_size)
+        self.SetProperty('tab.timmy.whinge.level', str(self.classprefs.tab_highlight_style))
+        self.SetUseTabs(self.classprefs.use_tab_characters)
 
     def setEdgeStyle(self):
-        self.stc.SetEdgeMode(self.classprefs.edge_indicator)
+        self.SetEdgeMode(self.classprefs.edge_indicator)
         if self.classprefs.edge_indicator == wx.stc.STC_EDGE_NONE:
-            self.stc.SetEdgeColumn(0)
+            self.SetEdgeColumn(0)
         else:
-            self.stc.SetEdgeColumn(self.classprefs.edge_column)
+            self.SetEdgeColumn(self.classprefs.edge_column)
 
     def setCaretStyle(self):
-        self.stc.SetCaretPeriod(self.classprefs.caret_blink_rate)
-        self.stc.SetCaretLineVisible(self.classprefs.caret_line_highlight)
-        self.stc.SetCaretWidth(self.classprefs.caret_width)
+        self.SetCaretPeriod(self.classprefs.caret_blink_rate)
+        self.SetCaretLineVisible(self.classprefs.caret_line_highlight)
+        self.SetCaretWidth(self.classprefs.caret_width)
 
     def onMarginClick(self, evt):
         # fold and unfold as needed
         if evt.GetMargin() == 2:
             if evt.GetShift() and evt.GetControl():
-                self.stc.FoldAll()
+                self.FoldAll()
             else:
-                lineClicked = self.stc.LineFromPosition(evt.GetPosition())
-                if self.stc.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
+                lineClicked = self.LineFromPosition(evt.GetPosition())
+                if self.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
                     if evt.GetShift():
-                        self.stc.SetFoldExpanded(lineClicked, True)
-                        self.stc.Expand(lineClicked, True, True, 1)
+                        self.SetFoldExpanded(lineClicked, True)
+                        self.Expand(lineClicked, True, True, 1)
                     elif evt.GetControl():
-                        if self.stc.GetFoldExpanded(lineClicked):
-                            self.stc.SetFoldExpanded(lineClicked, False)
-                            self.stc.Expand(lineClicked, False, True, 0)
+                        if self.GetFoldExpanded(lineClicked):
+                            self.SetFoldExpanded(lineClicked, False)
+                            self.Expand(lineClicked, False, True, 0)
                         else:
-                            self.stc.SetFoldExpanded(lineClicked, True)
-                            self.stc.Expand(lineClicked, True, True, 100)
+                            self.SetFoldExpanded(lineClicked, True)
+                            self.Expand(lineClicked, True, True, 100)
                     else:
-                        self.stc.ToggleFold(lineClicked)
+                        self.ToggleFold(lineClicked)
 
     def OnUpdateUI(self, evt):
         """Specific OnUpdateUI callback for those modes that use an actual
@@ -718,7 +717,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         
         Adds things like fold level and style display.
         """
-        self.stc.braceHighlight()
+        self.braceHighlight()
         assert self.dprint("OnUpdateUI for view %s, frame %s" % (self.keyword,self.frame))
         linenum = self.GetCurrentLine()
         pos = self.GetCurrentPos()

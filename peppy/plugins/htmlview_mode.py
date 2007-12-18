@@ -24,37 +24,7 @@ from peppy.stcinterface import *
 __all__ = ['HTMLViewPlugin']
 
 
-class HTMLSTCWrapper(STCProxy):
-    def __init__(self, stc, html):
-        self.stc = stc
-        self.html = html
-        
-    def CanEdit(self):
-        return False
-
-    def CanCopy(self):
-        return True
-
-    def Copy(self):
-        txt = self.html.SelectionToText()
-        SetClipboardText(txt)
-        dprint(txt)
-
-    def CanCut(self):
-        return False
-
-    def CanPaste(self):
-        return False
-
-    def CanUndo(self):
-        return False
-
-    def CanRedo(self):
-        return False
-
-    
-
-class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
+class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
     """Major mode for viewing HTML markup.
 
     Editing the markup should be done in an editing mode.
@@ -71,8 +41,6 @@ class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
         if "gtk2" in wx.PlatformInfo:
             self.SetStandardFonts()
             
-        self.stc = HTMLSTCWrapper(self.buffer.stc, self)
-        
         self.update()
 
     def OnLinkClicked(self, linkinfo):
@@ -88,7 +56,7 @@ class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
             self.frame.SetStatusText("")
 
     def update(self):
-        self.SetPage(self.stc.GetText())
+        self.SetPage(self.buffer.stc.GetText())
 
     def createListenersPostHook(self):
         eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
@@ -123,6 +91,13 @@ class HTMLViewMode(MajorMode, wx.html.HtmlWindow):
         # self.update()
         pass
 
+    def CanCopy(self):
+        return True
+
+    def Copy(self):
+        txt = self.SelectionToText()
+        SetClipboardText(txt)
+        dprint(txt)
 
 
 class HTMLViewPlugin(IPeppyPlugin):

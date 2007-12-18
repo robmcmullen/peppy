@@ -61,7 +61,7 @@ class ElectricColon(TextModificationAction):
         return mode.keyword == 'Python'
 
     def action(self, index=-1, multiplier=1):
-        s = self.mode.stc
+        s = self.mode
         style = s.GetStyleAt(s.GetSelectionEnd())
         s.BeginUndoAction()
         s.ReplaceSelection(":")

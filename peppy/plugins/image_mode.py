@@ -82,33 +82,8 @@ class RectangularSelect(ImageActionMixin, ToggleAction):
         else:
             mode.setSelector(RubberBand)
 
-class ImageSTCWrapper(STCProxy):
-    def __init__(self, stc, win):
-        self.stc = stc
-        self.win = win
-        
-    def CanEdit(self):
-        return False
 
-    def CanCopy(self):
-        return True
-
-    def Copy(self):
-        self.win.copyToClipboard()
-
-    def CanCut(self):
-        return False
-
-    def CanPaste(self):
-        return False
-
-    def CanUndo(self):
-        return False
-
-    def CanRedo(self):
-        return False
-
-class ImageViewMode(BitmapScroller, MajorMode):
+class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
     """
     Major mode for viewing images.  Eventually this may contain more
     image manipulation commands like rotation, reflection, zooming,
@@ -125,11 +100,10 @@ class ImageViewMode(BitmapScroller, MajorMode):
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         BitmapScroller.__init__(self, parent)
-        self.stc = ImageSTCWrapper(self.buffer.stc, self)
         self.update()
         
     def update(self):
-        fh = StringIO(self.stc.GetBinaryData(0,self.stc.GetTextLength()))
+        fh = StringIO(self.GetBinaryData(0,self.GetTextLength()))
 
         # Can't use wx.ImageFromStream(fh), because a malformed image
         # causes python to crash.
@@ -174,6 +148,13 @@ class ImageViewMode(BitmapScroller, MajorMode):
         # self.update()
         pass
 
+    def CanCopy(self):
+        return True
+
+    def Copy(self):
+        """Copy the image to the clipboard by overriding the STC's copy"""
+        dprint()
+        self.copyToClipboard()
 
 
 class ImageViewPlugin(IPeppyPlugin, debugmixin):

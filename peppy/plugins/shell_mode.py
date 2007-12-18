@@ -173,18 +173,18 @@ class ShellMode(FundamentalMode):
 
     def createWindowPostHook(self):
         assert self.dprint("In shell.")
-        self.stc.Bind(wx.stc.EVT_STC_MODIFIED, self.OnUpdate)
+        self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnUpdate)
 
         #Use an event listener to update the cursor position when the
         #underlying shell has changed.
-        self.stc.Bind(EVT_SHELL_UPDATE, self.OnUpdateCursorPos)
+        self.Bind(EVT_SHELL_UPDATE, self.OnUpdateCursorPos)
         self.OnUpdateCursorPos()
 
     def OnUpdateCursorPos(self,evt=None):
         assert self.dprint("cursor position = %d" % self.buffer.stc.GetCurrentPos())
-        self.stc.GotoPos(self.buffer.stc.GetCurrentPos())
-        self.stc.EnsureCaretVisible()
-        self.stc.ScrollToColumn(0)
+        self.GotoPos(self.buffer.stc.GetCurrentPos())
+        self.EnsureCaretVisible()
+        self.ScrollToColumn(0)
 
     def OnUpdate(self,evt=None):
         assert self.dprint("Updated!")
