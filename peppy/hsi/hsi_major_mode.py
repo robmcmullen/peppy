@@ -194,7 +194,7 @@ class MedianFilter1D(GeneralFilter):
             return filtered
         return raw
 
-class CubeView(object):
+class CubeView(debugmixin):
     """Wrapper around a Cube object that provides a bitmap view.
     
     This class wraps a cube object and provides the interface needed by the
