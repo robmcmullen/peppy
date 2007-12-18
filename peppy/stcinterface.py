@@ -702,6 +702,7 @@ class PeppySTC(PeppyBaseSTC):
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
         self.Bind(wx.EVT_MIDDLE_UP, self.OnMousePaste)
+        self.Bind(wx.EVT_LEFT_UP, self.OnSelectionEnd)
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
 
@@ -770,6 +771,19 @@ class PeppySTC(PeppyBaseSTC):
             text = GetClipboardText(True)
             if text:
                 self.InsertText(pos, text)
+
+    def OnSelectionEnd(self, evt):
+        """Copy the selected region into the primary selection
+        
+        This currently supports unix only, because it depends on the primary
+        selection of the clipboard.
+        """
+        sel = self.GetSelection()
+        #dprint(sel)
+        if sel[0] != sel[1]:
+            text = self.GetTextRange(sel[0], sel[1])
+            SetClipboardText(text, True)
+        evt.Skip()
 
     def OnStartDrag(self, evt):
         assert self.dprint("OnStartDrag: %d, %s\n"
