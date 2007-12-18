@@ -34,7 +34,7 @@ def load_setuptools_plugins(entry_point_name):
     modules_seen = {}
     
     for entrypoint in pkg_resources.iter_entry_points(entry_point_name):
-        print entrypoint
+        print "entrypoint: %s" % entrypoint
         # Don't load plugin class becasue classprefs depend on wx
         #plugin_class = entrypoint.load()
         plugin_class = None
@@ -50,6 +50,11 @@ def load_setuptools_plugins(entry_point_name):
         # its __init__.py)
         m = __import__(moduleparent)
         print m.__file__
+        path = m.__file__
+        if path in modules_seen:
+            print "Already seen %s" % path
+            continue
+        modules_seen[path] = True
 
         # from its file, get the directory that contains the __init__.py
         path = os.path.dirname(m.__file__)
@@ -58,17 +63,12 @@ def load_setuptools_plugins(entry_point_name):
         # go up one directory
         path = os.path.dirname(path)
         print path
-        if path in modules_seen:
-            print "Already seen %s" % path
-            continue
-        modules_seen[path] = True
-
         os.chdir(path)
         copythese = []
         process(moduleparent, None, copythese)
         os.chdir(savepath)
 
-        print copythese
+        print "copying: %s" % str(copythese)
         for py in copythese:
             source = os.path.join(path, py)
             dest = os.path.join(destdir, py)
