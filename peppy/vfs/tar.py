@@ -155,6 +155,15 @@ class TarFS(BaseFS):
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @classmethod
+    def get_mtime(cls, reference):
+        path = str(reference.path)
+        archive, path, name = cls._open(path)
+        m = cls._get_info(archive, name)
+        if m:
+            return m.mtime
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
+
+    @classmethod
     def open(cls, reference, mode=None):
         path = str(reference.path)
         archive, path, name = cls._open(path)
