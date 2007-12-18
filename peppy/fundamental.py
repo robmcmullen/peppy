@@ -497,7 +497,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
     image viewer) that only use the STC as the backend storage are
     probably not based on this view.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     keyword = 'Fundamental'
     

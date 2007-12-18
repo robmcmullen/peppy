@@ -272,7 +272,7 @@ class MajorMode(ClassPrefs, debugmixin):
     Classes that use this mixin must create some subclass of wx.Window in the
     __init__ method -- this forms the basis of the user interaction.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     # Pointer to the icon representing this major mode
     icon = 'icons/page_white.png'
@@ -951,7 +951,7 @@ def guessBinary(text, percentage):
     return False
 
 class MajorModeMatcherDriver(debugmixin):
-    debuglevel = 1
+    debuglevel = 0
     
     @classmethod
     def getCompatibleMajorModes(cls, stc_class):

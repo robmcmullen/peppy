@@ -275,7 +275,7 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 
 
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
-    debuglevel=1
+    debuglevel=0
     frameid=0
     
     perspectives={}
