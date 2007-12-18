@@ -12,12 +12,22 @@ import peppy.vfs as vfs
 
 from peppy.debug import *
 
+# Mimic the primary selection middle mouse paste on non-X11 platforms, but
+# unfortunately the primary selection will only be application local
+non_x11_primary_selection = None
 
 def GetClipboardText(primary_selection=False):
+    global non_x11_primary_selection
+
     success = False
+    if primary_selection:
+        if wx.Platform == "__WXGTK__":
+            wx.TheClipboard.UsePrimarySelection(primary_selection)
+        else:
+            #dprint(non_x11_primary_selection)
+            return non_x11_primary_selection
     do = wx.TextDataObject()
     if wx.TheClipboard.Open():
-        wx.TheClipboard.UsePrimarySelection(primary_selection)
         success = wx.TheClipboard.GetData(do)
         wx.TheClipboard.Close()
 
@@ -26,10 +36,18 @@ def GetClipboardText(primary_selection=False):
     return None
 
 def SetClipboardText(txt, primary_selection=False):
+    global non_x11_primary_selection
+
+    if primary_selection:
+        if wx.Platform == "__WXGTK__":
+            wx.TheClipboard.UsePrimarySelection(primary_selection)
+        else:
+            non_x11_primary_selection = txt
+            #dprint(non_x11_primary_selection)
+            return 1
     do = wx.TextDataObject()
     do.SetText(txt)
     if wx.TheClipboard.Open():
-        wx.TheClipboard.UsePrimarySelection(primary_selection)
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
         return 1
@@ -558,6 +576,17 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         mode = self.GetEOLMode()
         return self.int2eol[mode]
+    
+    def convertStringEOL(self, text):
+        """Convert a string to the target EOL format of this STC"""
+        target = self.getLinesep()
+        if target == '\r':
+            text = text.replace('\r\n', '\r').replace('\n', '\r')
+        elif target == '\n':
+            text = text.replace('\r\n', '\n').replace('\r', '\n')
+        else:
+            text = text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '\r\n')
+        return text
 
     # Styling stuff
     
@@ -770,7 +799,9 @@ class PeppySTC(PeppyBaseSTC):
         if pos != wx.stc.STC_INVALID_POSITION:
             text = GetClipboardText(True)
             if text:
+                text = self.convertStringEOL(text)
                 self.InsertText(pos, text)
+                self.GotoPos(pos + len(text))
 
     def OnSelectionEnd(self, evt):
         """Copy the selected region into the primary selection
