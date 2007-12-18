@@ -47,11 +47,11 @@ class HyperspectralFileFormat(object):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
-        try:
-            import GDAL
-        except Exception, e:
-            #dprint("GDAL not available")
-            pass
+#        try:
+#            import GDAL
+#        except Exception, e:
+#            #dprint("GDAL not available")
+#            pass
 
         import peppy.lib.setuptools_utils
         peppy.lib.setuptools_utils.load_plugins("peppy.hsi.plugins")

@@ -60,8 +60,8 @@ import peppy.lib.plotter as plotter
 # Some features require scipy, so set this flag to allow the features
 # that require scipi to be enabled at runtime
 try:
-    import scipy
-    import scipy.signal
+#    import scipy
+#    import scipy.signal
     HAS_SCIPY = True
 except:
     HAS_SCIPY = False
