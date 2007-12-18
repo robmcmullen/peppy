@@ -28,9 +28,12 @@ def SetClipboardText(txt):
     do = wx.TextDataObject()
     do.SetText(txt)
     if wx.TheClipboard.Open():
+        wx.TheClipboard.UsePrimarySelection(False)
         wx.TheClipboard.SetData(do)
         wx.TheClipboard.Close()
         return 1
+    else:
+        eprint("Can't open clipboard!")
     return 0
 
 
