@@ -433,20 +433,12 @@ class ToggleListAction(ListAction):
         if is_toplevel:
             self.toplevel.append(id)
         self.toggles.append(id)
-        self.frame.Connect(id,-1,wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
         self.count+=1
 
-    def OnMenuSelected(self,evt):
-        self.id=evt.GetId()
-        assert self.dprint("list item %s (widget id=%s) selected on frame=%s" % (self.id2index[self.id],self.id,self.frame))
-        self.action(index=self.id2index[self.id])
-
-    def OnUpdateUI(self,evt):
-        assert self.dprint("menu item %s (widget id=%d) on frame=%s" % (self.name,self.id,self.frame))
-        self.Enable()
-        self.Check()
-
+    def showEnable(self):
+        ListAction.showEnable(self)
+        self.showCheck()
+        
     def showCheck(self):
         if self.toplevel:
             assert self.dprint("Checking all items: %s" % str(self.toplevel))
@@ -874,7 +866,7 @@ class UserActionMap(debugmixin):
                            self.OnMenuSelected)
         self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI,
                            self.OnUpdateUI)
-        self.frame.Bind(wx.EVT_MENU_OPEN, self.frame.OnMenuOpen)
+        self.frame.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
     
     def OnMenuSelected(self, evt):
         """Process a menu selection event"""
@@ -898,10 +890,11 @@ class UserActionMap(debugmixin):
             action.action()
      
     def OnUpdateUI(self, evt):
-        """Update the state of the menu items.
+        """Update the state of the toolbar items.
         
-        This event gets fired just before wx shows the menu, giving us a
-        chance to update the status before the user sees it.
+        This event only gets fired for toolbars? I had thought it was fired
+        just before wx shows the menu, giving us a chance to update the status
+        before the user sees it.
         """
         if self.debuglevel > 1: self.dprint(evt)
         id = evt.GetId()
@@ -910,12 +903,21 @@ class UserActionMap(debugmixin):
             # actions will set the state for all their sub-ids given a
             # single id
             action = self.actions[id]
-            if self.debuglevel > 1: self.dprint(action)
+            if self.debuglevel > 1 or action.debuglevel: self.dprint(action)
             action.showEnable()
     
-    def updateOnDemandActions(self):
+    def OnMenuOpen(self, evt):
+        """Callback when a menubar menu is about to be opened.
+        
+        Note that on Windows, this also happens when submenus are opened, but
+        gtk only happens when the top level menu gets opened.
+        
+        By trial and error, it seems to be safe to update dynamic menus here.
+        """
+        #dprint(evt)
         for action in self.actions.values():
             #dprint(action)
+            action.showEnable()
             if hasattr(action, 'updateOnDemand'):
                 action.updateOnDemand()
 

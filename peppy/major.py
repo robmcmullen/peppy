@@ -61,8 +61,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.editwin=None # user interface window
         self.minibuffer=None
         self.sidebar=None
-        self.minors=[]
-        self.minor_panes = []
+        
         self.statusbar = None
         
         wx.Panel.__init__(self, parent, -1, style=wx.NO_BORDER, pos=(9000,9000))
@@ -74,6 +73,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self._mgr = wx.aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
         self._mgr.Update()
+        
+        self.minors = None
 
     def __del__(self):
         dprint("deleting %s: editwin=%s %s" % (self.__class__.__name__, self.editwin, self.editwin.getTabName()))
@@ -142,9 +143,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     def loadMinorModes(self):
         """Find the listof minor modes to load and create them."""
         
-        minors = MinorMode.getValidMinorModes(self.editwin)
-        dprint("major = %s, minors = %s" % (self.editwin, minors))
-
         # get list of minor modes that should be displayed at startup
         minor_list = self.editwin.classprefs.minor_modes
         if minor_list is not None:
@@ -155,55 +153,33 @@ class MajorModeWrapper(wx.Panel, debugmixin):
 
         # if the class name or the keyword of the minor mode shows up
         # in the list, turn it on.
-        for minorcls in minors:
-            minor = self.createMinorMode(minorcls)
-            if minorcls.__name__ in minor_names or minorcls.keyword in minor_names:
-                minor.paneinfo.Show(True)
-            else:
-                minor.paneinfo.Show(False)
-        self.createMinorPaneList()
-
-    def createMinorMode(self, minorcls):
-        """Create minor modes and register them with the AUI Manager."""
-        minor=minorcls(self.editwin, self.splitter)
-        # register minor mode here
-        if isinstance(minor, wx.Window):
-            paneinfo = minor.getPaneInfo()
-            try:
-                self._mgr.AddPane(minor, paneinfo)
-            except Exception, e:
-                dprint("Failed adding minor mode %s: error: %s" % (minor, str(e)))
-        self.minors.append(minor)
-
-        # A different paneinfo object is stored in the AUIManager,
-        # so we have to get its version rather than using the
-        # paneinfo we generate
-        minor.paneinfo = self._mgr.GetPane(minor)
-        return minor
-
-    def createMinorPaneList(self):
-        """Create alphabetized list of minor modes.
-
-        This is used by the menu system to display the list of minor
-        modes to the user.
-        """
-        self.minor_panes = []
-        panes = self._mgr.GetAllPanes()
-        for pane in panes:
-            assert self.dprint("name=%s caption=%s window=%s state=%s" % (pane.name, pane.caption, pane.window, pane.state))
-            if pane.name != "main":
-                self.minor_panes.append(pane)
-        self.minor_panes.sort(key=lambda s:s.caption)
+        self.minors = MinorModeList(self.splitter, self._mgr, self.editwin,
+                                    minor_names)
 
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
-        while len(self.minors)>0:
-            minor = self.minors.pop()
-            self.dprint("deleting minor mode %s" % (minor.keyword))
-            minor.deletePreHook()
-            if self._mgr.GetPane(minor):
-                self._mgr.DetachPane(minor)
-                minor.Destroy()
+        self.minors.deleteAll()
+        self.minors = None
+    
+    def findMinorMode(self, name):
+        """Get the minor mode given the name
+        
+        This will create the mode if it doesn't exist.
+        """
+        minor = self.minors.getWindow(name)
+        if minor:
+            return minor
+        
+        entry = self.minors.create(name)
+        self._mgr.Update()
+        return entry.win
+
+    def getActiveMinorModes(self):
+        """Proxy the minor mode requests up to the wrapper"""
+        if self.minors:
+            return self.minors.getActive()
+        return []
+
 
     def getStatusBar(self):
         """Returns pointer to this mode's status bar.
@@ -659,10 +635,8 @@ class MajorMode(ClassPrefs, debugmixin):
         self.wrapper.removeMinibuffer(specific, detach_only)
 
     def findMinorMode(self, name):
-        for minor in self.wrapper.minors:
-            if minor.keyword == name:
-                return minor
-        return None
+        """Proxy the minor mode requests up to the wrapper"""
+        return self.wrapper.findMinorMode(name)
 
     def addPopup(self,popup):
         self.popup=popup

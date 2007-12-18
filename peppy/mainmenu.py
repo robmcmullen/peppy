@@ -591,20 +591,21 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MinorModeShow(ToggleListAction):
+    debuglevel = 4
+    
     name = "Minor Modes"
     inline = False
     tooltip = "Show or hide minor mode windows"
     default_menu = ("View", 1)
 
     def getItems(self):
-        return [m.caption for m in self.mode.wrapper.minor_panes]
+        return self.mode.wrapper.minors.getKeywordOrder()
 
     def isChecked(self, index):
-        return self.mode.wrapper.minor_panes[index].IsShown()
+        return self.mode.wrapper.minors.isVisible(index)
 
     def action(self, index=-1, multiplier=1):
-        self.mode.wrapper.minor_panes[index].Show(not self.mode.wrapper.minor_panes[index].IsShown())
-        self.mode.wrapper._mgr.Update()
+        self.mode.wrapper.minors.toggle(index)
 
 
 class SidebarShow(ToggleListAction):

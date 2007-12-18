@@ -761,7 +761,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.frame.SetStatusText("%s %s" % (pix, hex(pix)), 3)
         pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
         self.frame.SetStatusText("%s" % pos, 4)
-        for minor in self.wrapper.minors:
+        for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.updateLines(*evt.imageCoords)
@@ -794,7 +794,7 @@ class HSIMode(BitmapScroller, MajorMode):
     def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
         self.cubeview.loadBands()
-        for minor in self.wrapper.minors:
+        for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.setupAxes()

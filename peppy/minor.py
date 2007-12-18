@@ -133,3 +133,110 @@ class MinorMode(ClassPrefs, debugmixin):
         does anything with it.
         """
         pass
+
+class MinorModeEntry(object):
+    """Simple wrapper to hold a class and an instance"""
+    def __init__(self, minorcls):
+        self.minorcls = minorcls
+        self.win = None
+
+class MinorModeList(debugmixin):
+    """Container holding a list of minor modes attached to a parent major mode
+    
+    """
+    debuglevel = 0
+    
+    def __init__(self, parent, mgr, mode=None, initial=[]):
+        self.mode = mode
+        self.map = {}
+        self.order = []
+        self.parent = parent
+        self.mgr = mgr
+
+        if mode:
+            minors = MinorMode.getValidMinorModes(mode)
+            assert self.dprint("major = %s, minors = %s" % (mode, minors))
+            for minorcls in minors:
+                self.map[minorcls.keyword] = MinorModeEntry(minorcls)
+                self.order.append(minorcls.keyword)
+                if minorcls.__name__ in initial or minorcls.keyword in initial:
+                    self.create(minorcls.keyword)
+            self.mgr.Update()
+
+        self.order.sort()
+    
+    def getKeywordOrder(self):
+        """Return the sort order of the minor modes."""
+        return self.order
+    
+    def _getEntry(self, index):
+        """Return the MinorModeEntry given its index"""
+        keyword = self.order[index]
+        entry = self.map[keyword]
+        return entry
+    
+    def getWindow(self, keyword):
+        """Get the minor mode window given its keyword"""
+        if keyword in self.map:
+            return self.map[keyword].win
+    
+    def isVisible(self, index):
+        """Is the minor mode specified by the index shown?
+        
+        This is used in the menu bar code to present a check list of active
+        modes.
+        """
+        entry = self._getEntry(index)
+        if entry.win:
+            assert self.dprint("index=%d shown=%s" % (index, entry.win.paneinfo.IsShown()))
+            return entry.win.paneinfo.IsShown()
+        assert self.dprint("index=%d shown=%s" % (index, False))
+        return False
+    
+    def toggle(self, index):
+        """Toggle the shown state, or create the minor mode if necessary.
+        
+        Minor modes are created on demand if not speficied as one of the modes
+        to load at mode startup time.  If an entry doesn't exist and it is
+        attempted to be toggled, it is created and shown.
+        """
+        entry = self._getEntry(index)
+        if entry.win:
+            entry.win.paneinfo.Show(not entry.win.paneinfo.IsShown())
+        else:
+            self.create(self.order[index])
+        self.mgr.Update()
+
+    def create(self, keyword):
+        """Create the minor mode.
+        
+        Create the minor mode given its keyword.  It is shown automatically.
+        """
+        entry = self.map[keyword]
+        entry.win = entry.minorcls(self.mode, self.parent)
+        paneinfo = entry.win.getPaneInfo()
+        paneinfo.Show(True)
+        try:
+            self.mgr.AddPane(entry.win, paneinfo)
+            entry.win.paneinfo = self.mgr.GetPane(entry.win)
+        except Exception, e:
+            assert self.dprint("Failed adding minor mode %s: error: %s" % (keyword, str(e)))
+        assert self.dprint("Created minor mode %s: %s" % (keyword, entry))
+        return entry
+    
+    def getActive(self):
+        """Get a list of all created minor modes."""
+        for entry in self.map.itervalues():
+            if entry.win:
+                yield entry.win
+
+    def deleteAll(self):
+        """Delete all minor modes, removing the windows if they exist."""
+        for entry in self.map.itervalues():
+            if entry.win:
+                minor = entry.win
+                minor.deletePreHook()
+                if self.mgr.GetPane(minor):
+                    self.mgr.DetachPane(minor)
+                    minor.Destroy()
+                entry.win = None
