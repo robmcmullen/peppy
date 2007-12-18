@@ -8,6 +8,7 @@ Major mode for displaying a list of files in a directory
 import os
 
 import wx
+from wx.lib.mixins.listctrl import ColumnSorterMixin
 
 import peppy.vfs as vfs
 
@@ -155,7 +156,7 @@ class DiredReplace(SelectAction):
             self.frame.setBuffer(buffer)
 
 
-class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
+class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
     """Directory viewing mode
 
     Dired is a directory viewing mode that works like an extremely bare-bones
@@ -185,14 +186,30 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
         self.flags = {}
-        self.columns = {}
-
         self.createColumns()
+        self.itemDataMap = {}
+        ColumnSorterMixin.__init__(self, self.GetColumnCount())
+        
         self.updating = False
         self.url = self.buffer.url
         self.reset()
         self.setSelectedIndexes([0])
+        
+        # Assign icons for up and down arrows for column sorter
+        getIconStorage().assignList(self)
     
+    # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
+    def GetListCtrl(self):
+        return self
+    
+    def GetSortImages(self):
+        down = getIconStorage("icons/bullet_arrow_down.png")
+        up = getIconStorage("icons/bullet_arrow_up.png")
+        return (down, up)
+
+    def GetSecondarySortValues(self, col, key1, key2):
+        return (self.itemDataMap[key1][0], self.itemDataMap[key2][0])
+
     def createListenersPostHook(self):
 #        Publisher().subscribe(self.reset, 'buffer.opened')
 #        Publisher().subscribe(self.reset, 'buffer.closed')
@@ -390,6 +407,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         cumulative = 0
         cache = []
         show = -1
+        self.itemDataMap = {}
         for name in vfs.get_names(self.url):
             key, mode = self.getKey(name)
             flags = self.getFlags(key)
@@ -403,6 +421,9 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
             self.SetStringItem(index, 3, mode)
             self.SetStringItem(index, 4, metadata['description'])
             self.SetStringItem(index, 5, str(key))
+            self.SetItemData(index, index)
+            self.itemDataMap[index] = (index, name, metadata['size'], mode,
+                                    metadata['description'], str(key))
 
             index += 1
         
