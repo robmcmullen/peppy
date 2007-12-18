@@ -539,6 +539,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking'),
         IntParam('caret_width', 2, help='Caret width in pixels'),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
+        BoolParam('view_eol', False, 'Show line-ending cr/lf characters?'),
         )
     
     def __init__(self, parent, wrapper, buffer, frame):
@@ -633,6 +634,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.setTabStyle()
         self.setEdgeStyle()
         self.setCaretStyle()
+        self.setViewEOL()
 
     def setWordWrap(self,enable=None):
         if enable is not None:
@@ -689,6 +691,11 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.SetCaretPeriod(self.classprefs.caret_blink_rate)
         self.SetCaretLineVisible(self.classprefs.caret_line_highlight)
         self.SetCaretWidth(self.classprefs.caret_width)
+
+    def setViewEOL(self, enable=None):
+        if enable is not None:
+            self.classprefs.view_eol = enable
+        self.SetViewEOL(self.classprefs.view_eol)
 
     def onMarginClick(self, evt):
         # fold and unfold as needed

@@ -526,6 +526,23 @@ class ElectricReturn(TextModificationAction):
         self.mode.electricReturn()
 
 
+class ViewEOL(ToggleAction):
+    alias = "view-eol"
+    name = "EOL Characters"
+    tooltip = "Toggle display of line-end (cr/lf) characters"
+    default_menu = ("View", 305)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'setViewEOL')
+
+    def isChecked(self):
+        return self.mode.classprefs.view_eol
+    
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.mode.setViewEOL(not self.mode.classprefs.view_eol)
+    
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     name="Line Endings"
     inline=False
@@ -797,7 +814,7 @@ class MainMenu(IPeppyPlugin):
                 MajorModeSelect, MinorModeShow, SidebarShow,
                 ToolbarShow, 
 
-                EOLModeSelect, WordWrap, LineNumbers, Folding,
+                EOLModeSelect, WordWrap, LineNumbers, Folding, ViewEOL,
 
                 BufferList,
 
