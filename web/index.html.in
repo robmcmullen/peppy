@@ -26,10 +26,10 @@ like the hyperspectral image viewer.
 
 <ul>
 <li>Multiple top-level windows
-<li>Multiple views of the same file (edit in one view and it shows up in the others)
-<li>Extensible file loading module (current support to load from http as well as file protocols)
-<li>Minibuffer ala XEmacs, including tab completion
 <li>Multiple language support: currently baseline implementations of Python, Makefile, C/C++ major modes
+<li>Multiple views of the same file (edit in one view and changes are reflected in realtime in the others, even if the others are different major modes!)
+<li>Virtual file system abstraction layer based on <a href="http://www.ikaaro.org/itools/">itools.vfs</a>, allowing transparent file loads from the local file system, http URLs, and from within tar archives without uncompressing the archive beforehand.
+<li>Minibuffer ala XEmacs, including tab completion
 <li>Other interesting major modes:
 <ul>
 <li>Hex edit mode
