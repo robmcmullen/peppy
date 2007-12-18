@@ -833,7 +833,6 @@ class MainMenu(IPeppyPlugin):
             return [
                 DiredRefresh,
                 DiredNext, DiredPrevious,
-                DiredSave, DiredSaveBackwards,
                 DiredDelete, DiredDeleteBackwards,
                 DiredMark, DiredMarkBackwards,
                 DiredClearFlags,

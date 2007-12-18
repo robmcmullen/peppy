@@ -89,23 +89,6 @@ class DiredDeleteBackwards(FlagBackwardsMixin, SelectAction):
     flag = 'D'
 
 
-class DiredSave(FlagMixin, SelectAction):
-    alias = "dired-save"
-    name = "Mark for Save"
-    tooltip = "Mark the selected buffer to be saved."
-    default_menu = ("Actions", -110)
-    key_bindings = {'default': "S", }
-    flag = 'S'
-
-class DiredSaveBackwards(FlagBackwardsMixin, SelectAction):
-    alias = "dired-save-backwards"
-    name = "Mark for Save and Move Backwards"
-    tooltip = "Mark the selected buffer to be saved and move to the previous item."
-    default_menu = ("Actions", 111)
-    key_bindings = {'default': "C-S", }
-    flag = 'S'
-
-
 class DiredMark(FlagMixin, SelectAction):
     alias = "dired-mark"
     name = "Mark for Display"
@@ -202,8 +185,6 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
         self.flags = {}
-        self.column_names = ["Flags", "Filename", "Size", "Mode", "Description", "URL"]
-        self.column_sizes = [-60,200,0,0,0,-200]
         self.columns = {}
 
         self.createColumns()
@@ -222,11 +203,12 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
-        index = 0
-        for name in self.column_names:
-            self.columns[name] = index
-            self.InsertColumn(index, name)
-            index += 1
+        self.InsertSizedColumn(0, "Flags", min=30, max=30, scale=False)
+        self.InsertSizedColumn(1, "Filename", min=100)
+        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
+        self.InsertSizedColumn(3, "Mode")
+        self.InsertSizedColumn(4, "Description", min=100, scale=False)
+        self.InsertSizedColumn(5, "URL", can_scroll=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -432,5 +414,5 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         if show >= 0:
             self.EnsureVisible(show)
 
-        self.resizeColumns(self.column_sizes)
+        self.resizeColumns()
         self.Thaw()

@@ -321,11 +321,11 @@ class MPDComm(debugmixin):
         self.queue.put(MPDCommand(cmd, args, callback=callback))
 
     def isLoggedIn(self):
-        return self.status['login']
+        return 'login' in self.status and self.status['login']
         
     def isPlaying(self):
         """True if playing music; false if paused or stopped."""
-        return self.status['login'] and self.status['state'] == 'play'
+        return 'login' in self.status and self.status['login'] and self.status['state'] == 'play'
 
     def playPause(self):
         """User method to play or pause.
@@ -683,14 +683,14 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         paneinfo.Bottom()
 
     def createColumns(self):
-        self.InsertColumn(0, "Title")
-        self.InsertColumn(1, "Time")
-        self.InsertColumn(2, "Rating")
-        self.InsertColumn(3, "Artist")
-        self.InsertColumn(4, "Album")
-        self.InsertColumn(5, "Track")
-        self.InsertColumn(6, "Genre")
-        self.InsertColumn(7, "Filename")
+        self.InsertSizedColumn(0, "Title")
+        self.InsertSizedColumn(1, "Time")
+        self.InsertSizedColumn(2, "Rating")
+        self.InsertSizedColumn(3, "Artist")
+        self.InsertSizedColumn(4, "Album")
+        self.InsertSizedColumn(5, "Track")
+        self.InsertSizedColumn(6, "Genre")
+        self.InsertSizedColumn(7, "Filename", can_scroll=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -756,7 +756,7 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
 
         if index > 0:
             self.showIfHidden()
-            self.resizeColumns([0,1,-40,-40,-40,-40,-40,0])
+            self.resizeColumns()
 
     def searchResultsTracks(self, message=None):
         mpd, tracks = message.data
@@ -962,7 +962,7 @@ class MPDMode(wx.Panel, MajorMode):
     
     Displays various search boxes used to populate the mpd playlist.
     """
-    debuglevel = 0
+    debuglevel = 1
 
     keyword='MPD'
     icon='icons/mpd.png'
@@ -1204,10 +1204,10 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         eventManager.DeregisterListener(self.OnPlaylistChanged)
 
     def createColumns(self):
-        self.InsertColumn(0, "#")
-        self.InsertColumn(1, "Title")
-        self.InsertColumn(2, "Artist")
-        self.InsertColumn(3, "Time", wx.LIST_FORMAT_RIGHT)
+        self.InsertSizedColumn(0, "#")
+        self.InsertSizedColumn(1, "Title", scale=True)
+        self.InsertSizedColumn(2, "Artist", scale=True)
+        self.InsertSizedColumn(3, "Time", wx.LIST_FORMAT_RIGHT)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -1348,7 +1348,7 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         if self.pending_highlight >= 0:
             self.highlightSong(self.pending_highlight)
             self.pending_highlight = -1
-        self.resizeColumns([1,0,0,1])
+        self.resizeColumns()
 
         self.paneinfo.Caption("Playlist: %d songs -- %s" % (index, getTimeString(cumulative)))
         self.major.updateAui()
