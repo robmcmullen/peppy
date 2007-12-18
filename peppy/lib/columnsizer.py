@@ -142,7 +142,7 @@ class ColumnSizerMixin(debugmixin):
             elif large and resize > large:
                 resize = large
                 
-            dprint("col %d: before=%s resized=%s" % (col, before, resize))
+            assert self.dprint("col %d: before=%s resized=%s" % (col, before, resize))
             if resize != before:
                 self.SetColumnWidth(col, resize)
         self.Thaw()

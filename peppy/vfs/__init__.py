@@ -87,7 +87,7 @@ def store_local_cache(fstype, path, obj):
     subcache = cache[fstype]
     # new items inserted at the beginning of the list
     subcache[0:0] = [(path, os.path.getmtime(path), obj)]
-    print subcache
+    #dprint(subcache)
     # truncate the list if it's getting too big.
     if len(subcache) > max_cache:
         subcache = subcache[0:max_cache]

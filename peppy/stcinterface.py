@@ -889,7 +889,7 @@ class PeppySTC(PeppyBaseSTC):
         pass
 
     def OnUpdateUI(self, evt):
-        dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
+        assert self.dprint("(%s) at %d: text=%s" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText())))
         evt.Skip()
 
 

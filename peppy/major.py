@@ -53,7 +53,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
     
     """
-    debuglevel = 1
+    debuglevel = 0
     
     icon = "icons/blank.png"
     
@@ -77,7 +77,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.minors = None
 
     def __del__(self):
-        dprint("deleting %s: editwin=%s %s" % (self.__class__.__name__, self.editwin, self.editwin.getTabName()))
+        self.dprint("deleting %s: editwin=%s %s" % (self.__class__.__name__, self.editwin, self.getTabName()))
         # FIXME: remove stuff here?
 
     def createMajorMode(self, frame, buffer, requested=None):
@@ -307,7 +307,7 @@ class MajorMode(ClassPrefs, debugmixin):
         pass
 
     def __del__(self):
-        dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
+        assert self.dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
         self.removeListeners()
         self.removeListenersPostHook()
         self.deleteWindowPostHook()

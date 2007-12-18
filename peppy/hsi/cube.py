@@ -187,7 +187,7 @@ class Cube(object):
 
         if self.url:
             if self.mmap is None: # don't try to reopen if already open
-                dprint(self.url)
+                #dprint(self.url)
                 if self.url.scheme == "file":
                     self.mmap = numpy.memmap(str(self.url.path), mode="r")
                 else:

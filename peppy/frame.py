@@ -70,7 +70,7 @@ class NewFrame(SelectAction):
 
 
 class MyNotebook(wx.aui.AuiNotebook,debugmixin):
-    debuglevel = 1
+    debuglevel = 0
     
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
@@ -248,7 +248,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         mode.showInitialPosition(user_url)
 
     def newMode(self, buffer, mode_to_replace=None):
-        dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
+        assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
         if mode_to_replace:
             wrapper = self.getWrapper(mode_to_replace)
         else:
@@ -370,7 +370,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def loadList(self, urls):
         if urls:
             for url in urls:
-                dprint("Opening %s" % url)
+                #dprint("Opening %s" % url)
                 wx.CallAfter(self.open, url)
                 self.initial_load += 1
         else:
@@ -647,7 +647,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             found = False
             plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
             for plugin in plugins:
-                dprint("Checking %s" % plugin)
+                assert self.dprint("Checking %s" % plugin)
                 plugin.loadVirtualFileSystem(user_url)
                 try:
                     buffer = BufferList.findBufferByURL(user_url)

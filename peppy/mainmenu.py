@@ -842,9 +842,10 @@ class MainMenu(IPeppyPlugin):
         return []
 
     def attemptOpen(self, buffer):
-        # get a copy because we are working on the url in the buffer
+        # use a copy of the url because don't want to change the buffer's url
+        # unless it turns out that we want to change the scheme
         refcopy = vfs.get_reference(str(buffer.url))
-        print "url = %s" % str(refcopy)
+        #print "url = %s" % str(refcopy)
         if refcopy.scheme == "file" and vfs.exists(refcopy):
             # change scheme and see if tar can open it
             refcopy.scheme = "tar"

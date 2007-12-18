@@ -115,7 +115,7 @@ class BufferVFSMixin(debugmixin):
         return path
             
     def getBufferedReader(self, size=1024):
-        dprint("opening %s as %s" % (str(self.url), self.defaultmode))
+        assert self.dprint("opening %s as %s" % (str(self.url), self.defaultmode))
         if self.bfh is None:
             if vfs.exists(self.url):
                 fh = vfs.open(self.url)

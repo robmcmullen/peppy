@@ -75,7 +75,7 @@ class BandFilter(object):
         minval=raw.min()
         maxval=raw.max()
         valrange=maxval-minval
-        dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
+        assert self.dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
         if valrange==0.0:
             gray=(raw-minval).astype(numpy.uint8)
         else:
@@ -93,12 +93,12 @@ class BandFilter(object):
 
         count=0
         for band in cubeview.bands:
-            dprint("getRGB: band=%s" % str(band))
+            assert self.dprint("getRGB: band=%s" % str(band))
             self.planes.append(self.getPlane(filt.getPlane(band[1])))
             if progress: progress.Update(50+((count+1)*50)/len(cubeview.bands))
             count+=1
         self.rgb=numpy.zeros((cubeview.height, cubeview.width, 3),numpy.uint8)
-        dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, self.planes[0].shape))
+        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, self.planes[0].shape))
         if count>0:
             for i in range(count):
                 self.rgb[:,:,i]=self.planes[i]
@@ -124,18 +124,18 @@ class ContrastFilter(BandFilter):
         minval=raw.min()
         maxval=raw.max()
         valrange=maxval-minval
-        dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
+        assert self.dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
 
         h,bins=numpy.histogram(raw,self.bins,range=(minval,maxval+1))
-        dprint(h)
-        dprint("h[%d]=%d" % (self.bins-1,h[self.bins-1]))
+        assert self.dprint(h)
+        assert self.dprint("h[%d]=%d" % (self.bins-1,h[self.bins-1]))
         #dprint(h)
 
         shape=raw.shape
         numpixels=raw.size
         lo=numpixels*self.contraststretch
         hi=numpixels*(1.0-self.contraststretch)
-        dprint("lo=%d hi=%d" % (lo,hi))
+        assert self.dprint("lo=%d hi=%d" % (lo,hi))
         count=0
         for i in range(self.bins):
             if count>=lo:
@@ -148,7 +148,7 @@ class ContrastFilter(BandFilter):
                 break;
             count-=h[i]
         maxscaled=minval+valrange*i/self.bins
-        dprint("scaled: min=%d max=%d" % (minscaled,maxscaled))
+        assert self.dprint("scaled: min=%d max=%d" % (minscaled,maxscaled))
         if minscaled==maxscaled:
             gray=numpy.zeros(raw.shape,numpy.uint8)
         else:
@@ -161,7 +161,7 @@ class ContrastFilter(BandFilter):
             # histogram uses min <= val < max, so we need to use 256 as
             # the max
             h,bins = numpy.histogram(gray,256,range=(0,256))
-            dprint("h[255]=%d" % h[255])
+            assert self.dprint("h[255]=%d" % h[255])
             # dprint(h)
 
         return gray
@@ -249,7 +249,7 @@ class CubeView(object):
             self.indexes = self.cube.guessDisplayBands()
             if not self.display_rgb and len(self.indexes)>1:
                 self.indexes = [self.indexes[0]]
-            dprint("display indexes = %s" % str(self.bands))
+            assert self.dprint("display indexes = %s" % str(self.bands))
             self.max_index = self.cube.bands - 1
         else:
             self.indexes = [0]
@@ -342,7 +342,7 @@ class CubeView(object):
         display=True
         # greyscale image only needs the first array value, rgb image
         # uses all 3
-        dprint("bands=%s" % newbands)
+        assert self.dprint("bands=%s" % newbands)
 
         # first check the range
         for i in range(len(self.indexes)):
@@ -383,7 +383,7 @@ class CubeView(object):
         # determine type from the filename.
         image=wx.ImageFromBitmap(self.bitmap)
         type=getImageType(name)
-        dprint("saving image to %s with type=%d" % (name,type))
+        assert self.dprint("saving image to %s with type=%d" % (name,type))
         return image.SaveFile(name,type)
 
     def copyImageToClipboard(self):
@@ -478,7 +478,7 @@ class PrevBand(HSIActionMixin, SelectAction):
         return True
 
     def action(self, index=-1, multiplier=1):
-        dprint("Previous band!!!")
+        assert self.dprint("Previous band!!!")
         mode = self.mode
         if mode.cubeview.prevIndex():
             mode.update()
@@ -499,7 +499,7 @@ class NextBand(HSIActionMixin, SelectAction):
         return True
 
     def action(self, index=-1, multiplier=1):
-        dprint("Next band!!!")
+        assert self.dprint("Next band!!!")
         mode = self.mode
         if mode.cubeview.nextIndex():
             mode.update()
@@ -539,7 +539,7 @@ class PrevCube(CubeAction):
     icon = 'icons/hsi-cube-prev.png'
 
     def action(self, index=-1, multiplier=1):
-        dprint("Prev cube!!!")
+        assert self.dprint("Prev cube!!!")
         mode = self.mode
         mode.prevCube()
 
@@ -550,7 +550,7 @@ class NextCube(CubeAction):
     icon = 'icons/hsi-cube-next.png'
 
     def action(self, index=-1, multiplier=1):
-        dprint("Next cube!!!")
+        assert self.dprint("Next cube!!!")
         mode = self.mode
         mode.nextCube()
 
@@ -578,7 +578,7 @@ class SelectCube(HSIActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         mode.setCube(index)
-        dprint("mode.dataset_index = %d" % mode.dataset_index)
+        assert self.dprint("mode.dataset_index = %d" % mode.dataset_index)
         wx.CallAfter(mode.update)
         
 class ContrastFilterAction(HSIActionMixin, RadioAction):
@@ -628,7 +628,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         wx.CallAfter(mode.update)
 
     def processMinibuffer(self, minibuffer, mode, percentage):
-        dprint("returned percentage = %f" % percentage)
+        assert self.dprint("returned percentage = %f" % percentage)
         filt = ContrastFilter(percentage)
         mode.cubefilter = filt
         wx.CallAfter(mode.update)
@@ -638,7 +638,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         mode.setMinibuffer(minibuffer)
         
 class MedianFilterAction(HSIActionMixin, RadioAction):
-    debuglevel = 1
+    debuglevel = 0
     name = "Median Filter"
     tooltip = "Median filter"
     default_menu = ("View", 301)
@@ -657,7 +657,7 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
     def getIndex(self):
         mode = self.mode
         filt = mode.filter
-        dprint(filt)
+        assert self.dprint(filt)
         return filt.pos
 
     def getItems(self):
@@ -685,7 +685,7 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
 
 
 class CubeViewAction(HSIActionMixin, RadioAction):
-    debuglevel = 1
+    debuglevel = 0
     name = "View Direction"
     tooltip = ""
     default_menu = ("View", -600)
@@ -694,7 +694,6 @@ class CubeViewAction(HSIActionMixin, RadioAction):
 
     def getIndex(self):
         cls = self.mode.cubeview.__class__
-        dprint(cls)
         return self.items.index(cls)
 
     def getItems(self):
@@ -734,10 +733,10 @@ class HSIMode(BitmapScroller, MajorMode):
         self.filter = GeneralFilter()
 #        self.setCube(0)
         self.cube = self.dataset.getCube(self.buffer.url)
-        dprint(self.cube)
+        assert self.dprint(self.cube)
         self.setViewer(CubeView)
         #self.cube.open()
-        dprint(self.cube)
+        assert self.dprint(self.cube)
 
         self.update(False) # initial case will refresh automatically
 
@@ -789,7 +788,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cube = self.dataset.getCube(index=index)
         self.setViewer(viewcls)
         #self.cube.open()
-        dprint(self.cube)
+        assert self.dprint(self.cube)
     
     def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
@@ -805,7 +804,7 @@ class HSIMode(BitmapScroller, MajorMode):
         if index < (num-1):
             index += 1
             self.setCube(index)
-            dprint("self.dataset_index = %d" % self.dataset_index)
+            assert self.dprint("self.dataset_index = %d" % self.dataset_index)
             wx.CallAfter(self.update)
 
     def prevCube(self):
@@ -813,7 +812,7 @@ class HSIMode(BitmapScroller, MajorMode):
         if index > 0:
             index -= 1
             self.setCube(index)
-            dprint("self.dataset_index = %d" % self.dataset_index)
+            assert self.dprint("self.dataset_index = %d" % self.dataset_index)
             wx.CallAfter(self.update)
 
 
