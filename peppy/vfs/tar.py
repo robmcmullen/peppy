@@ -160,7 +160,7 @@ class TarFS(BaseFS):
         archive, path, name = cls._open(path)
         m = cls._get_info(archive, name)
         if m:
-            return m.mtime
+            return datetime.fromtimestamp(m.mtime)
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @classmethod

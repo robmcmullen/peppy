@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Import from the Standard Library
-from time import time
 from datetime import datetime
 from StringIO import StringIO
 
@@ -36,7 +35,7 @@ class MemDir(dict):
     
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
-        self.mtime = time()
+        self.mtime = datetime.now()
 
     def get_size(self):
         return 0
@@ -68,7 +67,7 @@ class MemFile(object):
 
     def __init__(self, data):
         self.data = data
-        self.mtime = time()
+        self.mtime = datetime.now()
 
     def get_mtime(self):
         return self.mtime

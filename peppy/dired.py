@@ -5,7 +5,7 @@
 Major mode for displaying a list of files in a directory
 """
 
-import os
+import os, datetime
 
 import wx
 from wx.lib.mixins.listctrl import ColumnSorterMixin
@@ -18,6 +18,23 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.buffers import *
 from peppy.debug import *
+
+
+def getCompactDate(mtime, recent_months=6):
+    """Get a printable representation of a date in a compact format
+    
+    Return a string in unix ls -l style date format, where the date in the most
+    recent number of months shows the time instead of the year.  Once the time
+    is older than the recent months, replace the time with the year.  E.g.
+    a recent date will be displayed like "Apr 20 12:34" and a date older than
+    the specified number of months will be displayed "Apr 20 1999"
+    """
+    recent_seconds = datetime.datetime.now() - datetime.timedelta(recent_months * 30)
+    if mtime < recent_seconds:
+        s = mtime.strftime("%b %d  %Y")
+    else:
+        s = mtime.strftime("%b %d %H:%M")
+    return s
 
 
 class DiredSTC(NonResidentSTC):
@@ -208,7 +225,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         return (down, up)
 
     def GetSecondarySortValues(self, col, key1, key2):
-        return (self.itemDataMap[key1][0], self.itemDataMap[key2][0])
+        return (self.itemDataMap[key1][1], self.itemDataMap[key2][1])
 
     def createListenersPostHook(self):
 #        Publisher().subscribe(self.reset, 'buffer.opened')
@@ -223,13 +240,14 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         self.InsertSizedColumn(0, "Flags", min=30, max=30, scale=False)
         self.InsertSizedColumn(1, "Filename", min=100)
         self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
-        self.InsertSizedColumn(3, "Mode")
-        self.InsertSizedColumn(4, "Description", min=100, scale=False)
-        self.InsertSizedColumn(5, "URL", can_scroll=True)
+        self.InsertSizedColumn(3, "Date")
+        self.InsertSizedColumn(4, "Mode")
+        self.InsertSizedColumn(5, "Description", min=100, scale=False)
+        self.InsertSizedColumn(6, "URL", can_scroll=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        path = self.GetItem(index, 5).GetText()
+        path = self.GetItem(index, 6).GetText()
         self.dprint("clicked on %d: path=%s" % (index, path))
         self.frame.open(path)
 
@@ -259,7 +277,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         index = self.GetFirstSelected()
         if index == -1:
             return None
-        key = self.GetItem(index, 5).GetText()
+        key = self.GetItem(index, 6).GetText()
         buffer = Dired.findBufferByURL(key)
         return buffer
 
@@ -302,7 +320,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         """
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 5).GetText()
+            key = self.GetItem(index, 6).GetText()
             dprint("index=%d key=%s" % (index, key))
             flags = self.getFlags(key)
             if flag not in flags:
@@ -320,7 +338,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         """Clear all flags for the selected items."""
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 5).GetText()
+            key = self.GetItem(index, 6).GetText()
             self.flags[key] = ""
             self.SetStringItem(index, 0, self.flags[key])
     
@@ -333,7 +351,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         try:
             list_count = self.GetItemCount()
             for index in range(list_count):
-                key = self.GetItem(index, 5).GetText()
+                key = self.GetItem(index, 6).GetText()
                 flags = self.flags[key]
                 dprint("flags %s for %s" % (flags, key))
                 if not flags:
@@ -418,12 +436,14 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
                 self.SetStringItem(index, 0, flags)
             self.SetStringItem(index, 1, name)
             self.SetStringItem(index, 2, str(metadata['size']))
-            self.SetStringItem(index, 3, mode)
-            self.SetStringItem(index, 4, metadata['description'])
-            self.SetStringItem(index, 5, str(key))
+            self.SetStringItem(index, 3, getCompactDate(metadata['mtime']))
+            self.SetStringItem(index, 4, mode)
+            self.SetStringItem(index, 5, metadata['description'])
+            self.SetStringItem(index, 6, str(key))
             self.SetItemData(index, index)
-            self.itemDataMap[index] = (index, name, metadata['size'], mode,
-                                    metadata['description'], str(key))
+            self.itemDataMap[index] = (index, name, metadata['size'],
+                                       metadata['mtime'], mode,
+                                       metadata['description'], str(key))
 
             index += 1
         
