@@ -17,6 +17,10 @@ def normalize(ref, base=None):
         ref = get_reference(ref)
     # Check the reference is absolute
     if ref.scheme:
+        # URLs always use /
+        if ref.scheme == 'file' and os.path.sep == '\\':
+            ref = str(ref).replace(os.path.sep, '/')
+            ref = get_reference(ref)
         return ref
     # Default to the current working directory
     if base is None:
