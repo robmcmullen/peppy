@@ -54,13 +54,15 @@ coordinates are in terms of the viewport.  An event coordinate of (0,
 0) actually occurs at (x, y) on the bitmap.
 
 @author: Rob McMullen
-@version: 0.4
+@version: 0.5
 
 Changelog:
     0.4:
         * added methods to allow programmatic specification of rubberband
         * added setSelection to Rubberband
         * added startSelector to BitmapScroller
+    0.5:
+        * changed to wx.Overlay for drawing (instead of XOR)
 """
 
 import os
@@ -211,7 +213,6 @@ class MouseSelector(object):
         coords = self.scroller.convertEventCoords(ev)
         img_coords = self.scroller.getImageCoords(*coords)
         if img_coords != self.last_img_coords:
-            self.erase()
             self.setWorldCoordsFromImageCoords(*img_coords)
             self.draw()
             self.handleEventPostHook(ev)
@@ -233,28 +234,40 @@ class MouseSelector(object):
         the selector should be destroyed.
         """
         self.want_autoscroll = False
-        self.erase()
+        self.cleanup()
 
     def draw(self):
+        #print("draw")
         if self.start_img_coords:
-            dc=self.getXORDC()
+            dc, odc = self.getOverlayDC()
             self.drawSelector(dc)
+            del odc # workaround big in python wrappers; delete overlay dc first
+    
+    def cleanup(self):
+        dc = wx.ClientDC(self.scroller)
+        odc = wx.DCOverlay(self.scroller.overlay, dc)
+        odc.Clear()
+        del odc
+        self.scroller.overlay.Reset()
+        self.scroller.Refresh()
+        self.world_coords = None
 
     def recalc(self):
         self.setWorldCoordsFromImageCoords(*self.last_img_coords)
-
-    def erase(self):
-        if self.world_coords:
-            self.draw()
-        self.world_coords = None
     
-    def getXORDC(self, dc=None):
-        if dc is None:
-            dc=wx.ClientDC(self.scroller)
+    def recalc_and_draw(self):
+        #print("recalc and draw")
+        self.scroller.overlay.Reset()
+        self.recalc()
+        self.draw()
+
+    def getOverlayDC(self):
+        dc = wx.ClientDC(self.scroller)
+        odc = wx.DCOverlay(self.scroller.overlay, dc)
+        odc.Clear()
         dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
         dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        dc.SetLogicalFunction(wx.XOR)
-        return dc
+        return dc, odc
 
     def getViewOffset(self):
         xView, yView = self.scroller.GetViewStart()
@@ -409,7 +422,6 @@ class RubberBand(MouseSelector):
 
     def startNormalEvent(self, ev, coords):
         self.event_type = None
-        self.erase()
         self.start_img_coords = self.scroller.getImageCoords(*coords)
         self.setWorldCoordsFromImageCoords(*self.start_img_coords)
         self.draw()
@@ -444,7 +456,6 @@ class RubberBand(MouseSelector):
                                                   fixbounds=False)
         # dprint("img_coords = %s" % str(img_coords))
         if img_coords != self.move_img_coords:
-            self.erase()
             self.resizeWorldCoordsFromImageCoords(*img_coords)
             self.draw()
             self.handleEventPostHook(ev)
@@ -456,7 +467,6 @@ class RubberBand(MouseSelector):
                                                   fixbounds=False)
         # dprint("img_coords = %s" % str(img_coords))
         if img_coords != self.move_img_coords:
-            self.erase()
             self.moveWorldCoordsFromImageCoords(*img_coords)
             self.draw()
             self.handleEventPostHook(ev)
@@ -493,14 +503,6 @@ class RubberBand(MouseSelector):
             rbev = RubberBandSizeEvent(upperLeftImageCoords = (x0, y0),
                                        lowerRightImageCoords = (x1, y1))
         wx.PostEvent(self.scroller, rbev)
-
-    def getXORDC(self, dc=None):
-        if dc is None:
-            dc=wx.ClientDC(self.scroller)
-        dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
-        dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        dc.SetLogicalFunction(wx.XOR)
-        return dc
 
     def drawSelector(self, dc):
         xoff, yoff = self.getViewOffset()
@@ -676,7 +678,6 @@ class RubberBand(MouseSelector):
     def setSelection(self, x0, y0, x1, y1):
         """Programmatically set the selection rectangle.
         """
-        self.erase()
         self.start_img_coords = self.scroller.getBoundedCoords(x0, y0)
         self.last_img_coords = self.scroller.getBoundedCoords(x1, y1)
         self.recalc()
@@ -685,6 +686,7 @@ class RubberBand(MouseSelector):
 
 class BitmapScroller(wx.ScrolledWindow):
     debuglevel = 0
+    dbg_call_seq = 0
     
     def __init__(self, parent, selector=Crosshair):
         wx.ScrolledWindow.__init__(self, parent, -1)
@@ -705,16 +707,21 @@ class BitmapScroller(wx.ScrolledWindow):
         self.height = 0
         self.zoom = 1.0
         self.crop = None
-
+        
+        # hacks
+        self.just_scrolled = False
+        
         # cursors
         self.default_cursor = wx.CURSOR_ARROW
         self.save_cursor = None
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
+        # selectors and related storage
         self.use_selector = None
         self.selector = None
         self.selector_event_callback = None
+        self.overlay = wx.Overlay()
         self.Bind(wx.EVT_MOUSE_EVENTS, self.OnMouseEvent)
 
         self.setSelector(selector)
@@ -802,7 +809,6 @@ class BitmapScroller(wx.ScrolledWindow):
             rate = 1
         self.SetScrollRate(rate, rate)
         if self.selector:
-            self.selector.erase()
             self.selector.recalc()
         self.Refresh()
         
@@ -994,21 +1000,21 @@ class BitmapScroller(wx.ScrolledWindow):
             dy = y - size[1]
         else:
             dy = 0
-        wx.CallAfter(self.autoScrollCallback, dx, dy)
+        self.autoScrollCallback(dx, dy)
 
     def autoScrollCallback(self, dx, dy):
+        self.dbg_call_seq += 1
+        #print("In autoScrollCallback %d" % self.dbg_call_seq)
         spx = self.GetScrollPos(wx.HORIZONTAL)
         spy = self.GetScrollPos(wx.VERTICAL)
         if self.selector:
-            self.selector.erase()
-        self.Scroll(spx+dx, spy+dy)
-        if self.selector:
-            self.selector.recalc()
-            self.selector.draw()
+            self.selector.cleanup()
+        wx.CallAfter(self.Scroll, spx+dx, spy+dy)
+        self.just_scrolled = True
 
     def setSelector(self, selector):
         if self.selector:
-            self.selector.erase()
+            self.selector.cleanup()
             self.selector = None
         self.use_selector = selector
         self.setCursor(self.use_selector.cursor)
@@ -1023,7 +1029,7 @@ class BitmapScroller(wx.ScrolledWindow):
 
     def endActiveSelector(self):
         if self.selector:
-            self.selector.erase()
+            self.selector.cleanup()
             self.selector = None
         if self.save_cursor:
             self.setCursor(self.use_selector.cursor)
@@ -1055,13 +1061,21 @@ class BitmapScroller(wx.ScrolledWindow):
                     self.blankCursor(ev)
 
     def OnPaint(self, evt):
+        self.dbg_call_seq += 1
+        #print("In OnPaint %d" % self.dbg_call_seq)
         if self.scaled_bmp is not None:
             dc=wx.BufferedPaintDC(self, self.scaled_bmp, wx.BUFFER_VIRTUAL_AREA)
             # Note that the drawing actually happens when the dc goes
             # out of scope and is destroyed.
             self.OnPaintHook(evt, dc)
-            if self.selector:
-                wx.CallAfter(self.selector.draw)
+            
+            # FIXME: This check for MSW is because it gets multiple onpaint
+            # events, so make sure it's only called once for consecutive
+            # repaints.  HACK!
+            if self.selector and (wx.Platform != '__WXMSW__' or not self.just_scrolled):
+                wx.CallAfter(self.selector.recalc_and_draw)
+            #self.overlay.Reset()
+        self.just_scrolled = False
         evt.Skip()
 
     def OnPaintHook(self, evt, dc):
