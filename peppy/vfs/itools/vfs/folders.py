@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2006 Hervé Cauwelier <herve@itaapy.com>
 # Copyright (C) 2006-2007 Juan David Ibáñez Palomar <jdavid@itaapy.com>
+# Copyright (C) 2007 David Versmisse <david.versmisse@itaapy.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,8 +44,14 @@ class Folder(object):
         builds the absolute URI reference. Then find outs which is the
         protocol handler for it (layer), and returns both.
         """
+
         reference = get_absolute_reference2(reference, base=self.uri)
-        fs = get_file_system(reference.scheme)
+        try:
+            fs = get_file_system(reference.scheme)
+        except NotImplementedError:
+            raise NotImplementedError, ('The scheme "%s"' % reference.scheme +
+                ' is not implemented or not loaded.')
+
         return fs, reference
 
 
@@ -153,7 +160,7 @@ class Folder(object):
                 if source_fs.is_folder(source_ref):
                     target_fs.make_folder(target_ref)
                 else:
-                    data = source_fs.open(source_ref, 'r').read()
+                    data = source_fs.open(source_ref).read()
                     file = target_fs.make_file(target_ref)
                     try:
                         file.write(data)

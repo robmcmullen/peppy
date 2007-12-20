@@ -6,7 +6,6 @@ from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_syste
 from peppy.vfs.itools.uri import *
 from peppy.vfs.itools.vfs.base import BaseFS
 
-import peppy.vfs.mem
 import peppy.vfs.http
 import peppy.vfs.tar
 

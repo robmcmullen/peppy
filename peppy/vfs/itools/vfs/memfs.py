@@ -15,36 +15,42 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Import from the Standard Library
+from time import time
 from datetime import datetime
 from StringIO import StringIO
 
 # Import from itools
-from itools.uri import Path, Reference
-from itools.vfs import READ, WRITE, READ_WRITE, APPEND, copy
-from itools.vfs.base import BaseFS
-from itools.vfs.registry import register_file_system
+from peppy.vfs.itools.uri import Path, Reference
+from vfs import READ, WRITE, READ_WRITE, APPEND, copy
+from base import BaseFS
+from registry import register_file_system
 
 
 class MemDir(dict):
     """Base class used for representing directories.
-    
+
     Nested dictionaries are used to represent directories, and this subclass
     of dict provides a few additional methods over simply using a dict.
     """
     is_file = False
+    
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self, *args, **kwargs)
+        self.mtime = time()
 
     def get_size(self):
         return 0
+    
+    def get_mtime(self):
+        return self.mtime
 
     def ls(self, indent=""):
+        """Debugging function to do a recursive list of the filesystem"""
         s = StringIO()
-        #print self.keys()
         for key in self.keys():
             if self[key].is_file:
-                #print "file: %s" % key
                 s.write("%s%s\n" % (indent, key))
             else:
-                #print "dir: %s" % key
                 s.write("%s%s:\n" % (indent, key))
                 contents = self[key].ls(indent + "  ")
                 s.write(contents)
@@ -53,7 +59,7 @@ class MemDir(dict):
 
 class MemFile(object):
     """Base class to represent files.
-    
+
     Stored files are represented as objects in the memory filesystem.  To
     minimize the memory footprint, the data itself is stored as a string
     (rather than as a StringIO instance, for example).
@@ -62,6 +68,10 @@ class MemFile(object):
 
     def __init__(self, data):
         self.data = data
+        self.mtime = time()
+
+    def get_mtime(self):
+        return self.mtime
 
     def get_size(self):
         return len(self.data)
@@ -70,7 +80,7 @@ class MemFile(object):
 class TempFile(StringIO):
     """Temporary file-like object that stores itself in the filesystem
     when closed or deleted.
-    
+
     Since files are stored as a string, some file-like object must be used when
     the user is reading or writing, and this is it.  It's a wrapper around the
     data when reading/writing to an existing file, and automatically updates
@@ -90,7 +100,6 @@ class TempFile(StringIO):
 
     def _close(self):
         if not self._read_only:
-            #print "setting file %s to %s in %s" % (self.file_name, self.getvalue(), self.folder)
             self.folder[self.file_name] = MemFile(self.getvalue())
 
     def __del__(self):
@@ -119,10 +128,9 @@ class MemFS(BaseFS):
 
         # strip off leading '/'; root of / is implicit
         path = path.lstrip('/')
-            
+
         while path.endswith('/'):
             path = path[:-1]
-        #print "normalized: %s" % path
         return path
 
     @staticmethod
@@ -130,7 +138,7 @@ class MemFS(BaseFS):
         """Find the item in the filesystem pointed to by the path
 
         path: string representing the pathname within the mem: filesystem
-        
+
         returns: tuple of (parent_dict, item, name_in_parent).  If the
         path is valid, the returned item item can be a MemDir or a
         MemFile object.  If the path is invalid, item will be None.
@@ -139,17 +147,14 @@ class MemFS(BaseFS):
         """
         parent = None
         fs = MemFS.root
-        #print fs
 
         path = MemFS._normalize_path(path)
         if not path:
             return parent, fs, path
         components = path.split('/')
-        #print "components: %s" % components
 
         # Skip over the root level since it is implicit in the storage
         for comp in components:
-            #print("path=%s comp=%s" % (path, comp))
             if fs.is_file:
                 # if we've found a file but we've still got path
                 # components left, return error
@@ -185,7 +190,6 @@ class MemFS(BaseFS):
                 fs = fs[comp]
         if fs.is_file:
             raise OSError("[Errno 20] Not a directory: '%s'" % path)
-        #print "filesystem: %s" % MemFS.root
 
     @staticmethod
     def exists(reference):
@@ -201,8 +205,8 @@ class MemFS(BaseFS):
             return item.is_file
         return False
 
-    @classmethod
-    def is_folder(cls, reference):
+    @staticmethod
+    def is_folder(reference):
         path = str(reference.path)
         parent, item, name = MemFS._find(path)
         if item is not None:
@@ -225,10 +229,17 @@ class MemFS(BaseFS):
             return item.get_size()
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
+    @staticmethod
+    def get_mtime(reference):
+        path = str(reference.path)
+        parent, item, name = MemFS._find(path)
+        if item:
+            return item.get_mtime()
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
+
 
     @staticmethod
     def make_file(reference):
-        #print reference
         folder_path = str(reference.path[:-1])
         file_path = str(reference.path)
 
@@ -239,24 +250,18 @@ class MemFS(BaseFS):
             if item is not None:
                 raise OSError("[Errno 17] File exists: '%s'" % reference)
         else:
-            #print "making folders: %s" % folder_path
             MemFS._makedirs(folder_path)
-        
+
         file_name = reference.path.get_name()
-        #print "folder=%s file=%s" % (folder_path, file_name)
-        #print "filesystem: %s" % MemFS.root.ls()
         parent, folder, folder_name = MemFS._find(folder_path)
         if parent and parent.is_file:
             raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
-        #print "file_name = %s" % file_name
         fh = TempFile(folder, file_name)
         return fh
 
     @staticmethod
     def make_folder(reference):
         path = str(reference.path)
-        #print "folder=%s" % (path)
-        #print "filesystem: %s" % MemFS.root.ls()
         MemFS._makedirs(path)
 
     @staticmethod
@@ -264,7 +269,6 @@ class MemFS(BaseFS):
         path = str(reference.path)
 
         parent, item, name = MemFS._find(path)
-        #print "removing: %s, %s, %s" % (parent, item, name)
         if item is None:
             raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
         if item.is_file:
@@ -273,7 +277,6 @@ class MemFS(BaseFS):
             # we need to go up a level and remove the entire dict.
             folder_path = str(reference.path[:-1])
             grandparent, parent, grandparent_name = MemFS._find(folder_path)
-            #print "removing directory: %s from %s, %s" % (parent, grandparent, name)
             del parent[name]
 
     @staticmethod
@@ -294,8 +297,7 @@ class MemFS(BaseFS):
             fh = TempFile(parent, file_name, item.data)
             fh.seek(item.get_size())
         elif mode == READ_WRITE:
-            # Open for read/write, but don't position at end of file,
-            # i.e. "r+b"
+            # Open for read/write but don't position at end of file, i.e. "r+b"
             fh = TempFile(parent, file_name, item.data)
         else:
             fh = TempFile(parent, file_name, item.data, True)
@@ -306,7 +308,6 @@ class MemFS(BaseFS):
         # Fail if target exists and is a file
         tgtpath = str(target.path)
         parent, item, tgtname = MemFS._find(tgtpath)
-        #print "move: %s, %s, %s" % (parent, item, tgtname)
         if item:
             if item.is_file:
                 raise OSError("[Errno 20] Not a directory: '%s'" % target)
@@ -315,11 +316,9 @@ class MemFS(BaseFS):
             # the target doesn't exist, so it must be the pathname of
             # the new item.
             tgtname = target.path[-1]
-            #print "target=%s" % tgtname
             folder_path = str(target.path[:-1])
             MemFS._makedirs(folder_path)
             parent, dest, dummy = MemFS._find(folder_path)
-        #print "dest=%s" % dest
 
         srcpath = str(source.path)
         srcdir, src, origname = MemFS._find(srcpath)
@@ -331,13 +330,12 @@ class MemFS(BaseFS):
 
     ######################################################################
     # Folders only
-    @classmethod
-    def get_names(cls, reference):
+    @staticmethod
+    def get_names(reference):
         path = str(reference.path)
         parent, item, name = MemFS._find(path)
         if item.is_file:
             raise OSError("[Errno 20] Not a directory '%s'" % reference)
-        #print item.keys()
         return item.keys()
 
 

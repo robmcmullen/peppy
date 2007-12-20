@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 # Copyright (C) 2006-2007 Juan David Ibáñez Palomar <jdavid@itaapy.com>
+# Copyright (C) 2007 Rob McMullen <rob.mcmullen@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@ from subprocess import call
 
 # Import from itools
 from peppy.vfs.itools.uri import Path, Reference
-from vfs import READ, WRITE, APPEND, copy
+from vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from base import BaseFS
 from registry import register_file_system
 
@@ -136,21 +137,17 @@ class FileFS(BaseFS):
         if not exists(path):
             raise OSError, "File does not exist '%s'" % reference
 
-        # Open for write if possible, otherwise for read
-        if mode is None:
-            try:
-                return file(path, 'r+b')
-            except IOError:
-                return file(path, 'rb')
-
-        # Open for read
-        if mode == READ:
-            return file(path, 'rb')
+        # Open for write
+        if mode == WRITE:
+            return file(path, 'wb')
+        # Open for read/write
+        if mode == READ_WRITE:
+            return file(path, 'r+b')
         # Open for append
         if mode == APPEND:
             return file(path, 'ab')
-        # Open for write
-        return file(path, 'wb')
+        # Open for read (default)
+        return file(path, 'rb')
 
 
     @staticmethod
