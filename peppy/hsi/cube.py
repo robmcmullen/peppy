@@ -324,6 +324,12 @@ class Cube(object):
             self.wavelength_units='um'
         else:
             self.wavelength_units='nm'
+    
+    def getWavelengthStr(self, band):
+        if self.wavelengths and band >=0 and band < len(self.wavelengths):
+            text = "%.2f %s" % (self.wavelengths[band], self.wavelength_units)
+            return text
+        return "no value"
 
     def updateExtrema(self, spectra):
         mn=spectra.min()

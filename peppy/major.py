@@ -699,6 +699,12 @@ class MajorMode(ClassPrefs, debugmixin):
     def focusPostHook(self):
         pass
 
+    def tabActivatedHook(self):
+        """Hook to update some user interface parameters after the tab has been
+        made the current tab.
+        """
+        pass
+
     def showModified(self,modified):
         self.frame.showModified(self)
 

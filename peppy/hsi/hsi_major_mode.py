@@ -66,7 +66,7 @@ try:
 except:
     HAS_SCIPY = False
 
-class BandFilter(object):
+class BandFilter(debugmixin):
     def __init__(self):
         self.planes=[]
         self.rgb=None
@@ -166,7 +166,7 @@ class ContrastFilter(BandFilter):
 
         return gray
 
-class GeneralFilter(object):
+class GeneralFilter(debugmixin):
     def __init__(self, pos=0):
         self.pos = pos
         
@@ -532,55 +532,7 @@ class CubeAction(HSIActionMixin, SelectAction):
             return True
         return False
 
-class PrevCube(CubeAction):
-    name = "Prev Cube"
-    tooltip = "Previous data cube in dataset"
-    default_menu = ("Dataset", -100)
-    icon = 'icons/hsi-cube-prev.png'
 
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("Prev cube!!!")
-        mode = self.mode
-        mode.prevCube()
-
-class NextCube(CubeAction):
-    name = "Next Cube"
-    tooltip = "Next data cube in dataset"
-    default_menu = ("Dataset", 101)
-    icon = 'icons/hsi-cube-next.png'
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("Next cube!!!")
-        mode = self.mode
-        mode.nextCube()
-
-class SelectCube(HSIActionMixin, RadioAction):
-    debuglevel = 0
-    name = "Select Cube"
-    tooltip = "Select a cube from the dataset"
-    default_menu = ("Dataset", 102)
-    icon = 'icons/hsi-cube.png'
-
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
-        # do nothing here: it's actually changed in action
-
-    def getIndex(self):
-        mode = self.mode
-        return mode.dataset_index
-
-    def getItems(self):
-        mode = self.mode
-        self.dprint("datasets = %s" % mode.dataset.getCubeNames())
-        return mode.dataset.getCubeNames()
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("index=%d" % index)
-        mode = self.mode
-        mode.setCube(index)
-        assert self.dprint("mode.dataset_index = %d" % mode.dataset_index)
-        wx.CallAfter(mode.update)
-        
 class ContrastFilterAction(HSIActionMixin, RadioAction):
     debuglevel = 0
     name = "Contrast"
@@ -738,6 +690,7 @@ class HSIMode(BitmapScroller, MajorMode):
         #self.cube.open()
         assert self.dprint(self.cube)
 
+    def tabActivatedHook(self):
         self.update(False) # initial case will refresh automatically
 
     def addUpdateUIEvent(self, callback):
@@ -747,19 +700,24 @@ class HSIMode(BitmapScroller, MajorMode):
         """Get the HSI status bar
         """
         if self.statusbar is None:
-            self.statusbar = PeppyStatusBar(self.frame, [-1, 100, 100, 100, 80])
+            self.statusbar = PeppyStatusBar(self.frame, [-1, 100, 170])
             self.createStatusIcons()
         return self.statusbar
+    
+    def updateInfo(self, x=-1, y=-1):
+        line, sample, band = self.cubeview.getCoords(x, y)
+        if x >= 0:
+            self.frame.SetStatusText("x=%d y=%d" % (x, y), 1)
+            pix = self.cube.getPixel(line, sample, band)
+            if self.debuglevel > 0:
+                pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
+                self.frame.SetStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
+        
+        self.frame.SetStatusText(u"Band %d: \u03bb=%s" % (band, self.cube.getWavelengthStr(band)), 2)
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        line, sample, band = self.cubeview.getCoords(*evt.imageCoords)
-        self.frame.SetStatusText("x=%d y=%d" % (evt.imageCoords), 1)
-        self.frame.SetStatusText("S%d L%d B%d" % (sample, line, band), 2)
-        pix = self.cube.getPixel(line, sample, band)
-        self.frame.SetStatusText("%s %s" % (pix, hex(pix)), 3)
-        pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
-        self.frame.SetStatusText("%s" % pos, 4)
+        self.updateInfo(*evt.imageCoords)
         for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
@@ -773,6 +731,7 @@ class HSIMode(BitmapScroller, MajorMode):
             evt.Skip()
 
     def update(self, refresh=True):
+        self.updateInfo()
         self.cubeview.show(self.filter, self.cubefilter)
         self.setBitmap(self.cubeview.bitmap)
         if refresh:
@@ -797,23 +756,6 @@ class HSIMode(BitmapScroller, MajorMode):
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.setupAxes()
-
-    def nextCube(self):
-        index = self.dataset_index
-        num = self.dataset.getNumCubes()
-        if index < (num-1):
-            index += 1
-            self.setCube(index)
-            assert self.dprint("self.dataset_index = %d" % self.dataset_index)
-            wx.CallAfter(self.update)
-
-    def prevCube(self):
-        index = self.dataset_index
-        if index > 0:
-            index -= 1
-            self.setCube(index)
-            assert self.dprint("self.dataset_index = %d" % self.dataset_index)
-            wx.CallAfter(self.update)
 
 
 class HSIMinorModeMixin(MinorMode):

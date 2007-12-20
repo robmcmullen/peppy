@@ -202,6 +202,7 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             self.SetPageText(index, wrapper.getTabName())
             self.SetPageBitmap(index, wrapper.getTabBitmap())
             self.frame.switchMode()
+            wrapper.editwin.tabActivatedHook()
 
     def updateWrapperTitle(self, mode):
         for index in range(0, self.GetPageCount()):
