@@ -253,7 +253,13 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper = self.getWrapper(mode_to_replace)
         else:
             wrapper = self.getNewModeWrapper()
-        mode = wrapper.createMajorMode(self.frame, buffer)
+        try:
+            mode = wrapper.createMajorMode(self.frame, buffer)
+        except:
+            import traceback
+            error = traceback.format_exc()
+            buffer = Buffer.createErrorBuffer(buffer.url, error)
+            mode = wrapper.createMajorMode(self.frame, buffer)
         self.updateWrapper(wrapper)
         return mode
 
@@ -277,6 +283,7 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     debuglevel=0
     frameid=0
+    load_error_count = 0
     
     perspectives={}
 
@@ -699,12 +706,18 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
-        buffer.openGUIThreadSuccess()
-        assert self.dprint("buffer=%s" % buffer)
-        
+        try:
+            buffer.openGUIThreadSuccess()
+            assert self.dprint("buffer=%s" % buffer)
+        except:
+            import traceback
+            error = traceback.format_exc()
+            self.openFailure(user_url, error, mode_to_replace, progress)
+            return
+
         mode = self.tabs.newMode(buffer, mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
-
+        
         #raceoff()
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
@@ -714,20 +727,16 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.SetStatusText(msg)
         mode.showInitialPosition(user_url)
 
-    def openFailure(self, url, error, progress=None):
+    def openFailure(self, url, error, mode_to_replace=None, progress=None):
         #traceoff()
         msg = "Failed opening %s.\n" % url
-        Publisher().sendMessage('peppy.log.error', msg)
-        Publisher().sendMessage('peppy.log.error', error + "\n")
+        buffer = Buffer.createErrorBuffer(url, error)
+        mode = self.tabs.newMode(buffer, mode_to_replace)
+        assert self.dprint("major mode=%s" % mode)
         if progress:
             progress.stopProgress(msg)
         else:
             self.SetStatusText(msg)
-
-        if self.initial_load > 0:
-            self.initial_load -= 1
-            if self.initial_load == 0:
-                self.titleBuffer()
 
     def save(self):        
         mode=self.getActiveMajorMode()

@@ -463,6 +463,18 @@ class PythonMode(IDLEElectricReturnMixin, IDLEReindentMixin,
     def isStyleComment(self, style):
         return style == 1
 
+class PythonErrorMode(FundamentalMode):
+    keyword = "Python Error"
+    icon='icons/error.png'
+    
+    default_classprefs = (
+        BoolParam('line_numbers', False),
+        )
+
+    @classmethod
+    def verifyMagic(cls, header):
+        return header.find("Traceback (most recent call last):") >= 0
+
 
 class PythonPlugin(IPeppyPlugin):
     def aboutFiles(self):
@@ -470,6 +482,7 @@ class PythonPlugin(IPeppyPlugin):
     
     def getMajorModes(self):
         yield PythonMode
+        yield PythonErrorMode
 
     def getActions(self):
         return [SamplePython, ElectricColon]

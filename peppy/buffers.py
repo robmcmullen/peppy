@@ -142,6 +142,7 @@ class Buffer(BufferVFSMixin):
     """
     count=0
     debuglevel=0
+    error_buffer_count = 0
 
     filenames={}
     
@@ -160,6 +161,20 @@ class Buffer(BufferVFSMixin):
         buffer = cls(url, defaultmode)
         buffer.open()
         buffer.permanent = True
+    
+    @classmethod
+    def createErrorBuffer(cls, url, error):
+        cls.error_buffer_count += 1
+        errurl = "mem:error.%d" % cls.error_buffer_count
+        fh = vfs.make_file(errurl)
+        fh.write("Failed opening %s.\n\nDetailed error message follows:\n\n" % url)
+        fh.write(error)
+        fh.close()
+        buffer = Buffer(errurl)
+        buffer.openGUIThreadStart()
+        buffer.openBackgroundThread()
+        buffer.openGUIThreadSuccess()
+        return buffer
 
     def __init__(self, url, defaultmode=None):
         BufferVFSMixin.__init__(self, url)
@@ -478,6 +493,4 @@ class BufferLoadThread(threading.Thread, debugmixin):
             traceback.print_exc()
             self.dprint("Exception: %s" % str(e))
             wx.CallAfter(self.frame.openFailure, self.user_url, str(e),
-                         self.progress)
-
-
+                         self.mode_to_replace, self.progress)
