@@ -984,14 +984,23 @@ class MajorModeMatcherDriver(debugmixin):
         
         # Try to match a specific protocol
         modes = cls.scanProtocol(plugins, buffer.url)
+        cls.dprint("scanProtocol matches %s" % modes)
         if modes:
             return modes[0]
 
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
-        metadata = vfs.get_metadata(buffer.url)
+        try:
+            metadata = vfs.get_metadata(buffer.url)
+        except:
+            metadata = {'mimetype': None,
+                        'mtime': None,
+                        'size': 0,
+                        'description': None,
+                        }
         modes = cls.scanURL(plugins, buffer.url, metadata)
-        
+        cls.dprint("scanURL matches %s using metadata %s" % (modes, metadata))
+
         # get a buffered file handle to examine some bytes in the file
         fh = buffer.getBufferedReader(magic_size)
         if not fh:
@@ -1028,17 +1037,20 @@ class MajorModeMatcherDriver(debugmixin):
         # emacs mode specifier since a match here means that we should
         # override the match based on filename
         emacs_match = cls.scanEmacs(plugins, header)
+        cls.dprint("scanEmacs matches %s" % emacs_match)
         if emacs_match:
             return emacs_match
 
         # Like the emacs match, a match on a shell bangpath should
         # override anything determined out of the filename
         bang_match = cls.scanShell(plugins, header)
+        cls.dprint("scanShell matches %s" % bang_match)
         if bang_match:
             return bang_match
 
         # Try to match some magic bytes that identify the file
         modes = cls.scanMagic(plugins, header)
+        cls.dprint("scanMagic matches %s" % modes)
         if modes:
             # It is unlikely that multiple modes will match the same magic
             # values, so just load the first one that we find
@@ -1053,6 +1065,7 @@ class MajorModeMatcherDriver(debugmixin):
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
         mode = cls.attemptOpen(plugins, buffer)
+        cls.dprint("attemptOpen matches %s" % mode)
         if mode:
             return mode
 
@@ -1090,7 +1103,6 @@ class MajorModeMatcherDriver(debugmixin):
         modes = []
         for plugin in plugins:
             for mode in plugin.getMajorModes():
-                cls.dprint("scanning %s" % mode)
                 if mode.verifyProtocol(url):
                     modes.append(mode)
         return modes
