@@ -94,7 +94,7 @@ class Fonts(ClassPrefs):
         if not filename:
             filename = self.classprefs.editra_style_sheet
         pathname = wx.GetApp().getConfigFilePath(filename)
-        dprint(pathname)
+        #dprint(pathname)
         return pathname
     
 

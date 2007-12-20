@@ -156,9 +156,9 @@ class DiredShow(SelectAction):
     key_bindings = {'default': "O", }
 
     def action(self, index=-1, multiplier=1):
-        buffer = self.mode.getFirstSelectedBuffer()
-        if buffer:
-            self.frame.newBuffer(buffer)
+        url = self.mode.getFirstSelectedKey()
+        if url:
+            self.frame.open(url)
 
 class DiredReplace(SelectAction):
     alias = "dired-replace"
@@ -168,9 +168,9 @@ class DiredReplace(SelectAction):
     key_bindings = {'default': "F", }
 
     def action(self, index=-1, multiplier=1):
-        buffer = self.mode.getFirstSelectedBuffer()
-        if buffer:
-            self.frame.setBuffer(buffer)
+        url = self.mode.getFirstSelectedKey()
+        if url:
+            wx.CallAfter(self.frame.open, url, mode_to_replace=self.mode)
 
 
 class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
@@ -197,7 +197,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT, pos=(9000,9000))
         ColumnSizerMixin.__init__(self)
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
@@ -272,14 +272,13 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
             index = self.GetNextSelected(index)
         return indexes
     
-    def getFirstSelectedBuffer(self):
+    def getFirstSelectedKey(self):
         """Get the Buffer object of the first selected item in the list."""
         index = self.GetFirstSelected()
         if index == -1:
             return None
         key = self.GetItem(index, 6).GetText()
-        buffer = Dired.findBufferByURL(key)
-        return buffer
+        return key
 
     def moveSelected(self, dir):
         """Move the selection up or down.
@@ -347,46 +346,19 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         
         For each buffer item, process the flags to perform the requested action.
         """
-        delete_self = None
-        try:
-            list_count = self.GetItemCount()
-            for index in range(list_count):
-                key = self.GetItem(index, 6).GetText()
-                flags = self.flags[key]
-                dprint("flags %s for %s" % (flags, key))
-                if not flags:
-                    continue
-                self.updating = True
-                buffer = Dired.findBufferByURL(key)
-                if 'S' in flags:
-                    buffer.save()
-                if 'D' in flags:
-                    if buffer.modified:
-                        Publisher().sendMessage('peppy.log.error', "Buffer %s modified.  Not deleting.\n" % key)
-                    elif buffer == self.buffer:
-                        # BadThings happen if you try to delete this buffer
-                        # in the middle of the delete process!
-                        dprint("Deleting me!  Save till later")
-                        delete_self = buffer
-                    elif not buffer.permanent:
-                        buffer.removeAllViewsAndDelete()
-                        del self.flags[key]
-                        # skip processing any other flags if the buffer has
-                        # been deleted.
-                        continue
-                elif 'M' in flags:
-                    self.frame.newBuffer(buffer)
-                self.flags[key] = ""
-        finally:
-            if delete_self is not None:
-                dprint("OK, now deleting myself")
-                self.deletePreHook()
-                # delete the buffer using call after to allow any pending
-                # events to the list to be cleaned up
-                wx.CallAfter(delete_self.removeAllViewsAndDelete)
-            elif self.updating:
-                self.updating = False
-                self.reset()
+        list_count = self.GetItemCount()
+        for index in range(list_count):
+            url = self.GetItem(index, 6).GetText()
+            flags = self.flags[url]
+            dprint("flags %s for %s" % (flags, url))
+            if not flags:
+                continue
+            if 'D' in flags:
+                dprint("Not actually deleting %s" % url)
+            elif 'M' in flags:
+                self.frame.open(url)
+            self.flags[url] = ""
+            self.SetStringItem(index, 0, self.flags[url])
 
     def getKey(self, name):
         url = self.url.resolve2(name)

@@ -241,8 +241,11 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper = self.newWrapper()
         return wrapper
 
-    def newBuffer(self, user_url, buffer, modecls=None):
-        wrapper = self.getNewModeWrapper()
+    def newBuffer(self, user_url, buffer, modecls=None, mode_to_replace=None):
+        if mode_to_replace:
+            wrapper = self.getWrapper(mode_to_replace)
+        else:
+            wrapper = self.getNewModeWrapper()
         mode = wrapper.createMajorMode(self.frame, buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         self.updateWrapper(wrapper)
@@ -640,7 +643,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("new mode=%s" % newmode)
         self.tabs.updateWrapper(wrapper)
 
-    def open(self, url, modecls=None):
+    def open(self, url, modecls=None, mode_to_replace=None):
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
         # query string and fragment) it separately.
@@ -669,7 +672,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         if buffer is not None:
             #dprint("found permanent buffer")
-            self.tabs.newBuffer(user_url, buffer, modecls)
+            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace)
         else:
             try:
                 buffer = LoadingBuffer(user_url, modecls)
@@ -680,18 +683,18 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 return
             
             if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
-                self.tabs.newBuffer(user_url, buffer)
+                self.tabs.newBuffer(user_url, buffer, mode_to_replace=mode_to_replace)
             else:
-                self.openStart(user_url, buffer)
+                self.openStart(user_url, buffer, mode_to_replace)
     
-    def openStart(self, user_url, loading_buffer):
+    def openStart(self, user_url, loading_buffer, mode_to_replace=None):
         #traceon()
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
             buffer = loading_buffer.clone()
             buffer.openGUIThreadStart()
             buffer.openBackgroundThread()
-            self.openSuccess(user_url, buffer)
+            self.openSuccess(user_url, buffer, mode_to_replace)
         except Exception, e:
             import traceback
             error = traceback.format_exc()
