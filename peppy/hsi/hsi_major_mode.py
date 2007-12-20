@@ -493,7 +493,7 @@ class NextBand(HSIActionMixin, SelectAction):
     def isEnabled(self):
         for band in self.mode.cubeview.indexes:
             # check if any of the display bands is at the high limit
-            if band > self.mode.cubeview.max_index:
+            if band >= self.mode.cubeview.max_index:
                 return False
         # nope, still room to advance all bands
         return True
