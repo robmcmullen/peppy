@@ -39,6 +39,10 @@ class HyperspectralFileFormat(object):
         cls.default_handlers.append(handler)
 
     @classmethod
+    def removeHandler(cls, handler):
+        cls.default_handlers.remove(handler)
+
+    @classmethod
     def setPluginManager(cls, pm):
         cls.plugin_manager = pm
         
