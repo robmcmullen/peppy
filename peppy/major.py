@@ -92,7 +92,12 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
                 dprint("Changing default mode of %s to %s" % (buffer, requested))
                 buffer.defaultmode = requested
-        self.editwin = requested(self.splitter, self, buffer, frame)
+        try:
+            self.editwin = requested(self.splitter, self, buffer, frame)
+        except:
+            import traceback
+            error = traceback.format_exc()
+            self.editwin = ErrorMode(self.splitter, self, buffer, frame, error)
         buffer.addViewer(self.editwin)
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
                           CenterPane())
@@ -713,6 +718,22 @@ class MajorMode(ClassPrefs, debugmixin):
     def showInitialPosition(self, url):
         """Hook to scroll to a non-default initial position if desired."""
         pass
+
+
+class ErrorMode(MajorMode, wx.Window):
+    """
+    A temporary Major Mode to load another mode in the background
+    """
+    keyword = "Blank"
+    icon='icons/error.png'
+    temporary = True
+    allow_threaded_loading = False
+
+    def __init__(self, parent, wrapper, buffer, frame, error=""):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        wx.Window.__init__(self, parent, -1, pos=(9000,9000))
+        lines = wx.StaticText(self, -1, error, (10,10))
+        lines.Wrap(500)
 
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):
