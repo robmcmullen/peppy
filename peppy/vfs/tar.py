@@ -54,6 +54,9 @@ class TarFS(BaseFS):
         # handle absolute and relative paths
         if path.startswith('/'):
             archive_path = '/'
+        elif len(path) > 1 and path[0].isalpha() and path[1]==':':
+            archive_path = path[0:2]
+            components.pop()
         else:
             archive_path = ''
         archive_found = False
@@ -63,7 +66,7 @@ class TarFS(BaseFS):
         # Find the first archive in the path
         while components:
             comp = components.pop()
-            archive_path = os.path.join(archive_path, comp)
+            archive_path = '/'.join([archive_path, comp])
             #print("archive_path=%s" % archive_path)
             if os.path.exists(archive_path):
                 try:
@@ -80,8 +83,7 @@ class TarFS(BaseFS):
                     #print("Exception: %s" % str(e))
                     pass
         if archive_found:
-            members = archive.getmembers()
-            #print members
+            #print archive.getmembers()
             if components:
                 components.reverse()
             member_path = "/".join(components)
@@ -193,10 +195,10 @@ class TarFS(BaseFS):
             if possible.startswith(name):
                 # Only match stuff in this directory; not directories further
                 # down.
-                print("possible match for %s: %s" % (name, possible))
+                #print("possible match for %s: %s" % (name, possible))
                 tmp = possible[cut:].replace('//', '/').rstrip('/') # for py 2.5
                 comps = tmp.split('/')
-                print("tmp=%s comps=%s" % (tmp, comps))
+                #print("tmp=%s comps=%s" % (tmp, comps))
                 if tmp and len(comps)==1:
                     names.append(tmp)
         #print("matches: %s" % names)

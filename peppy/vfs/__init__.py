@@ -1,4 +1,4 @@
-import os
+import os, sys
 
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
@@ -25,13 +25,13 @@ def normalize(ref, base=None):
     # Default to the current working directory
     if base is None:
         base = os.getcwd()
-    
+
     # URLs always use /
     if os.path.sep == '\\':
         base = base.replace(os.path.sep, '/')
-    # Check windows drive letters
+    # Check windows drive letters and add extra slash for correct URL syntax
     if base[1] == ':':
-        base = "%s:%s" % (base[0].lower(), base[2:])
+        base = "/%s:%s" % (base[0].lower(), base[2:])
     baseref = get_reference('file://%s/' % base)
     return baseref.resolve(ref)
 
