@@ -8,6 +8,7 @@ Major mode for displaying a list of buffers and operating on them.
 import os
 
 import wx
+from wx.lib.mixins.listctrl import ColumnSorterMixin
 
 from peppy.lib.columnsizer import *
 
@@ -170,7 +171,7 @@ class BufferListReplace(SelectAction):
             self.frame.setBuffer(buffer)
 
 
-class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
+class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
     """View the list of currently opened buffers
     """
     debuglevel = 0
@@ -200,10 +201,28 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         self.flags = {}
 
         self.createColumns()
+        self.itemDataMap = {}
+        ColumnSorterMixin.__init__(self, self.GetColumnCount())
+        # Assign icons for up and down arrows for column sorter
+        getIconStorage().assignList(self)
+
         self.updating = False
         self.reset()
         self.setSelectedIndexes([0])
     
+    # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
+    def GetListCtrl(self):
+        return self
+    
+    def GetSortImages(self):
+        down = getIconStorage("icons/bullet_arrow_down.png")
+        up = getIconStorage("icons/bullet_arrow_up.png")
+        return (down, up)
+
+    def GetSecondarySortValues(self, col, key1, key2):
+        return (self.itemDataMap[key1][1], self.itemDataMap[key2][1])
+
+
     def createListenersPostHook(self):
         Publisher().subscribe(self.reset, 'buffer.opened')
         Publisher().subscribe(self.reset, 'buffer.closed')
@@ -305,6 +324,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
                 flags = "".join(tmp)
                 self.flags[key] = flags
                 self.SetStringItem(index, 0, flags)
+                self.itemDataMap[index][0] = flags
     
     def clearFlags(self):
         """Clear all flags for the selected items."""
@@ -313,7 +333,8 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
             key = self.GetItem(index, 4).GetText()
             self.flags[key] = ""
             self.SetStringItem(index, 0, self.flags[key])
-    
+            self.itemDataMap[index][0] = self.flags[key]
+ 
     def execute(self):
         """Operate on all the flags for each of the buffers.
         
@@ -378,6 +399,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
         cumulative = 0
         cache = []
         show = -1
+        self.itemDataMap = {}
         for buf in BufferList.getBuffers():
             if buf.permanent:
                 # how to differentiate buffers that can't be deleted?
@@ -393,6 +415,10 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, MajorMode):
             self.SetStringItem(index, 2, str(buf.stc.GetLength()))
             self.SetStringItem(index, 3, buf.defaultmode.keyword)
             self.SetStringItem(index, 4, key)
+            self.SetItemData(index, index)
+            self.itemDataMap[index] = [flags, buf.getTabName(),
+                                       buf.stc.GetLength(),
+                                       buf.defaultmode.keyword, key]
 
             index += 1
         
