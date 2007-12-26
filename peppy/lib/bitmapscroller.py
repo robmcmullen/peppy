@@ -318,23 +318,31 @@ class Crosshair(MouseSelector):
         cev = CrosshairMotionEvent(imageCoords = (x, y),
                                    uncroppedImageCoords = (x + dx, y + dy))
         wx.PostEvent(self.scroller, cev)
+    
+    def drawCrossBox(self, x, y, xoff, yoff, dc):
+        dc.DrawRectangle(self.crossbox[0] + xoff, self.crossbox[1] + yoff,
+                         self.crossbox[2], self.crossbox[3])
+        dc.DrawLine(x, 0, x, self.crossbox[1] + yoff)
+        dc.DrawLine(x, self.crossbox[1] + self.crossbox[3] + yoff + 1,
+                    x, self.scroller.height)
+        dc.DrawLine(0, y, self.crossbox[0] + xoff, y)
+        dc.DrawLine(self.crossbox[0] + self.crossbox[2] + xoff + 1, y,
+                    self.scroller.width, y)
 
     def drawSelector(self, dc):
         xoff, yoff = self.getViewOffset()
         x = self.world_coords[0] + xoff
         y = self.world_coords[1] + yoff
         if self.crossbox:
-            dc.DrawRectangle(self.crossbox[0] + xoff, self.crossbox[1] + yoff,
-                             self.crossbox[2], self.crossbox[3])
-            dc.DrawLine(x, 0, x,
-                        self.crossbox[1] + yoff)
-            dc.DrawLine(x, self.crossbox[1] + self.crossbox[3] + yoff + 1,
-                        x, self.scroller.height)
-            dc.DrawLine(0, y,
-                        self.crossbox[0] + xoff, y)
-            dc.DrawLine(self.crossbox[0] + self.crossbox[2] + xoff + 1, y,
-                        self.scroller.width, y)
+            dc.SetPen(wx.Pen(wx.BLACK, 1))
+            self.drawCrossBox(x, y, xoff, yoff, dc)
+            dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
+            self.drawCrossBox(x, y, xoff, yoff, dc)
         else:
+            dc.SetPen(wx.Pen(wx.BLACK, 1))
+            dc.DrawLine(x, 0, x, self.scroller.height)
+            dc.DrawLine(0, y, self.scroller.width, y)
+            dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
             dc.DrawLine(x, 0, x, self.scroller.height)
             dc.DrawLine(0, y, self.scroller.width, y)
 
@@ -512,6 +520,9 @@ class RubberBand(MouseSelector):
         h = self.world_coords[3]
 
         # dprint("start=%s current=%s  xywh=%s" % (self.start_img_coords, self.last_img_coords, (x,y,w,h)))
+        dc.SetPen(wx.Pen(wx.BLACK, 1))
+        dc.DrawRectangle(x, y, w, h)
+        dc.SetPen(wx.Pen(wx.WHITE, 1, wx.DOT))
         dc.DrawRectangle(x, y, w, h)
 
     def isOnBorder(self, coords):
