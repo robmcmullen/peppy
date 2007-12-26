@@ -671,7 +671,7 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
     emacs_synonyms = 'hexl'
     
     icon='icons/tux.png'
-    regex="\.(hex|bin|so|a|exe)$"
+    mimetype = 'application/octet-stream'
 
     def __init__(self, parent, wrapper, buffer, frame):
         """Create the HexEdit viewer
