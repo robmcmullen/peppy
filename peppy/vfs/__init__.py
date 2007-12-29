@@ -115,7 +115,7 @@ def get_metadata(ref):
         return fs.get_metadata(ref)
     return {
         'mimetype': fs.get_mimetype(ref),
-        'description': 'description...',
+        'description': '',
         'mtime': fs.get_mtime(ref),
         'size': fs.get_size(ref),
         }

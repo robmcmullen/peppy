@@ -410,7 +410,10 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
             self.SetStringItem(index, 2, str(metadata['size']))
             self.SetStringItem(index, 3, getCompactDate(metadata['mtime']))
             self.SetStringItem(index, 4, mode)
-            self.SetStringItem(index, 5, metadata['description'])
+            desc = metadata['description']
+            if not desc:
+                desc = metadata['mimetype']
+            self.SetStringItem(index, 5, desc)
             self.SetStringItem(index, 6, str(key))
             self.SetItemData(index, index)
             self.itemDataMap[index] = (index, name, metadata['size'],

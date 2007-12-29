@@ -349,9 +349,28 @@ class MajorMode(ClassPrefs, debugmixin):
         return False
 
     @classmethod
+    def verifyMimetype(cls, mimetype):
+        """Hook to allow the major mode to determine compatibility by mimetype.
+
+        mimetype: a string indicating the MIME type of the file
+
+        return: True if the mode supports the MIME type
+        """
+        if cls.mimetype:
+            if isinstance(cls.mimetype, str) and mimetype == cls.mimetype:
+                return True
+            for mime in cls.mimetype:
+                if mimetype == mime:
+                    return True
+        return False
+
+    @classmethod
     def verifyMetadata(cls, metadata):
         """Hook to allow the major mode to determine compatibility by file
         metadata.
+        
+        This method is more general than verifyMimetype, as it can operate on
+        all the metadata passed to it rather than just the MIME type.
 
         metadata: a dict containing the results of a call to vfs.get_metadata.
         The MIME type will be in a key called 'mimetype'.
@@ -359,12 +378,6 @@ class MajorMode(ClassPrefs, debugmixin):
         return: True if the mode supports the MIME type specified by the
         metadata
         """
-        if cls.mimetype:
-            if isinstance(cls.mimetype, str) and metadata['mimetype'] == cls.mimetype:
-                return True
-            for mime in cls.mimetype:
-                if metadata['mimetype'] == cls.mimetype:
-                    return True
         return False
 
     @classmethod
@@ -998,8 +1011,8 @@ class MajorModeMatcherDriver(debugmixin):
                         'size': 0,
                         'description': None,
                         }
-        modes = cls.scanURL(plugins, buffer.url, metadata)
-        cls.dprint("scanURL matches %s using metadata %s" % (modes, metadata))
+        modes, binary_modes = cls.scanURL(plugins, buffer.url, metadata)
+        cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
 
         # get a buffered file handle to examine some bytes in the file
         fh = buffer.getBufferedReader(magic_size)
@@ -1070,6 +1083,8 @@ class MajorModeMatcherDriver(debugmixin):
             return mode
 
         # If we fail all the tests, use a generic mode
+        if binary_modes:
+            return binary_modes[0]
         if guessBinary(header, app.classprefs.binary_percentage):
             return cls.findModeByName(plugins,
                                          app.classprefs.default_binary_mode)
@@ -1137,20 +1152,32 @@ class MajorModeMatcherDriver(debugmixin):
         
         modes = []
         generics = []
+        
+        # Anything that matches application/octet-stream is a generic mode, so
+        # save it for last.
+        binary = []
+        
+        mimetype = metadata['mimetype']
         ext, editra_type = cls.getEditraType(url)
         for plugin in plugins:
             for mode in plugin.getMajorModes():
-                if mode.verifyMetadata(metadata):
+                if mode.verifyMimetype(mimetype):
+                    if mimetype == 'application/octet-stream':
+                        binary.append(mode)
+                    else:
+                        modes.append(mode)
+                elif mode.verifyMetadata(metadata):
                     modes.append(mode)
-                if mode.verifyFilename(url.path.get_name()):
+                elif mode.verifyFilename(url.path.get_name()):
                     modes.append(mode)
+
                 editra = mode.verifyEditraType(ext, editra_type)
                 if editra == 'generic':
                     generics.append(mode)
                 elif isinstance(editra, str):
                     modes.append(mode)
         modes.extend(generics)
-        return modes
+        return modes, binary
 
     @classmethod
     def scanMagic(cls, plugins, header):
