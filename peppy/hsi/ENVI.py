@@ -25,7 +25,7 @@ from cStringIO import StringIO
 # pair of double precision 12=16-bit unsigned integer 13=32-bit
 # unsigned long integer 14=64-bit signed long integer and 15=64-bit
 # unsigned long integer.
-enviDataType=[None,numpy.int8,numpy.int16,numpy.int32,numpy.float32,numpy.float64,numpy.complex64,None,None,numpy.complex128,None,None,numpy.uint16,numpy.uint32,numpy.int64,numpy.uint64]
+enviDataType=[None,numpy.uint8,numpy.int16,numpy.int32,numpy.float32,numpy.float64,numpy.complex64,None,None,numpy.complex128,None,None,numpy.uint16,numpy.uint32,numpy.int64,numpy.uint64]
 
 # byte order: 0=little endian, 1=big endian
 
