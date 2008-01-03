@@ -165,7 +165,7 @@ class Buffer(BufferVFSMixin):
     @classmethod
     def createErrorBuffer(cls, url, error):
         cls.error_buffer_count += 1
-        errurl = "mem:error.%d" % cls.error_buffer_count
+        errurl = "mem:error-%d.txt" % cls.error_buffer_count
         fh = vfs.make_file(errurl)
         fh.write("Failed opening %s.\n\nDetailed error message follows:\n\n" % url)
         fh.write(error)
