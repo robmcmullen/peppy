@@ -92,6 +92,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
                 dprint("Changing default mode of %s to %s" % (buffer, requested))
                 buffer.defaultmode = requested
+        self.dprint("creating major mode %s" % requested)
         self.editwin = requested(self.splitter, self, buffer, frame)
         buffer.addViewer(self.editwin)
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
@@ -113,6 +114,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("createListeners done in %0.5fs" % (time.time() - start))
         self.editwin.createListenersPostHook()
         self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
+        self.editwin.createActions()
+        self.dprint("createActions done in %0.5fs" % (time.time() - start))
         self.editwin.createPostHook()
         self.dprint("Created major mode in %0.5fs" % (time.time() - start))
         
@@ -121,9 +124,15 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     
     def deleteMajorMode(self):
         if self.editwin:
+            self.dprint("deleting major mode %s" % self.editwin)
             self.deleteMinorModes()
             self._mgr.DetachPane(self.editwin)
             self.editwin.frame.clearMenumap()
+            # FIXME: there must be references to the editwin held by other
+            # objects, because the window's __del__ method is not getting
+            # called.  Have to explicitly hide the window to prevent the
+            # editwin from showing up over top of the next editwin.
+            self.editwin.Hide()
             self.editwin.deleteWindow()
             self.editwin = None
     
@@ -295,6 +304,11 @@ class MajorMode(ClassPrefs, debugmixin):
     # Settings would propogate up the class hierachy and find a keymap
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
+    
+    # The first time an instance of a major mode is created, the action class
+    # list is populated.  Subsequent instances use this list, and this list
+    # can change if plugins are activated or deactivated.
+    action_classes = None
     
     def __init__(self, parent, wrapper, buffer, frame):
         self.wrapper = wrapper
@@ -588,6 +602,16 @@ class MajorMode(ClassPrefs, debugmixin):
         """Hook for subclasses to process during idle time.
         """
         pass
+
+    def createActions(self):
+        """Create the list of actions corresponding to this major mode.
+        
+        The action list includes all commands regardless of how they are
+        initiated: menubar, toolbar, or keyboard commands.  If a new minor
+        mode or sidebar is activated, this list will have to be regenerated.
+        """
+        if not self.action_classes:
+            self.__class__.action_classes = UserActionClassList(self)
 
     def OnContextMenu(self, evt):
         """Hook to display a context menu relevant to this major mode.

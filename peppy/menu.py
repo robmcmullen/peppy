@@ -536,12 +536,11 @@ class GlobalList(ListAction):
         return self.__class__.storage
 
 
-class UserActionMap(debugmixin):
-    """Creates a mapping of actions for a frame.
+class UserActionClassList(debugmixin):
+    """Creates a list of actions for a major mode
     
-    This class creates the ordering of the menubar, and maps actions to menu
-    items.  Note that the order of the menu titles is required here and can't
-    be added to later.
+    This class creates a list of action classes and a sorted list of actions
+    ready to be populated into a menu.
     """
     debuglevel=0
     
@@ -560,7 +559,7 @@ class UserActionMap(debugmixin):
         if not cls.default_menu_weights:
             cls.default_menu_weights.update(weights)
     
-    def __init__(self, frame, action_classes):
+    def __init__(self, mode):
         """Initialize the mapping with the new set of actions.
         
         The ordering of the menu items is set here, but nothing is actually
@@ -572,13 +571,29 @@ class UserActionMap(debugmixin):
         classes, but the classes themselves.  They will be instantiated when
         they are mapped to a menubar or toolbar.
         """
-        self.frame = frame
-        self.actions = {}
-        self.index_actions = {}
+        self.action_classes = []
         self.menus = {'root':[]}
-        self.title_to_menu = {}
-        self.title_to_toolbar = {}
-        self.sortActions(action_classes)
+        self.getActiveActions(mode)
+        self.sortActions()
+    
+    def getActiveActions(self, mode):
+        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+        #assert self.dprint(plugins)
+
+        actions = []
+        for plugin in plugins:
+            assert self.dprint("collecting from plugin %s" % plugin)
+            
+            # old-style way of checking each action for compatibility
+            for action in plugin.getActions():
+                if action.worksWithMajorMode(mode):
+                    # Only if the action works with the major mode do we want
+                    # it to be an action that fires events
+                    actions.append(action)
+
+            # new-style way of having the plugin check for compatibility
+            actions.extend(plugin.getCompatibleActions(mode.__class__))
+        self.action_classes = actions
 
     def getInfo(self, action):
         """Get menu ordering info from the action
@@ -618,7 +633,7 @@ class UserActionMap(debugmixin):
         else:
             return '/'.join(hier[0:-1])
     
-    def sortActions(self, action_classes):
+    def sortActions(self):
         """Sort the actions into a hierarchy of menus
         
         Menus and menu items are sorted here by the weights given
@@ -630,12 +645,10 @@ class UserActionMap(debugmixin):
         
         # First, loop through to get all actions matched to their
         # menu title
-        for actioncls in action_classes:
-            action = actioncls(self.frame)
-            self.actions[action.global_id] = action
-            self.dprint("%s in current mode list" % action)
+        for actioncls in self.action_classes:
+            self.dprint("%s in current mode list" % actioncls)
 
-            if action.default_menu is None or len(action.default_menu) == 0:
+            if actioncls.default_menu is None or len(actioncls.default_menu) == 0:
                 # It's a command event only, not a menu or toolbar
                 continue
             
@@ -646,7 +659,7 @@ class UserActionMap(debugmixin):
 
             # If the item weight is less than zero, a separator will
             # be added to the menu before the item
-            self.menus[menu_title].append((abs(weight), action, weight<0))
+            self.menus[menu_title].append((abs(weight), actioncls, weight<0))
             if menu_weight is not None:
                 menu_weights[menu_title] = menu_weight
             elif menu_title in self.default_menu_weights:
@@ -668,8 +681,8 @@ class UserActionMap(debugmixin):
                     self.dprint("submenu = %s, search = %s" % (submenu, search))
                     self.dprint(self.menus[search])
                     found = False
-                    for weight, action, sep in self.menus[search]:
-                        if isinstance(action, str) and action == submenu:
+                    for weight, actioncls, sep in self.menus[search]:
+                        if isinstance(actioncls, str) and actioncls == submenu:
                             found = True
                             break
                     if not found:
@@ -696,6 +709,39 @@ class UserActionMap(debugmixin):
         self.menus = sorted
         self.dprint(self.menus.keys())
     
+
+class UserActionMap(debugmixin):
+    """Creates a mapping of actions for a frame.
+    
+    This class creates the ordering of the menubar, and maps actions to menu
+    items.  Note that the order of the menu titles is required here and can't
+    be added to later.
+    """
+    debuglevel=0
+    
+    def __init__(self, frame, mode):
+        """Initialize the mapping with the new set of actions.
+        
+        The ordering of the menu items is set here, but nothing is actually
+        mapped to a menubar or a toolbar until either updateMenuActions or
+        updateToolbarActions is called.
+        
+        frame: parent Frame object
+        action_classes: list of possible action classes (i.e.  not instantiated
+        classes, but the classes themselves.  They will be instantiated when
+        they are mapped to a menubar or toolbar.
+        """
+        self.frame = frame
+        self.actions = {}
+        self.index_actions = {}
+        self.title_to_menu = {}
+        self.title_to_toolbar = {}
+        self.class_list = mode.action_classes
+        self.class_to_action = {}
+    
+    def __del__(self):
+        dprint("DELETING MENUMAP!")
+
     def updateMinMax(self, min, max):
         """Update the min and max menu ids
         
@@ -712,15 +758,27 @@ class UserActionMap(debugmixin):
         elif max > self.max_id:
             self.max_id = max
     
+    def getAction(self, actioncls):
+        """Return an existing action if already instantiated, or create it"""
+        if actioncls in self.class_to_action:
+            return self.actions[self.class_to_action[actioncls].global_id]
+        action = actioncls(self.frame)
+        self.class_to_action[actioncls] = action
+        self.actions[action.global_id] = action
+        return action
+    
     def updateMenuActions(self, menubar):
         """Populates the frame's menubar with the current actions.
         
         This replaces the current menubar in the frame with the menus
         defined by the current list of actions.
         """
+        self.title_to_menu = {}
+        self.actions = {}
+        self.class_to_action = {}
         self.min_id = None
         self.max_id = None
-        for title, items in self.menus.iteritems():
+        for title, items in self.class_list.menus.iteritems():
             if title == 'root':
                 # Save the root menu for later, since wx.MenuBar uses a
                 # different interface than wx.Menu for adding stuff
@@ -731,20 +789,21 @@ class UserActionMap(debugmixin):
             else:
                 menu = self.title_to_menu[title]
             
-            for weight, action, separator in items:
-                if isinstance(action, str):
+            for weight, actioncls, separator in items:
+                if isinstance(actioncls, str):
                     if separator and menu.GetMenuItemCount() > 0:
                         menu.AppendSeparator()
-                    submenu_parts = action.split('/')
+                    submenu_parts = actioncls.split('/')
                     self.dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
-                    if action not in self.title_to_menu:
+                    if actioncls not in self.title_to_menu:
                         submenu = wx.Menu()
-                        self.title_to_menu[action] = submenu
+                        self.title_to_menu[actioncls] = submenu
                     else:
-                        submenu = self.title_to_menu[action]
+                        submenu = self.title_to_menu[actioncls]
                         
                     menu.AppendMenu(-1, submenu_parts[-1], submenu)
                 else:
+                    action = self.getAction(actioncls)
                     if separator and menu.GetMenuItemCount() > 0:
                         menu.AppendSeparator()
                     action.insertIntoMenu(menu)
@@ -756,7 +815,7 @@ class UserActionMap(debugmixin):
                             self.index_actions[id] = action
         
         pos = 0
-        for weight, title, separator in self.menus['root']:
+        for weight, title, separator in self.class_list.menus['root']:
             self.dprint("root menu title: %s" % title)
             if pos < menubar.GetMenuCount():
                 menubar.Replace(pos, self.title_to_menu[title], title)
@@ -769,7 +828,7 @@ class UserActionMap(debugmixin):
     def updateToolbarActions(self, auimgr):
         needed = {}
         order = []
-        for title, items in self.menus.iteritems():
+        for title, items in self.class_list.menus.iteritems():
             if title == 'root':
                 # Ignore the root menu -- it only contains other menus
                 continue
@@ -778,11 +837,12 @@ class UserActionMap(debugmixin):
             # e.g. rather than splitting up File and File/Submenu into
             # two toolbars, all of the File toolbars are kept together
             title = title.split('/')[0]
-            for weight, action, separator in items:
-                if isinstance(action, str):
+            for weight, actioncls, separator in items:
+                if isinstance(actioncls, str):
                     # Ignore submenu definitions -- toolbars don't have subtoolbars
                     pass
-                elif action.icon is not None and action.default_toolbar:
+                elif actioncls.icon is not None and actioncls.default_toolbar:
+                    action = self.getAction(actioncls)
                     # Delay construction of toolbars until now, when
                     # we know that the toolbar is needed
                     if title not in needed:
@@ -816,7 +876,8 @@ class UserActionMap(debugmixin):
     def getKeyboardActions(self):
         keymap = KeyMap()
         #keymap.debug = True
-        for action in self.actions.values():
+        for actioncls in self.class_list.action_classes:
+            action = self.getAction(actioncls)
             if action.keyboard is None:
                 continue
             keymap.define(action.keyboard, action)
@@ -836,6 +897,17 @@ class UserActionMap(debugmixin):
             auimgr.DetachPane(tb)
             tb.Destroy()
         self.title_to_toolbar = {}
+    
+    def cleanupAndDelete(self):
+        self.cleanupPrevious(self.frame._mgr)
+        # Force garbage collection of actions by resetting all of the dicts
+        # that hold references to actions
+        self.actions = None
+        self.class_list = None
+        self.class_to_action = None
+        self.index_actions = None
+        self.title_to_menu = None
+        self.title_to_toolbar = None
 
     def reconnectEvents(self):
         """Update event handlers if the menu has been dynamically updated
@@ -920,23 +992,3 @@ class UserActionMap(debugmixin):
             action.showEnable()
             if hasattr(action, 'updateOnDemand'):
                 action.updateOnDemand()
-
-    @classmethod
-    def getActiveActions(cls, mode):
-        plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        assert cls.dprint(plugins)
-
-        actions = []
-        for plugin in plugins:
-            assert cls.dprint("collecting from plugin %s" % plugin)
-            
-            # old-style way of checking each action for compatibility
-            for action in plugin.getActions():
-                if action.worksWithMajorMode(mode):
-                    # Only if the action works with the major mode do we want
-                    # it to be an action that fires events
-                    actions.append(action)
-
-            # new-style way of having the plugin check for compatibility
-            actions.extend(plugin.getCompatibleActions(mode.__class__))
-        return actions

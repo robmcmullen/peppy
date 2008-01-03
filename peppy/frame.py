@@ -333,7 +333,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                           CenterPane())
         self.sidebar_panes = []
 
-        UserActionMap.setDefaultMenuBarWeights(self.default_menubar)
+        UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()
         if wx.Platform == '__WXMAC__':
             # turn off the automatic generation of the Window menu.
@@ -485,13 +485,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def clearMenumap(self):
         if self.menumap is not None:
-            self.menumap.cleanupPrevious(self._mgr)
+            self.menumap.cleanupAndDelete()
             self.menumap = None
 
     def setMenumap(self, mode):
         self.clearMenumap()
-        actions = UserActionMap.getActiveActions(mode)
-        self.menumap = UserActionMap(self, actions)
+        self.menumap = UserActionMap(self, mode)
+        
         keymap = self.menumap.updateActions(self.show_toolbar)
         self.keys.setGlobalKeyMap(keymap)
         self._mgr.Update()
@@ -719,6 +719,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.openFailure(user_url, error, mode_to_replace, progress)
             return
 
+        assert self.dprint("mode to replace = %s" % mode_to_replace)
         mode = self.tabs.newMode(buffer, mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
         
