@@ -428,7 +428,7 @@ class LoadingMode(BlankMode):
 class LoadingBuffer(BufferVFSMixin, debugmixin):
     debuglevel = 0
     
-    def __init__(self, url, modecls):
+    def __init__(self, url, modecls=None):
         self.user_url = url
         BufferVFSMixin.__init__(self, url)
         self.busy = True
