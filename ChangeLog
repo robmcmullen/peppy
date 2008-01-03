@@ -1,3 +1,9 @@
+2007-12-28  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.1.5 update to "The Winchester"
+	* changed bitmapscroller to use wx.Overlay
+	* added verifyMimetype interface to MajorMode
+
 2007-12-19  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.1.4 update to "The Winchester"
