@@ -109,14 +109,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         page = self.getCurrent()
         page.OnContextMenu(evt)
 
-    def closeTab(self, mode):
-        assert self.dprint("closing tab: mode %s" % mode)
-        index=self.GetPageIndex(mode)
-        self.RemovePage(index)
-        mode.deleteWindow()
-        if self.GetPageCount() == 0:
-            self.frame.open("about:blank")
-    
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):
             wrapper = self.GetPage(0)
@@ -124,46 +116,6 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
             wrapper.deleteMajorMode()
             wrapper.Destroy()
 
-    def addTab(self,mode):
-        before = self.GetPageCount()
-        assert self.dprint("#tabs = %d.  Adding mode %s" % (before, mode))
-        self.AddPage(mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
-        index=self.GetPageIndex(mode)
-        self.SetSelection(index)
-        if before==0:
-            # If this is the first tab added, a tab changed event
-            # won't be generated, so we have to call switchMode
-            # ourselves.
-            self.frame.switchMode()
-        
-    def replaceCurrentTab(self,mode):
-        index=self.GetSelection()
-        if index<0:
-            self.addTab(mode)
-        else:
-            assert self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, mode))
-            self.InsertPage(index, mode, mode.getTabName(), bitmap=getIconBitmap(mode.icon))
-            oldmode=self.GetPage(index+1)
-            self.RemovePage(index+1)
-            if oldmode:
-                oldmode.deleteWindow()
-                #del oldmode
-            self.SetSelection(index)
-
-    def replaceTab(self, oldmode, newmode):
-        index = self.GetPageIndex(oldmode)
-        if index == wx.NOT_FOUND:
-            self.addTab(newmode)
-        else:
-            assert self.dprint("Replacing tab %s at %d with %s" % (self.GetPage(index), index, newmode))
-            self.InsertPage(index, newmode, newmode.getTabName(), bitmap=getIconBitmap(newmode.icon))
-            oldmode=self.GetPage(index+1)
-            self.RemovePage(index+1)
-            if oldmode:
-                oldmode.deleteWindow()
-                #del oldmode
-            self.SetSelection(index)            
-        
     def getCurrent(self):
         index = self.GetSelection()
         if index<0:
@@ -221,10 +173,11 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def closeWrapper(self, mode):
         if self.GetPageCount() > 1:
             for index in range(0, self.GetPageCount()):
-                page = self.GetPage(index)
-                if page.editwin == mode:
-                    page.deleteMajorMode()
+                wrapper = self.GetPage(index)
+                if wrapper.editwin == mode:
+                    wrapper.deleteMajorMode()
                     self.RemovePage(index)
+                    wrapper.Destroy()
                     break
         else:
             page = self.GetPage(0)

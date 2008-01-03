@@ -321,7 +321,7 @@ class MajorMode(ClassPrefs, debugmixin):
         pass
 
     def __del__(self):
-        assert self.dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
+        #dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
         self.removeListeners()
         self.removeListenersPostHook()
         self.deleteWindowPostHook()
