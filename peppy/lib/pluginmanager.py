@@ -63,13 +63,10 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
 
         self.createColumns()
         self.reset()
-        self.resizeColumns()
 
     def createColumns(self):
-        self.InsertColumn(0, "Name")
-        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
-        self.InsertColumn(1, "Version")
-        self.SetColumnWidth(1, wx.LIST_AUTOSIZE)
+        self.InsertSizedColumn(0, "Name")
+        self.InsertSizedColumn(1, "Version")
 
     def getPlugin(self, index=-1):
         if index == -1:
@@ -109,6 +106,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
         for plugin in self.plugins:
             self.CheckItem(index, plugin.plugin_object.is_activated)
             index += 1
+        self.resizeColumns()
 
     def OnCheckItem(self, index, flag):
         if flag:
