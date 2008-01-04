@@ -11,7 +11,7 @@
 #-----------------------------------------------------------------------------
 """columnsizer -- a mixin to handle column resizing for list controls
 
-This mixin provides the capabibility to resize columns in a report-mode list
+This mixin provides the capability to resize columns in a report-mode list
 control.  Columns may have fixed or scalable widths, and optionally an initial
 group of columns can be constrained to fit in the visible portion of the
 window upon resizing or initialization of the list.
@@ -42,7 +42,7 @@ method for a full description.  For example,
         self.InsertSizedColumn(6, "Owner", fixed=50)
 
 will create 6 columns, all autosized to the largest item but with the
-additional constraits applied in the following cases:
+additional constraints applied in the following cases:
 
 * Column 1 (Filename) will be clamped to the range between minimum and maximum
 pixels.
@@ -162,12 +162,12 @@ class ColumnSizerMixin(object):
         will be greedy and take as much space as it requires to satisfy
         its autosize, min, and max constraints.  Otherwise it can be scaled
         smaller (or larger) as required in an attempt to fit more columns in
-        the visible part of list.
+        the visible part of list.  (Default is True)
         
         ok_offscreen: True/False value indicating if this column and subsequent
         columns are initially allowed to be placed offscreen if the width of
         the columns prior to it have preferred sizes that don't allow this
-        column to be placed entirely on screen.
+        column to be placed entirely on screen.  (Default is False)
         
         --
         
