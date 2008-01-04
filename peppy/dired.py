@@ -243,7 +243,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         self.InsertSizedColumn(3, "Date")
         self.InsertSizedColumn(4, "Mode")
         self.InsertSizedColumn(5, "Description", min=100, scale=False)
-        self.InsertSizedColumn(6, "URL", can_scroll=True)
+        self.InsertSizedColumn(6, "URL", ok_offscreen=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -430,5 +430,5 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         if show >= 0:
             self.EnsureVisible(show)
 
-        self.resizeColumns()
+        self.ResizeColumns()
         self.Thaw()

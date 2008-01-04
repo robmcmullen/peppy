@@ -236,7 +236,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode
         self.InsertSizedColumn(1, "Buffer", min=100, scale=True)
         self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
         self.InsertSizedColumn(3, "Mode")
-        self.InsertSizedColumn(4, "URL", can_scroll=True)
+        self.InsertSizedColumn(4, "URL", ok_offscreen=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -430,7 +430,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode
         if show >= 0:
             self.EnsureVisible(show)
 
-        self.resizeColumns()
+        self.ResizeColumns()
         self.Thaw()
 
 

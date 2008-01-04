@@ -690,7 +690,7 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         self.InsertSizedColumn(4, "Album")
         self.InsertSizedColumn(5, "Track")
         self.InsertSizedColumn(6, "Genre")
-        self.InsertSizedColumn(7, "Filename", can_scroll=True)
+        self.InsertSizedColumn(7, "Filename", ok_offscreen=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -756,7 +756,7 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
 
         if index > 0:
             self.showIfHidden()
-            self.resizeColumns()
+            self.ResizeColumns()
 
     def searchResultsTracks(self, message=None):
         mpd, tracks = message.data
@@ -1348,7 +1348,7 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
         if self.pending_highlight >= 0:
             self.highlightSong(self.pending_highlight)
             self.pending_highlight = -1
-        self.resizeColumns()
+        self.ResizeColumns()
 
         self.paneinfo.Caption("Playlist: %d songs -- %s" % (index, getTimeString(cumulative)))
         self.major.updateAui()
@@ -1386,7 +1386,7 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
                 self.pending_highlight = newindex
                 self.songindex = -1
                 self.dprint("pending_highlight = %d" % self.pending_highlight)
-            self.resizeColumns()
+            self.ResizeColumns()
         except:
             # Failure probably means that the playlist has changed out
             # from under us by another mpd client.  Just skip it and

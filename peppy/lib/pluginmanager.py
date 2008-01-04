@@ -106,7 +106,7 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
         for plugin in self.plugins:
             self.CheckItem(index, plugin.plugin_object.is_activated)
             index += 1
-        self.resizeColumns()
+        self.ResizeColumns()
 
     def OnCheckItem(self, index, flag):
         if flag:

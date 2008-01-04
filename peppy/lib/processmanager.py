@@ -267,9 +267,9 @@ class ProcessList(wx.ListCtrl, debugmixin):
                 self.DeleteItem(index)
 
         if index > 0:
-            self.resizeColumns()
+            self.ResizeColumns()
 
-    def resizeColumns(self):
+    def ResizeColumns(self):
         for col in range(self.GetColumnCount()):
             self.SetColumnWidth(col, wx.LIST_AUTOSIZE)                
 
