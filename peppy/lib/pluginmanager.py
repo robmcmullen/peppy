@@ -40,11 +40,11 @@ except:
             return True
 
 
-class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnSizerMixin, debugmixin):
+class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnAutoSizeMixin, debugmixin):
     def __init__(self, parent, pm):
         wx.ListCtrl.__init__(self, parent, size=(200,400), style=wx.LC_REPORT)
         CheckListCtrlMixin.__init__(self)
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
 
         self.plugin_manager = pm
         cats = self.plugin_manager.getCategories()

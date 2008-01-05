@@ -173,7 +173,7 @@ class DiredReplace(SelectAction):
             wx.CallAfter(self.frame.open, url, mode_to_replace=self.mode)
 
 
-class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
+class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
     """Directory viewing mode
 
     Dired is a directory viewing mode that works like an extremely bare-bones
@@ -198,7 +198,7 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT, pos=(9000,9000))
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
@@ -237,12 +237,12 @@ class DiredMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
-        self.InsertSizedColumn(0, "Flags", min=30, max=30, scale=False)
+        self.InsertSizedColumn(0, "Flags", min=30, max=30, greedy=True)
         self.InsertSizedColumn(1, "Filename", min=100)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
+        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
         self.InsertSizedColumn(3, "Date")
         self.InsertSizedColumn(4, "Mode")
-        self.InsertSizedColumn(5, "Description", min=100, scale=False)
+        self.InsertSizedColumn(5, "Description", min=100, greedy=True)
         self.InsertSizedColumn(6, "URL", ok_offscreen=True)
 
     def OnItemActivated(self, evt):

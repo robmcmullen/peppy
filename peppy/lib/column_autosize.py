@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# Name:        columnsizer.py
+# Name:        column_autosize.py
 # Purpose:     mixin for list controls to resize columns
 #
 # Author:      Rob McMullen
@@ -9,7 +9,7 @@
 # Copyright:   (c) 2007-2008 Rob McMullen
 # License:     wxWidgets
 #-----------------------------------------------------------------------------
-"""columnsizer -- a mixin to handle column resizing for list controls
+"""ColumnAutoSizeMixin -- a mixin to handle column resizing for list controls
 
 This mixin provides the capability to resize columns in a report-mode list
 control.  Columns may have fixed or scalable widths, and optionally an initial
@@ -22,10 +22,10 @@ Usage
 This mixin is used in subclasses of ListCtrl in LC_REPORT mode, as in the
 following snippet from a constructor:
 
-class TestList(ColumnSizerMixin, wx.ListCtrl):
+class TestList(ColumnAutoSizeMixin, wx.ListCtrl):
     def __init__(self, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
 
 Columns are added using the special InsertSizedColumn method, not the standard
 InsertColumn method of the ListCtrl.  InsertSizedColumn has several keyword
@@ -35,7 +35,7 @@ method for a full description.  For example,
     def createColumns(self):
         self.InsertSizedColumn(0, "Index")
         self.InsertSizedColumn(1, "Filename", min=100, max=200)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
+        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
         self.InsertSizedColumn(3, "Mode", max="MMM")
         self.InsertSizedColumn(4, "Description", min=100)
         self.InsertSizedColumn(5, "URL", ok_offscreen=True)
@@ -47,8 +47,9 @@ additional constraints applied in the following cases:
 * Column 1 (Filename) will be clamped to the range between minimum and maximum
 pixels.
 
-* Column 2 (Size) will be aligned to the right, has a minimum size, and won't
-be greedy about its maximum size when the whole list is scaled.
+* Column 2 (Size) will be aligned to the right, has a minimum size, and will
+be greedy and attempt to maintain its preferred size when the whole list is
+scaled.
 
 * Column 3 (Mode) has a maximum allowable size given by the width in pixels of
 the string "MMM" in the ListCtrl's current font.
@@ -79,9 +80,13 @@ in InsertSizedColumn.
 
 
 @author: Rob McMullen
-@version: 1.0
+@version: 1.1
 
 Changelog:
+    1.1:
+        * renamed to ColumnAutoSizeMixin
+        * changed keyword argument 'scale' to 'greedy'
+        * implemented new sizing algorithm
     1.0:
         * First public release
 """
@@ -90,7 +95,7 @@ import sys
 import wx
 
 
-class ColumnSizerMixin(object):
+class ColumnAutoSizeMixin(object):
     """Enhancement to ListCtrl (Report mode only) to handle initial column
     sizing.
 
@@ -134,7 +139,7 @@ class ColumnSizerMixin(object):
         
         Insert a column into the ListCtrl, replacing a call to InsertColumn.
         Don't mix calls to InsertColumn and InsertSizedColumn, as undefined
-        things will result.  Once you decide to use the ColumnSizerMixin, only
+        things will result.  Once you decide to use the ColumnAutoSizeMixin, only
         use InsertSizedColumn to insert columns.  You can insert a non-sized
         column by specifying the same value for min and max.
         
@@ -154,15 +159,15 @@ class ColumnSizerMixin(object):
         max can be an integer or a string or None, but in this case specifies
         the maximum width.  If None, there is no maximum size.
         
-        scale: True/False value indicating whether or not the column should
+        greedy: True/False value indicating whether or not the column should
         be scaled in rough proportion to its preferred width if all columns
         were allowed to be their preferred width as compared to the width
-        based on attempting to fit as many columns in the list without using
-        a horizontal scrollbar.  Basically, if scale is false, the column
-        will be greedy and take as much space as it requires to satisfy
-        its autosize, min, and max constraints.  Otherwise it can be scaled
-        smaller (or larger) as required in an attempt to fit more columns in
-        the visible part of list.  (Default is True)
+        based on attempting to fit as many columns in the list without using a
+        horizontal scrollbar.  To restate: if True, the column will be greedy
+        and take as much space as it requires to satisfy its autosize, min,
+        and max constraints.  Otherwise it can be scaled smaller (or larger)
+        as required in an attempt to fit more columns in the visible part of
+        list.  (Default is False)
         
         ok_offscreen: True/False value indicating if this column and subsequent
         columns are initially allowed to be placed offscreen if the width of
@@ -172,9 +177,9 @@ class ColumnSizerMixin(object):
         --
         
         Note that if both min and max are None, the column will be sized to
-        its width as determined by wx.LIST_AUTOSIZE.  (Unless 'scale' is
+        its width as determined by wx.LIST_AUTOSIZE.  (Unless 'greedy' is
         explicitly set for the column, in which case the column will also
-        respect the value to scale.
+        respect the value to greedy.
         """
         wx.ListCtrl.InsertColumn(self, index, title, *args)
         
@@ -188,16 +193,16 @@ class ColumnSizerMixin(object):
                     self.max = kwargs['max']
                 else:
                     self.max = None
-                if 'scale' in kwargs:
-                    self.scale = kwargs['scale']
+                if 'greedy' in kwargs:
+                    self.greedy = kwargs['greedy']
                 else:
                     if self.min is None and self.max is None:
-                        self.scale = False
+                        self.greedy = True
                     else:
-                        self.scale = True
+                        self.greedy = False
                 if 'fixed' in kwargs:
                     self.min = self.max = kwargs['fixed']
-                    self.scale = False
+                    self.greedy = True
         self._resize_flags[index] = ResizeFlags(**kwargs)
         if 'ok_offscreen' in kwargs and kwargs['ok_offscreen'] and index < self._allowed_offscreen:
             self._allowed_offscreen = index
@@ -236,50 +241,89 @@ class ColumnSizerMixin(object):
             return
         self.Freeze()
         
+        allowed_offscreen = min(self._allowed_offscreen, self.GetColumnCount())
+        
         # get font to measure text extents
         font = self.GetFont()
         dc = wx.ClientDC(self)
         dc.SetFont(font)
 
         flags = self._resize_flags
-        autosized_width = 0
         
-        # Resize all columns to their autosizedly determined width
+        usable_width = self.GetClientSize().width
+        # We're showing the vertical scrollbar -> allow for scrollbar width
+        # NOTE: on GTK, the scrollbar is included in the client size, but on
+        # Windows it is not included
+        if wx.Platform != '__WXMSW__':
+            if self.GetItemCount() > self.GetCountPerPage():
+                usable_width -= wx.SystemSettings_GetMetric(wx.SYS_VSCROLL_X)
+        remaining_width = usable_width
+        
+        # pass 1: get preferred sizes for all columns
+        before = {}
+        newsize = {}
         for col in range(self.GetColumnCount()):
             self.SetColumnWidth(col, wx.LIST_AUTOSIZE)
-            flag = flags[col]
-            if col < self._allowed_offscreen:
-                after = self.GetColumnWidth(col)
-                autosized_width += after
-        
-        # Loop through again and adjust once we know the total widths
-        w, h = self.GetClientSizeTuple()
-        for col in range(self.GetColumnCount()):
-            before = self.GetColumnWidth(col)
-            resize = before
+            before[col] = self.GetColumnWidth(col)
+            resize = before[col]
             
             flag = flags[col]
-            if col < self._allowed_offscreen and flag.scale:
-                resize = (before * w) / autosized_width
             
             # setup min and max values.  The min and max may be specified as
             # a string, which will be converted into pixels here, based on
             # the current font.
-            small = flag.min
-            if isinstance(small, str):
-                small = dc.GetTextExtent(small)[0]
-            large = flag.max
-            if isinstance(large, str):
-                large = dc.GetTextExtent(large)[0]
+            if isinstance(flag.min, str):
+                flag.min = dc.GetTextExtent(flag.min)[0]
+            if isinstance(flag.max, str):
+                flag.max = dc.GetTextExtent(flag.max)[0]
 
-            if small and resize < small:
-                resize = small
-            elif large and resize > large:
-                resize = large
+            if flag.min is not None and resize < flag.min:
+                resize = flag.min
+            elif flag.max is not None and resize > flag.max:
+                resize = flag.max
+            newsize[col] = resize
+
+            if col < allowed_offscreen and flag.greedy:
+                remaining_width -= resize
+
+        # pass 2: resize remaining columns
+        desired_width = 0
+        for col in range(allowed_offscreen):
+            flag = flags[col]
+            if not flag.greedy:
+                resize = (newsize[col] * usable_width) / remaining_width
+            
+                if flag.min is not None and resize < flag.min:
+                    resize = flag.min
+                elif flag.max is not None and resize > flag.max:
+                    resize = flag.max
+                if resize is not None:
+                    newsize[col] = resize
+                desired_width += newsize[col]
+        #print("desired=%d remaining=%d" % (desired_width, remaining_width))
+        
+        # pass 3: scale columns down if necessary
+        if desired_width > remaining_width:
+            pass3_width = 0
+            for col in range(allowed_offscreen):
+                flag = flags[col]
+                if not flag.greedy:
+                    resize = (newsize[col] * remaining_width) / desired_width
                 
-            #print("col %d: before=%s resized=%s" % (col, before, resize))
-            if resize != before:
-                self.SetColumnWidth(col, resize)
+                    if flag.min is not None and resize < flag.min:
+                        resize = flag.min
+                    elif flag.max is not None and resize > flag.max:
+                        resize = flag.max
+                    if resize is not None:
+                        newsize[col] = resize
+                    pass3_width += newsize[col]
+            #print("pass3=%d remaining=%d" % (pass3_width, remaining_width))
+
+        # pass 4: set column widths
+        for col in range(self.GetColumnCount()):
+            #print("col %d: before=%s resized=%s" % (col, before[col], newsize[col]))
+            if newsize[col] != before[col]:
+                self.SetColumnWidth(col, newsize[col])
         self.Thaw()
         self._resize_dirty = False
 
@@ -287,10 +331,10 @@ class ColumnSizerMixin(object):
 if __name__ == "__main__":
     import sys, random
     
-    class TestList(ColumnSizerMixin, wx.ListCtrl):
+    class TestList1(ColumnAutoSizeMixin, wx.ListCtrl):
         def __init__(self, parent):
             wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-            ColumnSizerMixin.__init__(self)
+            ColumnAutoSizeMixin.__init__(self)
 
             self.rows = 50
             self.examples = [0, (1,20), (4,10), (4,5), (10,30), (100,200), (5,10)]
@@ -300,10 +344,10 @@ if __name__ == "__main__":
         
         def createColumns(self):
             self.InsertSizedColumn(0, "Index")
-            self.InsertSizedColumn(1, "Filename", min=100, max=200)
-            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
-            self.InsertSizedColumn(3, "Mode", max="MMM")
-            self.InsertSizedColumn(4, "Description", min=100)
+            self.InsertSizedColumn(1, "Filename", min=75, max=200)
+            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+            self.InsertSizedColumn(3, "Mode", min="M", max="MMM")
+            self.InsertSizedColumn(4, "Description", min=75)
             self.InsertSizedColumn(5, "URL", ok_offscreen=True)
             self.InsertSizedColumn(6, "Owner", fixed=50)
 
@@ -332,17 +376,29 @@ if __name__ == "__main__":
             self.ResizeColumns()
             self.Thaw()
 
+    class TestList2(TestList1):
+        def createColumns(self):
+            self.InsertSizedColumn(0, "Index")
+            self.InsertSizedColumn(1, "Filename", min=75, max=200)
+            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+            self.InsertSizedColumn(3, "Mode", min="M", max="MMM")
+            self.InsertSizedColumn(4, "Description", min=75)
 
     app   = wx.PySimpleApp()
     frame = wx.Frame(None, -1, title='Column resizer test')
     frame.CreateStatusBar()
     
-    panel = TestList(frame)
+    list1 = TestList1(frame)
+    list2 = TestList2(frame)
     
     # Layout the frame
     sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(panel, 1, wx.EXPAND)
-    
+    sizer.Add(wx.StaticText(frame, -1, "List with stuff allowed offscreen:"), 0, wx.EXPAND)
+    sizer.Add(list1, 1, wx.EXPAND)
+    sizer.Add(wx.StaticText(frame, -1, ""), 0, wx.EXPAND)
+    sizer.Add(wx.StaticText(frame, -1, "List with nothing allowed offscreen:"), 0, wx.EXPAND)
+    sizer.Add(list2, 1, wx.EXPAND)
+  
     frame.SetAutoLayout(1)
     frame.SetSizer(sizer)
     frame.Show(1)

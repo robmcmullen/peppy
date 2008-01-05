@@ -635,7 +635,7 @@ class MPDMinorModeMixin(MinorMode):
             return True
         return False
 
-class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
+class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnAutoSizeMixin,
                        debugmixin):
     """Minor mode to display the results of a file search.
     """
@@ -649,7 +649,7 @@ class MPDSearchResults(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
 
     def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
         self.major = major
         self.mpd = major.mpd
         self.createColumns()
@@ -1146,7 +1146,7 @@ class SongDropTarget(wx.PyDropTarget, debugmixin):
         # case we just return the suggested value given to us.
         return d
 
-class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
+class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnAutoSizeMixin,
                   ListDropScrollerMixin, debugmixin):
     """Minor mode to display the current playlist and controls for
     music playing.
@@ -1163,7 +1163,7 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
 
     def __init__(self, major, parent):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
         ListDropScrollerMixin.__init__(self)
 
         self.major = major
@@ -1205,8 +1205,8 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnSizerMixin,
 
     def createColumns(self):
         self.InsertSizedColumn(0, "#")
-        self.InsertSizedColumn(1, "Title", scale=True)
-        self.InsertSizedColumn(2, "Artist", scale=True)
+        self.InsertSizedColumn(1, "Title", greedy=False)
+        self.InsertSizedColumn(2, "Artist", greedy=False)
         self.InsertSizedColumn(3, "Time", wx.LIST_FORMAT_RIGHT)
 
     def OnItemActivated(self, evt):

@@ -171,7 +171,7 @@ class BufferListReplace(SelectAction):
             self.frame.setBuffer(buffer)
 
 
-class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode):
+class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
     """View the list of currently opened buffers
     """
     debuglevel = 0
@@ -194,7 +194,7 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnSizerMixin.__init__(self)
+        ColumnAutoSizeMixin.__init__(self)
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
@@ -232,9 +232,9 @@ class BufferListMode(wx.ListCtrl, ColumnSizerMixin, ColumnSorterMixin, MajorMode
         Publisher().unsubscribe(self.reset)
 
     def createColumns(self):
-        self.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", scale=False)
-        self.InsertSizedColumn(1, "Buffer", min=100, scale=True)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, scale=False)
+        self.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", greedy=True)
+        self.InsertSizedColumn(1, "Buffer", min=100, greedy=False)
+        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
         self.InsertSizedColumn(3, "Mode")
         self.InsertSizedColumn(4, "URL", ok_offscreen=True)
 
