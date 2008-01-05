@@ -1,4 +1,5 @@
 import os, sys
+import copy as pycopy
 
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
@@ -50,6 +51,13 @@ def canonical_reference(ref):
 def get_file_system_schemes():
     """Return a list of all filesystem scheme names"""
     return _file_systems.keys()
+
+def get_dirname(ref):
+    return Reference(ref.scheme,
+                     pycopy.copy(ref.authority),
+                     ref.path.resolve2('../'),
+                     pycopy.copy(ref.query),
+                     ref.fragment)
 
 
 # Simple cache of wrappers around local filesystem objects.
@@ -165,4 +173,5 @@ __all__ = [
     'get_reference',
     'normalize',
     'canonical_reference',
+    'get_dirname',
     ]

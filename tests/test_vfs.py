@@ -196,6 +196,28 @@ class FSTestCase(TestCase):
         names = vfs.get_file_system_schemes()
         self.assert_('file' in names)
         self.assert_('mem' in names)
+    
+    def test_dirname(self):
+        base = vfs.get_reference('stuff/blah')
+        uri = vfs.get_dirname(base)
+        self.assertEqual('stuff/', uri.path)
+        uri = vfs.get_dirname(uri)
+        print "path=%s" % uri.path
+        self.assertEqual('./', uri.path)
+        base = vfs.get_reference('/stuff/blah/')
+        uri = vfs.get_dirname(base)
+        self.assertEqual('/stuff/', uri.path)
+        uri = vfs.get_dirname(uri)
+        print "path=%s" % uri.path
+        self.assertEqual('/', uri.path)
+        base = vfs.get_reference('file:///stuff/blah/')
+        uri = vfs.get_dirname(base)
+        print "path=%s" % uri.path
+        self.assertEqual('/stuff/', uri.path)
+        uri = vfs.get_dirname(uri)
+        print "path=%s" % uri.path
+        self.assertEqual('/', uri.path)
+
 
 
 
