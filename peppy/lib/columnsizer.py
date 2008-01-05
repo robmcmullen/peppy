@@ -317,7 +317,7 @@ if __name__ == "__main__":
                     self.InsertStringItem(sys.maxint, str(index))
                 else:
                     self.SetStringItem(index, 0, str(index))
-                for col in range(1, len(self.examples)):
+                for col in range(1, self.GetColumnCount()):
                     random_range = self.examples[col]
                     letter = chr(col+ord("A"))
                     item = letter*random.randint(*random_range)
