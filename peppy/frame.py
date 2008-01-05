@@ -701,7 +701,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if mode and mode.buffer:
             mode.buffer.save()
 
-    def cwd(self):
+    def cwd(self, use_vfs=False):
         """Get working filesystem directory for current mode.
 
         Convenience function to get working directory of the current
@@ -709,7 +709,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         """
         mode = self.getActiveMajorMode()
         if mode and mode.buffer:
-            cwd = mode.buffer.cwd()
+            cwd = mode.buffer.cwd(use_vfs)
         else:
             cwd=os.getcwd()
         return cwd

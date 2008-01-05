@@ -107,11 +107,42 @@ class BufferVFSMixin(debugmixin):
     def getFilename(self):
         return str(self.url.path)
 
-    def cwd(self):
-        if self.url.scheme == 'file':
+    def cwd(self, use_vfs=False):
+        """Find the current working directory of the buffer.
+        
+        Can be used in two ways based on use_vfs:
+        
+        use_vfs == True: uses the vfs to return the directory in the same
+        scheme as the buffer
+        
+        use_vfs == False (the default): find the current working directory
+        on the local filesystem.  Some schemes, like tar, for instance, are
+        overlays on the current filesystem and the cwd of those schemes with
+        this sense of use_vfs will report the overlayed directory.
+        """
+        if use_vfs:
+            if vfs.is_folder(self.url):
+                path = vfs.normalize(self.url)
+            else:
+                path = vfs.get_dirname(self.url)
+            return path
+        elif self.url.scheme == 'file':
             path = os.path.normpath(os.path.dirname(str(self.url.path)))
+            return path
         else:
-            path = os.getcwd()
+            # See if the path converts to an existing path in the local
+            # filesystem by converting it to a file:// url and seeing if any
+            # path components exist
+            lastpath = None
+            uri = vfs.normalize(str(self.url.path))
+            path = os.path.normpath(str(uri.path))
+            while path != lastpath:
+                #dprint("trying %s" % path)
+                if os.path.isdir(path):
+                    return path
+                lastpath = path
+                path = os.path.dirname(path)
+        path = os.getcwd()
         return path
             
     def getBufferedReader(self, size=1024):
