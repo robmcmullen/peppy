@@ -46,7 +46,38 @@ class New(SelectAction):
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:untitled")
 
-class URLMinibuffer(CompletionMinibuffer):
+class OpenFileGUI(SelectAction):
+    alias = "gui-find-file"
+    name = "&File..."
+    tooltip = "Open a file"
+    icon = "icons/folder_page.png"
+    default_menu = (("File/Open", 2), 1) 
+    key_bindings = {'default': "C-O", 'emacs': "C-X C-S-F" }
+
+    def action(self, index=-1, multiplier=1):
+        wildcard="*"
+        cwd=self.frame.cwd()
+        dlg = wx.FileDialog(
+            self.frame, message="Open File", defaultDir=cwd, 
+            defaultFile="", wildcard=wildcard, style=wx.OPEN)
+
+        # Show the dialog and retrieve the user response. If it is the
+        # OK response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+
+            for path in paths:
+                assert self.dprint("open file %s:" % path)
+                # Force the loader to use the file: protocol
+                self.frame.open("file:%s" % path)
+
+        # Destroy the dialog. Don't do this until you are done with it!
+        # BAD things can happen otherwise!
+        dlg.Destroy()
+
+
+class LocalFileMinibuffer(CompletionMinibuffer):
     def setDynamicChoices(self):
         text = self.text.GetValue()
         
@@ -94,40 +125,10 @@ class URLMinibuffer(CompletionMinibuffer):
                                 text[2:])
         return text
 
-class OpenFileGUI(SelectAction):
-    alias = "gui-find-file"
-    name = "&File..."
-    tooltip = "Open a file"
-    icon = "icons/folder_page.png"
-    default_menu = (("File/Open", 2), 1) 
-    key_bindings = {'default': "C-O", 'emacs': "C-X C-S-F" }
-
-    def action(self, index=-1, multiplier=1):
-        wildcard="*"
-        cwd=self.frame.cwd()
-        dlg = wx.FileDialog(
-            self.frame, message="Open File", defaultDir=cwd, 
-            defaultFile="", wildcard=wildcard, style=wx.OPEN)
-
-        # Show the dialog and retrieve the user response. If it is the
-        # OK response, process the data.
-        if dlg.ShowModal() == wx.ID_OK:
-            # This returns a Python list of files that were selected.
-            paths = dlg.GetPaths()
-
-            for path in paths:
-                assert self.dprint("open file %s:" % path)
-                # Force the loader to use the file: protocol
-                self.frame.open("file:%s" % path)
-
-        # Destroy the dialog. Don't do this until you are done with it!
-        # BAD things can happen otherwise!
-        dlg.Destroy()
-
 class OpenFile(SelectAction):
     alias = "find-file"
     name = "&File using Minibuffer..."
-    tooltip = "Open a file"
+    tooltip = "Open a file using filename completion"
     default_menu = ("File/Open", 2)
     key_bindings = {'emacs': "C-X C-F", }
 
@@ -136,7 +137,107 @@ class OpenFile(SelectAction):
         if not cwd.endswith(os.sep):
             cwd += os.sep
         self.dprint(cwd)
-        minibuffer = URLMinibuffer(self.mode, self, label="Find file:",
+        minibuffer = LocalFileMinibuffer(self.mode, self, label="Find file:",
+                                    initial = cwd)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        self.frame.open(text)
+
+
+class URLMinibuffer(CompletionMinibuffer):
+    def setDynamicChoices(self):
+        text = self.text.GetValue()
+        
+        if text[:-1] == self.initial:
+            if text.endswith('/') or text.endswith(os.sep):
+                uri = vfs.normalize(text)
+                change = str(vfs.normalize(uri.scheme + ":"))
+                self.text.ChangeValue(change)
+                self.text.SetInsertionPointEnd()
+        CompletionMinibuffer.setDynamicChoices(self)
+    
+    def completePath(self, text, uri, path):
+        paths = []
+        if '/' in path:
+            if path.endswith('/'):
+                # It's already a directory
+                uridir = uri
+                pattern = ''
+            else:
+                # The stuff after the last slash is the pattern to match
+                uridir, pattern = path.rsplit('/', 1)
+                uridir = vfs.get_dirname(uri)
+        elif path == '.':
+            # Needed to handle protocols that don't use leading slashes
+            uridir = uri
+            pattern = ''
+        else:
+            uridir = vfs.get_dirname(uri)
+            pattern = path
+            
+        self.dprint('dir=%s pattern=%s' % (uridir, pattern))
+        for name in vfs.get_names(uridir):
+            if not name.startswith(pattern):
+                self.dprint("skipping %s because it doesn't start with %s" % (name, pattern))
+                continue
+            uri = uridir.resolve2(name)
+            path = str(uri)
+            if vfs.is_folder(uri):
+                path = str(uri) + '/'
+            else:
+                path = str(uri)
+            self.dprint(path)
+            paths.append(path)
+        return paths
+    
+    def completeScheme(self, text, uri, path):
+        paths = []
+        # there's no scheme specified by the user, so complete on known
+        # schemes
+        pattern = text
+        for name in vfs.get_file_system_schemes():
+            if not name.startswith(pattern):
+                self.dprint("skipping %s because it doesn't start with %s" % (name, pattern))
+                continue
+            paths.append(str(vfs.normalize(name + ":")))
+        return paths
+
+    def complete(self, text):
+        uri = vfs.normalize(text)
+        path = str(uri.path)
+        self.dprint("uri=%s text=%s path=%s" % (str(uri), text, path))
+        try:
+            if ':' in text:
+                paths = self.completePath(text, uri, path)
+            else:
+                paths = self.completeScheme(text, uri, path)
+        except:
+            import traceback
+            error = traceback.format_exc()
+            dprint(error)
+            paths = []
+
+        paths.sort()
+        return paths
+
+    def convert(self, text):
+        if text.startswith("~/") or text.startswith("~\\"):
+            text = os.path.join(wx.StandardPaths.Get().GetDocumentsDir(),
+                                text[2:])
+        return text
+
+class OpenURL(SelectAction):
+    alias = "find-url"
+    name = "&URL using Minibuffer..."
+    tooltip = "Open a file using URL name completion"
+    default_menu = ("File/Open", 2)
+    key_bindings = {'emacs': "C-X C-A", }
+
+    def action(self, index=-1, multiplier=1):
+        cwd = str(self.frame.cwd(use_vfs=True))
+        self.dprint(cwd)
+        minibuffer = URLMinibuffer(self.mode, self, label="Find url:",
                                     initial = cwd)
         self.mode.setMinibuffer(minibuffer)
 
@@ -168,15 +269,6 @@ class OpenDialog(SelectAction):
     def processURL(self, url):
         assert self.dprint("open url %s:" % url)
         self.frame.open(url)
-        
-
-class OpenURL(OpenDialog):
-    name = "&URL..."
-    tooltip = "Open a buffer using a URL"
-    default_menu = ("File/Open", 3)
-    key_bindings = {'emacs': "C-X C-A", }
-
-    dialog_message = "Open URL"
 
 
 class Exit(SelectAction):
