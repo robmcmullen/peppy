@@ -191,6 +191,11 @@ class FSTestCase(TestCase):
         uri = vfs.get_reference('C:/stuff/blah')
         self.assertEqual('c:/stuff/blah', uri.path)
         self.assertEqual('file', uri.scheme)
+    
+    def test_filesystem_names(self):
+        names = vfs.get_file_system_schemes()
+        self.assert_('file' in names)
+        self.assert_('mem' in names)
 
 
 

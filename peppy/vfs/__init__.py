@@ -2,7 +2,7 @@ import os, sys
 
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
-from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_system
+from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_system, _file_systems
 from peppy.vfs.itools.uri import *
 from peppy.vfs.itools.vfs.base import BaseFS
 
@@ -46,7 +46,11 @@ def canonical_reference(ref):
     if is_folder(ref):
         ref.path.endswith_slash = True
     return ref
-    
+
+def get_file_system_schemes():
+    """Return a list of all filesystem scheme names"""
+    return _file_systems.keys()
+
 
 # Simple cache of wrappers around local filesystem objects.
 cache = {}
@@ -134,6 +138,7 @@ __all__ = [
     'register_file_system',
     'deregister_file_system',
     'get_file_system',
+    'get_file_system_schemes',
     # Functions
     'exists',
     'is_file',
