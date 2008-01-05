@@ -90,6 +90,15 @@ def findAbout(path):
             return files[path]
     return None
 
+def findAboutNames():
+    names = aboutfiles.keys()
+    plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+    for plugin in plugins:
+        #dprint("checking plugin %s" % plugin)
+        files = plugin.aboutFiles()
+        names.extend(files)
+    return names
+
 class AboutFS(vfs.BaseFS):
     mtime = time.time()
     
@@ -159,6 +168,15 @@ class AboutFS(vfs.BaseFS):
         fh.seek(0)
 
         return fh
+    
+    @staticmethod
+    def get_names(reference):
+        path = str(reference.path)
+        #dprint(path)
+        if path != ".":
+            raise OSError("[Errno 20] Not a directory '%s'" % path)
+        return findAboutNames()
+
 
 vfs.register_file_system('about', AboutFS)
 
