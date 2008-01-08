@@ -10,7 +10,7 @@ import os
 import wx
 from wx.lib.mixins.listctrl import ColumnSorterMixin
 
-from peppy.lib.columnsizer import *
+from peppy.lib.column_autosize import *
 
 from peppy.yapsy.plugins import *
 from peppy.major import *

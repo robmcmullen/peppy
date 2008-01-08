@@ -33,7 +33,7 @@ from peppy.actions.minibuffer import *
 
 from peppy.yapsy.plugins import *
 from peppy.lib.iconstorage import *
-from peppy.lib.columnsizer import *
+from peppy.lib.column_autosize import *
 from peppy.lib.dropscroller import *
 from peppy.lib.nextpanel import *
 from peppy.lib.mpdclient2 import mpd_connection

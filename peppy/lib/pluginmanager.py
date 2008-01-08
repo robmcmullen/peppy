@@ -24,7 +24,7 @@ from wx.lib.evtmgr import eventManager
 from wx.lib.mixins.listctrl import CheckListCtrlMixin
 
 from peppy.lib.userparams import *
-from peppy.lib.columnsizer import *
+from peppy.lib.column_autosize import *
 
 try:
     from peppy.debug import *

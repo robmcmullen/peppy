@@ -12,7 +12,7 @@ from wx.lib.mixins.listctrl import ColumnSorterMixin
 
 import peppy.vfs as vfs
 
-from peppy.lib.columnsizer import *
+from peppy.lib.column_autosize import *
 
 from peppy.yapsy.plugins import *
 from peppy.major import *
