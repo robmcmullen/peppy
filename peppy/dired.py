@@ -53,7 +53,7 @@ class DiredRefresh(SelectAction):
     key_bindings = {'default': "F5", }
 
     def action(self, index=-1, multiplier=1):
-        self.mode.reset()
+        self.mode.reset(sort=True)
 
 
 class FlagMixin(object):
@@ -382,7 +382,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
             mode.append("-")
         return url, "".join(mode)
 
-    def reset(self, msg=None):
+    def reset(self, msg=None, sort=False):
         """Reset the list.
         
         No optimization here, just rebuild the entire list.
@@ -434,4 +434,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
             self.EnsureVisible(show)
 
         self.ResizeColumns()
+        
+        if sort:
+            self.SortListItems()
         self.Thaw()
