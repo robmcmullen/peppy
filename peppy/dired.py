@@ -214,6 +214,9 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         
         # Assign icons for up and down arrows for column sorter
         getIconStorage().assignList(self)
+        
+        # default to sort by filename
+        self.SortListItems(1)
     
     # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
     def GetListCtrl(self):
