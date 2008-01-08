@@ -1,3 +1,11 @@
+2008-01-08  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.1.8 update to "The Winchester"
+	* added default sort (by name) to dired mode
+	* default mimetypes are now used instead of default major mode names
+	* released ColumnAutoSizeMixin as separate library
+	* vfs autocompletion on filenames
+
 2008-01-03  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.1.7 update to "The Winchester"
