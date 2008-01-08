@@ -929,3 +929,7 @@ class NonResidentSTC(STCInterface,debugmixin):
 
     def CanEdit(self):
         return False
+    
+    def Destroy(self):
+        pass
+    
