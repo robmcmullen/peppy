@@ -1046,7 +1046,7 @@ class MajorModeMatcherDriver(debugmixin):
             if modes:
                 return modes[0]
             else:
-                return cls.findModeByName(plugins, app.classprefs.default_text_mode)
+                return cls.findModeByMimetype(plugins, "text/plain")
         header = fh.read(magic_size)
 
         url_match = None
@@ -1107,22 +1107,21 @@ class MajorModeMatcherDriver(debugmixin):
             return mode
 
         # If we fail all the tests, use a generic mode
-        if binary_modes:
-            return binary_modes[0]
         if guessBinary(header, app.classprefs.binary_percentage):
-            return cls.findModeByName(plugins,
-                                         app.classprefs.default_binary_mode)
-        return cls.findModeByName(plugins,
-                                     app.classprefs.default_text_mode)
+            if binary_modes:
+                # FIXME: needs to be a better way to select which mode to use
+                # if there are multiple application/octet-stream viewers
+                return binary_modes[0]
+        return cls.findModeByMimetype(plugins, "text/plain")
 
     @classmethod
-    def findModeByName(cls, plugins, name):
+    def findModeByMimetype(cls, plugins, mimetype):
         cls.dprint("checking plugins %s" % plugins)
         for plugin in plugins:
             cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
             for mode in plugin.getMajorModes():
                 cls.dprint("searching %s" % mode.keyword)
-                if mode.keyword == name:
+                if mode.verifyMimetype(mimetype):
                     return mode
         return None
 

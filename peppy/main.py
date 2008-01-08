@@ -161,8 +161,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
         BoolParam('show_splash', True, 'Show the splash screen on start?'),
-        StrParam('default_text_mode', 'Fundamental', 'Name of the default text mode if peppy\ncan\'t guess the correct type'),
-        StrParam('default_binary_mode', 'HexEdit', 'Name of the default binary viewing mode if peppy\ncan\'t guess the correct type'),
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
         )
     mouse = Mouse()

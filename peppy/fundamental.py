@@ -577,6 +577,16 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         cls.dprint("generic match of %s" % file_type)
         return "generic"
     
+    @classmethod
+    def verifyMimetype(cls, mimetype):
+        """Verify that the mimetype is text/plain.
+        
+        The class attribute mimetype is not used so that subclasses that extend
+        Fundamental but forget to declare a MIME type won't also get added to
+        the list of modes that handle text/plain.
+        """
+        return mimetype == 'text/plain'
+    
     def createStatusIcons(self):
         linesep = self.getLinesep()
         if linesep == '\r\n':
