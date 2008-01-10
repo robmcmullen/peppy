@@ -329,7 +329,7 @@ class ListAction(SelectAction):
 
     def getHash(self):
         return self.count
-                   
+    
     def dynamic(self):
         if self.savehash == self.getHash():
             assert self.dprint("dynamic menu not changed.  Skipping")
@@ -402,9 +402,6 @@ class RadioAction(ListAction):
             assert self.dprint("checking %d" % (index))
             self.menu.Check(self.index2id[index],True)
 
-    def saveIndex(self,index):
-        raise NotImplementedError
-
     def getIndex(self):
         raise NotImplementedError
     
@@ -461,9 +458,10 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
     """
     # identifier that keeps track whenever ANY instance of
     # OnDemandGlobalListAction changes.  This causes menus to be rebuilt
-    # unnecessarily, but it's simpler than keeping track for each separate
-    # subclass.  If you need a better system, override calcHash and getHash.
-    fakehash = 0
+    # unnecessarily, as most operations aren't expensive, anything more
+    # complicated is a waste.  If you want a hash that only tracks your class,
+    # create a class attribute 'localhash' in your subclass
+    globalhash = 0
     
     # storage for each class.  setStorage should be called before using
     # any methods, or alternatively you can define a class attribute named
@@ -491,14 +489,20 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
     
     @classmethod
     def calcHash(cls):
-        cls.fakehash += 1
+        if hasattr(cls, 'localhash'):
+            cls.localhash += 1
+        else:
+            cls.globalhash += 1
 
     def getHash(self):
         """Simplistic implementation that only keeps track of additions or deletions.
         
         Should more rigorous hashing be needed, override this.
         """
-        return self.fakehash
+        if hasattr(self, 'localhash'):
+            return self.localhash
+        else:
+            return self.globalhash
     
     def getItems(self):
         return [str(item) for item in self.storage]

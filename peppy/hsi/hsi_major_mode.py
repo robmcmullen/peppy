@@ -542,10 +542,6 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
 
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
-        # do nothing here: it's actually changed in action
-
     def getIndex(self):
         mode = self.mode
         filt = mode.cubefilter
@@ -601,10 +597,6 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
 
     def isEnabled(self):
         return HAS_SCIPY
-
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
-        # do nothing here: it's actually changed in action
 
     def getIndex(self):
         mode = self.mode

@@ -648,9 +648,6 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     def worksWithMajorMode(cls, mode):
         return hasattr(mode, 'GetEOLMode')
 
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
-
     def getIndex(self):
         eol = self.mode.GetEOLMode()
         return EOLModeSelect.modes.index(eol)
@@ -678,9 +675,6 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
         self.modes = modes
         names = [m.keyword for m in modes]
         self.items = names
-
-    def saveIndex(self,index):
-        assert self.dprint("index=%d" % index)
 
     def getIndex(self):
         modecls = self.mode.__class__
@@ -905,7 +899,7 @@ class MainMenu(IPeppyPlugin):
 
                 EOLModeSelect, WordWrap, LineNumbers, Folding, ViewEOL,
 
-                BufferList,
+                BufferList, BufferListSort,
 
                 NewFrame, DeleteFrame, FrameList,
 

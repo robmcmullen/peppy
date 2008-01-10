@@ -27,9 +27,28 @@ class BufferList(OnDemandGlobalListAction):
     default_menu = ("Buffers", -500)
     inline = True
     
+    # keep track of only changes to this on demand action
+    localhash = 0
+    
     # provide storage for the on demand global list
     storage = []
-
+    
+    # flag to indicate that the list should be sorted before the next menu
+    # display
+    needs_sort = True
+    
+    @classmethod
+    def addBuffer(cls, buf):
+        """Convenience function to add a buffer and flag to be sorted"""
+        cls.append(buf)
+        cls.needsSort()
+    
+    @classmethod
+    def removeBuffer(cls, buf):
+        """Convenience function to remove a buffer and flag to be sorted"""
+        cls.remove(buf)
+        cls.needsSort()
+    
     @classmethod
     def findBufferByURL(cls, url):
         url = vfs.canonical_reference(url)
@@ -68,12 +87,77 @@ class BufferList(OnDemandGlobalListAction):
         return False
             
     def getItems(self):
-        return [buf.name for buf in self.storage]
+        return ["%s  (%s)" % (buf.displayname, str(buf.url)) for buf in self.storage]
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
         self.frame.setBuffer(BufferList.storage[index])
     
+    @classmethod
+    def sort(cls):
+        """Sort using the decorate, sort, undecorate pattern"""
+        decorator = BufferListSort.getSortDecorator(BufferList.storage)
+        
+        sorted = zip(decorator, BufferList.storage)
+        sorted.sort()
+        
+        #dprint(sorted)
+        buffers = [s[-1] for s in sorted]
+        BufferList.storage = buffers
+        
+        cls.calcHash()
+    
+    @classmethod
+    def needsSort(cls):
+        cls.needs_sort = True
+    
+    def dynamic(self):
+        """Check to see if the list needs sorting before processing a dynamic
+        menu update.
+        """
+        if self.__class__.needs_sort:
+            self.sort()
+            self.__class__.needs_sort = False
+        OnDemandGlobalListAction.dynamic(self)
+
+
+class BufferListSort(OnDemandActionMixin, RadioAction):
+    debuglevel = 0
+    
+    name="Sort Order"
+    inline=False
+    tooltip="Sort buffer list"
+    default_menu = ("Buffers", -999)
+
+    items = ['By Name', 'By Mode', 'Order Loaded']
+    sort_index = 0
+
+    @classmethod
+    def getSortDecorator(cls, buffers):
+        if cls.sort_index == 0:
+            decorator = [buffer.displayname for buffer in buffers]
+        elif cls.sort_index == 1:
+            decorator = [buffer.defaultmode for buffer in buffers]
+        elif cls.sort_index == 2:
+            decorator = [buffer.order_loaded for buffer in buffers]
+        else:
+            raise IndexError("Unknown sort order")
+        return decorator
+
+    def getIndex(self):
+        return BufferListSort.sort_index
+
+    def getItems(self):
+        return BufferListSort.items
+
+    def action(self, index=-1, multiplier=1):
+        dprint()
+        BufferListSort.sort_index = index
+        BufferList.needsSort()
+    
+    def updateOnDemand(self):
+        pass
+
 
 #### Buffers
 
@@ -258,7 +342,7 @@ class Buffer(BufferVFSMixin):
         if not self.permanent:
             basename=self.stc.getShortDisplayName(self.url)
 
-            BufferList.remove(self)
+            BufferList.removeBuffer(self)
             # Need to destroy the base STC or self will never get garbage
             # collected
             self.stc.Destroy()
@@ -307,6 +391,7 @@ class Buffer(BufferVFSMixin):
     def openGUIThreadSuccess(self):
         # Only increment count on successful buffer loads
         Buffer.count+=1
+        self.order_loaded = Buffer.count
         
         self.closeBufferedReader()
         
@@ -325,7 +410,7 @@ class Buffer(BufferVFSMixin):
         self.stc.EmptyUndoBuffer()
 
         # Add to the currently-opened buffer list
-        BufferList.append(self)
+        BufferList.addBuffer(self)
 
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.
