@@ -901,7 +901,7 @@ class MainMenu(IPeppyPlugin):
 
                 BufferList, BufferListSort,
 
-                NewFrame, DeleteFrame, FrameList,
+                NewWindow, DeleteWindow, WindowList,
 
                 FindText, ReplaceText, GotoLine,
                 

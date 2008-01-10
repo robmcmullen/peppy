@@ -23,7 +23,7 @@ from peppy.debug import *
 from peppy.buffers import *
 
     
-class FrameList(OnDemandGlobalListAction):
+class WindowList(OnDemandGlobalListAction):
     debuglevel=0
     name="Frames"
     default_menu = ("Window", -100)
@@ -34,19 +34,19 @@ class FrameList(OnDemandGlobalListAction):
     
     @classmethod
     def getFrames(self):
-        return [frame for frame in FrameList.storage]
+        return [frame for frame in WindowList.storage]
     
     def getItems(self):
-        return [frame.getTitle() for frame in FrameList.storage]
+        return [frame.getTitle() for frame in WindowList.storage]
 
     def action(self, index=0, multiplier=1):
-        assert self.dprint("top window to %d: %s" % (index,FrameList.storage[index]))
-        wx.GetApp().SetTopWindow(FrameList.storage[index])
-        wx.CallAfter(FrameList.storage[index].Raise)
+        assert self.dprint("top window to %d: %s" % (index,WindowList.storage[index]))
+        wx.GetApp().SetTopWindow(WindowList.storage[index])
+        wx.CallAfter(WindowList.storage[index].Raise)
 
-class DeleteFrame(SelectAction):
-    alias = "delete-frame"
-    name = "&Delete Frame"
+class DeleteWindow(SelectAction):
+    alias = "delete-window"
+    name = "&Delete Window"
     default_menu = ("Window", 1)
     tooltip = "Delete current window"
     
@@ -54,13 +54,13 @@ class DeleteFrame(SelectAction):
         self.frame.closeWindow()
 
     def isEnabled(self):
-        if len(FrameList.storage)>1:
+        if len(WindowList.storage)>1:
             return True
         return False
 
-class NewFrame(SelectAction):
-    alias = "new-frame"
-    name = "&New Frame"
+class NewWindow(SelectAction):
+    alias = "new-window"
+    name = "&New Window"
     tooltip = "Open a new window"
     default_menu = ("Window", 0)
     key_bindings = {'emacs': "C-X 5 2",}
@@ -274,7 +274,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         icon.CopyFromBitmap(getIconBitmap('icons/peppy.png'))
         self.SetIcon(icon)
 
-        FrameList.append(self)
+        WindowList.append(self)
         
         self.SetStatusBar(None)
 
@@ -392,7 +392,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def OnClose(self, evt=None):
         assert self.dprint(evt)
         close = True
-        if len(FrameList.storage)==1:
+        if len(WindowList.storage)==1:
             # If attempting to close the last window, check to make sure that
             # the user didn't cancel the quit
             close = wx.GetApp().quit()
@@ -535,13 +535,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def closeWindow(self):
         self.unbindEvents()
         self.clearMenumap()
-        FrameList.remove(self)
+        WindowList.remove(self)
         self.tabs.closeAllTabs()
         self.Destroy()
 
     @classmethod
     def closeAllWindows(cls):
-        frames = FrameList.getFrames()
+        frames = WindowList.getFrames()
         for frame in frames:
             frame.closeWindow()
     

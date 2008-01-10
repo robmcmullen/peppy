@@ -64,7 +64,7 @@ class SessionManagerPlugin(IPeppyPlugin):
 
         # Check to see if we've started up, but the existing frame
         # only has something temporary like the title buffer
-        frames = FrameList.getFrames()
+        frames = WindowList.getFrames()
         dprint(frames)
         use_frame = None
         if len(frames) == 1:
@@ -106,7 +106,7 @@ class SessionManagerPlugin(IPeppyPlugin):
             dprint(buffers)
             for buf in buffers:
                 dprint("url=%s permanent=%s" % (buf.url, buf.permanent))
-            frames = FrameList.getFrames()
+            frames = WindowList.getFrames()
             dprint(frames)
             for frame in frames:
                 modes = frame.getAllMajorModes()
