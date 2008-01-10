@@ -4,7 +4,7 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-from peppy.stcinterface import *
+from peppy.stcbase import *
 
 from tests.mock_wx import getSTC
 

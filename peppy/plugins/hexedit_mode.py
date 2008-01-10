@@ -11,7 +11,7 @@ import wx.lib.newevent
 from peppy.yapsy.plugins import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.stcinterface import STCInterface
+from peppy.stcinterface import *
 from peppy.actions.minibuffer import *
 
 

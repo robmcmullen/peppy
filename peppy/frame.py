@@ -16,7 +16,7 @@ from peppy.lib.controls import *
 from peppy.lib.userparams import *
 
 from peppy.configprefs import *
-from peppy.stcinterface import *
+from peppy.stcbase import *
 from peppy.major import *
 from peppy.sidebar import *
 from peppy.debug import *

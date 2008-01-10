@@ -8,7 +8,7 @@ import wx.stc
 from peppy.debug import *
 debuglog(sys.stdout)
 
-from peppy.stcinterface import PeppyBaseSTC
+from peppy.stcbase import PeppyBaseSTC
 
 class MockApp(wx.App):
     def getConfigFilePath(self, file):

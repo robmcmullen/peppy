@@ -28,7 +28,7 @@ import peppy.vfs as vfs
 from peppy.mainmenu import OpenDialog
 from peppy.menu import *
 from peppy.major import *
-from peppy.stcinterface import NonResidentSTC
+from peppy.stcinterface import *
 from peppy.actions.minibuffer import *
 
 from peppy.yapsy.plugins import *

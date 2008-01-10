@@ -14,7 +14,7 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.menu import *
 from peppy.fundamental import *
-from peppy.stcinterface import PeppySTC
+from peppy.stcbase import PeppySTC
 
 
 class ShellFS(vfs.BaseFS):

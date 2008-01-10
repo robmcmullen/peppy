@@ -17,6 +17,7 @@ from peppy.lib.column_autosize import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.buffers import *
+from peppy.stcinterface import *
 from peppy.debug import *
 
 

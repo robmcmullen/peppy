@@ -17,6 +17,7 @@ from peppy.lib.bufferedreader import *
 
 from peppy.dialogs import *
 from peppy.stcinterface import *
+from peppy.stcbase import *
 from peppy.major import *
 from peppy.debug import *
 

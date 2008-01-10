@@ -4,7 +4,7 @@ from cStringIO import StringIO
 import wx.stc
 from tests.mock_wx import *
 
-from peppy.stcinterface import *
+from peppy.stcbase import *
 from peppy.fundamental import *
 from peppy.plugins.python_mode import *
 from peppy.plugins.text_transforms import *

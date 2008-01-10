@@ -12,7 +12,7 @@ import wx
 from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
-from peppy.stcinterface import PeppySTC
+from peppy.stcbase import PeppySTC
 from peppy.sidebar import *
 from peppy.minor import *
 

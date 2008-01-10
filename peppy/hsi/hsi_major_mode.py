@@ -43,7 +43,7 @@ import wx.lib.newevent
 from peppy.actions.minibuffer import *
 from peppy.menu import *
 from peppy.major import *
-from peppy.stcinterface import NonResidentSTC
+from peppy.stcinterface import *
 
 from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
