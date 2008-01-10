@@ -20,17 +20,6 @@ from peppy.lib.wxemacskeybindings import *
 
 from peppy.yapsy.plugins import *
 
-class OnDemandActionMixin(object):
-    """Mixin to provide on-demand updating as the menubar is opened
-    
-    On-demand actions don't have to be created ahead of time -- the
-    updateOnDemand method is called immediately before the menu bar entry
-    is opened.
-    """
-    def updateOnDemand(self):
-        pass
-
-
 class SelectAction(debugmixin):
     debuglevel=0
     
@@ -449,91 +438,78 @@ class ToggleListAction(ListAction):
         raise NotImplementedError
 
 
-class GlobalList(ListAction):
-    debuglevel=0
-    inline=True
-
-    # storage and others must be defined in the subclass
-
-    # storage holds the list of objects to be managed
-    #storage=[]
-
-    # others holds the list of currently active global lists that will
-    # be used to update other menubars or toolbars when this object
-    # changes.
-    #others=[]
+class OnDemandActionMixin(object):
+    """Mixin to provide on-demand updating as the menubar is opened
     
-    def __init__(self, frame, menu=None):
-        ListAction.__init__(self, frame, menu)
-        self.__class__.others.append(weakref.ref(self))
-        assert self.dprint("others: %s" % self.__class__.others)
-        import gc
-        reference=self.__class__.others[0]
-        action=reference()
-        assert self.dprint(gc.get_referrers(action))
-
-    def createClassReferences(self):
+    On-demand actions don't have to be created ahead of time -- the
+    updateOnDemand method is called immediately before the menu bar entry
+    is opened.
+    """
+    
+    def updateOnDemand(self):
         raise NotImplementedError
 
+
+class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
+    """On-demand list that shares its items in all menu bars.
+    
+    Menu items are shared by using class attributes for the storage.  Be aware
+    that you either have to, in your subclass of OnDemandGlobalListAction,
+    have to explicitly name a class attribute 'storage' and it must be a list,
+    or you can call your subclasses class method setStorage and supply it with
+    a list.
+    """
+    # identifier that keeps track whenever ANY instance of
+    # OnDemandGlobalListAction changes.  This causes menus to be rebuilt
+    # unnecessarily, but it's simpler than keeping track for each separate
+    # subclass.  If you need a better system, override calcHash and getHash.
+    fakehash = 0
+    
+    # storage for each class.  setStorage should be called before using
+    # any methods, or alternatively you can define a class attribute named
+    # 'storage' that's a list, which will shadow the None definition here.
+    storage = None
+    
     @classmethod
-    def append(cls,item):
-##        dprint("BEFORE: storage: %s" % cls.storage)
-##        dprint("BEFORE: others: %s" % cls.others)
+    def setStorage(cls, array):
+        cls.storage = array
+    
+    @classmethod
+    def trimStorage(cls, num):
+        if len(cls.storage) > num:
+            cls.storage[num:]=[]
+
+    @classmethod
+    def append(cls, item):
         cls.storage.append(item)
-        cls.update()
-##        dprint("AFTER: storage: %s" % cls.storage)
-##        dprint("AFTER: others: %s" % cls.others)
-        
+        cls.calcHash()
+
     @classmethod
-    def extend(cls,items):
-##        dprint("BEFORE: storage: %s" % cls.storage)
-##        dprint("BEFORE: others: %s" % cls.others)
-        cls.storage.extend(items)
-        cls.update()
-##        dprint("AFTER: storage: %s" % cls.storage)
-##        dprint("AFTER: others: %s" % cls.others)
-        
-    @classmethod
-    def remove(cls,item):
-##        dprint("BEFORE: storage: %s" % cls.storage)
-##        dprint("BEFORE: others: %s" % cls.others)
+    def remove(cls, item):
         cls.storage.remove(item)
-
-##        # can't delete from a list that you're iterating on, so make a
-##        # new list.
-##        newlist=[]
-##        for reference in cls.others:
-##            action=reference()
-##            if action is not None:
-##                # Search through all related actions and remove references
-##                # to them. There may be more than one reference, so search
-##                # them all.
-##                if action != item:
-##                    newlist.append(weakref.ref(action))
-##        cls.others=newlist
-
-##        dprint("AFTER: storage: %s" % cls.storage)
-##        dprint("AFTER: others: %s" % cls.others)
-
-        cls.update()
-
+        cls.calcHash()
+    
     @classmethod
-    def update(cls):
-        newlist=[]
-        for reference in cls.others:
-            action=reference()
-            if action is not None:
-                newlist.append(reference)
-                action.dynamic()
-        cls.others=newlist
-        
-    def getHash(self):
-        temp=tuple(self.getItems())
-        assert self.dprint("hash=%s" % hash(temp))
-        return hash(temp)
+    def calcHash(cls):
+        cls.fakehash += 1
 
+    def getHash(self):
+        """Simplistic implementation that only keeps track of additions or deletions.
+        
+        Should more rigorous hashing be needed, override this.
+        """
+        return self.fakehash
+    
     def getItems(self):
-        return self.__class__.storage
+        return [str(item) for item in self.storage]
+
+    def updateOnDemand(self):
+        self.dynamic()
+
+
+
+
+
 
 
 class UserActionClassList(debugmixin):

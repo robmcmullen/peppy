@@ -21,41 +21,34 @@ from peppy.stcbase import *
 from peppy.major import *
 from peppy.debug import *
 
-class BufferList(GlobalList):
+class BufferList(OnDemandGlobalListAction):
     debuglevel = 0
     name = "Buffers"
     default_menu = ("Buffers", -500)
-
+    inline = True
+    
+    # provide storage for the on demand global list
     storage = []
-    others = []
 
     @classmethod
-    def addBuffer(self, buffer):
-        BufferList.append(buffer)
-
-    @classmethod
-    def removeBuffer(self, buffer):
-        BufferList.remove(buffer)
-
-    @classmethod
-    def findBufferByURL(self, url):
+    def findBufferByURL(cls, url):
         url = vfs.canonical_reference(url)
-        for buf in BufferList.storage:
+        for buf in cls.storage:
             if buf.isURL(url):
                 return buf
         return None
 
     @classmethod
-    def findBuffersByBasename(self, basename):
+    def findBuffersByBasename(cls, basename):
         bufs = []
-        for buf in BufferList.storage:
+        for buf in cls.storage:
             if buf.isBasename(basename):
                 bufs.append(buf)
         return bufs
 
     @classmethod
-    def getBuffers(self):
-        return [buf for buf in BufferList.storage]
+    def getBuffers(cls):
+        return [buf for buf in cls.storage]
 
     @staticmethod
     def promptUnsaved():
@@ -75,7 +68,7 @@ class BufferList(GlobalList):
         return False
             
     def getItems(self):
-        return [buf.name for buf in BufferList.storage]
+        return [buf.name for buf in self.storage]
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
@@ -293,7 +286,7 @@ class Buffer(BufferVFSMixin):
 
         # Update UI because the filename associated with this buffer
         # may have changed and that needs to be reflected in the menu.
-        BufferList.update()
+        BufferList.calcHash()
         
     def getTabName(self):
         if self.modified:
@@ -332,7 +325,7 @@ class Buffer(BufferVFSMixin):
         self.stc.EmptyUndoBuffer()
 
         # Add to the currently-opened buffer list
-        BufferList.addBuffer(self)
+        BufferList.append(self)
 
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.

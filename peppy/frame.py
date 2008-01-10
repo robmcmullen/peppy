@@ -23,13 +23,14 @@ from peppy.debug import *
 from peppy.buffers import *
 
     
-class FrameList(GlobalList):
+class FrameList(OnDemandGlobalListAction):
     debuglevel=0
     name="Frames"
     default_menu = ("Window", -100)
-
-    storage=[]
-    others=[]
+    inline = True
+    
+    # provide storage to be shared among instances
+    storage = []
     
     @classmethod
     def getFrames(self):

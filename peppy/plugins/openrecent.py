@@ -16,20 +16,15 @@ from peppy.menu import *
 from peppy.lib.userparams import *
 
 
-class RecentFiles(GlobalList):
+class RecentFiles(OnDemandGlobalListAction):
     name=_("Open Recent")
     default_menu = ("File", 10)
     inline=False
-
-    storage=[]
-    others=[]
-
+    
     @classmethod
     def append(cls, msg):
         buffer = msg.data
         url = buffer.url
-##        dprint("BEFORE: storage: %s" % cls.storage)
-##        dprint("BEFORE: others: %s" % cls.others)
         
         # skip files with the about: protocol
         if url.scheme == 'about':
@@ -38,26 +33,26 @@ class RecentFiles(GlobalList):
         item = str(url)
         # if we're adding an item that's already in the list, move it
         # to the top of the list by recreating the list
-        if item in cls.storage:
+        storage = RecentFiles.storage
+        if item in storage:
             newlist=[item]
-            for olditem in cls.storage:
+            for olditem in storage:
                 if olditem != item:
                     newlist.append(olditem)
-            cls.storage=newlist
+            RecentFiles.setStorage(newlist)
         else:
             # New items are added at the top of this list
-            cls.storage[0:0]=[item]
+            storage[0:0]=[item]
+            RecentFiles.setStorage(storage)
 
         # Trim list to max number of items
-        if len(cls.storage)>RecentFilesPlugin.classprefs.list_length:
-            cls.storage[RecentFilesPlugin.classprefs.list_length:]=[]
-        cls.update()
-##        dprint("AFTER: storage: %s" % cls.storage)
-##        dprint("AFTER: others: %s" % cls.others)
+        RecentFiles.trimStorage(RecentFilesPlugin.classprefs.list_length)
+            
+        cls.calcHash()
         
     def action(self, index=-1, multiplier=1):
-        assert self.dprint("opening file %s" % (self.storage[index]))
-        self.frame.open(self.storage[index])
+        assert self.dprint("opening file %s" % (RecentFiles.storage[index]))
+        self.frame.open(RecentFiles.storage[index])
 
 
 
@@ -86,10 +81,10 @@ class RecentFilesPlugin(IPeppyPlugin):
         pathname = self.getFile()
         try:
             fh=open(pathname)
-            RecentFiles.storage=[]
+            storage=[]
             for line in fh:
-                RecentFiles.storage.append(line.rstrip())
-            RecentFiles.update()
+                storage.append(line.rstrip())
+            RecentFiles.setStorage(storage)
         except:
             pass
 
