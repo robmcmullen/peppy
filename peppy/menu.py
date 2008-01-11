@@ -331,7 +331,8 @@ class ListAction(SelectAction):
         return self.count
     
     def dynamic(self):
-        if self.savehash == self.getHash():
+        # dynamic menu will be shown if getHash returned None
+        if self.savehash != None and self.savehash == self.getHash():
             assert self.dprint("dynamic menu not changed.  Skipping")
             return
         assert self.dprint("toplevel=%s" % self.toplevel)
@@ -489,6 +490,15 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
     
     @classmethod
     def calcHash(cls):
+        """Hash calculation method to determine if menu items have changed.
+        
+        The default implementation is a simplistic one that changes every time
+        calcHash is called, guaranteeing that the menu will be updated the
+        next time.
+        
+        If calcHash sets cls.localhash or cls.globalhash to None, the menu will
+        always be updated.
+        """
         if hasattr(cls, 'localhash'):
             cls.localhash += 1
         else:

@@ -33,6 +33,10 @@ class WindowList(OnDemandGlobalListAction):
     storage = []
     
     @classmethod
+    def calcHash(cls):
+        cls.globalhash = None
+    
+    @classmethod
     def getFrames(self):
         return [frame for frame in WindowList.storage]
     
@@ -266,7 +270,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def __init__(self, urls=[], id=-1):
         BufferFrame.frameid+=1
-        self.name="peppy: Frame #%d" % BufferFrame.frameid
+        self.name="peppy: Window #%d" % BufferFrame.frameid
 
         size=(int(self.classprefs.width),int(self.classprefs.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
@@ -779,4 +783,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.switchMode()
 
     def getTitle(self):
+        mode = self.getActiveMajorMode()
+        if mode:
+            return "peppy: %s" % mode.buffer.getTabName()
         return self.name
