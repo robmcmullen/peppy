@@ -730,7 +730,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MinorModeShow(ToggleListAction):
-    debuglevel = 4
+    debuglevel = 0
     
     name = "Minor Modes"
     inline = False

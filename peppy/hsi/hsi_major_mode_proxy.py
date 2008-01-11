@@ -14,7 +14,7 @@ class HSIPlugin(IPeppyPlugin):
 
     def attemptOpen(self, buffer):
         url = buffer.url
-        assert dprint("Trying to open url: %s" % url)
+        assert self.dprint("Trying to open url: %s" % url)
         hsi_major_mode = self.importModule("hsi_major_mode")
         if hsi_major_mode:
             format = HyperspectralFileFormat.identify(url)
@@ -23,7 +23,7 @@ class HSIPlugin(IPeppyPlugin):
                 return hsi_major_mode.HSIMode
             else:
                 fh = vfs.open(url)
-                assert dprint("checking for cube handler: %s" % dir(fh))
+                assert self.dprint("checking for cube handler: %s" % dir(fh))
                 if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
                     return hsi_major_mode.HSIMode
         return None
@@ -46,7 +46,7 @@ class HSIPlugin(IPeppyPlugin):
         raise StopIteration
     
     def getCompatibleActions(self, cls):
-        assert dprint("Checking for HSI mode %s" % cls)
+        assert self.dprint("Checking for HSI mode %s" % cls)
         if cls.keyword == "HSI":
             hsi_major_mode = self.importModule("hsi_major_mode")
             if hsi_major_mode:
