@@ -19,11 +19,11 @@ from peppy.stcinterface import *
 from peppy.debug import *
 
 
-class ListAllBuffers(SelectAction):
+class ListAllDocuments(SelectAction):
     alias = "list-all-buffers"
-    name = "List All Buffers"
+    name = "List All Documents"
     tooltip = "Display a list of all buffers."
-    default_menu = ("Buffers", 100)
+    default_menu = ("Documents", 100)
     key_bindings = {'emacs': "C-X C-B", }
 
     def action(self, index=-1, multiplier=1):
@@ -35,7 +35,7 @@ class BufferListSTC(NonResidentSTC):
     major mode to this one.
     """
     def getShortDisplayName(self, url):
-        return "Buffer List"
+        return "Document List"
 
 
 class FlagMixin(object):
@@ -442,7 +442,7 @@ class BufferListModePlugin(IPeppyPlugin):
         yield BufferListMode
 
     def getActions(self):
-        return [ListAllBuffers]
+        return [ListAllDocuments]
 
     def getCompatibleActions(self, mode):
         if mode == BufferListMode:

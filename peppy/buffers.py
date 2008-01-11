@@ -23,8 +23,8 @@ from peppy.debug import *
 
 class BufferList(OnDemandGlobalListAction):
     debuglevel = 0
-    name = "Buffers"
-    default_menu = ("Buffers", -500)
+    name = "Documents"
+    default_menu = ("Documents", -500)
     inline = True
     
     # keep track of only changes to this on demand action
@@ -126,8 +126,8 @@ class BufferListSort(OnDemandActionMixin, RadioAction):
     
     name="Sort Order"
     inline=False
-    tooltip="Sort buffer list"
-    default_menu = ("Buffers", -999)
+    tooltip="Sort document list"
+    default_menu = ("Documents", -999)
 
     items = ['By Name', 'By Mode', 'Order Loaded']
     sort_index = 0
