@@ -144,6 +144,28 @@ class OpenFile(SelectAction):
     def processMinibuffer(self, minibuffer, mode, text):
         self.frame.open(text)
 
+class SaveAs(SelectAction):
+    alias = "write-file"
+    name = "Save &As..."
+    tooltip = "Save as a new file"
+    icon = "icons/disk_edit.png"
+    key_bindings = {'emacs': "C-X C-W",}
+    
+    def isEnabled(self):
+        return self.mode.buffer.stc.CanSave()
+
+    def action(self, index=-1, multiplier=1):
+        cwd=self.frame.cwd()
+        if not cwd.endswith(os.sep):
+            cwd += os.sep
+        self.dprint(cwd)
+        minibuffer = LocalFileMinibuffer(self.mode, self, label="Write file:",
+                                    initial = cwd)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        mode.save(text)
+
 
 class URLMinibuffer(CompletionMinibuffer):
     def setDynamicChoices(self):
@@ -244,6 +266,23 @@ class OpenURL(SelectAction):
     def processMinibuffer(self, minibuffer, mode, text):
         self.frame.open(text)
 
+class SaveURL(SelectAction):
+    alias = "write-url"
+    name = "Save to URL using Minibuffer..."
+    tooltip = "Write to a new URL name completion"
+    default_menu = ("File/Open", 2)
+    key_bindings = {'emacs': "C-X C-Y", }
+
+    def action(self, index=-1, multiplier=1):
+        cwd = str(self.frame.cwd(use_vfs=True))
+        self.dprint(cwd)
+        minibuffer = URLMinibuffer(self.mode, self, label="Find url:",
+                                    initial = cwd)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        mode.save(text)
+
 
 class OpenDialog(SelectAction):
     dialog_message = "Open..."
@@ -332,13 +371,13 @@ class Save(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.save()
 
-class SaveAs(SelectAction):
+class SaveAsGUI(SelectAction):
     alias = "save-buffer-as"
     name = "Save &As..."
     tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     default_menu = ("File", 802)
-    key_bindings = {'default': "C-S-S", 'emacs': "C-X C-W",}
+    key_bindings = {'default': "C-S-S"}
     
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
@@ -888,7 +927,7 @@ class MainMenu(IPeppyPlugin):
     def getActions(self):
         return [NewTab, New,
                 OpenFileGUI, OpenFile, OpenURL,
-                Save, SaveAs, Close, Revert, Exit,
+                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert, Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 
