@@ -10,7 +10,7 @@ from peppy.yapsy.IPlugin import IPlugin
 
 from peppy.debug import *
 
-class IPeppyPlugin(IPlugin, ClassPrefs):
+class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
     """
     Some peppy-specific methods in addition to the yapsy plugin methods.
     """
