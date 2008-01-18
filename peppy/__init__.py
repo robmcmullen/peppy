@@ -46,6 +46,16 @@ L{FundamentalMode} for an example of a mode for general text files,
 L{PythonMode} for a specific type of text file, and L{HexEditMode} for a major
 mode that doesn't use a text window as its user interface.
 
+Actions
+=======
+
+Peppy uses the term Action to represent any response from the user interface,
+whether it be from the menu bar, tool bar, or keyboard.  The class
+L{SelectAction} is used as the base class for all the possible actions that
+the user can perform.  Actions are associated with a major mode (or several
+major modes or the entire application) and can be provided by plugins.  They
+contain a default menu item text, toolbar icon, and keyboard shortcut.
+
 Virtual File System (VFS)
 =========================
 

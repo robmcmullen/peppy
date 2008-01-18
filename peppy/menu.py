@@ -21,55 +21,59 @@ from peppy.lib.wxemacskeybindings import *
 from peppy.yapsy.plugins import *
 
 class SelectAction(debugmixin):
+    """The base class of any action (menu item, toolbar item, or keyboard
+    command).
+    
+    Actions represent individual commands that can be initiated by the user.
+    The same subclass of action is used to represent the keyboard, menu and
+    toolbar command because it doesn't matter how the action is called -- if
+    it's the same action, it is the same class.
+    
+    If an action should behave differently when called from a different user
+    input method, it should be a different subclass.
+    
+    The subclass should override the L{action} method to provide the
+    implementation and L{isEnabled} to return the enable/disabled (i.e.  the
+    grayed-out) state of the menu item or toolbar item.
+    
+    A C{SelectAction} is a simple action that shows up as a normal menu item, a
+    normal toolbar button, and a simple keystroke command.  For the toolbar and
+    menu system, L{ToggleAction}s and L{RadioAction}s are available.  For the
+    menu bar system, L{ListAction}s and L{ToggleListAction}s are available.
+    
+    Menu items can also be updated dynamically by mixing in the
+    L{OnDemandActionMixin} class, or using the L{OnDemandGlobalListAction}
+    class.
+    """
     debuglevel=0
     
-    # This is the name of the menu entry as it appears in the menu bar.
-    # i18n processing happens within the menu system, so no need to
-    # wrap this string in a call to the _ function
+    #: This is the name of the menu entry as it appears in the menu bar. i18n processing happens within the menu system, so no need to wrap this string in a call to the _ function
     name = None
     
-    # This alias holds an emacs style name that is used during M-X processing
-    # If you don't want this action to have an emacs style name, don't
-    # include this or set it equal to None
+    #: This alias holds an emacs style name that is used during M-X processing. If you don't want this action to have an emacs style name, don't include this or set it equal to None
     alias = ""
     
-    # Tooltip that is displayed when the mouse is hovering over the menu
-    # entry.  If the tooltip is None, the tooltip is taken from the first
-    # line of the docstring, if it exists.
+    #: Tooltip that is displayed when the mouse is hovering over the menu entry.  If the tooltip is None, the tooltip is taken from the first line of the docstring, if it exists.
     tooltip = None
     
-    # The default menu location is specified here as a tuple containing
-    # the menu path (separated by / characters) and a number between 1 and
-    # 1000 representing the position within the menu.  A negative number
-    # means that a separator should appear before the item
+    #: The default menu location is specified here as a tuple containing the menu path (separated by / characters) and a number between 1 and 1000 representing the position within the menu.  A negative number means that a separator should appear before the item
     default_menu = ()
     
-    # If there is an icon associated with this action, name it here.  Icons
-    # are referred to by path name relative to the peppy directory.  A toolbar
-    # entry will be automatically created if the icon is specified here, unless
-    # you specify default_toolbar = False
+    #: If there is an icon associated with this action, name it here.  Icons are referred to by path name relative to the peppy directory.  A toolbar entry will be automatically created if the icon is specified here, unless you specify default_toolbar = False
     icon = None
+    
+    #: Toolbar item will automatically be created unless this is False
     default_toolbar = True
     
-    # Map of platform to default keybinding.  This is used to assign the
-    # class attribute keyboard, which is the current keybinding.  Currently,
-    # the defined platforms are named "win", "mac", and "emacs".  A platform
-    # named 'default' may also be included that will be the default key
-    # unless overridden by a specific platform
+    #: Map of platform to default keybinding.  This is used to assign the class attribute keyboard, which is the current keybinding.  Currently, the defined platforms are named "win", "mac", and "emacs".  A platform named 'default' may also be included that will be the default key unless overridden by a specific platform
     key_bindings = None
+    
     keyboard = None
     
-    # If this menu action has a stock wx id, such as wx.ID_ABOUT or
-    # wx.ID_PREFERENCES, add it here and the wx menu system can do some
-    # special things to it, like automatically give it the correct
-    # location on WXMAC.
+    #: If this menu action has a stock wx id, such as wx.ID_ABOUT or wx.ID_PREFERENCES, add it here and the wx menu system can do some special things to it, like automatically give it the correct location on WXMAC.
     stock_id = None
     
-    # If the action doesn't use a stock id, it will automatically get assigned
-    # a global id here.  Note that if you are subclassing an action, you
-    # should explicitly assign a global id (or None) to your subclass's
-    # global_id attribute, otherwise the menu system will get confused
-    # and attempt to use the superclass's global_id
+    #: If the action doesn't use a stock id, it will automatically get assigned a global id here.  Note that if you are subclassing an action, you should explicitly assign a global id (or None) to your subclass's global_id attribute, otherwise the menu system will get confused and attempt to use the superclass's global_id
     global_id = None
 
     
@@ -80,6 +84,17 @@ class SelectAction(debugmixin):
 
     @classmethod
     def worksWithMajorMode(cls, mode):
+        """Hook to restrict the action to only be displayed with a specific
+        major mode
+        
+        This hook is called by the menu creation code to determine if the
+        action should be displayed when showing the major mode's user interface.
+        
+        @param mode: the major mode instance
+        
+        @returns: True if the action is allowed to be associated with the major
+        mode
+        """
         return True
     
     @classmethod
@@ -174,6 +189,20 @@ class SelectAction(debugmixin):
         toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
 
     def action(self, index=-1, multiplier=1):
+        """Override this to provide the functionality of the action.
+        
+        This method gets called when the user initiates the action, whether it
+        be from the menu bar, toolbar, or keyboard.
+        
+        @param index: The index of the item in the list.  This is only useful
+        for list or radio items.
+        
+        @param multiplier: the multiplier supplied by the keyboard handler.
+        The keyboard handler allows for emacs-style repeat commands.  For
+        some actions, it makes sense to allow repetition of the command.  For
+        instance, in a command that uppercases words, the multiplier could be
+        4, would mean that the next 4 words get uppercased.  The default is 1.
+        """
         pass
 
     def __call__(self, evt, number=1):
@@ -193,6 +222,14 @@ class SelectAction(debugmixin):
             self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
+        """Override this to provide the enable/disable state of the item.
+        
+        The menu system will call this method before the menu is drawn (or
+        periodically during idle time for toolbar items) to determine whether
+        or not the item should be disabled (grayed out).
+        
+        Default is to always enable the item.
+        """
         return True
 
 class ToggleAction(SelectAction):
@@ -238,6 +275,19 @@ class IdCache(object):
         return id
 
 class ListAction(SelectAction):
+    """Display a list of items in a menu bar.
+    
+    This is used to display a list of items while only requiring a single
+    action to display the entire list.
+    
+    The subclass should override the L{getItems} method to return the list of
+    items to display.  These items should be strings.  Overriding L{isEnabled}
+    will determine the enable/disable state for all of the items in the list.
+    
+    If the items change their text strings, you should add the
+    L{OnDemandActionMixin} and override the L{getHash} method to indicate when
+    the user interface should redraw the menu.
+    """
     menumax = 30
     abbrev_width = 16
     inline=False
@@ -369,6 +419,23 @@ class ListAction(SelectAction):
                 self.menu.Enable(id,self.isEnabled())
 
 class RadioAction(ListAction):
+    """Display a group of radio buttons in a menu bar.
+    
+    This is used to display a list of radio items while only requiring a single
+    action to display the entire list.
+    
+    The subclass should override the L{getItems} method to return the list of
+    items to display.  These items should be strings.  Like its L{ListAction}
+    parent, the L{isEnabled} method sets the enable state for all the items in
+    the radio list.
+    
+    The subclass should also override L{getIndex} to return the position within
+    the list of the selected item in the radio list.
+    
+    If the items change their text strings, you should add the
+    L{OnDemandActionMixin} and override the L{getHash} method to indicate when
+    the user interface should redraw the menu.
+    """
     menumax=-1
     inline=False
 
@@ -407,6 +474,21 @@ class RadioAction(ListAction):
         raise NotImplementedError
     
 class ToggleListAction(ListAction):
+    """Display a group of toggle buttons in a menu bar.
+    
+    This is used to display a list of toggle buttons while only requiring a
+    single action to display the entire list.
+    
+    The subclass should override the L{getItems} method to return the list of
+    items to display.  These items should be strings.
+    
+    The method L{isChecked} should be overridden by the subclass to provide the
+    checked state for each item.
+    
+    If the items change their text strings, you should add the
+    L{OnDemandActionMixin} and override the L{getHash} method to indicate when
+    the user interface should redraw the menu.
+    """
     def __init__(self, frame, menu=None, toolbar=None):
         # list of all toggles so we can switch 'em on and off
         self.toggles=[]
@@ -433,6 +515,12 @@ class ToggleListAction(ListAction):
                 self.menu.Check(id,self.isChecked(self.id2index[id]))
 
     def isChecked(self,index):
+        """Override this to show whether the index is checked or not.
+        
+        @param index: the position in the list (numbered from zero)
+        
+        @returns: True if checked.
+        """
         raise NotImplementedError
 
 
@@ -445,6 +533,13 @@ class OnDemandActionMixin(object):
     """
     
     def updateOnDemand(self):
+        """Hook called before the menu is displayed.
+        
+        This method allows the subclass to catch the menu opening event before
+        it anything is added to the menu bar.  When used in combination with
+        a list, the list may be reordered and menu items can be inserted or
+        deleted.
+        """
         raise NotImplementedError
 
 
