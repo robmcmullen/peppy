@@ -1034,15 +1034,16 @@ class UserActionMap(debugmixin):
         """
         self.disconnectEvents()
         self.index_actions = {}
-        for action in self.actions.values():
-            # Global ids can't have changed dynamically, so ignore them.
-            # We're only interested in the sub-ids
-            subids = action.getSubIds()
-            if subids:
-                self.updateMinMax(subids[0], subids[-1])
-                for id in subids:
-                    self.index_actions[id] = action
-        self.connectEvents()
+        if self.actions:
+            for action in self.actions.values():
+                # Global ids can't have changed dynamically, so ignore them.
+                # We're only interested in the sub-ids
+                subids = action.getSubIds()
+                if subids:
+                    self.updateMinMax(subids[0], subids[-1])
+                    for id in subids:
+                        self.index_actions[id] = action
+            self.connectEvents()
 
     def disconnectEvents(self):
         """Remove the event handlers for the range of menu ids"""

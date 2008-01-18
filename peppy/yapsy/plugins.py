@@ -124,16 +124,29 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         self._import_dir = None
 
     def activate(self):
-        """Called at plugin activation.
+        """Called at plugin activation to initialize some internal parameters.
         
-        NOTE: if overridden in a subclass, make sure to call this method in the
-        overriding method.
+        NOTE: if overridden in a subclass, make sure to call this method
+        in the overriding method.  In most cases, it's better to override
+        L{activateHook} instead.
         """
         if not self.classprefs.disable_at_startup or self._startup_complete:
             self.is_activated = True
             if not self._performed_initial_activation:
                 self.initialActivation()
                 self._performed_initial_activation = True
+            self.activateHook()
+    
+    def activateHook(self):
+        """Hook called when a plugin is successfully activated.
+        
+        This is the recommended method to override in subclass when the
+        subclass needs to take some action upon activation.  Note that
+        plugins can be started and stopped many times during the application's
+        lifecycle.  If the plugin needs only one-time activation, override the
+        L{initialActivation} method instead.
+        """
+        pass
 
     def deactivate(self):
         """Called when the plugin is disabled.
@@ -141,7 +154,17 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         NOTE: if overridden in a subclass, make sure to call this method in the
         overriding method.
         """
+        if self.is_activated:
+            self.deactivateHook()
         self.is_activated = False
+
+    def deactivateHook(self):
+        """Hook called when an active plugin is about to be deactivated.
+        
+        This is the recommended method to override in subclass when the
+        subclass needs to take some action upon deactivation.
+        """
+        pass
 
     def isInUse(self):
         """

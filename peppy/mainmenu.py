@@ -7,6 +7,7 @@ Main menu and actions.
 import os, glob
 
 import wx
+from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
 from peppy.actions.base import *
@@ -34,6 +35,15 @@ class NewTab(SelectAction):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:blank")
+
+class CloseTab(SelectAction):
+    alias = "close-tab"
+    name = "Close Tab"
+    tooltip = "Close the current tab"
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.frame.tabs.closeTab()
 
 class New(SelectAction):
     alias = "new-file"
@@ -917,6 +927,16 @@ class MainMenu(IPeppyPlugin):
     This provides the base menubar and toolbar that all major modes
     build upon.
     """
+    def activateHook(self):
+        Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
+    
+    def deactivateHook(self):
+        Publisher().unsubscribe(self.getTabMenu)
+    
+    def getTabMenu(self, msg):
+        action_classes = msg.data
+        action_classes.extend([NewTab, CloseTab])
+        dprint(action_classes)
 
     def getMajorModes(self):
         yield FundamentalMode

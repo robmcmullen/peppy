@@ -6,6 +6,7 @@ from cStringIO import StringIO
 import wx
 import wx.aui
 import wx.stc
+from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
@@ -82,10 +83,15 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         
         self.frame=parent
         self.lastActivePage=None
+        self.context_tab = -1 # which tab is currently displaying a context menu?
         
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        if 'EVT_AUINOTEBOOK_TAB_RIGHT_DOWN' in dir(wx.aui):
+            # This event was only added as of wx 2.8.7.1, so ignore it on
+            # earlier releases
+            self.Bind(wx.aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
 
     def OnTabChanged(self, evt):
         newpage = evt.GetSelection()
@@ -99,14 +105,39 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         wx.CallAfter(self.frame.switchMode)
         evt.Skip()
 
-    def OnTabClosed(self, evt):
-        index = evt.GetSelection()
+    def removeWrapper(self, index, in_callback=False):
         wrapper = self.GetPage(index)
         assert self.dprint("closing tab # %d: mode %s" % (index, wrapper.editwin))
         wrapper.deleteMajorMode()
+        if not in_callback:
+            self.RemovePage(index)
+            wrapper.Destroy()
+
+    def OnTabClosed(self, evt):
+        index = evt.GetSelection()
+        self.removeWrapper(index, in_callback=True)
         if self.GetPageCount() == 1:
             wx.CallAfter(self.frame.open, "about:blank")
         evt.Skip()
+
+    def closeTab(self, index=None):
+        if index == None:
+            index = self.context_tab
+        if index >= 0:
+            self.removeWrapper(index)
+            if self.GetPageCount() == 0:
+                wx.CallAfter(self.frame.open, "about:blank")
+
+    def OnTabContextMenu(self, evt):
+        dprint("Context menu over tab %d" % evt.GetSelection())
+        action_classes = []
+        Publisher().sendMessage('tabs.context_menu', action_classes)
+        dprint(action_classes)
+        self.context_tab = evt.GetSelection()
+        if action_classes:
+            self.frame.menumap.popupActions(self, action_classes)
+        self.context_tab = -1
+        #evt.Skip()
 
     def OnContextMenu(self, evt):
         dprint("Context menu over all tab contents (major and minor modes)")
@@ -116,11 +147,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
 
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):
-            wrapper = self.GetPage(0)
-            self.RemovePage(0)
-            wrapper.deleteMajorMode()
-            wrapper.Destroy()
-
+            self.removeWrapper(0)
+    
     def getCurrent(self):
         index = self.GetSelection()
         if index<0:
