@@ -46,6 +46,25 @@ L{FundamentalMode} for an example of a mode for general text files,
 L{PythonMode} for a specific type of text file, and L{HexEditMode} for a major
 mode that doesn't use a text window as its user interface.
 
+Virtual File System (VFS)
+=========================
+
+One of the advances used by peppy is the U{itools
+<http://www.ikaaro.org/itools>} virtual filesystem layer, an abstraction of
+the filesystem that allows for transparent file access whether the file is
+local to your hard disk, or across the network to a webdav server, an FTP
+server, or tunnelled over ssh.  At least theoretically -- the network stuff
+isn't available yet, but it will be at some point, and then they'll be able to
+be transparently integrated with peppy.
+
+Behind the scenes, all file access in peppy is through URLs, although local
+files are handled as a special case not requiring the leading C{file://}
+component.
+
+The virtual filesystem is extensible, but it's currently beyond the scope of
+this documentation.  If you're interested, you can see the L{TarFS} example to
+see how I implemented a pseudo-filesystem that allows reading individual files
+from within tar archives without decompressing the whole file first.
 
 
 @author: $author

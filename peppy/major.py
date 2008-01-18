@@ -254,44 +254,171 @@ class MajorModeWrapper(wx.Panel, debugmixin):
 class MajorMode(ClassPrefs, debugmixin):
     """Mixin class for all major modes.
     
-    Classes that use this mixin must create some subclass of wx.Window in the
-    __init__ method -- this forms the basis of the user interaction.
+    Major modes are associated with some type (or types) of file, and
+    provide a way to edit them.  Most major modes that edit text will
+    actually want to be a subclass of L{FundamentalMode}, as that class
+    uses the wx.stc.StyledTextControl as its base class and provides a
+    lot of additional text editing support by default.  See L{PythonMode},
+    L{ChangeLogMode}, and L{MakefileMode} for examples of modes that use
+    L{FundamentalMode} as a basis.
+    
+    If a major mode isn't for a text file, however, it should use this
+    mixin class along with some other subclass of wx.Window to provide the
+    editing interface.  This mixin is required because it provides a lot of
+    the boilerplate stuff that peppy needs to manage the major mode.  See
+    L{HexEditMode} and L{DiredMode} for modes that don't use an stc for their
+    user window.
+    
+    
+    
+    Associating the Major Mode with a File Type
+    ===========================================
+    
+    When a file is opened, peppy uses the L{MajorModeMatcherDriver}
+    class to determine which major mode to use to edit the file.  The
+    L{MajorModeMatcherDriver.match} method loops over all major modes and
+    uses the heuristics to determine the best match by calling the C{verify*}
+    class methods of the major modes.  There are default implementations of
+    the verify methods that use class attributes of the major mode to identify
+    the mode.
+    
+    There are several ways to tell peppy to associate the major mode with
+    a particular type of file.  
+    
+    MIME Type
+    ---------
+    
+    The simplest is to specify the MIME type in the class attribute
+    L{mimetype}.  The MIME type returned from the L{vfs.get_metadata}
+    call will be used to match against the MIME type specified here; or
+    alternatively you can override the L{verifyMimetype} class method and
+    perform matching on the MIME type of each file as it's opened by peppy.
+    
+    However, not all MIME types are known by default to the VFS, so you may
+    need to provide other ways to match the file.
+    
+    Filename
+    --------
+    
+    If your file always has a certain extension, you can specify a
+    regular expression is the L{regex} class attribute.  This uses the
+    L{verifyFilename} method to return a match.  You can also override the
+    L{verifyFilename} method directly.
+    
+    Note that only the filename is passed to the L{verifyFilename} method as
+    it should be independent of the scheme used to retrieve the URL.  If you
+    actually want to match on the scheme, use the L{verifyProtocol} method.
+    
+    Magic Bytes
+    -----------
+    
+    If there's no easy way to tell the file type, you may need to check some
+    bytes in the file to see if it matches some "magic number" that will
+    identify the file that peppy is trying to load as one that your major
+    mode supports.
+    
+    The class method L{verifyMagic} is called if there's no exact match by
+    earlier methods.  In order to reduce the expense of this operation, a
+    certain number of bytes (a minimum of 1024) are read from the file before
+    the call to verifyMagic so that every major mode isn't trying to read the
+    same file over and over.  If your file can't be uniquely determined in the
+    first 1024 bytes, there is still a way to determine the file type: see the
+    L{IPeppyPlugin.attemptOpen} method.
+    
+    Backend Storage
+    ===============
+    
+    Once the major mode has been selected for that file, it is loaded into a
+    L{Buffer} for storage.  There is only one Buffer instance per copy of a
+    file that's loaded.  Multiple views of the same file always point back to
+    the same Buffer.
+    
+    The major mode uses the Buffer as the backend storage for the data.  The
+    Buffer uses a class that implements the L{STCInterface} as the actual
+    storage space for the loaded file.  Major modes declare what type of
+    L{STCInterface} is used for the backend storage by setting the class
+    attribute L{stc_class}.
+    
+    Peppy is not limited to editing files that can fit in physical memory.
+    However, the wx.stc.StyledTextCtrl (the Scintilla control, abbreviated
+    'STC' here) does require that the file be held in physical memory.  So,
+    if you're going to use an stc to display your file, you're limited to
+    files that can fit in memory.  Files larger than physical memory should
+    extend from L{NonResidentSTC}, but currently the extra steps required
+    to make a major mode for extremely large files are not documented.  See
+    L{hsi_major_mode} if you're interested, until better documentation is
+    written.
+    
+    For a major mode that focuses on files that can be held in memory, the
+    backend storage should be implemented by a L{PeppySTC} instance.
+    
+    STC Backend Storage and STC Used for Display
+    --------------------------------------------
+    
+    If your major mode also uses an STC for displaying the text to the user,
+    you should consider extending your major mode from L{FundamentalMode}, as
+    the details will be taken care of for you.  But be aware that the STC used
+    for backend storage is not the same as the STC presented to the user.
+    
+    The backend storage is the root document, and this root document does not
+    get displayed.  The STC that is used for display will be linked to the
+    Buffer's STC using the document pointer capability of Scintilla.  This
+    means that multiple views of the same file are possible, and all share the
+    same backend storage because they all point to the same buffer.
+    
+    STC Backend Storage without using an STC for Display
+    ----------------------------------------------------
+    
+    It is also possible to use a real STC for backend storage, but use some
+    different wx.Window subclass for display.  See the L{HexEditMode} for an
+    example that uses a wx.Grid control to present the file as a string of
+    binary bytes.
+    
+    There are complications to using this approach, however.  Because multiple
+    views are possible, there could be a text view of a file at the same time
+    as a hex edit view.  If both views were STCs, the changes in one would be
+    automatically propagated to the other.  But, because one of the views is a
+    wx.Grid, we must catch modification events and update the wx.Grid as bytes
+    change in the other view.  See the L{HexEditMode} for more information.
+    
+    Fundamental Text Editing
+    ========================
+    
+    Most major modes for text editing will use a real STC for user interaction.
+    The best way to make a major mode that uses a real STC is to extend
+    from L{FundamentalMode}.  Fundamental mode uses a bunch of mixins that
+    extend the functionality of the STC, and provide the places for customized
+    enhancements like brace highlighting, region commenting, paragraph
+    finding, and a lot of other features.  Examining one of the subclasses of
+    Fundamental mode is probably the best place to start if you're interested
+    in extending peppy to handle a file that is currently unsupported.
+        
     """
+    #: set to non-zero to activate debug printing for this class
     debuglevel = 0
     
-    # Pointer to the icon representing this major mode
+    #: Pointer to the icon representing this major mode
     icon = 'icons/page_white.png'
     
-    # The single-word keyword representing this major mode
+    #: The single-word keyword representing this major mode
     keyword = 'Abstract_Major_Mode'
     
-    # If there are additional emacs synonyms for this mode, list them here
-    # as a string for a single synonym, or in a list of strings for multiple.
-    # For instance, see hexedit_mode.py: in emacs the hex edit mode is called
-    # 'hexl', but in peppy, it's called 'HexEdit'.  'hexl' is listed as in
-    # emacs_synomyms in that file.
+    #: If there are additional emacs synonyms for this mode, list them here as a string for a single synonym, or in a list of strings for multiple. For instance, see hexedit_mode.py: in emacs the hex edit mode is called 'hexl', but in peppy, it's called 'HexEdit'.  'hexl' is listed as in emacs_synomyms in that file.
     emacs_synonyms = None
     
-    # Filenames are matched against this regex in the class method
-    # verifyFilename when peppy tries to determine which mode to use
-    # to edit the file.  If no specific filenames, set to None
+    #: Filenames are matched against this regex in the class method verifyFilename when peppy tries to determine which mode to use to edit the file.  If no specific filenames, set to None
     regex = None
     
-    # The VFS also provides metadata, including MIME type, and the MIME types
-    # supported by the major mode can be listed here.  The MIME types can be
-    # a single string or a list of strings for multiple types.
+    #: The VFS also provides metadata, including MIME type, and the MIME types supported by the major mode can be listed here.  The MIME types can be a single string or a list of strings for multiple types.
     mimetype = None
     
-    # If this mode represents a temporary view and should be replaced by
-    # a new tab, make this True
+    #: If this mode represents a temporary view and should be replaced by a new tab, make this True
     temporary = False
     
-    # If this mode allows threading loading, set this True
-    allow_threaded_loading = True
+    #: If this mode allows threading loading, set this True
+    allow_threaded_loading = True    
 
-    # stc_class is used to associate this major mode with a storage
-    # mechanism (implementing the STCInterface).  The default is
-    # PeppySTC, which is a subclass of the scintilla editor.
+    #: stc_class is used to associate this major mode with a storage mechanism (implementing the STCInterface).  The default is PeppySTC, which is a subclass of the scintilla editor.
     stc_class = PeppySTC
 
     default_classprefs = (

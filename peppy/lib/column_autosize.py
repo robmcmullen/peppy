@@ -20,49 +20,49 @@ Usage
 =====
 
 This mixin is used in subclasses of ListCtrl in LC_REPORT mode, as in the
-following snippet from a constructor:
+following snippet from a constructor::
 
-class TestList(ColumnAutoSizeMixin, wx.ListCtrl):
-    def __init__(self, parent):
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnAutoSizeMixin.__init__(self)
+    class TestList(ColumnAutoSizeMixin, wx.ListCtrl):
+        def __init__(self, parent):
+            wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
+            ColumnAutoSizeMixin.__init__(self)
 
 Columns are added using the special InsertSizedColumn method, not the standard
 InsertColumn method of the ListCtrl.  InsertSizedColumn has several keyword
 arguments that control how the column is resized; see the docstring for the
-method for a full description.  For example,
+method for a full description.  For example::
 
-    def createColumns(self):
-        self.InsertSizedColumn(0, "Index")
-        self.InsertSizedColumn(1, "Filename", min=100, max=200)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
-        self.InsertSizedColumn(3, "Mode", max="MMM")
-        self.InsertSizedColumn(4, "Description", min=100)
-        self.InsertSizedColumn(5, "URL", ok_offscreen=True)
-        self.InsertSizedColumn(6, "Owner", fixed=50)
+        def createColumns(self):
+            self.InsertSizedColumn(0, "Index")
+            self.InsertSizedColumn(1, "Filename", min=100, max=200)
+            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+            self.InsertSizedColumn(3, "Mode", max="MMM")
+            self.InsertSizedColumn(4, "Description", min=100)
+            self.InsertSizedColumn(5, "URL", ok_offscreen=True)
+            self.InsertSizedColumn(6, "Owner", fixed=50)
 
 will create 6 columns, all autosized to the largest item but with the
 additional constraints applied in the following cases:
 
-* Column 1 (Filename) will be clamped to the range between minimum and maximum
+Column 1 (Filename) will be clamped to the range between minimum and maximum
 pixels.
 
-* Column 2 (Size) will be aligned to the right, has a minimum size, and will
+Column 2 (Size) will be aligned to the right, has a minimum size, and will
 be greedy and attempt to maintain its preferred size when the whole list is
 scaled.
 
-* Column 3 (Mode) has a maximum allowable size given by the width in pixels of
+Column 3 (Mode) has a maximum allowable size given by the width in pixels of
 the string "MMM" in the ListCtrl's current font.
 
-* Column 4 (Description) has a minimum size is pixels
+Column 4 (Description) has a minimum size is pixels
 
-* Column 5 (URL) is allowed to be initially placed offscreen, as it is expected
+Column 5 (URL) is allowed to be initially placed offscreen, as it is expected
 to be a very wide column.  Note that by allowing this column to be placed
 offscreen, subsequent columns would also be allowed offscreen.  Only columns
 before an ok_offscreen=True keyword argument are scaled in an attempt to keep
 those on screen.
 
-* Column 6 (Owner) is a fixed width of 50 pixels
+Column 6 (Owner) is a fixed width of 50 pixels
 
 Once the columns are set up and the list is populated with data, and every time
 you add more data and want the column sizes to be recomputed, you must make a
@@ -72,8 +72,8 @@ call to ResizeColumns.  This will recalculate and redisplay the columns.
 Bugs and to-do items
 ====================
 
-* the column sizes after a user resize (i.e.  the user uses the mouse, grabs
-a border between columns, and resizes a column) are not saved.  ResizeColumn
+The column sizes after a user resize (i.e.  the user uses the mouse, grabs a
+border between columns, and resizes a column) are not saved.  ResizeColumn
 ignores the user changes and resizes columns based on how they were set up
 in InsertSizedColumn.
 
@@ -82,13 +82,13 @@ in InsertSizedColumn.
 @author: Rob McMullen
 @version: 1.1
 
-Changelog:
+Changelog::
     1.1:
-        * renamed to ColumnAutoSizeMixin
-        * changed keyword argument 'scale' to 'greedy'
-        * implemented new sizing algorithm
+        - renamed to ColumnAutoSizeMixin
+        - changed keyword argument 'scale' to 'greedy'
+        - implemented new sizing algorithm
     1.0:
-        * First public release
+        - First public release
 """
 import sys
 

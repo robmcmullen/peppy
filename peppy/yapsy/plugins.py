@@ -17,8 +17,90 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
     in this interface have default implementations, though, so it is only
     necessary to implement those methods that you need for your plugin.
     
+    There are two ways to tell peppy about plugins: setuptools and yapsy.
+
+    Setuptools Plugins
+    ==================
+    
+    Setuptools is the more traditional python plugin approach, but currently
+    doesn't keep track of version numbers.  To create a setuptools plugin, you
+    need to create new module and directory structure somewhere on your hard
+    drive, something like this::
+    
+        mynewplugin-dev/
+            setup.py
+            mynewplugin/
+                __init__.py
+                newplugin.py
+    
+    where your setup.py contains something like this::
+    
+        from setuptools import setup, find_packages
+
+        setup(
+            name="mynewpluginname",
+            version="0.1",
+            description="my stupendous new plugin",
+            author="Your Name",
+            packages=['mynewplugin'],
+            entry_points='''
+            [peppy.plugins]
+            MyNewPluginKeyword = mynewplugin.newplugin:NewPlugin
+            ''',
+        )
+
+    and newplugin.py contains the class NewPlugin that implements the
+    IPeppyPlugin interface.  The entry point "peppy.plugins" is the keyword
+    that peppy uses to identify the plugins.  MyNewPluginKeyword is a unique
+    name that is used within the setuptools system to identify the plugin to
+    the user.
+    
+    To test the plugin, you'll want to use C{python setup.py develop} which
+    will make a symbolic link from the python site-packages directory to your
+    development directory.  The other option is to create an egg every time
+    you want to test a change -- that's not a very efficient option.
+    
+    Yapsy Plugins
+    =============
+    
+    The other method of informing peppy about the existence of plugins is to
+    place the plugins in a special folder in your user configuration directory.
+    
+    Every user has their own peppy configuration directory.  On unix
+    it's called .peppy in your home directory.  On windows, it's in your
+    application data directory, usually C{C:/Documents and Settings/Your User
+    Name/Application Data/Peppy} where Your User Name is replaced by your
+    actual user name.  On Mac OSX, I have no idea and could use your help.
+    
+    Inside this configuration directory, there's a directory called plugins.
+    You place your plugin source code (the .py file) in this directory, along
+    with a companion file that should be the same filename except replacing
+    the C{.py} extension with C{.peppy-plugin}.  The python source file should
+    implement the L{IPeppyPlugin} interface, and the companion file should
+    contain the metadata about the plugin, as in the following example::
+    
+        [Core]
+        Name = mynewpluginname
+        Module = newplugin
+
+        [Documentation]
+        Author = Your User Name
+        Version = 0.1
+        Website = http://your.web.site
+        Description = my stupendous plugin
+
+    where the yapsy plugin code expects the Module to be the name of the python
+    source file without the C{.py} extension.
+    
+    The Yapsy plugin system is currently better supported in the source, but
+    it is non-standard.  It may be replaced by a totally-setuptools plugin
+    system at some point.  But, the underlying L{IPeppyPlugin} interface won't
+    change (or at least methods won't be removed) so plugins are safe to be
+    implemented using that interface.
+    
+    
     @group convenience: isInUse, importModule
-    @group interface: initial*, addCommandLineOptions, processCommandLineOptions, requestedShutdown, finalShutdown, get*, about*, attempt*, load*
+    @group interface: initial*, addCommandLineOptions, processCommandLineOptions, requestedShutdown, finalShutdown, get*, about*, attempt*, load*, support*
     """
     preferences_tab = "Plugins"
     default_classprefs = (
