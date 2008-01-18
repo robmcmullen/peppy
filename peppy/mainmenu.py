@@ -270,7 +270,6 @@ class SaveURL(SelectAction):
     alias = "write-url"
     name = "Save to URL using Minibuffer..."
     tooltip = "Write to a new URL name completion"
-    default_menu = ("File/Open", 2)
     key_bindings = {'emacs': "C-X C-Y", }
 
     def action(self, index=-1, multiplier=1):
