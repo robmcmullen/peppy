@@ -59,5 +59,6 @@ class HSIPlugin(IPeppyPlugin):
                         hsi_major_mode.ContrastFilterAction,
                         hsi_major_mode.MedianFilterAction,
                         hsi_major_mode.CubeViewAction,
+                        hsi_major_mode.ShowPixelValues,
                         ]
         return []

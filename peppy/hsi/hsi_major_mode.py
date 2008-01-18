@@ -652,6 +652,19 @@ class CubeViewAction(HSIActionMixin, RadioAction):
             wx.CallAfter(self.mode.update)
 
 
+class ShowPixelValues(HSIActionMixin, ToggleAction):
+    debuglevel = 0
+    name = "Show Pixel Values"
+    tooltip = ""
+    default_menu = ("View", -900)
+
+    def isChecked(self):
+        return self.mode.show_value_at_cursor
+    
+    def action(self, index=-1, multiplier=1):
+        self.mode.show_value_at_cursor = not self.mode.show_value_at_cursor
+
+
 class HSIMode(BitmapScroller, MajorMode):
     """Major mode for hyperspectral image analysis.
 
@@ -681,6 +694,8 @@ class HSIMode(BitmapScroller, MajorMode):
         self.setViewer(CubeView)
         #self.cube.open()
         assert self.dprint(self.cube)
+        
+        self.show_value_at_cursor = True
 
     def tabActivatedHook(self):
         self.update(False) # initial case will refresh automatically
@@ -701,7 +716,7 @@ class HSIMode(BitmapScroller, MajorMode):
         if x >= 0:
             self.frame.SetStatusText("x=%d y=%d" % (x, y), 1)
             pix = self.cube.getPixel(line, sample, band)
-            if self.debuglevel > 0:
+            if self.show_value_at_cursor:
                 pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
                 self.frame.SetStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
         
