@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
+# peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
 Includable file that is used to provide a Goto Line function for a

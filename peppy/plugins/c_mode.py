@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
+# peppy Copyright (c) 2006-2008 Rob McMullen
 # c_mode Copyright (c) 2007 Julian Back
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """C programming language editing support.

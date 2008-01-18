@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
+# peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """
 Adapter pattern that allows the usage of PyPE's search and replace

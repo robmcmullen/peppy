@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2007 Rob McMullen
+# peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPL; see http://www.flipturn.org/peppy for more info
 """Definition and storage of the 'about:' protocol.
 
@@ -26,7 +26,7 @@ from StringIO import StringIO
 from peppy import __version__, __codename__, __description__, __author__, __author_email__, __url__
 substitutes = {
     'prog': 'peppy',
-    'yearrange': '2006-2007',
+    'yearrange': '2006-2008',
     'version': __version__,
     'codename': __codename__,
     'description': __description__,
@@ -35,11 +35,10 @@ substitutes = {
     'url': __url__,
     'license': "Licensed under the GPL",
     'warning': """<P>I'm dogfooding!  This is now my primary editor,
-but caveat emptor: it is still alpha code.  It has all of the basic features
-that I need for my day-to-day editing, and for the most part it has replaced
-XEmacs as my daily editor.  I've planned much more development, though,
-and I also intend to work on a lot of documentation to make it easier for
-contributors to extend the editor.
+but caveat emptor: it is still alpha code.  It has the features that I need for
+my day-to-day editing, and it has all but replaced XEmacs as my daily editor.
+I've planned much more development, though, and I also intend to work on a
+lot of documentation to make it easier for contributors to extend the editor.
 
 <P>Save your work often and file a bug report at
 http://trac.flipturn.org/newticket if you notice something that shouldn't
