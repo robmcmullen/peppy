@@ -36,6 +36,7 @@ like the hyperspectral image viewer.
 <li>Hyperspectral image view mode
 <li>Music Player Daemon mode for controlling an
 <a href="http://mpd.wikia.com/wiki/Main_Page">MPD</a> server
+<li>Dired mode for viewing directories
 </ul>
 </ul>
 

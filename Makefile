@@ -63,7 +63,7 @@ html: $(HTML) $(PRE) README.html doc
 	cp README.html web/
 web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
-web/screenshots.html.in:
+web/screenshots.html.in: web/0.*
 	(cd web; photo-album.py --nodatedir 0.*; photo-index.py -a -b -r -o screenshots.html.in)
 $(HTML): web/template.html.in web/mainmenu.html.in ChangeLog
 
@@ -120,7 +120,8 @@ nsis:
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --exclude "peppy\.editra\..+" --no-private --url 'http://peppy.flipturn.org/' peppy) 2>&1 | tee epydoc.out
-
+	rm -rf api
+	mv $(distdir)/docs/api .
 
 
 clean:
