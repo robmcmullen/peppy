@@ -89,7 +89,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         else:
             # Change the default major mode if the old default is the most
             # general major mode.
-            if buffer.defaultmode.keyword == wx.GetApp().classprefs.default_text_mode:
+            if buffer.defaultmode.verifyMimetype('text/plain'):
                 dprint("Changing default mode of %s to %s" % (buffer, requested))
                 buffer.defaultmode = requested
         self.dprint("creating major mode %s" % requested)
