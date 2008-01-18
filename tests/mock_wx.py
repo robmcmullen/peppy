@@ -6,28 +6,62 @@ import wx
 import wx.stc
 
 from peppy.debug import *
+import peppy.vfs as vfs
 debuglog(sys.stdout)
 
 from peppy.stcbase import PeppyBaseSTC
+from peppy.fundamental import FundamentalMode
+
+class MockFont(object):
+    def GetFaceName(self):
+        return "fixed"
+    def GetPointSize(self):
+        return 10
+
+class MockEditra(object):
+    @classmethod
+    def getStyleFile(self):
+        return None
+    class classprefs(object):
+        primary_editing_font = MockFont()
+        secondary_editing_font = MockFont()
 
 class MockApp(wx.App):
+    fonts = MockEditra()
     def getConfigFilePath(self, file):
         return None
     def GetLog(self):
         return lambda x: True
+    
 
 class MockWX(object):
     app = MockApp()
-    frame = wx.Frame(None, -1)
+    root = wx.Frame(None, -1)
 
 class MockSTC(PeppyBaseSTC):
     pass
 
+class MockBuffer(object):
+    def __init__(self, stc):
+        self.stc = stc
+        self.url = vfs.normalize("nothing")
+
+class MockFrame(wx.Frame):
+    def __init__(self, mode):
+        wx.Frame.__init__(self, None, -1)
+        self.mode = mode
+    def getActiveMajorMode(self):
+        return self.mode
+
 __builtin__._ = str
     
 
-def getSTC(init=None, stcclass=MockSTC, count=1, lexer="Python", tab_size=4, use_tabs=False):
-    stc = stcclass(MockWX.frame)
+def getSTC(init=None, stcclass=FundamentalMode, count=1, lexer="Python", tab_size=4, use_tabs=False):
+    refstc = MockSTC(MockWX.root)
+    buffer = MockBuffer(refstc)
+    frame = MockFrame(refstc)
+    stc = stcclass(frame, frame, buffer, frame)
+    frame.mode = stc
     #stc.SetLexer(lexer)
     stc.ConfigureLexer(lexer)
 #    if lexer == wx.stc.STC_LEX_PYTHON:

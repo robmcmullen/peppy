@@ -14,7 +14,7 @@ from nose.tools import *
 
 class TestFundamentalIndent(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer="Plain Text")
+        self.stc = getSTC(stcclass=FundamentalMode, lexer="Plain Text")
 
     def checkReturn(self, pair):
         dprint(pair)
@@ -85,8 +85,9 @@ back at column zero
 
 class TestPythonIndent(IDLEElectricReturnMixin, StandardReturnMixin, IDLEReindentMixin):
     def setUp(self):
-        self.stc = getSTC(stcclass=PythonSTC, lexer="Python")
-        self.reindentAction = Reindent(self)
+        self.stc = getSTC(stcclass=PythonMode, lexer="Python")
+        print self.stc
+        self.reindentAction = Reindent(self.stc.frame)
 
     def getActiveMajorMode(self):
         """dummy method to satisfy new action requirements"""

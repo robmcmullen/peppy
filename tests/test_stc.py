@@ -10,6 +10,10 @@ from tests.mock_wx import getSTC
 
 from nose.tools import *
 
+def insertColumns(stc, count):
+    for index in range(0, count):
+        stc.AppendText('%04d-0123456789\n' % (index))
+
 class TestBasic(object):
    def setUp(self):
        self.stc = getSTC()
@@ -23,7 +27,8 @@ class TestColumns(object):
    def setUp(self):
        self.count = 10
        self.mid = self.count/2
-       self.stc = getSTC('columns', self.count)
+       self.stc = getSTC()
+       insertColumns(self.stc, self.count)
 
    def testLines(self):
        eq_(self.stc.GetLineCount(), self.count+1)
@@ -47,8 +52,9 @@ class TestPasteAtColumn1(object):
    def setUp(self):
        self.count = 10
        self.mid = self.count/2
-       self.stc = getSTC('columns', self.count)
-       
+       self.stc = getSTC()
+       insertColumns(self.stc, self.count)
+
    def testInsert(self):
       self.stc.SetSelection(5,10)
       self.stc.PasteAtColumn("abc\nabc\nabc")
