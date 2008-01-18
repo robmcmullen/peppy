@@ -11,8 +11,14 @@ from peppy.yapsy.IPlugin import IPlugin
 from peppy.debug import *
 
 class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
-    """
-    Some peppy-specific methods in addition to the yapsy plugin methods.
+    """Use this interface to extend peppy.
+    
+    This is the interface that all peppy plugins must implement.  All methods
+    in this interface have default implementations, though, so it is only
+    necessary to implement those methods that you need for your plugin.
+    
+    @group convenience: isInUse, importModule
+    @group interface: initial*, addCommandLineOptions, processCommandLineOptions, requestedShutdown, finalShutdown, get*, about*, attempt*, load*
     """
     preferences_tab = "Plugins"
     default_classprefs = (
@@ -26,16 +32,20 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         cls._startup_complete = True
     
     def __init__(self):
-        """
-        Set the basic variables.
+        """Setup the required plugin attributes.
+        
+        NOTE: if overridden in a subclass, make sure to call this constructor
+        in the subclass's constructor.
         """
         self.is_activated = False
         self._performed_initial_activation = False
         self._import_dir = None
 
     def activate(self):
-        """
-        Called at plugin activation.
+        """Called at plugin activation.
+        
+        NOTE: if overridden in a subclass, make sure to call this method in the
+        overriding method.
         """
         if not self.classprefs.disable_at_startup or self._startup_complete:
             self.is_activated = True
@@ -44,8 +54,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
                 self._performed_initial_activation = True
 
     def deactivate(self):
-        """
-        Called when the plugin is disabled.
+        """Called when the plugin is disabled.
+        
+        NOTE: if overridden in a subclass, make sure to call this method in the
+        overriding method.
         """
         self.is_activated = False
 
@@ -65,7 +77,18 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         return False
 
     def importModule(self, relative_module):
-        """Import a module relative to the plugin module."""
+        """Import a module relative to the plugin module.
+        
+        This is used for on-demand plugin loading, which is experimental at
+        this time.  This is plugin-callable method and is not really part of
+        the interface that a plugin should implement and override.  It is a
+        convenience function that attempts to load modules in the directory
+        relative to the plugin's directory.  Because plugins are loaded using
+        a call to execfile, the python path is not setup correctly by default.
+        In normal circumstances, all this call does is prepend the plugin
+        path to the python path, but in py2exe usage, more complicated things
+        need to happen.
+        """
         
         save = sys.path
         # Save the old sys.path and modify it temporarily to include the

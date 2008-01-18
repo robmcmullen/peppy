@@ -20,13 +20,33 @@ after learning just enough to hack XEmacs.
 Plugins
 =======
 
-peppy is extended by plugins.  Plugins are based on the trac component
-architecture.
+peppy is extended by plugins.  Plugins are based on the U{yapsy component
+architecture<http://yapsy.sourceforge.net>}.
 
-Here are some of the types that can be used to extend peppy:
+Many parts of the peppy system are exposed through the L{IPeppyPlugin}
+interface, but most interesting for now are L{IPeppyPlugin.getMajorModes}
+used to specify the Major Modes provided by the plugin and
+L{IPeppyPlugin.getActions} to specify the actions that provide the user
+interface for the major mode.
 
-L{ProtocolPlugin<peppy.iofilter.ProtocolPlugin>}s and
-L{IMajorModeMatcher<major.IMajorModeMatcher>}s.
+Major Modes
+===========
+
+A major mode is a specialized editing mode that is associated with a type of
+file.  It takes its name from the emacs concept of the same name.  A major
+mode provides the user interface and specialized editing commands to edit
+a type of file.  There are several ways to identify files, one of the most
+useful being the MIME type of the file.  (Major modes can also use other
+means to identify files that they are capable of operating on, like filename
+matching and even scanning bytes in the file.)
+
+See the documentation for the L{MajorMode} class for more information
+on the interface for major mode subclasses, and also instances like
+L{FundamentalMode} for an example of a mode for general text files,
+L{PythonMode} for a specific type of text file, and L{HexEditMode} for a major
+mode that doesn't use a text window as its user interface.
+
+
 
 @author: $author
 @version: $version

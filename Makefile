@@ -119,7 +119,7 @@ nsis:
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
 
 api: distdir
-	(cd $(distdir); $(EPYDOC) -o docs/api --no-private --url 'http://www.flipturn.org/peppy/' $(DISTMAIN) $(APIFILES)) 2>&1 | tee epydoc.out
+	(cd $(distdir); $(EPYDOC) -o docs/api --exclude "peppy\.editra\..+" --no-private --url 'http://peppy.flipturn.org/' peppy) 2>&1 | tee epydoc.out
 
 
 
