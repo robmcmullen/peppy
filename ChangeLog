@@ -1,3 +1,14 @@
+2008-01-12  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2 "Oscillation Overthruster"
+	* added documentation
+	* changed "Buffer" to "Document" and "Frame" to "Window" in UI to scare
+	non-emacs users a bit less
+	* added autocompletion support for Save As...
+	* cleaned up display of documents in the Documents menu
+	* simplified menu system for menus that had to be kept consistent across
+	multiple windows
+
 2008-01-08  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.1.8 update to "The Winchester"
