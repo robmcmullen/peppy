@@ -846,19 +846,6 @@ class MajorMode(ClassPrefs, debugmixin):
         """Proxy the minor mode requests up to the wrapper"""
         return self.wrapper.findMinorMode(name)
 
-    def addPopup(self,popup):
-        self.popup=popup
-        self.Bind(wx.EVT_RIGHT_DOWN, self.popupMenu)
-
-    def popupMenu(self,evt):
-        # popups generate menu events as normal menus, so the
-        # callbacks to the command objects should still work if the
-        # popup is generated in the same way that the regular menu and
-        # toolbars are.
-        assert self.dprint("popping up menu for %s" % evt.GetEventObject())
-        self.PopupMenu(self.popup)
-        evt.Skip()
-
     def applySettings(self):
         """Apply settings to the view
 
