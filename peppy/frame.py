@@ -111,8 +111,8 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
     def OnContextMenu(self, evt):
         dprint("Context menu over all tab contents (major and minor modes)")
         # allow further processing for debugging
-        page = self.getCurrent()
-        page.OnContextMenu(evt)
+        wrapper = self.getCurrent()
+        wrapper.editwin.OnContextMenu(evt)
 
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):

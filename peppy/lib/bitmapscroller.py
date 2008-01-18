@@ -1070,6 +1070,7 @@ class BitmapScroller(wx.ScrolledWindow):
                     self.autoScroll(ev)
                 if self.selector.want_blank_cursor:
                     self.blankCursor(ev)
+        ev.Skip()
 
     def OnPaint(self, evt):
         self.dbg_call_seq += 1

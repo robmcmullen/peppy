@@ -802,7 +802,7 @@ class UserActionMap(debugmixin):
     items.  Note that the order of the menu titles is required here and can't
     be added to later.
     """
-    debuglevel=0
+    debuglevel = 0
     
     def __init__(self, frame, mode):
         """Initialize the mapping with the new set of actions.
@@ -818,7 +818,10 @@ class UserActionMap(debugmixin):
         """
         self.frame = frame
         self.actions = {}
+        self.popup_actions = {}
         self.index_actions = {}
+        self.popup_index_actions = {}
+        
         self.title_to_menu = {}
         self.title_to_toolbar = {}
         self.class_list = mode.action_classes
@@ -976,6 +979,35 @@ class UserActionMap(debugmixin):
         self.connectEvents()
         return keymap
     
+    def popupActions(self, parent, action_classes=[]):
+        """Create a popup menu from the list of action classes.
+        
+        """
+        menu = wx.Menu()
+        
+        self.disconnectEvents()
+        for actioncls in action_classes:
+            action = actioncls(self.frame)
+            self.popup_actions[action.global_id] = action
+            action.insertIntoMenu(menu)
+            action.showEnable()
+            self.updateMinMax(action.global_id, action.global_id)
+            subids = action.getSubIds()
+            if subids:
+                self.updateMinMax(subids[0], subids[-1])
+                for id in subids:
+                    self.popup_index_actions[id] = action
+        
+        # register the new ids and allow the event processing to handle the
+        # popup
+        self.connectEvents()
+        parent.PopupMenu(menu)
+        
+        # clean up after the popup events
+        self.popup_actions = {}
+        self.popup_index_actions = {}
+        self.reconnectEvents()
+    
     def cleanupPrevious(self, auimgr):
         self.disconnectEvents()
         for tb in self.title_to_toolbar.values():
@@ -1033,13 +1065,25 @@ class UserActionMap(debugmixin):
         # FIXME: Check for index actions first, because the global id for
         # a list is used as the first item in a list and also shows up in
         # self.actions.  Should the global id be used in lists???
-        if id in self.index_actions:
+        if id in self.popup_index_actions:
+            # Some actions are associated with more than one id, like list
+            # actions.  These are dispatched here.
+            action = self.popup_index_actions[id]
+            index = action.getIndexOfId(id)
+            self.dprint("popup index %d of %s" % (index, action))
+            action.action(index=index)
+        elif id in self.index_actions:
             # Some actions are associated with more than one id, like list
             # actions.  These are dispatched here.
             action = self.index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("index %d of %s" % (index, action))
             action.action(index=index)
+        elif id in self.popup_actions:
+            # The id is in the list of single-event actions
+            action = self.popup_actions[id]
+            self.dprint("popup: %s" % action)
+            action.action()
         elif id in self.actions:
             # The id is in the list of single-event actions
             action = self.actions[id]

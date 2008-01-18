@@ -764,6 +764,8 @@ class HSIMode(BitmapScroller, MajorMode):
                 plotproxy = minor.proxies[0]
                 plotproxy.setupAxes()
 
+    def getPopupActions(self, x, y):
+        return [CubeViewAction, ShowPixelValues]
 
 class HSIMinorModeMixin(MinorMode):
     @classmethod
