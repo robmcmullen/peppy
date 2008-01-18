@@ -58,7 +58,7 @@ class TarFS(BaseFS):
             archive_path = path[0:2]
             components.pop()
         else:
-            archive_path = ''
+            archive_path = os.getcwd()
         archive_found = False
         member_path = ''
         archive = None
