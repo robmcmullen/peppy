@@ -269,8 +269,6 @@ class MajorMode(ClassPrefs, debugmixin):
     L{HexEditMode} and L{DiredMode} for modes that don't use an stc for their
     user window.
     
-    
-    
     Associating the Major Mode with a File Type
     ===========================================
     

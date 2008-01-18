@@ -74,7 +74,24 @@ class FoldNode:
 
 
 class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
-    """All the non-GUI enhancements to the STC are here.
+    """The base class used as backend storage for files that fit in memory.
+    
+    Peppy uses the wx.stc.StyledTextCtrl (abbreviated STC in the peppy
+    documentation) to store its files in memory.  Because the STC allows
+    multiple views of the same file, we take advantage of this to prevent
+    keeping multiple copies of the file for different views.  As described
+    in L{MajorMode}, multiple STCs will keep themselves updated when the user
+    makes change in another STC.
+    
+    Note that there is a difference in the STC stored in the L{Buffer} and any
+    STCs that are used by the L{FundamentalMode} class.  There will always be
+    at least two instances of STCs: one in the buffer that is the main backend
+    storage, and the other in the major mode that provides the view.  They
+    both point to the same data, but they are kept separate in order that
+    major modes (i.e.  the views of the data) can change at will.
+    
+    This class performs the bookkeeping to keep the STC document pointers up to
+    date when a new view is added.
     """
     debuglevel = 0
     
@@ -146,6 +163,13 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.refstc.updateSubordinateClasses()
 
     def open(self, buffer, message=None):
+        """Open the file from the buffer and read in its contents.
+        
+        The open method is provided here in the STC and not in the buffer so
+        that specialized STCs can provide their own load methods.  So far,
+        this is only used in the L{NonResidentSTC} for files that are too
+        large to fit in memory.
+        """
         fh = buffer.getBufferedReader()
         if fh:
             # if the file exists, read the contents.
@@ -163,6 +187,15 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             pass
     
     def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
+        """Read a chunk of the file from the file-like object.
+        
+        Rather than reading the file in with a single call to fh.read(), it is
+        broken up into segments.  It may take a significant amount of time to
+        read a file, either if the file is really big or the file is loaded
+        over a slow URI scheme.  The threaded load capability of peppy is used
+        to display a progress bar that is updated after each segment is loaded,
+        and also keeps the user interface responsive during a file load.
+        """
         total = 0
         while amount is None or total<amount:
             txt = fh.read(chunk)
@@ -196,6 +229,10 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         # that has been read in to the correct encoding.
     
     def writeTo(self, fh):
+        """Writes a copy of the document to the provided file-like object.
+        
+        Note that peppy is not currently thread-enabled during file writing.
+        """
         numchars = self.GetTextLength()
         # Have to use GetStyledText because GetText will truncate the
         # string at the first zero character.
@@ -210,6 +247,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     ## Additional functionality
     def checkUndoEOL(self):
+        """Check to see if the last change was converting all EOL characters.
+        
+        The wx.stc.StyledTextCtrl doesn't directly store if the last undo/redo
+        was the change in all of the end of line characters, so we have to
+        check ourselves.
+        """
         # Check to see if the eol mode has changed.
         if self.maybe_undo_eolmode is not None:
             if self.maybe_undo_eolmode['likely']:
@@ -218,10 +261,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.maybe_undo_eolmode = None
         
     def Undo(self):
+        """Override of base Undo command to add our additional checks."""
         wx.stc.StyledTextCtrl.Undo(self)
         self.checkUndoEOL()
         
     def Redo(self):
+        """Override of base Redo command to add our additional checks."""
         wx.stc.StyledTextCtrl.Redo(self)
         self.checkUndoEOL()
         
@@ -241,11 +286,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.SetSelectionEnd(self.GetLength())
 
     def GetBinaryData(self,start,end):
-        """
-        Convenience function to get binary data out of the STC.  The
-        only way to get binary data out of the STC is to use the
-        GetStyledText method and chop out every other byte.  Using the
-        regular GetText method will stop at the first nul character.
+        """Convenience function to get binary data out of the STC.
+        
+        The only way to get binary data out of the STC is to use the
+        GetStyledText method and chop out every other byte.  Using the regular
+        GetText method will stop at the first nul character.
 
         @param start: first text position
         @param end: last text position
@@ -334,6 +379,13 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         return (linestart, lineend)
 
     def PasteAtColumn(self, paste=None):
+        """Paste a rectangular selection at a particular column.
+        
+        This method inserts a previously cut or copied rectangular selection
+        at a column.  If some lines in the STC are too short and end before
+        the column, leading spaces are inserted so that the column is pasted
+        correctly.
+        """
         assert self.dprint("rectangle=%s" % self.SelectionIsRectangle())
         start, end = self.GetSelection()
         assert self.dprint("selection = %d,%d" % (start, end))
@@ -369,6 +421,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.EndUndoAction()
 
     def detectLineEndings(self, num=1024):
+        """Guess which type of line ending is used by the file."""
         def whichLinesep(text):
             # line ending counting function borrowed from PyPE
             crlf_ = text.count('\r\n')
@@ -540,9 +593,10 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
 
 class PeppySTC(PeppyBaseSTC):
-    """
-    Base version of the STC that most major modes will use as the STC
-    implementation.
+    """Base class used by major modes that use the STC.
+    
+    This class contains all the GUI callbacks and mouse bindings on top of
+    L{PeppyBaseSTC}
     """
     debuglevel=0
     
