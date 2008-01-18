@@ -63,6 +63,15 @@ class BraceHighlightMixin(object):
 
 
 class StandardReturnMixin(object):
+    """Mixin to indent the next line to the correct column
+    
+    This mixin provides L{electricReturn}, which operates when the return
+    key is pressed.  At a minimum it should insert the appropriate line end
+    character (cr, crlf, or lf depending on the current state of the STC), but
+    provides the opportunity to indent the line as well.
+    
+    The default action is to simply copy the indent level of the previous line.
+    """
     def findIndent(self, linenum):
         """Find proper indention of next line given a line number.
 
@@ -108,10 +117,24 @@ class StandardReturnMixin(object):
         self.EndUndoAction()
 
 class ReindentBase(object):
+    """Base class for reindenting code.
+    
+    This class provides a base class for major modes that want to implement
+    their own reindention code.  The L{reindentLine} method should use
+    information about the major mode to indent the line to its correct
+    column.  For instance, the L{PythonMode} uses the L{IDLEReindentMixin} to
+    calculate the correct indent column of the python source code line.
+    
+    This operation is typically bound to the tab key, but regardless to the
+    actual keypress to which it is bound is *only* called in response to a
+    user keypress.
+    """
     def reindentLine(self, linenum=None, dedent_only=False):
         """Reindent the specified line to the correct level.
 
-        Given a line, indent to the previous line.
+        This method should be overridden in subclasses to provide the proper
+        indention based on the type of text file.  The default implementation
+        provided here will indent to the previous line.
         
         Return the new cursor position, in case the cursor has moved as a
         result of the indention.
@@ -179,6 +202,11 @@ class ReindentBase(object):
 
 
 class StandardReindentMixin(ReindentBase):
+    """Default implementation of a L{ReindentBase} for generic text files.
+    
+    This class provides a default implementation of line reindentation; it
+    simply reindents the line to the indentation of the line above it.
+    """
     def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
         # look at indention of previous line
         prevind, prevline = self.GetPrevLineIndentation(linenum)
@@ -194,6 +222,10 @@ class StandardReindentMixin(ReindentBase):
 
 
 class FoldingReindentMixin(object):
+    """Experimental class to use STC Folding to reindent a line.
+    
+    Currently not supported.
+    """
     def reindentLine(self, linenum=None, dedent_only=False):
         """Reindent the specified line to the correct level.
 
@@ -216,6 +248,16 @@ class FoldingReindentMixin(object):
         self.ReplaceTarget(self.GetIndentString(fold))
 
 class StandardCommentMixin(object):
+    """Default implementation of block commenting.
+    
+    This class provides the default implementation of block commenting.  Blocks
+    are commented by adding a comment string at the beginning of the line, and
+    an optional comment string at the end of each line in the block.
+    
+    Typically the comment characters are known to the Editra styling system
+    and are therefore automatically added to the FundamentalMode subclass by a
+    call to L{setCommentDelimiters}.
+    """
     def setCommentDelimiters(self, start='', end=''):
         """Set instance-specific comment characters and comment regex
         
@@ -471,47 +513,67 @@ class StandardParagraphMixin(object):
         return info
 
 
-class FundamentalSTC(BraceHighlightMixin, StandardReturnMixin,
-                     StandardReindentMixin, StandardCommentMixin,
-                     StandardParagraphMixin,
-                     GenericFoldHierarchyMixin, FoldExplorerMixin,
-                     EditraSTCMixin, PeppySTC):
-    # Default comment characters in case the Editra styling database
-    # doesn't have any information about the mode
-    start_line_comment = ''
-    end_line_comment = ''
-
-    def __init__(self, parent, refstc=None, **kwargs):
-        PeppySTC.__init__(self, parent, refstc, **kwargs)
-        EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
-
-
 class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
                      StandardReindentMixin, StandardCommentMixin,
                      StandardParagraphMixin,
                      GenericFoldHierarchyMixin, FoldExplorerMixin,
                      EditraSTCMixin, PeppySTC, MajorMode):
-    """
-    The base view of most (if not all) of the views that use the STC
-    to directly edit the text.  Views (like the HexEdit view or an
-    image viewer) that only use the STC as the backend storage are
-    probably not based on this view.
+    """Major mode for editing generic text files.
+    
+    This is the most generic major mode used for editing text files.  This uses
+    a L{PeppySTC} as the editing window, and is linked to a L{Buffer} object
+    that in turn is linked to the backend storage of a L{PeppyBaseSTC}.
+    
+    All major modes that are edit text using an STC should be subclasses of
+    this mode.  Major modes that provide editing windows that aren't an STC
+    (like the HexEdit view or an image viewer) will not be subclasses of
+    this mode; rather, they will be subclasses of L{MajorMode} and will only
+    use an STC as the backend storage within the L{Buffer} attribute that is
+    associated with every major mode.
+    
+    The STC uses the Editra system for styling text and fonts; it is based
+    on matching the filename or extension with values from its database.
+    Documentation on the Editra interface is forthcoming.
+    
+    C{FundamentalMode} is a subclass of L{PeppySTC}, so all of the STC
+    methods are availble here for user interfacing.  In addition, many
+    mixins are used, like the L{BraceHighlightMixin} to provide language
+    customizable brace highlighting, the L{StandardCommentMixin} providing
+    line commenting and uncommenting based on the Editra comment characters,
+    and the L{StandardParagraphMixin} used to determine the start and end of a
+    paragraph based on the major mode.
+    
+    Two mixins in particular will need attention when subclassing
+    FundamentalMode for new types of text files: L{StandardReturnMixin} and
+    L{StandardReindentMixin}.  The L{StandardReturnMixin} provides handling
+    for the return key and indenting the following line to the correct tab
+    stop.  The L{StandardReindentMixin} is used to indent a line to its proper
+    column based on the language supported by the major mode.  FundamentalMode
+    subclasses should override both of these classes and provide them as
+    mixins in order to customize the major mode.
+    
+    Because the L{FundamentalMode} serves as the base class for all
+    text editing modes, there are many defaults specified in the
+    L{default_classprefs} class attribute.  These defaults are based on
+    the L{ClassPrefs} metaclass that associates keywords with values and
+    serializes them to the peppy configuration file.  ClassPrefs are a
+    transparent way to handle the application preferences, and you'll find
+    them used all over peppy.  But, as their name suggests, ClassPrefs belong
+    to the class, not the instance, so this is not for instance variable
+    storage.  See the L{ClassPrefs} documentation for more information.
     """
     debuglevel = 0
     
     keyword = 'Fundamental'
     
-    # If the editra file_type (defined as the LANG_* keywords in the
-    # editra source file peppy/editra/synglob.py) doesn't match the keyword
-    # above, specify the editra file type here.  In other words, None here
-    # means that the editra file_type *does* match the keyword
+    #: If the editra file_type (defined as the LANG_* keywords in the editra source file peppy/editra/synglob.py) doesn't match the class attribute 'keyword', specify the editra file type here.  In other words, None here means that the editra file_type *does* match the keyword
     editra_synonym = None
 
-    # Default comment characters in case the Editra styling database
-    # doesn't have any information about the mode
+    #: Default comment characters in case the Editra styling database doesn't have any information about the mode
     start_line_comment = ''
     end_line_comment = ''
 
+    #: Default class preferences that relate to all instances of this major mode
     default_classprefs = (
         StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing\nEditra style sheet information.  Used to override\ndefault styles with custom styles for this mode.'),
         BoolParam('use_tab_characters', False,
