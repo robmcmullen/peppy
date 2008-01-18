@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Your one-stop shop for minor mode building blocks.
 
 Minor modes provide enhancements to a major mode or a set of major

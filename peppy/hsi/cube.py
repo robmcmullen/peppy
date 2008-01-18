@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Reading and writing raw HSI cubes.
 
 This class supports reading HSI data cubes (that are stored in raw,

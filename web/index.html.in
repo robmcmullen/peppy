@@ -22,7 +22,7 @@ source code editing; however, unlike other editors I'm not <i>limiting</i>
 myself to that, as evidenced by the hex edit mode and other esoteric modes
 like the hyperspectral image viewer.
 
-<P>A quick summary of features currently provided:
+<h3>Features</h3>
 
 <ul>
 <li>Multiple top-level windows
@@ -40,10 +40,31 @@ like the hyperspectral image viewer.
 </ul>
 </ul>
 
-Development features:
+<h3>Development features</h3>
 <ul>
 <li>Pure python source based on the <a href="http://www.wxpython.org">wxPython</a> widget toolkit
 <li>Most features coded as plugins - can enable or disable individual features at will
 <li>Scintilla styling code borrowed from <a href="http://www.editra.org">Editra</a>
 and I will continue to track Editra as more language lexers are supported
 </ul>
+
+<h3>Help Wanted</h3>
+
+I'm especially interested in help with the Mac OSX testing.  I regularly test
+on Windows and Linux, but don't have access to a Mac.  I'd appreciate any help
+in debugging on the Mac, as I believe there's still a problem in the keyboard
+handling on OSX.
+
+<h3>License</h3>
+
+<P>The application as a whole is licensed under the GPLv3 due to the inclusion
+of <a href="http://www.ikaaro.org/itools/">itools</a>.  The bulk of the code
+in peppy was written by me and is also available under either the GPLv2 or
+wxWidgets depending on the individual source file.  Consult the header of each
+file for the specific license.
+
+<P>So, if you're going to borrow the whole application, it's under the GPLv3.
+However, if you're just going to borrow an individual source file from
+one of the files that I've written outside of itools, you get to choose the
+license from one of the following dual license pairs: either GPLv2/GPLv3 or
+wxWidgets/GPLv3.

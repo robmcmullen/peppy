@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """
 Size reporter minor mode based on the SizeReporterCtrl from the
 wxPython AUI demos.  This is about as simple as a minor mode as you

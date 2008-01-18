@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """
 Session saving and restoration plugin.  Hooks into the configuration
 file loading and saving in order to get the cue when to load and save

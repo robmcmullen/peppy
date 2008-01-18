@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """
 FoldExplorerMinorMode and FoldExplorerMenu use Stani's fold explorer idea to
 display a subset of the fold hierarchy of the file.

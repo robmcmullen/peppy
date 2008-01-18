@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Definition and storage of the 'about:' protocol.
 
 This provides the about: protocol handling (a read-only protocol) for
@@ -33,7 +33,7 @@ substitutes = {
     'author': __author__,
     'author_email': __author_email__,
     'url': __url__,
-    'license': "Licensed under the GPL",
+    'license': "Application licensed under the GPLv3; most code also dual licensed under GPLv2",
     'warning': """<P>I'm dogfooding!  This is now my primary editor,
 but caveat emptor: it is still alpha code.  It has the features that I need for
 my day-to-day editing, and it has all but replaced XEmacs as my daily editor.

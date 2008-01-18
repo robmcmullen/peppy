@@ -81,7 +81,7 @@ class blah:
 
 ----------------------------------------
 # peppy Copyright (c) 2006-2007 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPL; see http://peppy.flipturn.org for more info
 '''FLAASH control mode
 
 Major mode to edit FLAASH config files, run FLAASH, and manage the results.

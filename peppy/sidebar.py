@@ -1,5 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Your one-stop shop for sidebar building blocks.
 
 Sidebars provide extra UI windows for frames that aren't dependent (or

@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # c_mode Copyright (c) 2007 Julian Back
-# Licenced under the GPL; see http://www.flipturn.org/peppy for more info
+# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """C programming language editing support.
 
 Major mode for editing ANSI C files.
