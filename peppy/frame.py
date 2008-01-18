@@ -144,6 +144,11 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         # allow further processing for debugging
         wrapper = self.getCurrent()
         wrapper.editwin.OnContextMenu(evt)
+    
+    def getContextMenuWrapper(self):
+        if self.context_tab >= 0:
+            return self.GetPage(self.context_tab)
+        raise IndexError("Not currently processing a popup!")
 
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):
@@ -186,7 +191,10 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
         if index>=0:
             self.SetPageText(index, wrapper.getTabName())
             self.SetPageBitmap(index, wrapper.getTabBitmap())
-            self.frame.switchMode()
+            if wrapper == self.getCurrent():
+                self.frame.switchMode()
+            else:
+                self.SetSelection(index)
             wrapper.editwin.tabActivatedHook()
 
     def updateWrapperTitle(self, mode):
@@ -612,9 +620,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return True
         return False
 
-    def setBuffer(self, buffer):
-        # this gets a default view for the selected buffer
-        wrapper = self.tabs.getCurrent()
+    def setBuffer(self, buffer, wrapper=None):
+        if wrapper is None:
+            # this gets a default view for the selected buffer
+            wrapper = self.tabs.getCurrent()
         mode = wrapper.createMajorMode(self, buffer)
         assert self.dprint("set buffer to new view %s" % mode)
         self.tabs.updateWrapper(wrapper)

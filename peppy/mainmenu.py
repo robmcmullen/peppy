@@ -935,7 +935,7 @@ class MainMenu(IPeppyPlugin):
     
     def getTabMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend([NewTab, CloseTab])
+        action_classes.extend([NewTab, CloseTab, BufferPopupList])
         dprint(action_classes)
 
     def getMajorModes(self):
