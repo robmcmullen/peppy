@@ -646,8 +646,16 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         The class attribute mimetype is not used so that subclasses that extend
         Fundamental but forget to declare a MIME type won't also get added to
         the list of modes that handle text/plain.
+        
+        This default implementation will call L{MajorMode.verifyMimetype} if not
+        overridden by the subclass.
         """
-        return mimetype == 'text/plain'
+        # check for the class here so that subclasses don't automatically also
+        # get associated with text/plain
+        if cls == FundamentalMode:
+            return mimetype == 'text/plain'
+        else:
+            return MajorMode.verifyMimetype(mimetype)
     
     def createStatusIcons(self):
         linesep = self.getLinesep()
