@@ -282,6 +282,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     debuglevel=0
     frameid=0
     load_error_count = 0
+    size_timer = None
     
     perspectives={}
 
@@ -290,6 +291,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         IntParam('height', 600, 'Height of the main frame in pixels'),
         StrParam('sidebars', '', 'List of sidebars to activate with the frame'),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
+        BoolParam('fast_resize', False, 'Speed up resize events by deferring window\nrepaints until the mouse stops moving'),
         )
 
     default_menubar = {
@@ -366,11 +368,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.Bind(wx.EVT_CLOSE,self.OnClose)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
-    
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
     def unbindEvents(self):
         self.Unbind(wx.EVT_CLOSE)
         self.Unbind(wx.EVT_IDLE)
         self.Unbind(wx.EVT_ACTIVATE)
+        self.Unbind(wx.EVT_SIZE)
 
     def loadList(self, urls):
         if urls:
@@ -428,7 +432,25 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.dprint("Focus! %s" % self.name)
         wx.GetApp().SetTopWindow(self)
         evt.Skip()
-        
+    
+    def OnSize(self, evt):
+        if self.classprefs.fast_resize:
+            if not self.IsFrozen():
+                dprint("not frozen.  Freezing")
+                self.Freeze()
+            if not self.__class__.size_timer:
+                self.__class__.size_timer = wx.PyTimer(self.OnSizeTimer)
+            self.__class__.size_timer.Start(50, oneShot=True)
+        else:
+            evt.Skip()
+
+    def OnSizeTimer(self, evt=None):
+        if self.IsFrozen():
+            dprint("frozen.  Thawing")
+            # FIXME: for some reason, IsFrozen returns True even when it's
+            # not frozen.
+            self.Thaw()
+
     def OnClose(self, evt=None):
         assert self.dprint(evt)
         close = True
