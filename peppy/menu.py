@@ -912,6 +912,7 @@ class UserActionMap(debugmixin):
             pos += 1
         while (pos < menubar.GetMenuCount()):
             menubar.Remove(pos)
+        wx.App_SetMacHelpMenuTitleName(_("&Help"))
         
     def updateToolbarActions(self, auimgr):
         needed = {}
