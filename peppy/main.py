@@ -101,7 +101,7 @@ class Fonts(ClassPrefs):
 class Mouse(ClassPrefs):
     preferences_tab = "General"
     default_classprefs = (
-        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'page', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
+        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'lines', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
         IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel\nis in line scrolling mode'),
     )
     
