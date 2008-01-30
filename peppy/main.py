@@ -76,14 +76,18 @@ class Fonts(ClassPrefs):
         FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
         StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
     )
-    
+    if wx.Platform == "__WXMAC__":
+        default_fontsize = 12
+    else:
+        default_fontsize = 10
+
     def __init__(self):
         # Can't set fonts in the default_classprefs, because at module load
         # time, the wx.App object hasn't been created yet.
         if self.classprefs.primary_editing_font is None:
-            self.classprefs.primary_editing_font = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            self.classprefs.primary_editing_font = wx.Font(self.default_fontsize, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         if self.classprefs.secondary_editing_font is None:
-            self.classprefs.secondary_editing_font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+            self.classprefs.secondary_editing_font = wx.Font(self.default_fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
     def getStyleFile(self, mode=None):
         if mode:
@@ -701,6 +705,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     return frame
             dprint("No top level Peppy frames found!")
         return frame
+    
+    def MacOpenFile(self, filename):
+        """OSX specific routine to handle files that are dropped on the icon
+        
+        """
+        frame = self.getTopFrame()
+        frame.open(filename)
 
     def enableFrames(self):
         """Force all frames to update their enable status.
