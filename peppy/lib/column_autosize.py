@@ -80,9 +80,11 @@ in InsertSizedColumn.
 
 
 @author: Rob McMullen
-@version: 1.1
+@version: 1.2
 
 Changelog::
+    1.2:
+        - added 'expand' keyword
     1.1:
         - renamed to ColumnAutoSizeMixin
         - changed keyword argument 'scale' to 'greedy'
@@ -169,6 +171,12 @@ class ColumnAutoSizeMixin(object):
         as required in an attempt to fit more columns in the visible part of
         list.  (Default is False)
         
+        expand: True/False indicating if the column should be expanded to fill
+        available width if there is some empty space after all columns are at
+        their preferred sizes.  This has no effect when the preferred sizes
+        of all columns is larger than the available width, and is only used if
+        you don't want empty space in your list.
+        
         ok_offscreen: True/False value indicating if this column and subsequent
         columns are initially allowed to be placed offscreen if the width of
         the columns prior to it have preferred sizes that don't allow this
@@ -200,6 +208,10 @@ class ColumnAutoSizeMixin(object):
                         self.greedy = True
                     else:
                         self.greedy = False
+                if 'expand' in kwargs:
+                    self.expand = kwargs['expand']
+                else:
+                    self.expand = False
                 if 'fixed' in kwargs:
                     self.min = self.max = kwargs['fixed']
                     self.greedy = True
@@ -285,6 +297,8 @@ class ColumnAutoSizeMixin(object):
 
             if col < allowed_offscreen and flag.greedy:
                 remaining_width -= resize
+            #print("pass1: col %d: before=%d newsize=%d remaining=%d" % (col, before[col], newsize[col], remaining_width))
+            
 
         # pass 2: resize remaining columns
         desired_width = 0
@@ -300,9 +314,10 @@ class ColumnAutoSizeMixin(object):
                 if resize is not None:
                     newsize[col] = resize
                 desired_width += newsize[col]
+            #print("pass2: col %d: before=%d newsize=%d desired=%d" % (col, before[col], newsize[col], desired_width))
         #print("desired=%d remaining=%d" % (desired_width, remaining_width))
         
-        # pass 3: scale columns down if necessary
+        # pass 3: scale columns up or down if necessary
         if desired_width > remaining_width:
             pass3_width = 0
             for col in range(allowed_offscreen):
@@ -317,7 +332,28 @@ class ColumnAutoSizeMixin(object):
                     if resize is not None:
                         newsize[col] = resize
                     pass3_width += newsize[col]
-            #print("pass3=%d remaining=%d" % (pass3_width, remaining_width))
+                #print("pass3: col %d: before=%d newsize=%d pass3_width=%d" % (col, before[col], newsize[col], pass3_width))
+        else:
+            # requested size of all columns is smaller than the window.  Any
+            # 'expand' columns will now expand to fill
+            pass3_width = 0
+            expandcount = 0
+            for col in range(allowed_offscreen):
+                flag = flags[col]
+                if flag.expand:
+                    expandcount += 1
+            if expandcount > 0:
+                for col in range(allowed_offscreen):
+                    flag = flags[col]
+                    if flag.expand:
+                        distribwidth = (remaining_width - desired_width) / expandcount
+                        resize = newsize[col] + distribwidth
+                    
+                        if flag.max is not None and resize > flag.max:
+                            resize = flag.max
+                        newsize[col] = resize
+                        expandcount -= 1
+                        #print("pass3: col %d: before=%d newsize=%d distribwidth=%d" % (col, before[col], newsize[col], distribwidth))
 
         # pass 4: set column widths
         for col in range(self.GetColumnCount()):
