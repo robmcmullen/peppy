@@ -610,6 +610,8 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
             return self.globalhash
     
     def getItems(self):
+        if self.storage is None:
+            raise TypeError("The 'storage' class attribute of OnDemandGlobalActionList must be of type 'list' when using the default implementation of getItems")
         return [str(item) for item in self.storage]
 
     def updateOnDemand(self):

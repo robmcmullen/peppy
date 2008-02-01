@@ -78,15 +78,15 @@ class RecentFilesPlugin(IPeppyPlugin):
         return pathname
 
     def initialActivation(self):
+        storage=[]
         pathname = self.getFile()
         try:
             fh=open(pathname)
-            storage=[]
             for line in fh:
                 storage.append(line.rstrip())
-            RecentFiles.setStorage(storage)
         except:
             pass
+        RecentFiles.setStorage(storage)
 
     def requestedShutdown(self):
         pathname = self.getFile()
