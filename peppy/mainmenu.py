@@ -437,10 +437,10 @@ class OpenFundamental(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:demo.txt")
 
-class WordWrap(ToggleAction):
-    alias = "word-wrap"
-    name = "&Word Wrap"
-    tooltip = "Toggle word wrap in this view"
+class Wrapping(ToggleAction):
+    alias = "wrapping"
+    name = "&Line Wrapping"
+    tooltip = "Toggle line wrap in this view"
     default_menu = ("View", 301)
 
     @classmethod
@@ -448,11 +448,31 @@ class WordWrap(ToggleAction):
         return hasattr(mode, 'setWordWrap')
 
     def isChecked(self):
+        return self.mode.classprefs.wrapping
+    
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s" % (id(self),self.name))
+        self.mode.setWordWrap(not self.mode.classprefs.wrapping)
+    
+class WordWrap(ToggleAction):
+    alias = "word-wrap"
+    name = "&Wrap Words"
+    tooltip = "Break wrapped lines at word boundaries"
+    default_menu = ("View", 302)
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'setWordWrap')
+
+    def isEnabled(self):
+        return self.mode.classprefs.wrapping
+
+    def isChecked(self):
         return self.mode.classprefs.word_wrap
     
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setWordWrap(not self.mode.classprefs.word_wrap)
+        self.mode.setWordWrap(style=not self.mode.classprefs.word_wrap)
     
 class LineNumbers(ToggleAction):
     alias = "line-numbers"
@@ -475,7 +495,7 @@ class Folding(ToggleAction):
     alias = "code-folding"
     name = "&Folding"
     tooltip = "Toggle folding in this view"
-    default_menu = ("View", 302)
+    default_menu = ("View", 304)
 
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -955,7 +975,7 @@ class MainMenu(IPeppyPlugin):
                 MajorModeSelect, MinorModeShow, SidebarShow,
                 ToolbarShow, 
 
-                EOLModeSelect, WordWrap, LineNumbers, Folding, ViewEOL,
+                EOLModeSelect, Wrapping, WordWrap, LineNumbers, Folding, ViewEOL,
 
                 BufferList, BufferListSort,
 

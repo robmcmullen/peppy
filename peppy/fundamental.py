@@ -511,7 +511,8 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         IntParam('symbols_margin_width', 16, 'Symbols margin width in pixels'),
         BoolParam('folding', False, 'Show the code folding margin?'),
         IntParam('folding_margin_width', 16, 'Code folding margin width in pixels'),
-        BoolParam('word_wrap', False, 'True: use word wrapping\nFalse: show horizontal scrollbars'),
+        BoolParam('wrapping', False, 'True: use line wrapping\nFalse: show horizontal scrollbars'),
+        BoolParam('word_wrap', False, 'True: wrap lines at word boundries\nFalse: wrap at right margin'),
         BoolParam('backspace_unindents', True),
         BoolParam('indentation_guides', True, 'Show indentation guides at multiples of the tab_size'),
         IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.\nNote: uses the BRACELIGHT color to highlight'),
@@ -639,11 +640,16 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.setCaretStyle()
         self.setViewEOL()
 
-    def setWordWrap(self,enable=None):
+    def setWordWrap(self, enable=None, style=None):
         if enable is not None:
-            self.classprefs.word_wrap=enable
-        if self.classprefs.word_wrap:
-            self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
+            self.classprefs.wrapping = enable
+        if style is not None:
+            self.classprefs.word_wrap = style
+        if self.classprefs.wrapping:
+            if self.classprefs.word_wrap:
+                self.SetWrapMode(wx.stc.STC_WRAP_WORD)
+            else:
+                self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
             self.SetWrapVisualFlags(wx.stc.STC_WRAPVISUALFLAG_END)
         else:
             self.SetWrapMode(wx.stc.STC_WRAP_NONE)
