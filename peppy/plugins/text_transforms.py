@@ -123,13 +123,14 @@ class CollapseBlankLines(LineOrRegionMutateAction):
 
 
 class CapitalizeWord(WordOrRegionMutateAction):
-    """Title-case the current word.
+    """Title-case the current word or words in the highlighted region.
     
     This will also move the cursor to the start of the next word.
     """
     alias = "capitalize-region-or-word"
-    name = "Capitalize word"
+    name = "Capitalize"
     key_bindings = {'emacs': 'M-C',}
+    default_menu = (("Transform/Case", 810), 100)
 
     def mutate(self, txt):
         """Change to title case -- first letter capitalized, rest
@@ -138,13 +139,14 @@ class CapitalizeWord(WordOrRegionMutateAction):
         return txt.title()
 
 class UpcaseWord(WordOrRegionMutateAction):
-    """Upcase the current word.
+    """Upcase the current word or the highlighted region.
     
     This will alse move the cursor to the start of the next word.
     """
     alias = "upcase-region-or-word"
-    name = "Upcase word"
+    name = "Upcase"
     key_bindings = {'emacs': 'M-U',}
+    default_menu = ("Transform/Case", 101)
 
     def mutate(self, txt):
         """Change to all upper case.
@@ -152,13 +154,14 @@ class UpcaseWord(WordOrRegionMutateAction):
         return txt.upper()
 
 class DowncaseWord(WordOrRegionMutateAction):
-    """Downcase the current word.
+    """Downcase the current word or the highlighted region.
     
     This will also move the cursor to the start of the next word.
     """
     alias = "downcase-region-or-word"
-    name = "Downcase word"
+    name = "Downcase"
     key_bindings = {'emacs': 'M-L',}
+    default_menu = ("Transform/Case", 102)
 
     def mutate(self, txt):
         """Change to all lower case.
