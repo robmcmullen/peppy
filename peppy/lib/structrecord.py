@@ -1073,7 +1073,39 @@ class Record(Field):
         if "_" in self.__dict__.keys():
             lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
         return "\n".join(lines)
-                                 
+    
+    def getTree(self):
+        """Get a list of nodes for use in a tree display.
+        
+        The returned list of nodes is a list of tuples for each field in
+        the Record.  Each entry in the tuple will have either two or three
+        entries.  If the field is a list, the tuple with have two entries: the
+        name and the list of records contained within the field.  If the field
+        represents another Record, the tuple will contain the name and the
+        Record.  Otherwise, the tuple contains the name, the python value, and
+        the packed value.
+        """
+        items = []
+        for field in self.typedef:
+            name = field._name
+            # ignore all keys that start with an underscore
+            if name and not name.startswith("_") and name in self.__dict__:
+                if name == "header_end":
+                    break
+                #dprint("name=%s" % name)
+                if isinstance(field,Record):
+                    #dprint("record=%s" % str(field))
+                    items.append((name, field))
+                else:
+                    value = self.__dict__[name]
+                    if isinstance(value, list):
+                        items.append((name, value))
+                    else:
+                        fh = StringIO()
+                        field.pack(fh, self)
+                        items.append((name, value, fh.getvalue()))
+        return items
+
 
 class RecordList(list):
     def __init__(self,parent):
