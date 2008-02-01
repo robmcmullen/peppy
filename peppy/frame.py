@@ -435,9 +435,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def OnSize(self, evt):
         if self.classprefs.fast_resize:
-            if not self.IsFrozen():
+            if not self.tabs.IsFrozen():
                 dprint("not frozen.  Freezing")
-                self.Freeze()
+                self.tabs.Freeze()
             if not self.__class__.size_timer:
                 self.__class__.size_timer = wx.PyTimer(self.OnSizeTimer)
             self.__class__.size_timer.Start(50, oneShot=True)
@@ -445,11 +445,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             evt.Skip()
 
     def OnSizeTimer(self, evt=None):
-        if self.IsFrozen():
+        if self.tabs.IsFrozen():
             dprint("frozen.  Thawing")
             # FIXME: for some reason, IsFrozen returns True even when it's
             # not frozen.
-            self.Thaw()
+            self.tabs.Thaw()
 
     def OnClose(self, evt=None):
         assert self.dprint(evt)
