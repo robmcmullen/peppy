@@ -11,7 +11,7 @@ import wx
 import wx.stc
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import *
 from peppy.actions.base import *

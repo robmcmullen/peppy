@@ -19,7 +19,7 @@ import wx
 from peppy.debug import *
 from peppy.yapsy.plugins import *
 from peppy.minor import *
-from peppy.menu import *
+from peppy.actions import *
 
 
 class FoldExplorerMenu(ListAction, OnDemandActionMixin):

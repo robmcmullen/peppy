@@ -15,7 +15,7 @@ import wx
 import peppy.vfs as vfs
 
 from peppy.debug import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 
 # can't use cStringIO because we need to add attributes to it

@@ -2,34 +2,48 @@
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Base classes for actions
 
-These are useful base classes for creating SelectAction subclasses.
+These are a collection of useful base classes for creating actions.  They
+contain a lot of boilerplate code that handle things like automatically
+setting the enable/disable state of the action.
+
+Most of these are designed to be associated with L{FundamentalMode} major modes
+(and any modes derived from FundamentalMode).
 """
 
 import wx
 import wx.stc
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.fundamental import *
 
 class BufferBusyActionMixin(object):
     """Mixin to disable an action when the buffer is being modified.
 
-    If a subclass needs to supply more information about its enable
-    state, override isActionAvailable instead of isEnabled, or else
-    you lose the buffer busy test.
+    Buffers can be marked as 'busy' if a long-running action is in process in
+    a background thread.  This mixin checks the state of the buffer busy flag
+    before allowing it to be enabled in the menu system.
+    
+    If a subclass needs to supply more information about its enable state,
+    override L{isActionAvailable} instead of L{isEnabled}, or else you lose
+    the buffer busy test.
     """
     def isEnabled(self):
         return not self.mode.buffer.busy and self.isActionAvailable()
 
     def isActionAvailable(self):
+        """Override this instead of isEnabled when using this mixin
+        
+        Provides a hook to isEnabled so subclasses can provide more information
+        about the enabled state if the buffer is not busy.
+        """
         return True
 
 class STCModificationAction(BufferBusyActionMixin, SelectAction):
     """Base class for any action that changes the bytes in the buffer.
 
-    This uses the BufferBusyActionMixin to disable any action that
-    would change the buffer when the buffer is in the process of being
-    modified by a long-running process.
+    This uses the L{BufferBusyActionMixin} to disable any action that would
+    change the buffer when the buffer is in the process of being modified by a
+    long-running process.
     """
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -47,6 +61,14 @@ class TextModificationAction(BufferBusyActionMixin, SelectAction):
         return isinstance(mode, FundamentalMode)
 
 class ScintillaCmdKeyExecute(TextModificationAction):
+    """Base class for an action that uses one of the scintilla key commands.
+    
+    Scintilla has a number of messages that operate on the text but don't have
+    direct method calls.  This base class can be used as a simple wrapper
+    around one of these scintilla messages.
+    
+    @see: http://www.yellowbrain.com/stc/keymap.html#exec
+    """
     cmd = 0
 
     def action(self, index=-1, multiplier=1):

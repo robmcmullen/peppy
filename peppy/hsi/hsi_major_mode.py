@@ -41,7 +41,7 @@ import wx.stc as stc
 import wx.lib.newevent
 
 from peppy.actions.minibuffer import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.stcinterface import *
 

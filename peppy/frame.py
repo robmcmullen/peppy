@@ -10,6 +10,7 @@ from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
+from peppy.actions import *
 from peppy.menu import *
 from peppy.lib.wxemacskeybindings import *
 from peppy.lib.iconstorage import *

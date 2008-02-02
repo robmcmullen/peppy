@@ -12,7 +12,7 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.debug import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.about import credits, copyrights, substitutes, gpl_text
 

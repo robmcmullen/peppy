@@ -20,7 +20,7 @@ import wx.stc
 from peppy.yapsy.plugins import *
 from peppy.lib.bitmapscroller import *
 from peppy.lib.processmanager import ProcessManager, JobOutputMixin
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 

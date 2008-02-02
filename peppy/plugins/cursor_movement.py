@@ -13,7 +13,7 @@ import wx
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.actions.base import *
 from peppy.debug import *
 

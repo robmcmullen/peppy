@@ -16,7 +16,7 @@ import time
 import wx
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 
 

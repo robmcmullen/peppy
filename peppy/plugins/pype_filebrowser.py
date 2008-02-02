@@ -8,7 +8,7 @@ Adapter class around PyPE's FilesystemBrowser sidebar widget.
 import os
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.sidebar import *
 
 import peppy.pype

@@ -12,7 +12,7 @@ from wx.lib.pubsub import Publisher
 import wx.grid
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 from peppy.lib.iconstorage import *

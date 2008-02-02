@@ -9,7 +9,7 @@ import wx.stc
 
 import peppy.vfs as vfs
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 from peppy.lib.userparams import *

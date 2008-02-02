@@ -20,7 +20,7 @@ from peppy.lib.processmanager import *
 from peppy.major import *
 from peppy.fundamental import *
 from peppy.dired import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.buffers import *
 from peppy.frame import *
 from peppy.debug import *

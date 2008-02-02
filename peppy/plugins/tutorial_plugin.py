@@ -15,7 +15,7 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.minor import *
-from peppy.menu import *
+from peppy.actions import *
 
 
 class InsertHelloWorld(SelectAction):

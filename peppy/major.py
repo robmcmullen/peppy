@@ -36,6 +36,7 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
+from peppy.actions import *
 from peppy.menu import *
 from peppy.stcbase import *
 from peppy.debug import *

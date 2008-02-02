@@ -1,7 +1,6 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-"""
-Main application class.
+"""Keyboard loader and configuration generator.
 """
 
 import os, sys
@@ -10,7 +9,7 @@ import wx
 from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.debug import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *

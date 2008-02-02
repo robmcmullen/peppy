@@ -11,7 +11,7 @@ sync if this is shown on two different frames.
 import os, gc
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.sidebar import *
 
 from wx.lib.pubsub import Publisher

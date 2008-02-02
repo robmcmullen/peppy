@@ -13,7 +13,7 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.debug import *
-from peppy.menu import *
+from peppy.actions import *
 
 from peppy.nltk_lite.chat import *
 

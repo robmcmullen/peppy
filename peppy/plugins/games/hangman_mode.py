@@ -29,7 +29,7 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.stcinterface import *
 

@@ -12,7 +12,7 @@ import os
 from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.lib.userparams import *
 
 

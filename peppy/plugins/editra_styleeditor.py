@@ -12,7 +12,7 @@ from wx.lib.pubsub import Publisher
 import peppy.vfs as vfs
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 
 from peppy.editra import *
 import peppy.editra.style_editor as style_editor

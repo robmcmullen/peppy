@@ -17,7 +17,7 @@ import os,re
 
 import wx
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.debug import *
 from peppy.lib.userparams import *
 

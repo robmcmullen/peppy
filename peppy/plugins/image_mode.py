@@ -22,7 +22,7 @@ import wx.stc
 from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.lib.bitmapscroller import *
 from peppy.stcinterface import *

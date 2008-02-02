@@ -6,7 +6,7 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.lib.foldexplorer import *
 

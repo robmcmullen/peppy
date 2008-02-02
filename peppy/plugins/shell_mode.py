@@ -12,7 +12,7 @@ import peppy.vfs as vfs
 
 from peppy.yapsy.plugins import *
 from peppy.major import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.fundamental import *
 from peppy.stcbase import PeppySTC
 

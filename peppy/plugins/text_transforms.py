@@ -15,7 +15,7 @@ from peppy.actions.minibuffer import *
 from peppy.lib.wordwrap import texwrap
 
 from peppy.actions.base import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.debug import *
 
 

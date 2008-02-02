@@ -8,7 +8,7 @@ for debugging layout of wxpython widgets.
 import os
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 
 class WidgetInspector(SelectAction):
     name = "Widget Inspector..."

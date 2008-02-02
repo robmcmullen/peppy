@@ -9,7 +9,7 @@ from wx.lib.evtmgr import eventManager
 import wx.lib.newevent
 
 from peppy.yapsy.plugins import *
-from peppy.menu import *
+from peppy.actions import *
 from peppy.major import *
 from peppy.stcinterface import *
 from peppy.actions.minibuffer import *
