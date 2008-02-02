@@ -1,9 +1,12 @@
-2008-01-31  Rob McMullen  <robm@users.sourceforge.net>
+2008-02-02  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.1 update to "Oscillation Overthruster"
 	* added popup menus to notebook tabs
 	* added hooks for popup menus over major mode contents
 	* some Mac icons from Chris Barker
+	* added upcase/downcase commands to menubar
+	* added capability to wrap at word boundaries
+	* fixed bug in RecentFiles when starting peppy on a fresh install
 
 2008-01-14  Rob McMullen  <robm@users.sourceforge.net>
 
