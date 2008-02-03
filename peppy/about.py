@@ -73,10 +73,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-aboutfiles={}
-def SetAbout(path,text):
+aboutfiles = {}
+aboutmimetype = {}
+def SetAbout(path, text, mimetype=None):
     #eprint("Setting %s: %d bytes" % (path, len(text)))
-    aboutfiles[path]=text
+    aboutfiles[path] = text
+    if mimetype:
+        aboutmimetype[path] = mimetype
 
 def findAbout(path):
     if path in aboutfiles:
@@ -144,6 +147,8 @@ class AboutFS(vfs.BaseFS):
         path = str(reference.path)
         text = findAbout(path)
         if text is not None:
+            if path in aboutmimetype:
+                return aboutmimetype[path]
             if text.strip()[0] == "<":
                 return "text/html"
             return "text/plain"
@@ -199,7 +204,7 @@ SetAbout('peppy',"""\
 
 <p>%(contributors)s</p>
 """)
-SetAbout('0x00-0xff',"".join([chr(i) for i in range(256)]))
+SetAbout('0x00-0xff', "".join([chr(i) for i in range(256)]), "application/octet-stream")
 SetAbout('red.png',
 "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
 \x00\x00\x00\x90\x91h6\x00\x00\x00\x03sBIT\x08\x08\x08\xdb\xe1O\xe0\x00\x00\
