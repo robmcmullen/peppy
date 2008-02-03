@@ -431,7 +431,7 @@ class SaveAsGUI(SelectAction):
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
     tooltip = "Open some sample text"
-    default_menu = "&Help/Samples"
+    default_menu = (("&Help/Samples", -500), 1)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -850,6 +850,7 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
     alias = "execute-action"
     tooltip = "Execute an action by name"
     key_bindings = {'default': "M-X", }
+    default_menu = ("Tools", -600)
     
     def __init__(self, *args, **kwargs):
         ActionNameMinibufferMixin.__init__(self, self.keyboard)
@@ -884,6 +885,7 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
     name = "&Describe Action"
     alias = "describe-action"
     tooltip = "Describe an action by name"
+    default_menu = ("&Help", -200)
 
     def __init__(self, *args, **kwargs):
         ActionNameMinibufferMixin.__init__(self, self.alias)
