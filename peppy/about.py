@@ -127,7 +127,7 @@ class AboutFS(vfs.BaseFS):
     def get_size(reference):
         path = str(reference.path)
         text = findAbout(path)
-        if text:
+        if text is not None:
             return len(text)
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
@@ -135,7 +135,7 @@ class AboutFS(vfs.BaseFS):
     def get_mtime(reference):
         path = str(reference.path)
         text = findAbout(path)
-        if text:
+        if text is not None:
             return AboutFS.mtime
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
@@ -143,7 +143,7 @@ class AboutFS(vfs.BaseFS):
     def get_mimetype(reference):
         path = str(reference.path)
         text = findAbout(path)
-        if text:
+        if text is not None:
             if text.strip()[0] == "<":
                 return "text/html"
             return "text/plain"
