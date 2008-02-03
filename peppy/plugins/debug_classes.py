@@ -26,7 +26,7 @@ class DebugGarbage(SelectAction):
     name = "Garbage Objects"
     tooltip = "Show uncollectable objects"
     default_menu = (("Tools/Debug", -1000), 500)
-    key_bindings = {'default': "C-X C-D", }
+    key_bindings = {'emacs': "C-X C-D", }
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
