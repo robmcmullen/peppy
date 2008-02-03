@@ -296,6 +296,18 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             del sys.argv[index:index + 1]
             self.no_server_option = False
 
+        if "--test" in sys.argv:
+            # currently just a synonym of --no-server, but that may change
+            index = sys.argv.index("--test")
+            del sys.argv[index:index + 1]
+            self.no_server_option = False
+
+        if "-t" in sys.argv:
+            # currently just a synonym of --no-server, but that may change
+            index = sys.argv.index("-t")
+            del sys.argv[index:index + 1]
+            self.no_server_option = False
+
         if "--no-setuptools" in sys.argv:
             index = sys.argv.index("--no-setuptools")
             del sys.argv[index:index + 1]
@@ -317,6 +329,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("-p", action="store_true", dest="profile", default=False)
         parser.add_option("-v", action="count", dest="verbose", default=0)
         parser.add_option("--log-stderr", action="store_true", dest="log_stderr", default=False)
+        parser.add_option("-t", "--test", action="store_true", dest="log_stderr", default=False)
         parser.add_option("-c", action="store", dest="confdir", default="")
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
@@ -488,9 +501,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             dprint(self.remote_args)
         else:
             dprint("Processing %s" % self.remote_args)
-            parser = self.getOptionParser()
-            opnions, args = parser.parse_args(self.remote_args)
-            # throw away options, only look at args
+            # Can't use optparse here because if the remote_args list contains
+            # an argument that starts with a '-' and doesn't happen to match
+            # an existing argument, it will exit the program
+            #parser = self.getOptionParser()
+            #opnions, args = parser.parse_args(self.remote_args)
+            ## throw away options, only look at args
+            args = [arg for arg in self.remote_args if not arg.startswith('-')]
             dprint(args)
             
             if self.classprefs.requests_in_new_frame:
