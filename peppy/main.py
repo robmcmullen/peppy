@@ -296,16 +296,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             del sys.argv[index:index + 1]
             self.no_server_option = False
 
-        if "--test" in sys.argv:
+        if "--test" in sys.argv or "-t" in sys.argv:
             # currently just a synonym of --no-server, but that may change
-            index = sys.argv.index("--test")
-            del sys.argv[index:index + 1]
-            self.no_server_option = False
-
-        if "-t" in sys.argv:
-            # currently just a synonym of --no-server, but that may change
-            index = sys.argv.index("-t")
-            del sys.argv[index:index + 1]
             self.no_server_option = False
 
         if "--no-setuptools" in sys.argv:
@@ -328,7 +320,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser=OptionParser(usage=usage)
         parser.add_option("-p", action="store_true", dest="profile", default=False)
         parser.add_option("-v", action="count", dest="verbose", default=0)
-        parser.add_option("--log-stderr", action="store_true", dest="log_stderr", default=False)
         parser.add_option("-t", "--test", action="store_true", dest="log_stderr", default=False)
         parser.add_option("-c", action="store", dest="confdir", default="")
         parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
