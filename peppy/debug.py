@@ -9,7 +9,7 @@ order of tenths of seconds!  So, beware to turn off most debug
 printing when deploying the application.
 """
 
-import os,sys,inspect
+import os, sys, inspect, weakref
 
 dlogfh=sys.stderr
 elogfh=sys.stderr
@@ -17,7 +17,8 @@ elogfh=sys.stderr
 TRACING = False
 
 __all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'debugmixin',
-           'get_all_objects', 'get_all_referrers', 'traceon', 'traceoff']
+           'get_all_objects', 'get_all_referrers', 'traceon', 'traceoff',
+           'storeWeakref', 'printWeakrefs']
 
 # Found an obscure bug while working on Windows: the call to dprint
 # was failing in Peppy.getConfigFilePath when called from
@@ -196,6 +197,45 @@ def traceoff():
 
 def _traceoff():
     sys.settrace(None)
+    
+
+
+_weakref_storage = {}
+def storeWeakref(place, obj):
+    global _weakref_storage
+    if place not in _weakref_storage:
+        _weakref_storage[place] = []
+    _weakref_storage[place].append(weakref.ref(obj))
+
+def printWeakrefs(place):
+    global _weakref_storage
+    if place not in _weakref_storage:
+        _weakref_storage[place] = []
+    caller=inspect.stack()[1]
+    try:
+        namespace=caller[0].f_locals
+        if 'self' in namespace:
+            cls=namespace['self'].__class__.__name__+'.'
+        else:
+            cls=''
+        text = str([ref() for ref in _weakref_storage[place]])
+        dlogfh.write("%s:%d %s%s: weakrefs of %s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3], place, text, os.linesep))
+        for ref in _weakref_storage[place]:
+            obj = ref()
+            if obj:
+                referrers=gc.get_referrers(obj)
+                print ">>> %s: " % obj
+                others=[]
+                for ref in referrers:
+                    if isinstance(ref, dict) or isinstance(ref, list):
+                        print ">>>    %s" % ref
+                    else:
+                        others.append(ref)
+                print ">>>    %s" % str(others)
+
+    finally:
+        del caller
+
 
 if __name__=="__main__":
     dprint('testing')
@@ -208,5 +248,11 @@ if __name__=="__main__":
 
     t=test()
     t.method()
+    
+    storeWeakref('test', t)
+    printWeakrefs('test')
+    t = None
+    printWeakrefs('test')
+    
 
 
