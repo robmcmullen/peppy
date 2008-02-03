@@ -172,8 +172,9 @@ class SelectAction(debugmixin):
     def getMenuItemName(self):
         if self._use_accelerators and self.keyboard:
             return "%s%s" % (_(self.name), self._accelerator_text)
-        else:
+        elif self.name:
             return self.name
+        return self.__class__.__name__
 
     def getTooltip(self, id=None, name=None):
         if id is None:
