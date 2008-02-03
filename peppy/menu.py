@@ -273,6 +273,7 @@ class UserActionMap(debugmixin):
                 continue
             if title not in self.title_to_menu:
                 menu = wx.Menu()
+                #storeWeakref('menu', menu)
                 self.title_to_menu[title] = menu
             else:
                 menu = self.title_to_menu[title]
@@ -285,6 +286,7 @@ class UserActionMap(debugmixin):
                     self.dprint("MENU: %s, TITLE: %s" % (submenu_parts, title))
                     if actioncls not in self.title_to_menu:
                         submenu = wx.Menu()
+                        #storeWeakref('menu', submenu)
                         self.title_to_menu[actioncls] = submenu
                     else:
                         submenu = self.title_to_menu[actioncls]
@@ -306,12 +308,14 @@ class UserActionMap(debugmixin):
         for weight, title, separator in self.class_list.menus['root']:
             self.dprint("root menu title: %s" % title)
             if pos < menubar.GetMenuCount():
-                menubar.Replace(pos, self.title_to_menu[title], title)
+                old = menubar.Replace(pos, self.title_to_menu[title], title)
+                old.Destroy()
             else:
                 menubar.Append(self.title_to_menu[title], title)
             pos += 1
         while (pos < menubar.GetMenuCount()):
-            menubar.Remove(pos)
+            old = menubar.Remove(pos)
+            old.Destroy()
         wx.App_SetMacHelpMenuTitleName(_("&Help"))
         
     def updateToolbarActions(self, auimgr):
@@ -418,6 +422,8 @@ class UserActionMap(debugmixin):
     
     def cleanupAndDelete(self):
         self.cleanupPrevious(self.frame._mgr)
+        #printWeakrefs('menuitem', detail=False)
+        #printWeakrefs('menu', detail=False)
 
     def reconnectEvents(self):
         """Update event handlers if the menu has been dynamically updated

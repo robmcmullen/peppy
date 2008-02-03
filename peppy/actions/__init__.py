@@ -189,6 +189,7 @@ class SelectAction(debugmixin):
 
     def insertIntoMenu(self, menu):
         self.widget = wx.MenuItem(menu, self.global_id, self.getMenuItemName(), self.getTooltip())
+        #storeWeakref('menuitem', self.widget)
         if self.icon:
             bitmap = getIconBitmap(self.icon)
             self.widget.SetBitmap(bitmap)
@@ -254,6 +255,7 @@ class ToggleAction(SelectAction):
     """
     def insertIntoMenu(self,menu):
         self.widget=menu.AppendCheckItem(self.global_id, self.name, self.getTooltip())
+        #storeWeakref('menuitem', self.widget)
 
     def insertIntoToolbar(self,toolbar):
         self.tool=toolbar
@@ -385,6 +387,7 @@ class ListAction(SelectAction):
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
         widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
+        #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
@@ -393,6 +396,7 @@ class ListAction(SelectAction):
     def _insertMenu(self,menu,pos,child,name,is_toplevel=False):
         id = self.cache.getNewId()
         widget=menu.InsertMenu(pos,id,name,child)
+        #storeWeakref('menuitem', widget)
         if is_toplevel:
             self.toplevel.append(id)
 
@@ -474,6 +478,7 @@ class RadioAction(ListAction):
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
         widget=menu.InsertRadioItem(pos,id,name, self.getTooltip(id, name))
+        #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)
@@ -517,6 +522,7 @@ class ToggleListAction(ListAction):
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
         widget=menu.InsertCheckItem(pos,id,name, self.getTooltip())
+        #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
             self.toplevel.append(id)

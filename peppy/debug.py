@@ -207,7 +207,7 @@ def storeWeakref(place, obj):
         _weakref_storage[place] = []
     _weakref_storage[place].append(weakref.ref(obj))
 
-def printWeakrefs(place):
+def printWeakrefs(place, detail=True):
     global _weakref_storage
     if place not in _weakref_storage:
         _weakref_storage[place] = []
@@ -220,18 +220,19 @@ def printWeakrefs(place):
             cls=''
         text = str([ref() for ref in _weakref_storage[place]])
         dlogfh.write("%s:%d %s%s: weakrefs of %s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3], place, text, os.linesep))
-        for ref in _weakref_storage[place]:
-            obj = ref()
-            if obj:
-                referrers=gc.get_referrers(obj)
-                print ">>> %s: " % obj
-                others=[]
-                for ref in referrers:
-                    if isinstance(ref, dict) or isinstance(ref, list):
-                        print ">>>    %s" % ref
-                    else:
-                        others.append(ref)
-                print ">>>    %s" % str(others)
+        if detail:
+            for ref in _weakref_storage[place]:
+                obj = ref()
+                if obj:
+                    referrers=gc.get_referrers(obj)
+                    print ">>> %s: " % obj
+                    others=[]
+                    for ref in referrers:
+                        if isinstance(ref, dict) or isinstance(ref, list):
+                            print ">>>    %s" % ref
+                        else:
+                            others.append(ref)
+                    print ">>>    %s" % str(others)
 
     finally:
         del caller
