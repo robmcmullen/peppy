@@ -139,8 +139,8 @@ class SelectAction(debugmixin):
 
         self.initPostHook()
 
-    def __del__(self):
-        self.dprint("DELETING action %s" % self.name)
+#    def __del__(self):
+#        self.dprint("DELETING action %s" % self.name)
 
     def initPreHook(self):
         pass

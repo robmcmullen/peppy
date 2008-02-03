@@ -227,8 +227,8 @@ class UserActionMap(debugmixin):
         self.class_list = mode.action_classes
         self.class_to_action = {}
     
-    def __del__(self):
-        dprint("DELETING MENUMAP!")
+#    def __del__(self):
+#        dprint("DELETING MENUMAP!")
 
     def updateMinMax(self, min, max):
         """Update the min and max menu ids
@@ -418,14 +418,6 @@ class UserActionMap(debugmixin):
     
     def cleanupAndDelete(self):
         self.cleanupPrevious(self.frame._mgr)
-        # Force garbage collection of actions by resetting all of the dicts
-        # that hold references to actions
-        self.actions = None
-        self.class_list = None
-        self.class_to_action = None
-        self.index_actions = None
-        self.title_to_menu = None
-        self.title_to_toolbar = None
 
     def reconnectEvents(self):
         """Update event handlers if the menu has been dynamically updated
@@ -450,6 +442,7 @@ class UserActionMap(debugmixin):
         """Remove the event handlers for the range of menu ids"""
         self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_COMMAND_MENU_SELECTED)
         self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI)
+        self.frame.Unbind(wx.EVT_MENU_OPEN)
     
     def connectEvents(self):
         """Add event handlers for the range of menu ids"""
