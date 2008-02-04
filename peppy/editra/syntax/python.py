@@ -17,8 +17,8 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: python.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: python.py 49250 2007-10-20 02:40:49Z CJP $"
+__revision__ = "$Revision: 49250 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -42,7 +42,7 @@ SYNTAX_ITEMS = [ ('STC_P_DEFAULT', 'default_style'),
                  ('STC_P_CLASSNAME', 'class_style'),
                  ('STC_P_COMMENTBLOCK', 'comment_style'),
                  ('STC_P_COMMENTLINE', 'comment_style'),
-                 ('STC_P_DECORATOR', 'default_style'),
+                 ('STC_P_DECORATOR', 'decor_style'),
                  ('STC_P_DEFNAME', 'keyword3_style'),
                  ('STC_P_IDENTIFIER', 'default_style'),
                  ('STC_P_NUMBER', 'number_style'),

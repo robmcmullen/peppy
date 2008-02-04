@@ -61,8 +61,32 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.ConfigureAutoComp()
         return 0
     
+    def getEditraSyntaxData(self, lang):
+        """Get the Editra syntax data given the keyword of the major mode
+        
+        Editra uses the filename extension as the basis for most of its
+        lookups, but also has a pretty-printing name.  For instance, 'Python'
+        is the pretty name of python mode, but Editra uses "py" as its main
+        designator for the mode internally.  This method gets the syntax data
+        based on the peppy keyword, which is designed to be the same as the
+        Editra pretty-printing mode in most cases.
+        """
+        # self._synmgr._extreg is an ExtensionRegister instance that is
+        # a dictionary from the Editra style sheet name to the extension
+        # list supported by that name.  If the peppy keyword exists in this
+        # dictionary, we can directly find the filename extensions.
+        ext = ""
+        for guess in [lang, lang.replace('_', ' ')]:
+            if guess in self._synmgr._extreg:
+                ext = self._synmgr._extreg[guess][0]
+                break
+        if not ext:
+            ext = lang
+        syn_data = self._synmgr.SyntaxData(ext)
+        return syn_data
+
     def getEditraSyntaxProperties(self, lang):
-        syn_data = self._synmgr.SyntaxData(lang)
+        syn_data = self.getEditraSyntaxData(lang)
         try:
             props = syn_data[syntax.PROPERTIES]
         except KeyError:
@@ -75,7 +99,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @param file_ext: a file extension to configure the lexer from
 
         """
-        syn_data = self._synmgr.SyntaxData(lang)
+        syn_data = self.getEditraSyntaxData(lang)
         self.LOG(lang)
         self.LOG(syn_data)
 

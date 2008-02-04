@@ -17,9 +17,11 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: tcl.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: tcl.py 49393 2007-10-24 13:46:17Z CJP $"
+__revision__ = "$Revision: 49393 $"
 
+#-----------------------------------------------------------------------------#
+import synglob
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
@@ -162,8 +164,8 @@ SYNTAX_ITEMS = [('STC_TCL_BLOCK_COMMENT', 'comment_style'),
                  ('STC_TCL_WORD_IN_QUOTE', 'default_style')]
 
 #---- Extra Properties ----#
-FOLD = ("fold", 1)
-FOLD_COMMENT = ("fold.comment", 1)
+FOLD = ("fold", "1")
+FOLD_COMMENT = ("fold.comment", "1")
 
 #-----------------------------------------------------------------------------#
 
@@ -173,28 +175,40 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [TCL_KW, TK_KW, ITCL_KW, TK_COMMANDS]
+    if lang_id == synglob.ID_LANG_TCL:
+        return [TCL_KW, TK_KW, ITCL_KW, TK_COMMANDS]
+    else:
+        return list()
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    return SYNTAX_ITEMS
+    if lang_id == synglob.ID_LANG_TCL:
+        return SYNTAX_ITEMS
+    else:
+        return list()
 
 def Properties(lang_id=0):
     """Returns a list of Extra Properties to set
     @param lang_id: used to select a specific set of properties
 
     """
-    return [FOLD, FOLD_COMMENT]
+    if lang_id == synglob.ID_LANG_TCL:
+        return [FOLD, FOLD_COMMENT]
+    else:
+        return list()
 
 def CommentPattern(lang_id=0):
     """Returns a list of characters used to comment a block of code
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    return [u'#']
+    if lang_id == synglob.ID_LANG_TCL:
+        return [u'#']
+    else:
+        return list()
 #---- End Required Module Functions ----#
 
 #---- Syntax Modules Internal Functions ----#

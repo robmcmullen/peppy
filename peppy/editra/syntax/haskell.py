@@ -20,9 +20,10 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: haskell.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: haskell.py 49417 2007-10-25 08:03:01Z CJP $"
+__revision__ = "$Revision: 49417 $"
 
+#-----------------------------------------------------------------------------#
 import synglob
 #-----------------------------------------------------------------------------#
 

@@ -20,8 +20,8 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: html.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: html.py 49417 2007-10-25 08:03:01Z CJP $"
+__revision__ = "$Revision: 49417 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -36,9 +36,8 @@ HTML_TAGS = (0, "address applet area a base basefont big blockquote br caption "
                 "center cite code dd dfn dir div dl dt font form hr html img "
                 "input isindex kbd li link map menu meta ol option param pre p "
                 "samp span select small strike sub sup table td textarea th tr "
-                "script noscript "
-                "tt ul var xmp b i u h1 h2 h3 h4 h5 h6 em strong head body "
-                "title "
+                "script noscript tt ul var xmp b i u h1 h2 h3 h4 h5 h6 em "
+                "strong head body title "
                 # HTML 4.0 Tags
                 "abbr acronym bdo button col label colgroup del fieldset "
                 "iframe ins legend object optgroup q s tbody tfoot thead "
@@ -62,7 +61,7 @@ HTML_TAGS = (0, "address applet area a base basefont big blockquote br caption "
                 "dtml-call dtml-raise dtml-try dtml-comment dtml-tree")
 
 #---- Extra defs ----#
-# ColdFusion
+# ColdFusion Tags
 CF_TAGS = ("cfabort cfapplet cfapplication cfargument cfassociate cfbreak "
            "cfcache cfcalendar cfcase cfcatch cfchart cfchartdata "
            "cfchartseries cfcol cfcollection cfcomponent cfcontent cfcookie "
@@ -83,7 +82,7 @@ CF_TAGS = ("cfabort cfapplet cfapplication cfargument cfassociate cfbreak "
 
 # JavaScript Keywords (see javascript.py)
 import javascript
-JS_KEYWORDS = (1, javascript.KeywordString())
+JS_KEYWORDS = (1, javascript.KeywordString(synglob.ID_LANG_JS))
 
 # VBScript Keywords (currently unsupported)
 VBS_KEYWORDS = (2, "")
@@ -102,8 +101,10 @@ PY_KEYWORDS = (3, "")
 # embedded xml highlighting it is currently not being used.
 
 # SGML Keywords
-SGML_KEYWORDS = (6, "#CURRENT #IMPLIED #REQUIRED ATTLIST CDATA DOCTYPE ELEMENT "
-                    "ENTITY IDREF INCLUDE IGNORE NMTOKEN NUMBER RCDATA TEMP")
+SGML_KEYWORDS = (6, "#CURRENT #IMPLIED #REQUIRED ATTLIST CDATA DOCTYPE "
+                    "ELEMENT ENTITY HTML IDREF INCLUDE IGNORE NMTOKEN NUMBER "
+                    "RCDATA TEMP")
+
 # SGML Block Keywords
 SGML_BLOCK = (7, "")
 
@@ -118,7 +119,7 @@ SYNTAX_ITEMS = [ ('STC_H_DEFAULT', 'default_style'),
                  ('STC_H_DOUBLESTRING', 'string_style'),
                  ('STC_H_ENTITY', 'default_style'), # Style ME
                  ('STC_H_NUMBER', 'number_style'),
-                 ('STC_H_OTHER', 'default_style'),  # Style Me
+                 ('STC_H_OTHER', 'default_style'),  # Style ME
                  ('STC_H_QUESTION', 'scalar_style'),
                  ('STC_H_SCRIPT', 'funct_style'), # STYLE ME
                  ('STC_H_SGML_1ST_PARAM', 'default_style'), # STYLE ME
@@ -181,9 +182,9 @@ def Keywords(lang_id=0):
 
     """
     if lang_id == synglob.ID_LANG_COLDFUSION:
-        return [(HTML_TAGS[0], HTML_TAGS[1] + " " + CF_TAGS), (1, javascript.KeywordString())]
+        return [(HTML_TAGS[0], HTML_TAGS[1] + " " + CF_TAGS), JS_KEYWORDS]
     else:
-        return [HTML_TAGS, SGML_KEYWORDS]
+        return [HTML_TAGS, JS_KEYWORDS, SGML_KEYWORDS]
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications

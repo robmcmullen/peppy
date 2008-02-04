@@ -19,9 +19,11 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: batch.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: batch.py 49417 2007-10-25 08:03:01Z CJP $"
+__revision__ = "$Revision: 49417 $"
 
+#-----------------------------------------------------------------------------#
+import synglob
 #-----------------------------------------------------------------------------#
 
 DOSBAT_KEYWORDS = (0, "goto call exit if else for EQU NEQ LSS LEQ GTR GEQ "
@@ -101,28 +103,41 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [DOSBAT_KEYWORDS]
+    if lang_id == synglob.ID_LANG_BATCH:
+        return [DOSBAT_KEYWORDS]
+    else:
+        return list()
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    return SYNTAX_ITEMS
+    if lang_id == synglob.ID_LANG_BATCH:
+        return SYNTAX_ITEMS
+    else:
+        return list()
 
 def Properties(lang_id=0):
     """Returns a list of Extra Properties to set
     @param lang_id: used to select a specific set of properties
 
     """
-    return [FOLD]
+    if lang_id == synglob.ID_LANG_BATCH:
+        return [FOLD]
+    else:
+        return list()
 
 def CommentPattern(lang_id=0):
     """Returns a list of characters used to comment a block of code
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    return [u'rem']
+    if lang_id == synglob.ID_LANG_BATCH:
+        return [u'rem']
+    else:
+        return list()
+
 #---- End Required Functions ----#
 
 #---- Syntax Modules Internal Functions ----#

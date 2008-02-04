@@ -19,12 +19,11 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: fortran.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: fortran.py 49417 2007-10-25 08:03:01Z CJP $"
+__revision__ = "$Revision: 49417 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
-
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
@@ -133,21 +132,30 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [FORT_KEYWORDS, FORT_FUNC , FORT_EXT]
+    if lang_id in [synglob.ID_LANG_F77, synglob.ID_LANG_F95]:
+        return [FORT_KEYWORDS, FORT_FUNC , FORT_EXT]
+    else:
+        return list()
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    return SYNTAX_ITEMS
+    if lang_id in [synglob.ID_LANG_F77, synglob.ID_LANG_F95]:
+        return SYNTAX_ITEMS
+    else:
+        return list()
 
 def Properties(lang_id=0):
     """Returns a list of Extra Properties to set
     @param lang_id: used to select a specific set of properties
 
     """
-    return [FOLD, FOLD_COMP]
+    if lang_id in [synglob.ID_LANG_F77, synglob.ID_LANG_F95]:
+        return [FOLD, FOLD_COMP]
+    else:
+        return list()
 
 def CommentPattern(lang_id=0):
     """Returns a list of characters used to comment a block of code

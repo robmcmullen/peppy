@@ -21,11 +21,12 @@
 """
 
 __author__ = "Rob McMullen <robm@users.sourceforge.net>"
-__svnid__ = "$Id: $"
-__revision__ = "$Revision: $"
+__svnid__ = "$Id: dot.py 49414 2007-10-25 04:47:46Z CJP $"
+__revision__ = "$Revision: 49414 $"
 
 import synglob
 #-----------------------------------------------------------------------------#
+
 #---- Keyword Definitions ----#
 DOT_KEYWORDS = (0, "node edge graph digraph subgraph strict")
 

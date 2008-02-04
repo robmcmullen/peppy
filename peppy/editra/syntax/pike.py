@@ -1,48 +1,48 @@
 ###############################################################################
-# Name: diff.py                                                               #
-# Purpose: Define Diff/Patch file syntax for highlighting and other features  #
+# Name: pike.py                                                               #
+# Purpose: Define highlighting/syntax for Pike programming language           #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
 # Licence: wxWindows Licence                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: diff.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for diff files                                   #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: pike.py
+
+Defines syntax and highlighting settings for the Pike programming language. Pike
+is very similar in form to C/CPP so the Cpp lexer is used to provide the
+highlighting settings.
+
 """
 
-__author__ = "Cody Precord <cprecord@editra.org"
-__svnid__ = "$Id: diff.py 51292 2008-01-20 01:33:39Z CJP $"
-__revision__ = "$Revision: 51292 $"
+__author__ = "Cody Precord <cprecord@editra.org>"
+__svnid__ = "$Id: pike.py 50663 2007-12-12 08:32:07Z CJP $"
+__revision__ = "$Revision: 50663 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
+import cpp
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
-# None
+PIKE_KW = (0, "goto break return continue case default if else switch while "
+              "foreach do gauge destruct lambda inherit import typeof catch "
+              "for inline nomask")
+
+PIKE_TYPE = (1, "private protected public static "
+                "int string void float mapping array multiset mixed program "
+                "object function")
+
+PIKE_DOC = tuple(cpp.DOC_KEYWORDS)
+
 #---- End Keyword Definitions ----#
 
 #---- Syntax Style Specs ----#
-SYNTAX_ITEMS = [('STC_DIFF_ADDED', 'global_style'),
-                ('STC_DIFF_COMMAND', 'pre_style'),
-                ('STC_DIFF_COMMENT', 'comment_style'),
-                ('STC_DIFF_DEFAULT', 'default_style'),
-                ('STC_DIFF_DELETED', 'error_style'),
-                ('STC_DIFF_HEADER', 'comment_style'),
-                ('STC_DIFF_POSITION', 'pre_style')]
+SYNTAX_ITEMS = list(cpp.SYNTAX_ITEMS)
 
 #---- Extra Properties ----#
-FOLD = ('fold', '1')
-FOLD_COMPACT = ('fold.compact', '1')
+# Fetched from cpp module on request
+
 #-----------------------------------------------------------------------------#
 
 #---- Required Module Functions ----#
@@ -51,8 +51,8 @@ def Keywords(lang_id=0):
     @keyword lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return list()
+    if lang_id == synglob.ID_LANG_PIKE:
+        return [PIKE_KW, PIKE_TYPE, PIKE_DOC]
     else:
         return list()
 
@@ -61,7 +61,7 @@ def SyntaxSpec(lang_id=0):
     @keyword lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
+    if lang_id == synglob.ID_LANG_PIKE:
         return SYNTAX_ITEMS
     else:
         return list()
@@ -71,8 +71,8 @@ def Properties(lang_id=0):
     @keyword lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return [FOLD, FOLD_COMPACT]
+    if lang_id == synglob.ID_LANG_PIKE:
+        return cpp.Properties(synglob.ID_LANG_CPP)
     else:
         return list()
 
@@ -81,8 +81,8 @@ def CommentPattern(lang_id=0):
     @keyword lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return ['--- ']
+    if lang_id == synglob.ID_LANG_PIKE:
+        return cpp.CommentPattern(synglob.ID_LANG_CPP)
     else:
         return list()
 

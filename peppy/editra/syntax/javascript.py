@@ -19,12 +19,14 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: javascript.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: javascript.py 49417 2007-10-25 08:03:01Z CJP $"
+__revision__ = "$Revision: 49417 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
 import cpp
+#-----------------------------------------------------------------------------#
+
 #---- Keyword Specifications ----#
 
 # JavaScript Keywords # set to 1 for embeded
@@ -72,7 +74,10 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [JS_KEYWORDS]
+    if lang_id == synglob.ID_LANG_JS:
+        return [JS_KEYWORDS]
+    else:
+        return list()
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
@@ -89,14 +94,21 @@ def Properties(lang_id=0):
     @param lang_id: used to select a specific set of properties
 
     """
-    return [("fold", "1")]
+    if lang_id == synglob.ID_LANG_JS:
+        return [("fold", "1")]
+    else:
+        return list()
 
 def CommentPattern(lang_id=0):
     """Returns a list of characters used to comment a block of code
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    return [u'//']
+    if lang_id == synglob.ID_LANG_JS:
+        return [u'//']
+    else:
+        return list()
+
 #---- End Required Module Functions ----#
 
 #---- Syntax Modules Internal Functions ----#

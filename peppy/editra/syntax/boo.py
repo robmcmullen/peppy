@@ -1,48 +1,46 @@
 ###############################################################################
-# Name: diff.py                                                               #
-# Purpose: Define Diff/Patch file syntax for highlighting and other features  #
+# Name: boo.py                                                                #
+# Purpose: Define Boo language syntax and other features                      #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
 # Licence: wxWindows Licence                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: diff.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for diff files                                   #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: boo.py
+
+Defines language and syntax highlighting settings for the Boo programming 
+language
+
 """
 
-__author__ = "Cody Precord <cprecord@editra.org"
-__svnid__ = "$Id: diff.py 51292 2008-01-20 01:33:39Z CJP $"
-__revision__ = "$Revision: 51292 $"
+__author__ = "Cody Precord <cprecord@editra.org>"
+__svnid__ = "$Id: boo.py 50641 2007-12-11 13:54:48Z CJP $"
+__revision__ = "$Revision: 50641 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
+import python
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
-# None
+BOO_KW = (0, "abstract and as AST break callable cast char class constructor "
+             "continue def destructor do elif else ensure enum event except "
+             "failure final false for from get given goto if import in "
+             "interface internal is isa not null of or otherwise override "
+             "namespace partial pass private protected public raise ref retry "
+             "return self set static super struct success transient true try "
+             "typeof unless virtual when while yield")
+
 #---- End Keyword Definitions ----#
 
 #---- Syntax Style Specs ----#
-SYNTAX_ITEMS = [('STC_DIFF_ADDED', 'global_style'),
-                ('STC_DIFF_COMMAND', 'pre_style'),
-                ('STC_DIFF_COMMENT', 'comment_style'),
-                ('STC_DIFF_DEFAULT', 'default_style'),
-                ('STC_DIFF_DELETED', 'error_style'),
-                ('STC_DIFF_HEADER', 'comment_style'),
-                ('STC_DIFF_POSITION', 'pre_style')]
+SYNTAX_ITEMS = [x for x in python.SYNTAX_ITEMS if x[0] != 'STC_P_DECORATOR']
+SYNTAX_ITEMS.append(('STC_P_DECORATOR', 'default_style'))
 
 #---- Extra Properties ----#
-FOLD = ('fold', '1')
-FOLD_COMPACT = ('fold.compact', '1')
+
 #-----------------------------------------------------------------------------#
 
 #---- Required Module Functions ----#
@@ -51,8 +49,8 @@ def Keywords(lang_id=0):
     @keyword lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return list()
+    if lang_id == synglob.ID_LANG_BOO:
+        return [BOO_KW]
     else:
         return list()
 
@@ -61,7 +59,7 @@ def SyntaxSpec(lang_id=0):
     @keyword lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
+    if lang_id == synglob.ID_LANG_BOO:
         return SYNTAX_ITEMS
     else:
         return list()
@@ -71,8 +69,8 @@ def Properties(lang_id=0):
     @keyword lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return [FOLD, FOLD_COMPACT]
+    if lang_id == synglob.ID_LANG_BOO:
+        return python.Properties(synglob.ID_LANG_PYTHON)
     else:
         return list()
 
@@ -81,8 +79,8 @@ def CommentPattern(lang_id=0):
     @keyword lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_DIFF:
-        return ['--- ']
+    if lang_id == synglob.ID_LANG_BOO:
+        return [u'#']
     else:
         return list()
 

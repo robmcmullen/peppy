@@ -11,5 +11,5 @@
    - syntax styling definitions
 """
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: __init__.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: __init__.py 49250 2007-10-20 02:40:49Z CJP $"
+__revision__ = "$Revision: 49250 $"

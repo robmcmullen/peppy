@@ -8,46 +8,32 @@
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: syntax.py                                                             #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Toolkit for managing the importing of syntax modules and providing the data #
-# to the requesting text control.                                             #
-#                                                                             #
-# DETAIL:                                                                     #
-# Since in Python Modules are only loaded once and maintain a single instance #
-# across a single program. This module is used as a storage place for         #
-# checking what syntax has already been loaded to facilitate a speedup of     #
-# setting lexer values.                                                       #
-#                                                                             #
-# The use of this system also keeps the program from preloading all syntax    #
-# data for all supported languages. The use of Python modules for the config  #
-# files was made because Python is dynamic so why not use that feature to     #
-# dynamically load configuration data. Since they are Python modules they can #
-# also supply some basic functions for this module to use in loading different#
-# dialects of a particular language.                                          #
-#                                                                             #
-# One of the driving reasons to move to this system was that the user of the  #
-# editor is unlikely to be editting source files for all supported languages  #
-# at one time, so there is no need to preload all data for all languages when #
-# the editor starts up. Also in the long run this will be a much easier to    #
-# maintain and enhance component of the editor than having all this data      #
-# crammed into the text control class. The separation of data from control    #
-# will also allow for user customization and modification to highlighting     #
-# styles.                                                                     #
-#                                                                             #
-# METHODS:                                                                    #
-# - IsModLoaded: Check if specified syntax module has been loaded.            #
-# - SyntaxData: Returns the required syntax/lexer related data for setting up #
-#               and configuring the lexer for a particular language.          #
-#-----------------------------------------------------------------------------#
+FILE: syntax.py
+AUTHOR: Cody Precord
+
+SUMMARY:
+
+Toolkit for managing the importing of syntax modules and providing the data
+to the requesting text control. It is meant to be the main access point to the
+resources and api provided by this package.
+
+DETAIL:
+
+The main item of this module is the L{SyntaxMgr} it is a singleton object that
+manages the dynamic importing of syntax data and configurations for all of the
+editors supported languages. It allows only the needed data to be loaded into
+memory when requested. The loading is only done once per session and all
+subsequent requests share the same object.
+
+In addition to the L{SyntaxMgr} there are also a number of other utility and
+convienience functions in this module for accessing data from other related
+objects such as the Extension Register.
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: syntax.py 609 2007-10-08 06:54:00Z CodyPrecord $"
-__revision__ = "$Revision: 609 $"
+__svnid__ = "$Id: syntax.py 50787 2007-12-18 07:45:00Z CJP $"
+__revision__ = "$Revision: 50787 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -75,11 +61,14 @@ COMMENT    = 5    # Gets the comment characters pattern
 _ = wx.GetTranslation
 #-----------------------------------------------------------------------------#
 
+from synextreg import ExtensionRegister, GetFileExtensions
+
+#-----------------------------------------------------------------------------#
+
 class SyntaxMgr(object):
     """Class Object for managing loaded syntax data. The manager
     is only created once as a singleton and shared amongst all
     editor windows
-    @status: initial implimentation
 
     """
     instance = None
@@ -175,19 +164,18 @@ class SyntaxMgr(object):
         file_h.close()
         return True
 
-    def SyntaxData(self, lang):
+    def SyntaxData(self, ext):
         """Fetches the language data based on a file extention string.
         The file extension is used to look up the default lexer actions from the
-        EXT_REG dictionary (@see L{synglob.py}).
+        EXT_REG dictionary.
+        @see L{synglob}
         @param ext: a string representing the file extension
         @return: Returns a Dictionary of Lexer Config Data
 
         """
         # The Return Value
         syn_data = dict()
-        if lang not in synglob.LANG_MAP:
-            lang = self._extreg.FileTypeFromExt(lang)
-        lex_cfg = synglob.LANG_MAP[lang]
+        lex_cfg = synglob.LANG_MAP[self._extreg.FileTypeFromExt(ext)]
 
         syn_data[LEXER] = lex_cfg[LEXER_ID]
         if lex_cfg[LANG_ID] == synglob.ID_LANG_TXT:
@@ -208,166 +196,6 @@ class SyntaxMgr(object):
         syn_data[COMMENT] = mod.CommentPattern(lex_cfg[LANG_ID])
         return syn_data
 
-#-----------------------------------------------------------------------------#
-
-class ExtensionRegister(dict):
-    """A data storage class for managing mappings of
-    file types to file extentions. The register is created
-    as a singleton.
-    @status: initial implimentation
-
-    """
-    instance = None
-    first = True
-    config = u'synmap'
-    def __init__(self):
-        """Initializes the register"""
-        if self.first:
-            self.first = False
-            self.LoadDefault()
-
-    def __new__(cls, *args, **kargs):
-        """Maintain only a single instance of this object
-        @return: instance of this class
-
-        """
-        if not cls.instance:
-            cls.instance = dict.__new__(cls, *args, **kargs)
-        return cls.instance
-
-    def __missing__(self, key):
-        """Return the default value if an item is not found
-        @return: txt extension for plain text
-
-        """
-        return u'txt'
-
-    def __setitem__(self, i, y):
-        """Ensures that only one filetype is associated with an extension
-        at one time. The behavior is that more recent settings override
-        and remove associations from older settings.
-        @param i: key to set
-        @param y: value to set
-
-        """
-        if not isinstance(y, list):
-            raise TypeError, "Extension Register Expects a List"
-        for key, val in self.iteritems():
-            for item in y:
-                if item in val:
-                    val.pop(val.index(item))
-        y.sort()
-        dict.__setitem__(self, i, [x.strip() for x in y])
-
-    def __str__(self):
-        """Converts the Register to a string that is formatted
-        for output to a config file.
-        @return the register as a string
-
-        """
-        keys = self.keys()
-        keys.sort()
-        tmp = list()
-        for key in keys:
-            tmp.append("%s=%s" % (key, u':'.join(self.__getitem__(key))))
-        return os.linesep.join(tmp)
-
-    def Associate(self, ftype, ext):
-        """Associate a given file type with the given file extension(s).
-        The ext parameter can be a string of space separated extensions
-        to allow for multiple associations at once.
-        @param ftype: file type description string
-        @param ext: file extension to associate
-        
-        """
-        assoc = self.get(ftype, None)
-        exts = ext.strip().split()
-        if assoc:
-            for x in exts:
-                if x not in assoc:
-                    assoc.append(x)
-        else:
-            assoc = list(set(exts))
-        assoc.sort()
-        self.__setitem__(ftype, assoc)
-
-    def Disassociate(self, ftype, ext):
-        """Disassociate a file type with a given extension or space
-        separated list of extensions.
-        @param ftype: filetype description string
-        @param ext: extension to disassociate
-
-        """
-        to_drop = ext.strip().split()
-        assoc = self.get(ftype, None)
-        if assoc:
-            for item in to_drop:
-                if item in assoc:
-                    assoc.pop([assoc.index(item)])
-            self.__setitem__(ftype, assoc)
-        else:
-            pass
-
-    def FileTypeFromExt(self, ext):
-        """Returns the file type that is associated with
-        the extension. If no association is found Plain Text
-        will be returned by default.
-        @param ext: extension to lookup
-
-        """
-        for key, val in self.iteritems():
-            if ext in val:
-                return key
-        return synglob.LANG_TXT
-
-    def GetAllExtensions(self):
-        """Returns a sorted list of all extensions registered
-        @return: list of all registered extensions
-
-        """
-        ext = list()
-        for extension in self.values():
-            ext.extend(extension) 
-        ext.sort()
-        return ext
-
-    def LoadDefault(self):
-        """Loads the default settings
-        @postcondition: sets dictionary back to default installation state
-
-        """
-        self.clear()
-        for key in synglob.EXT_MAP:
-            self.__setitem__(synglob.EXT_MAP[key], key.split())
-
-    def LoadFromConfig(self, config):
-        """Load the extention register with values from a config file
-        @param config: path to config file to load settings from
-
-        """
-        path = os.path.join(config, self.config)
-        if not os.path.exists(path):
-            self.LoadDefault()
-        else:
-            file_h = file(path, "rb")
-            lines = file_h.readlines()
-            file_h.close()
-            for line in lines:
-                tmp = line.split(u'=')
-                if len(tmp) != 2:
-                    continue
-                ftype = tmp[0].strip()
-                exts = tmp[1].split(u':')
-                self.__setitem__(ftype, exts)
-
-    def SetAssociation(self, ftype, ext):
-        """Like Associate but overrides any current settings instead of
-        just adding to them.
-        @param ftype: File type description string
-        @param ext: file extension to set
-
-        """
-        self.__setitem__(ftype, list(set(ext.split())))
 
 #-----------------------------------------------------------------------------#
 
@@ -411,15 +239,6 @@ def GenFileFilters():
     filters[-1] = filters[-1][:-1] # IMPORTANT trim last '|' from item in list
     return filters
 
-def GetFileExtensions():
-    """Gets a sorted list of all file extensions the editor is configured
-    to handle.
-    @return: all registered file extensions
-
-    """
-    extreg = ExtensionRegister()
-    return extreg.GetAllExtensions()
-
 def GetLexerList():
     """Gets a list of unique file lexer configurations available
     @return: list of all lexer identifiers
@@ -452,7 +271,7 @@ def SyntaxIds():
 
 def GetExtFromId(ext_id):
     """Takes a language ID and fetches an appropriate file extension string
-    @param extId: language id to get extension for
+    @param ext_id: language id to get extension for
     @return: file extension
     @rtype: string
 
@@ -460,3 +279,25 @@ def GetExtFromId(ext_id):
     extreg = ExtensionRegister()
     ftype = synglob.ID_MAP.get(ext_id, synglob.ID_MAP[synglob.ID_LANG_TXT])
     return extreg[ftype][0]
+
+def GetIdFromExt(ext):
+    """Get the language id from the given file extension
+    @param ext: file extension (no dot)
+    @return: language identifier id from extension register
+
+    """
+    ftype = ExtensionRegister().FileTypeFromExt(ext)
+    for val in dir(synglob):
+        if val.startswith('LANG_') and getattr(synglob, val) == ftype:
+            return getattr(synglob, 'ID_' + val, synglob.ID_LANG_TXT)
+
+    return synglob.ID_LANG_TXT
+
+def GetTypeFromExt(ext):
+    """Get the filetype description string from the given extension.
+    The return value defaults to synglob.LANG_TXT if nothing is found.
+    @param ext: file extension string (no dot)
+    @return: String
+
+    """
+    return ExtensionRegister().FileTypeFromExt(ext)

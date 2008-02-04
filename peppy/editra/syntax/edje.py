@@ -1,7 +1,7 @@
 ###############################################################################
-# Name: d.py                                                                  #
-# Purpose: Define D programming language syntax for highlighting and other    #
-#          features.                                                          #
+# Name: edje.py                                                               #
+# Purpose: Syntax provider module for the Enlightenment Foundation Libraries  #
+#          interface language Edje and Edje Data Collection files.            #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
 # Licence: wxWindows Licence                                                  #
@@ -9,11 +9,12 @@
 
 """
 #-----------------------------------------------------------------------------#
-# FILE: d.py                                                                  #
+# FILE: edje.py                                                               #
 # AUTHOR: Cody Precord                                                        #
 #                                                                             #
 # SUMMARY:                                                                    #
-# Lexer configuration module for D programming language                       #
+# Lexer configuration module for Edje. Edje is a interface definition language#
+# that is part of the Enlightenment Foundation Libraries for E17.             #
 #                                                                             #
 # @todo:                                                                      #
 #                                                                             #
@@ -21,37 +22,24 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: d.py 49417 2007-10-25 08:03:01Z CJP $"
-__revision__ = "$Revision: 49417 $"
+__svnid__ = "$Id: edje.py 49479 2007-10-27 06:14:24Z CJP $"
+__revision__ = "$Revision: 49479 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
-D_KEYWORDS = (0, "abstract alias align asm assert auto body break case cast "
-                 "catch cent class continue debug default delegate delete "
-                 "deprecated do else enum export extern false final finally "
-                 "for foreach foreach_reverse function goto if import in inout "
-                 "interface invariant is lazy mixin module new null out "
-                 "override package pragma private protected public return "
-                 "scope short struct super switch synchronized template this "
-                 "throw true try union unittest version void while with")
+EDJE_KW = (0, "action after align aspect border clip_to color color2 color3 "
+              "color_class effect fit font image inherit name normal max min "
+              "mouse_events offset relative repeat_events signal size smooth "
+              "source state step target text_class to to_x to_y transition "
+              "tween type visible")
 
-D_TYPES = (1, "bool byte cdouble cfloat char const creal dchar double float "
-              "idouble ifloat ireal int real long static typeof typedef typeid "
-              "ubyte ucent uint ulong ushort volatile wchar")
+EDJE_SEC = (1, "collections description fill group images part parts program "
+               "programs rel1 rel2 text")
 
-DOC_KEYWORDS = (2, "TODO FIXME XXX \\author \\brief \\bug \\callgraph "
-                   "\\category \\class \\code \\date \\def \\depreciated \\dir "
-                   "\\dot \\dotfile \\else \\elseif \\em \\endcode \\enddot "
-                   "\\endif \\endverbatim \\example \\exception \\file \\if "
-                   "\\ifnot \\image \\include \\link \\mainpage \\name "
-                   "\\namespace \\page \\par \\paragraph \\param \\return "
-                   "\\retval \\section \\struct \\subpage \\subsection " 
-                   "\\subsubsection \\test \\todo \\typedef \\union \\var "
-                   "\\verbatim \\version \\warning \\$ \\@ \\~ \\< \\> \\# \\% "
-                   "HACK ")
+DOC_KEYWORDS = (2, "TODO FIXME XXX HACK")
 
 #---- End Keyword Definitions ----#
 
@@ -92,8 +80,8 @@ def Keywords(lang_id=0):
     @keyword lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_D:
-        return [D_KEYWORDS, D_TYPES, DOC_KEYWORDS]
+    if lang_id == synglob.ID_LANG_EDJE:
+        return [EDJE_KW, EDJE_SEC]
     else:
         return list()
 
@@ -102,7 +90,7 @@ def SyntaxSpec(lang_id=0):
     @keyword lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_D:
+    if lang_id == synglob.ID_LANG_EDJE:
         return SYNTAX_ITEMS
     else:
         return list()
@@ -112,7 +100,7 @@ def Properties(lang_id=0):
     @keyword lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_D:
+    if lang_id == synglob.ID_LANG_EDJE:
         return [FOLD, FOLD_PRE]
     else:
         return list()
@@ -122,7 +110,7 @@ def CommentPattern(lang_id=0):
     @keyword lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_D:
+    if lang_id == synglob.ID_LANG_EDJE:
         return [u'//']
     else:
         return list()

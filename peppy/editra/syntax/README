@@ -17,13 +17,14 @@ it out to match the specs of the language you want to provide highlighting for.
 2: What the plugin needs to provide
 
     METHODS:
-      - FUNCTION: Keywords(type=0)
+      - FUNCTION: Keywords(lang_id=0)
         DESC: Provides a set of language keywords and their level to set in
               the editor.
-        PARAM: integer "type" is an optional parameter for requesting a
+        PARAM: integer "lang_id" is an optional parameter for requesting a
                particular subset of keywords or for specifying a certain dialect
                of a language. This allows for modules to handle multiple related
-               but different syntax sets.
+               but different syntax sets. The passed values are the ones defined
+               in synglob.py.
         RETURN: An ordered/unorder list of tuples.
         SPECIFICATIONS:
             The tuples in the list each contain two items.
@@ -32,12 +33,42 @@ it out to match the specs of the language you want to provide highlighting for.
                 -The second is a string of space separated keywords.
         EXAMPLE RETURN: [(0, "spam ni"), (1, "monty python")]
 
-      - FUNCTION: Parameters()
-        DESC:
-        PARAM:
-        RETURN:
+      - FUNCTION: SyntaxSpec(lang_id=0)
+        DESC: This function is called to get the mapping of the stc style attributes
+              to the Editra Style Sheet tags.
+        PARAM: lang_id, just as in Keywords
+        RETURN: List of tuple string pairs, that pair the STC value to the wanted
+                style tag.
         SPECIFICATIONS:
-        EXAMPLE RETURN: 
+            The values in tuples of the return list must be ordered as follows
+                - (STC_* value, Editra Style Tag)
+        EXAMPLE RETURN: [('STC_C_DEFAULT', 'default_style'), 
+                         (STC_C_COMMENT, 'comment_style')] 
+
+      - FUNCTION: Properties(lang_id=0)
+        DESC: This function is called to get any extra lexer properties that the
+              editor should set for the given language.
+        PARAM: lang_id, just as in Keywords
+        RETURN: List of tuples
+        SPECIFICATIONS:
+            The values in the tuples of the return list must be as follows
+                - ("property", "value")
+            If there are no needed  properties to set the function should
+            return an empty list.
+        EXAMPLE RETURN: [("fold", "1"), ("fold.comment", "1")]
+
+    - FUNCTION: CommentPattern(lang_id=0)
+        DESC: Get the patern of comment meta characters to use for commenting
+              out code in the given language.
+        PARAM: integer "lang_id", used for same purpose as in Keywords()
+        RETURN: Ordered List of strings
+        SPECIFICATIONS:
+            The returned list of strings must be in the order that the characters
+            are to be added to the document. This only applies to languages that
+            have multi character sequences required for comments.
+        EXAMPLE RETURN:
+            - Bash: [ "#" ]
+            - C:    ["/*", "*/]
 
       - FUNCTION: KeywordString(option=0)
         DESC: Provided primarly for other syntax modules that may wish to request
