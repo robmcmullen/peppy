@@ -77,7 +77,7 @@ class UserActionClassList(debugmixin):
                     actions.append(action)
 
             # new-style way of having the plugin check for compatibility
-            actions.extend(plugin.getCompatibleActions(mode.__class__))
+            actions.extend(plugin.getCompatibleActions(mode))
         self.action_classes = actions
 
     def getInfo(self, action):

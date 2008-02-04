@@ -396,7 +396,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         """
         return []
     
-    def getCompatibleActions(self, majorcls):
+    def getCompatibleActions(self, major):
         """Return list of actions compatible with the major mode.
         
         Return an iterator containing the list of actions provided by this

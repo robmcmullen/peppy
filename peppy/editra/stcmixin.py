@@ -12,11 +12,12 @@ from peppy.debug import *
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
     debuglevel = 0
     
+    _synmgr = syntax.SyntaxMgr()
+    
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
         
         self.LOG = self.dprint
-        self._synmgr = syntax.SyntaxMgr()
         self.syntax_set = list()
         self._use_autocomp = False
 
@@ -60,6 +61,15 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.ConfigureAutoComp()
         return 0
     
+    def getEditraSyntaxProperties(self, lang):
+        syn_data = self._synmgr.SyntaxData(lang)
+        try:
+            props = syn_data[syntax.PROPERTIES]
+        except KeyError:
+            #self.LOG("[stc] [exception] No Extra Properties to Set")
+            props = []
+        return props
+
     def ConfigureLexer(self, lang):
         """Sets Lexer and Lexer Keywords for the specifed file extension
         @param file_ext: a file extension to configure the lexer from

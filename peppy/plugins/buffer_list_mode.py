@@ -445,7 +445,7 @@ class BufferListModePlugin(IPeppyPlugin):
         return [ListAllDocuments]
 
     def getCompatibleActions(self, mode):
-        if mode == BufferListMode:
+        if mode.__class__ == BufferListMode:
             return [
                 BufferListNext, BufferListPrevious,
                 BufferListSave, BufferListSaveBackwards,

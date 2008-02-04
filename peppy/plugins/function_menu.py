@@ -104,7 +104,14 @@ class FunctionMenuPlugin(IPeppyPlugin):
     def getMinorModes(self):
         yield FoldExplorerMinorMode
     
-    def getCompatibleActions(self, majorcls):
-        if hasattr(majorcls, 'getFoldHierarchy'):
-            return [FoldExplorerMenu]
+    def getCompatibleActions(self, major):
+        if hasattr(major, 'getFoldHierarchy'):
+            # Only if the major mode has the 'fold' property will the fold
+            # explorer actually return anything meaningful, so to prevent an
+            # empty 'Functions' menu, make sure the mode supports folding.
+            props = major.getEditraSyntaxProperties(major.editra_lang)
+            #dprint(props)
+            for prop in props:
+                if prop[0] == 'fold' and prop[1] == '1':
+                    return [FoldExplorerMenu]
         return []

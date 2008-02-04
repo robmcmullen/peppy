@@ -45,9 +45,9 @@ class HSIPlugin(IPeppyPlugin):
                     yield mode
         raise StopIteration
     
-    def getCompatibleActions(self, cls):
-        assert self.dprint("Checking for HSI mode %s" % cls)
-        if cls.keyword == "HSI":
+    def getCompatibleActions(self, mode):
+        assert self.dprint("Checking for HSI mode %s" % mode)
+        if mode.keyword == "HSI":
             hsi_major_mode = self.importModule("hsi_major_mode")
             if hsi_major_mode:
                 return [#hsi_major_mode.PrevCube,

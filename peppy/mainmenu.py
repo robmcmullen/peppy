@@ -993,9 +993,9 @@ class MainMenu(IPeppyPlugin):
                 ]
 
     def getCompatibleActions(self, mode):
-        if issubclass(mode, FundamentalMode):
+        if issubclass(mode.__class__, FundamentalMode):
             return [WordCount]
-        elif issubclass(mode, DiredMode):
+        elif issubclass(mode.__class__, DiredMode):
             return [
                 DiredRefresh,
                 DiredNext, DiredPrevious,
