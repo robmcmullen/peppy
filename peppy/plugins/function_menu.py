@@ -32,7 +32,7 @@ class FoldExplorerMenu(ListAction, OnDemandActionMixin):
     def getItems(self):
         fold = self.mode.getFoldHierarchy()
         nodes = fold.flatten()
-        flat = [node.text.rstrip() for node in nodes]
+        flat = [node.text.rstrip().expandtabs() for node in nodes]
         #dprint(flat)
         return flat
     

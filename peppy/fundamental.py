@@ -303,6 +303,21 @@ class GenericFoldHierarchyMixin(object):
         stc_class_info['fold_line_count'] = self.GetLineCount()
         
         return stc_class_info['fold_hierarchy']
+    
+    def getFoldEntryFunctionName(self, line):
+        """Check if line should be included in a list of functions.
+        
+        Used as callback function by the fold explorer mixin: if the line should
+        be included in a list of functions, return True here.  Because the
+        scintilla folding includes a lot of other data than function calls, we
+        have to cull the full list to only include lines that we want.
+        
+        @param line: line number of the fold entry
+        
+        @return: text string that should be used as function name, or "" if it
+        should be skipped in the function menu
+        """
+        return ""
 
 
 class ParagraphInfo(object):

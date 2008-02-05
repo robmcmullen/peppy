@@ -91,13 +91,9 @@ class FoldExplorerMixin(object):
         print "found starting position for line %d: %s" % (recompute_from, start)
     
     def getFoldEntry(self, level, line, end):
-        text = self.GetLine(line)
-        name = text.lstrip()
+        text = self.getFoldEntryFunctionName(line)
         node = FoldExplorerNode(level=level, start=line, end=end, text=text)
-        if name.startswith("def ") or name.startswith("class "):
-            node.show = True
-        else:
-            node.show = False
+        node.show = text
         return node
     
     def recomputeFoldHierarchy(self, start_line, root, prevNode):
@@ -143,3 +139,60 @@ class FoldExplorerMixin(object):
         prevNode = root = FoldExplorerNode(level=0,start=0,end=n,text='root',parent=None)
         self.recomputeFoldHierarchy(0, root, prevNode)
         return root
+    
+class SimpleFoldFunctionMatchMixin(object):
+    """Simple getFoldEntryFunctionName provider that matches at the beginning
+    of the line.
+    
+    This mixin looks at the class attribute 'fold_function_match' to determine
+    if a potential fold entry should be included in the function list.
+    'fold_function_match' should be a list of strings without leading
+    whitespace that will be used to match against folded lines.
+    """
+    def getFoldEntryFunctionName(self, line):
+        text = self.GetLine(line)
+        name = text.lstrip()
+        for start in self.fold_function_match:
+            if name.startswith(start):
+                return text
+        return ""
+
+class SimpleCLikeFoldFunctionMatchMixin(object):
+    """Simple getFoldEntryFunctionName provider for C-like languages that
+    matches at the beginning of the line.
+    
+    This mixin looks at the class attribute 'fold_function_ignore' to determine
+    if a potential fold entry should be included in the function list.
+    'fold_function_ignore' should be a list of strings without leading
+    whitespace that will be used to match against folded lines.
+    
+    It also is aware of braces, and if a line contains only a single brace, it
+    will backtrack until it finds a non-blank line.
+    """
+    
+    #: default ignore list for C like languages.  Override in subclasses if you want to add more entries
+    fold_function_ignore = ["}", "if", "else", "for", "do", "while", "switch",
+                            "case", "enum", "struct"]
+    
+    def getFoldEntryFunctionName(self, line):
+        text = self.GetLine(line)
+        name = text.strip()
+        #print "checking %s at %d" % (name, line)
+        for start in self.fold_function_ignore:
+            if name.startswith(start):
+                print "  found bad %s at %d" % (name, line)
+                return ""
+        if name.startswith('{') or not name:
+            while line > 0:
+                text = self.GetLine(line - 1)
+                name = text.strip()
+                for start in self.fold_function_ignore:
+                    if name.startswith(start):
+                        print "  found bad %s at %d" % (name, line)
+                        return ""
+                if not name.startswith('#'):
+                    break
+                line = line - 1
+        print "  found good %s at %d" % (name, line)
+        return text
+

@@ -10,11 +10,12 @@ import os
 import wx
 import wx.stc
 
+from peppy.lib.foldexplorer import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-class CPlusPlusMode(FundamentalMode):
+class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing C++ files.
     """
     keyword = 'C++'

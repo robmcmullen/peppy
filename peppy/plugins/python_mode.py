@@ -449,10 +449,13 @@ class PythonParagraphMixin(StandardParagraphMixin):
 
 
 class PythonMode(IDLEElectricReturnMixin, IDLEReindentMixin,
-                 PythonParagraphMixin, JobControlMixin, FundamentalMode):
+                 PythonParagraphMixin, JobControlMixin,
+                 SimpleFoldFunctionMatchMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
     regex="\.(py|pyx)$"
+    
+    fold_function_match = ["def ", "class "]
 
     default_classprefs = (
         )
@@ -462,6 +465,7 @@ class PythonMode(IDLEElectricReturnMixin, IDLEReindentMixin,
         
     def isStyleComment(self, style):
         return style == 1
+
 
 class PythonErrorMode(FundamentalMode):
     keyword = "Python Error"
