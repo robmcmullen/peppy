@@ -9,6 +9,7 @@
 	* fixed missing about:untitled
 	* fixed memory leak in menu system
 	* fixed conflict with Cut keybinding (C-X works now)
+	* added command to set struct format in HexEdit mode
 
 2008-02-02  Rob McMullen  <robm@users.sourceforge.net>
 
