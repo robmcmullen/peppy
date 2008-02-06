@@ -1,6 +1,6 @@
-/**
-* Some Comments about this file
-*/
+// Syntax Highlighting Test File For Java
+// Comment Line
+
 /*
  * HelloWorld Using Swing
  */

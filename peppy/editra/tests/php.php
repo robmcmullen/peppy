@@ -1,4 +1,5 @@
 <?php
+    // Syntax Highlighting Test File for PHP
     /* Some comments about this file */
     // Comment line
     $hello = "HELLO"

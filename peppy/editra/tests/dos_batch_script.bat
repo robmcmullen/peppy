@@ -1,3 +1,4 @@
+rem Syntax Highlighting Test File for Dos Batch Scripts
 rem Comment Line
 
 :BEGIN

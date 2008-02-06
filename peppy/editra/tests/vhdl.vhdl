@@ -1,5 +1,6 @@
+-- Syntax Highlighting Test File for VHDL
+-- Comments are like this
 -- Hello World in VHDL
--- Some more comments about this file
 
 entity hello_world is
 end;

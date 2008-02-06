@@ -1,4 +1,5 @@
-{ Test File for Pascal
+{ Syntax Highlighting Test File for Pascal
+  Comments are like this
   Hello World in Pascal
 }
 program Hello;

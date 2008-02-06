@@ -1,19 +1,17 @@
 #!/usr/bin/ruby
+# Syntax Highlighting Test File for Ruby
 # Some Comments about this file
-# Hello World in ruby plus some other sillyness
+# Hello World in ruby
 
+# Keyword statement and string
 puts 'Hello world'
 
-def power(base, pow)
-    return base ** pow
-end
-
-# Say Hello to somebody
+# Function Definitions
 def hello2(name)
     puts "Hello #{name}!"
 end
 
-# Greeter Class
+# Class Definition
 class Greeter
     def intialize(name = "World")
         @name = name
@@ -26,6 +24,5 @@ class Greeter
     end
 end
 
-puts power(5, 2)
+# Keyword and some Numbers
 puts 5 ** 2
-

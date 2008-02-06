@@ -4,14 +4,10 @@
 @charset "iso-8859-1";
 
 /*** Plain tag definition  ***/
-a {
-    text-decoration 	: none;
-}
+a { text-decoration : none; }
 
 /** Tag:psuedo class def **/
-a:link {
-   color                  : #456;
-}
+a:link { color : #456; }
 
 /** Tag/Attribute def **/
 input[type="submit"] {
@@ -22,10 +18,10 @@ input[type="submit"] {
 
 /** Class def **/
 .tiny {
-   font-family            : "Bitstream Vera", "Vera", "Trebuchet MS", sans-serif;
-   color                  : #666;
-   font-size              : 10px;
-   line-height            : 10px;
+   font-family  : "Bitstream Vera", "Vera", "Trebuchet MS", sans-serif;
+   color        : #666;
+   font-size    : 10px;
+   line-height  : 10px;
 }
 
 /*** Ids defs ***/
@@ -39,7 +35,4 @@ input[type="submit"] {
 a:what { color: red; }
 
 /** Important **/
-.hide
-{
-  display: none !important;
-}
+.hide { display: none !important; }

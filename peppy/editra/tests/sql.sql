@@ -1,10 +1,11 @@
 /******************************************
+* Syntax Highlighting Test File for SQL   *
 * Multi-Line Comment Block                *
 * Oracle 9i SQL                           *
 *******************************************/
+--- Single Line Comments are like this
 
 --- Drop all tables, in case they were previously created ---
-
 DROP TABLE shipment;
 DROP TABLE customer;
 DROP TABLE truck;
@@ -134,13 +135,6 @@ WHERE  customer.CUS_ID = shipment.CUS_ID
 AND    shipment.CITY_ID = city.CITY_ID 
 AND    city.CITY_NAME = 'Lincoln';
 
---- What are names and populations of cities having recieved 
---- shipments weighing over 100 lbs?
-SELECT DISTINCT CITY_NAME, POPULATION
-FROM   shipment, city
-WHERE  shipment.CITY_ID = city.CITY_ID 
-AND    shipment.WEIGHT > 100;
-
 --- Who are the customers having over 5 million in revenue and 
 --- have sent less than 100lbs?
 SELECT DISTINCT CUS_FNAME, CUS_LNAME
@@ -170,5 +164,3 @@ FROM     city,shipment
 WHERE    shipment.CITY_ID = city.CITY_ID
 GROUP BY CITY_NAME
 HAVING   COUNT(shipment.CITY_ID) >= 2;
-
-/* END SCRIPT */

@@ -1,6 +1,7 @@
 #!/usr/local/bin/wish -f
+# Syntax Highlighting Test File for TCL/TK
+# Comments are like this
 # Hello World in tcl/tk
-# Some more comments about this file
 
 wm title . "Hello world!"
 

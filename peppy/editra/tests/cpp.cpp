@@ -1,5 +1,5 @@
-/** Comments about this file
- *
+/** Syntax Highlighting test file for C++
+ *  \brief Doxygen tag highlighing
  */
 #include<iostream>
 #include<cstdlib>

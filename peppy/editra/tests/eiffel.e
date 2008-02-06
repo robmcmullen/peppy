@@ -10,7 +10,7 @@ feature
         do
             io.put_string ("Hello, world!")
             io.put_new_line
-            io.put_string("Enclosed String
+            io.put_string('Unclosed String
         end
 end
 

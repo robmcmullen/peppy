@@ -1,16 +1,17 @@
-; Some comments about this file
-; Yet another hello world program
+; Syntax Highlighting Test File for Lisp
+; Comment Line
+
+; Lisp funciton and keyword test
+(defpackage :mypackage
+  (:use :common-lisp :cffi))
 
 ; hello version 1
 (defun hello-word1 ()
-                  (print (list 'HELLO 'WORLD)))
+  (print (list 'HELLO 'WORLD)))
 
 ; hello version 2
 (defun hello-world ()
   (format t "hello world~%"))
-
-; a function that doubles its input
-(defun double (x) (* x 2))
 
 ; Lets do some factorials too
 (defun factorial (N)

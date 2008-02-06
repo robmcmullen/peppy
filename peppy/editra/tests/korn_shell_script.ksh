@@ -1,4 +1,5 @@
 #!/bin/ksh
+# Syntax Highlighting Test File for Korn Shell
 # Some comments about this file
 
 export FRIENDS="Jon Kosuke Bill Sandra"

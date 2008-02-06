@@ -1,4 +1,5 @@
-; Some comments about this file
+; Syntax Highlighting Test File for MASM
+; Comment Line's are like this
 ; Hello world in MASM Assembly
 .MODEL tiny
 .CODE

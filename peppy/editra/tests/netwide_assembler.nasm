@@ -1,4 +1,4 @@
-; NASM test file
+; Syntax Highlighting Test File for NASM
 ; Some Comments about this file
 ; Hello World in NASM
 

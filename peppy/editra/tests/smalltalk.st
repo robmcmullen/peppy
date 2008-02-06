@@ -1,5 +1,6 @@
+" Syntax Highlighting Test File for Smalltalk "
+" Comments are like this "
 " Hello World in smalltalk "
-" Plus some other sillyness "
 
 " Heres helloworld doesnt get much easier that this "
 'Hello World!'
@@ -10,18 +11,18 @@ window := Window new.
 window label: 'Hello World'.
 window open.
  
- " Character Definition"
- | mychar |
- mychar := $A
- 
- " Symbol Definition "
- | mySym |
- mySym := #foo
- 
- " Symbol Array "
- mySym := #(1 2 3 4)
- 
- " Class Def "
+" Character Definition"
+| mychar |
+mychar := $A
+
+" Symbol Definition "
+| mySym |
+mySym := #foo
+
+" Symbol Array "
+mySym := #(1 2 3 4)
+
+" Class Def "
 Object subclass: #MessagePublisher
     instanceVariableNames: ''
     classVariableNames: ''
