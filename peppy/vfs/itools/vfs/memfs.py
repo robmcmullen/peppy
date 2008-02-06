@@ -99,7 +99,10 @@ class TempFile(StringIO):
 
     def _close(self):
         if not self._read_only:
-            self.folder[self.file_name] = MemFile(self.getvalue())
+            data = self.getvalue()
+            if isinstance(data, unicode):
+                data = data.encode('utf8')
+            self.folder[self.file_name] = MemFile(data)
 
     def __del__(self):
         if not self._is_closed:
