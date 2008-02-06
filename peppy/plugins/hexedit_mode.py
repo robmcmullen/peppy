@@ -26,7 +26,13 @@ class OpenHexEditor(SelectAction):
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:0x00-0xff")
 
-class GotoOffset(MinibufferAction):
+
+class WorksWithHexEdit(object):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return mode.keyword == 'HexEdit'
+
+class GotoOffset(WorksWithHexEdit, MinibufferAction):
     """Goto an offset.
     
     Use minibuffer to request an offset, then move the cursor to that
@@ -40,10 +46,6 @@ class GotoOffset(MinibufferAction):
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Offset:"
 
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return mode.keyword == 'HexEdit'
-
     def processMinibuffer(self, minibuffer, mode, pos):
         """
         Callback function used to set the grid's cursor to the
@@ -52,6 +54,56 @@ class GotoOffset(MinibufferAction):
         #dprint("goto pos = %d" % pos)
         mode.GotoPos(pos)
 
+
+class HexRecordFormat(WorksWithHexEdit, MinibufferAction):
+    """Change how hex values are unpacked to human-readable values 
+    
+    Use minibuffer to change the struct description of the hex values
+    """
+
+    name = "Record Format..."
+    default_menu = ("View", -500)
+    key_bindings = {'default': 'M-F',}
+    minibuffer = TextMinibuffer
+    minibuffer_label = "Record Format:"
+
+    def getInitialValueHook(self):
+        return self.mode.table.format
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        #dprint("changing format to %s" % text)
+        self.mode.Update(format=str(text))
+
+
+class ShowHexDigits(WorksWithHexEdit, ToggleAction):
+    """Show or hide the display of hex digits
+    
+    """
+    name = "Show Hex Digits"
+    default_menu = ("View", 550)
+
+    def isChecked(self):
+        return self.mode.table._show_hex
+    
+    def action(self, index=-1, multiplier=1):
+        #dprint("showing hex digits: %s" % (not self.mode.table._show_hex))
+        self.mode.table.showHexDigits(self.mode, not self.mode.table._show_hex)
+    
+
+class ShowRecordNumbers(WorksWithHexEdit, ToggleAction):
+    """Show record numbers instead of byte offset
+    
+    """
+    name = "Show Record Numbers"
+    default_menu = ("View", 551)
+
+    def isChecked(self):
+        return self.mode.table._show_record_numbers
+    
+    def action(self, index=-1, multiplier=1):
+        #dprint("showing hex digits: %s" % (not self.mode.table._show_record_numbers))
+        self.mode.table.showRecordNumbers(self.mode, not self.mode.table._show_record_numbers)
+    
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
     debuglevel=0
@@ -63,16 +115,25 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         self.setSTC(stc)
         
         self._debug=False
+        self._show_hex = True
+        self._show_record_numbers = False
+        self._col_labels = None
 
-    def setFormat(self,format):
+    def setFormat(self, format):
         if format:
-            self.format=format
-            self.nbytes=struct.calcsize(self.format)
-            self._hexcols=self.nbytes
+            try:
+                nbytes = struct.calcsize(format)
+            except struct.error:
+                raise
+            
+            self.format = format
+            self.nbytes = nbytes
+            self._hexcols = self.nbytes
             self.parseFormat(self.format)
-            self._cols=self._hexcols+self._textcols
+            self._cols = self._hexcols + self._textcols
+            assert self.dprint("# hexcols = %d, # textcols = %d, total=%d" % (self._hexcols, self._textcols, self._cols))
 
-    def parseFormat(self,format):
+    def parseFormat(self, format):
         """
         Given a format specifier, parse the string into individual
         cell formats.  A format specifier may have a repeat count, but
@@ -133,6 +194,43 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
     def getTextCol(self,col):
         return col-self._hexcols
     
+    def getTextColPreferredWidth(self, col):
+        col = self.getTextCol(col)
+        format = self.types[col][1] # types is 2 char string: endian + format
+        if format in "cbB": # character
+            width = self._base_width
+        elif format in "hH": # short
+            width = self._base_width * 8
+        elif format in "iIlLqQ": # int
+            width = self._base_width * 14
+        elif format in "fd": # floating point
+            width = self._base_width * 20
+        else:
+            width = self._base_width * 4
+        width += 4 # pixel offset for borders
+        return width
+    
+    def getHexColPreferredWidth(self):
+        if self._show_hex:
+            width = self._hexcol_width
+        else:
+            width = 0
+        return width
+    
+    def showHexDigits(self, grid, state, refresh=True):
+        self._show_hex = state
+        width = self.getHexColPreferredWidth()
+        for col in range(self._hexcols):
+            grid.SetColSize(col, width)
+        if refresh:
+            grid.AdjustScrollbars()
+            grid.ForceRefresh()
+
+    def showRecordNumbers(self, grid, state, refresh=True):
+        self._show_record_numbers = state
+        if refresh:
+            grid.ForceRefresh()
+
     def getLoc(self, row, col):
         """Get the byte offset from start of file given row, col
         position.
@@ -204,6 +302,8 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         return self._rows
 
     def GetRowLabelValue(self, row):
+        if self._show_record_numbers:
+            return "%d" % row
         return "%04x" % (row*self.nbytes)
 
     def GetNumberCols(self):
@@ -215,7 +315,10 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if col<self._hexcols:
             return "%x" % col
         else:
-            return "%x" % self.offsets[self.getTextCol(col)]
+            col = self.getTextCol(col)
+            if self._col_labels and col < len(self._col_labels):
+                return self._col_labels[col]
+            return "%x" % self.offsets[col]
 
     def IsEmptyCell(self, row, col):
         if col<self._hexcols:
@@ -230,14 +333,14 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if col<self._hexcols:
             loc = self.getLoc(row,col)
             s = "%02x" % self.stc.GetCharAt(loc)
-            assert self.dprint(s)
+            #assert self.dprint(s)
             return s
         else:
             startpos = self.getLoc(row,col)
             textcol = self.getTextCol(col)
             endpos = startpos+self.sizes[textcol]
             data = self.stc.GetStyledText(startpos,endpos)[::2]
-            assert self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
+            #assert self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
             s = struct.unpack(self.types[textcol],data)
             return str(s[0])
 
@@ -264,7 +367,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             styled='\0'.join(bytes)+'\0'
             self.stc.AddStyledText(styled)
 
-    def ResetView(self, grid, stc, format=None):
+    def ResetView(self, grid, stc, format=None, col_labels=None):
         """
         (Grid) -> Reset the grid view.   Call this to
         update the grid if rows and columns have been added or deleted
@@ -289,38 +392,50 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
                 msg = Grid.GridTableMessage(self,addmsg,new-current)
                 grid.ProcessTableMessage(msg)
                 self.UpdateValues(grid)
+        grid.EndBatch()
 
         # update the scrollbars and the displayed part of the grid
-        grid.SetColMinimalAcceptableWidth(6)
+        grid.SetColMinimalAcceptableWidth(0)
         font=wx.Font(10, wx.MODERN, wx.NORMAL, wx.NORMAL)
-        hexattr=Grid.GridCellAttr()
-        hexattr.SetFont(font)
-        hexattr.SetBackgroundColour("white")
-        textattr=Grid.GridCellAttr()
-        textattr.SetFont(font)
-        textattr.SetBackgroundColour(wx.Color(240,240,240))
         dc=wx.MemoryDC()
         dc.SetFont(font)
-        (width,height)=dc.GetTextExtent("MM")
+        
+        (width, height) = dc.GetTextExtent("M")
+        self._base_width = width
+        self._hexcol_width = (width * 2) + 4
         grid.SetDefaultRowSize(height)
+        
+        width = self.getHexColPreferredWidth()
         for col in range(self._hexcols):
-            assert self.dprint("col %d width=%d" % (col,width))
-            grid.SetColMinimalWidth(col,10)
-            grid.SetColSize(col,width+4)
-            grid.SetColAttr(col,hexattr)
-        (width,height)=dc.GetTextExtent("M")
-        for col in range(self._hexcols,self._cols,1):
-            assert self.dprint("col %d width=%d" % (col,width))
-            grid.SetColMinimalWidth(col,4)
-            grid.SetColSize(col,width+4)
-            grid.SetColAttr(col,textattr)
-
-        grid.EndBatch()
+            # Can't share GridCellAttrs among columns; causes crash when
+            # freeing them.  So, have to individually allocate the attrs for
+            # each column
+            hexattr = Grid.GridCellAttr()
+            hexattr.SetFont(font)
+            hexattr.SetBackgroundColour("white")
+            assert self.dprint("hexcol %d width=%d" % (col,width))
+            grid.SetColMinimalWidth(col, 0)
+            grid.SetColSize(col, width)
+            grid.SetColAttr(col, hexattr)
+            
+        for col in range(self._hexcols, self._cols, 1):
+            textattr = Grid.GridCellAttr()
+            textattr.SetFont(font)
+            textattr.SetBackgroundColour(wx.Color(240, 240, 240))
+            grid.SetColMinimalWidth(col, 4)
+            width = self.getTextColPreferredWidth(col)
+            assert self.dprint("textcol %d width=%d" % (col, width))
+            grid.SetColSize(col, width)
+            grid.SetColAttr(col, textattr)
 
         self._rows = self.GetNumberRows()
         self._cols = self.GetNumberCols()
 ##        # update the column rendering plugins
 ##        self._updateColAttrs(grid)
+        if col_labels and len(col_labels) >= self._textcols:
+            self._col_labels = col_labels
+        else:
+            self._col_labels = None
 
         grid.AdjustScrollbars()
         grid.ForceRefresh()
@@ -718,9 +833,15 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
         assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
         eventManager.DeregisterListener(self.underlyingSTCChanged)
         
-    def Update(self,stc,format=None):
+    def Update(self, stc=None, format=None, col_labels=None):
         assert self.dprint("Need to update grid")
-        self.table.ResetView(self,stc,format)
+        if stc is None:
+            stc = self.buffer.stc
+        try:
+            self.table.ResetView(self, stc, format, col_labels)
+            self.frame.SetStatusText("Record format = '%s', %d bytes per record" % (self.table.format, self.table.nbytes))
+        except struct.error:
+            self.frame.SetStatusText("Bad record format: %s" % format)
 
     def OnUnderlyingUpdate(self, evt, loc=None):
         """Data has changed in some other view, so we need to update
@@ -885,4 +1006,5 @@ class HexEditPlugin(IPeppyPlugin, debugmixin):
         yield HexEditMode
 
     def getActions(self):
-        return [OpenHexEditor, GotoOffset]
+        return [OpenHexEditor, GotoOffset, HexRecordFormat, ShowHexDigits,
+                ShowRecordNumbers]
