@@ -12,9 +12,19 @@ from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 class MinibufferAction(TextModificationAction):
     minibuffer_label = None
     
+    def getInitialValueHook(self):
+        """Get the initial value (if any)
+        
+        This hook is called immediately before the minibuffer is placed in
+        the mode.  If overridden in a subclass, this should return a text
+        representation of the string to place in the minibuffer.
+        """
+        return ""
+    
     def action(self, index=-1, multiplier=1):
-        minibuffer=self.minibuffer(self.mode, self,
-                                   label=self.minibuffer_label)
+        initial = self.getInitialValueHook()
+        minibuffer=self.minibuffer(self.mode, self, label=self.minibuffer_label,
+                                   initial=initial)
         #print minibuffer.win
         self.mode.setMinibuffer(minibuffer)
 
