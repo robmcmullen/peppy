@@ -1,3 +1,15 @@
+2008-02-05  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2.2 update to "Oscillation Overthruster"
+	* Revision 1000 in svn!
+	* moved action base clasess into peppy.actions
+	* added action tutorials to wiki
+	* synced Editra styling info to Editra version 0.2.50
+	* now checking fold capabilities of mode before showing Functions menu
+	* fixed missing about:untitled
+	* fixed memory leak in menu system
+	* fixed conflict with Cut keybinding (C-X works now)
+
 2008-02-02  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.1 update to "Oscillation Overthruster"
