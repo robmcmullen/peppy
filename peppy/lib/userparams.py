@@ -123,7 +123,7 @@ class FileBrowseButton2(FileBrowseButton):
         self.label.Hide()
         
     def SetToolTipString(self, text):
-        dprint(text)
+        #dprint(text)
         self.textControl.SetToolTipString(text)
         
     def IsEnabled(self):
@@ -1318,8 +1318,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
         """
         row = 0
         col = 0
+        existing_keywords = {}
+        for param in ctrls:
+            existing_keywords[param.keyword] = True
         for param in params:
-            if param.keyword in ctrls:
+            if param.keyword in existing_keywords:
                 # Don't put another control if it exists in a superclass
                 continue
 
@@ -1605,7 +1608,7 @@ class PrefDialog(wx.Dialog):
         self.Layout()
     
     def OnTabChanged(self, evt):
-        dprint()
+        #dprint()
         val = evt.GetSelection()
         page = self.notebook.GetPage(val)
         page.changePanel()
@@ -1635,8 +1638,8 @@ class PrefDialog(wx.Dialog):
                 self.tab_map[tab] = []
             self.tab_map[tab].append(cls)
             self.class_to_tab[cls.__name__] = tab
-        dprint(self.tab_map)
-        dprint(self.class_to_tab)
+        #dprint(self.tab_map)
+        #dprint(self.class_to_tab)
         self.class_names = [x.__name__ for x in classes]
     
     def createPage(self, tab, classes):
