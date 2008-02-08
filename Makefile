@@ -1,6 +1,6 @@
 # Documentation builder stuff
 
-HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html
+HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html web/ChangeLog.html
 PRE = 
 CSS = web/css web/js
 IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7
@@ -65,7 +65,10 @@ web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
 web/screenshots.html.in: web/0.*
 	(cd web; photo-album.py --nodatedir 0.*; photo-index.py -a -b -r -o screenshots.html.in)
-$(HTML): web/template.html.in web/mainmenu.html.in ChangeLog
+web/ChangeLog.html.in: ChangeLog
+	./make-doc.py -c -m peppy -o web/ChangeLog.html.in ChangeLog
+
+$(HTML): web/template.html.in web/mainmenu.html.in web/ChangeLog.html.in ChangeLog
 
 publish_html: html
 	rsync -avuz $(WEBSITE) robm351@www.flipturn.org:peppy.flipturn.org/

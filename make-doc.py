@@ -177,6 +177,38 @@ def parsedocstring(infile):
     out=t.safe_substitute(namespace)
     return out+unparsed
 
+def parsechangelog(infile):
+    if isinstance(infile, str):
+        fh = open(infile)
+    else:
+        fh = infile
+    doc=StringIO()
+    doc.write("<h2>ChangeLog</h2>")
+    release_date = ''
+    version = ''
+    show_items = False
+    for line in fh:
+        match=re.match('(\d+-\d+-\d+).*',line)
+        if match:
+            if show_items:
+                doc.write("</ul>\n")
+                show_items = False
+            print 'found date %s' % match.group(1)
+            release_date=date.fromtimestamp(time.mktime(time.strptime(match.group(1),'%Y-%m-%d'))).strftime('%d %B %Y')
+        else:
+            match=re.match('\s+\*\s*[Rr]eleased peppy-([\d\.]+)',line)
+            if match:
+                print 'found version %s' % match.group(1)
+                version=match.group(1)
+                doc.write("<h3>%s, released %s</h3>\n<ul>\n" % (version, release_date))
+                show_items = True
+            else:
+                line = line.lstrip()
+                if line.startswith('*'):
+                    doc.write("<li>%s " % line[1:])
+                else:
+                    doc.write(line)
+    return doc.getvalue()
 
 
 if __name__=='__main__':
@@ -204,6 +236,8 @@ if __name__=='__main__':
                       dest="mil", help="use mil modules")
     parser.add_option("-d", "--docstring-only", action="store_true",
                       dest="docstringonly", help="only variable-expand the named file's docstring only; leave the remaining contents unchanged.")
+    parser.add_option("-c", "--changelog", action="store_true",
+                      dest="changelog", help="create a changelog input file.")
     (options, args) = parser.parse_args()
 
     all=''
@@ -239,23 +273,25 @@ if __name__=='__main__':
 
     for filename in args:
         if options.docstringonly:
-            txt=parsedocstring(filename)
+            txt = parsedocstring(filename)
+        elif options.changelog:
+            txt = parsechangelog(filename)
         else:
-            txt=parse(filename)
+            txt = parse(filename)
         if options.outputfile:
             print 'saving to %s' % options.outputfile
-            all+=txt
+            all += txt
         else:
             if filename.endswith('.in'):
-                outfile=filename[:-3]
+                outfile = filename[:-3]
             else:
-                outfile=filename+".out"
-            fh=open(outfile,"w")
+                outfile = filename+".out"
+            fh = open(outfile,"w")
             fh.write(txt)
             fh.close()
 
     if options.outputfile:
-        fh=open(options.outputfile,"w")
+        fh = open(options.outputfile,"w")
         fh.write(all)
         fh.close()
     else:
