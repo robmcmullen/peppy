@@ -386,7 +386,11 @@ class ListAction(SelectAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
-        widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
+        try:
+            widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
+        except:
+            dprint("BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
+            raise
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:

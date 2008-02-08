@@ -190,7 +190,7 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
                     if name.startswith(start):
                         print "  found bad %s at %d" % (name, line)
                         return ""
-                if not name.startswith('#'):
+                if name and not name.startswith('#'):
                     break
                 line = line - 1
         print "  found good %s at %d" % (name, line)
