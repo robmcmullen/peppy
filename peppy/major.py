@@ -402,6 +402,9 @@ class MajorMode(ClassPrefs, debugmixin):
     #: The single-word keyword representing this major mode
     keyword = 'Abstract_Major_Mode'
     
+    #: The preferences tab that this mode will appear in
+    preferences_tab = "Modes"
+    
     #: If there are additional emacs synonyms for this mode, list them here as a string for a single synonym, or in a list of strings for multiple. For instance, see hexedit_mode.py: in emacs the hex edit mode is called 'hexl', but in peppy, it's called 'HexEdit'.  'hexl' is listed as in emacs_synomyms in that file.
     emacs_synonyms = None
     

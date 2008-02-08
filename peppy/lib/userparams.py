@@ -1564,7 +1564,16 @@ class PrefDialog(wx.Dialog):
         sizer.Add(self.notebook, 1, wx.EXPAND)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         
+        # Sort the names so that Misc and Plugins are always last
+        last = []
         names = self.tab_map.keys()
+        for name in ['Misc', 'Plugins']:
+            if name in names:
+                names.remove(name)
+                last.append(name)
+        names.sort()
+        names.extend(last)
+        
         self.tab_to_page = {}
         count = 0
         for tab in names:
