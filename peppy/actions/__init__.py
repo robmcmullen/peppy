@@ -109,7 +109,7 @@ class SelectAction(debugmixin):
     @classmethod
     def getHelp(cls):
         #dprint(dir(cls))
-        help = "\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
+        help = u"\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
         return help
     
     def __init__(self, frame, menu=None, toolbar=None):
@@ -160,9 +160,9 @@ class SelectAction(debugmixin):
                 # standard accelerator because wxWidgets will put one
                 # there anyway and we need to overwrite it with our
                 # definition
-                cls._accelerator_text = "\t%s" % KeyMap.nonEmacsName(keystrokes[0])
+                cls._accelerator_text = u"\t%s" % KeyMap.nonEmacsName(keystrokes[0])
             else:
-                cls._accelerator_text = "    %s" % cls.keyboard
+                cls._accelerator_text = u"    %s" % cls.keyboard
             #dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
             return len(keystrokes)
         else:
@@ -171,7 +171,7 @@ class SelectAction(debugmixin):
     
     def getMenuItemName(self):
         if self._use_accelerators and self.keyboard:
-            return "%s%s" % (_(self.name), self._accelerator_text)
+            return u"%s%s" % (_(self.name), self._accelerator_text)
         elif self.name:
             return self.name
         return self.__class__.__name__
@@ -184,8 +184,8 @@ class SelectAction(debugmixin):
         if self.tooltip is None:
             if self.__doc__ is not None:
                 lines = self.__doc__.splitlines()
-                self.__class__.tooltip = lines[0]
-        return "%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
+                self.__class__.tooltip = unicode(lines[0])
+        return u"%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
 
     def insertIntoMenu(self, menu):
         self.widget = wx.MenuItem(menu, self.global_id, self.getMenuItemName(), self.getTooltip())
@@ -226,10 +226,10 @@ class SelectAction(debugmixin):
     def showEnable(self):
         state = self.isEnabled()
         if self.widget is not None:
-            assert self.dprint("menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
+            assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
             self.widget.Enable(state)
         if self.tool is not None:
-            assert self.dprint("menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
+            assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
             self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
@@ -389,7 +389,7 @@ class ListAction(SelectAction):
         try:
             widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
         except:
-            dprint("BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
+            dprint(u"BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
             raise
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
@@ -641,7 +641,7 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
     def getItems(self):
         if self.storage is None:
             raise TypeError("The 'storage' class attribute of OnDemandGlobalActionList must be of type 'list' when using the default implementation of getItems")
-        return [str(item) for item in self.storage]
+        return [unicode(item) for item in self.storage]
 
     def updateOnDemand(self):
         self.dynamic()

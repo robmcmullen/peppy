@@ -30,7 +30,7 @@ class RecentFiles(OnDemandGlobalListAction):
         if url.scheme == 'about':
             return
 
-        item = str(url)
+        item = unicode(url)
         # if we're adding an item that's already in the list, move it
         # to the top of the list by recreating the list
         storage = RecentFiles.storage
@@ -83,7 +83,7 @@ class RecentFilesPlugin(IPeppyPlugin):
         try:
             fh=open(pathname)
             for line in fh:
-                storage.append(line.rstrip())
+                storage.append(line.decode('utf8').rstrip())
         except:
             pass
         RecentFiles.setStorage(storage)
@@ -93,7 +93,7 @@ class RecentFilesPlugin(IPeppyPlugin):
         fh=open(pathname,'w')
         for file in RecentFiles.storage:
             #print "saving %s to %s" % (file,pathname)
-            fh.write("%s%s" % (file,os.linesep))
+            fh.write("%s%s" % (file.encode('utf8'),os.linesep))
 
     def getActions(self):
         yield RecentFiles

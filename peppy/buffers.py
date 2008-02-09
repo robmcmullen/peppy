@@ -87,7 +87,7 @@ class BufferList(OnDemandGlobalListAction):
         return False
             
     def getItems(self):
-        return ["%s  (%s)" % (buf.displayname, str(buf.url)) for buf in self.storage]
+        return ["%s  (%s)" % (buf.displayname, unicode(buf.url)) for buf in self.storage]
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
@@ -200,7 +200,7 @@ class BufferVFSMixin(debugmixin):
         return False
     
     def getFilename(self):
-        return str(self.url.path)
+        return unicode(self.url.path)
 
     def cwd(self, use_vfs=False):
         """Find the current working directory of the buffer.
@@ -222,15 +222,15 @@ class BufferVFSMixin(debugmixin):
                 path = vfs.get_dirname(self.url)
             return path
         elif self.url.scheme == 'file':
-            path = os.path.normpath(os.path.dirname(str(self.url.path)))
+            path = os.path.normpath(os.path.dirname(unicode(self.url.path)))
             return path
         else:
             # See if the path converts to an existing path in the local
             # filesystem by converting it to a file:// url and seeing if any
             # path components exist
             lastpath = None
-            uri = vfs.normalize(str(self.url.path))
-            path = os.path.normpath(str(uri.path))
+            uri = vfs.normalize(unicode(self.url.path))
+            path = os.path.normpath(unicode(uri.path))
             while path != lastpath:
                 #dprint("trying %s" % path)
                 if os.path.isdir(path):
@@ -241,7 +241,7 @@ class BufferVFSMixin(debugmixin):
         return path
             
     def getBufferedReader(self, size=1024):
-        assert self.dprint("opening %s as %s" % (str(self.url), self.defaultmode))
+        assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
         if self.bfh is None:
             if vfs.exists(self.url):
                 fh = vfs.open(self.url)
@@ -293,7 +293,7 @@ class Buffer(BufferVFSMixin):
         cls.error_buffer_count += 1
         errurl = "mem:error-%d.txt" % cls.error_buffer_count
         fh = vfs.make_file(errurl)
-        fh.write("Failed opening %s.\n\nDetailed error message follows:\n\n" % url)
+        fh.write("Failed opening %s.\n\nDetailed error message follows:\n\n" % unicode(url))
         fh.write(error)
         fh.close()
         buffer = Buffer(errurl)
@@ -364,7 +364,7 @@ class Buffer(BufferVFSMixin):
             # collected
             self.stc.Destroy()
             Publisher().sendMessage('buffer.closed', self.url)
-            dprint("removed buffer %s" % self.url)
+            dprint(u"removed buffer %s" % unicode(self.url))
             
             # If we don't have any more buffers with this basename, reset the
             # counter
@@ -383,7 +383,7 @@ class Buffer(BufferVFSMixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
-        self.name="Buffer #%d: %s" % (self.count,str(self.url))
+        self.name=u"Buffer #%d: %s" % (self.count,unicode(self.url))
 
         # Update UI because the filename associated with this buffer
         # may have changed and that needs to be reflected in the menu.
@@ -391,11 +391,11 @@ class Buffer(BufferVFSMixin):
         
     def getTabName(self):
         if self.modified:
-            return "*"+self.displayname
+            return u"*"+self.displayname
         return self.displayname
 
     def openGUIThreadStart(self):
-        self.dprint("url: %s" % str(self.url))
+        self.dprint(u"url: %s" % unicode(self.url))
         if self.defaultmode is None:
             self.defaultmode = MajorModeMatcherDriver.match(self)
         self.dprint("mode=%s" % (str(self.defaultmode)))
@@ -448,7 +448,7 @@ class Buffer(BufferVFSMixin):
         wx.CallAfter(self.showModifiedAll)
         
     def save(self, url=None):
-        assert self.dprint("Buffer: saving buffer %s" % (self.url))
+        assert self.dprint(u"Buffer: saving buffer %s" % unicode(self.url))
         try:
             if url is None:
                 saveas = self.url
@@ -458,7 +458,7 @@ class Buffer(BufferVFSMixin):
                 if vfs.is_file(saveas):
                     fh = vfs.open(saveas, vfs.WRITE)
                 else:
-                    raise OSError("%s exists and is a directory; can't save as file" % saveas)
+                    raise OSError(u"%s exists and is a directory; can't save as file" % saveas)
             else:
                 fh = vfs.make_file(saveas)
             self.stc.writeTo(fh)
@@ -471,7 +471,7 @@ class Buffer(BufferVFSMixin):
             self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
         except:
-            eprint("Failed writing to %s" % self.url)
+            eprint(u"Failed writing to %s" % unicode(self.url))
             raise
 
     def showModifiedAll(self):
@@ -569,7 +569,7 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
         else:
             self.modecls = MajorModeMatcherDriver.match(self)
             self.dprint("found major mode = %s" % self.modecls)
-        self.stc = LoadingSTC(str(url))
+        self.stc = LoadingSTC(unicode(url))
     
     def allowThreadedLoading(self):
         return self.modecls.allow_threaded_loading
@@ -609,12 +609,12 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.start()
 
     def run(self):
-        self.dprint("starting to load %s" % self.buffer.url)
+        self.dprint(u"starting to load %s" % unicode(self.buffer.url))
         try:
             self.buffer.openBackgroundThread(self.progress.message)
             wx.CallAfter(self.frame.openSuccess, self.user_url, self.buffer,
                          self.mode_to_replace, self.progress)
-            self.dprint("successfully loaded %s" % self.buffer.url)
+            self.dprint(u"successfully loaded %s" % unicode(self.buffer.url))
         except Exception, e:
             import traceback
             traceback.print_exc()

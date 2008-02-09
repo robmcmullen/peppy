@@ -49,7 +49,7 @@ def init_i18n(path, lang, catalog):
     if os.path.exists(gettext_path):
         i18n_gettext(gettext_path)
     else:
-        __builtin__._ = str
+        __builtin__._ = unicode
 
 class errorRedirector(object):
     def __init__(self, which='error'):

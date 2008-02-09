@@ -86,15 +86,15 @@ class Authority(object):
 
 
     def __eq__(self, other):
-        return str(self) == str(other)
+        return unicode(self) == unicode(other)
 
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(unicode(self))
 
 
     def __nonzero__(self):
-        return bool(str(self))
+        return bool(unicode(self))
 
 
 
@@ -178,6 +178,25 @@ class Segment(str):
 
 
 
+class USegment(unicode):
+
+    __slots__ = []
+
+    def get_name(self):
+        return self.split(';', 1)[0]
+
+    name = property(get_name, None, None, '')
+
+
+    def get_params(self):
+        if ';' in self:
+            return self.split(';')[1:]
+        return []
+
+    params = property(get_params, None, None, '')
+
+
+
 class Path(list):
     """
     A path is a sequence of segments. A segment is has a name and,
@@ -193,7 +212,7 @@ class Path(list):
 
     def __init__(self, path):
         if isinstance(path, tuple) or isinstance(path, list):
-            path = '/'.join([ str(x) for x in path ])
+            path = '/'.join([ unicode(x) for x in path ])
 
         path = normalize_path(path)
 
@@ -205,8 +224,12 @@ class Path(list):
         if self.endswith_slash:
             path = path[:-1]
 
+        if isinstance(path, unicode):
+            segment = USegment
+        else:
+            segment = Segment
         if path != '':
-            path = [ Segment(x) for x in path.split('/') ]
+            path = [ segment(x) for x in path.split('/') ]
             list.__init__(self, path)
 
 
@@ -238,23 +261,34 @@ class Path(list):
             return '.'
         return path
 
+    def __unicode__(self):
+        path = u''
+        if self.startswith_slash:
+            path = u'/'
+        path += u'/'.join([ unicode(x) for x in self ])
+        if self.endswith_slash:
+            path += u'/'
+        if len(path) == 0:
+            return u'.'
+        return path
+
 
     def __ne__(self, other):
-        if isinstance(other, str):
+        if isinstance(other, str) or isinstance(other, unicode):
             other = Path(other)
 
-        return str(self) != str(other)
+        return unicode(self) != unicode(other)
 
 
     def __eq__(self, other):
-        if isinstance(other, str):
+        if isinstance(other, str) or isinstance(other, unicode):
             other = Path(other)
 
-        return str(self) == str(other)
+        return unicode(self) == unicode(other)
 
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(unicode(self))
 
 
     def is_absolute(self):
@@ -286,9 +320,17 @@ class Path(list):
             return path
 
         if self.endswith_slash:
-            return Path('%s/%s' % (self, path))
+            if len(self) > 0 and isinstance(self[0], unicode):
+                template = u'%s/%s'
+            else:
+                template = '%s/%s'
+            return Path(template % (self, path))
 
-        return Path('%s/../%s' % (self, path))
+        if len(self) > 0 and isinstance(self[0], unicode):
+            template = u'%s/../%s'
+        else:
+            template = '%s/../%s'
+        return Path(template % (self, path))
 
 
     def resolve2(self, path):
@@ -309,6 +351,8 @@ class Path(list):
         if path.is_absolute():
             return path
 
+        if len(self) > 0 and isinstance(self[0], unicode):
+            return Path(u'%s/%s' % (self, path))
         return Path('%s/%s' % (self, path))
 
 
@@ -492,12 +536,26 @@ class Reference(object):
         return reference
 
 
+    def __unicode__(self):
+        path = unicode(self.path)
+        if path == u'.':
+            path = u''
+        query = encode_query(self.query)
+        reference = urlunsplit((self.scheme, str(self.authority), path, query,
+                                self.fragment))
+        if reference == '':
+            if self.fragment is not None:
+                return u'#'
+            return u'.'
+        return reference
+
+
     def __eq__(self, other):
-        return str(self) == str(other)
+        return unicode(self) == unicode(other)
 
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(unicode(self))
 
 
     def resolve(self, reference):

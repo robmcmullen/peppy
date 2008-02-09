@@ -20,7 +20,7 @@ def normalize(ref, base=None):
     if ref.scheme:
         # URLs always use /
         if ref.scheme == 'file' and os.path.sep == '\\':
-            ref = str(ref).replace(os.path.sep, '/')
+            ref = unicode(ref).replace(os.path.sep, '/')
             ref = get_reference(ref)
         return ref
     # Default to the current working directory
@@ -39,7 +39,7 @@ def normalize(ref, base=None):
 def canonical_reference(ref):
     """Normalize a uri but remove any query string or fragments."""
     # get a copy of the reference
-    ref = normalize(str(ref))
+    ref = normalize(unicode(ref))
     ref.query = {}
     ref.fragment = ''
     

@@ -34,65 +34,65 @@ class FileFS(BaseFS):
 
     @staticmethod
     def exists(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return exists(path)
 
 
     @staticmethod
     def is_file(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return isfile(path)
 
 
     @classmethod
     def is_folder(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return isdir(path)
 
 
     @staticmethod
     def can_read(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return access(path, R_OK)
 
 
     @staticmethod
     def can_write(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return access(path, W_OK)
 
 
     @staticmethod
     def get_ctime(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         ctime = getctime(path)
         return datetime.fromtimestamp(ctime)
 
 
     @staticmethod
     def get_mtime(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         mtime = getmtime(path)
         return datetime.fromtimestamp(mtime)
 
 
     @staticmethod
     def get_atime(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         atime = getatime(path)
         return datetime.fromtimestamp(atime)
 
 
     @staticmethod
     def get_size(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return getsize(path)
 
 
     @staticmethod
     def make_file(reference):
-        folder_path = str(reference.path[:-1])
-        file_path = str(reference.path)
+        folder_path = unicode(reference.path[:-1])
+        file_path = unicode(reference.path)
 
         if exists(folder_path):
             if exists(file_path):
@@ -104,16 +104,16 @@ class FileFS(BaseFS):
 
     @staticmethod
     def make_folder(reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         mkdir(path)
 
 
     @staticmethod
     def remove(path):
         if isinstance(path, Reference):
-            path = str(path.path)
+            path = unicode(path.path)
         elif isinstance(path, Path):
-            path = str(path)
+            path = unicode(path)
 
         if not exists(path):
             raise OSError, "File does not exist '%s'" % path
@@ -133,7 +133,7 @@ class FileFS(BaseFS):
 
     @staticmethod
     def open(reference, mode=None):
-        path = str(reference.path)
+        path = unicode(reference.path)
         if not exists(path):
             raise OSError, "File does not exist '%s'" % reference
 
@@ -153,16 +153,16 @@ class FileFS(BaseFS):
     @staticmethod
     def move(source, target):
         # Fail if target exists and is a file
-        dst = str(target.path)
+        dst = unicode(target.path)
         if isfile(dst):
             raise OSError, '[Errno 20] Not a directory'
 
         # If target is a folder, move inside it
         if isdir(dst):
             dst = target.path.resolve2(source.path[-1])
-            dst = str(dst)
+            dst = unicode(dst)
 
-        src = str(source.path)
+        src = unicode(source.path)
         try:
             rename(src, dst)
         except OSError:
@@ -174,7 +174,7 @@ class FileFS(BaseFS):
     # Folders only
     @classmethod
     def get_names(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         return listdir(path)
 
 

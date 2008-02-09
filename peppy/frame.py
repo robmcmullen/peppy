@@ -622,9 +622,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def setTitle(self):
         major=self.getActiveMajorMode()
         if major:
-            self.SetTitle("peppy: %s" % major.getTabName())
+            self.SetTitle(u"peppy: %s" % major.getTabName())
         else:
-            self.SetTitle("peppy")
+            self.SetTitle(u"peppy")
 
     def showModified(self, major):
         current=self.getActiveMajorMode()
@@ -640,7 +640,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return False
         mode = self.getActiveMajorMode()
         url = vfs.normalize(wx.GetApp().classprefs.title_page)
-        dprint("%s == %s => %s" % (url, mode.buffer.url, mode.buffer.url == url))
+        dprint(u"%s == %s => %s" % (unicode(url), unicode(mode.buffer.url), mode.buffer.url == url))
         if mode.buffer.url == url:
             return True
         return False
@@ -726,7 +726,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         buffer = loading_buffer.clone()
         buffer.openGUIThreadStart()
         statusbar = mode_to_replace.getStatusBar()
-        statusbar.startProgress("Loading %s" % user_url, message=str(mode_to_replace))
+        statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
         thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
@@ -754,7 +754,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def openFailure(self, url, error, mode_to_replace=None, progress=None):
         #traceoff()
-        msg = "Failed opening %s.\n" % url
+        msg = "Failed opening %s.\n" % unicode(url)
         buffer = Buffer.createErrorBuffer(url, error)
         mode = self.tabs.newMode(buffer, mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
@@ -778,7 +778,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if mode and mode.buffer:
             cwd = mode.buffer.cwd(use_vfs)
         else:
-            cwd=os.getcwd()
+            cwd = unicode(os.getcwd())
         return cwd
             
     def switchMode(self):
