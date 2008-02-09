@@ -1,4 +1,4 @@
-# Sample make file
+# Syntax Highlighting Test File for Makefile
 # Some more comments about this file
 
 # Some Identifiers and Preproccessor stuff
@@ -8,6 +8,7 @@ CFLAGS=-DDEBUG -g $(CFLAGS)
 CFLAGS=-Os $(CFLAGS)
 !endif
 
+# Some Targets
 helloworld: helloworld.o
 		cc -o $@ $<
 

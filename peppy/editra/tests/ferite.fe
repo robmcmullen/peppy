@@ -1,0 +1,41 @@
+// Syntax Highlighting Test File for Ferite
+// Comments are like this
+/* Multiline comments are
+ * like this
+ */
+
+// Hello World
+uses "console";
+Console.println( "Hello World" );
+Console.println( "Unclosed String
+
+// Types
+number a;
+string b;
+array c;
+
+a = 2;
+b = "2";
+c = [ a, b ];
+
+// Function
+function f( number x ) {
+    if( x > 1 ) {
+        return f( x - 1 ) * 2;
+    }
+    return 1;
+}
+Console.println( f(10) );
+
+// Class
+class A {
+    string value;
+    
+    function constructor() {
+        .value = "Class.A";
+    }
+    
+    function f() {
+        return .value;
+    }
+}
