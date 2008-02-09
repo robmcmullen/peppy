@@ -14,6 +14,46 @@ from peppy.debug import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
 
+
+class ShowModeKeys(SelectAction):
+    """Display a list of key bindings.
+    
+    Simple action to show a list of keybindings of the current mode.
+    """
+    name = "&Show Key Bindings"
+    alias = "describe-keys"
+    default_menu = ("&Help", 210)
+    key_bindings = {'emacs': "M-/ B", }
+
+    def action(self, index=-1, multiplier=1):
+        actions = {}
+        for actioncls in self.frame.menumap.class_list.action_classes:
+            actions[actioncls] = True
+        text = ["List of key bindings:"]
+        #for actioncls in actions:
+        #    text.append(actioncls.__name__)
+        keymaps = self.frame.keys.keymaps
+        for keymap in keymaps:
+            bindings = keymap.getBindings()
+            #dprint(str(bindings))
+            sorted = [(a.__class__.__name__, key, a) for a, key in bindings.iteritems()]
+            sorted.sort()
+            for name, key, action in sorted:
+                if action:
+                    text.append("%s\t%s\t\t%s" % (key, name, action.tooltip))
+                    if action.__class__ in actions:
+                        del actions[action.__class__]
+        
+        text.append("\n")
+        text.append("Actions without key bindings:")
+        sorted = [(a.__name__, a) for a in actions]
+        sorted.sort()
+        for name, action in sorted:
+            text.append("%s\t\t%s" % (name, action.tooltip))
+        Publisher().sendMessage('peppy.log.info', '\n'.join(text))
+
+
+
 class KeyboardConf(IPeppyPlugin):
     """Loader for keyboard configurations.
 
@@ -125,3 +165,6 @@ class KeyboardConf(IPeppyPlugin):
         for name in names:
             lines.append("%s = %s" % (name, keymap[name]))
         fh.write(os.linesep.join(lines) + os.linesep)
+
+    def getActions(self):
+        yield ShowModeKeys

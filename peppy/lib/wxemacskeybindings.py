@@ -259,7 +259,19 @@ class KeyMap(object):
                 raise DuplicateKeyError("Some other hotkey shares a prefix with this hotkey: %s"%acc)
             hotkeys[keystrokes[-1]] = fcn
         return " ".join(keystrokes)
-
+    
+    def processBindings(self, map, lookup, keys):
+        for item, action in lookup.iteritems():
+            if isinstance(action, dict):
+                self.processBindings(map, action, keys + [item])
+            else:
+                map[action] = tuple(keys + [item])
+    
+    def getBindings(self):
+        """Return a dict that shows the mapping of actions to keystrokes"""
+        map = {}
+        self.processBindings(map, self.lookup, [])
+        return map
 
 class KeyProcessor(object):
     """Driver class for key processing.
@@ -699,6 +711,8 @@ if __name__ == '__main__':
             self.menuAdd(lmap, "ESC\tM-ESC A", "M-ESC A", StatusUpdater(self, "Meta-Escape-A"))
 
             #print self.lookup
+            print self.localKeyMap.getBindings()
+            print self.globalKeyMap.getBindings()
             self.Show(1)
 
 
