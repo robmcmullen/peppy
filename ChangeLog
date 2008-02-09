@@ -1,7 +1,11 @@
-2008-02-??  Rob McMullen  <robm@users.sourceforge.net>
+2008-02-09  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.3 update to "Oscillation Overthruster"
-
+	* now works with unicode pathnames
+	* fixed other problems related to unicode support
+	* C/C++ modes now display rudimentary function menus
+	* added simple list of keybindings
+	* added menu entry for bug reports
 
 2008-02-05  Rob McMullen  <robm@users.sourceforge.net>
 

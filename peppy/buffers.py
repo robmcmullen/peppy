@@ -325,7 +325,7 @@ class Buffer(BufferVFSMixin):
         self.stc=None
 
     def __del__(self):
-        dprint("cleaning up buffer %s" % self.url)
+        dprint(u"cleaning up buffer %s" % unicode(self.url))
 
     def initSTC(self):
         self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
