@@ -406,7 +406,7 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
                 # how to differentiate buffers that can't be deleted?
                 pass
             
-            key = str(buf.url)
+            key = unicode(buf.url)
             flags = self.getFlags(key)
             if index >= list_count:
                 self.InsertStringItem(sys.maxint, flags)
