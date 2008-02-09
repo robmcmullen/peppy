@@ -63,7 +63,7 @@ def dprint(str=''):
             cls=namespace['self'].__class__.__name__+'.'
         else:
             cls=''
-        dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str.encode('utf8'),os.linesep))
+        dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     finally:
         del caller
     if TRACING: _traceon()

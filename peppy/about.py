@@ -40,9 +40,9 @@ my day-to-day editing, and it has all but replaced XEmacs as my daily editor.
 I've planned much more development, though, and I also intend to work on a
 lot of documentation to make it easier for contributors to extend the editor.
 
-<P>Save your work often and file a bug report at
-http://trac.flipturn.org/newticket if you notice something that shouldn't
-be happening.
+<P>Save your work often and file a bug report using the <b>Help</b> ->
+<b>Report a Bug</b> menu item (or at http://trac.flipturn.org/newticket) if
+you notice something that shouldn't be happening.
     """,
     'thanks': "",
     'gpl_code': "",

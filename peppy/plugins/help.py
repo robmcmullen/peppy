@@ -81,10 +81,39 @@ class HelpManual(SelectAction):
         self.frame.open("about:User Manual")
         
 
+class ProjectHome(SelectAction):
+    """Go to the project homepage.
+    
+    Load the project homepage in the default webbrowser.
+    """
+    name = "Project Homepage"
+    default_menu = ("&Help", 101)
+    icon = "icons/peppy.png"
+    default_toolbar = False
+    
+    def action(self, index=-1, multiplier=1):
+        from peppy import __url__
+        import webbrowser
+        webbrowser.open(__url__)
+        
+
+class BugReport(SelectAction):
+    """Report a bug.
+    
+    Report a bug using the web-based bug tracking system.
+    """
+    name = "Report a bug"
+    default_menu = ("&Help", 102)
+    
+    def action(self, index=-1, multiplier=1):
+        import webbrowser
+        webbrowser.open("http://trac.flipturn.org/newticket")
+        
+
 class HelpPlugin(IPeppyPlugin):
     def aboutFiles(self):
         return {'User Manual': _user_manual}
 
     def getActions(self):
-        return [HelpAbout, HelpManual]
+        return [HelpAbout, HelpManual, ProjectHome, BugReport]
 
