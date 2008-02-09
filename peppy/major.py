@@ -115,8 +115,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("createListeners done in %0.5fs" % (time.time() - start))
         self.editwin.createListenersPostHook()
         self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
-        self.editwin.createActions()
-        self.dprint("createActions done in %0.5fs" % (time.time() - start))
         self.editwin.createPostHook()
         self.dprint("Created major mode in %0.5fs" % (time.time() - start))
         
@@ -434,11 +432,6 @@ class MajorMode(ClassPrefs, debugmixin):
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
     
-    # The first time an instance of a major mode is created, the action class
-    # list is populated.  Subsequent instances use this list, and this list
-    # can change if plugins are activated or deactivated.
-    action_classes = None
-    
     def __init__(self, parent, wrapper, buffer, frame):
         self.wrapper = wrapper
         self.buffer = buffer
@@ -731,16 +724,6 @@ class MajorMode(ClassPrefs, debugmixin):
         """Hook for subclasses to process during idle time.
         """
         pass
-
-    def createActions(self):
-        """Create the list of actions corresponding to this major mode.
-        
-        The action list includes all commands regardless of how they are
-        initiated: menubar, toolbar, or keyboard commands.  If a new minor
-        mode or sidebar is activated, this list will have to be regenerated.
-        """
-        if not self.action_classes:
-            self.__class__.action_classes = UserActionClassList(self)
 
     def getPopupActions(self, x, y):
         """Return the list of action classes to use as a context menu.

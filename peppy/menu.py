@@ -204,6 +204,9 @@ class UserActionMap(debugmixin):
     """
     debuglevel = 0
     
+    #: mapping of major mode class to list of actions
+    mode_actions = {}
+    
     def __init__(self, frame, mode):
         """Initialize the mapping with the new set of actions.
         
@@ -224,11 +227,23 @@ class UserActionMap(debugmixin):
         
         self.title_to_menu = {}
         self.title_to_toolbar = {}
-        self.class_list = mode.action_classes
+        self.class_list = self.createActions(mode)
         self.class_to_action = {}
     
 #    def __del__(self):
 #        dprint("DELETING MENUMAP!")
+
+    def createActions(self, mode):
+        """Create the list of actions corresponding to this major mode.
+        
+        The action list includes all commands regardless of how they are
+        initiated: menubar, toolbar, or keyboard commands.  If a new minor
+        mode or sidebar is activated, this list will have to be regenerated.
+        """
+        if not mode.__class__ in self.mode_actions:
+            action_classes = UserActionClassList(mode)
+            self.mode_actions[mode.__class__] = action_classes
+        return self.mode_actions[mode.__class__]
 
     def updateMinMax(self, min, max):
         """Update the min and max menu ids
