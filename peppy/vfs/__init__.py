@@ -15,14 +15,22 @@ from peppy.debug import *
 def normalize(ref, base=None):
     """Normalize a url string into a reference and fix windows shenanigans"""
     if not isinstance(ref, Reference):
+        if ref.startswith('file:'):
+            # URLs always use /, so change windows path separators to forward
+            # slashes
+            try:
+                ref = unicode(ref)
+            except UnicodeDecodeError:
+                ref = str(ref).decode(sys.getfilesystemencoding())
+            dprint(repr(ref))
+            if os.path.sep == '\\':
+                ref = path.replace(os.path.sep, '/')
         ref = get_reference(ref)
-    # Check the reference is absolute
+    # If the reference is absolute (i.e.  contains a scheme), we return;
+    # otherwise we assume it's a file:// URI
     if ref.scheme:
-        # URLs always use /
-        if ref.scheme == 'file' and os.path.sep == '\\':
-            ref = unicode(ref).replace(os.path.sep, '/')
-            ref = get_reference(ref)
         return ref
+
     # Default to the current working directory
     if base is None:
         base = os.getcwd()
@@ -33,8 +41,13 @@ def normalize(ref, base=None):
     # Check windows drive letters and add extra slash for correct URL syntax
     if base[1] == ':':
         base = "/%s:%s" % (base[0].lower(), base[2:])
-    baseref = get_reference('file://%s/' % base)
-    return baseref.resolve(ref)
+    baseref = get_reference(u'file://%s/' % base)
+    try:
+        path = unicode(ref.path)
+    except UnicodeDecodeError:
+        path = str(ref.path).decode(sys.getfilesystemencoding())
+    dprint(repr(path))
+    return baseref.resolve(path)
 
 def canonical_reference(ref):
     """Normalize a uri but remove any query string or fragments."""

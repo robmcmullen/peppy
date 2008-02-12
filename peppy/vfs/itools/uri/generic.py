@@ -265,6 +265,8 @@ class Path(list):
         path = u''
         if self.startswith_slash:
             path = u'/'
+        for x in self:
+            print(repr(x))
         path += u'/'.join([ unicode(x) for x in self ])
         if self.endswith_slash:
             path += u'/'

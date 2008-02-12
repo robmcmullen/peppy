@@ -53,7 +53,7 @@ class TarFS(BaseFS):
         
         # handle absolute and relative paths
         if path.startswith('/'):
-            archive_path = '/'
+            archive_path = u'/'
         elif len(path) > 1 and path[0].isalpha() and path[1]==':':
             archive_path = path[0:2]
             components.pop()
@@ -66,7 +66,7 @@ class TarFS(BaseFS):
         # Find the first archive in the path
         while components:
             comp = components.pop()
-            archive_path = '/'.join([archive_path, comp])
+            archive_path = u'/'.join([archive_path, comp])
             #print("archive_path=%s" % archive_path)
             if os.path.exists(archive_path):
                 try:
@@ -86,7 +86,7 @@ class TarFS(BaseFS):
             #print archive.getmembers()
             if components:
                 components.reverse()
-            member_path = "/".join(components)
+            member_path = u"/".join(components)
             return archive, archive_path, member_path
         return None, None, None
     
@@ -114,13 +114,13 @@ class TarFS(BaseFS):
 
     @classmethod
     def exists(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         return archive is not None
 
     @classmethod
     def is_file(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         m = cls._get_info(archive, name)
         if m:
@@ -129,7 +129,7 @@ class TarFS(BaseFS):
 
     @classmethod
     def is_folder(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         if not name:
             # the root of the archive is a folder
@@ -149,7 +149,7 @@ class TarFS(BaseFS):
 
     @classmethod
     def get_size(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         m = cls._get_info(archive, name)
         if m:
@@ -158,7 +158,7 @@ class TarFS(BaseFS):
 
     @classmethod
     def get_mtime(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         m = cls._get_info(archive, name)
         if m:
@@ -167,7 +167,7 @@ class TarFS(BaseFS):
 
     @classmethod
     def open(cls, reference, mode=None):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         m = cls._get_info(archive, name)
         if not m:
@@ -183,7 +183,7 @@ class TarFS(BaseFS):
     # Folders only
     @classmethod
     def get_names(cls, reference):
-        path = str(reference.path)
+        path = unicode(reference.path)
         archive, path, name = cls._open(path)
         if not archive:
             raise OSError('[Errno 20] Not a directory')

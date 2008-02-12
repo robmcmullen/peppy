@@ -14,7 +14,7 @@ class HSIPlugin(IPeppyPlugin):
 
     def attemptOpen(self, buffer):
         url = buffer.url
-        assert self.dprint("Trying to open url: %s" % url)
+        assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
         hsi_major_mode = self.importModule("hsi_major_mode")
         if hsi_major_mode:
             format = HyperspectralFileFormat.identify(url)

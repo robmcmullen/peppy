@@ -99,10 +99,10 @@ class LocalFileMinibuffer(CompletionMinibuffer):
         # hasn't rearranged the keyboard
         if text[:-1] == self.initial:
             if text.endswith('~'):
-                self.text.ChangeValue(u'~')
+                self.text.ChangeValue('~')
                 self.text.SetInsertionPointEnd()
             elif text.endswith('/') or text.endswith(os.sep):
-                self.text.ChangeValue(unicode(os.sep))
+                self.text.ChangeValue(os.sep)
                 self.text.SetInsertionPointEnd()
         elif wx.Platform == "__WXMSW__" and text[:-2] == self.initial:
             if text.endswith(':') and text[-2].isalpha():
@@ -124,7 +124,7 @@ class LocalFileMinibuffer(CompletionMinibuffer):
                 path += os.sep
             #dprint(path)
             if replace > 0:
-                path = u"~" + os.sep + path[replace:]
+                path = "~" + os.sep + path[replace:]
             paths.append(path)
         paths.sort()
         return paths
@@ -184,7 +184,7 @@ class URLMinibuffer(CompletionMinibuffer):
         if text[:-1] == self.initial:
             if text.endswith('/') or text.endswith(os.sep):
                 uri = vfs.normalize(text)
-                change = unicode(vfs.normalize(uri.scheme + ":"))
+                change = str(vfs.normalize(uri.scheme + ":"))
                 self.text.ChangeValue(change)
                 self.text.SetInsertionPointEnd()
         CompletionMinibuffer.setDynamicChoices(self)
@@ -208,17 +208,17 @@ class URLMinibuffer(CompletionMinibuffer):
             uridir = vfs.get_dirname(uri)
             pattern = path
             
-        self.dprint(u'dir=%s pattern=%s' % (uridir, pattern))
+        self.dprint('dir=%s pattern=%s' % (uridir, pattern))
         for name in vfs.get_names(uridir):
             if not name.startswith(pattern):
                 self.dprint("skipping %s because it doesn't start with %s" % (name, pattern))
                 continue
             uri = uridir.resolve2(name)
-            path = unicode(uri)
+            path = str(uri)
             if vfs.is_folder(uri):
-                path = unicode(uri) + '/'
+                path = str(uri) + '/'
             else:
-                path = unicode(uri)
+                path = str(uri)
             self.dprint(path)
             paths.append(path)
         return paths
@@ -237,8 +237,8 @@ class URLMinibuffer(CompletionMinibuffer):
 
     def complete(self, text):
         uri = vfs.normalize(text)
-        path = unicode(uri.path)
-        self.dprint(u"text=%s path=%s" % (text, path))
+        path = str(uri.path)
+        self.dprint("uri=%s text=%s path=%s" % (str(uri), text, path))
         try:
             if ':' in text:
                 paths = self.completePath(text, uri, path)
@@ -1010,7 +1010,7 @@ class MainMenu(IPeppyPlugin):
     def attemptOpen(self, buffer):
         # use a copy of the url because don't want to change the buffer's url
         # unless it turns out that we want to change the scheme
-        refcopy = vfs.get_reference(str(buffer.url))
+        refcopy = vfs.get_reference(unicode(buffer.url))
         #print "url = %s" % str(refcopy)
         if refcopy.scheme == "file" and vfs.exists(refcopy):
             # change scheme and see if tar can open it

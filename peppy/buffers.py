@@ -51,6 +51,7 @@ class BufferList(OnDemandGlobalListAction):
     
     @classmethod
     def findBufferByURL(cls, url):
+        dprint(repr(unicode(url)))
         url = vfs.canonical_reference(url)
         for buf in cls.storage:
             if buf.isURL(url):
