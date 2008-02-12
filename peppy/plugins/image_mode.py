@@ -103,7 +103,9 @@ class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
         self.update()
         
     def update(self):
-        fh = StringIO(self.GetBinaryData(0,self.GetTextLength()))
+        bytes = self.buffer.stc.GetBinaryData()
+        #dprint(repr(bytes))
+        fh = StringIO(bytes)
 
         # Can't use wx.ImageFromStream(fh), because a malformed image
         # causes python to crash.

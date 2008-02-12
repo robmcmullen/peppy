@@ -99,11 +99,19 @@ class STCInterface(object):
     def open(self, buffer, message=None):
         """Read from the specified url to populate the STC.
         
-        Abstract method that subclasses use to read data into the STC.
+        Abstract method that subclasses use to read data into the STC.  May be
+        called from a thread, so don't process any GUI actions here.
 
         buffer: buffer object used to read the file
         
         message: optional message used to update a progress bar
+        """
+        pass
+
+    def openSuccess(self, buffer):
+        """Called after a file has been successfully opened.
+        
+        This is called by the GUI thread, so can update any GUI elements here.
         """
         pass
 

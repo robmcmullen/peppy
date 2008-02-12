@@ -93,7 +93,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     This class performs the bookkeeping to keep the STC document pointers up to
     date when a new view is added.
     """
-    debuglevel = 0
+    debuglevel = 1
     
     eol2int = {'\r': wx.stc.STC_EOL_CR,
                '\r\n': wx.stc.STC_EOL_CRLF,
@@ -109,20 +109,21 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.ClearAll()
         
         if refstc is not None:
-            self.refstc=refstc
-            self.docptr=self.refstc.docptr
+            self.refstc = refstc
+            self.docptr = self.refstc.docptr
             self.AddRefDocument(self.docptr)
             self.SetDocPointer(self.docptr)
             self.SetCodePage(65001) # set for unicode character display
             self.refstc.addSubordinate(self)
             assert self.dprint("referencing document %s" % self.docptr)
         else:
-            self.refstc=None
-            self.docptr=self.CreateDocument()
+            self.refstc = self
+            self.docptr = self.CreateDocument()
             self.SetDocPointer(self.docptr)
             self.SetCodePage(65001) # set for unicode character display
+            self.encoding = None # we don't know the encoding yet
             assert self.dprint("creating new document %s" % self.docptr)
-            self.subordinates=[]
+            self.subordinates = []
 
             # If views can share info among similar classes, that info can be
             # stored here.
@@ -146,13 +147,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """Get the dict that can be used to store data common to viewers of
         the specified class.
         """
-        if self.refstc is None:
-            stc = self
-        else:
-            stc = self.refstc
-        if cls not in stc.stc_class_info:
-            stc.stc_class_info[cls] = {}
-        return stc.stc_class_info[cls]
+        if cls not in self.refstc.stc_class_info:
+            self.refstc.stc_class_info[cls] = {}
+        return self.refstc.stc_class_info[cls]
 
     def addSubordinate(self,otherstc):
         self.subordinates.append(otherstc)
@@ -160,7 +157,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     def removeDocumentView(self):
         """Remove the reference of this view from its parent document"""
-        if self.refstc:
+        if self.refstc != self:
             self.refstc.subordinates.remove(self)
             self.refstc.updateSubordinateClasses()
 
@@ -173,6 +170,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         large to fit in memory.
         """
         fh = buffer.getBufferedReader()
+        self.refstc.tempstore = StringIO()
         if fh:
             # if the file exists, read the contents.
             length = vfs.get_size(buffer.url)
@@ -181,13 +179,25 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             if length/chunk > 100:
                 chunk *= 4
             self.readFrom(fh, chunk=chunk, length=length, message=message)
-            self.detectEncoding()
-            self.detectLineEndings()
         else:
             # FIXME: if we're creating the file, we should allow for a
             # template.  The template will be major-mode dependent, so there
             # will have to be some callback to the major mode
             pass
+    
+    def openSuccess(self, buffer, headersize=1024):
+        bytes = self.tempstore.getvalue()
+        numbytes = len(bytes)
+        if headersize > numbytes:
+            headersize = numbytes
+        header = bytes[0:headersize]
+        self.detectLineEndings(header)
+        
+        lines = header.splitlines()
+        self.detectEncoding(lines[0:2], bytes)
+        dprint("found encoding = %s" % self.refstc.encoding)
+        
+        del self.tempstore
     
     def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
         """Read a chunk of the file from the file-like object.
@@ -202,7 +212,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         total = 0
         while amount is None or total<amount:
             txt = fh.read(chunk)
-            assert self.dprint("BinaryFilter: reading %d bytes from %s" % (len(txt), fh))
+            assert self.dprint("reading %d bytes from %s" % (len(txt), fh))
 
             if len(txt) > 0:
                 total += len(txt)
@@ -215,42 +225,43 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                     # This only seems to happen for unicode files written
                     # to the mem: filesystem, but if it does happen to be
                     # unicode, there's no need to convert the data
-                    self.AddText(txt)
+                    self.refstc.encoding = "utf-8"
+                    self.tempstore.write(unicode.encode('utf-8'))
                 else:
-                    # need to convert it to two bytes per character as
-                    # that's the only way to load binary data into
-                    # Scintilla.  First byte is the content, 2nd byte is
-                    # styling (which we set to zero)
-                    styledtxt = '\0'.join(txt)+'\0'
-                    assert self.dprint("styledtxt: length=%d" % len(styledtxt))
-                    self.AddStyledText(styledtxt)
+                    self.tempstore.write(txt)
             else:
                 # stop when we reach the end.  An exception will be
                 # handled outside this class
                 break
     
-    def detectEncoding(self):
+    def detectEncoding(self, lines, bytes):
         """Check for the file encoding and convert in place.
         
         If the encoding is embedded in the file (through emacs "magic
         comments"), change the text from the binary representation into the
         specified encoding.
         """
-        regex = re.compile("coding[:=]\s*([-\w.]+)")
-        for line in range(2):
-            txt = self.GetLine(line)
-            match = regex.search(txt)
-            if match:
-                dprint("Found encoding %s" % match.group(1))
-                self.convertEncoding(match.group(1))
-                return
-
-    def convertEncoding(self, encoding):
-        encoded = self.GetBinaryData(0, self.GetLength())
-        dprint("encoded(%s) = %s bytes" % (type(encoded), len(encoded)))
-        unicodestring = encoded.decode(encoding)
-        dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
-        self.SetText(unicodestring)
+        if not self.refstc.encoding:
+            # If we don't already know the encoding, search the "magic comments"
+            regex = re.compile("coding[:=]\s*([-\w.]+)")
+            for txt in lines:
+                match = regex.search(txt)
+                if match:
+                    dprint("Found encoding %s" % match.group(1))
+                    self.refstc.encoding = match.group(1)
+                    break
+        
+        if self.refstc.encoding:
+            unicodestring = bytes.decode(self.refstc.encoding)
+            dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
+            self.SetText(unicodestring)
+        else:
+            # If there's no encoding, stuff the binary bytes in the stc.  The
+            # only way to load binary data into scintilla is to convert it to
+            # two bytes per character: first byte is the content, 2nd byte is
+            # styling (which we set to zero)
+            styledtxt = '\0'.join(bytes)+'\0'
+            self.AddStyledText(styledtxt)
     
     def writeTo(self, fh):
         """Writes a copy of the document to the provided file-like object.
@@ -263,6 +274,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
         assert self.dprint("numchars=%d: writing %d bytes to %s" % (numchars, len(txt), fh))
         assert self.dprint(repr(txt))
+        utf8 = self.GetTextUTF8()
+        assert self.dprint("utf8: %d bytes" % len(txt))
+        assert self.dprint(repr(utf8))
         try:
             fh.write(txt)
         except:
@@ -309,7 +323,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.SetSelectionStart(0)
         self.SetSelectionEnd(self.GetLength())
 
-    def GetBinaryData(self,start,end):
+    def GetBinaryData(self, start=0, end=-1):
         """Convenience function to get binary data out of the STC.
         
         The only way to get binary data out of the STC is to use the
@@ -322,6 +336,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         @returns: binary data between start and end-1, inclusive (just
         like standard python array slicing)
         """
+        if end == -1:
+            end = self.GetTextLength()
         return self.GetStyledText(start,end)[::2]
 
     def GuessBinary(self,amount,percentage):
@@ -444,7 +460,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         finally:
             self.EndUndoAction()
 
-    def detectLineEndings(self, num=1024):
+    def detectLineEndings(self, header):
         """Guess which type of line ending is used by the file."""
         def whichLinesep(text):
             # line ending counting function borrowed from PyPE
@@ -461,9 +477,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             else:# cr_ is mx:
                 return '\r'
         
-        if num > self.GetTextLength():
-            num = self.GetTextLength()
-        linesep = whichLinesep(self.GetTextRange(0,num))
+        linesep = whichLinesep(header)
         mode = self.eol2int[linesep]
         self.SetEOLMode(mode)
 
@@ -705,7 +719,6 @@ class PeppySTC(PeppyBaseSTC):
     This class contains all the GUI callbacks and mouse bindings on top of
     L{PeppyBaseSTC}
     """
-    debuglevel=0
     
     def __init__(self, parent, refstc=None, copy=None, **kwargs):
         PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy, **kwargs)

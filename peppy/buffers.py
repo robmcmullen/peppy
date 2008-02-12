@@ -412,6 +412,8 @@ class Buffer(BufferVFSMixin):
         
         self.closeBufferedReader()
         
+        self.stc.openSuccess(self)
+        
         self.setName()
 
         if isinstance(self.stc,PeppySTC):
