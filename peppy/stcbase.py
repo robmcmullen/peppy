@@ -179,6 +179,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             if length/chunk > 100:
                 chunk *= 4
             self.readFrom(fh, chunk=chunk, length=length, message=message)
+            self.detectEncoding()
             self.detectLineEndings()
         else:
             # FIXME: if we're creating the file, we should allow for a
@@ -225,8 +226,32 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 # stop when we reach the end.  An exception will be
                 # handled outside this class
                 break
-        # FIXME: Encoding should be handled here -- convert the binary data
-        # that has been read in to the correct encoding.
+    
+    def detectEncoding(self):
+        """Check for the file encoding and convert in place.
+        
+        If the encoding is embedded in the file (through emacs "magic
+        comments"), change the text from the binary representation into the
+        specified encoding.
+        """
+        regex = re.compile("coding[:=]\s*([-\w.]+)")
+        for line in range(2):
+            txt = self.GetLine(line)
+            match = regex.search(txt)
+            if match:
+                dprint("Found encoding %s" % match.group(1))
+                self.convertEncoding(match.group(1))
+                return
+
+    def convertEncoding(self, encoding):
+        encoded = self.GetBinaryData(0, self.GetLength())
+        dprint("encoded(%s) = %s bytes" % (type(encoded), len(encoded)))
+        unicodestring = encoded.decode(encoding)
+        dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
+        self.SetText(unicodestring)
+#        utf8 = unicodestring.encode("utf-8")
+#        dprint("utf8(%s) = %s chars" % (type(utf8), len(utf8)))
+#        self.SetTextUTF8(utf8)
     
     def writeTo(self, fh):
         """Writes a copy of the document to the provided file-like object.
