@@ -113,12 +113,14 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.docptr=self.refstc.docptr
             self.AddRefDocument(self.docptr)
             self.SetDocPointer(self.docptr)
+            self.SetCodePage(65001) # set for unicode character display
             self.refstc.addSubordinate(self)
             assert self.dprint("referencing document %s" % self.docptr)
         else:
             self.refstc=None
             self.docptr=self.CreateDocument()
             self.SetDocPointer(self.docptr)
+            self.SetCodePage(65001) # set for unicode character display
             assert self.dprint("creating new document %s" % self.docptr)
             self.subordinates=[]
 
@@ -249,9 +251,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         unicodestring = encoded.decode(encoding)
         dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
         self.SetText(unicodestring)
-#        utf8 = unicodestring.encode("utf-8")
-#        dprint("utf8(%s) = %s chars" % (type(utf8), len(utf8)))
-#        self.SetTextUTF8(utf8)
     
     def writeTo(self, fh):
         """Writes a copy of the document to the provided file-like object.
