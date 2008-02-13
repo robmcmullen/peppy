@@ -147,6 +147,8 @@ class UpcaseWord(WordOrRegionMutateAction):
     name = "Upcase"
     key_bindings = {'emacs': 'M-U',}
     default_menu = ("Transform/Case", 101)
+    icon = "icons/text_uppercase.png"
+    default_toolbar = False
 
     def mutate(self, txt):
         """Change to all upper case.
@@ -162,6 +164,8 @@ class DowncaseWord(WordOrRegionMutateAction):
     name = "Downcase"
     key_bindings = {'emacs': 'M-L',}
     default_menu = ("Transform/Case", 102)
+    icon = "icons/text_lowercase.png"
+    default_toolbar = False
 
     def mutate(self, txt):
         """Change to all lower case.
