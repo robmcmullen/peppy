@@ -68,7 +68,11 @@ class TarFS(BaseFS):
             comp = components.pop()
             archive_path = u'/'.join([archive_path, comp])
             #print("archive_path=%s" % archive_path)
-            if os.path.exists(archive_path):
+            try:
+                path_exists = os.path.exists(archive_path)
+            except UnicodeEncodeError:
+                path_exists = os.path.exists(archive_path.encode('utf-8'))
+            if path_exists:
                 try:
                     archive = BaseFS.find_local_cached('tar', archive_path)
                     if not archive:

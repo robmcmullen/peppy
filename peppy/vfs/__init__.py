@@ -21,10 +21,13 @@ def normalize(ref, base=None):
             try:
                 ref = unicode(ref)
             except UnicodeDecodeError:
-                ref = str(ref).decode(sys.getfilesystemencoding())
+                try:
+                    ref = str(ref).decode(sys.getfilesystemencoding())
+                except UnicodeDecodeError:
+                    ref = str(ref).decode('utf-8')
             dprint(repr(ref))
             if os.path.sep == '\\':
-                ref = path.replace(os.path.sep, '/')
+                ref = ref.replace(os.path.sep, '/')
         ref = get_reference(ref)
     # If the reference is absolute (i.e.  contains a scheme), we return;
     # otherwise we assume it's a file:// URI
@@ -33,11 +36,15 @@ def normalize(ref, base=None):
 
     # Default to the current working directory
     if base is None:
-        base = os.getcwd()
+        try:
+            base = os.getcwd().decode(sys.getfilesystemencoding())
+        except UnicodeDecodeError:
+            base = os.getcwd().decode('utf-8')
 
     # URLs always use /
     if os.path.sep == '\\':
         base = base.replace(os.path.sep, '/')
+    dprint(base)
     # Check windows drive letters and add extra slash for correct URL syntax
     if base[1] == ':':
         base = "/%s:%s" % (base[0].lower(), base[2:])
@@ -45,7 +52,10 @@ def normalize(ref, base=None):
     try:
         path = unicode(ref.path)
     except UnicodeDecodeError:
-        path = str(ref.path).decode(sys.getfilesystemencoding())
+        try:
+            path = str(ref.path).decode(sys.getfilesystemencoding())
+        except UnicodeDecodeError:
+            path = str(ref.path).decode('utf-8')
     dprint(repr(path))
     return baseref.resolve(path)
 

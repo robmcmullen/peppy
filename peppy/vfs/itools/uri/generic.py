@@ -39,6 +39,7 @@ Other related RFCs include:
 # like API.
 
 # Import from the Standard Library
+import sys
 from copy import copy
 from urlparse import urlsplit, urlunsplit
 import urllib
@@ -265,8 +266,8 @@ class Path(list):
         path = u''
         if self.startswith_slash:
             path = u'/'
-        for x in self:
-            print(repr(x))
+        #for x in self:
+        #    print(repr(x))
         path += u'/'.join([ unicode(x) for x in self ])
         if self.endswith_slash:
             path += u'/'
@@ -354,6 +355,15 @@ class Path(list):
             return path
 
         if len(self) > 0 and isinstance(self[0], unicode):
+            try:
+                path = unicode(path)
+            except UnicodeDecodeError:
+                #for comp in path:
+                #    print("components: %s" % repr(comp))
+                path = str(path)
+                #print("path: %s, encoding=%s" % (repr(path), sys.getfilesystemencoding()))
+                #path = str(path).encode(sys.getfilesystemencoding())
+                path = str(path).decode('utf-8')
             return Path(u'%s/%s' % (self, path))
         return Path('%s/%s' % (self, path))
 

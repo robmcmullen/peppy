@@ -553,8 +553,13 @@ class MajorMode(ClassPrefs, debugmixin):
         veto = self.savePreHook(url)
         if veto == False:
             return
-        self.buffer.save(url)
-        self.savePostHook()
+        try:
+            self.buffer.save(url)
+            self.savePostHook()
+            self.frame.SetStatusText(u"Saved %s" % self.buffer.url)
+        except IOError, e:
+            self.frame.SetStatusText(unicode(e))
+
 
     def savePreHook(self, url=None):
         """Hook before the buffer is saved.

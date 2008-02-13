@@ -452,7 +452,7 @@ class Buffer(BufferVFSMixin):
         wx.CallAfter(self.showModifiedAll)
         
     def save(self, url=None):
-        assert self.dprint(u"Buffer: saving buffer %s" % unicode(self.url))
+        assert self.dprint(u"Buffer: saving buffer %s as %s" % (unicode(self.url), url))
         try:
             if url is None:
                 saveas = self.url
@@ -474,7 +474,7 @@ class Buffer(BufferVFSMixin):
             self.modified = False
             self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
-        except:
+        except IOError:
             eprint(u"Failed writing to %s" % unicode(self.url))
             raise
 

@@ -32,90 +32,113 @@ from registry import register_file_system
 
 class FileFS(BaseFS):
 
-    @staticmethod
-    def exists(reference):
+    @classmethod
+    def unicode_wrapper(cls, reference, func):
         path = unicode(reference.path)
-        return exists(path)
+        try:
+            return func(path)
+        except UnicodeEncodeError:
+            return func(path.encode('utf-8'))
 
 
-    @staticmethod
-    def is_file(reference):
-        path = unicode(reference.path)
-        return isfile(path)
+    @classmethod
+    def exists(cls, reference):
+        return cls.unicode_wrapper(reference, exists)
+
+
+    @classmethod
+    def is_file(cls, reference):
+        return cls.unicode_wrapper(reference, isfile)
 
 
     @classmethod
     def is_folder(cls, reference):
+        return cls.unicode_wrapper(reference, isdir)
+
+
+    @classmethod
+    def can_read(cls, reference):
         path = unicode(reference.path)
-        return isdir(path)
+        try:
+            return access(path, R_OK)
+        except UnicodeEncodeError:
+            return access(path.encode('utf-8'), R_OK)
 
 
-    @staticmethod
-    def can_read(reference):
+    @classmethod
+    def can_write(cls, reference):
         path = unicode(reference.path)
-        return access(path, R_OK)
+        try:
+            return access(path, W_OK)
+        except UnicodeEncodeError:
+            return access(path.encode('utf-8'), W_OK)
 
 
-    @staticmethod
-    def can_write(reference):
-        path = unicode(reference.path)
-        return access(path, W_OK)
+    @classmethod
+    def get_ctime(cls, reference):
+        return datetime.fromtimestamp(cls.unicode_wrapper(reference, getctime))
 
 
-    @staticmethod
-    def get_ctime(reference):
-        path = unicode(reference.path)
-        ctime = getctime(path)
-        return datetime.fromtimestamp(ctime)
+    @classmethod
+    def get_mtime(cls, reference):
+        return datetime.fromtimestamp(cls.unicode_wrapper(reference, getmtime))
 
 
-    @staticmethod
-    def get_mtime(reference):
-        path = unicode(reference.path)
-        mtime = getmtime(path)
-        return datetime.fromtimestamp(mtime)
+    @classmethod
+    def get_atime(cls, reference):
+        return datetime.fromtimestamp(cls.unicode_wrapper(reference, getatime))
 
 
-    @staticmethod
-    def get_atime(reference):
-        path = unicode(reference.path)
-        atime = getatime(path)
-        return datetime.fromtimestamp(atime)
+    @classmethod
+    def get_size(cls, reference):
+        return cls.unicode_wrapper(reference, getsize)
 
 
-    @staticmethod
-    def get_size(reference):
-        path = unicode(reference.path)
-        return getsize(path)
-
-
-    @staticmethod
-    def make_file(reference):
+    @classmethod
+    def make_file(cls, reference):
         folder_path = unicode(reference.path[:-1])
         file_path = unicode(reference.path)
 
-        if exists(folder_path):
-            if exists(file_path):
+        try:
+            dest_exists = exists(folder_path)
+        except UnicodeEncodeError:
+            folder_path = folder_path.encode('utf-8')
+            dest_exists = exists(folder_path)
+        if dest_exists:
+            try:
+                dest_exists = exists(file_path)
+            except UnicodeEncodeError:
+                file_path = file_path.encode('utf-8')
+                dest_exists = exists(file_path)
+            if dest_exists:
                 raise OSError, "File exists: '%s'" % reference
         else:
             makedirs(folder_path)
-        return file(file_path, 'wb')
+        try:
+            fh = file(file_path, 'wb')
+        except UnicodeEncodeError:
+            fh = file(file_path.encode('utf-8'), 'wb')
+        return fh
 
 
-    @staticmethod
-    def make_folder(reference):
-        path = unicode(reference.path)
-        mkdir(path)
+    @classmethod
+    def make_folder(cls, reference):
+        cls.unicode_wrapper(reference, mkdir)
 
 
-    @staticmethod
-    def remove(path):
+    @classmethod
+    def remove(cls, path):
         if isinstance(path, Reference):
             path = unicode(path.path)
         elif isinstance(path, Path):
             path = unicode(path)
 
-        if not exists(path):
+        try:
+            existence = exists(path)
+        except UnicodeEncodeError:
+            path = path.encode('utf-8')
+            existence = exists(path)
+        if not existence:
             raise OSError, "File does not exist '%s'" % path
 
         if isdir(path):
@@ -131,10 +154,15 @@ class FileFS(BaseFS):
             remove(path)
 
 
-    @staticmethod
-    def open(reference, mode=None):
+    @classmethod
+    def open(cls, reference, mode=None):
         path = unicode(reference.path)
-        if not exists(path):
+        try:
+            existence = exists(path)
+        except UnicodeEncodeError:
+            path = path.encode('utf-8')
+            existence = exists(path)
+        if not existence:
             raise OSError, "File does not exist '%s'" % reference
 
         # Open for write
@@ -150,11 +178,18 @@ class FileFS(BaseFS):
         return file(path, 'rb')
 
 
-    @staticmethod
-    def move(source, target):
+    @classmethod
+    def move(cls, source, target):
         # Fail if target exists and is a file
         dst = unicode(target.path)
-        if isfile(dst):
+        src = unicode(source.path)
+        try:
+            target_file = isfile(dst)
+        except UnicodeEncodeError:
+            dst = dst.encode('utf-8')
+            src = src.encode('utf-8')
+            target_file = isfile(dst)
+        if target_file:
             raise OSError, '[Errno 20] Not a directory'
 
         # If target is a folder, move inside it
@@ -162,12 +197,11 @@ class FileFS(BaseFS):
             dst = target.path.resolve2(source.path[-1])
             dst = unicode(dst)
 
-        src = unicode(source.path)
         try:
             rename(src, dst)
         except OSError:
             copy(src, dst)
-            FileFS.remove(src)
+            cls.remove(src)
 
 
     ######################################################################
@@ -175,7 +209,17 @@ class FileFS(BaseFS):
     @classmethod
     def get_names(cls, reference):
         path = unicode(reference.path)
-        return listdir(path)
+        try:
+            names = listdir(path)
+            to_unicode = True
+        except UnicodeEncodeError:
+            names = listdir(path.encode('utf-8'))
+            to_unicode = False
+        if to_unicode:
+            if names and isinstance(names[0], str):
+                names = [n.decode('utf-8') for n in names]
+        return names
+        
 
 
 
