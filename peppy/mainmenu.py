@@ -347,6 +347,11 @@ class Exit(SelectAction):
     alias = "exit-peppy-to-return-again-soon"
     name = "E&xit"
     tooltip = "Quit the program."
+    if wx.Platform == '__WXMAC__':
+        # Only add the stock ID where we must: on the mac.  It interferes
+        # with the emacs style keybindings, and there's no way to disable the
+        # automatic Ctrl-Q keybinding AFAICT
+        stock_id = wx.ID_EXIT
     default_menu = ("File", -1000)
     key_bindings = {'default': "C-Q", 'emacs': "C-X C-C"}
     
