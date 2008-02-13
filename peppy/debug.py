@@ -63,6 +63,8 @@ def dprint(str=''):
             cls=namespace['self'].__class__.__name__+'.'
         else:
             cls=''
+        if isinstance(str, unicode):
+            str = str.encode("utf-8")
         dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     finally:
         del caller
@@ -78,6 +80,8 @@ def eprint(str=''):
             cls=namespace['self'].__class__.__name__+'.'
         else:
             cls=''
+        if isinstance(str, unicode):
+            str = str.encode("utf-8")
         elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
     finally:
         del caller
@@ -93,6 +97,8 @@ class debugmixin(object):
             if TRACING: _traceoff()
             caller=inspect.stack()[1]
             try:
+                if isinstance(str, unicode):
+                    str = str.encode("utf-8")
                 dlogfh.write("%s:%d %s.%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls.__name__,caller[3],str,os.linesep))
             finally:
                 del caller
