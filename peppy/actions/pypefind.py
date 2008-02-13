@@ -128,12 +128,16 @@ class ReplaceMinibuffer(FindMinibuffer):
 class FindText(MinibufferAction):
     name = "Find..."
     tooltip = "Search for a string in the text."
+    default_menu = ("Edit", -400)
+    icon = "icons/find.png"
     key_bindings = {'default': "C-F", 'emacs': 'C-S', }
     minibuffer = FindMinibuffer
 
 class ReplaceText(MinibufferAction):
     name = "Replace..."
     tooltip = "Replace a string in the text."
+    default_menu = ("Edit", 401)
+    icon = "icons/text_replace.png"
     key_bindings = {'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
 
