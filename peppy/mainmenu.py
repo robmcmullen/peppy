@@ -350,13 +350,13 @@ class Revert(SelectAction):
     default_menu = ("File", -900)
     default_toolbar = False
     icon = "icons/page_refresh.png"
-
+    
     def isEnabled(self):
         return self.mode.buffer.stc.CanEdit()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        dlg = wx.MessageDialog(self.frame, "Revert file from\n\n%s?" % self.mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+        dlg = wx.MessageDialog(self.frame, u"Revert file from\n\n%s?" % self.mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
         retval=dlg.ShowModal()
         dlg.Destroy()
             

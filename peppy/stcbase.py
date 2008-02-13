@@ -170,6 +170,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         large to fit in memory.
         """
         fh = buffer.getBufferedReader()
+        self.readThreaded(fh, buffer, message)
+    
+    def readThreaded(self, fh, buffer, message=None):
         self.refstc.tempstore = StringIO()
         if fh:
             # if the file exists, read the contents.

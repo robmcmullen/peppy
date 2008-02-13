@@ -445,7 +445,8 @@ class Buffer(BufferVFSMixin):
         # don't use the buffered reader: get a new file handle
         fh = vfs.open(self.url)
         self.stc.ClearAll()
-        self.stc.readFrom(fh)
+        self.stc.readThreaded(fh, self)
+        self.stc.openSuccess(self)
         self.modified=False
         self.stc.EmptyUndoBuffer()
         wx.CallAfter(self.showModifiedAll)
