@@ -119,13 +119,37 @@ class LocalFileMinibuffer(CompletionMinibuffer):
             replace = 0
         # FIXME: need to make this general by putting it in URLInfo
         paths = []
-        for path in glob.glob(text+"*"):
+        try:
+            # First, try to process the string as a unicode value.  This will
+            # work in most cases on Windows and on unix when the locale is
+            # set properly.  It returns unicode values
+            globs = glob.glob(unicode(text)+"*")
+            utf8 = False
+        except UnicodeEncodeError:
+            # When text is a unicode string but glob.glob is incapable of
+            # processing unicode (usually only unix systems in the C/POSIX
+            # locale).  It returns plain strings that will be converted using
+            # utf-8
+            globs = glob.glob(("%s*" % text).encode('utf-8'))
+            utf8 = True
+        except UnicodeDecodeError:
+            # When the text is a utf-8 encoded string, but glob.glob can't
+            # handle unicode (again, usually only unix systems in the C/POSIX
+            # locale).  It also returns plain strings that need utf-8 decoding
+            globs = glob.glob(text.encode('utf-8') + "*")
+            utf8 = True
+        for path in globs:
             if os.path.isdir(path):
                 path += os.sep
             #dprint(path)
             if replace > 0:
                 path = "~" + os.sep + path[replace:]
-            paths.append(path)
+            
+            # Always return unicode, so convert if necessary
+            if utf8:
+                paths.append(path.decode('utf-8'))
+            else:
+                paths.append(path)
         paths.sort()
         return paths
 
