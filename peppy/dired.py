@@ -403,6 +403,10 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         show = -1
         self.itemDataMap = {}
         for name in vfs.get_names(self.url):
+            # FIXME: should get_names always return unicode? Until then, create
+            # a unicode version of the name
+            if isinstance(name, str):
+                name = name.decode("utf-8")
             key, mode = self.getKey(name)
             flags = self.getFlags(key)
             metadata = vfs.get_metadata(key)
