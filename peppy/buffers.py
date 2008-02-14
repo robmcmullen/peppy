@@ -458,6 +458,7 @@ class Buffer(BufferVFSMixin):
                 saveas = self.url
             else:
                 saveas = vfs.normalize(url)
+            self.stc.prepareEncoding()
             if vfs.exists(saveas):
                 if vfs.is_file(saveas):
                     fh = vfs.open(saveas, vfs.WRITE)

@@ -196,8 +196,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         header = bytes[0:headersize]
         self.detectLineEndings(header)
         
-        lines = header.splitlines()
-        self.detectEncoding(lines[0:2], bytes)
+        if not self.refstc.encoding:
+            self.refstc.encoding = self.detectEncoding(header)
+        self.decodeText(bytes)
         dprint("found encoding = %s" % self.refstc.encoding)
         
         del self.tempstore
@@ -237,54 +238,104 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 # handled outside this class
                 break
     
-    def detectEncoding(self, lines, bytes):
+    def getMagicComments(self, bytes, headersize=1024):
+        numbytes = len(bytes)
+        if headersize > numbytes:
+            headersize = numbytes
+        header = bytes[0:headersize]
+        lines = header.splitlines()
+        return lines[0:2]
+
+    def detectEncoding(self, bytes):
+        """Search the lines for "magic comments" specifying the encoding
+        """
+        lines = self.getMagicComments(bytes)
+        regex = re.compile("coding[:=]\s*([-\w.]+)")
+        for txt in lines:
+            match = regex.search(txt)
+            if match:
+                dprint("Found encoding %s" % match.group(1))
+                return match.group(1)
+        return None
+        
+    def decodeText(self, bytes):
         """Check for the file encoding and convert in place.
         
         If the encoding is embedded in the file (through emacs "magic
         comments"), change the text from the binary representation into the
         specified encoding.
         """
-        if not self.refstc.encoding:
-            # If we don't already know the encoding, search the "magic comments"
-            regex = re.compile("coding[:=]\s*([-\w.]+)")
-            for txt in lines:
-                match = regex.search(txt)
-                if match:
-                    dprint("Found encoding %s" % match.group(1))
-                    self.refstc.encoding = match.group(1)
-                    break
-        
         if self.refstc.encoding:
-            unicodestring = bytes.decode(self.refstc.encoding)
-            dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
-            self.SetText(unicodestring)
-        else:
-            # If there's no encoding, stuff the binary bytes in the stc.  The
-            # only way to load binary data into scintilla is to convert it to
-            # two bytes per character: first byte is the content, 2nd byte is
-            # styling (which we set to zero)
-            styledtxt = '\0'.join(bytes)+'\0'
-            self.AddStyledText(styledtxt)
+            try:
+                unicodestring = bytes.decode(self.refstc.encoding)
+                dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
+                self.SetText(unicodestring)
+                return
+            except UnicodeDecodeError, e:
+                dprint("bad encoding %s:" % self.refstc.encoding)
+                self.refstc.badencoding = self.refstc.encoding
+                self.refstc.encoding = None
+        
+        # If there's no encoding or an error in the decoding, stuff the binary
+        # bytes in the stc.  The only way to load binary data into scintilla
+        # is to convert it to two bytes per character: first byte is the
+        # content, 2nd byte is styling (which we set to zero)
+        self.SetText('')
+        styledtxt = '\0'.join(bytes)+'\0'
+        self.AddStyledText(styledtxt)
     
+    def prepareEncoding(self):
+        """Prepare the file for encoding.
+        
+        This method provides a short-circuit of the writing process in case the
+        encoding is bad.  This is a poor man's way of preventing a zero-length
+        file due to a bad encoding, because should this method generate an
+        exception, the file will never be opened for writing and therefore
+        won't be truncated.
+        """
+        try:
+            txt = self.GetText()
+            encoding = self.detectEncoding(txt)
+            if encoding:
+                dprint("found encoding %s" % encoding)
+                txt = txt.encode(encoding)
+                if encoding != self.refstc.encoding:
+                    # If the encoding has changed, update it here
+                    self.refstc.encoding = encoding
+                    self.decodeText(txt)
+            else:
+                # Have to use GetStyledText because GetText will truncate the
+                # string at the first zero character.
+                numchars = self.GetTextLength()
+                txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
+            
+            dprint(txt)
+            self.refstc.encoded = txt
+        except:
+            self.refstc.encoded = None
+            raise
+
     def writeTo(self, fh):
         """Writes a copy of the document to the provided file-like object.
         
         Note that peppy is not currently thread-enabled during file writing.
         """
-        numchars = self.GetTextLength()
-        # Have to use GetStyledText because GetText will truncate the
-        # string at the first zero character.
-        txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
-        assert self.dprint("numchars=%d: writing %d bytes to %s" % (numchars, len(txt), fh))
-        assert self.dprint(repr(txt))
-        utf8 = self.GetTextUTF8()
-        assert self.dprint("utf8: %d bytes" % len(txt))
-        assert self.dprint(repr(utf8))
-        try:
-            fh.write(txt)
-        except:
-            print "BinaryFilter: something went wrong writing to %s" % fh
-            raise
+        txt = self.refstc.encoded
+        if txt is None:
+            raise IOError("Invalid encoded string -- this should never happen")
+        
+        dprint(txt[0:len(txt)/10])
+        dprint("writing %d bytes to %s" % (len(txt), fh))
+
+        fh.write(txt)
+#
+#        try:
+#            fh.write(txt)
+#        except:
+#            print "BinaryFilter: something went wrong writing to %s" % fh
+#            raise
+#        finally:
+#            self.refstc.encoded = None
 
     ## Additional functionality
     def checkUndoEOL(self):

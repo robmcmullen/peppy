@@ -559,7 +559,11 @@ class MajorMode(ClassPrefs, debugmixin):
             self.frame.SetStatusText(u"Saved %s" % self.buffer.url)
         except IOError, e:
             self.frame.SetStatusText(unicode(e))
-
+        except UnicodeEncodeError, e:
+            self.frame.SetStatusText(unicode(e))
+        except LookupError, e:
+            # Bad encoding name!
+            self.frame.SetStatusText(unicode(e))
 
     def savePreHook(self, url=None):
         """Hook before the buffer is saved.

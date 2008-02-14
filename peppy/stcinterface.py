@@ -122,6 +122,13 @@ class STCInterface(object):
         """
         pass
 
+    def prepareEncoding(self):
+        """Convert the raw bytes in the file to the correct encoding before
+        writing.
+        
+        """
+        pass
+
     def writeTo(self, fh):
         """Write to filehandle, converting as necessary
 
