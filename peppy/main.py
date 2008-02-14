@@ -270,7 +270,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             index = sys.argv.index("-v")
             self.verbose += 1
             del sys.argv[index]
-            index = sys.argv.index("-v")
             
         if self.verbose:
             self.setVerbosity()
