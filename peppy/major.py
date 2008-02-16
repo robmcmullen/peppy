@@ -125,6 +125,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         if self.editwin:
             self.dprint("deleting major mode %s" % self.editwin)
             self.deleteMinorModes()
+            self.removeMinibuffer()
             self._mgr.DetachPane(self.editwin)
             self.editwin.frame.clearMenumap()
             # FIXME: there must be references to the editwin held by other

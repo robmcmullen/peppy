@@ -34,7 +34,7 @@ class NewTab(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.open("about:blank")
+        self.frame.open("about:blank", force_new_tab=True)
 
 class CloseTab(SelectAction):
     alias = "close-tab"

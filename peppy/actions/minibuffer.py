@@ -81,7 +81,12 @@ class Minibuffer(debugmixin):
         Convenience routine to destroy minibuffer after the event loop
         exits.
         """
-        wx.CallAfter(self.mode.removeMinibuffer, self)
+        # It's possible that the minibuffer has already been destroyed; for
+        # example, when the minibuffer is used in an action that replaces
+        # the mode in the current tab with another mode.  So, only attempt to
+        # remove the minibuffer if the mode is still valid.
+        if self.mode:
+            wx.CallAfter(self.mode.removeMinibuffer, self)
         
 
 

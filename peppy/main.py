@@ -112,6 +112,22 @@ class Mouse(ClassPrefs):
     )
 
 
+class Tabs(ClassPrefs):
+    preferences_tab = "General"
+    icon = "icons/tab.png"
+    default_classprefs = (
+        IndexChoiceParam('open_file_in_new_tab',
+                         ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
+                         1, 'Should a new file be opened in a new tab\nor should the current tab be reused?'),
+    )
+    
+    def useNewTab(self, mode):
+        new_tab = self.classprefs.open_file_in_new_tab
+        if new_tab == 0 or (new_tab == 1 and not mode.temporary):
+            return True
+        return False
+
+
 class User(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/user.png"
@@ -173,6 +189,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         )
     mouse = Mouse()
     user = User()
+    tabs = Tabs()
     
     config = None
     
@@ -510,7 +527,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             else:
                 frame = self.getTopFrame()
                 for filename in args:
-                    frame.open(filename)
+                    frame.open(filename, new_tab=True)
             self.remote_args = []
         
     def getConfigFilePath(self,filename):
