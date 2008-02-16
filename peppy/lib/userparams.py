@@ -98,6 +98,7 @@ from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.filebrowsebutton import *
+from wx.lib.stattext import GenStaticText
 
 from peppy.lib.controls import FontBrowseButton
 
@@ -248,9 +249,9 @@ class Param(debugmixin):
             return None
         
         if self.alt_label is None:
-            title = wx.StaticText(parent, -1, self.keyword)
+            title = GenStaticText(parent, -1, self.keyword)
         else:
-            title = wx.StaticText(parent, -1, self.alt_label)
+            title = GenStaticText(parent, -1, self.alt_label)
         if self.help:
             title.SetToolTipString(self.help)
         return title
@@ -1558,7 +1559,7 @@ class PrefDialog(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         if self.static_title:
-            label = wx.StaticText(self, -1, self.static_title)
+            label = GenStaticText(self, -1, self.static_title)
             sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
 
         self.createClassMap()
