@@ -87,12 +87,15 @@ class ShellSTC(PeppySTC):
     def open(self, buffer, progress_message):
         """Save the file handle, which is really the mpd connection"""
         self.pipe = vfs.open(buffer.url)
-        self.readFrom(self.pipe)
+        self.readThreaded(self.pipe, buffer)
+        
+    def openSuccess(self, buffer):
+        PeppySTC.openSuccess(self, buffer)
         length=self.GetTextLength()
         self.SetCurrentPos(length)
         self.AddText('\n')
         self.prompt()
-        
+    
         self.pipe.setNotifyWindow(self, ShellUpdateEvent)
         self.Bind(EVT_SHELL_UPDATE,self.OnReadable)
 
