@@ -12,6 +12,7 @@ import peppy.vfs as vfs
 
 from peppy.debug import *
 from peppy.stcinterface import *
+from peppy.lib.textutil import *
 
 
 # Mimic the primary selection middle mouse paste on non-X11 platforms, but
@@ -197,7 +198,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.detectLineEndings(header)
         
         if not self.refstc.encoding:
-            self.refstc.encoding = self.detectEncoding(header)
+            self.refstc.encoding = detectEncoding(header)
         self.decodeText(bytes)
         assert self.dprint("found encoding = %s" % self.refstc.encoding)
         
@@ -238,26 +239,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 # handled outside this class
                 break
     
-    def getMagicComments(self, bytes, headersize=1024):
-        numbytes = len(bytes)
-        if headersize > numbytes:
-            headersize = numbytes
-        header = bytes[0:headersize]
-        lines = header.splitlines()
-        return lines[0:2]
-
-    def detectEncoding(self, bytes):
-        """Search the lines for "magic comments" specifying the encoding
-        """
-        lines = self.getMagicComments(bytes)
-        regex = re.compile("coding[:=]\s*([-\w.]+)")
-        for txt in lines:
-            match = regex.search(txt)
-            if match:
-                assert self.dprint("Found encoding %s" % match.group(1))
-                return match.group(1)
-        return None
-        
     def decodeText(self, bytes):
         """Check for the file encoding and convert in place.
         
@@ -295,7 +276,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         try:
             txt = self.GetText()
-            encoding = self.detectEncoding(txt)
+            encoding = detectEncoding(txt)
             if encoding:
                 assert self.dprint("found encoding %s" % encoding)
                 txt = txt.encode(encoding)

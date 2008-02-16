@@ -48,7 +48,7 @@ from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
-
+from peppy.lib.textutil import *
 
 class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
@@ -1021,77 +1021,6 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                                  "\n")
 
 
-
-def parseEmacs(header):
-    """
-    Parse a potential emacs major mode specifier line into the
-    mode and the optional variables.  The mode may appears as any
-    of::
-
-      -*-C++-*-
-      -*- mode: Python; -*-
-      -*- mode: Ksh; var1:value1; var3:value9; -*-
-
-    @param header: first x bytes of the file to be loaded
-    @return: two-tuple of the mode and a dict of the name/value pairs.
-    @rtype: tuple
-    """
-    lines = header.splitlines()
-    if len(lines) == 0:
-        return None, None
-    elif len(lines) > 1:
-        line = lines[0] + lines[1]
-    else:
-        line = lines[0]
-    match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
-    if match:
-        vars={}
-        varstring=match.group(5)
-        if varstring:
-            try:
-                for nameval in varstring.split(';'):
-                    s=nameval.strip()
-                    if s:
-                        name,val=s.split(':')
-                        vars[name.strip()]=val.strip()
-            except:
-                pass
-        if match.group(2):
-            return (match.group(2),vars)
-        elif match.group(3):
-            return (match.group(3),vars)
-    return None, None
-
-def guessBinary(text, percentage):
-    """
-    Guess if the text in this file is binary or text by scanning
-    through the first C{amount} characters in the file and
-    checking if some C{percentage} is out of the printable ascii
-    range.
-
-    Obviously this is a poor check for unicode files, so this is
-    just a bit of a hack.
-
-    @param amount: number of characters to check at the beginning
-    of the file
-
-    @type amount: int
-
-    @param percentage: percentage of characters that must be in
-    the printable ASCII range
-
-    @type percentage: number
-
-    @rtype: boolean
-    """
-    data = [ord(i) for i in text]
-    binary=0
-    for ch in data:
-        if (ch<8) or (ch>13 and ch<32) or (ch>126):
-            binary+=1
-    if binary>(len(text)/percentage):
-        return True
-    return False
 
 class MajorModeMatcherDriver(debugmixin):
     debuglevel = 0
