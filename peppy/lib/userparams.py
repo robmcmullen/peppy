@@ -1281,8 +1281,6 @@ class ClassPrefs(object):
 class PrefPanel(ScrolledPanel, debugmixin):
     """Panel that shows ui controls corresponding to all preferences
     """
-    debuglevel = 0
-
 
     def __init__(self, parent, obj):
         ScrolledPanel.__init__(self, parent, -1, size=(500,-1),
@@ -1409,10 +1407,13 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     # Don't update with value in superclass
                     continue
 
-                if param.isSettable():
-                    # It's possible that a keyword won't have an
-                    # associated control, so only deal with those
-                    # controls that are settable
+                # It's possible that a param won't have an associated control
+                # because the param is handled by a subclass.  Params are
+                # class attributes, and if a param of the same name is
+                # overridden by a subclass, the control will only appear in
+                # the subclass, not any superclasses.  In addition, only deal
+                # with those controls that are settable
+                if param in self.ctrls and param.isSettable():
                     ctrl = self.ctrls[param]
                     val = param.getValue(ctrl)
                     if val != self.orig[param]:
