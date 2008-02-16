@@ -71,6 +71,7 @@ class errorRedirector(object):
 
 class Fonts(ClassPrefs):
     preferences_tab = "General"
+    icon = "icons/font.png"
     default_classprefs = (
         FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
         FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
@@ -104,14 +105,16 @@ class Fonts(ClassPrefs):
 
 class Mouse(ClassPrefs):
     preferences_tab = "General"
+    icon = "icons/mouse.png"
     default_classprefs = (
         ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'lines', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
         IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel\nis in line scrolling mode'),
     )
-    
+
 
 class User(ClassPrefs):
     preferences_tab = "General"
+    icon = "icons/user.png"
     default_classprefs = (
         StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
@@ -156,6 +159,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                                    },
                    }
     preferences_tab = "General"
+    preferences_sort_weight = 0
     default_classprefs = (
         StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search\nfor additional plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),

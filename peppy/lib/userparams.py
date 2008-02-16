@@ -1273,7 +1273,10 @@ class ClassPrefs(object):
     for the prefs class attribute.
     """
     __metaclass__ = ClassPrefsMetaClass
-
+    
+    #: Sorting weight (from 0 to 1000) if you want to group items out of the
+    # ordinary the dictionary sort order
+    preferences_sort_weight = 500
 
 class PrefPanel(ScrolledPanel, debugmixin):
     """Panel that shows ui controls corresponding to all preferences
@@ -1626,7 +1629,7 @@ class PrefDialog(wx.Dialog):
             unique[cls.__name__] = cls
         self.class_map = unique
         classes = unique.values()
-        classes.sort(key=lambda x: x.__name__)
+        classes.sort(key=lambda x: (x.preferences_sort_weight, x.__name__))
         
         self.tab_map= {}
         self.class_to_tab = {}
