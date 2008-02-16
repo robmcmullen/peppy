@@ -94,8 +94,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     This class performs the bookkeeping to keep the STC document pointers up to
     date when a new view is added.
     """
-    debuglevel = 0
-    
     eol2int = {'\r': wx.stc.STC_EOL_CR,
                '\r\n': wx.stc.STC_EOL_CRLF,
                '\n': wx.stc.STC_EOL_LF,

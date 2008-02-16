@@ -23,7 +23,6 @@ from peppy.actions import *
 
 
 class FoldExplorerMenu(ListAction, OnDemandActionMixin):
-    debuglevel = 0
     name="Functions"
     inline=True
     tooltip="Go to a function"

@@ -138,8 +138,6 @@ class PythonFoldingReindentMixin(ReindentBase):
 
 
 class PyPEElectricReturnMixin(debugmixin):
-    debuglevel = 0
-    
     def findIndent(self, linenum):
         linestart = self.PositionFromLine(linenum)
         lineend = self.GetLineEndPosition(linenum)
@@ -294,8 +292,6 @@ def build_char_in_string_func(stc, startindex):
     return inner
 
 class IDLEElectricReturnMixin(debugmixin):
-    debuglevel = 0
-    
     def findIndent(self, linenum, extra=None):
         """Find what indentation of the line should be based on previous lines
         

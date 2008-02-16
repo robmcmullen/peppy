@@ -206,7 +206,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     initial keyboard mapping, and other lower level initialization
     from the BufferApp superclass.
     """
-    debuglevel = 0
     verbose = 0
     options = {}
     args = []

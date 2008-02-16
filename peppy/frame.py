@@ -26,7 +26,6 @@ from peppy.buffers import *
 
     
 class WindowList(OnDemandGlobalListAction):
-    debuglevel=0
     name="Frames"
     default_menu = ("Window", -100)
     inline = True
@@ -76,9 +75,7 @@ class NewWindow(SelectAction):
         frame.Show(True)
 
 
-class MyNotebook(wx.aui.AuiNotebook,debugmixin):
-    debuglevel = 0
-    
+class MyNotebook(wx.aui.AuiNotebook, debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
         
@@ -288,7 +285,6 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 
 
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
-    debuglevel=0
     frameid=0
     load_error_count = 0
     size_timer = None
@@ -304,14 +300,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         )
 
     default_menubar = {
-        "File": 0,
-        "Edit": 0.001,
-        "View": 0.003,
-        "Tools": 0.004,
-        "Transform": 0.005,
-        "Documents": 1000.1,
-        "Window": 1000.2,
-        "&Help": 1000.3,
+        _("File"): 0,
+        _("Edit"): 0.001,
+        _("View"): 0.003,
+        _("Tools"): 0.004,
+        _("Transform"): 0.005,
+        _("Documents"): 1000.1,
+        _("Window"): 1000.2,
+        _("&Help"): 1000.3,
         }
 
 

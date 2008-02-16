@@ -791,8 +791,6 @@ class MPDListByGenre(NeXTPanel, debugmixin):
 
     Displays genre, artist, album, and songs.
     """
-    debuglevel = 0
-
     def __init__(self, parent_win, major):
         NeXTPanel.__init__(self, parent_win)
         self.major = major
@@ -886,8 +884,6 @@ class MPDListByPath(NeXTFileManager, debugmixin):
 class MPDListSearch(wx.Panel, debugmixin):
     """Search the database by keyword
     """
-    debuglevel = 0
-
     def __init__(self, parent_win, major):
         wx.Panel.__init__(self, parent_win)
         self.major = major
@@ -962,8 +958,6 @@ class MPDMode(wx.Panel, MajorMode):
     
     Displays various search boxes used to populate the mpd playlist.
     """
-    debuglevel = 1
-
     keyword='MPD'
     icon='icons/mpd.png'
 
@@ -1090,8 +1084,6 @@ class MPDMode(wx.Panel, MajorMode):
 
 class SongDropTarget(wx.PyDropTarget, debugmixin):
     """Custom drop target modified from the wxPython demo."""
-    debuglevel = 0
-    
     def __init__(self, window):
         wx.PyDropTarget.__init__(self)
         self.dv = window
@@ -1151,8 +1143,6 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnAutoSizeMixin,
     """Minor mode to display the current playlist and controls for
     music playing.
     """
-    debuglevel = 0
-    
     keyword = "MPD Playlist"
     default_classprefs = (
         IntParam('best_width', 400),
@@ -1408,8 +1398,6 @@ class MPDCurrentlyPlaying(MPDMinorModeMixin, wx.Panel, debugmixin):
     """Minor mode to display the current title, artist, and album,
     with controls for position in the song and play/pause controls.
     """
-    debuglevel = 0
-
     keyword = "MPD Currently Playing"
     default_classprefs = (
         IntParam('best_width', 400),

@@ -53,9 +53,7 @@ from peppy.lib.textutil import *
 class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
     
-    """
-    debuglevel = 0
-    
+    """    
     icon = "icons/blank.png"
     
     def __init__(self, parent):
@@ -1024,8 +1022,6 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
 
 
 class MajorModeMatcherDriver(debugmixin):
-    debuglevel = 0
-    
     @classmethod
     def getCompatibleMajorModes(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()

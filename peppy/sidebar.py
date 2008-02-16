@@ -29,8 +29,6 @@ class Sidebar(ClassPrefs, debugmixin):
     frame that is outside the purview of the major mode.  It is a
     constant regardless of which major mode is selected.
     """
-    debuglevel = 0
-    
     keyword = None
     caption = None
 

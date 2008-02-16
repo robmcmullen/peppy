@@ -22,7 +22,6 @@ from peppy.major import *
 from peppy.debug import *
 
 class BufferList(OnDemandGlobalListAction):
-    debuglevel = 0
     name = "Documents"
     default_menu = ("Documents", -500)
     inline = True
@@ -122,7 +121,6 @@ class BufferList(OnDemandGlobalListAction):
 
 
 class BufferPopupList(ListAction):
-    debuglevel = 1
     name = "Same Major Mode"
     inline = False
     
@@ -266,7 +264,6 @@ class Buffer(BufferVFSMixin):
     one-to-one mapping from a buffer to an STCInterface instance.
     """
     count=0
-    debuglevel=0
     error_buffer_count = 0
 
     filenames={}
@@ -556,8 +553,6 @@ class LoadingMode(BlankMode):
                      self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
-    debuglevel = 0
-    
     def __init__(self, url, modecls=None):
         self.user_url = url
         BufferVFSMixin.__init__(self, url)

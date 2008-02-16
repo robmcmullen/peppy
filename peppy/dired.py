@@ -180,8 +180,6 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
     Dired is a directory viewing mode that works like an extremely bare-bones
     file manager.
     """
-    debuglevel = 0
-
     keyword = "Dired"
     icon='icons/folder_explore.png'
     allow_threaded_loading = False

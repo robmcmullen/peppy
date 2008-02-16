@@ -10,8 +10,6 @@ import peppy.editra.util as util
 from peppy.debug import *
 
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
-    debuglevel = 0
-    
     _synmgr = syntax.SyntaxMgr()
     
     def __init__(self, stylefile):

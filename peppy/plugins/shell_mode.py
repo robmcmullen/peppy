@@ -74,8 +74,6 @@ class ShellSTC(PeppySTC):
     the cursor position on this STC doesn't affect the views directly.
     This is the data storage STC, not the viewing STC.
     """
-    debuglevel=0
-
     def __init__(self, parent, **kwargs):
         PeppySTC.__init__(self, parent, **kwargs)
         self.pipe=None
@@ -160,8 +158,6 @@ class ShellMode(FundamentalMode):
     FundamentalMode's electricReturn in order to handle the user
     interaction. 
     """
-    debuglevel=0
-    
     keyword='Shell'
     icon='icons/application_xp_terminal.png'
     regex = None

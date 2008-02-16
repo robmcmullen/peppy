@@ -144,8 +144,6 @@ class MouseSelector(object):
     processing.  The selector will be destroyed by the BitmapScroller
     when this occurs.
     """
-    debuglevel = 0
-    
     cursor = wx.CURSOR_ARROW
     
     def __init__(self, scroller, ev=None):
@@ -696,7 +694,6 @@ class RubberBand(MouseSelector):
 
 
 class BitmapScroller(wx.ScrolledWindow):
-    debuglevel = 0
     dbg_call_seq = 0
     
     def __init__(self, parent, selector=Crosshair):

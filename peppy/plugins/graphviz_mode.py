@@ -68,8 +68,6 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
     file.  It calls the external graphviz program and displays a
     bitmap version of the graph.
     """
-    debuglevel = 0
-
     keyword="GraphvizView"
     default_classprefs = (
         IntParam('best_width', 300),

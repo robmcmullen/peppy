@@ -22,8 +22,6 @@ class ProcessSidebar(Sidebar, ProcessList, debugmixin):
     active.  Any processes started using the ProcessManager will be
     displayed here.
     """
-    debuglevel = 0
-    
     keyword = "processes"
     caption = _("Running Jobs")
 

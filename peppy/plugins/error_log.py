@@ -17,8 +17,6 @@ from peppy.sidebar import *
 from peppy.minor import *
 
 class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
-    debuglevel = 0
-    
     default_classprefs = (
         BoolParam('show', False),
         BoolParam('always_scroll', False),
@@ -110,8 +108,6 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
     messages and it could show only those messages above a certain
     level.
     """
-    debuglevel = 0
-    
     keyword = "error_log"
     caption = "Error Log"
 
@@ -180,8 +176,6 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
     stderrCallback of the JobOutputMixin, you should call showMessage
     to display the output in the log.
     """
-    debuglevel = 0
-    
     keyword = "OutputLog"
     caption = "Output Log"
 

@@ -91,8 +91,6 @@ class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
     mean that the image will have to be decompressed into raw pixels.
     This mode leaves the image in its native format.
     """
-    debuglevel=0
-
     keyword="ImageView"
     icon='icons/picture.png'
     regex="\.(jpg|jpeg|gif|bmp|png|ico)"

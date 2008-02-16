@@ -47,7 +47,7 @@ class CloseTab(SelectAction):
 
 class New(SelectAction):
     alias = "new-file"
-    name = "&Text file"
+    name = "Text file"
     tooltip = "New plain text file"
     icon = "icons/page.png"
     default_menu = ("File/New", -2)
@@ -58,7 +58,7 @@ class New(SelectAction):
 
 class OpenFileGUI(SelectAction):
     alias = "gui-find-file"
-    name = "&File..."
+    name = "Open File..."
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
     default_menu = (("File/Open", 2), 1) 
@@ -161,7 +161,7 @@ class LocalFileMinibuffer(CompletionMinibuffer):
 
 class OpenFile(SelectAction):
     alias = "find-file"
-    name = "&File using Minibuffer..."
+    name = "Open File Using Minibuffer..."
     tooltip = "Open a file using filename completion"
     default_menu = ("File/Open", 2)
     key_bindings = {'emacs': "C-X C-F", }
@@ -285,7 +285,7 @@ class URLMinibuffer(CompletionMinibuffer):
 
 class OpenURL(SelectAction):
     alias = "find-url"
-    name = "&URL using Minibuffer..."
+    name = "Open URL Using Minibuffer..."
     tooltip = "Open a file using URL name completion"
     default_menu = ("File/Open", 2)
     key_bindings = {'emacs': "C-X C-A", }
@@ -293,7 +293,7 @@ class OpenURL(SelectAction):
     def action(self, index=-1, multiplier=1):
         cwd = str(self.frame.cwd(use_vfs=True))
         self.dprint(cwd)
-        minibuffer = URLMinibuffer(self.mode, self, label="Find url:",
+        minibuffer = URLMinibuffer(self.mode, self, label="Find URL:",
                                     initial = cwd)
         self.mode.setMinibuffer(minibuffer)
 
@@ -302,14 +302,14 @@ class OpenURL(SelectAction):
 
 class SaveURL(SelectAction):
     alias = "write-url"
-    name = "Save to URL using Minibuffer..."
-    tooltip = "Write to a new URL name completion"
+    name = "Save to URL Using Minibuffer..."
+    tooltip = "Write to a new URL using name completion"
     key_bindings = {'emacs': "C-X C-Y", }
 
     def action(self, index=-1, multiplier=1):
         cwd = str(self.frame.cwd(use_vfs=True))
         self.dprint(cwd)
-        minibuffer = URLMinibuffer(self.mode, self, label="Find url:",
+        minibuffer = URLMinibuffer(self.mode, self, label="Write to URL:",
                                     initial = cwd)
         self.mode.setMinibuffer(minibuffer)
 
@@ -789,8 +789,6 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MinorModeShow(ToggleListAction):
-    debuglevel = 0
-    
     name = "Minor Modes"
     inline = False
     tooltip = "Show or hide minor mode windows"

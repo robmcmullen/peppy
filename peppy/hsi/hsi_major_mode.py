@@ -534,7 +534,6 @@ class CubeAction(HSIActionMixin, SelectAction):
 
 
 class ContrastFilterAction(HSIActionMixin, RadioAction):
-    debuglevel = 0
     name = "Contrast"
     tooltip = "Contrast adjustment method"
     default_menu = ("View", -300)
@@ -586,7 +585,6 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         mode.setMinibuffer(minibuffer)
         
 class MedianFilterAction(HSIActionMixin, RadioAction):
-    debuglevel = 0
     name = "Median Filter"
     tooltip = "Median filter"
     default_menu = ("View", 301)
@@ -629,9 +627,7 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
 
 
 class CubeViewAction(HSIActionMixin, RadioAction):
-    debuglevel = 0
     name = "View Direction"
-    tooltip = ""
     default_menu = ("View", -600)
 
     items = [CubeView, FocalPlaneView]
@@ -653,9 +649,7 @@ class CubeViewAction(HSIActionMixin, RadioAction):
 
 
 class ShowPixelValues(HSIActionMixin, ToggleAction):
-    debuglevel = 0
     name = "Show Pixel Values"
-    tooltip = ""
     default_menu = ("View", -900)
 
     def isChecked(self):

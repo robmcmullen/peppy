@@ -53,8 +53,6 @@ class SelectAction(debugmixin):
     L{OnDemandActionMixin} class, or using the L{OnDemandGlobalListAction}
     class.
     """
-    debuglevel=0
-    
     #: This is the name of the menu entry as it appears in the menu bar. i18n processing happens within the menu system, so no need to wrap this string in a call to the _ function
     name = None
     
@@ -197,7 +195,8 @@ class SelectAction(debugmixin):
 
     def insertIntoToolbar(self, toolbar):
         self.tool=toolbar
-        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=_(self.name), longHelp=self.getTooltip())
+        help = _(self.name).replace('&','')
+        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=help, longHelp=self.getTooltip())
 
     def action(self, index=-1, multiplier=1):
         """Override this to provide the functionality of the action.

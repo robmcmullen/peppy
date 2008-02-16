@@ -106,8 +106,6 @@ class ShowRecordNumbers(WorksWithHexEdit, ToggleAction):
     
 
 class HugeTable(Grid.PyGridTableBase,debugmixin):
-    debuglevel=0
-
     def __init__(self,stc,format="16c"):
         Grid.PyGridTableBase.__init__(self)
 
@@ -466,8 +464,6 @@ class HexDigitMixin(object):
             return None
 
 class HexTextCtrl(wx.TextCtrl,HexDigitMixin,debugmixin):
-    debuglevel=0
-    
     def __init__(self,parent,id,parentgrid):
         # Don't use the validator here, because apparently we can't
         # reset the validator based on the columns.  We have to do the
@@ -596,8 +592,6 @@ class HexCellEditor(Grid.PyGridCellEditor,HexDigitMixin,debugmixin):
     Cell editor for the grid, based on GridCustEditor.py from the
     wxPython demo.
     """
-    debuglevel=0
-
     def __init__(self,grid):
         Grid.PyGridCellEditor.__init__(self)
         self.parentgrid=grid
@@ -780,8 +774,6 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
     """
     View for editing in hexidecimal notation.
     """
-    debuglevel=0
-
     keyword = 'HexEdit'
     emacs_synonyms = 'hexl'
     

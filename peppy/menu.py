@@ -27,8 +27,6 @@ class UserActionClassList(debugmixin):
     This class creates a list of action classes and a sorted list of actions
     ready to be populated into a menu.
     """
-    debuglevel=0
-    
     default_menu_weights = {}
     
     @classmethod
@@ -202,8 +200,6 @@ class UserActionMap(debugmixin):
     items.  Note that the order of the menu titles is required here and can't
     be added to later.
     """
-    debuglevel = 0
-    
     #: mapping of major mode class to list of actions
     mode_actions = {}
     

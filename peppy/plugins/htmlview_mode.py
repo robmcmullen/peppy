@@ -29,8 +29,6 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
 
     Editing the markup should be done in an editing mode.
     """
-    debuglevel = 0
-    
     keyword='HTMLView'
     icon='icons/world.png'
     regex=""

@@ -81,7 +81,6 @@ class ChatPlugin(IPeppyPlugin):
         return actions
 
 class ChatWrapper(debugmixin):
-    debuglevel=0
     ps1="> "
     ps2=">> "
     

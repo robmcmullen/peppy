@@ -500,8 +500,6 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
     to the class, not the instance, so this is not for instance variable
     storage.  See the L{ClassPrefs} documentation for more information.
     """
-    debuglevel = 0
-    
     keyword = 'Fundamental'
     
     #: If the editra file_type (defined as the LANG_* keywords in the editra source file peppy/editra/synglob.py) doesn't match the class attribute 'keyword', specify the editra file type here.  In other words, None here means that the editra file_type *does* match the keyword

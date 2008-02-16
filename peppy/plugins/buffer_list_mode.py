@@ -175,8 +175,6 @@ class BufferListReplace(SelectAction):
 class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
     """View the list of currently opened buffers
     """
-    debuglevel = 0
-
     keyword = "BufferList"
     icon='icons/page_white_stack.png'
     allow_threaded_loading = False

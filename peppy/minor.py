@@ -144,8 +144,6 @@ class MinorModeList(debugmixin):
     """Container holding a list of minor modes attached to a parent major mode
     
     """
-    debuglevel = 0
-    
     def __init__(self, parent, mgr, mode=None, initial=[]):
         self.mode = mode
         self.map = {}

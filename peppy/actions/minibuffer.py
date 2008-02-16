@@ -95,8 +95,6 @@ class TextMinibuffer(Minibuffer):
     """
     Dedicated subclass of Minibuffer that prompts for a text string
     """
-    debuglevel = 0
-    
     label = "Text"
     error = "Bad input."
     

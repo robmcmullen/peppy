@@ -204,8 +204,6 @@ class NonResidentSTC(STCInterface):
     Base version of a non-memory resident storage space that
     implements the STC interface.
     """
-    debuglevel=0
-    
     def __init__(self, parent=None, copy=None):
         self.filename = None
 
