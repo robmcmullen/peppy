@@ -139,11 +139,10 @@ class BufferPopupList(ListAction):
 
 
 class BufferListSort(OnDemandActionMixin, RadioAction):
-    debuglevel = 0
-    
-    name="Sort Order"
-    inline=False
-    tooltip="Sort document list"
+    name = "Sort Order"
+    inline = False
+    localize_items = True
+    tooltip = "Sort document list"
     default_menu = ("Documents", -999)
 
     items = ['By Name', 'By Mode', 'Order Loaded']

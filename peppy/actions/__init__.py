@@ -173,8 +173,8 @@ class SelectAction(debugmixin):
         if self._use_accelerators and self.keyboard:
             return u"%s%s" % (_(self.name), self._accelerator_text)
         elif self.name:
-            return self.name
-        return self.__class__.__name__
+            return _(self.name)
+        return _(self.__class__.__name__)
 
     def getTooltip(self, id=None, name=None):
         if id is None:
@@ -197,7 +197,7 @@ class SelectAction(debugmixin):
 
     def insertIntoToolbar(self, toolbar):
         self.tool=toolbar
-        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=self.name, longHelp=self.getTooltip())
+        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=_(self.name), longHelp=self.getTooltip())
 
     def action(self, index=-1, multiplier=1):
         """Override this to provide the functionality of the action.
@@ -254,12 +254,12 @@ class ToggleAction(SelectAction):
     display the button as toggled-on (for a toolbar).
     """
     def insertIntoMenu(self,menu):
-        self.widget=menu.AppendCheckItem(self.global_id, self.name, self.getTooltip())
+        self.widget=menu.AppendCheckItem(self.global_id, _(self.name), self.getTooltip())
         #storeWeakref('menuitem', self.widget)
 
     def insertIntoToolbar(self,toolbar):
         self.tool=toolbar
-        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=self.name, longHelp=self.getTooltip())
+        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=_(self.name), longHelp=self.getTooltip())
         
     def showEnable(self):
         SelectAction.showEnable(self)
@@ -293,7 +293,10 @@ class ListAction(SelectAction):
     """
     menumax = 30
     abbrev_width = 16
-    inline=False
+    inline = False
+    
+    #: Should the items in the list be localized?  Dynamically generated lists in general won't be, because they represent filenames -- if a filename happened to be named "File" or "Edit" or "Cut" or a common string, they would be transformed to the localized version when they shouldn't be if that's the actual filename.
+    localize_items = False
     
     class IdCache(object):
         def __init__(self, first):
@@ -350,7 +353,10 @@ class ListAction(SelectAction):
             # This is a named list, which means that all the items in
             # the list will be placed in a pop-right menu
             child=wx.Menu()
-            self._insertMenu(menu,pos,child,self.name,True)
+            
+            # Inline list should always use a localized name for the pop-right
+            # indicator
+            self._insertMenu(menu, pos, child, _(self.name),True)
             self.topindex=pos
             pos=0
             menu=child
@@ -387,7 +393,9 @@ class ListAction(SelectAction):
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
         try:
-            widget=menu.Insert(pos,id,name, self.getTooltip(id, name))
+            if self.localize_items:
+                name = _(name)
+            widget=menu.Insert(pos, id, name, self.getTooltip(id, name))
         except:
             dprint(u"BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
             raise
@@ -399,7 +407,9 @@ class ListAction(SelectAction):
 
     def _insertMenu(self,menu,pos,child,name,is_toplevel=False):
         id = self.cache.getNewId()
-        widget=menu.InsertMenu(pos,id,name,child)
+        if self.localize_items:
+            name = _(name)
+        widget=menu.InsertMenu(pos, id, name, child)
         #storeWeakref('menuitem', widget)
         if is_toplevel:
             self.toplevel.append(id)
@@ -481,7 +491,9 @@ class RadioAction(ListAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
-        widget=menu.InsertRadioItem(pos,id,name, self.getTooltip(id, name))
+        if self.localize_items:
+            name = _(name)
+        widget=menu.InsertRadioItem(pos, id, name, self.getTooltip(id, name))
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:

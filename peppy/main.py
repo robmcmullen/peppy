@@ -4,7 +4,7 @@
 Main application class.
 """
 
-import os, sys, imp, platform, random
+import os, sys, imp, platform, random, string
 import __builtin__
 
 import wx
@@ -24,6 +24,7 @@ from peppy.lib.gaugesplash import *
 from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
+from peppy.lib.textutil import piglatin
 
 #### py2exe support
 
@@ -31,25 +32,6 @@ def main_is_frozen():
     return (hasattr(sys, "frozen") or # new py2exe
            hasattr(sys, "importers") # old py2exe
            or imp.is_frozen("__main__")) # tools/freeze
-
-##### i18n
-
-def i18n_gettext(path):
-    import gettext
-
-    trans = gettext.GNUTranslations(open(path, 'rb'))
-    __builtin__._ = trans.ugettext
-
-def lower(text):
-    """Dummy conversion to test i18n without loading i18n stuff"""
-    return text.lower()
-
-def init_i18n(path, lang, catalog):
-    gettext_path = os.path.join(path, lang, catalog)
-    if os.path.exists(gettext_path):
-        i18n_gettext(gettext_path)
-    else:
-        __builtin__._ = unicode
 
 class errorRedirector(object):
     def __init__(self, which='error'):
@@ -143,7 +125,78 @@ class User(ClassPrefs):
         StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
         StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
     )
+
+
+class Language(ClassPrefs):
+    preferences_tab = "General"
+    icon = "icons/world.png"
+    default_classprefs = (
+        StrParam('language', '', 'Locale for user interface'),
+        ChoiceParam('fun_translator', ['normal', 'leet', 'pig latin'], 'Have some fun with the localization'),
+    )
     
+    # Leet speak transformation used to test the translate method
+    leet = string.maketrans(u'abegilorstz', u'4639!102572')
+        
+    def __init__(self):
+        self.locale = None
+        self.lang = None
+        self.fun = None
+        Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
+
+    def translateLeet(self, msgid):
+        if u"%" in msgid:
+            return msgid
+        return msgid.encode('utf-8').translate(self.leet).decode('utf-8')
+    
+    def translatePigLatin(self, msgid):
+        if u"%" in msgid:
+            return msgid
+        return piglatin(msgid)
+    
+    def translateSimple(self, msgid):
+        msgid = unicode(msgid)
+        if self.fun:
+            return self.fun(msgid)
+        return msgid
+    
+    translateLocale = translateSimple
+    
+    def settingsChanged(self, msg=None):
+        self.updateLanguage(-1)
+        wx.CallAfter(wx.GetApp().updateAllFrames)
+
+    def setDefaultLanguage(self):
+        # set the default language here
+        self.updateLanguage(-1)
+
+    def updateLanguage(self, lang):
+        dprint("Updating language to %s" % lang)
+        
+        # Make *sure* any existing locale is deleted before the new
+        # one is created.  The old C++ object needs to be deleted
+        # before the new one is created, and if we just assign a new
+        # instance to the old Python variable, the old C++ locale will
+        # not be destroyed soon enough, likely causing a crash.
+        if self.locale:
+            assert sys.getrefcount(self.locale) <= 2
+            del self.locale
+            
+        # create a locale object for this language
+        self.locale = wx.Locale(lang)
+        if self.locale.IsOk():
+            __builtin__._ = self.translateLocale
+        else:
+            __builtin__._ = self.translateSimple
+            # don't keep the bad locale reference around
+            self.locale = None
+        
+        if self.classprefs.fun_translator == 'leet':
+            self.fun = self.translateLeet
+        elif self.classprefs.fun_translator == 'pig latin':
+            self.fun = self.translatePigLatin
+        else:
+            self.fun = None
 
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
@@ -198,6 +251,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     mouse = Mouse()
     user = User()
     tabs = Tabs()
+    language = Language()
     
     config = None
     
@@ -311,14 +365,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 del sys.argv[index:index + 2]
         self.config = HomeConfigDir(confdir)
 
-        catalog = "peppy"
-        if "--i18n-catalog" in sys.argv:
-            index = sys.argv.index("--i18n-catalog")
-            if len(sys.argv) > index:
-                catalog = sys.argv[index + 1]
-                del sys.argv[index:index + 2]
-        self.i18nConfig(catalog)
-
         if "--no-server" in sys.argv:
             index = sys.argv.index("--no-server")
             del sys.argv[index:index + 1]
@@ -350,7 +396,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("-v", action="count", dest="verbose", default=0)
         parser.add_option("-t", "--test", action="store_true", dest="log_stderr", default=False)
         parser.add_option("-c", action="store", dest="confdir", default="")
-        parser.add_option("--i18n-catalog", action="store", dest="i18n_catalog", default="peppy")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
         parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
         parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False)
@@ -541,25 +586,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def getConfigFilePath(self,filename):
         assert self.dprint("found home dir=%s" % self.config.dir)
         return os.path.join(self.config.dir,filename)
-
-    def i18nConfig(self, catalog):
-        #dprint("found home dir=%s" % self.config.dir)
-
-        basedir = os.path.dirname(os.path.dirname(__file__))
-
-        try:
-            fh = self.config.open("i18n.cfg")
-            cfg = ConfigParser()
-            cfg.optionxform = str
-            cfg.readfp(fh)
-            defaults = cfg.defaults()
-        except:
-            defaults = {}
-
-        locale = defaults.get('locale', 'en')
-        path = defaults.get('dir', os.path.join(basedir, 'locale'))
-
-        init_i18n(path, locale, catalog)
 
     def loadConfig(self):
         files = [self.base_preferences,
@@ -768,6 +794,23 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 # all exceptions.
                 pass
 
+    def updateAllFrames(self):
+        """Recreate the UI for all frames.
+
+        Loop through each frame and force an update of the entire UI.  This is
+        useful after changing languages to force the menubar to be redrawn in
+        the new language.
+        """
+        for frame in wx.GetTopLevelWindows():
+            assert self.dprint(frame)
+            try:
+                frame.switchMode()
+            except:
+                # not all top level windows will be BufferFrame
+                # subclasses, so just use the easy way out and catch
+                # all exceptions.
+                pass
+
     def close(self, buffer):
         if buffer.modified:
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
@@ -855,6 +898,8 @@ def run():
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')
+    
+    peppy.language.setDefaultLanguage()
     frame=BufferFrame(peppy.args)
     frame.Show(True)
 

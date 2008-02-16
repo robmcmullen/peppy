@@ -733,9 +733,10 @@ class ViewEOL(ToggleAction):
         self.mode.setViewEOL(not self.mode.classprefs.view_eol)
     
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
-    name="Line Endings"
-    inline=False
-    tooltip="Switch line endings"
+    name = "Line Endings"
+    inline = False
+    localize_items = True
+    tooltip = "Switch line endings"
     default_menu = ("Transform", -999)
 
     items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']

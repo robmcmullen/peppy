@@ -306,7 +306,7 @@ class UserActionMap(debugmixin):
                     else:
                         submenu = self.title_to_menu[actioncls]
                         
-                    menu.AppendMenu(-1, submenu_parts[-1], submenu)
+                    menu.AppendMenu(-1, _(submenu_parts[-1]), submenu)
                 else:
                     action = self.getAction(actioncls)
                     if separator and menu.GetMenuItemCount() > 0:
@@ -323,10 +323,10 @@ class UserActionMap(debugmixin):
         for weight, title, separator in self.class_list.menus['root']:
             self.dprint("root menu title: %s" % title)
             if pos < menubar.GetMenuCount():
-                old = menubar.Replace(pos, self.title_to_menu[title], title)
+                old = menubar.Replace(pos, self.title_to_menu[title], _(title))
                 old.Destroy()
             else:
-                menubar.Append(self.title_to_menu[title], title)
+                menubar.Append(self.title_to_menu[title], _(title))
             pos += 1
         while (pos < menubar.GetMenuCount()):
             old = menubar.Remove(pos)

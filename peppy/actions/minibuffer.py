@@ -104,7 +104,7 @@ class TextMinibuffer(Minibuffer):
         self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        prompt = wx.StaticText(self.win, -1, self.label)
+        prompt = wx.StaticText(self.win, -1, _(self.label))
         sizer.Add(prompt, 0, wx.CENTER)
         self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         sizer.Add(self.text, 1, wx.EXPAND)
@@ -183,7 +183,7 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        prompt = wx.StaticText(self.win, -1, self.label)
+        prompt = wx.StaticText(self.win, -1, _(self.label))
         sizer.Add(prompt, 0, wx.CENTER)
         self.text = wx.TextCtrl(self.win, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
         sizer.Add(self.text, 1, wx.EXPAND)
@@ -243,7 +243,7 @@ class CompletionMinibuffer(TextMinibuffer):
         self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        prompt = wx.StaticText(self.win, -1, self.label)
+        prompt = wx.StaticText(self.win, -1, _(self.label))
         sizer.Add(prompt, 0, wx.CENTER)
         self.text = TextCtrlAutoComplete(self.win, choices=[], size=(-1,-1), style=wx.TE_PROCESS_ENTER|wx.TE_PROCESS_TAB)
         sizer.Add(self.text, 1, wx.EXPAND)
