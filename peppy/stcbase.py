@@ -93,7 +93,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     This class performs the bookkeeping to keep the STC document pointers up to
     date when a new view is added.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     eol2int = {'\r': wx.stc.STC_EOL_CR,
                '\r\n': wx.stc.STC_EOL_CRLF,
@@ -199,7 +199,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if not self.refstc.encoding:
             self.refstc.encoding = self.detectEncoding(header)
         self.decodeText(bytes)
-        dprint("found encoding = %s" % self.refstc.encoding)
+        assert self.dprint("found encoding = %s" % self.refstc.encoding)
         
         del self.tempstore
     
@@ -254,7 +254,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         for txt in lines:
             match = regex.search(txt)
             if match:
-                dprint("Found encoding %s" % match.group(1))
+                assert self.dprint("Found encoding %s" % match.group(1))
                 return match.group(1)
         return None
         
@@ -268,11 +268,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if self.refstc.encoding:
             try:
                 unicodestring = bytes.decode(self.refstc.encoding)
-                dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
+                assert self.dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
                 self.SetText(unicodestring)
                 return
             except UnicodeDecodeError, e:
-                dprint("bad encoding %s:" % self.refstc.encoding)
+                assert self.dprint("bad encoding %s:" % self.refstc.encoding)
                 self.refstc.badencoding = self.refstc.encoding
                 self.refstc.encoding = None
         
@@ -297,7 +297,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             txt = self.GetText()
             encoding = self.detectEncoding(txt)
             if encoding:
-                dprint("found encoding %s" % encoding)
+                assert self.dprint("found encoding %s" % encoding)
                 txt = txt.encode(encoding)
                 if encoding != self.refstc.encoding:
                     # If the encoding has changed, update it here
@@ -309,7 +309,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 numchars = self.GetTextLength()
                 txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
             
-            dprint(txt)
             self.refstc.encoded = txt
         except:
             self.refstc.encoded = None
@@ -327,15 +326,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         dprint(txt[0:len(txt)/10])
         dprint("writing %d bytes to %s" % (len(txt), fh))
 
-        fh.write(txt)
-#
-#        try:
-#            fh.write(txt)
-#        except:
-#            print "BinaryFilter: something went wrong writing to %s" % fh
-#            raise
-#        finally:
-#            self.refstc.encoded = None
+        try:
+            fh.write(txt)
+        finally:
+            # clean up temporary encoded version of the text
+            self.refstc.encoded = None
 
     ## Additional functionality
     def checkUndoEOL(self):

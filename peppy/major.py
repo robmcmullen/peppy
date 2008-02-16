@@ -201,6 +201,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         and the user switches to some other mode.
         """
         if self.statusbar is None:
+            dprint()
             self.statusbar = PeppyStatusBar(self.frame)
             self.createStatusIcons()
         return self.statusbar
@@ -216,6 +217,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
     
     def deleteStatusBar(self):
         if self.statusbar:
+            dprint()
             self.statusbar.Destroy()
             self.statusbar = None
 

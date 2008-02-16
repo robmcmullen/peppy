@@ -25,7 +25,7 @@ def normalize(ref, base=None):
                     ref = str(ref).decode(sys.getfilesystemencoding())
                 except UnicodeDecodeError:
                     ref = str(ref).decode('utf-8')
-            dprint(repr(ref))
+            #dprint(repr(ref))
             if os.path.sep == '\\':
                 ref = ref.replace(os.path.sep, '/')
         ref = get_reference(ref)
