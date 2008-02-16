@@ -119,13 +119,21 @@ class Tabs(ClassPrefs):
         IndexChoiceParam('open_file_in_new_tab',
                          ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
                          1, 'Should a new file be opened in a new tab\nor should the current tab be reused?'),
+        IndexChoiceParam('documents_in_new_tab',
+                         ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
+                         1, 'When selecting a document from the documents menu,\nshould it be displayed in a new tab or should\nthe current tab be reused?'),
     )
     
-    def useNewTab(self, mode):
-        new_tab = self.classprefs.open_file_in_new_tab
+    def useNewTab(self, mode, new_tab):
         if new_tab == 0 or (new_tab == 1 and not mode.temporary):
             return True
         return False
+    
+    def useNewTabForNewFile(self, mode):
+        return self.useNewTab(mode, self.classprefs.open_file_in_new_tab)
+
+    def useNewTabForDocument(self, mode):
+        return self.useNewTab(mode, self.classprefs.documents_in_new_tab)
 
 
 class User(ClassPrefs):

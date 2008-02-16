@@ -230,7 +230,15 @@ class MyNotebook(wx.aui.AuiNotebook,debugmixin):
 
     def getNewModeWrapper(self, new_tab=False):
         current = self.getCurrentMode()
-        if current and not new_tab and (not wx.GetApp().tabs.useNewTab(current)):
+        if current and not new_tab and (not wx.GetApp().tabs.useNewTabForNewFile(current)):
+            wrapper = self.getCurrent()
+        else:
+            wrapper = self.newWrapper()
+        return wrapper
+
+    def getDocumentWrapper(self):
+        current = self.getCurrentMode()
+        if current and not wx.GetApp().tabs.useNewTabForDocument(current):
             wrapper = self.getCurrent()
         else:
             wrapper = self.newWrapper()
@@ -648,7 +656,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def setBuffer(self, buffer, wrapper=None):
         if wrapper is None:
             # this gets a default view for the selected buffer
-            wrapper = self.tabs.getCurrent()
+            wrapper = self.tabs.getDocumentWrapper()
         mode = wrapper.createMajorMode(self, buffer)
         assert self.dprint("set buffer to new view %s" % mode)
         self.tabs.updateWrapper(wrapper)
@@ -668,7 +676,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # or fragment, so we need to keep track of the full url (with the
         # query string and fragment) it separately.
         user_url = vfs.normalize(url)
-        dprint("url=%s force_new_tab=%s" % (unicode(user_url), force_new_tab))
         try:
             buffer = BufferList.findBufferByURL(user_url)
         except NotImplementedError:
@@ -692,8 +699,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 return
 
         if buffer is not None:
-            dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), new_tab))
-            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, new_tab)
+            #dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), force_new_tab))
+            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab)
         else:
             try:
                 buffer = LoadingBuffer(user_url, modecls)
