@@ -28,9 +28,9 @@ from peppy.debug import *
 
 class NewTab(SelectAction):
     alias = "new-tab"
-    name = "&Tab"
+    name = "New Tab"
     tooltip = "Open a new tab"
-    default_menu = (("File/New", 1), 1.0)
+    default_menu = (("File/New", 1), 1)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -50,7 +50,7 @@ class New(SelectAction):
     name = "&Text file"
     tooltip = "New plain text file"
     icon = "icons/page.png"
-    default_menu = ("File/New", 1.1)
+    default_menu = ("File/New", -2)
     key_bindings = {'win': "C-N", 'mac': "C-N"}
 
     def action(self, index=-1, multiplier=1):
