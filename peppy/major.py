@@ -188,39 +188,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             return self.minors.getActive()
         return []
 
-
-    def getStatusBar(self):
-        """Returns pointer to this mode's status bar.
-
-        Individual status bars are maintained by each instance of a
-        major mode.  The frame only shows the status bar of the active
-        mode and hides all the rest.  This means that modes may change
-        their status bars without checking if they are the active
-        mode.  This situation arizes when there is some background
-        processing going on (either with threads or using wx.Yield)
-        and the user switches to some other mode.
-        """
-        if self.statusbar is None:
-            dprint()
-            self.statusbar = PeppyStatusBar(self.frame)
-            self.createStatusIcons()
-        return self.statusbar
-
-    def resetStatusBar(self, message=None):
-        """Updates the status bar.
-
-        This method clears and rebuilds the status bar, usually
-        because something requests an icon change.
-        """
-        self.statusbar.reset()
-        self.createStatusIcons()
-    
-    def deleteStatusBar(self):
-        if self.statusbar:
-            dprint()
-            self.statusbar.Destroy()
-            self.statusbar = None
-
     def setMinibuffer(self, minibuffer=None):
         self.removeMinibuffer()
         if minibuffer is not None:
