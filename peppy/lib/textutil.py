@@ -7,6 +7,44 @@ therefore may be used independently of peppy.
 """
 import re
 
+def piglatin(text):
+    """Translate string to pig latin.
+    
+    Simple pig latin translator that properly capitalizes the resulting string,
+    and skips over any leading or trailing non-alphabetic characters.
+    """
+    words = []
+    for w in text.split():
+        # Find non alphabetic chars at the start and skip them
+        i=0
+        while not w[i].isalpha():
+            i += 1
+        start = w[0:i]
+        w = w[i:]
+        
+        if w[0] in 'aeiouAEIOU':
+            prefix = w
+            suffix = 'way'
+        else:
+            if w[0].isupper():
+                prefix = w[1:].capitalize()
+                suffix = w[0].lower() + 'ay'
+            else:
+                prefix = w[1:]
+                suffix = w[0].lower() + 'ay'
+        
+        # Move any trailing non-alphabetic characters to the end
+        i = len(prefix) - 1
+        while i >= 0 and not prefix[i].isalpha():
+            i -= 1
+        end = prefix[i + 1:]
+        prefix = prefix[0:i + 1]
+        
+        word = start + prefix + suffix + end
+        #print "preprefix=%s, prefix=%s, suffix=%s, word=%s" % (preprefix, prefix, suffix, word)
+        words.append(word)
+    return u' '.join(words)
+
 def getMagicComments(bytes, headersize=1024):
     """Given a byte string, get the first two lines.
     
