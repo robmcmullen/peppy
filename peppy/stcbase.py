@@ -323,8 +323,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if txt is None:
             raise IOError("Invalid encoded string -- this should never happen")
         
-        dprint(txt[0:len(txt)/10])
-        dprint("writing %d bytes to %s" % (len(txt), fh))
+        #dprint("writing %d bytes to %s" % (len(txt), fh))
 
         try:
             fh.write(txt)

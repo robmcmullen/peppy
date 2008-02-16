@@ -44,7 +44,7 @@ def normalize(ref, base=None):
     # URLs always use /
     if os.path.sep == '\\':
         base = base.replace(os.path.sep, '/')
-    dprint(base)
+    #dprint(base)
     # Check windows drive letters and add extra slash for correct URL syntax
     if base[1] == ':':
         base = "/%s:%s" % (base[0].lower(), base[2:])
@@ -56,7 +56,7 @@ def normalize(ref, base=None):
             path = str(ref.path).decode(sys.getfilesystemencoding())
         except UnicodeDecodeError:
             path = str(ref.path).decode('utf-8')
-    dprint(repr(path))
+    #dprint(repr(path))
     return baseref.resolve(path)
 
 def canonical_reference(ref):

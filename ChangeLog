@@ -1,3 +1,10 @@
+2008-02-14  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2.4 update to "Oscillation Overthruster"
+	* fixed a bunch of corner cases related to unicode paths
+	* added file encoding and "magic comment" support
+	* added menu items for find and replace
+
 2008-02-09  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.3 update to "Oscillation Overthruster"
