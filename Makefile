@@ -5,6 +5,7 @@ PRE =
 CSS = web/css web/js
 IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7
 WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
+AUX_LOCALE_DIRS = /opt/python/taskcoach/i18n.in /opt/wx/src/wxPython/wx/tools/Editra/locale /usr/share/locale
 
 # Distribution stuff
 TAR = tar
@@ -86,6 +87,9 @@ splash:
 publish: api release
 	rsync -avuz $(WEBSITE) archive robm351@www.flipturn.org:peppy.flipturn.org/
 
+locale:
+	i18n.in/make-podict.py -a i18n.in -o peppy/i18n i18n.in/messages.pot $(AUX_LOCALE_DIRS)
+
 dist: distdir
 	-chmod -R a+r $(distdir)
 	rm -f $(distdir)/peppy/icons/iconmap.py
@@ -109,8 +113,7 @@ distdir:
 	rm $(distdir)/$(DISTMAIN).tmp
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
-	
-	i18n.in/make-locales.py -o $(distdir)/peppy/i18n
+	cp peppy/i18n/*.py $(distdir)/peppy/i18n
 	
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
