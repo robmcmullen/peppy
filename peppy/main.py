@@ -128,11 +128,27 @@ class User(ClassPrefs):
     )
 
 
+class LocaleParam(Param):
+    """I18N parameter that pops up a dialog containing available locales.
+
+    The locale's canonical name is used as the value.
+    """
+    
+    def getCtrl(self, parent, initial=None):
+        btn = LangListCombo(parent)
+        return btn
+
+    def setValue(self, ctrl, value):
+        ctrl.setCatalog(value)
+
+    def getValue(self, ctrl):
+        return ctrl.getCatalog()
+
 class Language(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/world.png"
     default_classprefs = (
-        StrParam('language', 'en_US', 'Locale for user interface'),
+        LocaleParam('language', 'en_US', 'Locale for user interface'),
         ChoiceParam('fun_translator', ['normal', 'leet', 'pig latin'], 'Have some fun with the localization'),
     )
     

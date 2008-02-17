@@ -140,6 +140,10 @@ class LangListCombo(wx.combo.BitmapComboBox):
             if default in translation_map:
                 self.SetValue(translation_map[default].description)
     
+    def setCatalog(self, locale):
+        if locale in translation_map:
+            self.SetValue(translation_map[locale].description)
+    
     def getCatalog(self):
         #print self.GetValue()
         #print description_map[self.GetValue()]
