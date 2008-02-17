@@ -423,6 +423,11 @@ class TokenEater:
             self.__state = self.__waiting
         elif ttype == tokenize.STRING:
             self.__data.append(safe_eval(tstring))
+        elif ttype == tokenize.NAME and tstring in self.__options.keywords:
+            # handle the case where a keyword also includes a _() wrapper:
+            # ignore the current keyword by resetting the state to show that
+            # it has found a keyword
+            self.__state = self.__keywordseen
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:
             # warn if we see anything else than STRING or whitespace
