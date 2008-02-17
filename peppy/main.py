@@ -16,6 +16,7 @@ from peppy.buffers import *
 from peppy.frame import BufferFrame
 from peppy.configprefs import *
 from peppy.debug import *
+from peppy.i18n import *
 
 from peppy.yapsy.plugins import *
 from peppy.yapsy.PeppyPluginManager import *
@@ -131,7 +132,7 @@ class Language(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/world.png"
     default_classprefs = (
-        StrParam('language', '', 'Locale for user interface'),
+        StrParam('language', 'en_US', 'Locale for user interface'),
         ChoiceParam('fun_translator', ['normal', 'leet', 'pig latin'], 'Have some fun with the localization'),
     )
     
@@ -160,18 +161,23 @@ class Language(ClassPrefs):
             return self.fun(msgid)
         return msgid
     
-    translateLocale = translateSimple
+    def translateLocale(self, msgid):
+        msgid = unicode(msgid)
+        try:
+            msgid = self.messages[msgid].decode(self.encoding)
+        except (AttributeError, KeyError):
+            #print("didn't find %s" % repr(msgid))
+            pass
+        if self.fun:
+            return self.fun(msgid)
+        return msgid
     
     def settingsChanged(self, msg=None):
-        self.updateLanguage(-1)
+        self.setLanguage()
         wx.CallAfter(wx.GetApp().updateAllFrames)
 
-    def setDefaultLanguage(self):
-        # set the default language here
-        self.updateLanguage(-1)
-
-    def updateLanguage(self, lang):
-        dprint("Updating language to %s" % lang)
+    def setLanguage(self):
+        dprint("Updating language to %s" % self.classprefs.language)
         
         # Make *sure* any existing locale is deleted before the new
         # one is created.  The old C++ object needs to be deleted
@@ -183,11 +189,18 @@ class Language(ClassPrefs):
             del self.locale
             
         # create a locale object for this language
-        self.locale = wx.Locale(lang)
+        translations = getTranslationMap()
+        try:
+            lang_id = translations[self.classprefs.language].lang_id
+        except KeyError:
+            lang_id = -1
+            
+        self.locale = wx.Locale(lang_id)
         if self.locale.IsOk():
-            __builtin__._ = self.translateLocale
+            self.messages, self.encoding = importCatalog(self.classprefs.language)
         else:
-            __builtin__._ = self.translateSimple
+            self.messages = {}
+            self.encoding = 'utf-8'
             # don't keep the bad locale reference around
             self.locale = None
         
@@ -197,6 +210,14 @@ class Language(ClassPrefs):
             self.fun = self.translatePigLatin
         else:
             self.fun = None
+        
+        if self.messages:
+            __builtin__._ = self.translateLocale
+        elif self.fun:
+            __builtin__._ = self.translateSimple
+        else:
+            __builtin__._ = unicode
+
 
 class Peppy(wx.App, ClassPrefs, debugmixin):
     """Main application object.
@@ -898,7 +919,7 @@ def run():
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')
     
-    peppy.language.setDefaultLanguage()
+    peppy.language.setLanguage()
     frame=BufferFrame(peppy.args)
     frame.Show(True)
 

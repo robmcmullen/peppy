@@ -30,7 +30,7 @@ SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
 GIT_LIST = $(shell git-ls-files)
-GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/ web/%
+GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/ web/% i18n.in/%
 GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
 DISTSRC := $(filter %.py,$(GIT_FILTERED))
 DISTFILES := README INSTALL $(GIT_FILTERED)
@@ -86,7 +86,6 @@ splash:
 publish: api release
 	rsync -avuz $(WEBSITE) archive robm351@www.flipturn.org:peppy.flipturn.org/
 
-
 dist: distdir
 	-chmod -R a+r $(distdir)
 	rm -f $(distdir)/peppy/icons/iconmap.py
@@ -110,6 +109,8 @@ distdir:
 	rm $(distdir)/$(DISTMAIN).tmp
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
+	
+	i18n.in/make-locales.py -o $(distdir)/peppy/i18n
 	
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
