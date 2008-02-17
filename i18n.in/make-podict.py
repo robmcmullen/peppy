@@ -39,11 +39,26 @@ class MessageCatalog(object):
                 if not self.encoding:
                     self.encoding = self.current_encoding
             
-        if not fuzzy and str and id in self.template and id not in self.messages:
-            print ("adding translation for %s" % id)
-            if self.current_encoding != self.encoding:
-                str = str.decode(self.current_encoding).encode(self.encoding)
-            self.messages[id] = str
+        if not fuzzy and str:
+            if id in self.template and id not in self.messages:
+                print ("adding translation for %s" % id)
+                if self.current_encoding != self.encoding:
+                    str = str.decode(self.current_encoding).encode(self.encoding)
+                self.messages[id] = str
+            else:
+                for prefix in [u'', u'&']:
+                    for suffix in [u'', u'...', u':']:
+                        if not prefix and not suffix:
+                            continue
+                        keyword = prefix + id.decode(self.current_encoding) + suffix
+                        if keyword in self.template and keyword not in self.messages:
+                            print ("adding pre/suffixed translation for %s" % keyword)
+                            if self.current_encoding != self.encoding:
+                                str = str.decode(self.current_encoding).encode(self.encoding)
+                            str = prefix.encode(self.encoding) + str + suffix.encode(self.encoding)
+                            self.messages[keyword] = str
+                
+                
 
     def generateDict(self):
         "Return the generated dictionary"
