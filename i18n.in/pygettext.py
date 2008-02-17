@@ -234,9 +234,17 @@ def escape(s):
     return EMPTYSTRING.join(s)
 
 
-def safe_eval(s):
+peppy_keywords = ['default_menu']
+
+def safe_eval(s, peppy=False):
     # unwrap quotes, safely
-    return eval(s, {'__builtins__':{}}, {})
+    s = eval(s, {'__builtins__':{}}, {})
+    if peppy == 'default_menu' and '/' in s:
+        s2 = s.split('/')[-1]
+        print "default_menu: %s -> %s" % (s, s2)
+        s = s2
+    return s
+
 
 
 def normalize(s):
@@ -354,6 +362,7 @@ class TokenEater:
         self.__options = options
         self.__messages = {}
         self.__state = self.__waiting
+        self.__peppy = None
         self.__data = []
         self.__lineno = -1
         self.__freshmodule = 1
@@ -361,9 +370,9 @@ class TokenEater:
 
     def __call__(self, ttype, tstring, stup, etup, line):
         # dispatch
-##        import token
-##        print >> sys.stderr, 'ttype:', token.tok_name[ttype], \
-##              'tstring:', tstring
+#        import token
+#        print >> sys.stderr, 'ttype:', token.tok_name[ttype], \
+#              'tstring:', tstring
         self.__state(ttype, tstring, stup[0])
 
     def __waiting(self, ttype, tstring, lineno):
@@ -373,7 +382,7 @@ class TokenEater:
             # module docstring?
             if self.__freshmodule:
                 if ttype == tokenize.STRING:
-                    self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
+                    self.__addentry(safe_eval(tstring, self.__peppy), lineno, isdocstring=1)
                     self.__freshmodule = 0
                 elif ttype not in (tokenize.COMMENT, tokenize.NL):
                     self.__freshmodule = 0
@@ -382,8 +391,15 @@ class TokenEater:
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
-        if ttype == tokenize.NAME and tstring in opts.keywords:
-            self.__state = self.__keywordseen
+        if ttype == tokenize.NAME:
+            if tstring in peppy_keywords:
+                self.__state = self.__keywordseen
+                self.__peppy = tstring
+            elif tstring in opts.keywords:
+                self.__state = self.__keywordseen
+                self.__peppy = None
+            else:
+                self.__peppy = None
 
     def __suiteseen(self, ttype, tstring, lineno):
         # ignore anything until we see the colon
@@ -393,7 +409,7 @@ class TokenEater:
     def __suitedocstring(self, ttype, tstring, lineno):
         # ignore any intervening noise
         if ttype == tokenize.STRING:
-            self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
+            self.__addentry(safe_eval(tstring, self.__peppy), lineno, isdocstring=1)
             self.__state = self.__waiting
         elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
                            tokenize.COMMENT):
@@ -422,17 +438,23 @@ class TokenEater:
                 self.__addentry(EMPTYSTRING.join(self.__data))
             self.__state = self.__waiting
         elif ttype == tokenize.STRING:
-            self.__data.append(safe_eval(tstring))
+            self.__data.append(safe_eval(tstring, self.__peppy))
         elif ttype == tokenize.NAME and tstring in self.__options.keywords:
             # handle the case where a keyword also includes a _() wrapper:
             # ignore the current keyword by resetting the state to show that
             # it has found a keyword
             self.__state = self.__keywordseen
+        elif ttype == tokenize.OP and tstring == '(':
+            # handle the case where a keyword also includes a tuple that might
+            # contain a string
+            self.__data = []
+            self.__lineno = lineno
+            self.__state = self.__peppyopenseen
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:
             # warn if we see anything else than STRING or whitespace
             print >> sys.stderr, _(
-                '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
+                '*** %(file)s:%(lineno)s: unexpected token "%(token)s" in attrseen'
                 ) % {
                 'token': tstring,
                 'file': self.__curfile,
@@ -450,12 +472,36 @@ class TokenEater:
                 self.__addentry(EMPTYSTRING.join(self.__data))
             self.__state = self.__waiting
         elif ttype == tokenize.STRING:
-            self.__data.append(safe_eval(tstring))
+            self.__data.append(safe_eval(tstring, self.__peppy))
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:
             # warn if we see anything else than STRING or whitespace
             print >> sys.stderr, _(
-                '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
+                '*** %(file)s:%(lineno)s: unexpected token "%(token)s" in openseen'
+                ) % {
+                'token': tstring,
+                'file': self.__curfile,
+                'lineno': self.__lineno
+                }
+            self.__state = self.__waiting
+
+    def __peppyopenseen(self, ttype, tstring, lineno):
+        if ttype == tokenize.OP and tstring == ')':
+            # We've seen the last of the translatable strings.  Record the
+            # line number of the first line of the strings and update the list
+            # of messages seen.  Reset state for the next batch.  If there
+            # were no strings inside _(), then just ignore this entry.
+            if self.__data:
+                self.__addentry(EMPTYSTRING.join(self.__data))
+            self.__state = self.__waiting
+        elif ttype == tokenize.STRING:
+            self.__data.append(safe_eval(tstring, self.__peppy))
+        elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
+                           token.NEWLINE, tokenize.NL, tokenize.NUMBER,
+                           tokenize.OP]:
+            # warn if we see anything else than STRING or whitespace
+            print >> sys.stderr, _(
+                '*** %(file)s:%(lineno)s: unexpected token "%(token)s" in openseen'
                 ) % {
                 'token': tstring,
                 'file': self.__curfile,
@@ -528,8 +574,10 @@ class TokenEater:
                         print >> fp, locline
                 if isdocstring:
                     print >> fp, '#, docstring'
-                print >> fp, 'msgid', normalize(k)
-                print >> fp, 'msgstr ""\n'
+                if k:
+                    # Don't duplicate the msgid "" line
+                    print >> fp, 'msgid', normalize(k)
+                    print >> fp, 'msgstr ""\n'
 
 
 
@@ -628,7 +676,8 @@ def main():
 
     # calculate all keywords
     options.keywords.extend(default_keywords)
-
+    options.keywords.extend(peppy_keywords)
+    
     # initialize list of strings to exclude
     if options.excludefilename:
         try:
