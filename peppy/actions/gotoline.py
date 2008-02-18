@@ -24,7 +24,8 @@ class GotoLine(MinibufferAction):
     alias = "goto-line"
     name = "Goto Line..."
     tooltip = "Goto a line in the text."
-    key_bindings = {'default': 'M-G',}
+    default_menu = ("View", -250)
+    key_bindings = {'default': 'C-G', 'emacs': 'M-G'}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
 
