@@ -1,3 +1,10 @@
+2008-02-17  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2.5 update to "Oscillation Overthruster"
+	* added i18n support (and no need to restart to change languages!)
+	* added sample languages: Russian, Spanish, German, Chinese & Japanese
+	* added setting for how new files are opened: in new tabs or reuse tabs
+
 2008-02-14  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.4 update to "Oscillation Overthruster"

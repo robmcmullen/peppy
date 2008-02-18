@@ -182,17 +182,6 @@ class MessageCatalog(object):
         except IOError,msg:
             print >> sys.stderr, msg
 
-def processDir(outdir):
-    catalogs = ['en_US']
-    for poFile in glob.glob('i18n.in/*.po'):
-        print poFile
-        pyFile = po2dict.make(poFile)
-        shutil.move(pyFile, '%s/%s' % (outdir, os.path.basename(pyFile)))
-        
-        catalogs.append(os.path.splitext(os.path.basename(pyFile))[0])
-    
-    fh = open('%s/%s' % (outdir, 'peppy_message_catalogs.py'), 'w')
-    fh.write("supplied_translations = %s" % str(catalogs))
 
 if __name__ == "__main__":
     usage="usage: %prog [-o file] template po-files"
@@ -230,7 +219,11 @@ if __name__ == "__main__":
             catalogs.append(canonical)
         fh = open(os.path.join(options.output, 'peppy_message_catalogs.py'), 'w')
         fh.write("supplied_translations = %s" % str(catalogs))
-        
+        fh.write("\n\nif False:\n    # Dummy imports to trick py2exe into including these\n")
+        for catalog in catalogs[1:]:
+            # skip en_US
+            fh.write("    import %s\n" % catalog)
+
     elif options.canonical:
         po = MessageCatalog(args[0])
         for pofile in args[1:]:
