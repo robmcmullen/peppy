@@ -219,6 +219,7 @@ class Language(ClassPrefs):
             self.encoding = 'utf-8'
             # don't keep the bad locale reference around
             self.locale = None
+            self.classprefs.language = ''
         
         if self.classprefs.fun_translator == 'leet':
             self.fun = self.translateLeet
