@@ -154,7 +154,7 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
     def createImage(self):
         assert self.dprint("using image, size=%s" % len(self.preview.getvalue()))
         if len(self.preview.getvalue())==0:
-            self.major.frame.SetStatusText("Error running graphviz!")
+            self.major.setStatusText("Error running graphviz!")
             return
         
 ##        fh = open("test.png",'wb')
@@ -164,10 +164,10 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         img = wx.EmptyImage()
         if img.LoadStream(fh):
             self.bmp = wx.BitmapFromImage(img)
-            self.major.frame.SetStatusText("Graphviz completed.")
+            self.major.setStatusText("Graphviz completed.")
         else:
             self.bmp = None
-            self.major.frame.SetStatusText("Invalid image")
+            self.major.setStatusText("Invalid image")
         self.drawing.setBitmap(self.bmp)
 
     def OnSize(self, evt):

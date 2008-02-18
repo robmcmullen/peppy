@@ -50,9 +50,9 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
         assert self.dprint('OnCellMouseHover: %s\n' % cell)
         linkinfo = cell.GetLink()
         if linkinfo is not None:
-            self.frame.SetStatusText(linkinfo.GetHref())
+            self.setStatusText(linkinfo.GetHref())
         else:
-            self.frame.SetStatusText("")
+            self.setStatusText("")
 
     def update(self):
         self.SetPage(self.buffer.stc.GetText())

@@ -112,7 +112,7 @@ class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
             self.setImage(img)
         else:
             self.setImage(None)
-            self.frame.SetStatusText("Invalid image")
+            self.setStatusText("Invalid image")
 
     def createListenersPostHook(self):
         eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,

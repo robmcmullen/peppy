@@ -33,7 +33,7 @@ class SlowProgressBarTest(SelectAction):
         mode = self.frame.getActiveMajorMode()
         if mode is not None:
             mode.buffer.setBusy(True)
-            statusbar = mode.statusbar
+            statusbar = mode.status_info
             statusbar.startProgress("Testing...", 100, True)
             for i in range(100):
                 if statusbar.isCancelled():

@@ -61,8 +61,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.minibuffer=None
         self.sidebar=None
         
-        self.statusbar = None
-        
         wx.Panel.__init__(self, parent, -1, style=wx.NO_BORDER, pos=(9000,9000))
         box=wx.BoxSizer(wx.VERTICAL)
         self.SetAutoLayout(True)
@@ -101,6 +99,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("starting __init__ at 0.00000s")
         self.editwin.createWindowPostHook()
         self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
+        self.editwin.createStatusBarInfo()
+        self.dprint("createStatusBarInfo done in %0.5fs" % (time.time() - start))
         self.loadMinorModes()
         self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
         self.editwin.loadMinorModesPostHook()
@@ -404,8 +404,8 @@ class MajorMode(ClassPrefs, debugmixin):
         self.wrapper = wrapper
         self.buffer = buffer
         self.frame = frame
-        self.popup=None
-        self.statusbar = None
+        self.popup = None
+        self.status_info = None
         
         # Create a window here!
         pass
@@ -524,14 +524,14 @@ class MajorMode(ClassPrefs, debugmixin):
         try:
             self.buffer.save(url)
             self.savePostHook()
-            self.frame.SetStatusText(u"Saved %s" % self.buffer.url)
+            self.status_info.setText(u"Saved %s" % self.buffer.url)
         except IOError, e:
-            self.frame.SetStatusText(unicode(e))
+            self.status_info.setText(unicode(e))
         except UnicodeEncodeError, e:
-            self.frame.SetStatusText(unicode(e))
+            self.status_info.setText(unicode(e))
         except LookupError, e:
             # Bad encoding name!
-            self.frame.SetStatusText(unicode(e))
+            self.status_info.setText(unicode(e))
 
     def savePreHook(self, url=None):
         """Hook before the buffer is saved.
@@ -572,7 +572,6 @@ class MajorMode(ClassPrefs, debugmixin):
         user code to the delete process.
         """
         self.deleteWindowPreHook()
-        self.deleteStatusBar()
 
         # remove the mode as one of the buffer's listeners
         self.buffer.removeViewer(self)
@@ -676,7 +675,7 @@ class MajorMode(ClassPrefs, debugmixin):
         linenum = self.GetCurrentLine()
         pos = self.GetCurrentPos()
         col = self.GetColumn(pos)
-        self.frame.SetStatusText("L%d C%d" % (linenum+self.classprefs.line_number_offset,
+        self.status_info.setText("L%d C%d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset),1)
         self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
@@ -753,6 +752,16 @@ class MajorMode(ClassPrefs, debugmixin):
         modes, and all bindings and other hooks are called.
         """
         pass
+    
+    def createStatusBarInfo(self):
+        """Create the status bar exstrinsic information storage.
+        
+        The appearance of the statusbar can depend on the major mode, so the
+        individual major mode is responsible for creating whatever it needs.
+        """
+        widths = self.getStatusBarWidths()
+        self.status_info = ModularStatusBarInfo(self.frame.GetStatusBar(), widths)
+        self.createStatusIcons()
 
     def createStatusIcons(self):
         """Create any icons in the status bar.
@@ -764,21 +773,13 @@ class MajorMode(ClassPrefs, debugmixin):
         """
         pass
 
-    def getStatusBar(self):
-        """Returns pointer to this mode's status bar.
+    def getStatusBarWidths(self):
+        """Returns a list of status bar field widths.
 
-        Individual status bars are maintained by each instance of a
-        major mode.  The frame only shows the status bar of the active
-        mode and hides all the rest.  This means that modes may change
-        their status bars without checking if they are the active
-        mode.  This situation arizes when there is some background
-        processing going on (either with threads or using wx.Yield)
-        and the user switches to some other mode.
+        Override this in subclasses to change the number of text fields in the
+        status bar.
         """
-        if self.statusbar is None:
-            self.statusbar = PeppyStatusBar(self.frame)
-            self.createStatusIcons()
-        return self.statusbar
+        return [-1]
 
     def resetStatusBar(self, message=None):
         """Updates the status bar.
@@ -786,14 +787,12 @@ class MajorMode(ClassPrefs, debugmixin):
         This method clears and rebuilds the status bar, usually
         because something requests an icon change.
         """
-        self.statusbar.reset()
+        self.status_info.reset()
         self.createStatusIcons()
     
-    def deleteStatusBar(self):
-        if self.statusbar:
-            self.statusbar.Destroy()
-            self.statusbar = None
-
+    def setStatusText(self, text, field=0):
+        self.status_info.setText(text, field)
+    
     ##### Proxy services for the wrapper
     def updateAui(self):
         self.wrapper._mgr.Update()

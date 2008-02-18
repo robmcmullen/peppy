@@ -831,9 +831,9 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
             stc = self.buffer.stc
         try:
             self.table.ResetView(self, stc, format, col_labels)
-            self.frame.SetStatusText("Record format = '%s', %d bytes per record" % (self.table.format, self.table.nbytes))
+            self.setStatusText("Record format = '%s', %d bytes per record" % (self.table.format, self.table.nbytes))
         except struct.error:
-            self.frame.SetStatusText("Bad record format: %s" % format)
+            self.setStatusText("Bad record format: %s" % format)
 
     def OnUnderlyingUpdate(self, evt, loc=None):
         """Data has changed in some other view, so we need to update

@@ -323,7 +323,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         WindowList.append(self)
         
-        self.SetStatusBar(None)
+        ModularStatusBar(self)
 
         # tell FrameManager to manage this frame        
         self._mgr = wx.aui.AuiManager()
@@ -480,23 +480,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             major.SetFocus()
         
     def SetStatusText(self, text, index=0):
-        if self.GetStatusBar() is not None:
-            self.GetStatusBar().SetStatusText(text, index)
+        mode = self.getActiveMajorMode()
+        if mode is not None:
+            mode.status_info.setText(text, index)
     
     # non-wx methods
-
-    def setStatusBar(self):
-        #self.statusbar.reset()
-        oldbar = self.GetStatusBar()
-        if oldbar is not None:
-            oldbar.Hide()
-        mode=self.getActiveMajorMode()
-        if mode is not None:
-            bar = mode.getStatusBar()
-        else:
-            bar = None
-        self.SetStatusBar(bar)
-        bar.Show()
     
     def setKeys(self,majormodes=[],minormodes=[]):
 ##        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
@@ -731,7 +719,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         #traceon()
         buffer = loading_buffer.clone()
         buffer.openGUIThreadStart()
-        statusbar = mode_to_replace.getStatusBar()
+        statusbar = mode_to_replace.status_info
         statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
         thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
 
@@ -754,8 +742,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         msg = mode.getWelcomeMessage()
         if progress:
             progress.stopProgress(msg)
-        else:
-            self.SetStatusText(msg)
+        mode.status_info.setText(msg)
         mode.showInitialPosition(user_url)
 
     def openFailure(self, url, error, mode_to_replace=None, progress=None):
@@ -767,7 +754,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if progress:
             progress.stopProgress(msg)
         else:
-            self.SetStatusText(msg)
+            mode.status_info.setText(msg)
 
     def save(self):        
         mode=self.getActiveMajorMode()
@@ -805,7 +792,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.setTitle()
         #self.setKeys(majors)
         self.setMenumap(mode)
-        self.setStatusBar()
+        self.GetStatusBar().changeInfo(mode.status_info)
 
 ##        if mode.buffer.filename in BufferFrame.perspectives:
 ##            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])

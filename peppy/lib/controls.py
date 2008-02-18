@@ -25,6 +25,9 @@ from wx.lib.pubsub import Publisher
 
 from peppy.lib.iconstorage import *
 
+if not '_' in dir():
+    _ = unicode
+
 
 class StatusBarButton(wx.lib.buttons.GenBitmapButton):
     """A minimally sized bitmap button for use in the statusbar.
@@ -53,66 +56,152 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
         return None
 
 
-class PeppyStatusBar(wx.StatusBar):
-    instances = []
+class ModularStatusBarInfo(object):
+    def __init__(self, parent, widths=[-1, 150]):
+        self.parent = parent
+        self.widths = widths
+        
+        self.cancel_label = _("Cancel")
+        self.text = [' ' for w in self.widths]
+        self.reset()
+
+    def reset(self):
+        self.gauge_value = 0
+        self.gauge_width = 100
+        self.gauge_max = 100
+        
+        self.overlays = []
+        self.active_controls = []
+        
+        self.show_cancel = False
+        self.cancelled = False
+        if self.parent.info == self:
+            self.parent.setWidths()
+
+    def addIcon(self, bmp, tooltip=None):
+        b = self.parent.getIcon(bmp, tooltip)
+        self.active_controls.append(b)
+        if self.parent.info == self:
+            self.parent.setWidths()
     
+    def setText(self, text, field=0):
+        self.text[field] = text
+        if self.parent.info == self:
+            self.parent.SetStatusText(text, field)
+
+    def startProgress(self, text, max=100, cancel=False, message=None):
+        self.in_progress = True
+        self.gauge_value = 0
+        self.gauge_value_max = max
+        self.cancelled = False
+        self.show_cancel = cancel
+        
+        self.setText(text)
+        self.overlays = []
+        self.overlays.append((self.parent.gauge, self.gauge_width))
+
+        if self.show_cancel:
+            dc=wx.ClientDC(self.parent)
+            tw, th = dc.GetTextExtent(self.cancel_label)
+            tw += 20 # add some padding to the text for button border
+            self.overlays.append((self.parent.cancel, tw))
+
+        if message:
+            Publisher().subscribe(self.updateMessage, message)
+            self.message = message
+        
+        if self.parent.info == self:
+            self.parent.setWidths()
+
+    def updateProgress(self, value):
+        self.gauge_value = value
+        if self.parent.info == self:
+            if value < 0:
+                self.parent.gauge.Pulse()
+            else:
+                self.parent.gauge.SetValue(self.gauge_value)
+    
+    def isCancelled(self):
+        return self.cancelled
+    
+    def isInProgress(self):
+        return bool(self.overlays)
+
+    def stopProgress(self, text="Completed."):
+        if self.cancelled:
+            self.setText("Cancelled.")
+        else:
+            self.setText(text)
+        self.overlays = []
+        Publisher().unsubscribe(self.updateMessage)
+        self.message = None
+        if self.parent.info == self:
+            self.parent.setWidths()
+        
+    def updateMessage(self, msg):
+        value = msg.data
+        wx.CallAfter(self.updateProgress, value)
+
+
+class ModularStatusBar(wx.StatusBar):
     def __init__(self, parent, widths=[-1, 150]):
         wx.StatusBar.__init__(self, parent, -1)
 
-        self.default_widths = widths
         if wx.Platform == '__WXGTK__':
             self.spacing = 3
         else:
             self.spacing = 0
-        self.controls = []
+        self.controls = {}
+        
+        self.info = None
+        self.default_info = ModularStatusBarInfo(self, widths)
+        self.info = self.default_info
 
-        self.gauge = None
-        self.gaugeWidth = 100
-        self.overlays = []
-        self.cancelled = False
-
+        self.gauge = wx.Gauge(self, -1, 100)
+        self.gauge.Hide()
+        self.cancel = wx.Button(self, -1, _("Cancel"))
+        self.cancel.Hide()
+        self.Bind(wx.EVT_BUTTON, self.OnCancel, self.cancel)
+        
         self.setWidths()
 
         self.sizeChanged = False
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
-        PeppyStatusBar.instances.append(weakref.ref(self))
-        
-    @classmethod
-    def debugInstances(cls):
-        index = 0
-        for ref in PeppyStatusBar.instances:
-            bar = ref()
-            if (bar):
-                print("PeppyStatusBar[%d]: %s: %s, %s" % (index, hex(id(bar)), bar.GetStatusText(), bar.GetParent()))
-            else:
-                print("PeppyStatusBar[%d]: deleted" % index)
-            index += 1
-                
+        parent.SetStatusBar(self)
+        self.Show()
+    
+    def changeInfo(self, info=None):
+        if info:
+            self.info = info
+        else:
+            self.info = self.default_info
+        self.setWidths()
+
     def setWidths(self):
-        self.widths = [i for i in self.default_widths]
-        for widget in self.controls:
+        self.widths = [i for i in self.info.widths]
+        for widget in self.info.active_controls:
             self.widths.append(widget.GetSizeTuple()[0] + 2*self.spacing)
         self.widths.append(16 + 2*self.spacing) # leave space for the resizer
         self.SetFieldsCount(len(self.widths))
         self.SetStatusWidths(self.widths)
+        for i in range(len(self.widths)):
+            if i < len(self.info.widths):
+                self.SetStatusText(self.info.text[i], i)
+            else:
+                self.SetStatusText(' ', i)
         self.Reposition()
         
-    def reset(self):
-        for widget in self.controls:
-            self.RemoveChild(widget)
-            widget.Destroy()
-        self.controls = []
-        self.setWidths()
-
-    def addIcon(self, bmp, tooltip=None):
+    def getIcon(self, bmp, tooltip=None):
         if isinstance(bmp,str):
             bmp = getIconBitmap(bmp)
-        b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE)
-        if tooltip:
-            b.SetToolTipString(tooltip)
-        self.controls.append(b)
-        self.setWidths()
+        if bmp not in self.controls:
+            b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE)
+            if tooltip:
+                b.SetToolTipString(tooltip)
+            b.Hide()
+            self.controls[bmp] = b
+        return self.controls[bmp]
 
     def OnSize(self, evt):
         self.Reposition()  # for normal size events
@@ -122,16 +211,16 @@ class PeppyStatusBar(wx.StatusBar):
         # accurate during the EVT_SIZE resulting from a frame maximize.
         self.sizeChanged = True
 
-
     def OnIdle(self, evt):
         if self.sizeChanged:
             self.Reposition()
 
     # reposition the checkbox
     def Reposition(self):
-        if self.controls:
-            field = len(self.default_widths)
-            for widget in self.controls:
+        shown = {}
+        if self.info.active_controls:
+            field = len(self.info.widths)
+            for widget in self.info.active_controls:
                 rect = self.GetFieldRect(field)
                 #dprint(rect)
                 size = widget.GetSize()
@@ -142,74 +231,33 @@ class PeppyStatusBar(wx.StatusBar):
                 widget.SetPosition((rect.x + xoffset,
                                   rect.y + yoffset + self.spacing))
                 #widget.SetSize((rect.width-4, rect.height-4))
+                shown[widget] = True
                 
                 field += 1
-        if self.overlays:
-            for widget, rect in self.overlays:
-                widget.SetPosition((rect.x, rect.y))
-                widget.SetSize((rect.width, rect.height))
+        for widget in self.controls.values():
+            state = widget in shown
+            widget.Show(state)
+            
+        shown = {}
+        if self.info.overlays:
+            rect = self.GetFieldRect(0)
+            x = rect.width
+            overlays = [a for a in self.info.overlays]
+            overlays.reverse()
+            shown = {}
+            for widget, width in overlays:
+                x -= width
+                widget.SetPosition((x, rect.y))
+                widget.SetSize((width, rect.height))
+                #print("x=%d width=%d widget=%s" % (x, width, widget))
+                shown[widget] = True
+        for widget in [self.gauge, self.cancel]:
+            state = widget in shown
+            widget.Show(state)
         self.sizeChanged = False
 
-    def startProgress(self, text, max=100, cancel=False, message=None):
-        self.cancelled = False
-        
-        self.SetStatusText(text)
-
-        dc=wx.ClientDC(self)
-       
-        gauge = wx.Gauge(self, -1, max)
-        grect = self.GetFieldRect(0)
-        grect.x = grect.width - self.gaugeWidth
-        grect.width = self.gaugeWidth
-        self.overlays.append((gauge, grect))
-        self.gauge = gauge
-
-        if cancel:
-            text = _("Cancel")
-            button = wx.Button(self, -1, text)
-            self.Bind(wx.EVT_BUTTON, self.OnCancel, button)
-            tw, th = dc.GetTextExtent(text)
-            tw += 20 # add some padding to the text for button border
-            crect = self.GetFieldRect(0)
-            crect.x = crect.width - tw
-            crect.width = tw
-            grect.x -= tw
-            self.overlays.append((button, crect))
-
-        if message:
-            Publisher().subscribe(self.updateMessage, message)
-            self.message = message
-            
-        self.Reposition()
-
-    def updateProgress(self, value):
-        if value < 0:
-            self.gauge.Pulse()
-        else:
-            self.gauge.SetValue(value)
-
-    def updateMessage(self, msg):
-        value = msg.data
-        wx.CallAfter(self.updateProgress, value)
-
     def OnCancel(self, evt):
-        self.cancelled = True
-    
-    def isCancelled(self):
-        return self.cancelled
-
-    def stopProgress(self, text="Completed."):
-        for widget, rect in self.overlays:
-            self.RemoveChild(widget)
-            widget.Destroy()
-        if self.cancelled:
-            self.SetStatusText("Cancelled.")
-        else:
-            self.SetStatusText(text)
-        self.overlays = []
-        self.gauge = None
-        Publisher().unsubscribe(self.updateMessage)
-        self.message = None
+        self.info.cancelled = True
 
 
 class FontBrowseButton(wx.Panel):
@@ -288,20 +336,90 @@ class FontBrowseButton(wx.Panel):
 
 
 if __name__ == "__main__":
-    app   = wx.PySimpleApp()
-    frame = wx.Frame(None, -1, title='Font Button Test')
-    frame.CreateStatusBar()
-    
-    # Add a panel that the rubberband will work on.
-    #panel = NeXTTest(frame)
-    panel = FontBrowseButton(frame)
+    class TestFrame(wx.Frame):
+        def __init__(self, parent):
+            wx.Frame.__init__(self, parent, -1, "Status Bar Test", wx.DefaultPosition, wx.DefaultSize)
+            self.statusbar = ModularStatusBar(self)
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            
+            font = FontBrowseButton(self)
+            sizer.Add(font, 0, wx.EXPAND)
+            
+            button1 = wx.Button(self, -1, "Statusbar 1")
+            button1.Bind(wx.EVT_BUTTON, self.setStatus1)
+            sizer.Add(button1, 0, wx.EXPAND)
+            self.status_info1 = self.statusbar.info
+            self.status_info1.addIcon("icons/windows.png", "DOS/Windows line endings")
+            self.status_info1.addIcon("icons/apple.png", "Old-style Apple line endings")
+            self.status_info1.addIcon("icons/tux.png", "Unix line endings")
+            self.status_info1.setText("Status Bar 1")
+            
+            button2 = wx.Button(self, -1, "Statusbar 2")
+            button2.Bind(wx.EVT_BUTTON, self.setStatus2)
+            sizer.Add(button2, 0, wx.EXPAND)
+            self.status_info2 = ModularStatusBarInfo(self.statusbar, [50, -1])
+            self.status_info2.setText("Status Bar 2")
+            self.status_info2.setText("blah", 1)
 
-    # Layout the frame
-    sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(panel, 0, wx.EXPAND)
-    
-    frame.SetAutoLayout(1)
-    frame.SetSizer(sizer)
-    frame.Show(1)
+            button3 = wx.Button(self, -1, "Statusbar 3")
+            button3.Bind(wx.EVT_BUTTON, self.setStatus3)
+            sizer.Add(button3, 0, wx.EXPAND)
+            self.status_info3 = ModularStatusBarInfo(self.statusbar, [150, -1])
+            self.status_info3.addIcon("icons/tux.png", "Unix line endings")
+            self.status_info3.addIcon("icons/apple.png", "Old-style Apple line endings")
+            self.status_info3.setText("Status Bar 3")
+            self.status_info3.startProgress("Stuff!")
+            self.count3 = 0
+
+            button4 = wx.Button(self, -1, "Statusbar 4")
+            button4.Bind(wx.EVT_BUTTON, self.setStatus4)
+            sizer.Add(button4, 0, wx.EXPAND)
+            self.status_info4 = ModularStatusBarInfo(self.statusbar, [-1])
+            self.status_info4.addIcon("icons/apple.png", "Old-style Apple line endings")
+            self.status_info4.setText("Status Bar 4")
+            self.status_info4.startProgress("Stuff!", cancel=True)
+            self.count4 = 0
+
+            self.timer = wx.Timer(self)
+            self.Bind(wx.EVT_TIMER, self.OnTimer)
+            self.timer.Start(1000/10)
+
+            self.SetAutoLayout(1)
+            self.SetSizer(sizer)
+            self.Show(1)
+        
+        def OnTimer(self, evt):
+            self.count3 = (self.count3 + 1) % 100
+            self.status_info3.updateProgress(self.count3)
+            if self.status_info4.isInProgress():
+                if self.status_info4.isCancelled():
+                    self.status_info4.stopProgress()
+                else:
+                    self.count4 = (self.count4 + 3) % 100
+                    self.status_info4.updateProgress(self.count4)
+        
+        def setStatus1(self, evt):
+            print("status 1")
+            self.statusbar.changeInfo(self.status_info1)
+            evt.Skip()
+            
+        def setStatus2(self, evt):
+            print("status 2")
+            self.statusbar.changeInfo(self.status_info2)
+            evt.Skip()
+
+        def setStatus3(self, evt):
+            print("status 3")
+            self.statusbar.changeInfo(self.status_info3)
+            evt.Skip()
+
+        def setStatus4(self, evt):
+            print("status 4")
+            self.statusbar.changeInfo(self.status_info4)
+            evt.Skip()
+
+    app   = wx.PySimpleApp()
+    frame = TestFrame(None)
     
     app.MainLoop()

@@ -697,13 +697,10 @@ class HSIMode(BitmapScroller, MajorMode):
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)
 
-    def getStatusBar(self):
+    def getStatusBarWidths(self):
         """Get the HSI status bar
         """
-        if self.statusbar is None:
-            self.statusbar = PeppyStatusBar(self.frame, [-1, 100, 170])
-            self.createStatusIcons()
-        return self.statusbar
+        return [-1, 100, 170]
     
     def updateInfo(self, x=-1, y=-1):
         line, sample, band = self.cubeview.getCoords(x, y)

@@ -594,14 +594,17 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         else:
             return MajorMode.verifyMimetype(mimetype)
     
+    def getStatusBarWidths(self):
+        return [-1, 150]
+
     def createStatusIcons(self):
         linesep = self.getLinesep()
         if linesep == '\r\n':
-            self.statusbar.addIcon("icons/windows.png", "DOS/Windows line endings")
+            self.status_info.addIcon("icons/windows.png", "DOS/Windows line endings")
         elif linesep == '\r':
-            self.statusbar.addIcon("icons/apple.png", "Old-style Apple line endings")
+            self.status_info.addIcon("icons/apple.png", "Old-style Apple line endings")
         else:
-            self.statusbar.addIcon("icons/tux.png", "Unix line endings")
+            self.status_info.addIcon("icons/tux.png", "Unix line endings")
 
     def applySettings(self):
         start = time.time()
@@ -751,7 +754,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         linenum = self.GetCurrentLine()
         pos = self.GetCurrentPos()
         col = self.GetColumn(pos)
-        self.frame.SetStatusText("L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
+        self.status_info.setText("L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset,
             self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE,
             self.GetStyleAt(pos), pos),1)
