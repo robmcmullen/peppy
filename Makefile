@@ -84,7 +84,7 @@ release: dist
 splash:
 	img2py -u graphics/peppy-splash.png peppy/splash_image.py
 
-publish: api release
+publish: api html
 	rsync -avuz $(WEBSITE) archive robm351@www.flipturn.org:peppy.flipturn.org/
 
 locale:
