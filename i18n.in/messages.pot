@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2008-02-17 11:51+PST\n"
+"POT-Creation-Date: 2008-02-18 16:50+PST\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -138,14 +138,14 @@ msgstr ""
 msgid "About this program"
 msgstr ""
 
-#: ../peppy/dired.py:144 ../peppy/plugins/buffer_list_mode.py:142
+#: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
 msgstr ""
 
-#: ../peppy/dired.py:53 ../peppy/dired.py:83 ../peppy/dired.py:90
-#: ../peppy/dired.py:98 ../peppy/dired.py:106 ../peppy/dired.py:115
-#: ../peppy/dired.py:123 ../peppy/dired.py:132 ../peppy/dired.py:145
-#: ../peppy/dired.py:156 ../peppy/dired.py:168
+#: ../peppy/dired.py:58 ../peppy/dired.py:88 ../peppy/dired.py:95
+#: ../peppy/dired.py:103 ../peppy/dired.py:111 ../peppy/dired.py:120
+#: ../peppy/dired.py:128 ../peppy/dired.py:137 ../peppy/dired.py:150
+#: ../peppy/dired.py:161 ../peppy/dired.py:173
 #: ../peppy/plugins/buffer_list_mode.py:64
 #: ../peppy/plugins/buffer_list_mode.py:71
 #: ../peppy/plugins/buffer_list_mode.py:79
@@ -169,8 +169,16 @@ msgstr ""
 msgid "Add new ChangeLog entry to the top of the ChangeLog"
 msgstr ""
 
+#: ../peppy/dired.py:26
+msgid "Apr"
+msgstr ""
+
 #: ../peppy/editra/style_editor.py:242
 msgid "Attributes"
+msgstr ""
+
+#: ../peppy/dired.py:27
+msgid "Aug"
 msgstr ""
 
 #: ../peppy/editra/style_editor.py:231
@@ -189,7 +197,8 @@ msgstr ""
 msgid "Break wrapped lines at word boundaries"
 msgstr ""
 
-#: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:168
+#: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:64
+#: ../peppy/lib/controls.py:162
 msgid "Cancel"
 msgstr ""
 
@@ -211,7 +220,7 @@ msgstr ""
 msgid "Case"
 msgstr ""
 
-#: ../peppy/dired.py:130 ../peppy/plugins/buffer_list_mode.py:128
+#: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
 msgstr ""
 
@@ -219,7 +228,7 @@ msgstr ""
 msgid "Clear Playlist"
 msgstr ""
 
-#: ../peppy/dired.py:131 ../peppy/plugins/buffer_list_mode.py:129
+#: ../peppy/dired.py:136 ../peppy/plugins/buffer_list_mode.py:129
 msgid "Clear all flags from the selected item(s)."
 msgstr ""
 
@@ -297,6 +306,10 @@ msgstr ""
 
 #: ../peppy/plugins/debug_classes.py:54
 msgid "DebugClassMenu"
+msgstr ""
+
+#: ../peppy/dired.py:27
+msgid "Dec"
 msgstr ""
 
 #: ../peppy/plugins/mpd_major_mode.py:547
@@ -382,6 +395,10 @@ msgstr ""
 msgid "Fast test of the progress bar"
 msgstr ""
 
+#: ../peppy/dired.py:26
+msgid "Feb"
+msgstr ""
+
 #: ../peppy/frame.py:303 ../peppy/mainmenu.py:355 ../peppy/mainmenu.py:365
 #: ../peppy/mainmenu.py:379 ../peppy/mainmenu.py:400 ../peppy/mainmenu.py:417
 #: ../peppy/plugins/openrecent.py:21
@@ -396,7 +413,7 @@ msgstr ""
 msgid "Find..."
 msgstr ""
 
-#: ../peppy/major.py:1017
+#: ../peppy/major.py:1016
 msgid "Finished %s on %s"
 msgstr ""
 
@@ -437,7 +454,7 @@ msgid "Garbage Objects"
 msgstr ""
 
 #: ../peppy/main.py:56 ../peppy/main.py:90 ../peppy/main.py:99
-#: ../peppy/main.py:123 ../peppy/main.py:132 ../peppy/main.py:258
+#: ../peppy/main.py:123 ../peppy/main.py:148 ../peppy/main.py:275
 msgid "General"
 msgstr ""
 
@@ -514,6 +531,18 @@ msgstr ""
 msgid "Integer"
 msgstr ""
 
+#: ../peppy/dired.py:26
+msgid "Jan"
+msgstr ""
+
+#: ../peppy/dired.py:27
+msgid "Jul"
+msgstr ""
+
+#: ../peppy/dired.py:26
+msgid "Jun"
+msgstr ""
+
 #: ../peppy/mainmenu.py:736
 msgid "Line Endings"
 msgstr ""
@@ -550,19 +579,23 @@ msgstr ""
 msgid "Major Mode"
 msgstr ""
 
-#: ../peppy/dired.py:96 ../peppy/plugins/buffer_list_mode.py:77
+#: ../peppy/dired.py:26
+msgid "Mar"
+msgstr ""
+
+#: ../peppy/dired.py:101 ../peppy/plugins/buffer_list_mode.py:77
 msgid "Mark for Deletion"
 msgstr ""
 
-#: ../peppy/dired.py:104 ../peppy/plugins/buffer_list_mode.py:85
+#: ../peppy/dired.py:109 ../peppy/plugins/buffer_list_mode.py:85
 msgid "Mark for Deletion and Move Backwards"
 msgstr ""
 
-#: ../peppy/dired.py:113 ../peppy/plugins/buffer_list_mode.py:111
+#: ../peppy/dired.py:118 ../peppy/plugins/buffer_list_mode.py:111
 msgid "Mark for Display"
 msgstr ""
 
-#: ../peppy/dired.py:121 ../peppy/plugins/buffer_list_mode.py:119
+#: ../peppy/dired.py:126 ../peppy/plugins/buffer_list_mode.py:119
 msgid "Mark for Display and Move Backwards"
 msgstr ""
 
@@ -574,19 +607,19 @@ msgstr ""
 msgid "Mark for Save and Move Backwards"
 msgstr ""
 
-#: ../peppy/dired.py:105 ../peppy/plugins/buffer_list_mode.py:86
+#: ../peppy/dired.py:110 ../peppy/plugins/buffer_list_mode.py:86
 msgid "Mark the selected buffer for deletion and move to the previous item."
 msgstr ""
 
-#: ../peppy/dired.py:97 ../peppy/plugins/buffer_list_mode.py:78
+#: ../peppy/dired.py:102 ../peppy/plugins/buffer_list_mode.py:78
 msgid "Mark the selected buffer for deletion."
 msgstr ""
 
-#: ../peppy/dired.py:122 ../peppy/plugins/buffer_list_mode.py:120
+#: ../peppy/dired.py:127 ../peppy/plugins/buffer_list_mode.py:120
 msgid "Mark the selected buffer to be displayed and move to the previous item."
 msgstr ""
 
-#: ../peppy/dired.py:114 ../peppy/plugins/buffer_list_mode.py:112
+#: ../peppy/dired.py:119 ../peppy/plugins/buffer_list_mode.py:112
 msgid "Mark the selected buffer to be displayed."
 msgstr ""
 
@@ -596,6 +629,10 @@ msgstr ""
 
 #: ../peppy/plugins/buffer_list_mode.py:95
 msgid "Mark the selected buffer to be saved."
+msgstr ""
+
+#: ../peppy/dired.py:26
+msgid "May"
 msgstr ""
 
 #: ../peppy/hsi/hsi_major_mode.py:588
@@ -639,19 +676,19 @@ msgstr ""
 msgid "Move the cursor up a line"
 msgstr ""
 
-#: ../peppy/dired.py:82 ../peppy/plugins/buffer_list_mode.py:63
+#: ../peppy/dired.py:87 ../peppy/plugins/buffer_list_mode.py:63
 msgid "Move the selection to the next item in the list."
 msgstr ""
 
-#: ../peppy/dired.py:89 ../peppy/plugins/buffer_list_mode.py:70
+#: ../peppy/dired.py:94 ../peppy/plugins/buffer_list_mode.py:70
 msgid "Move the selection to the previous item in the list."
 msgstr ""
 
-#: ../peppy/dired.py:81 ../peppy/plugins/buffer_list_mode.py:62
+#: ../peppy/dired.py:86 ../peppy/plugins/buffer_list_mode.py:62
 msgid "Move to Next Item"
 msgstr ""
 
-#: ../peppy/dired.py:88 ../peppy/plugins/buffer_list_mode.py:69
+#: ../peppy/dired.py:93 ../peppy/plugins/buffer_list_mode.py:69
 msgid "Move to Previous Item"
 msgstr ""
 
@@ -691,6 +728,14 @@ msgstr ""
 
 #: ../peppy/actions/minibuffer.py:142
 msgid "Not an integer expression."
+msgstr ""
+
+#: ../peppy/dired.py:27
+msgid "Nov"
+msgstr ""
+
+#: ../peppy/dired.py:27
+msgid "Oct"
 msgstr ""
 
 #: ../peppy/editra/style_editor.py:155
@@ -843,11 +888,11 @@ msgstr ""
 msgid "Redo"
 msgstr ""
 
-#: ../peppy/dired.py:51
+#: ../peppy/dired.py:56
 msgid "Refresh"
 msgstr ""
 
-#: ../peppy/dired.py:52
+#: ../peppy/dired.py:57
 msgid "Refresh the current view to show any changes."
 msgstr ""
 
@@ -863,7 +908,7 @@ msgstr ""
 msgid "Remove whitespace from blank lines"
 msgstr ""
 
-#: ../peppy/dired.py:166 ../peppy/plugins/buffer_list_mode.py:164
+#: ../peppy/dired.py:171 ../peppy/plugins/buffer_list_mode.py:164
 msgid "Replace Buffer"
 msgstr ""
 
@@ -935,7 +980,7 @@ msgstr ""
 msgid "Save as a new file"
 msgstr ""
 
-#: ../peppy/dired.py:143 ../peppy/plugins/buffer_list_mode.py:141
+#: ../peppy/dired.py:148 ../peppy/plugins/buffer_list_mode.py:141
 msgid "Save or Delete Marked Buffers"
 msgstr ""
 
@@ -967,6 +1012,10 @@ msgstr ""
 msgid "Select rectangular region."
 msgstr ""
 
+#: ../peppy/dired.py:27
+msgid "Sep"
+msgstr ""
+
 #: ../peppy/editra/style_editor.py:195
 msgid "Set the preview file type"
 msgstr ""
@@ -979,7 +1028,7 @@ msgstr ""
 msgid "Shift &Right"
 msgstr ""
 
-#: ../peppy/dired.py:154 ../peppy/plugins/buffer_list_mode.py:152
+#: ../peppy/dired.py:159 ../peppy/plugins/buffer_list_mode.py:152
 msgid "Show Buffer"
 msgstr ""
 
@@ -1007,11 +1056,11 @@ msgstr ""
 msgid "Show or hide sidebar windows"
 msgstr ""
 
-#: ../peppy/dired.py:155 ../peppy/plugins/buffer_list_mode.py:153
+#: ../peppy/dired.py:160 ../peppy/plugins/buffer_list_mode.py:153
 msgid "Show the buffer in a new tab."
 msgstr ""
 
-#: ../peppy/dired.py:167 ../peppy/plugins/buffer_list_mode.py:165
+#: ../peppy/dired.py:172 ../peppy/plugins/buffer_list_mode.py:165
 msgid "Show the buffer in place of this tab."
 msgstr ""
 
@@ -1055,7 +1104,7 @@ msgstr ""
 msgid "Start a hangman game"
 msgstr ""
 
-#: ../peppy/major.py:997
+#: ../peppy/major.py:996
 msgid "Started %s on %s"
 msgstr ""
 
@@ -1173,13 +1222,14 @@ msgstr ""
 msgid "User manual"
 msgstr ""
 
-#: ../peppy/frame.py:305 ../peppy/hsi/hsi_major_mode.py:468
-#: ../peppy/hsi/hsi_major_mode.py:489 ../peppy/hsi/hsi_major_mode.py:510
-#: ../peppy/hsi/hsi_major_mode.py:539 ../peppy/hsi/hsi_major_mode.py:590
-#: ../peppy/hsi/hsi_major_mode.py:631 ../peppy/hsi/hsi_major_mode.py:653
-#: ../peppy/mainmenu.py:473 ../peppy/mainmenu.py:490 ../peppy/mainmenu.py:510
-#: ../peppy/mainmenu.py:527 ../peppy/mainmenu.py:722 ../peppy/mainmenu.py:765
-#: ../peppy/mainmenu.py:795 ../peppy/mainmenu.py:811 ../peppy/mainmenu.py:828
+#: ../peppy/actions/gotoline.py:27 ../peppy/frame.py:305
+#: ../peppy/hsi/hsi_major_mode.py:468 ../peppy/hsi/hsi_major_mode.py:489
+#: ../peppy/hsi/hsi_major_mode.py:510 ../peppy/hsi/hsi_major_mode.py:539
+#: ../peppy/hsi/hsi_major_mode.py:590 ../peppy/hsi/hsi_major_mode.py:631
+#: ../peppy/hsi/hsi_major_mode.py:653 ../peppy/mainmenu.py:473
+#: ../peppy/mainmenu.py:490 ../peppy/mainmenu.py:510 ../peppy/mainmenu.py:527
+#: ../peppy/mainmenu.py:722 ../peppy/mainmenu.py:765 ../peppy/mainmenu.py:795
+#: ../peppy/mainmenu.py:811 ../peppy/mainmenu.py:828
 #: ../peppy/plugins/hexedit_mode.py:65 ../peppy/plugins/hexedit_mode.py:83
 #: ../peppy/plugins/hexedit_mode.py:98 ../peppy/plugins/image_mode.py:50
 #: ../peppy/plugins/image_mode.py:60
