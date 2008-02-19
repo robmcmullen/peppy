@@ -556,6 +556,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
+        self.buffer.startChangeDetection()
 
     @classmethod
     def verifyEditraType(cls, ext, file_type):
@@ -610,7 +611,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         start = time.time()
         self.dprint("starting applySettings at %0.5fs" % start)
         self.applyDefaultSettings()
-        #dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
+        self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url)
         self.dprint("ext=%s file_type=%s" % (ext, file_type))
@@ -625,6 +626,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.dprint("ext=%s file_type=%s" % (ext, file_type))
         self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
         self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
+        self.dprint("font styling done in %0.5fs" % (time.time() - start))
         self.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True

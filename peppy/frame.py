@@ -722,6 +722,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         statusbar = mode_to_replace.status_info
         statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
         thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
+        wx.Yield()
+        thread.start()
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
         try:
@@ -732,6 +734,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             error = traceback.format_exc()
             self.openFailure(user_url, error, mode_to_replace, progress)
             return
+        
+        if progress:
+            progress.stopProgress("Parsing...")
+            wx.Yield()
 
         assert self.dprint("mode to replace = %s" % mode_to_replace)
         mode = self.tabs.newMode(buffer, mode_to_replace)
@@ -740,8 +746,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         #raceoff()
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
-        if progress:
-            progress.stopProgress(msg)
         mode.status_info.setText(msg)
         mode.showInitialPosition(user_url)
 

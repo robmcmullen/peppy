@@ -323,9 +323,6 @@ class Buffer(BufferVFSMixin):
     def __del__(self):
         dprint(u"cleaning up buffer %s" % unicode(self.url))
 
-    def initSTC(self):
-        self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
-
     def addViewer(self, mode):
         self.viewers.append(mode) # keep track of views
         assert self.dprint("views of %s: %s" % (self,self.viewers))
@@ -412,9 +409,6 @@ class Buffer(BufferVFSMixin):
         
         self.setName()
 
-        if isinstance(self.stc,PeppySTC):
-            self.initSTC()
-
         self.modified = False
         
         # If it doesn't exist, that means we are creating the file, so it
@@ -487,6 +481,10 @@ class Buffer(BufferVFSMixin):
             assert self.dprint("notifing: %s busy = %s" % (view, self.busy))
             view.showBusy(self.busy)
         wx.GetApp().enableFrames()
+
+    def startChangeDetection(self):
+        if isinstance(self.stc, PeppySTC):
+            self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
     def OnChanged(self, evt):
         #dprint("stc = %s" % self.stc)
@@ -603,8 +601,6 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.buffer = buffer
         self.mode_to_replace = mode_to_replace
         self.progress = progress
-
-        self.start()
 
     def run(self):
         self.dprint(u"starting to load %s" % unicode(self.buffer.url))
