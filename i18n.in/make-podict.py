@@ -83,7 +83,10 @@ class MessageCatalog(object):
         "Return the generated dictionary"
         metadata = self.messages['']
         del self.messages['']
-        return "# -*- coding: %s -*-\n#This is generated code - do not edit\nencoding = '%s'\ndict = %s"%(self.encoding, self.encoding, self.messages)
+        msgids = self.messages.keys()
+        msgids.sort()
+        messages = '\n'.join(["%s: %s," % (repr(a), repr(self.messages[a])) for a in msgids])
+        return "# -*- coding: %s -*-\n#This is generated code - do not edit\nencoding = '%s'\ndict = {\n%s\n}\n"%(self.encoding, self.encoding, messages)
 
     def loadTemplate(self, filename):
         self.add = self.addAlways
