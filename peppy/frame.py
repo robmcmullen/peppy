@@ -311,7 +311,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         }
 
 
-    def __init__(self, urls=[], id=-1):
+    def __init__(self, urls=[], id=-1, buffer=None):
         BufferFrame.frameid+=1
         self.name="peppy: Window #%d" % BufferFrame.frameid
 
@@ -367,7 +367,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # counter to make sure the title buffer is shown if we attempt
         # to load files and they all fail.
         self.initial_load = 0
-        self.loadList(urls)
+        if buffer:
+            self.newBuffer(buffer)
+        else:
+            self.loadList(urls)
+        self.Show()
         
     def bindEvents(self):
         self.Bind(wx.EVT_CLOSE,self.OnClose)

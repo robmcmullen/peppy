@@ -45,6 +45,22 @@ class CloseTab(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.tabs.closeTab()
 
+class MoveTabToNewWindow(SelectAction):
+    alias = "move-tab-to-new-window"
+    name = "Move Tab to New Window"
+    tooltip = "Move the current tab to a new window"
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        # If it's called from a popup, use the tab on which it was clicked, not
+        # the current mode
+        try:
+            mode = self.frame.tabs.getContextMenuWrapper().editwin
+        except IndexError:
+            mode = self.mode
+        wx.CallAfter(BufferFrame, buffer=mode.buffer)
+        wx.CallAfter(self.frame.tabs.closeWrapper, mode)
+
 class New(SelectAction):
     alias = "new-file"
     name = "Text file"
@@ -1013,7 +1029,7 @@ class MainMenu(IPeppyPlugin):
     
     def getTabMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend([NewTab, CloseTab, BufferPopupList])
+        action_classes.extend([NewTab, CloseTab, MoveTabToNewWindow, BufferPopupList])
         dprint(action_classes)
 
     def getMajorModes(self):

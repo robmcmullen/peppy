@@ -938,7 +938,6 @@ def run():
     
     peppy.language.setLanguage()
     frame=BufferFrame(peppy.args)
-    frame.Show(True)
 
     peppy.stopSplash()
     Publisher().sendMessage('peppy.starting.mainloop')
