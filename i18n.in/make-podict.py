@@ -13,6 +13,25 @@ Based on msgfmt.py by Martin v. Löwis <loewis@informatik.hu-berlin.de>
 import sys, re, os, glob
 from optparse import OptionParser
 
+
+def normalize(s):
+    # This converts the utf-8 string into a format that is appropriate for .po
+    # files, namely much closer to C style.
+    lines = s.split('\n')
+    if len(lines) == 1:
+        s = '"' + s + '"'
+    else:
+        if not lines[-1]:
+            del lines[-1]
+            lines[-1] = lines[-1] + '\\n'
+        print lines
+        lineterm = '\\n"\n"'
+        s = '""\n"' + lineterm.join(lines) + '"'
+        print lines
+        print s
+    return s
+
+
 class MessageCatalog(object):
     def __init__(self, template):
         self.messages = {}
@@ -181,19 +200,96 @@ class MessageCatalog(object):
             open(outfile,"wb").write(output)
         except IOError,msg:
             print >> sys.stderr, msg
+    
+    def save_po_entry(self, fh, msgid, msgstr):
+        if not msgstr and msgid in self.messages:
+            msgstr = self.messages[msgid]
+        if not msgid:
+            print repr(msgstr)
+        fh.write("msgid %s\n" % normalize(msgid))
+        fh.write("msgstr %s\n" % normalize(msgstr))
+    
+    def save_po(self, template, outfile):
+        ID = 1
+        STR = 2
+
+        print("reading template from %s" % template)
+        try:
+            lines = open(template).readlines()
+        except IOError, msg:
+            print >> sys.stderr, msg
+            sys.exit(1)
+        self.current_encoding = 'utf-8'
+
+        section = None
+        fuzzy = 0
+
+        fh = open(outfile, 'wb')
+        # Parse the catalog
+        lno = 0
+        for l in lines:
+            lno += 1
+            # If we get a comment line after a msgstr, this is a new entry
+            if l[0] == '#':
+                if section == STR:
+                    self.save_po_entry(fh, msgid, msgstr)
+                    section = None
+                # Immediately write comments
+                fh.write("%s" % l)
+                continue
+            # Now we are in a msgid section, output previous section
+            if l.startswith('msgid'):
+                if section == STR:
+                    self.save_po_entry(fh, msgid, msgstr)
+                section = ID
+                l = l[5:]
+                msgid = msgstr = ''
+            # Now we are in a msgstr section
+            elif l.startswith('msgstr'):
+                section = STR
+                l = l[6:]
+            # Skip empty lines
+            l = l.strip()
+            if not l:
+                if section == STR:
+                    self.save_po_entry(fh, msgid, msgstr)
+                    section = None
+                fh.write("\n")
+                continue
+            # XXX: Does this always follow Python escape semantics?
+            try:
+                l = eval(l)
+                if section == ID:
+                    msgid += l
+                elif section == STR:
+                    msgstr += l
+                else:
+                    print >> sys.stderr, 'Syntax error on %s:%d' % (filename, lno), \
+                          'before:'
+                    print >> sys.stderr, l
+                    sys.exit(1)
+            except SyntaxError:
+                print >> sys.stderr, 'Syntax error on %s:%d' % (filename, lno)
+        
+        # Add last entry
+        if section == STR:
+            self.save_po_entry(fh, msgid, msgstr)
+
 
 
 if __name__ == "__main__":
     usage="usage: %prog [-o file] template po-files"
     parser=OptionParser(usage=usage)
     parser.add_option("-a", action="store", dest="all",
-                      default='.', help="process all po files in this directory as locales to be generated")
+                      default='', help="process all po files in this directory as locales to be generated")
     parser.add_option("-c", action="store", dest="canonical",
                       default=None, help="canonical name of the locale")
     parser.add_option("-o", action="store", dest="output",
                       default=None, help="output file or directory")
     parser.add_option("-s", action="store_true", dest="system",
                       default=False, help="check system locale directories")
+    parser.add_option("-p", action="store", dest="make_po",
+                      default=None, help="using the template, create po file containing the merged data")
     (options, args) = parser.parse_args()
 
     if len(args) < 1:
@@ -206,6 +302,8 @@ if __name__ == "__main__":
         files = glob.glob(os.path.join(options.all, "*.po"))
         for file in files:
             canonical = os.path.basename(file)[0:-3]
+            if canonical.startswith('merged-'):
+                continue
             print("Processing locale %s" % canonical)
             po = MessageCatalog(args[0])
             po.addFile(file)
@@ -217,6 +315,8 @@ if __name__ == "__main__":
                     po.addFile(pofile)
             po.save(os.path.join(options.output, canonical + ".py"))
             catalogs.append(canonical)
+            if options.make_po:
+                po.save_po(options.make_po, "merged-%s.po" % canonical)
         fh = open(os.path.join(options.output, 'peppy_message_catalogs.py'), 'w')
         fh.write("supplied_translations = %s" % str(catalogs))
         fh.write("\n\nif False:\n    # Dummy imports to trick py2exe into including these\n")
@@ -236,3 +336,5 @@ if __name__ == "__main__":
             po.save(options.output)
         elif options.canonical:
             po.save(options.canonical + ".py")
+        if options.make_po:
+            po.save_po(options.make_po, "merged-%s.po" % options.canonical)
