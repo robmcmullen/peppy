@@ -187,7 +187,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             # will have to be some callback to the major mode
             pass
     
-    def openSuccess(self, buffer, headersize=1024):
+    def openSuccess(self, buffer, headersize=1024, encoding=None):
         bytes = self.tempstore.getvalue()
         numbytes = len(bytes)
         if headersize > numbytes:
@@ -195,6 +195,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         header = bytes[0:headersize]
         self.detectLineEndings(header)
         
+        if encoding:
+            self.refstc.encoding = encoding
         if not self.refstc.encoding:
             self.refstc.encoding = detectEncoding(header)
         self.decodeText(bytes)

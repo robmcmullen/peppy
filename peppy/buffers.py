@@ -430,12 +430,12 @@ class Buffer(BufferVFSMixin):
         self.openBackgroundThread()
         self.openGUIThreadSuccess()
 
-    def revert(self):
+    def revert(self, encoding=None):
         # don't use the buffered reader: get a new file handle
         fh = vfs.open(self.url)
         self.stc.ClearAll()
         self.stc.readThreaded(fh, self)
-        self.stc.openSuccess(self)
+        self.stc.openSuccess(self, encoding=encoding)
         self.modified=False
         self.stc.EmptyUndoBuffer()
         wx.CallAfter(self.showModifiedAll)

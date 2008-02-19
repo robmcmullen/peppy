@@ -392,6 +392,34 @@ class Revert(SelectAction):
         if retval==wx.ID_YES:
             self.mode.buffer.revert()
 
+class RevertEncoding(SelectAction):
+    alias = "revert-encoding"
+    name = "Revert With Encoding"
+    tooltip = "Revert with a different encoding"
+    default_menu = ("File", 901)
+    default_toolbar = False
+    
+    def isEnabled(self):
+        return self.mode.buffer.stc.CanEdit()
+
+    def action(self, index=-1, multiplier=1):
+        minibuffer = TextMinibuffer(self.mode, self, label="Revert using encoding:",
+                                    initial = self.mode.buffer.stc.encoding)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        dprint("Revert to encoding %s" % text)
+        # see if it's a known encoding
+        try:
+            'test'.encode(text)
+            # if we get here, it's valid
+            self.mode.buffer.revert(text)
+            if text != self.mode.buffer.stc.encoding:
+                self.mode.setStatusText("Failed converting to %s; loaded as binary (probably not what you want)" % text)
+        except LookupError:
+            self.mode.setStatusText("Unknown encoding %s" % text)
+            
+
 class Save(SelectAction):
     alias = "save-buffer"
     name = "&Save..."
@@ -996,7 +1024,8 @@ class MainMenu(IPeppyPlugin):
     def getActions(self):
         return [NewTab, New,
                 OpenFileGUI, OpenFile, OpenURL,
-                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert, Exit,
+                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert, RevertEncoding,
+                Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 
