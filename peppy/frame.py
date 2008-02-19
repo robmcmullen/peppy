@@ -726,7 +726,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         statusbar = mode_to_replace.status_info
         statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
         thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
-        wx.Yield()
+        wx.GetApp().cooperativeYield()
         thread.start()
 
     def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
@@ -741,7 +741,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         if progress:
             progress.stopProgress("Parsing...")
-            wx.Yield()
+            wx.GetApp().cooperativeYield()
 
         assert self.dprint("mode to replace = %s" % mode_to_replace)
         mode = self.tabs.newMode(buffer, mode_to_replace)

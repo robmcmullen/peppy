@@ -291,6 +291,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     language = Language()
     
     config = None
+    yielding = False
     
     def OnInit(self):
         """Main application initialization.
@@ -908,6 +909,18 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         else:
             return lambda x: None
     
+    def cooperativeYield(self):
+        """Make sure you don't try to wx.Yield inside another wx.Yield
+        
+        wx.Yield doesn't like being called by another function when it's in the
+        middle of another yield, so guard against that by using this barrier.
+        """
+        if self.yielding:
+            #dprint("Caught a yield inside a yield")
+            return
+        self.yielding = True
+        wx.Yield()
+        self.yielding = False
 
 def run():
     """Start an instance of the application.
