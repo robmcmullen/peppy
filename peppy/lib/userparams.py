@@ -1183,7 +1183,7 @@ class PrefsProxy(debugmixin):
         if user:
             d=GlobalPrefs.user
             for klass in klasses:
-                assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d[klass]))
+                #assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     if klass not in GlobalPrefs.convert_already_seen:
                         dprint("warning: GlobalPrefs[%s] not converted yet." % klass)
@@ -1193,13 +1193,13 @@ class PrefsProxy(debugmixin):
         if default:
             d=GlobalPrefs.default
             for klass in klasses:
-                assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d[klass]))
+                #assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     return d[klass][name]
 
         klasses=GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]
         for klass in klasses:
-            assert self.dprint("checking %s for %s in default_classprefs" % (klass,name))
+            #assert self.dprint("checking %s for %s in default_classprefs" % (klass,name))
             if hasattr(klass,'default_classprefs') and name in klass.default_classprefs:
                 return klass.default_classprefs[name]
         raise AttributeError("%s not found in %s.classprefs" % (name, self.__dict__['_startSearch']))
