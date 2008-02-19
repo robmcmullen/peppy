@@ -20,6 +20,11 @@ from peppy.buffers import *
 from peppy.stcinterface import *
 from peppy.debug import *
 
+# Can't reliably use strftime, because it returns the month encoded in some
+# coding that apparently is unable to be discovered in a cross-platform manner.
+months = [None,
+          _("Jan"), _("Feb"), _("Mar"), _("Apr"), _("May"), _("Jun"),
+          _("Jul"), _("Aug"), _("Sep"), _("Oct"), _("Nov"), _("Dec")]
 
 def getCompactDate(mtime, recent_months=6):
     """Get a printable representation of a date in a compact format
@@ -32,9 +37,9 @@ def getCompactDate(mtime, recent_months=6):
     """
     recent_seconds = datetime.datetime.now() - datetime.timedelta(recent_months * 30)
     if mtime < recent_seconds:
-        s = mtime.strftime("%b %d  %Y")
+        s = u"%s %02d  %s" % (months[mtime.month], mtime.day, mtime.year)
     else:
-        s = mtime.strftime("%b %d %H:%M")
+        s = u"%s %02d %02d:%02d" % (months[mtime.month], mtime.day, mtime.hour, mtime.minute)
     return s
 
 
