@@ -808,6 +808,7 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
         self.Bind(EVT_WAIT_UPDATE,self.OnUnderlyingUpdate)
         self.Show(True)
 
+    def createPostHook(self):
         self.buffer.startChangeDetection()
         self.Update(self.buffer.stc)
 

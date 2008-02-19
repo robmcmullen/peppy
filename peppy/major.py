@@ -779,7 +779,7 @@ class MajorMode(ClassPrefs, debugmixin):
         Override this in subclasses to change the number of text fields in the
         status bar.
         """
-        return [-1]
+        return [-1, 150]
 
     def resetStatusBar(self, message=None):
         """Updates the status bar.

@@ -595,9 +595,6 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         else:
             return MajorMode.verifyMimetype(mimetype)
     
-    def getStatusBarWidths(self):
-        return [-1, 150]
-
     def createStatusIcons(self):
         linesep = self.getLinesep()
         if linesep == '\r\n':
