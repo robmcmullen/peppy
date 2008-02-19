@@ -91,7 +91,6 @@ class ModularStatusBarInfo(object):
 
     def startProgress(self, text, max=100, cancel=False, message=None):
         self.in_progress = True
-        self.gauge_value = 0
         self.gauge_value_max = max
         self.cancelled = False
         self.show_cancel = cancel
@@ -110,6 +109,7 @@ class ModularStatusBarInfo(object):
             Publisher().subscribe(self.updateMessage, message)
             self.message = message
         
+        self.updateProgress(0)
         if self.parent.info == self:
             self.parent.setWidths()
 
@@ -196,7 +196,7 @@ class ModularStatusBar(wx.StatusBar):
         if isinstance(bmp,str):
             bmp = getIconBitmap(bmp)
         if bmp not in self.controls:
-            b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE)
+            b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE, pos=(9000,9000))
             if tooltip:
                 b.SetToolTipString(tooltip)
             b.Hide()
