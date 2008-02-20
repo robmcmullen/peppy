@@ -54,7 +54,7 @@ class MessageCatalog(object):
             match = re.search(r'charset=(\S*)\n', str)
             if match:
                 self.current_encoding = match.group(1).lower()
-                print("Found encoding %s" % self.current_encoding)
+                #print("Found encoding %s" % self.current_encoding)
                 if not self.encoding:
                     self.encoding = self.current_encoding
             
@@ -182,8 +182,14 @@ class MessageCatalog(object):
             choices.append(canonical[0:2])
         for locale in choices:
             lcdir = "%s/%s/LC_MESSAGES" % (dir, locale)
+            ldir = "%s/%s" % (dir, locale)
             if os.path.isdir(lcdir):
                 files = glob.glob("%s/*" % lcdir)
+                print files
+                for file in files:
+                    self.addFile(file)
+            elif os.path.isdir(ldir):
+                files = glob.glob("%s/*" % ldir)
                 print files
                 for file in files:
                     self.addFile(file)

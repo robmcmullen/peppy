@@ -5,7 +5,7 @@ PRE =
 CSS = web/css web/js
 IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7
 WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
-AUX_LOCALE_DIRS = /opt/python/taskcoach/i18n.in /opt/wx/src/wxPython/wx/tools/Editra/locale /usr/share/locale
+AUX_LOCALE_DIRS = /opt/python/taskcoach/i18n.in /opt/wx/src/wxPython/wx/tools/Editra/locale /opt/python/ulipad/lang /usr/share/locale /usr/kde/3.5/share/locale
 
 # Distribution stuff
 TAR = tar
@@ -87,8 +87,11 @@ splash:
 publish: api html
 	rsync -avuz $(WEBSITE) archive robm351@www.flipturn.org:peppy.flipturn.org/
 
-locale:
+locale-full-rebuild:
 	i18n.in/make-podict.py -a i18n.in -o peppy/i18n i18n.in/messages.pot $(AUX_LOCALE_DIRS)
+
+locale:
+	i18n.in/make-podict.py -a i18n.in -o peppy/i18n i18n.in/messages.pot
 
 dist: distdir
 	-chmod -R a+r $(distdir)
