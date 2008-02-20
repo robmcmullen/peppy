@@ -51,7 +51,7 @@ msgstr "&Helpo"
 
 #: ../peppy/plugins/help.py:70
 msgid "&Help..."
-msgstr "&&Helpo..."
+msgstr "&Helpo..."
 
 #: ../peppy/mainmenu.py:508
 msgid "&Line Numbers"

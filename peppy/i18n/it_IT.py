@@ -4,7 +4,7 @@ encoding = 'utf-8'
 dict = {
 '&About...': 'Informazioni &su...',
 '&Help': '&Guida',
-'&Help...': '&&Guida...',
+'&Help...': '&Guida...',
 '&Line Wrapping': '&A capo automatico',
 '&New Window': '&Nuova finestra',
 '&Preferences...': '&Preferenze...',
