@@ -85,7 +85,6 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         if 'EVT_AUINOTEBOOK_TAB_RIGHT_DOWN' in dir(wx.aui):
             # This event was only added as of wx 2.8.7.1, so ignore it on
             # earlier releases
@@ -137,12 +136,6 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         self.context_tab = -1
         #evt.Skip()
 
-    def OnContextMenu(self, evt):
-        dprint("Context menu over all tab contents (major and minor modes)")
-        # allow further processing for debugging
-        wrapper = self.getCurrent()
-        wrapper.editwin.OnContextMenu(evt)
-    
     def getContextMenuWrapper(self):
         if self.context_tab >= 0:
             return self.GetPage(self.context_tab)

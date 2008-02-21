@@ -13,6 +13,50 @@ from peppy.lib.foldexplorer import *
 from peppy.editra import *
 from peppy.editra.stcmixin import *
 
+try:
+    import enchant
+    USE_SPELLING = True
+except ImportError:
+    USE_SPELLING = False
+
+
+class SpellingSuggestionAction(ListAction):
+    name = "Spelling..."
+    inline = True
+    menumax = 5
+    tooltip = "Spelling suggestions for the current word"
+
+    def getItems(self):
+        word = self.mode.check_spelling[0]
+        lang = wx.GetApp().language.classprefs.language
+        if USE_SPELLING and lang:
+            if len(word) > 2:
+                try:
+                    # FIXME: simplistic approach is to grab a new dict object
+                    # whenever I need it.  Later, I'll cache it as I do spell-
+                    # as-you-type
+                    d = enchant.Dict(lang)
+                    # Because this is a popup action, we can save stuff to this
+                    # object.  Otherwise, we'd save it to the major mode
+                    self.words = d.suggest(self.mode.check_spelling[0])
+                    return self.words
+                except enchant.DictNotFoundError:
+                    # No suggestions if the dictionary can't be found.
+                    pass
+        return [_('No suggestions')]
+    
+    def isEnabled(self):
+        return hasattr(self, 'words') and len(self.words) > 0
+
+    def action(self, index=-1, multiplier=1):
+        #dprint(self.words[index])
+        s = self.mode
+        c = s.check_spelling
+        s.SetTargetStart(c[1])
+        s.SetTargetEnd(c[2])
+        s.ReplaceTarget(self.words[index])
+    
+
 class BraceHighlightMixin(object):
     """Brace highlighting mixin for STC
 
@@ -773,6 +817,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
             self.EnsureVisible(line)
 
     def getPopupActions(self, x, y):
-        action_classes = []
+        pos = self.PositionFromPoint(wx.Point(x, y))
+        self.check_spelling = self.getWordFromPosition(pos)
+        #dprint(self.check_spelling)
+        action_classes = [SpellingSuggestionAction]
         Publisher().sendMessage('fundamental.context_menu', action_classes)
         return action_classes

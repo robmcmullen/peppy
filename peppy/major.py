@@ -606,6 +606,7 @@ class MajorMode(ClassPrefs, debugmixin):
         if hasattr(self, 'addUpdateUIEvent'):
             self.addUpdateUIEvent(self.OnUpdateUI)
         self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.idle_update_menu = False
 
     def createEventBindingsPostHook(self):
@@ -730,7 +731,7 @@ class MajorMode(ClassPrefs, debugmixin):
         """
         pos = evt.GetPosition()
         screen = self.GetScreenPosition()
-        dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
+        #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
         action_classes = self.getPopupActions(pos.x - screen.x, pos.y - screen.y)
         if action_classes:
             self.frame.menumap.popupActions(self, action_classes)

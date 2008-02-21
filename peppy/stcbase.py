@@ -740,6 +740,13 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             return ("", line, "")
         self.dprint(match.groups())
         return match.group(1, 2, 3)
+    
+    # Word stuff (for spelling, etc.)
+    def getWordFromPosition(self, pos):
+        end = self.WordEndPosition(pos, True)
+        start = self.WordStartPosition(pos, True)
+        word = self.GetTextRange(start, end)
+        return (word, start, end)
 
 
 class PeppySTC(PeppyBaseSTC):
