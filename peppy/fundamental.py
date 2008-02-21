@@ -630,6 +630,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):
+        # We use our own right click popup menu, so disable the builtin
+        self.UsePopUp(0)
+        
         # turn off symbol margin
         if self.classprefs.symbols:
             self.SetMarginWidth(1, self.classprefs.symbols_margin_width)
@@ -768,3 +771,8 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
             line -= self.classprefs.line_number_offset
             self.GotoLine(line)
             self.EnsureVisible(line)
+
+    def getPopupActions(self, x, y):
+        action_classes = []
+        Publisher().sendMessage('fundamental.context_menu', action_classes)
+        return action_classes

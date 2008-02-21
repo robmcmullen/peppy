@@ -1023,13 +1023,22 @@ class MainMenu(IPeppyPlugin):
     """
     def activateHook(self):
         Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
+        Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
     
     def deactivateHook(self):
         Publisher().unsubscribe(self.getTabMenu)
+        Publisher().unsubscribe(self.getFundamentalMenu)
     
     def getTabMenu(self, msg):
         action_classes = msg.data
         action_classes.extend([NewTab, CloseTab, MoveTabToNewWindow, BufferPopupList])
+        dprint(action_classes)
+
+    def getFundamentalMenu(self, msg):
+        action_classes = msg.data
+        # FIXME: the built-in right click menu has a Delete option as well that
+        # deletes the current selection.
+        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll])
         dprint(action_classes)
 
     def getMajorModes(self):
