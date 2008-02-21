@@ -1104,6 +1104,11 @@ class Record(Field):
                         fh = StringIO()
                         field.pack(fh, self)
                         items.append((name, value, fh.getvalue()))
+                    # It's possible that field.pack has altered the value.
+                    # Reset it to the prevous value
+                    if value != self.__dict__[name]:
+                        #dprint("%s changed from %s to %s. Resetting!" % (name, value, self.__dict__[name]))
+                        self.__dict__[name] = value
         return items
 
 
