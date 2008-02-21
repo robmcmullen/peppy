@@ -9,6 +9,22 @@
 # Copyright:   (c) 2008 Rob McMullen
 # License:     wxWidgets
 #-----------------------------------------------------------------------------
+#
+# Originally based on code from Luke-SDK, which includes the following
+# copyright notice:
+# 
+# Copyright (c) 2007 Eur Ing Christopher Thoday, cthoday@mail.berlios.de.
+#
+# Permission to use, copy, modify and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies and that both
+# the copyright notice and this permission notice appear in supporting
+# documentation.
+#
+# Christopher Thoday makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or implied
+# warranty.
+
 """Spell checking mixin for the wx.StyledTextControl using pyenchant
 
 This module was insipred by the spell check function from Christopher Thoday's
@@ -176,8 +192,7 @@ class STCSpellCheckMixin(object):
         language, or None if there is no dictionary for the language.
         """
         try:
-            spell = enchant.Dict(self._spelling_lang)
-            return spell
+            return enchant.Dict(self._spelling_lang)
         except NameError:
             pass
         return None

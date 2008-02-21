@@ -232,6 +232,7 @@ AddCredit("David Eppstein", "for his public domain python implementation of the 
 AddCredit("Robin Dunn", "for the omnipresence on the wxPython mailing list and the feature list on his blog")
 AddCredit("Dinu Gherman", "for the <a href=\"http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/68205\">Null object implementation</a>")
 AddCredit("Frank Niessink", "for the i18n utilities from <a href=\"http://www.taskcoach.org\">Task Coach</a>")
+AddCredit("Christopher Thoday", "for some code from <a href=\"http://luke-sdk.berlios.de\">Luke SDK</a> that became the spell checker")
 copyrights = {}
 def AddCopyright(project, website, author, date, reason=""):
     copyrights[project] = ({'website': website,
