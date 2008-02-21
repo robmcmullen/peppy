@@ -152,9 +152,9 @@ class Cube(object):
         s=StringIO()
         s.write("""Cube: filename=%s
         description=%s
-        data_offset=%d header_offset=%d data_type=%s
+        data_offset=%d header_offset=%d file_offset=%d data_type=%s
         samples=%d lines=%d bands=%d data_bytes=%d
-        interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
+        interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,self.file_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
         # s.write("        wavelengths: %s\n" % self.wavelengths)
@@ -213,8 +213,14 @@ class Cube(object):
         self.initializeOffset()
         self.initializeMmap()
         self.initializeRaw()
+        #dprint("slice=%d, values=%s" % (len(self.slice), self.slice))
         if self.raw!=None:
-            self.shape()
+            try:
+                self.shape()
+            except ValueError:
+                dprint(self)
+                dprint("length=%d raw=%s" % (len(self.raw)*self.itemsize, self.raw))
+                raise
 
         self.verifyAttributes()
 
