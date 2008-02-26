@@ -103,6 +103,7 @@ class STCSpellCheckMixin(object):
         self.spellSetLanguage(kwargs.get('language', "en_US"))
         self.spellSetMinimumWordSize(kwargs.get('min_word_size', 3))
         self._spelling_debug = False
+        self._spelling_last_idle_line = -1
 
     def spellSetIndicator(self, indicator=None, color=None, style=None):
         """Set the indicator styling for misspelled words.
@@ -266,17 +267,33 @@ class STCSpellCheckMixin(object):
         """Perform a spell check on the currently selected region."""
         return self.spellCheckRange(self.GetSelectionStart(), self.GetSelectionEnd())
     
-    def spellCheckCurrentPage(self):
-        """Perform a spell check on the currently visible lines."""
-        startline = self.GetFirstVisibleLine()
+    def spellCheckLines(self, startline=-1, count=-1):
+        """Perform a spell check on group of lines.
+        
+        Given the starting line, check the spelling on a block of lines.  If
+        the number of lines in the block is not specified, use the number of
+        currently visibile lines.
+        
+        @param startline: current line, or -1 to use the first visible line
+        @param count: number of lines in the block, or -1 to use the number of
+        lines visible on screen
+        """
+        if startline < 0:
+            startline = self.GetFirstVisibleLine()
         start = self.PositionFromLine(startline)
-        endline = startline + self.LinesOnScreen()
+        if count < 0:
+            count = self.LinesOnScreen()
+        endline = startline + count
         if endline > self.GetLineCount():
             endline = self.GetLineCount() - 1
         end = self.GetLineEndPosition(endline)
         if self._spelling_debug:
             print("Checking lines %d-%d, chars %d=%d" % (startline, endline, start, end))
         return self.spellCheckRange(start, end)
+    
+    def spellCheckCurrentPage(self):
+        """Perform a spell check on the currently visible lines."""
+        return self.spellCheckLines()
     
     def spellFindNextWord(self, utext, index, length):
         """Find the next valid word to check.
@@ -299,7 +316,42 @@ class STCSpellCheckMixin(object):
                 return (index, end)
             index += 1
         return (-1, -1)
+    
+    def spellStartIdleProcessing(self):
+        """Initialize parameters needed for idle block spell checking.
         
+        This must be called before the first call to L{spellProcessIdleBlock}
+        or if you wish to restart the spell checking from the start
+        of the document.  It initializes parameters needed by the
+        L{spellProcessIdleBlock} in order to process the document during idle
+        time.
+        """
+        self._spelling_last_idle_line = 0
+        
+    def spellProcessIdleBlock(self):
+        """Process a block of lines during idle time.
+        
+        This method is designed to be called during idle processing and will
+        spell checks a small number of lines.  The next idle processing event
+        will continue from where the previous call left off, and in this way
+        over some number of idle events will spell check the entire document.
+        
+        Once the entire document is spell checked, a flag is set and
+        further calls to this method will immediately return.  Calling
+        L{spellStartIdleProcessing} will cause the idle processing to start
+        checking from the beginning of the document.
+        """
+        if self._spelling_last_idle_line < 0:
+            return
+        if self._spelling_debug:
+            print("Idle processing page starting at line %d" % self._spelling_last_idle_line)
+        self.spellCheckLines(self._spelling_last_idle_line)
+        self._spelling_last_idle_line += self.LinesOnScreen()
+        if self._spelling_last_idle_line > self.GetLineCount():
+            self._spelling_last_idle_line = -1
+            return False
+        return True
+
 
 if __name__ == "__main__":
     import sys

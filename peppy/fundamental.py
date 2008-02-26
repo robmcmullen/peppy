@@ -9,6 +9,7 @@ from wx.lib.pubsub import Publisher
 from peppy.actions import *
 from peppy.major import *
 from peppy.lib.foldexplorer import *
+from peppy.lib.stcspellcheckmixin import *
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
@@ -499,9 +500,9 @@ class FundamentalSTC(EditraSTCMixin, PeppySTC):
 
 
 class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
-                     StandardReindentMixin, StandardParagraphMixin,
-                     GenericFoldHierarchyMixin, FoldExplorerMixin,
-                     EditraSTCMixin, PeppySTC, MajorMode):
+                      StandardReindentMixin, StandardParagraphMixin,
+                      GenericFoldHierarchyMixin, FoldExplorerMixin,
+                      STCSpellCheckMixin, EditraSTCMixin, PeppySTC, MajorMode):
     """Major mode for editing generic text files.
     
     This is the most generic major mode used for editing text files.  This uses
@@ -600,6 +601,9 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
+        
+        STCSpellCheckMixin.__init__(self)
+        self.spellStartIdleProcessing()
         self.buffer.startChangeDetection()
 
     @classmethod
@@ -823,3 +827,6 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         action_classes = [SpellingSuggestionAction]
         Publisher().sendMessage('fundamental.context_menu', action_classes)
         return action_classes
+
+    def idlePostHook(self):
+        self.spellProcessIdleBlock()
