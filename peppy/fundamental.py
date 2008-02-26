@@ -56,214 +56,6 @@ class SpellingSuggestionAction(ListAction):
         s.SetTargetStart(c[1])
         s.SetTargetEnd(c[2])
         s.ReplaceTarget(self.words[index])
-    
-
-class BraceHighlightMixin(object):
-    """Brace highlighting mixin for STC
-
-    Highlight matching braces or flag mismatched braces.  This is
-    called during the EVT_STC_UPDATEUI event handler.
-
-    Code taken from StyledTextCtrl_2 from the wxPython demo.  Should
-    probably implement this as a dynamic method of the text control or
-    the Major Mode, controllable by a setting.
-    """
-    def braceHighlight(self):
-        # check for matching braces
-        braceAtCaret = -1
-        braceOpposite = -1
-        braceStyle = None
-        charBefore = None
-        caretPos = self.GetCurrentPos()
-
-        # check before
-        if caretPos > 0:
-            charBefore = self.GetCharAt(caretPos - 1)
-            braceStyle = self.GetStyleAt(caretPos - 1)
-            #dprint("before: char=%s style=%d" % (charBefore, braceStyle))
-
-            if charBefore and chr(charBefore) in "[]{}()":
-                braceAtCaret = caretPos - 1
-
-        # check after
-        if braceAtCaret < 0:
-            charAfter = self.GetCharAt(caretPos)
-            braceStyle = self.GetStyleAt(caretPos)
-            #dprint("after: char=%s style=%d" % (charAfter, braceStyle))
-
-            if charAfter and chr(charAfter) in "[]{}()":
-                braceAtCaret = caretPos
-
-        if braceAtCaret >= 0:
-            braceOpposite = self.BraceMatch(braceAtCaret)
-
-        if braceAtCaret != -1  and braceOpposite == -1:
-            self.BraceBadLight(braceAtCaret)
-        else:
-            if braceStyle != self.GetStyleAt(braceOpposite):
-                self.BraceBadLight(braceAtCaret)
-            else:
-                self.BraceHighlight(braceAtCaret, braceOpposite)
-        
-
-
-class StandardReturnMixin(object):
-    """Mixin to indent the next line to the correct column
-    
-    This mixin provides L{electricReturn}, which operates when the return
-    key is pressed.  At a minimum it should insert the appropriate line end
-    character (cr, crlf, or lf depending on the current state of the STC), but
-    provides the opportunity to indent the line as well.
-    
-    The default action is to simply copy the indent level of the previous line.
-    """
-    def findIndent(self, linenum):
-        """Find proper indention of next line given a line number.
-
-        This is designed to be overridden in subclasses.  Given the
-        current line, figure out what the indention should be for the
-        next line.
-        """
-        return self.GetLineIndentation(linenum)
-        
-    def electricReturn(self):
-        """Add a newline and indent to the proper tab level.
-
-        Indent to the level of the line above.
-        """
-        linesep = self.getLinesep()
-        
-        self.BeginUndoAction()
-        # reindent current line (if necessary), then process the return
-        #pos = self.reindentLine()
-        
-        linenum = self.GetCurrentLine()
-        pos = self.GetCurrentPos()
-        col = self.GetColumn(pos)
-        linestart = self.PositionFromLine(linenum)
-        line = self.GetLine(linenum)[:pos-linestart]
-    
-        #get info about the current line's indentation
-        ind = self.GetLineIndentation(linenum)
-
-        self.dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
-
-        self.SetTargetStart(pos)
-        self.SetTargetEnd(pos)
-        if col <= ind:
-            newline = linesep+self.GetIndentString(col)
-        elif not pos:
-            newline = linesep
-        else:
-            ind = self.findIndent(linenum + 1)
-            newline = linesep+self.GetIndentString(ind)
-        self.ReplaceTarget(newline)
-        self.GotoPos(pos + len(newline))
-        self.EndUndoAction()
-
-class ReindentBase(object):
-    """Base class for reindenting code.
-    
-    This class provides a base class for major modes that want to implement
-    their own reindention code.  The L{reindentLine} method should use
-    information about the major mode to indent the line to its correct
-    column.  For instance, the L{PythonMode} uses the L{IDLEReindentMixin} to
-    calculate the correct indent column of the python source code line.
-    
-    This operation is typically bound to the tab key, but regardless to the
-    actual keypress to which it is bound is *only* called in response to a
-    user keypress.
-    """
-    def reindentLine(self, linenum=None, dedent_only=False):
-        """Reindent the specified line to the correct level.
-
-        This method should be overridden in subclasses to provide the proper
-        indention based on the type of text file.  The default implementation
-        provided here will indent to the previous line.
-        
-        Return the new cursor position, in case the cursor has moved as a
-        result of the indention.
-        """
-        if linenum is None:
-            linenum = self.GetCurrentLine()
-        if linenum == 0:
-            # first line is always indented correctly
-            return self.GetCurrentPos()
-        
-        linestart = self.PositionFromLine(linenum)
-
-        # actual indention of current line
-        indcol = self.GetLineIndentation(linenum) # columns
-        pos = self.GetCurrentPos()
-        indpos = self.GetLineIndentPosition(linenum) # absolute character position
-        col = self.GetColumn(pos)
-        self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
-
-        newind = self.getReindentColumn(linenum, linestart, pos, indpos, col, indcol)
-        if newind is None:
-            return pos
-        if dedent_only and newind > indcol:
-            return pos
-            
-        # the target to be replaced is the leading indention of the
-        # current line
-        indstr = self.GetIndentString(newind)
-        self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
-        self.SetTargetStart(linestart)
-        self.SetTargetEnd(indpos)
-        self.ReplaceTarget(indstr)
-
-        # recalculate cursor position, because it may have moved if it
-        # was within the target
-        after = self.GetLineIndentPosition(linenum)
-        self.dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
-        if pos < linestart:
-            return pos
-        newpos = pos - indpos + after
-        if newpos < linestart:
-            # we were in the indent region, but the region was made smaller
-            return after
-        elif pos < indpos:
-            # in the indent region
-            return after
-        return newpos
-
-    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
-        """User hook to return the new indentation position.
-        
-        This routine should be overridden in subclasses to provide the correct
-        indentation of the first not-blank character of the line.
-        
-        linenum: current line number
-        linestart: position of character at column zero of line
-        pos: position of cursor
-        indpos: position of first non-blank character in line
-        col: column number of cursor
-        indcol: column number of first non-blank character
-        
-        return: the number of columns to indent, or None to leave as-is
-        """
-        return None
-
-
-class StandardReindentMixin(ReindentBase):
-    """Default implementation of a L{ReindentBase} for generic text files.
-    
-    This class provides a default implementation of line reindentation; it
-    simply reindents the line to the indentation of the line above it.
-    """
-    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
-        # look at indention of previous line
-        prevind, prevline = self.GetPrevLineIndentation(linenum)
-        if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
-            # if there's blank lines before this and the previous
-            # non-blank line is indented less than this one, ignore
-            # it.  Make the user manually unindent lines.
-            return None
-
-        # previous line is not blank, so indent line to previous
-        # line's level
-        return prevind
 
 
 class FoldingReindentMixin(object):
@@ -291,78 +83,6 @@ class FoldingReindentMixin(object):
         self.SetTargetStart(linestart)
         self.SetTargetEnd(pos)
         self.ReplaceTarget(self.GetIndentString(fold))
-
-
-class GenericFoldHierarchyMixin(object):
-    """Mixin for the scintilla fold processing.
-    
-    Scintilla's folding code is used to generate the function lists in some
-    major modes.  Scintilla doesn't support code folding in all its supported
-    languages, so major modes that aren't supported may mimic this interface to
-    provide similar functionality.
-    
-    This mixin depends on the FoldExplorerMixin in peppy.lib.foldexplorer
-    """
-    def OnFoldChanged(self, evt):
-        """Callback to process fold events.
-        
-        This callback is initiated from within the event handler of PeppySTC.
-        The events could be used to optimize the fold algorithm, but
-        currently this data is not used by anything.
-        """
-        stc_class_info = self.getSharedClassInfo(self.__class__)
-        if 'fold_hierarchy' in stc_class_info:
-            #dprint("changed fold at line=%d, pos=%d" % (evt.Line, evt.Position))
-            stc_class_info['fold_changed'].append(evt.Line)
-    
-    def getFoldHierarchy(self):
-        """Get the current fold hierarchy, returning the existing copy if there
-        are no changes, or updating if necessary.
-        """
-        stc_class_info = self.getSharedClassInfo(self.__class__)
-        if 'fold_hierarchy' not in stc_class_info or stc_class_info['fold_changed'] or self.GetLineCount() != stc_class_info['fold_line_count']:
-            #dprint("Fold hierarchy has changed.  Updating.")
-            self.updateFoldHierarchy()
-        fold_hier = stc_class_info['fold_hierarchy']
-        return fold_hier
-
-    def updateFoldHierarchy(self):
-        """Create the fold hierarchy using Stani's fold explorer algorithm.
-        """
-        # FIXME: Turn this into a threaded operation if it takes too long
-        t = time.time()
-        self.Colourise(0, self.GetTextLength())
-        self.dprint("Finished colourise: %0.5f" % (time.time() - t))
-        
-        # Note that different views of the same buffer *using the same major
-        # mode* will have the same fold hierarchy.  So, we use the stc's
-        # getSharedClassInfo interface to store data common to all views of
-        # this buffer that use this major mode.
-        stc_class_info = self.getSharedClassInfo(self.__class__)
-        stc_class_info['fold_hierarchy'] = self.computeFoldHierarchy()
-        stc_class_info['fold_changed'] = []
-        
-        # Note: folding events aren't fired when only blank lines are inserted
-        # or deleted, so we keep track of the line count as a secondary method
-        # to indicate the folding needs to be recalculated
-        stc_class_info['fold_line_count'] = self.GetLineCount()
-        
-        return stc_class_info['fold_hierarchy']
-    
-    def getFoldEntryFunctionName(self, line):
-        """Check if line should be included in a list of functions.
-        
-        Used as callback function by the fold explorer mixin: if the line should
-        be included in a list of functions, return True here.  Because the
-        scintilla folding includes a lot of other data than function calls, we
-        have to cull the full list to only include lines that we want.
-        
-        @param line: line number of the fold entry
-        
-        @return: text string that should be used as function name, or "" if it
-        should be skipped in the function menu
-        """
-        return ""
 
 
 class ParagraphInfo(object):
@@ -411,83 +131,6 @@ class ParagraphInfo(object):
         return self._lines
 
 
-class StandardParagraphMixin(object):
-    """Locate the start and end of a paragraph, given a point within it."""
-    def findParagraphStart(self, linenum, info):
-        """Check to see if a previous line should be included in the
-        paragraph match.
-        
-        Routine designed to be overridden by subclasses to evaluate
-        if a line should be included in the list of lines that belong with
-        the current paragraph.
-        
-        Add the line to the ParagraphInfo class using addStartLine if it
-        belongs.
-        
-        Return True if findParagraph should continue searching; otherwise
-        return False
-        """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        self.dprint(line)
-        if leader != info.leader_pattern or len(line.strip())==0:
-            return False
-        info.addStartLine(linenum, line)
-        return True
-    
-    def findParagraphEnd(self, linenum, info):
-        """Check to see if a following line should be included in the
-        paragraph match.
-        
-        Routine designed to be overridden by subclasses to evaluate
-        if a line should be included in the list of lines that belong with
-        the current paragraph.
-        
-        Add the line to the ParagraphInfo class using addEndLine if it belongs.
-        
-        Return True if findParagraph should continue searching; otherwise
-        return False
-        """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        self.dprint(line)
-        if leader != info.leader_pattern or len(line.strip())==0:
-            return False
-        info.addEndLine(linenum, line)
-        return True
-        
-    def findParagraph(self, start, end=-1):
-        if end == -1:
-            end = start
-        linenum = self.LineFromPosition(start)
-        info = ParagraphInfo(self, linenum)
-        
-        # find the start of the paragraph by searching backwards till the
-        # prefix changes or we find a line with only whitespace in it
-        while linenum > 0:
-            linenum -= 1
-            if not self.findParagraphStart(linenum, info):
-                break
-        
-        endlinenum = self.LineFromPosition(end)
-        if endlinenum > info.cursor_linenum:
-            # find all the lines in the middle, doing the best to strip off any
-            # leading comment chars from the line
-            linenum = info.cursor_linenum
-            while linenum < endlinenum:
-                linenum += 1
-                leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-                info.addEndLine(linenum, line)
-                
-        # Now, find the end of the paragraph by searching forward until the
-        # comment prefix changes or we find only white space
-        lastlinenum = self.GetLineCount()
-        self.dprint("start=%d count=%d end=%d" % (info.cursor_linenum, lastlinenum, endlinenum))
-        while endlinenum < lastlinenum:
-            endlinenum += 1
-            if not self.findParagraphEnd(endlinenum, info):
-                break
-        return info
-
-
 class FundamentalSTC(EditraSTCMixin, PeppySTC):
     """Subclass of PeppySTC providing the Editra mixin
     
@@ -499,10 +142,8 @@ class FundamentalSTC(EditraSTCMixin, PeppySTC):
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
 
 
-class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
-                      StandardReindentMixin, StandardParagraphMixin,
-                      GenericFoldHierarchyMixin, FoldExplorerMixin,
-                      STCSpellCheckMixin, EditraSTCMixin, PeppySTC, MajorMode):
+class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
+                      PeppySTC, MajorMode):
     """Major mode for editing generic text files.
     
     This is the most generic major mode used for editing text files.  This uses
@@ -584,6 +225,8 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         IntParam('caret_width', 2, help='Caret width in pixels'),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
         BoolParam('view_eol', False, 'Show line-ending cr/lf characters?'),
+        BoolParam('spell_check', True, 'Spell check the document (if pyenchant\nis available'),
+        BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
         )
     
     def __init__(self, parent, wrapper, buffer, frame):
@@ -599,11 +242,12 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
+        STCSpellCheckMixin.__init__(self)
+        self.dprint("STCSpellCheckMixin done in %0.5fs" % (time.time() - start))
+
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
         
-        STCSpellCheckMixin.__init__(self)
-        self.spellStartIdleProcessing()
         self.buffer.startChangeDetection()
 
     @classmethod
@@ -675,6 +319,10 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         self.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
+        if self.classprefs.spell_check:
+            self.spellStartIdleProcessing()
+        else:
+            self.spellClearAll()
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):
@@ -771,7 +419,7 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         if enable is not None:
             self.classprefs.view_eol = enable
         self.SetViewEOL(self.classprefs.view_eol)
-
+    
     def onMarginClick(self, evt):
         # fold and unfold as needed
         if evt.GetMargin() == 2:
@@ -792,6 +440,49 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
                             self.Expand(lineClicked, True, True, 100)
                     else:
                         self.ToggleFold(lineClicked)
+
+    def braceHighlight(self):
+        """Highlight matching braces or flag mismatched braces.
+        
+        Code taken from StyledTextCtrl_2 from the wxPython demo.  Should
+        probably implement this as a dynamic method of the text control or
+        the Major Mode, controllable by a setting.
+        """
+        # check for matching braces
+        braceAtCaret = -1
+        braceOpposite = -1
+        braceStyle = None
+        charBefore = None
+        caretPos = self.GetCurrentPos()
+
+        # check before
+        if caretPos > 0:
+            charBefore = self.GetCharAt(caretPos - 1)
+            braceStyle = self.GetStyleAt(caretPos - 1)
+            #dprint("before: char=%s style=%d" % (charBefore, braceStyle))
+
+            if charBefore and chr(charBefore) in "[]{}()":
+                braceAtCaret = caretPos - 1
+
+        # check after
+        if braceAtCaret < 0:
+            charAfter = self.GetCharAt(caretPos)
+            braceStyle = self.GetStyleAt(caretPos)
+            #dprint("after: char=%s style=%d" % (charAfter, braceStyle))
+
+            if charAfter and chr(charAfter) in "[]{}()":
+                braceAtCaret = caretPos
+
+        if braceAtCaret >= 0:
+            braceOpposite = self.BraceMatch(braceAtCaret)
+
+        if braceAtCaret != -1  and braceOpposite == -1:
+            self.BraceBadLight(braceAtCaret)
+        else:
+            if braceStyle != self.GetStyleAt(braceOpposite):
+                self.BraceBadLight(braceAtCaret)
+            else:
+                self.BraceHighlight(braceAtCaret, braceOpposite)
 
     def OnUpdateUI(self, evt):
         """Specific OnUpdateUI callback for those modes that use an actual
@@ -820,6 +511,382 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
             self.GotoLine(line)
             self.EnsureVisible(line)
 
+    ##### Comment handling
+    def setCommentDelimiters(self, start='', end=''):
+        """Set instance-specific comment characters and comment regex
+        
+        If the instance uses different comment characters that the class
+        attributes, set the instance attributes here which will override
+        the class attributes.
+        
+        A regex is created that will match a line with the comment characters.
+        The regex returns a 3-tuple of whitespace followed by the opening
+        comment character, the body of the line, and then the closing comment
+        including any trailing whitespace.  If the language doesn't have a
+        closing comment character, the final tuple element will always be
+        an empty string.
+        
+        This is typically called by the Editra stc mixin to set the
+        comment characters encoded by the Editra style manager.
+        """
+        self.start_line_comment = start
+        self.end_line_comment = end
+        if start:
+            if end:
+                regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
+                self.dprint(regex)
+                self.comment_regex = re.compile(regex)
+            else:
+                regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
+                self.dprint(regex)
+                self.comment_regex = re.compile(regex)
+        else:
+            regex = r"^(\s*)(.*)($)"
+            self.dprint(regex)
+            self.comment_regex = re.compile(regex)
+        
+    def commentRegion(self, add=True):
+        """Default implementation of block commenting and uncommenting
+    
+        This class provides the default implementation of block commenting.
+        Blocks are commented by adding a comment string at the beginning of
+        the line, and an optional comment string at the end of each line in
+        the block.
+    
+        Typically the comment characters are known to the Editra styling system
+        and are therefore automatically added to the FundamentalMode subclass
+        by a call to L{setCommentDelimiters}.
+
+        @param add: True to add comments, False to remove them
+        """
+        eol_len = len(self.getLinesep())
+        if add:
+            func = self.addLinePrefixAndSuffix
+        else:
+            func = self.removeLinePrefixAndSuffix
+        
+        self.BeginUndoAction()
+        line, lineend = self.GetLineRegion()
+        assert self.dprint("lines: %d - %d" % (line, lineend))
+        try:
+            selstart, selend = self.GetSelection()
+            assert self.dprint("selection: %d - %d" % (selstart, selend))
+
+            start = selstart
+            end = self.GetLineEndPosition(line)
+            while line <= lineend:
+                start = func(start, end, self.start_line_comment, self.end_line_comment)
+                line += 1
+                end = self.GetLineEndPosition(line)
+            self.SetSelection(selstart, start - eol_len)
+        finally:
+            self.EndUndoAction()
+            
+    def splitCommentLine(self, line):
+        """Split the line into the whitespace leader and body of the line.
+        
+        Return a tuple containing the leading whitespace and comment
+        character(s), the body of the line, and any trailing comment
+        character(s)
+        """
+        match = self.comment_regex.match(line)
+        if match is None:
+            return ("", line, "")
+        self.dprint(match.groups())
+        return match.group(1, 2, 3)
+
+
+    ##### Indentation
+    def findIndent(self, linenum):
+        """Find proper indention of next line given a line number.
+
+        This is designed to be overridden in subclasses.  Given the current
+        line and assuming the current line is indented correctly, figure out
+        what the indention should be for the next line.
+        
+        @param linenum: line number
+        @return: integer indicating number of columns to indent the following
+        line
+        """
+        return self.GetLineIndentation(linenum)
+
+    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
+        """Determine the correct indentation of the first not-blank character
+        of the line.
+        
+        This routine should be overridden in subclasses; this provides a
+        default implementation of line reindentatiot that simply reindents the
+        line to the indentation of the line above it.  Subclasses with more
+        specific knowledge of the text being edited will be able to use the
+        syntax of previous lines to indent the line properly.
+        
+        linenum: current line number
+        linestart: position of character at column zero of line
+        pos: position of cursor
+        indpos: position of first non-blank character in line
+        col: column number of cursor
+        indcol: column number of first non-blank character
+        
+        return: the number of columns to indent, or None to leave as-is
+        """
+        # look at indention of previous line
+        prevind, prevline = self.GetPrevLineIndentation(linenum)
+        if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
+            # if there's blank lines before this and the previous
+            # non-blank line is indented less than this one, ignore
+            # it.  Make the user manually unindent lines.
+            return None
+
+        # previous line is not blank, so indent line to previous
+        # line's level
+        return prevind
+
+    def reindentLine(self, linenum=None, dedent_only=False):
+        """Reindent the specified line to the correct level.
+
+        This method should be overridden in subclasses to provide the proper
+        indention based on the type of text file.  The default implementation
+        provided here will indent to the previous line.
+        
+        This operation is typically bound to the tab key, but regardless to the
+        actual keypress to which it is bound is *only* called in response to a
+        user keypress.
+        
+        @return: the new cursor position, in case the cursor has moved as a
+        result of the indention.
+        """
+        if linenum is None:
+            linenum = self.GetCurrentLine()
+        if linenum == 0:
+            # first line is always indented correctly
+            return self.GetCurrentPos()
+        
+        linestart = self.PositionFromLine(linenum)
+
+        # actual indention of current line
+        indcol = self.GetLineIndentation(linenum) # columns
+        pos = self.GetCurrentPos()
+        indpos = self.GetLineIndentPosition(linenum) # absolute character position
+        col = self.GetColumn(pos)
+        self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
+
+        newind = self.getReindentColumn(linenum, linestart, pos, indpos, col, indcol)
+        if newind is None:
+            return pos
+        if dedent_only and newind > indcol:
+            return pos
+            
+        # the target to be replaced is the leading indention of the
+        # current line
+        indstr = self.GetIndentString(newind)
+        self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
+        self.SetTargetStart(linestart)
+        self.SetTargetEnd(indpos)
+        self.ReplaceTarget(indstr)
+
+        # recalculate cursor position, because it may have moved if it
+        # was within the target
+        after = self.GetLineIndentPosition(linenum)
+        self.dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
+        if pos < linestart:
+            return pos
+        newpos = pos - indpos + after
+        if newpos < linestart:
+            # we were in the indent region, but the region was made smaller
+            return after
+        elif pos < indpos:
+            # in the indent region
+            return after
+        return newpos
+
+    def electricReturn(self):
+        """Add a newline and indent to the proper tab level.
+
+        Indent to the level of the line above.  This is the entry point action
+        when the return key is pressed.  At a minimum it should insert the
+        appropriate line end character (cr, crlf, or lf depending on the
+        current state of the STC), but provides the opportunity to indent the
+        line as well.
+    
+        The default action is to simply copy the indent level of the previous
+        line.
+        """
+        linesep = self.getLinesep()
+        
+        self.BeginUndoAction()
+        # reindent current line (if necessary), then process the return
+        #pos = self.reindentLine()
+        
+        linenum = self.GetCurrentLine()
+        pos = self.GetCurrentPos()
+        col = self.GetColumn(pos)
+        linestart = self.PositionFromLine(linenum)
+        line = self.GetLine(linenum)[:pos-linestart]
+    
+        #get info about the current line's indentation
+        ind = self.GetLineIndentation(linenum)
+
+        self.dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
+
+        self.SetTargetStart(pos)
+        self.SetTargetEnd(pos)
+        if col <= ind:
+            newline = linesep+self.GetIndentString(col)
+        elif not pos:
+            newline = linesep
+        else:
+            ind = self.findIndent(linenum + 1)
+            newline = linesep+self.GetIndentString(ind)
+        self.ReplaceTarget(newline)
+        self.GotoPos(pos + len(newline))
+        self.EndUndoAction()
+
+
+    ##### Paragraphs
+    def findParagraphStart(self, linenum, info):
+        """Check to see if a previous line should be included in the
+        paragraph match.
+        
+        Routine designed to be overridden by subclasses to evaluate
+        if a line should be included in the list of lines that belong with
+        the current paragraph.
+        
+        Add the line to the ParagraphInfo class using addStartLine if it
+        belongs.
+        
+        Return True if findParagraph should continue searching; otherwise
+        return False
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        self.dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        info.addStartLine(linenum, line)
+        return True
+    
+    def findParagraphEnd(self, linenum, info):
+        """Check to see if a following line should be included in the
+        paragraph match.
+        
+        Routine designed to be overridden by subclasses to evaluate
+        if a line should be included in the list of lines that belong with
+        the current paragraph.
+        
+        Add the line to the ParagraphInfo class using addEndLine if it belongs.
+        
+        Return True if findParagraph should continue searching; otherwise
+        return False
+        """
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        self.dprint(line)
+        if leader != info.leader_pattern or len(line.strip())==0:
+            return False
+        info.addEndLine(linenum, line)
+        return True
+        
+    def findParagraph(self, start, end=-1):
+        if end == -1:
+            end = start
+        linenum = self.LineFromPosition(start)
+        info = ParagraphInfo(self, linenum)
+        
+        # find the start of the paragraph by searching backwards till the
+        # prefix changes or we find a line with only whitespace in it
+        while linenum > 0:
+            linenum -= 1
+            if not self.findParagraphStart(linenum, info):
+                break
+        
+        endlinenum = self.LineFromPosition(end)
+        if endlinenum > info.cursor_linenum:
+            # find all the lines in the middle, doing the best to strip off any
+            # leading comment chars from the line
+            linenum = info.cursor_linenum
+            while linenum < endlinenum:
+                linenum += 1
+                leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+                info.addEndLine(linenum, line)
+                
+        # Now, find the end of the paragraph by searching forward until the
+        # comment prefix changes or we find only white space
+        lastlinenum = self.GetLineCount()
+        self.dprint("start=%d count=%d end=%d" % (info.cursor_linenum, lastlinenum, endlinenum))
+        while endlinenum < lastlinenum:
+            endlinenum += 1
+            if not self.findParagraphEnd(endlinenum, info):
+                break
+        return info
+
+
+    ##### Code folding for function lists
+    def OnFoldChanged(self, evt):
+        """Callback to process fold events.
+        
+        This callback is initiated from within the event handler of PeppySTC.
+        The events could be used to optimize the fold algorithm, but
+        currently this data is not used by anything.
+        """
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        if 'fold_hierarchy' in stc_class_info:
+            #dprint("changed fold at line=%d, pos=%d" % (evt.Line, evt.Position))
+            stc_class_info['fold_changed'].append(evt.Line)
+    
+    def getFoldHierarchy(self):
+        """Get the current fold hierarchy, returning the existing copy if there
+        are no changes, or updating if necessary.
+        """
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        if 'fold_hierarchy' not in stc_class_info or stc_class_info['fold_changed'] or self.GetLineCount() != stc_class_info['fold_line_count']:
+            #dprint("Fold hierarchy has changed.  Updating.")
+            self.updateFoldHierarchy()
+        fold_hier = stc_class_info['fold_hierarchy']
+        return fold_hier
+
+    def updateFoldHierarchy(self):
+        """Create the fold hierarchy using Stani's fold explorer algorithm.
+
+        Scintilla's folding code is used to generate the function lists in
+        some major modes.  Scintilla doesn't support code folding in all its
+        supported languages, so major modes that aren't supported may mimic
+        this interface to provide similar functionality.
+        """
+        # FIXME: Turn this into a threaded operation if it takes too long
+        t = time.time()
+        self.Colourise(0, self.GetTextLength())
+        self.dprint("Finished colourise: %0.5f" % (time.time() - t))
+        
+        # Note that different views of the same buffer *using the same major
+        # mode* will have the same fold hierarchy.  So, we use the stc's
+        # getSharedClassInfo interface to store data common to all views of
+        # this buffer that use this major mode.
+        stc_class_info = self.getSharedClassInfo(self.__class__)
+        stc_class_info['fold_hierarchy'] = self.computeFoldHierarchy()
+        stc_class_info['fold_changed'] = []
+        
+        # Note: folding events aren't fired when only blank lines are inserted
+        # or deleted, so we keep track of the line count as a secondary method
+        # to indicate the folding needs to be recalculated
+        stc_class_info['fold_line_count'] = self.GetLineCount()
+        
+        return stc_class_info['fold_hierarchy']
+    
+    def getFoldEntryFunctionName(self, line):
+        """Check if line should be included in a list of functions.
+        
+        Used as callback function by the fold explorer mixin: if the line should
+        be included in a list of functions, return True here.  Because the
+        scintilla folding includes a lot of other data than function calls, we
+        have to cull the full list to only include lines that we want.
+        
+        @param line: line number of the fold entry
+        
+        @return: text string that should be used as function name, or "" if it
+        should be skipped in the function menu
+        """
+        return ""
+
+
+    ### Spell checking utilities
     def getPopupActions(self, x, y):
         pos = self.PositionFromPoint(wx.Point(x, y))
         self.check_spelling = self.getWordFromPosition(pos)
@@ -829,4 +896,14 @@ class FundamentalMode(BraceHighlightMixin, StandardReturnMixin,
         return action_classes
 
     def idlePostHook(self):
-        self.spellProcessIdleBlock()
+        if self.classprefs.spell_check:
+            self.spellProcessIdleBlock()
+    
+    def spellIsSpellCheckRegion(self, pos):
+        if self.classprefs.spell_check_strings_only:
+            style = self.GetStyleAt(pos)
+            try:
+                return self.isStyleComment(style) or self.isStyleString(style)
+            except NotImplementedError:
+                pass
+        return True

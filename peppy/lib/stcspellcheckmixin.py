@@ -251,8 +251,9 @@ class STCSpellCheckMixin(object):
                         
                         if self._spelling_debug:
                             print("styling position corresponding to text[%d:%d] = (%d,%d)" % (start_index, end_index, last_pos, last_pos + raw_count))
-                        self.StartStyling(last_pos, mask)
-                        self.SetStyling(raw_count, mask)
+                        if self.spellIsSpellCheckRegion(last_pos):
+                            self.StartStyling(last_pos, mask)
+                            self.SetStyling(raw_count, mask)
                         last_pos += raw_count
                         last_index = end_index
                 unicode_index = end_index
@@ -316,6 +317,15 @@ class STCSpellCheckMixin(object):
                 return (index, end)
             index += 1
         return (-1, -1)
+    
+    def spellIsSpellCheckRegion(self, pos):
+        """Is the position in a region of the document that should be spell-
+        checked?
+        
+        @return: True if the position should be spell-checked; False if it
+        doesn't make sense to spell check that part of the document
+        """
+        return True
     
     def spellStartIdleProcessing(self):
         """Initialize parameters needed for idle block spell checking.

@@ -539,16 +539,21 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         
         Designed to be overridded by subclasses to map styling info to useful
         status checks.
+        
+        @return: True/False if style represents a quoted string as determined
+        by the scintilla style
         """
-        return False
+        raise NotImplementedError
     
     def isStyleComment(self, style):
         """Is the style a comment?
         
         Designed to be overridded by subclasses to map styling info to useful
         status checks.
+        
+        @return: True/False if style is a comment
         """
-        return False
+        raise NotImplementedError
 
     def showStyle(self, linenum=None):
         if linenum is None:
@@ -658,89 +663,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 end -= elen
         return end + len(self.getLinesep())
 
-    def setCommentDelimiters(self, start='', end=''):
-        """Set instance-specific comment characters and comment regex
-        
-        If the instance uses different comment characters that the class
-        attributes, set the instance attributes here which will override
-        the class attributes.
-        
-        A regex is created that will match a line with the comment characters.
-        The regex returns a 3-tuple of whitespace followed by the opening
-        comment character, the body of the line, and then the closing comment
-        including any trailing whitespace.  If the language doesn't have a
-        closing comment character, the final tuple element will always be
-        an empty string.
-        
-        This is typically called by the Editra stc mixin to set the
-        comment characters encoded by the Editra style manager.
-        """
-        self.start_line_comment = start
-        self.end_line_comment = end
-        if start:
-            if end:
-                regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
-                self.dprint(regex)
-                self.comment_regex = re.compile(regex)
-            else:
-                regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
-                self.dprint(regex)
-                self.comment_regex = re.compile(regex)
-        else:
-            regex = r"^(\s*)(.*)($)"
-            self.dprint(regex)
-            self.comment_regex = re.compile(regex)
-        
-    def commentRegion(self, add=True):
-        """Default implementation of block commenting and uncommenting
-    
-        This class provides the default implementation of block commenting.
-        Blocks are commented by adding a comment string at the beginning of
-        the line, and an optional comment string at the end of each line in
-        the block.
-    
-        Typically the comment characters are known to the Editra styling system
-        and are therefore automatically added to the FundamentalMode subclass
-        by a call to L{setCommentDelimiters}.
-
-        @param add: True to add comments, False to remove them
-        """
-        eol_len = len(self.getLinesep())
-        if add:
-            func = self.addLinePrefixAndSuffix
-        else:
-            func = self.removeLinePrefixAndSuffix
-        
-        self.BeginUndoAction()
-        line, lineend = self.GetLineRegion()
-        assert self.dprint("lines: %d - %d" % (line, lineend))
-        try:
-            selstart, selend = self.GetSelection()
-            assert self.dprint("selection: %d - %d" % (selstart, selend))
-
-            start = selstart
-            end = self.GetLineEndPosition(line)
-            while line <= lineend:
-                start = func(start, end, self.start_line_comment, self.end_line_comment)
-                line += 1
-                end = self.GetLineEndPosition(line)
-            self.SetSelection(selstart, start - eol_len)
-        finally:
-            self.EndUndoAction()
-            
-    def splitCommentLine(self, line):
-        """Split the line into the whitespace leader and body of the line.
-        
-        Return a tuple containing the leading whitespace and comment
-        character(s), the body of the line, and any trailing comment
-        character(s)
-        """
-        match = self.comment_regex.match(line)
-        if match is None:
-            return ("", line, "")
-        self.dprint(match.groups())
-        return match.group(1, 2, 3)
-    
     # Word stuff (for spelling, etc.)
     def getWordFromPosition(self, pos):
         end = self.WordEndPosition(pos, True)

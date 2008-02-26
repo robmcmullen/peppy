@@ -76,202 +76,6 @@ class ElectricColon(TextModificationAction):
             s.reindentLine(dedent_only=True)
         s.EndUndoAction()
 
-class PythonFoldingReindentMixin(ReindentBase):
-    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
-        """Reindent the specified line to the correct level.
-
-        Given a line, use Scintilla's built-in folding and a whole
-        bunch of heuristics based on the previous lines to determine
-        the indention level of the current line.
-        """
-        # folding says this should be the current indention.  The
-        # limitation of Scintilla's folding logic, though, is that
-        # folding tells the indention position of the line as it is,
-        # not as it should be for pythonic consistancy.  For instance,
-        # using GetFoldColumn on each line in the following code:
-        #
-        # if blah:
-        #      stuff = 0
-        #          things = 1
-        #
-        # reports fold levels of 0, 4, and 8, even though for valid
-        # python the 3rd line should be at fold level 4.  So, we're
-        # forced to add a whole bunch of additional logic to figure
-        # out which indention level should be used.
-        fold = self.GetFoldColumn(linenum)
-
-        # get indention of previous (non-blank) line
-        prev, prevline = self.GetPrevLineIndentation(linenum)
-        if fold>=prev:
-            # OK, line is indented with respect to the previous line,
-            # so we need to honor the fact that it is indented.
-            # However, it may still be indented too much or too
-            # little.
-
-            # FIXME: this doesn't handle comments
-            line = self.GetLine(prevline).rstrip()
-            print "previous line %d = %s" % (prevline, line)
-            if line.endswith(':'):
-                fold = prev + self.GetIndent()
-            else:
-                fold = prev
-        elif fold > prev - self.GetIndent():
-            # line is partially indented, but not at the usual indent
-            # level.  We force this to be indented to match the indent
-            # level
-            fold = prev
-
-        # get line without indention
-        line = self.GetLine(linenum)[before-linestart:]
-        dprint(line)
-
-        # the keywords elif or else should be unindented if the
-        # previous line is at the same level
-        style = self.GetStyleAt(before)
-        dprint("linenum=%d cursor=%d before=%d style=%d ind=%s fold=%s line=%s" % (linenum, pos, before, style, ind, fold, repr(line)))
-        if linenum>0 and style==wx.stc.STC_P_WORD and (line.startswith('else') or line.startswith('elif') or line.startswith('except') or line.startswith('finally')):
-            dprint("prev = %s" % prev)
-            if prev == ind:
-                fold-=self.GetIndent()
-
-        return fold
-
-
-class PyPEElectricReturnMixin(debugmixin):
-    def findIndent(self, linenum):
-        linestart = self.PositionFromLine(linenum)
-        lineend = self.GetLineEndPosition(linenum)
-        line = self.GetTextRange(linestart, lineend)
-        ind = self.GetLineIndentation(linenum)
-        assert self.dprint("line (%d-%d) = %s" % (linestart, lineend, repr(line)))
-        xtra = 0
-        colon = ord(':')
-        
-        if (line.find(':')>-1):
-            assert self.dprint("found a ':'")
-            for i in xrange(linestart, lineend):
-                styl = self.GetStyleAt(i)
-                assert self.dprint("pos=%d char=%s style=%d" % (i, repr(self.GetCharAt(i)), styl))
-                if not xtra:
-                    if (styl==10) and (self.GetCharAt(i) == colon):
-                        xtra = 1
-                elif (styl == 1):
-                    assert self.dprint("in comment")
-                    #it is a comment, ignore the character
-                    pass
-                elif (styl == 0) and (self.GetCharAt(i) in [ord(i) for i in ' \t\r\n']):
-                    #is not a comment, but is the space before a comment
-                    #or the end of a line, ignore the character
-                    pass
-                else:
-                    #this is not a comment or some innocuous other character
-                    #this is a docstring or otherwise, no additional indent
-                    xtra = 0
-                    #commenting the break fixes stuff like this
-                    # for i in blah[:]:
-                    #break
-            if xtra:
-                #This deals with ending single and multi-line definitions properly.
-                while linenum >= 0:
-                    found = []
-                    for i in ['def', 'class', 'if', 'else', 'elif', 'while',
-                            'for', 'try', 'except', 'finally', 'with', 'cdef']:
-                        a = line.find(i)
-                        if (a > -1):
-                            found.append(a)
-                    #assert self.dprint('fnd', found)
-                    if found: found = min(found)
-                    else:     found = -1
-                    if (found > -1) and\
-                    (self.GetStyleAt(self.GetLineEndPosition(linenum)-len(line)+found)==5) and\
-                    (self.GetLineIndentation(linenum) == found):
-                        ind = self.GetLineIndentation(linenum)
-                        break
-                    linenum -= 1
-                    line = self.GetLine(linenum)
-        #if we were to do indentation for ()[]{}, it would be here
-        if not xtra:
-            #yep, right here.
-            fnd = 0
-            for i in "(){}[]":
-                if (line.find(i) > -1):
-                    fnd = 1
-                    break
-            if fnd:
-                seq = []
-                #assert self.dprint("finding stuff")
-                for i in "(){}[]":
-                    a = line.find(i)
-                    start = 0
-                    while a > -1:
-                        start += a+1
-                        if self.GetStyleAt(start+linestart-1)==10:
-                            seq.append((start, i))
-                        a = line[start:].find(i)
-                seq.sort()
-                cl = {')':'(', ']': '[', '}': '{',
-                    '(':'',  '[': '',  '{': ''}
-                stk = []
-                #assert self.dprint("making tree")
-                for po, ch in seq:
-                    #assert self.dprint(ch,)
-                    if not cl[ch]:
-                        #standard opening
-                        stk.append((po, ch))
-                    elif stk:
-                        if cl[ch] == stk[-1][1]:
-                            #proper closing of something
-                            stk.pop()
-                        else:
-                            #probably a syntax error
-                            #does it matter what is done?
-                            stk = []
-                            break
-                    else:
-                        # Probably closing something on another line,
-                        # should probably find the indent level of the
-                        # opening, but that would require checking
-                        # multiple previous items for the opening
-                        # item.  single-line dedent.
-                        stk = []
-                        break
-                if stk:
-                    #assert self.dprint("stack remaining", stk)
-                    ind = stk[-1][0]
-        if not xtra:
-            ls = line.lstrip()
-            if (ls[:6] == 'return') or (ls[:4] == 'pass') or (ls[:5] == 'break') or (ls[:8] == 'continue'):
-                xtra = -1
-
-        dprint("indent = %d" % int(ind+xtra*self.GetIndent()))
-        return max(ind+xtra*self.GetIndent(), 0)
-
-
-class IDLEReindentMixin(ReindentBase):
-    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
-        """Reindent the specified line to the correct level.
-
-        Given a line, use IDLE's parsing module to find the correct indention
-        level
-        """
-        # Use the current line number, which will find the indention based on
-        # the previous line
-        indent, extra = self.findIndent(linenum, True)
-        #dprint("linenum: %d indent=%d extra=%s" % (linenum, indent, extra))
-        
-        # The text begins at indpos; check some special cases to see if there
-        # should be a dedent
-        style = self.GetStyleAt(before)
-        end = self.GetLineEndPosition(linenum)
-        cmd = self.GetTextRange(before, end)
-        #dprint("checking %s" % cmd)
-        if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
-            #dprint("Found a dedent: %s" % cmd)
-            if extra != "block dedent":
-                # If we aren't right after a return or something that already
-                # caused a dedent, dedent it
-                indent -= self.GetIndent()
-        return indent
 
 # Helper functions required by IDLE's PyParse routine
 def is_char_in_string(stc, pos):
@@ -291,18 +95,33 @@ def build_char_in_string_func(stc, startindex):
         return _icis(_stc, _startindex + offset)
     return inner
 
-class IDLEElectricReturnMixin(debugmixin):
+
+class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
+                 FundamentalMode):
+    keyword='Python'
+    icon='icons/py.png'
+    regex="\.(py|pyx)$"
+    
+    fold_function_match = ["def ", "class "]
+
+    default_classprefs = (
+        )
+
+    def isStyleString(self, style):
+        return style == 3 or style == 7 or style == 6 or style == 4
+        
+    def isStyleComment(self, style):
+        return style == 1
+
     def findIndent(self, linenum, extra=None):
-        """Find what indentation of the line should be based on previous lines
+        """Find indentation of next line using IDLE's parsing code.
         
-        Gets indentation of what the line containing pos should be, not taking
-        into account any dedenting as a result of compound blocks like else,
-        finally, etc.
-        
-        linenum: line number to find indentation
-        
-        extra: include extra syntactic info as a result of the parsing; whether
-        the previous block included a return and was dedented, for instance.
+        @param linenum: line number
+        @param extra: flag to indicate if it should return a tuple containing
+        extra data
+        @return: if extra is None or False, returns integer indicating number
+        of columns to indent.  If extra is True, returns a tuple of the number
+        of columns and a keyword indicating extra information.
         """
         indentwidth = self.GetIndent()
         tabwidth = 87
@@ -398,8 +217,28 @@ class IDLEElectricReturnMixin(debugmixin):
             return (indent, extra_data)
         return indent
 
+    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
+        """Use IDLE parsing module to find the correct indention for the line.
+        """
+        # Use the current line number, which will find the indention based on
+        # the previous line
+        indent, extra = self.findIndent(linenum, True)
+        #dprint("linenum: %d indent=%d extra=%s" % (linenum, indent, extra))
+        
+        # The text begins at indpos; check some special cases to see if there
+        # should be a dedent
+        style = self.GetStyleAt(before)
+        end = self.GetLineEndPosition(linenum)
+        cmd = self.GetTextRange(before, end)
+        #dprint("checking %s" % cmd)
+        if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
+            #dprint("Found a dedent: %s" % cmd)
+            if extra != "block dedent":
+                # If we aren't right after a return or something that already
+                # caused a dedent, dedent it
+                indent -= self.GetIndent()
+        return indent
 
-class PythonParagraphMixin(StandardParagraphMixin):
     def findParagraphStart(self, linenum, info):
         """Check to see if a previous line should be included in the
         paragraph match.
@@ -442,25 +281,6 @@ class PythonParagraphMixin(StandardParagraphMixin):
         if line.endswith("'''") or line.endswith('"""'):
             return False
         return True
-
-
-class PythonMode(IDLEElectricReturnMixin, IDLEReindentMixin,
-                 PythonParagraphMixin, JobControlMixin,
-                 SimpleFoldFunctionMatchMixin, FundamentalMode):
-    keyword='Python'
-    icon='icons/py.png'
-    regex="\.(py|pyx)$"
-    
-    fold_function_match = ["def ", "class "]
-
-    default_classprefs = (
-        )
-
-    def isStyleString(self, style):
-        return style == 3 or style == 7 or style == 6 or style == 4
-        
-    def isStyleComment(self, style):
-        return style == 1
 
 
 class PythonErrorMode(FundamentalMode):
