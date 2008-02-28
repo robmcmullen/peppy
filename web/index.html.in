@@ -50,10 +50,19 @@ and I will continue to track Editra as more language lexers are supported
 
 <h3>Help Wanted</h3>
 
+<h4>Mac OSX</h4>
 <P>I'm especially interested in help with the Mac OSX testing.  I regularly test
 on Windows and Linux, but don't have access to a Mac.  I'd appreciate any help
 in debugging on the Mac, as I believe there's still a problem in the keyboard
 handling on OSX.
+
+<h4>Localization</h4>
+
+<P>Additionally, if you speak languages other than English
+(I have a small vocabulary in Esperanto/mi havas eta
+vortprovizon de esperanto), the i18n work is hosted at <a
+href="https://translations.launchpad.net/peppy/trunk/+pots/peppy">launchpad</a>
+and I could definitely use the help getting peppy localized in your language.
 
 <h3>Mailing List</h3>
 
