@@ -362,6 +362,23 @@ class STCSpellCheckMixin(object):
             return False
         return True
 
+    def spellGetSuggestions(self, word):
+        """Get suggestion for the correct spelling of a word.
+        
+        @param word: word to check
+        
+        @return: list of suggestions, or an empty list if any of the following
+        are true: there are no suggestions, the word is shorter than the
+        minimum length, or the dictionary can't be found.
+        """
+        spell = self.spellGetDict()
+        if spell and len(word) >= self._spelling_word_size:
+            words = spell.suggest(word)
+            if self._spelling_debug:
+                print("suggestions for %s: %s" % (word, words))
+            return words
+        return []
+        
 
 if __name__ == "__main__":
     import sys

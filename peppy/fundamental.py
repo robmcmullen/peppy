@@ -14,12 +14,6 @@ from peppy.lib.stcspellcheckmixin import *
 from peppy.editra import *
 from peppy.editra.stcmixin import *
 
-try:
-    import enchant
-    USE_SPELLING = True
-except ImportError:
-    USE_SPELLING = False
-
 
 class SpellingSuggestionAction(ListAction):
     name = "Spelling..."
@@ -28,22 +22,11 @@ class SpellingSuggestionAction(ListAction):
     tooltip = "Spelling suggestions for the current word"
 
     def getItems(self):
-        word = self.mode.check_spelling[0]
-        lang = wx.GetApp().language.classprefs.language
-        if USE_SPELLING and lang:
-            if len(word) > 2:
-                try:
-                    # FIXME: simplistic approach is to grab a new dict object
-                    # whenever I need it.  Later, I'll cache it as I do spell-
-                    # as-you-type
-                    d = enchant.Dict(lang)
-                    # Because this is a popup action, we can save stuff to this
-                    # object.  Otherwise, we'd save it to the major mode
-                    self.words = d.suggest(self.mode.check_spelling[0])
-                    return self.words
-                except enchant.DictNotFoundError:
-                    # No suggestions if the dictionary can't be found.
-                    pass
+        # Because this is a popup action, we can save stuff to this object.
+        # Otherwise, we'd save it to the major mode
+        self.words = self.mode.spellGetSuggestions(self.mode.check_spelling[0])
+        if self.words:
+            return self.words
         return [_('No suggestions')]
     
     def isEnabled(self):
