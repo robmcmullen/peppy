@@ -172,6 +172,21 @@ class DowncaseWord(WordOrRegionMutateAction):
         """
         return txt.lower()
 
+class SwapcaseWord(WordOrRegionMutateAction):
+    """Swap the case of the current word or the highlighted region.
+    
+    This will also move the cursor to the start of the next word.
+    """
+    alias = "swapcase-region-or-word"
+    name = "Swap case"
+    default_menu = ("Transform/Case", 103)
+    default_toolbar = False
+
+    def mutate(self, txt):
+        """Change to the opposite case (upper to lower and vice-versa).
+        """
+        return txt.swapcase()
+
 class Rot13(RegionMutateAction):
     """Convert the region using the rot13 encoding."""
     alias = "rot13-region"
@@ -227,7 +242,7 @@ class TextTransformPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text transformation actions.
     """
     def getActions(self):
-        return [CapitalizeWord, UpcaseWord, DowncaseWord,
+        return [CapitalizeWord, UpcaseWord, DowncaseWord, SwapcaseWord,
 
                 ShiftLeft, ShiftRight,
 
