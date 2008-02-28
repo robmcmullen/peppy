@@ -21,7 +21,7 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     keyword = 'Fortran77'
     editra_synonym = 'Fortran 77'
     
-    icon = 'icons/page_white_ftn.png'
+    icon = 'icons/page_white_f77.png'
     regex = "(\.f|\.for|\.f77|\.f90|\.f95)$"
     
     fold_function_match = ["SUBROUTINE ", "FUNCTION ","subroutine ", "function ",
