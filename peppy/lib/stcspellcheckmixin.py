@@ -221,7 +221,7 @@ class STCSpellCheckMixin(object):
         # Remove any old spelling indicators
         mask = self._spelling_indicator_mask
         self.StartStyling(start, mask)
-        self.SetStyling(end, 0)
+        self.SetStyling(end - start, 0)
         
         text = self.GetTextRange(start, end) # note: returns unicode
         unicode_index = 0
