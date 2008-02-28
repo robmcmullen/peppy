@@ -313,6 +313,8 @@ if __name__ == "__main__":
             canonical = os.path.basename(file)[0:-3]
             if canonical.startswith('merged-'):
                 continue
+            if canonical.startswith('peppy-'):
+                canonical = canonical[6:]
             print("Processing locale %s" % canonical)
             po = MessageCatalog(args[0])
             po.addFile(file)

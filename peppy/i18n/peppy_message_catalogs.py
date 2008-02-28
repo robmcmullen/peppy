@@ -1,15 +1,18 @@
-supplied_translations = ['en_US', 'da', 'fr_FR', 'ru_RU', 'it_IT', 'es_ES', 'de_DE', 'zh_CN', 'zh_TW', 'ja_JP', 'eo', 'ia']
+supplied_translations = ['en_US', 'da', 'de', 'eo', 'es', 'ia', 'it', 'ja', 'ru', 'zh_CN', 'zh_TW', 'ca', 'en_GB', 'fr', 'sv']
 
 if False:
     # Dummy imports to trick py2exe into including these
     import da
-    import fr_FR
-    import ru_RU
-    import it_IT
-    import es_ES
-    import de_DE
+    import de
+    import eo
+    import es
+    import ia
+    import it
+    import ja
+    import ru
     import zh_CN
     import zh_TW
-    import ja_JP
-    import eo
-    import ia
+    import ca
+    import en_GB
+    import fr
+    import sv
