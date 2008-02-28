@@ -30,6 +30,7 @@ like the hyperspectral image viewer.
 <li>Multiple views of the same file (edit in one view and changes are reflected in realtime in the others, even if the others are different major modes!)
 <li>Virtual file system abstraction layer based on <a href="http://www.ikaaro.org/itools/">itools.vfs</a>, allowing transparent file loads from the local file system, http URLs, and from within tar archives without uncompressing the archive beforehand.
 <li>Minibuffer ala XEmacs, including tab completion
+<li>On-the-fly spell checking using the <a href="http://pyenchant.sourceforge.net">pyenchant</a> module
 <li>Other interesting major modes:
 <ul>
 <li>Hex edit mode
@@ -58,11 +59,19 @@ handling on OSX.
 
 <h4>Localization</h4>
 
-<P>Additionally, if you speak languages other than English
-(I have a small vocabulary in Esperanto/mi havas eta
-vortprovizon de esperanto), the i18n work is hosted at <a
-href="https://translations.launchpad.net/peppy/trunk/+pots/peppy">launchpad</a>
-and I could definitely use the help getting peppy localized in your language.
+<P>Additionally, if you speak languages other than English, the i18n work is
+hosted at
+
+<a href="https://translations.launchpad.net/peppy/trunk/+pots/peppy">launchpad</a>
+
+using their collaborative translation feature.  I could definitely use the help
+getting peppy localized in your language, as my only language skills include a
+tiny bit to contribute to the
+
+<a href="http://www.esperanto-usa.org/">Esperanto</a>
+
+localization (mi havas eta vortprovizon de esperanto) and knowing the word for
+'beer' in numerous languages.
 
 <h3>Mailing List</h3>
 

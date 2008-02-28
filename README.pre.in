@@ -12,11 +12,10 @@ ABSTRACT
 $prog - $description
 
 This is a wxPython/Scintilla-based editor and framework written in and
-extensible through Python.  It attempts to provide an XEmacs-like
-multi-window, multi-tabbed interface.  The architectural goal is to
-provide a system with low coupling in order to reduce the work
-required to extend the editor with new major modes, minor modes, and
-sidebars.
+extensible through Python.  It attempts to provide an XEmacs-like multi-
+window, multi-tabbed interface.  The architectural goal is to provide a system
+with low coupling in order to reduce the work required to extend the editor
+with new major modes, minor modes, and sidebars.
 
 
 
@@ -38,8 +37,8 @@ FEATURES
   * HSIMode for viewing hyperspectral image files
  
 
-Many more features are available or planned.  See the roadmap on the
-web at http://trac.flipturn.org/roadmap
+Many more features are available or planned.  See the roadmap on the web at
+http://trac.flipturn.org/roadmap
 
 
 
@@ -60,19 +59,28 @@ PREREQUISITES
 python 2.4 or later
 wxPython 2.8 or later
 
-Currently developed on Python 2.5.1 and wxPython 2.8.4.0 on Linux, and
-Python 2.5 and wxPython 2.8.6.0 on Windows.
+Currently developed on Python 2.5.1 and wxPython 2.8.4.0 on Linux, and Python
+2.5 and wxPython 2.8.6.0 on Windows.
 
-Peppy requires such a new version of wxPython because it's using the
-AUI (Advanced User Interface) set of widgets for the main frame and
-the notebook.
+Peppy requires such a new version of wxPython because it's using the AUI
+(Advanced User Interface) set of widgets for the main frame and the notebook.
 
 
-Optional Modules
-----------------
+Optional: pyenchant
+-------------------
 
-The optional hyperspectral image view mode has additional
-requirements:
+Peppy will automatically spell check documents on the fly if the pyenchant
+module is installed.  Get it from
+
+http://pyenchant.sourceforge.net
+
+I've tested with 1.3.1, but should work with 1.2.0 and later.
+
+
+Optional: numpy
+---------------
+
+The optional hyperspectral image view mode has additional requirements:
 
 numpy 1.0 or later
 
@@ -81,19 +89,18 @@ and additional functionality will be enabled if it finds:
 scipy 0.5.2 or later
 gdal 1.4.0 or later
 
-Without GDAL support, only raw image formats like ENVI are available.
-GDAL provides image loading capability for a wide variety of formats,
-including compressed images.  To use GDAL support, the ngpython swig
-bindings must be used when compiling the module.  See the file INSTALL
-for more information.
+Without GDAL support, only raw image formats like ENVI are available.  GDAL
+provides image loading capability for a wide variety of formats, including
+compressed images.  To use GDAL support, the ngpython swig bindings must be
+used when compiling the module.  See the file INSTALL for more information.
 
 
 
 RUNNING THE PROGRAM
 ===================
 
-This is still alpha software, so caveat emptor.  I recommend just
-running it out of the directory in which the software was unpacked.
+This is still alpha software, so caveat emptor.  I recommend just running it
+out of the directory in which the software was unpacked.
 
 $ tar xfv peppy-$version.tar.bz2
 $ cd peppy-$version
@@ -124,16 +131,16 @@ in the tests/ directory.
 KNOWN ISSUES
 ============
 
-This editor is still in heavy development, but I am using it as my
-primary editor and have felt that it is stable enough that it has
-replaced XEmacs in my daily life.
+This editor is still in heavy development, but I am using it as my primary
+editor and have felt that it is stable enough that it has replaced XEmacs in
+my daily life.
 
-The only time 0.7.0 has ever crashed was due to an obscure AUI bug
-that I have not been able to track down.  It was caused by splitting
-the notebook by dragging a tab to form a new notebook, then dragging
-the tab back to the original notebook.  I've not been able to
-duplicate it, but if you experiment with the AUI tab dragging feature,
-I'd suggest saving your work before trying it.
+The only time 0.7.* has ever crashed was due to an obscure AUI bug that I
+have not been able to track down.  It was caused by splitting the notebook
+by dragging a tab to form a new notebook, then dragging the tab back to the
+original notebook.  I've not been able to duplicate it, but if you experiment
+with the AUI tab dragging feature, I'd suggest saving your work before trying
+it.
 
 
 
