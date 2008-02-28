@@ -177,6 +177,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     #: Default comment characters in case the Editra styling database doesn't have any information about the mode
     start_line_comment = ''
     end_line_comment = ''
+    
+    #: Default characters that end a word and signal the spell checker
+    word_end_chars = ' .!?\'\"'
 
     #: Default class preferences that relate to all instances of this major mode
     default_classprefs = (
@@ -269,6 +272,19 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             return mimetype == 'text/plain'
         else:
             return MajorMode.verifyMimetype(mimetype)
+    
+    def createEventBindingsPostHook(self):
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+    
+    def OnChar(self, evt):
+        """Handle all events that result from typing characters in the stc.
+        
+        Automatic spell checking is handled here.
+        """
+        uchar = unichr(evt.GetKeyCode())
+        if self.classprefs.spell_check and uchar in self.word_end_chars:
+            self.spellCheckWord()
+        evt.Skip()
     
     def createStatusIcons(self):
         linesep = self.getLinesep()
@@ -376,10 +392,31 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
-            self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.onMarginClick)
+            self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         else:
             self.SetMarginWidth(2, 0)
             self.Unbind(wx.stc.EVT_STC_MARGINCLICK)
+
+    def OnMarginClick(self, evt):
+        # fold and unfold as needed
+        if evt.GetMargin() == 2:
+            if evt.GetShift() and evt.GetControl():
+                self.FoldAll()
+            else:
+                lineClicked = self.LineFromPosition(evt.GetPosition())
+                if self.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
+                    if evt.GetShift():
+                        self.SetFoldExpanded(lineClicked, True)
+                        self.Expand(lineClicked, True, True, 1)
+                    elif evt.GetControl():
+                        if self.GetFoldExpanded(lineClicked):
+                            self.SetFoldExpanded(lineClicked, False)
+                            self.Expand(lineClicked, False, True, 0)
+                        else:
+                            self.SetFoldExpanded(lineClicked, True)
+                            self.Expand(lineClicked, True, True, 100)
+                    else:
+                        self.ToggleFold(lineClicked)
 
     def setTabStyle(self):
         self.SetIndent(self.classprefs.tab_size)
@@ -403,27 +440,6 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             self.classprefs.view_eol = enable
         self.SetViewEOL(self.classprefs.view_eol)
     
-    def onMarginClick(self, evt):
-        # fold and unfold as needed
-        if evt.GetMargin() == 2:
-            if evt.GetShift() and evt.GetControl():
-                self.FoldAll()
-            else:
-                lineClicked = self.LineFromPosition(evt.GetPosition())
-                if self.GetFoldLevel(lineClicked) & wx.stc.STC_FOLDLEVELHEADERFLAG:
-                    if evt.GetShift():
-                        self.SetFoldExpanded(lineClicked, True)
-                        self.Expand(lineClicked, True, True, 1)
-                    elif evt.GetControl():
-                        if self.GetFoldExpanded(lineClicked):
-                            self.SetFoldExpanded(lineClicked, False)
-                            self.Expand(lineClicked, False, True, 0)
-                        else:
-                            self.SetFoldExpanded(lineClicked, True)
-                            self.Expand(lineClicked, True, True, 100)
-                    else:
-                        self.ToggleFold(lineClicked)
-
     def braceHighlight(self):
         """Highlight matching braces or flag mismatched braces.
         
@@ -722,6 +738,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             newline = linesep+self.GetIndentString(ind)
         self.ReplaceTarget(newline)
         self.GotoPos(pos + len(newline))
+        if self.classprefs.spell_check:
+            self.spellCheckWord(pos)
         self.EndUndoAction()
 
 

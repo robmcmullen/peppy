@@ -38,8 +38,6 @@ Currently provides:
  - spell checking of entire buffer, currently visible page, or selection region
  - user specified indicator number (0 - 2), style, and color
  - language can be changed on the fly
-
-TODO:
  - update the spelling as you type
  - check the document in either idle time or in a background thread
 
@@ -49,6 +47,9 @@ TODO:
 Changelog::
     1.0:
         - First public release
+    1.1:
+        - Added helper function to use idle processing time to check document
+        - Added word checking function for use in instant spell checking
 """
 
 import locale
@@ -378,7 +379,21 @@ class STCSpellCheckMixin(object):
                 print("suggestions for %s: %s" % (word, words))
             return words
         return []
+    
+    def spellCheckWord(self, pos=None):
+        """Check the word at the current or specified position.
         
+        @param pos: position of a character in the word (or at the start or end
+        of the word), or None to use the current position
+        """
+        if pos is None:
+            pos = self.GetCurrentPos()
+        end = self.WordEndPosition(pos, True)
+        start = self.WordStartPosition(pos, True)
+        if self._spelling_debug:
+            print("%d-%d: %s" % (start, end, self.GetTextRange(start, end)))
+        self.spellCheckRange(start, end)
+
 
 if __name__ == "__main__":
     import sys
@@ -394,7 +409,19 @@ if __name__ == "__main__":
             STCSpellCheckMixin.__init__(self)
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
             self.SetMarginWidth(0, 32)
+            self.word_end_chars = ' .!?\'\"'
+            self.Bind(wx.EVT_CHAR, self.OnChar)
 
+        def OnChar(self, evt):
+            """Handle all events that result from typing characters in the stc.
+            
+            Automatic spell checking is handled here.
+            """
+            uchar = unichr(evt.GetKeyCode())
+            if uchar in self.word_end_chars:
+                self.spellCheckWord()
+            evt.Skip()
+    
     class Frame(wx.Frame):
         def __init__(self, *args, **kwargs):
             super(self.__class__, self).__init__(*args, **kwargs)
