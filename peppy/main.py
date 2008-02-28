@@ -797,7 +797,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def getTopFrame(self):
         frame = self.GetTopWindow()
-        if hasattr(frame, 'open'):
+        if not hasattr(frame, 'open'):
             # FIXME: can this ever happen?
             dprint("Top window not a Peppy frame!")
             for frame in wx.GetTopLevelWindows():
