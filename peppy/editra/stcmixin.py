@@ -119,7 +119,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.SetLexer(lexer)
             self.ClearDocumentStyle()
             self.UpdateBaseStyles()
-            self.setCommentDelimiters()
+            self.SetComments()
             self.LOG("NULL!!!!")
             return True
         else:
@@ -158,9 +158,17 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         # Set Extra Properties
         self.SetProperties(props)
         # Set Comment Pattern
-        self.setCommentDelimiters(*comment)
+        self.SetComments(comment)
         self.LOG("GetLexer = %d" % self.GetLexer())
         return True
+    
+    def SetComments(self, comment=[]):
+        try:
+            # Set Comment Pattern
+            self.setCommentDelimiters(*comment)
+        except AttributeError:
+            # the target STC doesn't understand setCommentDelimiters, so skip it
+            pass
 
     def SetKeyWords(self, kw_lst, orig_interface_keywords=None):
         """Sets the keywords from a list of keyword sets
