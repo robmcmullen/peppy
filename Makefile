@@ -13,8 +13,8 @@ TAROPTS = --exclude=.git --exclude=.svn --exclude='*.pyc' --exclude='*~'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
-VERSION_CODENAME := $(shell grep Released ChangeLog|head -n1|cut -d '"' -f 2)
-VERSION := $(shell grep Released ChangeLog|head -n1|cut -d '-' -f 2|cut -d ' ' -f 1)
+VERSION_CODENAME := $(shell grep "Released peppy-" ChangeLog|head -n1|cut -d '"' -f 2)
+VERSION := $(shell grep "Released peppy-" ChangeLog|head -n1|cut -d '-' -f 2|cut -d ' ' -f 1)
 
 EPYDOC = epydoc -v -v -v --no-sourcecode --debug
 
