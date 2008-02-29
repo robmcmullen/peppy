@@ -11,7 +11,6 @@ dict = {
 '&Save...': '&Konservu...',
 '&Word Count': 'Nombro da vortoj',
 'Actions': 'Agoj',
-'Apr': 'Apr',
 'Attributes': 'Atributoj',
 'Aug': 'A\xc5\xadg',
 'Background': 'Fono',

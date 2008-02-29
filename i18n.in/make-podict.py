@@ -63,7 +63,9 @@ class MessageCatalog(object):
                 print ("adding translation for %s" % id)
                 if self.current_encoding != self.encoding:
                     str = str.decode(self.current_encoding).encode(self.encoding)
-                self.messages[id] = str
+                if id != str:
+                    # Don't include translation if it's the same as the source
+                    self.messages[id] = str
             else:
                 for prefix in [u'', u'&']:
                     for suffix in [u'', u'...', u':']:
