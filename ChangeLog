@@ -1,3 +1,15 @@
+2008-02-27  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2.6 update to "Oscillation Overthruster"
+	* added on-the-fly spell checking using pyenchant
+	* added right-click action to suggest other spellings
+	* added more sample languages: Catalan, Esperanto, Italian, French,
+	Swedish, and UK English
+	* added Fortran 77 editing mode
+	* added new action to move a tab to a new window
+	* added action to revert a file with a new encoding
+	* redesigned the status bar to prevent flickering
+
 2008-02-17  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.5 update to "Oscillation Overthruster"

@@ -32,12 +32,6 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
         BoolParam('indentation_guides', False),
        )
 
-    def isStyleString(self, style):
-        return style == 3 or style == 4
-        
-    def isStyleComment(self, style):
-        return style == 1
-
 
 class FortranModePlugin(IPeppyPlugin):
     """C plugin to register modes and user interface.

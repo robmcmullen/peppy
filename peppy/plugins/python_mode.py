@@ -107,12 +107,6 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
     default_classprefs = (
         )
 
-    def isStyleString(self, style):
-        return style == 3 or style == 7 or style == 6 or style == 4
-        
-    def isStyleComment(self, style):
-        return style == 1
-
     def findIndent(self, linenum, extra=None):
         """Find indentation of next line using IDLE's parsing code.
         

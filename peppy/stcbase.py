@@ -534,27 +534,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     # Styling stuff
     
-    def isStyleString(self, style):
-        """Is the style a string?
-        
-        Designed to be overridded by subclasses to map styling info to useful
-        status checks.
-        
-        @return: True/False if style represents a quoted string as determined
-        by the scintilla style
-        """
-        raise NotImplementedError
-    
-    def isStyleComment(self, style):
-        """Is the style a comment?
-        
-        Designed to be overridded by subclasses to map styling info to useful
-        status checks.
-        
-        @return: True/False if style is a comment
-        """
-        raise NotImplementedError
-
     def showStyle(self, linenum=None):
         if linenum is None:
             linenum = self.GetCurrentLine()

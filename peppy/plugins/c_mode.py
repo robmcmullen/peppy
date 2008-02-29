@@ -44,12 +44,6 @@ class CMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     default_classprefs = (
        )
 
-    def isStyleString(self, style):
-        return style == 6
-        
-    def isStyleComment(self, style):
-        return style == 1 or style == 2
-
 
 class CModePlugin(IPeppyPlugin):
     """C plugin to register modes and user interface.

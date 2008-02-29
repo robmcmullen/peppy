@@ -18,6 +18,34 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.LOG = self.dprint
         self.syntax_set = list()
         self._use_autocomp = False
+        self._string_styles = []
+        self._comment_styles = []
+    
+    def isStyleString(self, style):
+        """Is the style a string?
+        
+        This is automatically determined from the styling info provided by the
+        syntax lists defined by editra.
+        
+        @return: True/False if style represents a quoted string as determined
+        by the scintilla style
+        """
+        return style in self._string_styles
+    
+    def _alwaysStyleString(self, style):
+        """Function to be used in place of isStyleString when lexer is NULL
+        """
+        return True
+        
+    def isStyleComment(self, style):
+        """Is the style a comment?
+        
+        This is automatically determined from the styling info provided by the
+        syntax lists defined by editra.
+        
+        @return: True/False if style is a comment
+        """
+        return style in self._comment_styles
 
     def FindLexer(self, set_ext=u''):
         """Sets Text Controls Lexer Based on File Extension
@@ -120,6 +148,10 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.ClearDocumentStyle()
             self.UpdateBaseStyles()
             self.SetComments()
+            
+            # Make all styles appear as strings for spelling purposes
+            self.isStyleString = self._alwaysStyleString
+            
             self.LOG("NULL!!!!")
             return True
         else:
@@ -231,6 +263,14 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                     self.StyleSetSpec(getattr(wx.stc, syn[0]), \
                                       self.GetStyleByName(syn[1]))
                     valid_settings.append(syn)
+                    if syn[1] == 'string_style':
+                        self._string_styles.append(getattr(wx.stc, syn[0]))
+                    elif syn[1] == 'char_style':
+                        self._string_styles.append(getattr(wx.stc, syn[0]))
+                    elif syn[1] == 'stringeol_style':
+                        self._string_styles.append(getattr(wx.stc, syn[0]))
+                    elif syn[1] == 'comment_style':
+                        self._comment_styles.append(getattr(wx.stc, syn[0]))
         self.syntax_set = valid_settings
         return True
 

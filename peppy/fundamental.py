@@ -903,8 +903,5 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     def spellIsSpellCheckRegion(self, pos):
         if self.classprefs.spell_check_strings_only:
             style = self.GetStyleAt(pos)
-            try:
-                return self.isStyleComment(style) or self.isStyleString(style)
-            except NotImplementedError:
-                pass
+            return self.isStyleComment(style) or self.isStyleString(style)
         return True
