@@ -211,6 +211,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         IntParam('caret_width', 2, help='Caret width in pixels'),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
         BoolParam('view_eol', False, 'Show line-ending cr/lf characters?'),
+        KeyedIndexChoiceParam('view_whitespace',
+                              [(wx.stc.STC_WS_INVISIBLE, 'none'),
+                               (wx.stc.STC_WS_VISIBLEALWAYS, 'visible'),
+                               (wx.stc.STC_WS_VISIBLEAFTERINDENT, 'after indent'),
+                               ], 'none', help='Visible whitespace mode'),
         BoolParam('spell_check', True, 'Spell check the document (if pyenchant\nis available'),
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
         )
@@ -354,6 +359,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.setEdgeStyle()
         self.setCaretStyle()
         self.setViewEOL()
+        self.setWhitespace()
 
     def setWordWrap(self, enable=None, style=None):
         if enable is not None:
@@ -441,6 +447,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         if enable is not None:
             self.classprefs.view_eol = enable
         self.SetViewEOL(self.classprefs.view_eol)
+    
+    def setWhitespace(self):
+        self.SetViewWhiteSpace(self.classprefs.view_whitespace)
     
     def braceHighlight(self):
         """Highlight matching braces or flag mismatched braces.
