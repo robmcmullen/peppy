@@ -700,7 +700,7 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
     displayed in the choice control.
     """
     def __init__(self, keyword, choices, default=None, help='', **kwargs):
-        Param.__init__(self, keyword, help='', **kwargs)
+        Param.__init__(self, keyword, help=help, **kwargs)
         self.choices = [entry[1] for entry in choices]
         self.keys = [entry[0] for entry in choices]
         if default is not None and default in self.choices:
