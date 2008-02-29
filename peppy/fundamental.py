@@ -905,3 +905,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             style = self.GetStyleAt(pos)
             return self.isStyleComment(style) or self.isStyleString(style)
         return True
+
+    def updateRegion(self, start, end):
+        self.Colourise(start, end)
+        self.spellCheckRange(start, end)

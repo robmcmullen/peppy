@@ -116,6 +116,7 @@ class RegionMutateAction(TextModificationAction):
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
         s.ReplaceTarget(self.mutate(word))
+        s.updateRegion(pos, end)
         s.GotoPos(end)
         s.EndUndoAction()
 
@@ -164,6 +165,7 @@ class WordOrRegionMutateAction(TextModificationAction):
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
         s.ReplaceTarget(self.mutate(word))
+        s.updateRegion(pos, end)
         s.GotoPos(end)
         s.EndUndoAction()
 
@@ -227,6 +229,7 @@ class LineOrRegionMutateAction(TextModificationAction):
         text = "".join(newlines)
         s.ReplaceTarget(text)
         end = pos + len(text)
+        s.updateRegion(pos, end)
         s.GotoPos(end + offset)
         s.SetSelection(pos, end + offset)
         s.EndUndoAction()
@@ -278,6 +281,7 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
         text = "\n".join(lines)
         s.ReplaceTarget(text)
         end = info.start + len(text)
+        s.updateRegion(info.start, end)
         s.GotoPos(end)
         s.EndUndoAction()
 
