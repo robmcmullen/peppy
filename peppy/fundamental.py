@@ -283,7 +283,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         """
         uchar = unichr(evt.GetKeyCode())
         if self.classprefs.spell_check and uchar in self.word_end_chars:
-            self.spellCheckWord()
+            # We are catching the event before the character is added to the
+            # text, so we know the cursor is at the end of the word.
+            self.spellCheckWord(atend=True)
         evt.Skip()
     
     def createStatusIcons(self):

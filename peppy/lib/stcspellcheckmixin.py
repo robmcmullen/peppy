@@ -380,15 +380,19 @@ class STCSpellCheckMixin(object):
             return words
         return []
     
-    def spellCheckWord(self, pos=None):
+    def spellCheckWord(self, pos=None, atend=False):
         """Check the word at the current or specified position.
         
         @param pos: position of a character in the word (or at the start or end
         of the word), or None to use the current position
+        @param atend: True if you know the cursor is at the end of the word
         """
         if pos is None:
             pos = self.GetCurrentPos()
-        end = self.WordEndPosition(pos, True)
+        if atend:
+            end = pos
+        else:
+            end = self.WordEndPosition(pos, True)
         start = self.WordStartPosition(pos, True)
         if self._spelling_debug:
             print("%d-%d: %s" % (start, end, self.GetTextRange(start, end)))
