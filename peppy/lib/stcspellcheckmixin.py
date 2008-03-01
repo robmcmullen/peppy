@@ -89,6 +89,10 @@ class STCSpellCheckMixin(object):
     L{spellCheckCurrentPage}, or L{spellCheckSelection}.  Clear the spelling
     indicators with L{spellClearAll}.
     """
+    # Class attributes to act as default values
+    _spelling_lang = None
+    _spelling_dict = None
+    
     def __init__(self, *args, **kwargs):
         """Mixin must be initialized using this constructor.
         
@@ -101,8 +105,11 @@ class STCSpellCheckMixin(object):
         self.spellSetIndicator(kwargs.get('indicator', 2),
                                   kwargs.get('indicator_color', "#FF0000"),
                                   kwargs.get('indicator_style', wx.stc.STC_INDIC_SQUIGGLE))
-        self.spellSetLanguage(kwargs.get('language', "en_US"))
         self.spellSetMinimumWordSize(kwargs.get('min_word_size', 3))
+        if 'language' in kwargs:
+            # Don't set default language unless explicitly specified -- it
+            # might have already been set through the class method
+            self.spellSetDefaultLanguage(kwargs['language'])
         self._spelling_debug = False
         self._spelling_last_idle_line = -1
 
@@ -164,15 +171,36 @@ class STCSpellCheckMixin(object):
             pass
         return []
     
-    def spellSetLanguage(self, lang):
-        """Set the language for spelling check.
+    @classmethod
+    def spellSetDefaultLanguage(cls, lang):
+        """Set the default language for spelling check.
         
         The string should be in language locale format, e.g.  en_US, ru, ru_RU,
         eo, es_ES, etc.  See L{spellGetAvailableLanguages}.
         
         @param lang: text string indicating the language
         """
+        cls._spelling_lang = lang
+        try:
+            cls._spelling_dict = enchant.Dict(cls._spelling_lang)
+        except (NameError, enchant.DictNotFoundError):
+            cls._spelling_dict = None
+    
+    def spellSetLanguage(self, lang):
+        """Set the language for spelling check for this class, if different than
+        the default.
+        
+        The string should be in language locale format, e.g.  en_US, ru, ru_RU,
+        eo, es_ES, etc.  See L{spellGetAvailableLanguages}.
+        
+        @param lang: text string indicating the language
+        """
+        # Note that this instance variable will shadow the class attribute
         self._spelling_lang = lang
+        try:
+            self._spelling_dict = enchant.Dict(self._spelling_lang)
+        except (NameError, enchant.DictNotFoundError):
+            self._spelling_dict = None
     
     def spellSetMinimumWordSize(self, size):
         """Set the minimum word size that will be looked up in the dictionary.
@@ -180,24 +208,6 @@ class STCSpellCheckMixin(object):
         Words smaller than this size won't be spell checked.
         """
         self._spelling_word_size = size
-    
-    def spellGetDict(self):
-        """Get a dictionary.
-        
-        Using the language specified in L{spellSetLanguage}, return a
-        pyenchant dictionary instance that can be used to check spelling.
-        
-        Currently, no caching is used -- it returns a new dictionary object
-        every time this method is called.
-        
-        @return: pyenchant dictionary if a valid one was found for the current
-        language, or None if there is no dictionary for the language.
-        """
-        try:
-            return enchant.Dict(self._spelling_lang)
-        except NameError:
-            pass
-        return None
     
     def spellClearAll(self):
         """Clear the stc of all spelling indicators."""
@@ -215,7 +225,7 @@ class STCSpellCheckMixin(object):
         @param start: starting position
         @param end: last position to check
         """
-        spell = self.spellGetDict()
+        spell = self._spelling_dict
         if not spell:
             return
         
@@ -372,7 +382,7 @@ class STCSpellCheckMixin(object):
         are true: there are no suggestions, the word is shorter than the
         minimum length, or the dictionary can't be found.
         """
-        spell = self.spellGetDict()
+        spell = self._spelling_dict
         if spell and len(word) >= self._spelling_word_size:
             words = spell.suggest(word)
             if self._spelling_debug:
@@ -410,7 +420,7 @@ if __name__ == "__main__":
     class TestSTC(STCSpellCheckMixin, wx.stc.StyledTextCtrl):
         def __init__(self, *args, **kwargs):
             wx.stc.StyledTextCtrl.__init__(self, *args, **kwargs)
-            STCSpellCheckMixin.__init__(self)
+            STCSpellCheckMixin.__init__(self, language="en_US")
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
             self.SetMarginWidth(0, 32)
             self.word_end_chars = ' .!?\'\"'
