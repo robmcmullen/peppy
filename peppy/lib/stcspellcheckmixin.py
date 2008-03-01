@@ -172,6 +172,16 @@ class STCSpellCheckMixin(object):
         return []
     
     @classmethod
+    def _spellGetDict(cls, lang):
+        try:
+            d = enchant.Dict(lang)
+        except:
+            # Catch all exceptions, because if pyenchant isn't available, you
+            # can't catch the enchant.DictNotFound error.
+            d = None
+        return d
+    
+    @classmethod
     def spellSetDefaultLanguage(cls, lang):
         """Set the default language for spelling check.
         
@@ -181,10 +191,7 @@ class STCSpellCheckMixin(object):
         @param lang: text string indicating the language
         """
         cls._spelling_lang = lang
-        try:
-            cls._spelling_dict = enchant.Dict(cls._spelling_lang)
-        except (NameError, enchant.DictNotFoundError):
-            cls._spelling_dict = None
+        cls._spelling_dict = cls._spellGetDict(lang)
     
     def spellSetLanguage(self, lang):
         """Set the language for spelling check for this class, if different than
@@ -197,10 +204,7 @@ class STCSpellCheckMixin(object):
         """
         # Note that this instance variable will shadow the class attribute
         self._spelling_lang = lang
-        try:
-            self._spelling_dict = enchant.Dict(self._spelling_lang)
-        except (NameError, enchant.DictNotFoundError):
-            self._spelling_dict = None
+        self._spelling_dict = self._spellGetDict(lang)
     
     def spellHasDictionary(self):
         """Returns True if a dictionary is available to spell check the current
