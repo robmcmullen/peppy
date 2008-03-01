@@ -212,10 +212,10 @@ class Language(ClassPrefs):
         except KeyError:
             lang_id = -1
             
+        STCSpellCheckMixin.spellSetDefaultLanguage(self.classprefs.language)
         self.locale = wx.Locale(lang_id)
         if self.locale.IsOk():
             self.messages, self.encoding = importCatalog(self.classprefs.language)
-            STCSpellCheckMixin.spellSetDefaultLanguage(self.classprefs.language)
         else:
             self.messages = {}
             self.encoding = 'utf-8'

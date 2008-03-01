@@ -202,6 +202,18 @@ class STCSpellCheckMixin(object):
         except (NameError, enchant.DictNotFoundError):
             self._spelling_dict = None
     
+    def spellHasDictionary(self):
+        """Returns True if a dictionary is available to spell check the current
+        language.
+        """
+        return self._spelling_dict is not None
+    
+    def spellGetLanguage(self):
+        """Returns True if a dictionary is available to spell check the current
+        language.
+        """
+        return self._spelling_lang
+    
     def spellSetMinimumWordSize(self, size):
         """Set the minimum word size that will be looked up in the dictionary.
         

@@ -301,6 +301,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             self.status_info.addIcon("icons/apple.png", "Old-style Apple line endings")
         else:
             self.status_info.addIcon("icons/tux.png", "Unix line endings")
+        if self.spellHasDictionary():
+            self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spellGetLanguage())
 
     def applySettings(self):
         start = time.time()
@@ -325,10 +327,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
+        self.spellClearAll()
         if self.classprefs.spell_check:
             self.spellStartIdleProcessing()
-        else:
-            self.spellClearAll()
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):

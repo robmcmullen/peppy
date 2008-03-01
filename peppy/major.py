@@ -821,7 +821,8 @@ class MajorMode(ClassPrefs, debugmixin):
 
     def settingsChanged(self, message=None):
         dprint("changing settings for mode %s" % self.__class__.__name__)
-        self.applySettings()       
+        self.applySettings()
+        self.resetStatusBar()
 
     def focus(self):
         # The active tab may have changed, so make sure that this mode is

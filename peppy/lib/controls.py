@@ -197,11 +197,12 @@ class ModularStatusBar(wx.StatusBar):
             bmp = getIconBitmap(bmp)
         if bmp not in self.controls:
             b = StatusBarButton(self, -1, bmp, style=wx.BORDER_NONE, pos=(9000,9000))
-            if tooltip:
-                b.SetToolTipString(tooltip)
             b.Hide()
             self.controls[bmp] = b
-        return self.controls[bmp]
+        btn = self.controls[bmp]
+        if tooltip:
+            btn.SetToolTipString(tooltip)
+        return btn
 
     def OnSize(self, evt):
         self.Reposition()  # for normal size events
