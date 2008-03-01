@@ -10,6 +10,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.lib.foldexplorer import *
 from peppy.lib.stcspellcheckmixin import *
+from peppy.lib.vimutil import *
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
@@ -218,6 +219,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                                ], 'none', help='Visible whitespace mode'),
         BoolParam('spell_check', True, 'Spell check the document (if pyenchant\nis available'),
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
+        IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file\nto search for vim modeline comments'),
         )
     
     def __init__(self, parent, wrapper, buffer, frame):
@@ -330,6 +332,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.spellClearAll()
         if self.classprefs.spell_check:
             self.spellStartIdleProcessing()
+        self.setEmacsAndVIM()
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):
@@ -451,6 +454,25 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     
     def setWhitespace(self):
         self.SetViewWhiteSpace(self.classprefs.view_whitespace)
+    
+    def setEmacsAndVIM(self):
+        lines = self.getFileLocalComments()
+        applyVIMModeline(self, lines)
+        #applyEmacsFileLocalSettings(self, text)
+
+    def getFileLocalComments(self):
+        start = min(self.GetLineCount(), self.classprefs.vim_settings_lines)
+        lines = range(0, start)
+        ending = max(start, self.GetLineCount() - self.classprefs.vim_settings_lines)
+        lines.extend(range(ending, self.GetLineCount()))
+        text = []
+        for linenum in lines:
+            line = self.GetLine(linenum)
+            match = self.comment_regex.match(line)
+            if match.group(1).endswith(self.start_line_comment):
+                dprint("line %d: %s" % (linenum, str(match.groups())))
+                text.append(line)
+        return text
     
     def braceHighlight(self):
         """Highlight matching braces or flag mismatched braces.
@@ -605,7 +627,6 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             return ("", line, "")
         self.dprint(match.groups())
         return match.group(1, 2, 3)
-
 
     ##### Indentation
     def findIndent(self, linenum):

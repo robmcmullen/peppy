@@ -56,6 +56,10 @@ class MockFrame(wx.Frame):
 __builtin__._ = str
     
 
+def getPlainSTC():
+    stc = wx.stc.StyledTextCtrl(MockWX.root, -1)
+    return stc
+
 def getSTC(init=None, stcclass=FundamentalMode, count=1, lexer="Python", tab_size=4, use_tabs=False):
     refstc = MockSTC(MockWX.root)
     buffer = MockBuffer(refstc)
