@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Definition and storage of the 'about:' protocol.
@@ -75,11 +76,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 aboutfiles = {}
 aboutmimetype = {}
-def SetAbout(path, text, mimetype=None):
+def SetAbout(path, text, mimetype="text/plain", encoding=None):
     #eprint("Setting %s: %d bytes" % (path, len(text)))
+    if encoding:
+        text = text.encode(encoding)
     aboutfiles[path] = text
-    if mimetype:
-        aboutmimetype[path] = mimetype
+    aboutmimetype[path] = mimetype
 
 def findAbout(path):
     if path in aboutfiles:
@@ -163,9 +165,12 @@ class AboutFS(vfs.BaseFS):
         if text is None:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
         recurse_count = 100
-        while text.find("%(") >= 0 and recurse_count>0:
-            text = text % substitutes
-            recurse_count -= 1
+        mimetype = aboutmimetype.get(path)
+        if mimetype.startswith("text") and text.find("%("):
+            while text.find("%(") >= 0 and recurse_count>0:
+                text = text % substitutes
+                recurse_count -= 1
+            text = text.encode('utf-8')
         # FIXME: display error when recurse count is triggered???
         fh=StringIO()
         fh.write(text)
@@ -203,7 +208,7 @@ SetAbout('peppy',"""\
 <p>%(warning)s</p>
 
 <p>%(contributors)s</p>
-""")
+""", "text/html")
 SetAbout('0x00-0xff', "".join([chr(i) for i in range(256)]), "application/octet-stream")
 SetAbout('red.png',
 "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
@@ -214,7 +219,7 @@ SetAbout('red.png',
 ](\x85\xc6LhqJ\x19\x85\x10\xfe\xd2\xadB\x18\x05k\x17\x82\xb5\xa3\xa0\xf5B\
 \xd0\xba\x81\xb7\xd7\xba\xef\x0b\xb0\x03]8\xcf\x85 \xc0\xdd\xb5\xb6\xc3M\x9d\
 \xf9\xe1dN\x8ct\xee\x83:\xc7\x18\xa5w\xcb\xf6\xf8\xb7\xbe\x01K&\xfa\xcbB\xfe\
-\xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82")
+\xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82", "image/png")
 
 
 credits={}
@@ -242,4 +247,4 @@ def AddCopyright(project, website, author, date, reason=""):
                        'reason': reason,
                        })
     substitutes['gpl_code']="\n".join(["<li>%(reason)s <a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights.values()])
-AddCopyright("itools", "http://www.ikaaro.org/itools", "Juan David Ibanez Palomar et al.", "2002-2007", "Virtual filesystem implementation from")
+AddCopyright("itools", "http://www.ikaaro.org/itools", u"Juan David Ibáñez Palomar et al.", "2002-2007", "Virtual filesystem implementation from")
