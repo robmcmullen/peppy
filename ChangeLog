@@ -9,6 +9,7 @@
 	* added new action to move a tab to a new window
 	* added action to revert a file with a new encoding
 	* redesigned the status bar to prevent flickering
+	* added preference to show whitespace indicators
 
 2008-02-17  Rob McMullen  <robm@users.sourceforge.net>
 
