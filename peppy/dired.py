@@ -308,6 +308,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
                 index = self.GetItemCount() - 1
         if index is not None:
             self.setSelectedIndexes([index])
+            self.EnsureVisible(index)
     
     def getFlags(self, key):
         """Get the flags for the given key.
