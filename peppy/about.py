@@ -76,11 +76,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 aboutfiles = {}
 aboutmimetype = {}
-def SetAbout(path, text, mimetype="text/plain", encoding=None):
+def SetAbout(path, text, mimetype=None, encoding=None):
     #eprint("Setting %s: %d bytes" % (path, len(text)))
     if encoding:
         text = text.encode(encoding)
     aboutfiles[path] = text
+    if not mimetype:
+        sample = text[0:1024].strip()
+        if sample and sample[0] == "<":
+            mimetype = "text/html"
+        else:
+            mimetype = "text/plain"
     aboutmimetype[path] = mimetype
 
 def findAbout(path):
@@ -149,11 +155,9 @@ class AboutFS(vfs.BaseFS):
         path = str(reference.path)
         text = findAbout(path)
         if text is not None:
-            if path in aboutmimetype:
-                return aboutmimetype[path]
-            if text.strip()[0] == "<":
-                return "text/html"
-            return "text/plain"
+            # mimetype is now always stored in aboutmimetype, so don't have to
+            # check for the existence of it any more.
+            return aboutmimetype[path]
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @staticmethod
@@ -208,7 +212,7 @@ SetAbout('peppy',"""\
 <p>%(warning)s</p>
 
 <p>%(contributors)s</p>
-""", "text/html")
+""")
 SetAbout('0x00-0xff', "".join([chr(i) for i in range(256)]), "application/octet-stream")
 SetAbout('red.png',
 "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\
