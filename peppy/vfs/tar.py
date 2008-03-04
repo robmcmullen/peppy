@@ -77,6 +77,10 @@ class TarFS(BaseFS):
                     archive = BaseFS.find_local_cached('tar', archive_path)
                     if not archive:
                         archive = tarfile.open(archive_path)
+                        # FIXME: tarfile will successfully open zero length
+                        # files, and currently we allow this.  Should this be
+                        # the case, or should it not report success on a zero
+                        # length file?
                         if archive:
                             BaseFS.store_local_cache('tar', archive_path, archive)
                     archive_found = True

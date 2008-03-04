@@ -1094,7 +1094,7 @@ class MainMenu(IPeppyPlugin):
         # unless it turns out that we want to change the scheme
         refcopy = vfs.get_reference(unicode(buffer.url))
         #print "url = %s" % str(refcopy)
-        if refcopy.scheme == "file" and vfs.exists(refcopy):
+        if refcopy.scheme == "file" and vfs.exists(refcopy) and vfs.get_size(refcopy) > 0:
             # change scheme and see if tar can open it
             refcopy.scheme = "tar"
             if vfs.exists(refcopy):
