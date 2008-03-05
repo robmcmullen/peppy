@@ -15,50 +15,57 @@ class HSIPlugin(IPeppyPlugin):
     def attemptOpen(self, buffer):
         url = buffer.url
         assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
-        hsi_major_mode = self.importModule("hsi_major_mode")
-        if hsi_major_mode:
+        try:
+            import peppy.hsi.hsi_major_mode
             format = HyperspectralFileFormat.identify(url)
             if format:
                 assert dprint("found %s" % format)
-                return hsi_major_mode.HSIMode
+                return peppy.hsi.hsi_major_mode.HSIMode
             else:
                 fh = vfs.open(url)
                 assert self.dprint("checking for cube handler: %s" % dir(fh))
                 if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
                     return hsi_major_mode.HSIMode
+        except:
+                dprint("FAILED Loading hsi_major_mode")
+                pass
         return None
     
     def getCompatibleMajorModes(self, stc_class):
         if stc_class == HyperspectralSTC:
-            hsi_major_mode = self.importModule("hsi_major_mode")
-            if hsi_major_mode:
-                return [hsi_major_mode.HSIMode]
+            try:
+                import peppy.hsi.hsi_major_mode
+                return [peppy.hsi.hsi_major_mode.HSIMode]
+            except:
+                dprint("FAILED Loading hsi_major_mode")
+                pass
         return []
 
     def getCompatibleMinorModes(self, cls):
         if cls.keyword == "HSI":
-            hsi_major_mode = self.importModule("hsi_major_mode")
-            if hsi_major_mode:
-                for mode in [hsi_major_mode.HSIXProfileMinorMode,
-                             hsi_major_mode.HSIYProfileMinorMode,
-                             hsi_major_mode.HSISpectrumMinorMode]:
+            try:
+                import peppy.hsi.hsi_major_mode
+                for mode in [peppy.hsi.hsi_major_mode.HSIXProfileMinorMode,
+                             peppy.hsi.hsi_major_mode.HSIYProfileMinorMode,
+                             peppy.hsi.hsi_major_mode.HSISpectrumMinorMode]:
                     yield mode
+            except:
+                pass
         raise StopIteration
     
     def getCompatibleActions(self, mode):
         assert self.dprint("Checking for HSI mode %s" % mode)
         if mode.keyword == "HSI":
-            hsi_major_mode = self.importModule("hsi_major_mode")
-            if hsi_major_mode:
-                return [#hsi_major_mode.PrevCube,
-                        #hsi_major_mode.NextCube,
-                        #hsi_major_mode.SelectCube,
-                        hsi_major_mode.PrevBand,
-                        hsi_major_mode.NextBand,
-                        hsi_major_mode.GotoBand,
-                        hsi_major_mode.ContrastFilterAction,
-                        hsi_major_mode.MedianFilterAction,
-                        hsi_major_mode.CubeViewAction,
-                        hsi_major_mode.ShowPixelValues,
+            try:
+                import peppy.hsi.hsi_major_mode
+                return [peppy.hsi.hsi_major_mode.PrevBand,
+                        peppy.hsi.hsi_major_mode.NextBand,
+                        peppy.hsi.hsi_major_mode.GotoBand,
+                        peppy.hsi.hsi_major_mode.ContrastFilterAction,
+                        peppy.hsi.hsi_major_mode.MedianFilterAction,
+                        peppy.hsi.hsi_major_mode.CubeViewAction,
+                        peppy.hsi.hsi_major_mode.ShowPixelValues,
                         ]
+            except:
+                pass
         return []

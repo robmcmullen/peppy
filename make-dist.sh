@@ -6,7 +6,8 @@ distdir=`make print-distdir|cut -c11-`
 echo $distdir
 mkdir -p $distdir/peppy/builtins
 mv $distdir/peppy/plugins/* $distdir/peppy/builtins
-mv $distdir/peppy/hsi/hsi_major_mode* $distdir/peppy/builtins
+mv $distdir/peppy/hsi/hsi_major_mode_proxy.py $distdir/peppy/builtins
+rm $distdir/peppy/hsi/hsi_major_mode.peppy-plugin
 rmdir $distdir/peppy/plugins
 
 ./make-py2exe-plugin-list.py -i $distdir/peppy -d builtins

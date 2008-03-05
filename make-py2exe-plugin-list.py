@@ -9,26 +9,29 @@ __builtin__._ = str
 
 plugin_count = 0
 
-def entry(filename, out=None, copythese=None):
+def entry(filename, out=None, copythese=None, fake=False):
     print "Processing filename %s" % filename
     if filename.endswith(".py"):
-        if copythese is not None:
+        if copythese is not None and not fake:
             copythese.append(filename)
         if not filename.endswith("__init__.py") or True:
             module = filename[:-3].replace('/', '.').replace('\\', '.')
             if out:
-                global plugin_count
-                plugin_count += 1
-                out.write("app.gaugeCallback('%s')\n" % module)
+                if fake:
+                    out.write("if False: # fake the import so py2exe will include the file\n    ")
+                else:
+                    global plugin_count
+                    plugin_count += 1
+                    out.write("app.gaugeCallback('%s')\n" % module)
                 out.write("import %s\n" % (module))
 
-def process(path, out=None, copythese=None):
+def process(path, out=None, copythese=None, fake=False):
     files = glob.glob('%s/*' % path)
     for path in files:
         if os.path.isdir(path):
-            process(path, out)
+            process(path, out, fake=fake)
         else:
-            entry(path, out, copythese)
+            entry(path, out, copythese, fake)
 
 def load_setuptools_plugins(entry_point_name):
     modules_seen = {}
@@ -113,8 +116,9 @@ if __name__ == "__main__":
     os.chdir(savepath)
 
     process(options.importdir, out)
-    # Need to force the importing of the editra style definition files
-    process('editra/syntax', out)
+    # Need to fake the importing of the editra style definition files so py2exe
+    # will include them
+    process('editra/syntax', out, fake=True)
 
     filename = os.path.join(savepath, options.output)
     fh = open(filename, 'w')
