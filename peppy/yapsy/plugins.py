@@ -99,7 +99,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
     implemented using that interface.
     
     
-    @group convenience: isInUse, importModule
+    @group convenience: isInUse
     @group interface: initial*, addCommandLineOptions, processCommandLineOptions, requestedShutdown, finalShutdown, get*, about*, attempt*, load*, support*
     """
     preferences_tab = "Plugins"
@@ -180,67 +180,6 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
             if mode in modes:
                 return True
         return False
-
-    def importModule(self, relative_module):
-        """Import a module relative to the plugin module.
-        
-        This is used for on-demand plugin loading, which is experimental at
-        this time.  This is plugin-callable method and is not really part of
-        the interface that a plugin should implement and override.  It is a
-        convenience function that attempts to load modules in the directory
-        relative to the plugin's directory.  Because plugins are loaded using
-        a call to execfile, the python path is not setup correctly by default.
-        In normal circumstances, all this call does is prepend the plugin
-        path to the python path, but in py2exe usage, more complicated things
-        need to happen.
-        """
-        
-        save = sys.path
-        # Save the old sys.path and modify it temporarily to include the
-        # directory in which the plugin was loaded
-        if hasattr(sys, 'frozen'): # py2exe
-            # in a py2exe module, yapsy plugins don't work, so the plugin will
-            # have been imported with a regular import statement.  But, check
-            # anyway.
-            if self.__class__.__module__ == "__builtin__":
-                # Don't know how to handle this yet.
-                raise ImportError("Can't locate relative import %s in a dynamicly loaded plugin" % relative_module)
-            if "." in relative_module:
-                # actually have a fully specified module
-                base = relative_module.rsplit(".", 1)
-                #dprint("base = %s" % base)
-                subdir = base[0].replace(".", "\\")
-                #dprint("subdir = %s" % subdir)
-                relative_module = base[1]
-            else:
-                # have a relative module.  Find the current "module path" and
-                # make that the first place import looks
-                base = self.__class__.__module__.rsplit(".", 1)
-                #dprint("base = %s" % base)
-                subdir = base[0].replace(".", "\\")
-                #dprint("subdir = %s" % subdir)
-            dir = os.path.join(sys.path[0], subdir)
-            sys.path = [dir]
-            sys.path.extend(save)
-        elif self._import_dir is None:
-            # FIXME: hardcode for the builtins directory
-            sys.path = [os.path.join(sys.path[0], "peppy/builtins")]
-            sys.path.extend(save)
-        else:
-            # normal import; just prefix the path list with the local dir
-            sys.path = [self._import_dir]
-            sys.path.extend(save)
-            
-        try:
-            mod = __import__(relative_module)
-        except Exception, e:
-            import traceback
-            error = traceback.format_exc()
-            dprint(error)
-            mod = None
-        sys.path = save
-        #dprint("module = %s" % mod)
-        return mod
 
     ##### Lifecycle control methods
     
