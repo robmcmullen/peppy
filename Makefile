@@ -92,7 +92,7 @@ locale-full-rebuild:
 	i18n.in/make-podict.py -a i18n.in -o peppy/i18n i18n.in/messages.pot $(AUX_LOCALE_DIRS)
 
 locale:
-	i18n.in/make-podict.py -a i18n.in -o peppy/i18n i18n.in/messages.pot
+	i18n.in/make-podict.py -f -a i18n.in -o peppy/i18n i18n.in/messages.pot
 
 dist: distdir
 	-chmod -R a+r $(distdir)

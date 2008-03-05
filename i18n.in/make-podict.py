@@ -33,16 +33,17 @@ def normalize(s):
 
 
 class MessageCatalog(object):
-    def __init__(self, template):
+    def __init__(self, template, use_fuzzy=False):
         self.messages = {}
         self.template = {}
         self.encoding = None
         self.current_encoding = None
         self.loadTemplate(template)
+        self.use_fuzzy = use_fuzzy
     
     def addAlways(self, id, str, fuzzy):
         "Add a non-fuzzy translation to the dictionary."
-        if not fuzzy:
+        if not fuzzy or self.use_fuzzy:
             print ("adding template for %s" % id)
             self.template[id] = True
             if str:
@@ -58,7 +59,7 @@ class MessageCatalog(object):
                 if not self.encoding:
                     self.encoding = self.current_encoding
             
-        if not fuzzy and str:
+        if str and (not fuzzy or self.use_fuzzy):
             if id in self.template and id not in self.messages:
                 print ("adding translation for %s" % id)
                 if self.current_encoding != self.encoding:
@@ -295,6 +296,8 @@ if __name__ == "__main__":
                       default='', help="process all po files in this directory as locales to be generated")
     parser.add_option("-c", action="store", dest="canonical",
                       default=None, help="canonical name of the locale")
+    parser.add_option("-f", action="store_true", dest="fuzzy",
+                      default=False, help="use fuzzy strings")
     parser.add_option("-o", action="store", dest="output",
                       default=None, help="output file or directory")
     parser.add_option("-s", action="store_true", dest="system",
@@ -318,7 +321,7 @@ if __name__ == "__main__":
             if canonical.startswith('peppy-'):
                 canonical = canonical[6:]
             print("Processing locale %s" % canonical)
-            po = MessageCatalog(args[0])
+            po = MessageCatalog(args[0], use_fuzzy=options.fuzzy)
             po.addFile(file)
             for pofile in args[1:]:
                 print("checking %s" % pofile)
@@ -338,7 +341,7 @@ if __name__ == "__main__":
             fh.write("    import %s\n" % catalog)
 
     elif options.canonical:
-        po = MessageCatalog(args[0])
+        po = MessageCatalog(args[0], use_fuzzy=options.fuzzy)
         for pofile in args[1:]:
             print("checking %s" % pofile)
             if os.path.isdir(pofile):

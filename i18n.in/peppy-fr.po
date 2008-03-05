@@ -5,14 +5,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-19 02:18+0000\n"
-"PO-Revision-Date: 2008-02-26 09:55+0000\n"
+"POT-Creation-Date: 2008-02-27 17:36+0000\n"
+"PO-Revision-Date: 2008-03-04 18:01+0000\n"
 "Last-Translator: Yves MATHIEU <ymathieu@moulins-vichy.cci.fr>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-02-27 04:44+0000\n"
+"X-Launchpad-Export-Date: 2008-03-04 19:32+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -489,8 +489,9 @@ msgid "Goto Offset..."
 msgstr "Aller à l'offset..."
 
 #: ../peppy/actions/gotoline.py:26
+#, fuzzy
 msgid "Goto a line in the text."
-msgstr ""
+msgstr "Aller à une ligne dans le texte"
 
 #: ../peppy/plugins/hexedit_mode.py:43
 msgid "Goto an offset."
@@ -550,12 +551,14 @@ msgid "Jun"
 msgstr "Juin"
 
 #: ../peppy/mainmenu.py:736
+#, fuzzy
 msgid "Line Endings"
-msgstr ""
+msgstr "Fin de lignes"
 
 #: ../peppy/plugins/buffer_list_mode.py:24
+#, fuzzy
 msgid "List All Documents"
-msgstr ""
+msgstr "Lister tous les documents"
 
 #: ../peppy/plugins/mpd_major_mode.py:413
 #: ../peppy/plugins/mpd_major_mode.py:414
@@ -574,12 +577,14 @@ msgstr "Login"
 #: ../peppy/plugins/mpd_major_mode.py:573
 #: ../peppy/plugins/mpd_major_mode.py:584
 #: ../peppy/plugins/mpd_major_mode.py:595
+#, fuzzy
 msgid "MPD"
-msgstr ""
+msgstr "MPD"
 
 #: ../peppy/plugins/mpd_major_mode.py:428
+#, fuzzy
 msgid "MPD Server..."
-msgstr ""
+msgstr "Serveur MPD..."
 
 #: ../peppy/mainmenu.py:762
 msgid "Major Mode"
@@ -771,8 +776,9 @@ msgid "Open URL Using Minibuffer..."
 msgstr ""
 
 #: ../peppy/plugins/hexedit_mode.py:20
+#, fuzzy
 msgid "Open a Hex Editor"
-msgstr ""
+msgstr "Ouvrir l'éditeur Hexa"
 
 #: ../peppy/mainmenu.py:62 ../peppy/mainmenu.py:562
 msgid "Open a file"
