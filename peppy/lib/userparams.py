@@ -656,8 +656,8 @@ class IndexChoiceParam(Param):
         else:
             self.choices = choices
             self.index_to_value = self.value_to_index = range(0, len(choices))
-        if default is not None and default in self.choices:
-            self.default = self.index_to_value[self.choices.index(default)]
+        if default is not None and default in self.value_to_index:
+            self.default = default
         else:
             self.default = self.index_to_value[0]
 
