@@ -21,6 +21,10 @@ def applyVIMModeline(stc, linelist):
     
     @param stc: styled text control that will be used to apply settings
     @param linelist: list of lines to consider
+    
+    @return: list of settings affected.  Settings changed are reported as the
+    name of the wx.stc method used for each setting, with the 'Set' removed.
+    If the tab width is changed, the setting is reported as 'TabWidth'.
     """
     DBG = True
     sre = re.compile('(?:^|\s+)vim?:(?:\s*set?\s+)?(.+):')
@@ -58,6 +62,7 @@ def applyVIMModeline(stc, linelist):
     
     values = {}
     saw_sw = 0
+    settings_changed = []
     
     for line in linelist:
         if DBG: print "checking line %s" % line
@@ -114,15 +119,21 @@ def applyVIMModeline(stc, linelist):
     if DBG: print values.items()
     if 'hcl' in values:
         stc.SetCaretLineVisible(values['hcl'])
+        settings_changed.append('CaretLineVisible')
     if 'ut' in values:
         stc.SetUseTabs(values['ut'])
         stc.SetProperty("tab.timmy.whinge.level", "10"[bool(values['ut'])])
+        settings_changed.append('UseTabs')
     if 'siw' in values:
         stc.SetIndent(values['siw'])
+        settings_changed.append('Indent')
     if 'stw' in values:
         stc.SetTabWidth(values['stw'])
+        settings_changed.append('TabWidth')
     if 'tw' in values:
         stc.SetEdgeColumn(values['tw'])
+        settings_changed.append('EdgeColumn')
+    return settings_changed
 
 def createVIMModeline(stc):
     entries = []
