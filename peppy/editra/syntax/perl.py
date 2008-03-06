@@ -2,23 +2,21 @@
 # Name: perl.py                                                               #
 # Purpose: Define Perl syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
-# Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# Copyright: (c) 2008 Cody Precord <staff@editra.org>                         #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: perl.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# @summary: Lexer configuration module for Perl.                              #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: perl.py
+AUTHOR: Cody Precord
+
+@summary: Lexer configuration module for Perl.
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: perl.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: perl.py 51861 2008-02-17 13:14:01Z CJP $"
+__revision__ = "$Revision: 51861 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -74,7 +72,7 @@ SYNTAX_ITEMS = [ ('STC_PL_DEFAULT', 'default_style'),
                  ('STC_PL_LONGQUOTE', 'default_style'), # STYLE ME
                  ('STC_PL_NUMBER', 'number_style'),
                  ('STC_PL_OPERATOR', 'operator_style'),
-                 ('STC_PL_POD', 'default_style'), #STYLE ME
+                 ('STC_PL_POD', 'comment_style'),
                  ('STC_PL_PREPROCESSOR',  'pre_style' ),
                  ('STC_PL_PUNCTUATION', 'default_style'), # STYLE ME
                  ('STC_PL_REGEX', 'regex_style'),

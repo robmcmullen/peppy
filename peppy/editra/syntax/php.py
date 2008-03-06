@@ -3,22 +3,20 @@
 # Purpose: Define PHP syntax for highlighting and other features              #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: php.py                                                                #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# @summary: Lexer configuration module for PHP.                               #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: php.py                                                                
+AUTHOR: Cody Precord                                                        
+                                                                         
+@summary: Lexer configuration module for PHP.                               
+                                                                         
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: php.py 49393 2007-10-24 13:46:17Z CJP $"
-__revision__ = "$Revision: 49393 $"
+__svnid__ = "$Id: php.py 52279 2008-03-03 09:00:42Z CJP $"
+__revision__ = "$Revision: 52279 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -438,12 +436,11 @@ def Properties(lang_id=0):
 def CommentPattern(lang_id=0):
     """Returns a list of characters used to comment a block of code
     @param lang_id: used to select a specific subset of comment pattern(s)
-    @todo: currently unsupported because of difficulties due to having
-           other inline code such as html that require different
+    @note: assuming pure php code for comment character(s)
 
     """
     if lang_id == synglob.ID_LANG_PHP:
-        return list()
+        return [u'//']
     else:
         return list()
 

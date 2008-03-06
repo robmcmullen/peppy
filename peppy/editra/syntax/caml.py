@@ -2,26 +2,24 @@
 # Name: caml.py                                                               #
 # Purpose: Define Caml syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
-# Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# Copyright: (c) 2008 Cody Precord <staff@editra.org>                         #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: caml.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for                                              #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: caml.py
+AUTHOR: Cody Precord
+
+SUMMARY:
+Lexer configuration module for Caml
+
+@todo:
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: caml.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: caml.py 52101 2008-02-26 08:12:33Z CJP $"
+__revision__ = "$Revision: 52101 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -59,7 +57,7 @@ SYNTAX_ITEMS = [('STC_CAML_CHAR', 'char_style'),
                 ('STC_CAML_NUMBER', 'number_style'),
                 ('STC_CAML_OPERATOR', 'operator_style'),
                 ('STC_CAML_STRING', 'string_style'),
-                ('STC_CAML_TAGNAME', 'directive_style')] #STYLE ME]
+                ('STC_CAML_TAGNAME', 'directive_style')] #STYLE ME
 
 #---- Extra Properties ----#
 FOLD = ('fold', '1')

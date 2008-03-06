@@ -9,8 +9,21 @@ from peppy.editra import *
 import peppy.editra.util as util
 from peppy.debug import *
 
+class WorkaroundSyntaxMgr(syntax.SyntaxMgr):
+    def IsModLoaded(self, modname):
+        """Workaround for problem in Editra syntax manager.
+        """
+        # Editra code checks for modname in sys.modules as well, but this fails
+        # if the language you're loading happens to have the same module name
+        # as a builtin module.  For instance, this fails with 'xml' if you
+        # have previously imported the python xml module
+        if modname in self._loaded:
+            return True
+        else:
+            return False
+    
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
-    _synmgr = syntax.SyntaxMgr()
+    _synmgr = WorkaroundSyntaxMgr()
     
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
@@ -102,12 +115,16 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         # list supported by that name.  If the peppy keyword exists in this
         # dictionary, we can directly find the filename extensions.
         ext = ""
+        #dprint("before: %s" % lang)
+        #dprint(self._synmgr._extreg)
         for guess in [lang, lang.replace('_', ' ')]:
+            #dprint(guess)
             if guess in self._synmgr._extreg:
                 ext = self._synmgr._extreg[guess][0]
                 break
         if not ext:
             ext = lang
+        #dprint("after: %s" % ext)
         syn_data = self._synmgr.SyntaxData(ext)
         return syn_data
 
@@ -119,6 +136,19 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             #self.LOG("[stc] [exception] No Extra Properties to Set")
             props = []
         return props
+    
+    def NullLexer(self):
+        self.SetStyleBits(5)
+        self.SetIndentationGuides(False)
+        self.SetLexer(wx.stc.STC_LEX_NULL)
+        self.ClearDocumentStyle()
+        self.UpdateBaseStyles()
+        self.SetComments()
+        
+        # Make all styles appear as strings for spelling purposes
+        self.isStyleString = self._alwaysStyleString
+        
+        self.LOG("NULL!!!!")
 
     def ConfigureLexer(self, lang):
         """Sets Lexer and Lexer Keywords for the specifed file extension
@@ -135,6 +165,8 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         except KeyError:
             self.LOG("[stc][err] Failed to get Lang Id from Syntax package")
             self.lang_id = 0
+            self.NullLexer()
+            return
 
         lexer = syn_data[syntax.LEXER]
         self.LOG("lexer = %s" % lexer)
@@ -142,17 +174,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         if lexer in [ wx.stc.STC_LEX_HTML, wx.stc.STC_LEX_XML]:
             self.SetStyleBits(7)
         elif lexer == wx.stc.STC_LEX_NULL:
-            self.SetStyleBits(5)
-            self.SetIndentationGuides(False)
-            self.SetLexer(lexer)
-            self.ClearDocumentStyle()
-            self.UpdateBaseStyles()
-            self.SetComments()
-            
-            # Make all styles appear as strings for spelling purposes
-            self.isStyleString = self._alwaysStyleString
-            
-            self.LOG("NULL!!!!")
+            self.NullLexer()
             return True
         else:
             self.SetStyleBits(5)

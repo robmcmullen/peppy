@@ -32,8 +32,8 @@ objects such as the Extension Register.
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: syntax.py 50787 2007-12-18 07:45:00Z CJP $"
-__revision__ = "$Revision: 50787 $"
+__svnid__ = "$Id: syntax.py 52201 2008-02-29 22:34:06Z CJP $"
+__revision__ = "$Revision: 52201 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -159,9 +159,12 @@ class SyntaxMgr(object):
         if not self._config or not os.path.exists(self._config):
             return False
         path = os.path.join(self._config, self._extreg.config)
-        file_h = file(path, "wb")
-        file_h.write(str(self._extreg))
-        file_h.close()
+        try:
+            file_h = open(path, "wb")
+            file_h.write(str(self._extreg))
+            file_h.close()
+        except IOError:
+            return False
         return True
 
     def SyntaxData(self, ext):
@@ -235,7 +238,7 @@ def GenFileFilters():
         tmp = u" (%s)|%s|" % (f_dict[key][1:], f_dict[key][1:])
         filters.append(key + tmp)
     filters.sort()
-    filters.insert(0, u"All Files (*.*)|*.*|")
+    filters.insert(0, u"All Files (*)|*|")
     filters[-1] = filters[-1][:-1] # IMPORTANT trim last '|' from item in list
     return filters
 
@@ -277,7 +280,8 @@ def GetExtFromId(ext_id):
 
     """
     extreg = ExtensionRegister()
-    ftype = synglob.ID_MAP.get(ext_id, synglob.ID_MAP[synglob.ID_LANG_TXT])
+    ftype = synglob.GetDescriptionFromId(ext_id)
+    print "HELLO", ftype
     return extreg[ftype][0]
 
 def GetIdFromExt(ext):

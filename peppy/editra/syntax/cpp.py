@@ -18,8 +18,8 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: cpp.py 49417 2007-10-25 08:03:01Z CJP $"
-__revision__ = "$Revision: 49417 $"
+__svnid__ = "$Id: cpp.py 52102 2008-02-26 08:14:04Z CJP $"
+__revision__ = "$Revision: 52102 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -31,7 +31,7 @@ import synglob
 
 # C Keywords
 C_KEYWORDS = ("goto break return continue asm case default if else switch "
-              "while for do sizeof typeof ")
+              "while for do sizeof typeof")
 
 # C Types/Structures/Storage Classes
 C_TYPES = ("int long short char void signed unsigned float double "
@@ -66,6 +66,10 @@ CPP_KEYWORDS = ("new delete this friend using throw try catch opperator "
 # CPP Type/Structure/Storage Class Extensions
 CPP_TYPES = ("public protected private inline virtual explicit export bool "
              "wchar_t mutable class typename template namespace ")
+
+# Objective C
+OBJC_KEYWORDS = ("@interface @implementation @end self super false true")
+OBJC_TYPES = ("id")
 
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_C_DEFAULT', 'default_style'),
@@ -110,6 +114,11 @@ def Keywords(lang_id=0):
     if lang_id == synglob.ID_LANG_CPP:
         kw1_str.append(CPP_KEYWORDS)
         kw2_str.append(CPP_TYPES)
+    elif lang_id == synglob.ID_LANG_OBJC:
+        kw1_str.append(OBJC_KEYWORDS)
+        kw2_str.append(OBJC_TYPES)
+    else:
+        pass
     keywords.append((0, " ".join(kw1_str)))
     keywords.append((1, " ".join(kw2_str)))
     keywords.append(DOC_KEYWORDS)
@@ -120,7 +129,9 @@ def SyntaxSpec(lang_id=0):
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id in [ synglob.ID_LANG_C, synglob.ID_LANG_CPP ]:
+    if lang_id in [ synglob.ID_LANG_C,
+                    synglob.ID_LANG_CPP,
+                    synglob.ID_LANG_OBJC ]:
         return SYNTAX_ITEMS
     else:
         return list()
@@ -130,7 +141,9 @@ def Properties(lang_id=0):
     @param lang_id: used to select a specific set of properties
 
     """
-    if lang_id in [ synglob.ID_LANG_C, synglob.ID_LANG_CPP ]:
+    if lang_id in [ synglob.ID_LANG_C,
+                    synglob.ID_LANG_CPP,
+                    synglob.ID_LANG_OBJC ]:
         return [FOLD, FOLD_PRE]
     else:
         return list()
@@ -140,7 +153,7 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_CPP:
+    if lang_id in [ synglob.ID_LANG_CPP, synglob.ID_LANG_OBJC ]:
         return [u'//']
     else:
         return [u'/*', u'*/']

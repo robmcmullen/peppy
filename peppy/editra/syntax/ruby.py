@@ -19,8 +19,8 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ruby.py 49393 2007-10-24 13:46:17Z CJP $"
-__revision__ = "$Revision: 49393 $"
+__svnid__ = "$Id: ruby.py 51538 2008-02-04 07:59:49Z CJP $"
+__revision__ = "$Revision: 51538 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -31,9 +31,9 @@ import synglob
 
 # Ruby Keywords
 RUBY_KW = (0, "__FILE__ and def end in or self unless __LINE__ begin defined? "
-              "ensure module redo super until BEGIN break do false next rescue "
-              "then when END case else for nil retry true while alias class "
-              "elsif if not return undef yieldr puts")
+              "ensure module redo super until BEGIN break do false next "
+              "require rescue then when END case else for nil retry true while "
+              "alias class elsif if not return undef yieldr puts")
 
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_RB_BACKTICKS', 'scalar_style'),

@@ -6,16 +6,25 @@
 #                                                                             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
+"""
+FILE: synextreg.py
+LANGUAGE: Python
+
+This module defines all supported language/filetype indentifiers and an
+extension register for mapping file extensions to filetypes.
+
+@see: synglob.py for more details on how this data is used
+
+"""
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synextreg.py 51489 2008-02-01 10:17:24Z CJP $"
-__revision__ = "$Revision: 51489 $"
+__svnid__ = "$Id: synextreg.py 52177 2008-02-28 12:02:25Z CJP $"
+__revision__ = "$Revision: 52177 $"
 
 #-----------------------------------------------------------------------------#
-
 import os
 
 #-----------------------------------------------------------------------------#
@@ -69,6 +78,8 @@ ID_LANG_APACHE = _NewId()
 LANG_APACHE = u'Apache Conf'
 
 # Use LEX_CPP
+ID_LANG_AS = _NewId()
+LANG_AS = u'ActionScript'
 ID_LANG_C    = _NewId()
 LANG_C = u'C'
 ID_LANG_CPP  = _NewId()
@@ -85,6 +96,8 @@ ID_LANG_HAXE = _NewId()
 LANG_HAXE = u'HaXe'
 ID_LANG_JAVA = _NewId()
 LANG_JAVA = u'Java'
+ID_LANG_OBJC = _NewId()
+LANG_OBJC = u'Objective C'
 ID_LANG_PIKE = _NewId()
 LANG_PIKE = u'Pike'
 
@@ -148,6 +161,8 @@ LANG_KIX = u'Kix'
 # Use LEX_LISP
 ID_LANG_LISP = _NewId()
 LANG_LISP = u'Lisp'
+ID_LANG_SCHEME = _NewId()
+LANG_SCHEME = u'Scheme'
 
 # Use LEX_LOUT
 ID_LANG_LOUT = _NewId()
@@ -243,11 +258,12 @@ LANG_YAML = u'YAML'
 
 #---- End Language Identifier Keys ----#
 
-# Default extensions to file type map
+# Default extensions to file type mapping
 EXT_MAP = {
            '68k'                : LANG_68K,
            'ada adb ads a'      : LANG_ADA,
            'conf htaccess'      : LANG_APACHE,
+           'as asc mx'          : LANG_AS,
            'bsh sh configure'   : LANG_BASH,
            'bat cmd'            : LANG_BATCH,
            'boo'                : LANG_BOO,
@@ -283,10 +299,11 @@ EXT_MAP = {
            'lua'                : LANG_LUA,
            'mak makefile'       : LANG_MAKE,
            'asm masm'           : LANG_MASM,
-           'm matlab'           : LANG_MATLAB,
+           'matlab'             : LANG_MATLAB,
            'mssql'              : LANG_MSSQL,
            'nasm'               : LANG_NASM,
            'nsi nsh'            : LANG_NSIS,
+           'mm m'               : LANG_OBJC,
            'oct octave'         : LANG_OCTAVE,
            'dfm dpk dpr inc p pas pp' : LANG_PASCAL,
            'cgi pl pm pod'      : LANG_PERL,
@@ -297,6 +314,7 @@ EXT_MAP = {
            'ai ps'              : LANG_PS,
            'py pyw python'      : LANG_PYTHON,
            'rb rbw rbx'         : LANG_RUBY,
+           'scm smd ss'         : LANG_SCHEME,
            'sql'                : LANG_SQL,
            'st'                 : LANG_ST,
            'itcl tcl tk'        : LANG_TCL,

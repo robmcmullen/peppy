@@ -2,26 +2,24 @@
 # Name: inno.py                                                               #
 # Purpose: Syntax configuration module for Inno Setup Scripts                 #
 # Author: Cody Precord <cprecord@editra.org>                                  #
-# Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# Copyright: (c) 2008 Cody Precord <staff@editra.org>                         #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: inno.py                                                               #
-# AUTHOR: Cody Preord                                                         #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for Inno Setup Scripts                           #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: inno.py
+AUTHOR: Cody Preord
+
+SUMMARY:
+Lexer configuration module for Inno Setup Scripts
+
+@todo:
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: inno.py 49389 2007-10-24 08:45:21Z CJP $"
-__revision__ = "$Revision: 49389 $"
+__svnid__ = "$Id: inno.py 51954 2008-02-21 08:27:57Z CJP $"
+__revision__ = "$Revision: 51954 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
