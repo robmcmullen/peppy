@@ -32,14 +32,13 @@ objects such as the Extension Register.
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: syntax.py 52201 2008-02-29 22:34:06Z CJP $"
-__revision__ = "$Revision: 52201 $"
+__svnid__ = "$Id: syntax.py 52351 2008-03-06 08:36:41Z CJP $"
+__revision__ = "$Revision: 52351 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
 import wx
 import os
-import sys
 import synglob
 
 #-----------------------------------------------------------------------------#
@@ -61,6 +60,7 @@ COMMENT    = 5    # Gets the comment characters pattern
 _ = wx.GetTranslation
 #-----------------------------------------------------------------------------#
 
+# Needed by other modules that use this api
 from synextreg import ExtensionRegister, GetFileExtensions
 
 #-----------------------------------------------------------------------------#
@@ -129,7 +129,7 @@ class SyntaxMgr(object):
         @param modname: name of module to lookup
 
         """
-        if modname in sys.modules or modname in self._loaded:
+        if modname in self._loaded:
             return True
         else:
             return False

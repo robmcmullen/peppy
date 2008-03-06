@@ -9,21 +9,8 @@ from peppy.editra import *
 import peppy.editra.util as util
 from peppy.debug import *
 
-class WorkaroundSyntaxMgr(syntax.SyntaxMgr):
-    def IsModLoaded(self, modname):
-        """Workaround for problem in Editra syntax manager.
-        """
-        # Editra code checks for modname in sys.modules as well, but this fails
-        # if the language you're loading happens to have the same module name
-        # as a builtin module.  For instance, this fails with 'xml' if you
-        # have previously imported the python xml module
-        if modname in self._loaded:
-            return True
-        else:
-            return False
-    
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
-    _synmgr = WorkaroundSyntaxMgr()
+    _synmgr = syntax.SyntaxMgr()
     
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
