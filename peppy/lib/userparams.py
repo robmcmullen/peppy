@@ -1336,14 +1336,14 @@ class ClassPrefs(object):
         if not hasattr(self, 'locals'):
             raise AttributeError("local copy of classprefs doesn't exist in %s!" % self)
         hier = self.classprefs._getMRO()
-        dprint(hier)
+        #dprint(hier)
         updated = {}
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
             for param in cls.default_classprefs:
                 if param.keyword == keyword:
-                    dprint("found %s in %s" % (param.keyword, cls))
+                    #dprint("found %s in %s" % (param.keyword, cls))
                     return param
         raise IndexError("keyword %s not found in default_classprefs in any class in the MRO of %s" % (param.keyword, self))
 
