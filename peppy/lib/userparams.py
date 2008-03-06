@@ -1319,6 +1319,33 @@ class ClassPrefs(object):
                 if param.local:
                     #dprint("setting classpref %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
                     self.classprefs._set(param.keyword, getattr(self.locals, param.keyword))
+    
+    def classprefsFindParam(self, keyword):
+        """Find the Param instance corresponding to the keyword.
+        
+        Search each default_classprefs going up the class hierarchy for a param
+        with the specified keyword.
+        
+        This currently uses an inefficient linear search, so if this is called
+        a lot, it will probably be slow.
+        
+        @param keyword: string to search for
+        @return: param instance
+        @raises: IndexError if not found
+        """
+        if not hasattr(self, 'locals'):
+            raise AttributeError("local copy of classprefs doesn't exist in %s!" % self)
+        hier = self.classprefs._getMRO()
+        dprint(hier)
+        updated = {}
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            for param in cls.default_classprefs:
+                if param.keyword == keyword:
+                    dprint("found %s in %s" % (param.keyword, cls))
+                    return param
+        raise IndexError("keyword %s not found in default_classprefs in any class in the MRO of %s" % (param.keyword, self))
 
 
 class PrefPanel(ScrolledPanel, debugmixin):
@@ -1786,6 +1813,8 @@ if __name__ == "__main__":
     print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
     print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
     print
+    
+    t1.classprefsFindParam('testbase1')
 
     app = wx.PySimpleApp()
 

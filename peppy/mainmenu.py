@@ -989,7 +989,8 @@ class MainMenu(IPeppyPlugin):
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
             return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
-                    ViewEOL, IndentationGuides, CaretLineHighlight]
+                    ViewEOL, IndentationGuides, CaretLineHighlight, CaretWidth,
+                    ViewWhitespace, LongLineIndicator, TabHighlight]
         elif issubclass(mode.__class__, DiredMode):
             return [
                 DiredRefresh,

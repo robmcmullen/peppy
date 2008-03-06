@@ -52,6 +52,41 @@ class FundamentalSettingToggle(ToggleAction):
         setattr(self.mode.locals, self.local_setting, not value)
         self.mode.applyDefaultSettings()
 
+class FundamentalRadioToggle(RadioAction):
+    local_setting = None
+
+    text_list = None
+    value_list = None
+
+    def getValue(self):
+        return getattr(self.mode.locals, self.local_setting)
+    
+    def getChoices(self):
+        param = self.mode.classprefsFindParam(self.local_setting)
+        cls = self.__class__
+        cls.text_list = param.choices
+        if hasattr(param, 'index_to_value'):
+            # handle IndexChoiceParam
+            cls.value_list = [param.index_to_value[i] for i in range(len(param.choices))]
+        else:
+            # handle KeyedIndexChoiceParam
+            cls.value_list = param.keys
+
+    def getIndex(self):
+        if self.text_list is None:
+            self.getChoices()
+        return self.value_list.index(self.getValue())
+                                           
+    def getItems(self):
+        if self.text_list is None:
+            self.getChoices()
+        return self.text_list
+
+    def action(self, index=-1, multiplier=1):
+        value = self.value_list[index]
+        setattr(self.mode.locals, self.local_setting, value)
+        self.mode.applyDefaultSettings()
+
 class LineNumbers(FundamentalSettingToggle):
     local_setting = 'line_numbers'
     alias = "line-numbers"
@@ -90,15 +125,35 @@ class ViewEOL(FundamentalSettingToggle):
     tooltip = "Toggle display of line-end (cr/lf) characters"
     default_menu = ("View", 305)
 
+class ViewWhitespace(FundamentalRadioToggle):
+    local_setting = 'view_whitespace'
+    name = "Show Whitespace"
+    default_menu = ("View", 305.5)
+
+class LongLineIndicator(FundamentalRadioToggle):
+    local_setting = 'edge_indicator'
+    name = "Show Long Lines"
+    default_menu = ("View", 305.7)
+
 class IndentationGuides(FundamentalSettingToggle):
     local_setting = 'indentation_guides'
     name = "Indentation Guides"
     default_menu = ("View", 306)
 
+class TabHighlight(FundamentalRadioToggle):
+    local_setting = 'tab_highlight_style'
+    name = "Show Tabs"
+    default_menu = ("View", 305.7)
+
+class CaretWidth(FundamentalRadioToggle):
+    local_setting = 'caret_width'
+    name = "Caret Width"
+    default_menu = ("View", 310)
+
 class CaretLineHighlight(FundamentalSettingToggle):
     local_setting = 'caret_line_highlight'
     name = "Highlight Caret Line"
-    default_menu = ("View", 307)
+    default_menu = ("View", 311)
 
 
 class FoldingReindentMixin(object):
@@ -269,7 +324,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                                (wx.stc.STC_EDGE_BACKGROUND, 'background'),
                                ], 'line', help='Long line indication mode', local=True),
         IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking', local=True),
-        IntParam('caret_width', 2, help='Caret width in pixels', local=True),
+        IndexChoiceParam('caret_width',
+                         [(1, '1 Pixel'), (2, '2 Pixels'), (3, '3 Pixels'),],
+                         2, help='Caret width in pixels', local=True),
         BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?', local=True),
         BoolParam('view_eol', False, 'Show line-ending cr/lf characters?', local=True),
         KeyedIndexChoiceParam('view_whitespace',
@@ -423,6 +480,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.setCaretStyle()
         self.setViewEOL()
         self.setWhitespace()
+        
+        # Added call to colourise because some parameter might have changed
+        # that requires a styling update.  E.g.  if the tab highlighting style
+        # has changed.
+        self.Colourise(0, self.GetTextLength())
 
     def setWordWrap(self, enable=None, style=None):
         if enable is not None:
