@@ -25,10 +25,10 @@ class HSIPlugin(IPeppyPlugin):
                 fh = vfs.open(url)
                 assert self.dprint("checking for cube handler: %s" % dir(fh))
                 if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
-                    return hsi_major_mode.HSIMode
+                    return peppy.hsi.hsi_major_mode.HSIMode
         except:
                 dprint("FAILED Loading hsi_major_mode")
-                pass
+                raise
         return None
     
     def getCompatibleMajorModes(self, stc_class):
