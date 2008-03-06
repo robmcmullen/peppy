@@ -133,6 +133,13 @@ class Cube(object):
         # have already been multiplied.  To get values in the range of
         # 0.0 - 1.0, you must B{divide} by this value.
         self.scale_factor=None
+        
+        # Georeferencing information
+        self.utm_zone = -1
+        self.utm_origin = (0, 0)
+        self.utm_pixel_size = (0, 0)
+        self.utm_easting = 0
+        self.utm_northing = 0
 
         self.description=''
 
@@ -155,6 +162,8 @@ class Cube(object):
         data_offset=%d header_offset=%d file_offset=%d data_type=%s
         samples=%d lines=%d bands=%d data_bytes=%d
         interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,self.file_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
+        if self.utm_zone >= 0:
+            s.write("        utm: zone=%s easting=%f northing=%f\n" % (self.utm_zone, self.utm_easting, self.utm_northing))
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
         # s.write("        wavelengths: %s\n" % self.wavelengths)

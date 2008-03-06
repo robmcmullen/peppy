@@ -10,6 +10,7 @@ data contained in the corresponding data file.
 import os,os.path,sys,re,csv,textwrap
 
 import peppy.vfs as vfs
+from peppy.debug import *
 
 import numpy
 
@@ -98,7 +99,8 @@ class Header(dict,MetadataMixin):
         self['interleave']="bil"
 
         self.strings=['description']
-        self.lists=['wavelength','fwhm','sigma','band names','default bands','bbl']
+        self.lists=['wavelength','fwhm','sigma','band names','default bands',
+                    'bbl', 'map info']
         self.outputorder=['description','samples','lines','bands','byte order','interleave']
 
         # To convert from python dict to object attributes, here's a
@@ -323,6 +325,16 @@ class Header(dict,MetadataMixin):
 ##                    dprint(" after: cube.%s = %s" % (item_id,str(getattr(cube,item_id,None))))
 ##                else:
 ##                    dprint(" item %s not found in header." % item_txt)
+        if 'map info' in self:
+            dprint("found map info: %s" % self['map info'])
+            # map info looks like this:
+            # UTM, 1.000, 1.000, 469734.460, 4429870.640, 3.7700000000e+00, 3.7700000000e+00, 13, North, WGS-84, units=Meters}
+            utm = self['map info'].split(',')
+            cube.utm_zone = int(float(utm[7]))
+            cube.utm_origin = (int(float(utm[1])) - 1, int(float(utm[2])) - 1)
+            cube.utm_easting = float(utm[3])
+            cube.utm_northing = float(utm[4])
+            cube.utm_pixel_size = (float(utm[5]), float(utm[6]))
 
     def getCubeAttributes(self,cube):
         """Create header strings from the attributes in the cube."""
