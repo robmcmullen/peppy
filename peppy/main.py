@@ -329,15 +329,22 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         self.startSplash()
 
-        count = self.countYapsyPlugins() + 7
-        count += self.countImports()
+        self.initPluginManager()
+        count = self.countImports()
+        if count == 0:
+            # only load yapsy plugins if no py2exe plugins
+            count = self.countYapsyPlugins()
+            load_yapsy = True
+        else:
+            load_yapsy = False
+        count += 7
         self.splash.setTicks(count)
         
         self.splash.tick("Loading standard plugins...")
         self.autoloadImports()
         self.splash.tick("Loading setuptools plugins...")
         self.autoloadSetuptoolsPlugins()
-        self.autoloadYapsyPlugins()
+        self.autoloadYapsyPlugins(load_yapsy)
             
         # Now that the remaining plugins and classes are loaded, we
         # can convert the rest of the configuration params
@@ -710,8 +717,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             name = plugin_info.name
         self.splash.tick("Loading %s..." % name)
 
-    def countYapsyPlugins(self):
-        """Autoload plugins from peppy plugins directory.
+    def initPluginManager(self):
+        """Initialize plugin manager and yapsy plugin search path.
 
         All .py files that exist in the peppy.plugins directory are
         loaded here.  Currently uses a naive approach by loading them
@@ -731,16 +738,14 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             plugin_info_ext="peppy-plugin",
             )
 
-        # To remove the dependency on wx in URLHandler, instead of it
-        # using wx.GetApp().plugin_manager in URLHandler, we
-        # explicitly set URLHandler's plugin manager
-        #URLHandler.setPluginManager(self.plugin_manager)
-        
+    def countYapsyPlugins(self):
+        """Count all yapsy plugins from all plugin directories.
+        """
         # count the potential plugins that were be found
         count = self.plugin_manager.locatePlugins()
         return count
         
-    def autoloadYapsyPlugins(self):
+    def autoloadYapsyPlugins(self, load=True):
         """Autoload plugins from peppy plugins directory.
 
         All .py files that exist in the peppy.plugins directory are
@@ -753,8 +758,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # IPeppyPlugin, and if you wait till after plugins are loaded
         # from the filesystem, two copies will exist.
         self.plugin_manager.activateBuiltins()
-        
-        self.plugin_manager.loadPlugins(self.gaugeCallback)
+        if load:
+            self.plugin_manager.loadPlugins(self.gaugeCallback)
         
     def activatePlugins(self):
         cats = self.plugin_manager.getCategories()
