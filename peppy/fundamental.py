@@ -41,6 +41,65 @@ class SpellingSuggestionAction(ListAction):
         s.SetTargetEnd(c[2])
         s.ReplaceTarget(self.words[index])
 
+class FundamentalSettingToggle(ToggleAction):
+    local_setting = None
+
+    def isChecked(self):
+        return getattr(self.mode.locals, self.local_setting)
+    
+    def action(self, index=-1, multiplier=1):
+        value = self.isChecked()
+        setattr(self.mode.locals, self.local_setting, not value)
+        self.mode.applyDefaultSettings()
+
+class LineNumbers(FundamentalSettingToggle):
+    local_setting = 'line_numbers'
+    alias = "line-numbers"
+    name = "&Line Numbers"
+    tooltip = "Toggle line numbers in this view"
+    default_menu = ("View", -300)
+
+class Wrapping(FundamentalSettingToggle):
+    local_setting = 'wrapping'
+    alias = "wrapping"
+    name = "&Line Wrapping"
+    tooltip = "Toggle line wrap in this view"
+    default_menu = ("View", 301)
+
+class WordWrap(FundamentalSettingToggle):
+    local_setting = 'word_wrap'
+    alias = "word-wrap"
+    name = "&Wrap Words"
+    tooltip = "Break wrapped lines at word boundaries"
+    default_menu = ("View", 302)
+
+    def isEnabled(self):
+        return self.mode.locals.wrapping
+
+class Folding(FundamentalSettingToggle):
+    local_setting = 'folding'
+    alias = "code-folding"
+    name = "&Folding"
+    tooltip = "Toggle folding in this view"
+    default_menu = ("View", 304)
+
+class ViewEOL(FundamentalSettingToggle):
+    local_setting = 'view_eol'
+    alias = "view-eol"
+    name = "EOL Characters"
+    tooltip = "Toggle display of line-end (cr/lf) characters"
+    default_menu = ("View", 305)
+
+class IndentationGuides(FundamentalSettingToggle):
+    local_setting = 'indentation_guides'
+    name = "Indentation Guides"
+    default_menu = ("View", 306)
+
+class CaretLineHighlight(FundamentalSettingToggle):
+    local_setting = 'caret_line_highlight'
+    name = "Highlight Caret Line"
+    default_menu = ("View", 307)
+
 
 class FoldingReindentMixin(object):
     """Experimental class to use STC Folding to reindent a line.
@@ -186,37 +245,38 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     default_classprefs = (
         StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing\nEditra style sheet information.  Used to override\ndefault styles with custom styles for this mode.'),
         BoolParam('use_tab_characters', False,
-                  'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.'),
-        IntParam('tab_size', 4, 'Number of spaces in each tab'),
+                  'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.', local=True),
+        IntParam('tab_size', 8, 'Number of spaces in each expanded tab', local=True),
+        IntParam('indent_size', 4, 'Number of spaces in each indent level', local=True),
         IndexChoiceParam('tab_highlight_style',
                          ['ignore', 'inconsistent', 'mixed', 'spaces are bad', 'tabs are bad'],
-                         4, 'Highlight bad intentation'),
-        BoolParam('line_numbers', True, 'Show line numbers in the margin?'),
-        IntParam('line_number_margin_width', 40, 'Margin width in pixels'),
-        BoolParam('symbols', False, 'Show symbols margin'),
-        IntParam('symbols_margin_width', 16, 'Symbols margin width in pixels'),
-        BoolParam('folding', False, 'Show the code folding margin?'),
-        IntParam('folding_margin_width', 16, 'Code folding margin width in pixels'),
-        BoolParam('wrapping', False, 'True: use line wrapping\nFalse: show horizontal scrollbars'),
-        BoolParam('word_wrap', False, 'True: wrap lines at word boundries\nFalse: wrap at right margin'),
-        BoolParam('backspace_unindents', True),
-        BoolParam('indentation_guides', True, 'Show indentation guides at multiples of the tab_size'),
-        IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.\nNote: uses the BRACELIGHT color to highlight'),
-        IntParam('edge_column', 80, 'Column at which to show the edge (i.e. long line) indicator'),
+                         4, 'Highlight bad intentation', local=True),
+        BoolParam('line_numbers', True, 'Show line numbers in the margin?', local=True),
+        IntParam('line_number_margin_width', 40, 'Margin width in pixels', local=True),
+        BoolParam('symbols', False, 'Show symbols margin', local=True),
+        IntParam('symbols_margin_width', 16, 'Symbols margin width in pixels', local=True),
+        BoolParam('folding', False, 'Show the code folding margin?', local=True),
+        IntParam('folding_margin_width', 16, 'Code folding margin width in pixels', local=True),
+        BoolParam('wrapping', False, 'True: use line wrapping\nFalse: show horizontal scrollbars', local=True),
+        BoolParam('word_wrap', False, 'True: wrap lines at word boundries\nFalse: wrap at right margin', local=True),
+        BoolParam('backspace_unindents', True, local=True),
+        BoolParam('indentation_guides', True, 'Show indentation guides at multiples of the indent_size', local=True),
+        IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.\nNote: uses the BRACELIGHT color to highlight', local=True),
+        IntParam('edge_column', 80, 'Column at which to show the edge (i.e. long line) indicator', local=True),
         KeyedIndexChoiceParam('edge_indicator',
                               [(wx.stc.STC_EDGE_NONE, 'none'),
                                (wx.stc.STC_EDGE_LINE, 'line'),
                                (wx.stc.STC_EDGE_BACKGROUND, 'background'),
-                               ], 'line', help='Long line indication mode'),
-        IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking'),
-        IntParam('caret_width', 2, help='Caret width in pixels'),
-        BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?'),
-        BoolParam('view_eol', False, 'Show line-ending cr/lf characters?'),
+                               ], 'line', help='Long line indication mode', local=True),
+        IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking', local=True),
+        IntParam('caret_width', 2, help='Caret width in pixels', local=True),
+        BoolParam('caret_line_highlight', False, help='Highlight the line containing the cursor?', local=True),
+        BoolParam('view_eol', False, 'Show line-ending cr/lf characters?', local=True),
         KeyedIndexChoiceParam('view_whitespace',
                               [(wx.stc.STC_WS_INVISIBLE, 'none'),
                                (wx.stc.STC_WS_VISIBLEALWAYS, 'visible'),
                                (wx.stc.STC_WS_VISIBLEAFTERINDENT, 'after indent'),
-                               ], 'none', help='Visible whitespace mode'),
+                               ], 'none', help='Visible whitespace mode', local=True),
         BoolParam('spell_check', True, 'Spell check the document (if pyenchant\nis available'),
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
         IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file\nto search for vim modeline comments'),
@@ -340,21 +400,20 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.UsePopUp(0)
         
         # turn off symbol margin
-        if self.classprefs.symbols:
-            self.SetMarginWidth(1, self.classprefs.symbols_margin_width)
+        if self.locals.symbols:
+            self.SetMarginWidth(1, self.locals.symbols_margin_width)
         else:
             self.SetMarginWidth(1, 0)
 
         # turn off folding margin
-        if self.classprefs.folding:
-            self.SetMarginWidth(2, self.classprefs.folding_margin_width)
+        if self.locals.folding:
+            self.SetMarginWidth(2, self.locals.folding_margin_width)
         else:
             self.SetMarginWidth(2, 0)
 
         self.SetProperty("fold", "1")
-        self.SetBackSpaceUnIndents(self.classprefs.backspace_unindents)
-        self.SetIndentationGuides(self.classprefs.indentation_guides)
-        self.SetHighlightGuide(self.classprefs.highlight_column)
+        self.SetBackSpaceUnIndents(self.locals.backspace_unindents)
+        self.SetHighlightGuide(self.locals.highlight_column)
 
         self.setWordWrap()
         self.setLineNumbers()
@@ -367,11 +426,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
     def setWordWrap(self, enable=None, style=None):
         if enable is not None:
-            self.classprefs.wrapping = enable
+            self.locals.wrapping = enable
         if style is not None:
-            self.classprefs.word_wrap = style
-        if self.classprefs.wrapping:
-            if self.classprefs.word_wrap:
+            self.locals.word_wrap = style
+        if self.locals.wrapping:
+            if self.locals.word_wrap:
                 self.SetWrapMode(wx.stc.STC_WRAP_WORD)
             else:
                 self.SetWrapMode(wx.stc.STC_WRAP_CHAR)
@@ -381,21 +440,21 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
     def setLineNumbers(self,enable=None):
         if enable is not None:
-            self.classprefs.line_numbers=enable
-        if self.classprefs.line_numbers:
+            self.locals.line_numbers=enable
+        if self.locals.line_numbers:
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-            self.SetMarginWidth(0,  self.classprefs.line_number_margin_width)
+            self.SetMarginWidth(0,  self.locals.line_number_margin_width)
         else:
             self.SetMarginWidth(0,0)
 
     def setFolding(self,enable=None):
         if enable is not None:
-            self.classprefs.folding=enable
-        if self.classprefs.folding:
+            self.locals.folding=enable
+        if self.locals.folding:
             self.SetMarginType(2, wx.stc.STC_MARGIN_SYMBOL)
             self.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
             self.SetMarginSensitive(2, True)
-            self.SetMarginWidth(2, self.classprefs.folding_margin_width)
+            self.SetMarginWidth(2, self.locals.folding_margin_width)
             # Marker definitions from PyPE
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
@@ -431,34 +490,46 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                         self.ToggleFold(lineClicked)
 
     def setTabStyle(self):
-        self.SetIndent(self.classprefs.tab_size)
-        self.SetProperty('tab.timmy.whinge.level', str(self.classprefs.tab_highlight_style))
-        self.SetUseTabs(self.classprefs.use_tab_characters)
+        self.SetIndentationGuides(self.locals.indentation_guides)
+        self.SetIndent(self.locals.indent_size)
+        self.SetTabWidth(self.locals.tab_size)
+        self.SetProperty('tab.timmy.whinge.level', str(self.locals.tab_highlight_style))
+        self.SetUseTabs(self.locals.use_tab_characters)
 
     def setEdgeStyle(self):
-        self.SetEdgeMode(self.classprefs.edge_indicator)
-        if self.classprefs.edge_indicator == wx.stc.STC_EDGE_NONE:
+        self.SetEdgeMode(self.locals.edge_indicator)
+        if self.locals.edge_indicator == wx.stc.STC_EDGE_NONE:
             self.SetEdgeColumn(0)
         else:
-            self.SetEdgeColumn(self.classprefs.edge_column)
+            self.SetEdgeColumn(self.locals.edge_column)
 
     def setCaretStyle(self):
-        self.SetCaretPeriod(self.classprefs.caret_blink_rate)
-        self.SetCaretLineVisible(self.classprefs.caret_line_highlight)
-        self.SetCaretWidth(self.classprefs.caret_width)
+        self.SetCaretPeriod(self.locals.caret_blink_rate)
+        self.SetCaretLineVisible(self.locals.caret_line_highlight)
+        self.SetCaretWidth(self.locals.caret_width)
 
     def setViewEOL(self, enable=None):
         if enable is not None:
-            self.classprefs.view_eol = enable
-        self.SetViewEOL(self.classprefs.view_eol)
+            self.locals.view_eol = enable
+        self.SetViewEOL(self.locals.view_eol)
     
     def setWhitespace(self):
-        self.SetViewWhiteSpace(self.classprefs.view_whitespace)
+        self.SetViewWhiteSpace(self.locals.view_whitespace)
     
     def setEmacsAndVIM(self):
         lines = self.getFileLocalComments()
-        applyVIMModeline(self, lines)
-        #applyEmacsFileLocalSettings(self, text)
+        settings = applyVIMModeline(self, lines)
+        #settings.extend(applyEmacsFileLocalSettings(self, text))
+        mapping = {'Indent': 'indent_size',
+                   'TabWidth': 'tab_size',
+                   'EdgeColumn': 'edge_column',
+                   'CaretLineVisible': 'caret_line_indicator',
+                   }
+        for setting in settings:
+            if setting in mapping:
+                value = getattr(self, "Get%s" % setting)()
+                dprint("Setting %s to %s" % (mapping[setting], value))
+                setattr(self.locals, mapping[setting], value)
 
     def getFileLocalComments(self):
         start = min(self.GetLineCount(), self.classprefs.vim_settings_lines)

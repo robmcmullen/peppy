@@ -13,7 +13,7 @@ from tests.mock_wx import getPlainSTC
 from nose.tools import *
 
 class TestVIM(object):
-    tests = [
+  tests = [
     ('<!-- vim:set ts=2 sts=2 sw=2 tw=0: -->', [('GetTabWidth', 2), ('GetIndent', 2), ('GetEdgeColumn', 0)]),
     ('# vim:set sw=2 et:', [('GetIndent', 2)]),
     ('# vim: sts=4 sw=4 :', [('GetIndent', 4)]),
@@ -29,27 +29,27 @@ class TestVIM(object):
     ('/* vi:set tabstop=4 shiftwidth=4 noexpandtab: */', [('GetTabWidth', 4), ('GetIndent', 4)]),
     ]
 
-    def setUp(self):
-        self.stc = getPlainSTC()
+  def setUp(self):
+    self.stc = getPlainSTC()
         
-    def checkSettings(self, test):
-        lines = test[0]
-        if isinstance(lines, str):
-            lines = [lines]
-        applyVIMModeline(self.stc, lines)
-        for fcn, val in test[1]:
-            eq_((fcn, getattr(self.stc, fcn)()), (fcn, val))
+  def checkSettings(self, test):
+    lines = test[0]
+    if isinstance(lines, str):
+      lines = [lines]
+    applyVIMModeline(self.stc, lines)
+    for fcn, val in test[1]:
+      eq_((fcn, getattr(self.stc, fcn)()), (fcn, val))
 
-    def testSettings(self):
-        for test in self.tests:
-            yield self.checkSettings, test
-    
-    def testCreateModeline(self):
-        applyVIMModeline(self.stc, ['/* vim:set ts=8 sts=4 sw=4 tw=75:'])
-        line = createVIMModeline(self.stc)
-        applyVIMModeline(self.stc, ['vim: set ts=0 sts=0 sw=0 tw=0'])
-        applyVIMModeline(self.stc, [line])
-        eq_(self.stc.GetTabWidth(), 8)
-        eq_(self.stc.GetIndent(), 4)
-        eq_(self.stc.GetEdgeColumn(), 75)
-        
+  def testSettings(self):
+    for test in self.tests:
+      yield self.checkSettings, test
+
+  def testCreateModeline(self):
+    applyVIMModeline(self.stc, ['/* vim:set ts=8 sts=4 sw=4 tw=75:'])
+    line = createVIMModeline(self.stc)
+    applyVIMModeline(self.stc, ['vim: set ts=0 sts=0 sw=0 tw=0'])
+    applyVIMModeline(self.stc, [line])
+    eq_(self.stc.GetTabWidth(), 8)
+    eq_(self.stc.GetIndent(), 4)
+    eq_(self.stc.GetEdgeColumn(), 75)
+

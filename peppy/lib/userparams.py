@@ -225,6 +225,15 @@ class Param(debugmixin):
         else:
             self.enable = True
         
+        # Params marked as 'local' will be placed in the instance's local
+        # namespace as well as in the classprefs.  This means that the
+        # instance can have different values for the local version of the
+        # param as compared to the class-wide version.
+        if 'local' in kwargs:
+            self.local = kwargs['local']
+        else:
+            self.local = False
+        
         # Flag to indicate if any callbacks should be processed.  When the
         # value has been changed programmatically (i.e.  not by the user typing
         # something), it may be desirable to turn off callbacks.  This happens
@@ -1246,7 +1255,7 @@ class PrefsProxy(debugmixin):
 
     def _getMRO(self):
         return [cls for cls in GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]]
-        
+
 
 class ClassPrefsMetaClass(type):
     def __init__(cls, name, bases, attributes):
@@ -1266,6 +1275,11 @@ class ClassPrefsMetaClass(type):
         # Add the prefs class attribute
         cls.classprefs = PrefsProxy(expanded)
 
+
+class LocalPrefs(object):
+    pass
+
+
 class ClassPrefs(object):
     """Base class to extend in order to support class prefs.
 
@@ -1277,6 +1291,35 @@ class ClassPrefs(object):
     #: Sorting weight (from 0 to 1000) if you want to group items out of the
     # ordinary the dictionary sort order
     preferences_sort_weight = 500
+    
+    def classprefsCopyToLocals(self):
+        if not hasattr(self, 'locals'):
+            self.locals = LocalPrefs()
+        hier = self.classprefs._getMRO()
+        #dprint(hier)
+        updated = {}
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            for param in cls.default_classprefs:
+                if param.local:
+                    #dprint("setting instance var %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
+                    setattr(self.locals, param.keyword, self.classprefs._get(param.keyword))
+
+    def classprefsCopyFromLocals(self):
+        if not hasattr(self, 'locals'):
+            raise AttributeError("local copy of classprefs doesn't exist in %s!" % self)
+        hier = self.classprefs._getMRO()
+        #dprint(hier)
+        updated = {}
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            for param in cls.default_classprefs:
+                if param.local:
+                    #dprint("setting classpref %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
+                    self.classprefs._set(param.keyword, getattr(self.locals, param.keyword))
+
 
 class PrefPanel(ScrolledPanel, debugmixin):
     """Panel that shows ui controls corresponding to all preferences
@@ -1666,12 +1709,15 @@ class PrefDialog(wx.Dialog):
 if __name__ == "__main__":
     class Test1(ClassPrefs):
         default_classprefs = (
-            IntParam("test1", 5),
+            IntParam("test1", 5, local=True),
             FloatParam("testfloat", 6.0),
-            IntParam("testbase1", 1),
+            IntParam("testbase1", 1, local=True),
             IntParam("testbase2", 2),
             IntParam("testbase3", 3),
             )
+        
+        def __init__(self):
+            self.classprefsCopyToLocals()
     
     class Test2(Test1):
         default_classprefs = (
@@ -1700,18 +1746,46 @@ if __name__ == "__main__":
     t1 = Test1()
     t2 = Test2()
 
-    print t1.classprefs.test1, t1.classprefs.testbase1
-    print t2.classprefs.test1, t2.classprefs.testbase1
+    print "at initialization"
+    print "t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.testbase1=%s t1.locals.testbase1=%s" % (t1.classprefs.testbase1, t1.locals.testbase1)
+    print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
+    print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
+    print
 
     t1.classprefs.testbase1 = 113
-    
-    print t1.classprefs.test1, t1.classprefs.testbase1
-    print t2.classprefs.test1, t2.classprefs.testbase1
-    
+    t1.locals.test1 = 593
+    print "after setting t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.testbase1=%s t1.locals.testbase1=%s" % (t1.classprefs.testbase1, t1.locals.testbase1)
+    print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
+    print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
+    print
+
+    t1.classprefsCopyToLocals()
+    print "after t1.classprefsCopyToLocals"
+    print "t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.testbase1=%s t1.locals.testbase1=%s" % (t1.classprefs.testbase1, t1.locals.testbase1)
+    print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
+    print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
+    print
+
+    t1.locals.test1 = -888
+    t1.classprefsCopyFromLocals()
+    print "after setting t1.locals.test1=%d and then t1.classprefsCopyFromLocals" % t1.locals.test1
+    print "t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.testbase1=%s t1.locals.testbase1=%s" % (t1.classprefs.testbase1, t1.locals.testbase1)
+    print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
+    print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
+    print
+
     t2.classprefs.testbase1 = 9874
-    
-    print t1.classprefs.test1, t1.classprefs.testbase1
-    print t2.classprefs.test1, t2.classprefs.testbase1
+    print "after setting t2.classprefs.testbase1=%s" % t2.classprefs.testbase1
+    print "t1.classprefs.test1=%s t1.locals.test1=%s" % (t1.classprefs.test1, t1.locals.test1)
+    print "t1.classprefs.testbase1=%s t1.locals.testbase1=%s" % (t1.classprefs.testbase1, t1.locals.testbase1)
+    print "t2.classprefs.test1=%s t2.locals.test1=%s" % (t2.classprefs.test1, t2.locals.test1)
+    print "t2.classprefs.testbase1=%s t2.locals.testbase1=%s" % (t2.classprefs.testbase1, t2.locals.testbase1)
+    print
 
     app = wx.PySimpleApp()
 

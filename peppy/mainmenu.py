@@ -510,77 +510,6 @@ class OpenFundamental(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:demo.txt")
 
-class Wrapping(ToggleAction):
-    alias = "wrapping"
-    name = "&Line Wrapping"
-    tooltip = "Toggle line wrap in this view"
-    default_menu = ("View", 301)
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'setWordWrap')
-
-    def isChecked(self):
-        return self.mode.classprefs.wrapping
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setWordWrap(not self.mode.classprefs.wrapping)
-    
-class WordWrap(ToggleAction):
-    alias = "word-wrap"
-    name = "&Wrap Words"
-    tooltip = "Break wrapped lines at word boundaries"
-    default_menu = ("View", 302)
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'setWordWrap')
-
-    def isEnabled(self):
-        return self.mode.classprefs.wrapping
-
-    def isChecked(self):
-        return self.mode.classprefs.word_wrap
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setWordWrap(style=not self.mode.classprefs.word_wrap)
-    
-class LineNumbers(ToggleAction):
-    alias = "line-numbers"
-    name = "&Line Numbers"
-    tooltip = "Toggle line numbers in this view"
-    default_menu = ("View", -300)
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'setLineNumbers')
-
-    def isChecked(self):
-        return self.mode.classprefs.line_numbers
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setLineNumbers(not self.mode.classprefs.line_numbers)
-
-class Folding(ToggleAction):
-    alias = "code-folding"
-    name = "&Folding"
-    tooltip = "Toggle folding in this view"
-    default_menu = ("View", 304)
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'setFolding')
-
-    def isChecked(self):
-        return self.mode.classprefs.folding
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setFolding(not self.mode.classprefs.folding)
-
 class RunScript(SelectAction):
     alias = "run-script"
     name = "Run"
@@ -759,23 +688,6 @@ class ElectricReturn(TextModificationAction):
         self.mode.electricReturn()
 
 
-class ViewEOL(ToggleAction):
-    alias = "view-eol"
-    name = "EOL Characters"
-    tooltip = "Toggle display of line-end (cr/lf) characters"
-    default_menu = ("View", 305)
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'setViewEOL')
-
-    def isChecked(self):
-        return self.mode.classprefs.view_eol
-    
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s" % (id(self),self.name))
-        self.mode.setViewEOL(not self.mode.classprefs.view_eol)
-    
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
     name = "Line Endings"
     inline = False
@@ -1059,7 +971,7 @@ class MainMenu(IPeppyPlugin):
                 MajorModeSelect, MinorModeShow, SidebarShow,
                 ToolbarShow, 
 
-                EOLModeSelect, Wrapping, WordWrap, LineNumbers, Folding, ViewEOL,
+                EOLModeSelect,
 
                 BufferList, BufferListSort,
 
@@ -1076,7 +988,8 @@ class MainMenu(IPeppyPlugin):
 
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
-            return [WordCount]
+            return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
+                    ViewEOL, IndentationGuides, CaretLineHighlight]
         elif issubclass(mode.__class__, DiredMode):
             return [
                 DiredRefresh,

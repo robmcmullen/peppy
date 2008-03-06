@@ -401,6 +401,9 @@ class MajorMode(ClassPrefs, debugmixin):
     localkeymaps = {}
     
     def __init__(self, parent, wrapper, buffer, frame):
+        # set up the view-local versions of classprefs
+        self.classprefsCopyToLocals()
+        
         self.wrapper = wrapper
         self.buffer = buffer
         self.frame = frame
