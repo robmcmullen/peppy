@@ -41,7 +41,14 @@ class SpellingSuggestionAction(ListAction):
         s.SetTargetEnd(c[2])
         s.ReplaceTarget(self.words[index])
 
-class FundamentalSettingToggle(ToggleAction):
+class ClassprefsTooltipMixin(object):
+    def getTooltip(self, id=None, name=None):
+        if self.tooltip is None:
+            param = self.mode.classprefsFindParam(self.local_setting)
+            self.__class__.tooltip = unicode(_(param.help))
+        return self.tooltip
+
+class FundamentalSettingToggle(ClassprefsTooltipMixin, ToggleAction):
     local_setting = None
 
     def isChecked(self):
@@ -52,7 +59,7 @@ class FundamentalSettingToggle(ToggleAction):
         setattr(self.mode.locals, self.local_setting, not value)
         self.mode.applyDefaultSettings()
 
-class FundamentalRadioToggle(RadioAction):
+class FundamentalRadioToggle(ClassprefsTooltipMixin, RadioAction):
     local_setting = None
 
     text_list = None
@@ -91,21 +98,18 @@ class LineNumbers(FundamentalSettingToggle):
     local_setting = 'line_numbers'
     alias = "line-numbers"
     name = "&Line Numbers"
-    tooltip = "Toggle line numbers in this view"
     default_menu = ("View", -300)
 
 class Wrapping(FundamentalSettingToggle):
     local_setting = 'wrapping'
     alias = "wrapping"
     name = "&Line Wrapping"
-    tooltip = "Toggle line wrap in this view"
     default_menu = ("View", 301)
 
 class WordWrap(FundamentalSettingToggle):
     local_setting = 'word_wrap'
     alias = "word-wrap"
     name = "&Wrap Words"
-    tooltip = "Break wrapped lines at word boundaries"
     default_menu = ("View", 302)
 
     def isEnabled(self):
@@ -115,14 +119,12 @@ class Folding(FundamentalSettingToggle):
     local_setting = 'folding'
     alias = "code-folding"
     name = "&Folding"
-    tooltip = "Toggle folding in this view"
     default_menu = ("View", 304)
 
 class ViewEOL(FundamentalSettingToggle):
     local_setting = 'view_eol'
     alias = "view-eol"
     name = "EOL Characters"
-    tooltip = "Toggle display of line-end (cr/lf) characters"
     default_menu = ("View", 305)
 
 class ViewWhitespace(FundamentalRadioToggle):
@@ -142,7 +144,7 @@ class IndentationGuides(FundamentalSettingToggle):
 
 class TabHighlight(FundamentalRadioToggle):
     local_setting = 'tab_highlight_style'
-    name = "Show Tabs"
+    name = "Show Indentation"
     default_menu = ("View", 305.7)
 
 class CaretWidth(FundamentalRadioToggle):
@@ -298,32 +300,32 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
     #: Default class preferences that relate to all instances of this major mode
     default_classprefs = (
-        StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing\nEditra style sheet information.  Used to override\ndefault styles with custom styles for this mode.'),
+        StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing Editra style sheet information.  Used to override default styles with custom styles for this mode.'),
         BoolParam('use_tab_characters', False,
-                  'True: insert tab characters when tab is pressed\nFalse: insert the equivalent number of spaces instead.', local=True),
+                  'True: insert tab characters when tab is pressed.  False: insert the equivalent number of spaces instead.', local=True),
         IntParam('tab_size', 8, 'Number of spaces in each expanded tab', local=True),
         IntParam('indent_size', 4, 'Number of spaces in each indent level', local=True),
         IndexChoiceParam('tab_highlight_style',
                          ['ignore', 'inconsistent', 'mixed', 'spaces are bad', 'tabs are bad'],
-                         4, 'Highlight bad intentation', local=True),
+                         1, 'Highlight bad intentation', local=True),
         BoolParam('line_numbers', True, 'Show line numbers in the margin?', local=True),
         IntParam('line_number_margin_width', 40, 'Margin width in pixels', local=True),
         BoolParam('symbols', False, 'Show symbols margin', local=True),
         IntParam('symbols_margin_width', 16, 'Symbols margin width in pixels', local=True),
         BoolParam('folding', False, 'Show the code folding margin?', local=True),
         IntParam('folding_margin_width', 16, 'Code folding margin width in pixels', local=True),
-        BoolParam('wrapping', False, 'True: use line wrapping\nFalse: show horizontal scrollbars', local=True),
-        BoolParam('word_wrap', False, 'True: wrap lines at word boundries\nFalse: wrap at right margin', local=True),
+        BoolParam('wrapping', False, 'If set, use line wrapping; otherwise show horizontal scrollbars', local=True),
+        BoolParam('word_wrap', False, 'If set, wrap lines at word boundries; otherwise wrap at right margin', local=True),
         BoolParam('backspace_unindents', True, local=True),
         BoolParam('indentation_guides', True, 'Show indentation guides at multiples of the indent_size', local=True),
-        IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.\nNote: uses the BRACELIGHT color to highlight', local=True),
+        IntParam('highlight_column', 30, 'Column at which to highlight the indention guide.', local=True),
         IntParam('edge_column', 80, 'Column at which to show the edge (i.e. long line) indicator', local=True),
         KeyedIndexChoiceParam('edge_indicator',
                               [(wx.stc.STC_EDGE_NONE, 'none'),
                                (wx.stc.STC_EDGE_LINE, 'line'),
                                (wx.stc.STC_EDGE_BACKGROUND, 'background'),
                                ], 'line', help='Long line indication mode', local=True),
-        IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds\nor 0 to stop blinking', local=True),
+        IntParam('caret_blink_rate', 0, help='Blink rate in milliseconds or 0 to stop blinking', local=True),
         IndexChoiceParam('caret_width',
                          [(1, '1 Pixel'), (2, '2 Pixels'), (3, '3 Pixels'),],
                          2, help='Caret width in pixels', local=True),
@@ -334,9 +336,9 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                                (wx.stc.STC_WS_VISIBLEALWAYS, 'visible'),
                                (wx.stc.STC_WS_VISIBLEAFTERINDENT, 'after indent'),
                                ], 'none', help='Visible whitespace mode', local=True),
-        BoolParam('spell_check', True, 'Spell check the document (if pyenchant\nis available'),
+        BoolParam('spell_check', True, 'Spell check the document (if pyenchant is available)'),
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
-        IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file\nto search for vim modeline comments'),
+        IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file to search for vim modeline comments'),
         )
     
     def __init__(self, parent, wrapper, buffer, frame):

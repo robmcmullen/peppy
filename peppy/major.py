@@ -390,9 +390,9 @@ class MajorMode(ClassPrefs, debugmixin):
     stc_class = PeppySTC
 
     default_classprefs = (
-        StrParam('minor_modes', '', 'List of minor mode keywords that should be\ndisplayed when starting this major mode'),
-        IntParam('line_number_offset', 1, 'Number to add to the line number reported\nby the mode\'s stc in order to display'),
-        IntParam('column_number_offset', 1, 'Number to add to the column number reported\nby the mode\'s stc in order to display'),
+        StrParam('minor_modes', '', 'List of minor mode keywords that should be displayed when starting this major mode'),
+        IntParam('line_number_offset', 1, 'Number to add to the line number reported by the mode\'s stc in order to display'),
+        IntParam('column_number_offset', 1, 'Number to add to the column number reported by the mode\'s stc in order to display'),
         )
 
     # Need one keymap per subclass, so we can't use the settings.
@@ -872,7 +872,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     """
     default_classprefs = (
         PathParam('interpreter_exe', '',
-                  'Full path to a program that can interpret this text\nand return results on standard output'),
+                  'Full path to a program that can interpret this text and return results on standard output'),
         BoolParam('autosave_before_run', True,
                   'Automatically save without prompting before running script'),
         )

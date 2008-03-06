@@ -59,7 +59,7 @@ class Fonts(ClassPrefs):
     default_classprefs = (
         FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
         FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
-        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing\nEditra style sheet information'),
+        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing Editra style sheet information'),
     )
     if wx.Platform == "__WXMAC__":
         default_fontsize = 12
@@ -91,8 +91,8 @@ class Mouse(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/mouse.png"
     default_classprefs = (
-        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'lines', help='Mouse wheel scroll style: lines,\nhalf a page, or entire page'),
-        IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel\nis in line scrolling mode'),
+        ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'lines', help='Mouse wheel scroll style: lines, half a page, or entire page'),
+        IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel is in line scrolling mode'),
     )
 
 
@@ -102,10 +102,10 @@ class Tabs(ClassPrefs):
     default_classprefs = (
         IndexChoiceParam('open_file_in_new_tab',
                          ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
-                         1, 'Should a new file be opened in a new tab\nor should the current tab be reused?'),
+                         1, 'Should a new file be opened in a new tab or should the current tab be reused?'),
         IndexChoiceParam('documents_in_new_tab',
                          ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
-                         1, 'When selecting a document from the documents menu,\nshould it be displayed in a new tab or should\nthe current tab be reused?'),
+                         1, 'When selecting a document from the documents menu, should it be displayed in a new tab or should the current tab be reused?'),
     )
     
     def useNewTab(self, mode, new_tab):
@@ -124,8 +124,8 @@ class User(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/user.png"
     default_classprefs = (
-        StrParam('full_name', '', 'Your full name, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
-        StrParam('email', '', 'Your email address, used for annotation in\ndocuments (e.g. in ChangeLog entries)'),
+        StrParam('full_name', '', 'Your full name, used for annotation in documents (e.g. in ChangeLog entries)'),
+        StrParam('email', '', 'Your email address, used for annotation in documents (e.g. in ChangeLog entries)'),
     )
 
 
@@ -277,15 +277,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     preferences_tab = "General"
     preferences_sort_weight = 0
     default_classprefs = (
-        StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search\nfor additional plugins'),
-        StrParam('title_page', 'about:peppy', 'URL of page to load when no other file\n is loaded'),
-        BoolParam('request_server', True, 'Force peppy to send file open requests to\nan already running copy of peppy'),
-        BoolParam('requests_in_new_frame', True, 'File open requests will appear in\na new frame if True, or as a new tab in\nan existing frame if False'),
-        IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results\nin peppy guessing that the file is binary'),
-        IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type\nof the file.'),
+        StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search for additional plugins'),
+        StrParam('title_page', 'about:peppy', 'URL of page to load when no other file  is loaded'),
+        BoolParam('request_server', True, 'Force peppy to send file open requests to an already running copy of peppy'),
+        BoolParam('requests_in_new_frame', True, 'File open requests will appear in a new frame if True, or as a new tab in an existing frame if False'),
+        IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results in peppy guessing that the file is binary'),
+        IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type of the file.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
         BoolParam('show_splash', True, 'Show the splash screen on start?'),
-        StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified\nin the file'),
+        StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified in the file'),
         )
     mouse = Mouse()
     user = User()
