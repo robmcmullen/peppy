@@ -358,9 +358,16 @@ class NeXTFileManager(wx.Panel, debugmixin):
         names = [os.path.basename(a) for a in paths]
         names.sort()
         return names
+    
+    def OnPanelUpdatePreHook(self, evt):
+        pass
+    
+    def OnPanelUpdatePostHook(self, evt):
+        pass
 
     def OnPanelUpdate(self, evt):
         self.dprint("select on list %d, selections=%s" % (evt.listnum, str(evt.selections)))
+        self.OnPanelUpdatePreHook(evt)
         self.shown = evt.listnum + 1
         list = evt.list
         newitems = []
@@ -375,7 +382,7 @@ class NeXTFileManager(wx.Panel, debugmixin):
         self.dprint("shown=%d" % self.shown)
         self.dirlevels.DeleteAfter(self.shown)
         self.dirlevels.ensureVisible(self.shown)
-
+        self.OnPanelUpdatePostHook(evt)
 
 
 

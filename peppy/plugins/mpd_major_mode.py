@@ -618,7 +618,7 @@ class MPDSTC(NonResidentSTC):
     
     def open(self, buffer, progress_message=None):
         """Save the file handle, which is really the mpd connection"""
-        dprint(buffer.url)
+        #dprint(buffer.url)
         fh = vfs.open(buffer.url)
         self.mpd = fh
 
@@ -858,27 +858,44 @@ class MPDListByPath(NeXTFileManager, debugmixin):
         NeXTFileManager.__init__(self, parent_win)
         self.major = major
         self.files = {}
-        
-    def getLevelItems(self, level, item):
-        if level<0:
-            path = ''
-        else:
-            path = '/'.join(self.dirtree[0:level+1])
-        #assert self.dprint(self.dirtree)
-        #assert self.dprint(path)
+        self.tracks = None
+    
+    def getAllTracks(self, names, tracks, path, first, recurse=True):
+        #dprint("recursing into %s" % path)
         items = self.major.mpd.sync('lsinfo', path)
-        names = []
-        tracks = []
         for item in items:
             #assert self.dprint(item)
             if item['type'] == 'directory':
-                names.append(os.path.basename(item['directory']))
-            elif item['type'] == 'file':
-                tracks.append(item)
-
-        Publisher().sendMessage('mpd.searchResultsTracks',
-                                (self.major.mpd, tracks))
+                if first:
+                    name = os.path.basename(item['directory'])
+                    names.append(name)
+                if recurse:
+                    self.getAllTracks(names, tracks, item['directory'], False, recurse)
+            elif item['type'] == 'file' and recurse:
+                if tracks is not None:
+                    tracks.append(item)
+    
+    def getLevelItems(self, level, item):
+        if level<0:
+            path = ''
+            recurse = False
+        else:
+            path = '/'.join(self.dirtree[0:level+1])
+            recurse = True
+        #self.dprint("level=%d path=%s dirtree=%s" % (level, path, self.dirtree))
+        names = []
+        self.getAllTracks(names, self.tracks, path, first=True, recurse=recurse)
         return names
+    
+    def OnPanelUpdatePreHook(self, evt):
+        self.tracks = []
+        #self.dprint(self.tracks)
+    
+    def OnPanelUpdatePostHook(self, evt):
+        #self.dprint(self.tracks)
+        Publisher().sendMessage('mpd.searchResultsTracks',
+                                (self.major.mpd, self.tracks))
+        self.tracks = None
 
 
 class MPDListSearch(wx.Panel, debugmixin):
@@ -1534,7 +1551,7 @@ class MPDFS(vfs.BaseFS):
             port = int(parts[1])
         else:
             port = 6600
-        dprint(parts)
+        #dprint(parts)
         fh = MPDComm(host, port)
         return fh
 
