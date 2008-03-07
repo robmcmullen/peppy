@@ -6,6 +6,7 @@ These text utilities have no dependencies on any other part of peppy, and
 therefore may be used independently of peppy.
 """
 import re
+import emacsutil
 
 def piglatin(text):
     """Translate string to pig latin.
@@ -88,23 +89,9 @@ def parseEmacs(header):
     """
     lines = getMagicComments(header)
     for line in lines:
-        match=re.search(r'-\*\-\s*(mode:\s*(.+?)|(.+?))(\s*;\s*(.+?))?\s*-\*-',line)
-        if match:
-            vars={}
-            varstring=match.group(5)
-            if varstring:
-                try:
-                    for nameval in varstring.split(';'):
-                        s=nameval.strip()
-                        if s:
-                            name,val=s.split(':')
-                            vars[name.strip()]=val.strip()
-                except:
-                    pass
-            if match.group(2):
-                return (match.group(2),vars)
-            elif match.group(3):
-                return (match.group(3),vars)
+        mode, vars = emacsutil.parseModeline(line)
+        if mode:
+            return mode, vars
     return None, None
 
 def guessBinary(text, percentage):

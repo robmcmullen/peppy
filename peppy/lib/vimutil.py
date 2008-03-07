@@ -26,7 +26,7 @@ def applyVIMModeline(stc, linelist):
     name of the wx.stc method used for each setting, with the 'Set' removed.
     If the tab width is changed, the setting is reported as 'TabWidth'.
     """
-    DBG = True
+    DBG = False
     sre = re.compile('(?:^|\s+)vim?:(?:\s*set?\s+)?(.+):')
     
     #hcl ->  Highlight Current Line

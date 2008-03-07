@@ -11,6 +11,7 @@ from peppy.major import *
 from peppy.lib.foldexplorer import *
 from peppy.lib.stcspellcheckmixin import *
 from peppy.lib.vimutil import *
+from peppy.lib.emacsutil import *
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
@@ -583,7 +584,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     def setEmacsAndVIM(self):
         lines = self.getFileLocalComments()
         settings = applyVIMModeline(self, lines)
-        #settings.extend(applyEmacsFileLocalSettings(self, text))
+        emacs_settings, emacs_locals = applyEmacsFileLocalSettings(self)
+        settings.extend(emacs_settings)
         mapping = {'Indent': 'indent_size',
                    'TabWidth': 'tab_size',
                    'EdgeColumn': 'edge_column',
@@ -605,7 +607,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             line = self.GetLine(linenum)
             match = self.comment_regex.match(line)
             if match.group(1).endswith(self.start_line_comment):
-                dprint("line %d: %s" % (linenum, str(match.groups())))
+                #dprint("line %d: %s" % (linenum, str(match.groups())))
                 text.append(line)
         return text
     
