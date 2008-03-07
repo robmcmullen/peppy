@@ -80,6 +80,12 @@ class OpenFileGUI(SelectAction):
     default_menu = (("File/Open", 2), 1) 
     key_bindings = {'default': "C-O", 'emacs': "C-X C-S-F" }
 
+    def openFiles(self, paths):
+        for path in paths:
+            assert self.dprint("open file %s:" % path)
+            # Force the loader to use the file: protocol
+            self.frame.open("file:%s" % path)
+
     def action(self, index=-1, multiplier=1):
         wildcard="*"
         cwd=self.frame.cwd()
@@ -92,15 +98,23 @@ class OpenFileGUI(SelectAction):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             paths = dlg.GetPaths()
-
-            for path in paths:
-                assert self.dprint("open file %s:" % path)
-                # Force the loader to use the file: protocol
-                self.frame.open("file:%s" % path)
+            self.openFiles(paths)
 
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
         dlg.Destroy()
+
+class OpenFileNewWindowGUI(OpenFileGUI):
+    alias = "gui-find-file-new-window"
+    name = "Open File in New Window..."
+    tooltip = "Open a file in a new window"
+    icon = None
+    default_menu = (("File/Open", 2), 2) 
+    key_bindings = None
+    global_id = None
+
+    def openFiles(self, paths):
+        BufferFrame(paths)
 
 
 class LocalFileMinibuffer(CompletionMinibuffer):
@@ -179,7 +193,7 @@ class OpenFile(SelectAction):
     alias = "find-file"
     name = "Open File Using Minibuffer..."
     tooltip = "Open a file using filename completion"
-    default_menu = ("File/Open", 2)
+    default_menu = ("File/Open", 10)
     key_bindings = {'emacs': "C-X C-F", }
 
     def action(self, index=-1, multiplier=1):
@@ -303,7 +317,7 @@ class OpenURL(SelectAction):
     alias = "find-url"
     name = "Open URL Using Minibuffer..."
     tooltip = "Open a file using URL name completion"
-    default_menu = ("File/Open", 2)
+    default_menu = ("File/Open", 20)
     key_bindings = {'emacs': "C-X C-A", }
 
     def action(self, index=-1, multiplier=1):
@@ -960,7 +974,7 @@ class MainMenu(IPeppyPlugin):
 
     def getActions(self):
         return [NewTab, New,
-                OpenFileGUI, OpenFile, OpenURL,
+                OpenFileGUI, OpenFileNewWindowGUI, OpenFile, OpenURL,
                 Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert, RevertEncoding,
                 Exit,
 
