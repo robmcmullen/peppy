@@ -63,6 +63,7 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_major_mode.GotoBand,
                         peppy.hsi.hsi_major_mode.ContrastFilterAction,
                         peppy.hsi.hsi_major_mode.MedianFilterAction,
+                        peppy.hsi.hsi_major_mode.ClippingFilterAction,
                         peppy.hsi.hsi_major_mode.CubeViewAction,
                         peppy.hsi.hsi_major_mode.ShowPixelValues,
                         ]

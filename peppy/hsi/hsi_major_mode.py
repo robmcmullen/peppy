@@ -60,8 +60,9 @@ import peppy.lib.plotter as plotter
 # Some features require scipy, so set this flag to allow the features
 # that require scipi to be enabled at runtime
 try:
-#    import scipy
-#    import scipy.signal
+    # Import this way to prevent py2exe from automatically including scipy
+    scipy = __import__('scipy')
+    __import__('scipy.signal')
     HAS_SCIPY = True
 except:
     HAS_SCIPY = False
@@ -172,6 +173,27 @@ class GeneralFilter(debugmixin):
         
     def getPlane(self,raw):
         return raw
+
+class ClipFilter(GeneralFilter):
+    """Apply a cliping filter to the band.
+
+    A cliping filter restricts the range of the image to specified values.
+    """
+    def __init__(self, min_clip=0, max_clip=None, pos=0):
+        GeneralFilter.__init__(self, pos=pos)
+        self.min_clip = min_clip
+        self.max_clip = max_clip
+   
+    def getPlane(self,raw):
+        if self.min_clip is not None and self.max_clip is not None:
+            clipped = raw.clip(self.min_clip, self.max_clip)
+        elif self.min_clip is not None:
+            clipped = numpy.where(raw < self.min_clip, self.min_clip, raw)
+        elif self.max_clip is not None:
+            clipped = numpy.where(raw > self.max_clip, self.max_clip, raw)
+        else:
+            clipped = raw
+        return clipped
 
 class MedianFilter1D(GeneralFilter):
     """Apply a median filter to the band.
@@ -600,7 +622,9 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
         mode = self.mode
         filt = mode.filter
         assert self.dprint(filt)
-        return filt.pos
+        if isinstance(filt, MedianFilter1D):
+            return filt.pos
+        return 0
 
     def getItems(self):
         return self.__class__.items
@@ -625,6 +649,55 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
         mode.filter = filt
         wx.CallAfter(mode.update)
 
+class ClippingFilterAction(HSIActionMixin, RadioAction):
+    name = "Clipping Filter"
+    tooltip = "Clip pixel values to limits"
+    default_menu = ("View", 302)
+
+    items = ['No Clipping',
+             'Pixel > 0', '0 <= Pixel < 256', '0 <= Pixel < 1000',
+             '0 <= Pixel < 10000',
+             'User Defined']
+
+    def getIndex(self):
+        mode = self.mode
+        filt = mode.filter
+        assert self.dprint(filt)
+        if isinstance(filt, ClipFilter):
+            return filt.pos
+        return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("index=%d" % index)
+        mode = self.mode
+        filt = None
+        if index == 0:
+            filt = GeneralFilter(pos=0)
+        elif index == 1:
+            filt = ClipFilter(0, pos=index)
+        elif index == 2:
+            filt = ClipFilter(0, 256, pos=index)
+        elif index == 3:
+            filt = ClipFilter(0, 1000, pos=index)
+        elif index == 4:
+            filt = ClipFilter(0, 10000, pos=index)
+        elif index == 5:
+            minibuffer = IntRangeMinibuffer(self.mode, self,
+                                            label="Enter clipping min, max:",
+                                            initial = "%d, %d" % (0,1000))
+            self.mode.setMinibuffer(minibuffer)
+        if filt:
+            mode.filter = filt
+            wx.CallAfter(mode.update)
+
+    def processMinibuffer(self, minibuffer, mode, pair):
+        dprint("Setting clipping to %s" % str(pair))
+        filt = ClipFilter(pair[0], pair[1], pos=len(self.items) - 1)
+        mode.filter = filt
+        wx.CallAfter(mode.update)
 
 class CubeViewAction(HSIActionMixin, RadioAction):
     name = "View Direction"

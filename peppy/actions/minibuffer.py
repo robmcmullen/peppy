@@ -147,10 +147,31 @@ class IntMinibuffer(TextMinibuffer):
     def convert(self, text):
         # replace each occurrence of a MSW-style hex number to 0x style so that
         # eval can parse it.
-        text = self.msw_hex.sub(lambda s: "0x%s" % s.group(0)[:-1], self.text.GetValue())
+        text = self.msw_hex.sub(lambda s: "0x%s" % s.group(0)[:-1], text)
         number = int(eval(text))
         assert self.dprint("number=%s" % number)
         return number
+
+class IntRangeMinibuffer(IntMinibuffer):
+    """Dedicated subclass of Minibuffer that prompts for a pair of integers.
+    
+    Can handle python expressions, with the enhancement that it recognizez
+    hex numbers in the msw format of abcd1234h; i.e.  with a 'h' after the
+    hex digits.
+    """
+    label = "Range"
+    error = "Invalid range."
+
+    def convert(self, text):
+        # replace each occurrence of a MSW-style hex number to 0x style so that
+        # eval can parse it.
+        pair = []
+        for val in text.split(','):
+            pair.append(IntMinibuffer.convert(self, val))
+        if len(pair) == 2:
+            assert self.dprint("range=%s" % str(pair))
+            return pair
+        raise ValueError("Didn't specify a range")
 
 class FloatMinibuffer(TextMinibuffer):
     """
