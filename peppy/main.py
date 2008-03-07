@@ -772,7 +772,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 try:
                     plugininfo.plugin_object.activate()
                     self.dprint("  plugin activation = %s" % plugininfo.plugin_object.is_activated)
-                except:
+                except Exception, e:
                     eprint("Plugin %s failed with exception %s" % (plugininfo.name, str(e)))
         self.plugin_manager.startupCompleted()
         
@@ -893,7 +893,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             except Exception, e:
                 exceptions.append(e)
         if exceptions:
-            text = os.linesep().join([str(e) for e in exceptions])
+            text = os.linesep.join([str(e) for e in exceptions])
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(),
                 "Errors shutting down plugins:\n%s\n\nQuit anyway?" % text,
                 "Shutdown Errors", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
