@@ -289,7 +289,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         IntParam('height', 600, 'Height of the main frame in pixels'),
         StrParam('sidebars', '', 'List of sidebars to activate with the frame'),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
-        BoolParam('fast_resize', False, 'Speed up resize events by deferring window\nrepaints until the mouse stops moving'),
+        # FIXME: this attempt at fast resizing caused Freeze() mismatch
+        # problems.  It's not worth that much, so I'm disabling it for
+        # now.
+        # BoolParam('fast_resize', False, 'Speed up resize events by deferring window\nrepaints until the mouse stops moving'),
         )
 
     default_menubar = {
@@ -436,7 +439,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         evt.Skip()
     
     def OnSize(self, evt):
-        if self.classprefs.fast_resize:
+        # FIXME: this fast resizing was causing problems, so I've disabled it
+        # with the embedded False
+        if False and self.classprefs.fast_resize:
             if not self.tabs.IsFrozen():
                 dprint("not frozen.  Freezing")
                 self.tabs.Freeze()
