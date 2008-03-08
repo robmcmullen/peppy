@@ -73,9 +73,28 @@ def applyEmacsFileLocalSettings(stc):
     
     settings_changed = []
     
-    if 'fill-column' in vars:
-        stc.SetEdgeColumn(int(vars['fill-column']))
-        settings_changed.append('EdgeColumn')
+    # check for integers.  int_mapping takes the emacs string to the name of
+    # the stc getter/setter function.
+    int_mapping = {'fill-column': 'EdgeColumn',
+                   'tab-width': 'TabWidth',
+                   }
+    for name, setting in int_mapping.iteritems():
+        if name in vars:
+            # Construct the name of the stc setting function and set the value
+            func = getattr(stc, "Set%s" % setting)
+            func(int(vars[name]))
+            settings_changed.append(setting)
+    
+    # check for booleans -- emacs uses 'nil' for false, everything else for true
+    bool_mapping = {'use-tabs': 'UseTabs',
+                    }
+    for name, setting in bool_mapping.iteritems():
+        if name in vars:
+            func = getattr(stc, "Set%s" % setting)
+            func(vars[name] != 'nil')
+            settings_changed.append(setting)
+    
+    # check for more complicated settings
     if 'cursor-type' in vars:
         text = vars['cursor-type']
         match = re.search(r'\(\s*bar\s*\.\s*([0-9]+)', text)
@@ -83,8 +102,5 @@ def applyEmacsFileLocalSettings(stc):
             width = int(match.group(1))
             stc.SetCaretWidth(width)
             settings_changed.append('CaretWidth')
-    if 'tab-width' in vars:
-        stc.SetTabWidth(int(vars['tab-width']))
-        settings_changed.append('TabWidth')
     
     return settings_changed, vars

@@ -586,9 +586,14 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         settings = applyVIMModeline(self, lines)
         emacs_settings, emacs_locals = applyEmacsFileLocalSettings(self)
         settings.extend(emacs_settings)
+        
+        # Map the STC function to the local variable name so the local variables
+        # can be properly updated to whatever VIM or EMACS set them to
         mapping = {'Indent': 'indent_size',
                    'TabWidth': 'tab_size',
+                   'UseTabs': 'use_tab_characters',
                    'EdgeColumn': 'edge_column',
+                   'CaretWidth': 'caret_width',
                    'CaretLineVisible': 'caret_line_indicator',
                    }
         for setting in settings:
