@@ -1,3 +1,16 @@
+2008-03-07  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.2.7 update to "Oscillation Overthruster"
+	* added parsing of some vim and emacs modeline options
+	* added simple bookmarks list to save URLs of the user's choice
+	* added image clipping to hyperspectral image viewing
+	* changed settings to apply to individual views instead of sharing
+	among all views of the same major mode
+	* fixed zero length files being interpreted as tar files
+	* fixed problem opening XML files
+	* added action to open files in new window
+	* started simplification process for generating py2exe files
+
 2008-02-27  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.6 update to "Oscillation Overthruster"

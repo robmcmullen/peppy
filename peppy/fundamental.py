@@ -612,7 +612,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         for setting in settings:
             if setting in mapping:
                 value = getattr(self, "Get%s" % setting)()
-                dprint("Setting %s to %s" % (mapping[setting], value))
+                #dprint("Setting %s to %s" % (mapping[setting], value))
                 setattr(self.locals, mapping[setting], value)
 
     def getFileLocalComments(self):

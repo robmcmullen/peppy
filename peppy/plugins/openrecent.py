@@ -173,7 +173,6 @@ class RecentFilesPlugin(IPeppyPlugin):
     def getTabMenu(self, msg):
         action_classes = msg.data
         action_classes.extend([AddURLBookmark])
-        dprint(action_classes)
 
     def getActions(self):
         return [RecentFiles, URLBookmarks]

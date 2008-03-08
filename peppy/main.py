@@ -194,7 +194,7 @@ class Language(ClassPrefs):
         wx.CallAfter(wx.GetApp().updateAllFrames)
 
     def setLanguage(self):
-        dprint("Updating language to %s" % self.classprefs.language)
+        #dprint("Updating language to %s" % self.classprefs.language)
         
         # Make *sure* any existing locale is deleted before the new
         # one is created.  The old C++ object needs to be deleted

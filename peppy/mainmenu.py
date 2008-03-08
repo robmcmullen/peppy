@@ -438,7 +438,7 @@ class RevertEncoding(SelectAction):
         self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
-        dprint("Revert to encoding %s" % text)
+        #dprint("Revert to encoding %s" % text)
         # see if it's a known encoding
         try:
             'test'.encode(text)
@@ -902,7 +902,6 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
         return actions
 
     def processMinibuffer(self, minibuffer, mode, text):
-        dprint("HERE!!!")
         if text in self.map:
             action = self.map[text]
             dprint("looking up docs for %s: %s" % (text, action))
