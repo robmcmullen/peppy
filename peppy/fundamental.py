@@ -377,6 +377,19 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             cls.dprint("Specific match of %s" % file_type)
             return ext
         
+        # If the editra filetype exists but doesn't match the editra synonym,
+        # then we know the mode won't work.
+        if cls.editra_synonym and file_type != cls.editra_synonym:
+            return False
+        
+        # Same with the mode keyword: if there's no editra synonym the keyword
+        # is used to match against the editra filetype.  If the editra type
+        # doesn't match the keyword, the mode won't work.  However, if the
+        # mode is specifically labeled as a generic mode (matches text/plain),
+        # we *do* want to allow this mode to match.
+        if not cls.editra_synonym and not cls.verifyMimetype('text/plain') and file_type != cls.keyword:
+            return False
+        
         # Otherwise, if the file type is recognized but not specific to this
         # mode, mark it as generic.
         cls.dprint("generic match of %s" % file_type)
