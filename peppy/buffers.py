@@ -326,6 +326,17 @@ class Buffer(BufferVFSMixin):
     def addViewer(self, mode):
         self.viewers.append(mode) # keep track of views
         assert self.dprint("views of %s: %s" % (self,self.viewers))
+    
+    def forEachView(self, func_name):
+        """Call a method for each view of this buffer.
+        
+        @param func_name: string to be used as the method to call
+        """
+        for view in self.viewers:
+            if hasattr(view, func_name):
+                func = getattr(view, func_name)
+                self.dprint("calling %s in %s" % (func_name, view))
+                func()
 
     def removeViewer(self,view):
         assert self.dprint("removing view %s of %s" % (view,self))
@@ -438,7 +449,8 @@ class Buffer(BufferVFSMixin):
         self.stc.openSuccess(self, encoding=encoding)
         self.modified=False
         self.stc.EmptyUndoBuffer()
-        wx.CallAfter(self.showModifiedAll)
+        self.forEachView('applySettings')
+        self.showModifiedAll()
         
     def save(self, url=None):
         assert self.dprint(u"Buffer: saving buffer %s as %s" % (unicode(self.url), url))
