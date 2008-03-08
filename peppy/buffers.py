@@ -133,7 +133,9 @@ class BufferPopupList(ListAction):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index, self.savelist[index]))
         wrapper = self.frame.tabs.getContextMenuWrapper()
-        self.frame.setBuffer(self.savelist[index], wrapper)
+        # Have to use CallAfter here because the call to setBuffer changes the
+        # tab structure, and we're in the tab callback during this method
+        wx.CallAfter(self.frame.setBuffer, self.savelist[index], wrapper)
 
 
 class BufferListSort(OnDemandActionMixin, RadioAction):
