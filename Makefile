@@ -30,12 +30,7 @@ WINBATCH = peppy.bat
 SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
-GIT_LIST = $(shell cat git-manifest)
-GIT_FILTER_OUT := %.in Makefile make-% peppy.bat setup.py svn-ls.py trac/% graphics/% peppy/icons/% %/ web/% i18n.in/%
-GIT_FILTERED := $(filter-out $(GIT_FILTER_OUT),$(GIT_LIST))
-DISTSRC := $(filter %.py,$(GIT_FILTERED))
-DISTFILES := README INSTALL $(GIT_FILTERED)
-APIFILES := $(filter-out $(APPMAIN) $(DISTMAIN) tests/% demo/%,$(DISTSRC))
+DISTFILES := AUTHORS ChangeLog FAQ INSTALL LICENSE.* NEWS README TODO peppy peppy.py peppy.bat setup_mac.py tests
 
 
 
@@ -134,11 +129,6 @@ api: distdir
 	rm -rf api
 	mv $(distdir)/docs/api .
 
-
-dcommit:
-	git-ls-files > git-manifest
-	git-commit -a -m "Updating file manifest"
-	git-svn dcommit
 
 
 clean:
