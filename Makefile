@@ -30,7 +30,7 @@ WINBATCH = peppy.bat
 SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
-DISTFILES := AUTHORS ChangeLog FAQ INSTALL LICENSE.* NEWS README TODO peppy peppy.py peppy.bat setup_mac.py tests
+DISTFILES := AUTHORS ChangeLog docs FAQ INSTALL LICENSE.* NEWS README TODO peppy peppy.py peppy.bat setup_mac.py tests
 
 
 
