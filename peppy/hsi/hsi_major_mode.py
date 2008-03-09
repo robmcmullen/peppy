@@ -343,7 +343,19 @@ class CubeView(debugmixin):
         """Get the profile into the monitor at the given x,y position"""
         profile = self.cube.getSpectra(y,x)
         return profile
-
+    
+    def getBandName(self, band_index):
+        """Return the band name given the index"""
+        text = self.cube.getDescriptiveBandName(band_index)
+        if text:
+            text = ": %s" % text
+        return u"Band %d%s" % (band_index + HSIMode.classprefs.band_number_offset,
+                               text)
+    
+    def getBandLegend(self, band_index):
+        """Return the band name given the index"""
+        return u"Band %d" % (band_index + HSIMode.classprefs.band_number_offset)
+    
     def nextIndex(self):
         newbands=[]
         for i in range(len(self.indexes)):
@@ -356,7 +368,11 @@ class CubeView(debugmixin):
             newbands.append(self.indexes[i]-1)
         return self.setIndexes(newbands)
 
-    def gotoIndex(self, band):
+    def gotoIndex(self, band, user=False):
+        if user:
+            # If the user entered this number, adjust for the user's display
+            # offset
+            band = band - HSIMode.classprefs.band_number_offset
         newbands=[band]
         return self.setIndexes(newbands)
 
@@ -542,7 +558,7 @@ class GotoBand(HSIActionMixin, MinibufferAction):
         
         # stc counts lines from zero, but displayed starting at 1.
         #dprint("goto line = %d" % line)
-        if mode.cubeview.gotoIndex(band):
+        if mode.cubeview.gotoIndex(band, user=True):
             mode.update()
 
 class CubeAction(HSIActionMixin, SelectAction):
@@ -744,6 +760,7 @@ class HSIMode(BitmapScroller, MajorMode):
 
     default_classprefs = (
         StrParam('minor_modes', 'Spectrum, X Profile, Y Profile'),
+        IntParam('band_number_offset', 1, help="Start counting band numbers from this value"),
         BoolParam('display_rgb', False),
         )
 
@@ -784,7 +801,7 @@ class HSIMode(BitmapScroller, MajorMode):
                 pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
                 self.frame.SetStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
         
-        self.frame.SetStatusText(u"Band %d: \u03bb=%s" % (band, self.cube.getWavelengthStr(band)), 2)
+        self.frame.SetStatusText(self.cubeview.getBandName(band), 2)
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
@@ -942,7 +959,8 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
             data=numpy.zeros((cubeview.width,2))
             data[:,0]=x
             data[:,1]=values
-            line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            #line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
         yaxis=cubeview.cube.getUpdatedExtrema()
@@ -974,7 +992,7 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
             data=numpy.zeros((cubeview.height,2))
             data[:,0]=x
             data[:,1]=values
-            line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
+            line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
         yaxis=cubeview.cube.getUpdatedExtrema()

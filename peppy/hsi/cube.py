@@ -347,6 +347,19 @@ class Cube(object):
             return text
         return "no value"
 
+    def getDescriptiveBandName(self, band):
+        """Get a text string that describes the band.
+        
+        Use the wavelength array and the array of band names to create a text
+        string that describes the band.
+        """
+        text = []
+        if self.wavelengths and band >=0 and band < len(self.wavelengths):
+            text.append(u"\u03bb=%.2f %s" % (self.wavelengths[band], self.wavelength_units))
+        if self.band_names and band >=0 and band < len(self.band_names):
+            text.append(unicode(self.band_names[band]))
+        return u" ".join(text)
+
     def updateExtrema(self, spectra):
         mn=spectra.min()
         if self.spectraextrema[0]==None or mn<self.spectraextrema[0]:
