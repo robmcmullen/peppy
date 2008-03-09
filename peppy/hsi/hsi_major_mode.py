@@ -173,6 +173,14 @@ class GeneralFilter(debugmixin):
         
     def getPlane(self,raw):
         return raw
+    
+    def getProfile(self, raw):
+        """Filter a profile for display in the x-y plots.
+        
+        Not all filters will be appropriate for use with profile plots, but if
+        so, this is the hook to provide the modification.
+        """
+        return raw
 
 class ClipFilter(GeneralFilter):
     """Apply a cliping filter to the band.
@@ -194,6 +202,9 @@ class ClipFilter(GeneralFilter):
         else:
             clipped = raw
         return clipped
+    
+    def getProfile(self, raw):
+        return self.getPlane(raw)
 
 class MedianFilter1D(GeneralFilter):
     """Apply a median filter to the band.
@@ -762,6 +773,7 @@ class HSIMode(BitmapScroller, MajorMode):
         StrParam('minor_modes', 'Spectrum, X Profile, Y Profile'),
         IntParam('band_number_offset', 1, help="Start counting band numbers from this value"),
         BoolParam('display_rgb', False),
+        BoolParam('use_cube_min_max', False, help="Use overall cube min/max for profile min/max"),
         )
 
     def __init__(self, parent, wrapper, buffer, frame):
@@ -903,6 +915,24 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
             self.yaxis=(float(yaxis[0]), float(yaxis[1]))
             # dprint("yaxis=%s" % self.yaxis)
             self.updateListenerExtrema()
+    
+    def sizeYAxis(self, lines):
+        """Calculate Y axis extrema based on the wx.lib.plot.Polyline objects
+        
+        If the overall cube extrema is not used to set up the Y axis scale,
+        this routine can be used to calculate the extrema based on the lines
+        that will be shown.
+        """
+        #dprint(lines[0].points[:,1])
+        lo = min([min(line.points[:,1]) for line in lines])
+        hi = max([max(line.points[:,1]) for line in lines])
+        if lo == hi:
+            lo = lo / 2
+            hi = lo * 3
+        self.yaxis=(float(lo), float(hi))
+        # dprint("yaxis=%s" % self.yaxis)
+        self.updateListenerExtrema()
+
 
 class HSISpectrumMinorMode(HSIPlotMinorMode):
     """Display a spectrum at the current crosshair point.
@@ -958,13 +988,16 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
         for values in profiles:
             data=numpy.zeros((cubeview.width,2))
             data[:,0]=x
-            data[:,1]=values
+            data[:,1]=self.major.filter.getProfile(values)
             #line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        yaxis=cubeview.cube.getUpdatedExtrema()
-        self.updateYAxis(yaxis)
+        if self.major.classprefs.use_cube_min_max:
+            yaxis=cubeview.cube.getUpdatedExtrema()
+            self.updateYAxis(yaxis)
+        else:
+            self.sizeYAxis(lines)
         return lines
         
 class HSIYProfileMinorMode(HSIPlotMinorMode):
@@ -991,10 +1024,13 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
         for values in profiles:
             data=numpy.zeros((cubeview.height,2))
             data[:,0]=x
-            data[:,1]=values
+            data[:,1]=self.major.filter.getProfile(values)
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        yaxis=cubeview.cube.getUpdatedExtrema()
-        self.updateYAxis(yaxis)
+        if self.major.classprefs.use_cube_min_max:
+            yaxis=cubeview.cube.getUpdatedExtrema()
+            self.updateYAxis(yaxis)
+        else:
+            self.sizeYAxis(lines)
         return lines
