@@ -1271,6 +1271,8 @@ class MPDPlaylist(MPDMinorModeMixin, wx.ListCtrl, ColumnAutoSizeMixin,
 
     def AddSongs(self, x, y, songs):
         index = self.getDropIndex(x, y)
+        if index < 0:
+            index = 0
         assert self.dprint("At (%d,%d), index=%d, adding %s" % (x, y, index, songs))
         # Looks like the MPD protocol is a bit limited in that you
         # can't add a song at a particular spot; only at the end.  So,

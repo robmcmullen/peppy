@@ -150,8 +150,12 @@ class ListDropScrollerMixin(object):
             
         drop_index = self.getDropIndex(x, y, index=index, flags=flags)
         count = self.GetItemCount()
-        if drop_index >= count:
-            rect = self.GetItemRect(count - 1)
+        if count == 0:
+            # don't show any lines if we don't have any items in the list
+            return
+        elif drop_index >= count:
+            index = min(count, drop_index)
+            rect = self.GetItemRect(index - 1)
             y = rect.y + rect.height + 1
         else:
             rect = self.GetItemRect(drop_index)
@@ -338,11 +342,15 @@ if __name__ == '__main__':
 
             list_count = self.GetItemCount()
             for item in items:
+                if index == -1:
+                    index = 0
                 index = self.InsertStringItem(index, item[0])
                 self.SetStringItem(index, 1, item[1])
                 index += 1
-               
-            
+        
+        def clear(self, evt):
+            self.DeleteAllItems()
+
     class ListPanel(wx.SplitterWindow):
         def __init__(self, parent):
             wx.SplitterWindow.__init__(self, parent)
@@ -362,6 +370,14 @@ if __name__ == '__main__':
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
     sizer.Add(panel, 1, wx.EXPAND | wx.ALL, 5)
+    hsizer = wx.BoxSizer(wx.HORIZONTAL)
+    btn1 = wx.Button(frame, -1, "Clear List 1")
+    btn1.Bind(wx.EVT_BUTTON, panel.list1.clear)
+    btn2 = wx.Button(frame, -1, "Clear List 2")
+    btn2.Bind(wx.EVT_BUTTON, panel.list2.clear)
+    hsizer.Add(btn1, 1, wx.EXPAND)
+    hsizer.Add(btn2, 1, wx.EXPAND)
+    sizer.Add(hsizer, 0, wx.EXPAND)
     
     frame.SetAutoLayout(1)
     frame.SetSizer(sizer)
