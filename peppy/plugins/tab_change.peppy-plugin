@@ -1,0 +1,9 @@
+[Core]
+Name = Tab Changing Actions
+Module = tab_change
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Actions used to change the current tab to something else

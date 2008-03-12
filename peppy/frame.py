@@ -145,6 +145,30 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         for index in range(0, self.GetPageCount()):
             self.removeWrapper(0)
     
+    def moveSelectionLeft(self):
+        """Change the selection to the tab to the left of the currently
+        selected tab.
+        """
+        # FIXME: if the tab order is changed by dragging tabs around, the
+        # order doesn't seem to be reflected in the index.  It looks like the
+        # index of a tab is tied to the order in which it was created, and no
+        # matter how the tabs a physically rearranged on screen, the tab order
+        # is constant.
+        index = self.GetSelection()
+        if index > 0:
+            index -= 1
+            self.SetSelection(index)
+    
+    def moveSelectionRight(self):
+        """Change the selection to the tab to the right of the currently
+        selected tab.
+        """
+        # FIXME: see moveSelectionLeft
+        index = self.GetSelection()
+        if index < self.GetPageCount() - 1:
+            index += 1
+            self.SetSelection(index)
+    
     def getCurrent(self):
         index = self.GetSelection()
         if index<0:
