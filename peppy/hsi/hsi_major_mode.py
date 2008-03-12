@@ -866,6 +866,15 @@ class HSIMinorModeMixin(MinorMode):
         if mode.__class__ == HSIMode:
             return True
         return False
+    
+    def paneInfoHook(self, paneinfo):
+        # adjust the width of the minor mode windows if they are placed on the
+        # top or bottom -- the default width is generally too wide and the
+        # plots will overlap.
+        if self.classprefs.side in ['top', 'bottom']:
+            paneinfo.MinSize(wx.Size(self.classprefs.min_width/2,
+                                     self.classprefs.min_height))
+
 
 class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
                        plotter.PlotProxy):

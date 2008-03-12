@@ -52,6 +52,8 @@ class MinorMode(ClassPrefs, debugmixin):
         IntParam('best_height', 100, 'Desired height of minor mode in pixels'),
         IntParam('min_width', 100, 'Minimum width of minor mode in pixels\nenforced by the AuiManager'),
         IntParam('min_height', 100, 'Minimum height of minor mode in pixels\nenforced by the AuiManager'),
+        ChoiceParam('side', ['top', 'right', 'bottom', 'left'], 'bottom',
+                    help='Positioning of the minor mode window relative to the main window'),
         )
 
     @classmethod
@@ -120,7 +122,18 @@ class MinorMode(ClassPrefs, debugmixin):
         """
         if caption is None:
             caption = self.keyword
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption).Right()
+        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
+        try:
+            # Turn the string 'top', 'right', 'bottom' or 'left' into the
+            # function that will place the pane on that side of the main
+            # window.  The function name is just the string with the first
+            # letter capitalized
+            side = self.classprefs.side.title()
+            func = getattr(paneinfo, side)
+            func()
+        except Exception, e:
+            # default to place on the right side
+            paneinfo.Right()
         paneinfo.DestroyOnClose(False)
         paneinfo.BestSize(wx.Size(self.classprefs.best_width,
                                   self.classprefs.best_height))
