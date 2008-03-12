@@ -52,6 +52,34 @@ class NextLine(ScintillaCmdKeyExecute):
     tooltip = "Move the cursor down a line"
     key_bindings = {'emacs': 'C-N',}
     cmd = wx.stc.STC_CMD_LINEDOWN
+    
+class NextCharacter(ScintillaCmdKeyExecute):
+    alias = "next-character"
+    name = "Cursor to next character"
+    tooltip = "Move the cursor right"
+    key_bindings = {'emacs': 'C-F',}
+    cmd = wx.stc.STC_CMD_CHARRIGHT
+
+class PreviousCharacter(ScintillaCmdKeyExecute):
+    alias = "previous-character"
+    name = "Cursor to previous character"
+    tooltip = "Move the cursor left"
+    key_bindings = {'emacs': 'C-B',}
+    cmd = wx.stc.STC_CMD_CHARLEFT
+    
+class NextWord(ScintillaCmdKeyExecute):
+    alias = "next-word"
+    name = "Cursor to next word"
+    tooltip = "Move the cursor right to the next word break"
+    key_bindings = {'emacs': 'M-F',}
+    cmd = wx.stc.STC_CMD_WORDRIGHT
+
+class PreviousWord(ScintillaCmdKeyExecute):
+    alias = "previous-word"
+    name = "Cursor to previous word"
+    tooltip = "Move the cursor left to the previous word break"
+    key_bindings = {'emacs': 'M-B',}
+    cmd = wx.stc.STC_CMD_WORDLEFT
 
 class BeginningOfBuffer(SelectAction):
     alias = "beginning-of-buffer"
@@ -78,6 +106,9 @@ class CursorMovementPlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [BeginningOfLine, BeginningTextOfLine, EndOfLine, PreviousLine,
-            NextLine, BeginningOfBuffer, EndOfBuffer
+        return [BeginningOfLine, BeginningTextOfLine, EndOfLine,
+                PreviousLine, NextLine,
+                NextCharacter, PreviousCharacter,
+                NextWord, PreviousWord,
+                BeginningOfBuffer, EndOfBuffer
             ]
