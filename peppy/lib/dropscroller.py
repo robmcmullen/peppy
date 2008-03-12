@@ -16,7 +16,7 @@ showing where the items will be dropped.
 It would be nice to have somethin similar for a tree control as well,
 but I haven't tackled that yet.
 """
-import sys
+import sys, pickle
 
 import wx
 
@@ -217,75 +217,73 @@ class ListDropScrollerMixin(object):
                         self._auto_scroll_save_width, self._auto_scroll_save_y)
         self._auto_scroll_save_y = -1
 
-        
+
+class PickledDataObject(wx.CustomDataObject):
+    """Sample custom data object storing indexes of the selected items"""
+    def __init__(self):
+        wx.CustomDataObject.__init__(self, "Pickled")
+
+class PickledDropTarget(wx.PyDropTarget):
+    """Custom drop target modified from the wxPython demo."""
+
+    def __init__(self, window):
+        wx.PyDropTarget.__init__(self)
+        self.dv = window
+
+        # specify the type of data we will accept
+        self.data = PickledDataObject()
+        self.SetDataObject(self.data)
+
+    def cleanup(self):
+        self.dv.finishListScroll()
+
+    # some virtual methods that track the progress of the drag
+    def OnEnter(self, x, y, d):
+        print "OnEnter: %d, %d, %d\n" % (x, y, d)
+        return d
+
+    def OnLeave(self):
+        print "OnLeave\n"
+        self.cleanup()
+
+    def OnDrop(self, x, y):
+        print "OnDrop: %d %d\n" % (x, y)
+        self.cleanup()
+        return True
+
+    def OnDragOver(self, x, y, d):
+        top = self.dv.GetTopItem()
+        print "OnDragOver: %d, %d, %d, top=%s" % (x, y, d, top)
+
+        self.dv.processListScroll(x, y)
+
+        # The value returned here tells the source what kind of visual
+        # feedback to give.  For example, if wxDragCopy is returned then
+        # only the copy cursor will be shown, even if the source allows
+        # moves.  You can use the passed in (x,y) to determine what kind
+        # of feedback to give.  In this case we return the suggested value
+        # which is based on whether the Ctrl key is pressed.
+        return d
+
+    # Called when OnDrop returns True.  We need to get the data and
+    # do something with it.
+    def OnData(self, x, y, d):
+        print "OnData: %d, %d, %d\n" % (x, y, d)
+
+        self.cleanup()
+        # copy the data from the drag source to our data object
+        if self.GetData():
+            # convert it back to a list of lines and give it to the viewer
+            items = pickle.loads(self.data.GetData())
+            self.dv.AddDroppedItems(x, y, items)
+
+        # what is returned signals the source what to do
+        # with the original data (move, copy, etc.)  In this
+        # case we just return the suggested value given to us.
+        return d
+
 
 if __name__ == '__main__':
-    import cPickle as pickle
-    
-    class TestDataObject(wx.CustomDataObject):
-        """Sample custom data object"""
-        def __init__(self):
-            wx.CustomDataObject.__init__(self, "TestData")
-
-    class TestDropTarget(wx.PyDropTarget):
-        """Custom drop target modified from the wxPython demo."""
-
-        def __init__(self, window):
-            wx.PyDropTarget.__init__(self)
-            self.dv = window
-
-            # specify the type of data we will accept
-            self.data = TestDataObject()
-            self.SetDataObject(self.data)
-
-        def cleanup(self):
-            self.dv.finishListScroll()
-
-        # some virtual methods that track the progress of the drag
-        def OnEnter(self, x, y, d):
-            print "OnEnter: %d, %d, %d\n" % (x, y, d)
-            return d
-
-        def OnLeave(self):
-            print "OnLeave\n"
-            self.cleanup()
-
-        def OnDrop(self, x, y):
-            print "OnDrop: %d %d\n" % (x, y)
-            self.cleanup()
-            return True
-
-        def OnDragOver(self, x, y, d):
-            top = self.dv.GetTopItem()
-            print "OnDragOver: %d, %d, %d, top=%s" % (x, y, d, top)
-
-            self.dv.processListScroll(x, y)
-
-            # The value returned here tells the source what kind of visual
-            # feedback to give.  For example, if wxDragCopy is returned then
-            # only the copy cursor will be shown, even if the source allows
-            # moves.  You can use the passed in (x,y) to determine what kind
-            # of feedback to give.  In this case we return the suggested value
-            # which is based on whether the Ctrl key is pressed.
-            return d
-
-        # Called when OnDrop returns True.  We need to get the data and
-        # do something with it.
-        def OnData(self, x, y, d):
-            print "OnData: %d, %d, %d\n" % (x, y, d)
-
-            self.cleanup()
-            # copy the data from the drag source to our data object
-            if self.GetData():
-                # convert it back to a list of lines and give it to the viewer
-                items = pickle.loads(self.data.GetData())
-                self.dv.AddDroppedItems(x, y, items)
-
-            # what is returned signals the source what to do
-            # with the original data (move, copy, etc.)  In this
-            # case we just return the suggested value given to us.
-            return d
-
     class TestList(wx.ListCtrl, ListDropScrollerMixin):
         """Simple list control that provides a drop target and uses
         the new mixin for automatic scrolling.
@@ -297,7 +295,7 @@ if __name__ == '__main__':
             # The mixin needs to be initialized
             ListDropScrollerMixin.__init__(self, interval=200)
             
-            self.dropTarget=TestDropTarget(self)
+            self.dropTarget=PickledDropTarget(self)
             self.SetDropTarget(self.dropTarget)
 
             self.create(name, count)
@@ -319,7 +317,7 @@ if __name__ == '__main__':
 
             # Create the data object containing all currently selected
             # items
-            data = TestDataObject()
+            data = PickledDataObject()
             items = []
             index = self.GetFirstSelected()
             while index != -1:
