@@ -108,7 +108,10 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
         )
 
     def findIndent(self, linenum, extra=None):
-        """Find indentation of next line using IDLE's parsing code.
+        """Find indentation of the current line using IDLE's parsing code.
+        
+        This uses IDLE's python parsing routine to find the indent level of the
+        specified line based on the python code that comes before it.
         
         @param linenum: line number
         @param extra: flag to indicate if it should return a tuple containing
@@ -127,6 +130,9 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
             if firstline < 0:
                 firstline = 0
             start = self.PositionFromLine(firstline)
+            
+            # end is the position before the first character of the line, so
+            # we're looking at the code up to the start of the current line.
             end = self.PositionFromLine(linenum)
             rawtext = self.GetTextRange(start, end)
             
