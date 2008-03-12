@@ -52,7 +52,7 @@ class MinorMode(ClassPrefs, debugmixin):
         IntParam('best_height', 100, 'Desired height of minor mode in pixels'),
         IntParam('min_width', 100, 'Minimum width of minor mode in pixels\nenforced by the AuiManager'),
         IntParam('min_height', 100, 'Minimum height of minor mode in pixels\nenforced by the AuiManager'),
-        ChoiceParam('side', ['top', 'right', 'bottom', 'left'], 'bottom',
+        ChoiceParam('side', ['top', 'right', 'bottom', 'left'], 'right',
                     help='Positioning of the minor mode window relative to the main window'),
         )
 
