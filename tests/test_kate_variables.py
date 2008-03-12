@@ -22,6 +22,8 @@ class TestEmacs(object):
 
     tests = [
     ('kate: space-indent on; indent-width 2; replace-tabs on;', [('GetIndent', 2)]),
+    ('kate: tab-width 4; indent-width 4;', [('GetIndent', 4), ('GetTabWidth', 4)]),
+    ('kate: show-tabs on;', [('GetViewWhiteSpace', 1)]),
     ]
 
     def setUp(self):

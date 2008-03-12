@@ -99,9 +99,9 @@ def applyKateVariables(stc, linelist):
     # check for more complicated settings
     if 'show-tabs' in vars:
         if kateTruth(vars['show-tabs']):
-            stc.SetVisibleWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
+            stc.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         else:
-            stc.SetVisibleWhiteSpace(wx.stc.STC_WS_INVISIBLE)
-        settings_changed.append('SetVisibleWhiteSpace')
+            stc.SetViewWhiteSpace(wx.stc.STC_WS_INVISIBLE)
+        settings_changed.append('SetViewWhiteSpace')
     
     return settings_changed, vars
