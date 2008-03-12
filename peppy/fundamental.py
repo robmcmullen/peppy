@@ -599,6 +599,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         settings = applyVIMModeline(self, lines)
         emacs_settings, emacs_locals = applyEmacsFileLocalSettings(self)
         settings.extend(emacs_settings)
+        kate_settings, kate_locals = applyKateVariables(self, lines)
+        settings.extend(kate_settings)
         
         # Map the STC function to the local variable name so the local variables
         # can be properly updated to whatever VIM or EMACS set them to
