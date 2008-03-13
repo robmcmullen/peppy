@@ -12,6 +12,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.stcspellcheckmixin import *
 from peppy.lib.vimutil import *
 from peppy.lib.emacsutil import *
+from peppy.lib.kateutil import *
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
