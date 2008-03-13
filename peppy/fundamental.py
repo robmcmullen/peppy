@@ -610,6 +610,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                    'EdgeColumn': 'edge_column',
                    'CaretWidth': 'caret_width',
                    'CaretLineVisible': 'caret_line_indicator',
+                   'SetViewWhiteSpace': 'view_whitespace',
                    }
         for setting in settings:
             if setting in mapping:
