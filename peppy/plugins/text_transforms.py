@@ -199,6 +199,34 @@ class Rot13(RegionMutateAction):
         return txt.encode('rot13')
 
 
+class Backslashify(LineOrRegionMutateAction):
+    """Escape the end of line character by adding backslashes.
+    
+    Add backslashes to the end of every line (except the last one) in the
+    region so that the end-of-line character is escaped.  This is useful, for
+    instance, within C or C++ C{#define} blocks that contain multiple line
+    macros.
+    """
+    alias = "backslashify"
+    name = "Backslashify"
+    default_menu = ("Transform", 610)
+
+    def isActionAvailable(self):
+        """The action is only available if a region has multiple lines."""
+        (pos, end) = self.mode.GetSelection()
+        return self.mode.LineFromPosition(pos) < self.mode.LineFromPosition(end) - 1
+
+    def mutateLines(self, lines):
+        """Add backslashes to the end of all lines but the last
+        """
+        out = []
+        eol = " \\" + self.mode.getLinesep()
+        for line in lines[:-1]:
+            out.append(line.rstrip() + eol)
+        out.append(lines[-1])
+        return out
+
+
 class Reindent(TextModificationAction):
     """Reindent a line or region."""
     alias = "reindent-region"
@@ -241,7 +269,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 ShiftLeft, ShiftRight,
 
                 Reindent, CommentRegion, UncommentRegion,
-                FillParagraphOrRegion,
+                FillParagraphOrRegion, Backslashify,
 
                 Tabify, Untabify, CollapseBlankLines,
                 
