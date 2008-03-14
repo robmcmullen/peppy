@@ -572,9 +572,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             last = self.GetLineEndPosition(i)
             if indent<last:
                 col = self.GetLineIndentation(i)
-                dprint("line=%d indent=%d (col=%d) last=%d" % (i, indent, col, last))
+                self.dprint("line=%d indent=%d (col=%d) last=%d" % (i, indent, col, last))
                 return col, i
-            dprint("all blanks: line=%d indent=%d last=%d" % (i, indent, last))
+            self.dprint("all blanks: line=%d indent=%d last=%d" % (i, indent, last))
         return 0, -1
 
     def GetIndentString(self, ind):

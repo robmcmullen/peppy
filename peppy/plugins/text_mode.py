@@ -10,9 +10,10 @@ import os
 import wx
 import wx.stc
 
-from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.yapsy.plugins import IPeppyPlugin
 from peppy.fundamental import FundamentalMode
+from peppy.lib.autoindent import BasicAutoindent
 
 _sample_file="""\
 Life is what happens while you're busy making other plans.
@@ -52,6 +53,8 @@ class TextMode(FundamentalMode):
         StrParam('minor_modes', ''),
         BoolParam('word_wrap', True),
         )
+    
+    autoindent = BasicAutoindent()
     
 
 class TextModePlugin(IPeppyPlugin):

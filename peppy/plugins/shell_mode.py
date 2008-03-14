@@ -15,6 +15,7 @@ from peppy.major import *
 from peppy.actions import *
 from peppy.fundamental import *
 from peppy.stcbase import PeppySTC
+import peppy.lib.autoindent as autoindent
 
 
 class ShellFS(vfs.BaseFS):
@@ -151,6 +152,11 @@ class ShellSTC(PeppySTC):
         return False
 
 
+class ShellAutoindent(autoindent.NullAutoindent):
+    def processReturn(self, stc):
+        stc.refstc.process()
+
+
 class ShellMode(FundamentalMode):
     """This is the viewer STC that is the front-end to the user.
     
@@ -163,6 +169,8 @@ class ShellMode(FundamentalMode):
     regex = None
     
     stc_class = ShellSTC
+    
+    autoindent = ShellAutoindent()
     
     @classmethod
     def verifyProtocol(cls, url):
@@ -187,12 +195,6 @@ class ShellMode(FundamentalMode):
 
     def OnUpdate(self,evt=None):
         assert self.dprint("Updated!")
-        
-    def electricReturn(self):
-        # Call the reference stc's (i.e. the ShellSTC instance)
-        # process command, because it is the reference STC that
-        # knows how to communicate with the shell process
-        self.refstc.process()
 
 
 class ShellPlugin(IPeppyPlugin):

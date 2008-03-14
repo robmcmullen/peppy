@@ -208,13 +208,7 @@ class Reindent(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         s = self.mode
-
-        # save cursor information so the cursor can be maintained at
-        # the same relative location in the text after the indention
-        s.BeginUndoAction()
-        pos = s.reindentLine()
-        s.GotoPos(pos)
-        s.EndUndoAction()
+        s.autoindent.processTab(s)
 
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):

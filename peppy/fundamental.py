@@ -8,6 +8,7 @@ from wx.lib.pubsub import Publisher
 
 from peppy.actions import *
 from peppy.major import *
+from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
 from peppy.lib.stcspellcheckmixin import *
 from peppy.lib.vimutil import *
@@ -158,33 +159,6 @@ class CaretLineHighlight(FundamentalSettingToggle):
     local_setting = 'caret_line_highlight'
     name = "Highlight Caret Line"
     default_menu = ("View", 311)
-
-
-class FoldingReindentMixin(object):
-    """Experimental class to use STC Folding to reindent a line.
-    
-    Currently not supported.
-    """
-    def reindentLine(self, linenum=None, dedent_only=False):
-        """Reindent the specified line to the correct level.
-
-        Given a line, use Scintilla's built-in folding to determine
-        the indention level of the current line.
-        """
-        if linenum is None:
-            linenum = self.GetCurrentLine()
-        linestart = self.PositionFromLine(linenum)
-
-        # actual indention of current line
-        ind = self.GetLineIndentation(linenum) # columns
-        pos = self.GetLineIndentPosition(linenum) # absolute character position
-
-        # folding says this should be the current indention
-        fold = self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
-        self.dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
-        self.SetTargetStart(linestart)
-        self.SetTargetEnd(pos)
-        self.ReplaceTarget(self.GetIndentString(fold))
 
 
 class ParagraphInfo(object):
@@ -343,6 +317,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file to search for vim modeline comments'),
         )
     
+    autoindent = NullAutoindent()
+
     def __init__(self, parent, wrapper, buffer, frame):
         """Create the STC and apply styling settings.
 
@@ -786,154 +762,6 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             return ("", line, "")
         self.dprint(match.groups())
         return match.group(1, 2, 3)
-
-    ##### Indentation
-    def findIndent(self, linenum):
-        """Find proper indention of next line given a line number.
-
-        This is designed to be overridden in subclasses.  Given the current
-        line and assuming the current line is indented correctly, figure out
-        what the indention should be for the next line.
-        
-        @param linenum: line number
-        @return: integer indicating number of columns to indent the following
-        line
-        """
-        return self.GetLineIndentation(linenum)
-
-    def getReindentColumn(self, linenum, linestart, pos, indpos, col, indcol):
-        """Determine the correct indentation of the first not-blank character
-        of the line.
-        
-        This routine should be overridden in subclasses; this provides a
-        default implementation of line reindentatiot that simply reindents the
-        line to the indentation of the line above it.  Subclasses with more
-        specific knowledge of the text being edited will be able to use the
-        syntax of previous lines to indent the line properly.
-        
-        linenum: current line number
-        linestart: position of character at column zero of line
-        pos: position of cursor
-        indpos: position of first non-blank character in line
-        col: column number of cursor
-        indcol: column number of first non-blank character
-        
-        return: the number of columns to indent, or None to leave as-is
-        """
-        # look at indention of previous line
-        prevind, prevline = self.GetPrevLineIndentation(linenum)
-        if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
-            # if there's blank lines before this and the previous
-            # non-blank line is indented less than this one, ignore
-            # it.  Make the user manually unindent lines.
-            return None
-
-        # previous line is not blank, so indent line to previous
-        # line's level
-        return prevind
-
-    def reindentLine(self, linenum=None, dedent_only=False):
-        """Reindent the specified line to the correct level.
-
-        This method should be overridden in subclasses to provide the proper
-        indention based on the type of text file.  The default implementation
-        provided here will indent to the previous line.
-        
-        This operation is typically bound to the tab key, but regardless to the
-        actual keypress to which it is bound is *only* called in response to a
-        user keypress.
-        
-        @return: the new cursor position, in case the cursor has moved as a
-        result of the indention.
-        """
-        if linenum is None:
-            linenum = self.GetCurrentLine()
-        if linenum == 0:
-            # first line is always indented correctly
-            return self.GetCurrentPos()
-        
-        linestart = self.PositionFromLine(linenum)
-
-        # actual indention of current line
-        indcol = self.GetLineIndentation(linenum) # columns
-        pos = self.GetCurrentPos()
-        indpos = self.GetLineIndentPosition(linenum) # absolute character position
-        col = self.GetColumn(pos)
-        self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
-
-        newind = self.getReindentColumn(linenum, linestart, pos, indpos, col, indcol)
-        if newind is None:
-            return pos
-        if dedent_only and newind > indcol:
-            return pos
-            
-        # the target to be replaced is the leading indention of the
-        # current line
-        indstr = self.GetIndentString(newind)
-        self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
-        self.SetTargetStart(linestart)
-        self.SetTargetEnd(indpos)
-        self.ReplaceTarget(indstr)
-
-        # recalculate cursor position, because it may have moved if it
-        # was within the target
-        after = self.GetLineIndentPosition(linenum)
-        self.dprint("after: indent=%d cursor=%d" % (after, self.GetCurrentPos()))
-        if pos < linestart:
-            return pos
-        newpos = pos - indpos + after
-        if newpos < linestart:
-            # we were in the indent region, but the region was made smaller
-            return after
-        elif pos < indpos:
-            # in the indent region
-            return after
-        return newpos
-
-    def electricReturn(self):
-        """Add a newline and indent to the proper tab level.
-
-        Indent to the level of the line above.  This is the entry point action
-        when the return key is pressed.  At a minimum it should insert the
-        appropriate line end character (cr, crlf, or lf depending on the
-        current state of the STC), but provides the opportunity to indent the
-        line as well.
-    
-        The default action is to simply copy the indent level of the previous
-        line.
-        """
-        linesep = self.getLinesep()
-        
-        self.BeginUndoAction()
-        # reindent current line (if necessary), then process the return
-        #pos = self.reindentLine()
-        
-        linenum = self.GetCurrentLine()
-        pos = self.GetCurrentPos()
-        col = self.GetColumn(pos)
-        linestart = self.PositionFromLine(linenum)
-        line = self.GetLine(linenum)[:pos-linestart]
-    
-        #get info about the current line's indentation
-        ind = self.GetLineIndentation(linenum)
-
-        self.dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
-
-        self.SetTargetStart(pos)
-        self.SetTargetEnd(pos)
-        if col <= ind:
-            newline = linesep+self.GetIndentString(col)
-        elif not pos:
-            newline = linesep
-        else:
-            ind = self.findIndent(linenum + 1)
-            newline = linesep+self.GetIndentString(ind)
-        self.ReplaceTarget(newline)
-        self.GotoPos(pos + len(newline))
-        if self.classprefs.spell_check:
-            self.spellCheckWord(pos)
-        self.EndUndoAction()
-
 
     ##### Paragraphs
     def findParagraphStart(self, linenum, info):

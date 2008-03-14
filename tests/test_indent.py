@@ -83,7 +83,7 @@ back at column zero
         for test in splittests(tests):
             yield self.checkReturn, test
 
-class TestPythonIndent(IDLEElectricReturnMixin, StandardReturnMixin, IDLEReindentMixin):
+class TestPythonIndent(object):
     def setUp(self):
         self.stc = getSTC(stcclass=PythonMode, lexer="Python")
         print self.stc

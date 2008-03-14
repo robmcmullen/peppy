@@ -14,17 +14,180 @@
 This is a collection of autoindent code designed for use with peppy's
 enhancements to the wx.StyledTextCtrl.
 
-If you wanted to use this without peppy, you'd need to provide the methods
-C{isStyleComment} and C{isStyleString} to the stc of interest.  They
-should return true when the style passed to them is a comment or string,
-respectively.  See the implementation of them in L{peppy.editra.stcmixin}
+If you wanted to use this without peppy, you'd need to provide several
+methods, including C{isStyleComment}, C{isStyleString}, C{getLinesep},
+(and others) to the stc of interest.  See the implementation of them in
+L{peppy.editra.stcmixin} and L{peppy.stcbase}.
 """
 
 import os, re
+import wx.stc
 from peppy.debug import *
 
 
-class RegexAutoindent(debugmixin):
+class BasicAutoindent(debugmixin):
+    """Simple autoindent that indents the line to the level of the line above it.
+    
+    This is about the bare minimum indenter.  It just looks at the line above
+    it and reports the indent level of that line.  No effort is made to look
+    at syntax or anything.  Simple.
+    """
+    def __init__(self):
+        pass
+    
+    def findIndent(self, stc, linenum):
+        """Find proper indention of current line based on the previous line
+
+        This is designed to be overridden in subclasses.  Given the current
+        line and assuming the current line is indented correctly, figure out
+        what the indention should be for the next line.
+        
+        @param linenum: line number
+        @return: integer indicating number of columns to indent the following
+        line
+        """
+        # look at indention of previous line
+        prevind, prevline = stc.GetPrevLineIndentation(linenum)
+        #if (prevind < indcol and prevline < linenum-1) or prevline < linenum-2:
+        #    # if there's blank lines before this and the previous
+        #    # non-blank line is indented less than this one, ignore
+        #    # it.  Make the user manually unindent lines.
+        #    return None
+
+        # previous line is not blank, so indent line to previous
+        # line's level
+        return prevind
+
+    def reindentLine(self, stc, linenum=None, dedent_only=False):
+        """Reindent the specified line to the correct level.
+
+        Changes the indentation of the given line by inserting or deleting
+        whitespace as required.  This operation is typically bound to the tab
+        key, but regardless to the actual keypress to which it is bound is
+        *only* called in response to a user keypress.
+        
+        @param stc: the stc of interest
+        @param linenum: the line number, or None to use the current line
+        @param dedent_only: flag to indicate that indentation should only be
+        removed, not added
+        @return: the new cursor position, in case the cursor has moved as a
+        result of the indention.
+        """
+        if linenum is None:
+            linenum = stc.GetCurrentLine()
+        if linenum == 0:
+            # first line is always indented correctly
+            return stc.GetCurrentPos()
+        
+        linestart = stc.PositionFromLine(linenum)
+
+        # actual indention of current line
+        indcol = stc.GetLineIndentation(linenum) # columns
+        pos = stc.GetCurrentPos()
+        indpos = stc.GetLineIndentPosition(linenum) # absolute character position
+        col = stc.GetColumn(pos)
+        self.dprint("linestart=%d indpos=%d pos=%d col=%d indcol=%d" % (linestart, indpos, pos, col, indcol))
+
+        newind = self.findIndent(stc, linenum)
+        if newind is None:
+            return pos
+        if dedent_only and newind > indcol:
+            return pos
+            
+        # the target to be replaced is the leading indention of the
+        # current line
+        indstr = stc.GetIndentString(newind)
+        self.dprint("linenum=%d indstr='%s'" % (linenum, indstr))
+        stc.SetTargetStart(linestart)
+        stc.SetTargetEnd(indpos)
+        stc.ReplaceTarget(indstr)
+
+        # recalculate cursor position, because it may have moved if it
+        # was within the target
+        after = stc.GetLineIndentPosition(linenum)
+        self.dprint("after: indent=%d cursor=%d" % (after, stc.GetCurrentPos()))
+        if pos < linestart:
+            return pos
+        newpos = pos - indpos + after
+        if newpos < linestart:
+            # we were in the indent region, but the region was made smaller
+            return after
+        elif pos < indpos:
+            # in the indent region
+            return after
+        return newpos
+
+    def processReturn(self, stc):
+        """Add a newline and indent to the proper tab level.
+
+        Indent to the level of the line above.  This uses the findIndent method
+        to determine the proper indentation of the line about to be added,
+        inserts the appropriate end-of-line characters, and indents the new
+        line to that indentation level.
+        
+        @param stc: stc of interest
+        """
+        linesep = stc.getLinesep()
+        
+        stc.BeginUndoAction()
+        # reindent current line (if necessary), then process the return
+        #pos = stc.reindentLine()
+        
+        linenum = stc.GetCurrentLine()
+        pos = stc.GetCurrentPos()
+        col = stc.GetColumn(pos)
+        #linestart = stc.PositionFromLine(linenum)
+        #line = stc.GetLine(linenum)[:pos-linestart]
+    
+        #get info about the current line's indentation
+        ind = stc.GetLineIndentation(linenum)
+
+        self.dprint("format = %s col=%d ind = %d" % (repr(linesep), col, ind)) 
+
+        stc.SetTargetStart(pos)
+        stc.SetTargetEnd(pos)
+        if col <= ind:
+            newline = linesep + stc.GetIndentString(col)
+        elif not pos:
+            newline = linesep
+        else:
+            ind = self.findIndent(stc, linenum + 1)
+            newline = linesep + stc.GetIndentString(ind)
+        stc.ReplaceTarget(newline)
+        stc.GotoPos(pos + len(newline))
+        stc.EndUndoAction()
+
+    def processTab(self, stc):
+        stc.BeginUndoAction()
+        pos = self.reindentLine(stc)
+        stc.GotoPos(pos)
+        stc.EndUndoAction()
+
+
+class FoldingAutoindent(BasicAutoindent):
+    """Experimental class to use STC Folding to reindent a line.
+    """
+    def findIndent(self, stc, linenum=None):
+        """Reindent the specified line to the correct level.
+
+        Given a line, use Scintilla's built-in folding to determine
+        the indention level of the current line.
+        """
+        if linenum is None:
+            linenum = stc.GetCurrentLine()
+        linestart = stc.PositionFromLine(linenum)
+
+        # actual indention of current line
+        ind = stc.GetLineIndentation(linenum) # columns
+        pos = stc.GetLineIndentPosition(linenum) # absolute character position
+
+        # folding says this should be the current indention
+        fold = stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        self.dprint("ind = %s (char num=%d), fold = %s" % (ind, pos, fold))
+        return fold * stc.GetIndent()
+
+
+class RegexAutoindent(BasicAutoindent):
     """Regex based autoindenter
 
     This is a flexible autointent module that uses regular expressions to
@@ -78,15 +241,11 @@ class RegexAutoindent(debugmixin):
         else:
             self.couples = ''
 
-    def getReindentColumn(self, stc, linenum):
-        """Determine the correct indentation of the first not-blank character
-        of the line.
+    def findIndent(self, stc, linenum):
+        """Determine the correct indentation for the line.
         
-        This routine should be overridden in subclasses; this provides a
-        default implementation of line reindentatiot that simply reindents the
-        line to the indentation of the line above it.  Subclasses with more
-        specific knowledge of the text being edited will be able to use the
-        syntax of previous lines to indent the line properly.
+        This routine uses regular expressions to determine the indentation
+        level of the line.
         
         @param linenum: current line number
         
@@ -281,3 +440,24 @@ class RegexAutoindent(debugmixin):
         #
         #
         #//END KateVarIndent
+
+
+class NullAutoindent(debugmixin):
+    """No-op unindenter that doesn't change the indent level at all.
+    """
+    def findIndent(self, stc, linenum):
+        """No-op that returns the current indent level."""
+        return stc.GetLineIndentation(linenum)
+    
+    def reindentLine(self, stc, linenum=None, dedent_only=False):
+        """No-op that doesn't change the current indent level."""
+        return stc.GetCurrentPos()
+    
+    def processReturn(self, stc):
+        """Add a newline only."""
+        linesep = stc.getLinesep()
+        stc.AddText(linesep)
+    
+    def processTab(self, stc):
+        """Don't reindent but insert the equivalent of a tab character"""
+        stc.AddText(stc.GetIndentString(stc.GetIndent()))

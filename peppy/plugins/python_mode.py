@@ -16,6 +16,7 @@ from peppy.major import *
 from peppy.fundamental import *
 from peppy.actions.base import *
 
+from peppy.lib.autoindent import BasicAutoindent
 import peppy.lib.PyParse as PyParse
 
 
@@ -73,7 +74,7 @@ class ElectricColon(TextModificationAction):
             # do it manually
             linestart = s.PositionFromLine(s.GetCurrentLine())
             s.Colourise(linestart, s.GetSelectionEnd())
-            s.reindentLine(dedent_only=True)
+            s.autoindent.reindentLine(s, dedent_only=True)
         s.EndUndoAction()
 
 
@@ -95,59 +96,44 @@ def build_char_in_string_func(stc, startindex):
         return _icis(_stc, _startindex + offset)
     return inner
 
-
-class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
-                 FundamentalMode):
-    keyword='Python'
-    icon='icons/py.png'
-    regex="\.(py|pyx)$"
-    
-    fold_function_match = ["def ", "class "]
-
-    default_classprefs = (
-        )
-
-    def findIndent(self, linenum, extra=None):
-        """Find indentation of the current line using IDLE's parsing code.
+class PythonAutoindent(BasicAutoindent):
+    def findIndent(self, stc, linenum):
+        """Find proper indentation of the current Python source line.
         
         This uses IDLE's python parsing routine to find the indent level of the
         specified line based on the python code that comes before it.
         
         @param linenum: line number
-        @param extra: flag to indicate if it should return a tuple containing
-        extra data
-        @return: if extra is None or False, returns integer indicating number
-        of columns to indent.  If extra is True, returns a tuple of the number
-        of columns and a keyword indicating extra information.
+        @return: integer indicating number of columns to indent.
         """
-        indentwidth = self.GetIndent()
+        indentwidth = stc.GetIndent()
         tabwidth = 87
-        indent = self.GetLineIndentation(linenum)
+        indent = stc.GetLineIndentation(linenum)
         y = PyParse.Parser(indentwidth, tabwidth)
         # FIXME: context line hack straight from IDLE
         for context in [50, 500, 5000000]:
             firstline = linenum - context
             if firstline < 0:
                 firstline = 0
-            start = self.PositionFromLine(firstline)
+            start = stc.PositionFromLine(firstline)
             
             # end is the position before the first character of the line, so
             # we're looking at the code up to the start of the current line.
-            end = self.PositionFromLine(linenum)
-            rawtext = self.GetTextRange(start, end)
+            end = stc.PositionFromLine(linenum)
+            rawtext = stc.GetTextRange(start, end)
             
             # FIXME: for now, rather than changing PyParse, I'm converting
             # everything to newlines because PyParse is hardcoded for newlines
             # only
-            if self.getLinesep() == "\r\n":
+            if stc.getLinesep() == "\r\n":
                 #dprint("Converting windows!")
                 rawtext = rawtext.replace("\r\n", "\n")
-            elif self.getLinesep() == "\r":
+            elif stc.getLinesep() == "\r":
                 #dprint("Converting old mac!")
                 rawtext = rawtext.replace("\r", "\n")
             y.set_str(rawtext+"\n")
             
-            bod = y.find_good_parse_start(build_char_in_string_func(self, start))
+            bod = y.find_good_parse_start(build_char_in_string_func(stc, start))
             if bod is not None or firstline == 0:
                 break
         #dprint(rawtext)
@@ -161,27 +147,27 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
             # The current stmt hasn't ended yet.
             if c == PyParse.C_STRING_FIRST_LINE:
                 # after the first line of a string; do not indent at all
-                print "C_STRING_FIRST_LINE"
+                self.dprint("C_STRING_FIRST_LINE")
                 pass
             elif c == PyParse.C_STRING_NEXT_LINES:
                 # inside a string which started before this line;
                 # just mimic the current indent
                 #text.insert("insert", indent)
-                s = self.GetStyleAt(end)
+                s = stc.GetStyleAt(end)
                 if s == 6 or s == 7:
                     # Inside a triple quoted string (TQS)
-                    print "C_STRING_NEXT_LINES in TQS"
+                    self.dprint("C_STRING_NEXT_LINES in TQS")
                     indentstr = y.get_base_indent_string()
                     indent = len(indentstr.expandtabs(tabwidth))
                 else:
                     # FIXME: Does this ever happen without being in a TQS???
-                    print "C_STRING_NEXT_LINES"
+                    self.dprint("C_STRING_NEXT_LINES")
             elif c == PyParse.C_BRACKET:
                 # line up with the first (if any) element of the
                 # last open bracket structure; else indent one
                 # level beyond the indent of the line with the
                 # last open bracket
-                print "C_BRACKET"
+                self.dprint("C_BRACKET")
                 #self.reindent_to(y.compute_bracket_indent())
                 indent = y.compute_bracket_indent()
             elif c == PyParse.C_BACKSLASH:
@@ -213,31 +199,35 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
                 indent = ((indent-1)//indentwidth) * indentwidth
                 extra_data = "block dedent"
         self.dprint("indent = %d" % indent)
-        if extra:
-            return (indent, extra_data)
-        return indent
-
-    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
-        """Use IDLE parsing module to find the correct indention for the line.
-        """
-        # Use the current line number, which will find the indention based on
-        # the previous line
-        indent, extra = self.findIndent(linenum, True)
-        #dprint("linenum: %d indent=%d extra=%s" % (linenum, indent, extra))
         
-        # The text begins at indpos; check some special cases to see if there
-        # should be a dedent
-        style = self.GetStyleAt(before)
-        end = self.GetLineEndPosition(linenum)
-        cmd = self.GetTextRange(before, end)
+        # check some special cases to see if they line should be dedented by
+        # a level
+        before = stc.GetLineIndentPosition(linenum)
+        style = stc.GetStyleAt(before)
+        end = stc.GetLineEndPosition(linenum)
+        cmd = stc.GetTextRange(before, end)
         #dprint("checking %s" % cmd)
         if linenum>0 and style==wx.stc.STC_P_WORD and (cmd.startswith('else') or cmd.startswith('elif') or cmd.startswith('except') or cmd.startswith('finally')):
-            #dprint("Found a dedent: %s" % cmd)
-            if extra != "block dedent":
+            self.dprint("Found a dedent: %s" % cmd)
+            if extra_data != "block dedent":
                 # If we aren't right after a return or something that already
                 # caused a dedent, dedent it
-                indent -= self.GetIndent()
+                indent -= indentwidth
         return indent
+
+
+class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
+                 FundamentalMode):
+    keyword='Python'
+    icon='icons/py.png'
+    regex="\.(py|pyx)$"
+    
+    fold_function_match = ["def ", "class "]
+
+    default_classprefs = (
+        )
+
+    autoindent = PythonAutoindent()
 
     def findParagraphStart(self, linenum, info):
         """Check to see if a previous line should be included in the

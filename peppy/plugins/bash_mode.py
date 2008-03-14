@@ -1,8 +1,8 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-"""Fortran programming language editing support.
+"""Shell script programming language editing support.
 
-Major mode for editing Fortran files.
+Major mode for editing bash shell script files.
 """
 
 import os
@@ -41,12 +41,6 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
                                                         self.classprefs.indent,
                                                         self.classprefs.unindent,
                                                         '')
-    
-    def findIndent(self, linenum):
-        return self.autoindent.getReindentColumn(self, linenum)
-    
-    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
-        return self.autoindent.getReindentColumn(self, linenum)
 
 
 class BashModePlugin(IPeppyPlugin):

@@ -15,6 +15,7 @@ import wx.stc
 from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import *
+from peppy.lib.autoindent import *
 
 # A sample makefile is provided
 _sample_file = """\
@@ -57,10 +58,10 @@ class SampleMakefile(SelectAction):
         self.frame.open("about:sample.mak")
 
 
-class MakefileIndentMixin(object):
-    commandre = "[^\s\"\']+:"
+class MakefileAutoindent(BasicAutoindent):
+    commandre = re.compile("[^\s\"\']+:")
     
-    def getReindentColumn(self, linenum, linestart, pos, before, col, ind):
+    def findIndent(self, stc, linenum):
         """Reindent the specified line to the correct level.
 
         Given a line, use some regex matching to determine the correct indent
@@ -68,47 +69,50 @@ class MakefileIndentMixin(object):
         """
         # The text begins at indpos; check some special cases to see if there
         # should be a dedent
-        end = self.GetLineEndPosition(linenum)
-        cmd = self.GetTextRange(before, end)
+        before = stc.GetLineIndentPosition(linenum)
+        end = stc.GetLineEndPosition(linenum)
+        cmd = stc.GetTextRange(before, end)
         dprint(cmd)
         
         # skip blank lines
         if len(cmd) > 0:
             # don't reindent comments
-            if cmd[0] == "#": return ind
+            if cmd[0] == "#": return stc.GetLineIndentation(linenum)
             
-            match = re.match(self.commandre, cmd)
+            match = self.commandre.match(cmd)
             if match:
                 # it's a command, so it shouldn't be indented.
-                dprint("It's a command!  indent=0")
+                self.dprint("It's a command!  indent=0")
                 return 0
         
         # OK, not a command, so it depends on context.
         while linenum > 0:
             linenum -= 1
-            start = self.PositionFromLine(linenum)
-            style = self.GetStyleAt(start)
-            dprint("line=%d start=%d style=%d" % (linenum, start, style))
+            start = stc.PositionFromLine(linenum)
+            style = stc.GetStyleAt(start)
+            self.dprint("line=%d start=%d style=%d" % (linenum, start, style))
             if style == 5:
                 # OK, it's a possible command.
-                end = self.GetLineEndPosition(linenum)
-                cmd = self.GetTextRange(start, end)
-                match = re.match(self.commandre, cmd)
+                end = stc.GetLineEndPosition(linenum)
+                cmd = stc.GetTextRange(start, end)
+                match = self.commandre.match(cmd)
                 if match:
                     # Yep, a command.  This line should be tabbed
-                    dprint("tabbed!")
+                    self.dprint("tabbed!")
                     return 8
                 return 0
             elif style == 3:
                 return 0
 
-        return ind
+        # If all else fails, just use the same amount of indentation as before
+        return stc.GetLineIndentation(linenum)
+
 
 # The Makefile major mode is descended from FundamentalMode, meaning that
 # it is an STC based editing window.  Currently, no particular additional
 # functionality is present in the mode except for overriding some
 # classprefs
-class MakefileMode(MakefileIndentMixin, FundamentalMode):
+class MakefileMode(FundamentalMode):
     """Major mode for editing Makefiles.
     
     """
@@ -122,7 +126,7 @@ class MakefileMode(MakefileIndentMixin, FundamentalMode):
     
     # Any files matching this regex will be candidates for this major
     # mode
-    regex="(\.mak|[Mm]akefile.*)$"
+    regex="(\.mak|[Mm]akefile$|[Mm]akefile\..*)$"
 
     default_classprefs = (
         # Overrides from FundamentalMode classprefs
@@ -130,6 +134,8 @@ class MakefileMode(MakefileIndentMixin, FundamentalMode):
         IntParam('tab_size', 8),
         BoolParam('word_wrap', True),
         )
+
+    autoindent = MakefileAutoindent()
 
 
 # This is the plugin definition for MakefileMode.  This is the only way

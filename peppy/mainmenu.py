@@ -699,7 +699,10 @@ class ElectricReturn(TextModificationAction):
     key_bindings = {'default': 'RET',}
 
     def action(self, index=-1, multiplier=1):
-        self.mode.electricReturn()
+        if self.mode.classprefs.spell_check:
+            pos = self.mode.GetCurrentPos()
+            self.mode.spellCheckWord(pos)
+        self.mode.autoindent.processReturn(self.mode)
 
 
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
