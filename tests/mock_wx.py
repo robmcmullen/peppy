@@ -45,6 +45,8 @@ class MockBuffer(object):
     def __init__(self, stc):
         self.stc = stc
         self.url = vfs.normalize("nothing")
+    def startChangeDetection(self):
+        pass
 
 class MockFrame(wx.Frame):
     def __init__(self, mode):

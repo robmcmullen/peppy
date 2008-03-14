@@ -10,7 +10,7 @@ from peppy.plugins.python_mode import *
 from peppy.plugins.text_transforms import *
 from peppy.debug import *
 
-import PyParse as PyParse
+import peppy.lib.PyParse as PyParse
 
 from nose.tools import *
 
@@ -119,10 +119,7 @@ class blah:
     '''
 --
 
-
-"""
-
-test_cases = """\
+----------------------
 class blah:
     '''euanoe usnahoeunahoesnuhaoe
       blaoeuaoeua
@@ -144,7 +141,7 @@ def pyparseit():
     '''
     inside triple quotes
     '''
-    stc = getSTC(stcclass=PythonSTC, lexer="Python")
+    stc = getSTC(stcclass=PythonMode, lexer="Python")
     
     tests = splittests(test_cases)
     dprint(len(tests))
