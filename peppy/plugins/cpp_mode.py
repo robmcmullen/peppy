@@ -11,7 +11,7 @@ import wx
 import wx.stc
 
 from peppy.lib.foldexplorer import *
-from peppy.lib.autoindent import FoldingAutoindent
+from peppy.lib.autoindent import CStyleAutoindent
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
@@ -28,7 +28,7 @@ class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     default_classprefs = (
        )
     
-    autoindent = FoldingAutoindent()
+    autoindent = CStyleAutoindent()
 
 
 class CPlusPlusModePlugin(IPeppyPlugin):

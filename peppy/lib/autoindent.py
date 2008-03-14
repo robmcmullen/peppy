@@ -187,6 +187,40 @@ class FoldingAutoindent(BasicAutoindent):
         return fold * stc.GetIndent()
 
 
+class CStyleAutoindent(BasicAutoindent):
+    """Use the STC Folding to reindent a line in a C-like mode.
+    
+    This autoindenter uses the built-in Scintilla folding to determine the
+    correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
+    plus a bunch of heuristics to handle things that Scintilla doesn't.
+    """
+    debuglevel = 1
+    def findIndent(self, stc, linenum=None):
+        """Reindent the specified line to the correct level.
+
+        Given a line, use Scintilla's built-in folding to determine
+        the indention level of the current line.
+        """
+        if linenum is None:
+            linenum = stc.GetCurrentLine()
+        linestart = stc.PositionFromLine(linenum)
+
+        # actual indention of current line
+        col = stc.GetLineIndentation(linenum) # columns
+        pos = stc.GetLineIndentPosition(linenum) # absolute character position
+
+        # folding says this should be the current indention
+        fold = stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        c = stc.GetCharAt(pos)
+        self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, c))
+        if c == ord('}'):
+            # Scintilla doesn't automatically dedent the closing brace, so we
+            # force that here.
+            fold -= 1
+
+        return fold * stc.GetIndent()
+
+
 class RegexAutoindent(BasicAutoindent):
     """Regex based autoindenter
 
@@ -198,6 +232,10 @@ class RegexAutoindent(BasicAutoindent):
     the kate editor of the KDE project.  He has a U{blog
     entry<http://www.alweb.dk/blog/anders/autoindentation>} describing his
     thinking that led up to the creation of the code.
+    
+    The source code for the autoindenting part of Kate is actually in the
+    L{kpart<http://websvn.kde.org/branches/KDE/3.5/kdelibs/kate/part/kateautoindent.cpp?revision=620408&view=markup>}
+    section of KDE, not with the main Kate application.
     """
     
     def __init__(self, reIndentAfter, reIndent, reUnindent, braces):
