@@ -212,11 +212,15 @@ class CStyleAutoindent(BasicAutoindent):
         # folding says this should be the current indention
         fold = stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
         c = stc.GetCharAt(pos)
+        s = stc.GetStyleAt(pos)
         self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, c))
         if c == ord('}'):
             # Scintilla doesn't automatically dedent the closing brace, so we
             # force that here.
             fold -= 1
+        elif c == ord('#') and s == 9:
+            # Force preprocessor directives to start at column zero
+            fold = 0
 
         return fold * stc.GetIndent()
 
