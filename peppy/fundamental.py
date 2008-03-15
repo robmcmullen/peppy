@@ -399,6 +399,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         Automatic spell checking is handled here.
         """
         uchar = unichr(evt.GetKeyCode())
+        if self.autoindent.electricChar(self, uchar):
+            # If the autoindenter handles the char, it will insert the char.
+            # So, we don't call Skip in this case and the processing ends
+            # here.
+            return
         if self.classprefs.spell_check and uchar in self.word_end_chars:
             # We are catching the event before the character is added to the
             # text, so we know the cursor is at the end of the word.

@@ -151,8 +151,21 @@ class BasicAutoindent(debugmixin):
         elif not pos:
             newline = linesep
         else:
+            # When we insert a new line, the colorization isn't always
+            # immediately updated, so we have to force that here before
+            # calling findIndent
+            stc.ReplaceTarget(linesep)
+            pos += len(linesep)
+            end = min(pos + 1, stc.GetTextLength())
+            # Colorize the entire last line up to one character beyond the
+            # newly inserted linesep character, guaranteeing that the new line
+            # will have the correct fold property set.
+            stc.Colourise(stc.PositionFromLine(linenum), end)
+            stc.SetTargetStart(pos)
+            stc.SetTargetEnd(pos)
             ind = self.findIndent(stc, linenum + 1)
-            newline = linesep + stc.GetIndentString(ind)
+            dprint("pos=%d ind=%d fold=%d" % (pos, ind, (stc.GetFoldLevel(linenum+1)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE))
+            newline = stc.GetIndentString(ind)
         stc.ReplaceTarget(newline)
         stc.GotoPos(pos + len(newline))
         stc.EndUndoAction()
@@ -162,6 +175,27 @@ class BasicAutoindent(debugmixin):
         pos = self.reindentLine(stc)
         stc.GotoPos(pos)
         stc.EndUndoAction()
+    
+    def electricChar(self, stc, uchar):
+        """Autoindent in response to a special character
+
+        This is a hook to cause an autoindent on a particular character.
+        Note that the hook can do more than that -- it can insert or delete
+        characters as well.
+        
+        This takes its name from emacs, where "electric" meant that something
+        else happened other than simply inserting the char.
+        
+        @param stc: stc instance
+        
+        @param uchar: unicode character that was just typed by the user (note
+        that it hasn't been inserted into the document yet.)
+        
+        @return: True if this method handled the character and the text
+        was modified; False if the calling event handler should handle the
+        character.
+        """
+        return False
 
 
 class FoldingAutoindent(BasicAutoindent):
@@ -210,7 +244,7 @@ class CStyleAutoindent(BasicAutoindent):
         pos = stc.GetLineIndentPosition(linenum) # absolute character position
 
         # folding says this should be the current indention
-        fold = stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+        fold = (stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
         c = stc.GetCharAt(pos)
         s = stc.GetStyleAt(pos)
         self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, c))
@@ -223,6 +257,33 @@ class CStyleAutoindent(BasicAutoindent):
             fold = 0
 
         return fold * stc.GetIndent()
+    
+    def electricChar(self, stc, uchar):
+        """Reindent the line and insert a newline when special chars are typed.
+        
+        Like emacs, a semicolon or curly brace causes the line to be reindented
+        and the next line to be indented to the correct column.
+        
+        @param stc: stc instance
+        
+        @param uchar: unicode character that was just typed by the user (note
+        that it hasn't been inserted into the document yet.)
+        
+        @return: True if this method handled the character and the text
+        was modified; False if the calling event handler should handle the
+        character.
+        """
+        if uchar == u';' or uchar == '{' or uchar == '}':
+            pos = stc.GetCurrentPos()
+            s = stc.GetStyleAt(pos)
+            if not stc.isStyleComment(s) and not stc.isStyleString(s):
+                stc.BeginUndoAction()
+                stc.AddText(uchar)
+                self.processTab(stc)
+                self.processReturn(stc)
+                stc.EndUndoAction()
+                return True
+        return False
 
 
 class RegexAutoindent(BasicAutoindent):
@@ -503,3 +564,7 @@ class NullAutoindent(debugmixin):
     def processTab(self, stc):
         """Don't reindent but insert the equivalent of a tab character"""
         stc.AddText(stc.GetIndentString(stc.GetIndent()))
+    
+    def electricChar(self, stc, uchar):
+        """No electric chars in Null autoindenter."""
+        return False

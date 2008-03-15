@@ -52,32 +52,6 @@ class SamplePython(SelectAction):
         self.frame.open("about:sample.py")
 
 
-class ElectricColon(TextModificationAction):
-    name = "Electric Colon"
-    tooltip = "Indent the current line when a colon is pressed"
-    key_bindings = {'default': 'S-;',} # FIXME: doesn't work to specify ':'
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return mode.keyword == 'Python'
-
-    def action(self, index=-1, multiplier=1):
-        s = self.mode
-        style = s.GetStyleAt(s.GetSelectionEnd())
-        s.BeginUndoAction()
-        s.ReplaceSelection(":")
-        if s.isStyleComment(style) or s.isStyleString(style):
-            self.dprint("within comment or string: not indenting")
-            pass
-        else:
-            # folding info not automatically updated after a Replace, so
-            # do it manually
-            linestart = s.PositionFromLine(s.GetCurrentLine())
-            s.Colourise(linestart, s.GetSelectionEnd())
-            s.autoindent.reindentLine(s, dedent_only=True)
-        s.EndUndoAction()
-
-
 # Helper functions required by IDLE's PyParse routine
 def is_char_in_string(stc, pos):
     """Return True if the position is within a string"""
@@ -215,6 +189,23 @@ class PythonAutoindent(BasicAutoindent):
                 indent -= indentwidth
         return indent
 
+    def electricChar(self, stc, uchar):
+        """Reindent the line and insert a newline when special chars are typed.
+        
+        For python mode, a colon should reindent the line (for example, after
+        an else statement, it should dedent it one level)
+        """
+        if uchar == u':':
+            pos = stc.GetCurrentPos()
+            s = stc.GetStyleAt(pos)
+            if not stc.isStyleComment(s) and not stc.isStyleString(s):
+                stc.BeginUndoAction()
+                stc.AddText(uchar)
+                self.reindentLine(stc, dedent_only=True)
+                stc.EndUndoAction()
+                return True
+        return False
+
 
 class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
                  FundamentalMode):
@@ -295,4 +286,4 @@ class PythonPlugin(IPeppyPlugin):
         yield PythonErrorMode
 
     def getActions(self):
-        return [SamplePython, ElectricColon]
+        return [SamplePython]
