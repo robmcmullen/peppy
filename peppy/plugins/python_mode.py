@@ -96,16 +96,19 @@ class PythonAutoindent(BasicAutoindent):
             end = stc.PositionFromLine(linenum)
             rawtext = stc.GetTextRange(start, end)
             
-            # FIXME: for now, rather than changing PyParse, I'm converting
-            # everything to newlines because PyParse is hardcoded for newlines
-            # only
-            if stc.getLinesep() == "\r\n":
-                #dprint("Converting windows!")
-                rawtext = rawtext.replace("\r\n", "\n")
-            elif stc.getLinesep() == "\r":
-                #dprint("Converting old mac!")
-                rawtext = rawtext.replace("\r", "\n")
-            y.set_str(rawtext+"\n")
+            # Handle two issues with this loop.  1: Remove comments that start
+            # at column zero so they don't affect the indenting.  2: PyParse
+            # is hardcoded for "\n" style newlines only, so by splitting the
+            # lines here we can change whatever the newlines are into "\n"
+            # characters.
+            lines = []
+            for line in rawtext.splitlines():
+                if len(line) > 0:
+                    if line[0] != '#':
+                        lines.append(line)
+            lines.append('') # include a blank line at the end
+            rawtext = "\n".join(lines)
+            y.set_str(rawtext)
             
             bod = y.find_good_parse_start(build_char_in_string_func(stc, start))
             if bod is not None or firstline == 0:
