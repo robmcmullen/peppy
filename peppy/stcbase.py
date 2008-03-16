@@ -648,6 +648,105 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         start = self.WordStartPosition(pos, True)
         word = self.GetTextRange(start, end)
         return (word, start, end)
+    
+    def selectBraces(self, pos=None, braces=None):
+        """Given a point, find the region contained by the innermost set of braces.
+        
+        If not specified, all types of braces (e.g.  parens, brackets, curly
+        braces) are matched.  Otherwise, only the specified types of braces
+        are matched.
+        
+        @param pos: starting position
+        @param braces: string containing brace types
+        @return: True if valid region found
+        @side-effect: selects region if valid
+        """
+        if pos is None:
+            pos = self.GetCurrentPos()
+        
+        if braces is None:
+            braces = "([{"
+        braces = braces.replace(')', '(').replace(']', '[').replace('}', '{')
+        matching = {'(': ')', ')': '(',
+                    '[': ']', ']': '[',
+                    '{': '}', '}': '{'}
+        
+        # use regex to search forward for all brace chars
+        pattern = "[\(\[\{\)\]\}]"
+        pairs = {u'(': 0, u'[': 0, u'{': 0}
+        braceopen = ''
+        i = pos
+        last = self.GetLength()
+        while i < last:
+            i = self.FindText(i, last, pattern, wx.stc.STC_FIND_REGEXP)
+            if i < 0:
+                break
+            c = self.GetTextRange(i, i+1)
+            s = self.GetStyleAt(i)
+            if self.isStyleComment(s) or self.isStyleString(s):
+                # Skip matches inside strings
+                i += 1
+                continue
+            if c in u')]}':
+                c = matching[c]
+                pairs[c] -= 1
+                #dprint("-->: closing brace %s at %d: pairs=%s" % (matching[c], i, str(pairs)))
+                if pairs[c] < 0:
+                    # found an unmatched closing brace.  We're done matching
+                    # in this direction, but we have to check if there's a
+                    # nesting error.  If all others are zero, we have our
+                    # match.  Otherwise, there's some nesting error and we
+                    # won't be able to do the search.
+                    count = 0
+                    for k,v in pairs.iteritems():
+                        if k == c:
+                            continue
+                        count += v
+                    if count == 0:
+                        # No nesting error, so mark the brace type
+                        braceopen = c
+                    break
+            else:
+                # found an opening brace, so now we have to do a search for
+                # more brace pairs till we find a closing brace.  We could go
+                # many levels of nesting before we find the closing.
+                pairs[c] += 1
+                #dprint("-->: opening brace %s at %d: pairs=%s" % (c, i, str(pairs)))
+            i += 1
+        
+        #dprint("brace type = %s at %d" % (braceopen, i))
+        last = i
+        
+        # Can't use regular expressions searching backward (scintilla
+        # limitation), so have to use the slow char-by-char method.
+        i = pos
+        pairs = {u'(': 0, u'[': 0, u'{': 0}
+        while i > 0:
+            i -= 1
+            c = self.GetTextRange(i, i+1)
+            if c in matching:
+                if c in u')]}':
+                    c = matching[c]
+                    pairs[c] += 1
+                    #dprint("<--: closing brace %s at %d: pairs=%s" % (matching[c], i, str(pairs)))
+                else:
+                    pairs[c] -= 1
+                    #dprint("<--: opening brace %s at %d: pairs=%s" % (c, i, str(pairs)))
+                    if pairs[c] < 0:
+                        # found an unmatched opening brace.  Check nesting
+                        # and return
+                        count = 0
+                        for k,v in pairs.iteritems():
+                            if k == c:
+                                continue
+                            count += v
+                        if count == 0:
+                            # No nesting error, so we have the range
+                            #dprint("found match of %s" % braceopen)
+                            self.SetSelection(i, last + 1)
+                            return True
+                        return False
+        return False
 
 
 class PeppySTC(PeppyBaseSTC):

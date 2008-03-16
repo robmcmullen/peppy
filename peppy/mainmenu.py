@@ -691,6 +691,24 @@ class SelectAll(Paste):
         self.mode.SelectAll()
 
 
+class SelectBraces(Paste):
+    alias = "select-braces"
+    name = "Select Braces"
+    tooltip = "Select all text between the braces"
+    icon = None
+    default_menu = ("Edit", 126)
+    default_toolbar = False
+    key_bindings = None
+    global_id = None
+
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'selectBraces')
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.selectBraces()
+
+
 class ElectricReturn(TextModificationAction):
     alias = "electric-return"
     name = "Electric Return"
@@ -966,7 +984,8 @@ class MainMenu(IPeppyPlugin):
         action_classes = msg.data
         # FIXME: the built-in right click menu has a Delete option as well that
         # deletes the current selection.
-        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll])
+        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll,
+                               SelectBraces])
         #dprint(action_classes)
 
     def getMajorModes(self):
@@ -981,6 +1000,7 @@ class MainMenu(IPeppyPlugin):
                 Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
+                SelectBraces,
 
                 RunScript, RunScriptWithArgs, StopScript,
 
