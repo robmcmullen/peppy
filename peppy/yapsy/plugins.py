@@ -245,8 +245,16 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         mostly for storing read-only help files or sample files.  It
         is useful for adding help text for your plugin.
     
-        The dict is keyed on the filename, and the value is the contents
-        of the file.
+        The dict is keyed on the filename, and the value is the contents of the
+        file, or a tuple with the contents of the file and the mime type.
+        
+        Some examples::
+        
+            def aboutFiles(self):
+                return {"test.txt": "stuff"}
+        
+            def aboutFiles(self):
+                return {"test.html": ("Hello <strong>world</strong>", "text/html")}
         """
         return {}
 

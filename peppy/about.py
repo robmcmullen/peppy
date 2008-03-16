@@ -76,17 +76,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 aboutfiles = {}
 aboutmimetype = {}
+
+def guessMime(text):
+    sample = text[0:1024].strip()
+    if sample and sample[0] == "<":
+        return "text/html"
+    return "text/plain"
+
 def SetAbout(path, text, mimetype=None, encoding=None):
     #eprint("Setting %s: %d bytes" % (path, len(text)))
     if encoding:
         text = text.encode(encoding)
     aboutfiles[path] = text
     if not mimetype:
-        sample = text[0:1024].strip()
-        if sample and sample[0] == "<":
-            mimetype = "text/html"
-        else:
-            mimetype = "text/plain"
+        mimetype = guessMime(text)
     aboutmimetype[path] = mimetype
 
 def findAbout(path):
@@ -97,7 +100,28 @@ def findAbout(path):
         #dprint("checking plugin %s" % plugin)
         files = plugin.aboutFiles()
         if path in files:
-            return files[path]
+            # the file details could include a mimetype
+            details = files[path]
+            if isinstance(details, str):
+                return details
+            else:
+                return details[0]
+    return None
+
+def findMime(path):
+    if path in aboutmimetype:
+        return aboutmimetype[path]
+    plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+    for plugin in plugins:
+        #dprint("checking plugin %s" % plugin)
+        files = plugin.aboutFiles()
+        if path in files:
+            # the file details could include a mimetype
+            details = files[path]
+            if isinstance(details, str):
+                return guessMime(details)
+            else:
+                return details[1]
     return None
 
 def findAboutNames():
@@ -169,7 +193,7 @@ class AboutFS(vfs.BaseFS):
         if text is None:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
         recurse_count = 100
-        mimetype = aboutmimetype.get(path)
+        mimetype = findMime(path)
         if mimetype.startswith("text") and text.find("%("):
             while text.find("%(") >= 0 and recurse_count>0:
                 text = text % substitutes
