@@ -165,7 +165,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
 
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
-        self.minors.deleteAll()
+        try:
+            self.minors.deleteAll()
+        except AttributeError:
+            dprint("Minor modes must not have been initiated for %s" % self.editwin)
+            raise
         self.minors = None
     
     def findMinorMode(self, name):
