@@ -109,6 +109,7 @@ class ModularStatusBarInfo(object):
             Publisher().subscribe(self.updateMessage, message)
             self.message = message
         
+        self.parent.gauge.SetRange(self.gauge_value_max)
         self.updateProgress(0)
         if self.parent.info == self:
             self.parent.setWidths()
