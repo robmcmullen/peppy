@@ -100,6 +100,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from wx.lib.filebrowsebutton import *
 from wx.lib.stattext import GenStaticText
 
+from peppy.lib.column_autosize import ColumnAutoSizeMixin
 from peppy.lib.controls import FontBrowseButton
 
 try:
@@ -1492,9 +1493,10 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     updated[param] = True
 
 
-class PrefClassList(wx.ListCtrl, debugmixin):
+class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
     def __init__(self, parent, classes):
         wx.ListCtrl.__init__(self, parent, size=(200,400), style=wx.LC_REPORT)
+        ColumnAutoSizeMixin.__init__(self)
 
         self.setIconStorage()
         
@@ -1513,12 +1515,7 @@ class PrefClassList(wx.ListCtrl, debugmixin):
         self.SetStringItem(index, 0, name)
 
     def createColumns(self):
-        info = wx.ListItem()
-        info.m_mask = wx.LIST_MASK_TEXT | wx.LIST_MASK_IMAGE | wx.LIST_MASK_FORMAT
-        info.m_image = -1
-        info.m_format = 0
-        info.m_text = "Class"
-        self.InsertColumnInfo(0, info)
+        self.InsertSizedColumn(0, "Class")
 
     def reset(self, classes):
         index = 0

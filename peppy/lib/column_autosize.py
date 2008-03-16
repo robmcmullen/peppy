@@ -80,9 +80,12 @@ in InsertSizedColumn.
 
 
 @author: Rob McMullen
-@version: 1.2
+@version: 1.3
 
 Changelog::
+    1.3:
+        - changed autosizing to expand last column to width of the containing
+          window if the whole list is smaller than the window size
     1.2:
         - added 'expand' keyword
     1.1:
@@ -342,7 +345,12 @@ class ColumnAutoSizeMixin(object):
                 flag = flags[col]
                 if flag.expand:
                     expandcount += 1
-            if expandcount > 0:
+            if expandcount == 0:
+                # no columns are flagged for expansion, so expand the last one
+                col = self.GetColumnCount() - 1
+                newsize[col] += remaining_width
+                #print("Resizing last column %d = %d" % (col, newsize[col]))
+            else:
                 for col in range(allowed_offscreen):
                     flag = flags[col]
                     if flag.expand:
