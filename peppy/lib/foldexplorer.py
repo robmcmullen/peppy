@@ -170,68 +170,62 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
     will backtrack until it finds a non-blank line.
     """
     
-    #: default ignore list for C like languages.  Override in subclasses if you want to add more entries
-    fold_function_ignore = ["}", "if", "else", "for", "do", "while", "switch",
-                            "case", "enum", "struct"]
-    
     # regular expressions modified from pygments:
     # http://dev.pocoo.org/projects/pygments/browser/pygments/lexers/compiled.py
     _ws = r'(?:\s|//.*?\n|/[*].*?[*]/)+'
     
-    funcre = re.compile(r'((?:[a-zA-Z0-9_*\s])+?(?:\s|[*]))'   # return arguments
-                        r'([a-zA-Z_][a-zA-Z0-9_:]*)'           # method name
-                        r'(\s*\((?:([^;]*?|\s*))\))'           # signature
-                        r'(?:\s*const)?'                       # const
+    funcre = re.compile(r'\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
+                        r'([a-zA-Z_][a-zA-Z0-9_:]*)'              # method name
+                        r'(\s*\((?:([^;]*?|\s*))\))'              # signature
+                        r'(?:\s*const)?'                          # const
                         r'(' + _ws + r')({)'
                         )
     
     def getFoldEntryFunctionName(self, line):
-        text = self.GetLine(line)
-        name = text.strip()
-        #print "checking %s at %d" % (name, line)
-        
         fold = (self.GetFoldLevel(line)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
-        print " searching for previous lines with the same level %d" % fold
-        i = line
-        lines = [text]
-        while i > 0:
-            i -= 1
-            f = (self.GetFoldLevel(i)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
-            if f == fold:
-                lines.append(self.GetLine(i))
-            else:
+        # previous lines with the same fold level will determine the range to
+        # search for a function name.
+        start = line
+        while start > 0:
+            if (self.GetFoldLevel(start - 1)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE != fold:
                 break
-        lines.reverse()
-        code = "".join(lines)
-        print " function name has to be within this block\nvvvvv\n%s\n^^^^^" % code
+            start -= 1
+        
+        # Need both text and styling information, because we use the styling
+        # info to figure out the language keywords (we don't need to
+        # explicitly specify a list here because the editra syntax stuff
+        # already has a list of keywords tied to the styling code)
+        bytes = self.GetStyledText(self.PositionFromLine(start),
+                                   self.GetLineEndPosition(line))
+        #print repr(bytes)
+        
+        # Remove comments and text strings so we're only left with code
+        text = []
+        style = []
+        for index in xrange(0, len(bytes), 2):
+            s = ord(bytes[index + 1])
+            if not self.isStyleComment(s) and not self.isStyleString(s):
+                text.append(bytes[index])
+                style.append(s)
+        code = "".join(text)
+        self.dprint(" function name has to be within this block\nvvvvv\n%s\n^^^^^" % code)
         match = self.funcre.search(code)
         if match and match.group(1).strip():
             args = match.group(1).strip()
             name = match.group(2).strip()
-            # FIXME: try using stc.GetStyledText and checking the style bits
-            # for a keyword rather than using the fold_function_ignore.  Also
-            # use style bits to ignore comments
-            if args and name not in self.fold_function_ignore:
-                print "matches!!!: return args=%s name=%s sig=%s" % (match.group(1).strip(),
-                                                                 match.group(2).strip(),
-                                                                 match.group(3).strip())
-                return "%s" % match.group(2).strip()
+            if args:
+                index = match.start(2)
+                
+                # It's only a match if the return arguments and method name
+                # aren't a reserved keyword.  We don't want stuff like "if
+                # blah()" or "if (blah)" to match a function call.
+                if not self.isStyleKeyword(style[match.start(1)]) and not self.isStyleKeyword(style[match.start(2)]):
+                    #print repr(code)
+                    #print style
+                    self.dprint("matches!!!: return args=%s (index=%d, %d) name=%s (index=%d %d) sig=%s" % (match.group(1).strip(), match.start(1), style[match.start(1)], match.group(2).strip(), match.start(2), style[match.start(2)], match.group(3).strip()))
+                    return "%s" % match.group(2).strip()
+                else:
+                    self.dprint("%s or %s is a keyword" % (match.group(1).strip(), match.group(2).strip()))
+            else:
+                self.dprint("regular expression didn't match")
         return ""
-#        for start in self.fold_function_ignore:
-#            if name.startswith(start):
-#                print "  found bad %s at %d" % (name, line)
-#                return ""
-#        if name.startswith('{') or not name:
-#            while line > 0:
-#                text = self.GetLine(line - 1)
-#                name = text.strip()
-#                for start in self.fold_function_ignore:
-#                    if name.startswith(start):
-#                        print "  found bad %s at %d" % (name, line)
-#                        return ""
-#                if name and not name.startswith('#'):
-#                    break
-#                line = line - 1
-#        print "  found good %s at %d" % (name, line)
-#        return text
-

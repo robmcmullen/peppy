@@ -20,6 +20,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self._use_autocomp = False
         self._string_styles = []
         self._comment_styles = []
+        self._keyword_styles = []
     
     def isStyleString(self, style):
         """Is the style a string?
@@ -46,6 +47,19 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @return: True/False if style is a comment
         """
         return style in self._comment_styles
+
+    def isStyleKeyword(self, style):
+        """Is the style a keyword reserved by the language?
+        
+        This corresponds to stuff flagged by editra as the 'keyword_style',
+        designed to be the minimal set of reserved language words used for
+        control flow like "if", "then", "for", etc.  This is automatically
+        determined from the styling info provided by the syntax lists defined
+        by editra.
+        
+        @return: True/False if style is a comment
+        """
+        return style in self._keyword_styles
 
     def FindLexer(self, set_ext=u''):
         """Sets Text Controls Lexer Based on File Extension
@@ -272,14 +286,12 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                     self.StyleSetSpec(getattr(wx.stc, syn[0]), \
                                       self.GetStyleByName(syn[1]))
                     valid_settings.append(syn)
-                    if syn[1] == 'string_style':
+                    if syn[1] in ['string_style', 'char_style', 'stringeol_style']:
                         self._string_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] == 'char_style':
-                        self._string_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] == 'stringeol_style':
-                        self._string_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] == 'comment_style':
+                    elif syn[1] in ['comment_style']:
                         self._comment_styles.append(getattr(wx.stc, syn[0]))
+                    elif syn[1] in ['keyword_style']:
+                        self._keyword_styles.append(getattr(wx.stc, syn[0]))
         self.syntax_set = valid_settings
         return True
 
