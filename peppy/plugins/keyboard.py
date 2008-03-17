@@ -13,6 +13,7 @@ from peppy.actions import *
 from peppy.debug import *
 from peppy.configprefs import *
 from peppy.lib.userparams import *
+from peppy.lib.wxemacskeybindings import *
 
 
 class ShowModeKeys(SelectAction):
@@ -52,6 +53,18 @@ class ShowModeKeys(SelectAction):
             text.append("%s\t\t%s" % (name, action.tooltip))
         Publisher().sendMessage('peppy.log.info', '\n'.join(text))
 
+
+class DebugKeypress(ToggleAction):
+    """Print debugging information to the console for each keypress"""
+    name = "Debug Keypress"
+    alias = "debug-keypress"
+    default_menu = ("Tools/Debug", 100)
+    
+    def isChecked(self):
+        return KeyProcessor.debug
+    
+    def action(self, index=-1, multiplier=1):
+        KeyProcessor.debug = not KeyProcessor.debug
 
 
 class KeyboardConf(IPeppyPlugin):
@@ -168,3 +181,4 @@ class KeyboardConf(IPeppyPlugin):
 
     def getActions(self):
         yield ShowModeKeys
+        yield DebugKeypress
