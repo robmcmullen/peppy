@@ -7,7 +7,7 @@ This is a mixin class based on Stani Michiels' fold explorer he posted to the
 pyxides mailing list.
 """
 
-import os, sys, random, time
+import os, sys, random, time, re
 import wx
 import wx.stc
 
@@ -174,25 +174,64 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
     fold_function_ignore = ["}", "if", "else", "for", "do", "while", "switch",
                             "case", "enum", "struct"]
     
+    # regular expressions modified from pygments:
+    # http://dev.pocoo.org/projects/pygments/browser/pygments/lexers/compiled.py
+    _ws = r'(?:\s|//.*?\n|/[*].*?[*]/)+'
+    
+    funcre = re.compile(r'((?:[a-zA-Z0-9_*\s])+?(?:\s|[*]))'   # return arguments
+                        r'([a-zA-Z_][a-zA-Z0-9_:]*)'           # method name
+                        r'(\s*\((?:([^;]*?|\s*))\))'           # signature
+                        r'(?:\s*const)?'                       # const
+                        r'(' + _ws + r')({)'
+                        )
+    
     def getFoldEntryFunctionName(self, line):
         text = self.GetLine(line)
         name = text.strip()
         #print "checking %s at %d" % (name, line)
-        for start in self.fold_function_ignore:
-            if name.startswith(start):
-                print "  found bad %s at %d" % (name, line)
-                return ""
-        if name.startswith('{') or not name:
-            while line > 0:
-                text = self.GetLine(line - 1)
-                name = text.strip()
-                for start in self.fold_function_ignore:
-                    if name.startswith(start):
-                        print "  found bad %s at %d" % (name, line)
-                        return ""
-                if name and not name.startswith('#'):
-                    break
-                line = line - 1
-        print "  found good %s at %d" % (name, line)
-        return text
+        
+        fold = (self.GetFoldLevel(line)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
+        print " searching for previous lines with the same level %d" % fold
+        i = line
+        lines = [text]
+        while i > 0:
+            i -= 1
+            f = (self.GetFoldLevel(i)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
+            if f == fold:
+                lines.append(self.GetLine(i))
+            else:
+                break
+        lines.reverse()
+        code = "".join(lines)
+        print " function name has to be within this block\nvvvvv\n%s\n^^^^^" % code
+        match = self.funcre.search(code)
+        if match and match.group(1).strip():
+            args = match.group(1).strip()
+            name = match.group(2).strip()
+            # FIXME: try using stc.GetStyledText and checking the style bits
+            # for a keyword rather than using the fold_function_ignore.  Also
+            # use style bits to ignore comments
+            if args and name not in self.fold_function_ignore:
+                print "matches!!!: return args=%s name=%s sig=%s" % (match.group(1).strip(),
+                                                                 match.group(2).strip(),
+                                                                 match.group(3).strip())
+                return "%s" % match.group(2).strip()
+        return ""
+#        for start in self.fold_function_ignore:
+#            if name.startswith(start):
+#                print "  found bad %s at %d" % (name, line)
+#                return ""
+#        if name.startswith('{') or not name:
+#            while line > 0:
+#                text = self.GetLine(line - 1)
+#                name = text.strip()
+#                for start in self.fold_function_ignore:
+#                    if name.startswith(start):
+#                        print "  found bad %s at %d" % (name, line)
+#                        return ""
+#                if name and not name.startswith('#'):
+#                    break
+#                line = line - 1
+#        print "  found good %s at %d" % (name, line)
+#        return text
 
