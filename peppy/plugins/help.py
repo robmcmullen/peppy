@@ -75,7 +75,15 @@ class HelpManual(SelectAction):
     # mac should be cmd-?, but wx doesn't understand shifted keys as a target
     # for keybindings, so have to specify shift-/, which on standard keyboard
     # is the same as ?
-    key_bindings = {'default': "F1", 'mac': "C-S-/"}
+    
+    # emacs should be "M-S-/ i" but that results in two keybindings.  When we
+    # use a stock ID and an emacs keybinding, the menu system puts the default
+    # "Ctrl+H" in the menu item anyway.  I can't find a way to turn off the
+    # default keybinding.
+    key_bindings = {'win': "F1",
+                    'emacs': "F1", # should be "M-S-/ i"
+                    #'mac': "M-S-/",
+                    }
     
     def action(self, index=-1, multiplier=1):
         self.frame.open("about:User Manual")
