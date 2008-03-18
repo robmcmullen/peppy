@@ -154,13 +154,19 @@ class SelectAction(debugmixin):
         if cls.keyboard:
             keystrokes = KeyMap.split(cls.keyboard)
             if len(keystrokes) == 1 and (cls.stock_id is not None or not force_emacs):
-                # if it has a stock id, always force it to use the
-                # standard accelerator because wxWidgets will put one
-                # there anyway and we need to overwrite it with our
-                # definition
+                # if it has a stock id, always force it to use the our
+                # accelerator because wxWidgets will put one there anyway and
+                # we need to overwrite it with our definition
                 cls._accelerator_text = u"\t%s" % KeyMap.nonEmacsName(keystrokes[0])
             else:
                 cls._accelerator_text = u"    %s" % cls.keyboard
+                if cls.stock_id is not None and (cls.global_id is None or cls.global_id == cls.stock_id):
+                    # Can't use a stock id if we're also using emacs
+                    # keybindings, because the stock id injects a one
+                    # keystroke accelerator that we can't override unless we
+                    # also use a one keystroke accelerator.
+                    cls.global_id = wx.NewId()
+                        
             #dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
             return len(keystrokes)
         else:

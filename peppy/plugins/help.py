@@ -81,7 +81,7 @@ class HelpManual(SelectAction):
     # "Ctrl+H" in the menu item anyway.  I can't find a way to turn off the
     # default keybinding.
     key_bindings = {'win': "F1",
-                    'emacs': "F1", # should be "M-S-/ i"
+                    'emacs': "M-S-/ i",
                     #'mac': "M-S-/",
                     }
     
