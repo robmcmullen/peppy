@@ -241,6 +241,9 @@ class Param(debugmixin):
         # if some params dynamically depend on the values in other params, and
         # could lead to a race condition if callbacks are allowed to propagate
         self.user_initiated_callback = True
+        
+        # Added a user settable callback hook.  Use setObserverCallback
+        self.processCallbackHook = None
     
     def __str__(self):
         return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
@@ -277,6 +280,22 @@ class Param(debugmixin):
         ctrl.Enable(self.enable)
         return ctrl
     
+    def setObserverCallback(self, callback):
+        """Sets a callback hook that calls this function when the
+        processCallback method is called.
+        
+        This method provides a way to hook a callback to the param without
+        subclassing the param.  This hook will be called at the end of the
+        processCallback.  The callback should have the following method
+        signature:
+        
+           def callback(param, evt, ctrl, ctrl_list)
+        
+        See the definition of L{processCallback} for a description of the
+        paramaters that will be passed to the callback.
+        """
+        self.processCallbackHook = callback
+    
     def processCallback(self, evt, ctrl, ctrl_list):
         """Subclasses should override this to provide functionality.
         
@@ -294,9 +313,11 @@ class Param(debugmixin):
         ctrl = evt.GetEventObject()
         if self.user_initiated_callback:
             self.processCallback(evt, ctrl, ctrl.ctrl_list)
+            if self.processCallbackHook:
+                self.processCallbackHook(self, evt, ctrl, ctrl.ctrl_list)
     
     def setCallback(self, ctrl, ctrl_list):
-        """Set the callback that responds to changes inthe state of the control
+        """Set the callback that responds to changes in the state of the control
         
         This is called during control creation to set the callback in response
         to the class attribute 'callback_event' that is particular to the type
@@ -310,6 +331,23 @@ class Param(debugmixin):
         if self.callback_event is not None:
             ctrl.ctrl_list = ctrl_list
             ctrl.Bind(self.callback_event, self.OnCallback)
+    
+    def overrideCallback(self, ctrl, callback):
+        """Override the callback on the control.
+        
+        Force the callback for the control to call the specified function.
+        Normally the callback is tied to the param's L{OnCallback} method,
+        allowing the param to do checking on the input.  However, the callback
+        may be overridden with this method to force an individual control to
+        call a specific function.  This means that the callback is no longer
+        tied to the param's callback, and the callback will have to determine
+        which control was acted upon by using the evt.GetEventObject() method.
+        
+        Some controls have multiple events that can be fired; for now, only
+        a single event is handled.
+        """
+        if self.callback_event is not None:
+            ctrl.Bind(self.callback_event, callback)
     
     def setInitialState(self, ctrl, ctrl_list):
         """Set the initial state of the control.
