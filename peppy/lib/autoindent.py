@@ -164,7 +164,7 @@ class BasicAutoindent(debugmixin):
             stc.SetTargetStart(pos)
             stc.SetTargetEnd(pos)
             ind = self.findIndent(stc, linenum + 1)
-            dprint("pos=%d ind=%d fold=%d" % (pos, ind, (stc.GetFoldLevel(linenum+1)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE))
+            self.dprint("pos=%d ind=%d fold=%d" % (pos, ind, (stc.GetFoldLevel(linenum+1)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE))
             newline = stc.GetIndentString(ind)
         stc.ReplaceTarget(newline)
         stc.GotoPos(pos + len(newline))
@@ -228,7 +228,6 @@ class CStyleAutoindent(BasicAutoindent):
     correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
     plus a bunch of heuristics to handle things that Scintilla doesn't.
     """
-    debuglevel = 1
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
 
