@@ -123,8 +123,15 @@ class PythonAutoindent(BasicAutoindent):
         if c != PyParse.C_NONE:
             # The current stmt hasn't ended yet.
             if c == PyParse.C_STRING_FIRST_LINE:
-                # after the first line of a string; do not indent at all
-                self.dprint("C_STRING_FIRST_LINE")
+                s = stc.GetStyleAt(end)
+                if s == 6 or s == 7:
+                    # Inside a triple quoted string (TQS)
+                    self.dprint("C_STRING_FIRST_LINE in TQS")
+                    indentstr = y.get_base_indent_string()
+                    indent = len(indentstr.expandtabs(tabwidth))
+                else:
+                    # after the first line of a string; do not indent at all
+                    self.dprint("C_STRING_FIRST_LINE")
                 pass
             elif c == PyParse.C_STRING_NEXT_LINES:
                 # inside a string which started before this line;
