@@ -539,7 +539,7 @@ class DateParam(Param):
     The wx.DateTime class is used as the value.
     """
     default = wx.DateTime().Today()
-    callback_event = None
+    callback_event = wx.EVT_DATE_CHANGED
     
     def getCtrl(self, parent, initial=None):
         dpc = wx.DatePickerCtrl(parent, size=(120,-1),
@@ -585,28 +585,12 @@ class DirParam(Param):
         if initial is None:
             initial = os.getcwd()
         c = DirBrowseButton2(parent, -1, size=(300, -1),
-                            labelText = '', startDirectory=initial)
+                             labelText = '', startDirectory=initial,
+                             changeCallback = self.changeCallback)
         return c
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(os.path.normpath(value))
-
-class PathParam(DirParam):
-    """Directory parameter that displays a FileBrowseButton as its
-    user interface.
-
-    A string that represents a path to a file is used as the value.
-    """
-    default = os.getcwd()
-    
-    def getCtrl(self, parent, initial=None):
-        if initial is None:
-            initial = os.getcwd()
-        c = FileBrowseButton2(parent, -1, size=(300, -1),
-                                        labelText = '',
-                                        startDirectory=initial,
-                                        changeCallback = self.changeCallback)
-        return c
 
     def changeCallback(self, evt):
         # FIXME: this possibly can be used to maintain a history, but
@@ -628,6 +612,34 @@ class PathParam(DirParam):
 ##                ctrl.SetHistory(history)
 ##                ctrl.GetHistoryControl().SetStringSelection(value)
         evt.Skip()
+
+    def overrideCallback(self, ctrl, callback):
+        """Override the callback with a new one.
+        
+        Note that this callback will originate from the text control, not
+        the DirBrowseButton.  Any callbacks that rely on determining the
+        control using GetEventObject will have to search up through the window
+        hierarchy to get back to the browse button.
+        """
+        ctrl.changeCallback = callback
+
+class PathParam(DirParam):
+    """Directory parameter that displays a FileBrowseButton as its
+    user interface.
+
+    A string that represents a path to a file is used as the value.
+    """
+    default = os.getcwd()
+    
+    def getCtrl(self, parent, initial=None):
+        if initial is None:
+            initial = os.getcwd()
+        c = FileBrowseButton2(parent, -1, size=(300, -1),
+                                        labelText = '',
+                                        startDirectory=initial,
+                                        changeCallback = self.changeCallback)
+        return c
+
 
 class ChoiceParam(Param):
     """Parameter that is restricted to a string from a list of choices.
