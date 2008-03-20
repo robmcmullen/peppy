@@ -55,7 +55,11 @@ def load_setuptools_plugins(entry_point_name, out, packages):
         print "entrypoint=%s, name=%s, class=%s" % (entrypoint, entrypoint.name, plugin_class)
 
         # find the parent of the loaded module
-        moduleparent, module = entrypoint.module_name.rsplit('.', 1)
+        try:
+            moduleparent, module = entrypoint.module_name.rsplit('.', 1)
+        except ValueError:
+            print "%s looks like a standalone file.  NOT INCLUDING!" % entrypoint.module_name
+            continue
         print "moduleparent=%s" % moduleparent
         if moduleparent not in packages:
             packages.append(moduleparent)
