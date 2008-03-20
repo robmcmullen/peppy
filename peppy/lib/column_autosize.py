@@ -80,9 +80,12 @@ in InsertSizedColumn.
 
 
 @author: Rob McMullen
-@version: 1.3
+@version: 1.4
 
 Changelog::
+    1.4:
+        - use column header width as column size if there are no items in the
+          list
     1.3:
         - changed autosizing to expand last column to width of the containing
           window if the whole list is smaller than the window size
@@ -277,8 +280,16 @@ class ColumnAutoSizeMixin(object):
         # pass 1: get preferred sizes for all columns
         before = {}
         newsize = {}
+        
+        # If there are no items in the list, use the header of the column as
+        # the default width to provide some reasonable values.
+        if self.GetItemCount() == 0:
+            resize_type = wx.LIST_AUTOSIZE_USEHEADER
+        else:
+            resize_type = wx.LIST_AUTOSIZE
+        
         for col in range(self.GetColumnCount()):
-            self.SetColumnWidth(col, wx.LIST_AUTOSIZE)
+            self.SetColumnWidth(col, resize_type)
             before[col] = self.GetColumnWidth(col)
             resize = before[col]
             
