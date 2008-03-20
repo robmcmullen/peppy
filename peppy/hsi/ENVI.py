@@ -305,7 +305,7 @@ class Header(dict,MetadataMixin):
             item_id=re.sub(' ','_',txt).lower()
         return item_id
 
-    def setCubeAttributes(self,cube):
+    def setCubeAttributes(self, cube):
         """Parse the text strings stored in the object (as a
         dictionary) into usable numbers, lists, and strings.  Store
         the resulting values in the Cube that is passed in as a
@@ -326,15 +326,30 @@ class Header(dict,MetadataMixin):
 ##                else:
 ##                    dprint(" item %s not found in header." % item_txt)
         if 'map info' in self:
-            dprint("found map info: %s" % self['map info'])
-            # map info looks like this:
-            # UTM, 1.000, 1.000, 469734.460, 4429870.640, 3.7700000000e+00, 3.7700000000e+00, 13, North, WGS-84, units=Meters}
-            utm = self['map info'].split(',')
-            cube.utm_zone = int(float(utm[7]))
-            cube.utm_origin = (int(float(utm[1])) - 1, int(float(utm[2])) - 1)
-            cube.utm_easting = float(utm[3])
-            cube.utm_northing = float(utm[4])
-            cube.utm_pixel_size = (float(utm[5]), float(utm[6]))
+            self.setCubeMapInfo(cube)
+    
+    def setCubeMapInfo(self, cube):
+        #dprint("found map info: %s" % self['map info'])
+        # map info looks like this for UTM:
+        # UTM, 1.000, 1.000, 469734.460, 4429870.640, 3.7700000000e+00, 3.7700000000e+00, 13, North, WGS-84, units=Meters}
+        # or this for lat/long:
+        # Geographic Lat/Lon, 1.0000, 1.0000, -77.35009260, 38.26675930, 9.2592592600e-005, 9.2592592600e-005, North America 1983, units=Degrees
+        
+        mapinfo = self['map info'].split(',')
+        if mapinfo[0] == 'UTM':
+            cube.utm_zone = int(float(mapinfo[7]))
+            cube.utm_origin = (int(float(mapinfo[1])) - 1, int(float(mapinfo[2])) - 1)
+            cube.utm_easting = float(mapinfo[3])
+            cube.utm_northing = float(mapinfo[4])
+            cube.utm_pixel_size = (float(mapinfo[5]), float(mapinfo[6]))
+        elif mapinfo[0] == 'Geographic Lat/Lon':
+            cube.georef_system = mapinfo[7]
+            cube.georef_origin = (int(float(mapinfo[1])) - 1, int(float(mapinfo[2])) - 1)
+            cube.georef_long = float(mapinfo[3])
+            cube.georef_lat = float(mapinfo[4])
+            cube.georef_pixel_size = (float(mapinfo[5]), float(mapinfo[6]))
+        else:
+            dprint("Unrecognized map info %s" % mapinfo[0])
 
     def getCubeAttributes(self,cube):
         """Create header strings from the attributes in the cube."""

@@ -134,12 +134,19 @@ class Cube(object):
         # 0.0 - 1.0, you must B{divide} by this value.
         self.scale_factor=None
         
-        # Georeferencing information
+        # UTM Georeferencing information
         self.utm_zone = -1
         self.utm_origin = (0, 0)
         self.utm_pixel_size = (0, 0)
         self.utm_easting = 0
         self.utm_northing = 0
+
+        # Lat/Long Georeferencing information
+        self.georef_system = None
+        self.georef_origin = (0, 0)
+        self.georef_pixel_size = (0, 0)
+        self.georef_lat = 0
+        self.georef_long = 0
 
         self.description=''
 
