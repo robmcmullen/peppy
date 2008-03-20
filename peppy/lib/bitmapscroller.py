@@ -217,6 +217,11 @@ class MouseSelector(object):
         #dprint("ev: (%d,%d), coords: (%d,%d)" % (ev.GetX(), ev.GetY(), coords[0], coords[1]))
         
     def handleEventPostHook(self, ev):
+        """Hook called during every event handled by L{handleEvent}
+        
+        This is a no-op in the base class; it's designed to be overridden in
+        subclasses.
+        """
         pass
 
     def finishEvent(self, ev):
@@ -233,6 +238,15 @@ class MouseSelector(object):
         """
         self.want_autoscroll = False
         self.cleanup()
+        self.finishEventPostHook(ev)
+    
+    def finishEventPostHook(self, ev):
+        """Hook that gets called when the selector has been dismissed.
+        
+        This is a no-op in the base class; it's designed to be overridden in
+        subclasses.
+        """
+        pass
 
     def draw(self):
         #print("draw")
