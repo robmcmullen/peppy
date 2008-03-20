@@ -17,6 +17,7 @@ from peppy.actions.pypefind import *
 
 from peppy.lib.processmanager import *
 
+from peppy.about import *
 from peppy.major import *
 from peppy.fundamental import *
 from peppy.dired import *
@@ -70,7 +71,7 @@ class New(SelectAction):
     key_bindings = {'win': "C-N", 'mac': "C-N"}
 
     def action(self, index=-1, multiplier=1):
-        self.frame.open("about:untitled")
+        self.frame.open(getNewUntitled())
 
 class OpenFileGUI(SelectAction):
     alias = "gui-find-file"

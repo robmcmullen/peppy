@@ -218,7 +218,17 @@ class AboutFS(vfs.BaseFS):
 vfs.register_file_system('about', AboutFS)
 
 
-SetAbout('untitled','')
+def getNewUntitled():
+    """Get a unique filename for a new blank document"""
+    root = "untitled"
+    name = root
+    count = 1
+    while name in aboutfiles:
+        count += 1
+        name = "%s-%d" % (root, count)
+    SetAbout(name,'')
+    return "about:%s" % name
+
 SetAbout('blank','')
 SetAbout('scratch','-*- Fundamental -*-')
 SetAbout('thanks', """\
