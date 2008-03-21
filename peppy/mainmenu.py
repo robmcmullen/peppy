@@ -618,7 +618,7 @@ class Cut(STCModificationAction):
     tooltip = "Cut"
     icon = "icons/cut.png"
     default_menu = ("Edit", -100)
-    key_bindings = {'win': "C-X", 'mac': "C-X"}
+    key_bindings = {'win': "C-X", 'mac': "C-X", 'emacs': "C-W"}
 
     def isActionAvailable(self):
         return self.mode.CanCut()
@@ -633,7 +633,7 @@ class Copy(STCModificationAction):
     tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
-    key_bindings = {'win': "C-C", 'mac': "C-C"}
+    key_bindings = {'win': "C-C", 'mac': "C-C", 'emacs': "M-W"}
 
     def isActionAvailable(self):
         return self.mode.CanCopy()
@@ -648,7 +648,7 @@ class Paste(STCModificationAction):
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 102)
-    key_bindings = {'win': "C-V", 'mac': "C-V"}
+    key_bindings = {'win': "C-V", 'mac': "C-V", 'emacs': "C-Y"}
 
     def isActionAvailable(self):
         return self.mode.CanEdit()
