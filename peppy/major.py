@@ -1033,7 +1033,6 @@ class MajorModeMatcherDriver(debugmixin):
     @classmethod
     def getCompatibleMajorModes(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        cls.dprint(plugins)
         modes = []
         for plugin in plugins:
             # Only display those modes that use the same type of STC as the
@@ -1041,6 +1040,7 @@ class MajorModeMatcherDriver(debugmixin):
             modes.extend([m for m in plugin.getMajorModes() if m.stc_class == stc_class])
         
             modes.extend(plugin.getCompatibleMajorModes(stc_class))
+        cls.dprint("%s: compatible modes = %s" % (stc_class, str(modes)))
         return modes
 
     @classmethod
@@ -1050,7 +1050,6 @@ class MajorModeMatcherDriver(debugmixin):
             magic_size = app.classprefs.magic_size
 
         plugins = app.plugin_manager.getActivePluginObjects()
-        cls.dprint(plugins)
         
         # Try to match a specific protocol
         modes = cls.scanProtocol(plugins, buffer.url)
@@ -1212,6 +1211,7 @@ class MajorModeMatcherDriver(debugmixin):
         # Anything that matches application/octet-stream is a generic mode, so
         # save it for last.
         binary = []
+        binary_generics = []
         
         mimetype = metadata['mimetype']
         ext, editra_type = cls.getEditraType(url)
@@ -1226,13 +1226,19 @@ class MajorModeMatcherDriver(debugmixin):
                     modes.append(mode)
                 elif mode.verifyFilename(url.path.get_name()):
                     modes.append(mode)
-
+                elif mode.verifyMimetype("application/octet-stream"):
+                    binary_generics.append(mode)
+                
+                # check if the mode is recognized by Editra.  It could also be
+                # a generic mode or not recognized at all (in which case it
+                # is ignored).
                 editra = mode.verifyEditraType(ext, editra_type)
                 if editra == 'generic':
                     generics.append(mode)
                 elif isinstance(editra, str):
                     modes.append(mode)
         modes.extend(generics)
+        binary.extend(binary_generics)
         return modes, binary
 
     @classmethod
