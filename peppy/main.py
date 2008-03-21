@@ -337,6 +337,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             load_yapsy = True
         else:
             load_yapsy = False
+        count += self.countSetuptoolsPlugins()
         count += 7
         self.splash.setTicks(count)
         
@@ -776,6 +777,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     eprint("Plugin %s failed with exception %s" % (plugininfo.name, str(e)))
         self.plugin_manager.startupCompleted()
         
+    def countSetuptoolsPlugins(self, entry_point='peppy.plugins'):
+        """Count all yapsy plugins from all plugin directories.
+        """
+        # count the potential plugins that were be found
+        if not hasattr(self, 'no_setuptools'):
+            import peppy.lib.setuptools_utils
+            return peppy.lib.setuptools_utils.count_plugins(entry_point)
+        return 0
+
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
         """Autoload setuptools plugins.
 
@@ -784,7 +794,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         if not hasattr(self, 'no_setuptools'):
             import peppy.lib.setuptools_utils
-            peppy.lib.setuptools_utils.load_plugins(entry_point)
+            peppy.lib.setuptools_utils.load_plugins(entry_point, self.gaugeCallback)
 
     def initGraphics(self):
         try:

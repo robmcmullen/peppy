@@ -29,22 +29,27 @@ except:
 USE_SETUPTOOLS = False
 try:
     import pkg_resources
-    USE_SETUPTOOLS = True
+    if hasattr(pkg_resources, 'iter_entry_points'):
+        USE_SETUPTOOLS = True
+    else:
+        print "Need a newer version of setuptools to load setuptools plugins."
 except:
     #dprint("Setuptools unavailable; setuptools plugins will not be loaded.")
     pass
 
-
-def load_plugins(entry_point):
+def count_plugins(entry_point):
     if USE_SETUPTOOLS:
-        if not hasattr(pkg_resources, 'iter_entry_points'):
-            print "Need a newer version of setuptools to load setuptools plugins."
-            return
-        
+        return len(tuple(pkg_resources.iter_entry_points(entry_point)))
+    return 0
+
+def load_plugins(entry_point, progress=None):
+    if USE_SETUPTOOLS:
         try:
             for entrypoint in pkg_resources.iter_entry_points(entry_point):
                 plugin_class = entrypoint.load()
                 #dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
+                if progress:
+                    progress(entrypoint.name)
         except ImportError, e:
             import traceback
             dprint(traceback.format_exc())
