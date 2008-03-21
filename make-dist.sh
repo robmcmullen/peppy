@@ -9,6 +9,9 @@ mv $distdir/peppy/hsi/hsi_major_mode.peppy-plugin $distdir/peppy/plugins
 
 ./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins
 
+mkdir $distdir/plugins
+./plugins/egg-utils.py -d $distdir/plugins egg
+
 cat > $distdir/py2exe.sh <<EOF
 #!/bin/bash
 python setup.py py2exe

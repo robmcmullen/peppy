@@ -251,7 +251,7 @@ class FractalMode(BitmapScroller, MajorMode):
         self.setBitmap(self.fractal.getBitmap(progress))
 
 
-class MandlebrotPlugin(IPeppyPlugin, debugmixin):
+class MandelbrotPlugin(IPeppyPlugin, debugmixin):
     """Peppy plugin that registers the Mandelbrot viewer and its actions.
     """
     def aboutFiles(self):
