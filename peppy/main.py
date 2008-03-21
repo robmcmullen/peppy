@@ -35,6 +35,19 @@ def main_is_frozen():
            hasattr(sys, "importers") # old py2exe
            or imp.is_frozen("__main__")) # tools/freeze
 
+def get_plugin_dirs(search_path):
+    if main_is_frozen():
+        top = os.path.dirname(sys.argv[0])
+    else:
+        top = os.path.dirname(os.path.dirname(__file__))
+    
+    dirs = [os.path.join(top, "plugins")]
+    if isinstance(search_path, str):
+        search_path = search_path.split(os.pathsep)
+    dirs.extend(search_path)
+    dprint(dirs)
+    return dirs
+
 class errorRedirector(object):
     def __init__(self, which='error'):
         self.msg = "peppy.log.%s" % which
@@ -277,7 +290,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     preferences_tab = "General"
     preferences_sort_weight = 0
     default_classprefs = (
-        StrParam('plugin_search_path', 'plugins', 'os.pathsep separated list of paths to search for additional plugins'),
+        StrParam('yapsy_search_path', 'plugins', 'os.pathsep separated list of paths to search for additional yapsy plugins'),
+        StrParam('plugin_search_path', '/home/rob/src/peppy-plugins', 'os.pathsep separated list of paths to search for additional setuptools plugins'),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file  is loaded'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to an already running copy of peppy'),
         BoolParam('requests_in_new_frame', True, 'File open requests will appear in a new frame if True, or as a new tab in an existing frame if False'),
@@ -716,6 +730,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             name = plugin_info
         else:
             name = plugin_info.name
+        self.dprint("Loading %s..." % name)
         self.splash.tick("Loading %s..." % name)
 
     def initPluginManager(self):
@@ -728,8 +743,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         paths = [os.path.join(os.path.dirname(__file__), p) for p in self.standard_plugin_dirs]
         paths.append(os.path.join(self.config.dir, self.preferences_plugin_dir))
-        if self.classprefs.plugin_search_path:
-            userdirs = self.classprefs.plugin_search_path.split(os.pathsep)
+        if self.classprefs.yapsy_search_path:
+            userdirs = self.classprefs.yapsy_search_path.split(os.pathsep)
             for path in userdirs:
                 paths.append(path)
         
@@ -783,7 +798,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # count the potential plugins that were be found
         if not hasattr(self, 'no_setuptools'):
             import peppy.lib.setuptools_utils
-            return peppy.lib.setuptools_utils.count_plugins(entry_point)
+            dirs = get_plugin_dirs(self.classprefs.plugin_search_path)
+            return peppy.lib.setuptools_utils.count_plugins(entry_point, dirs)
         return 0
 
     def autoloadSetuptoolsPlugins(self, entry_point='peppy.plugins'):
@@ -794,7 +810,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         """
         if not hasattr(self, 'no_setuptools'):
             import peppy.lib.setuptools_utils
-            peppy.lib.setuptools_utils.load_plugins(entry_point, self.gaugeCallback)
+            dirs = get_plugin_dirs(self.classprefs.plugin_search_path)
+            peppy.lib.setuptools_utils.load_plugins(entry_point, dirs, self.gaugeCallback)
 
     def initGraphics(self):
         try:
