@@ -31,7 +31,7 @@ def entry(filename, out=None, copythese=None, fake=False):
                     lastfake = False
                     global plugin_count
                     plugin_count += 1
-                    out.write("app.gaugeCallback('%s')\n" % module)
+                    out.write("app.gaugeCallback('%s')\n" % module.split('.')[-1])
                 print "importing %s" % module
                 out.write("import %s\n" % (module))
 
@@ -52,6 +52,8 @@ if __name__ == "__main__":
                       default="builtins", help="import directory within base directory")
     parser.add_option("-o", action="store", dest="output",
                       default="peppy/py2exe_plugins.py", help="output filename")
+    parser.add_option("-e", action="store", dest="eggs",
+                      default="", help="process unpacked eggs")
     (options, args) = parser.parse_args()
 
     out = StringIO()
@@ -67,6 +69,9 @@ if __name__ == "__main__":
     # definition files so py2exe will include them
     process('peppy/lib', out, fake=True)
     process('peppy/editra/syntax', out, fake=True)
+    
+    if options.eggs:
+        process(options.eggs, out)
 
     filename = os.path.join(savepath, options.output)
     fh = open(filename, 'w')

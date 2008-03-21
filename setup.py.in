@@ -98,12 +98,27 @@ if HAVE_NUMPY and not USE_PY2EXE:
                                  include_dirs = include_dirs,
                                  ))
 
-# Create the data files for Editra's styling
+# Create the data files for Editra's styling stuff
 DATA_FILES = [("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")),
               ("peppy/editra/tests", glob.glob("peppy/editra/tests/*")),
               ("peppy/editra/syntax", glob.glob("peppy/editra/syntax/*.*"))]
 
-packages = $packages
+def findPackages(name):
+    packages = []
+    # find packages to be installed
+    path = os.path.abspath(name)
+    def addmodules(arg, dirname, names):
+        if '__init__.py' in names:
+            prefix = os.path.commonprefix((path, dirname))
+            mod = "%s%s" % (name, dirname[len(prefix):].replace(os.sep,'.'))
+            if mod not in packages:
+                packages.append(mod)
+    os.path.walk(path, addmodules, None)
+    #print "packages = %s" % packages
+    return packages
+
+packages = findPackages('$prog')
+
 if USE_PY2EXE:
     # Add pyenchant dictionaries to data files if we're on windows
     try:
@@ -112,6 +127,12 @@ if USE_PY2EXE:
     except ImportError:
         pass
 
+    # py2exe can't scan inside zipped eggs to find dependencies.  All plugins
+    # must be unpacked into a directory in order for py2exe to find any
+    # additional dependencies that are in the eggs but not in the main
+    # application
+    packages.extend(findPackages('eggs'))
+    
     try:
         import peppy.py2exe_plugins_count
         packages.extend(peppy.py2exe_plugins_count.setuptools_packages)

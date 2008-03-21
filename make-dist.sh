@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Make distribution in preparation for creating a py2exe executable
+
 make distdir
 
 distdir=`make print-distdir|cut -c11-`
@@ -7,10 +9,18 @@ echo $distdir
 mv $distdir/peppy/hsi/hsi_major_mode_proxy.py $distdir/peppy/plugins
 mv $distdir/peppy/hsi/hsi_major_mode.peppy-plugin $distdir/peppy/plugins
 
-./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins
+# Create the eggs that are normally used for standalone plugins, but include
+# the source
+mkdir $distdir/eggs
+./plugins/egg-utils.py -d $distdir/eggs -k egg
 
-mkdir $distdir/plugins
-./plugins/egg-utils.py -d $distdir/plugins egg
+# Unzip them into the eggs directory so we can search for plugins
+touch $distdir/eggs/__init__.py
+ls -1 $distdir/eggs/*.egg | while read EGG; do
+    unzip -o $EGG -d $distdir/eggs
+done
+
+./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins -e eggs
 
 cat > $distdir/py2exe.sh <<EOF
 #!/bin/bash

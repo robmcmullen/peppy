@@ -114,6 +114,8 @@ distdir:
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	cp peppy/i18n/*.py $(distdir)/peppy/i18n
 	
+	./plugins/egg-utils.py -d $(distdir)/plugins egg
+	
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
 	

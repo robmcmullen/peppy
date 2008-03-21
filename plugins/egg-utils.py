@@ -19,12 +19,16 @@ if __name__ == "__main__":
     usage="usage: %prog [-d dir] [develop|egg]"
     parser=OptionParser(usage=usage)
     parser.add_option("-d", action="store", dest="destdir", default="", help="destination directory for egg")
+    parser.add_option("-k", action="store_true", dest="keep_source", help="destination directory for egg")
     (options, args) = parser.parse_args()
 
     if args[0].startswith('d'):
         cmd = "develop --install-dir %s"
     elif args[0].startswith('e'):
-        cmd = "bdist_egg --exclude-source-files -d %s"
+        if options.keep_source:
+            cmd = "bdist_egg -d %s"
+        else:
+            cmd = "bdist_egg --exclude-source-files -d %s"
     else:
         parser.print_usage()
     
