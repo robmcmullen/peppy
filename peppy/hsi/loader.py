@@ -56,15 +56,8 @@ class HyperspectralFileFormat(object):
 #        except Exception, e:
 #            #dprint("GDAL not available")
 #            pass
-
-        import peppy.lib.setuptools_utils
-        peppy.lib.setuptools_utils.load_plugins("peppy.hsi.plugins")
-
+        
         cls.handlers = [h for h in cls.default_handlers]
-        if cls.plugin_manager is not None:
-            plugins = cls.plugin_manager.getActivePluginObjects()
-            for plugin in plugins:
-                cls.handlers.extend(plugin.supportedFormats())
         
         HyperspectralFileFormat.loaded = True
 
