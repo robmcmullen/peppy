@@ -5,14 +5,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-19 02:18+0000\n"
-"PO-Revision-Date: 2008-02-20 00:00+0000\n"
+"POT-Creation-Date: 2008-02-27 17:36+0000\n"
+"PO-Revision-Date: 2008-03-04 18:01+0000\n"
 "Last-Translator: Rob McMullen <robm@users.sourceforge.net>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-02-27 04:44+0000\n"
+"X-Launchpad-Export-Date: 2008-03-24 23:52+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -221,7 +221,7 @@ msgstr "Majuskligi"
 #: ../peppy/plugins/text_transforms.py:149
 #: ../peppy/plugins/text_transforms.py:166
 msgid "Case"
-msgstr ""
+msgstr "Uskleco"
 
 #: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
@@ -1283,7 +1283,7 @@ msgstr ""
 
 #: ../peppy/editra/style_editor.py:245
 msgid "bold"
-msgstr ""
+msgstr "grasa"
 
 #: ../peppy/plugins/chatbots.py:37
 msgid "chatbot-%s"
@@ -1299,7 +1299,7 @@ msgstr ""
 
 #: ../peppy/editra/style_editor.py:247
 msgid "italic"
-msgstr ""
+msgstr "kursiva"
 
 #: ../peppy/plugins/error_log.py:150
 msgid "peppy.log.debug"
@@ -1319,7 +1319,7 @@ msgstr ""
 
 #: ../peppy/editra/style_editor.py:248
 msgid "underline"
-msgstr ""
+msgstr "emfazi"
 
 #: ../peppy/debug.py:186
 msgid "unknown"

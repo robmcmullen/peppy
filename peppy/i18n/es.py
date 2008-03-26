@@ -3,6 +3,9 @@
 encoding = 'utf-8'
 dict = {
 '&About...': '&Acerca de...',
+'&Close Buffer': '&Cerrar buffer',
+'&Comment Region': '&Comentar regi\xc3\xb3n',
+'&Delete Window': '&Borrar ventana',
 '&Help': '&Ayuda',
 '&Help...': '&Ayuda...',
 '&Line Wrapping': '&Ajuste de l\xc3\xadneas',

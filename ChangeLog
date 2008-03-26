@@ -14,7 +14,8 @@
 	* added clipping filters to hyperspectral image viewer
 	* added DebugKeypress action to help OSX debugging
 	* added Mandelbrot set generator
-	* added new translations
+	* i18n updates: added Hungarian and Ukrainian and updated German,
+	French, Esperanto and Spanish message catalogs
 	* added new documentation on http://trac.flipturn.org/wiki
 
 2008-03-07  Rob McMullen  <robm@users.sourceforge.net>

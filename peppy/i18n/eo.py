@@ -16,6 +16,7 @@ dict = {
 'Background': 'Fono',
 'Cancel': 'Forigu',
 'Capitalize': 'Majuskligi',
+'Case': 'Uskleco',
 'Clear Playlist': 'Frovi\xc5\x9di kantaron',
 'Close Tab': 'Fermu Langeton',
 'Close the current tab': 'Fermu la nunan folion',
@@ -77,5 +78,8 @@ dict = {
 'Window': 'Fenestro',
 'Zoom In': 'Zomu',
 'Zoom Out': 'Malzomu',
+'bold': 'grasa',
+'italic': 'kursiva',
+'underline': 'emfazi',
 'unknown': 'nekonata',
 }
