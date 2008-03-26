@@ -174,13 +174,55 @@ class GeneralFilter(debugmixin):
     def getPlane(self,raw):
         return raw
     
-    def getProfile(self, raw):
-        """Filter a profile for display in the x-y plots.
+    def getXProfile(self, y, raw):
+        """Get the x profile at a constant y.
         
         Not all filters will be appropriate for use with profile plots, but if
         so, this is the hook to provide the modification.
         """
         return raw
+
+    def getYProfile(self, x, raw):
+        """Get the y profile at a constant x.
+        
+        Not all filters will be appropriate for use with profile plots, but if
+        so, this is the hook to provide the modification.
+        """
+        return raw
+
+class SubtractFilter(GeneralFilter):
+    """Apply a subtraction filter to the band.
+
+    This filter subtracts data from the band.  Usually this is used to subtract
+    dark data out of the band so that you can see what's left.
+    """
+    def __init__(self, band):
+        GeneralFilter.__init__(self)
+        self.darks = band
+        self.dtype = band.dtype
+        #dprint("subtracted datatype = %s" % self.dtype)
+   
+    def filter(self, raw, darks):
+        if self.dtype == numpy.uint8:
+            filtered = raw.astype(numpy.int8) - darks
+        elif self.dtype == numpy.uint16:
+            filtered = raw.astype(numpy.int16) - darks
+        elif self.dtype == numpy.uint32:
+            filtered = raw.astype(numpy.int32) - darks
+        else:
+            filtered = raw - darks
+        return filtered
+    
+    def getPlane(self, raw):
+        return self.filter(raw, self.darks)
+    
+    def getXProfile(self, y, raw):
+        # bands are in array form as line, sample
+        return self.filter(raw, self.darks[y,:])
+    
+    def getYProfile(self, x, raw):
+        # bands are in array form as line, sample
+        return self.filter(raw, self.darks[:,x])
 
 class ClipFilter(GeneralFilter):
     """Apply a cliping filter to the band.
@@ -203,7 +245,10 @@ class ClipFilter(GeneralFilter):
             clipped = raw
         return clipped
     
-    def getProfile(self, raw):
+    def getXProfile(self, y, raw):
+        return self.getPlane(raw)
+    
+    def getYProfile(self, x, raw):
         return self.getPlane(raw)
 
 class MedianFilter1D(GeneralFilter):
@@ -379,12 +424,15 @@ class CubeView(debugmixin):
             newbands.append(self.indexes[i]-1)
         return self.setIndexes(newbands)
 
-    def gotoIndex(self, band, user=False):
+    def getIndex(self, band, user=False):
         if user:
             # If the user entered this number, adjust for the user's display
             # offset
             band = band - HSIMode.classprefs.band_number_offset
-        newbands=[band]
+        return band
+
+    def gotoIndex(self, band, user=False):
+        newbands=[self.getIndex(band, user)]
         return self.setIndexes(newbands)
 
     def setIndexes(self, newbands):
@@ -726,6 +774,26 @@ class ClippingFilterAction(HSIActionMixin, RadioAction):
         mode.filter = filt
         wx.CallAfter(mode.update)
 
+class SubtractBandAction(HSIActionMixin, MinibufferAction):
+    name = "Band Subtraction Filter"
+    tooltip = "Subtract a band from the rest of the bands"
+    default_menu = ("View", 303)
+    
+    key_bindings = None
+    minibuffer = IntMinibuffer
+    minibuffer_label = "Subtract Band:"
+
+    def processMinibuffer(self, minibuffer, mode, band_num):
+        """
+        Callback function used to set the stc to the correct line.
+        """
+        mode = self.mode
+        band_num = mode.cubeview.getIndex(band_num, user=True)
+        band = mode.cube.getBand(band_num)
+        mode.filter = SubtractFilter(band)
+        wx.CallAfter(mode.update)
+
+
 class CubeViewAction(HSIActionMixin, RadioAction):
     name = "View Direction"
     default_menu = ("View", -600)
@@ -991,13 +1059,13 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
         cubeview = self.major.cubeview
         profiles=cubeview.getHorizontalProfiles(y)
 
-        x=numpy.arange(1,cubeview.width+1,1)
+        abscissas = numpy.arange(1,cubeview.width+1,1)
         colorindex=0
         lines=[]
         for values in profiles:
             data=numpy.zeros((cubeview.width,2))
-            data[:,0]=x
-            data[:,1]=self.major.filter.getProfile(values)
+            data[:,0] = abscissas
+            data[:,1] = self.major.filter.getXProfile(y, values)
             #line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
@@ -1027,13 +1095,13 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
         cubeview = self.major.cubeview
         profiles=cubeview.getVerticalProfiles(x)
 
-        x=numpy.arange(1,cubeview.height+1,1)
+        abscissas = numpy.arange(1,cubeview.height+1,1)
         colorindex=0
         lines=[]
         for values in profiles:
             data=numpy.zeros((cubeview.height,2))
-            data[:,0]=x
-            data[:,1]=self.major.filter.getProfile(values)
+            data[:,0] = abscissas
+            data[:,1] = self.major.filter.getYProfile(x, values)
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
