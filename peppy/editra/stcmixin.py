@@ -138,6 +138,11 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             props = []
         return props
     
+    def isEditraLanguage(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        lexer = syn_data[syntax.LEXER]
+        return lexer != wx.stc.STC_LEX_NULL
+    
     def NullLexer(self):
         self.SetStyleBits(5)
         self.SetIndentationGuides(False)

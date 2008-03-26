@@ -427,17 +427,21 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.applyDefaultSettings()
         self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
-        ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url)
-        self.dprint("ext=%s file_type=%s" % (ext, file_type))
-        if file_type == 'generic' or file_type is None:
-            if self.editra_synonym is not None:
-                file_type = self.editra_synonym
-            elif self.keyword is not 'Fundamental':
-                file_type = self.keyword
-            else:
-                file_type = ext
+        # Try to find the editra style corresponding to the major mode.  If
+        # there is no mode corresponding to the major mode name, let the
+        # Editra styling system choose the style based on the filename
+        if self.editra_synonym is not None:
+            file_type = self.editra_synonym
+        else:
+            file_type = self.keyword
+        if not self.isEditraLanguage(file_type):
+            ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url)
+            self.dprint("ext=%s file_type=%s" % (ext, file_type))
+            if file_type == 'generic' or file_type is None:
+                file_type = 'Plain Text'
+            self.dprint("ext=%s file_type=%s" % (ext, file_type))
+            
         self.editra_lang = file_type
-        self.dprint("ext=%s file_type=%s" % (ext, file_type))
         self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
         self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
         self.dprint("font styling done in %0.5fs" % (time.time() - start))
