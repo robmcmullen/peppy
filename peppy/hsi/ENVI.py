@@ -219,16 +219,20 @@ class Header(dict,MetadataMixin):
                     key,val = [s.strip() for s in re.split('=\s*',txt,1)]
                     key=key.lower()
                     if self.debug: dprint("matching: '%s'='%s'" % (key,val))
-                    if val == "{":
-                        state='bracket'
-                        val=''
-                    else:
-                        if val[0]=='{' and val[-1]=='}':
+                    
+                    if val[0] == "{":
+                        if val[-1] == "}":
                             # single line string: remove braces and spaces
-                            val=val[1:-1].strip()
+                            self[key] = val[1:-1].strip()
                         else:
-                            # remove garbage characters
-                            val=re.sub('\{\}[ \r\n\t]*','',val)
+                            state='bracket'
+                            # Some ENVI header files have opening and closing
+                            # braces on different lines, but also have valid
+                            # data on the opening line.
+                            val = val[1:].strip()
+                    else:
+                        # remove garbage characters
+                        val=re.sub('\{\}[ \r\n\t]*','',val)
                         self[key]=val
                         if self.debug: dprint("stored: '%s'='%s'" % (key,self[key]))
         self.fixup()
@@ -329,7 +333,7 @@ class Header(dict,MetadataMixin):
             self.setCubeMapInfo(cube)
     
     def setCubeMapInfo(self, cube):
-        #dprint("found map info: %s" % self['map info'])
+        dprint("found map info: %s" % self['map info'])
         # map info looks like this for UTM:
         # UTM, 1.000, 1.000, 469734.460, 4429870.640, 3.7700000000e+00, 3.7700000000e+00, 13, North, WGS-84, units=Meters}
         # or this for lat/long:
