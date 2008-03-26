@@ -227,6 +227,39 @@ class Backslashify(LineOrRegionMutateAction):
         return out
 
 
+class UnBackslashify(LineOrRegionMutateAction):
+    """Remove backslashes from end of line.
+    
+    Remove backslashes from the end of every line in the region so that the
+    end- of-line character is not escaped anymore.  This is the opposite of
+    L{Backslashify}.
+    """
+    alias = "remove-backslashes"
+    name = "Remove Backslashes"
+    default_menu = ("Transform", 611)
+
+    def isActionAvailable(self):
+        """The action is only available if a region has multiple lines."""
+        (pos, end) = self.mode.GetSelection()
+        return self.mode.LineFromPosition(pos) < self.mode.LineFromPosition(end) - 1
+
+    def mutateLines(self, lines):
+        """Add backslashes to the end of all lines but the last
+        """
+        out = []
+        regex = re.compile(r"(.*?)\s*\\(\s)*$")
+        eol = self.mode.getLinesep()
+        for line in lines:
+            match = regex.match(line)
+            if match:
+                #dprint(repr(line))
+                line = match.group(1)
+                if match.group(2):
+                    line += match.group(2)
+            out.append(line)
+        return out
+
+
 class Reindent(TextModificationAction):
     """Reindent a line or region."""
     alias = "reindent-region"
@@ -269,7 +302,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 ShiftLeft, ShiftRight,
 
                 Reindent, CommentRegion, UncommentRegion,
-                FillParagraphOrRegion, Backslashify,
+                FillParagraphOrRegion, Backslashify, UnBackslashify,
 
                 Tabify, Untabify, CollapseBlankLines,
                 
