@@ -45,7 +45,7 @@ def get_plugin_dirs(search_path):
     if isinstance(search_path, str):
         search_path = search_path.split(os.pathsep)
     dirs.extend(search_path)
-    dprint(dirs)
+    #dprint(dirs)
     return dirs
 
 class errorRedirector(object):

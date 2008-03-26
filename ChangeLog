@@ -1,3 +1,22 @@
+2008-03-24  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3 "Zeta Function"
+	* created new autoindent architecture
+	* added regex autoindenter based on KDE's Kate regex syntax
+	* added beginnings of C-style autoindenter based on Scintilla's folding
+	* much improved recognition of function names for C, C++, Java
+	* fixed problem in python autoindenter's handling of comments
+	* multiple untitled files can now be opened
+	* reorganized source code to provide examples of setuptools plugins
+	* added utility to select all text between matching braces
+	* added backslashify and unbackslashify commands
+	* added emacs style cursor movement commands from Christopher Armstrong
+	* added clipping filters to hyperspectral image viewer
+	* added DebugKeypress action to help OSX debugging
+	* added Mandelbrot set generator
+	* added new translations
+	* added new documentation on http://trac.flipturn.org/wiki
+
 2008-03-07  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.2.7 update to "Oscillation Overthruster"
