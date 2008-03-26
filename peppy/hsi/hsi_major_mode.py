@@ -204,11 +204,11 @@ class SubtractFilter(GeneralFilter):
    
     def filter(self, raw, darks):
         if self.dtype == numpy.uint8:
-            filtered = raw.astype(numpy.int8) - darks
+            filtered = raw.astype(numpy.int8) - darks.astype(numpy.int8)
         elif self.dtype == numpy.uint16:
-            filtered = raw.astype(numpy.int16) - darks
+            filtered = raw.astype(numpy.int16) - darks.astype(numpy.int16)
         elif self.dtype == numpy.uint32:
-            filtered = raw.astype(numpy.int32) - darks
+            filtered = raw.astype(numpy.int32) - darks.astype(numpy.int32)
         else:
             filtered = raw - darks
         return filtered
