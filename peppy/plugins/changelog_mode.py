@@ -71,15 +71,28 @@ class ChangeLogMode(FundamentalMode):
     
     # Any files matching this regex will be candidates for this major
     # mode
-    regex="([Cc]hange[Ll]og.*)$"
+    regex="([Cc]hange[Ll]og(:?(\..*|$)))"
 
     default_classprefs = (
         # Overrides from FundamentalMode classprefs
         BoolParam('use_tab_characters', True),
         IntParam('tab_size', 8),
+        IntParam('indent_size', 8),
         BoolParam('word_wrap', True),
         StrParam('date_format_str', "%Y-%m-%d", "Date format string, in strftime format"),
-        )
+        Param('indent_after', r'(^[0-9])'),
+        Param('indent', r'\*'),
+        Param('unindent', r'(^[0-9])'),
+       )
+    
+    autoindent = None
+    
+    def createPostHook(self):
+        if not self.autoindent:
+            self.__class__.autoindent = RegexAutoindent(self.classprefs.indent_after,
+                                                        self.classprefs.indent,
+                                                        self.classprefs.unindent,
+                                                        '')
 
 
 # This is the plugin definition for ChangeLogMode.  This is the only way
