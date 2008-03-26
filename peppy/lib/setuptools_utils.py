@@ -30,26 +30,28 @@ except:
 
 USE_SETUPTOOLS = False
 try:
-    import pkg_resources
+    import peppy.lib.pkg_resources as pkg_resources
     if hasattr(pkg_resources, 'iter_entry_points'):
         USE_SETUPTOOLS = True
     else:
         print "Need a newer version of setuptools to load setuptools plugins."
 except:
-    #dprint("Setuptools unavailable; setuptools plugins will not be loaded.")
+    dprint("Setuptools unavailable; setuptools plugins will not be loaded.")
     pass
+
+SETUPTOOLS_DEBUG = False
 
 def count_plugins(entry_point_name, plugin_dirs):
     if USE_SETUPTOOLS:
         global_plugins = tuple(pkg_resources.iter_entry_points(entry_point_name))
-        #dprint(global_plugins)
+        if SETUPTOOLS_DEBUG: dprint(global_plugins)
         count = len(global_plugins)
         distributions, errors = pkg_resources.working_set.find_plugins(
             pkg_resources.Environment(plugin_dirs)
             )
         for dist in distributions:
             entries = dist.get_entry_map()
-            #dprint("count_plugins: found entries %s" % entries)
+            if SETUPTOOLS_DEBUG: dprint("count_plugins: found entries %s" % entries)
             if entry_point_name in entries:
                 for name, entrypoint in entries[entry_point_name].iteritems():
                     count += 1
@@ -57,13 +59,13 @@ def count_plugins(entry_point_name, plugin_dirs):
     return 0
 
 def load_local_plugins(entry_point_name, plugin_dirs, progress=None):
-    #dprint("Searching for local plugins: %s" % plugin_dirs)
+    if SETUPTOOLS_DEBUG: dprint("Searching for local plugins: %s" % plugin_dirs)
     
     # Create the environment used to search for plugins in a non-standard spot
     env = pkg_resources.Environment(plugin_dirs)
     distributions, errors = pkg_resources.working_set.find_plugins(env)
     for dist in distributions:
-        #dprint(" name=%s version=%s" % (dist.project_name, dist.version))
+        if SETUPTOOLS_DEBUG: dprint(" name=%s version=%s" % (dist.project_name, dist.version))
         entries = dist.get_entry_map()
         
         # Only attempt to load plugins that have the correct entry point.
@@ -75,7 +77,7 @@ def load_local_plugins(entry_point_name, plugin_dirs, progress=None):
             for name, entrypoint in entries[entry_point_name].iteritems():
                 try:
                     plugin_class = entrypoint.load(True, env)
-                    #dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
+                    if SETUPTOOLS_DEBUG: dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
                     if progress:
                         progress(entrypoint.name)
                 except ImportError, e:
@@ -91,7 +93,7 @@ def load_plugins(entry_point_name, plugin_dirs, progress=None):
         for entrypoint in pkg_resources.iter_entry_points(entry_point_name):
             try:
                 plugin_class = entrypoint.load()
-                #dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
+                if SETUPTOOLS_DEBUG: dprint("setuptools plugin loaded: %s, class=%s" % (entrypoint.name, plugin_class))
                 if progress:
                     progress(entrypoint.name)
             except ImportError, e:
