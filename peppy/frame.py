@@ -311,7 +311,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     default_classprefs = (
         IntParam('width', 800, 'Width of the main frame in pixels'),
         IntParam('height', 600, 'Height of the main frame in pixels'),
-        StrParam('sidebars', '', 'List of sidebars to activate with the frame'),
+        StrParam('sidebars', '', 'List of sidebars to activate with the frame', fullwidth=True),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
         # FIXME: this attempt at fast resizing caused Freeze() mismatch
         # problems.  It's not worth that much, so I'm disabling it for

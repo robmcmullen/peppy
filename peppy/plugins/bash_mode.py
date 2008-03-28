@@ -28,9 +28,9 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     fold_function_match = ["function "]
 
     default_classprefs = (
-        Param('indent_after', r'(\{(?![^\}]*\})|\b(then|elif|else)\b(?!.+fi)|\bdo\b(?!.+done)|\bcase\s+.+\s+in\b(?!.*esac)|\[\[)'),
-        Param('indent', r'\$\{.*\}'),
-        Param('unindent', r'([}]\s*$|\b(fi|elif|else)\b|\bdone\b|\besac\b|\]\])'),
+        Param('indent_after', r'(\{(?![^\}]*\})|\b(then|elif|else)\b(?!.+fi)|\bdo\b(?!.+done)|\bcase\s+.+\s+in\b(?!.*esac)|\[\[)', fullwidth=True),
+        Param('indent', r'\$\{.*\}', fullwidth=True),
+        Param('unindent', r'([}]\s*$|\b(fi|elif|else)\b|\bdone\b|\besac\b|\]\])', fullwidth=True),
        )
     
     autoindent = None

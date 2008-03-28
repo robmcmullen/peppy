@@ -70,8 +70,8 @@ class Fonts(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/font.png"
     default_classprefs = (
-        FontParam('primary_editing_font', None, 'Font name of the primary editing font'),
-        FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font'),
+        FontParam('primary_editing_font', None, 'Font name of the primary editing font', fullwidth=True),
+        FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font', fullwidth=True),
         StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing Editra style sheet information'),
     )
     if wx.Platform == "__WXMAC__":
@@ -137,8 +137,8 @@ class User(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/user.png"
     default_classprefs = (
-        StrParam('full_name', '', 'Your full name, used for annotation in documents (e.g. in ChangeLog entries)'),
-        StrParam('email', '', 'Your email address, used for annotation in documents (e.g. in ChangeLog entries)'),
+        StrParam('full_name', '', 'Your full name, used for annotation in documents (e.g. in ChangeLog entries)', fullwidth=True),
+        StrParam('email', '', 'Your email address, used for annotation in documents (e.g. in ChangeLog entries)', fullwidth=True),
     )
 
 
@@ -162,7 +162,7 @@ class Language(ClassPrefs):
     preferences_tab = "General"
     icon = "icons/world.png"
     default_classprefs = (
-        LocaleParam('language', 'en_US', 'Locale for user interface'),
+        LocaleParam('language', 'en_US', 'Locale for user interface', wide=True),
         ChoiceParam('fun_translator', ['normal', 'leet', 'pig latin'], 'Have some fun with the localization'),
     )
     
@@ -291,7 +291,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     preferences_sort_weight = 0
     default_classprefs = (
         StrParam('yapsy_search_path', 'plugins', 'os.pathsep separated list of paths to search for additional yapsy plugins'),
-        StrParam('plugin_search_path', '/home/rob/src/peppy-plugins', 'os.pathsep separated list of paths to search for additional setuptools plugins'),
+        StrParam('plugin_search_path', '/home/rob/src/peppy-plugins', 'os.pathsep separated list of paths to search for additional setuptools plugins', fullwidth=True),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file  is loaded'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to an already running copy of peppy'),
         BoolParam('requests_in_new_frame', True, 'File open requests will appear in a new frame if True, or as a new tab in an existing frame if False'),

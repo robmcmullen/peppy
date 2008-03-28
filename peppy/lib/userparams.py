@@ -213,14 +213,32 @@ class Param(debugmixin):
             self.default = default
         self.help = help
         self.save_to_file = save_to_file
+        
+        # join means to place the next param's control on the same line as
+        # this one
         if 'next_on_same_line' in kwargs or 'join' in kwargs:
             self.next_on_same_line = True
         else:
             self.next_on_same_line = False
+        
+        # wide params expand to fill extra columns; fullwidth params expand to
+        # fill the width of the window
+        if 'fullwidth' in kwargs:
+            self.fullwidth = kwargs['fullwidth']
+        else:
+            self.fullwidth = False
+        if 'wide' in kwargs:
+            self.wide = kwargs['wide']
+        else:
+            self.wide = self.fullwidth
+        
+        # An alternate label can be supplied using the keyword 'label'
         if 'label' in kwargs:
             self.alt_label = kwargs['label']
         else:
             self.alt_label = None
+        
+        # The editing control of the param can also be disabled
         if 'disable' in kwargs:
             self.enable = not kwargs['disable']
         else:
@@ -1455,7 +1473,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
             if name:
                 box = wx.StaticBox(parent, -1, name)
                 bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
-                sizer.Add(bsizer)
+                sizer.Add(bsizer, 0, wx.EXPAND)
                 grid = wx.GridBagSizer(2,5)
                 bsizer.Add(grid, 0, wx.EXPAND)
                 
@@ -1470,10 +1488,20 @@ class PrefPanel(ScrolledPanel, debugmixin):
             width = 1
             title = param.getLabel(parent)
             if title is not None:
-                grid.Add(title, (row,col))
+                if grid.CheckForIntersectionPos((row,col), (1,width)):
+                    dprint("found overlap for %s at (%d,%d)" % (param.keyword, row, col))
+                else:
+                    grid.Add(title, (row,col))
                 col += 1
             else:
                 width = 2
+            if param.wide:
+                if isinstance(param.wide, int):
+                    width += param.wide
+                else:
+                    width += 2
+                if param.fullwidth:
+                    grid.AddGrowableCol(col + width - 1)
 
             if param.isSettable():
                 ctrl = param.getCtrl(parent)
@@ -1481,8 +1509,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 param.setCallback(ctrl, ctrls)
                 if param.help:
                     ctrl.SetToolTipString(param.help)
-                grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
-                col += 1
+                if grid.CheckForIntersectionPos((row,col), (1,width)):
+                    dprint("found overlap for control of %s at (%d,%d)" % (param.keyword, row, col))
+                else:
+                    grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
+                col += width
                 
                 if default_getter is not None:
                     val = default_getter(param.keyword)
