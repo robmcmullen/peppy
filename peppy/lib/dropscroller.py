@@ -50,8 +50,17 @@ class ListDropScrollerMixin(object):
         self._auto_scroll = 0
         self._auto_scroll_save_y = -1
         self._auto_scroll_save_width = width
+        self._auto_scroll_last_state = 0
+        self._auto_scroll_last_index = -1
+        self._auto_scroll_indicator_line = True
         self.Bind(wx.EVT_TIMER, self.OnAutoScrollTimer)
         
+    def clearAllSelected(self):
+        """clear all selected items"""
+        list_count = self.GetItemCount()
+        for index in range(list_count):
+            self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+
     def _startAutoScrollTimer(self, direction = 0):
         """Set the direction of the next scroll, and start the
         interval timer if it's not already running.
@@ -133,13 +142,17 @@ class ListDropScrollerMixin(object):
 
         return index
 
-    def processListScroll(self, x, y):
+    def processListScroll(self, x, y, line=True):
         """Main handler: call this with the x and y coordinates of the
         mouse cursor as determined from the OnDragOver callback.
 
         This method will determine which direction the list should be
         scrolled, and start the interval timer if necessary.
         """
+        if self.GetItemCount() == 0:
+            # don't show any lines if we don't have any items in the list
+            return
+
         index, flags = self.HitTest((x, y))
 
         direction = self._getAutoScrollDirection(index)
@@ -147,13 +160,17 @@ class ListDropScrollerMixin(object):
             self._stopAutoScrollTimer()
         else:
             self._startAutoScrollTimer(direction)
+        self._auto_scroll_indicator_line = line
             
         drop_index = self.getDropIndex(x, y, index=index, flags=flags)
+        if line:
+            self._processLineIndicator(x, y, drop_index)
+        else:
+            self._processHighlightIndicator(drop_index)
+    
+    def _processLineIndicator(self, x, y, drop_index):
         count = self.GetItemCount()
-        if count == 0:
-            # don't show any lines if we don't have any items in the list
-            return
-        elif drop_index >= count:
+        if drop_index >= count:
             index = min(count, drop_index)
             rect = self.GetItemRect(index - 1)
             y = rect.y + rect.height + 1
@@ -176,11 +193,25 @@ class ListDropScrollerMixin(object):
             dc.DrawLine(0, y, self._auto_scroll_save_width, y)
             self._auto_scroll_save_y = y
 
+    def _processHighlightIndicator(self, index):
+        count = self.GetItemCount()
+        if self._auto_scroll_last_index != index and index < count:
+            selected = self.GetItemState(index, wx.LIST_STATE_SELECTED)
+            if not selected:
+                self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            if self._auto_scroll_last_index != -1:
+                #self.SetItemState(self._auto_scroll_last_index, self._auto_scroll_last_state, wx.LIST_STATE_SELECTED)
+                self.SetItemState(self._auto_scroll_last_index, 0, wx.LIST_STATE_SELECTED)
+            self._auto_scroll_last_state = selected
+            self._auto_scroll_last_index = index
+    
     def finishListScroll(self):
         """Clean up timer resource and erase indicator.
         """
         self._stopAutoScrollTimer()
         self._eraseIndicator()
+        self._auto_scroll_last_index = -1
+        self._auto_scroll_last_state = 0
         
     def OnAutoScrollTimer(self, evt):
         """Timer event handler to scroll the list in the requested
@@ -191,8 +222,9 @@ class ListDropScrollerMixin(object):
             # clean up timer resource
             self._auto_scroll_timer = None
         else:
-            dc = self._getIndicatorDC()
-            self._eraseIndicator(dc)
+            if self._auto_scroll_indicator_line:
+                dc = self._getIndicatorDC()
+                self._eraseIndicator(dc)
             if self._auto_scroll < 0:
                 self.EnsureVisible(self.GetTopItem() + self._auto_scroll)
                 self._auto_scroll_timer.Start()
@@ -209,12 +241,13 @@ class ListDropScrollerMixin(object):
         return dc
 
     def _eraseIndicator(self, dc=None):
-        if dc is None:
-            dc = self._getIndicatorDC()
-        if self._auto_scroll_save_y >= 0:
-            # erase the old line
-            dc.DrawLine(0, self._auto_scroll_save_y,
-                        self._auto_scroll_save_width, self._auto_scroll_save_y)
+        if self._auto_scroll_indicator_line:
+            if dc is None:
+                dc = self._getIndicatorDC()
+            if self._auto_scroll_save_y >= 0:
+                # erase the old line
+                dc.DrawLine(0, self._auto_scroll_save_y,
+                            self._auto_scroll_save_width, self._auto_scroll_save_y)
         self._auto_scroll_save_y = -1
 
 
@@ -225,7 +258,8 @@ class PickledDataObject(wx.CustomDataObject):
 
 class PickledDropTarget(wx.PyDropTarget):
     """Custom drop target modified from the wxPython demo."""
-
+    debug = False
+    
     def __init__(self, window):
         wx.PyDropTarget.__init__(self)
         self.dv = window
@@ -239,21 +273,21 @@ class PickledDropTarget(wx.PyDropTarget):
 
     # some virtual methods that track the progress of the drag
     def OnEnter(self, x, y, d):
-        print "OnEnter: %d, %d, %d\n" % (x, y, d)
+        if self.debug: print "OnEnter: %d, %d, %d\n" % (x, y, d)
         return d
 
     def OnLeave(self):
-        print "OnLeave\n"
+        if self.debug: print "OnLeave\n"
         self.cleanup()
 
     def OnDrop(self, x, y):
-        print "OnDrop: %d %d\n" % (x, y)
+        if self.debug: print "OnDrop: %d %d\n" % (x, y)
         self.cleanup()
         return True
 
     def OnDragOver(self, x, y, d):
         top = self.dv.GetTopItem()
-        print "OnDragOver: %d, %d, %d, top=%s" % (x, y, d, top)
+        if self.debug: print "OnDragOver: %d, %d, %d, top=%s" % (x, y, d, top)
 
         self.dv.processListScroll(x, y)
 
@@ -268,7 +302,7 @@ class PickledDropTarget(wx.PyDropTarget):
     # Called when OnDrop returns True.  We need to get the data and
     # do something with it.
     def OnData(self, x, y, d):
-        print "OnData: %d, %d, %d\n" % (x, y, d)
+        if self.debug: print "OnData: %d, %d, %d\n" % (x, y, d)
 
         self.cleanup()
         # copy the data from the drag source to our data object
