@@ -817,6 +817,7 @@ class FontParam(Param):
 
     The wx.Font class is used as the value.
     """
+    callback_event = None
     
     def getCtrl(self, parent, initial=None):
         btn = FontBrowseButton(parent)
@@ -1491,7 +1492,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 if grid.CheckForIntersectionPos((row,col), (1,width)):
                     dprint("found overlap for %s at (%d,%d)" % (param.keyword, row, col))
                 else:
-                    grid.Add(title, (row,col))
+                    grid.Add(title, (row,col), flag=wx.ALIGN_CENTER_VERTICAL)
                 col += 1
             else:
                 width = 2

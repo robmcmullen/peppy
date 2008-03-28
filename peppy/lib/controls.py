@@ -20,7 +20,6 @@ import os, weakref
 import wx
 from wx.lib import buttons
 from wx.lib import imageutils
-from wx.lib import stattext
 from wx.lib.pubsub import Publisher
 
 from peppy.lib.iconstorage import *
@@ -274,7 +273,8 @@ class FontBrowseButton(wx.Panel):
         btn = wx.Button(self, -1, "Select Font")
         self.Bind(wx.EVT_BUTTON, self.OnSelectFont, btn)
 
-        self.sampleText = stattext.GenStaticText(self, -1, "Sample Text", size=(150,-1))
+        self.sampleText = wx.TextCtrl(self, -1, size=(150, -1), style=wx.TE_CENTRE)
+        self.sampleText.SetEditable(False)
         self.sampleText.SetBackgroundColour(wx.WHITE)
         
         if font is None:
@@ -284,8 +284,8 @@ class FontBrowseButton(wx.Panel):
         self.curClr = wx.BLACK
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(btn, 0, wx.EXPAND)
         sizer.Add(self.sampleText, 1, wx.EXPAND)
+        sizer.Add(btn, 0, wx.EXPAND)
 
         self.SetSizer(sizer)
         self.UpdateUI()
@@ -293,14 +293,7 @@ class FontBrowseButton(wx.Panel):
     def UpdateUI(self):
         self.sampleText.SetFont(self.curFont)
         self.sampleText.SetForegroundColour(self.curClr)
-        self.sampleText.SetLabel("%s %s" % (self.curFont.GetFaceName(),
-                                            self.curFont.GetPointSize()))
-#        self.ps.SetLabel(str(self.curFont.GetPointSize()))
-#        self.family.SetLabel(self.curFont.GetFamilyString())
-#        self.style.SetLabel(self.curFont.GetStyleString())
-#        self.weight.SetLabel(self.curFont.GetWeightString())
-#        self.face.SetLabel(self.curFont.GetFaceName())
-#        self.nfi.SetLabel(self.curFont.GetNativeFontInfo().ToString())
+        self.sampleText.SetValue("%s %s" % (self.curFont.GetFaceName(), self.curFont.GetPointSize()))
         self.Layout()
 
     def OnSelectFont(self, evt):
