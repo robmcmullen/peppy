@@ -97,25 +97,44 @@ class ListDropScrollerMixin(object):
         # we're somewhere in the middle of the list.  Don't scroll
         return 0
 
-    def getDropIndex(self, x, y, index=None, flags=None):
+    def getDropIndex(self, x, y, index=None, flags=None, insert=True):
         """Find the index to insert the new item, which could be
         before or after the index passed in.
+        
+        @return: if insert is true, return value is the index of the insert
+        point (i.e.  the new data should be inserted at that point, pushing
+        the existing data further down the list).  If insert is false, the
+        return value is the item on which the drop happened, or -1 indicating
+        an invalid drop.
         """
         if index is None:
             index, flags = self.HitTest((x, y))
 
-        if index == wx.NOT_FOUND: # not clicked on an item
-            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)): # empty list or below last item
-                index = sys.maxint # append to end of list
+        # Not clicked on an item
+        if index == wx.NOT_FOUND:
+            
+            # If it's an empty list or below the last item
+            if (flags & (wx.LIST_HITTEST_NOWHERE|wx.LIST_HITTEST_ABOVE|wx.LIST_HITTEST_BELOW)):
+                
+                # Append to the end of the list or return an invalid index
+                if insert:
+                    index = sys.maxint
+                else:
+                    index = self.GetItemCount() - 1
                 #print "getDropIndex: append to end of list: index=%d" % index
             elif (self.GetItemCount() > 0):
                 if y <= self.GetItemRect(0).y: # clicked just above first item
                     index = 0 # append to top of list
                     #print "getDropIndex: before first item: index=%d, y=%d, rect.y=%d" % (index, y, self.GetItemRect(0).y)
-                else:
-                    index = self.GetItemCount() + 1 # append to end of list
+                elif insert:
+                    index = self.GetItemCount() # append to end of list
                     #print "getDropIndex: after last item: index=%d" % index
-        else: # clicked on an item
+                else:
+                    index = self.GetItemCount() - 1
+                    
+        # Otherwise, we've clicked on an item.  If we're in insert mode, check
+        # to see if the cursor is between items
+        elif insert:
             # Get bounding rectangle for the item the user is dropping over.
             rect = self.GetItemRect(index)
             #print "getDropIndex: landed on %d, y=%d, rect=%s" % (index, y, rect)
@@ -195,7 +214,9 @@ class ListDropScrollerMixin(object):
 
     def _processHighlightIndicator(self, index):
         count = self.GetItemCount()
-        if self._auto_scroll_last_index != index and index < count:
+        if index >= count:
+            index = count - 1
+        if self._auto_scroll_last_index != index:
             selected = self.GetItemState(index, wx.LIST_STATE_SELECTED)
             if not selected:
                 self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
