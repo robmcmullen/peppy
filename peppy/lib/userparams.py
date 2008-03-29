@@ -137,6 +137,30 @@ class FileBrowseButton2(FileBrowseButton):
         # of the text control, which should indicate the real enabled state.
         return self.textControl.IsEnabled()
     
+    def OnBrowse(self, event=None):
+        """Replacing the default action because it doesn't check for bad
+        directories.
+        """
+        current = self.GetValue()
+        directory = os.path.split(current)
+        if os.path.isdir( current):
+            directory = current
+            current = ''
+        elif directory and os.path.isdir( directory[0] ):
+            current = directory[1]
+            directory = directory [0]
+        else:
+            current = ''
+            directory = self.startDirectory
+        dprint(current)
+        dprint(directory)
+        dlg = wx.FileDialog(self, self.dialogTitle, directory, current,
+                            self.fileMask, self.fileMode)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.SetValue(dlg.GetPath())
+        dlg.Destroy()
+    
 class DirBrowseButton2(DirBrowseButton):
     """Update to dir browse button to browse to the currently set
     directory instead of always using the initial directory.
