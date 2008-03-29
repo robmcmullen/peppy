@@ -7,7 +7,6 @@ from mock_wx import *
 from peppy.stcbase import *
 from peppy.fundamental import *
 from peppy.plugins.python_mode import *
-from peppy.plugins.text_transforms import *
 from peppy.debug import *
 
 from nose.tools import *
@@ -15,12 +14,13 @@ from nose.tools import *
 class TestFundamentalIndent(object):
     def setUp(self):
         self.stc = getSTC(stcclass=FundamentalMode, lexer="Plain Text")
+        self.autoindent = BasicAutoindent()
 
     def checkReturn(self, pair):
         dprint(pair)
         prepareSTC(self.stc, pair[0])
         dprint("after prepareSTC")
-        self.stc.electricReturn()
+        self.autoindent.processReturn(self.stc)
         dprint("after electricReturn")
         assert checkSTC(self.stc, pair[0], pair[1])
 
@@ -86,8 +86,8 @@ back at column zero
 class TestPythonIndent(object):
     def setUp(self):
         self.stc = getSTC(stcclass=PythonMode, lexer="Python")
-        print self.stc
-        self.reindentAction = Reindent(self.stc.frame)
+        self.autoindent = PythonAutoindent()
+        #print self.stc
 
     def getActiveMajorMode(self):
         """dummy method to satisfy new action requirements"""
@@ -96,7 +96,7 @@ class TestPythonIndent(object):
     def checkReturn(self, pair):
         dprint(pair)
         prepareSTC(self.stc, pair[0])
-        self.stc.electricReturn()
+        self.autoindent.processReturn(self.stc)
         assert checkSTC(self.stc, pair[0], pair[1])
 
     def testReturn(self):
@@ -131,7 +131,7 @@ class blah:
         dprint(pair)
         prepareSTC(self.stc, pair[0])
         #self.stc.showStyle()
-        self.reindentAction.action()
+        self.autoindent.processTab(self.stc)
         #self.stc.showStyle()
         assert checkSTC(self.stc, pair[0], pair[1])
 
@@ -238,6 +238,26 @@ if blah:
 if blah:
     stuff
     |pass
+--------
+class Blah
+    def func(self):
+        if True:
+            if True:
+                pass
+            elif True:
+                pass
+        # this comment sets a new baseline, and else will be dedented from here
+|else:
+--
+class Blah
+    def func(self):
+        if True:
+            if True:
+                pass
+            elif True:
+                pass
+        # this comment sets a new baseline, and else will be dedented from here
+    |else:
 --------
 """
 
