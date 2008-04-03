@@ -100,6 +100,31 @@ class EndOfBuffer(SelectAction):
         self.mode.DocumentEnd()
 
 
+class GotoLine(MinibufferAction):
+    """Goto a line number.
+    
+    Use minibuffer to request a line number, then go to that line in
+    the stc.
+    """
+    alias = "goto-line"
+    name = "Goto Line..."
+    tooltip = "Goto a line in the text."
+    default_menu = ("View", -250)
+    key_bindings = {'default': 'C-G', 'emacs': 'M-G'}
+    minibuffer = IntMinibuffer
+    minibuffer_label = "Goto Line:"
+
+    def processMinibuffer(self, minibuffer, mode, line):
+        """
+        Callback function used to set the stc to the correct line.
+        """
+        
+        # stc counts lines from zero, but displayed starting at 1.
+        #dprint("goto line = %d" % line)
+        mode.EnsureVisible(line - 1)
+        mode.GotoLine(line - 1)
+
+
 class CursorMovementPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
     actions.
@@ -110,5 +135,6 @@ class CursorMovementPlugin(IPeppyPlugin):
                 PreviousLine, NextLine,
                 NextCharacter, PreviousCharacter,
                 NextWord, PreviousWord,
-                BeginningOfBuffer, EndOfBuffer
+                BeginningOfBuffer, EndOfBuffer,
+                GotoLine,
             ]

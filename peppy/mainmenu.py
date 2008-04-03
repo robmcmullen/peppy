@@ -12,7 +12,6 @@ from wx.lib.pubsub import Publisher
 from peppy.yapsy.plugins import *
 from peppy.actions.base import *
 from peppy.actions.minibuffer import *
-from peppy.actions.gotoline import *
 from peppy.actions.pypefind import *
 
 from peppy.lib.processmanager import *
@@ -1014,7 +1013,7 @@ class MainMenu(IPeppyPlugin):
 
                 NewWindow, DeleteWindow, WindowList,
 
-                FindText, ReplaceText, GotoLine,
+                FindText, ReplaceText,
                 
                 ExecuteActionByName, DescribeAction,
                 
