@@ -102,21 +102,21 @@ class Untabify(LineOrRegionMutateAction):
                 out.append(line)
         return out
 
-class CollapseBlankLines(LineOrRegionMutateAction):
-    """Collapse lines that have only whitespace down to only a return character."""
-    alias = "collapse-blank-lines"
-    name = "Collapse blank lines"
-    tooltip = "Remove whitespace from blank lines"
+class RemoveTrailingWhitespace(LineOrRegionMutateAction):
+    """Remove all trailing whitespace from a line."""
+    alias = "remove-trailing-whitespace"
+    name = "Remove Trailing Whitespace"
+    tooltip = "Remove all trailing whitespace from selected lines"
     default_menu = ("Transform", 710)
 
     def mutateLines(self, lines):
-        regex = re.compile('([\t ]+)$')
+        regex = re.compile('(.*?)([\t ]+)([\r\n]+)?$')
         out = []
         for line in lines:
             match = regex.match(line)
             if match:
                 # Remove everything but the line ending (if it exists)
-                out.append(line[len(match.group(1)):])
+                out.append(match.group(1) + line[match.end(2):])
             else:
                 out.append(line)
         return out
@@ -304,7 +304,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 Reindent, CommentRegion, UncommentRegion,
                 FillParagraphOrRegion, Backslashify, UnBackslashify,
 
-                Tabify, Untabify, CollapseBlankLines,
+                Tabify, Untabify, RemoveTrailingWhitespace,
                 
                 Rot13,
                 ]

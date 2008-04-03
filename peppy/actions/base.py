@@ -207,21 +207,22 @@ class LineOrRegionMutateAction(TextModificationAction):
         """
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
-        s.GotoPos(pos)
-        s.CmdKeyExecute(wx.stc.STC_CMD_HOME)
-        pos = s.GetCurrentPos()
         # If end of the selection is on a line by itself, move the end back
         # by one so we don't end up picking up an additional line
-        if s.GetColumn(end) == 0:
+        if end > pos and s.GetColumn(end) == 0:
             offset = 1
         else:
             offset = 0
+        s.GotoPos(pos)
+        s.CmdKeyExecute(wx.stc.STC_CMD_HOME)
+        pos = s.GetCurrentPos()
         s.GotoPos(end - offset)
         s.CmdKeyExecute(wx.stc.STC_CMD_LINEEND)
         end = s.GetCurrentPos()
         text = s.GetTextRange(pos, end)
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
+        #dprint("range: %d - %d" % (pos, end))
         lines = text.splitlines(True) # keep line endings on
         #dprint(lines)
         newlines = self.mutateLines(lines)
