@@ -36,7 +36,7 @@ from peppy.lib.iconstorage import *
 from peppy.lib.column_autosize import *
 from peppy.lib.dropscroller import *
 from peppy.lib.nextpanel import *
-from peppy.lib.mpdclient2 import mpd_connection
+from mpdclient2 import mpd_connection
 
 from peppy.about import AddCredit
 
