@@ -112,6 +112,7 @@ class CommaSeparatedListDialog(wx.Dialog):
                  title='Edit Values', cwd=None):
         wx.Dialog.__init__(self, parent, -1, title, size=size, pos=pos, style=style)
         
+        self.debug = False
         self.selected = []
         if cwd:
             self.cwd = cwd
@@ -260,7 +261,6 @@ class CommaSeparatedListDialog(wx.Dialog):
         btnsizer = wx.StdDialogButtonSizer()
         
         btn = wx.Button(self, wx.ID_OK)
-        btn.SetDefault()
         btnsizer.AddButton(btn)
 
         btn = wx.Button(self, wx.ID_CANCEL)
@@ -282,14 +282,14 @@ class CommaSeparatedListDialog(wx.Dialog):
         blocktl = self.grid.GetSelectionBlockTopLeft()
         blockbr = self.grid.GetSelectionBlockBottomRight()
         blocks = zip(blocktl, blockbr)
-        print("rows=%s cells=%s blocks=%s" % (str(rows), str(cells), str(blocks)))
+        if self.debug: print("rows=%s cells=%s blocks=%s" % (str(rows), str(cells), str(blocks)))
         
         rows.extend([c[0] for c in cells])
         for blocktl, blockbr in blocks:
             rows.extend(range(blocktl[0], blockbr[0]+1))
         rows = list(set(rows))
         rows.sort()
-        print("rows=%s" % str(rows))
+        if self.debug: print("rows=%s" % str(rows))
         if update_text:
             if rows:
                 self.start.ChangeValue(str(rows[0] + 1))
@@ -314,19 +314,19 @@ class CommaSeparatedListDialog(wx.Dialog):
         self.getSelectedEntries()
         
     def OnLeftUp(self, evt):
-        print("OnLeftUp:\n")
+        if self.debug: print("OnLeftUp:\n")
         self.highlighting = False
         evt.Skip()
     
     def OnLabelLeftClick(self, evt):
-        print("OnCellLeftClick: (%d,%d) %s" %
+        if self.debug: print("OnCellLeftClick: (%d,%d) %s" %
                     (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         self.getSelectedEntries()
         evt.Skip()
     
     def OnRangeSelect(self, evt):
         if evt.Selecting():
-            print("OnRangeSelect: top-left %s, bottom-right %s" %
+            if self.debug: print("OnRangeSelect: top-left %s, bottom-right %s" %
                   (evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
         self.getSelectedEntries()
         evt.Skip()
@@ -417,7 +417,7 @@ class CommaSeparatedListDialog(wx.Dialog):
             for line in fh:
                 vals = getEntriesFromCSV(line)
                 for val in vals:
-                    print(val)
+                    if self.debug: print("importing %s" % str(val))
                     if val:
                         values.append(val)
             self.table.ResetView(values=values)
