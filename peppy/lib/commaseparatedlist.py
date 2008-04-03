@@ -126,18 +126,21 @@ class CommaSeparatedListDialog(wx.Dialog):
         label = wx.StaticText(self, -1, "First Row:")
         bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.start = wx.TextCtrl(self, -1)
+        self.start.Bind(wx.EVT_TEXT, self.OnUserRow)
         bag.Add(self.start, (row, 1), flag=wx.EXPAND)
         row += 1
         
         label = wx.StaticText(self, -1, "Last Row:")
         bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.end = wx.TextCtrl(self, -1)
+        self.end.Bind(wx.EVT_TEXT, self.OnUserRow)
         bag.Add(self.end, (row, 1), flag=wx.EXPAND)
         row += 1
         
         label = wx.StaticText(self, -1, "# Selected:")
         bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.count = wx.TextCtrl(self, -1)
+        self.count.SetEditable(False)
         bag.Add(self.count, (row, 1), flag=wx.EXPAND)
         row += 1
         
@@ -234,7 +237,20 @@ class CommaSeparatedListDialog(wx.Dialog):
         self.grid.SelectAll()
         evt.Skip()
     
-    def getSelectedEntries(self):
+    def OnUserRow(self, evt):
+        first = self.start.GetValue()
+        last = self.end.GetValue()
+        try:
+            first = int(first) - 1
+            last = int(last) - 1
+            if first <= last and first > 0 and last < self.grid.GetNumberRows():
+                self.grid.ClearSelection()
+                self.grid.SelectBlock(first, 0, last, 0, True)
+                self.getSelectedEntries(update_text=False)
+        except ValueError:
+            pass
+    
+    def getSelectedEntries(self, update_text=True):
         rows = self.grid.GetSelectedRows()
         cells = self.grid.GetSelectedCells()
         blocktl = self.grid.GetSelectionBlockTopLeft()
@@ -245,15 +261,17 @@ class CommaSeparatedListDialog(wx.Dialog):
         rows.extend([c[0] for c in cells])
         for blocktl, blockbr in blocks:
             rows.extend(range(blocktl[0], blockbr[0]+1))
+        rows = list(set(rows))
         rows.sort()
         print("rows=%s" % str(rows))
-        if rows:
-            self.start.SetValue(str(rows[0] + 1))
-            self.end.SetValue(str(rows[-1] + 1))
-        else:
-            self.start.SetValue('')
-            self.end.SetValue('')
-        self.count.SetValue(str(len(rows)))
+        if update_text:
+            if rows:
+                self.start.ChangeValue(str(rows[0] + 1))
+                self.end.ChangeValue(str(rows[-1] + 1))
+            else:
+                self.start.ChangeValue('')
+                self.end.ChangeValue('')
+        self.count.ChangeValue(str(len(rows)))
         self.selected = rows
         
     def OnConstant(self, evt):
