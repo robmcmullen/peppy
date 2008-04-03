@@ -163,7 +163,7 @@ class CommaSeparatedListDialog(wx.Dialog):
         
         row += 1
         
-        label = wx.StaticText(self, -1, "Operate on Selected Rows Using Buttons Below")
+        label = wx.StaticText(self, -1, "Operate on Selected Items Using the Buttons Below")
         bag.Add(label, (row, 0), (1,6), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
         row += 1
 
@@ -208,8 +208,37 @@ class CommaSeparatedListDialog(wx.Dialog):
         
         row += 1
         
+        label = wx.StaticText(self, -1, "Insert Items Before/After Selection:")
+        bag.Add(label, (row, 0), (1, 3), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        btn = wx.Button(self, -1, "Before")
+        btn.Bind(wx.EVT_BUTTON, self.OnInsertItemsBefore)
+        bag.Add(btn, (row, 3), flag=wx.EXPAND)
+        btn = wx.Button(self, -1, "After")
+        btn.Bind(wx.EVT_BUTTON, self.OnInsertItemsAfter)
+        bag.Add(btn, (row, 4), flag=wx.EXPAND)
         row += 1
         
+        label = wx.StaticText(self, -1, "Delete Selected Items:")
+        bag.Add(label, (row, 0), (1, 2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        btn = wx.Button(self, -1, "Remove")
+        btn.Bind(wx.EVT_BUTTON, self.OnDeleteSelected)
+        bag.Add(btn, (row, 2), flag=wx.EXPAND)
+
+        row += 1
+        
+        row += 1
+        
+        label = wx.StaticText(self, -1, "Operate on Entire List Using the Buttons Below")
+        bag.Add(label, (row, 0), (1,6), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+        row += 1
+
+        label = wx.StaticText(self, -1, "Change Size:")
+        bag.Add(label, (row, 0), (1,2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        btn = wx.Button(self, -1, "Resize")
+        btn.Bind(wx.EVT_BUTTON, self.OnChangeSize)
+        bag.Add(btn, (row, 2), flag=wx.EXPAND)
+        row += 1
+
         label = wx.StaticText(self, -1, "Import From Text File:")
         bag.Add(label, (row, 0), (1,2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
         btn = wx.Button(self, -1, "Import")
@@ -296,6 +325,15 @@ class CommaSeparatedListDialog(wx.Dialog):
                 self.end.ChangeValue('')
         self.count.ChangeValue(str(len(rows)))
         self.selected = rows
+    
+    def resetSelectedEntries(self, selected=None):
+        """Reset the selection to the items given in the list"""
+        if selected is None:
+            selected = self.selected
+        self.grid.ClearSelection()
+        for row in selected:
+            self.grid.SelectRow(row, True)
+        self.getSelectedEntries()
         
     def OnConstant(self, evt):
         """Event handler when Constant button is pressed -- fill the selected
@@ -345,7 +383,9 @@ class CommaSeparatedListDialog(wx.Dialog):
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Values should be numbers.", wx.OK | wx.ICON_ERROR)
 
     def OnImport(self, evt):
-        """Fill the selected entries by incrementing a stepsize
+        """Import from a text file.
+        
+        Values can be separated by commas or on separate lines.
         """
         dlg = wx.FileDialog(self, message="Open Comma Separated Value File", defaultDir=self.cwd, defaultFile="", wildcard="*", style=wx.OPEN)
 
@@ -372,6 +412,72 @@ class CommaSeparatedListDialog(wx.Dialog):
             dlg = wx.MessageDialog(self, "Error importing file\n%s" % filename, "Import Error.", wx.OK | wx.ICON_ERROR)
             dlg.ShowModal()
         
+    def OnChangeSize(self, evt):
+        """Resize the grid
+        """
+        dlg = wx.TextEntryDialog(self, "Enter Number of Items", defaultValue=str(self.table.GetNumberRows()), style=wx.OK|wx.CANCEL)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                num = int(dlg.GetValue())
+                values = self.table.values
+                if num < len(values):
+                    values = values[0:num]
+                elif num > len(values):
+                    values.extend([0]*(num - len(values)))
+                self.table.ResetView(values=values)
+            except ValueError:
+                dlg = wx.MessageDialog(self, "Need integer as number of items.", "Integer Error", wx.OK | wx.ICON_ERROR)
+                dlg.ShowModal()
+    
+    def OnInsertItemsBefore(self, evt):
+        """Insert items in the list
+        """
+        self.insertItems()
+    
+    def OnInsertItemsAfter(self, evt):
+        """Insert items in the list
+        """
+        self.insertItems(before=False)
+    
+    def insertItems(self, before=True):
+        if not self.selected:
+            return
+        dlg = wx.TextEntryDialog(self, "Enter Number of Items", defaultValue="1", style=wx.OK|wx.CANCEL)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            try:
+                num = int(dlg.GetValue())
+                values = self.table.values
+                if before:
+                    pos = self.selected[0]
+                else:
+                    pos = self.selected[-1] + 1
+                values[pos:pos] = [0]*num
+                self.table.ResetView(values=values)
+                
+                selected = []
+                for row in self.selected:
+                    if row >= pos:
+                        row += num
+                    selected.append(row)
+                self.resetSelectedEntries(selected)
+            except ValueError:
+                dlg = wx.MessageDialog(self, "Need integer as number of items.", "Integer Error", wx.OK | wx.ICON_ERROR)
+                dlg.ShowModal()
+        
+    def OnDeleteSelected(self, evt):
+        """Delete the selected items"""
+        if not self.selected:
+            return
+        values = self.table.values
+        newvalues = []
+        for index in range(0, len(values)):
+            if index not in self.selected:
+                newvalues.append(values[index])
+        self.table.ResetView(values=newvalues)
+        self.resetSelectedEntries([])
+    
     def GetValue(self):
         return self.table.GetCSV()
 
