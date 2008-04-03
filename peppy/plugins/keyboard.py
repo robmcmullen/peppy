@@ -58,7 +58,7 @@ class DebugKeypress(ToggleAction):
     """Print debugging information to the console for each keypress"""
     name = "Debug Keypress"
     alias = "debug-keypress"
-    default_menu = ("Tools/Debug", 100)
+    default_menu = (("Tools/Debug", -1000), 100)
     
     def isChecked(self):
         return KeyProcessor.debug
