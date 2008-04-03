@@ -627,43 +627,38 @@ class DirParam(Param):
         if initial is None:
             initial = os.getcwd()
         c = DirBrowseButton2(parent, -1, size=(300, -1),
-                             labelText = '', startDirectory=initial,
-                             changeCallback = self.changeCallback)
+                             labelText = '', startDirectory=initial)
         return c
 
     def setValue(self, ctrl, value):
         ctrl.SetValue(os.path.normpath(value))
 
-    def changeCallback(self, evt):
-        # FIXME: this possibly can be used to maintain a history, but
-        # haven't worked it out yet.
+    def OnCallback(self, evt):
+        """Specific implementation for DirParam.
         
-        # On MSW, a fake object can be sent to the callback, so check
-        # to see if it is a real event before using it.
-        if not hasattr(evt, 'GetEventObject'):
-            evt.Skip()
-            return
-        
-##        ctrl = evt.GetEventObject()
-##        value = evt.GetString()
-##        if value:
-##            dprint('FileBrowseButtonWithHistory: %s\n' % value)
-##            history = ctrl.GetHistory()
-##            if value not in history:
-##                history.append(value)
-##                ctrl.SetHistory(history)
-##                ctrl.GetHistoryControl().SetStringSelection(value)
-        evt.Skip()
-
-    def overrideCallback(self, ctrl, callback):
-        """Override the callback with a new one.
-        
-        Note that this callback will originate from the text control, not
-        the DirBrowseButton.  Any callbacks that rely on determining the
-        control using GetEventObject will have to search up through the window
-        hierarchy to get back to the browse button.
+        The normal OnCallback method of the parent class can't be used because
+        the change event for the DirBrowseButton/FileBrowseButton composite
+        controls actually occurs on the text control, which is the immediate
+        child of the browsebutton control.
         """
-        ctrl.changeCallback = callback
+        # Get the browse button control, which is the parent of the text
+        # control that the event occurs on
+        ctrl = evt.GetEventObject().GetParent()
+        if self.user_initiated_callback:
+            self.processCallback(evt, ctrl, ctrl.ctrl_list)
+            if self.processCallbackHook:
+                self.processCallbackHook(self, evt, ctrl, ctrl.ctrl_list)
+    
+    def setCallback(self, ctrl, ctrl_list):
+        """Set the callback that responds to changes in the state of the control
+        
+        Because the DirBrowseButton/FileBrowseButton have their own built-in
+        way of specifying a callback, we have to override L{Param.setCallback}
+        with this function that sets the callback as required by the browse
+        button control.
+        """
+        ctrl.ctrl_list = ctrl_list
+        ctrl.changeCallback = self.OnCallback
 
 class PathParam(DirParam):
     """Directory parameter that displays a FileBrowseButton as its
@@ -678,8 +673,7 @@ class PathParam(DirParam):
             initial = os.getcwd()
         c = FileBrowseButton2(parent, -1, size=(300, -1),
                                         labelText = '',
-                                        startDirectory=initial,
-                                        changeCallback = self.changeCallback)
+                                        startDirectory=initial)
         return c
 
 
