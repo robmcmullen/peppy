@@ -14,6 +14,10 @@ mv $distdir/peppy/hsi/hsi_major_mode.peppy-plugin $distdir/peppy/plugins
 mkdir $distdir/eggs
 ./plugins/egg-utils.py -d $distdir/eggs -k egg
 
+# prevent duplicate plugins -- if plugins dir exists, they will also be pulled
+# from there.  Had a problem with rm -rf in a script once, so just rename it. :)
+mv $distdir/plugins $distdir/plugins-src
+
 # Unzip them into the eggs directory so we can search for plugins
 touch $distdir/eggs/__init__.py
 ls -1 $distdir/eggs/*.egg | while read EGG; do
