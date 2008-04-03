@@ -18,6 +18,11 @@ import wx
 import wx.grid as Grid
 
 
+def getEntriesFromCSV(text):
+    """Return entries from a line of comma-separated values"""
+    return [t.strip() for t in text.split(',')]
+
+
 class CSVTable(Grid.PyGridTableBase):
     def __init__(self, text, grid):
         Grid.PyGridTableBase.__init__(self)
@@ -33,8 +38,8 @@ class CSVTable(Grid.PyGridTableBase):
         self.ResetView()
 
     def parseCSV(self, text):
-        self.values = [t.strip() for t in text.split(',')]
-
+        self.values = getEntriesFromCSV(text)
+    
     def GetNumberRows(self):
         return len(self.values)
 
@@ -58,13 +63,16 @@ class CSVTable(Grid.PyGridTableBase):
     def SetValue(self, row, col, value):
         self.values[row] = value
 
-    def ResetView(self):
+    def ResetView(self, values=None):
         """
         (Grid) -> Reset the grid view.   Call this to
         update the grid if rows and columns have been added or deleted
         """
         oldrows = self._rows
         oldcols = self._cols
+        
+        if values:
+            self.values = values
         
         self.grid.BeginBatch()
 
@@ -101,10 +109,14 @@ class CSVTable(Grid.PyGridTableBase):
 class CommaSeparatedListDialog(wx.Dialog):
     def __init__(self, parent, text, size=wx.DefaultSize, pos=wx.DefaultPosition,
                  style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,
-                 title='Edit Values'):
+                 title='Edit Values', cwd=None):
         wx.Dialog.__init__(self, parent, -1, title, size=size, pos=pos, style=style)
         
         self.selected = []
+        if cwd:
+            self.cwd = cwd
+        else:
+            self.cwd = os.getcwd()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -194,6 +206,17 @@ class CommaSeparatedListDialog(wx.Dialog):
         bag.Add(btn, (row, 5), flag=wx.EXPAND)
         row += 1
         
+        row += 1
+        
+        row += 1
+        
+        label = wx.StaticText(self, -1, "Import From Text File:")
+        bag.Add(label, (row, 0), (1,2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        btn = wx.Button(self, -1, "Import")
+        btn.Bind(wx.EVT_BUTTON, self.OnImport)
+        bag.Add(btn, (row, 2), flag=wx.EXPAND)
+        row += 1
+
         hsizer.Add(bag, 0, wx.EXPAND)
         
         sizer.Add(hsizer, 1, wx.EXPAND)
@@ -305,8 +328,9 @@ class CommaSeparatedListDialog(wx.Dialog):
                 self.table.SetValue(row, 0, str(start))
             self.table.UpdateValues()
         except ValueError:
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Values should be numbers.", wx.OK | wx.ICON_ERROR)
-
+            dlg = wx.MessageDialog(self, "Values should be numbers.", "Range Error", wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+        
     def OnLinearStep(self, evt):
         """Fill the selected entries by incrementing a stepsize
         """
@@ -320,6 +344,34 @@ class CommaSeparatedListDialog(wx.Dialog):
         except ValueError:
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Values should be numbers.", wx.OK | wx.ICON_ERROR)
 
+    def OnImport(self, evt):
+        """Fill the selected entries by incrementing a stepsize
+        """
+        dlg = wx.FileDialog(self, message="Open Comma Separated Value File", defaultDir=self.cwd, defaultFile="", wildcard="*", style=wx.OPEN)
+
+        # Show the dialog and retrieve the user response. If it is the
+        # OK response, process the data.
+        if dlg.ShowModal() == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            if paths:
+                self.importFile(paths[0])
+    
+    def importFile(self, filename):
+        try:
+            values = []
+            fh = open(filename, 'rb')
+            for line in fh:
+                vals = getEntriesFromCSV(line)
+                for val in vals:
+                    print(val)
+                    if val:
+                        values.append(val)
+            self.table.ResetView(values=values)
+        except IOError:
+            dlg = wx.MessageDialog(self, "Error importing file\n%s" % filename, "Import Error.", wx.OK | wx.ICON_ERROR)
+            dlg.ShowModal()
+        
     def GetValue(self):
         return self.table.GetCSV()
 
