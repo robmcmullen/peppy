@@ -117,6 +117,7 @@ class CommaSeparatedListDialog(wx.Dialog):
             self.cwd = cwd
         else:
             self.cwd = os.getcwd()
+        self.enable_when_selected = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -172,6 +173,7 @@ class CommaSeparatedListDialog(wx.Dialog):
         self.constant = wx.TextCtrl(self, -1)
         bag.Add(self.constant, (row, 1), flag=wx.EXPAND)
         btn = wx.Button(self, -1, "Set")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnConstant)
         bag.Add(btn, (row, 2), flag=wx.EXPAND)
         row += 1
@@ -187,6 +189,7 @@ class CommaSeparatedListDialog(wx.Dialog):
         self.linear_range_end = wx.TextCtrl(self, -1)
         bag.Add(self.linear_range_end, (row, 4), flag=wx.EXPAND)
         btn = wx.Button(self, -1, "Set")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnLinearRange)
         bag.Add(btn, (row, 5), flag=wx.EXPAND)
         row += 1
@@ -202,6 +205,7 @@ class CommaSeparatedListDialog(wx.Dialog):
         self.linear_step = wx.TextCtrl(self, -1)
         bag.Add(self.linear_step, (row, 4), flag=wx.EXPAND)
         btn = wx.Button(self, -1, "Set")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnLinearStep)
         bag.Add(btn, (row, 5), flag=wx.EXPAND)
         row += 1
@@ -211,9 +215,11 @@ class CommaSeparatedListDialog(wx.Dialog):
         label = wx.StaticText(self, -1, "Insert Items Before/After Selection:")
         bag.Add(label, (row, 0), (1, 3), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
         btn = wx.Button(self, -1, "Before")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnInsertItemsBefore)
         bag.Add(btn, (row, 3), flag=wx.EXPAND)
         btn = wx.Button(self, -1, "After")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnInsertItemsAfter)
         bag.Add(btn, (row, 4), flag=wx.EXPAND)
         row += 1
@@ -221,6 +227,7 @@ class CommaSeparatedListDialog(wx.Dialog):
         label = wx.StaticText(self, -1, "Delete Selected Items:")
         bag.Add(label, (row, 0), (1, 2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
         btn = wx.Button(self, -1, "Remove")
+        self.enable_when_selected.append(btn)
         btn.Bind(wx.EVT_BUTTON, self.OnDeleteSelected)
         bag.Add(btn, (row, 2), flag=wx.EXPAND)
 
@@ -266,7 +273,46 @@ class CommaSeparatedListDialog(wx.Dialog):
         sizer.Fit(self)
 
         self.Layout()
+        
+        self.getSelectedEntries()
+
+    def getSelectedEntries(self, update_text=True):
+        rows = self.grid.GetSelectedRows()
+        cells = self.grid.GetSelectedCells()
+        blocktl = self.grid.GetSelectionBlockTopLeft()
+        blockbr = self.grid.GetSelectionBlockBottomRight()
+        blocks = zip(blocktl, blockbr)
+        print("rows=%s cells=%s blocks=%s" % (str(rows), str(cells), str(blocks)))
+        
+        rows.extend([c[0] for c in cells])
+        for blocktl, blockbr in blocks:
+            rows.extend(range(blocktl[0], blockbr[0]+1))
+        rows = list(set(rows))
+        rows.sort()
+        print("rows=%s" % str(rows))
+        if update_text:
+            if rows:
+                self.start.ChangeValue(str(rows[0] + 1))
+                self.end.ChangeValue(str(rows[-1] + 1))
+            else:
+                self.start.ChangeValue('')
+                self.end.ChangeValue('')
+        self.count.ChangeValue(str(len(rows)))
+        self.selected = rows
+        
+        enable = bool(self.selected)
+        for ctrl in self.enable_when_selected:
+            ctrl.Enable(enable)
     
+    def resetSelectedEntries(self, selected=None):
+        """Reset the selection to the items given in the list"""
+        if selected is None:
+            selected = self.selected
+        self.grid.ClearSelection()
+        for row in selected:
+            self.grid.SelectRow(row, True)
+        self.getSelectedEntries()
+        
     def OnLeftUp(self, evt):
         print("OnLeftUp:\n")
         self.highlighting = False
@@ -302,39 +348,6 @@ class CommaSeparatedListDialog(wx.Dialog):
         except ValueError:
             pass
     
-    def getSelectedEntries(self, update_text=True):
-        rows = self.grid.GetSelectedRows()
-        cells = self.grid.GetSelectedCells()
-        blocktl = self.grid.GetSelectionBlockTopLeft()
-        blockbr = self.grid.GetSelectionBlockBottomRight()
-        blocks = zip(blocktl, blockbr)
-        print("rows=%s cells=%s blocks=%s" % (str(rows), str(cells), str(blocks)))
-        
-        rows.extend([c[0] for c in cells])
-        for blocktl, blockbr in blocks:
-            rows.extend(range(blocktl[0], blockbr[0]+1))
-        rows = list(set(rows))
-        rows.sort()
-        print("rows=%s" % str(rows))
-        if update_text:
-            if rows:
-                self.start.ChangeValue(str(rows[0] + 1))
-                self.end.ChangeValue(str(rows[-1] + 1))
-            else:
-                self.start.ChangeValue('')
-                self.end.ChangeValue('')
-        self.count.ChangeValue(str(len(rows)))
-        self.selected = rows
-    
-    def resetSelectedEntries(self, selected=None):
-        """Reset the selection to the items given in the list"""
-        if selected is None:
-            selected = self.selected
-        self.grid.ClearSelection()
-        for row in selected:
-            self.grid.SelectRow(row, True)
-        self.getSelectedEntries()
-        
     def OnConstant(self, evt):
         """Event handler when Constant button is pressed -- fill the selected
         entries with whatever value is in the text field
