@@ -103,6 +103,8 @@ class CommaSeparatedListDialog(wx.Dialog):
                  style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,
                  title='Edit Values'):
         wx.Dialog.__init__(self, parent, -1, title, size=size, pos=pos, style=style)
+        
+        self.selected = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -120,20 +122,74 @@ class CommaSeparatedListDialog(wx.Dialog):
         hsizer.Add(self.grid, 0, wx.EXPAND)
         
         bag = wx.GridBagSizer(2, 5)
+        row = 0
         label = wx.StaticText(self, -1, "First Row:")
-        bag.Add(label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.start = wx.TextCtrl(self, -1)
-        bag.Add(self.start, (0, 1), flag=wx.EXPAND)
+        bag.Add(self.start, (row, 1), flag=wx.EXPAND)
+        row += 1
+        
         label = wx.StaticText(self, -1, "Last Row:")
-        bag.Add(label, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.end = wx.TextCtrl(self, -1)
-        bag.Add(self.end, (1, 1), flag=wx.EXPAND)
-        btn = wx.Button(self, -1, "Stuff")
-        bag.Add(btn, (5, 0), flag=wx.EXPAND)
-        btn = wx.Button(self, -1, "More Stuff")
-        bag.Add(btn, (6, 0), flag=wx.EXPAND)
-        btn = wx.Button(self, -1, "Other Stuff")
-        bag.Add(btn, (6, 1), flag=wx.EXPAND)
+        bag.Add(self.end, (row, 1), flag=wx.EXPAND)
+        row += 1
+        
+        label = wx.StaticText(self, -1, "# Selected:")
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.count = wx.TextCtrl(self, -1)
+        bag.Add(self.count, (row, 1), flag=wx.EXPAND)
+        row += 1
+        
+        btn = wx.Button(self, -1, "Select All")
+        btn.Bind(wx.EVT_BUTTON, self.OnSelectAll)
+        bag.Add(btn, (row, 0), flag=wx.EXPAND)
+        row += 1
+        
+        row += 1
+        
+        label = wx.StaticText(self, -1, "Operate on Selected Rows Using Buttons Below")
+        bag.Add(label, (row, 0), (1,6), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER)
+        row += 1
+
+        label = wx.StaticText(self, -1, "Constant:")
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        self.constant = wx.TextCtrl(self, -1)
+        bag.Add(self.constant, (row, 1), flag=wx.EXPAND)
+        btn = wx.Button(self, -1, "Set")
+        btn.Bind(wx.EVT_BUTTON, self.OnConstant)
+        bag.Add(btn, (row, 2), flag=wx.EXPAND)
+        row += 1
+        
+        label = wx.StaticText(self, -1, "Linear Range:")
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        label = wx.StaticText(self, -1, "first value:")
+        bag.Add(label, (row, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.linear_range_start = wx.TextCtrl(self, -1)
+        bag.Add(self.linear_range_start, (row, 2), flag=wx.EXPAND)
+        label = wx.StaticText(self, -1, "last value:")
+        bag.Add(label, (row, 3), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.linear_range_end = wx.TextCtrl(self, -1)
+        bag.Add(self.linear_range_end, (row, 4), flag=wx.EXPAND)
+        btn = wx.Button(self, -1, "Set")
+        btn.Bind(wx.EVT_BUTTON, self.OnLinearRange)
+        bag.Add(btn, (row, 5), flag=wx.EXPAND)
+        row += 1
+        
+        label = wx.StaticText(self, -1, "Linear Step:")
+        bag.Add(label, (row, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
+        label = wx.StaticText(self, -1, "start value:")
+        bag.Add(label, (row, 1), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.linear_step_start = wx.TextCtrl(self, -1)
+        bag.Add(self.linear_step_start, (row, 2), flag=wx.EXPAND)
+        label = wx.StaticText(self, -1, "increment:")
+        bag.Add(label, (row, 3), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.linear_step = wx.TextCtrl(self, -1)
+        bag.Add(self.linear_step, (row, 4), flag=wx.EXPAND)
+        btn = wx.Button(self, -1, "Set")
+        btn.Bind(wx.EVT_BUTTON, self.OnLinearStep)
+        bag.Add(btn, (row, 5), flag=wx.EXPAND)
+        row += 1
         
         hsizer.Add(bag, 0, wx.EXPAND)
         
@@ -162,21 +218,89 @@ class CommaSeparatedListDialog(wx.Dialog):
         evt.Skip()
     
     def OnLabelLeftClick(self, evt):
-        print("OnCellLeftClick: (%d,%d) %s\n" %
+        print("OnCellLeftClick: (%d,%d) %s" %
                     (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-        rows = self.grid.GetSelectedRows()
-        print(rows)
-        self.start.SetValue(str(evt.GetRow() + 1))
-        self.end.SetValue(str(evt.GetRow() + 1))
+        self.getSelectedEntries()
         evt.Skip()
     
     def OnRangeSelect(self, evt):
         if evt.Selecting():
-            print("OnRangeSelect: top-left %s, bottom-right %s\n" %
+            print("OnRangeSelect: top-left %s, bottom-right %s" %
                   (evt.GetTopLeftCoords(), evt.GetBottomRightCoords()))
-            self.start.SetValue(str(evt.GetTopLeftCoords()[0] + 1))
-            self.end.SetValue(str(evt.GetBottomRightCoords()[0] + 1))
+        self.getSelectedEntries()
         evt.Skip()
+    
+    def OnSelectAll(self, evt):
+        self.grid.SelectAll()
+        evt.Skip()
+    
+    def getSelectedEntries(self):
+        rows = self.grid.GetSelectedRows()
+        cells = self.grid.GetSelectedCells()
+        blocktl = self.grid.GetSelectionBlockTopLeft()
+        blockbr = self.grid.GetSelectionBlockBottomRight()
+        blocks = zip(blocktl, blockbr)
+        print("rows=%s cells=%s blocks=%s" % (str(rows), str(cells), str(blocks)))
+        
+        rows.extend([c[0] for c in cells])
+        for blocktl, blockbr in blocks:
+            rows.extend(range(blocktl[0], blockbr[0]+1))
+        rows.sort()
+        print("rows=%s" % str(rows))
+        if rows:
+            self.start.SetValue(str(rows[0] + 1))
+            self.end.SetValue(str(rows[-1] + 1))
+        else:
+            self.start.SetValue('')
+            self.end.SetValue('')
+        self.count.SetValue(str(len(rows)))
+        self.selected = rows
+        
+    def OnConstant(self, evt):
+        """Event handler when Constant button is pressed -- fill the selected
+        entries with whatever value is in the text field
+        """
+        val = self.constant.GetValue()
+        for row in self.selected:
+            self.table.SetValue(row, 0, val)
+        self.table.UpdateValues()
+
+    def OnLinearRange(self, evt):
+        """Fill the selected entries with linearly interpolated values
+        """
+        try:
+            start = float(self.linear_range_start.GetValue())
+            end = float(self.linear_range_end.GetValue())
+            index = 0
+            num = len(self.selected)
+            if num > 1:
+                num -= 1
+                for row in self.selected:
+                    val = start + index*(end - start)/num
+                    self.table.SetValue(row, 0, str(val))
+                    index += 1
+            elif num == 1:
+                row = self.selected[0]
+                # could select either the start or ending value here, since a
+                # selection with only one element is both the start and the
+                # end.  The least surprising thing would probably be the start
+                self.table.SetValue(row, 0, str(start))
+            self.table.UpdateValues()
+        except ValueError:
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Values should be numbers.", wx.OK | wx.ICON_ERROR)
+
+    def OnLinearStep(self, evt):
+        """Fill the selected entries by incrementing a stepsize
+        """
+        try:
+            val = float(self.linear_step_start.GetValue())
+            step = float(self.linear_step.GetValue())
+            for row in self.selected:
+                self.table.SetValue(row, 0, str(val))
+                val += step
+            self.table.UpdateValues()
+        except ValueError:
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Values should be numbers.", wx.OK | wx.ICON_ERROR)
 
     def GetValue(self):
         return self.table.GetCSV()
