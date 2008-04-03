@@ -106,7 +106,7 @@ class CSVTable(Grid.PyGridTableBase):
         return ", ".join([str(i) for i in self.values])
 
 
-class CommaSeparatedListDialog(wx.Dialog):
+class CSVEditDialog(wx.Dialog):
     def __init__(self, parent, text, size=wx.DefaultSize, pos=wx.DefaultPosition,
                  style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,
                  title='Edit Values', cwd=None):
@@ -495,7 +495,16 @@ class CommaSeparatedListDialog(wx.Dialog):
         return self.table.GetCSV()
 
 
-class CommaSeparatedListCtrl(wx.Panel):
+myEVT_CSV_CHANGED = wx.NewEventType()
+EVT_CSV_CHANGED = wx.PyEventBinder(myEVT_CSV_CHANGED, 1)
+
+class CSVChangedEvent(wx.PyCommandEvent):
+    def __init__(self, obj):
+        wx.PyCommandEvent.__init__(self, myEVT_CSV_CHANGED, id=obj.GetId())
+        self.SetEventObject(obj)
+
+
+class CSVCtrl(wx.Panel):
     """
     A control to allow the user to type in a filename or browse with
     the standard file dialog to select file
@@ -510,8 +519,6 @@ class CommaSeparatedListCtrl(wx.Panel):
                   # following are the values for a file dialog box
                   dialogTitle = "Edit Values",
                   initialValue = "",
-                  # callback for when value changes (optional)
-                  changeCallback= lambda x:x,
                   labelWidth = 0
         ):
         """
@@ -519,7 +526,6 @@ class CommaSeparatedListCtrl(wx.Panel):
         :param buttonText:     Text for button which launches the file dialog
         :param toolTip:        Help text
         :param dialogTitle:    Title used in file dialog
-        :param changeCallback: Optional callback called for all changes in value of the control
         :param labelWidth:     Width of the label
         """
       
@@ -529,17 +535,11 @@ class CommaSeparatedListCtrl(wx.Panel):
         self.toolTip = toolTip
         self.dialogTitle = dialogTitle
         self.initialValue = initialValue
-        self.changeCallback = changeCallback
-        self.callCallback = True
         self.labelWidth = labelWidth
 
         # create the panel
         self.createPanel(parent, id, pos, size, style)
-        # Setting a value causes the changeCallback to be called.
-        # In this case that would be before the return of the
-        # constructor. Not good. So a default value on
-        # SetValue is used to disable the callback
-        self.SetValue(initialValue, 0)
+        self.ChangeValue(initialValue)
 
 
     def createPanel(self, parent, id, pos, size, style):
@@ -592,14 +592,13 @@ class CommaSeparatedListCtrl(wx.Panel):
         """Create the text control"""
         textControl = wx.TextCtrl(self, -1)
         textControl.SetToolTipString(self.toolTip)
-        if self.changeCallback:
-            textControl.Bind(wx.EVT_TEXT, self.OnChanged)
-            textControl.Bind(wx.EVT_COMBOBOX, self.OnChanged)
+        textControl.Bind(wx.EVT_TEXT, self.OnChanged)
+        textControl.Bind(wx.EVT_COMBOBOX, self.OnChanged)
         return textControl
 
     def OnChanged(self, evt):
-        if self.callCallback and self.changeCallback:
-            self.changeCallback(evt)
+        event = CSVChangedEvent(self)
+        self.GetEventHandler().ProcessEvent(event)
 
     def createEditButton(self):
         """Create the edit-button control"""
@@ -612,7 +611,7 @@ class CommaSeparatedListCtrl(wx.Panel):
         """ Going to edit for file... """
         current = self.GetValue()
         
-        dlg = CommaSeparatedListDialog(self, current)
+        dlg = CSVEditDialog(self, current)
 
         if dlg.ShowModal() == wx.ID_OK:
             self.SetValue(dlg.GetValue())
@@ -624,12 +623,13 @@ class CommaSeparatedListCtrl(wx.Panel):
         """
         return self.textControl.GetValue()
 
-    def SetValue(self, value, callBack=1):
+    def SetValue(self, value):
         """set current value of text control"""
-        save = self.callCallback
-        self.callCallback = callBack
         self.textControl.SetValue(value)
-        self.callCallback =  save
+
+    def ChangeValue(self, value):
+        """set current value of text control without firing an event"""
+        self.textControl.ChangeValue(value)
 
     def Enable(self, value=True):
         """ Convenient enabling/disabling of entire control """
