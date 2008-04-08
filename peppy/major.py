@@ -709,7 +709,7 @@ class MajorMode(ClassPrefs, debugmixin):
         """
         pass
 
-    def getPopupActions(self, x, y):
+    def getPopupActions(self, evt, x, y):
         """Return the list of action classes to use as a context menu.
         
         If the subclass is capable of displaying a popup menu, it needs to
@@ -739,7 +739,7 @@ class MajorMode(ClassPrefs, debugmixin):
         pos = evt.GetPosition()
         screen = self.GetScreenPosition()
         #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
-        action_classes = self.getPopupActions(pos.x - screen.x, pos.y - screen.y)
+        action_classes = self.getPopupActions(evt, pos.x - screen.x, pos.y - screen.y)
         if action_classes:
             self.frame.menumap.popupActions(self, action_classes)
         else:
