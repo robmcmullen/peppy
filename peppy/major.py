@@ -1327,10 +1327,19 @@ class MajorModeMatcherDriver(debugmixin):
         """
         modes = []
         for plugin in plugins:
-            exact, generics = plugin.attemptOpen(buffer)
-            if exact:
-                return exact
-            modes.extend(generics)
+            try:
+                exact, generics = plugin.attemptOpen(buffer)
+                if exact:
+                    return exact
+                modes.extend(generics)
+            except ImportError:
+                # plugin tried to load a module that didn't exist
+                pass
+            except:
+                # some other error
+                import traceback
+                error = traceback.format_exc()
+                dprint("Some non-import related error attempting to open from plugin %s\n:%s" % (str(plugin), error))
         if modes:
             return modes[0]
         return None
