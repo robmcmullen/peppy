@@ -44,6 +44,60 @@ def getSmallDnArrowImage():
 
 
 
+class FakePopupWindow(wx.MiniFrame):
+    def __init__(self, parent, style=None):
+        wx.MiniFrame.__init__(self, parent, style = wx.NO_BORDER
+                              | wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP)
+        self.Panel = wx.Panel(self)
+        self.list = None
+
+    def setList(self, list):
+        #self.GetSizer().Add(list, 1, wx.EXPAND)
+        #self.SetAutoLayout(True)
+        #list.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+        #list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.list = list
+
+    def Position(self, position, size):
+        #print("pos=%s size=%s" % (position, size))
+        self.Move((position[0]+size[0], position[1]+size[1]))
+        
+    def SetPosition(self, position):
+        #print("pos=%s" % (position))
+        self.Move((position[0], position[1]))
+        
+    def SetBackgroundColour(self, colour):
+        self.Panel.SetBackgroundColour(colour)
+    
+    def Window(self):
+        return self.Panel
+    
+    def ActivateParent(self):
+        """Activate the parent window
+        @postcondition: parent window is raised
+
+        """
+        parent = self.GetParent()
+        parent.Raise()
+        parent.SetFocus()
+
+    def OnFocus(self, evt):
+        """Raise and reset the focus to the parent window whenever
+        we get focus.
+        @param evt: event that called this handler
+
+        """
+        print("On Focus: set focus to %s" % str(self.GetParent()))
+        self.ActivateParent()
+        self.list.SetFocus()
+        evt.Skip()
+
+    Window = property(Window)
+    
+if wx.Platform == '__WXMAC__':
+    wx.PopupWindow = FakePopupWindow
+
+
 class FakePopup(wx.Frame):
     def __init__(self, parent, pos=wx.DefaultPosition):
         style = wx.FRAME_NO_TASKBAR | wx.FRAME_FLOAT_ON_PARENT
@@ -161,7 +215,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         #widgets
         self._mac = mac | bool(wx.Platform == '__WXMAC__')
         if self._mac:
-            self.dropdown = FakePopup(self)
+            self.dropdown = FakePopupWindow(self)
         else:
             self.dropdown = wx.PopupWindow( self )
         #Control the style
@@ -173,7 +227,8 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                                  pos=wx.Point( 0, 0) )
         if mac:
             self.dropdown.setList(self.dropdownlistbox)
-            self.dropdown.setKillFocus(self.onControlChanged)
+            #self.dropdown.setKillFocus(self.onControlChanged)
+            #self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
         else:
             self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
         
@@ -260,6 +315,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                 item = self.dropdownlistbox.GetItem(numCh)
                 toSel = item.GetId()
                 self.dropdownlistbox.Select(toSel)
+                #self.SetFocus()
                 break
         if not found:
             self.dropdownlistbox.Select(self.dropdownlistbox.GetFirstSelected(), False)
@@ -370,7 +426,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
     def onClickToggleUp ( self, event ) :
         if ( self.GetInsertionPoint() == self._lastinsertionpoint ) :
             self._showDropDown ( not self.dropdown.IsShown() )
-        #wx.CallAfter(self.SetFocus)
+        wx.CallAfter(self.SetFocus)
         event.Skip ()
 
     def onControlChanged(self, event):
@@ -379,13 +435,14 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         other = event.GetWindow()
         print("changed=%s other=%s" % (changed, other))
         if self.dropdown.IsShown():
-            if self._mac:
-                if changed == self:
-                    wx.CallAfter(self.SetFocus)
-                else:
-                    self._showDropDown( False )
-            else:
-                self._showDropDown( False )
+            self._showDropDown( False )
+#            if self._mac:
+#                if changed == self:
+#                    wx.CallAfter(self.SetFocus)
+#                else:
+#                    self._showDropDown( False )
+#            else:
+#                self._showDropDown( False )
         event.Skip()
 
     # -- Interfaces methods
