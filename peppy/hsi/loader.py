@@ -24,13 +24,15 @@ class HyperspectralSTC(NonResidentSTC):
     def getNumCubes(self):
         return self.dataset.getNumCubes()
     
-    def getCube(self, url=None, index=None):
+    def getCube(self, url=None, index=0):
         try:
             return self.dataset.getCube(filename=url, index=index)
-        except WindowsError:
-            # WindowsError here means that we couldn't memmap the file.  Try
-            # to load the file using another loader (for example, instead of
-            # ENVI, use GDAL)
+        except OSError:
+            # WindowsError here means that we couldn't memmap the file
+            # (although we can't actually specify WindowsError here because
+            # it's not cross-platform.  Use OSError instead, which is the
+            # superclass of WindowsError).  Try to load the file using another
+            # loader (for example, instead of ENVI, use GDAL)
             dataset = HyperspectralFileFormat.load(self.url, bad=self.dataset.__class__)
             if dataset:
                 self.dataset = dataset
