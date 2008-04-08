@@ -1,3 +1,13 @@
+2008-04-07  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3.1 update to "Zeta Function"
+	* changed plugins' attemptOpen method to return exact and generic major
+	mode matches
+	* fixed error in plugins when loading files with unknown extension
+	* updated GDAL support to GDAL 1.5 for hyperspectral images
+	* fall back to GDAL when can't memory map an image in ENVI mode
+	* moved plugins having non-core functionality to googlecode repository
+
 2008-04-02  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3 "Zeta Function"
