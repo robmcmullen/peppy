@@ -43,6 +43,79 @@ def getSmallDnArrowImage():
     return ImageFromStream(stream)
 
 
+
+class FakePopup(wx.Frame):
+    def __init__(self, parent, pos=wx.DefaultPosition):
+        style = wx.FRAME_NO_TASKBAR | wx.FRAME_FLOAT_ON_PARENT
+        if wx.Platform == '__WXMAC__':
+            style = style | wx.BORDER_NONE | wx.POPUP_WINDOW
+        else:
+            style = style | wx.SIMPLE_BORDER
+        wx.Frame.__init__(self, parent, pos=pos, style=style)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(sizer)
+        
+        self.list = None
+    
+    def OnKillFocus(self, evt):
+        win = evt.GetEventObject()
+        print("list losing focus %s" % win)
+        evt.Skip()
+
+    def setKillFocus(self, callback):
+        self.GetParent().Bind(wx.EVT_KILL_FOCUS, callback, self.GetParent())
+        self.list.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+        pass
+    
+    def setList(self, list):
+        self.GetSizer().Add(list, 1, wx.EXPAND)
+        self.SetAutoLayout(True)
+        list.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+        list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.list = list
+    
+    def Show(self, state=True):
+        print("Showing %s" % state)
+        import traceback
+        traceback.print_stack()
+        if state:
+            wx.Frame.Show(self, state)
+        else:
+            wx.Frame.Show(self, state)
+
+    def ActivateParent(self):
+        """Activate the parent window
+        @postcondition: parent window is raised
+
+        """
+        parent = self.GetParent()
+        parent.Raise()
+        parent.SetFocus()
+
+    def OnFocus(self, evt):
+        """Raise and reset the focus to the parent window whenever
+        we get focus.
+        @param evt: event that called this handler
+
+        """
+        print("On Focus: set focus to %s" % str(self.GetParent()))
+        self.ActivateParent()
+        self.GetParent().SetFocus()
+        evt.Skip()
+
+    def OnKeyUp(self, evt):
+        """Process key upevents in the control
+        @param evt: event that called this handler
+
+        """
+        if evt.GetKeyCode() == wx.WXK_RETURN:
+            self.__PostEvent()
+        else:
+            evt.Skip()
+
+
 #----------------------------------------------------------------------
 class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
     def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
@@ -55,6 +128,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                   multiChoices=None, showHead=True, dropDownClick=True,
                   colFetch=-1, colSearch=0, hideOnNoMatch=True,
                   selectCallback=None, entryCallback=None, matchFunction=None,
+                   mac=False,
                   **therest) :
         """
         Constructor works just like wx.TextCtrl except you can pass in a
@@ -85,7 +159,11 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 ##        if not (self._multiChoices or self._choices):
 ##            raise ValueError, "Pass me at least one of multiChoices OR choices"
         #widgets
-        self.dropdown = wx.PopupWindow( self )
+        self._mac = mac | bool(wx.Platform == '__WXMAC__')
+        if self._mac:
+            self.dropdown = FakePopup(self)
+        else:
+            self.dropdown = wx.PopupWindow( self )
         #Control the style
         flags = wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_SORT_ASCENDING
         if not (showHead and multiChoices) :
@@ -93,6 +171,12 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         #Create the list and bind the events
         self.dropdownlistbox = myListCtrl( self.dropdown, style=flags,
                                  pos=wx.Point( 0, 0) )
+        if mac:
+            self.dropdown.setList(self.dropdownlistbox)
+            self.dropdown.setKillFocus(self.onControlChanged)
+        else:
+            self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
+        
         #initialize the parent
         if multiChoices: ln = len(multiChoices)
         else: ln = 1
@@ -106,7 +190,6 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 ##            gp.Bind ( wx.EVT_MOVE , self.onControlChanged, gp )
 ##            gp.Bind ( wx.EVT_SIZE , self.onControlChanged, gp )
 ##            gp = gp.GetParent()
-        self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
         self.Bind( wx.EVT_TEXT , self.onEnteredText, self )
         self.Bind( wx.EVT_KEY_DOWN , self.onKeyDown, self )
         #If need drop down on left click
@@ -287,11 +370,22 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
     def onClickToggleUp ( self, event ) :
         if ( self.GetInsertionPoint() == self._lastinsertionpoint ) :
             self._showDropDown ( not self.dropdown.IsShown() )
+        #wx.CallAfter(self.SetFocus)
         event.Skip ()
 
     def onControlChanged(self, event):
-        if self.IsShown():
-            self._showDropDown( False )
+        print(event)
+        changed = event.GetEventObject()
+        other = event.GetWindow()
+        print("changed=%s other=%s" % (changed, other))
+        if self.dropdown.IsShown():
+            if self._mac:
+                if changed == self:
+                    wx.CallAfter(self.SetFocus)
+                else:
+                    self._showDropDown( False )
+            else:
+                self._showDropDown( False )
         event.Skip()
 
     # -- Interfaces methods
@@ -559,4 +653,30 @@ class test:
         print "Select Callback called...:",  values
 
 if __name__ == "__main__":
-    test()
+    dynamic_choices = [
+                    'aardvark', 'abandon', 'acorn', 'acute', 'adore',
+                    'aegis', 'ascertain', 'asteroid',
+                    'beautiful', 'bold', 'classic',
+                    'daring', 'dazzling', 'debonair', 'definitive',
+                    'effective', 'elegant',
+                    'http://python.org', 'http://www.google.com',
+                    'fabulous', 'fantastic', 'friendly', 'forgiving', 'feature',
+                    'sage', 'scarlet', 'scenic', 'seaside', 'showpiece', 'spiffy',
+                    'www.wxPython.org', 'www.osafoundation.org'
+                    ]
+    app = wx.PySimpleApp()
+    frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE)
+    panel = wx.Panel(frm)
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    normal = TextCtrlAutoComplete(panel, choices=dynamic_choices)
+    sizer.Add(normal, 1)
+    mac = TextCtrlAutoComplete(panel, mac=True, choices=dynamic_choices)
+    sizer.Add(mac, 1)
+    panel.SetAutoLayout(True)
+    panel.SetSizer(sizer)
+    sizer.Fit(panel)
+    sizer.SetSizeHints(panel)
+    panel.Layout()
+    app.SetTopWindow(frm)
+    frm.Show()
+    app.MainLoop()
