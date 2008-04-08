@@ -21,19 +21,22 @@ def entry(filename, out=None, copythese=None, fake=False):
             if out:
                 if fake:
                     global lastfake
-                    if lastfake:
-                        out.write("    ")
-                    else:
-                        out.write("if False: # fake the import so py2exe will include the file\n    ")
+                    if not lastfake:
+                        out.write("if False: # fake the import so py2exe will include the file\n")
                         lastfake = True
+                    out.write("    import %s\n" % (module))
                 else:
                     global lastfake
                     lastfake = False
                     global plugin_count
-                    plugin_count += 1
-                    out.write("app.gaugeCallback('%s')\n" % module.split('.')[-1])
-                print "importing %s" % module
-                out.write("import %s\n" % (module))
+                    name = module.split('.')[-1]
+                    
+                    # Don't print any __init__ modules in the splash screen
+                    if name != "__init__":
+                        plugin_count += 1
+                        out.write("app.gaugeCallback('%s')\n" % name)
+                    print "importing %s" % module
+                    out.write("try:\n    import %s\nexcept:\n    pass\n" % (module))
 
 def process(path, out=None, copythese=None, fake=False):
     files = glob.glob('%s/*' % path)
