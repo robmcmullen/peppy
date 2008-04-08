@@ -11,7 +11,6 @@ from peppy.hsi.loader import *
 class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
-
     def attemptOpen(self, buffer):
         url = buffer.url
         assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
@@ -19,17 +18,12 @@ class HSIPlugin(IPeppyPlugin):
             import peppy.hsi.hsi_major_mode
             format = HyperspectralFileFormat.identify(url)
             if format:
-                assert dprint("found %s" % format)
-                return peppy.hsi.hsi_major_mode.HSIMode
-            else:
-                fh = vfs.open(url)
-                assert self.dprint("checking for cube handler: %s" % dir(fh))
-                if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
-                    return peppy.hsi.hsi_major_mode.HSIMode
+                assert self.dprint("found %s" % repr(format))
+                return (None, [peppy.hsi.hsi_major_mode.HSIMode])
         except:
                 dprint("FAILED Loading hsi_major_mode")
                 raise
-        return None
+        return (None, [])
     
     def getCompatibleMajorModes(self, stc_class):
         if stc_class == HyperspectralSTC:

@@ -319,9 +319,11 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
 
         buffer: the Buffer object to attempt to load
 
-        @returns: major mode class if successful in matching
+        @returns: tuple (exact, generic_list) where when exact is not None the
+        matching will stop, and the generic_list indicates major modes that
+        are acceptable but not necessarily specific
         """
-        return None
+        return (None, [])
     
     def getCompatibleMajorModes(self, stc_class):
         """Return list of major modes that are compatible to the given stc

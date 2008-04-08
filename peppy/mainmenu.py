@@ -1051,5 +1051,5 @@ class MainMenu(IPeppyPlugin):
                 # OK, we do a bit of a trick here: rewrite the url in the
                 # buffer object to change the scheme to tar:
                 buffer.url.scheme = "tar"
-                return DiredMode
-        return None
+                return (DiredMode, [])
+        return (None, [])

@@ -1319,16 +1319,18 @@ class MajorModeMatcherDriver(debugmixin):
     
     @classmethod
     def attemptOpen(cls, plugins, buffer):
-        """Use the mode's attemptOpen method to see if it recognizes
-        the url.
+        """Use the mode's attemptOpen method to see if it recognizes the url.
         
         @param buffer: Buffer object to scan
         
         @returns: matching L{MajorMode} subclass or None
         """
-        
+        modes = []
         for plugin in plugins:
-            mode = plugin.attemptOpen(buffer)
-            if mode:
-                return mode
+            exact, generics = plugin.attemptOpen(buffer)
+            if exact:
+                return exact
+            modes.extend(generics)
+        if modes:
+            return modes[0]
         return None

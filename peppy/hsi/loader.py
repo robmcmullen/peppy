@@ -15,9 +15,27 @@ from peppy.stcinterface import *
 
 
 class HyperspectralSTC(NonResidentSTC):
+    """Combination of STC and proxy for a hyperspectral dataset"""
+    
     def open(self, buffer, message=None):
         self.url = buffer.url
-        self.dataset=HyperspectralFileFormat.load(self.url)
+        self.dataset = HyperspectralFileFormat.load(self.url)
+    
+    def getNumCubes(self):
+        return self.dataset.getNumCubes()
+    
+    def getCube(self, url=None, index=None):
+        try:
+            return self.dataset.getCube(filename=url, index=index)
+        except WindowsError:
+            # WindowsError here means that we couldn't memmap the file.  Try
+            # to load the file using another loader (for example, instead of
+            # ENVI, use GDAL)
+            dataset = HyperspectralFileFormat.load(self.url, bad=self.dataset.__class__)
+            if dataset:
+                self.dataset = dataset
+                return self.dataset.getCube(filename=url, index=index)
+            raise
     
     def GetLength(self):
         return vfs.get_size(self.url)
@@ -55,6 +73,8 @@ class HyperspectralFileFormat(debugmixin):
             import GDAL
         except Exception, e:
             cls.dprint("GDAL not available")
+            import traceback
+            cls.dprint(traceback.format_exc())
             pass
         
         cls.handlers = [h for h in cls.default_handlers]
@@ -93,6 +113,11 @@ class HyperspectralFileFormat(debugmixin):
 
     @classmethod
     def identify(cls, url):
+        fh = vfs.open(url)
+        assert cls.dprint("checking for cube handler: %s" % dir(fh))
+        if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
+            return fh.metadata
+            
         url = vfs.normalize(url)
         matches = cls.identifyall(url)
         if len(matches)>0:
@@ -100,20 +125,42 @@ class HyperspectralFileFormat(debugmixin):
         return None
 
     @classmethod
-    def load(cls, url):
+    def load(cls, url, bad=None):
+        """Find an HSI dataset instance corresponding to the url
+        
+        @param url: url to load
+        @param bad: subclass of HSI.MetadataMixin that should be avoided.  This
+        is used to select a different dataset reader if an error occurs with
+        the one specified here.
+        
+        @return: instance of HSI.MetadataMixin that can read the file, or None
+        if nothing is found.
+        """
         cls.discover()
         url = vfs.normalize(url)
-        matches = cls.identifyall(url)
-        for format in matches:
-            cls.dprint("Loading %s format cube" % format.format_name)
-            dataset = format(url)
-            return dataset
-        # OK, that didn't return a result, so see if there's a handler provided
-        # by the vfs:
+        
+        if bad:
+            cls.dprint("EXCLUDING %s" % bad)
+        
+        # Check to see if there's a specific handler provided in the vfs
         fh = vfs.open(url)
         cls.dprint("checking for cube handler: %s" % dir(fh))
         if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
-            return fh.metadata
+            dataset = fh.metadata
+            # Only return the dataset if it's not the same class we're trying
+            # to avoid
+            if dataset.__class__ != bad:
+                return dataset
+        
+        # OK, that didn't return a result, so see if there's a HSI handler 
+        matches = cls.identifyall(url)
+        for format in matches:
+            if format == bad:
+                cls.dprint("Skipping format %s" % format.format_name)
+                continue
+            cls.dprint("Loading %s format cube" % format.format_name)
+            dataset = format(url)
+            return dataset
         return None
 
     def wildcards(self):

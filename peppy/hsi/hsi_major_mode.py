@@ -848,7 +848,7 @@ class HSIMode(BitmapScroller, MajorMode):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         BitmapScroller.__init__(self, parent)
 
-        self.dataset = self.buffer.stc.dataset
+        self.dataset = self.buffer.stc
         self.cubeview = None
         self.cubefilter = BandFilter()
         self.filter = GeneralFilter()

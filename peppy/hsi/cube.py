@@ -27,7 +27,7 @@ else:
 byteordertext=['<','>']
 
 
-class MetadataMixin(object):
+class MetadataMixin(debugmixin):
     """Generic mixin interface for Cube metadata.
 
     This will be subclassed by various formats like ENVI and GDAL to
@@ -83,7 +83,7 @@ class MetadataMixin(object):
             fs.write("%s = %s%s" % (key,val,os.linesep))
         return fs.getvalue()
     
-class Cube(object):
+class Cube(debugmixin):
     """Generic representation of an HSI datacube.  Specific subclasses
     L{BILCube}, L{BIPCube}, and L{BSQCube} exist to fill in the
     concrete implementations of the common formats of HSI data.

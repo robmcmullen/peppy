@@ -38,9 +38,6 @@ class GDALDataset(HSI.MetadataMixin):
     through the GDAL interface.  This has the ability to populate an
     L{HSI.Cube} with the parsed values from this text.
     """
-
-    debug=True
-
     format_id="GDAL"
     format_name="GDAL"
 
@@ -61,16 +58,38 @@ class GDALDataset(HSI.MetadataMixin):
         return fs.getvalue()
 
     @classmethod
-    def identify(cls, urlinfo):
-        if urlinfo.scheme == 'file':
-            dprint("trying gdal.Open(%s)" % str(urlinfo.path))
-            try:
-                dataset=gdal.Open(str(urlinfo.path), gdal.GA_ReadOnly)
-                if dataset:
-                    dprint("found GDAL dataset")
-                    return True
-            except TypeError:
-                dprint("type error opening GDAL.  Skipping")
+    def getSubName(cls, url):
+        """Get the GDAL subdataset name given the url"""
+        path = str(url.path)
+        if url.scheme == 'file':
+            return path
+        elif url.scheme == 'nitf':
+            nitf_root = os.path.dirname(path)
+            image_name = os.path.basename(path)
+            if image_name.startswith('IM'):
+                image_number = int(image_name[2:])
+                newname = "NITF_IM:%d:%s" % (image_number - 1, nitf_root)
+                return newname
+            else:
+                cls.dprint("can't open non-image NITF segment %s" % path)
+        return None
+
+    @classmethod
+    def getDataset(cls, url):
+        local = cls.getSubName(url)
+        cls.dprint("trying gdal.Open(%s)" % local)
+        try:
+            return gdal.Open(local, gdal.GA_ReadOnly)
+        except TypeError:
+            cls.dprint("type error opening GDAL.  Skipping")
+        return None
+
+    @classmethod
+    def identify(cls, url):
+        dataset = cls.getDataset(url)
+        if dataset:
+            cls.dprint("found GDAL dataset")
+            return True
         return False
 
     def setURL(self, url=None):
@@ -85,15 +104,11 @@ class GDALDataset(HSI.MetadataMixin):
             self.setURL(filename)
 
         if self.url:
-            dprint(self.url.path)
-            try:
-                dataset=gdal.Open(str(self.url.path), gdal.GA_ReadOnly)
-                if dataset:
-                    self.read(dataset)
-                else:
-                    eprint("Couldn't open %s\n" % self.url)
-            except TypeError:
-                dprint("type error opening GDAL.  Skipping")
+            dataset = self.getDataset(self.url)
+            if dataset:
+                self.read(dataset)
+            else:
+                eprint("Couldn't open %s\n" % self.url)
 
     def save(self, url=None):
         if url:
@@ -110,7 +125,7 @@ class GDALDataset(HSI.MetadataMixin):
         # assume everything has the same type as the first band.
         band=dataset.GetRasterBand(1)
         subset['data_type']=GDALDataType[band.DataType]
-        dprint(subset)
+        self.dprint(subset)
         self.subsets.append(subset)
 
     def setCubeAttributes(self,cube):
@@ -120,7 +135,7 @@ class GDALDataset(HSI.MetadataMixin):
         cube.data_type=self.subsets[0]['data_type']
 
         cube.subcubes=len(self.subsets)
-        dprint("adjusted number of subcubes to %s" % cube.subcubes)
+        self.dprint("adjusted number of subcubes to %s" % cube.subcubes)
         cube.setURL(self.url)
 
     def getCubeAttributes(self,cube):
@@ -131,7 +146,7 @@ class GDALDataset(HSI.MetadataMixin):
         if filename is None:
             filename = self.url
         cube=GDALCube(filename)
-        dprint(cube)
+        self.dprint(cube)
         self.setCubeAttributes(cube)
         cube.verifyAttributes()
         cube.open()
@@ -169,7 +184,8 @@ class GDALCube(HSI.Cube):
 
         if self.url:
             if not self.dataset: # don't try to reopen if already open
-                self.dataset=gdal.Open(str(self.url.path), gdal.GA_ReadOnly)
+                subname = GDALDataset.getSubName(self.url)
+                self.dataset=gdal.Open(subname, gdal.GA_ReadOnly)
                 if not self.dataset:
                     raise TypeError
                 self.verifyAttributes()
@@ -194,7 +210,7 @@ class GDALCube(HSI.Cube):
         for band in range(self.bands):
             b=self.dataset.GetRasterBand(band+1)
             color=b.GetRasterColorInterpretation()
-            dprint("checking band %d; color interp=%d" % (band,color))
+            #dprint("checking band %d; color interp=%d" % (band,color))
             if color==gdal.GCI_RedBand:
                 rgb[0]=band
                 count+=1
@@ -206,7 +222,7 @@ class GDALCube(HSI.Cube):
                 count+=1
         if count>=3:
             self.rgbbands=rgb
-        dprint(self.rgbbands)
+        self.dprint("GDAL reports rgb bands are %s" % str(self.rgbbands))
 
     def getPixel(self,line,sample,band):
         bytes=self.dataset.ReadRaster(sample, line, 1, 1, band_list=[band+1])
