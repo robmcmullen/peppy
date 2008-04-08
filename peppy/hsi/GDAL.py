@@ -11,9 +11,9 @@ compression.
 import os,os.path,sys,re,struct,stat
 from cStringIO import StringIO
 
-import cube
+import peppy.hsi.common as HSI
 
-import gdal
+import osgeo.gdal as gdal
 
 import peppy.vfs as vfs
 
@@ -32,11 +32,11 @@ GDALDataType=[None, numpy.uint8,
               numpy.complex64, numpy.complex128]
 
 
-class GDALDataset(cube.MetadataMixin):
+class GDALDataset(HSI.MetadataMixin):
     """
     Class representing the metadata associated with an image loaded
     through the GDAL interface.  This has the ability to populate an
-    L{cube.Cube} with the parsed values from this text.
+    L{HSI.Cube} with the parsed values from this text.
     """
 
     debug=True
@@ -49,7 +49,7 @@ class GDALDataset(cube.MetadataMixin):
         self.subsets=[]
 
         if filename:
-            if isinstance(filename,cube.Cube):
+            if isinstance(filename,HSI.Cube):
                 self.getCubeAttributes(filename)
             else:
                 self.open(filename)
@@ -141,9 +141,9 @@ class GDALDataset(cube.MetadataMixin):
         pass
 
 
-class GDALCube(cube.Cube):
+class GDALCube(HSI.Cube):
     def __init__(self,filename=None):
-        cube.Cube.__init__(self,filename)
+        HSI.Cube.__init__(self,filename)
 
         self.interleave='bsq'
         
@@ -228,8 +228,11 @@ class GDALCube(cube.Cube):
         bytes=self.dataset.ReadRaster(sample, line, 1, 1, buf_type=datatype)
         s=numpy.frombuffer(bytes, self.data_type)
         return s
+    
+    def locationToFlat(self, line, sample, band):
+        return -1
 
-HyperspectralFileFormat.addDefaultHandler(GDALDataset)
+HSI.HyperspectralFileFormat.addDefaultHandler(GDALDataset)
 
 
 if __name__ == "__main__":

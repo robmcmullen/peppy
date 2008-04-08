@@ -380,7 +380,7 @@ class Cube(object):
 
     def getPixel(self,line,sample,band):
         """Get an individual pixel at the specified line, sample, & band"""
-        pass
+        raise NotImplementedError
 
     def getBand(self,band):
         """Get a copy of the array of (lines x samples) at the
@@ -398,7 +398,7 @@ class Cube(object):
         return s
 
     def getBandRaw(self,band):
-        pass
+        raise NotImplementedError
 
     def getFocalPlaneInPlace(self, line):
         """Get the slice of the data array (bands x samples) at the specified
@@ -410,7 +410,7 @@ class Cube(object):
         return s
 
     def getFocalPlaneRaw(self, line):
-        pass
+        raise NotImplementedError
 
     def getFocalPlaneDepthInPlace(self, sample, band):
         """Get the slice of the data array through the cube at the specified
@@ -420,7 +420,7 @@ class Cube(object):
         return s
 
     def getFocalPlaneDepthRaw(self, sample, band):
-        pass
+        raise NotImplementedError
 
     def getSpectra(self,line,sample):
         """Get the spectra at the given pixel.  Calculate the extrema
@@ -440,7 +440,7 @@ class Cube(object):
 
     def getSpectraRaw(self,line,sample):
         """Get the spectra at the given pixel"""
-        pass
+        raise NotImplementedError
 
     def getLineOfSpectra(self,line):
         """Get the all the spectra along the given line.  Calculate
@@ -533,15 +533,15 @@ class Cube(object):
     def getBandBoundary(self):
         """return the number of items you have to add to a flat
         version of the data until you reach the next band in the data"""
-        pass
+        raise NotImplementedError
 
     def flatToLocation(self,pos):
         """Convert the flat index to a tuple of line,sample,band"""
-        pass
+        raise NotImplementedError
 
     def locationToFlat(self,line,sample,band):
         """Convert location (line,sample,band) to flat index"""
-        pass
+        raise NotImplementedError
     
     def getBadBandList(self,other=None):
         if other:

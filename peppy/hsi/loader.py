@@ -26,7 +26,7 @@ class HyperspectralSTC(NonResidentSTC):
         self.dataset = None
 
 
-class HyperspectralFileFormat(object):
+class HyperspectralFileFormat(debugmixin):
     loaded = False
 
     default_handlers = []
@@ -51,11 +51,11 @@ class HyperspectralFileFormat(object):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
-#        try:
-#            import GDAL
-#        except Exception, e:
-#            #dprint("GDAL not available")
-#            pass
+        try:
+            import GDAL
+        except Exception, e:
+            cls.dprint("GDAL not available")
+            pass
         
         cls.handlers = [h for h in cls.default_handlers]
         
@@ -65,12 +65,12 @@ class HyperspectralFileFormat(object):
     def identifyall(cls, url):
         cls.discover()
         
-        #dprint("handlers: %s" % cls.handlers)
+        cls.dprint("handlers: %s" % cls.handlers)
         matches = []
         for format in cls.handlers:
-            #dprint("checking %s for %s format" % (url, format.format_name))
+            cls.dprint("checking %s for %s format" % (url, format.format_name))
             if format.identify(url):
-                #dprint("Possible match for %s format" % format.format_name)
+                cls.dprint("Possible match for %s format" % format.format_name)
                 matches.append(format)
         order = []
         for match in matches:
@@ -80,11 +80,11 @@ class HyperspectralFileFormat(object):
             # efficient than GDAL.  So, loop through the matches and
             # see if there is a specific class that should be used
             # instead of a generic one.
-            #dprint("Checking %s for specific support of %s" % (match, url))
+            cls.dprint("Checking %s for specific support of %s" % (match, url))
             name, ext = os.path.splitext(url.path.get_name())
             ext.lower()
             if ext in match.extensions:
-                #dprint("Found specific support for %s in %s" % (ext, match))
+                cls.dprint("Found specific support for %s in %s" % (ext, match))
                 order.append(match)
                 matches.remove(match)
         if len(matches)>0:
@@ -105,13 +105,13 @@ class HyperspectralFileFormat(object):
         url = vfs.normalize(url)
         matches = cls.identifyall(url)
         for format in matches:
-            #dprint("Loading %s format cube" % format.format_name)
+            cls.dprint("Loading %s format cube" % format.format_name)
             dataset = format(url)
             return dataset
         # OK, that didn't return a result, so see if there's a handler provided
         # by the vfs:
         fh = vfs.open(url)
-        #dprint("checking for cube handler: %s" % dir(fh))
+        cls.dprint("checking for cube handler: %s" % dir(fh))
         if fh and hasattr(fh, 'metadata') and hasattr(fh.metadata, 'getCube'):
             return fh.metadata
         return None
