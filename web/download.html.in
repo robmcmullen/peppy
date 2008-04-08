@@ -2,7 +2,7 @@
 
 <P>Binary installers are self-contained: they do not depend on python or
 wxpython being installed on the host system.  Everything you need to run peppy
-(including optional modules like pyenchant and NumPy) is contained within
+(including optional modules like pyenchant, NumPy, and GDAL) is contained within
 the installer.
 
 <P>Note: there is no installer for unix-like operating systems.  You should
@@ -38,10 +38,16 @@ platform.
 <dd>If pyenchant is installed,
 text-based major modes will use it to provide on-the-fly spell checking.
 
-<dt><a href="http://numpy.scipy.org/">NumPy</a>
+<dt><a href="http://numpy.scipy.org/">NumPy 1.0</a>
 <dd>Some of the optional major modes like the Hyperspectral Image Viewer
 require NumPy, but note that NumPy is <strong>not</strong> required to run
 peppy for normal editing.
+
+<dt><a href="http://www.gdal.org/">GDAL 1.5</a>
+<dd>The Hyperspectral Image Viewer can also use the GDAL 1.5 libraries to read
+images.  GDAL supports a wide range of image formats, including compressed
+formats.  Note that you need the new style swig bindings (which are built by
+default in GDAL 1.5).
 </dl>
 
 <h2>Unix and Source Code Download</h2>
