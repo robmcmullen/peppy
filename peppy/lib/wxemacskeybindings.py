@@ -54,16 +54,22 @@ class KeyMap(object):
     """    
     modifiers=['C-','S-','A-','M-']
     if wx.Platform == '__WXMAC__':
-        modaccelerator = {'C-': 'Cmd-',
+        # WXMAC needs Command to appear as Ctrl- in the accelerator text.  It
+        # converts Ctrl into the command symbol
+        modaccelerator = {'C-': 'Ctrl-',
                           'S-': 'Shift-',
                           'A-': 'Alt-',
                           'M-': 'Alt-',
                           }
-        modaliases={'Cmd-':'C-',
+        modaliases={'Command-':'C-',
+                    'Cmd-':'C-',
+                    'Ctrl-':'C-',
                     'Shift-':'S-',
                     'Alt-':'A-',
                     'Meta-':'M-',
+                    'Command+':'C-',
                     'Cmd+':'C-',
+                    'Ctrl+':'C-',
                     'Shift+':'S-',
                     'Alt+':'A-',
                     'Meta+':'M-',

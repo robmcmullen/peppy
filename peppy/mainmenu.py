@@ -936,7 +936,7 @@ class CancelMinibuffer(SelectAction):
     name = "Cancel Minibuffer"
     tooltip = "Cancel any currently active minibuffer"
     icon = 'icons/control_stop.png'
-    key_bindings = {'default': "M-ESC ESC", }
+    key_bindings = {'default': "C-ESC", 'emacs': "M-ESC ESC", }
     
     def action(self, index=-1, multiplier=1):
         self.mode.removeMinibuffer()

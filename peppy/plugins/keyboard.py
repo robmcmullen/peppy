@@ -159,6 +159,7 @@ class KeyboardConf(IPeppyPlugin):
             numkeystrokes = action.setAcceleratorText()
             if numkeystrokes>1:
                 found_emacs = True
+                #dprint("found emacs keystroke: %s" % action)
 
         if found_emacs:
             # Found a multi-key accelerator: force all accelerators to
