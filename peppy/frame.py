@@ -360,9 +360,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             # turn off the automatic generation of the Window menu.
             # We generate one ourselves
             wx.MenuBar.SetAutoWindowMenu(False)
-            # Replace the system Help menu with ours by creating this
-            # small fake menu in order to register the help menu
+            # Replace the system Help menu with ours by creating this small
+            # fake menu in order to register the help menu.  Note that you
+            # have to add something to the menubar on the mac (i.e.  the
+            # separator) in order for it to actually register with the Mac
+            # menu system as being present.  An empty Help menu is ignored as
+            # far as SetMacHelpMenuTitleName is concerned.
             help = wx.Menu()
+            help.AppendSeparator()
             menubar.Append(help, _("&Help"))
             wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
         self.SetMenuBar(menubar)

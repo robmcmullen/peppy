@@ -327,7 +327,6 @@ class UserActionMap(debugmixin):
         while (pos < menubar.GetMenuCount()):
             old = menubar.Remove(pos)
             old.Destroy()
-        wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
         
     def updateToolbarActions(self, auimgr):
         needed = {}
@@ -389,9 +388,18 @@ class UserActionMap(debugmixin):
         return keymap
             
     def updateActions(self, toolbar=True):
-        menubar = self.frame.GetMenuBar()
+        if wx.Platform == "__WXMAC__":
+            # Must use a new menu bar on the mac -- you can't dynamically add
+            # to the Help menu apparently due to a limitation in the toolkit.
+            # Additionally, using a fresh menu bar fixes the double Help
+            # menu problem
+            menubar = wx.MenuBar()
+        else:
+            menubar = self.frame.GetMenuBar()
         self.updateMenuActions(menubar)
+        wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
         self.frame.SetMenuBar(menubar)
+        
         if toolbar:
             self.updateToolbarActions(self.frame._mgr)
         keymap = self.getKeyboardActions()
