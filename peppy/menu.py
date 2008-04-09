@@ -327,7 +327,7 @@ class UserActionMap(debugmixin):
         while (pos < menubar.GetMenuCount()):
             old = menubar.Remove(pos)
             old.Destroy()
-        wx.App_SetMacHelpMenuTitleName(_("&Help"))
+        wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
         
     def updateToolbarActions(self, auimgr):
         needed = {}
@@ -389,7 +389,9 @@ class UserActionMap(debugmixin):
         return keymap
             
     def updateActions(self, toolbar=True):
-        self.updateMenuActions(self.frame.GetMenuBar())
+        menubar = self.frame.GetMenuBar()
+        self.updateMenuActions(menubar)
+        self.frame.SetMenuBar(menubar)
         if toolbar:
             self.updateToolbarActions(self.frame._mgr)
         keymap = self.getKeyboardActions()
