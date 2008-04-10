@@ -80,21 +80,26 @@ class RecentFiles(OnDemandGlobalListAction):
         self.frame.open(self.storage[index])
 
 
-class URLBookmarks(RecentFiles):
-    """Open the previously saved URL.
+class FileCabinet(RecentFiles):
+    """Open a previously saved URL.
     
-    Bookmarks are saved URLs that operate very much like L{RecentFiles} shown
-    in the Open Recent menu.  The only differences are that the files are
-    added only using the L{AddURLBookmark} action, and the files show up in the
-    list in the order that they were added.
+    The File Cabinet is a list of saved URLs that operate very much like
+    L{RecentFiles} shown in the Open Recent menu.  The only differences are
+    that the files are added only using the L{AddToFileCabinet} action, and
+    the files show up in the list in the order that they were added.
     
     This list is not limited in size.
     """
-    name = "Bookmarks"
-    default_menu = ("File", 11)
-    inline = False
+    name = "File Cabinet"
+    default_menu = (("File/File Cabinet", 11), 0)
+    inline = True
     add_at_top = False
     global_id = None
+    
+    # Have to set tooltip to none, otherwise menu system picks up the tooltip
+    # from the parent class (RecentFiles) and doesn't attempt to scan this
+    # class's docstring for the tooltip
+    tooltip = None
     
     @classmethod
     def isAcceptableURL(cls, url):
@@ -104,11 +109,12 @@ class URLBookmarks(RecentFiles):
     def trimList(cls):
         pass
 
-class AddURLBookmark(SelectAction):
+class AddToFileCabinet(SelectAction):
     """Add to the saved URL (i.e. bookmarks) list"""
-    alias = "add-bookmark"
-    name = "Add To Bookmarks"
-    tooltip = "Add this URL to the list of bookmarked URLs"
+    alias = "add-file-cabinet"
+    name = "Add To File Cabinet"
+    tooltip = "Add this URL to the file cabinet"
+    default_menu = (("File/File Cabinet", 11), -900)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -118,14 +124,14 @@ class AddURLBookmark(SelectAction):
             mode = self.frame.tabs.getContextMenuWrapper().editwin
         except IndexError:
             mode = self.mode
-        URLBookmarks.appendURL(mode.buffer.url)
+        FileCabinet.appendURL(mode.buffer.url)
 
 
 class RecentFilesPlugin(IPeppyPlugin):
     default_classprefs = (
         StrParam('history_file', 'recentfiles.txt', 'Filename used in the peppy configuration directory to store the list of recently opened files.'),
         IntParam('list_length', 20, 'Truncate the list to this number of files most recently opened.'),
-        StrParam('bookmarks_file', 'bookmarks.txt', 'Filename used in the peppy configuration directory to store the list of bookmarked files.'),
+        StrParam('file_cabinet', 'file_cabinet.txt', 'Filename used in the peppy configuration directory to store the list of URLs saved in the File Cabinet.'),
         )
 
     def activateHook(self):
@@ -156,7 +162,7 @@ class RecentFilesPlugin(IPeppyPlugin):
 
     def initialActivation(self):
         self.loadStorage(RecentFiles, self.classprefs.history_file)
-        self.loadStorage(URLBookmarks, self.classprefs.bookmarks_file)
+        self.loadStorage(FileCabinet, self.classprefs.file_cabinet)
     
     @classmethod
     def saveStorage(cls, actioncls, filename):
@@ -168,11 +174,11 @@ class RecentFilesPlugin(IPeppyPlugin):
 
     def requestedShutdown(self):
         self.saveStorage(RecentFiles, self.classprefs.history_file)
-        self.saveStorage(URLBookmarks, self.classprefs.bookmarks_file)
+        self.saveStorage(FileCabinet, self.classprefs.file_cabinet)
 
     def getTabMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend([AddURLBookmark])
+        action_classes.extend([AddToFileCabinet])
 
     def getActions(self):
-        return [RecentFiles, URLBookmarks]
+        return [RecentFiles, FileCabinet, AddToFileCabinet]
