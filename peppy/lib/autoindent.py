@@ -21,6 +21,8 @@ L{peppy.editra.stcmixin} and L{peppy.stcbase}.
 """
 
 import os, re
+from cStringIO import StringIO
+
 import wx.stc
 from peppy.debug import *
 
@@ -216,6 +218,79 @@ class FoldingAutoindent(BasicAutoindent):
     """
     folding_last_line_bug = True
     
+    def getFold(self, stc, linenum):
+        return stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
+
+    def getPreviousText(self, stc, linenum):
+        """Find the text above the line with the same fold level.
+        
+        """
+        fold = self.getFold(stc, linenum)
+        ln = linenum - 1
+        fc = lc = stc.GetLineEndPosition(ln)
+        above = ''
+        while ln > 0:
+            f = self.getFold(stc, ln)
+            if f != fold:
+                above = stc.GetTextRange(fc, lc)
+                break
+            fc = stc.PositionFromLine(ln)
+            ln -= 1
+        return above
+
+    def getFoldSectionStart(self, stc, linenum):
+        """Find the line number of the text above the given line that has the
+        same fold level.
+        
+        Searching from the given line number toward the start of the file,
+        find the set of lines that have the same fold level as the given
+        line.  Once the fold level changes, we know that we're done searching
+        because there's no way that any indentation for the given line can be
+        affected by a separate block of code
+
+        @return: the line number of the start of the fold section
+        """
+        fold = self.getFold(stc, linenum)
+        ln = linenum
+        while ln > 1:
+            f = self.getFold(stc, ln - 1)
+            if f != fold:
+                break
+            ln -= 1
+        return ln
+    
+    def getCodeCharacters(self, stc, ln):
+        """Get a version of the given line with all non code chars blanked out.
+        
+        This function blanks out all non-code characters (comments, strings,
+        etc) from the line and returns a copy of the interesting stuff.
+        """
+        fc = stc.PositionFromLine(ln)
+        lc = stc.GetLineEndPosition(ln)
+        
+        mask = (2 ** stc.GetStyleBits()) - 1
+        
+        out = []
+
+        line = stc.GetStyledText(fc, lc)
+        self.dprint(repr(line))
+        i = len(line)
+        
+        # replace all uninteresting chars with blanks
+        while i > 0:
+            i -= 1
+            s = ord(line[i]) & mask
+            i -= 1
+            if stc.isStyleComment(s) or stc.isStyleString(s):
+                c = ' '
+            else:
+                c = line[i]
+            out.append(c)
+        
+        # Note that we assembled the string in reverse, so flip it around
+        out = ''.join(reversed(out))
+        return out
+
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
 
@@ -236,14 +311,47 @@ class FoldingAutoindent(BasicAutoindent):
         return fold * stc.GetIndent()
 
 
-class CStyleAutoindent(BasicAutoindent):
+class CStyleAutoindent(FoldingAutoindent):
     """Use the STC Folding to reindent a line in a C-like mode.
     
     This autoindenter uses the built-in Scintilla folding to determine the
     correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
     plus a bunch of heuristics to handle things that Scintilla doesn't.
     """
-    folding_last_line_bug = True
+    
+    def __init__(self, reIndentAfter=None, reIndent=None, reUnindent=None):
+        """Create a regex autoindenter.
+        
+        Creates an instance of the regex autoindenter.  Since this code is
+        based on the varindent module from KDE's Kate editor, it uses the same
+        regular expressions as Kate to indent code.
+        
+        @param reIndentAfter: a regular expression used on the nearest line
+        above the current line that has content.  If it matches, it will add
+        indentation to the current line
+        
+        @param reIndent: regular expression used on the current line.  If it
+        matches, indentation will be added to the current line.
+        
+        @param reUnindent: regular expression used on the current line.  If it
+        matches, indentation is removed from the current line.
+        
+        @param braces: a list of braces used on the nearest line with content
+        above the current.  When an opening brace appears without its matching
+        closing brace, and indentation level is added to the current line.
+        """
+        if reIndentAfter:
+            self.reIndentAfter = re.compile(reIndentAfter)
+        else:
+            self.reIndentAfter = re.compile(r'^(?!.*;\s*//).*[^\s;{}]\s*$')
+        if reIndent:
+            self.reIndent = re.compile(reIndent)
+        else:
+            self.reIndent = None
+        if reUnindent:
+            self.reUnindent = re.compile(reUnindent)
+        else:
+            self.reUnindent = None
     
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
@@ -271,6 +379,21 @@ class CStyleAutoindent(BasicAutoindent):
         elif c == ord('#') and s == 9:
             # Force preprocessor directives to start at column zero
             fold = 0
+        else:
+            start = self.getFoldSectionStart(stc, linenum)
+            
+            for ln in xrange(linenum - 1, start - 1, -1):
+                line = self.getCodeCharacters(stc, ln)
+                dprint(line)
+                if not line.strip():
+                    continue
+                if self.reIndentAfter.match(line):
+                    dprint("continuation")
+                    fold += 1
+                else:
+                    dprint("terminated statement")
+                break
+                
 
         return fold * stc.GetIndent()
     
