@@ -32,6 +32,13 @@ class BasicAutoindent(debugmixin):
     it and reports the indent level of that line.  No effort is made to look
     at syntax or anything.  Simple.
     """
+    
+    # Scintilla always reports a fold of zero on the last line, so if
+    # subclasses use folding to determine the indent, this should be set to
+    # True so that processReturn will add an extra newline character if it's
+    # at the end of the file.
+    folding_last_line_bug = False
+    
     def __init__(self):
         pass
     
@@ -151,15 +158,21 @@ class BasicAutoindent(debugmixin):
         elif not pos:
             newline = linesep
         else:
-            # When we insert a new line, the colorization isn't always
-            # immediately updated, so we have to force that here before
-            # calling findIndent
             stc.ReplaceTarget(linesep)
             pos += len(linesep)
             end = min(pos + 1, stc.GetTextLength())
-            # Colorize the entire last line up to one character beyond the
-            # newly inserted linesep character, guaranteeing that the new line
-            # will have the correct fold property set.
+            
+            # Scintilla always returns a fold level of zero on the last line,
+            # so when trying to indent the last line, must add a newline
+            # character.
+            if pos == end and self.folding_last_line_bug:
+                stc.AddText("\n")
+                end = stc.GetTextLength()
+            
+            # When we insert a new line, the colorization isn't always
+            # immediately updated, so we have to force that here before
+            # calling findIndent to guarantee that the new line will have the
+            # correct fold property set.
             stc.Colourise(stc.PositionFromLine(linenum), end)
             stc.SetTargetStart(pos)
             stc.SetTargetEnd(pos)
@@ -201,6 +214,8 @@ class BasicAutoindent(debugmixin):
 class FoldingAutoindent(BasicAutoindent):
     """Experimental class to use STC Folding to reindent a line.
     """
+    folding_last_line_bug = True
+    
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
 
@@ -228,6 +243,8 @@ class CStyleAutoindent(BasicAutoindent):
     correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
     plus a bunch of heuristics to handle things that Scintilla doesn't.
     """
+    folding_last_line_bug = True
+    
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
 
