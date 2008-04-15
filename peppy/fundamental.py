@@ -917,7 +917,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
 
     ### Spell checking utilities
-    def getPopupActions(self, x, y):
+    def getPopupActions(self, evt, x, y):
         pos = self.PositionFromPoint(wx.Point(x, y))
         self.check_spelling = self.getWordFromPosition(pos)
         #dprint(self.check_spelling)
