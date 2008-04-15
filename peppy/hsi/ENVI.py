@@ -376,6 +376,11 @@ class Header(dict,MetadataMixin):
                             val.lstrip('[').rstrip(']'),
                             initial_indent='  ',
                             subsequent_indent='  ')
+                    elif isinstance(orig,tuple):
+                        val=textwrap.fill(
+                            val.lstrip('(').rstrip(')'),
+                            initial_indent='  ',
+                            subsequent_indent='  ')
                     self[item_txt]=val
         
         # FIXME: why was this needed?  Seems like it unnecessarily
