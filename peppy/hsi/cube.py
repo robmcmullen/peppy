@@ -206,6 +206,10 @@ class Cube(debugmixin):
                 #dprint(self.url)
                 if self.url.scheme == "file":
                     self.mmap = numpy.memmap(str(self.url.path), mode="r")
+                elif self.url.scheme == "mem":
+                    fh = vfs.open(self.url)
+                    data = fh.read()
+                    self.mmap = numpy.fromstring(data, dtype=numpy.uint8)
                 else:
                     self.mmap = vfs.open_numpy_mmap(self.url)
                 self.initialize()
