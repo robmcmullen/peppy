@@ -77,11 +77,14 @@ class GDALDataset(HSI.MetadataMixin):
     @classmethod
     def getDataset(cls, url):
         local = cls.getSubName(url)
-        cls.dprint("trying gdal.Open(%s)" % local)
-        try:
-            return gdal.Open(local, gdal.GA_ReadOnly)
-        except TypeError:
-            cls.dprint("type error opening GDAL.  Skipping")
+        if local:
+            cls.dprint("trying gdal.Open(%s)" % local)
+            try:
+                return gdal.Open(local, gdal.GA_ReadOnly)
+            except TypeError:
+                cls.dprint("type error opening GDAL.  Skipping")
+        else:
+            cls.dprint("url %s not compatible with GDAL" % str(url))
         return None
 
     @classmethod
