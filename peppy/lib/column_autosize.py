@@ -80,9 +80,13 @@ in InsertSizedColumn.
 
 
 @author: Rob McMullen
-@version: 1.4
+@version: 1.5
 
 Changelog::
+    1.5:
+        - windows doesn't properly resize column zero -- it's too small.  So,
+          a small fudge factor is added to column zero's calculated width on
+          MSW only
     1.4:
         - use column header width as column size if there are no items in the
           list
@@ -225,6 +229,12 @@ class ColumnAutoSizeMixin(object):
         if 'ok_offscreen' in kwargs and kwargs['ok_offscreen'] and index < self._allowed_offscreen:
             self._allowed_offscreen = index
         self._resize_dirty = True
+        
+        # Windows seems to need extra padding on column zero
+        if wx.Platform == "__WXMSW__":
+            self._extra_col0_padding = 4
+        else:
+            self._extra_col0_padding = 0
 
     def _onSize(self, evt):
         if self._last_size is None or self._last_size != evt.GetSize():
@@ -275,7 +285,7 @@ class ColumnAutoSizeMixin(object):
         if wx.Platform != '__WXMSW__':
             if self.GetItemCount() > self.GetCountPerPage():
                 usable_width -= wx.SystemSettings_GetMetric(wx.SYS_VSCROLL_X)
-        remaining_width = usable_width
+        remaining_width = usable_width - self._extra_col0_padding
         
         # pass 1: get preferred sizes for all columns
         before = {}
@@ -376,9 +386,12 @@ class ColumnAutoSizeMixin(object):
 
         # pass 4: set column widths
         for col in range(self.GetColumnCount()):
-            #print("col %d: before=%s resized=%s" % (col, before[col], newsize[col]))
-            if newsize[col] != before[col]:
-                self.SetColumnWidth(col, newsize[col])
+            width = newsize[col]
+            if col == 0:
+                width += self._extra_col0_padding
+            #print("col %d: before=%s resized=%s" % (col, before[col], width))
+            if width != before[col]:
+                self.SetColumnWidth(col, width)
         self.Thaw()
         self._resize_dirty = False
 
@@ -392,19 +405,20 @@ if __name__ == "__main__":
             ColumnAutoSizeMixin.__init__(self)
 
             self.rows = 50
-            self.examples = [0, (1,20), (4,10), (4,5), (10,30), (100,200), (5,10)]
+            self.examples = [0, (1,20), (1,20), (4,10), (4,5), (10,30), (100,200), (5,10)]
 
             self.createColumns()
             self.reset()
         
         def createColumns(self):
             self.InsertSizedColumn(0, "Index")
-            self.InsertSizedColumn(1, "Filename", min=75, max=200)
-            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
-            self.InsertSizedColumn(3, "Mode", min="M", max="MMM")
-            self.InsertSizedColumn(4, "Description", min=75)
-            self.InsertSizedColumn(5, "URL", ok_offscreen=True)
-            self.InsertSizedColumn(6, "Owner", fixed=50)
+            self.InsertSizedColumn(1, "Num")
+            self.InsertSizedColumn(2, "Filename", min=75, max=200)
+            self.InsertSizedColumn(3, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+            self.InsertSizedColumn(4, "Mode", min="M", max="MMM")
+            self.InsertSizedColumn(5, "Description", min=75)
+            self.InsertSizedColumn(6, "URL", ok_offscreen=True)
+            self.InsertSizedColumn(7, "Owner", fixed=50)
 
         def reset(self, msg=None):
             # FIXME: Freeze doesn't seem to work -- on windows, this list is built
@@ -416,7 +430,8 @@ if __name__ == "__main__":
                     self.InsertStringItem(sys.maxint, str(index))
                 else:
                     self.SetStringItem(index, 0, str(index))
-                for col in range(1, self.GetColumnCount()):
+                self.SetStringItem(index, 1, str(index))
+                for col in range(2, self.GetColumnCount()):
                     random_range = self.examples[col]
                     letter = chr(col+ord("A"))
                     item = letter*random.randint(*random_range)
@@ -434,10 +449,11 @@ if __name__ == "__main__":
     class TestList2(TestList1):
         def createColumns(self):
             self.InsertSizedColumn(0, "Index")
-            self.InsertSizedColumn(1, "Filename", min=75, max=200)
-            self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
-            self.InsertSizedColumn(3, "Mode", min="M", max="MMM")
-            self.InsertSizedColumn(4, "Description", min=75)
+            self.InsertSizedColumn(1, "Num")
+            self.InsertSizedColumn(2, "Filename", min=75, max=200)
+            self.InsertSizedColumn(3, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+            self.InsertSizedColumn(4, "Mode", min="M", max="MMM")
+            self.InsertSizedColumn(5, "Description", min=75)
 
     app   = wx.PySimpleApp()
     frame = wx.Frame(None, -1, title='Column resizer test')
