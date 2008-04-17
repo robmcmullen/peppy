@@ -376,24 +376,66 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if col<self._hexcols:
             val=int(value,16)
             if val>=0 and val<256:
-                c=chr(val)
-                loc = self.getLoc(row,col)
-                self.stc.SetSelection(loc,loc+1)
-                self.stc.ReplaceSelection('')
-                self.stc.AddStyledText(c+'\0')
+                bytes = chr(val)
             else:
                 assert self.dprint('SetValue(%d, %d, "%s")=%d out of range.' % (row, col, value,val))
         else:
             textcol = self.getTextCol(col)
             fmt = self.types[textcol]
-            assert self.dprint('SetValue(%d, %d, "%s") packing with fmt %s.' % (row, col, value, fmt))
+            assert self.dprint('SetValue(%d, %d, %s (%s)) packing with fmt %s.' % (row, col, value, repr(value), fmt))
+            fmt_char = fmt[-1]
+            if fmt_char == 'f' or fmt_char == 'd':
+                value = float(value)
+            elif fmt_char in ['bBhHiIlLqQ']:
+                value = int(value)
+            else:
+                value = str(value)
             bytes = struct.pack(fmt, value)
             assert self.dprint('bytes = %s' % repr(bytes))
-            loc=self.getLoc(row,col)
-            self.stc.SetSelection(loc,loc+1)
-            self.stc.ReplaceSelection('')
-            styled='\0'.join(bytes)+'\0'
-            self.stc.AddStyledText(styled)
+            
+        loc = self.getLoc(row, col)
+        locend = loc + len(bytes)
+        
+        # FIXME: the set/replace selection can fail if we start or end in the
+        # middle of a multi-byte sequence.  To properly handle this, we'd
+        # have to search backwards and forwards to make sure that we aren't
+        # splitting a UTF-8 sequence
+        start = loc
+        valid = False
+        while not valid:
+            try:
+                self.stc.GotoPos(start)
+                valid = True
+            except wx._core.PyAssertionError:
+                self.dprint("Trying back one... start=%d" % start)
+                if start > 0:
+                    start -= 1
+        if start > 0:
+            self.stc.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFTEXTEND)
+        start = self.stc.GetSelectionStart()
+        end = locend
+        valid = False
+        while not valid:
+            try:
+                self.stc.GotoPos(end)
+                valid = True
+            except wx._core.PyAssertionError:
+                self.dprint("Trying ahead one... end=%d" % end)
+                if end < self.stc.GetLength():
+                    end += 1
+        self.stc.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHTEXTEND)
+        end = self.stc.GetSelectionEnd()
+        data = self.stc.GetStyledText(start, end)
+        self.stc.SetSelection(start, end)
+        self.stc.ReplaceSelection('')
+        
+        styled = '\0'.join(bytes) + '\0'
+        gap1 = loc - start
+        gap2 = gap1 + locend - loc
+        replacement = data[:gap1 * 2] + styled + data[gap2 * 2:]
+        self.dprint("start=%d loc=%d locend=%d end=%d  data=%s styled=%s replace=%s" % (start, loc, locend, end, repr(data), repr(styled), repr(replacement)))
+        self.stc.AddStyledText(replacement)
+        
         self.invalidateCacheRow(row)
 
     def ResetView(self, grid, stc, format=None, col_labels=None):
