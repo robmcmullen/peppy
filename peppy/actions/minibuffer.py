@@ -42,7 +42,7 @@ class MinibufferRepeatAction(MinibufferAction):
         minibuffer = self.mode.getMinibuffer()
         if minibuffer.__class__ == self.minibuffer:
             dprint("Using the same type of minibuffer!")
-            minibuffer.repeat()
+            minibuffer.repeat(self)
         else:
             dprint("Not using the same type of minibuffer.  Creating a new one.")
             MinibufferAction.action(self, index, multiplier)
@@ -77,9 +77,11 @@ class Minibuffer(debugmixin):
         """
         raise NotImplementedError
 
-    def repeat(self):
+    def repeat(self, action):
         """Entry point used to reinitialize the minibuffer without creating
         a new instance.
+        
+        @param action: the L{SelectAction} that caused the repeat
         """
         raise NotImplementedError
 
