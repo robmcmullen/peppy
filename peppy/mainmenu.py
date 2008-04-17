@@ -715,6 +715,7 @@ class ElectricReturn(TextModificationAction):
     tooltip = "Indent the next line following a return"
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': 'RET',}
+    key_needs_focus = True
 
     def action(self, index=-1, multiplier=1):
         if self.mode.classprefs.spell_check:

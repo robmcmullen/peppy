@@ -30,6 +30,21 @@ from peppy.lib.wxemacskeybindings import *
 from peppy.lib.iconstorage import *
 
 
+class ActionNeedsFocusException(Exception):
+    """If the action needs to be focused to process a keystroke and it receives
+    the keystroke while not focused, raise this exception to allow the
+    keystroke to propagate to other controls.
+    
+    For an example, see L{ElectricReturn}, which needs to raise this exception
+    when not focused otherwise returns are not processed in L{FindBar}
+    
+    In general, this is only needed when special keys like Return and Tab are
+    bound to actions -- most of the other times, you'll want the action to be
+    performed regardless of the focus state.
+    """
+    pass
+
+
 class SelectAction(debugmixin):
     """Display a normal menu item, toolbar button, or simple keystroke command.
     
@@ -73,6 +88,9 @@ class SelectAction(debugmixin):
     
     #: Map of platform to default keybinding.  This is used to assign the class attribute keyboard, which is the current keybinding.  Currently, the defined platforms are named "win", "mac", and "emacs".  A platform named 'default' may also be included that will be the default key unless overridden by a specific platform
     key_bindings = None
+    
+    #: True if the action should be focused to process a keystroke.  Finer-grained control can be obtained by checking some condition within the action method and raising the L{ActionNeedsFocusException}
+    key_needs_focus = False
     
     #: Current keybinding of the action.  This is set by the keyboard configuration loader and shouldn't be modified directly.  Subclasses should leave this set to None.
     keyboard = None
@@ -226,7 +244,13 @@ class SelectAction(debugmixin):
         # Make sure that the action is enabled before allowing it to be called
         # using the keybinding
         if self.isEnabled():
-            self.action(0, number)
+            if self.key_needs_focus and self.mode.FindFocus() != self.mode:
+                evt.Skip()
+                return
+            try:
+                self.action(0, number)
+            except ActionNeedsFocusException:
+                evt.Skip()
 
     def showEnable(self):
         state = self.isEnabled()

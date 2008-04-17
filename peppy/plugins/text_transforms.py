@@ -266,6 +266,7 @@ class Reindent(TextModificationAction):
     name = "Reindent"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'TAB',}
+    key_needs_focus = True
 
     def action(self, index=-1, multiplier=1):
         s = self.mode

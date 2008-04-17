@@ -398,6 +398,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         
         Automatic spell checking is handled here.
         """
+        
+        # Make sure that we have the focus before processing chars.
+        if self.FindFocus() != self:
+            return
+
         uchar = unichr(evt.GetKeyCode())
         if self.autoindent.electricChar(self, uchar):
             # If the autoindenter handles the char, it will insert the char.
