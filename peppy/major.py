@@ -612,7 +612,7 @@ class MajorMode(ClassPrefs, debugmixin):
     def createEventBindings(self):
         if hasattr(self, 'addUpdateUIEvent'):
             self.addUpdateUIEvent(self.OnUpdateUI)
-        self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyPressed)
+        self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyDown)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.idle_update_menu = False
 

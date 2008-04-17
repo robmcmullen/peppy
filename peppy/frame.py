@@ -376,7 +376,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.show_toolbar = self.classprefs.show_toolbar
         
         self.keys=KeyProcessor(self)
-        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPressed)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
         self.loadSidebars()
 
@@ -497,7 +497,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if close:
             self.closeWindow()
 
-    def OnKeyPressed(self, evt):
+    def OnKeyDown(self, evt):
         self.keys.process(evt)
 ##        if function:
 ##            print "num=%d function=%s" % (num,function)

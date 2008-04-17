@@ -388,6 +388,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         wx.SetDefaultPyEncoding(self.classprefs.default_text_encoding)
         
         self.Bind(wx.EVT_IDLE, self.OnIdle)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
         return True
     
@@ -397,6 +398,27 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # The process manager is a global, so it should be updated here
         ProcessManager().idle()
         evt.Skip()
+
+    def OnKeyDown(self, evt):
+        """Last chance to handle keystroke processing.
+        
+        This is the failsafe keystroke processing handler, which catches all
+        key down events that have not been processed by other controls.  If
+        a key event makes it all the way out to here, we're probably dealing
+        with a major mode that doesn't have a key handler.  Therefore, it's
+        likely that the major mode hasn't called L{BufferFrame.OnKeyDown},
+        meaning that keystroke commands will not have been handled.
+        
+        This method makes sure that keystroke events are processed by calling
+        the active frame's OnKeyDown function.
+        """
+        ctrl = evt.GetEventObject()
+        frame = ctrl
+        while frame:
+            frame = frame.GetParent()
+            if isinstance(frame, BufferFrame):
+                frame.OnKeyDown(evt)
+                break
 
     def bootstrapCommandLineOptions(self):
         """Process a small number of configuration options before
