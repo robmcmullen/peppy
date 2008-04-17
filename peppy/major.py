@@ -804,6 +804,10 @@ class MajorMode(ClassPrefs, debugmixin):
     ##### Proxy services for the wrapper
     def updateAui(self):
         self.wrapper._mgr.Update()
+    
+    def getMinibuffer(self):
+        """Returns the minibuffer instance in use, or None"""
+        return self.wrapper.minibuffer
 
     def setMinibuffer(self, minibuffer=None):
         """Proxy the minibuffer requests up to the wrapper"""

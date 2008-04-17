@@ -32,6 +32,22 @@ class MinibufferAction(TextModificationAction):
         assert self.dprint("processing %s" % text)
 
 
+class MinibufferRepeatAction(MinibufferAction):
+    """If an existing minibuffer is of the same type as the newly requested
+    minibuffer, call L{Minibuffer.repeat} instead of creating a new instance
+    of the minibuffer.
+    """
+    
+    def action(self, index=-1, multiplier=1):
+        minibuffer = self.mode.getMinibuffer()
+        if minibuffer.__class__ == self.minibuffer:
+            dprint("Using the same type of minibuffer!")
+            minibuffer.repeat()
+        else:
+            dprint("Not using the same type of minibuffer.  Creating a new one.")
+            MinibufferAction.action(self, index, multiplier)
+
+
 class Minibuffer(debugmixin):
     """
     Base class for an action that is implemented using the minibuffer.
@@ -58,6 +74,12 @@ class Minibuffer(debugmixin):
         """
         Create a window that represents the minibuffer, and set
         self.win to that window.
+        """
+        raise NotImplementedError
+
+    def repeat(self):
+        """Entry point used to reinitialize the minibuffer without creating
+        a new instance.
         """
         raise NotImplementedError
 

@@ -76,6 +76,9 @@ class FindMinibuffer(Minibuffer):
         # Create the find bar widget.
         self.win=PypeFindBar(self.mode.wrapper, self)
         #print "findbar=%s" % self.win
+    
+    def repeat(self):
+        self.win.OnFindN(None)
 
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
@@ -125,7 +128,7 @@ class ReplaceMinibuffer(FindMinibuffer):
         return self
     
 
-class FindText(MinibufferAction):
+class FindText(MinibufferRepeatAction):
     name = "Find..."
     tooltip = "Search for a string in the text."
     default_menu = ("Edit", -400)
@@ -133,7 +136,7 @@ class FindText(MinibufferAction):
     key_bindings = {'default': "C-F", 'emacs': 'C-S', }
     minibuffer = FindMinibuffer
 
-class ReplaceText(MinibufferAction):
+class ReplaceText(MinibufferRepeatAction):
     name = "Replace..."
     tooltip = "Replace a string in the text."
     default_menu = ("Edit", 401)
