@@ -1,0 +1,9 @@
+[Core]
+Name = Find and Replace Plugin
+Module = find_replace
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Plugin providing text search and replace for Fundamental modes

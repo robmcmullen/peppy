@@ -81,7 +81,8 @@ class Minibuffer(debugmixin):
         """Entry point used to reinitialize the minibuffer without creating
         a new instance.
         
-        @param action: the L{SelectAction} that caused the repeat
+        @param action: the L{SelectAction} that caused the repeat, which could
+        be different than C{self.action} stored during the __init__ method.
         """
         raise NotImplementedError
 

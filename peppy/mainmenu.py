@@ -1014,7 +1014,7 @@ class MainMenu(IPeppyPlugin):
 
                 NewWindow, DeleteWindow, WindowList,
 
-                FindText, ReplaceText,
+                ReplaceText,
                 
                 ExecuteActionByName, DescribeAction,
                 
