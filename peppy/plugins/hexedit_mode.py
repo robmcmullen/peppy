@@ -130,6 +130,10 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             self.parseFormat(self.format)
             self._cols = self._hexcols + self._textcols
             assert self.dprint("# hexcols = %d, # textcols = %d, total=%d" % (self._hexcols, self._textcols, self._cols))
+        
+        # Any change in the format will invalidate the cache since the cache
+        # also stores the unpacked version of the data
+        self.invalidateCache()
 
     def parseFormat(self, format):
         """
@@ -326,21 +330,47 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
                 return False
         else:
             return False
-
-    def GetValue(self, row, col):
-        if col<self._hexcols:
-            loc = self.getLoc(row,col)
-            s = "%02x" % self.stc.GetCharAt(loc)
-            #assert self.dprint(s)
-            return s
-        else:
-            startpos = self.getLoc(row,col)
-            textcol = self.getTextCol(col)
-            endpos = startpos+self.sizes[textcol]
+    
+    def invalidateCache(self, max=100):
+        self._cache = {}
+        self._cache_max = max
+        self._cache_fifo = []
+    
+    def invalidateCacheRow(self, row):
+        if row in self._cache:
+            del self._cache[row]
+            self._cache_fifo.remove(row)
+    
+    def getRowData(self, row):
+        if len(self._cache_fifo) > self._cache_max:
+            amt = self._cache_max / 8
+            remove = self._cache_fifo[:amt]
+            self._cache_fifo = self._cache_fifo[amt:]
+            for r in remove:
+                if r != row:
+                    del self._cache[r]
+                else:
+                    # add back the row that we didn't remove
+                    self._cache_fifo.append(row)
+            #dprint("Removed 1/8 of the cache: %d elements: %s.  cache=%s" % (amt, str(remove), str(self._cache_fifo)))
+        if row not in self._cache:
+            startpos = row*self.nbytes
+            endpos = startpos + self.nbytes
             data = self.stc.GetStyledText(startpos,endpos)[::2]
-            #assert self.dprint("row=%d col=%d textcol=%d start=%d end=%d data=%d structlen=%d" % (row,col,textcol,startpos,endpos,len(data),self.nbytes))
-            s = struct.unpack(self.types[textcol],data)
-            return str(s[0])
+            s = struct.unpack(self.format, data)
+            self._cache[row] = (data, s)
+            #dprint("Storing cached data for row %d: %s, %s" % (row, repr(data), str(s)))
+            
+            self._cache_fifo.append(row)
+        return self._cache[row]
+    
+    def GetValue(self, row, col):
+        data, s = self.getRowData(row)
+        if col<self._hexcols:
+            return "%02x" % ord(data[col])
+        else:
+            col -= self._hexcols
+            return str(s[col])
 
     def SetValue(self, row, col, value):
         if col<self._hexcols:
@@ -364,6 +394,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             self.stc.ReplaceSelection('')
             styled='\0'.join(bytes)+'\0'
             self.stc.AddStyledText(styled)
+        self.invalidateCacheRow(row)
 
     def ResetView(self, grid, stc, format=None, col_labels=None):
         """
