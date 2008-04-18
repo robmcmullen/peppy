@@ -25,10 +25,14 @@ class FindBar(wx.Panel):
     forward = "Find"
     backward = "Find Backward"
     
-    def __init__(self, parent, frame, stc, initial='', direction=1):
+    def __init__(self, parent, frame, stc, storage=None, direction=1):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         self.frame = frame
         self.stc = stc
+        if isinstance(storage, dict):
+            self.storage = storage
+        else:
+            self.storage = {}
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.label = wx.StaticText(self, -1, _(self.forward) + u":")
@@ -45,9 +49,6 @@ class FindBar(wx.Panel):
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.text.Bind(wx.EVT_TEXT, self.OnChar)
-
-        if initial:
-            self.text.ChangeValue(initial)
     
     def setDirection(self, dir=1):
         if dir > 0:
@@ -185,35 +186,56 @@ class FindBar(wx.Panel):
         
         self.OnNotFound()
 
-
+    def repeat(self, direction):
+        if not self.getSearchString():
+            if 'last_search' in self.storage:
+                self.text.ChangeValue(self.storage['last_search'])
+                self.text.SetInsertionPointEnd()
+                return
+            
+        if direction < 0:
+            self.setDirection(-1)
+            self.OnFindP(None)
+        else:
+            self.setDirection(1)
+            self.OnFindN(None)
+    
+    def saveState(self):
+        last = self.getSearchString()
+        if last:
+            self.storage['last_search'] = last
 
 
 class FindMinibuffer(Minibuffer):
     """
     Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
     """
+    search_storage = {}
+    
     def createWindow(self):
         # Create the find bar widget.
         if self.action.__class__ == FindPrevText:
             dir = -1
         else:
             dir = 1
-        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, direction=dir)
+        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=dir)
     
     def repeat(self, action):
         self.win.SetFocus()
         dprint(action)
         if action.__class__ == FindPrevText:
-            self.win.setDirection(-1)
-            self.win.OnFindP(None)
+            self.win.repeat(-1)
         else:
-            self.win.setDirection(1)
-            self.win.OnFindN(None)
+            self.win.repeat(1)
 
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
         # to the text ctrl or combo box of the pype findbar.
         self.win.text.SetFocus()
+    
+    def closePreHook(self):
+        self.win.saveState()
+        self.dprint(self.search_storage)
 
 
 class FindText(MinibufferRepeatAction):

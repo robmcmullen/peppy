@@ -95,10 +95,17 @@ class Minibuffer(debugmixin):
         assert self.dprint("focus!!!")
         self.win.SetFocus()
     
+    def closePreHook(self):
+        """Hook called when minibuffer is about to be closed to allow it to
+        save any persistent data.
+        """
+        pass
+    
     def close(self):
         """
         Destroy the minibuffer widgets.
         """
+        self.closePreHook()
         self.win.Destroy()
         self.win=None
 
