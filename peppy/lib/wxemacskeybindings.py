@@ -304,6 +304,7 @@ class KeyProcessor(object):
         # Probably should create a standard way to process sticky
         # keys, but for now ESC corresponds to a sticky meta key just
         # like XEmacs
+        self.useStickyMeta = True
         self.stickyMeta="ESCAPE"
         self.metaNext=False
         self.nextStickyMetaCancel=False
@@ -338,13 +339,25 @@ class KeyProcessor(object):
             else:
                 self.wxkeys[getattr(wx, "WXK_"+i)] = ''
 
+    def findStickyMeta(self):
+        """Determine if the sticky meta key should be defined for this set
+        of keymaps.
+        """
+        self.useStickyMeta = False
+        sticky = "M-%s" % self.stickyMeta
+        for keymap in self.keymaps:
+            if sticky in keymap.lookup:
+                #print("found M-ESC in keymap = %s" % str(keymap.lookup))
+                self.useStickyMeta = True
+                break
+
     def fixmaps(self):
         """set up the search order of keymaps
         """
         self.keymaps=self.minorKeymaps+[self.localKeymap,
-                                        self.globalKeymap,
-                                        self.escapeKeymap]
+                                        self.globalKeymap]
         self.num=len(self.keymaps)
+        self.findStickyMeta()
         self.reset()
 
     def addMinorKeyMap(self,keymap):
@@ -409,7 +422,7 @@ class KeyProcessor(object):
             # to cancel the keystroke input
             if keyname==self.stickyMeta:
                 self.nextStickyMetaCancel=True
-        else:
+        elif self.useStickyMeta:
             # ESC hasn't been pressed before, so flag it for next
             # time.
             if keyname==self.stickyMeta:
@@ -674,8 +687,6 @@ if __name__ == '__main__':
             self.globalKeyMap=KeyMap()
             self.localKeyMap=KeyMap()
             self.keys=KeyProcessor(status=self)
-            self.keys.setGlobalKeyMap(self.globalKeyMap)
-            self.keys.setLocalKeyMap(self.localKeyMap)
 
             menuBar = wx.MenuBar()
             self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
@@ -717,6 +728,8 @@ if __name__ == '__main__':
             self.menuAdd(lmap, "ESC\tM-ESC A", "M-ESC A", StatusUpdater(self, "Meta-Escape-A"))
 
             #print self.lookup
+            self.keys.setGlobalKeyMap(self.globalKeyMap)
+            self.keys.setLocalKeyMap(self.localKeyMap)
             print self.localKeyMap.getBindings()
             print self.globalKeyMap.getBindings()
             self.Show(1)
