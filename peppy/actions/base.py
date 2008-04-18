@@ -45,6 +45,8 @@ class STCModificationAction(BufferBusyActionMixin, SelectAction):
     change the buffer when the buffer is in the process of being modified by a
     long-running process.
     """
+    key_needs_focus = True
+    
     @classmethod
     def worksWithMajorMode(cls, mode):
         return hasattr(mode, 'CanUndo')
@@ -56,6 +58,8 @@ class TextModificationAction(BufferBusyActionMixin, SelectAction):
     would change the buffer when the buffer is in the process of being
     modified by a long-running process.
     """
+    key_needs_focus = True
+    
     @classmethod
     def worksWithMajorMode(cls, mode):
         return isinstance(mode, FundamentalMode)
@@ -70,7 +74,7 @@ class ScintillaCmdKeyExecute(TextModificationAction):
     @see: http://www.yellowbrain.com/stc/keymap.html#exec
     """
     cmd = 0
-
+    
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mode.CmdKeyExecute(self.cmd)

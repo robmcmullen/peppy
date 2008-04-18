@@ -11,6 +11,7 @@ from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 
 class MinibufferAction(TextModificationAction):
     minibuffer_label = None
+    key_needs_focus = False
     
     def getInitialValueHook(self):
         """Get the initial value (if any)
