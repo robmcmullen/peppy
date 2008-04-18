@@ -37,8 +37,8 @@ class FindBar(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.label = wx.StaticText(self, -1, _(self.forward) + u":")
         sizer.Add(self.label, 0, wx.CENTER)
-        self.text = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
-        sizer.Add(self.text, 1, wx.EXPAND)
+        self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
+        sizer.Add(self.find, 1, wx.EXPAND)
         self.SetSizer(sizer)
         
         self.match_case = False
@@ -47,8 +47,8 @@ class FindBar(wx.Panel):
         self.incr = 1
         self.setDirection(direction)
 
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
-        self.text.Bind(wx.EVT_TEXT, self.OnChar)
+        self.find.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+        self.find.Bind(wx.EVT_TEXT, self.OnChar)
     
     def setDirection(self, dir=1):
         if dir > 0:
@@ -73,43 +73,55 @@ class FindBar(wx.Panel):
         return self.OnFindN(evt)
     
     def OnNotFound(self):
-        self.text.SetBackgroundColour(wx.RED)
+        self.find.SetBackgroundColour(wx.RED)
         self.frame.SetStatusText("Search string was not found.")
         self.Refresh()
 
-    def getSearchString(self):
-        findTxt = self.text.GetValue()
-        if not findTxt:
-            return ""
-        
+    def expandText(self, findTxt):
         #python strings in find
-        if findTxt and findTxt[0] in ['"', "'"]:
+        if findTxt[0] in ['"', "'"]:
             try:
                 findTxt = [i for i in compiler.parse(str(findTxt)).getChildren()[:1] if isinstance(i, basestring)][0]
             except Exception, e:
                 pass
-        
-        return findTxt
+            matchcase = True
+        else:
+            if findTxt != findTxt.lower():
+                matchcase = True
+            else:
+                matchcase = self.match_case
+        return findTxt, matchcase
+
+    def getSearchString(self):
+        txt = self.find.GetValue()
+        if not txt:
+            return "", self.match_case
+        return self.expandText(txt)
 
     def resetColor(self):
-        if self.text.GetBackgroundColour() != wx.WHITE:
-            self.text.SetBackgroundColour(wx.WHITE)
-            self.frame.SetStatusText('')
+        if self.find.GetBackgroundColour() != wx.WHITE:
+            self.find.SetBackgroundColour(wx.WHITE)
             self.Refresh()
 
-    def sel(self, posns, posne, msg):
-        self.resetColor()
-        self.frame.SetStatusText(msg)
-        line = self.stc.LineFromPosition(posns)
-        self.stc.GotoLine(line)
+    def sel(self, posns, posne, msg, interactive=True):
+        if interactive:
+            self.resetColor()
+            self.frame.SetStatusText(msg)
+            line = self.stc.LineFromPosition(posns)
+            self.stc.GotoLine(line)
         posns, posne = self.getRange(posns, posne-posns)
         self.stc.SetSelection(posns, posne)
-        self.stc.EnsureVisible(line)
-        self.stc.EnsureCaretVisible()
+        if interactive:
+            self.stc.EnsureVisible(line)
+            self.stc.EnsureCaretVisible()
     
-    def cancel(self):
+    def cancel(self, pos_at_end=False):
         self.resetColor()
-        pos = self.stc.GetSelectionStart()
+        self.frame.SetStatusText('')
+        if pos_at_end:
+            pos = self.stc.GetSelectionEnd()
+        else:
+            pos = self.stc.GetSelectionStart()
         self.stc.GotoPos(pos)
         self.stc.EnsureCaretVisible()
     
@@ -127,15 +139,15 @@ class FindBar(wx.Panel):
             end = z - x
         return start, end
     
-    def OnFindN(self, evt, incr=0):
+    def OnFindN(self, evt, incr=0, allow_wrap=True, help='', interactive=True):
         self._lastcall = self.OnFindN
         self.incr = incr
-        findTxt = self.getSearchString()
+        findTxt, matchcase = self.getSearchString()
         if not findTxt:
             return self.cancel()
         flags = wx.FR_DOWN
-        if self.match_case:
-            flags |= wx.STC_FIND_MATCHCASE
+        if matchcase:
+            flags |= wx.stc.STC_FIND_MATCHCASE
         
         #handle finding next item, handling wrap-arounds as necessary
         gs = self.stc.GetSelection()
@@ -143,11 +155,11 @@ class FindBar(wx.Panel):
         st = gs[1-incr]
         posn = self.stc.FindText(st, self.stc.GetTextLength(), findTxt, flags)
         if posn != -1:
-            self.sel(posn, posn+len(findTxt), '')
+            self.sel(posn, posn+len(findTxt), help, interactive)
             self.loop = 0
             return
         
-        if st != 0:
+        if allow_wrap and st != 0:
             posn = self.stc.FindText(0, self.stc.GetTextLength(), findTxt, flags)
         self.loop = 1
         
@@ -157,14 +169,14 @@ class FindBar(wx.Panel):
         
         self.OnNotFound()
     
-    def OnFindP(self, evt, incr=0):
+    def OnFindP(self, evt, incr=0, allow_wrap=True, help=''):
         self._lastcall = self.OnFindP
         self.incr = 0
-        findTxt = self.getSearchString()
+        findTxt, matchcase = self.getSearchString()
         if not findTxt:
             return self.cancel()
         flags = 0
-        if self.match_case:
+        if matchcase:
             flags |= wx.STC_FIND_MATCHCASE
         
         #handle finding previous item, handling wrap-arounds as necessary
@@ -172,11 +184,11 @@ class FindBar(wx.Panel):
         #print self.stc.GetSelection(), st, 
         posn = self.stc.FindText(st, 0, findTxt, flags)
         if posn != -1:
-            self.sel(posn, posn+len(findTxt), '')
+            self.sel(posn, posn+len(findTxt), help)
             self.loop = 0
             return
         
-        if st != self.stc.GetTextLength():
+        if allow_wrap and st != self.stc.GetTextLength():
             posn = self.stc.FindText(self.stc.GetTextLength(), 0, findTxt, flags)
         self.loop = 1
         
@@ -187,10 +199,11 @@ class FindBar(wx.Panel):
         self.OnNotFound()
 
     def repeat(self, direction):
-        if not self.getSearchString():
+        last, matchcase = self.getSearchString()
+        if not last:
             if 'last_search' in self.storage:
-                self.text.ChangeValue(self.storage['last_search'])
-                self.text.SetInsertionPointEnd()
+                self.find.ChangeValue(self.storage['last_search'])
+                self.find.SetInsertionPointEnd()
                 return
             
         if direction < 0:
@@ -201,7 +214,7 @@ class FindBar(wx.Panel):
             self.OnFindN(None)
     
     def saveState(self):
-        last = self.getSearchString()
+        last, matchcase = self.getSearchString()
         if last:
             self.storage['last_search'] = last
 
@@ -222,7 +235,6 @@ class FindMinibuffer(Minibuffer):
     
     def repeat(self, action):
         self.win.SetFocus()
-        dprint(action)
         if action.__class__ == FindPrevText:
             self.win.repeat(-1)
         else:
@@ -231,7 +243,7 @@ class FindMinibuffer(Minibuffer):
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
         # to the text ctrl or combo box of the pype findbar.
-        self.win.text.SetFocus()
+        self.win.find.SetFocus()
     
     def closePreHook(self):
         self.win.saveState()
@@ -254,6 +266,256 @@ class FindPrevText(MinibufferRepeatAction):
     minibuffer = FindMinibuffer
 
 
+
+
+
+class ReplaceBar(FindBar):
+    """Replace panel in the style of the Emacs replace function
+    
+    """
+    replace = "Replace"
+    replace_regex = "Regex Replace"
+    help_status = "y: replace, n: skip, q: exit, !:replace all"
+    
+    def __init__(self, parent, frame, stc, storage=None, direction=1, on_exit=None):
+        wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+        self.frame = frame
+        self.stc = stc
+        if isinstance(storage, dict):
+            self.storage = storage
+        else:
+            self.storage = {}
+        
+        if on_exit:
+            self.on_exit = on_exit
+        else:
+            self.on_exit = None
+        
+        self.text = self.replace
+        grid = wx.GridBagSizer(0, 0)
+        self.label = wx.StaticText(self, -1, _(self.replace) + u":")
+        grid.Add(self.label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+        self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
+        grid.Add(self.find, (0, 1), flag=wx.EXPAND)
+        label = wx.StaticText(self, -1, _("with") + u":")
+        grid.Add(label, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        self.replace = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
+        grid.Add(self.replace, (1, 1), flag=wx.EXPAND)
+        self.command = wx.Button(self, -1, "Replace")
+        grid.Add(self.command, (1, 2), flag=wx.EXPAND)
+        grid.AddGrowableCol(1)
+        self.SetSizer(grid)
+        
+        self.match_case = False
+        self.smart_case = True
+        
+        # Count of number of replacements
+        self.count = 0
+        
+        # Last cursor position, tracked during replace all
+        self.last_cursor = 0
+        
+        # PyPE compat
+        self.incr = 1
+        self.setDirection(direction)
+
+        self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
+        self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToPanel)
+        self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
+        self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
+        self.command.Bind(wx.EVT_CHAR, self.OnCommandChar)
+        self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
+        self.command.Bind(wx.EVT_KILL_FOCUS, self.OnSearchStop)
+    
+    def setDirection(self, dir=1):
+        self.label.SetLabel(_(self.text) + u":")
+        self.Layout()
+
+    def OnTabToReplace(self, evt):
+        self.replace.SetFocus()
+        self.text = "Regex Replace"
+        self.setDirection()
+    
+    def OnTabToPanel(self, evt):
+        self.command.SetFocus()
+        self.text = "Replace"
+        self.setDirection()
+    
+    def OnSearchStart(self, evt):
+        self.OnFindN(evt, help=self.help_status)
+    
+    def OnSearchStop(self, evt):
+        self.cancel()
+        
+    def getReplaceString(self, replacing):
+        txt = self.replace.GetValue()
+        if not txt:
+            return ""
+        
+        replaceTxt, ignore = self.expandText(txt)
+        
+        if self.smart_case:
+            if replacing.upper() == replacing:
+                ## print "all upper", replacing
+                replaceTxt = replaceTxt.upper()
+            elif replacing.lower() == replacing:
+                ## print "all lower", replacing
+                replaceTxt = replaceTxt.lower()
+            elif len(replacing) == len(replaceTxt):
+                ## print "smartcasing", replacing
+                r = []
+                for i,j in zip(replacing, replaceTxt):
+                    if i.isupper():
+                        r.append(j.upper())
+                    elif i.islower():
+                        r.append(j.lower())
+                    else:
+                        r.append(j)
+                replaceTxt = ''.join(r)
+            elif replacing and replaceTxt and replacing[:1].upper() == replacing[:1]:
+                ## print "first upper", replacing
+                replaceTxt = replaceTxt[:1].upper() + replaceTxt[1:]
+            elif replacing and replaceTxt and replacing[:1].lower() == replacing[:1]:
+                ## print "first lower", replacing
+                replaceTxt = replaceTxt[:1].lower() + replaceTxt[1:]
+        
+        return replaceTxt
+
+    def OnReplace(self, evt, find_next=True, interactive=True):
+        """Replace the selection
+        
+        The bulk of this algorithm is from PyPE.
+        """
+        allow_wrap = not interactive
+        findTxt, matchcase = self.getSearchString()
+        sel = self.stc.GetSelection()
+        if sel[0] == sel[1]:
+            if find_next:
+                self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
+            return (-1, -1), 0
+        else:
+            replacing = self.stc.GetTextRange(sel[0], sel[1])
+            if (matchcase and replacing != findTxt) or \
+               (not matchcase and replacing.lower() != findTxt.lower()):
+                if find_next:
+                    self.OnFindN(evt, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
+                return (-1, -1), 0
+        
+        replaceTxt = self.getReplaceString(replacing)
+        
+        sel = self.stc.GetSelection()
+        if not self.stc.GetReadOnly():
+            self.stc.ReplaceSelection(replaceTxt)
+            #fix for unicode...
+            self.stc.SetSelection(min(sel), min(sel)+len(replaceTxt))
+            self.last_cursor = self.stc.GetSelectionEnd()
+            if find_next:
+                self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
+            self.count += 1
+            
+            return sel, len(replacing)-len(replaceTxt)
+        else:
+            return (max(sel), max(sel)), 0
+    
+    def OnReplaceAll(self, evt):
+        self.count = 0
+        self.loop = 0
+        self.last_cursor = 0
+        
+        # FIXME: this takes more time than it should, probably because there's
+        # a lot of redundant stuff going on in OnReplace.  This should be
+        # rewritten for speed at some point.
+        if hasattr(self.stc, 'showBusy'):
+            self.stc.showBusy(True)
+            wx.Yield()
+        self.stc.BeginUndoAction()
+        try:
+            while self.loop == 0:
+                self.OnReplace(None, interactive=False)
+            self.stc.GotoPos(self.last_cursor)
+        finally:
+            self.stc.EndUndoAction()
+        
+        if self.count == 1:
+            occurrences = _("Replaced %d occurrence")
+        else:
+            occurrences = _("Replaced %d occurrences")
+        if hasattr(self.stc, 'showBusy'):
+            self.stc.showBusy(False)
+        self.OnExit(msg=_(occurrences) % self.count)
+    
+    def OnCommandKeyDown(self, evt):
+        key = evt.GetKeyCode()
+        mods = evt.GetModifiers()
+        if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
+            self.find.SetFocus()
+        elif key == wx.WXK_RETURN:
+            self.OnExit()
+        elif key == wx.WXK_DELETE:
+            self.OnFindN(None, help=self.help_status)
+        else:
+            evt.Skip()
+    
+    def OnCommandChar(self, evt):
+        uchar = unichr(evt.GetKeyCode())
+        if uchar in u'n':
+            self.OnFindN(None, help=self.help_status)
+        elif uchar in u'y ':
+            self.OnReplace(None)
+        elif uchar in u'p^':
+            self.OnFindP(None, help=self.help_status)
+        elif uchar in u'q':
+            self.OnExit()
+        elif uchar in u'.':
+            self.OnReplace(None, find_next=False)
+            self.OnExit()
+        elif uchar in u'!':
+            self.OnReplaceAll(None)
+        else:
+            evt.Skip()
+    
+    def OnExit(self, msg=''):
+        self.cancel(pos_at_end=True)
+        if msg:
+            self.frame.SetStatusText(msg)
+        if self.on_exit:
+            self.on_exit()
+
+
+class ReplaceMinibuffer(Minibuffer):
+    """
+    Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
+    """
+    search_storage = {}
+    
+    def createWindow(self):
+        self.win = ReplaceBar(self.mode.wrapper, self.mode.frame, self.mode,
+                              self.search_storage, on_exit=self.removeFromParent)
+    
+    def repeat(self, action):
+        self.win.SetFocus()
+        self.win.repeat(1)
+
+    def focus(self):
+        # When the focus is asked for by the minibuffer driver, set it
+        # to the text ctrl or combo box of the pype findbar.
+        self.win.find.SetFocus()
+    
+    def closePreHook(self):
+        self.win.saveState()
+        self.dprint(self.search_storage)
+
+
+
+
+class Replace(MinibufferRepeatAction):
+    name = "Replace..."
+    tooltip = "Search backwards for a string in the text."
+    default_menu = ("Edit", 402)
+    key_bindings = {'emacs': 'F6', }
+    minibuffer = ReplaceMinibuffer
+
+
 class FindReplacePlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
     actions.
@@ -261,6 +523,7 @@ class FindReplacePlugin(IPeppyPlugin):
 
     def getActions(self):
         return [FindText, FindPrevText,
+                Replace
                 ]
 
 
@@ -280,6 +543,9 @@ if __name__ == "__main__":
             self.search = FindBar(self, self, self.stc)
             sizer.Add(self.search, 0, wx.EXPAND)
             
+            self.replace = ReplaceBar(self, self, self.stc)
+            sizer.Add(self.replace, 0, wx.EXPAND)
+            
             self.SetSizer(sizer)
 
             self.CreateStatusBar()
@@ -294,6 +560,13 @@ if __name__ == "__main__":
 
         def loadSample(self, paragraphs=2):
             lorem_ipsum = u"""\
+self
+Self
+SELF
+SeLF
+seLF
+SeLf
+
 Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Vivamus mattis
 commodo sem.  Phasellus scelerisque tellus id lorem.  Nulla facilisi.
 Suspendisse potenti.  Fusce velit odio, scelerisque vel, consequat nec,
