@@ -510,8 +510,9 @@ class ReplaceMinibuffer(Minibuffer):
 
 class Replace(MinibufferRepeatAction):
     name = "Replace..."
-    tooltip = "Search backwards for a string in the text."
+    tooltip = "Replace a string in the text."
     default_menu = ("Edit", 402)
+    icon = "icons/text_replace.png"
     key_bindings = {'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
 
