@@ -834,8 +834,10 @@ class PeppySTC(PeppyBaseSTC):
             text = GetClipboardText(True)
             if text:
                 text = self.convertStringEOL(text)
+                self.BeginUndoAction()
                 self.InsertText(pos, text)
                 self.GotoPos(pos + len(text))
+                self.EndUndoAction()
 
     def OnSelectionEnd(self, evt):
         """Copy the selected region into the primary selection
