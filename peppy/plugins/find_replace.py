@@ -10,6 +10,7 @@ import os, glob
 import compiler
 
 import wx
+import wx.lib.stattext
 
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
@@ -268,6 +269,16 @@ class FindPrevText(MinibufferRepeatAction):
 
 
 
+class FakeButton(wx.lib.stattext.GenStaticText):
+    """Simple text label that accepts focus.
+    
+    Used as the key processor for replace.  This label accepts focus but
+    doesn't display any indicator that focus has been taken, so it looks like
+    an ordinary label.  However, events can be processed through this label
+    and it is used to handle the keyboard commands for replacing.
+    """
+    def AcceptsFocus(self):
+        return True
 
 class ReplaceBar(FindBar):
     """Replace panel in the style of the Emacs replace function
@@ -297,12 +308,19 @@ class ReplaceBar(FindBar):
         grid.Add(self.label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL)
         self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         grid.Add(self.find, (0, 1), flag=wx.EXPAND)
-        label = wx.StaticText(self, -1, _("with") + u":")
-        grid.Add(label, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.replace = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         grid.Add(self.replace, (1, 1), flag=wx.EXPAND)
-        self.command = wx.Button(self, -1, "Replace")
-        grid.Add(self.command, (1, 2), flag=wx.EXPAND)
+        
+        # Windows doesn't process char events through a real button, so we use
+        # this fake button as a label and process events through it.  It's
+        # added here so that it will be last in the tab order.
+        self.command = FakeButton(self, -1, _("with") + u":")
+        grid.Add(self.command, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
+        
+        self.help = wx.Button(self, -1, "Help")
+        tip = wx.ToolTip("Type the search string in 'Replace:' and hit enter.  Type the replacement string in 'with:' and hit enter.  Then, use the keyboard to control the replacements: 'y' or 'space' to replace one match, 'n' or 'delete' to skip to the next match, 'q' to quit, '.' to replace one match and quit, '!' to replace all remaining matches', 'p' or '^' to move to the previous match.")
+        self.help.SetToolTip(tip)
+        grid.Add(self.help, (0, 2), (2, 1))
         grid.AddGrowableCol(1)
         self.SetSizer(grid)
         
@@ -320,7 +338,7 @@ class ReplaceBar(FindBar):
         self.setDirection(direction)
 
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
-        self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToPanel)
+        self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
         self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
         self.command.Bind(wx.EVT_CHAR, self.OnCommandChar)
@@ -333,13 +351,9 @@ class ReplaceBar(FindBar):
 
     def OnTabToReplace(self, evt):
         self.replace.SetFocus()
-        self.text = "Regex Replace"
-        self.setDirection()
     
-    def OnTabToPanel(self, evt):
+    def OnTabToCommand(self, evt):
         self.command.SetFocus()
-        self.text = "Replace"
-        self.setDirection()
     
     def OnSearchStart(self, evt):
         self.OnFindN(evt, help=self.help_status)
@@ -447,6 +461,7 @@ class ReplaceBar(FindBar):
     def OnCommandKeyDown(self, evt):
         key = evt.GetKeyCode()
         mods = evt.GetModifiers()
+        #dprint("key=%s mods=%s" % (key, mods))
         if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
             self.find.SetFocus()
         elif key == wx.WXK_RETURN:
@@ -458,6 +473,7 @@ class ReplaceBar(FindBar):
     
     def OnCommandChar(self, evt):
         uchar = unichr(evt.GetKeyCode())
+        #dprint("uchar = %s" % uchar)
         if uchar in u'n':
             self.OnFindN(None, help=self.help_status)
         elif uchar in u'y ':
