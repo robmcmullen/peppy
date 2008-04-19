@@ -283,6 +283,13 @@ class FakeButton(wx.lib.stattext.GenStaticText):
 class ReplaceBar(FindBar):
     """Replace panel in the style of the Emacs replace function
     
+    The control of the minibuffer is similar to emacs:
+    
+    Type the search string in 'Replace:' and hit enter.  Type the replacement
+    string in 'with:' and hit enter.  Then, use the keyboard to control the
+    replacements: 'y' or 'space' to replace one match, 'n' or 'delete' to skip
+    to the next match, 'q' to quit, '.' to replace one match and quit, '!' to
+    replace all remaining matches', 'p' or '^' to move to the previous match.
     """
     replace = "Replace"
     replace_regex = "Regex Replace"
@@ -317,10 +324,6 @@ class ReplaceBar(FindBar):
         self.command = FakeButton(self, -1, _("with") + u":")
         grid.Add(self.command, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         
-        self.help = wx.Button(self, -1, "Help")
-        tip = wx.ToolTip("Type the search string in 'Replace:' and hit enter.  Type the replacement string in 'with:' and hit enter.  Then, use the keyboard to control the replacements: 'y' or 'space' to replace one match, 'n' or 'delete' to skip to the next match, 'q' to quit, '.' to replace one match and quit, '!' to replace all remaining matches', 'p' or '^' to move to the previous match.")
-        self.help.SetToolTip(tip)
-        grid.Add(self.help, (0, 2), (2, 1))
         grid.AddGrowableCol(1)
         self.SetSizer(grid)
         
@@ -338,7 +341,9 @@ class ReplaceBar(FindBar):
         self.setDirection(direction)
 
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
+        self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
         self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
+        self.replace.Bind(wx.EVT_SET_FOCUS, self.OnReplaceSetFocus)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
         self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
         self.command.Bind(wx.EVT_CHAR, self.OnCommandChar)
@@ -349,6 +354,12 @@ class ReplaceBar(FindBar):
         self.label.SetLabel(_(self.text) + u":")
         self.Layout()
 
+    def OnFindSetFocus(self, evt):
+        self.frame.SetStatusText("Enter search text and press Return")
+    
+    def OnReplaceSetFocus(self, evt):
+        self.frame.SetStatusText("Enter replacement text and press Return")
+    
     def OnTabToReplace(self, evt):
         self.replace.SetFocus()
     
@@ -461,7 +472,7 @@ class ReplaceBar(FindBar):
     def OnCommandKeyDown(self, evt):
         key = evt.GetKeyCode()
         mods = evt.GetModifiers()
-        #dprint("key=%s mods=%s" % (key, mods))
+        dprint("key=%s mods=%s" % (key, mods))
         if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
             self.find.SetFocus()
         elif key == wx.WXK_RETURN:
@@ -473,14 +484,14 @@ class ReplaceBar(FindBar):
     
     def OnCommandChar(self, evt):
         uchar = unichr(evt.GetKeyCode())
-        #dprint("uchar = %s" % uchar)
-        if uchar in u'n':
+        dprint("uchar = %s" % uchar)
+        if uchar in u'nN':
             self.OnFindN(None, help=self.help_status)
-        elif uchar in u'y ':
+        elif uchar in u'yY ':
             self.OnReplace(None)
-        elif uchar in u'p^':
+        elif uchar in u'pP^':
             self.OnFindP(None, help=self.help_status)
-        elif uchar in u'q':
+        elif uchar in u'qQ':
             self.OnExit()
         elif uchar in u'.':
             self.OnReplace(None, find_next=False)
@@ -529,7 +540,7 @@ class Replace(MinibufferRepeatAction):
     tooltip = "Replace a string in the text."
     default_menu = ("Edit", 402)
     icon = "icons/text_replace.png"
-    key_bindings = {'emacs': 'F6', }
+    key_bindings = {'win': 'C-H', 'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
 
 
