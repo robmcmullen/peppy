@@ -696,10 +696,9 @@ class MajorMode(ClassPrefs, debugmixin):
     def idleHandler(self):
         #dprint("Idle starting for %s at %f" % (self.buffer.url, time.time()))
         if self.idle_update_menu:
-            # FIXME: calling the toolbar enable here is better than in
-            # the update UI loop, but it still seems to cause flicker
-            # in the paste icon.  What's up with that?
-            self.frame.enableTools()
+            # FIXME: this was the old way to update the UI; now toolbar buttons
+            # are automatically updated in the event handler OnUpdateUI in
+            # UserActionMap.
             self.idle_update_menu = False
         self.idlePostHook()
         #dprint("Idle finished for %s at %f" % (self.buffer.url, time.time()))

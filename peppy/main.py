@@ -869,25 +869,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         frame = self.getTopFrame()
         frame.open(filename)
 
-    def enableFrames(self):
-        """Force all frames to update their enable status.
-
-        Loop through each frame and force an update of the
-        enable/disable state of ui items.  The menu does this in
-        response to a user event, so this is really for the toolbar
-        and other always-visible widgets that aren't automatically
-        updated.
-        """
-        for frame in wx.GetTopLevelWindows():
-            assert self.dprint(frame)
-            try:
-                frame.enableTools()
-            except:
-                # not all top level windows will be BufferFrame
-                # subclasses, so just use the easy way out and catch
-                # all exceptions.
-                pass
-
     def updateAllFrames(self):
         """Recreate the UI for all frames.
 

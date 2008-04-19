@@ -538,69 +538,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.keys.setGlobalKeyMap(keymap)
         self._mgr.Update()
 
-    enablecount = 0
-    def enableTools(self):
-        """Enable toolbar buttons.
-
-        Fixed bug?  Originally, the enabling of individual toolbar
-        buttons was accomplished using the EVT_UPDATE_UI event on the
-        toolbar button itself.  When deleting toolbars, that caused a
-        crash because one toolbar button was getting its enable method
-        called after the toolbar was destroyed.  By moving the toolbar
-        enabling out of there and into here, the crash was eliminated.
-        This is called using the STC_UPDATEUI event now.  I think this
-        is more efficient, anyway.
-        """
-        if not self.show_toolbar:
-            return
-
-        # Skip this for now
-        if True:
-            return
-        
-        BufferFrame.enablecount += 1
-        count = BufferFrame.enablecount
-        #print
-        #print
-        #print
-        assert self.dprint("---------- %d id=%s" % (count, id(self.toolmap)))
-
-        current = self.getActiveMajorMode()
-        if len(self.toolmap.actions) > 0:
-            if self.toolmap.actions[0].mode != current:
-                # Now that I'm saving the major mode in each action,
-                # it's possible that some old actions can be hanging
-                # around before the next event is processed that
-                # creates the new major mode.
-                #dprint("FOUND OLD MODE!!!! ABORTING!!!")
-                return
-            
-            for action in self.toolmap.actions:
-                assert self.dprint("%d action=%s action.tool=%s" % (count, action,action.tool))
-                action.Enable()
-
-##    def setToolmap(self,majormodes=[],minormodes=[]):
-##        if self.toolmap is not None:
-##            for action in self.toolmap.actions:
-##                action.disconnectFromToolbar()
-##            assert self.dprint(self.toolmap.actions)
-##            for tb in self.toolmap.toolbars:
-##                self._mgr.DetachPane(tb)
-##                tb.Destroy()
-
-##        if self.show_toolbar:
-##            self.toolmap=UserInterfaceLoader.loadToolbar(self,majormodes,minormodes)
-##            self.keys.addMinorKeyMap(self.toolmap.keymap)
-
-##            for tb in self.toolmap.toolbars:
-##                tb.Realize()
-##                self._mgr.AddPane(tb, wx.aui.AuiPaneInfo().
-##                                  Name(tb.label).Caption(tb.label).
-##                                  ToolbarPane().Top().
-##                                  LeftDockable(False).RightDockable(False))
-##        else:
-##            self.toolmap = None
-        
     def getActiveMajorMode(self):
         wrapper = self.tabs.getCurrent()
         if wrapper:
@@ -847,7 +784,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         # "commit" all changes made to FrameManager   
         self._mgr.Update()
-        wx.CallAfter(self.enableTools)
 
     def getAllModes(self):
         modes = []

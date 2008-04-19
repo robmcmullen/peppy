@@ -486,7 +486,6 @@ class Buffer(BufferVFSMixin):
         for view in self.viewers:
             assert self.dprint("notifing: %s modified = %s" % (view, self.modified))
             view.showModified(self.modified)
-        wx.GetApp().enableFrames()
         Publisher().sendMessage('buffer.modified', self)
 
     def setBusy(self, state):
@@ -494,7 +493,6 @@ class Buffer(BufferVFSMixin):
         for view in self.viewers:
             assert self.dprint("notifing: %s busy = %s" % (view, self.busy))
             view.showBusy(self.busy)
-        wx.GetApp().enableFrames()
 
     def startChangeDetection(self):
         if isinstance(self.stc, PeppySTC):
