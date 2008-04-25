@@ -76,7 +76,7 @@ class Replacer(object):
         return self._pat.sub(self._do_sub, text)
 
     def _do_sub(self, m):
-        print("match = %s, lastindex = %d" % (m.group(0), m.lastindex))
+        #print("match = %s, lastindex = %d" % (m.group(0), m.lastindex))
         fun = self._funs[m.lastindex - 1]
         if hasattr(fun, '__call__'):
             return fun(m.group(0))

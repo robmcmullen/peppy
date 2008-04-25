@@ -331,14 +331,14 @@ class FindBasicRegexService(FindService):
         self.stc.SetTargetStart(sel[0])
         self.stc.SetTargetEnd(sel[1])
         self.stc.SetSearchFlags(self.flags)
-        
+        dprint("target = %d - %d" % (sel[0], sel[1]))
         count = self.stc.ReplaceTargetRE(self.settings.replace)
 
         self.stc.SetSelection(min(sel), min(sel) + count)
         return count
 
 
-class FindWildcardService(FindBasicRegexService):
+class FindWildcardService(FindService):
     """Find and replace using shell style wildcards.
     
     Simpler than regular expressions, shell style wildcards allow simple
@@ -371,9 +371,9 @@ class FindWildcardService(FindBasicRegexService):
         text = self.stc.GetTextRange(pos, last)
         match = re.match(pyre, text, flags=re.IGNORECASE)
         if match:
-            dprint(match.group(0))
+            #dprint(match.group(0))
             return len(match.group(0))
-        dprint("Not matched!!! pat=%s text=%s pos=%d last=%d" % (pyre, text, pos, last))
+        #dprint("Not matched!!! pat=%s text=%s pos=%d last=%d" % (pyre, text, pos, last))
         return -1
     
     def expandSearchText(self, text, set_flags=False):
@@ -383,25 +383,70 @@ class FindWildcardService(FindBasicRegexService):
         if not text:
             text = ""
         regex = peppy.lib.glob.translate(text)
-        dprint(regex)
+        #dprint(regex)
         
         self.flags = wx.stc.STC_FIND_REGEXP
         
         return regex
 
     def expandReplaceText(self, text):
-        """Convert from shell style wildcards to regular expressions"""
-        import peppy.lib.glob
-        
         if not text:
             text = ""
-        regex = peppy.lib.glob.translate(text)
-        dprint(regex)
+        return text
+    
+#    def repgroup(self, m):
+#        dprint("match=%s span=%s" % (m.group(), str(m.span())))
+#        self._group_count += 1
+#        return "\\%d" % self._group_count
+#
+#    def expandReplaceText(self, text):
+#        """Convert from shell style wildcards to regular expressions"""
+#        import peppy.lib.glob
+#        
+#        if not text:
+#            text = ""
+#        regex = peppy.lib.glob.translate(text)
+#        dprint(regex)
+#        
+#        groups = r"([\\][(].+[\\][)])"
+#        self._group_count = 0
+#        regex = re.sub(groups, self.repgroup, regex)
+#        dprint(regex)
+#        
+#        return regex
+    
+    def getReplacement(self, replacing):
+        """Get the replacement text.
         
-        return regex
-
-
-
+        Can't use the built-in scintilla regex replacement method, because
+        it seems that scintilla regexs are greedy and ignore the target end
+        specified by SetTargetEnd.  So, we have to convert to a python regex
+        and replace that way.
+        """
+        pyre = self.settings.find.replace(r"\(.*\)", r"([^ \t\n\r]*)").replace(r"\(.\)", r"([^ \t\n\r])")
+        #dprint("replacing %s: %s, %s" % (replacing, pyre, self.settings.replace))
+        matches = re.match(pyre, replacing, flags=re.IGNORECASE)
+        if matches and matches.groups():
+            groups = matches.groups()
+        else:
+            groups = []
+        #dprint("matches: %s" % str(groups))
+        
+        output = []
+        index = 0
+        # replace each wildcard with the corresponding match from the search
+        # string
+        for c in self.settings.replace:
+            if c in '*?':
+                if index < len(groups):
+                    output.append(groups[index])
+                else:
+                    output.append("")
+                index += 1
+            else:
+                output.append(c)
+        text = "".join(output)
+        return text
 
 
 class FindBar(wx.Panel):
@@ -571,7 +616,6 @@ class FindBar(wx.Panel):
             self.setDirection(-1)
         else:
             self.setDirection(1)
-        dprint("label = %s" % self.label.GetLabel())
         
         if self.repeatLastUserInput():
             return
@@ -880,6 +924,15 @@ class ReplaceBasicRegex(MinibufferRepeatAction):
     find_service = FindBasicRegexService
     find_direction = 1
 
+class ReplaceWildcard(MinibufferRepeatAction):
+    name = "Replace Wildcard..."
+    tooltip = "Replace using shell-style wildcards."
+    default_menu = ("Edit", 411)
+    key_bindings = {'win': 'C-S-H', 'emacs': 'M-F6', }
+    minibuffer = ReplaceMinibuffer
+    find_service = FindWildcardService
+    find_direction = 1
+
 
 class FindReplacePlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
@@ -888,7 +941,7 @@ class FindReplacePlugin(IPeppyPlugin):
 
     def getActions(self):
         return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
-                Replace, ReplaceBasicRegex,
+                Replace, ReplaceBasicRegex, ReplaceWildcard,
                 ]
 
 
