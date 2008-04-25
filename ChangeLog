@@ -1,7 +1,9 @@
-2008-04-22  Rob McMullen  <robm@users.sourceforge.net>
+2008-04-23  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.2 update to "Zeta Function"
 	* changed search and replace to Emacs style
+	* added scintilla regular expression search/replace
+	* added shell wildcard search/replace
 	* added repeat action to minibuffer actions (you can now search again
 	using the same keystroke that triggered the first search)
 	* actions can now assert they have the focus before operating (which

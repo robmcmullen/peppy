@@ -306,7 +306,7 @@ class FindBasicRegexService(FindService):
         self.stc.SetSearchFlags(self.flags)
         found = self.stc.SearchInTarget(self.settings.find)
         last = self.stc.GetTargetEnd()
-        dprint("Target: found=%d pos=%d last=%d" % (found, pos, last))
+        #dprint("Target: found=%d pos=%d last=%d" % (found, pos, last))
         if found >= 0:
             return last - pos
         return -1
@@ -331,7 +331,7 @@ class FindBasicRegexService(FindService):
         self.stc.SetTargetStart(sel[0])
         self.stc.SetTargetEnd(sel[1])
         self.stc.SetSearchFlags(self.flags)
-        dprint("target = %d - %d" % (sel[0], sel[1]))
+        #dprint("target = %d - %d" % (sel[0], sel[1]))
         count = self.stc.ReplaceTargetRE(self.settings.replace)
 
         self.stc.SetSelection(min(sel), min(sel) + count)
