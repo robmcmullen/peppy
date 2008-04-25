@@ -1,3 +1,16 @@
+2008-04-22  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3.2 update to "Zeta Function"
+	* changed search and replace to Emacs style
+	* added repeat action to minibuffer actions (you can now search again
+	using the same keystroke that triggered the first search)
+	* actions can now assert they have the focus before operating (which
+	then allows global actions regardless of what has focus)
+	* added hooks into HSI mode to change initial viewing parameters
+	* added url query string and fragment support to mem filesystem
+	* fixed OSX problems (double Help menu, mac style modifier keys in menu)
+	* workaround for scintilla autoindenting bug on last line of file
+
 2008-04-07  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.1 update to "Zeta Function"
