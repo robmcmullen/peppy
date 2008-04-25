@@ -52,6 +52,9 @@ class FindService(debugmixin):
     backward = "Find Backward"
     replace = "Replace"
     
+    help = """The default find and replace uses literal strings.  No wildcard
+    or regular expressions are used to match text."""
+    
     def __init__(self, stc, settings=None):
         self.flags = 0
         self.stc = stc
@@ -290,6 +293,25 @@ class FindBasicRegexService(FindService):
     forward = "Find Regex"
     replace = "Replace Regex"
     
+    help = r"""
+    Basic regular expressions are a limited form supported by the scintilla
+    editor, not the full python regular expressions.  Scintilla regular
+    expressions are limited to:
+
+.	Matches any character
+\( 	This marks the start of a region for tagging a match.
+\) 	This marks the end of a tagged region.
+\n 	Where n is 1 through 9 refers to the first through ninth tagged region when replacing. For example if the search string was Fred\([1-9]\)XXX and the replace string was Sam\1YYY applied to Fred2XXX this would generate Sam2YYY.
+\< 	This matches the start of a word using Scintilla's definitions of words.
+\> 	This matches the end of a word using Scintilla's definition of words.
+\x 	This allows you to use a character x that would otherwise have a special meaning. For example, \[ would be interpreted as [ and not as the start of a character set.
+[...] 	This indicates a set of characters, for example [abc] means any of the characters a, b or c. You can also use ranges, for example [a-z] for any lower case character.
+[^...] 	The complement of the characters in the set. For example, [^A-Za-z] means any character except an alphabetic character.
+^ 	This matches the start of a line (unless used inside a set, see above).
+$ 	This matches the end of a line.
+* 	This matches 0 or more times. For example Sa*m matches Sm, Sam, Saam, Saaam and so on.
++ 	This matches 1 or more times. For example Sa+m matches Sam, Saam, Saaam and so on."""
+    
     def __init__(self, stc, settings=None):
         FindService.__init__(self, stc, settings)
     
@@ -359,6 +381,27 @@ class FindWildcardService(FindService):
     """
     forward = "Find Wildcard"
     replace = "Replace Wildcard"
+    
+    help = """
+    Shell-style wildcards are simpler than full regular expressions, but you
+    give up some power for the simplicity.  '*' and '?' are the wildcards,
+    where '*' matches zero or more non-whitespace characters and '?' matches
+    exactly one non-whitespace character.
+    
+    Wildcards are also allowed in replacement strings, where each wildcard in
+    the replacement string will be replaced by the value found in the search
+    result matched by the corresponding wildcard character.  For instance, if
+    the find string is:
+    
+    a*b???c*
+    
+    and finds the match a222b345c678, given the replacement string:
+    
+    d*e?f?g?h*i
+    
+    the resulting replacement will be:
+    
+    d222e3f4g5h678i"""
     
     def findMatchLength(self, pos):
         """Have to convert a scintilla regex to a python one so we can find out
@@ -638,6 +681,9 @@ class FindMinibuffer(Minibuffer):
     def createWindow(self):
         self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=self.action.find_direction, service=self.action.find_service)
     
+    def getHelp(self):
+        return self.win.service.help
+
     def repeat(self, action):
         self.win.SetFocus()
         self.win.repeat(action.find_direction, action.find_service)
@@ -919,7 +965,7 @@ class ReplaceBasicRegex(MinibufferRepeatAction):
     name = "Replace Regex..."
     tooltip = "Replace using simple regular expressions."
     default_menu = ("Edit", 411)
-    key_bindings = {'win': 'C-S-H', 'emacs': 'S-F6', }
+    key_bindings = {'emacs': 'S-F6', }
     minibuffer = ReplaceMinibuffer
     find_service = FindBasicRegexService
     find_direction = 1
@@ -928,7 +974,7 @@ class ReplaceWildcard(MinibufferRepeatAction):
     name = "Replace Wildcard..."
     tooltip = "Replace using shell-style wildcards."
     default_menu = ("Edit", 411)
-    key_bindings = {'win': 'C-S-H', 'emacs': 'M-F6', }
+    key_bindings = {'emacs': 'M-F6', }
     minibuffer = ReplaceMinibuffer
     find_service = FindWildcardService
     find_direction = 1

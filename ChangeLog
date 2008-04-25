@@ -4,6 +4,7 @@
 	* changed search and replace to Emacs style
 	* added scintilla regular expression search/replace
 	* added shell wildcard search/replace
+	* added help display for minibuffers, and a help item in the menu bar
 	* added repeat action to minibuffer actions (you can now search again
 	using the same keystroke that triggered the first search)
 	* actions can now assert they have the focus before operating (which

@@ -107,6 +107,10 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
     highlighted in red, or there could be different levels of log
     messages and it could show only those messages above a certain
     level.
+    
+    If the topic ends with the keyword "wrap", the message will be word-
+    wrapped.  Currently the word wrapping column is fixed at 72, but this will
+    change in the future.
     """
     keyword = "error_log"
     caption = "Error Log"
@@ -141,7 +145,12 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
                 if not paneinfo.IsShown():
                     paneinfo.Show(True)
                     self.frame._mgr.Update()
-            self.addMessage(message.data)
+            text = message.data
+            if message.topic[-1] == 'wrap':
+                columns = 72
+                import textwrap
+                text = textwrap.fill(text, columns)
+            self.addMessage(text)
 
 class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"

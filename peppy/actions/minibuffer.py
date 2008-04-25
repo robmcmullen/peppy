@@ -86,6 +86,10 @@ class Minibuffer(debugmixin):
         be different than C{self.action} stored during the __init__ method.
         """
         raise NotImplementedError
+    
+    def getHelp(self):
+        """Return the help string for this minibuffer"""
+        return ""
 
     def focus(self):
         """

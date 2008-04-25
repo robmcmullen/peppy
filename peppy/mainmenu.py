@@ -942,6 +942,27 @@ class CancelMinibuffer(SelectAction):
         self.mode.removeMinibuffer()
 
 
+class HelpMinibuffer(SelectAction):
+    alias = "help-minibuffer"
+    name = "Help on Minibuffer"
+    tooltip = "Show help for the currently active minibuffer"
+    default_menu = ("&Help", 210)
+    key_bindings = {'emacs': "M-S-/ m", }
+    
+    def isEnabled(self):
+        return bool(self.mode.getMinibuffer())
+    
+    def action(self, index=-1, multiplier=1):
+        minibuffer = self.mode.getMinibuffer()
+        if minibuffer:
+            help = minibuffer.getHelp()
+            if help:
+                help = u"\n\nHelp for '%s'\n\n%s" % (minibuffer.__class__.__name__, help)
+                Publisher().sendMessage('peppy.log.info', help)
+            else:
+                self.frame.setStatusText("Help not available for current minibuffer")
+
+
 class WordCount(SelectAction):
     name = "&Word Count"
     tooltip = "Word count in region or document"
@@ -1013,7 +1034,7 @@ class MainMenu(IPeppyPlugin):
 
                 NewWindow, DeleteWindow, WindowList,
                 
-                ExecuteActionByName, DescribeAction,
+                ExecuteActionByName, DescribeAction, HelpMinibuffer,
                 
                 CancelMinibuffer, ElectricReturn,
 
