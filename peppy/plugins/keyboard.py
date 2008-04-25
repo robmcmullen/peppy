@@ -67,6 +67,19 @@ class DebugKeypress(ToggleAction):
         KeyProcessor.debug = not KeyProcessor.debug
 
 
+class Keyboard(ClassPrefs):
+    """Global keyboard configuration.
+    
+    """
+    preferences_tab = "General"
+    icon = "icons/keyboard.png"
+    platform = 'win'
+    
+    valid_platforms = ['system default', 'win', 'emacs', 'mac']
+    default_classprefs = (
+        ChoiceParam('key_bindings', valid_platforms, 'system default', 'Platform type from which to emulate the default keybindings.'),
+        )
+
 class KeyboardConf(IPeppyPlugin):
     """Loader for keyboard configurations.
 
@@ -90,13 +103,19 @@ class KeyboardConf(IPeppyPlugin):
     the application's default value (which is specified in the source
     code.)
     """
-    valid_platforms = ['system default', 'win', 'emacs', 'mac']
+    keyboard = Keyboard()
     default_classprefs = (
-        ChoiceParam('key_bindings', valid_platforms, 'system default', 'Platform type from which to emulate the\ndefault keybindings.'),
+        # backward compatibility: now the key binding is set in Keyboard
+        DeprecatedParam('key_bindings', 'system default', help="Deprecated.  Set the key bindings using the Keyboard option in the General tab of the Preferences dialog."),
         )
-    platform = 'win'
     
     ignore_list = ['MajorAction', 'MinibufferAction']
+    
+    def activateHook(self):
+        Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
+    
+    def deactivateHook(self):
+        Publisher().unsubscribe(self.settingsChanged)
 
     def addCommandLineOptions(self, parser):
         parser.add_option("--key-bindings", action="store",
@@ -107,14 +126,16 @@ class KeyboardConf(IPeppyPlugin):
     def processCommandLineOptions(self, options):
         #dprint(options.key_bindings)
         if options.key_bindings:
-            self.platform = options.key_bindings
+            self.keyboard.platform = options.key_bindings
         else:
-            self.platform = self.classprefs.key_bindings
-        if self.platform == 'system default':
+            self.keyboard.platform = self.classprefs.key_bindings
+            if self.keyboard.classprefs.key_bindings != 'system default':
+                self.keyboard.platform = self.keyboard.classprefs.key_bindings
+        if self.keyboard.platform == 'system default':
             if wx.Platform == '__WXMAC__':
-                self.platform = 'mac'
+                self.keyboard.platform = 'mac'
             else:
-                self.platform = 'win'
+                self.keyboard.platform = 'win'
         self.load()
         if options.show_key_bindings:
             self.configDefault()
@@ -122,13 +143,18 @@ class KeyboardConf(IPeppyPlugin):
     def requestedShutdown(self):
         # FIXME: configuration file should be saved here
         pass
+    
+    def settingsChanged(self, message=None):
+        if self.keyboard.classprefs.key_bindings != self.keyboard.platform:
+            self.keyboard.platform = self.keyboard.classprefs.key_bindings
+            self.load()
 
     def getKey(self, action):
         keyboard = None
         bindings = action.key_bindings
         if isinstance(bindings, dict):
-            if self.platform in bindings:
-                keyboard = bindings[self.platform]
+            if self.keyboard.platform in bindings:
+                keyboard = bindings[self.keyboard.platform]
             elif 'default' in bindings:
                 keyboard = bindings['default']
         return keyboard
@@ -159,8 +185,8 @@ class KeyboardConf(IPeppyPlugin):
             numkeystrokes = action.setAcceleratorText()
             if numkeystrokes>1:
                 found_emacs = True
-                if self.platform != "emacs":
-                    dprint("Warning: in %s mode, found emacs keystroke %s for %s" % (self.platform, action.keyboard, action))
+                if self.keyboard.platform != "emacs":
+                    dprint("Warning: in %s mode, found emacs keystroke %s for %s" % (self.keyboard.platform, action.keyboard, action))
 
         if found_emacs:
             # Found a multi-key accelerator: force all accelerators to

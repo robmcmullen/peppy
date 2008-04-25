@@ -465,6 +465,30 @@ class Param(debugmixin):
         # The default string edit control simply returns the string.
         return str(ctrl.GetValue())
 
+class DeprecatedParam(Param):
+    """Parameter that is only around for compatibility purposes and should be
+    set through some other means.
+    """
+
+    def getCtrl(self, parent, initial=None):
+        """Create and editing control.
+
+        Given the parent window, create a user interface element to
+        edit the param.
+        """
+        ctrl = GenStaticText(parent, -1, "")
+        ctrl.Enable(self.enable)
+        return ctrl
+
+    def setValue(self, ctrl, value):
+        """Populate the control given the user value.
+
+        If any conversion is needed to show the user value in the
+        control, do it here.
+        """
+        # The default string edit control doesn't need any conversion.
+        ctrl.SetLabel(value)
+
 class ReadOnlyParam(debugmixin):
     """Read-only parameter for display only."""
     callback_event = None

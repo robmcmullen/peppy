@@ -1,4 +1,4 @@
-2008-04-23  Rob McMullen  <robm@users.sourceforge.net>
+2008-04-24  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.2 update to "Zeta Function"
 	* changed search and replace to Emacs style
@@ -13,6 +13,7 @@
 	* added url query string and fragment support to mem filesystem
 	* fixed OSX problems (double Help menu, mac style modifier keys in menu)
 	* workaround for scintilla autoindenting bug on last line of file
+	* can now switch keybinding platforms on the fly through preferences
 
 2008-04-07  Rob McMullen  <robm@users.sourceforge.net>
 
