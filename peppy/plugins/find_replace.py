@@ -25,13 +25,23 @@ class FindSettings(debugmixin):
         self.match_case = match_case
         self.smart_case = smart_case
         self.find = ''
+        self.find_user = ''
         self.replace = ''
+        self.replace_user = ''
     
     def serialize(self, storage):
-        if self.find:
-            storage['last_search'] = self.find
-        if self.replace:
-            storage['last_replace'] = self.replace
+        storage['last_search'] = self.find_user
+        storage['last_replace'] = self.replace_user
+
+    def unserialize(self, storage):
+        if 'last_search' in storage:
+            self.find_user = storage['last_search']
+        else:
+            self.find_user = ''
+        if 'last_replace' in storage:
+            self.replace_user = storage['last_replace']
+        else:
+            self.replace_user = ''
 
 
 class FindService(debugmixin):
@@ -40,13 +50,25 @@ class FindService(debugmixin):
     replace = "Replace"
     
     def __init__(self, stc, settings=None):
+        self.flags = 0
         self.stc = stc
         if settings is None:
             self.settings = FindSettings()
         else:
             self.settings = settings
         
-        self.flags = 0
+        if self.settings.find_user:
+            self.setFindString(self.settings.find_user)
+        if self.settings.replace:
+            self.setReplaceString(self.settings.replace_user)
+    
+    def serialize(self, storage):
+        self.settings.serialize(storage)
+    
+    def unserialize(self, storage):
+        self.settings.unserialize(storage)
+        self.setFindString(self.settings.find_user)
+        self.setReplaceString(self.settings.replace_user)
     
     def allowBackward(self):
         return True
@@ -62,20 +84,25 @@ class FindService(debugmixin):
                 pass
             match_case = True
         else:
-            if self.settings.find != self.settings.find.lower():
+            if findTxt != findTxt.lower():
                 match_case = True
             else:
                 match_case = self.settings.match_case
         
-        if set_flags and match_case:
-            self.flags = wx.stc.STC_FIND_MATCHCASE
+        if set_flags:
+            if match_case:
+                self.flags = wx.stc.STC_FIND_MATCHCASE
+            else:
+                self.flags = 0
             
         return findTxt
     
     def setFindString(self, text):
+        self.settings.find_user = text
         self.settings.find = self.expandText(text, set_flags=True)
     
     def setReplaceString(self, text):
+        self.settings.replace_user = text
         self.settings.replace = self.expandText(text)
 
     def getReplacement(self, replacing):
@@ -156,6 +183,7 @@ class FindService(debugmixin):
             else:
                 start = max(sel)
         pos = self.stc.FindText(start, self.stc.GetTextLength(), self.settings.find, flags)
+        #dprint("start=%d find=%s flags=%d pos=%d" % (start, self.settings.find, flags, pos))
         
         if pos >= 0:
             self.highlightSelection(pos)
@@ -336,10 +364,12 @@ class FindBar(wx.Panel):
         self._lastcall = self.OnFindN
         
         posn, st = self.service.doFindNext(incremental=incremental)
+        #dprint("start=%d pos=%d" % (st, posn))
         if posn is None:
             self.cancel()
             return
         elif posn != -1:
+            #dprint("interactive=%s" % interactive)
             if interactive:
                 self.showLine(posn, help)
             self.loop = 0
@@ -347,6 +377,7 @@ class FindBar(wx.Panel):
         
         if allow_wrap and st != 0:
             posn, st = self.service.doFindNext(0)
+            #dprint("wrapped: start=%d pos=%d" % (st, posn))
         self.loop = 1
         
         if posn != -1:
@@ -354,6 +385,7 @@ class FindBar(wx.Panel):
                 self.showLine(posn, "Reached end of document, continued from start.")
             return
         
+        #dprint("not found: start=%d pos=%d" % (st, posn))
         self.OnNotFound()
     
     def OnFindP(self, evt, allow_wrap=True, help='', incremental=False):
@@ -376,24 +408,23 @@ class FindBar(wx.Panel):
         self.OnNotFound()
 
     def repeat(self, direction, service=None):
+        self.resetColor()
         if service is not None:
             self.service = service(self.stc, self.settings)
-        if not self.settings.find:
-            if 'last_search' in self.storage:
-                self.settings.find = self.storage['last_search']
-                self.find.ChangeValue(self.settings.find)
-                self.find.SetInsertionPointEnd()
-                return
+        if not self.settings.find_user:
+            self.service.unserialize(self.storage)
+            self.find.ChangeValue(self.settings.find_user)
+            self.find.SetInsertionPointEnd()
+            return
             
         if direction < 0:
             self.setDirection(-1)
-            self.OnFindP(None)
         else:
             self.setDirection(1)
-            self.OnFindN(None)
+        self._lastcall(None)
     
     def saveState(self):
-        self.settings.serialize(self.storage)
+        self.service.serialize(self.storage)
 
 
 class FindMinibuffer(Minibuffer):
@@ -439,7 +470,6 @@ class FindBasicRegex(MinibufferRepeatAction):
     name = "Find Regex..."
     tooltip = "Search for a simple regular expression."
     default_menu = ("Edit", 401)
-    icon = "icons/find.png"
     key_bindings = {'emacs': 'C-S-S', }
     minibuffer = FindMinibuffer
     find_service = FindBasicRegexService
@@ -602,7 +632,7 @@ class ReplaceBar(FindBar):
     def OnCommandKeyDown(self, evt):
         key = evt.GetKeyCode()
         mods = evt.GetModifiers()
-        dprint("key=%s mods=%s" % (key, mods))
+        #dprint("key=%s mods=%s" % (key, mods))
         if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
             self.find.SetFocus()
         elif key == wx.WXK_RETURN:
@@ -614,7 +644,7 @@ class ReplaceBar(FindBar):
     
     def OnCommandChar(self, evt):
         uchar = unichr(evt.GetKeyCode())
-        dprint("uchar = %s" % uchar)
+        #dprint("uchar = %s" % uchar)
         if uchar in u'nN':
             self.OnFindN(None, help=self.help_status)
         elif uchar in u'yY ':
