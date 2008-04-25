@@ -6,7 +6,7 @@ This plugin is a collection of some simple text transformation actions that
 should be applicable to more than one major mode.
 """
 
-import os, glob
+import os, glob, re
 import compiler
 
 import wx
@@ -15,9 +15,12 @@ import wx.lib.stattext
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
 
+from peppy.about import AddCredit
 from peppy.actions import *
 from peppy.actions.base import *
 from peppy.debug import *
+
+AddCredit("Jan Hudec", "for the shell-style wildcard to regex converter from bzrlib")
 
 
 class FindSettings(debugmixin):
@@ -73,8 +76,14 @@ class FindService(debugmixin):
     def allowBackward(self):
         return True
     
-    def expandText(self, findTxt, set_flags=False):
-        #python strings in find
+    def expandSearchText(self, findTxt, set_flags=True):
+        """Convert the search string that the user enters into the string
+        actually searched for by the service.
+        
+        This is designed to be overridden in subclasses, and has most use for
+        regular expression searches where the string the user types has to be
+        compiled into a form that the regular expression engine uses to search.
+        """
         if not findTxt:
             findTxt = ""
         if len(findTxt) > 0 and findTxt[0] in ['"', "'"]:
@@ -97,13 +106,22 @@ class FindService(debugmixin):
             
         return findTxt
     
+    def expandReplaceText(self, text):
+        """Convert the replacement string that the user enters into the string
+        actually searched for by the service.
+        
+        Like L{expandSearchText}, this is primarily designed to be overridden
+        in subclasses.
+        """
+        return expandSearchText(text, set_flags=False)
+    
     def setFindString(self, text):
         self.settings.find_user = text
-        self.settings.find = self.expandText(text, set_flags=True)
+        self.settings.find = self.expandSearchText(text)
     
     def setReplaceString(self, text):
         self.settings.replace_user = text
-        self.settings.replace = self.expandText(text)
+        self.settings.replace = self.expandReplaceText(text)
 
     def getReplacement(self, replacing):
         """Return the string that will be substituted in the text
@@ -154,11 +172,30 @@ class FindService(debugmixin):
             end = z - x
         return start, end
     
-    def highlightSelection(self, pos):
-        sel_start, sel_end = self.getRange(pos, len(self.settings.find))
+    def highlightSelection(self, pos, count):
+        sel_start, sel_end = self.getRange(pos, count)
         #dprint("selection = %d - %d" % (sel_start, sel_end))
         self.stc.SetSelection(sel_start, sel_end)
     
+    def findMatchLength(self, pos):
+        """Scintilla doesn't return the end of the match, so we have to compute
+        it ourselves.
+        
+        This is designed to be overridden in subclasses, particularly by
+        subclasses that use regular expressions to match.
+        
+        This can also be used as a verification method to reject a match.
+        Should a subclass need this capability, return a -1 here and the
+        L{doFindNext} method will move to the next possible match and try
+        again.  This will repeat until a match is found or the end of the
+        document is reached.
+        
+        @return: number of characters matched by the search string, or -1 to
+        reject the match.
+        """
+        count = len(self.settings.find)
+        return count
+        
     def doFindNext(self, start=-1, incremental=False):
         """Find and highlight the next match in the document.
         
@@ -182,11 +219,21 @@ class FindService(debugmixin):
                 start = min(sel)
             else:
                 start = max(sel)
-        pos = self.stc.FindText(start, self.stc.GetTextLength(), self.settings.find, flags)
-        #dprint("start=%d find=%s flags=%d pos=%d" % (start, self.settings.find, flags, pos))
         
-        if pos >= 0:
-            self.highlightSelection(pos)
+        while True:
+            pos = self.stc.FindText(start, self.stc.GetTextLength(), self.settings.find, flags)
+            #dprint("start=%d find=%s flags=%d pos=%d" % (start, self.settings.find, flags, pos))
+        
+            if pos < 0:
+                # no match; done.
+                break
+            
+            count = self.findMatchLength(pos)
+            if count >= 0:
+                self.highlightSelection(pos, count)
+                break
+            
+            start = pos + 1
         
         return pos, start
 
@@ -248,16 +295,78 @@ class FindBasicRegexService(FindService):
     def allowBackward(self):
         return False
     
-    def expandText(self, findTxt, set_flags=False):
-        #python strings in find
-        if not findTxt:
-            findTxt = ""
+    def expandSearchText(self, text, set_flags=True):
+        if not text:
+            text = ""
         
         if set_flags:
             self.flags = wx.stc.STC_FIND_REGEXP
-            
-        return findTxt
+        
+        return text
+
+
+class FindWildcardService(FindBasicRegexService):
+    """Find and replace using shell style wildcards.
     
+    Simpler than regular expressions, shell style wildcards allow simple
+    search and replace on patterns.  Internally, they are converted to regular
+    expressions, but to the user's perspective they are simple, less powerful
+    pattern matching.
+    
+    Replacements can be made using the wildcard characters -- the same set of
+    wildcard characters must be given in the replacement string, in the same
+    order.  For instance, if the find string is:
+    
+    blah*blah???blah*
+    
+    the replacement string should have the wildcards in the same order: '*',
+    '?', '?', '?', and '*'.  E.g.:
+    
+    stuff*stuff?stuff?stuff?stuff*stuff
+    """
+    forward = "Find Wildcard"
+    replace = "Replace Wildcard"
+    
+    def findMatchLength(self, pos):
+        """Have to convert a scintilla regex to a python one so we can find out
+        how many characters the regex matched.
+        """
+        pyre = self.settings.find.replace(r"\(.*\)", r"([^ \t\n\r]*)").replace(r"\(.\)", r"([^ \t\n\r])")
+        
+        line = self.stc.LineFromPosition(pos)
+        last = self.stc.GetLineEndPosition(line)
+        text = self.stc.GetTextRange(pos, last)
+        match = re.match(pyre, text, flags=re.IGNORECASE)
+        if match:
+            dprint(match.group(0))
+            return len(match.group(0))
+        dprint("Not matched!!! pat=%s text=%s pos=%d last=%d" % (pyre, text, pos, last))
+        return -1
+    
+    def expandSearchText(self, text, set_flags=False):
+        """Convert from shell style wildcards to regular expressions"""
+        import peppy.lib.glob
+        
+        if not text:
+            text = ""
+        regex = peppy.lib.glob.translate(text)
+        dprint(regex)
+        
+        self.flags = wx.stc.STC_FIND_REGEXP
+        
+        return regex
+
+    def expandReplaceText(self, text):
+        """Convert from shell style wildcards to regular expressions"""
+        import peppy.lib.glob
+        
+        if not text:
+            text = ""
+        regex = peppy.lib.glob.translate(text)
+        dprint(regex)
+        
+        return regex
+
 
 
 
@@ -473,6 +582,15 @@ class FindBasicRegex(MinibufferRepeatAction):
     key_bindings = {'emacs': 'C-S-S', }
     minibuffer = FindMinibuffer
     find_service = FindBasicRegexService
+    find_direction = 1
+
+class FindWildcard(MinibufferRepeatAction):
+    name = "Find Wildcard..."
+    tooltip = "Search using shell-style wildcards."
+    default_menu = ("Edit", 402)
+    key_bindings = {'emacs': 'C-M-S', }
+    minibuffer = FindMinibuffer
+    find_service = FindWildcardService
     find_direction = 1
 
 class FindPrevText(MinibufferRepeatAction):
@@ -710,7 +828,7 @@ class FindReplacePlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [FindText, FindBasicRegex, FindPrevText,
+        return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
                 Replace
                 ]
 
