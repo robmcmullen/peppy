@@ -21,15 +21,23 @@ from peppy.debug import *
 
 
 class FindSettings(debugmixin):
-    def __init__(self, match_case=False):
+    def __init__(self, match_case=False, smart_case=True):
         self.match_case = match_case
+        self.smart_case = smart_case
         self.find = ''
         self.replace = ''
+    
+    def serialize(self, storage):
+        if self.find:
+            storage['last_search'] = self.find
+        if self.replace:
+            storage['last_replace'] = self.replace
 
 
 class FindService(debugmixin):
     forward = "Find"
     backward = "Find Backward"
+    replace = "Replace"
     
     def __init__(self, stc, settings=None):
         self.stc = stc
@@ -68,8 +76,43 @@ class FindService(debugmixin):
         self.settings.find = self.expandText(text, set_flags=True)
     
     def setReplaceString(self, text):
-        self.replace = self.expandText(text)
-    
+        self.settings.replace = self.expandText(text)
+
+    def getReplacement(self, replacing):
+        """Return the string that will be substituted in the text
+        
+        @param replacing: the original string from the document
+        @return: the string after the substitutions have been made
+        """
+        replaceTxt = self.settings.replace
+        
+        if self.settings.smart_case:
+            if replacing.upper() == replacing:
+                ## print "all upper", replacing
+                replaceTxt = replaceTxt.upper()
+            elif replacing.lower() == replacing:
+                ## print "all lower", replacing
+                replaceTxt = replaceTxt.lower()
+            elif len(replacing) == len(replaceTxt):
+                ## print "smartcasing", replacing
+                r = []
+                for i,j in zip(replacing, replaceTxt):
+                    if i.isupper():
+                        r.append(j.upper())
+                    elif i.islower():
+                        r.append(j.lower())
+                    else:
+                        r.append(j)
+                replaceTxt = ''.join(r)
+            elif replacing and replaceTxt and replacing[:1].upper() == replacing[:1]:
+                ## print "first upper", replacing
+                replaceTxt = replaceTxt[:1].upper() + replaceTxt[1:]
+            elif replacing and replaceTxt and replacing[:1].lower() == replacing[:1]:
+                ## print "first lower", replacing
+                replaceTxt = replaceTxt[:1].lower() + replaceTxt[1:]
+        
+        return replaceTxt
+
     def getRange(self, start, chars, dire=1):
         end = start
         if dire==1:
@@ -86,11 +129,16 @@ class FindService(debugmixin):
     
     def highlightSelection(self, pos):
         sel_start, sel_end = self.getRange(pos, len(self.settings.find))
-        dprint("selection = %d - %d" % (sel_start, sel_end))
+        #dprint("selection = %d - %d" % (sel_start, sel_end))
         self.stc.SetSelection(sel_start, sel_end)
     
-    def doFindNext(self, start=-1):
+    def doFindNext(self, start=-1, incremental=False):
         """Find and highlight the next match in the document.
+        
+        @param start: starting position in text, or -1 to use current position
+        
+        @param incremental: True if an incremental search that will be added to
+        the current search result
         
         @return: tuple containing the position of the match or -1 if no match
         is found, and the position of the original start of the search.  If
@@ -102,9 +150,11 @@ class FindService(debugmixin):
         
         #handle finding next item, handling wrap-arounds as necessary
         if start < 0:
-            gs = self.stc.GetSelection()
-            gs = min(gs), max(gs)
-            start = gs[1]
+            sel = self.stc.GetSelection()
+            if incremental:
+                start = min(sel)
+            else:
+                start = max(sel)
         pos = self.stc.FindText(start, self.stc.GetTextLength(), self.settings.find, flags)
         
         if pos >= 0:
@@ -112,8 +162,13 @@ class FindService(debugmixin):
         
         return pos, start
 
-    def doFindPrev(self, start=-1):
+    def doFindPrev(self, start=-1, incremental=False):
         """Find and highlight the previous match in the document.
+        
+        @param start: starting position in text, or -1 to use current position
+        
+        @param incremental: True if an incremental search that will be added to
+        the current search result
         
         @return: tuple containing the position of the match or -1 if no match
         is found, and the position of the original start of the search.  If
@@ -124,7 +179,12 @@ class FindService(debugmixin):
         flags = self.flags
         
         if start < 0:
-            start = min(self.getRange(min(self.stc.GetSelection()), len(self.settings.find), 0))
+            sel = self.stc.GetSelection()
+            if incremental:
+                start = min(sel) + len(self.settings.find)
+                #dprint("sel=%s min=%d len=%s" % (str(sel), min(sel), len(self.settings.find)))
+            else:
+                start = min(sel)
         pos = self.stc.FindText(start, 0, self.settings.find, flags)
         
         if pos >= 0:
@@ -132,8 +192,27 @@ class FindService(debugmixin):
         
         return pos, start
 
+    def doReplace(self):
+        """Replace the selection
+        
+        Replace the current selection in the stc with the replacement text
+        """
+        if self.stc.GetReadOnly():
+            return -1
+        sel = self.stc.GetSelection()
+        replacing = self.stc.GetTextRange(sel[0], sel[1])
+
+        replaceTxt = self.getReplacement(replacing)
+        
+        self.stc.ReplaceSelection(replaceTxt)
+        #fix for unicode...
+        self.stc.SetSelection(min(sel), min(sel)+len(replaceTxt))
+        return len(replaceTxt)
+
+
 class FindBasicRegexService(FindService):
     forward = "Find Regex"
+    replace = "Replace Regex"
     
     def __init__(self, stc, settings=None):
         FindService.__init__(self, stc, settings)
@@ -159,7 +238,7 @@ class FindBar(wx.Panel):
     """Find panel customized from PyPE's findbar.py
     
     """
-    def __init__(self, parent, frame, stc, storage=None, service=None, direction=1):
+    def __init__(self, parent, frame, stc, storage=None, service=None, direction=1, **kwargs):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         self.frame = frame
         self.stc = stc
@@ -173,6 +252,12 @@ class FindBar(wx.Panel):
         else:
             self.service = FindService(self.stc, self.settings)
         
+        self.createCtrls()
+        
+        # PyPE compat
+        self.setDirection(direction)
+    
+    def createCtrls(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.label = wx.StaticText(self, -1, _(self.service.forward) + u":")
         sizer.Add(self.label, 0, wx.CENTER)
@@ -180,9 +265,6 @@ class FindBar(wx.Panel):
         sizer.Add(self.find, 1, wx.EXPAND)
         self.SetSizer(sizer)
         
-        # PyPE compat
-        self.setDirection(direction)
-
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.find.Bind(wx.EVT_TEXT, self.OnChar)
     
@@ -203,12 +285,12 @@ class FindBar(wx.Panel):
         self.service.setFindString(self.find.GetValue())
         
         #search in whatever direction we were before
-        self._lastcall(evt, 1)
+        self._lastcall(evt, incremental=True)
         
         evt.Skip()
 
     def OnEnter(self, evt):
-        return self.OnFindN(evt)
+        return self._lastcall(evt)
     
     def OnNotFound(self):
         self.find.SetBackgroundColour(wx.RED)
@@ -250,10 +332,10 @@ class FindBar(wx.Panel):
         self.stc.GotoPos(pos)
         self.stc.EnsureCaretVisible()
     
-    def OnFindN(self, evt, allow_wrap=True, help='', interactive=True):
+    def OnFindN(self, evt, allow_wrap=True, help='', interactive=True, incremental=False):
         self._lastcall = self.OnFindN
         
-        posn, st = self.service.doFindNext()
+        posn, st = self.service.doFindNext(incremental=incremental)
         if posn is None:
             self.cancel()
             return
@@ -274,10 +356,10 @@ class FindBar(wx.Panel):
         
         self.OnNotFound()
     
-    def OnFindP(self, evt, incr=0, allow_wrap=True, help=''):
+    def OnFindP(self, evt, allow_wrap=True, help='', incremental=False):
         self._lastcall = self.OnFindP
         
-        posn, st = self.service.doFindPrev()
+        posn, st = self.service.doFindPrev(incremental=incremental)
         if posn != -1:
             self.showLine(posn, help)
             self.loop = 0
@@ -311,9 +393,7 @@ class FindBar(wx.Panel):
             self.OnFindN(None)
     
     def saveState(self):
-        last, matchcase = self.getSearchString()
-        if last:
-            self.storage['last_search'] = last
+        self.settings.serialize(self.storage)
 
 
 class FindMinibuffer(Minibuffer):
@@ -403,23 +483,24 @@ class ReplaceBar(FindBar):
     replace_regex = "Regex Replace"
     help_status = "y: replace, n: skip, q: exit, !:replace all"
     
-    def __init__(self, parent, frame, stc, storage=None, direction=1, on_exit=None):
-        wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
-        self.frame = frame
-        self.stc = stc
-        if isinstance(storage, dict):
-            self.storage = storage
-        else:
-            self.storage = {}
+    def __init__(self, *args, **kwargs):
+        FindBar.__init__(self, *args, **kwargs)
         
-        if on_exit:
-            self.on_exit = on_exit
+        if 'on_exit' in kwargs:
+            self.on_exit = kwargs['on_exit']
         else:
             self.on_exit = None
         
-        self.text = self.replace
+        # Count of number of replacements
+        self.count = 0
+        
+        # Last cursor position, tracked during replace all
+        self.last_cursor = 0
+    
+    def createCtrls(self):
+        text = self.service.replace
         grid = wx.GridBagSizer(0, 0)
-        self.label = wx.StaticText(self, -1, _(self.replace) + u":")
+        self.label = wx.StaticText(self, -1, _(text) + u":")
         grid.Add(self.label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL)
         self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         grid.Add(self.find, (0, 1), flag=wx.EXPAND)
@@ -435,19 +516,6 @@ class ReplaceBar(FindBar):
         grid.AddGrowableCol(1)
         self.SetSizer(grid)
         
-        self.match_case = False
-        self.smart_case = True
-        
-        # Count of number of replacements
-        self.count = 0
-        
-        # Last cursor position, tracked during replace all
-        self.last_cursor = 0
-        
-        # PyPE compat
-        self.incr = 1
-        self.setDirection(direction)
-
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
         self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
         self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
@@ -459,7 +527,7 @@ class ReplaceBar(FindBar):
         self.command.Bind(wx.EVT_KILL_FOCUS, self.OnSearchStop)
     
     def setDirection(self, dir=1):
-        self.label.SetLabel(_(self.text) + u":")
+        self.label.SetLabel(_(self.service.replace) + u":")
         self.Layout()
 
     def OnFindSetFocus(self, evt):
@@ -475,80 +543,34 @@ class ReplaceBar(FindBar):
         self.command.SetFocus()
     
     def OnSearchStart(self, evt):
+        self.service.setFindString(self.find.GetValue())
+        self.service.setReplaceString(self.replace.GetValue())
         self.OnFindN(evt, help=self.help_status)
     
     def OnSearchStop(self, evt):
         self.cancel()
         
-    def getReplaceString(self, replacing):
-        txt = self.replace.GetValue()
-        if not txt:
-            return ""
-        
-        replaceTxt, ignore = self.expandText(txt)
-        
-        if self.smart_case:
-            if replacing.upper() == replacing:
-                ## print "all upper", replacing
-                replaceTxt = replaceTxt.upper()
-            elif replacing.lower() == replacing:
-                ## print "all lower", replacing
-                replaceTxt = replaceTxt.lower()
-            elif len(replacing) == len(replaceTxt):
-                ## print "smartcasing", replacing
-                r = []
-                for i,j in zip(replacing, replaceTxt):
-                    if i.isupper():
-                        r.append(j.upper())
-                    elif i.islower():
-                        r.append(j.lower())
-                    else:
-                        r.append(j)
-                replaceTxt = ''.join(r)
-            elif replacing and replaceTxt and replacing[:1].upper() == replacing[:1]:
-                ## print "first upper", replacing
-                replaceTxt = replaceTxt[:1].upper() + replaceTxt[1:]
-            elif replacing and replaceTxt and replacing[:1].lower() == replacing[:1]:
-                ## print "first lower", replacing
-                replaceTxt = replaceTxt[:1].lower() + replaceTxt[1:]
-        
-        return replaceTxt
-
     def OnReplace(self, evt, find_next=True, interactive=True):
         """Replace the selection
         
         The bulk of this algorithm is from PyPE.
         """
         allow_wrap = not interactive
-        findTxt, matchcase = self.getSearchString()
         sel = self.stc.GetSelection()
         if sel[0] == sel[1]:
             if find_next:
                 self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
             return (-1, -1), 0
-        else:
-            replacing = self.stc.GetTextRange(sel[0], sel[1])
-            if (matchcase and replacing != findTxt) or \
-               (not matchcase and replacing.lower() != findTxt.lower()):
-                if find_next:
-                    self.OnFindN(evt, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
-                return (-1, -1), 0
         
-        replaceTxt = self.getReplaceString(replacing)
-        
-        sel = self.stc.GetSelection()
-        if not self.stc.GetReadOnly():
-            self.stc.ReplaceSelection(replaceTxt)
-            #fix for unicode...
-            self.stc.SetSelection(min(sel), min(sel)+len(replaceTxt))
-            self.last_cursor = self.stc.GetSelectionEnd()
+        if self.service.doReplace() >= 0:
+            start, self.last_cursor = self.stc.GetSelection()
             if find_next:
                 self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
             self.count += 1
             
-            return sel, len(replacing)-len(replaceTxt)
+            return sel, self.last_cursor - start + 1
         else:
-            return (max(sel), max(sel)), 0
+            return (-1, -1), 0
     
     def OnReplaceAll(self, evt):
         self.count = 0
@@ -679,6 +701,12 @@ if __name__ == "__main__":
             self.search = FindBar(self, self, self.stc)
             sizer.Add(self.search, 0, wx.EXPAND)
             
+            self.search_back = FindBar(self, self, self.stc, direction=-1)
+            sizer.Add(self.search_back, 0, wx.EXPAND)
+            
+            self.search_regex = FindBar(self, self, self.stc, service=FindBasicRegexService)
+            sizer.Add(self.search_regex, 0, wx.EXPAND)
+            
             self.replace = ReplaceBar(self, self, self.stc)
             sizer.Add(self.replace, 0, wx.EXPAND)
             
@@ -737,7 +765,7 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             pass
         
     app = wx.App(False)
-    frame = Frame(None)
+    frame = Frame(None, size=(-1, 600))
     frame.loadSample()
     frame.Show()
     app.MainLoop()
