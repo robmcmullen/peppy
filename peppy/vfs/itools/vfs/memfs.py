@@ -342,3 +342,10 @@ class MemFS(BaseFS):
 
 
 register_file_system('mem', MemFS)
+
+# python's urlparse.urlsplit doesn't know anything about mem urls, so we have
+# to force it to parse query strings and fragments by adding the mem scheme
+# to urlparse's internal arrays
+import urlparse
+urlparse.uses_fragment.append('mem')
+urlparse.uses_query.append('mem')

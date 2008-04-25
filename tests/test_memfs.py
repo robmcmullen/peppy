@@ -65,6 +65,12 @@ class MemTestCase(TestCase):
         mimetype = vfs.get_mimetype('mem:tmp/blah.txt')
         self.assertEqual(mimetype, 'text/plain')
 
+    def test02_test_url(self):
+        is_file = vfs.is_file('mem:tmp/blah.txt#fragment')
+        self.assertEqual(is_file, True)
+        is_file = vfs.is_file('mem:tmp/blah.txt?fragment')
+        self.assertEqual(is_file, True)
+
     def test10_creation(self):
         file = vfs.make_file('mem:testfile.txt')
         file.write("one\n")
