@@ -282,6 +282,9 @@ class CubeView(debugmixin):
     name = "Image View"
     xProfileXAxisLabel = 'sample'
     yProfileXAxisLabel = 'line'
+    imageDirectionLabel = "Band"
+    prev_index_icon = 'icons/hsi-band-prev.png'
+    next_index_icon = 'icons/hsi-band-next.png'
 
     def __init__(self, cube, display_rgb=True):
         self.display_rgb = display_rgb
@@ -501,6 +504,9 @@ class FocalPlaneView(CubeView):
     name = "Focal Plane View"
     xProfileXAxisLabel = 'sample'
     yProfileXAxisLabel = 'band'
+    imageDirectionLabel = "Frame"
+    prev_index_icon = 'icons/mouse.png'
+    next_index_icon = 'icons/keyboard.png'
 
     def initBitmap(self, cube):
         if cube:
@@ -559,12 +565,20 @@ class HSIActionMixin(object):
     def worksWithMajorMode(cls, mode):
         return isinstance(mode, HSIMode)
 
-class PrevBand(HSIActionMixin, SelectAction):
+class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     name = "Prev Band"
-    tooltip = "Previous Band"
     default_menu = ("View", -200)
     icon = 'icons/hsi-band-prev.png'
     key_bindings = {'default': "C-P"}
+    
+    def getMenuItemName(self):
+        return _("Prev %s") % self.mode.cubeview.imageDirectionLabel
+    
+    def getMenuItemHelp(self, name):
+        return _("Go to previous %s in the cube") % self.mode.cubeview.imageDirectionLabel.lower()
+    
+    def getToolbarIconName(self):
+        return self.mode.cubeview.prev_index_icon
     
     def isEnabled(self):
         for band in self.mode.cubeview.indexes:
@@ -580,12 +594,21 @@ class PrevBand(HSIActionMixin, SelectAction):
         if mode.cubeview.prevIndex():
             mode.update()
 
-class NextBand(HSIActionMixin, SelectAction):
+class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     name = "Next Band"
     tooltip = "Next Band"
     default_menu = ("View", 201)
     icon = 'icons/hsi-band-next.png'
     key_bindings = {'default': "C-N"}
+    
+    def getMenuItemName(self):
+        return _("Next %s") % self.mode.cubeview.imageDirectionLabel
+    
+    def getMenuItemHelp(self, name):
+        return _("Go to next %s in the cube") % self.mode.cubeview.imageDirectionLabel.lower()
+    
+    def getToolbarIconName(self):
+        return self.mode.cubeview.next_index_icon
     
     def isEnabled(self):
         for band in self.mode.cubeview.indexes:
@@ -601,15 +624,20 @@ class NextBand(HSIActionMixin, SelectAction):
         if mode.cubeview.nextIndex():
             mode.update()
 
-class GotoBand(HSIActionMixin, MinibufferAction):
+class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
     name = "Goto Band"
-    tooltip = "Go to a particular band in the cube"
     default_menu = ("View", 202)
     
     key_bindings = {'default': 'M-G',}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Band:"
 
+    def getMenuItemName(self):
+        return _("Goto %s") % self.mode.cubeview.imageDirectionLabel
+    
+    def getMenuItemHelp(self, name):
+        return _("Goto a specified %s in the cube") % self.mode.cubeview.imageDirectionLabel.lower()
+    
     def processMinibuffer(self, minibuffer, mode, band):
         """
         Callback function used to set the stc to the correct line.

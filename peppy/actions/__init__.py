@@ -191,14 +191,14 @@ class SelectAction(debugmixin):
             cls._accelerator_text = ""
         return 0
     
-    def getMenuItemName(self):
+    def getDefaultMenuItemName(self):
         if self._use_accelerators and self.keyboard:
             return u"%s%s" % (_(self.name), self._accelerator_text)
         elif self.name:
             return _(self.name)
         return _(self.__class__.__name__)
 
-    def getTooltip(self, id=None, name=None):
+    def getDefaultTooltip(self, id=None, name=None):
         if id is None:
             id = self.global_id
         if name is None:
@@ -210,7 +210,7 @@ class SelectAction(debugmixin):
         return u"%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
 
     def insertIntoMenu(self, menu):
-        self.widget = wx.MenuItem(menu, self.global_id, self.getMenuItemName(), self.getTooltip())
+        self.widget = wx.MenuItem(menu, self.global_id, self.getDefaultMenuItemName(), self.getDefaultTooltip())
         #storeWeakref('menuitem', self.widget)
         if self.icon:
             bitmap = getIconBitmap(self.icon)
@@ -220,7 +220,7 @@ class SelectAction(debugmixin):
     def insertIntoToolbar(self, toolbar):
         self.tool=toolbar
         help = _(self.name).replace('&','')
-        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=help, longHelp=self.getTooltip())
+        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=help, longHelp=self.getDefaultTooltip())
 
     def action(self, index=-1, multiplier=1):
         """Override this to provide the functionality of the action.
@@ -283,12 +283,12 @@ class ToggleAction(SelectAction):
     display the button as toggled-on (for a toolbar).
     """
     def insertIntoMenu(self,menu):
-        self.widget=menu.AppendCheckItem(self.global_id, _(self.name), self.getTooltip())
+        self.widget=menu.AppendCheckItem(self.global_id, _(self.name), self.getDefaultTooltip())
         #storeWeakref('menuitem', self.widget)
 
     def insertIntoToolbar(self,toolbar):
         self.tool=toolbar
-        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=_(self.name), longHelp=self.getTooltip())
+        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=_(self.name), longHelp=self.getDefaultTooltip())
         
     def showEnable(self):
         SelectAction.showEnable(self)
@@ -424,7 +424,7 @@ class ListAction(SelectAction):
         try:
             if self.localize_items:
                 name = _(name)
-            widget=menu.Insert(pos, id, name, self.getTooltip(id, name))
+            widget=menu.Insert(pos, id, name, self.getDefaultTooltip(id, name))
         except:
             dprint(u"BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
             raise
@@ -522,7 +522,7 @@ class RadioAction(ListAction):
         id = self.cache.getNewId()
         if self.localize_items:
             name = _(name)
-        widget=menu.InsertRadioItem(pos, id, name, self.getTooltip(id, name))
+        widget=menu.InsertRadioItem(pos, id, name, self.getDefaultTooltip(id, name))
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
@@ -566,7 +566,7 @@ class ToggleListAction(ListAction):
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
-        widget=menu.InsertCheckItem(pos,id,name, self.getTooltip())
+        widget=menu.InsertCheckItem(pos,id,name, self.getDefaultTooltip())
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
@@ -611,6 +611,52 @@ class OnDemandActionMixin(object):
         deleted.
         """
         raise NotImplementedError
+
+
+class OnDemandActionNameMixin(object):
+    """Mixin to provide on-demand naming of the menu item.
+    
+    Note that the toolbar icon is not changed until the OnUpdateUI event is
+    issued, which may not be as soon as you want it.  Because the OnUpdateUI
+    event is not issued until the user pulls down a menu from the menubar,
+    it's possible that you will have to update the toolbars by hand.
+    """
+    
+    def updateOnDemand(self):
+        """Updates the menu item name and toolbar icon"""
+        name = self.getMenuItemName()
+        help = self.getMenuItemHelp(name)
+        icon = self.getToolbarIconName()
+        if icon:
+            icon = getIconBitmap(icon)
+        if self.widget:
+            if name:
+                self.widget.SetItemLabel(name)
+            if icon:
+                self.widget.SetBitmap(icon)
+            self.widget.SetHelp(tooltip)
+        if self.tool:
+            if icon:
+                self.tool.SetToolNormalBitmap(self.global_id, icon)
+            if name:
+                self.tool.SetToolShortHelp(self.global_id, name)
+            self.tool.SetToolLongHelp(self.global_id, tooltip)
+
+    def getMenuItemName(self):
+        """Override in subclass to provide the menu item name."""
+        return ""
+
+    def getMenuItemHelp(self, name):
+        """Override in subclass to provide the help text.
+        
+        This is shown in the status line when hovering over the menu item or
+        toolbar item.
+        """
+        return self.getDefaultTooltip(name = name)
+
+    def getToolbarIconName(self):
+        """Override in subclass to provide the name of the icon."""
+        return ""
 
 
 class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
