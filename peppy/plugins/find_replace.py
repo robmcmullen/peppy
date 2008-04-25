@@ -113,7 +113,7 @@ class FindService(debugmixin):
         Like L{expandSearchText}, this is primarily designed to be overridden
         in subclasses.
         """
-        return expandSearchText(text, set_flags=False)
+        return self.expandSearchText(text, set_flags=False)
     
     def setFindString(self, text):
         self.settings.find_user = text
@@ -263,7 +263,8 @@ class FindService(debugmixin):
         pos = self.stc.FindText(start, 0, self.settings.find, flags)
         
         if pos >= 0:
-            self.highlightSelection(pos)
+            count = self.findMatchLength(pos)
+            self.highlightSelection(pos, count)
         
         return pos, start
 
@@ -295,6 +296,21 @@ class FindBasicRegexService(FindService):
     def allowBackward(self):
         return False
     
+    def findMatchLength(self, pos):
+        """Determine the length of the regular expression match
+        """
+        line = self.stc.LineFromPosition(pos)
+        last = self.stc.GetLineEndPosition(line)
+        self.stc.SetTargetStart(pos)
+        self.stc.SetTargetEnd(last)
+        self.stc.SetSearchFlags(self.flags)
+        found = self.stc.SearchInTarget(self.settings.find)
+        last = self.stc.GetTargetEnd()
+        dprint("Target: found=%d pos=%d last=%d" % (found, pos, last))
+        if found >= 0:
+            return last - pos
+        return -1
+    
     def expandSearchText(self, text, set_flags=True):
         if not text:
             text = ""
@@ -303,6 +319,23 @@ class FindBasicRegexService(FindService):
             self.flags = wx.stc.STC_FIND_REGEXP
         
         return text
+
+    def doReplace(self):
+        """Replace the selection
+        
+        Replace the current selection in the stc with the replacement text
+        """
+        if self.stc.GetReadOnly():
+            return -1
+        sel = self.stc.GetSelection()
+        self.stc.SetTargetStart(sel[0])
+        self.stc.SetTargetEnd(sel[1])
+        self.stc.SetSearchFlags(self.flags)
+        
+        count = self.stc.ReplaceTargetRE(self.settings.replace)
+
+        self.stc.SetSelection(min(sel), min(sel) + count)
+        return count
 
 
 class FindWildcardService(FindBasicRegexService):
@@ -392,6 +425,7 @@ class FindBar(wx.Panel):
         self.createCtrls()
         
         # PyPE compat
+        self._lastcall = None
         self.setDirection(direction)
     
     def createCtrls(self):
@@ -515,22 +549,37 @@ class FindBar(wx.Panel):
             return
         
         self.OnNotFound()
+    
+    def repeatLastUserInput(self):
+        """Load the user interface with the last saved user input
+        
+        @return: True if user input was loaded from the storage space
+        """
+        if not self.settings.find_user:
+            self.service.unserialize(self.storage)
+            self.find.ChangeValue(self.settings.find_user)
+            self.find.SetInsertionPointEnd()
+            return True
+        return False
 
     def repeat(self, direction, service=None):
         self.resetColor()
         if service is not None:
             self.service = service(self.stc, self.settings)
-        if not self.settings.find_user:
-            self.service.unserialize(self.storage)
-            self.find.ChangeValue(self.settings.find_user)
-            self.find.SetInsertionPointEnd()
-            return
-            
+        
         if direction < 0:
             self.setDirection(-1)
         else:
             self.setDirection(1)
-        self._lastcall(None)
+        dprint("label = %s" % self.label.GetLabel())
+        
+        if self.repeatLastUserInput():
+            return
+        
+        # replace doesn't use an automatic search, so make sure that a method
+        # has been specified before calling it
+        if self._lastcall:
+            self._lastcall(None)
     
     def saveState(self):
         self.service.serialize(self.storage)
@@ -543,13 +592,7 @@ class FindMinibuffer(Minibuffer):
     search_storage = {}
     
     def createWindow(self):
-        # Create the find bar widget.
-        if self.action.__class__ == FindPrevText:
-            dir = -1
-        else:
-            dir = 1
-        
-        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=dir, service=self.action.find_service)
+        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=self.action.find_direction, service=self.action.find_service)
     
     def repeat(self, action):
         self.win.SetFocus()
@@ -786,8 +829,25 @@ class ReplaceBar(FindBar):
         if self.on_exit:
             self.on_exit()
 
+    def repeatLastUserInput(self):
+        """Load the user interface with the last saved user input
+        
+        @return: True if user input was loaded from the storage space
+        """
+        # disable the repeat search when using the replace buffer
+        self._lastcall = None
+        
+        if not self.settings.find_user:
+            self.service.unserialize(self.storage)
+            self.find.ChangeValue(self.settings.find_user)
+            self.find.SetInsertionPointEnd()
+            self.replace.ChangeValue(self.settings.replace_user)
+            self.replace.SetInsertionPointEnd()
+            return True
+        return False
 
-class ReplaceMinibuffer(Minibuffer):
+
+class ReplaceMinibuffer(FindMinibuffer):
     """
     Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
     """
@@ -795,21 +855,9 @@ class ReplaceMinibuffer(Minibuffer):
     
     def createWindow(self):
         self.win = ReplaceBar(self.mode.wrapper, self.mode.frame, self.mode,
-                              self.search_storage, on_exit=self.removeFromParent)
-    
-    def repeat(self, action):
-        self.win.SetFocus()
-        self.win.repeat(1)
-
-    def focus(self):
-        # When the focus is asked for by the minibuffer driver, set it
-        # to the text ctrl or combo box of the pype findbar.
-        self.win.find.SetFocus()
-    
-    def closePreHook(self):
-        self.win.saveState()
-        self.dprint(self.search_storage)
-
+                              self.search_storage, on_exit=self.removeFromParent,
+                              direction=self.action.find_direction,
+                              service=self.action.find_service)
 
 
 
@@ -820,6 +868,17 @@ class Replace(MinibufferRepeatAction):
     icon = "icons/text_replace.png"
     key_bindings = {'win': 'C-H', 'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
+    find_service = FindService
+    find_direction = 1
+
+class ReplaceBasicRegex(MinibufferRepeatAction):
+    name = "Replace Regex..."
+    tooltip = "Replace using simple regular expressions."
+    default_menu = ("Edit", 411)
+    key_bindings = {'win': 'C-S-H', 'emacs': 'S-F6', }
+    minibuffer = ReplaceMinibuffer
+    find_service = FindBasicRegexService
+    find_direction = 1
 
 
 class FindReplacePlugin(IPeppyPlugin):
@@ -829,7 +888,7 @@ class FindReplacePlugin(IPeppyPlugin):
 
     def getActions(self):
         return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
-                Replace
+                Replace, ReplaceBasicRegex,
                 ]
 
 
