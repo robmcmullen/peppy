@@ -927,6 +927,17 @@ class HSIMode(BitmapScroller, MajorMode):
 
     def getPopupActions(self, evt, x, y):
         return [CubeViewAction, ShowPixelValues]
+    
+    def showInitialPosition(self, url):
+        if url.query:
+            self.dprint(url.query)
+            if 'view' in url.query:
+                if url.query['view'] == 'focalplane':
+                    self.setViewer(FocalPlaneView)
+                else:
+                    self.setViewer(CubeView)
+                self.update()
+        
 
 class HSIMinorModeMixin(MinorMode):
     @classmethod
