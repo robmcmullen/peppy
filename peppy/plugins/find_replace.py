@@ -19,14 +19,122 @@ from peppy.actions import *
 from peppy.actions.base import *
 from peppy.debug import *
 
+
+class FindSettings(debugmixin):
+    def __init__(self, match_case=False):
+        self.match_case = match_case
+
+
+class FindService(debugmixin):
+    forward = "Find"
+    backward = "Find Backward"
+    
+    def __init__(self, stc, settings):
+        self.stc = stc
+        self.settings = settings
+        self.find = ''
+        self.replace = ''
+        
+        self.flags = 0
+    
+    def allowBackward(self):
+        return True
+    
+    def expandText(self, findTxt, set_flags=False):
+        #python strings in find
+        if not findTxt:
+            findTxt = ""
+        if len(findTxt) > 0 and findTxt[0] in ['"', "'"]:
+            try:
+                findTxt = [i for i in compiler.parse(str(findTxt)).getChildren()[:1] if isinstance(i, basestring)][0]
+            except Exception, e:
+                pass
+            match_case = True
+        else:
+            if self.find != self.find.lower():
+                match_case = True
+            else:
+                match_case = self.settings.match_case
+        
+        if set_flags and match_case:
+            self.flags = wx.stc.STC_FIND_MATCHCASE
+            
+        return findTxt
+    
+    def setFindString(self, text):
+        self.find = self.expandText(text, set_flags=True)
+    
+    def setReplaceString(self, text):
+        self.replace = self.expandText(text)
+    
+    def getRange(self, start, chars, dire=1):
+        end = start
+        if dire==1:
+            fcn = self.stc.PositionAfter
+        else:
+            fcn = self.stc.PositionBefore
+        for i in xrange(chars):
+            z = fcn(end)
+            y = self.stc.GetCharAt(end)
+            x = abs(z-end)==2 and (((dire==1) and (y == 13)) or ((dire==0) and (y == 10)))
+            ## print y, z-end
+            end = z - x
+        return start, end
+    
+    def highlightSelection(self, pos):
+        sel_start, sel_end = self.getRange(pos, len(self.find))
+        dprint("selection = %d - %d" % (sel_start, sel_end))
+        self.stc.SetSelection(sel_start, sel_end)
+    
+    def doFindNext(self, start=-1):
+        """Find and highlight the next match in the document.
+        
+        @return: tuple containing the position of the match or -1 if no match
+        is found, and the position of the original start of the search.  If
+        the search string is invalid, a tuple of (None, None) is returned.
+        """
+        if not self.find:
+            return None, None
+        flags = self.flags | wx.FR_DOWN
+        
+        #handle finding next item, handling wrap-arounds as necessary
+        if start < 0:
+            gs = self.stc.GetSelection()
+            gs = min(gs), max(gs)
+            start = gs[1]
+        pos = self.stc.FindText(start, self.stc.GetTextLength(), self.find, flags)
+        
+        if pos >= 0:
+            self.highlightSelection(pos)
+        
+        return pos, start
+
+    def doFindPrev(self, start=-1):
+        """Find and highlight the previous match in the document.
+        
+        @return: tuple containing the position of the match or -1 if no match
+        is found, and the position of the original start of the search.  If
+        the search string is invalid, a tuple of (None, None) is returned.
+        """
+        if not self.find:
+            return None, None
+        flags = self.flags
+        
+        if start < 0:
+            start = min(self.getRange(min(self.stc.GetSelection()), len(self.find), 0))
+        pos = self.stc.FindText(start, 0, self.find, flags)
+        
+        if pos >= 0:
+            self.highlightSelection(pos)
+        
+        return pos, start
+
+
 class FindBar(wx.Panel):
     """Find panel customized from PyPE's findbar.py
     
     """
-    forward = "Find"
-    backward = "Find Backward"
-    
-    def __init__(self, parent, frame, stc, storage=None, direction=1):
+    def __init__(self, parent, frame, stc, storage=None, service=None, direction=1):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         self.frame = frame
         self.stc = stc
@@ -34,18 +142,21 @@ class FindBar(wx.Panel):
             self.storage = storage
         else:
             self.storage = {}
+        if service:
+            self.service = service
+            self.settings = self.service.settings
+        else:
+            self.settings = FindSettings()
+            self.service = FindService(self.stc, self.settings)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.label = wx.StaticText(self, -1, _(self.forward) + u":")
+        self.label = wx.StaticText(self, -1, _(self.service.forward) + u":")
         sizer.Add(self.label, 0, wx.CENTER)
         self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         sizer.Add(self.find, 1, wx.EXPAND)
         self.SetSizer(sizer)
         
-        self.match_case = False
-        
         # PyPE compat
-        self.incr = 1
         self.setDirection(direction)
 
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
@@ -54,10 +165,10 @@ class FindBar(wx.Panel):
     def setDirection(self, dir=1):
         if dir > 0:
             self._lastcall = self.OnFindN
-            text = self.forward
+            text = self.service.forward
         else:
             self._lastcall = self.OnFindP
-            text = self.backward
+            text = self.service.backward
         self.label.SetLabel(_(text) + u":")
         self.Layout()
 
@@ -65,6 +176,8 @@ class FindBar(wx.Panel):
         #handle updating the background color
         self.resetColor()
 
+        self.service.setFindString(self.find.GetValue())
+        
         #search in whatever direction we were before
         self._lastcall(evt, 1)
         
@@ -77,27 +190,6 @@ class FindBar(wx.Panel):
         self.find.SetBackgroundColour(wx.RED)
         self.frame.SetStatusText("Search string was not found.")
         self.Refresh()
-
-    def expandText(self, findTxt):
-        #python strings in find
-        if findTxt[0] in ['"', "'"]:
-            try:
-                findTxt = [i for i in compiler.parse(str(findTxt)).getChildren()[:1] if isinstance(i, basestring)][0]
-            except Exception, e:
-                pass
-            matchcase = True
-        else:
-            if findTxt != findTxt.lower():
-                matchcase = True
-            else:
-                matchcase = self.match_case
-        return findTxt, matchcase
-
-    def getSearchString(self):
-        txt = self.find.GetValue()
-        if not txt:
-            return "", self.match_case
-        return self.expandText(txt)
 
     def resetColor(self):
         if self.find.GetBackgroundColour() != wx.WHITE:
@@ -116,6 +208,14 @@ class FindBar(wx.Panel):
             self.stc.EnsureVisible(line)
             self.stc.EnsureCaretVisible()
     
+    def showLine(self, pos, msg):
+        self.resetColor()
+        self.frame.SetStatusText(msg)
+        line = self.stc.LineFromPosition(pos)
+        #self.stc.GotoLine(line)
+        self.stc.EnsureVisible(line)
+        self.stc.EnsureCaretVisible()
+    
     def cancel(self, pos_at_end=False):
         self.resetColor()
         self.frame.SetStatusText('')
@@ -126,82 +226,51 @@ class FindBar(wx.Panel):
         self.stc.GotoPos(pos)
         self.stc.EnsureCaretVisible()
     
-    def getRange(self, start, chars, dire=1):
-        end = start
-        if dire==1:
-            fcn = self.stc.PositionAfter
-        else:
-            fcn = self.stc.PositionBefore
-        for i in xrange(chars):
-            z = fcn(end)
-            y = self.stc.GetCharAt(end)
-            x = abs(z-end)==2 and (((dire==1) and (y == 13)) or ((dire==0) and (y == 10)))
-            ## print y, z-end
-            end = z - x
-        return start, end
-    
-    def OnFindN(self, evt, incr=0, allow_wrap=True, help='', interactive=True):
+    def OnFindN(self, evt, allow_wrap=True, help='', interactive=True):
         self._lastcall = self.OnFindN
-        self.incr = incr
-        findTxt, matchcase = self.getSearchString()
-        if not findTxt:
-            return self.cancel()
-        flags = wx.FR_DOWN
-        if matchcase:
-            flags |= wx.stc.STC_FIND_MATCHCASE
         
-        #handle finding next item, handling wrap-arounds as necessary
-        gs = self.stc.GetSelection()
-        gs = min(gs), max(gs)
-        st = gs[1-incr]
-        posn = self.stc.FindText(st, self.stc.GetTextLength(), findTxt, flags)
-        if posn != -1:
-            self.sel(posn, posn+len(findTxt), help, interactive)
+        posn, st = self.service.doFindNext()
+        if posn is None:
+            self.cancel()
+            return
+        elif posn != -1:
+            if interactive:
+                self.showLine(posn, help)
             self.loop = 0
             return
         
         if allow_wrap and st != 0:
-            posn = self.stc.FindText(0, self.stc.GetTextLength(), findTxt, flags)
+            posn, st = self.service.doFindNext(0)
         self.loop = 1
         
         if posn != -1:
-            self.sel(posn, posn+len(findTxt), "Reached end of document, continued from start.")
+            if interactive:
+                self.showLine(posn, "Reached end of document, continued from start.")
             return
         
         self.OnNotFound()
     
     def OnFindP(self, evt, incr=0, allow_wrap=True, help=''):
         self._lastcall = self.OnFindP
-        self.incr = 0
-        findTxt, matchcase = self.getSearchString()
-        if not findTxt:
-            return self.cancel()
-        flags = 0
-        if matchcase:
-            flags |= wx.STC_FIND_MATCHCASE
         
-        #handle finding previous item, handling wrap-arounds as necessary
-        st = min(self.getRange(min(self.stc.GetSelection()), len(findTxt), 0))
-        #print self.stc.GetSelection(), st, 
-        posn = self.stc.FindText(st, 0, findTxt, flags)
+        posn, st = self.service.doFindPrev()
         if posn != -1:
-            self.sel(posn, posn+len(findTxt), help)
+            self.showLine(posn, help)
             self.loop = 0
             return
         
         if allow_wrap and st != self.stc.GetTextLength():
-            posn = self.stc.FindText(self.stc.GetTextLength(), 0, findTxt, flags)
+            posn, st = self.service.doFindPrev(self.stc.GetTextLength())
         self.loop = 1
         
         if posn != -1:
-            self.sel(posn, posn+len(findTxt), "Reached start of document, continued from end.")
+            self.showLine(posn, "Reached start of document, continued from end.")
             return
         
         self.OnNotFound()
 
     def repeat(self, direction):
-        last, matchcase = self.getSearchString()
-        if not last:
+        if not self.service.find:
             if 'last_search' in self.storage:
                 self.find.ChangeValue(self.storage['last_search'])
                 self.find.SetInsertionPointEnd()
