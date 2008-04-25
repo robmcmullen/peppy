@@ -23,17 +23,20 @@ from peppy.debug import *
 class FindSettings(debugmixin):
     def __init__(self, match_case=False):
         self.match_case = match_case
+        self.find = ''
+        self.replace = ''
 
 
 class FindService(debugmixin):
     forward = "Find"
     backward = "Find Backward"
     
-    def __init__(self, stc, settings):
+    def __init__(self, stc, settings=None):
         self.stc = stc
-        self.settings = settings
-        self.find = ''
-        self.replace = ''
+        if settings is None:
+            self.settings = FindSettings()
+        else:
+            self.settings = settings
         
         self.flags = 0
     
@@ -51,7 +54,7 @@ class FindService(debugmixin):
                 pass
             match_case = True
         else:
-            if self.find != self.find.lower():
+            if self.settings.find != self.settings.find.lower():
                 match_case = True
             else:
                 match_case = self.settings.match_case
@@ -62,7 +65,7 @@ class FindService(debugmixin):
         return findTxt
     
     def setFindString(self, text):
-        self.find = self.expandText(text, set_flags=True)
+        self.settings.find = self.expandText(text, set_flags=True)
     
     def setReplaceString(self, text):
         self.replace = self.expandText(text)
@@ -82,7 +85,7 @@ class FindService(debugmixin):
         return start, end
     
     def highlightSelection(self, pos):
-        sel_start, sel_end = self.getRange(pos, len(self.find))
+        sel_start, sel_end = self.getRange(pos, len(self.settings.find))
         dprint("selection = %d - %d" % (sel_start, sel_end))
         self.stc.SetSelection(sel_start, sel_end)
     
@@ -93,7 +96,7 @@ class FindService(debugmixin):
         is found, and the position of the original start of the search.  If
         the search string is invalid, a tuple of (None, None) is returned.
         """
-        if not self.find:
+        if not self.settings.find:
             return None, None
         flags = self.flags | wx.FR_DOWN
         
@@ -102,7 +105,7 @@ class FindService(debugmixin):
             gs = self.stc.GetSelection()
             gs = min(gs), max(gs)
             start = gs[1]
-        pos = self.stc.FindText(start, self.stc.GetTextLength(), self.find, flags)
+        pos = self.stc.FindText(start, self.stc.GetTextLength(), self.settings.find, flags)
         
         if pos >= 0:
             self.highlightSelection(pos)
@@ -116,18 +119,40 @@ class FindService(debugmixin):
         is found, and the position of the original start of the search.  If
         the search string is invalid, a tuple of (None, None) is returned.
         """
-        if not self.find:
+        if not self.settings.find:
             return None, None
         flags = self.flags
         
         if start < 0:
-            start = min(self.getRange(min(self.stc.GetSelection()), len(self.find), 0))
-        pos = self.stc.FindText(start, 0, self.find, flags)
+            start = min(self.getRange(min(self.stc.GetSelection()), len(self.settings.find), 0))
+        pos = self.stc.FindText(start, 0, self.settings.find, flags)
         
         if pos >= 0:
             self.highlightSelection(pos)
         
         return pos, start
+
+class FindBasicRegexService(FindService):
+    forward = "Find Regex"
+    
+    def __init__(self, stc, settings=None):
+        FindService.__init__(self, stc, settings)
+    
+    def allowBackward(self):
+        return False
+    
+    def expandText(self, findTxt, set_flags=False):
+        #python strings in find
+        if not findTxt:
+            findTxt = ""
+        
+        if set_flags:
+            self.flags = wx.stc.STC_FIND_REGEXP
+            
+        return findTxt
+    
+
+
 
 
 class FindBar(wx.Panel):
@@ -142,11 +167,10 @@ class FindBar(wx.Panel):
             self.storage = storage
         else:
             self.storage = {}
+        self.settings = FindSettings()
         if service:
-            self.service = service
-            self.settings = self.service.settings
+            self.service = service(self.stc, self.settings)
         else:
-            self.settings = FindSettings()
             self.service = FindService(self.stc, self.settings)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -269,10 +293,13 @@ class FindBar(wx.Panel):
         
         self.OnNotFound()
 
-    def repeat(self, direction):
-        if not self.service.find:
+    def repeat(self, direction, service=None):
+        if service is not None:
+            self.service = service(self.stc, self.settings)
+        if not self.settings.find:
             if 'last_search' in self.storage:
-                self.find.ChangeValue(self.storage['last_search'])
+                self.settings.find = self.storage['last_search']
+                self.find.ChangeValue(self.settings.find)
                 self.find.SetInsertionPointEnd()
                 return
             
@@ -301,14 +328,12 @@ class FindMinibuffer(Minibuffer):
             dir = -1
         else:
             dir = 1
-        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=dir)
+        
+        self.win = FindBar(self.mode.wrapper, self.mode.frame, self.mode, self.search_storage, direction=dir, service=self.action.find_service)
     
     def repeat(self, action):
         self.win.SetFocus()
-        if action.__class__ == FindPrevText:
-            self.win.repeat(-1)
-        else:
-            self.win.repeat(1)
+        self.win.repeat(action.find_direction, action.find_service)
 
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
@@ -327,13 +352,27 @@ class FindText(MinibufferRepeatAction):
     icon = "icons/find.png"
     key_bindings = {'default': "C-F", 'emacs': 'C-S', }
     minibuffer = FindMinibuffer
+    find_service = FindService
+    find_direction = 1
+
+class FindBasicRegex(MinibufferRepeatAction):
+    name = "Find Regex..."
+    tooltip = "Search for a simple regular expression."
+    default_menu = ("Edit", 401)
+    icon = "icons/find.png"
+    key_bindings = {'emacs': 'C-S-S', }
+    minibuffer = FindMinibuffer
+    find_service = FindBasicRegexService
+    find_direction = 1
 
 class FindPrevText(MinibufferRepeatAction):
     name = "Find Previous..."
     tooltip = "Search backwards for a string in the text."
-    default_menu = ("Edit", 401)
+    default_menu = ("Edit", 402)
     key_bindings = {'default': "C-S-F", 'emacs': 'C-R', }
     minibuffer = FindMinibuffer
+    find_service = FindService
+    find_direction = -1
 
 
 
@@ -607,7 +646,7 @@ class ReplaceMinibuffer(Minibuffer):
 class Replace(MinibufferRepeatAction):
     name = "Replace..."
     tooltip = "Replace a string in the text."
-    default_menu = ("Edit", 402)
+    default_menu = ("Edit", 410)
     icon = "icons/text_replace.png"
     key_bindings = {'win': 'C-H', 'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
@@ -619,7 +658,7 @@ class FindReplacePlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [FindText, FindPrevText,
+        return [FindText, FindBasicRegex, FindPrevText,
                 Replace
                 ]
 
