@@ -6,7 +6,6 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
-from peppy.actions import *
 from peppy.major import *
 from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
@@ -18,147 +17,6 @@ from peppy.lib.kateutil import *
 from peppy.editra import *
 from peppy.editra.stcmixin import *
 
-
-class SpellingSuggestionAction(ListAction):
-    name = "Spelling..."
-    inline = True
-    menumax = 5
-    tooltip = "Spelling suggestions for the current word"
-
-    def getItems(self):
-        # Because this is a popup action, we can save stuff to this object.
-        # Otherwise, we'd save it to the major mode
-        self.words = self.mode.spellGetSuggestions(self.mode.check_spelling[0])
-        if self.words:
-            return self.words
-        return [_('No suggestions')]
-    
-    def isEnabled(self):
-        return hasattr(self, 'words') and len(self.words) > 0
-
-    def action(self, index=-1, multiplier=1):
-        #dprint(self.words[index])
-        s = self.mode
-        c = s.check_spelling
-        s.SetTargetStart(c[1])
-        s.SetTargetEnd(c[2])
-        s.ReplaceTarget(self.words[index])
-
-class ClassprefsTooltipMixin(object):
-    def getTooltip(self, id=None, name=None):
-        if self.tooltip is None:
-            param = self.mode.classprefsFindParam(self.local_setting)
-            self.__class__.tooltip = unicode(_(param.help))
-        return self.tooltip
-
-class FundamentalSettingToggle(ClassprefsTooltipMixin, ToggleAction):
-    local_setting = None
-
-    def isChecked(self):
-        return getattr(self.mode.locals, self.local_setting)
-    
-    def action(self, index=-1, multiplier=1):
-        value = self.isChecked()
-        setattr(self.mode.locals, self.local_setting, not value)
-        self.mode.applyDefaultSettings()
-
-class FundamentalRadioToggle(ClassprefsTooltipMixin, RadioAction):
-    local_setting = None
-
-    text_list = None
-    value_list = None
-
-    def getValue(self):
-        return getattr(self.mode.locals, self.local_setting)
-    
-    def getChoices(self):
-        param = self.mode.classprefsFindParam(self.local_setting)
-        cls = self.__class__
-        cls.text_list = param.choices
-        if hasattr(param, 'index_to_value'):
-            # handle IndexChoiceParam
-            cls.value_list = [param.index_to_value[i] for i in range(len(param.choices))]
-        else:
-            # handle KeyedIndexChoiceParam
-            cls.value_list = param.keys
-
-    def getIndex(self):
-        if self.text_list is None:
-            self.getChoices()
-        return self.value_list.index(self.getValue())
-                                           
-    def getItems(self):
-        if self.text_list is None:
-            self.getChoices()
-        return self.text_list
-
-    def action(self, index=-1, multiplier=1):
-        value = self.value_list[index]
-        setattr(self.mode.locals, self.local_setting, value)
-        self.mode.applyDefaultSettings()
-
-class LineNumbers(FundamentalSettingToggle):
-    local_setting = 'line_numbers'
-    alias = "line-numbers"
-    name = "&Line Numbers"
-    default_menu = ("View", -300)
-
-class Wrapping(FundamentalSettingToggle):
-    local_setting = 'wrapping'
-    alias = "wrapping"
-    name = "&Line Wrapping"
-    default_menu = ("View", 301)
-
-class WordWrap(FundamentalSettingToggle):
-    local_setting = 'word_wrap'
-    alias = "word-wrap"
-    name = "&Wrap Words"
-    default_menu = ("View", 302)
-
-    def isEnabled(self):
-        return self.mode.locals.wrapping
-
-class Folding(FundamentalSettingToggle):
-    local_setting = 'folding'
-    alias = "code-folding"
-    name = "&Folding"
-    default_menu = ("View", 304)
-
-class ViewEOL(FundamentalSettingToggle):
-    local_setting = 'view_eol'
-    alias = "view-eol"
-    name = "EOL Characters"
-    default_menu = ("View", 305)
-
-class ViewWhitespace(FundamentalRadioToggle):
-    local_setting = 'view_whitespace'
-    name = "Show Whitespace"
-    default_menu = ("View", 305.5)
-
-class LongLineIndicator(FundamentalRadioToggle):
-    local_setting = 'edge_indicator'
-    name = "Show Long Lines"
-    default_menu = ("View", 305.7)
-
-class IndentationGuides(FundamentalSettingToggle):
-    local_setting = 'indentation_guides'
-    name = "Indentation Guides"
-    default_menu = ("View", 306)
-
-class TabHighlight(FundamentalRadioToggle):
-    local_setting = 'tab_highlight_style'
-    name = "Show Indentation"
-    default_menu = ("View", 305.7)
-
-class CaretWidth(FundamentalRadioToggle):
-    local_setting = 'caret_width'
-    name = "Caret Width"
-    default_menu = ("View", 310)
-
-class CaretLineHighlight(FundamentalSettingToggle):
-    local_setting = 'caret_line_highlight'
-    name = "Highlight Caret Line"
-    default_menu = ("View", 311)
 
 
 class ParagraphInfo(object):
@@ -312,6 +170,7 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                                (wx.stc.STC_WS_VISIBLEALWAYS, 'visible'),
                                (wx.stc.STC_WS_VISIBLEAFTERINDENT, 'after indent'),
                                ], 'none', help='Visible whitespace mode', local=True),
+        IntParam('font_zoom', 0, 'Change the text size relative to the standard font size', local=True),
         BoolParam('spell_check', True, 'Spell check the document (if pyenchant is available)'),
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
         IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file to search for vim modeline comments'),

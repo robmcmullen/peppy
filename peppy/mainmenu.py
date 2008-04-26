@@ -17,7 +17,6 @@ from peppy.lib.processmanager import *
 
 from peppy.about import *
 from peppy.major import *
-from peppy.fundamental import *
 from peppy.dired import *
 from peppy.actions import *
 from peppy.buffers import *
@@ -418,30 +417,6 @@ class Revert(SelectAction):
         if retval==wx.ID_YES:
             self.mode.buffer.revert()
 
-class RevertEncoding(SelectAction):
-    alias = "revert-encoding"
-    name = "Revert With Encoding"
-    tooltip = "Revert with a different encoding"
-    default_menu = ("File", 901)
-    default_toolbar = False
-    
-    def action(self, index=-1, multiplier=1):
-        minibuffer = TextMinibuffer(self.mode, self, label="Revert using encoding:",
-                                    initial = self.mode.buffer.stc.encoding)
-        self.mode.setMinibuffer(minibuffer)
-
-    def processMinibuffer(self, minibuffer, mode, text):
-        #dprint("Revert to encoding %s" % text)
-        # see if it's a known encoding
-        try:
-            'test'.encode(text)
-            # if we get here, it's valid
-            self.mode.buffer.revert(text)
-            if text != self.mode.buffer.stc.encoding:
-                self.mode.setStatusText("Failed converting to %s; loaded as binary (probably not what you want)" % text)
-        except LookupError:
-            self.mode.setStatusText("Unknown encoding %s" % text)
-            
 
 class Save(SelectAction):
     alias = "save-buffer"
@@ -666,7 +641,7 @@ class PasteAtColumn(Paste):
     def action(self, index=-1, multiplier=1):
         self.mode.PasteAtColumn()
 
-class SelectAll(Paste):
+class SelectAll(STCModificationAction):
     alias = "select-all"
     name = "Select All"
     tooltip = "Select all text"
@@ -682,65 +657,6 @@ class SelectAll(Paste):
 
     def action(self, index=-1, multiplier=1):
         self.mode.SelectAll()
-
-
-class SelectBraces(Paste):
-    alias = "select-braces"
-    name = "Select Braces"
-    tooltip = "Select all text between the braces"
-    icon = None
-    default_menu = ("Edit", 126)
-    default_toolbar = False
-    key_bindings = None
-    global_id = None
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'selectBraces')
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.selectBraces()
-
-
-class ElectricReturn(TextModificationAction):
-    alias = "electric-return"
-    name = "Electric Return"
-    tooltip = "Indent the next line following a return"
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'RET',}
-    key_needs_focus = True
-
-    def action(self, index=-1, multiplier=1):
-        if self.mode.classprefs.spell_check:
-            pos = self.mode.GetCurrentPos()
-            self.mode.spellCheckWord(pos)
-        self.mode.autoindent.processReturn(self.mode)
-
-
-class EOLModeSelect(BufferBusyActionMixin, RadioAction):
-    name = "Line Endings"
-    inline = False
-    localize_items = True
-    tooltip = "Switch line endings"
-    default_menu = ("Transform", -999)
-
-    items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
-    modes = [wx.stc.STC_EOL_LF, wx.stc.STC_EOL_CRLF, wx.stc.STC_EOL_CR]
-
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'GetEOLMode')
-
-    def getIndex(self):
-        eol = self.mode.GetEOLMode()
-        return EOLModeSelect.modes.index(eol)
-                                           
-    def getItems(self):
-        return EOLModeSelect.items
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.ConvertEOLs(EOLModeSelect.modes[index])
-        Publisher().sendMessage('resetStatusBar')
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
@@ -957,25 +873,6 @@ class HelpMinibuffer(SelectAction):
                 self.frame.setStatusText("Help not available for current minibuffer")
 
 
-class WordCount(SelectAction):
-    name = "&Word Count"
-    tooltip = "Word count in region or document"
-    default_menu = ("Tools", -500)
-    key_bindings = {'default': "M-=", }
-
-    def action(self, index=-1, multiplier=1):
-        s = self.mode
-        (start, end) = s.GetSelection()
-        if start==end:
-            text = s.GetText()
-        else:
-            text = s.GetTextRange(start, end)
-        chars = len(text)
-        words = len(text.split())
-        lines = len(text.splitlines())
-        self.frame.SetStatusText("%d chars, %d words, %d lines" % (chars, words, lines))
-
-
 class MainMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -1004,7 +901,6 @@ class MainMenu(IPeppyPlugin):
         #dprint(action_classes)
 
     def getMajorModes(self):
-        yield FundamentalMode
         yield BlankMode
         yield DiredMode
 
@@ -1015,14 +911,11 @@ class MainMenu(IPeppyPlugin):
                 Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
-                SelectBraces,
 
                 RunScript, RunScriptWithArgs, StopScript,
 
                 MajorModeSelect, MinorModeShow, SidebarShow,
                 ToolbarShow, 
-
-                EOLModeSelect,
 
                 BufferList, BufferListSort,
 
@@ -1030,18 +923,13 @@ class MainMenu(IPeppyPlugin):
                 
                 ExecuteActionByName, DescribeAction, HelpMinibuffer,
                 
-                CancelMinibuffer, ElectricReturn,
+                CancelMinibuffer,
 
                 OpenFundamental,
                 ]
 
     def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, FundamentalMode):
-            return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
-                    ViewEOL, IndentationGuides, CaretLineHighlight, CaretWidth,
-                    ViewWhitespace, LongLineIndicator, TabHighlight,
-                    RevertEncoding]
-        elif issubclass(mode.__class__, DiredMode):
+        if issubclass(mode.__class__, DiredMode):
             return [
                 DiredRefresh,
                 DiredNext, DiredPrevious,

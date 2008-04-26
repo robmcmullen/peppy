@@ -738,8 +738,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         # FIXME: Could make mainmenu a plugin, but at least have to
         # defer main menu loading till after the i18n '_' method is
         # defined.
-        import peppy.mainmenu
         import peppy.fundamental
+        import peppy.fundamental_menu
+        
+        import peppy.mainmenu
         
         # py2exe imports go here.
         try:
