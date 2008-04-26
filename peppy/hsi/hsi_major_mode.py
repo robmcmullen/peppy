@@ -505,8 +505,8 @@ class FocalPlaneView(CubeView):
     xProfileXAxisLabel = 'sample'
     yProfileXAxisLabel = 'band'
     imageDirectionLabel = "Frame"
-    prev_index_icon = 'icons/mouse.png'
-    next_index_icon = 'icons/keyboard.png'
+    prev_index_icon = 'icons/hsi-frame-prev.png'
+    next_index_icon = 'icons/hsi-frame-next.png'
 
     def initBitmap(self, cube):
         if cube:
