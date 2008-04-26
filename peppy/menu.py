@@ -544,3 +544,16 @@ class UserActionMap(debugmixin):
             action.showEnable()
             if hasattr(action, 'updateOnDemand'):
                 action.updateOnDemand()
+    
+    def forceUpdate(self):
+        """Convenience function to force the on-demand portions of the menu to
+        be updated outside of an EVT_MENU_OPEN event.
+        
+        This is useful when you need to change a toolbar icon as the result
+        of another action and you'd like the change in the menu system to be
+        reflected immediately rather than waiting for the next EVT_MENU_OPEN
+        when the user pulls down a menu.
+        
+        
+        """
+        self.OnMenuOpen(None)

@@ -930,6 +930,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.updateInfo()
         self.cubeview.show(self.filter, self.cubefilter)
         self.setBitmap(self.cubeview.bitmap)
+        self.frame.updateMenumap()
         if refresh:
             self.Refresh()
         self.idle_update_menu = True

@@ -616,10 +616,11 @@ class OnDemandActionMixin(object):
 class OnDemandActionNameMixin(object):
     """Mixin to provide on-demand naming of the menu item.
     
-    Note that the toolbar icon is not changed until the OnUpdateUI event is
-    issued, which may not be as soon as you want it.  Because the OnUpdateUI
+    Note that the toolbar icon is not changed until the EVT_MENU_OPEN event is
+    issued, which may not be as soon as you want it.  Because the menu open
     event is not issued until the user pulls down a menu from the menubar,
-    it's possible that you will have to update the toolbars by hand.
+    it's possible that you will have to update the toolbars by hand using a
+    direct call to UserActionMap.forceUpdate()
     """
     
     def updateOnDemand(self):
@@ -630,14 +631,18 @@ class OnDemandActionNameMixin(object):
         if icon:
             icon = getIconBitmap(icon)
         if self.widget:
+            # FIXME: setting the menu bitmap mangles the menu on MSW -- it
+            # pushes all menu items not set over to the right, as if the old
+            # menu item labels become the accelerator text.
+            if icon and wx.Platform != "__WXMSW__":
+                self.widget.SetBitmap(icon)
             if name:
                 self.widget.SetItemLabel(name)
-            if icon:
-                self.widget.SetBitmap(icon)
             self.widget.SetHelp(help)
         if self.tool:
             if icon:
                 self.tool.SetToolNormalBitmap(self.global_id, icon)
+                self.tool.EnableTool(self.global_id, True)
             if name:
                 self.tool.SetToolShortHelp(self.global_id, name)
             self.tool.SetToolLongHelp(self.global_id, help)
