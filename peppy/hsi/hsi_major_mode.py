@@ -685,7 +685,8 @@ class BandSlider(HSIActionMixin, SliderAction):
             self.mode.update(refresh=False)
 
 class BandSliderUpdates(HSIActionMixin, ToggleAction):
-    name = "Immediate Slider Updates"
+    """Refresh image during slider dragging"""
+    name = "Refresh While Dragging Slider"
     default_menu = ("View", 209)
 
     def isChecked(self):
