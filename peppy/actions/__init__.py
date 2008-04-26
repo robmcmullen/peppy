@@ -628,6 +628,7 @@ class SliderAction(SelectAction):
         
         self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
         self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
+        self.slider.SetToolTip(wx.ToolTip(_(self.name)))
         
     def showEnable(self):
         state = self.isEnabled()

@@ -446,7 +446,7 @@ class CubeView(debugmixin):
 
         # first check the range
         for i in range(len(self.indexes)):
-            if newbands[i]<0 or newbands[i]>=self.cube.bands:
+            if newbands[i] < 0 or newbands[i] > self.max_index:
                 display=False
                 break
 
@@ -658,18 +658,41 @@ class BandSlider(HSIActionMixin, SliderAction):
     
     slider_width = 200
     
+    def updateToolOnDemand(self):
+        """Override so we can set the tooltip depending on the view direction"""
+        name = _("Seek %s") % self.mode.cubeview.imageDirectionLabel
+        self.slider.SetToolTip(wx.ToolTip(name))
+        SliderAction.updateToolOnDemand(self)
+    
     def getSliderValues(self):
         return self.mode.cubeview.indexes[0], 0, self.mode.cubeview.max_index
     
     def OnSliderMove(self, evt):
-        pos = evt.GetPosition()
-        text = self.mode.cubeview.getBandLegend(pos)
+        index = evt.GetPosition()
+        text = self.mode.cubeview.getBandLegend(index)
         self.mode.setStatusText(text)
+        if self.mode.immediate_slider_updates:
+            if self.mode.cubeview.gotoIndex(index, user=False):
+                self.mode.update()
     
     def action(self, index=-1, multiplier=1):
         #dprint("index=%d" % index)
+        if self.mode.immediate_slider_updates and index == self.mode.cubeview.indexes[0]:
+            # don't refresh the window if the index hasn't changed from the
+            # last update
+            return
         if self.mode.cubeview.gotoIndex(index, user=False):
             self.mode.update(refresh=False)
+
+class BandSliderUpdates(HSIActionMixin, ToggleAction):
+    name = "Immediate Slider Updates"
+    default_menu = ("View", 209)
+
+    def isChecked(self):
+        return self.mode.immediate_slider_updates
+    
+    def action(self, index=-1, multiplier=1):
+        self.mode.immediate_slider_updates = not self.mode.immediate_slider_updates
 
 
 class CubeAction(HSIActionMixin, SelectAction):
@@ -894,6 +917,7 @@ class HSIMode(BitmapScroller, MajorMode):
         IntParam('band_number_offset', 1, help="Start counting band numbers from this value"),
         BoolParam('display_rgb', False),
         BoolParam('use_cube_min_max', False, help="Use overall cube min/max for profile min/max"),
+        BoolParam('immediate_slider_updates', True, help="Refresh the image as the band slider moves rather than after releasing the slider"),
         )
 
     def __init__(self, parent, wrapper, buffer, frame):
@@ -912,6 +936,7 @@ class HSIMode(BitmapScroller, MajorMode):
         assert self.dprint(self.cube)
         
         self.show_value_at_cursor = True
+        self.immediate_slider_updates = self.classprefs.immediate_slider_updates
 
     def tabActivatedHook(self):
         self.update(False) # initial case will refresh automatically
@@ -956,7 +981,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.setBitmap(self.cubeview.bitmap)
         self.frame.updateMenumap()
         if refresh:
-            self.Refresh()
+            self.Update()
         self.idle_update_menu = True
 
     def setCube(self, index=0):
@@ -979,7 +1004,7 @@ class HSIMode(BitmapScroller, MajorMode):
                 plotproxy.setupAxes()
 
     def getPopupActions(self, evt, x, y):
-        return [CubeViewAction, ShowPixelValues]
+        return [CubeViewAction, ShowPixelValues, BandSliderUpdates]
     
     def showInitialPosition(self, url):
         if url.query:
