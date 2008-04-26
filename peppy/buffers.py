@@ -445,9 +445,11 @@ class Buffer(BufferVFSMixin):
 
     def revert(self, encoding=None):
         # don't use the buffered reader: get a new file handle
+        self.forEachView('revertPreHook')
         self.stc.revertEncoding(self, encoding=encoding)
         self.modified=False
         self.forEachView('applySettings')
+        self.forEachView('revertPostHook')
         self.showModifiedAll()
         
     def save(self, url=None):

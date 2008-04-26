@@ -865,6 +865,14 @@ class MajorMode(ClassPrefs, debugmixin):
     def showInitialPosition(self, url):
         """Hook to scroll to a non-default initial position if desired."""
         pass
+    
+    def revertPreHook(self):
+        """Hook to save any view parameters that should be restored after a revert"""
+        pass
+    
+    def revertPostHook(self):
+        """Hook to restore the view parameters after a revert"""
+        pass
 
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):

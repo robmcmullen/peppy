@@ -482,6 +482,20 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
                 text.append(line)
         return text
     
+    ##### Revert hooks
+    def revertPreHook(self):
+        self._revert_top = self.GetFirstVisibleLine()
+        self._revert_pos = self.GetCurrentPos()
+    
+    def revertPostHook(self):
+        line = min(self._revert_top, self.GetLineCount() - 1)
+        self.ScrollToLine(line)
+        pos = min(self._revert_pos, self.GetLength() - 1)
+        self.GotoPos(self._revert_pos)
+    
+    
+    ##### Styling code
+    
     def braceHighlight(self):
         """Highlight matching braces or flag mismatched braces.
         
