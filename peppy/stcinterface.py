@@ -14,6 +14,10 @@ class STCInterface(object):
     STC<http://www.yellowbrain.com/stc/index.html>} for more info on
     the rest of the STC methods.
     """
+    def GetReadOnly(self):
+        """Is the instance read-only (non-editable) or editable?"""
+        return False
+    
     def CanSave(self):
         """Can this STC instance save its contents?"""
         return True
