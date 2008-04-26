@@ -10,15 +10,13 @@ import wx
 from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
+from peppy.actions import *
 from peppy.actions.base import *
 from peppy.actions.minibuffer import *
 
 from peppy.lib.processmanager import *
 
-from peppy.about import *
 from peppy.major import *
-from peppy.dired import *
-from peppy.actions import *
 from peppy.buffers import *
 from peppy.frame import *
 from peppy.debug import *
@@ -874,7 +872,7 @@ class HelpMinibuffer(SelectAction):
 
 
 class MainMenu(IPeppyPlugin):
-    """Trac plugin that provides the global menubar and toolbar.
+    """Plugin that provides the global menubar and toolbar.
 
     This provides the base menubar and toolbar that all major modes
     build upon.
@@ -902,7 +900,6 @@ class MainMenu(IPeppyPlugin):
 
     def getMajorModes(self):
         yield BlankMode
-        yield DiredMode
 
     def getActions(self):
         return [NewTab, New,
@@ -927,31 +924,3 @@ class MainMenu(IPeppyPlugin):
 
                 OpenFundamental,
                 ]
-
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, DiredMode):
-            return [
-                DiredRefresh,
-                DiredNext, DiredPrevious,
-                DiredDelete, DiredDeleteBackwards,
-                DiredMark, DiredMarkBackwards,
-                DiredClearFlags,
-                DiredShow, DiredReplace,
-                DiredExecute,
-                ]
-        return []
-
-    def attemptOpen(self, buffer):
-        # use a copy of the url because don't want to change the buffer's url
-        # unless it turns out that we want to change the scheme
-        refcopy = vfs.get_reference(unicode(buffer.url))
-        #print "url = %s" % str(refcopy)
-        if refcopy.scheme == "file" and vfs.exists(refcopy) and vfs.get_size(refcopy) > 0:
-            # change scheme and see if tar can open it
-            refcopy.scheme = "tar"
-            if vfs.exists(refcopy):
-                # OK, we do a bit of a trick here: rewrite the url in the
-                # buffer object to change the scheme to tar:
-                buffer.url.scheme = "tar"
-                return (DiredMode, [])
-        return (None, [])
