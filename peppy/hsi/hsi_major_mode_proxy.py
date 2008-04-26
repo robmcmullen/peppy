@@ -55,6 +55,7 @@ class HSIPlugin(IPeppyPlugin):
                 return [peppy.hsi.hsi_major_mode.PrevBand,
                         peppy.hsi.hsi_major_mode.NextBand,
                         peppy.hsi.hsi_major_mode.GotoBand,
+                        peppy.hsi.hsi_major_mode.BandSlider,
                         peppy.hsi.hsi_major_mode.ContrastFilterAction,
                         peppy.hsi.hsi_major_mode.MedianFilterAction,
                         peppy.hsi.hsi_major_mode.ClippingFilterAction,

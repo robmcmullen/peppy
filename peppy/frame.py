@@ -539,7 +539,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self._mgr.Update()
     
     def updateMenumap(self):
-        self.menumap.forceUpdate()
+        self.menumap.forceToolbarUpdate()
 
     def getActiveMajorMode(self):
         wrapper = self.tabs.getCurrent()

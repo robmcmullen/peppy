@@ -594,6 +594,71 @@ class ToggleListAction(ListAction):
         raise NotImplementedError
 
 
+class SliderAction(SelectAction):
+    """Display a slider toolbar item.
+    
+    This is used to display a slider (gauge) control in a toolbar.
+    
+    The subclass should override the L{isChecked} method to return a boolean
+    indicating whether or not to display a checkmark (for a menu item) or to
+    display the button as toggled-on (for a toolbar).
+    """
+    icon = True
+    
+    slider_width = 100
+    
+    def insertIntoMenu(self,menu):
+        """Sliders are not allowed in the menu bar, so nothing will be added to
+        the menu."""
+        pass
+    
+    def getSliderValues(self):
+        """Return the current, min, and max value for the slider"""
+        return 0, 50, 100
+
+    def insertIntoToolbar(self,toolbar):
+        """Insert the slider control into the toolbar and set the min/max
+        values and initial value.
+        """
+        self.tool=toolbar
+        val, minval, maxval = self.getSliderValues()
+        self.slider = wx.Slider(toolbar, -1, val, minval, maxval, size=(self.slider_width, -1))
+        #dprint(self.slider)
+        toolbar.AddControl(self.slider)
+        
+        self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
+        self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
+        
+    def showEnable(self):
+        state = self.isEnabled()
+        self.slider.Enable(state)
+    
+    def OnSliderMove(self, evt):
+        """Hook method responding to EVT_SCROLL_THUMBTRACK event.
+        
+        Hook method to be overridden in subclasses if you want to perform some
+        update as the slider is changing.
+        """
+        #dprint(evt.GetPosition())
+        pass
+    
+    def OnSliderRelease(self, evt):
+        """Event callback when slider movement is complete."""
+        pos = evt.GetPosition()
+        self.action(pos)
+    
+    def updateToolOnDemand(self):
+        """Update the state of the tool from the extrinsic source.
+        
+        This is called through L{UserActionMap.forceToolbarUpdate} when the
+        toolbar has been updated.
+        """
+        val, minval, maxval = self.getSliderValues()
+        #dprint("val=%d min=%d max=%d" % (val, minval, maxval))
+        self.slider.SetRange(minval, maxval)
+        self.slider.SetValue(val)
+
+
 class OnDemandActionMixin(object):
     """Mixin to provide on-demand updating as the menubar is opened
     
@@ -616,37 +681,59 @@ class OnDemandActionMixin(object):
 class OnDemandActionNameMixin(object):
     """Mixin to provide on-demand naming of the menu item.
     
-    Note that the toolbar icon is not changed until the EVT_MENU_OPEN event is
-    issued, which may not be as soon as you want it.  Because the menu open
-    event is not issued until the user pulls down a menu from the menubar,
-    it's possible that you will have to update the toolbars by hand using a
-    direct call to UserActionMap.forceUpdate()
+    The menu item in the menu bar will be changed as a result of the
+    EVT_MENU_OPEN event handled by L{UserActionMap.OnMenuOpen}, so no user
+    interaction is necessary if only menu bar items are used.
+    
+    However, if this on demand action has an associated toolbar
+    icon, the update must be forced through a direct call to
+    L{UserActionMap.forceToolbarUpdate}.  Because toolbars are always visible,
+    there is no way to update the toolbar in response to some event.  Unless
+    the update is forced manually, the toolbar will remain in its old state.
     """
     
     def updateOnDemand(self):
-        """Updates the menu item name and toolbar icon"""
+        """Updates the menu item name.
+        
+        Because menu items are normally hidden, the EVT_MENU_OPEN event
+        that is sent immediately before the menu is displayed can be used
+        for the purpose of updating the name.  That's what happens in
+        L{UserActionMap.OnMenuOpen}.
+        """
+        if not self.widget:
+            return
+        
         name = self.getMenuItemName()
         help = self.getMenuItemHelp(name)
         icon = self.getToolbarIconName()
         if icon:
             icon = getIconBitmap(icon)
-        if self.widget:
             # FIXME: setting the menu bitmap mangles the menu on MSW -- it
             # pushes all menu items not set over to the right, as if the old
             # menu item labels become the accelerator text.
             if icon and wx.Platform != "__WXMSW__":
                 self.widget.SetBitmap(icon)
-            if name:
-                self.widget.SetItemLabel(name)
-            self.widget.SetHelp(help)
+        if name:
+            self.widget.SetItemLabel(name)
+        self.widget.SetHelp(help)
+    
+    def updateToolOnDemand(self):
+        """Updates the toolbar item.
+        
+        This is only called through the L{UserActionMap.forceToolbarUpdate}
+        method because toolbars must be manually updated at the time they
+        are changed.
+        """
         if self.tool:
+            icon = self.getToolbarIconName()
             if icon:
+                icon = getIconBitmap(icon)
                 self.tool.SetToolNormalBitmap(self.global_id, icon)
-                self.tool.EnableTool(self.global_id, True)
-            if name:
+                name = self.getMenuItemName()
                 self.tool.SetToolShortHelp(self.global_id, name)
-            self.tool.SetToolLongHelp(self.global_id, help)
-
+                help = self.getMenuItemHelp(name)
+                self.tool.SetToolLongHelp(self.global_id, help)
+                
     def getMenuItemName(self):
         """Override in subclass to provide the menu item name."""
         return ""

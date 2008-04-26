@@ -593,10 +593,10 @@ class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
         return True
 
     def action(self, index=-1, multiplier=1):
-        assert self.dprint("Previous band!!!")
+        #assert self.dprint("Previous band!!!")
         mode = self.mode
         if mode.cubeview.prevIndex():
-            mode.update()
+            mode.update(refresh=False)
 
 class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     name = "Next Band"
@@ -626,7 +626,7 @@ class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
         assert self.dprint("Next band!!!")
         mode = self.mode
         if mode.cubeview.nextIndex():
-            mode.update()
+            mode.update(refresh=False)
 
 class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
     name = "Goto Band"
@@ -650,7 +650,27 @@ class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
         # stc counts lines from zero, but displayed starting at 1.
         #dprint("goto line = %d" % line)
         if mode.cubeview.gotoIndex(band, user=True):
-            mode.update()
+            mode.update(refresh=False)
+
+class BandSlider(HSIActionMixin, SliderAction):
+    name = "Seek Band"
+    default_menu = ("View", 203)
+    
+    slider_width = 200
+    
+    def getSliderValues(self):
+        return self.mode.cubeview.indexes[0], 0, self.mode.cubeview.max_index
+    
+    def OnSliderMove(self, evt):
+        pos = evt.GetPosition()
+        text = self.mode.cubeview.getBandLegend(pos)
+        self.mode.setStatusText(text)
+    
+    def action(self, index=-1, multiplier=1):
+        #dprint("index=%d" % index)
+        if self.mode.cubeview.gotoIndex(index, user=False):
+            self.mode.update(refresh=False)
+
 
 class CubeAction(HSIActionMixin, SelectAction):
     def isEnabled(self):
