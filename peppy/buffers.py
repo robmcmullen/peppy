@@ -445,12 +445,8 @@ class Buffer(BufferVFSMixin):
 
     def revert(self, encoding=None):
         # don't use the buffered reader: get a new file handle
-        fh = vfs.open(self.url)
-        self.stc.ClearAll()
-        self.stc.readThreaded(fh, self)
-        self.stc.openSuccess(self, encoding=encoding)
+        self.stc.revertEncoding(self, encoding=encoding)
         self.modified=False
-        self.stc.EmptyUndoBuffer()
         self.forEachView('applySettings')
         self.showModifiedAll()
         

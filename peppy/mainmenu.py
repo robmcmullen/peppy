@@ -409,9 +409,6 @@ class Revert(SelectAction):
     default_toolbar = False
     icon = "icons/page_refresh.png"
     
-    def isEnabled(self):
-        return self.mode.buffer.stc.CanEdit()
-
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         dlg = wx.MessageDialog(self.frame, u"Revert file from\n\n%s?" % self.mode.buffer.url, "Revert File", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
@@ -428,9 +425,6 @@ class RevertEncoding(SelectAction):
     default_menu = ("File", 901)
     default_toolbar = False
     
-    def isEnabled(self):
-        return self.mode.buffer.stc.CanEdit()
-
     def action(self, index=-1, multiplier=1):
         minibuffer = TextMinibuffer(self.mode, self, label="Revert using encoding:",
                                     initial = self.mode.buffer.stc.encoding)
@@ -649,7 +643,7 @@ class Paste(STCModificationAction):
     key_bindings = {'win': "C-V", 'mac': "C-V", 'emacs': "C-Y"}
 
     def isActionAvailable(self):
-        return self.mode.CanEdit()
+        return not self.mode.GetReadOnly()
 
     def action(self, index=-1, multiplier=1):
         dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
@@ -1017,7 +1011,7 @@ class MainMenu(IPeppyPlugin):
     def getActions(self):
         return [NewTab, New,
                 OpenFileGUI, OpenFileNewWindowGUI, OpenFile, OpenURL,
-                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert, RevertEncoding,
+                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert,
                 Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
@@ -1045,7 +1039,8 @@ class MainMenu(IPeppyPlugin):
         if issubclass(mode.__class__, FundamentalMode):
             return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
                     ViewEOL, IndentationGuides, CaretLineHighlight, CaretWidth,
-                    ViewWhitespace, LongLineIndicator, TabHighlight]
+                    ViewWhitespace, LongLineIndicator, TabHighlight,
+                    RevertEncoding]
         elif issubclass(mode.__class__, DiredMode):
             return [
                 DiredRefresh,

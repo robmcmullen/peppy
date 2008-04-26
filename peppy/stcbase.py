@@ -171,6 +171,13 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         fh = buffer.getBufferedReader()
         self.readThreaded(fh, buffer, message)
     
+    def revertEncoding(self, buffer, message=None, encoding=None):
+        fh = vfs.open(buffer.url)
+        self.ClearAll()
+        self.readThreaded(fh, buffer, message)
+        self.openSuccess(buffer, encoding=encoding)
+        self.EmptyUndoBuffer()
+
     def readThreaded(self, fh, buffer, message=None):
         self.refstc.tempstore = StringIO()
         if fh:
@@ -337,10 +344,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         wx.stc.StyledTextCtrl.Redo(self)
         self.checkUndoEOL()
         
-    def CanEdit(self):
-        """PyPE compat"""
-        return True
-
     ## STCInterface additions
     def CanCopy(self):
         return True

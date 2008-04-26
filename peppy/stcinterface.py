@@ -14,10 +14,6 @@ class STCInterface(object):
     STC<http://www.yellowbrain.com/stc/index.html>} for more info on
     the rest of the STC methods.
     """
-    def CanEdit(self):
-        """PyPE compat to show read-only status"""
-        return True
-    
     def CanSave(self):
         """Can this STC instance save its contents?"""
         return True
@@ -108,20 +104,41 @@ class STCInterface(object):
         """
         pass
 
+    def revertEncoding(self, buffer, message=None, encoding=None):
+        """Revert the file to the last saved state.
+        
+        @param buffer: buffer object used to read the file
+        @param message: optional message used to update a progress bar
+        @param encoding: optional encoding to attempt to convert from
+        """
+        pass
+
+    def readThreaded(self, fh, buffer, message=None):
+        """Read from filehandle, converting as necessary.
+        
+        This may be called from a background thread, so no direct interaction
+        with the GUI is allowed.  Any communication for progress bars needs to
+        be done through the message that's passed in, using pubsub like::
+        
+            Publisher().sendMessage(message, percent)
+        
+        where percent is an integer from 0 to 100 indicating the amount of the
+        file that has been successfully processed.  A value of -1 can be used
+        to indicate that an unknown amount of data remains.
+
+        @param fh: file-like object used to load the file
+        @param buffer: L{Buffer} object containing information about the file
+        @param message: optional pubsub message to be sent with progress
+        """
+        pass
+
     def openSuccess(self, buffer):
         """Called after a file has been successfully opened.
         
         This is called by the GUI thread, so can update any GUI elements here.
         """
         pass
-
-    def readFrom(self, fh):
-        """Read from filehandle, converting as necessary
-
-        @param fh: file-like object used to load the file
-        """
-        pass
-
+    
     def prepareEncoding(self):
         """Convert the raw bytes in the file to the correct encoding before
         writing.
@@ -206,9 +223,6 @@ class NonResidentSTC(STCInterface):
     """
     def __init__(self, parent=None, copy=None):
         self.filename = None
-
-    def CanEdit(self):
-        return False
     
     def Destroy(self):
         pass
