@@ -239,19 +239,20 @@ class ListDropScrollerMixin(object):
         direction.
         """
         #print "_auto_scroll = %d, timer = %s" % (self._auto_scroll, self._auto_scroll_timer is not None)
+        count = self.GetItemCount()
         if self._auto_scroll == 0:
             # clean up timer resource
             self._auto_scroll_timer = None
-        else:
+        elif count > 0:
             if self._auto_scroll_indicator_line:
                 dc = self._getIndicatorDC()
                 self._eraseIndicator(dc)
             if self._auto_scroll < 0:
-                self.EnsureVisible(self.GetTopItem() + self._auto_scroll)
-                self._auto_scroll_timer.Start()
+                index = max(0, self.GetTopItem() + self._auto_scroll)
             else:
-                self.EnsureVisible(self.GetTopItem() + self.GetCountPerPage())
-                self._auto_scroll_timer.Start()
+                index = min(self.GetTopItem() + self.GetCountPerPage(), count - 1)
+            self.EnsureVisible(index)
+            self._auto_scroll_timer.Start()
         evt.Skip()
 
     def _getIndicatorDC(self):
