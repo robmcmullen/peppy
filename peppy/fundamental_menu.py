@@ -157,17 +157,38 @@ class FontZoom(ClassprefsTooltipMixin, MinibufferAction):
     """
     alias = "font-zoom"
     name = "Set Font Zoom..."
-    default_menu = (("View/Font Size", 320), 100)
+    default_menu = (("View/Font Size", 320), -900)
     minibuffer = IntMinibuffer
     minibuffer_label = "Font Zoom:"
     
     local_setting = 'font_zoom'
+
+    def getInitialValueHook(self):
+        return str(self.mode.GetZoom())
 
     def processMinibuffer(self, minibuffer, mode, zoom):
         """
         Callback function used to set the stc to the correct line.
         """
         mode.SetZoom(zoom)
+
+class FontZoomIncrease(SelectAction):
+    name = "Increase Size"
+    tooltip = "Increase the size of the font in the current view"
+    default_menu = ("View/Font Size", 100)
+    icon = "icons/zoom_in.png"
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.SetZoom(self.mode.GetZoom() + 1)
+
+class FontZoomDecrease(SelectAction):
+    name = "Decrease Size"
+    tooltip = "Decrease the size of the font in the current view"
+    default_menu = ("View/Font Size", 101)
+    icon = "icons/zoom_out.png"
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.SetZoom(self.mode.GetZoom() - 1)
 
 
 class SelectBraces(TextModificationAction):
@@ -279,7 +300,9 @@ class FundamentalMenu(IPeppyPlugin):
             return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
                     ViewEOL, IndentationGuides, CaretLineHighlight, CaretWidth,
                     ViewWhitespace, LongLineIndicator, TabHighlight,
-                    RevertEncoding, FontZoom,
+                    RevertEncoding,
+                    
+                    FontZoom, FontZoomIncrease, FontZoomDecrease,
                     
                     EOLModeSelect, SelectBraces,
                     
