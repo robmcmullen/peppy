@@ -634,13 +634,13 @@ class OnDemandActionNameMixin(object):
                 self.widget.SetItemLabel(name)
             if icon:
                 self.widget.SetBitmap(icon)
-            self.widget.SetHelp(tooltip)
+            self.widget.SetHelp(help)
         if self.tool:
             if icon:
                 self.tool.SetToolNormalBitmap(self.global_id, icon)
             if name:
                 self.tool.SetToolShortHelp(self.global_id, name)
-            self.tool.SetToolLongHelp(self.global_id, tooltip)
+            self.tool.SetToolLongHelp(self.global_id, help)
 
     def getMenuItemName(self):
         """Override in subclass to provide the menu item name."""
