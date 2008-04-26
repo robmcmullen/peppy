@@ -559,6 +559,10 @@ class FocalPlaneView(CubeView):
         profile = self.cube.getFocalPlaneDepthInPlace(x, y)
         return profile
 
+    def getBandLegend(self, band_index):
+        """Return the band name given the index"""
+        return u"Frame %d" % (band_index + HSIMode.classprefs.band_number_offset)
+    
 
 class HSIActionMixin(object):
     @classmethod
