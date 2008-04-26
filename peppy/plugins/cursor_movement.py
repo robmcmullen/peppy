@@ -114,6 +114,10 @@ class GotoLine(MinibufferAction):
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
 
+    def getInitialValueHook(self):
+        line = self.mode.GetCurrentLine()
+        return str(line + 1)
+
     def processMinibuffer(self, minibuffer, mode, line):
         """
         Callback function used to set the stc to the correct line.
