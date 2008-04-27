@@ -16,6 +16,7 @@ from peppy.actions.minibuffer import *
 
 from peppy.lib.processmanager import *
 
+from peppy.about import *
 from peppy.major import *
 from peppy.buffers import *
 from peppy.frame import *
@@ -589,7 +590,6 @@ class Cut(STCModificationAction):
         return self.mode.CanCut()
 
     def action(self, index=-1, multiplier=1):
-        dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
         return self.mode.Cut()
 
 class Copy(STCModificationAction):
@@ -604,7 +604,6 @@ class Copy(STCModificationAction):
         return self.mode.CanCopy()
 
     def action(self, index=-1, multiplier=1):
-        assert self.dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
         return self.mode.Copy()
 
 class Paste(STCModificationAction):
@@ -619,7 +618,6 @@ class Paste(STCModificationAction):
         return not self.mode.GetReadOnly()
 
     def action(self, index=-1, multiplier=1):
-        dprint("rectangle=%s" % self.mode.SelectionIsRectangle())
         return self.mode.Paste()
 
 class PasteAtColumn(Paste):
@@ -894,8 +892,7 @@ class MainMenu(IPeppyPlugin):
         action_classes = msg.data
         # FIXME: the built-in right click menu has a Delete option as well that
         # deletes the current selection.
-        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll,
-                               SelectBraces])
+        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll])
         #dprint(action_classes)
 
     def getMajorModes(self):

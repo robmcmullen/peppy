@@ -797,9 +797,11 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
     ### Spell checking utilities
     def getPopupActions(self, evt, x, y):
         pos = self.PositionFromPoint(wx.Point(x, y))
+        # Save the word that should be spell-checked so that the spell checking
+        # action won't have to figure out which word to check
         self.check_spelling = self.getWordFromPosition(pos)
         #dprint(self.check_spelling)
-        action_classes = [SpellingSuggestionAction]
+        action_classes = []
         Publisher().sendMessage('fundamental.context_menu', action_classes)
         return action_classes
 

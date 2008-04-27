@@ -292,6 +292,20 @@ class FundamentalMenu(IPeppyPlugin):
     This provides the base menubar and toolbar that all major modes
     build upon.
     """
+    def activateHook(self):
+        Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
+    
+    def deactivateHook(self):
+        Publisher().unsubscribe(self.getFundamentalMenu)
+    
+    def getFundamentalMenu(self, msg):
+        action_classes = msg.data
+        # FIXME: Insert the spelling suggestion action as the first thing in
+        # the list
+        action_classes[0:0] = [SpellingSuggestionAction]
+        action_classes.append(SelectBraces)
+        #dprint(action_classes)
+
     def getMajorModes(self):
         yield FundamentalMode
 

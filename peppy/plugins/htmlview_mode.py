@@ -89,6 +89,9 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
         # it in a thread.
         # self.update()
         pass
+    
+    def GetReadOnly(self):
+        return True
 
     def CanCopy(self):
         return True
