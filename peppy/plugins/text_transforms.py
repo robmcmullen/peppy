@@ -72,7 +72,7 @@ class Tabify(LineOrRegionMutateAction):
     """Replace spaces with tabs at the start of lines."""
     alias = "tabify"
     name = "&Tabify"
-    default_menu = ("Transform", -700)
+    default_menu = (("Transform/Whitespace", -800), 100)
 
     def mutateLines(self, lines):
         out = []
@@ -90,7 +90,7 @@ class Untabify(LineOrRegionMutateAction):
     """Replace tabs with spaces at the start of lines."""
     alias = "untabify"
     name = "&Untabify"
-    default_menu = ("Transform", 701)
+    default_menu = ("Transform/Whitespace", 110)
 
     def mutateLines(self, lines):
         out = []
@@ -107,7 +107,7 @@ class RemoveTrailingWhitespace(LineOrRegionMutateAction):
     alias = "remove-trailing-whitespace"
     name = "Remove Trailing Whitespace"
     tooltip = "Remove all trailing whitespace from selected lines"
-    default_menu = ("Transform", 710)
+    default_menu = ("Transform/Whitespace", 200)
 
     def mutateLines(self, lines):
         regex = re.compile('(.*?)([\t ]+)([\r\n]+)?$')
@@ -191,7 +191,7 @@ class Rot13(RegionMutateAction):
     """Convert the region using the rot13 encoding."""
     alias = "rot13-region"
     name = "Rot13"
-    default_menu = ("Transform", -800)
+    default_menu = ("Transform", -900)
 
     def mutate(self, txt):
         """Change to all lower case.
@@ -209,7 +209,7 @@ class Backslashify(LineOrRegionMutateAction):
     """
     alias = "backslashify"
     name = "Backslashify"
-    default_menu = ("Transform", 610)
+    default_menu = ("Transform", 910)
 
     def isActionAvailable(self):
         """The action is only available if a region has multiple lines."""
@@ -236,7 +236,7 @@ class UnBackslashify(LineOrRegionMutateAction):
     """
     alias = "remove-backslashes"
     name = "Remove Backslashes"
-    default_menu = ("Transform", 611)
+    default_menu = ("Transform", 911)
 
     def isActionAvailable(self):
         """The action is only available if a region has multiple lines."""

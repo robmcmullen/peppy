@@ -330,7 +330,6 @@ class UserActionMap(debugmixin):
         
     def updateToolbarActions(self, auimgr):
         needed = {}
-        order = []
         for title, items in self.class_list.menus.iteritems():
             if title == 'root':
                 # Ignore the root menu -- it only contains other menus
@@ -350,7 +349,6 @@ class UserActionMap(debugmixin):
                     # we know that the toolbar is needed
                     if title not in needed:
                         needed[title] = True
-                        order.append(title)
                     if title not in self.title_to_toolbar:
                         tb = wx.ToolBar(self.frame, -1, wx.DefaultPosition, wx.DefaultSize,
                             wx.TB_FLAT | wx.TB_NODIVIDER)
@@ -362,6 +360,12 @@ class UserActionMap(debugmixin):
                         toolbar.AddSeparator()
                     action.insertIntoToolbar(toolbar)
         
+        order = []
+        # Use order of the menubar to determine order of the toolbar
+        for weight, title, separator in self.class_list.menus['root']:
+            if title in needed:
+                order.append(title)
+
         if wx.Platform != '__WXMSW__':
             # FIXME: On GTK and OSX, add toolbars in reverse order, because
             # apparently aui inserts toolbars from the left and pushes
