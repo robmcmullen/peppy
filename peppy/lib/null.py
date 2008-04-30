@@ -88,6 +88,9 @@ class Null:
     def __str__(self):
         "Convert to a string and return it."
         return "Null"
+    
+    def __nonzero__(self):
+        return 0
 
 
 def test():
