@@ -7,7 +7,6 @@ should be applicable to more than one major mode.
 """
 
 import os, glob, re
-import compiler
 
 import wx
 import wx.lib.stattext
@@ -16,6 +15,7 @@ from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
 
 from peppy.about import AddCredit
+from peppy.fundamental import FundamentalMode
 from peppy.actions import *
 from peppy.actions.base import *
 from peppy.debug import *
@@ -79,7 +79,27 @@ class FindService(debugmixin):
     def allowBackward(self):
         return True
     
-    def expandSearchText(self, findTxt, set_flags=True):
+    def setFlags(self):
+        text = self.settings.find
+        
+        if text != text.lower():
+            match_case = True
+        else:
+            match_case = self.settings.match_case
+        
+        if match_case:
+            self.flags = wx.stc.STC_FIND_MATCHCASE
+        else:
+            self.flags = 0
+    
+    def getFlags(self, user_flags=0):
+        if self.settings.match_case != self.stc.locals.case_sensitive_search:
+            self.settings.match_case = self.stc.locals.case_sensitive_search
+            self.setFlags()
+        
+        return self.flags | user_flags
+        
+    def expandSearchText(self, findTxt):
         """Convert the search string that the user enters into the string
         actually searched for by the service.
         
@@ -89,23 +109,6 @@ class FindService(debugmixin):
         """
         if not findTxt:
             findTxt = ""
-        if len(findTxt) > 0 and findTxt[0] in ['"', "'"]:
-            try:
-                findTxt = [i for i in compiler.parse(str(findTxt)).getChildren()[:1] if isinstance(i, basestring)][0]
-            except Exception, e:
-                pass
-            match_case = True
-        else:
-            if findTxt != findTxt.lower():
-                match_case = True
-            else:
-                match_case = self.settings.match_case
-        
-        if set_flags:
-            if match_case:
-                self.flags = wx.stc.STC_FIND_MATCHCASE
-            else:
-                self.flags = 0
             
         return findTxt
     
@@ -116,11 +119,12 @@ class FindService(debugmixin):
         Like L{expandSearchText}, this is primarily designed to be overridden
         in subclasses.
         """
-        return self.expandSearchText(text, set_flags=False)
+        return self.expandSearchText(text)
     
     def setFindString(self, text):
         self.settings.find_user = text
         self.settings.find = self.expandSearchText(text)
+        self.setFlags()
     
     def setReplaceString(self, text):
         self.settings.replace_user = text
@@ -213,7 +217,7 @@ class FindService(debugmixin):
         """
         if not self.settings.find:
             return None, None
-        flags = self.flags | wx.FR_DOWN
+        flags = self.getFlags(wx.FR_DOWN)
         
         #handle finding next item, handling wrap-arounds as necessary
         if start < 0:
@@ -254,7 +258,7 @@ class FindService(debugmixin):
         """
         if not self.settings.find:
             return None, None
-        flags = self.flags
+        flags = self.getFlags()
         
         if start < 0:
             sel = self.stc.GetSelection()
@@ -333,15 +337,9 @@ $ 	This matches the end of a line.
             return last - pos
         return -1
     
-    def expandSearchText(self, text, set_flags=True):
-        if not text:
-            text = ""
-        
-        if set_flags:
-            self.flags = wx.stc.STC_FIND_REGEXP
-        
-        return text
-
+    def setFlags(self):
+        self.flags = self.getFlags(wx.stc.STC_FIND_REGEXP)
+    
     def doReplace(self):
         """Replace the selection
         
@@ -419,7 +417,10 @@ class FindWildcardService(FindService):
         #dprint("Not matched!!! pat=%s text=%s pos=%d last=%d" % (pyre, text, pos, last))
         return -1
     
-    def expandSearchText(self, text, set_flags=False):
+    def setFlags(self):
+        self.flags = self.getFlags(wx.stc.STC_FIND_REGEXP)
+    
+    def expandSearchText(self, text):
         """Convert from shell style wildcards to regular expressions"""
         import peppy.lib.glob
         
@@ -427,8 +428,6 @@ class FindWildcardService(FindService):
             text = ""
         regex = peppy.lib.glob.translate(text)
         #dprint(regex)
-        
-        self.flags = wx.stc.STC_FIND_REGEXP
         
         return regex
 
@@ -982,16 +981,31 @@ class ReplaceWildcard(MinibufferRepeatAction):
     find_direction = 1
 
 
+class CaseSensitiveSearch(ToggleAction):
+    """Should search string require match by case"""
+    name = "Case Sensitive Search"
+    default_menu = ("Edit", 499)
+    
+    def isChecked(self):
+        return self.mode.locals.case_sensitive_search
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.locals.case_sensitive_search = not self.mode.locals.case_sensitive_search
+
+
 class FindReplacePlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
     actions.
     """
 
-    def getActions(self):
-        return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
-                Replace, ReplaceBasicRegex, ReplaceWildcard,
-                ]
-
+    def getCompatibleActions(self, mode):
+        if issubclass(mode.__class__, FundamentalMode):
+            return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
+                    Replace, ReplaceBasicRegex, ReplaceWildcard,
+                    
+                    CaseSensitiveSearch,
+                    ]
+        return []
 
 if __name__ == "__main__":
     import sys
