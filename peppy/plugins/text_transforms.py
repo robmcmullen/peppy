@@ -299,7 +299,7 @@ class SortLines(LineOrRegionMutateAction):
     """
     alias = "sort-lines"
     name = "Sort Lines"
-    default_menu = (("Transform/Sort", 820), 100)
+    default_menu = (("Transform/Reorder", 820), 100)
 
     def isActionAvailable(self):
         """The action is makes sense if a region has multiple lines."""
@@ -311,6 +311,26 @@ class SortLines(LineOrRegionMutateAction):
         """
         out = [line for line in lines]
         out.sort()
+        return out
+
+
+class ReverseLines(LineOrRegionMutateAction):
+    """Reverse the selected lines
+    """
+    alias = "reverse-lines"
+    name = "Reverse Lines"
+    default_menu = ("Transform/Reorder", -200)
+
+    def isActionAvailable(self):
+        """The action is makes sense if a region has multiple lines."""
+        (pos, end) = self.mode.GetSelection()
+        return self.mode.LineFromPosition(pos) < self.mode.LineFromPosition(end) - 1
+
+    def mutateLines(self, lines):
+        """Sort the lines using the default string comparison sort
+        """
+        out = [line for line in lines]
+        out.reverse()
         return out
 
 
@@ -329,5 +349,5 @@ class TextTransformPlugin(IPeppyPlugin):
                 
                 Rot13,
                 
-                SortLines,
+                SortLines, ReverseLines,
                 ]
