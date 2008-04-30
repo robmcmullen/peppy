@@ -202,7 +202,7 @@ class FindService(debugmixin):
         """
         count = len(self.settings.find)
         return count
-        
+    
     def doFindNext(self, start=-1, incremental=False):
         """Find and highlight the next match in the document.
         
@@ -294,8 +294,8 @@ class FindService(debugmixin):
 
 
 class FindBasicRegexService(FindService):
-    forward = "Find Regex"
-    replace = "Replace Regex"
+    forward = "Find Scintilla Regex"
+    replace = "Replace Scintilla Regex"
     
     help = r"""
     Basic regular expressions are a limited form supported by the scintilla
@@ -491,6 +491,131 @@ class FindWildcardService(FindService):
         return text
 
 
+class FindRegexService(FindService):
+    """Find and replace using python regular expressions.
+    
+    """
+    forward = "Find Regex"
+    replace = "Replace Regex"
+
+    def __init__(self, *args, **kwargs):
+        FindService.__init__(self, *args, **kwargs)
+        self.regex = None
+
+    def setFlags(self):
+        text = self.settings.find
+        
+        if text != text.lower():
+            match_case = True
+        else:
+            match_case = self.settings.match_case
+        
+        if match_case:
+            self.flags = 0
+        else:
+            self.flags = re.IGNORECASE
+    
+    def getFlags(self, user_flags=0):
+        if self.settings.match_case != self.stc.locals.case_sensitive_search:
+            self.settings.match_case = self.stc.locals.case_sensitive_search
+            self.setFlags()
+        
+        flags = self.flags | user_flags
+        
+        try:
+            self.regex = re.compile(self.settings.find, flags)
+        except re.error:
+            self.regex = None
+        return flags
+
+    def doFindNext(self, start=-1, incremental=False):
+        """Find and highlight the next match in the document.
+        
+        @param start: starting position in text, or -1 to use current position
+        
+        @param incremental: True if an incremental search that will be added to
+        the current search result
+        
+        @return: tuple of two elements.  The first element is the position of
+        the match, -1 if no match, a string indicating that an error occurred.
+        The second element is the position of the original start of the
+        search.  If the search string is invalid, a tuple of (None, None)
+        is returned.
+        """
+        if not self.settings.find:
+            return None, None
+        self.getFlags()
+        if self.regex is None:
+            return _("Incomplete regex"), None
+        
+        #handle finding next item, handling wrap-arounds as necessary
+        if start < 0:
+            sel = self.stc.GetSelection()
+            if incremental:
+                start = min(sel)
+            else:
+                start = max(sel)
+        
+        # FIXME: optimize this.
+        text = self.stc.GetTextRange(start, self.stc.GetTextLength())
+        index = 0
+        
+        match = self.regex.search(text, index)
+        if match:
+            #dprint("match=%s start=%d end=%d string=%s" % (match, match.start(0), match.end(0), match.group(0)))
+            # Because unicode characters are stored as utf-8 in the stc and the
+            # positions in the stc correspond to the raw bytes, not the number
+            # of unicode characters, we have to find out the offset to the
+            # unicode chars in terms of raw bytes.
+            pos = start + len(text[:match.start(0)].encode('utf-8'))
+            count = len(text[match.start(0):match.end(0)].encode('utf-8'))
+            self.highlightSelection(pos, count)
+        
+        else:
+            pos = -1
+        
+        return pos, start
+    
+    def getReplacement(self, replacing):
+        """Get the replacement text.
+        
+        Can't use the built-in scintilla regex replacement method, because
+        it seems that scintilla regexs are greedy and ignore the target end
+        specified by SetTargetEnd.  So, we have to convert to a python regex
+        and replace that way.
+        """
+        match = self.regex.match(replacing)
+        if not match:
+            # Hmmm.  This should have worked because theoretically we should
+            # have been matching a value returned by the same regex.
+            return replacing
+        #dprint("matches: %s" % str(match.groups()))
+        
+        output = []
+        
+        parts = re.split("(\\\\[0-9]{1,2})", self.settings.replace)
+        for part in parts:
+            if part.startswith("\\"):
+                try:
+                    index = int(part[1:])
+                    #dprint("found index %d" % index)
+                    output.append(match.group(index))
+                except ValueError:
+                    # not an integer means we just insert the value
+                    output.append(part)
+                except IndexError:
+                    # no matching group with that index, so put no value in the
+                    # output for this match
+                    pass
+            else:
+                if not part:
+                    part = ''
+                output.append(part)
+        text = "".join(output)
+        return text
+
+
+
 class FindBar(wx.Panel):
     """Find panel customized from PyPE's findbar.py
     
@@ -550,9 +675,11 @@ class FindBar(wx.Panel):
     def OnEnter(self, evt):
         return self._lastcall(evt)
     
-    def OnNotFound(self):
+    def OnNotFound(self, msg=None):
         self.find.SetBackgroundColour(wx.RED)
-        self.frame.SetStatusText("Search string was not found.")
+        if msg is None:
+            msg = _("Search string was not found.")
+        self.frame.SetStatusText(msg)
         self.Refresh()
 
     def resetColor(self):
@@ -598,6 +725,8 @@ class FindBar(wx.Panel):
         if posn is None:
             self.cancel()
             return
+        elif not isinstance(posn, int):
+            return self.OnNotFound(posn)
         elif posn != -1:
             #dprint("interactive=%s" % interactive)
             if interactive:
@@ -707,13 +836,13 @@ class FindText(MinibufferRepeatAction):
     find_service = FindService
     find_direction = 1
 
-class FindBasicRegex(MinibufferRepeatAction):
+class FindRegex(MinibufferRepeatAction):
     name = "Find Regex..."
-    tooltip = "Search for a simple regular expression."
+    tooltip = "Search for a python regular expression."
     default_menu = ("Edit", 401)
     key_bindings = {'emacs': 'C-S-S', }
     minibuffer = FindMinibuffer
-    find_service = FindBasicRegexService
+    find_service = FindRegexService
     find_direction = 1
 
 class FindWildcard(MinibufferRepeatAction):
@@ -962,13 +1091,13 @@ class Replace(MinibufferRepeatAction):
     find_service = FindService
     find_direction = 1
 
-class ReplaceBasicRegex(MinibufferRepeatAction):
+class ReplaceRegex(MinibufferRepeatAction):
     name = "Replace Regex..."
-    tooltip = "Replace using simple regular expressions."
+    tooltip = "Replace using python regular expressions."
     default_menu = ("Edit", 411)
     key_bindings = {'emacs': 'S-F6', }
     minibuffer = ReplaceMinibuffer
-    find_service = FindBasicRegexService
+    find_service = FindRegexService
     find_direction = 1
 
 class ReplaceWildcard(MinibufferRepeatAction):
@@ -1000,8 +1129,8 @@ class FindReplacePlugin(IPeppyPlugin):
 
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
-            return [FindText, FindBasicRegex, FindWildcard, FindPrevText,
-                    Replace, ReplaceBasicRegex, ReplaceWildcard,
+            return [FindText, FindRegex, FindWildcard, FindPrevText,
+                    Replace, ReplaceRegex, ReplaceWildcard,
                     
                     CaseSensitiveSearch,
                     ]
