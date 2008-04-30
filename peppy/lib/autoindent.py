@@ -417,7 +417,11 @@ class CStyleAutoindent(FoldingAutoindent):
             s = stc.GetStyleAt(pos)
             if not stc.isStyleComment(s) and not stc.isStyleString(s):
                 stc.BeginUndoAction()
-                stc.AddText(uchar)
+                start, end = stc.GetSelection()
+                if start == end:
+                    stc.AddText(uchar)
+                else:
+                    stc.ReplaceSelection(uchar)
                 self.processTab(stc)
                 self.processReturn(stc)
                 stc.EndUndoAction()

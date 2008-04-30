@@ -210,7 +210,11 @@ class PythonAutoindent(BasicAutoindent):
             s = stc.GetStyleAt(pos)
             if not stc.isStyleComment(s) and not stc.isStyleString(s):
                 stc.BeginUndoAction()
-                stc.AddText(uchar)
+                start, end = stc.GetSelection()
+                if start == end:
+                    stc.AddText(uchar)
+                else:
+                    stc.ReplaceSelection(uchar)
                 self.reindentLine(stc, dedent_only=True)
                 stc.EndUndoAction()
                 return True
