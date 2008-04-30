@@ -334,6 +334,28 @@ class ReverseLines(LineOrRegionMutateAction):
         return out
 
 
+class ShuffleLines(LineOrRegionMutateAction):
+    """Shuffle the selected lines randomly
+    """
+    alias = "shuffle-lines"
+    name = "Shuffle Lines"
+    default_menu = ("Transform/Reorder", 210)
+
+    def isActionAvailable(self):
+        """The action is makes sense if a region has multiple lines."""
+        (pos, end) = self.mode.GetSelection()
+        return self.mode.LineFromPosition(pos) < self.mode.LineFromPosition(end) - 1
+
+    def mutateLines(self, lines):
+        """Sort the lines using the default string comparison sort
+        """
+        import random
+        
+        out = [line for line in lines]
+        random.shuffle(out)
+        return out
+
+
 class TextTransformPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text transformation actions.
     """
@@ -349,5 +371,5 @@ class TextTransformPlugin(IPeppyPlugin):
                 
                 Rot13,
                 
-                SortLines, ReverseLines,
+                SortLines, ReverseLines, ShuffleLines,
                 ]
