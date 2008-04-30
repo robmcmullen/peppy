@@ -607,15 +607,15 @@ class FindRegexService(FindService):
         # The stc equivalent position must be adjusted for the difference in
         # numbers of bytes, not numbers of characters.
         self.stc_equiv_pos += len(replacement.encode('utf-8')) - len(replacing.encode('utf-8'))
-        
         self.stc.ReplaceTarget(replacement)
         self.stc.SetSelection(self.stc_equiv_start, self.stc_equiv_pos)
 
-
-class FindBar(wx.Panel):
+class FindBar(wx.Panel, debugmixin):
     """Find panel customized from PyPE's findbar.py
     
     """
+    debuglevel = 0
+    
     def __init__(self, parent, frame, stc, storage=None, service=None, direction=1, **kwargs):
         wx.Panel.__init__(self, parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         self.frame = frame
@@ -683,25 +683,19 @@ class FindBar(wx.Panel):
             self.find.SetBackgroundColour(wx.WHITE)
             self.Refresh()
 
-    def sel(self, posns, posne, msg, interactive=True):
-        if interactive:
-            self.resetColor()
-            self.frame.SetStatusText(msg)
-            line = self.stc.LineFromPosition(posns)
-            self.stc.GotoLine(line)
-        posns, posne = self.getRange(posns, posne-posns)
-        self.stc.SetSelection(posns, posne)
-        if interactive:
-            self.stc.EnsureVisible(line)
-            self.stc.EnsureCaretVisible()
-    
     def showLine(self, pos, msg):
+        self.dprint()
         self.resetColor()
+        self.dprint()
         self.frame.SetStatusText(msg)
+        self.dprint()
         line = self.stc.LineFromPosition(pos)
-        #self.stc.GotoLine(line)
-        self.stc.EnsureVisible(line)
+        self.dprint()
+        if not self.stc.GetLineVisible(line):
+            self.stc.EnsureVisible(line)
+        self.dprint()
         self.stc.EnsureCaretVisible()
+        self.dprint()
     
     def cancel(self, pos_at_end=False):
         self.resetColor()
@@ -717,14 +711,14 @@ class FindBar(wx.Panel):
         self._lastcall = self.OnFindN
         
         posn, st = self.service.doFindNext(incremental=incremental)
-        #dprint("start=%d pos=%d" % (st, posn))
+        self.dprint("start=%d pos=%d" % (st, posn))
         if posn is None:
             self.cancel()
             return
         elif not isinstance(posn, int):
             return self.OnNotFound(posn)
         elif posn != -1:
-            #dprint("interactive=%s" % interactive)
+            self.dprint("interactive=%s" % interactive)
             if interactive:
                 self.showLine(posn, help)
             self.loop = 0
@@ -732,7 +726,7 @@ class FindBar(wx.Panel):
         
         if allow_wrap and st != 0:
             posn, st = self.service.doFindNext(0)
-            #dprint("wrapped: start=%d pos=%d" % (st, posn))
+            self.dprint("wrapped: start=%d pos=%d" % (st, posn))
         self.loop = 1
         
         if posn != -1:
@@ -740,7 +734,7 @@ class FindBar(wx.Panel):
                 self.showLine(posn, "Reached end of document, continued from start.")
             return
         
-        #dprint("not found: start=%d pos=%d" % (st, posn))
+        self.dprint("not found: start=%d pos=%d" % (st, posn))
         self.OnNotFound()
     
     def OnFindP(self, evt, allow_wrap=True, help='', incremental=False):
