@@ -211,6 +211,7 @@ class LineOrRegionMutateAction(TextModificationAction):
         """
         s.BeginUndoAction()
         (pos, end) = s.GetSelection()
+        #dprint("original selection: %d - %d" % (pos, end))
         # If end of the selection is on a line by itself, move the end back
         # by one so we don't end up picking up an additional line
         if end > pos and s.GetColumn(end) == 0:
@@ -223,10 +224,20 @@ class LineOrRegionMutateAction(TextModificationAction):
         s.GotoPos(end - offset)
         s.CmdKeyExecute(wx.stc.STC_CMD_LINEEND)
         end = s.GetCurrentPos()
+        
+        # Check to make sure that we're including the line-end characters from
+        # the last line
+        line = s.LineFromPosition(end)
+        lineend = s.GetLineEndPosition(line)
+        if end == lineend:
+            end = s.PositionFromLine(line + 1)
+            if end < 0:
+                end = lineend
+        
         text = s.GetTextRange(pos, end)
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
-        #dprint("range: %d - %d" % (pos, end))
+        #dprint("range: %d - %d, text=-->%s<--" % (pos, end, text))
         lines = text.splitlines(True) # keep line endings on
         #dprint(lines)
         newlines = self.mutateLines(lines)
@@ -235,8 +246,8 @@ class LineOrRegionMutateAction(TextModificationAction):
         s.ReplaceTarget(text)
         end = pos + len(text)
         s.updateRegion(pos, end)
-        s.GotoPos(end + offset)
-        s.SetSelection(pos, end + offset)
+        s.GotoPos(end)
+        s.SetSelection(pos, end)
         s.EndUndoAction()
 
     def action(self, index=-1, multiplier=1):
