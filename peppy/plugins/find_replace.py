@@ -23,6 +23,10 @@ from peppy.debug import *
 AddCredit("Jan Hudec", "for the shell-style wildcard to regex converter from bzrlib")
 
 
+class ReplacementError(Exception):
+    pass
+
+
 class FindSettings(debugmixin):
     def __init__(self, match_case=False, smart_case=True):
         self.match_case = match_case
@@ -280,17 +284,13 @@ class FindService(debugmixin):
         
         Replace the current selection in the stc with the replacement text
         """
-        if self.stc.GetReadOnly():
-            return -1
         sel = self.stc.GetSelection()
         replacing = self.stc.GetTextRange(sel[0], sel[1])
 
-        replaceTxt = self.getReplacement(replacing)
+        replacement = self.getReplacement(replacing)
         
-        self.stc.ReplaceSelection(replaceTxt)
-        #fix for unicode...
-        self.stc.SetSelection(min(sel), min(sel)+len(replaceTxt))
-        return len(replaceTxt)
+        self.stc.ReplaceSelection(replacement)
+        self.stc.SetSelection(min(sel), min(sel) + len(replacement.encode('utf-8')))
 
 
 class FindBasicRegexService(FindService):
@@ -345,8 +345,6 @@ $ 	This matches the end of a line.
         
         Replace the current selection in the stc with the replacement text
         """
-        if self.stc.GetReadOnly():
-            return -1
         sel = self.stc.GetSelection()
         self.stc.SetTargetStart(sel[0])
         self.stc.SetTargetEnd(sel[1])
@@ -355,7 +353,6 @@ $ 	This matches the end of a line.
         count = self.stc.ReplaceTargetRE(self.settings.replace)
 
         self.stc.SetSelection(min(sel), min(sel) + count)
-        return count
 
 
 class FindWildcardService(FindService):
@@ -501,6 +498,7 @@ class FindRegexService(FindService):
     def __init__(self, *args, **kwargs):
         FindService.__init__(self, *args, **kwargs)
         self.regex = None
+        self.shadow = None
 
     def setFlags(self):
         text = self.settings.find
@@ -514,6 +512,9 @@ class FindRegexService(FindService):
             self.flags = 0
         else:
             self.flags = re.IGNORECASE
+        
+        # Force the next search to start from a new shadow copy of the text
+        self.shadow = None
     
     def getFlags(self, user_flags=0):
         if self.settings.match_case != self.stc.locals.case_sensitive_search:
@@ -527,6 +528,20 @@ class FindRegexService(FindService):
         except re.error:
             self.regex = None
         return flags
+    
+    def verifyShadow(self, start=-1, incremental=False):
+        if self.shadow is None or start >= 0:
+            #handle finding next item, handling wrap-arounds as necessary
+            if start < 0:
+                sel = self.stc.GetSelection()
+                if incremental:
+                    start = min(sel)
+                else:
+                    start = max(sel)
+            self.shadow = self.stc.GetTextRange(start, self.stc.GetTextLength())
+            self.shadow_equiv_pos = 0
+            self.stc_equiv_start = start
+            self.stc_equiv_pos = start
 
     def doFindNext(self, start=-1, incremental=False):
         """Find and highlight the next match in the document.
@@ -548,72 +563,53 @@ class FindRegexService(FindService):
         if self.regex is None:
             return _("Incomplete regex"), None
         
-        #handle finding next item, handling wrap-arounds as necessary
-        if start < 0:
-            sel = self.stc.GetSelection()
-            if incremental:
-                start = min(sel)
-            else:
-                start = max(sel)
+        self.verifyShadow(start, incremental)
         
-        # FIXME: optimize this.
-        text = self.stc.GetTextRange(start, self.stc.GetTextLength())
-        index = 0
-        
-        match = self.regex.search(text, index)
+        match = self.regex.search(self.shadow, self.shadow_equiv_pos)
         if match:
-            #dprint("match=%s start=%d end=%d string=%s" % (match, match.start(0), match.end(0), match.group(0)))
             # Because unicode characters are stored as utf-8 in the stc and the
             # positions in the stc correspond to the raw bytes, not the number
             # of unicode characters, we have to find out the offset to the
             # unicode chars in terms of raw bytes.
-            pos = start + len(text[:match.start(0)].encode('utf-8'))
-            count = len(text[match.start(0):match.end(0)].encode('utf-8'))
-            self.highlightSelection(pos, count)
+            pos = self.stc_equiv_pos + len(self.shadow[self.shadow_equiv_pos:match.start(0)].encode('utf-8'))
+            count = len(self.shadow[match.start(0):match.end(0)].encode('utf-8'))
+            self.stc_equiv_start = pos
+            self.stc_equiv_pos = pos + count
+            
+            self.shadow_equiv_pos = match.end(0)
+            
+            #dprint("match=%s shadow: (%d-%d) equiv=%d, stc: (%d-%d) equiv=%d" % (match.group(0), match.start(0), match.end(0), self.shadow_equiv_pos, pos, pos+count, self.stc_equiv_pos))
+            self.stc.SetSelection(self.stc_equiv_start, self.stc_equiv_pos)
         
         else:
             pos = -1
         
         return pos, start
     
-    def getReplacement(self, replacing):
-        """Get the replacement text.
+    def doReplace(self):
+        """Replace the selection
         
-        Can't use the built-in scintilla regex replacement method, because
-        it seems that scintilla regexs are greedy and ignore the target end
-        specified by SetTargetEnd.  So, we have to convert to a python regex
-        and replace that way.
+        Replace the current selection with the regex replacement
         """
-        match = self.regex.match(replacing)
-        if not match:
-            # Hmmm.  This should have worked because theoretically we should
-            # have been matching a value returned by the same regex.
-            return replacing
-        #dprint("matches: %s" % str(match.groups()))
+        self.verifyShadow()
         
-        output = []
+        # We assume that doFindNext has been called, setting up the equivalent
+        # start and end positions
+        replacing = self.stc.GetTextRange(self.stc_equiv_start, self.stc_equiv_pos)
+        try:
+            replacement = self.regex.sub(self.settings.replace, replacing)
+        except re.error, e:
+            raise ReplacementError("Regex error: %s" % e)
         
-        parts = re.split("(\\\\[0-9]{1,2})", self.settings.replace)
-        for part in parts:
-            if part.startswith("\\"):
-                try:
-                    index = int(part[1:])
-                    #dprint("found index %d" % index)
-                    output.append(match.group(index))
-                except ValueError:
-                    # not an integer means we just insert the value
-                    output.append(part)
-                except IndexError:
-                    # no matching group with that index, so put no value in the
-                    # output for this match
-                    pass
-            else:
-                if not part:
-                    part = ''
-                output.append(part)
-        text = "".join(output)
-        return text
-
+        self.stc.SetTargetStart(self.stc_equiv_start)
+        self.stc.SetTargetEnd(self.stc_equiv_pos)
+        
+        # The stc equivalent position must be adjusted for the difference in
+        # numbers of bytes, not numbers of characters.
+        self.stc_equiv_pos += len(replacement.encode('utf-8')) - len(replacing.encode('utf-8'))
+        
+        self.stc.ReplaceTarget(replacement)
+        self.stc.SetSelection(self.stc_equiv_start, self.stc_equiv_pos)
 
 
 class FindBar(wx.Panel):
@@ -928,6 +924,7 @@ class ReplaceBar(FindBar):
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
         self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
         self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
+        self.replace.Bind(wx.EVT_KILL_FOCUS, self.OnTabToCommand)
         self.replace.Bind(wx.EVT_SET_FOCUS, self.OnReplaceSetFocus)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
         self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
@@ -935,6 +932,17 @@ class ReplaceBar(FindBar):
         self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
         self.command.Bind(wx.EVT_KILL_FOCUS, self.OnSearchStop)
     
+    def OnReplaceError(self, msg=None):
+        self.replace.SetBackgroundColour(wx.RED)
+        self.frame.SetStatusText(msg)
+        self.Refresh()
+
+    def resetColor(self):
+        if self.replace.GetBackgroundColour() != wx.WHITE:
+            self.replace.SetBackgroundColour(wx.WHITE)
+            self.replace.Refresh()
+        FindBar.resetColor(self)
+
     def setDirection(self, dir=1):
         self.label.SetLabel(_(self.service.replace) + u":")
         self.Layout()
@@ -949,6 +957,10 @@ class ReplaceBar(FindBar):
         self.replace.SetFocus()
     
     def OnTabToCommand(self, evt):
+        # Using tab after changing color when a selection exists in
+        # self.replace causes the text to appear white on a white background.
+        # Force the selection to disappear when tabbing off of self.replace
+        self.replace.SetInsertionPointEnd()
         self.command.SetFocus()
     
     def OnSearchStart(self, evt):
@@ -964,22 +976,26 @@ class ReplaceBar(FindBar):
         
         The bulk of this algorithm is from PyPE.
         """
+        if self.stc.GetReadOnly():
+            return False
+
         allow_wrap = not interactive
         sel = self.stc.GetSelection()
         if sel[0] == sel[1]:
             if find_next:
                 self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
-            return (-1, -1), 0
+            return True
         
-        if self.service.doReplace() >= 0:
-            start, self.last_cursor = self.stc.GetSelection()
+        try:
+            self.service.doReplace()
             if find_next:
                 self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
             self.count += 1
-            
-            return sel, self.last_cursor - start + 1
-        else:
-            return (-1, -1), 0
+                
+            return True
+        except ReplacementError, e:
+            self.OnReplaceError(str(e))
+        return False
     
     def OnReplaceAll(self, evt):
         self.count = 0
@@ -993,20 +1009,22 @@ class ReplaceBar(FindBar):
             self.stc.showBusy(True)
             wx.Yield()
         self.stc.BeginUndoAction()
+        valid = True
         try:
-            while self.loop == 0:
-                self.OnReplace(None, interactive=False)
+            while self.loop == 0 and valid:
+                valid = self.OnReplace(None, interactive=False)
             self.stc.GotoPos(self.last_cursor)
         finally:
             self.stc.EndUndoAction()
         
-        if self.count == 1:
-            occurrences = _("Replaced %d occurrence")
-        else:
-            occurrences = _("Replaced %d occurrences")
         if hasattr(self.stc, 'showBusy'):
             self.stc.showBusy(False)
-        self.OnExit(msg=_(occurrences) % self.count)
+        if valid:
+            if self.count == 1:
+                occurrences = _("Replaced %d occurrence")
+            else:
+                occurrences = _("Replaced %d occurrences")
+            self.OnExit(msg=_(occurrences) % self.count)
     
     def OnCommandKeyDown(self, evt):
         key = evt.GetKeyCode()
@@ -1056,6 +1074,11 @@ class ReplaceBar(FindBar):
         """
         # disable the repeat search when using the replace buffer
         self._lastcall = None
+        
+        # Set the focus to the find string to prevent the focus from staying on
+        # the command control.  Unless this is done, the focus tends to stay
+        # on the command control which highlights the last successful search.
+        self.find.SetFocus()
         
         if not self.settings.find_user:
             self.service.unserialize(self.storage)
