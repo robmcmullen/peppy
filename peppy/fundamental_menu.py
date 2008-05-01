@@ -20,9 +20,10 @@ class SpellingSuggestionAction(ListAction):
     def getItems(self):
         # Because this is a popup action, we can save stuff to this object.
         # Otherwise, we'd save it to the major mode
-        self.words = self.mode.spellGetSuggestions(self.mode.check_spelling[0])
-        if self.words:
-            return self.words
+        if self.mode.spell:
+            self.words = self.mode.spell.getSuggestions(self.mode.check_spelling[0])
+            if self.words:
+                return self.words
         return [_('No suggestions')]
     
     def isEnabled(self):
@@ -280,9 +281,9 @@ class ElectricReturn(TextModificationAction):
     key_needs_focus = True
 
     def action(self, index=-1, multiplier=1):
-        if self.mode.classprefs.spell_check:
+        if self.mode.spell and self.mode.classprefs.spell_check:
             pos = self.mode.GetCurrentPos()
-            self.mode.spellCheckWord(pos)
+            self.mode.spell.checkWord(pos)
         self.mode.autoindent.processReturn(self.mode)
 
 

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
-# Name:        stcspellcheckmixin.py
-# Purpose:     Spell checking mixin for the wx.StyledTextControl using pyenchant
+# Name:        stcspellcheck.py
+# Purpose:     Spell checking for the wx.StyledTextControl using pyenchant
 #
 # Author:      Rob McMullen
 #
@@ -25,7 +25,7 @@
 # software for any purpose.  It is provided "as is" without express or implied
 # warranty.
 
-"""Spell checking mixin for the wx.StyledTextControl using pyenchant
+"""Spell checking for the wx.StyledTextControl using pyenchant
 
 This module was insipred by the spell check function from Christopher Thoday's
 U{Luke SDK<http://luke-sdk.berlios.de/>}.
@@ -42,14 +42,16 @@ Currently provides:
  - check the document in either idle time or in a background thread
 
 @author: Rob McMullen
-@version: 1.0
+@version: 1.2
 
 Changelog::
-    1.0:
-        - First public release
+    1.2:
+        - Rewrote as a standalone class rather than a static mixin
     1.1:
         - Added helper function to use idle processing time to check document
         - Added word checking function for use in instant spell checking
+    1.0:
+        - First public release
 """
 
 import locale
@@ -60,60 +62,61 @@ try:
 except ImportError:
     pass
 
-class STCSpellCheckMixin(object):
-    """Spell checking mixin for use with wx.StyledTextControl.
+class STCSpellCheck(object):
+    """Spell checking for use with wx.StyledTextControl.
     
-    This mixin shows spelling errors using the styling indicators (e.g.  the
-    red squiggly underline) of the styled text control; I find this much more
+    This shows spelling errors using the styling indicators (e.g.  the red
+    squiggly underline) of the styled text control; I find this much more
     convenient than a dialog-box that makes you click through each mistake.
     
     The eventual goal of the module is to provide on-the-fly spell checking
     that will display errors as you type, and also will highlight errors
     during idle time or in a background thread.
     
-    This mixin provides spell checking using the pyenchant module.  Without
-    pyenchant, this mixin won't do anything useful, but it is still safe to
-    be mixed in.  It wraps all calls to pyenchant with try/except blocks to
-    catch import errors, and any calls to the spell checking functions will
-    return immediately.
+    Spell checking is provided through the pyenchant module.  Without
+    pyenchant, this object won't do anything useful, but it is still safe to
+    be used.  It wraps all calls to pyenchant with try/except blocks to catch
+    import errors, and any calls to the spell checking functions will return
+    immediately.
     
-    In your code that uses this mixin, be sure to call the mixin's constructor
-    with code like::
-    
-        class MySTC(STCSpellCheckMixin, wx.stc.StyledTextCtrl):
-            def __init__(self, *args, **kwargs):
-                wx.stc.StyledTextCtrl.__init__(self, *args, **kwargs)
-                STCSpellingMixin.__init__(self)
-
-    To use the spelling check, use one of the methods L{spellCheckAll},
-    L{spellCheckCurrentPage}, or L{spellCheckSelection}.  Clear the spelling
-    indicators with L{spellClearAll}.
+    To use the spelling check, use one of the methods L{checkAll},
+    L{checkCurrentPage}, or L{checkSelection}.  Clear the spelling
+    indicators with L{clearAll}.
     """
     # Class attributes to act as default values
     _spelling_lang = None
     _spelling_dict = None
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, stc, *args, **kwargs):
         """Mixin must be initialized using this constructor.
         
         Keyword arguments are also available instead of calling the
-        convenience functions.  For L{spellSetIndicator}, use C{indicator},
-        C{indicator_color}, and {indicator_style}; for L{spellSetLanguage},
-        use C{language}; and for L{spellSetMinimumWordSize}, use
+        convenience functions.  For L{setIndicator}, use C{indicator},
+        C{indicator_color}, and {indicator_style}; for L{setLanguage},
+        use C{language}; and for L{setMinimumWordSize}, use
         C{min_word_size}.  See the descriptions of those methods for more info.
         """
-        self.spellSetIndicator(kwargs.get('indicator', 2),
-                                  kwargs.get('indicator_color', "#FF0000"),
-                                  kwargs.get('indicator_style', wx.stc.STC_INDIC_SQUIGGLE))
-        self.spellSetMinimumWordSize(kwargs.get('min_word_size', 3))
+        self.stc = stc
+        self.setIndicator(kwargs.get('indicator', 2),
+                          kwargs.get('indicator_color', "#FF0000"),
+                          kwargs.get('indicator_style', wx.stc.STC_INDIC_SQUIGGLE))
+        self.setMinimumWordSize(kwargs.get('min_word_size', 3))
         if 'language' in kwargs:
             # Don't set default language unless explicitly specified -- it
             # might have already been set through the class method
-            self.spellSetDefaultLanguage(kwargs['language'])
+            self.setDefaultLanguage(kwargs['language'])
+        if 'check_region' in kwargs:
+            # optional function to specify if the region should be spell
+            # checked.  Function should return True if the position should
+            # be spell-checked; False if it doesn't make sense to spell check
+            # that part of the document
+            self._spell_check_region = kwargs['check_region']
+        else:
+            self._spell_check_region = lambda s: True
         self._spelling_debug = False
         self._spelling_last_idle_line = -1
 
-    def spellSetIndicator(self, indicator=None, color=None, style=None):
+    def setIndicator(self, indicator=None, color=None, style=None):
         """Set the indicator styling for misspelled words.
         
         Set the indicator index to use, its color, and the visual style.
@@ -136,7 +139,7 @@ class STCSpellCheckMixin(object):
             if indicator not in indicators:
                 indicator = 0
             # The current view may have fewer than 3 indicators
-            bitmax = 7 - self.GetStyleBits()
+            bitmax = 7 - self.stc.GetStyleBits()
             if indicator > bitmax:
                 indicator = bitmax
             self._spelling_indicator = indicator
@@ -144,18 +147,18 @@ class STCSpellCheckMixin(object):
         
         if color is not None:
             self._spelling_color = color
-        self.IndicatorSetForeground(self._spelling_indicator,
+        self.stc.IndicatorSetForeground(self._spelling_indicator,
                                     self._spelling_color)
     
         if style is not None:
             if style > wx.stc.STC_INDIC_MAX:
                 style = wx.stc.STC_INDIC_MAX
             self._spelling_style = style
-        self.IndicatorSetStyle(self._spelling_indicator,
+        self.stc.IndicatorSetStyle(self._spelling_indicator,
                                self._spelling_style)
     
     @classmethod
-    def spellGetAvailableLanguages(cls):
+    def getAvailableLanguages(cls):
         """Return a list of supported languages.
         
         Pyenchant supplies a list of its supported languages, so this is just
@@ -172,7 +175,7 @@ class STCSpellCheckMixin(object):
         return []
     
     @classmethod
-    def _spellGetDict(cls, lang):
+    def _getDict(cls, lang):
         try:
             d = enchant.Dict(lang)
         except:
@@ -182,59 +185,59 @@ class STCSpellCheckMixin(object):
         return d
     
     @classmethod
-    def spellSetDefaultLanguage(cls, lang):
+    def setDefaultLanguage(cls, lang):
         """Set the default language for spelling check.
         
         The string should be in language locale format, e.g.  en_US, ru, ru_RU,
-        eo, es_ES, etc.  See L{spellGetAvailableLanguages}.
+        eo, es_ES, etc.  See L{getAvailableLanguages}.
         
         @param lang: text string indicating the language
         """
         cls._spelling_lang = lang
-        cls._spelling_dict = cls._spellGetDict(lang)
+        cls._spelling_dict = cls._getDict(lang)
     
-    def spellSetLanguage(self, lang):
+    def setLanguage(self, lang):
         """Set the language for spelling check for this class, if different than
         the default.
         
         The string should be in language locale format, e.g.  en_US, ru, ru_RU,
-        eo, es_ES, etc.  See L{spellGetAvailableLanguages}.
+        eo, es_ES, etc.  See L{getAvailableLanguages}.
         
         @param lang: text string indicating the language
         """
         # Note that this instance variable will shadow the class attribute
         self._spelling_lang = lang
-        self._spelling_dict = self._spellGetDict(lang)
+        self._spelling_dict = self._getDict(lang)
     
-    def spellHasDictionary(self):
+    def hasDictionary(self):
         """Returns True if a dictionary is available to spell check the current
         language.
         """
         return self._spelling_dict is not None
     
-    def spellGetLanguage(self):
+    def getLanguage(self):
         """Returns True if a dictionary is available to spell check the current
         language.
         """
         return self._spelling_lang
     
-    def spellSetMinimumWordSize(self, size):
+    def setMinimumWordSize(self, size):
         """Set the minimum word size that will be looked up in the dictionary.
         
         Words smaller than this size won't be spell checked.
         """
         self._spelling_word_size = size
     
-    def spellClearAll(self):
+    def clearAll(self):
         """Clear the stc of all spelling indicators."""
-        self.StartStyling(0, self._spelling_indicator_mask)
-        self.SetStyling(self.GetLength(), 0)
+        self.stc.StartStyling(0, self._spelling_indicator_mask)
+        self.stc.SetStyling(self.stc.GetLength(), 0)
     
-    def spellCheckRange(self, start, end):
+    def checkRange(self, start, end):
         """Perform a spell check over a range of text in the document.
         
         This is the main spell checking routine -- it loops over the range
-        of text using the L{spellFindNextWord} method to break the text into
+        of text using the L{findNextWord} method to break the text into
         words to check.  Misspelled words are highlighted using the current
         indicator.
         
@@ -247,17 +250,17 @@ class STCSpellCheckMixin(object):
         
         # Remove any old spelling indicators
         mask = self._spelling_indicator_mask
-        self.StartStyling(start, mask)
-        self.SetStyling(end - start, 0)
+        self.stc.StartStyling(start, mask)
+        self.stc.SetStyling(end - start, 0)
         
-        text = self.GetTextRange(start, end) # note: returns unicode
+        text = self.stc.GetTextRange(start, end) # note: returns unicode
         unicode_index = 0
         max_index = len(text)
         
         last_index = 0 # last character in text a valid raw byte position
         last_pos = start # raw byte position corresponding to last_index
         while unicode_index < max_index:
-            start_index, end_index = self.spellFindNextWord(text, unicode_index, max_index)
+            start_index, end_index = self.findNextWord(text, unicode_index, max_index)
             if end_index >= 0:
                 if end_index - start_index >= self._spelling_word_size:
                     if self._spelling_debug:
@@ -278,24 +281,24 @@ class STCSpellCheckMixin(object):
                         
                         if self._spelling_debug:
                             print("styling position corresponding to text[%d:%d] = (%d,%d)" % (start_index, end_index, last_pos, last_pos + raw_count))
-                        if self.spellIsSpellCheckRegion(last_pos):
-                            self.StartStyling(last_pos, mask)
-                            self.SetStyling(raw_count, mask)
+                        if self._spell_check_region(last_pos):
+                            self.stc.StartStyling(last_pos, mask)
+                            self.stc.SetStyling(raw_count, mask)
                         last_pos += raw_count
                         last_index = end_index
                 unicode_index = end_index
             else:
                 break
 
-    def spellCheckAll(self):
+    def checkAll(self):
         """Perform a spell check on the entire document."""
-        return self.spellCheckRange(0, self.GetLength())
+        return self.checkRange(0, self.stc.GetLength())
     
-    def spellCheckSelection(self):
+    def checkSelection(self):
         """Perform a spell check on the currently selected region."""
-        return self.spellCheckRange(self.GetSelectionStart(), self.GetSelectionEnd())
+        return self.checkRange(self.stc.GetSelectionStart(), self.stc.GetSelectionEnd())
     
-    def spellCheckLines(self, startline=-1, count=-1):
+    def checkLines(self, startline=-1, count=-1):
         """Perform a spell check on group of lines.
         
         Given the starting line, check the spelling on a block of lines.  If
@@ -307,23 +310,23 @@ class STCSpellCheckMixin(object):
         lines visible on screen
         """
         if startline < 0:
-            startline = self.GetFirstVisibleLine()
-        start = self.PositionFromLine(startline)
+            startline = self.stc.GetFirstVisibleLine()
+        start = self.stc.PositionFromLine(startline)
         if count < 0:
-            count = self.LinesOnScreen()
+            count = self.stc.LinesOnScreen()
         endline = startline + count
-        if endline > self.GetLineCount():
-            endline = self.GetLineCount() - 1
-        end = self.GetLineEndPosition(endline)
+        if endline > self.stc.GetLineCount():
+            endline = self.stc.GetLineCount() - 1
+        end = self.stc.GetLineEndPosition(endline)
         if self._spelling_debug:
             print("Checking lines %d-%d, chars %d=%d" % (startline, endline, start, end))
-        return self.spellCheckRange(start, end)
+        return self.checkRange(start, end)
     
-    def spellCheckCurrentPage(self):
+    def checkCurrentPage(self):
         """Perform a spell check on the currently visible lines."""
-        return self.spellCheckLines()
+        return self.checkLines()
     
-    def spellFindNextWord(self, utext, index, length):
+    def findNextWord(self, utext, index, length):
         """Find the next valid word to check.
         
         Designed to be overridden in subclasses, this method takes a starting
@@ -345,27 +348,18 @@ class STCSpellCheckMixin(object):
             index += 1
         return (-1, -1)
     
-    def spellIsSpellCheckRegion(self, pos):
-        """Is the position in a region of the document that should be spell-
-        checked?
-        
-        @return: True if the position should be spell-checked; False if it
-        doesn't make sense to spell check that part of the document
-        """
-        return True
-    
-    def spellStartIdleProcessing(self):
+    def startIdleProcessing(self):
         """Initialize parameters needed for idle block spell checking.
         
-        This must be called before the first call to L{spellProcessIdleBlock}
+        This must be called before the first call to L{processIdleBlock}
         or if you wish to restart the spell checking from the start
         of the document.  It initializes parameters needed by the
-        L{spellProcessIdleBlock} in order to process the document during idle
+        L{processIdleBlock} in order to process the document during idle
         time.
         """
         self._spelling_last_idle_line = 0
         
-    def spellProcessIdleBlock(self):
+    def processIdleBlock(self):
         """Process a block of lines during idle time.
         
         This method is designed to be called during idle processing and will
@@ -375,21 +369,21 @@ class STCSpellCheckMixin(object):
         
         Once the entire document is spell checked, a flag is set and
         further calls to this method will immediately return.  Calling
-        L{spellStartIdleProcessing} will cause the idle processing to start
+        L{startIdleProcessing} will cause the idle processing to start
         checking from the beginning of the document.
         """
         if self._spelling_last_idle_line < 0:
             return
         if self._spelling_debug:
             print("Idle processing page starting at line %d" % self._spelling_last_idle_line)
-        self.spellCheckLines(self._spelling_last_idle_line)
-        self._spelling_last_idle_line += self.LinesOnScreen()
-        if self._spelling_last_idle_line > self.GetLineCount():
+        self.checkLines(self._spelling_last_idle_line)
+        self._spelling_last_idle_line += self.stc.LinesOnScreen()
+        if self._spelling_last_idle_line > self.stc.GetLineCount():
             self._spelling_last_idle_line = -1
             return False
         return True
 
-    def spellGetSuggestions(self, word):
+    def getSuggestions(self, word):
         """Get suggestion for the correct spelling of a word.
         
         @param word: word to check
@@ -406,7 +400,7 @@ class STCSpellCheckMixin(object):
             return words
         return []
     
-    def spellCheckWord(self, pos=None, atend=False):
+    def checkWord(self, pos=None, atend=False):
         """Check the word at the current or specified position.
         
         @param pos: position of a character in the word (or at the start or end
@@ -414,15 +408,15 @@ class STCSpellCheckMixin(object):
         @param atend: True if you know the cursor is at the end of the word
         """
         if pos is None:
-            pos = self.GetCurrentPos()
+            pos = self.stc.GetCurrentPos()
         if atend:
             end = pos
         else:
-            end = self.WordEndPosition(pos, True)
-        start = self.WordStartPosition(pos, True)
+            end = self.stc.WordEndPosition(pos, True)
+        start = self.stc.WordStartPosition(pos, True)
         if self._spelling_debug:
-            print("%d-%d: %s" % (start, end, self.GetTextRange(start, end)))
-        self.spellCheckRange(start, end)
+            print("%d-%d: %s" % (start, end, self.stc.GetTextRange(start, end)))
+        self.checkRange(start, end)
 
 
 if __name__ == "__main__":
@@ -433,10 +427,10 @@ if __name__ == "__main__":
         print("pyenchant not available, so spelling correction won't work.")
         print("Get pyenchant from http://pyenchant.sourceforge.net")
     
-    class TestSTC(STCSpellCheckMixin, wx.stc.StyledTextCtrl):
+    class TestSTC(wx.stc.StyledTextCtrl):
         def __init__(self, *args, **kwargs):
             wx.stc.StyledTextCtrl.__init__(self, *args, **kwargs)
-            STCSpellCheckMixin.__init__(self, language="en_US")
+            self.spell = STCSpellCheck(self, language="en_US")
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
             self.SetMarginWidth(0, 32)
             self.word_end_chars = ' .!?\'\"'
@@ -449,7 +443,7 @@ if __name__ == "__main__":
             """
             uchar = unichr(evt.GetKeyCode())
             if uchar in self.word_end_chars:
-                self.spellCheckWord()
+                self.spell.checkWord()
             evt.Skip()
     
     class Frame(wx.Frame):
@@ -474,7 +468,7 @@ if __name__ == "__main__":
             self.menuAdd(menu, "Clear Spelling", "Remove spelling correction indicators", self.OnClearSpelling)
             menu = wx.Menu()
             menubar.Append(menu, "Language")
-            langs = self.stc.spellGetAvailableLanguages()
+            langs = self.stc.spell.getAvailableLanguages()
             self.lang_id = {}
             for lang in langs:
                 id = wx.NewId()
@@ -485,7 +479,7 @@ if __name__ == "__main__":
         def loadFile(self, filename):
             fh = open(filename)
             self.stc.SetText(fh.read())
-            self.stc.spellCheckCurrentPage()
+            self.stc.spell.checkCurrentPage()
         
         def loadSample(self, paragraphs=10):
             lorem_ipsum = u"""\
@@ -509,7 +503,7 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
                 self.stc.AppendText(lorem_ipsum)
             # Call the spell check after the text has had a chance to be
             # displayed and the window resized to the correct size.
-            wx.CallAfter(self.stc.spellCheckCurrentPage)
+            wx.CallAfter(self.stc.spell.checkCurrentPage)
 
         def menuAdd(self, menu, name, desc, fcn, id=-1, kind=wx.ITEM_NORMAL):
             if id == -1:
@@ -533,16 +527,16 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             self.Close(True)
         
         def OnCheckAll(self, evt):
-            self.stc.spellCheckAll()
+            self.stc.spell.checkAll()
         
         def OnCheckPage(self, evt):
-            self.stc.spellCheckCurrentPage()
+            self.stc.spell.checkCurrentPage()
         
         def OnCheckSelection(self, evt):
-            self.stc.spellCheckSelection()
+            self.stc.spell.checkSelection()
         
         def OnClearSpelling(self, evt):
-            self.stc.spellClearAll()
+            self.stc.spell.clearAll()
         
         def OnChangeLanguage(self, evt):
             id = evt.GetId()
@@ -552,9 +546,9 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
                 print("Changing locale %s, dictionary set to %s" % (normalized, self.lang_id[id]))
             except locale.Error:
                 print("Can't set python locale to %s; dictionary set to %s" % (normalized, self.lang_id[id]))
-            self.stc.spellSetLanguage(self.lang_id[id])
-            self.stc.spellClearAll()
-            self.stc.spellCheckCurrentPage()
+            self.stc.spell.setLanguage(self.lang_id[id])
+            self.stc.spell.clearAll()
+            self.stc.spell.checkCurrentPage()
 
     app = wx.App(False)
     frame = Frame(None)

@@ -9,7 +9,6 @@ from wx.lib.pubsub import Publisher
 from peppy.major import *
 from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
-from peppy.lib.stcspellcheckmixin import *
 from peppy.lib.vimutil import *
 from peppy.lib.emacsutil import *
 from peppy.lib.kateutil import *
@@ -76,7 +75,7 @@ class FundamentalSTC(EditraSTCMixin, PeppySTC):
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
 
 
-class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
+class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
                       PeppySTC, MajorMode):
     """Major mode for editing generic text files.
     
@@ -193,8 +192,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
-        STCSpellCheckMixin.__init__(self)
-        self.dprint("STCSpellCheckMixin done in %0.5fs" % (time.time() - start))
+        
+        self.spell = None
 
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
@@ -270,10 +269,10 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             # So, we don't call Skip in this case and the processing ends
             # here.
             return
-        if self.classprefs.spell_check and uchar in self.word_end_chars:
+        if self.spell and self.classprefs.spell_check and uchar in self.word_end_chars:
             # We are catching the event before the character is added to the
             # text, so we know the cursor is at the end of the word.
-            self.spellCheckWord(atend=True)
+            self.spell.checkWord(atend=True)
         evt.Skip()
     
     def createStatusIcons(self):
@@ -284,8 +283,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
             self.status_info.addIcon("icons/apple.png", "Old-style Apple line endings")
         else:
             self.status_info.addIcon("icons/tux.png", "Unix line endings")
-        if self.spellHasDictionary():
-            self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spellGetLanguage())
+        if self.spell and self.spell.hasDictionary():
+            self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spell.getLanguage())
 
     def applySettings(self):
         start = time.time()
@@ -314,10 +313,8 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         self.ConfigureLexer(self.editra_lang)
         self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
-        self.spellClearAll()
-        if self.classprefs.spell_check:
-            self.spellStartIdleProcessing()
         self.setEmacsAndVIM()
+        self.setSpelling()
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
     def applyDefaultSettings(self):
@@ -797,6 +794,15 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
 
     ### Spell checking utilities
+    def setSpelling(self):
+        spelling_classes = []
+        Publisher().sendMessage('spelling.provider', spelling_classes)
+        if spelling_classes:
+            self.spell = spelling_classes[0](self, check_region=self.isSpellCheckRegion)
+            self.spell.clearAll()
+            if self.classprefs.spell_check:
+                self.spell.startIdleProcessing()
+
     def getPopupActions(self, evt, x, y):
         pos = self.PositionFromPoint(wx.Point(x, y))
         # Save the word that should be spell-checked so that the spell checking
@@ -808,10 +814,10 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
         return action_classes
 
     def idlePostHook(self):
-        if self.classprefs.spell_check:
-            self.spellProcessIdleBlock()
+        if self.spell and self.classprefs.spell_check:
+            self.spell.processIdleBlock()
     
-    def spellIsSpellCheckRegion(self, pos):
+    def isSpellCheckRegion(self, pos):
         if self.classprefs.spell_check_strings_only:
             style = self.GetStyleAt(pos)
             return self.isStyleComment(style) or self.isStyleString(style)
@@ -819,4 +825,4 @@ class FundamentalMode(FoldExplorerMixin, STCSpellCheckMixin, EditraSTCMixin,
 
     def updateRegion(self, start, end):
         self.Colourise(start, end)
-        self.spellCheckRange(start, end)
+        self.spell.checkRange(start, end)

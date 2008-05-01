@@ -26,7 +26,6 @@ from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.textutil import piglatin
-from peppy.lib.stcspellcheckmixin import *
 
 #### py2exe support
 
@@ -225,7 +224,7 @@ class Language(ClassPrefs):
         except KeyError:
             lang_id = -1
             
-        STCSpellCheckMixin.spellSetDefaultLanguage(self.classprefs.language)
+        Publisher().sendMessage('spelling.default_language', self.classprefs.language)
         self.locale = wx.Locale(lang_id)
         if self.locale.IsOk():
             self.messages, self.encoding = importCatalog(self.classprefs.language)
