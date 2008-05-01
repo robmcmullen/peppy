@@ -120,12 +120,15 @@ def findPackages(name):
 packages = findPackages('$prog')
 
 if USE_PY2EXE:
-    # Add pyenchant dictionaries to data files if we're on windows
-    try:
-        import enchant
-        DATA_FILES.extend(enchant.utils.win32_data_files())
-    except ImportError:
-        pass
+    if os.path.exists('peppy/lib/stcspellcheck.py'):
+        # Add pyenchant dictionaries to data files if we find the STCSpellCheck
+        # code and we're on windows
+        print("Found spell checker; including pyenchant")
+        try:
+            import enchant
+            DATA_FILES.extend(enchant.utils.win32_data_files())
+        except ImportError:
+            pass
 
     # py2exe can't scan inside zipped eggs to find dependencies.  All plugins
     # must be unpacked into a directory in order for py2exe to find any
