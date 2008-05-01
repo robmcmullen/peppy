@@ -517,7 +517,7 @@ class FindRegexService(FindService):
         self.shadow = None
     
     def getFlags(self, user_flags=0):
-        if self.settings.match_case != self.stc.locals.case_sensitive_search:
+        if hasattr(self.stc, 'locals') and self.settings.match_case != self.stc.locals.case_sensitive_search:
             self.settings.match_case = self.stc.locals.case_sensitive_search
             self.setFlags()
         
@@ -586,6 +586,85 @@ class FindRegexService(FindService):
         
         return pos, start
     
+    def getReplacement(self, replacing):
+        """Extended regex replacement
+        
+        This handles extra regex replacement targets, like upper and lower
+        casing of targets, that the standard python regular expression matcher
+        doesn't include.
+        """
+        def firstLower(s):
+            if len(s) > 1:
+                return s[0].lower() + s[1:]
+            return s[0].lower
+        
+        def firstUpper(s):
+            if len(s) > 1:
+                return s[0].upper() + s[1:]
+            return s[0].upper
+        
+        match = self.regex.match(replacing)
+        if not match:
+            # Hmmm.  This should have worked because theoretically we should
+            # have been matching a value returned by the same regex.
+            return replacing
+        self.dprint("matches: %s" % str(match.groups()))
+         
+        output = []
+        next_once = None
+        next_until = None
+        parts = re.split("(\\\\(?:[0-9]{1,2}|g<[0-9]+>|l|L|u|U|E))", self.settings.replace)
+        self.dprint(parts)
+        for part in parts:
+            if part.startswith("\\"):
+                escape = part[1:]
+                if escape == "l":
+                    next_once = firstLower
+                elif escape == "u":
+                    next_once = firstUpper
+                elif escape == "L":
+                    next_until = str.lower
+                elif escape == "U":
+                    next_until = str.upper
+                elif escape == "E":
+                    next_until = None
+                else:
+                    try:
+                        if escape.startswith("g"):
+                            index = int(part[1:])
+                            self.dprint("found %s: %d" % (escape, index))
+                        else:
+                            index = int(part[1:])
+                            self.dprint("found index %d" % index)
+                        value = match.group(index)
+                        if next_once:
+                            value = next_once(value)
+                            self.dprint("converted to %s" % value)
+                            next_once = None
+                        elif next_until:
+                            value = next_until(value)
+                            self.dprint("converted to %s" % value)
+                        output.append(value)
+                    except ValueError:
+                        # not an integer means we just insert the value
+                        output.append(part)
+                    except IndexError:
+                        # no matching group with that index, so put no value in the
+                        # output for this match
+                        pass
+                self.dprint("part=%s: once=%s until=%s" % (part, str(next_once), str(next_until)))
+            elif part:
+                if next_once:
+                    part = next_once(part)
+                    self.dprint("converted to %s" % part)
+                    next_once = None
+                elif next_until:
+                    part = next_until(part)
+                    self.dprint("converted to %s" % part)
+                output.append(part)
+        text = "".join(output)
+        return text
+
     def doReplace(self):
         """Replace the selection
         
@@ -596,10 +675,7 @@ class FindRegexService(FindService):
         # We assume that doFindNext has been called, setting up the equivalent
         # start and end positions
         replacing = self.stc.GetTextRange(self.stc_equiv_start, self.stc_equiv_pos)
-        try:
-            replacement = self.regex.sub(self.settings.replace, replacing)
-        except re.error, e:
-            raise ReplacementError("Regex error: %s" % e)
+        replacement = self.getReplacement(replacing)
         
         self.stc.SetTargetStart(self.stc_equiv_start)
         self.stc.SetTargetEnd(self.stc_equiv_pos)
@@ -1189,6 +1265,7 @@ if __name__ == "__main__":
             menu = wx.Menu()
             menubar.Append(menu, "Edit")
             self.menuAdd(menu, "Find Next", "Remove spelling correction indicators", self.OnFind)
+            self.doTests()
 
         def loadSample(self, paragraphs=2):
             lorem_ipsum = u"""\
@@ -1231,6 +1308,13 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
         
         def OnFind(self, evt):
             pass
+        
+        def doTests(self):
+            service = FindRegexService(self)
+            service.setFindString("(.+) (.+)")
+            service.setReplaceString("\\u\\1 \\l\\2 upper=\\U\\1 upper \\2\\E lower=\\L\\1 LoWeR \\2\\E")
+            service.getFlags()
+            dprint(service.getReplacement("blah STUFF"))
         
     app = wx.App(False)
     frame = Frame(None, size=(-1, 600))
