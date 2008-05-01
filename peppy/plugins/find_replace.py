@@ -642,14 +642,15 @@ class FindRegexService(FindService):
                             index = int(part[1:])
                             self.dprint("found index %d" % index)
                         value = match.group(index)
-                        if next_once:
-                            value = next_once(value)
-                            self.dprint("next_once converted to %s" % value)
-                            next_once = None
-                        elif next_until:
-                            value = next_until(value)
-                            self.dprint("next_until converted to %s" % value)
-                        output.append(value)
+                        if value:
+                            if next_once:
+                                value = next_once(value)
+                                self.dprint("next_once converted to %s" % value)
+                                next_once = None
+                            elif next_until:
+                                value = next_until(value)
+                                self.dprint("next_until converted to %s" % value)
+                            output.append(value)
                     except ValueError:
                         # not an integer means we just insert the value
                         output.append(part)
@@ -1316,11 +1317,17 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             pass
         
         def doTests(self):
+            tests = [
+                ("(.+) (.+)", "\\u\\1 \\l\\2 upper=\\U\\1 upper \\2\\E lower=\\L\\1 LoWeR \\2\\E", "blah STUFF"),
+                ("(_)?spell([A-Z].+)", "\\1\\l\\2", "spellCheck"),
+                ]
             service = FindRegexService(self)
-            service.setFindString("(.+) (.+)")
-            service.setReplaceString("\\u\\1 \\l\\2 upper=\\U\\1 upper \\2\\E lower=\\L\\1 LoWeR \\2\\E")
-            service.getFlags()
-            dprint(service.getReplacement("blah STUFF"))
+            service.__class__.debuglevel = 1
+            for search, replace, string in tests:
+                service.setFindString(search)
+                service.setReplaceString(replace)
+                service.getFlags()
+                dprint(service.getReplacement(string))
         
     app = wx.App(False)
     frame = Frame(None, size=(-1, 600))
