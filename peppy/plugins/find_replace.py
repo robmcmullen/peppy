@@ -508,9 +508,8 @@ class FindRegexService(FindService):
         else:
             match_case = self.settings.match_case
         
-        if match_case:
-            self.flags = 0
-        else:
+        self.flags = re.MULTILINE
+        if not match_case:
             self.flags = re.IGNORECASE
         
         # Force the next search to start from a new shadow copy of the text
@@ -787,7 +786,7 @@ class FindBar(wx.Panel, debugmixin):
         self._lastcall = self.OnFindN
         
         posn, st = self.service.doFindNext(incremental=incremental)
-        self.dprint("start=%d pos=%d" % (st, posn))
+        self.dprint("start=%s pos=%s" % (st, posn))
         if posn is None:
             self.cancel()
             return
