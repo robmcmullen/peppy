@@ -595,12 +595,18 @@ class FindRegexService(FindService):
         def firstLower(s):
             if len(s) > 1:
                 return s[0].lower() + s[1:]
-            return s[0].lower
+            return s.lower()
         
         def firstUpper(s):
             if len(s) > 1:
                 return s[0].upper() + s[1:]
-            return s[0].upper
+            return s.upper()
+        
+        def lower(s):
+            return s.lower()
+        
+        def upper(s):
+            return s.upper()
         
         match = self.regex.match(replacing)
         if not match:
@@ -622,9 +628,9 @@ class FindRegexService(FindService):
                 elif escape == "u":
                     next_once = firstUpper
                 elif escape == "L":
-                    next_until = str.lower
+                    next_until = lower
                 elif escape == "U":
-                    next_until = str.upper
+                    next_until = upper
                 elif escape == "E":
                     next_until = None
                 else:
@@ -638,11 +644,11 @@ class FindRegexService(FindService):
                         value = match.group(index)
                         if next_once:
                             value = next_once(value)
-                            self.dprint("converted to %s" % value)
+                            self.dprint("next_once converted to %s" % value)
                             next_once = None
                         elif next_until:
                             value = next_until(value)
-                            self.dprint("converted to %s" % value)
+                            self.dprint("next_until converted to %s" % value)
                         output.append(value)
                     except ValueError:
                         # not an integer means we just insert the value
@@ -661,6 +667,7 @@ class FindRegexService(FindService):
                     part = next_until(part)
                     self.dprint("converted to %s" % part)
                 output.append(part)
+        self.dprint("output = %s" % str(output))
         text = "".join(output)
         return text
 
