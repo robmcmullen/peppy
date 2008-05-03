@@ -335,7 +335,10 @@ class CubeView(debugmixin):
         else:
             self.indexes = [0]
             self.max_index = 0
-
+    
+    def getBand(self, index):
+        return self.cube.getBandInPlace(index)
+    
     def loadBands(self, progress=None):
         if not self.cube: return
 
@@ -344,7 +347,7 @@ class CubeView(debugmixin):
         emin=None
         emax=None
         for i in self.indexes:
-            raw=self.cube.getBandInPlace(i)
+            raw=self.getBand(i)
             minval=raw.min()
             maxval=raw.max()
             self.bands.append((i,raw,minval,maxval))
@@ -438,6 +441,9 @@ class CubeView(debugmixin):
         newbands=[self.getIndex(band, user)]
         return self.setIndexes(newbands)
 
+    def getIndexes(self):
+        return self.indexes
+
     def setIndexes(self, newbands):
         display=True
         # greyscale image only needs the first array value, rgb image
@@ -525,25 +531,8 @@ class FocalPlaneView(CubeView):
         """
         return (self.indexes[0], x, y)
     
-    def loadBands(self, progress=None):
-        if not self.cube: return
-
-        self.bands=[]
-        count=0
-        emin=None
-        emax=None
-        for i in self.indexes:
-            raw=self.cube.getFocalPlaneInPlace(i)
-            minval=raw.min()
-            maxval=raw.max()
-            self.bands.append((i,raw,minval,maxval))
-            count+=1
-            if emin==None or minval<emin:
-                emin=minval
-            if emax==None or maxval>emax:
-                emax=maxval
-            if progress: progress.Update((count*50)/len(self.bands))
-        self.extrema=(emin,emax)
+    def getBand(self, index):
+        return self.cube.getFocalPlaneInPlace(index)
 
     def getDepthXAxisLabel(self):
         return 'line'
@@ -695,15 +684,6 @@ class BandSliderUpdates(HSIActionMixin, ToggleAction):
     def action(self, index=-1, multiplier=1):
         self.mode.immediate_slider_updates = not self.mode.immediate_slider_updates
 
-
-class CubeAction(HSIActionMixin, SelectAction):
-    def isEnabled(self):
-        mode = self.mode
-        index = mode.dataset_index
-        num = mode.dataset.getNumCubes()
-        if index>0:
-            return True
-        return False
 
 
 class ContrastFilterAction(HSIActionMixin, RadioAction):
