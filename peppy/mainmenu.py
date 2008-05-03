@@ -62,7 +62,7 @@ class New(SelectAction):
     alias = "new-file"
     name = "Text file"
     tooltip = "New plain text file"
-    icon = "icons/page.png"
+    icon = "icons/page_white_text_new.png"
     default_menu = ("File/New", -2)
     key_bindings = {'win': "C-N", 'mac': "C-N"}
 
@@ -551,7 +551,7 @@ class Undo(STCModificationAction):
     alias = "undo"
     name = "Undo"
     tooltip = "Undo"
-    icon = "icons/arrow_turn_left.png"
+    icon = "icons/undo.png"
     default_menu = ("Edit", 0)
     key_bindings = {'default': "C-Z", 'emacs': "C-/",}
     
@@ -567,7 +567,7 @@ class Redo(STCModificationAction):
     alias = "redo"
     name = "Redo"
     tooltip = "Redo"
-    icon = "icons/arrow_turn_right.png"
+    icon = "icons/redo.png"
     default_menu = ("Edit", 1)
     key_bindings = {'win': "C-Y", 'emacs': "C-S-/", 'mac': "C-S-Z"}
     
