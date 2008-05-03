@@ -710,7 +710,6 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
     name = "Contrast"
     tooltip = "Contrast adjustment method"
     default_menu = ("View", -300)
-    icon = 'icons/hsi-cube-next.png'
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
 
