@@ -477,7 +477,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser=OptionParser(usage=usage)
         parser.add_option("-p", action="store_true", dest="profile", default=False)
         parser.add_option("-v", action="count", dest="verbose", default=0)
-        parser.add_option("-t", "--test", action="store_true", dest="log_stderr", default=False)
+        parser.add_option("-t", "--test", action="store_true", dest="test_mode", default=False)
+        parser.add_option("-d", "--debug-print", action="store_true", dest="log_stderr", default=False)
         parser.add_option("-c", action="store", dest="confdir", default="")
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
         parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
@@ -510,7 +511,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 #            KeyboardConf.configDefault()
 #            sys.exit()
 
-        if not self.options.log_stderr:
+        if not self.options.log_stderr and not self.options.test_mode:
             debuglog(errorRedirector('debug'))
             errorlog(errorRedirector('error'))
         
@@ -957,10 +958,19 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         middle of another yield, so guard against that by using this barrier.
         """
         if self.yielding:
-            #dprint("Caught a yield inside a yield")
+            if self.debuglevel > 0:
+                dprint("Caught a yield inside a yield")
+                import traceback
+                dprint("".join(traceback.format_stack()))
             return
         self.yielding = True
-        wx.Yield()
+        if self.debuglevel > 0:
+            dprint("Pending events: %s.  Yielding at:" % self.Pending())
+            import traceback
+            dprint("".join(traceback.format_stack()))
+        self.Yield()
+        if self.debuglevel > 0:
+            dprint("Yield returned.")
         self.yielding = False
 
 def run():
