@@ -166,7 +166,7 @@ setup(name = '$prog',
       # rid of.
       options = {'py2exe': {'unbuffered': True,
                             'optimize': 2,
-                            'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'numpy.distutils', 'numpy.f2py', 'matplotlib', 'doctest'],
+                            'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'numpy.f2py', 'matplotlib', 'doctest'],
                             }
                  },
       windows = [{"script": "peppy.py",

@@ -20,8 +20,11 @@ class HSIPlugin(IPeppyPlugin):
             if format:
                 assert self.dprint("found %s" % repr(format))
                 return (None, [peppy.hsi.hsi_major_mode.HSIMode])
-        except:
+        except Exception, e:
                 dprint("FAILED Loading hsi_major_mode")
+                import traceback
+                error = traceback.format_exc()
+                dprint(error)
                 raise
         return (None, [])
     
@@ -32,6 +35,9 @@ class HSIPlugin(IPeppyPlugin):
                 return [peppy.hsi.hsi_major_mode.HSIMode]
             except:
                 dprint("FAILED Loading hsi_major_mode")
+                import traceback
+                error = traceback.format_exc()
+                dprint(error)
                 pass
         return []
 
