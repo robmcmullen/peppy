@@ -709,7 +709,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def saveConfig(self, filename):
         if GlobalPrefs.isUserConfigChanged():
-            dprint("User configuration has changed!  Saving")
+            self.dprint("User configuration has changed!  Saving")
             text = GlobalPrefs.configToText()
             try:
                 fh = self.config.open(filename, "w")

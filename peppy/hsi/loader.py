@@ -35,8 +35,10 @@ class HyperspectralSTC(NonResidentSTC):
             # loader (for example, instead of ENVI, use GDAL)
             dataset = HyperspectralFileFormat.load(self.url, bad=self.dataset.__class__)
             if dataset:
+                #dprint("Using %s instead" % dataset.__class__)
                 self.dataset = dataset
                 return self.dataset.getCube(filename=url, index=index)
+            dprint("Caught OSError; most likely out-of-memory error due to mmap.  Alternate loaders failed.")
             raise
     
     def GetLength(self):
