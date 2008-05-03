@@ -816,3 +816,55 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if mode:
             return "peppy: %s" % mode.buffer.getTabName()
         return self.name
+    
+    def showSaveAs(self, title, default_name=None, extra=None):
+        """Show a save as dialog relative to the currently active major mode.
+        
+        Displays a save as dialog and returns the chosen filename.  The
+        dialog's initial directory will be current working directory of the
+        active major mode.
+        
+        @param title: string to display in the window title bar
+        
+        @param extra: extra suffix to append to the default filename
+        
+        @return: filename of desired file, or None if cancelled.
+        """
+        mode = self.getActiveMajorMode()
+        cwd = self.cwd()
+        if default_name:
+            saveas = default_name
+        else:
+            saveas = mode.buffer.getFilename()
+            saveas = os.path.basename(saveas)
+        if extra:
+            saveas += extra
+        assert self.dprint("cwd = %s, file = %s" % (cwd, saveas))
+
+        wildcard="*.*"
+        dlg = wx.FileDialog(
+            self, message=title, defaultDir=cwd, 
+            defaultFile=saveas, wildcard=wildcard,
+            style=wx.SAVE| wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
+
+        # FIXME: bug in linux: setting defaultFile to some
+        # non-blank string causes directory to be set to
+        # current working directory.  If defaultFile == "",
+        # working directory is set to the specified
+        # defaultDir.           
+        dlg.SetDirectory(cwd)
+        
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            # This returns a Python list of files that were selected.
+            paths = dlg.GetPaths()
+            if len(paths) > 0:
+                saveas = paths[0]
+                assert self.dprint("save file %s:" % saveas)
+            elif paths!=None:
+                raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
+        else:
+            saveas = None
+
+        dlg.Destroy()
+        return saveas

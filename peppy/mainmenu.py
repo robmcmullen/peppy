@@ -450,37 +450,10 @@ class SaveAsGUI(SelectAction):
 
         paths=None
         if self.mode.buffer:
-            saveas = self.mode.buffer.getFilename()
-            cwd = self.frame.cwd()
-            assert self.dprint("cwd = %s, path = %s" % (cwd, saveas))
-            saveas=os.path.basename(saveas)
+            saveas = self.frame.showSaveAs("Save File")
+            if saveas:
+                self.mode.save(saveas)
 
-            wildcard="*.*"
-            dlg = wx.FileDialog(
-                self.frame, message="Save File", defaultDir=cwd, 
-                defaultFile=saveas, wildcard=wildcard,
-                style=wx.SAVE| wx.CHANGE_DIR | wx.OVERWRITE_PROMPT)
-
-            # FIXME: bug in linux: setting defaultFile to some
-            # non-blank string causes directory to be set to
-            # current working directory.  If defaultFile == "",
-            # working directory is set to the specified
-            # defaultDir.           
-            dlg.SetDirectory(cwd)
-            
-            retval=dlg.ShowModal()
-            if retval==wx.ID_OK:
-                # This returns a Python list of files that were selected.
-                paths = dlg.GetPaths()
-                if len(paths)>0:
-                    saveas=paths[0]
-                    assert self.dprint("save file %s:" % saveas)
-
-                    self.mode.save(saveas)
-                elif paths!=None:
-                    raise IndexError("BUG: probably shouldn't happen: len(paths)!=1 (%s)" % str(paths))
-
-            dlg.Destroy()
 
 class OpenFundamental(SelectAction):
     name = "&Open Sample Text"
