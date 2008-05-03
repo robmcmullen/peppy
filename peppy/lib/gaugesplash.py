@@ -99,3 +99,28 @@ class GaugeSplash(wx.Frame):
         self.gauge.SetValue(self.count)
         self.gauge.Update()
         wx.SafeYield()
+
+
+if __name__ == "__main__":
+    import time
+    
+    app   = wx.PySimpleApp()
+    
+    bitmap = wx.EmptyBitmap(500, 300)
+    dc = wx.MemoryDC()
+    dc.SelectObject(bitmap)
+    dc.Clear()
+    splash = GaugeSplash(bitmap)
+    splash.Show()
+    splash.Update()
+    wx.Yield()
+    splash.Update()
+    wx.Yield()
+    
+    count = 40
+    splash.setTicks(count)
+    for i in range(count):
+        splash.tick("count %d" % i)
+        time.sleep(.1)
+
+    splash.Destroy()
