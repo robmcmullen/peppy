@@ -53,8 +53,7 @@ class FindSettings(debugmixin):
 
 class FindService(debugmixin):
     forward = "Find"
-    backward = "Find Backward"
-    replace = "Replace"
+    backward = "Find backward"
     
     help = """The default find and replace uses literal strings.  No wildcard
     or regular expressions are used to match text."""
@@ -294,8 +293,7 @@ class FindService(debugmixin):
 
 
 class FindBasicRegexService(FindService):
-    forward = "Find Scintilla Regex"
-    replace = "Replace Scintilla Regex"
+    forward = "Find Scintilla regex"
     
     help = r"""
     Basic regular expressions are a limited form supported by the scintilla
@@ -374,8 +372,7 @@ class FindWildcardService(FindService):
     
     stuff*stuff?stuff?stuff?stuff*stuff
     """
-    forward = "Find Wildcard"
-    replace = "Replace Wildcard"
+    forward = "Find wildcard"
     
     help = """
     Shell-style wildcards are simpler than full regular expressions, but you
@@ -492,8 +489,7 @@ class FindRegexService(FindService):
     """Find and replace using python regular expressions.
     
     """
-    forward = "Find Regex"
-    replace = "Replace Regex"
+    forward = "Find regex"
 
     def __init__(self, *args, **kwargs):
         FindService.__init__(self, *args, **kwargs)
@@ -961,9 +957,7 @@ class ReplaceBar(FindBar):
     to the next match, 'q' to quit, '.' to replace one match and quit, '!' to
     replace all remaining matches', 'p' or '^' to move to the previous match.
     """
-    replace = "Replace"
-    replace_regex = "Regex Replace"
-    help_status = "y: replace, n: skip, q: exit, !:replace all"
+    help_status = "y: replace, n: skip, q: exit, !:replace all, f: edit find, r: edit replace"
     
     def __init__(self, *args, **kwargs):
         FindBar.__init__(self, *args, **kwargs)
@@ -980,10 +974,10 @@ class ReplaceBar(FindBar):
         self.last_cursor = 0
     
     def createCtrls(self):
-        text = self.service.replace
-        grid = wx.GridBagSizer(0, 0)
+        text = self.service.forward
+        grid = wx.GridBagSizer(2, 2)
         self.label = wx.StaticText(self, -1, _(text) + u":")
-        grid.Add(self.label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL)
+        grid.Add(self.label, (0, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         self.find = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
         grid.Add(self.find, (0, 1), flag=wx.EXPAND)
         self.replace = wx.TextCtrl(self, -1, size=(-1,-1), style=wx.TE_PROCESS_ENTER)
@@ -992,7 +986,7 @@ class ReplaceBar(FindBar):
         # Windows doesn't process char events through a real button, so we use
         # this fake button as a label and process events through it.  It's
         # added here so that it will be last in the tab order.
-        self.command = FakeButton(self, -1, _("with") + u":")
+        self.command = FakeButton(self, -1, _("Replace with") + u":")
         grid.Add(self.command, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         
         grid.AddGrowableCol(1)
@@ -1021,7 +1015,7 @@ class ReplaceBar(FindBar):
         FindBar.resetColor(self)
 
     def setDirection(self, dir=1):
-        self.label.SetLabel(_(self.service.replace) + u":")
+        self.label.SetLabel(_(self.service.forward) + u":")
         self.Layout()
 
     def OnFindSetFocus(self, evt):
@@ -1029,6 +1023,9 @@ class ReplaceBar(FindBar):
     
     def OnReplaceSetFocus(self, evt):
         self.frame.SetStatusText("Enter replacement text and press Return")
+    
+    def OnTabToFind(self, evt):
+        self.find.SetFocus()
     
     def OnTabToReplace(self, evt):
         self.replace.SetFocus()
@@ -1134,6 +1131,10 @@ class ReplaceBar(FindBar):
             self.OnExit()
         elif uchar in u'!':
             self.OnReplaceAll(None)
+        elif uchar in u'fF':
+            self.OnTabToFind(None)
+        elif uchar in u'rR':
+            self.OnTabToReplace(None)
         else:
             evt.Skip()
     
