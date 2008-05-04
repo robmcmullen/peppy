@@ -455,10 +455,11 @@ class ListAction(SelectAction):
         assert self.dprint("id2index=%s" % self.id2index)
         assert self.dprint("items in list: %s" % self.menu.GetMenuItems())
         pos=0
-        for item in self.menu.GetMenuItems():
-            if item.GetId()==self.toplevel[0]:
-                break
-            pos+=1
+        if self.toplevel:
+            for item in self.menu.GetMenuItems():
+                if item.GetId()==self.toplevel[0]:
+                    break
+                pos+=1
         assert self.dprint("inserting items at pos=%d" % pos)
         for id in self.toplevel:
             assert self.dprint("deleting widget %d" % id)
