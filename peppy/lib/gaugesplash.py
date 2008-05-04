@@ -71,7 +71,7 @@ class GaugeSplash(wx.Frame):
         self.gauge.Layout()
         self.Layout()
         self.Update()
-        wx.SafeYield()
+        wx.Yield()
 
     def OnNotify(self):
         """ Handles The Timer Expiration, And Calls The Close() Method. """
@@ -98,7 +98,7 @@ class GaugeSplash(wx.Frame):
         self.label.SetLabel(text)
         self.gauge.SetValue(self.count)
         self.gauge.Update()
-        wx.SafeYield()
+        wx.Yield()
 
 
 if __name__ == "__main__":
