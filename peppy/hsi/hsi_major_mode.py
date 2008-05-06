@@ -647,6 +647,9 @@ class BandSlider(HSIActionMixin, SliderAction):
     
     slider_width = 200
     
+    def isEnabled(self):
+        return self.mode.cubeview.max_index > 1
+    
     def updateToolOnDemand(self):
         """Override so we can set the tooltip depending on the view direction"""
         name = _("Seek %s") % self.mode.cubeview.imageDirectionLabel
