@@ -181,9 +181,19 @@ class BufferVFSMixin(debugmixin):
     """Mixin class that compartmentalizes the interaction with the vfs
     
     """
-    def __init__(self, url):
+    def __init__(self, url, created_from_url=None):
+        """Initialize the mixin.
+        
+        @param url: url of the buffer
+        
+        @param created_from_url: (optional) url from which this buffer was
+        created.  If this exists, it will be used as a secondary place to look
+        for a local filesystem working directory if a working directory can't
+        be determined from the real url.
+        """
         self.bfh = None
         self.setURL(url)
+        self.created_from_url = created_from_url
         
     def setURL(self, url):
         if not url:
@@ -201,6 +211,27 @@ class BufferVFSMixin(debugmixin):
     def getFilename(self):
         return unicode(self.url.path)
 
+    def _cwd(self, url, use_vfs=False):
+        """Find a directory in the local filesystem that corresponds to the
+        given url.
+        """
+        if url.scheme == 'file':
+            path = os.path.normpath(os.path.dirname(unicode(url.path)))
+        else:
+            # See if the path converts to an existing path in the local
+            # filesystem by converting it to a file:// url and seeing if any
+            # path components exist
+            lastpath = None
+            uri = vfs.normalize(unicode(url.path))
+            path = os.path.normpath(unicode(uri.path))
+            while path != lastpath and path != '/':
+                #dprint("trying %s" % path)
+                if os.path.isdir(path):
+                    break
+                lastpath = path
+                path = os.path.dirname(path)
+        return path
+            
     def cwd(self, use_vfs=False):
         """Find the current working directory of the buffer.
         
@@ -215,30 +246,20 @@ class BufferVFSMixin(debugmixin):
         this sense of use_vfs will report the overlayed directory.
         """
         if use_vfs:
-            if vfs.is_folder(self.url):
-                path = vfs.normalize(self.url)
+            if vfs.is_folder(url):
+                path = vfs.normalize(url)
             else:
-                path = vfs.get_dirname(self.url)
-            return path
-        elif self.url.scheme == 'file':
-            path = os.path.normpath(os.path.dirname(unicode(self.url.path)))
+                path = vfs.get_dirname(url)
             return path
         else:
-            # See if the path converts to an existing path in the local
-            # filesystem by converting it to a file:// url and seeing if any
-            # path components exist
-            lastpath = None
-            uri = vfs.normalize(unicode(self.url.path))
-            path = os.path.normpath(unicode(uri.path))
-            while path != lastpath and path != '/':
-                #dprint("trying %s" % path)
-                if os.path.isdir(path):
-                    return path
-                lastpath = path
-                path = os.path.dirname(path)
-        path = os.getcwd()
+            path = self._cwd(self.url)
+            if (not path or path == '/') and self.created_from_url:
+                path = self._cwd(self.created_from_url)
+        
+        if path == '/':
+            path = os.getcwd()
         return path
-            
+
     def getBufferedReader(self, size=1024):
         assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
         if self.bfh is None:
@@ -300,8 +321,8 @@ class Buffer(BufferVFSMixin):
         buffer.openGUIThreadSuccess()
         return buffer
 
-    def __init__(self, url, defaultmode=None):
-        BufferVFSMixin.__init__(self, url)
+    def __init__(self, url, defaultmode=None, created_from_url=None):
+        BufferVFSMixin.__init__(self, url, created_from_url)
         
         if Buffer.dummyframe is None:
             Buffer.initDummyFrame()
@@ -561,9 +582,9 @@ class LoadingMode(BlankMode):
                      self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
-    def __init__(self, url, modecls=None):
+    def __init__(self, url, modecls=None, created_from_url=None):
         self.user_url = url
-        BufferVFSMixin.__init__(self, url)
+        BufferVFSMixin.__init__(self, url, created_from_url)
         self.busy = True
         self.readonly = False
         self.permanent = False
@@ -582,7 +603,7 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""
-        return Buffer(self.url, self.modecls)
+        return Buffer(self.url, self.modecls, self.created_from_url)
 
     def addViewer(self, mode):
         pass

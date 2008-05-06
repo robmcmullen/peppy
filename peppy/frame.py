@@ -626,7 +626,29 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("new mode=%s" % newmode)
         self.tabs.updateWrapper(wrapper)
 
-    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False):
+    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None):
+        """Open a new tab to edit the given URL.
+        
+        Driver function that loads a file and creates a new tab in the user
+        interface.  Depending on settings, the file may be loaded by a thread.
+        
+        @param url: URL of the file to open
+        
+        @param modecls: (optional) L{MajorMode} sublass to be used to edit
+        the file
+        
+        @param mode_to_replace: (optional) if used, this L{MajorMode} instance
+        will be replaced in the GUI with the newly created major mode.
+        
+        @param force_new_tab: (optional) force a new tab to be reused,
+        regardless of preference settings that would otherwise cause a tab to
+        be replaced.
+        
+        @param create_from_url: (optional) the URL of the buffer that was
+        used to generate this URL.  This is not typically used unless you're
+        creating a new file in the mem: filesystem and want a working directory
+        on the local filesystem to be available if needed to save a copy.
+        """
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
         # query string and fragment) it separately.
@@ -658,7 +680,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab)
         else:
             try:
-                buffer = LoadingBuffer(user_url, modecls)
+                buffer = LoadingBuffer(user_url, modecls, created_from_url)
             except Exception, e:
                 import traceback
                 error = traceback.format_exc()
