@@ -4,58 +4,95 @@
 
 <P>Latest version: $version "$codename".  <a href="download.html">Download here</a>
 
-<P>This project started out as my graduate school thesis, built
-as an educational experiment to attempt to demonstrate the <a
-href="pm/">modern software development process</a> using the <a
-href="http://readyset.tigris.org/">ReadySET project management templates</a>.
-However, the code that started out as a means-to-an-end has grown beyond its
-original purpose of demonstrating the software development process.  It's now
-quite usable and useful.
+<h3>Why Another Editor?</h3>
 
-<P>I suppose you're thinking that the world doesn't need another editor, and
-you might even be right.  In fact, a <a href="http://www.xemacs.org">really
-good editor</a> does already exist, but I'm not just trying to create another
-editor.  I'm looking for a way to build an extensible framework in Python that
-can support editing and viewing many different types of files, not <i>just</i>
-text files or source code.  But, having said that, the primary target is still
-source code editing; however, unlike other editors I'm not <i>limiting</i>
-myself to that, as evidenced by the hex edit mode and other esoteric modes
-like the hyperspectral image viewer.
+<P>Peppy is not just another editor.  It's an extensible framework in Python
+that can support editing and viewing many different types of files, not
+<i>just</i> text files or source code.
 
-<h3>Features</h3>
+<P>Besides, can your editor do this?
+
+
+<h3><img src="peppy-icon-16.png"> Multiple Top-Level Windows</h3>
+
+<p>Multiple views of the same file are kept in sync (edit in one view and changes are reflected in realtime in the others, even if the others are different major modes!)
+
+<p><img src="multiple-top-level-windows.png" alt="image of two top-level windows"/>
+
+<br>
+<br>
+
+<h3><img src="peppy-icon-16.png"> Spell Check On The Fly</h3>
+
+<P>When using the optional module <a
+href="http://pyenchant.sourceforge.net">pyenchant</a>, spelling mistakes are
+highlighted as you type.
+
+<p><img src="spell-check.png" alt="wavy-lines under spelling mistakes"/>
+
+<br>
+<br>
+
+<h3><img src="peppy-icon-16.png"> Python Regular Expression Search and Replace</h3>
+
+<P>Including extended replace functionality to alter the case of matched strings.
+
+<p><img src="python-regex.png" alt="python regular expression replace"/>
+
+<br>
+<br>
+
+<h3><img src="peppy-icon-16.png"> Edit Files in Binary Mode</h3>
+
+<p>Your edits in binary mode are reflected in other views of the same file.
+
+<p><img src="hex-edit.png" alt="binary view of a png file"/>
+
+<br>
+<br>
+
+<h3><img src="peppy-icon-16.png"> Other Major Modes (Music Player Daemon, View Hyperspectral Images)</h3>
+
+<p>Control a <a href="http://mpd.wikia.com/wiki/Main_Page">Music Player
+Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optional <a href="http://gdal.osgeo.org/">GDAL</a> support).
+
+<p><img src="cool-major-modes.png" alt="mpd mode, hyperspectral mode"/>
+
+<br>
+
+
+
+<h3><img src="peppy-icon-16.png"> Other Features</h3>
 
 <ul>
-<li>Multiple top-level windows
-<li>Multiple language support: currently baseline implementations of Python, Makefile, C/C++ major modes
-<li>Multiple views of the same file (edit in one view and changes are reflected in realtime in the others, even if the others are different major modes!)
+<li>Same interface on Unix, Windows, and OSX thanks to wxPython
+<li>Multiple language support: Python mode is very well supported, baseline implementations of C/C++/Java, Makefile, and Shell major modes
+<li>Syntax highlighting using the Scintilla styling code from <a href="http://www.editra.org">Editra</a>
+<li>Autoindenting of source code, including a <a href="http://www.alweb.dk/blog/anders/autoindentation">regex-based autoindenter</a> based on KDE's Kate
+<li>Built-in class browser to display list of functions and methods in code
+<li>Customizable key bindings
 <li>Virtual file system abstraction layer based on <a href="http://www.ikaaro.org/itools/">itools.vfs</a>, allowing transparent file loads from the local file system, http URLs, and from within tar archives without uncompressing the archive beforehand.
 <li>Minibuffer ala XEmacs, including tab completion
-<li>On-the-fly spell checking using the <a href="http://pyenchant.sourceforge.net">pyenchant</a> module
+<li>Extensible through <a href="http://code.google.com/p/peppy/">plugins</a>
+<li>Internationalized, and can even switch languages on the fly
 <li>Other interesting major modes:
 <ul>
-<li>Hex edit mode
-<li>Hyperspectral image view mode
-<li>Music Player Daemon mode for controlling an
-<a href="http://mpd.wikia.com/wiki/Main_Page">MPD</a> server
 <li>Dired mode for viewing directories
+<li>Eliza and other psychotherapists
+<li>Mandelbrot set explorer using Ned Batchelder's <a href="http://nedbatchelder.com/code/aptus/">Aptus</a> engine
+<li>Hangman word guessing game
 </ul>
 </ul>
 
-<h3>Development features</h3>
-<ul>
-<li>Pure python source based on the <a href="http://www.wxpython.org">wxPython</a> widget toolkit
-<li>Most features coded as plugins - can enable or disable individual features at will
-<li>Scintilla styling code borrowed from <a href="http://www.editra.org">Editra</a>
-and I will continue to track Editra as more language lexers are supported
-</ul>
 
 <h3>Help Wanted</h3>
 
 <h4>Mac OSX</h4>
-<P>I'm especially interested in help with the Mac OSX testing.  I regularly test
-on Windows and Linux, but don't have access to a Mac.  I'd appreciate any help
-in debugging on the Mac, as I believe there's still a problem in the keyboard
-handling on OSX.
+
+<P>I'm especially interested in help with the Mac OSX testing.  I regularly
+test on Windows and Linux, but only have limited access to a Mac.  I'd
+appreciate any help in debugging on the Mac, as I believe there's still a
+problem in the keyboard handling on OSX.
 
 <h4>Localization</h4>
 
