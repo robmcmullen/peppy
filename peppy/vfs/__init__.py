@@ -46,7 +46,7 @@ def normalize(ref, base=None):
         base = base.replace(os.path.sep, '/')
     #dprint(base)
     # Check windows drive letters and add extra slash for correct URL syntax
-    if base[1] == ':':
+    if len(base) > 1 and base[1] == ':':
         base = "/%s:%s" % (base[0].lower(), base[2:])
     baseref = get_reference(u'file://%s/' % base)
     try:
