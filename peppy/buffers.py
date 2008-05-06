@@ -230,7 +230,7 @@ class BufferVFSMixin(debugmixin):
             lastpath = None
             uri = vfs.normalize(unicode(self.url.path))
             path = os.path.normpath(unicode(uri.path))
-            while path != lastpath:
+            while path != lastpath and path != '/':
                 #dprint("trying %s" % path)
                 if os.path.isdir(path):
                     return path
