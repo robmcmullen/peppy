@@ -389,7 +389,7 @@ class Close(SelectAction):
     alias = "close-buffer"
     name = "&Close Buffer"
     tooltip = "Close current buffer"
-    default_menu = ("File", 809)
+    default_menu = ("File", 890)
     icon = "icons/cross.png"
 
     def isEnabled(self):

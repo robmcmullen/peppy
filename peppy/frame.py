@@ -321,6 +321,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     default_menubar = {
         _("File"): 0,
+        _("File/Export"): 850, # position within the parent menu for submenus
         _("Edit"): 0.001,
         _("View"): 0.003,
         _("Tools"): 0.004,
