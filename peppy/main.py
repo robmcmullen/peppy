@@ -276,8 +276,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     # regular expressions.  Everything not listed here will get turned
     # on with a verbosity level of 1.
     verboselevel={'.*Frame':2,
-                  'ActionMenu.*':4,
-                  'ActionTool.*':4,
+                  'IconStorage':2,
+                  'UserActionMap':2,
+                  'UserActionClassList':2,
                   '.*Filter':3,
                   }
     

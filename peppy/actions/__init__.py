@@ -255,10 +255,12 @@ class SelectAction(debugmixin):
     def showEnable(self):
         state = self.isEnabled()
         if self.widget is not None:
-            assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
+            if self.debuglevel > 1:
+                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
             self.widget.Enable(state)
         if self.tool is not None:
-            assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
+            if self.debuglevel > 1:
+                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
             self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
@@ -449,24 +451,29 @@ class ListAction(SelectAction):
     def dynamic(self):
         # dynamic menu will be shown if getHash returned None
         if self.savehash != None and self.savehash == self.getHash():
-            assert self.dprint("dynamic menu not changed.  Skipping")
+            if self.debuglevel > 1:
+                self.dprint("dynamic menu not changed.  Skipping")
             return
-        assert self.dprint("toplevel=%s" % self.toplevel)
-        assert self.dprint("id2index=%s" % self.id2index)
-        assert self.dprint("items in list: %s" % self.menu.GetMenuItems())
+        if self.debuglevel > 1:
+            self.dprint("toplevel=%s" % self.toplevel)
+            self.dprint("id2index=%s" % self.id2index)
+            self.dprint("items in list: %s" % self.menu.GetMenuItems())
         pos=0
         if self.toplevel:
             for item in self.menu.GetMenuItems():
                 if item.GetId()==self.toplevel[0]:
                     break
                 pos+=1
-        assert self.dprint("inserting items at pos=%d" % pos)
+        if self.debuglevel > 1:
+            self.dprint("inserting items at pos=%d" % pos)
         for id in self.toplevel:
-            assert self.dprint("deleting widget %d" % id)
+            if self.debuglevel > 1:
+                self.dprint("deleting widget %d" % id)
             self.menu.Delete(id)
         self.toplevel=[]
         self.id2index={}
-        assert self.dprint("inserting new widgets at %d" % pos)
+        if self.debuglevel > 1:
+            self.dprint("inserting new widgets at %d" % pos)
         self.insertIntoMenu(self.menu,pos)
         # FIXME: it seems that on app exit, frame.menumap can be None, so check
         # for that here
@@ -481,7 +488,8 @@ class ListAction(SelectAction):
 
     def showEnable(self):
         if self.toplevel:
-            assert self.dprint("Enabling all items: %s" % str(self.toplevel))
+            if self.debuglevel > 1:
+                self.dprint("Enabling all items: %s" % str(self.toplevel))
             for id in self.toplevel:
                 self.menu.Enable(id,self.isEnabled())
 
@@ -537,7 +545,8 @@ class RadioAction(ListAction):
     def showCheck(self):
         if self.index2id:
             index=self.getIndex()
-            assert self.dprint("checking %d" % (index))
+            if self.debuglevel > 1:
+                self.dprint("checking %d" % (index))
             self.menu.Check(self.index2id[index],True)
 
     def getIndex(self):
@@ -581,7 +590,8 @@ class ToggleListAction(ListAction):
         
     def showCheck(self):
         if self.toplevel:
-            assert self.dprint("Checking all items: %s" % str(self.toplevel))
+            if self.debuglevel > 1:
+                self.dprint("Checking all items: %s" % str(self.toplevel))
             for id in self.toggles:
                 self.menu.Check(id,self.isChecked(self.id2index[id]))
 
