@@ -1,3 +1,16 @@
+2008-05-05  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3.3 update to "Zeta Function"
+	* added full python regular expression search and replace
+	* workaround for missing tab key event on OSX replace minibuffer
+	* fixed flickering splash screen on OSX
+	* spell checker is now a standalone object instead of plugin
+	* added action to sort lines
+	* revert now keeps the file positioned at the same line
+	* added action to change the font size (scintilla's built-in zoom)
+	* slider controls can now appear in toolbars
+	* added slider to quickly select bands in hyperspectral mode
+
 2008-04-24  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.2 update to "Zeta Function"
