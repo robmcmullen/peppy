@@ -6,11 +6,17 @@
 
 <h3>Why Another Editor?</h3>
 
-<P>Peppy is not just another editor.  It's an extensible framework in Python
-that can support editing and viewing many different types of files, not
-<i>just</i> text files or source code.
+<P>Peppy is not just another editor.  While it does emphasize source code
+editing, it's also an extensible framework in Python that can support editing
+and viewing many different types of files, not <emph>just</emph> text files.
 
-<P>Besides, can your editor do this?
+<P>It's not a minimalist editor, nor is it quite the kitchen sink of Emacs (it's
+never going to read mail).  It is powerful, but that power is hidden behind
+a familiar GUI.  It's easy to get started because most commands are available
+using the menu and tool bars.  More advanced use is possible through key
+bindings, but it's not necessary to memorize keystrokes to start using peppy.
+
+<P>Here are some features you won't find in your typical Python based editor:
 
 
 <h3><img src="peppy-icon-16.png"> Multiple Top-Level Windows</h3>
@@ -22,6 +28,15 @@ that can support editing and viewing many different types of files, not
 <br>
 <br>
 
+<h3><img src="peppy-icon-16.png"> Python Regular Expression Search and Replace</h3>
+
+<P>Including extended replace functionality to alter the case of matched strings.
+
+<p><img src="python-regex.png" alt="python regular expression replace"/>
+
+<br>
+<br>
+
 <h3><img src="peppy-icon-16.png"> Spell Check On The Fly</h3>
 
 <P>When using the optional module <a
@@ -29,15 +44,6 @@ href="http://pyenchant.sourceforge.net">pyenchant</a>, spelling mistakes are
 highlighted as you type.
 
 <p><img src="spell-check.png" alt="wavy-lines under spelling mistakes"/>
-
-<br>
-<br>
-
-<h3><img src="peppy-icon-16.png"> Python Regular Expression Search and Replace</h3>
-
-<P>Including extended replace functionality to alter the case of matched strings.
-
-<p><img src="python-regex.png" alt="python regular expression replace"/>
 
 <br>
 <br>
@@ -65,12 +71,13 @@ Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optio
 <h3><img src="peppy-icon-16.png"> Other Features</h3>
 
 <ul>
-<li>Same interface on Unix, Windows, and OSX thanks to wxPython
+<li>Same interface on Unix, Windows, and OSX thanks to <a href="http://www.wxpython.org">wxPython</a>
 <li>Multiple language support: Python mode is very well supported, baseline implementations of C/C++/Java, Makefile, and Shell major modes
 <li>Syntax highlighting using the Scintilla styling code from <a href="http://www.editra.org">Editra</a>
 <li>Autoindenting of source code, including a <a href="http://www.alweb.dk/blog/anders/autoindentation">regex-based autoindenter</a> based on KDE's Kate
 <li>Built-in class browser to display list of functions and methods in code
 <li>Customizable key bindings
+<li>GUI adapts itself to the editing mode
 <li>Virtual file system abstraction layer based on <a href="http://www.ikaaro.org/itools/">itools.vfs</a>, allowing transparent file loads from the local file system, http URLs, and from within tar archives without uncompressing the archive beforehand.
 <li>Minibuffer ala XEmacs, including tab completion
 <li>Extensible through <a href="http://code.google.com/p/peppy/">plugins</a>

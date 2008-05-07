@@ -8,6 +8,11 @@
 <li><a href="thanks.html">Contributors</a></li>
 <li><a href="README.html">README</a></li>
 </ul>
+<P>Users:</P>
+<ul>
+<li>Installation Guide (coming soon)</li>
+<li>User's Manual (coming soon)</li>
+</ul>
 <P>Developers:</P>
 <ul>
 <li><a href="http://trac.flipturn.org/">Development Home (trac)</a></li>
