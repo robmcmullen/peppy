@@ -8,7 +8,7 @@
 
 <P>Peppy is not just another editor.  While it does emphasize source code
 editing, it's also an extensible framework in Python that can support editing
-and viewing many different types of files, not <emph>just</emph> text files.
+and viewing many different types of files, not <em>just</em> text files.
 
 <P>It's not a minimalist editor, nor is it quite the kitchen sink of Emacs (it's
 never going to read mail).  It is powerful, but that power is hidden behind
@@ -76,6 +76,8 @@ Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optio
 <li>Syntax highlighting using the Scintilla styling code from <a href="http://www.editra.org">Editra</a>
 <li>Autoindenting of source code, including a <a href="http://www.alweb.dk/blog/anders/autoindentation">regex-based autoindenter</a> based on KDE's Kate
 <li>Built-in class browser to display list of functions and methods in code
+<li>Open new files in an already-running peppy process
+<li><em>File Cabinet</em> to store pointers to interesting files (analogous to Bookmarks in a web browser)
 <li>Customizable key bindings
 <li>GUI adapts itself to the editing mode
 <li>Virtual file system abstraction layer based on <a href="http://www.ikaaro.org/itools/">itools.vfs</a>, allowing transparent file loads from the local file system, http URLs, and from within tar archives without uncompressing the archive beforehand.
@@ -85,6 +87,7 @@ Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optio
 <li>Other interesting major modes:
 <ul>
 <li>Dired mode for viewing directories
+<li>Document List mode, analogous to Emacs's Buffer List mode
 <li>Eliza and other psychotherapists
 <li>Mandelbrot set explorer using Ned Batchelder's <a href="http://nedbatchelder.com/code/aptus/">Aptus</a> engine
 <li>Hangman word guessing game
