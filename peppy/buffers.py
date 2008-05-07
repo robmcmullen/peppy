@@ -246,10 +246,10 @@ class BufferVFSMixin(debugmixin):
         this sense of use_vfs will report the overlayed directory.
         """
         if use_vfs:
-            if vfs.is_folder(url):
-                path = vfs.normalize(url)
+            if vfs.is_folder(self.url):
+                path = vfs.normalize(self.url)
             else:
-                path = vfs.get_dirname(url)
+                path = vfs.get_dirname(self.url)
             return path
         else:
             path = self._cwd(self.url)
