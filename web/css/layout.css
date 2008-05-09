@@ -1,5 +1,5 @@
 body {
-	font-size: 9pt;
+	font-size: 100%;
 	font-family: verdana,arial,helvetica;
 	margin: 0;
 	padding: 0;
@@ -21,15 +21,6 @@ body {
   border: 0px;
 }
 
-#siteTitle {
-	font-size: 26pt;
-}
-
-#siteSubtitle {
-	padding-left: 1em;
-	font-size: 10pt;
-}
-
 #mainMenu {
 	position: absolute;
 	left: 0em;
@@ -38,7 +29,6 @@ body {
         line-height: 166%;
 */	padding: 1em 0.5em 0.5em 0.5em;
 
-	font-size: 10pt;
 	text-align: left;
 }
 
