@@ -1,0 +1,13 @@
+{% extends "!layout.html" %}
+{% block relbar1 %}
+<div id="titleLine">
+    <a href="http://peppy.flipturn.org/"><img src="{{ pathto("_static/peppy-web-logo.png", 1) }}" alt="peppy - (ap)Proximated (X)Emacs Powered by Python"/></a>
+</div>
+    {{ super() }}
+{% endblock %}
+
+{% block footer %}
+<div class="footer">
+Updated {{ last_updated }} by Rob McMullen &lt;robm at flipturn.org&gt;
+</div>
+{% endblock %}
