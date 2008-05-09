@@ -16,6 +16,8 @@ def entry(filename, out):
     if filename.endswith('.py') or filename.endswith('.pyc'):
         return
     data = gen(filename)
+    # Change all windows backslashes to forward slashes
+    filename = filename.replace('\\', '/')
     out.write("'%s':\n%s,\n" % (filename, data))
 
 def process(path, out):
