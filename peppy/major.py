@@ -866,13 +866,35 @@ class MajorMode(ClassPrefs, debugmixin):
         """Hook to scroll to a non-default initial position if desired."""
         pass
     
+    def getViewPositionData(self):
+        """Get a dictionary containing enough information to restore the cursor
+        position.
+        
+        This is used when reverting a file or changing major modes so that
+        the cursor stays in the same place.  The return value should be a
+        dictionary with whatever parameters necessary for the same type of
+        major mode to restore the view.
+        """
+        return {}
+    
     def revertPreHook(self):
         """Hook to save any view parameters that should be restored after a revert"""
+        self._revert_data = self.getViewPositionData()
+    
+    def setViewPositionData(self, data={}):
+        """Attempt to restore the state of the view from the given data.
+        
+        Note that the revert data passed in may be from a different major mode,
+        so the data should be tested for compatibility.
+        """
         pass
     
     def revertPostHook(self):
         """Hook to restore the view parameters after a revert"""
-        pass
+        if getattr(self, '_revert_data'):
+            self.setViewPositionData(self._revert_data)
+        else:
+            self.setViewPositionData()
 
 
 class JobControlMixin(JobOutputMixin, ClassPrefs):

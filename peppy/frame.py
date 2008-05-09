@@ -623,8 +623,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def changeMajorMode(self, requested):
         wrapper = self.tabs.getCurrent()
+        cursor_data = wrapper.editwin.getViewPositionData()
         newmode = wrapper.createMajorMode(self, wrapper.editwin.buffer, requested)
         assert self.dprint("new mode=%s" % newmode)
+        newmode.setViewPositionData(cursor_data)
         self.tabs.updateWrapper(wrapper)
 
     def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None):

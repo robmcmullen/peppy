@@ -482,15 +482,18 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         return text
     
     ##### Revert hooks
-    def revertPreHook(self):
-        self._revert_top = self.GetFirstVisibleLine()
-        self._revert_pos = self.GetCurrentPos()
+    def getViewPositionData(self):
+        return {'top': self.GetFirstVisibleLine(),
+                'pos': self.GetCurrentPos(),
+                }
     
-    def revertPostHook(self):
-        line = min(self._revert_top, self.GetLineCount() - 1)
-        self.ScrollToLine(line)
-        pos = min(self._revert_pos, self.GetLength() - 1)
-        self.GotoPos(self._revert_pos)
+    def setViewPositionData(self, data):
+        if 'top' in data:
+            line = min(data['top'], self.GetLineCount() - 1)
+            self.ScrollToLine(line)
+        if 'pos' in data:
+            pos = min(data['pos'], self.GetLength() - 1)
+            self.GotoPos(pos)
     
     
     ##### Styling code
