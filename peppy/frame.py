@@ -276,6 +276,9 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
             wrapper = self.getNewModeWrapper()
         try:
             mode = wrapper.createMajorMode(self.frame, buffer)
+        except MajorModeLoadError, error:
+            buffer = Buffer.createErrorBuffer(buffer.url, error)
+            mode = wrapper.createMajorMode(self.frame, buffer)
         except:
             import traceback
             error = traceback.format_exc()

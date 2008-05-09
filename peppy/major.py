@@ -222,6 +222,10 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             self.editwin.focus()
 
 
+class MajorModeLoadError(RuntimeError):
+    pass
+
+
 class MajorMode(ClassPrefs, debugmixin):
     """Mixin class for all major modes.
     
