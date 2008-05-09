@@ -97,7 +97,10 @@ dist: distdir
 	$(COMPRESS) $(distdir).tar
 	-rm -rf $(distdir)
 
-distdir:
+eggs:
+	./plugins/egg-utils.py -d ./plugins/build egg
+
+distdir: eggs
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
@@ -114,7 +117,8 @@ distdir:
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	cp peppy/i18n/*.py $(distdir)/peppy/i18n
 	
-	./plugins/egg-utils.py -d $(distdir)/plugins egg
+	mkdir $(distdir)/plugins
+	cp ./plugins/build/*.egg $(distdir)/plugins
 	
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
