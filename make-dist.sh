@@ -18,6 +18,8 @@ mkdir $distdir/eggs
 # from there.  Had a problem with rm -rf in a script once, so just rename it. :)
 mv $distdir/plugins $distdir/plugins-src
 
+mv $distdir/eggs/*win32.egg $distdir
+
 # Unzip them into the eggs directory so we can search for plugins
 touch $distdir/eggs/__init__.py
 ls -1 $distdir/eggs/*.egg | while read EGG; do
@@ -25,6 +27,15 @@ ls -1 $distdir/eggs/*.egg | while read EGG; do
 done
 
 ./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins -e eggs
+
+# Handle eggs with compiled objects.  They don't seem to do well when placed in
+# the eggs directory -- they need to be in the top level directory
+ls -1 $distdir/*win32.egg | while read EGG; do
+    unzip -o $EGG -d $distdir
+    cat $distdir/EGG-INFO/top_level.txt | while read TOPLEVEL; do
+        echo "import $TOPLEVEL" >> $distdir/peppy/py2exe_plugins.py
+    done
+done
 
 cat > $distdir/py2exe.sh <<EOF
 #!/bin/bash
