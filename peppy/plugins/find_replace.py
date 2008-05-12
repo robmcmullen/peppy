@@ -141,7 +141,7 @@ class FindService(debugmixin):
         """
         replaceTxt = self.settings.replace
         
-        if self.settings.smart_case:
+        if self.settings.smart_case and replaceTxt.lower() == replaceTxt:
             if replacing.upper() == replacing:
                 ## print "all upper", replacing
                 replaceTxt = replaceTxt.upper()

@@ -30,7 +30,10 @@ bindings, but it's not necessary to memorize keystrokes to start using peppy.
 
 <h3><img src="peppy-icon-16.png"> Python Regular Expression Search and Replace</h3>
 
-<P>Including extended replace functionality to alter the case of matched strings.
+<P>Including extended replace functionality to alter the case of matched
+strings.  Convenient keyboard control -- you've just typed something in to be
+searched for, why do other editors make you move back to the mouse to perform
+the search and replace?
 
 <p><img src="python-regex.png" alt="python regular expression replace"/>
 
@@ -57,16 +60,6 @@ highlighted as you type.
 <br>
 <br>
 
-<h3><img src="peppy-icon-16.png"> Other Major Modes (Music Player Daemon, View Hyperspectral Images)</h3>
-
-<p>Control a <a href="http://mpd.wikia.com/wiki/Main_Page">Music Player
-Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optional <a href="http://gdal.osgeo.org/">GDAL</a> support).
-
-<p><img src="cool-major-modes.png" alt="mpd mode, hyperspectral mode"/>
-
-<br>
-
-
 
 <h3><img src="peppy-icon-16.png"> Other Features</h3>
 
@@ -86,6 +79,9 @@ Daemon</a> server.  View hyperspectral images (built-in ENVI image loader, optio
 <li>Internationalized, and can even switch languages on the fly
 <li>Other interesting major modes:
 <ul>
+<li>Control a <a href="http://mpd.wikia.com/wiki/Main_Page">Music Player
+Daemon</a> server.
+<li>View hyperspectral images (built-in ENVI image loader, optional <a href="http://gdal.osgeo.org/">GDAL</a> support).
 <li>Dired mode for viewing directories
 <li>Document List mode, analogous to Emacs's Buffer List mode
 <li>Eliza and other psychotherapists
