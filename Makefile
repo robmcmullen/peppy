@@ -3,7 +3,7 @@
 HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html web/ChangeLog.html
 PRE = 
 CSS = web/css web/js
-IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7
+IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7 web/*.png
 WEBSITE = $(CSS) $(HTML) $(PRE) $(IMAGES)
 AUX_LOCALE_DIRS = /opt/python/taskcoach/i18n.in /opt/wx/src/wxPython/wx/tools/Editra/locale /opt/python/ulipad/lang /usr/share/locale /usr/kde/3.5/share/locale
 
