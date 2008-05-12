@@ -35,6 +35,9 @@ FEATURES
     where the port will default to 6600 if you don't specify it.
 
   * HSIMode for viewing hyperspectral image files
+
+  * AptusMode for viewing the Mandelbrot fractal using Ned Batchelder's Aptus
+    (requires numpy).
  
 
 Many more features are available or planned.  See the roadmap on the web at
@@ -80,11 +83,12 @@ I've tested with 1.3.1, but should work with 1.2.0 and later.
 Optional: numpy
 ---------------
 
-The optional hyperspectral image view mode has additional requirements:
+The Aptus plugin and the optional hyperspectral image view mode require:
 
 numpy 1.0 or later
 
-and additional functionality will be enabled if it finds:
+The hyperspectral image view mode will have additional functionality and
+provide support for more types of images if it finds:
 
 scipy 0.5.2 or later
 gdal 1.4.0 or later

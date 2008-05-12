@@ -10,6 +10,8 @@
 	* added action to change the font size (scintilla's built-in zoom)
 	* slider controls can now appear in toolbars
 	* added slider to quickly select bands in hyperspectral mode
+	* added Aptus plugin to distribution (includes compiled extension, so
+	only works on win32 and linux 64 bit currently)
 
 2008-04-24  Rob McMullen  <robm@users.sourceforge.net>
 

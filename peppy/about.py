@@ -187,14 +187,14 @@ class AboutFS(vfs.BaseFS):
     @staticmethod
     def open(reference, mode=None):
         path = str(reference.path)
-        #dprint(url)
+        #dprint(str(reference))
         
         text = findAbout(path)
         if text is None:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
         recurse_count = 100
         mimetype = findMime(path)
-        if mimetype.startswith("text") and text.find("%("):
+        if mimetype.startswith("text") and text.find("%(") >= 0:
             while text.find("%(") >= 0 and recurse_count>0:
                 text = text % substitutes
                 recurse_count -= 1
