@@ -58,6 +58,10 @@ doc: README INSTALL
 
 html: $(HTML) $(PRE) README.html doc
 	cp README.html web/
+	(cd manual; make html)
+	mkdir -p web/manual
+	rsync -avuz manual/_build/html/ web/manual/
+
 web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
 web/screenshots.html.in: web/0.*

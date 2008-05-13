@@ -11,7 +11,12 @@ Contents:
    :maxdepth: 2
 
    intro
+   concepts
    running
+   preferences
+   hsi
+
+\* not written yet
 
 Indices and tables
 ==================

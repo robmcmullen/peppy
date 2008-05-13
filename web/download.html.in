@@ -5,7 +5,10 @@ wxpython being installed on the host system.  Everything you need to run peppy
 (including optional modules like pyenchant, NumPy, and GDAL) is contained within
 the installer.
 
-<P>Note: there is no installer for unix-like operating systems.  You should
+<P>Note 1: If you're interested in developing plugins or extending the
+functionality of peppy, you should install from source code.
+
+<P>Note 2: there is no installer for unix-like operating systems.  You should
 install from source code, as described below.
 
 <h2>Windows Installer</h2>
@@ -31,29 +34,10 @@ href="http://www.wxpython.org/download.php">these instructions</a> for your
 platform.
 </ul>
 
-<h2>Optional Modules</h2>
-
-<dl>
-<dt><a href="http://pyenchant.sourceforge.net">pyenchant</a>
-<dd>If pyenchant is installed,
-text-based major modes will use it to provide on-the-fly spell checking.
-
-<dt><a href="http://numpy.scipy.org/">NumPy 1.0</a>
-<dd>Some of the optional major modes like the Hyperspectral Image Viewer
-require NumPy, but note that NumPy is <strong>not</strong> required to run
-peppy for normal editing.
-
-<dt><a href="http://www.gdal.org/">GDAL 1.5</a>
-<dd>The Hyperspectral Image Viewer can also use the GDAL 1.5 libraries to read
-images.  GDAL supports a wide range of image formats, including compressed
-formats.  Note that you need the new style swig bindings (which are built by
-default in GDAL 1.5).
-</dl>
-
 <h2>Unix and Source Code Download</h2>
 <dl>
 <dt><strong>Recommended:</strong> download current release: <a href="http://peppy.flipturn.org/archive/peppy-$version.tar.bz2">peppy-$version.tar.bz2</a>
-<dd>If you're using unix or linux:
+<dd>If you're using unix, linux or Mac OSX:
 <ul>
 <li>tar xvf peppy-$version.tar.bz2
 <li>cd peppy-$version
@@ -61,7 +45,7 @@ default in GDAL 1.5).
 </ul>
 <dd>If you're using windows:
 <ul>
-<li>extract the archive using winzip, 7zip, or another extracter
+<li>extract the archive using winzip, 7zip, or another extractor
 <li>go to the extracted folder peppy-$version
 <li>double-click on peppy.py
 </ul>
@@ -73,14 +57,49 @@ default in GDAL 1.5).
 <li>cd peppy
 <li>python peppy.py
 </ul>
+
+<dt><strong>Browse:</strong> look at the source code before you download using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or <a href="http://trac.flipturn.org/browser/">trac</a>.
+
 </dl>
 
-<h2>Current Source Code</h2>
-
-<P>If you want to look at the source code before you download, you can browse
-it online using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or
-<a href="http://trac.flipturn.org/browser/">trac</a>.
-
-<h2>Older Releases</h2>
-
 <P>Older releases are <a href="archive/">archived here</a>.
+
+
+<h2>Optional Modules</h2>
+
+<dl>
+<dt><a href="http://pyenchant.sourceforge.net">pyenchant</a>
+<dd>If pyenchant is installed,
+text-based major modes will use it to provide on-the-fly spell checking.
+
+<dt><a href="http://numpy.scipy.org/">NumPy 1.0</a>
+<dd>Some of the optional major modes like the Hyperspectral Image Viewer
+and the Aptus fractal viewer require NumPy, but note that NumPy is
+<strong>not</strong> required to run peppy for normal editing.
+
+<dt><a href="http://www.gdal.org/">GDAL 1.5</a>
+<dd>The Hyperspectral Image Viewer can also use the GDAL 1.5 libraries to read
+images.  GDAL supports a wide range of image formats, including compressed
+formats.  Note that you need the new style swig bindings (which are built by
+default in GDAL 1.5).
+
+<dt><a href="http://www.scipi.org/">SciPy 0.6</a>
+
+<dd>For even more functionality in the Hyperspectral Image
+Viewer, you can install the SciPy library.  SciPy provides a
+huge suite of mathematical utility functions and is used in
+several image enhancement commands.  However, it is a bit of a <a
+href="http://www.scipy.org/Installing_SciPy/BuildingGeneral">complicated
+install</a>, involving compiling some libraries by hand.
+
+<p>A problem that plagued me for a while was that the "python
+setup.py install" stage was picking up libblas and liblapack from the
+system's /usr/lib directory, and RedHat prior to early 2007 supplied
+incomplete libraries.  I had to replace these system libraries with my
+just-built libraries, because setup.py seemed to ignore the paths I
+specified for BLAS and LAPACK as shown in the instructions on the
+webpage above.
+
+</dl>
+
+

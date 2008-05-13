@@ -1,32 +1,25 @@
-*************
-Running Peppy
-*************
+***************************
+Up and Running with Peppy *
+***************************
 
-This is stuff about peppy.  blah blah
+[\* To be written...]
 
-
-Section
-=======
-
-stuff. stuff. stuff. stuff. stuff. stuff. stuff. stuff. 
-
-stuff. stuff. stuff. stuff. 
-
-.. image:: peppy.png
+Command Line Options
+====================
 
 
-Another Section
-===============
-
-stuff. stuff. stuff. stuff. stuff. stuff. stuff. stuff. 
-
-stuff. stuff. stuff. stuff. 
+Opening Files
+=============
 
 
+Using the Window Menu
+=====================
 
-Sub Section
------------
 
-stuff. stuff. stuff. stuff. stuff. stuff. stuff. stuff. 
-stuff. stuff. stuff. stuff. 
+Using the Documents Menu
+========================
+
+
+Saving Files
+============
 
