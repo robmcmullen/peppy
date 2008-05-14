@@ -2,8 +2,9 @@
 Introduction
 ************
 
-Peppy is an editor in the general sense -- it allows you to edit lots of
-different types of data, not just text.
+Peppy is an editor in the general sense -- even though it aims to be an
+exemplary text editor, it allows you to edit lots of different types of data,
+not *just* text.
 
 It is designed in the spirit of Emacs and its concept of "major modes" --
 editing modes that are tuned to edit a type of file using a specific user
@@ -20,9 +21,9 @@ Target Audience
 ===============
 
 Peppy is targeted at software developers and people who edit source code for
-a living.  It is also designed to be extensible, if you program in the Python
+a living.  It is also designed to be extensible: if you program in the Python
 language (and are so inclined), you can help improve the editor with new
-functionality that is missing from the editor.
+functionality that you'd like to see in the editor.
 
 Editing Source Code
 -------------------

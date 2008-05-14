@@ -9,10 +9,12 @@ unique features that may not be obvious, and these are described here.
 User Interface
 ==============
 
+.. image:: peppy-python-mode.png
+
 Top Level Windows
 -----------------
 
-Peppy can display an unlimited number of windows, each of which can display an
+Peppy can display multiple top level windows, each of which can display an
 arbitrary number of tabs.  Each tab contains exactly one major mode, which is
 to say that each tab contains one view of a document.
 
@@ -20,11 +22,9 @@ Major Modes
 -----------
 
 A major mode is a specific type of user interface window for a particular
-type of file.  For example, the Python Major Mode shows a typical text editor
-window with line numbers on the left side, a cursor for typing, and scroll
-bars for moving back and forward in the document.
-
-.. image:: peppy-python-mode.png
+type of file.  For example, the Python Major Mode in the image above shows a
+typical text editor window with line numbers on the left side, a cursor for
+typing, and scroll bars for moving back and forward in the document.
 
 Other major modes like HexEdit:
 
@@ -75,10 +75,11 @@ Automatic Recognition of File Type
 Another unique aspect of peppy is the lengths to which it goes to identify
 a file.  Because most text editors assume that the file that you're loading
 is a text file, they don't spend much time trying to figure out what type of
-file it is.  They just look at the file extension and assume that it correctly
-corresponds with the text within it.
+file it really is.  They just look at the file extension and assume that it
+correctly identifies the text within it.
 
-Peppy doesn't just do that -- it also provides several hooks in the file
+Peppy does take into account the filename and extension when identifying a file,
+but it doesn't *just* do that -- it also provides several hooks in the file
 loading process to examine the URL or the contents of the file to determine
 what type of file it is.  This set of heuristics allows peppy to correctly
 determine the major mode to use even if the file is incorrectly labeled, or in
@@ -97,6 +98,6 @@ until you explicitly delete it from memory.
 Opened files appear in the *Documents* menu, and a particular document can be
 opened in any peppy window by selecting it from the menu.  A new tab containing
 a view of the document will appear, using its default major mode.  Deleting
-the tab only causes the tab to go a way; it doesn't delete the document.  Only
+the tab only causes the tab to go away; it doesn't delete the document.  Only
 when closing the document will the document be removed from memory.
 

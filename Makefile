@@ -1,6 +1,6 @@
 # Documentation builder stuff
 
-HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html web/ChangeLog.html
+HTML = web/index.html web/about.html web/faq.html web/download.html web/thanks.html web/screenshots.html web/README.html web/ChangeLog.html web/manual
 PRE = 
 CSS = web/css web/js
 IMAGES = web/peppy-web-logo.png web/0.3 web/0.6 web/0.7 web/*.png
