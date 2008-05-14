@@ -520,11 +520,6 @@ dt:hover > a.headerlink {
 a.headerlink:hover {
 }
 
-div.body p, div.body dd, div.body li {
-    text-align: justify;
-    line-height: 130%;
-}
-
 div.body td {
     text-align: left;
 }
