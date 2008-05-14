@@ -73,30 +73,27 @@ on your platform.  The layout of the menu attempts to
 follow the `Apple style guidelines for the menu bar
 <http://developer.apple.com/documentation/UserExperience/Conceptual/OSXHIGuidelines/XHIGMenus/chapter_17_section_4.html>`_
 even though peppy works with all platforms and not just Mac OS X. I found
-their guidelines useful, and so applied them to my work.
+their guidelines useful and logical, and so applied them to my work.
 
-There's a File menu that contains the common file load, file save, and related
-options.  The Edit menu holds commands related to editing and selecting text
-or date.  The Tools menu holds standalone commands that either start a process
-or don't change the contents of the document.  The Documents menu
-
-
-The File Menu
-=============
+There are seven menu titles that will always appear in the menu bar, and
+additional titles depending on the major mode.  The seven are: File, Edit,
+View, Tools, Documents, Window, and Help.
 
 The File menu contains the common file load, file save, and related options.
+The Edit menu holds commands related to editing and selecting text or data,
+and also is where you'll find the :ref:`preferences <preferences>`.  View
+holds menu items that affect how the major mode displays its contents, but
+nothing that actually alters the data -- just how the data is viewed.  The
+Tools menu holds standalone commands that either start a process or don't
+change the contents of the document.  The Documents menu contains a list of
+currently open documents, but note that some documents may not have an active
+view.  Window holds a list of top level peppy windows, allowing you to switch
+back and forth between them.  And finally, Help contains menu items related
+to documentation.
+
 
 Opening Files
 -------------
-
-
-Using the Window Menu
----------------------
-
-
-Using the Documents Menu
-------------------------
-
 
 Saving Files
 ------------

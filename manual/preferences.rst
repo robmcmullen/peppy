@@ -1,3 +1,5 @@
+.. _preferences:
+
 *******************************
 Customization and Preferences *
 *******************************
