@@ -818,6 +818,12 @@ class MajorMode(ClassPrefs, debugmixin):
 
     def removeMinibuffer(self, specific=None, detach_only=False):
         """Proxy the minibuffer requests up to the wrapper"""
+        if not self:
+            # this can get called using a wx.CallAfter, so it's possible
+            # that the mode has been deleted in the time between the call to
+            # wx.CallAfter and when the event handler gets around to calling
+            # this.
+            return
         self.wrapper.removeMinibuffer(specific, detach_only)
 
     def findMinorMode(self, name):

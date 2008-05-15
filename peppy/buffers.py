@@ -120,24 +120,6 @@ class BufferList(OnDemandGlobalListAction):
         OnDemandGlobalListAction.dynamic(self)
 
 
-class BufferPopupList(ListAction):
-    name = "Same Major Mode"
-    inline = False
-    
-    def getItems(self):
-        wrapper = self.frame.tabs.getContextMenuWrapper()
-        tab_mode = wrapper.editwin
-        self.savelist = [buf for buf in BufferList.storage if buf.defaultmode == tab_mode.__class__]
-        return [buf.displayname for buf in self.savelist]
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("top window to %d: %s" % (index, self.savelist[index]))
-        wrapper = self.frame.tabs.getContextMenuWrapper()
-        # Have to use CallAfter here because the call to setBuffer changes the
-        # tab structure, and we're in the tab callback during this method
-        wx.CallAfter(self.frame.setBuffer, self.savelist[index], wrapper)
-
-
 class BufferListSort(OnDemandActionMixin, RadioAction):
     name = "Sort Order"
     inline = False
