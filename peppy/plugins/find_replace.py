@@ -141,7 +141,12 @@ class FindService(debugmixin):
         """
         replaceTxt = self.settings.replace
         
-        if self.settings.smart_case and replaceTxt.lower() == replaceTxt:
+        # in order to use smart casing, the target string needs to have at
+        # least one alphabetic character.  If the target converted to upper
+        # case is the same as the target converted to lower case, we know that
+        # it doesn't have any alphabetic chars in it so we punt and use the
+        # replace string as is.
+        if self.settings.smart_case and replaceTxt.lower() == replaceTxt and replacing.upper() != replacing.lower():
             if replacing.upper() == replacing:
                 ## print "all upper", replacing
                 replaceTxt = replaceTxt.upper()
