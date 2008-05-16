@@ -242,14 +242,14 @@ class CSVEditDialog(wx.Dialog):
 
         label = wx.StaticText(self, -1, "Change Size:")
         bag.Add(label, (row, 0), (1,2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
-        btn = wx.Button(self, -1, "Resize")
+        btn = wx.Button(self, -1, "Resize...")
         btn.Bind(wx.EVT_BUTTON, self.OnChangeSize)
         bag.Add(btn, (row, 2), flag=wx.EXPAND)
         row += 1
 
         label = wx.StaticText(self, -1, "Import From Text File:")
         bag.Add(label, (row, 0), (1,2), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT)
-        btn = wx.Button(self, -1, "Import")
+        btn = wx.Button(self, -1, "Import...")
         btn.Bind(wx.EVT_BUTTON, self.OnImport)
         bag.Add(btn, (row, 2), flag=wx.EXPAND)
         row += 1
