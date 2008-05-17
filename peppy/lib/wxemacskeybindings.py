@@ -138,14 +138,14 @@ class KeyMap(object):
         return False
 
     def isUnknown(self):
-        """Convience function to check whether the keystroke combo is an
+        """Convenience function to check whether the keystroke combo is an
         unknown combo.
         """        
         return self.cur==None and self.function==None
 
     @classmethod
     def matchModifier(self,str):
-        """Find a modifier in the accerelator string
+        """Find a modifier in the accelerator string
         """        
         for m in self.modifiers:
             if str.startswith(m):
@@ -312,6 +312,10 @@ class KeyProcessor(object):
         self.escapeKeymap.define("M-"+self.stickyMeta + " " + self.stickyMeta,
                                  None)
 
+        # Whether or not a CMD or ALT key has been pressed at any point in this
+        # keystroke.  Used to determine if the key is printable or not.
+        self.modifier = False
+
         self.number=None
         self.defaultNumber=4 # for some reason, XEmacs defaults to 4
         self.scale=1 # scale factor, usually either 1 or -1
@@ -403,12 +407,14 @@ class KeyProcessor(object):
         # Get the modifier string in order C-, S-, A-, M-
         if emods & wx.MOD_CMD:
             modifiers += "C-"
+            self.modifier = True
         if emods & wx.MOD_SHIFT:
             modifiers += "S-"
         # A- not used currently; meta is called alt
         if emods & wx.MOD_ALT:
             modifiers += "M-"
             metadown = True
+            self.modifier = True
 
 
         # Check the sticky-meta
@@ -450,6 +456,7 @@ class KeyProcessor(object):
             self.show('')
             self.hasshown=False
             
+        self.modifier = False
         self.number=None
         self.metaNext=False
         self.nextStickyMetaCancel=False
@@ -583,7 +590,7 @@ class KeyProcessor(object):
             self.reset()
             self.show("Quit")
             if function:
-                function(evt)
+                function(evt, printable=False)
         elif self.metaNext:
             # OK, the meta sticky key is down, but it's not a quit
             # sequence
@@ -623,11 +630,12 @@ class KeyProcessor(object):
                     # Found a function in one of the keymaps, so
                     # execute it.
                     save=self.number
+                    printable = not self.modifier
                     self.reset()
                     if save is not None:
-                        function(evt,save)
+                        function(evt,save, printable=printable)
                     else:
-                        function(evt)
+                        function(evt, printable=printable)
                 elif unknown:
                     # This is an unknown keystroke combo
                     sf = "%s not defined."%(self.sofar)

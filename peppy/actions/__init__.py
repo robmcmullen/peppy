@@ -239,14 +239,18 @@ class SelectAction(debugmixin):
         """
         pass
 
-    def __call__(self, evt, number=1):
+    def __call__(self, evt, number=1, printable=False):
         assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, number))
         # Make sure that the action is enabled before allowing it to be called
         # using the keybinding
-        if self.isEnabled():
-            if self.key_needs_focus and self.mode.FindFocus() != self.mode:
+        focus = self.mode.FindFocus()
+        if focus != self.mode:
+            is_text = isinstance(focus, wx.TextCtrl)
+            dprint("focus = %s text = %s printable=%s" % (focus, is_text, printable))
+            if self.key_needs_focus or (is_text and printable):
                 evt.Skip()
                 return
+        if self.isEnabled():
             try:
                 self.action(0, number)
             except ActionNeedsFocusException:
