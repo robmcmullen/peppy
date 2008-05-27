@@ -35,15 +35,21 @@ def main_is_frozen():
            or imp.is_frozen("__main__")) # tools/freeze
 
 def get_plugin_dirs(search_path):
+    # 'plugins' directory at root of current installation (either when bundled
+    # as an app or when running from the file system) is automatically included
     if main_is_frozen():
         top = os.path.dirname(sys.argv[0])
     else:
         top = os.path.dirname(os.path.dirname(__file__))
-    
     dirs = [os.path.join(top, "plugins")]
+    
+    # Because setuptools can only load plugins from the local filesystem (not
+    # from the vfs) we can check for the existence of the directory here
+    # before including it in the plugin search path
     if isinstance(search_path, str):
-        search_path = search_path.split(os.pathsep)
-    dirs.extend(search_path)
+        for path in search_path.split(os.pathsep):
+            if os.path.exists(path):
+                dirs.append(path)
     #dprint(dirs)
     return dirs
 
@@ -291,7 +297,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     preferences_sort_weight = 0
     default_classprefs = (
         StrParam('yapsy_search_path', 'plugins', 'os.pathsep separated list of paths to search for additional yapsy plugins'),
-        StrParam('plugin_search_path', '/home/rob/src/peppy-plugins', 'os.pathsep separated list of paths to search for additional setuptools plugins', fullwidth=True),
+        StrParam('plugin_search_path', '', 'os.pathsep separated list of paths to search for additional setuptools plugins', fullwidth=True),
         StrParam('title_page', 'about:peppy', 'URL of page to load when no other file  is loaded'),
         BoolParam('request_server', True, 'Force peppy to send file open requests to an already running copy of peppy'),
         BoolParam('requests_in_new_frame', True, 'File open requests will appear in a new frame if True, or as a new tab in an existing frame if False'),
