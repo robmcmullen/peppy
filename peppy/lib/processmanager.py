@@ -102,6 +102,10 @@ class Job(debugmixin):
             size = len(text)
             fh = self.process.GetOutputStream()
             assert self.dprint("sending text size=%d to %s" % (size,fh))
+            
+            # sending large chunks of text to a process's stdin would sometimes
+            # freeze, but breaking up into < 1024 byte pieces seemed to work
+            # on all platforms
             if size > 1000:
                 for i in range(0,size,1000):
                     last = i+1000
@@ -134,6 +138,9 @@ class Job(debugmixin):
         if self.process is not None:
             self.readStream(self.stdout, self.jobout.stdoutCallback)
             self.readStream(self.stderr, self.jobout.stderrCallback)
+
+    def isRunning(self):
+        return bool(self.process)
 
     def OnCleanup(self, evt):
         """Cleanup handler on process exit.
@@ -255,7 +262,7 @@ class ProcessList(wx.ListCtrl, debugmixin):
                 self.InsertStringItem(sys.maxint, str(job.pid))
             else:
                 self.SetStringItem(index, 0, str(job.pid))
-            self.SetStringItem(index, 1, str(job.process is not None))
+            self.SetStringItem(index, 1, str(job.isRunning()))
             self.SetStringItem(index, 2, job.cmd)
 
             index += 1
@@ -271,7 +278,7 @@ class ProcessList(wx.ListCtrl, debugmixin):
 
     def ResizeColumns(self):
         for col in range(self.GetColumnCount()):
-            self.SetColumnWidth(col, wx.LIST_AUTOSIZE)                
+            self.SetColumnWidth(col, wx.LIST_AUTOSIZE)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -288,8 +295,6 @@ class ProcessList(wx.ListCtrl, debugmixin):
             pid = int(self.GetItem(index, 0).GetText())
             pm.kill(pid)
             index = self.GetNextSelected(index)
-        
-
 
 
 if __name__ == '__main__':
@@ -297,12 +302,27 @@ if __name__ == '__main__':
         def __init__(self):
             wx.Frame.__init__(self, None, -1, 'Process Manager Test',
                               size=(640,480))
+            usercommand = True
             
             mainsizer = wx.BoxSizer(wx.VERTICAL)
             listsizer = wx.BoxSizer(wx.HORIZONTAL)
             sizer = wx.BoxSizer(wx.VERTICAL)
             
-            b = wx.Button(self, -1, "Start")
+            if usercommand:
+                b = wx.Button(self, -1, "Start User Command")
+                sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
+                b.Bind(wx.EVT_BUTTON, self.OnStartCmd)
+                
+                h = wx.BoxSizer(wx.HORIZONTAL)
+                cmdlabel = wx.StaticText(self, -1, 'User Command')
+                h.Add(cmdlabel, 0, wx.EXPAND, 0)
+                self.cmd = wx.TextCtrl(self, -1, '')
+                h.Add(self.cmd, 1, wx.EXPAND, 0)
+                mainsizer.Add(h, 0, wx.EXPAND, 0)
+                
+                self.cmd.SetValue("python -u")
+            
+            b = wx.Button(self, -1, "Start Sample Python Loop")
             sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnStart)
             
@@ -310,9 +330,9 @@ if __name__ == '__main__':
             sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnKill)
             
-            b = wx.Button(self, -1, "Cleanup")
-            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
-            b.Bind(wx.EVT_BUTTON, self.OnCleanup)
+            #b = wx.Button(self, -1, "Cleanup")
+            #sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
+            #b.Bind(wx.EVT_BUTTON, self.OnCleanup)
             
             b = wx.Button(self, -1, "Quit")
             sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
@@ -322,15 +342,10 @@ if __name__ == '__main__':
             listsizer.Add(sizer, 0, wx.EXPAND|wx.ALL, 0)
             listsizer.Add(self.list, 1, wx.EXPAND|wx.ALL, 0)
             
-            self.cmd = wx.TextCtrl(self, -1, '')
-            mainsizer.Add(self.cmd, 0, wx.EXPAND, 0)
-            
             mainsizer.Add(listsizer, 1, wx.EXPAND|wx.ALL, 0)
 
             self.out = wx.TextCtrl(self, -1, '',
                                    style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_RICH2)
-
-            self.cmd.SetValue("python -u")
             
             mainsizer.Add(self.out, 1, wx.EXPAND|wx.ALL, 10)
 
@@ -341,12 +356,16 @@ if __name__ == '__main__':
             dprint()
             self.out.AppendText("job=%s text=%s" % (job.pid, text))
     
+        def OnStartCmd(self, evt):
+            p = ProcessManager().run(self.cmd.GetValue(), os.getcwd(), self)
+            dprint("OnStart: pid=%d" % p.pid)
+            
         def OnStart(self, evt):
-            p = ProcessManager().run(self.cmd.GetValue(), self, """\
+            p = ProcessManager().run("python -u", os.getcwd(), self, """\
 import time
 
-for x in range(5):
-    print 'blah'
+for x in range(10):
+    print 'loop #%d' % x
     time.sleep(1)
 """)
             dprint("OnStart: pid=%d" % p.pid)
@@ -357,7 +376,7 @@ for x in range(5):
 
         def OnCleanup(self, evt):
             print "cleanup list & remove completed jobs"
-            self.list.cleanup()
+            ProcessManager().cleanup()
 
         def OnQuit(self, evt):
             sys.exit(1)
