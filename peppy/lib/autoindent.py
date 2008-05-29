@@ -374,8 +374,9 @@ class CStyleAutoindent(FoldingAutoindent):
             self.reUnindent = re.compile(reUnindent)
         else:
             self.reUnindent = None
-        self.reStatement = re.compile(r'^([^\s]+)\s*(\(.+\))?$')
+        self.reStatement = re.compile(r'^([^\s]+)\s*(\(.+\)|.+)?$')
         self.reCase = re.compile(r'^\s*(case|default).*:$')
+        self.reClassAttrScope = re.compile(r'^\s*(public|private).*:$')
         self.reBreak = re.compile(r'^\s*break\s*;\s*$')
         self.reLabel = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*:((?!:)|$)')
     
@@ -406,23 +407,23 @@ class CStyleAutoindent(FoldingAutoindent):
             line = self.getCodeChars(stc, ln).strip()
             dprint(line)
             ln -= 1
-            if not line.strip():
+            if not line:
                 continue
+            statement = line + statement
             if first:
-                if line.endswith('{'):
-                    line = line[:-1].strip()
+                if statement.endswith('{'):
+                    statement = statement[:-1].strip()
                     
-                if line.endswith(';'):
+                if statement.endswith(';'):
                     # A complete statement before an opening brace means it's
                     # an anonymous block, so the statement before doesn't
                     # relate to the block itself.
                     break
-                if ')' in line:
+                if ')' in statement:
                     parens = True
                 else:
                     break
                 first = False
-            statement = line + statement
             
             # Parens must match to form a complete statement
             if parens:
@@ -475,6 +476,12 @@ class CStyleAutoindent(FoldingAutoindent):
                 # case statements are partially dedented relative to the
                 # scintilla level
                 if self.reCase.match(line):
+                    matched = True
+                    partial = - (indent / 2)
+            elif opener == "class":
+                # public/private/protected statements are partially dedented
+                # relative to the scintilla level
+                if self.reClassAttrScope.match(line):
                     matched = True
                     partial = - (indent / 2)
             
@@ -536,7 +543,7 @@ class CStyleAutoindent(FoldingAutoindent):
                     # reindents the new line
                     linenum = stc.GetCurrentLine()
                     line = self.getCodeChars(stc, linenum) + ":"
-                    if not self.reCase.match(line):
+                    if not self.reCase.match(line) and not self.reClassAttrScope.match(line):
                         return False
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()

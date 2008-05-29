@@ -20,6 +20,12 @@ blah:
     }
 }
 
+class blah :: public blah {
+  public:
+    int blah;
+  private:
+    int blah;
+}
 
 float TestClass::test1b(const float arg) 
 {

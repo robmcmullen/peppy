@@ -66,17 +66,15 @@ if (blah) {
 
 --------
 switch (blah) {
-    case 0:
+  case 0:
      |
 
 --
 switch (blah) {
-    case 0:
-        |
+  case 0:
+    |
 
 --------
-"""
-        tests = """\
 switch (func(blah,
         stuff)) {
   case 0:
@@ -89,6 +87,20 @@ switch (func(blah,
   case 0:
     printf("stuff");
   case 1:|
+
+--------
+"""
+        tests = """\
+class A::public B {
+  private:
+    int blah;
+    public:|
+
+--
+class A::public B {
+  private:
+    int blah;
+  public:|
 
 --------
 """
