@@ -33,7 +33,7 @@ class TestCPPIndent(object):
         self.autoindent.processReturn(self.stc)
         assert checkSTC(self.stc, pair[0], pair[1])
 
-    def testReturn(self):
+    def SKIPPEDtestReturn(self):
         tests = """\
 if (blah) {|
 
@@ -63,6 +63,32 @@ if (blah) {
 --
 if (blah) {
     |
+
+--------
+switch (blah) {
+    case 0:
+     |
+
+--
+switch (blah) {
+    case 0:
+        |
+
+--------
+"""
+        tests = """\
+switch (func(blah,
+        stuff)) {
+  case 0:
+    printf("stuff");
+    case 1:|
+
+--
+switch (func(blah,
+        stuff)) {
+  case 0:
+    printf("stuff");
+  case 1:|
 
 --------
 """

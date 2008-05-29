@@ -259,7 +259,7 @@ class FoldingAutoindent(BasicAutoindent):
             ln -= 1
         return ln
     
-    def getCodeCharacters(self, stc, ln):
+    def getCodeChars(self, stc, ln):
         """Get a version of the given line with all non code chars blanked out.
         
         This function blanks out all non-code characters (comments, strings,
@@ -290,6 +290,28 @@ class FoldingAutoindent(BasicAutoindent):
         # Note that we assembled the string in reverse, so flip it around
         out = ''.join(reversed(out))
         return out
+
+    def getBraceMatch(self, text, open=u'(', close=u')'):
+        """Search the text to see if there are unmatched braces
+        
+        Search the line for unmatched braces given the open and close matching
+        pair.  This does not look at styling information; it assumes that
+        L{getCodeChars} has been called before this.
+        
+        @param text: line number
+        @param open: the opening brace character, e.g. "("
+        @param close: the complimentary closing brace character, e.g. ")"
+        
+        @return: brace mismatch count: 0 for matching braces, positive for a
+        surplus of opening braces, and negative for a surplus of closing braces
+        """
+        r = 0
+        for c in text:
+            if c == open:
+                r += 1
+            elif c == close:
+                r -= 1
+        return r
 
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
@@ -352,6 +374,65 @@ class CStyleAutoindent(FoldingAutoindent):
             self.reUnindent = re.compile(reUnindent)
         else:
             self.reUnindent = None
+        self.reStatement = re.compile(r'^([^\s]+)\s*(\(.+\))?$')
+        self.reCase = re.compile(r'^\s*(case|default).*:$')
+        self.reBreak = re.compile(r'^\s*break\s*;\s*$')
+        self.reLabel = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*:((?!:)|$)')
+    
+    def getBraceOpener(self, stc, linenum):
+        """Find the statement related to the brace's opening.
+        
+        If a block of code is related to a reserved keyword, like
+        
+        switch (blah) {
+            case 0:
+                stuff;
+        }
+        
+        return the keyword so it can be used to further indent the contents.
+
+        @return: the keyword of interest
+        """
+        fold = self.getFold(stc, linenum)
+        dprint("linenum=%d fold=%d" % (linenum, fold))
+        ln = linenum
+        statement = ''
+        first = True
+        parens = False
+        while ln >= 0:
+            f = self.getFold(stc, ln)
+            if f != fold:
+                break
+            line = self.getCodeChars(stc, ln).strip()
+            dprint(line)
+            ln -= 1
+            if not line.strip():
+                continue
+            if first:
+                if line.endswith('{'):
+                    line = line[:-1].strip()
+                    
+                if line.endswith(';'):
+                    # A complete statement before an opening brace means it's
+                    # an anonymous block, so the statement before doesn't
+                    # relate to the block itself.
+                    break
+                if ')' in line:
+                    parens = True
+                else:
+                    break
+                first = False
+            statement = line + statement
+            
+            # Parens must match to form a complete statement
+            if parens:
+                if self.getBraceMatch(statement) == 0:
+                    break
+        if statement:
+            match = self.reStatement.match(statement)
+            if match:
+                statement = match.group(1)
+        return statement
     
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
@@ -371,6 +452,8 @@ class CStyleAutoindent(FoldingAutoindent):
         fold = (stc.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
         c = stc.GetCharAt(pos)
         s = stc.GetStyleAt(pos)
+        indent = stc.GetIndent()
+        partial = 0
         self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, c))
         if c == ord('}'):
             # Scintilla doesn't automatically dedent the closing brace, so we
@@ -381,21 +464,49 @@ class CStyleAutoindent(FoldingAutoindent):
             fold = 0
         else:
             start = self.getFoldSectionStart(stc, linenum)
+            opener = self.getBraceOpener(stc, start-1)
+            dprint(opener)
             
-            for ln in xrange(linenum - 1, start - 1, -1):
-                line = self.getCodeCharacters(stc, ln)
-                dprint(line)
-                if not line.strip():
-                    continue
-                if self.reIndentAfter.match(line):
-                    dprint("continuation")
-                    fold += 1
-                else:
-                    dprint("terminated statement")
-                break
-                
+            # First, try to match on the current line to see if we know enough
+            # about it to figure its indent level
+            matched = False
+            line = self.getCodeChars(stc, linenum)
+            if opener == "switch":
+                # case statements are partially dedented relative to the
+                # scintilla level
+                if self.reCase.match(line):
+                    matched = True
+                    partial = - (indent / 2)
+            
+            # labels are matched after case statements to prevent the
+            # 'default:' label from getting confused with a regular label
+            if not matched and self.reLabel.match(line):
+                fold = 0
+                matched = True
+            
+            # If we can't determine the indent level when only looking at
+            # the current line, start backing up to find the first non blank
+            # statement above the line.  We then look to see if we should
+            # indent relative to that statement (e.g.  if the statement is a
+            # continuation) or relative to the fold level supplied by scintilla
+            if not matched:
+                for ln in xrange(linenum - 1, start - 1, -1):
+                    line = self.getCodeChars(stc, ln)
+                    dprint(line)
+                    if not line.strip() or self.reLabel.match(line):
+                        continue
+                    if opener == "switch":
+                        if self.reCase.match(line):
+                            # a case statement will be interpreted as a continuation
+                            break
+                    if self.reIndentAfter.match(line):
+                        dprint("continuation")
+                        fold += 1
+                    else:
+                        dprint("terminated statement")
+                    break
 
-        return fold * stc.GetIndent()
+        return (fold * indent) + partial
     
     def electricChar(self, stc, uchar):
         """Reindent the line and insert a newline when special chars are typed.
@@ -412,10 +523,21 @@ class CStyleAutoindent(FoldingAutoindent):
         was modified; False if the calling event handler should handle the
         character.
         """
-        if uchar == u';' or uchar == '{' or uchar == '}':
+        if uchar == u';' or uchar == u':' or uchar == '{' or uchar == '}':
             pos = stc.GetCurrentPos()
             s = stc.GetStyleAt(pos)
             if not stc.isStyleComment(s) and not stc.isStyleString(s):
+                if uchar == u':':
+                    # FIXME: currently only process the : if the current
+                    # line is a case statement.  Emacs also indents labels
+                    # and namespace operators with a :: by checking if the
+                    # last character on the previous line is a : and if so
+                    # collapses the current line with the previous line and
+                    # reindents the new line
+                    linenum = stc.GetCurrentLine()
+                    line = self.getCodeChars(stc, linenum) + ":"
+                    if not self.reCase.match(line):
+                        return False
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()
                 if start == end:

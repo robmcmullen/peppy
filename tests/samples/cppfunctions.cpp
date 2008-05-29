@@ -1,6 +1,23 @@
 float TestClass::test1a(float arg) 
 {
     printf("blah");
+    switch (blah) {
+      case 1:
+        stuff;
+        stuff;
+        goto blah;
+        here;
+      case 0:
+      case 3:
+      default:
+        stuff;
+blah:
+        if (blah) {
+            if (blah) {
+                stuff;
+            }
+        }
+    }
 }
 
 
