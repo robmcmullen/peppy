@@ -74,6 +74,7 @@ class HyperspectralFileFormat(debugmixin):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
+        import FITS
         import subcube
         try:
             import GDAL
