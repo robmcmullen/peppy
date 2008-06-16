@@ -287,6 +287,30 @@ class ElectricReturn(TextModificationAction):
         self.mode.autoindent.processReturn(self.mode)
 
 
+class ElectricDelete(TextModificationAction):
+    """Delete all whitespace from cursor forwart to the next non-blank character
+    """
+    alias = "electric-delete"
+    name = "Electric Delete"
+    key_bindings = {'default': 'DELETE',}
+    key_needs_focus = True
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.autoindent.electricDelete(self.mode)
+
+
+class ElectricBackspace(TextModificationAction):
+    """Delete all whitespace from cursor back to the last non-blank character
+    """
+    alias = "electric-backspace"
+    name = "Electric Backspace"
+    key_bindings = {'default': 'BACK',}
+    key_needs_focus = True
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.autoindent.electricBackspace(self.mode)
+
+
 class FundamentalMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -321,5 +345,5 @@ class FundamentalMenu(IPeppyPlugin):
                     
                     EOLModeSelect, SelectBraces,
                     
-                    ElectricReturn]
+                    ElectricReturn, ElectricDelete, ElectricBackspace]
         return []

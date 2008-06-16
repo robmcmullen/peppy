@@ -212,6 +212,22 @@ class BasicAutoindent(debugmixin):
         character.
         """
         return False
+    
+    def electricDelete(self, stc):
+        """Delete the next character
+        
+        This hook allows more complex processing of the Delete key than the
+        default which is to delete the character after the cursor.
+        """
+        stc.CmdKeyExecute(wx.stc.STC_CMD_CLEAR)
+    
+    def electricBackspace(self, stc):
+        """Delete the previous character
+        
+        This hook allows more complex processing of the Backspace key than the
+        default which is to delete the character before the cursor.
+        """
+        stc.CmdKeyExecute(wx.stc.STC_CMD_DELETEBACK)
 
 
 class FoldingAutoindent(BasicAutoindent):
@@ -535,6 +551,7 @@ class CStyleAutoindent(FoldingAutoindent):
         was modified; False if the calling event handler should handle the
         character.
         """
+        dprint(ord(uchar))
         if uchar == u';' or uchar == u':' or uchar == '{' or uchar == '}':
             pos = stc.GetCurrentPos()
             s = stc.GetStyleAt(pos)
@@ -845,3 +862,11 @@ class NullAutoindent(debugmixin):
     def electricChar(self, stc, uchar):
         """No electric chars in Null autoindenter."""
         return False
+    
+    def electricDelete(self, stc):
+        """Defaults to standard delete processing in Null autoindenter."""
+        stc.CmdKeyExecute(wx.stc.STC_CMD_CLEAR)
+    
+    def electricBackspace(self, stc):
+        """Defaults to standard backspace processing in Null autoindenter."""
+        stc.CmdKeyExecute(wx.stc.STC_CMD_DELETEBACK)
