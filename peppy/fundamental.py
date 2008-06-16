@@ -128,6 +128,9 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     start_line_comment = ''
     end_line_comment = ''
     
+    #: STC Marker number used for bookmarks
+    bookmark_marker_number = 1
+    
     #: Default characters that end a word and signal the spell checker
     word_end_chars = ' .!?\'\"'
 
@@ -252,7 +255,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     
     def createEventBindingsPostHook(self):
         self.Bind(wx.EVT_CHAR, self.OnChar)
-    
+        self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+
     def OnChar(self, evt):
         """Handle all events that result from typing characters in the stc.
         
@@ -370,9 +374,11 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.locals.line_numbers=enable
         if self.locals.line_numbers:
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
-            self.SetMarginWidth(0,  self.locals.line_number_margin_width)
+            self.SetMarginWidth(0, self.locals.line_number_margin_width)
         else:
-            self.SetMarginWidth(0,0)
+            self.SetMarginWidth(0, 0)
+        self.SetMarginMask(0, ~wx.stc.STC_MASK_FOLDERS)
+        self.MarkerDefine(self.bookmark_marker_number, wx.stc.STC_MARK_ARROWS)
 
     def setFolding(self,enable=None):
         if enable is not None:
@@ -390,14 +396,19 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
             self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
-            self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+            #self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         else:
             self.SetMarginWidth(2, 0)
-            self.Unbind(wx.stc.EVT_STC_MARGINCLICK)
+            #self.Unbind(wx.stc.EVT_STC_MARGINCLICK)
 
     def OnMarginClick(self, evt):
-        # fold and unfold as needed
-        if evt.GetMargin() == 2:
+        dprint("Margin = %d" % evt.GetMargin())
+        lineClicked = self.LineFromPosition(evt.GetPosition())
+        self.MarkerAdd(lineClicked, self.bookmark_marker_number)
+        if evt.GetMargin() == 0:
+            pass
+        elif evt.GetMargin() == 2:
+            # handle folding and unfolding
             if evt.GetShift() and evt.GetControl():
                 self.FoldAll()
             else:

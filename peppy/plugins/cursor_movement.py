@@ -129,6 +129,48 @@ class GotoLine(MinibufferAction):
         mode.GotoLine(line - 1)
 
 
+class SetBookmark(SelectAction):
+    """Set a bookmark on the current line in the buffer."""
+    alias = "set-bookmark"
+    key_bindings = {'default': 'C-C C-B'}
+
+    def action(self, index=-1, multiplier=1):
+        line = self.mode.GetCurrentLine()
+        self.mode.MarkerAdd(line, self.mode.bookmark_marker_number)
+
+class NextBookmark(SelectAction):
+    """Scroll to view the next bookmark."""
+    alias = "next-bookmark"
+    key_bindings = {'default': 'C-C C-N'}
+
+    def action(self, index=-1, multiplier=1):
+        mask = 1 << self.mode.bookmark_marker_number
+        line = self.mode.GetCurrentLine() + 1
+        line = self.mode.MarkerNext(line, mask)
+        self.dprint("found marker at line %d" % line)
+        if line < 0:
+            line = self.mode.MarkerNext(0, mask)
+        if line > -1:
+            self.mode.EnsureVisible(line)
+            self.mode.GotoLine(line)
+
+class PrevBookmark(SelectAction):
+    """Scroll to view the next bookmark."""
+    alias = "prev-bookmark"
+    key_bindings = {'default': 'C-C C-P'}
+
+    def action(self, index=-1, multiplier=1):
+        mask = 1 << self.mode.bookmark_marker_number
+        line = self.mode.GetCurrentLine() - 1
+        line = self.mode.MarkerPrevious(line, mask)
+        self.dprint("found marker at line %d" % line)
+        if line < 0:
+            line = self.mode.MarkerPrevious(self.mode.GetLineCount(), mask)
+        if line > -1:
+            self.mode.EnsureVisible(line)
+            self.mode.GotoLine(line)
+
+
 class CursorMovementPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
     actions.
@@ -141,4 +183,6 @@ class CursorMovementPlugin(IPeppyPlugin):
                 NextWord, PreviousWord,
                 BeginningOfBuffer, EndOfBuffer,
                 GotoLine,
+                
+                SetBookmark, NextBookmark, PrevBookmark,
             ]
