@@ -69,6 +69,9 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_major_mode.SubtractBandAction,
                         peppy.hsi.hsi_major_mode.CubeViewAction,
                         peppy.hsi.hsi_major_mode.ShowPixelValues,
+                        
+                        peppy.hsi.hsi_major_mode.TestSubset,
+                        peppy.hsi.hsi_major_mode.SpatialSubset,
                         ]
             except:
                 pass

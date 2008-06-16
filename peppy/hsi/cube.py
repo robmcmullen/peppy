@@ -8,6 +8,7 @@ uncompressed formats) using memory mapped file access.
 
 import os,sys,re,random, glob
 from cStringIO import StringIO
+from datetime import datetime
 
 import numpy
 import utils
@@ -101,7 +102,7 @@ class Cube(debugmixin):
 
         # date/time metadata
         self.imaging_date = 0
-        self.file_date = 0
+        self.file_date = datetime.now()
 
         # absolute pointer to data within the file
         self.file_offset=0

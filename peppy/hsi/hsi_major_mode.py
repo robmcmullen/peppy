@@ -50,6 +50,7 @@ from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
 from peppy.hsi.common import *
+from peppy.hsi.subcube import *
 
 # hsi mode and the plotting utilities require numpy, the check for which is
 # handled by the major mode wrapper
@@ -885,6 +886,56 @@ class ShowPixelValues(HSIActionMixin, ToggleAction):
         self.mode.show_value_at_cursor = not self.mode.show_value_at_cursor
 
 
+class TestSubset(HSIActionMixin, SelectAction):
+    name = "Test HSI Spatial Subset"
+    default_menu = ("&Help/Tests", 888)
+    key_bindings = {'default': "C-T"}
+    
+    testcube = 1
+    
+    def getTempName(self):
+        name = "dataset:test%d" % self.__class__.testcube
+        self.__class__.testcube += 1
+        return name
+    
+    def action(self, index=-1, multiplier=1):
+        cube = self.mode.cube
+        name = self.getTempName()
+        fh = vfs.make_file(name)
+        subcube = SubCube(cube)
+        subcube.subset(0,cube.lines/2,0,cube.samples/2,0,cube.bands/2)
+        fh.setCube(subcube)
+        wx.CallAfter(self.frame.open, name)
+
+
+class SpatialSubset(HSIActionMixin, SelectAction):
+    name = "Spatial Subset"
+    default_menu = ("Edit", 800)
+    
+    testcube = 1
+    
+    def isEnabled(self):
+        if self.mode.selector.__class__ == RubberBand:
+            x, y, w, h = self.mode.selector.getSelectedBox()
+            return w > 1 and h > 1
+        return False
+    
+    def getTempName(self):
+        name = "dataset:spatial_subset%d" % self.__class__.testcube
+        self.__class__.testcube += 1
+        return name
+    
+    def action(self, index=-1, multiplier=1):
+        cube = self.mode.cube
+        name = self.getTempName()
+        fh = vfs.make_file(name)
+        subcube = SubCube(cube)
+        sample, line, ds, dl = self.mode.selector.getSelectedBox()
+        subcube.subset(line, line+dl, sample, sample+ds, 0, cube.bands)
+        fh.setCube(subcube)
+        wx.CallAfter(self.frame.open, name)
+
+
 class HSIMode(BitmapScroller, MajorMode):
     """Major mode for hyperspectral image analysis.
 
@@ -913,6 +964,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.filter = GeneralFilter()
 #        self.setCube(0)
         self.cube = self.dataset.getCube(self.buffer.url)
+        
         assert self.dprint(self.cube)
         self.setViewer(CubeView)
         #self.cube.open()

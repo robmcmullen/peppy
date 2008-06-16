@@ -9,6 +9,7 @@ uncompressed formats) using memory mapped file access.
 import os, sys, re, glob
 
 import peppy.vfs as vfs
+import peppy.hsi.datasetfs
 
 from peppy.debug import *
 from peppy.stcinterface import *
@@ -73,6 +74,7 @@ class HyperspectralFileFormat(debugmixin):
         if HyperspectralFileFormat.loaded:
             return
         import ENVI
+        import subcube
         try:
             import GDAL
         except Exception, e:
