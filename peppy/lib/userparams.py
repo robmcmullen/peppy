@@ -304,9 +304,10 @@ class Param(debugmixin):
             return None
         
         if self.alt_label is None:
-            title = GenStaticText(parent, -1, self.keyword)
+            text = self.keyword
         else:
-            title = GenStaticText(parent, -1, self.alt_label)
+            text = self.alt_label
+        title = GenStaticText(parent, -1, text)
         if self.help:
             title.SetToolTipString(self.help)
         return title
@@ -1500,8 +1501,15 @@ class PrefPanel(ScrolledPanel, debugmixin):
         orig: dict keyed on param to store the original values
         default_getter: optional functor to return a default value for the keyword
         """
-        row = 0
-        col = 0
+        class gridstate(object):
+            def __init__(self):
+                self.row = 0
+                self.col = 0
+                self.grid = wx.GridBagSizer(2,5)
+        
+        bsizer = None
+        loc = gridstate()
+        app = gridstate()
         existing_keywords = {}
         for param in ctrls:
             existing_keywords[param.keyword] = True
@@ -1514,28 +1522,30 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 name = param.keyword
                 
             if name:
+                # First time through, create the grid and sizers
                 box = wx.StaticBox(parent, -1, name)
                 bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
                 sizer.Add(bsizer, 0, wx.EXPAND)
-                grid = wx.GridBagSizer(2,5)
-                bsizer.Add(grid, 0, wx.EXPAND)
                 
                 # reset so it acts as a flag
                 name = None
-                row = 0
-                col = 0
             
             if not param.isVisible():
                 continue
             
+            if param.local:
+                grid = loc
+            else:
+                grid = app
+            
             width = 1
             title = param.getLabel(parent)
             if title is not None:
-                if grid.CheckForIntersectionPos((row,col), (1,width)):
-                    dprint("found overlap for %s at (%d,%d)" % (param.keyword, row, col))
+                if grid.grid.CheckForIntersectionPos((grid.row,grid.col), (1,width)):
+                    dprint("found overlap for %s at (%d,%d)" % (param.keyword, grid.row, grid.col))
                 else:
-                    grid.Add(title, (row,col), flag=wx.ALIGN_CENTER_VERTICAL)
-                col += 1
+                    grid.grid.Add(title, (grid.row,grid.col), flag=wx.ALIGN_CENTER_VERTICAL)
+                grid.col += 1
             else:
                 width = 2
             if param.wide:
@@ -1544,7 +1554,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 else:
                     width += 2
                 if param.fullwidth:
-                    grid.AddGrowableCol(col + width - 1)
+                    grid.grid.AddGrowableCol(grid.col + width - 1)
 
             if param.isSettable():
                 ctrl = param.getCtrl(parent)
@@ -1552,11 +1562,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 param.setCallback(ctrl, ctrls)
                 if param.help:
                     ctrl.SetToolTipString(param.help)
-                if grid.CheckForIntersectionPos((row,col), (1,width)):
-                    dprint("found overlap for control of %s at (%d,%d)" % (param.keyword, row, col))
+                if grid.grid.CheckForIntersectionPos((grid.row,grid.col), (1,width)):
+                    dprint("found overlap for control of %s at (%d,%d)" % (param.keyword, grid.row, grid.col))
                 else:
-                    grid.Add(ctrl, (row,col), (1,width), flag=wx.EXPAND)
-                col += width
+                    grid.grid.Add(ctrl, (grid.row,grid.col), (1,width), flag=wx.EXPAND)
+                grid.col += width
                 
                 if default_getter is not None:
                     val = default_getter(param.keyword)
@@ -1565,8 +1575,20 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     orig[param] = val
                 
             if not param.next_on_same_line:
-                row += 1
-                col = 0
+                grid.row += 1
+                grid.col = 0
+        
+        if not bsizer:
+            return
+        
+        if app.grid and len(app.grid.GetChildren()) > 0:
+            bsizer.Add(app.grid, 0, wx.EXPAND)
+        if loc.grid and len(loc.grid.GetChildren()) > 0:
+            label = GenStaticText(parent, -1, "\n" + _("Per-view settings"))
+            label.SetToolTip(wx.ToolTip("Each view maintains its own value for each of the settings below.  Changes made here will be used as default values for these settings the next time the applications starts and when opening new views.  Additionally, the settings can be applied to existing views when finished with the Preferences dialog."))
+            bsizer.Add(label, 0, wx.EXPAND)
+            bsizer.Add(loc.grid, 0, wx.EXPAND)
+
 
     def create(self):
         """Create the list of classprefs, organized by MRO.
@@ -1589,10 +1611,15 @@ class PrefPanel(ScrolledPanel, debugmixin):
                               self.ctrls, self.orig, self.obj.classprefs)
         
     def update(self):
-        """Update the class with the changed preferences."""
+        """Update the class with the changed preferences.
+        
+        @return: list of local settings that have been modified.  Each entry in
+        the list is a tuple of (class, setting name, value)
+        """
         hier = self.obj.classprefs._getMRO()
         self.dprint(hier)
         updated = {}
+        locals = []
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
@@ -1614,7 +1641,9 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     if val != self.orig[param]:
                         self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
                         self.obj.classprefs._set(param.keyword, val)
+                        locals.append((self.obj, param.keyword, val))
                     updated[param] = True
+        return locals
 
 
 class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
@@ -1734,8 +1763,16 @@ class PrefPage(wx.SplitterWindow):
         """On an OK from the dialog, process any updates to the plugins"""
         # Look at all the panels that have been created: this gives us
         # an upper bound on what may have changed.
+        all_locals = []
         for cls, pref in self.pref_panels.iteritems():
-            pref.update()
+            locals = pref.update()
+            all_locals.extend(locals)
+            dprint("cls locals = %s" % str(locals))
+        if all_locals:
+            dprint("found a bunch of locals: %s" % str(all_locals))
+            # FIXME: for each class in all_locals, need to find all instances
+            # of that class and change the locals for that class.  Need some
+            # GetAllInstances method...
 
 
 class PrefDialog(wx.Dialog):
