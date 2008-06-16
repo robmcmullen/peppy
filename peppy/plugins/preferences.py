@@ -34,8 +34,14 @@ class Preferences(SelectAction):
         dlg = PeppyPrefDialog(frame, mode)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
-            dlg.applyPreferences()
-            Publisher().sendMessage('peppy.preferences.changed')
+            locals = dlg.applyPreferences()
+            if locals:
+                dlg2 = wx.MessageDialog(dlg, "Some default values have changed that affect\nlocal view settings.  Do you want to update the\nlocal settings for all affected views?\n\nIf not, the settings will not change current views\nbut will remain the defaults to be applied the\nnext time a view is created.", "Apply Local Settings?", wx.YES_NO | wx.ICON_QUESTION )
+                retval=dlg2.ShowModal()
+                dlg2.Destroy()
+                if retval != wx.ID_YES:
+                    locals = {}
+            Publisher().sendMessage('peppy.preferences.changed', locals)
         dlg.Destroy()
 
     def action(self, index=-1, multiplier=1):

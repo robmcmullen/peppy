@@ -838,9 +838,18 @@ class MajorMode(ClassPrefs, debugmixin):
         changes in the settings.
         """
         pass
+    
+    def applyLocals(self, locals):
+        if locals and self.__class__ in locals:
+            pairs = locals[self.__class__]
+            self.dprint("applying local variables from %s" % str(pairs))
+            self.classprefsUpdateLocals(pairs)
+        else:
+            self.dprint("%s not found in %s" % (self.__class__, str(locals)))
 
     def settingsChanged(self, message=None):
-        dprint("changing settings for mode %s" % self.__class__.__name__)
+        self.dprint("changing settings for mode %s" % self.__class__.__name__)
+        self.applyLocals(message.data)
         self.applySettings()
         self.resetStatusBar()
 

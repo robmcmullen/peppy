@@ -1433,6 +1433,16 @@ class ClassPrefs(object):
                     #dprint("setting classpref %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
                     self.classprefs._set(param.keyword, getattr(self.locals, param.keyword))
     
+    def classprefsUpdateLocals(self, new_locals):
+        """Update the locals with new values
+        
+        This updates the locals object with the name/value pairs specified in
+        the passed-in dict.
+        """
+        for name, value in new_locals.iteritems():
+            if hasattr(self.locals, name):
+                setattr(self.locals, name, value)
+    
     def classprefsFindParam(self, keyword):
         """Find the Param instance corresponding to the keyword.
         
@@ -1584,7 +1594,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         if app.grid and len(app.grid.GetChildren()) > 0:
             bsizer.Add(app.grid, 0, wx.EXPAND)
         if loc.grid and len(loc.grid.GetChildren()) > 0:
-            label = GenStaticText(parent, -1, "\n" + _("Per-view settings"))
+            label = GenStaticText(parent, -1, "\n" + _("Local settings (each view can have different values for these settings)"))
             label.SetToolTip(wx.ToolTip("Each view maintains its own value for each of the settings below.  Changes made here will be used as default values for these settings the next time the applications starts and when opening new views.  Additionally, the settings can be applied to existing views when finished with the Preferences dialog."))
             bsizer.Add(label, 0, wx.EXPAND)
             bsizer.Add(loc.grid, 0, wx.EXPAND)
@@ -1613,13 +1623,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
     def update(self):
         """Update the class with the changed preferences.
         
-        @return: list of local settings that have been modified.  Each entry in
-        the list is a tuple of (class, setting name, value)
+        @return: dict of local settings that have been modified.
         """
         hier = self.obj.classprefs._getMRO()
         self.dprint(hier)
         updated = {}
-        locals = []
+        locals = {}
         for cls in hier:
             if 'default_classprefs' not in dir(cls):
                 continue
@@ -1641,7 +1650,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     if val != self.orig[param]:
                         self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
                         self.obj.classprefs._set(param.keyword, val)
-                        locals.append((self.obj, param.keyword, val))
+                        locals[param.keyword] = val
                     updated[param] = True
         return locals
 
@@ -1763,16 +1772,14 @@ class PrefPage(wx.SplitterWindow):
         """On an OK from the dialog, process any updates to the plugins"""
         # Look at all the panels that have been created: this gives us
         # an upper bound on what may have changed.
-        all_locals = []
+        all_locals = {}
         for cls, pref in self.pref_panels.iteritems():
             locals = pref.update()
-            all_locals.extend(locals)
-            dprint("cls locals = %s" % str(locals))
-        if all_locals:
-            dprint("found a bunch of locals: %s" % str(all_locals))
-            # FIXME: for each class in all_locals, need to find all instances
-            # of that class and change the locals for that class.  Need some
-            # GetAllInstances method...
+            if locals:
+                # use the actual object as the key rather than the name of
+                # the object
+                all_locals[pref.obj] = locals
+        return all_locals
 
 
 class PrefDialog(wx.Dialog):
@@ -1885,11 +1892,15 @@ class PrefDialog(wx.Dialog):
         return index
 
     def applyPreferences(self):
-        # For every notebook page, update the preferences for that notebook
+        locals = {}
+        # For every notebook page, update the preferences for that notebook and
+        # gather any local preferences
         for index in range(self.notebook.GetPageCount()):
             page = self.notebook.GetPage(index)
-            page.applyPreferences()
-
+            page_locals = page.applyPreferences()
+            if page_locals:
+                locals.update(page_locals)
+        return locals
 
 if __name__ == "__main__":
     class Test1(ClassPrefs):
