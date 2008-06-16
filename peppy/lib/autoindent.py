@@ -579,6 +579,55 @@ class CStyleAutoindent(FoldingAutoindent):
                 return True
         return False
 
+    def electricDelete(self, stc):
+        """Delete all whitespace after the cursor unless in a string or comment
+        """
+        pos = stc.GetCurrentPos()
+        s = stc.GetStyleAt(pos)
+        if stc.isStyleComment(s) or stc.isStyleString(s):
+            stc.CmdKeyExecute(wx.stc.STC_CMD_CLEAR)
+        else:
+            self.dprint("deleting from pos %d" % pos)
+            end = pos
+            while end < stc.GetLength():
+                c = stc.GetCharAt(end)
+                if c == ord(' ') or c == ord('\t') or c == 10 or c == 13:
+                    end += 1
+                else:
+                    break
+            if end > pos:
+                stc.SetTargetStart(pos)
+                stc.SetTargetEnd(end)
+                stc.ReplaceTarget('')
+            else:
+                stc.CmdKeyExecute(wx.stc.STC_CMD_CLEAR)
+
+    def electricBackspace(self, stc):
+        """Delete all whitespace before the cursor unless in a string or comment
+        """
+        pos = stc.GetCurrentPos()
+        if pos <= 0:
+            return
+        s = stc.GetStyleAt(pos - 1)
+        if stc.isStyleComment(s) or stc.isStyleString(s):
+            stc.CmdKeyExecute(wx.stc.STC_CMD_DELETEBACK)
+        else:
+            self.dprint("backspace from pos %d" % pos)
+            start = pos
+            while start > 0:
+                c = stc.GetCharAt(start - 1)
+                if c == ord(' ') or c == ord('\t') or c == 10 or c == 13:
+                    start -= 1
+                else:
+                    break
+            if start < pos:
+                stc.SetTargetStart(start)
+                stc.SetTargetEnd(pos)
+                stc.ReplaceTarget('')
+            else:
+                stc.CmdKeyExecute(wx.stc.STC_CMD_DELETEBACK)
+
+
 
 class RegexAutoindent(BasicAutoindent):
     """Regex based autoindenter
