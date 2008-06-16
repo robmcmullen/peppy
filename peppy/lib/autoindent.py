@@ -187,6 +187,7 @@ class BasicAutoindent(debugmixin):
 
     def processTab(self, stc):
         stc.BeginUndoAction()
+        self.dprint()
         pos = self.reindentLine(stc)
         stc.GotoPos(pos)
         stc.EndUndoAction()
@@ -340,6 +341,7 @@ class CStyleAutoindent(FoldingAutoindent):
     correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
     plus a bunch of heuristics to handle things that Scintilla doesn't.
     """
+    debuglevel = 1
     
     def __init__(self, reIndentAfter=None, reIndent=None, reUnindent=None):
         """Create a regex autoindenter.
@@ -455,18 +457,21 @@ class CStyleAutoindent(FoldingAutoindent):
         s = stc.GetStyleAt(pos)
         indent = stc.GetIndent()
         partial = 0
-        self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, c))
+        self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, chr(c)))
         if c == ord('}'):
             # Scintilla doesn't automatically dedent the closing brace, so we
             # force that here.
             fold -= 1
+        elif c == ord('{'):
+            # Opening brace on a line by itself always stays at the fold level
+            pass
         elif c == ord('#') and s == 9:
             # Force preprocessor directives to start at column zero
             fold = 0
         else:
             start = self.getFoldSectionStart(stc, linenum)
             opener = self.getBraceOpener(stc, start-1)
-            dprint(opener)
+            self.dprint(opener)
             
             # First, try to match on the current line to see if we know enough
             # about it to figure its indent level

@@ -89,8 +89,6 @@ switch (func(blah,
   case 1:|
 
 --------
-"""
-        tests = """\
 class A::public B {
   private:
     int blah;
@@ -101,6 +99,16 @@ class A::public B {
   private:
     int blah;
   public:|
+
+--------
+"""
+        tests = """\
+void main(void)
+    {|
+
+--
+void main(void)
+{|
 
 --------
 """
