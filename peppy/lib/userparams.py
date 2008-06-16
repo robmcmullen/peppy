@@ -1700,15 +1700,29 @@ class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
                 # shorter by one each time.
                 self.DeleteItem(index)
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+    
+    def clearSelected(self):
+        """Clear any selected items from the list.
+        
+        Note that each call to SetItemState generates a EVT_LIST_ITEM_SELECTED
+        event, so the callback processing should be turned off before calling
+        this method.
+        """
+        index = 0
+        list_count = self.GetItemCount()
+        if index < list_count:
+            self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+            index += 1
 
     def getClass(self, index=-1):
         if index == -1:
-            index = self.GetNextItem(-1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            index = self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
         if index == -1:
             index = 0
         return self.class_map[self.class_names[index]]
 
     def ensureClassVisible(self, cls):
+        self.clearSelected()
         try:
             index = self.class_names.index(cls.__name__)
             self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
@@ -1724,6 +1738,8 @@ class PrefPage(wx.SplitterWindow):
         wx.SplitterWindow.__init__(self, parent, -1, *args, **kwargs)
         self.SetMinimumPaneSize(50)
         
+        self.process_callback = False
+        
         self.pref_panels = {}
         list = self.createList(classes)
         dum = wx.Window(self, -1)
@@ -1731,11 +1747,12 @@ class PrefPage(wx.SplitterWindow):
         list.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected, list)
 
     def OnItemSelected(self, evt):
-        index = evt.GetIndex()
-        list = evt.GetEventObject()
-        if index >= 0:
-            cls = list.getClass(index)
-            self.changePanel(cls)
+        if self.process_callback:
+            index = evt.GetIndex()
+            list = evt.GetEventObject()
+            if index >= 0:
+                cls = list.getClass(index)
+                self.changePanel(cls)
         evt.Skip()
 
     def createList(self, classes):
@@ -1743,10 +1760,12 @@ class PrefPage(wx.SplitterWindow):
         list = PrefClassList(self, classes)
         return list
         
-    def showClass(self, cls):
+    def showClass(self, cls=None):
         """Make sure the requested class is highlighted and its pref panel
         is shown."""
+        self.process_callback = False
         self.GetWindow1().ensureClassVisible(cls)
+        self.process_callback = True
     
     def getPanel(self, cls=None):
         """Get or create the requested class's pref panel"""
@@ -1762,8 +1781,11 @@ class PrefPage(wx.SplitterWindow):
     def changePanel(self, cls=None):
         """Change the currently shown pref panel to the requested"""
         old = self.GetWindow2()
+        if cls is None:
+            cls = self.GetWindow1().getClass()
         pref = self.getPanel(cls)
         self.ReplaceWindow(old, pref)
+        self.showClass(cls)
         old.Hide()
         pref.Show()
         pref.Layout()

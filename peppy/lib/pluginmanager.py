@@ -70,15 +70,38 @@ class PluginList(wx.ListCtrl, CheckListCtrlMixin, ColumnAutoSizeMixin, debugmixi
 
     def getPlugin(self, index=-1):
         if index == -1:
-            index = self.GetNextItem(-1, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            index = self.GetNextItem(-1, wx.LIST_NEXT_ALL, wx.LIST_STATE_SELECTED)
         if index == -1:
             index = 0
         return self.plugins[index]
+
+    def ensurePluginVisible(self, plugin):
+        self.clearSelected()
+        try:
+            index = self.plugins.index(plugin)
+            self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+            self.EnsureVisible(index)
+        except:
+            # item not in list. skip it.
+            pass
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
         dprint("selected plugin %d: %s" % (index, self.plugins[index]))
         evt.Skip()
+
+    def clearSelected(self):
+        """Clear any selected items from the list.
+        
+        Note that each call to SetItemState generates a EVT_LIST_ITEM_SELECTED
+        event, so the callback processing should be turned off before calling
+        this method.
+        """
+        index = 0
+        list_count = self.GetItemCount()
+        if index < list_count:
+            self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+            index += 1
 
     def reset(self):
         index = 0
@@ -211,6 +234,8 @@ class PluginPage(wx.SplitterWindow):
         wx.SplitterWindow.__init__(self, parent, -1, *args, **kwargs)
         self.SetMinimumPaneSize(50)
         
+        self.process_callback = False
+        
         self.plugin_manager = pm
         
         self.panels = {}
@@ -230,12 +255,20 @@ class PluginPage(wx.SplitterWindow):
         return list
         
     def OnItemSelected(self, evt):
-        index = evt.GetIndex()
-        list = evt.GetEventObject()
-        plugin_info = list.getPlugin(index)
-        if plugin_info:
-            self.changePanel(plugin_info)
+        if self.process_callback:
+            index = evt.GetIndex()
+            list = evt.GetEventObject()
+            plugin_info = list.getPlugin(index)
+            if plugin_info:
+                self.changePanel(plugin_info)
         evt.Skip()
+    
+    def showPlugin(self, plugin=None):
+        """Make sure the requested class is highlighted and its pref panel
+        is shown."""
+        self.process_callback = False
+        self.GetWindow1().ensurePluginVisible(plugin)
+        self.process_callback = True
     
     def getPanel(self, plugin_info=None):
         """Get or create the pref panel for the requested plugin"""
@@ -251,8 +284,11 @@ class PluginPage(wx.SplitterWindow):
     def changePanel(self, plugin_info=None):
         """Change the currently shown panel"""
         old = self.GetWindow2()
+        if plugin_info is None:
+            plugin_info = self.GetWindow1().getPlugin()
         pref = self.getPanel(plugin_info)
         self.ReplaceWindow(old, pref)
+        self.showPlugin(plugin_info)
         old.Hide()
         pref.Show()
         pref.Layout()
