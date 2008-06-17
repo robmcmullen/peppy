@@ -109,7 +109,7 @@ class GotoLine(MinibufferAction):
     alias = "goto-line"
     name = "Goto Line..."
     tooltip = "Goto a line in the text."
-    default_menu = ("View", -250)
+    default_menu = ("Tools", -250)
     key_bindings = {'default': 'C-G', 'emacs': 'M-G'}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Line:"
@@ -129,18 +129,52 @@ class GotoLine(MinibufferAction):
         mode.GotoLine(line - 1)
 
 
-class SetBookmark(SelectAction):
+class MarkerAction(SelectAction):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'MarkerAdd')
+
+class SetBookmark(MarkerAction):
     """Set a bookmark on the current line in the buffer."""
     alias = "set-bookmark"
-    key_bindings = {'default': 'C-C C-B'}
+    name = "Set Bookmark"
+    default_menu = (("Tools/Bookmarks", 251), 100)
 
     def action(self, index=-1, multiplier=1):
         line = self.mode.GetCurrentLine()
         self.mode.MarkerAdd(line, self.mode.bookmark_marker_number)
 
-class NextBookmark(SelectAction):
+class ToggleBookmark(MarkerAction):
+    """Toggle a bookmark on the current line in the buffer."""
+    alias = "toggle-bookmark"
+    name = "Toggle Bookmark"
+    default_menu = (("Tools/Bookmarks", 251), 110)
+    key_bindings = {'default': 'C-C C-B'}
+
+    def action(self, index=-1, multiplier=1):
+        line = self.mode.GetCurrentLine()
+        marker = self.mode.MarkerGet(line)
+        mask = 1 << self.mode.bookmark_marker_number
+        if marker & mask:
+            self.mode.MarkerDelete(line, self.mode.bookmark_marker_number)
+        else:
+            self.mode.MarkerAdd(line, self.mode.bookmark_marker_number)
+
+class DelBookmark(MarkerAction):
+    """Remove a bookmark on the current line in the buffer."""
+    alias = "del-bookmark"
+    name = "Delete Bookmark"
+    default_menu = (("Tools/Bookmarks", 251), 120)
+
+    def action(self, index=-1, multiplier=1):
+        line = self.mode.GetCurrentLine()
+        self.mode.MarkerDelete(line, self.mode.bookmark_marker_number)
+
+class NextBookmark(MarkerAction):
     """Scroll to view the next bookmark."""
     alias = "next-bookmark"
+    name = "Next Bookmark"
+    default_menu = ("Tools/Bookmarks", -200)
     key_bindings = {'default': 'C-C C-N'}
 
     def action(self, index=-1, multiplier=1):
@@ -154,9 +188,11 @@ class NextBookmark(SelectAction):
             self.mode.EnsureVisible(line)
             self.mode.GotoLine(line)
 
-class PrevBookmark(SelectAction):
-    """Scroll to view the next bookmark."""
+class PrevBookmark(MarkerAction):
+    """Scroll to view the previous bookmark."""
     alias = "prev-bookmark"
+    name = "Prev Bookmark"
+    default_menu = ("Tools/Bookmarks", 210)
     key_bindings = {'default': 'C-C C-P'}
 
     def action(self, index=-1, multiplier=1):
@@ -184,5 +220,6 @@ class CursorMovementPlugin(IPeppyPlugin):
                 BeginningOfBuffer, EndOfBuffer,
                 GotoLine,
                 
-                SetBookmark, NextBookmark, PrevBookmark,
+                SetBookmark, ToggleBookmark, DelBookmark,
+                NextBookmark, PrevBookmark,
             ]
