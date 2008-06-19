@@ -302,7 +302,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.refstc.encoded = None
             raise
 
-    def writeTo(self, fh):
+    def writeTo(self, fh, url):
         """Writes a copy of the document to the provided file-like object.
         
         Note that peppy is not currently thread-enabled during file writing.

@@ -1050,7 +1050,15 @@ class HSIMode(BitmapScroller, MajorMode):
                 else:
                     self.setViewer(CubeView)
                 self.update()
+    
+    def savePreHook(self, url):
+        if url is None:
+            # don't allow save; only save as
+            return False
         
+        self.dataset.setPreSave(self.cube)
+        return self.dataset.CanExport()
+
 
 class HSIMinorModeMixin(MinorMode):
     @classmethod

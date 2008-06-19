@@ -45,6 +45,20 @@ class MetadataMixin(debugmixin):
         valid instance of the type that the subclass is expecting to
         load."""
         return False
+    
+    @classmethod
+    def canExport(cls):
+        return False
+    
+    @classmethod
+    def export(cls, fh, cube, url):
+        """Create a new file with the given cube.
+        
+        @param fh: file-like object to which the data should be written
+        @param cube: HSI.Cube object to be saved
+        @param url: url of the file-like object
+        """
+        pass
 
     def formatName(self):
         return self.format_name

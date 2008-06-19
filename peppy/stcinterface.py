@@ -150,10 +150,11 @@ class STCInterface(object):
         """
         pass
 
-    def writeTo(self, fh):
+    def writeTo(self, fh, url):
         """Write to filehandle, converting as necessary
 
-        @param fh: file-like object used to write the file
+        @param fh: file-like object to which the data should be saved
+        @param url: the url that was used to open the file-like object
         """
         pass
 

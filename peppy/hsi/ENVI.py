@@ -189,6 +189,15 @@ class Header(dict,MetadataMixin):
                 fh.close()
             else:
                 eprint("Couldn't open %s for writing.\n" % filename)
+    
+    @classmethod
+    def canExport(self):
+        return True
+    
+    @classmethod
+    def export(cls, fh, cube, url):
+        dprint("writing cube to %s" % url)
+        dprint("writing header to %s" % vfs.normalize(str(url) + ".hdr"))
 
     def read(self,fh):
         """parse the header file for the ENVI key/value pairs."""
