@@ -845,7 +845,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return "peppy: %s" % mode.buffer.getTabName()
         return self.name
     
-    def showSaveAs(self, title, default_name=None, extra=None):
+    def showSaveAs(self, title, default_name=None, extra=None, wildcard="*.*"):
         """Show a save as dialog relative to the currently active major mode.
         
         Displays a save as dialog and returns the chosen filename.  The
@@ -865,11 +865,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             saveas = mode.buffer.getFilename()
             saveas = os.path.basename(saveas)
-        if extra:
+        if extra and not saveas.endswith(extra):
             saveas += extra
         assert self.dprint("cwd = %s, file = %s" % (cwd, saveas))
 
-        wildcard="*.*"
         dlg = wx.FileDialog(
             self, message=title, defaultDir=cwd, 
             defaultFile=saveas, wildcard=wildcard,
