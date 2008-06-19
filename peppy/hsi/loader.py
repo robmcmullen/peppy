@@ -21,32 +21,9 @@ class HyperspectralSTC(NonResidentSTC):
     def open(self, buffer, message=None):
         self.url = buffer.url
         self.dataset = HyperspectralFileFormat.load(self.url)
-        self.export_cls = None
-        self.save_cube = None
-    
-    def setPreSave(self, cube, handlercls=None):
-        self.save_cube = cube
-        if handlercls:
-            self.export_cls = handlercls
-        dprint("saving cube %s" % self.save_cube.url)
     
     def CanSave(self):
-        return self.dataset.canExport()
-    
-    def CanExport(self):
-        return (self.export_cls is not None and self.export_cls.canExport()) or self.dataset.canExport()
-    
-    def writeTo(self, fh, url):
-        handler = self.export_cls
-        if not handler:
-            handler = self.dataset.__class__
-        dprint("Writing %s to file using %s" % (self.save_cube.url, handler))
-        
-        handler.export(fh, self.save_cube, url)
-        
-        # Make sure references to the save parameters aren't held by this class
-        self.export_cls = None
-        self.save_cube = None
+        return False
     
     def getNumCubes(self):
         return self.dataset.getNumCubes()
@@ -90,6 +67,13 @@ class HyperspectralFileFormat(debugmixin):
     @classmethod
     def removeHandler(cls, handler):
         cls.default_handlers.remove(handler)
+    
+    @classmethod
+    def getHandlerByName(cls, name):
+        for handler in cls.handlers:
+            if handler.format_id == name:
+                return handler
+        return None
 
     @classmethod
     def setPluginManager(cls, pm):

@@ -1050,7 +1050,31 @@ class HSIMode(BitmapScroller, MajorMode):
                 else:
                     self.setViewer(CubeView)
                 self.update()
-    
+
+
+class ExportAsENVI(SelectAction):
+    """Export the current datacube in ENVI BIL format
+    """
+    name = "as ENVI"
+    default_menu = ("File/Export", -100)
+
+    def action(self, index=-1, multiplier=1):
+        filename = self.frame.showSaveAs("Save Image as ENVI",
+                                         wildcard="BIL (*.bil)|*.bil|BIP (*.bip)|*.bip|BSQ (*.bsq)|*.bsq")
+        if filename:
+            root, ext = os.path.splitext(filename)
+            ext = ext.lower()
+            if ext in ['.bil', '.bip', '.bsq']:
+                handler = HyperspectralFileFormat.getHandlerByName("ENVI")
+                if handler:
+                    handler.export(filename, self.mode.cube)
+                else:
+                    self.mode.setStatusText("Can't find ENVI handler")
+                self.mode.setStatusText("Exported to %s" % filename)
+            else:
+                self.mode.setStatusText("Unrecognized file format %s" % filename)
+
+
     def savePreHook(self, url):
         if url is None:
             # don't allow save; only save as

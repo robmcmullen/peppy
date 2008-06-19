@@ -51,11 +51,12 @@ class MetadataMixin(debugmixin):
         return False
     
     @classmethod
-    def export(cls, fh, cube, url):
+    def export(cls, fh, cube, options, url):
         """Create a new file with the given cube.
         
         @param fh: file-like object to which the data should be written
         @param cube: HSI.Cube object to be saved
+        @param options: dict containing name value pairs that can override the cube data to provide for data conversion on output (e.g. change the interleave from BIP to BIL)
         @param url: url of the file-like object
         """
         pass
@@ -571,7 +572,37 @@ class Cube(debugmixin):
             return bbl2
         else:
             return self.bbl
-        
+    
+    def writeRawAsBIP(self, fh, options):
+        # bands vary fastest, then samples, then lines
+        for i in range(self.lines):
+            band = self.getFocalPlaneRaw(i).transpose()
+            fh.write(band.tostring())
+    
+    def writeRawAsBIL(self, fh, options):
+        # samples vary fastest, then bands, then lines
+        for i in range(self.lines):
+            band = self.getFocalPlaneRaw(i)
+            fh.write(band.tostring())
+    
+    def writeRawAsBSQ(self, fh, options):
+        # samples vary fastest, then lines, then bands 
+        for i in range(self.bands):
+            band = self.getBandRaw(i)
+            fh.write(band.tostring())
+    
+    def writeRawData(self, fh, options=None):
+        if options is None:
+            options = dict()
+        interleave = options.get('interleave', self.interleave)
+        if interleave == 'bip':
+            self.writeRawAsBIP(fh, options)
+        elif interleave == 'bil':
+            self.writeRawAsBIL(fh, options)
+        elif interleave == 'bsq':
+            self.writeRawAsBSQ(fh, options)
+        else:
+            raise ValueError("Unknown interleave %s" % interleave)
 
 
 # BIP: (line,sample,band)

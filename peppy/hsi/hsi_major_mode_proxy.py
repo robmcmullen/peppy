@@ -72,6 +72,8 @@ class HSIPlugin(IPeppyPlugin):
                         
                         peppy.hsi.hsi_major_mode.TestSubset,
                         peppy.hsi.hsi_major_mode.SpatialSubset,
+                        
+                        peppy.hsi.hsi_major_mode.ExportAsENVI,
                         ]
             except:
                 pass

@@ -7,7 +7,7 @@ the HSI module to set up the correct parameters for reading the raw
 data contained in the corresponding data file.
 """
 
-import os,os.path,sys,re,csv,textwrap
+import os, os.path, sys, re, csv, textwrap, copy
 
 import peppy.vfs as vfs
 from peppy.debug import *
@@ -60,6 +60,18 @@ def verifyHeader(filename):
                 break
 
     return filename
+
+def getCanonicalHeader(filename):
+    """Get the canonical header name for a given datacube filename.
+    
+    If the filename ends in one of the typical ENVI extensions of .dat, .bil,
+    .bip, .bsq or .img, the extension will be replaced by .hdr.  Otherwise the
+    extension .hdr will be appended to the filename.
+    """
+    name, ext = os.path.splitext(filename)
+    if ext.lower() in ['.dat', '.bil', '.bip', '.bsq', '.img']:
+        return name + ".hdr"
+    return filename + ".hdr"
 
 def findHeaders(url):
     urls = []
@@ -195,9 +207,28 @@ class Header(dict,MetadataMixin):
         return True
     
     @classmethod
-    def export(cls, fh, cube, url):
+    def export(cls, filename, cube, options=None):
+        if options is None:
+            options = dict()
+        if 'interleave' not in options:
+            root, ext = os.path.splitext(filename)
+            if ext:
+                options['interleave'] = ext[1:].lower()
+        url = vfs.normalize(filename)
         dprint("writing cube to %s" % url)
-        dprint("writing header to %s" % vfs.normalize(str(url) + ".hdr"))
+        fh = vfs.open_write(url)
+        cube.writeRawData(fh, options)
+        
+        headername = vfs.normalize(getCanonicalHeader(str(url)))
+        dprint("writing header to %s" % headername)
+        c = copy.copy(cube)
+        for k, v in options.iteritems():
+            setattr(c, k, v)
+        print c
+        h = Header()
+        h.getCubeAttributes(c)
+        hfh = vfs.open_write(headername)
+        hfh.write(str(h))
 
     def read(self,fh):
         """parse the header file for the ENVI key/value pairs."""
