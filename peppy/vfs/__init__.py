@@ -141,6 +141,19 @@ def open_numpy_mmap(ref):
         return fs.open_numpy_mmap(ref)
     raise IOError('%s not supported for mmap access' % str(ref))
 
+def open_write(ref):
+    """Open a file for writing, and if it exists, truncate it"""
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
+    if exists(ref):
+        if is_file(ref):
+            fh = open(ref, WRITE)
+        else:
+            raise OSError(u"%s exists and is a directory; can't save as file" % ref)
+    else:
+        fh = make_file(ref)
+    return fh
+
 # extension to vfs to return dictionary containing metadata for the reference
 def get_metadata(ref):
     if not isinstance(ref, Reference):
@@ -186,6 +199,7 @@ __all__ = [
     'remove',
     'open',
     'open_numpy_mmap',
+    'open_write',
     'get_metadata',
     'copy',
     'move',
