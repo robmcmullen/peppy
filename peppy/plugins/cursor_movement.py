@@ -139,6 +139,7 @@ class SetBookmark(MarkerAction):
     alias = "set-bookmark"
     name = "Set Bookmark"
     default_menu = (("Tools/Bookmarks", 251), 100)
+    key_bindings = {'emacs': 'C-C C-B C-S'}
 
     def action(self, index=-1, multiplier=1):
         line = self.mode.GetCurrentLine()
@@ -149,7 +150,7 @@ class ToggleBookmark(MarkerAction):
     alias = "toggle-bookmark"
     name = "Toggle Bookmark"
     default_menu = (("Tools/Bookmarks", 251), 110)
-    key_bindings = {'default': 'C-C C-B'}
+    key_bindings = {'default': 'M-B', 'emacs': 'C-C C-B C-B'}
 
     def action(self, index=-1, multiplier=1):
         line = self.mode.GetCurrentLine()
@@ -165,6 +166,7 @@ class DelBookmark(MarkerAction):
     alias = "del-bookmark"
     name = "Delete Bookmark"
     default_menu = (("Tools/Bookmarks", 251), 120)
+    key_bindings = {'emacs': 'C-C C-B C-D'}
 
     def action(self, index=-1, multiplier=1):
         line = self.mode.GetCurrentLine()
@@ -175,7 +177,7 @@ class NextBookmark(MarkerAction):
     alias = "next-bookmark"
     name = "Next Bookmark"
     default_menu = ("Tools/Bookmarks", -200)
-    key_bindings = {'default': 'C-C C-N'}
+    key_bindings = {'default': 'M-N', 'emacs': 'C-C C-B C-N'}
 
     def action(self, index=-1, multiplier=1):
         mask = 1 << self.mode.bookmark_marker_number
@@ -193,7 +195,7 @@ class PrevBookmark(MarkerAction):
     alias = "prev-bookmark"
     name = "Prev Bookmark"
     default_menu = ("Tools/Bookmarks", 210)
-    key_bindings = {'default': 'C-C C-P'}
+    key_bindings = {'default': 'M-P', 'emacs': 'C-C C-B C-P'}
 
     def action(self, index=-1, multiplier=1):
         mask = 1 << self.mode.bookmark_marker_number

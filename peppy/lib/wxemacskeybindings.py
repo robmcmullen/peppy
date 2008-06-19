@@ -105,6 +105,9 @@ class KeyMap(object):
         # duplicate keystroke.  If false, it silently overwrites any
         # previously defined keystroke with the new one.
         self.exceptionsWhenDuplicate=False
+    
+    def raiseDuplicateExceptions(self):
+        self.exceptionsWhenDuplicate = True
 
     def reset(self):
         self.cur=self.lookup
@@ -236,6 +239,48 @@ class KeyMap(object):
                 modifiers.append(acc[j:])
                 break
         return "".join(modifiers)
+    
+    def findNested(self, hotkeys, actions):
+        """Convenience function to find all the actions starting at the given
+        spot in the nested dict.
+        """
+        if not isinstance(hotkeys, dict):
+            actions.append(hotkeys)
+        else:
+            for val in hotkeys.values():
+                if isinstance(val, dict):
+                    self.findNested(val, actions)
+                else:
+                    actions.append(val)
+    
+    def find(self, acc):
+        """Find the action(s) associated with the given keystroke combination.
+        
+        If the keystroke is the prefix of other keystrokes, the list of
+        actions that use the given keystrokes as a prefix will be returned.
+        
+        @return: list of actions
+        """
+        hotkeys = self.lookup
+        if self.debug: print "define: acc=%s" % acc
+        keystrokes = self.split(acc)
+        if self.debug: print "define: keystrokes=%s" % str(keystrokes)
+        actions = []
+        for keystroke in keystrokes:
+            if keystroke not in hotkeys:
+                # if we didn't find the current keystroke in the current
+                # level of the nested dict, we're done because we didn't find
+                # a match.
+                break
+            
+            # Go to the next level of the nested dict
+            hotkeys = hotkeys[keystroke]
+        if isinstance(hotkeys, dict):
+            # We've got a dict left, so multiple keystrokes
+            self.findNested(hotkeys, actions)
+        else:
+            actions.append(hotkeys)
+        return actions
         
     def define(self,acc,fcn):
         """Create the nested dicts that point to the function to be

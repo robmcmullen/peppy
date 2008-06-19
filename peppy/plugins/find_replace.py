@@ -914,7 +914,7 @@ class FindRegex(MinibufferRepeatAction):
     name = "Find Regex..."
     tooltip = "Search for a python regular expression."
     default_menu = ("Edit", 401)
-    key_bindings = {'emacs': 'C-S-S', }
+    key_bindings = {'emacs': 'C-M-S', }
     minibuffer = FindMinibuffer
     find_service = FindRegexService
     find_direction = 1
@@ -923,7 +923,7 @@ class FindWildcard(MinibufferRepeatAction):
     name = "Find Wildcard..."
     tooltip = "Search using shell-style wildcards."
     default_menu = ("Edit", 402)
-    key_bindings = {'emacs': 'C-M-S', }
+    key_bindings = {'emacs': 'C-S-M-S', }
     minibuffer = FindMinibuffer
     find_service = FindWildcardService
     find_direction = 1

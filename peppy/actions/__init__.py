@@ -141,10 +141,11 @@ class SelectAction(debugmixin):
         # major mode
         self.frame = frame
         self.mode = frame.getActiveMajorMode()
-##        if self.mode:
-##            dprint("%s %s %s" % (self.mode.keyword, menu, toolbar))
-##        else:
-##            dprint("%s is None! %s %s" % (self.mode, menu, toolbar))
+        
+        # Flag to indicate whether the keystroke should be displayed in the
+        # menu item.  This will be false if the keyboard loader detects that
+        # an already existing action is using the same keystroke
+        self.keystroke_valid = True
 
         self.initPreHook()
         
@@ -192,7 +193,7 @@ class SelectAction(debugmixin):
         return 0
     
     def getDefaultMenuItemName(self):
-        if self._use_accelerators and self.keyboard:
+        if self._use_accelerators and self.__class__.keyboard and self.keystroke_valid:
             return u"%s%s" % (_(self.name), self._accelerator_text)
         elif self.name:
             return _(self.name)

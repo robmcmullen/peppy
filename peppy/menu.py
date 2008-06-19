@@ -273,8 +273,6 @@ class UserActionMap(debugmixin):
         defined by the current list of actions.
         """
         self.title_to_menu = {}
-        self.actions = {}
-        self.class_to_action = {}
         self.min_id = None
         self.max_id = None
         for title, items in self.class_list.menus.iteritems():
@@ -383,15 +381,30 @@ class UserActionMap(debugmixin):
 
     def getKeyboardActions(self):
         keymap = KeyMap()
+        keymap.raiseDuplicateExceptions()
         #keymap.debug = True
         for actioncls in self.class_list.action_classes:
             action = self.getAction(actioncls)
             if action.keyboard is None:
                 continue
-            keymap.define(action.keyboard, action)
+            try:
+                keymap.define(action.keyboard, action)
+            except DuplicateKeyError:
+                dups = keymap.find(action.keyboard)
+                if len(dups) == 1:
+                    dups = dups[0].__class__.__name__
+                else:
+                    dups = [d.__class__.__name__ for d in dups]
+                eprint("%s uses same keystroke as %s" % (action.__class__.__name__, str(dups)))
+                action.keystroke_valid = False
         return keymap
             
     def updateActions(self, toolbar=True):
+        self.actions = {}
+        self.class_to_action = {}
+        
+        keymap = self.getKeyboardActions()
+        
         if wx.Platform == "__WXMAC__":
             # Must use a new menu bar on the mac -- you can't dynamically add
             # to the Help menu apparently due to a limitation in the toolkit.
@@ -406,7 +419,7 @@ class UserActionMap(debugmixin):
         
         if toolbar:
             self.updateToolbarActions(self.frame._mgr)
-        keymap = self.getKeyboardActions()
+        
         self.connectEvents()
         return keymap
     
