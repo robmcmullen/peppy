@@ -144,10 +144,10 @@ class Cube(debugmixin):
 
         # Lat/Long Georeferencing information
         self.georef_system = None
-        self.georef_origin = (0, 0)
-        self.georef_pixel_size = (0, 0)
-        self.georef_lat = 0
-        self.georef_long = 0
+        self.georef_origin = (0, 0) # reference pixel location
+        self.georef_pixel_size = (0, 0) # in degrees
+        self.georef_lat = 0 # of upper left corner of pixel
+        self.georef_long = 0 # of upper left corner of pixel
 
         self.description=''
 
