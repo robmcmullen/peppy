@@ -333,6 +333,9 @@ class SaveURL(SelectAction):
     tooltip = "Write to a new URL using name completion"
     key_bindings = {'emacs': "C-X C-Y", }
 
+    def isEnabled(self):
+        return self.mode.buffer.stc.CanSave()
+
     def action(self, index=-1, multiplier=1):
         cwd = str(self.frame.cwd(use_vfs=True))
         self.dprint(cwd)
