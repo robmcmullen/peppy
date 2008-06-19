@@ -1,3 +1,14 @@
+2008-06-18  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3.4 update to "Zeta Function"
+	* added bookmarks for saving places within a file
+	* added support for creating subsets of hyperspectral images
+	* preferences now update per-view (local) settings if desired
+	* improved C autoindenter
+	* added electricDelete and electricBackspace to C autoindenter
+	* added action to switch to buffer using text completion
+	* added the beginnings of a user's manual
+
 2008-05-05  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.3 update to "Zeta Function"
