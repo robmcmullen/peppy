@@ -82,6 +82,10 @@ def get_dirname(ref):
                      pycopy.copy(ref.query),
                      ref.fragment)
 
+def get_filename(ref):
+    """Convenience method to return the filename component of the URL"""
+    return ref.path[-1]
+
 
 # Simple cache of wrappers around local filesystem objects.
 cache = {}
@@ -211,4 +215,5 @@ __all__ = [
     'normalize',
     'canonical_reference',
     'get_dirname',
+    'get_filename',
     ]
