@@ -31,6 +31,7 @@ def normalize(ref, base=None):
         ref = get_reference(ref)
     # If the reference is absolute (i.e.  contains a scheme), we return;
     # otherwise we assume it's a file:// URI
+    #dprint(str(ref))
     if ref.scheme:
         return ref
 
@@ -57,7 +58,13 @@ def normalize(ref, base=None):
         except UnicodeDecodeError:
             path = str(ref.path).decode('utf-8')
     #dprint(repr(path))
-    return baseref.resolve(path)
+    
+    # Add the query string and fragment if they exist
+    newref = baseref.resolve(path)
+    newref.query = ref.query
+    newref.fragment = ref.fragment
+    #dprint(newref)
+    return newref
 
 def canonical_reference(ref):
     """Normalize a uri but remove any query string or fragments."""

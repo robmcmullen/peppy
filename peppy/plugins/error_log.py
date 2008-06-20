@@ -27,7 +27,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
         PeppySTC.__init__(self, *args, **kwargs)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         
-        self.IndicatorSetStyle(0, wx.stc.STC_INDIC_SQUIGGLE)
+        self.IndicatorSetStyle(0, wx.stc.STC_INDIC_TT)
         self.IndicatorSetForeground(0, wx.RED)
         
         self.filere = re.compile(self.classprefs.filename_match_regex)
@@ -229,7 +229,8 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         self.showMessage(message.data)
     
     def open(self, url):
-        self.major.frame.open(url)
+        if not self.major.frame.makeTabActive(url):
+            self.major.frame.open(url)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar

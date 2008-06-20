@@ -169,6 +169,19 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
             index += 1
             self.SetSelection(index)
     
+    def moveSelectionToURL(self, url):
+        """Change the selection to the tab containing the given URL
+        
+        @return: major mode if found, or None
+        """
+        for index in range(0, self.GetPageCount()):
+            mode = self.GetPage(index).editwin
+            if mode.buffer.isURL(url):
+                self.SetSelection(index)
+                mode.focus()
+                return mode
+        return None
+    
     def getCurrent(self):
         index = self.GetSelection()
         if index<0:
@@ -631,6 +644,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("new mode=%s" % newmode)
         newmode.setViewPositionData(cursor_data)
         self.tabs.updateWrapper(wrapper)
+
+    def makeTabActive(self, url):
+        """Make the tab current that corresponds to the url.
+        
+        If the url isn't found, nothing happens.
+        
+        @return: True if URL was found, False if not.
+        """
+        mode = self.tabs.moveSelectionToURL(url)
+        if mode:
+            url = vfs.normalize(url)
+            mode.showInitialPosition(url)
+        return mode is not None
 
     def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None):
         """Open a new tab to edit the given URL.
