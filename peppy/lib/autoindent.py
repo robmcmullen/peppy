@@ -276,14 +276,23 @@ class FoldingAutoindent(BasicAutoindent):
             ln -= 1
         return ln
     
-    def getCodeChars(self, stc, ln):
+    def getCodeChars(self, stc, ln, lc=-1):
         """Get a version of the given line with all non code chars blanked out.
         
         This function blanks out all non-code characters (comments, strings,
         etc) from the line and returns a copy of the interesting stuff.
+        
+        @param stc: stc of interest
+        @param ln: line number
+        @param lc: optional integer specifying the last position on the
+        line to consider
         """
         fc = stc.PositionFromLine(ln)
-        lc = stc.GetLineEndPosition(ln)
+        if lc < 0:
+            lc = stc.GetLineEndPosition(ln)
+        if lc < fc:
+            # FIXME: fail hard during development
+            raise IndexError("bad line specification for line %d: fc=%d lc=%d" % (ln, fc, lc))
         
         mask = (2 ** stc.GetStyleBits()) - 1
         
@@ -307,6 +316,28 @@ class FoldingAutoindent(BasicAutoindent):
         # Note that we assembled the string in reverse, so flip it around
         out = ''.join(reversed(out))
         return out
+
+    def getLastNonWhitespaceChar(self, stc, pos):
+        """Working backward, find the closest non-whitespace character
+        
+        @param stc: stc of interest
+        @param pos: boundary position from which to start looking backwards
+        @return: tuple of the matching char and the position
+        """
+        pos = pos - 1
+        found = stc.GetCharAt(pos)
+        while pos > 0:
+            check = pos - 1
+            c = stc.GetCharAt(check)
+            s = stc.GetStyleAt(check)
+            dprint("check=%d char='%s'" % (check, c))
+            if stc.isStyleComment(s) or stc.isStyleString(s):
+                break
+            if not c.isspace():
+                break
+            found = c
+            pos = check
+        return (found, pos)
 
     def getBraceMatch(self, text, open=u'(', close=u')'):
         """Search the text to see if there are unmatched braces
@@ -564,9 +595,14 @@ class CStyleAutoindent(FoldingAutoindent):
                     # collapses the current line with the previous line and
                     # reindents the new line
                     linenum = stc.GetCurrentLine()
-                    line = self.getCodeChars(stc, linenum) + ":"
+                    line = self.getCodeChars(stc, linenum, pos) + ":"
                     if not self.reCase.match(line) and not self.reClassAttrScope.match(line):
-                        return False
+                        c, prev = self.getLastNonWhitespaceChar(pos)
+                        if c == ':':
+                            # Found previous ':', so make it a double colon
+                            stc.SetSelection(prev + 1, pos)
+                        else:
+                            return False
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()
                 if start == end:
