@@ -324,19 +324,22 @@ class FoldingAutoindent(BasicAutoindent):
         @param pos: boundary position from which to start looking backwards
         @return: tuple of the matching char and the position
         """
-        pos = pos - 1
-        found = stc.GetCharAt(pos)
+        found = ''
         while pos > 0:
             check = pos - 1
-            c = stc.GetCharAt(check)
+            c = unichr(stc.GetCharAt(check))
             s = stc.GetStyleAt(check)
-            dprint("check=%d char='%s'" % (check, c))
+            #dprint("check=%d char='%s'" % (check, c))
+            
+            # Comment or string terminates the search and will return with the
+            # character after the last comment/string char.
             if stc.isStyleComment(s) or stc.isStyleString(s):
                 break
-            if not c.isspace():
-                break
+            
             found = c
             pos = check
+            if not c.isspace():
+                break
         return (found, pos)
 
     def getBraceMatch(self, text, open=u'(', close=u')'):
@@ -582,6 +585,8 @@ class CStyleAutoindent(FoldingAutoindent):
         was modified; False if the calling event handler should handle the
         character.
         """
+        implicit_return = True
+        
         dprint(ord(uchar))
         if uchar == u';' or uchar == u':' or uchar == '{' or uchar == '}':
             pos = stc.GetCurrentPos()
@@ -597,20 +602,24 @@ class CStyleAutoindent(FoldingAutoindent):
                     linenum = stc.GetCurrentLine()
                     line = self.getCodeChars(stc, linenum, pos) + ":"
                     if not self.reCase.match(line) and not self.reClassAttrScope.match(line):
-                        c, prev = self.getLastNonWhitespaceChar(pos)
-                        if c == ':':
+                        c, prev = self.getLastNonWhitespaceChar(stc, pos)
+                        if c == u':':
                             # Found previous ':', so make it a double colon
                             stc.SetSelection(prev + 1, pos)
-                        else:
-                            return False
+                            #dprint("selection: %d - %d" % (prev + 1, pos))
+                        implicit_return = False
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()
                 if start == end:
                     stc.AddText(uchar)
                 else:
                     stc.ReplaceSelection(uchar)
+                
+                # Always reindent the line, but only process a return if needed
                 self.processTab(stc)
-                self.processReturn(stc)
+                if implicit_return:
+                    self.processReturn(stc)
+                
                 stc.EndUndoAction()
                 return True
         return False
