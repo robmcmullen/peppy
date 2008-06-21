@@ -1865,7 +1865,7 @@ class PrefDialog(wx.Dialog):
         index = self.getPageIndex(self.obj.__class__)
         self.notebook.SetSelection(index)
         page = self.notebook.GetPage(index)
-        page.showClass(self.obj.__class__)
+        page.changePanel(self.obj.__class__)
 
         self.Layout()
     
