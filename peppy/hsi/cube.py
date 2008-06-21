@@ -573,34 +573,94 @@ class Cube(debugmixin):
         else:
             return self.bbl
     
-    def writeRawAsBIP(self, fh, options):
+    def iterRawBIP(self):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
             band = self.getFocalPlaneRaw(i).transpose()
-            fh.write(band.tostring())
+            yield band.tostring()
     
-    def writeRawAsBIL(self, fh, options):
+    def iterRawBIL(self):
         # samples vary fastest, then bands, then lines
         for i in range(self.lines):
             band = self.getFocalPlaneRaw(i)
-            fh.write(band.tostring())
+            yield band.tostring()
     
-    def writeRawAsBSQ(self, fh, options):
+    def iterRawBSQ(self):
         # samples vary fastest, then lines, then bands 
         for i in range(self.bands):
             band = self.getBandRaw(i)
-            fh.write(band.tostring())
+            yield band.tostring()
+    
+    def iterRaw(self, size, interleaveiter):
+        """Iterator used to return the raw data of the cube in manageable chunks.
+        
+        Uses one of L{iterRawBIP}, L{iterRawBIL}, or L{iterRawBSQ} to grab the
+        next chunk of data.  Once there are enough bytes to fill the requested
+        size, the bytes are yielded to the calling function.  This loop
+        continues until all the data has been returned to the caller.
+        
+        @param size: length of buffer to return at each iteration (note the
+        final iteration may be shorter)
+        
+        @param iterleaveiter: an interleave functor taking no arguments and
+        yielding chunks of data at each iteration
+        """
+        fh = StringIO()
+        i = 0
+        for bytes in interleaveiter():
+            count = len(bytes)
+            if (i + count) < size:
+                fh.write(bytes)
+                i += len(bytes)
+            else:
+                bi = 0
+                while bi < count:
+                    remaining_bytes = count - bi
+                    unfilled = size - i
+                    if remaining_bytes < unfilled:
+                        fh.write(bytes[bi:])
+                        i += remaining_bytes
+                        break
+                    fh.write(bytes[bi:bi + unfilled])
+                    yield fh.getvalue()
+                    bi += unfilled
+                    fh = StringIO()
+                    i = 0
+        leftover = fh.getvalue()
+        if len(leftover) > 0:
+            yield leftover
+    
+    def getRawIterator(self, block_size, interleave=None):
+        """Get an iterator to return the raw data of the cube in manageable
+        chunks.
+        
+        The blocks of data returned by this iterator are in the interleave
+        order supplied.  If no interleave is supplied, the current interleave
+        is used.
+        
+        @param block_size: size of data chunks to be returned
+        @param interleave: string, one of 'bip', 'bil', or 'bsq'
+        @return: iterator used to loop over blocks of data, or None if unknown
+        interleave
+        """
+        if interleave is None:
+            interleave = self.interleave
+        iter = {'bip': self.iterRawBIP,
+                'bil': self.iterRawBIL,
+                'bsq': self.iterRawBSQ,
+                }.get(interleave.lower(), None)
+        if iter:
+            return self.iterRaw(block_size, iter)
+        return None
     
     def writeRawData(self, fh, options=None):
         if options is None:
             options = dict()
         interleave = options.get('interleave', self.interleave)
-        if interleave == 'bip':
-            self.writeRawAsBIP(fh, options)
-        elif interleave == 'bil':
-            self.writeRawAsBIL(fh, options)
-        elif interleave == 'bsq':
-            self.writeRawAsBSQ(fh, options)
+        iterator = self.getRawIterator(100000, interleave)
+        if iterator:
+            for block in iterator:
+                fh.write(block)
         else:
             raise ValueError("Unknown interleave %s" % interleave)
 
