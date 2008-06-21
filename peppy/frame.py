@@ -534,6 +534,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     # non-wx methods
     
+    def showErrorDialog(self, msg):
+        dlg = wx.MessageDialog(self, msg, "Error", wx.OK | wx.ICON_ERROR )
+        retval=dlg.ShowModal()
+        return
+    
     def setKeys(self,majormodes=[],minormodes=[]):
 ##        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
 ##        self.keys.setGlobalKeyMap(keymap)

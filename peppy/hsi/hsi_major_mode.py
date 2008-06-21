@@ -1076,7 +1076,7 @@ class ExportAsENVI(SelectAction):
                     self.mode.setStatusText("Can't find ENVI handler")
                 self.mode.setStatusText("Exported to %s" % filename)
             else:
-                self.mode.setStatusText("Unrecognized file format %s" % filename)
+                self.frame.showErrorDialog("Unrecognized file format %s\n\nThe filename extension determines the\ninterleave format.  Use a filename extension of\n.bip, .bil, or .bsq" % filename)
 
 
     def savePreHook(self, url):
