@@ -402,11 +402,13 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             #self.Unbind(wx.stc.EVT_STC_MARGINCLICK)
 
     def OnMarginClick(self, evt):
-        dprint("Margin = %d" % evt.GetMargin())
         lineClicked = self.LineFromPosition(evt.GetPosition())
-        self.MarkerAdd(lineClicked, self.bookmark_marker_number)
         if evt.GetMargin() == 0:
-            pass
+            # FIXME: This doesn't actually work because I don't want to make
+            # margin 0 sensitive.  Making it sensitive then requires managing
+            # all the selection stuff myself.  But, don't want to add margin 1
+            # unnecessarily...  A conundrum.
+            self.MarkerAdd(lineClicked, self.bookmark_marker_number)
         elif evt.GetMargin() == 2:
             # handle folding and unfolding
             if evt.GetShift() and evt.GetControl():

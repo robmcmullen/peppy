@@ -566,6 +566,80 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     # --- line indentation stuff
     
+    def FoldAll(self):
+        """Fold or unfold all items.
+        
+        Code borrowed from the wxPython demo
+        """
+        lineCount = self.GetLineCount()
+        expanding = True
+
+        # find out if we are folding or unfolding
+        for lineNum in range(lineCount):
+            if self.GetFoldLevel(lineNum) & wx.stc.STC_FOLDLEVELHEADERFLAG:
+                expanding = not self.GetFoldExpanded(lineNum)
+                break
+
+        lineNum = 0
+
+        while lineNum < lineCount:
+            level = self.GetFoldLevel(lineNum)
+            if level & wx.stc.STC_FOLDLEVELHEADERFLAG and \
+               (level & wx.stc.STC_FOLDLEVELNUMBERMASK) == wx.stc.STC_FOLDLEVELBASE:
+
+                if expanding:
+                    self.SetFoldExpanded(lineNum, True)
+                    lineNum = self.Expand(lineNum, True)
+                    lineNum = lineNum - 1
+                else:
+                    lastChild = self.GetLastChild(lineNum, -1)
+                    self.SetFoldExpanded(lineNum, False)
+
+                    if lastChild > lineNum:
+                        self.HideLines(lineNum+1, lastChild)
+
+            lineNum = lineNum + 1
+
+    def Expand(self, line, doExpand, force=False, visLevels=0, level=-1):
+        """Expand all folds.
+        
+        Code borrowed from the wxPython demo.
+        """
+        lastChild = self.GetLastChild(line, level)
+        line = line + 1
+
+        while line <= lastChild:
+            if force:
+                if visLevels > 0:
+                    self.ShowLines(line, line)
+                else:
+                    self.HideLines(line, line)
+            else:
+                if doExpand:
+                    self.ShowLines(line, line)
+
+            if level == -1:
+                level = self.GetFoldLevel(line)
+
+            if level & wx.stc.STC_FOLDLEVELHEADERFLAG:
+                if force:
+                    if visLevels > 1:
+                        self.SetFoldExpanded(line, True)
+                    else:
+                        self.SetFoldExpanded(line, False)
+
+                    line = self.Expand(line, doExpand, force, visLevels-1)
+
+                else:
+                    if doExpand and self.GetFoldExpanded(line):
+                        line = self.Expand(line, True, force, visLevels-1)
+                    else:
+                        line = self.Expand(line, False, force, visLevels-1)
+            else:
+                line = line + 1
+
+        return line
+
     def GetFoldColumn(self, linenum):
         return self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE
 
