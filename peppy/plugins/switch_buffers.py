@@ -41,7 +41,7 @@ class SwitchToBuffer(SelectAction):
     alias = "switch-to-buffer"
     tooltip = "Change to a document by typing part of its name"
     key_bindings = {'emacs': "C-X B", }
-    default_menu = ("View/Tabs", -600)
+    default_menu = ("Tools", 610)
     
     def createList(self):
         """Generate list of possible buffer names to complete.
