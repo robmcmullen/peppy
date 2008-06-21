@@ -4,7 +4,7 @@
 	* added bookmarks for saving places within a file
 	* added support for creating subsets of hyperspectral images
 	* preferences now update per-view (local) settings if desired
-	* improved C autoindenter
+	* improved C autoindenter to handle classes and namespaces
 	* added electricDelete and electricBackspace to C autoindenter
 	* added action to switch to buffer using text completion
 	* added the beginnings of a user's manual

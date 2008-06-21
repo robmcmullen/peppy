@@ -391,7 +391,7 @@ class CStyleAutoindent(FoldingAutoindent):
     correct indent level for C-like modes (C, C++, Java, Javascript, etc.)
     plus a bunch of heuristics to handle things that Scintilla doesn't.
     """
-    debuglevel = 1
+    debuglevel = 0
     
     def __init__(self, reIndentAfter=None, reIndent=None, reUnindent=None):
         """Create a regex autoindenter.
@@ -447,7 +447,7 @@ class CStyleAutoindent(FoldingAutoindent):
         @return: the keyword of interest
         """
         fold = self.getFold(stc, linenum)
-        dprint("linenum=%d fold=%d" % (linenum, fold))
+        self.dprint("linenum=%d fold=%d" % (linenum, fold))
         ln = linenum
         statement = ''
         first = True
@@ -457,7 +457,7 @@ class CStyleAutoindent(FoldingAutoindent):
             if f != fold:
                 break
             line = self.getCodeChars(stc, ln).strip()
-            dprint(line)
+            self.dprint(line)
             ln -= 1
             if not line:
                 continue
@@ -554,7 +554,7 @@ class CStyleAutoindent(FoldingAutoindent):
             if not matched:
                 for ln in xrange(linenum - 1, start - 1, -1):
                     line = self.getCodeChars(stc, ln)
-                    dprint(line)
+                    self.dprint(line)
                     if not line.strip() or self.reLabel.match(line):
                         continue
                     if opener == "switch":
@@ -562,10 +562,10 @@ class CStyleAutoindent(FoldingAutoindent):
                             # a case statement will be interpreted as a continuation
                             break
                     if self.reIndentAfter.match(line):
-                        dprint("continuation")
+                        self.dprint("continuation")
                         fold += 1
                     else:
-                        dprint("terminated statement")
+                        self.dprint("terminated statement")
                     break
 
         return (fold * indent) + partial
@@ -587,7 +587,6 @@ class CStyleAutoindent(FoldingAutoindent):
         """
         implicit_return = True
         
-        dprint(ord(uchar))
         if uchar == u';' or uchar == u':' or uchar == '{' or uchar == '}':
             pos = stc.GetCurrentPos()
             s = stc.GetStyleAt(pos)
