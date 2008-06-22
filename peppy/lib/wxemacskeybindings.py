@@ -460,7 +460,8 @@ class KeyProcessor(object):
             modifiers += "M-"
             metadown = True
             self.modifier = True
-
+        if keycode == wx.WXK_ESCAPE:
+            self.modifier = True
 
         # Check the sticky-meta
         if self.metaNext:
