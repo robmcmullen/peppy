@@ -195,11 +195,9 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.removeMinibuffer()
         if minibuffer is not None:
             self.minibuffer = minibuffer
-            box = self.GetSizer()
-            box.Add(self.minibuffer.win, 0, wx.EXPAND)
+            self.minibuffer.addToSizer(self.GetSizer())
             self.Layout()
-            self.minibuffer.win.Show()
-            self.minibuffer.focus()
+            self.minibuffer.show()
 
     def removeMinibuffer(self, specific=None, detach_only=False):
         self.dprint(self.minibuffer)
@@ -210,8 +208,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 # again.
                 return
             
-            box = self.GetSizer()
-            box.Detach(self.minibuffer.win)
+            self.minibuffer.detachFromSizer(self.GetSizer())
             if not detach_only:
                 # for those cases where you still want to keep a
                 # pointer around to the minibuffer and close it later,

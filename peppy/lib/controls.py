@@ -37,6 +37,9 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
     """
     labelDelta = 0
 
+    def AcceptsFocus(self):
+        return False
+
     def _GetLabelSize(self):
         """ used internally """
         if not self.bmpLabel:

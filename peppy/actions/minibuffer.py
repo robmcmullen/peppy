@@ -8,6 +8,8 @@ import wx.stc
 from peppy.actions.base import *
 from peppy.debug import *
 from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
+from peppy.lib.iconstorage import *
+from peppy.lib.controls import StatusBarButton
 
 class MinibufferAction(TextModificationAction):
     minibuffer_label = None
@@ -69,12 +71,22 @@ class Minibuffer(debugmixin):
         if label is not None:
             self.label = label
         self.initial = initial
-        self.createWindow()
         
-    def createWindow(self):
+        self.panel = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.createWindow(self.panel)
+        sizer.Add(self.win, 1, wx.EXPAND)
+        close = StatusBarButton(self.panel, -1, getIconBitmap("icons/cancel.png"), style=wx.NO_BORDER)
+        close.Bind(wx.EVT_BUTTON, self.OnClose)
+        sizer.Add(close, 0, wx.EXPAND)
+        self.panel.SetSizer(sizer)
+        
+    def createWindow(self, parent):
         """
         Create a window that represents the minibuffer, and set
         self.win to that window.
+        
+        @param parent: parent window of minibuffer
         """
         raise NotImplementedError
 
@@ -91,6 +103,12 @@ class Minibuffer(debugmixin):
         """Return the help string for this minibuffer"""
         return ""
 
+    def show(self):
+        """Show the main minibuffer panel"""
+        self.panel.Show()
+        self.win.Show()
+        self.focus()
+
     def focus(self):
         """
         Set the focus to the component in the menubar that should get
@@ -98,6 +116,18 @@ class Minibuffer(debugmixin):
         """
         assert self.dprint("focus!!!")
         self.win.SetFocus()
+    
+    def addToSizer(self, sizer):
+        """Add the minibuffer panel to the given sizer"""
+        sizer.Add(self.panel, 0, wx.EXPAND)
+        
+    def detachFromSizer(self, sizer):
+        """Remove the minibuffer panel from the given sizer"""
+        sizer.Detach(self.panel)
+    
+    def OnClose(self, evt):
+        """Callback handler to remove minibuffer from major mode"""
+        wx.CallAfter(self.mode.removeMinibuffer)
     
     def closePreHook(self):
         """Hook called when minibuffer is about to be closed to allow it to
@@ -110,8 +140,8 @@ class Minibuffer(debugmixin):
         Destroy the minibuffer widgets.
         """
         self.closePreHook()
-        self.win.Destroy()
-        self.win=None
+        self.panel.Destroy()
+        self.panel = None
 
     def removeFromParent(self):
         """
@@ -135,8 +165,8 @@ class TextMinibuffer(Minibuffer):
     label = "Text"
     error = "Bad input."
     
-    def createWindow(self):
-        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+    def createWindow(self, parent):
+        self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, _(self.label))
@@ -235,8 +265,8 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
     This class doesn't implement the complete method, leaving its
     implementation to subclasses.
     """
-    def createWindow(self):
-        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+    def createWindow(self, parent):
+        self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, _(self.label))
@@ -295,8 +325,8 @@ class CompletionMinibuffer(TextMinibuffer):
     This class doesn't implement the complete method, leaving its
     implementation to subclasses.
     """
-    def createWindow(self):
-        self.win = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
+    def createWindow(self, parent):
+        self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         prompt = wx.StaticText(self.win, -1, _(self.label))
