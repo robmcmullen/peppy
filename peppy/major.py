@@ -926,8 +926,11 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     and will be automatically enabled when they find a mode has the
     interpreter_exe classpref.
     """
+    #: Is the full path required to be specified in interpreter_exe?
+    full_path_required = False
+    
     default_classprefs = (
-        PathParam('interpreter_exe', '', 'Full path to a program that can interpret this text and return results on standard output', fullwidth=True),
+        PathParam('interpreter_exe', '', 'Program that can interpret this text and return results on standard output', fullwidth=True),
         BoolParam('autosave_before_run', True, 'Automatically save without prompting before running script'),
         )
 
@@ -1020,17 +1023,16 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         path = self.classprefs.interpreter_exe
         if bangpath is None:
             if not path:
-                msg = "No interpreter executable set.\nMust set the full path to the\nexecutable in preferences."
-            elif os.path.exists(path):
-                if os.path.isdir(path):
-                    msg = "Interpreter executable:\n\n%s\n\nis not a valid file.  Locate the\ncorrect executable in the preferences." % path
-            else:
-                msg = "Interpreter executable not found:\n\n%s\n\nLocate the correct path to the executable\nin the preferences." % path
+                msg = "No interpreter executable set.\n\nMust set the executable name in preferences or\ninclude a #! specifier as the first line in the file."
+            elif self.full_path_required:
+                if os.path.exists(path):
+                    if os.path.isdir(path):
+                        msg = "Interpreter executable:\n\n%s\n\nis not a valid file.  Locate the\ncorrect executable in the preferences." % path
+                else:
+                    msg = "Interpreter executable not found:\n\n%s\n\nLocate the correct path to the executable\nin the preferences." % path
 
         if msg:
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Problem with interpreter executable", wx.OK | wx.ICON_ERROR )
-            retval=dlg.ShowModal()
-            Publisher().sendMessage('peppy.preferences.show')
+            self.frame.showErrorDialog(msg, "Problem with interpreter executable")
         else:
             cmd = self.getCommandLine(bangpath)
             ProcessManager().run(cmd, self.buffer.cwd(), self)

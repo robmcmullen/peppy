@@ -534,8 +534,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     # non-wx methods
     
-    def showErrorDialog(self, msg):
-        dlg = wx.MessageDialog(self, msg, "Error", wx.OK | wx.ICON_ERROR )
+    def showErrorDialog(self, msg, title="Error"):
+        dlg = wx.MessageDialog(self, msg, title, wx.OK | wx.ICON_ERROR )
         retval=dlg.ShowModal()
         return
     
