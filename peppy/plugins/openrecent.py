@@ -14,7 +14,7 @@ from wx.lib.pubsub import Publisher
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.lib.userparams import *
-
+from peppy.lib.dropscroller import ListReorderDialog
 
 class RecentFiles(OnDemandGlobalListAction):
     """Open a file from the list of recently opened files.
@@ -110,10 +110,9 @@ class FileCabinet(RecentFiles):
         pass
 
 class AddToFileCabinet(SelectAction):
-    """Add to the saved URL (i.e. bookmarks) list"""
+    """Add to the saved URL (i.e. file cabinet) list"""
     alias = "add-file-cabinet"
     name = "Add To File Cabinet"
-    tooltip = "Add this URL to the file cabinet"
     default_menu = (("File/File Cabinet", 11), -900)
 
     def action(self, index=-1, multiplier=1):
@@ -125,6 +124,20 @@ class AddToFileCabinet(SelectAction):
         except IndexError:
             mode = self.mode
         FileCabinet.appendURL(mode.buffer.url)
+
+class ReorderFileCabinet(SelectAction):
+    """Reorder list of files in File Cabinet"""
+    alias = "reorder-file-cabinet"
+    name = "Reorder File Cabinet"
+    default_menu = (("File/File Cabinet", 11), 910)
+
+    def action(self, index=-1, multiplier=1):
+        dlg = ListReorderDialog(self.frame, FileCabinet.storage)
+        if dlg.ShowModal() == wx.ID_OK:
+            items = dlg.getItems()
+            FileCabinet.setStorage(items)
+            FileCabinet.calcHash()
+        dlg.Destroy()
 
 
 class RecentFilesPlugin(IPeppyPlugin):
@@ -181,4 +194,4 @@ class RecentFilesPlugin(IPeppyPlugin):
         action_classes.extend([AddToFileCabinet])
 
     def getActions(self):
-        return [RecentFiles, FileCabinet, AddToFileCabinet]
+        return [RecentFiles, FileCabinet, AddToFileCabinet, ReorderFileCabinet]

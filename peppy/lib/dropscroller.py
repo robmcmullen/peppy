@@ -339,6 +339,148 @@ class PickledDropTarget(wx.PyDropTarget):
         return d
 
 
+class ReorderableList(wx.ListCtrl, ListDropScrollerMixin):
+    """Simple list control that provides a drop target and uses
+    the new mixin for automatic scrolling.
+    """
+    def __init__(self, parent, items, col_title, size=(400,400)):
+        wx.ListCtrl.__init__(self, parent, size=size, style=wx.LC_REPORT)
+        self.debug = False
+
+        # The mixin needs to be initialized
+        ListDropScrollerMixin.__init__(self, interval=200)
+        
+        self.dropTarget=PickledDropTarget(self)
+        self.SetDropTarget(self.dropTarget)
+        self.Bind(wx.EVT_LIST_BEGIN_DRAG, self.OnStartDrag)
+        
+        self.create(col_title, items)
+
+    def create(self, col_title, items):
+        """Set up some test data."""
+        self.clear(None)
+        self.InsertColumn(0, col_title)
+        for item in items:
+            self.InsertStringItem(sys.maxint, item)
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE)
+        width1 = self.GetColumnWidth(0)
+        self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        width2 = self.GetColumnWidth(0)
+        if width1 > width2:
+            self.SetColumnWidth(0, width1)
+
+    def OnStartDrag(self, evt):
+        index = evt.GetIndex()
+        #print "beginning drag of item %d" % index
+
+        # Create the data object containing all currently selected
+        # items
+        data = PickledDataObject()
+        items = []
+        index = self.GetFirstSelected()
+        while index != -1:
+            items.append(index)
+            index = self.GetNextSelected(index)
+        data.SetData(pickle.dumps(items,-1))
+
+        # And finally, create the drop source and begin the drag
+        # and drop opperation
+        dropSource = wx.DropSource(self)
+        dropSource.SetData(data)
+        #print "Begining DragDrop\n"
+        result = dropSource.DoDragDrop(wx.Drag_AllowMove)
+        #print "DragDrop completed: %d\n" % result
+
+    def AddDroppedItems(self, x, y, items):
+        start_index = self.getDropIndex(x, y)
+        if self.debug: print "At (%d,%d), index=%d, adding %s" % (x, y, start_index, items)
+
+        list_count = self.GetItemCount()
+        new_order = range(list_count)
+        index = start_index
+        for item in items:
+            if item < start_index:
+                start_index -= 1
+            new_order.remove(item)
+        if self.debug: print("inserting %s into %s at %d" % (str(items), str(new_order), start_index))
+        new_order[start_index:start_index] = items
+        if self.debug: print("orig list = %s" % str(range(list_count)))
+        if self.debug: print(" new list = %s" % str(new_order))
+        
+        saved = {}
+        new_selection = []
+        for i in range(list_count):
+            new_i = new_order[i]
+            if i != new_i:
+                src = self.GetItem(i)
+                if new_i in saved:
+                    text = saved[new_i]
+                else:
+                    text = self.GetItem(new_i).GetText()
+                
+                # save the value that's about to be overwritten
+                if i not in saved:
+                    saved[i] = self.GetItem(i).GetText()
+                if self.debug: print("setting %d to value from %d: %s" % (i, new_i, text))
+                self.SetStringItem(i, 0, text)
+                
+                # save the new highlight position
+                if new_i in items:
+                    new_selection.append(i)
+            
+            # Selection stays with the index even when the item text changes,
+            # so remove the selection from all items for the moment
+            self.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+        
+        # Turn the selection back on for the new positions of the moved items
+        for i in new_selection:
+            self.SetItemState(i, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
+    
+    def clear(self, evt):
+        self.DeleteAllItems()
+    
+    def getItems(self):
+        list_count = self.GetItemCount()
+        items = []
+        for i in range(list_count):
+            items.append(self.GetItem(i).GetText())
+        return items
+
+
+class ListReorderDialog(wx.Dialog):
+    """Simple dialog to return a list of items that can be reordered by the user.
+    """
+    def __init__(self, parent, items, title="Reorder List", col_title="Items"):
+        wx.Dialog.__init__(self, parent, -1, title,
+                           size=(700, 500), pos=wx.DefaultPosition, 
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.list = ReorderableList(self, items, col_title)
+        sizer.Add(self.list, 1, wx.EXPAND)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+
+        self.Layout()
+
+    def getItems(self):
+        return self.list.getItems()
+
+
 if __name__ == '__main__':
     class TestList(wx.ListCtrl, ListDropScrollerMixin):
         """Simple list control that provides a drop target and uses
@@ -413,6 +555,13 @@ if __name__ == '__main__':
             self.list2 = TestList(self, "right", 10)
             self.SplitVertically(self.list1, self.list2)
             self.Layout()
+    
+    def showDialog(parent):
+        dlg = ListReorderDialog(parent, [chr(i + 65) for i in range(26)])
+        if dlg.ShowModal() == wx.ID_OK:
+            items = dlg.getItems()
+            print items
+        dlg.Destroy()
 
     app   = wx.PySimpleApp()
     frame = wx.Frame(None, -1, title='List Drag Test', size=(400,500))
@@ -436,5 +585,7 @@ if __name__ == '__main__':
     frame.SetAutoLayout(1)
     frame.SetSizer(sizer)
     frame.Show(1)
+    
+    wx.CallAfter(showDialog, frame)
     
     app.MainLoop()
