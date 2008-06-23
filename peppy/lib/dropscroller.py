@@ -407,9 +407,37 @@ class ReorderableList(wx.ListCtrl, ListDropScrollerMixin):
         if self.debug: print("orig list = %s" % str(range(list_count)))
         if self.debug: print(" new list = %s" % str(new_order))
         
+        self.changeList(new_order, items)
+    
+    def deleteSelected(self):
+        list_count = self.GetItemCount()
+        new_order = range(list_count)
+        index = self.GetFirstSelected()
+        while index != -1:
+            new_order.remove(index)
+            index = self.GetNextSelected(index)
+        if self.debug: print("orig list = %s" % str(range(list_count)))
+        if self.debug: print(" new list = %s" % str(new_order))
+        self.changeList(new_order)
+    
+    def changeList(self, new_order, make_selected=[]):
+        """Reorder the list given the new list of indexes.
+        
+        The new list will be constructed by building up items based on the
+        indexes specified in new_order as taken from the current list.  The
+        ListCtrl contents is then replaced with the new list of items.  Items
+        may also be deleted from the list by not including items in the
+        new_order.
+        
+        @param new_order: list of indexes used to compose the new list
+        
+        @param make_selected: optional list showing indexes of original order
+        that should be marked as selected in the new list.
+        """
         saved = {}
         new_selection = []
-        for i in range(list_count):
+        new_count = len(new_order)
+        for i in range(new_count):
             new_i = new_order[i]
             if i != new_i:
                 src = self.GetItem(i)
@@ -425,12 +453,17 @@ class ReorderableList(wx.ListCtrl, ListDropScrollerMixin):
                 self.SetStringItem(i, 0, text)
                 
                 # save the new highlight position
-                if new_i in items:
+                if new_i in make_selected:
                     new_selection.append(i)
             
             # Selection stays with the index even when the item text changes,
             # so remove the selection from all items for the moment
             self.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+        
+        # if the list size has been reduced, clean up any extra items
+        list_count = self.GetItemCount()
+        for i in range(new_count, list_count):
+            self.DeleteItem(new_count)
         
         # Turn the selection back on for the new positions of the moved items
         for i in new_selection:
@@ -476,6 +509,21 @@ class ListReorderDialog(wx.Dialog):
         sizer.Fit(self)
 
         self.Layout()
+        
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        self.delete_id = wx.NewId()
+        self.Bind(wx.EVT_MENU, self.OnDelete, id=self.delete_id)
+    
+    def OnContextMenu(self, evt):
+        menu = wx.Menu()
+        menu.Append(self.delete_id, "Delete Selected Items")
+        if self.list.GetSelectedItemCount() == 0:
+            menu.Enable(self.delete_id, False)
+        self.PopupMenu(menu)
+        menu.Destroy()
+    
+    def OnDelete(self, evt):
+        self.list.deleteSelected()
 
     def getItems(self):
         return self.list.getItems()

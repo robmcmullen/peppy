@@ -132,7 +132,7 @@ class ReorderFileCabinet(SelectAction):
     default_menu = (("File/File Cabinet", 11), 910)
 
     def action(self, index=-1, multiplier=1):
-        dlg = ListReorderDialog(self.frame, FileCabinet.storage)
+        dlg = ListReorderDialog(self.frame, FileCabinet.storage, "Reorder File Cabinet", "URL")
         if dlg.ShowModal() == wx.ID_OK:
             items = dlg.getItems()
             FileCabinet.setStorage(items)
