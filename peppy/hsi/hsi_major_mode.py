@@ -1070,13 +1070,23 @@ class ExportAsENVI(SelectAction):
             if ext in ['.bil', '.bip', '.bsq']:
                 handler = HyperspectralFileFormat.getHandlerByName("ENVI")
                 if handler:
-                    handler.export(filename, self.mode.cube)
+                    try:
+                        self.mode.showBusy(True)
+                        self.mode.status_info.startProgress("Exporting to %s" % filename)
+                        wx.GetApp().cooperativeYield()
+                        handler.export(filename, self.mode.cube, progress=self.updateProgress)
+                        self.mode.status_info.stopProgress("Saved %s" % filename)
+                        wx.GetApp().cooperativeYield()
+                    finally:
+                        self.mode.showBusy(False)
                 else:
                     self.mode.setStatusText("Can't find ENVI handler")
-                self.mode.setStatusText("Exported to %s" % filename)
             else:
                 self.frame.showErrorDialog("Unrecognized file format %s\n\nThe filename extension determines the\ninterleave format.  Use a filename extension of\n.bip, .bil, or .bsq" % filename)
 
+    def updateProgress(self, value):
+        self.mode.status_info.updateProgress(value)
+        wx.GetApp().cooperativeYield()
 
     def savePreHook(self, url):
         if url is None:

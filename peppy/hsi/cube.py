@@ -653,14 +653,19 @@ class Cube(debugmixin):
             return self.iterRaw(block_size, iter)
         return None
     
-    def writeRawData(self, fh, options=None):
+    def writeRawData(self, fh, options=None, progress=None, block_size=100000):
         if options is None:
             options = dict()
         interleave = options.get('interleave', self.interleave)
-        iterator = self.getRawIterator(100000, interleave)
+        num_blocks = (self.data_bytes / block_size) + 1
+        iterator = self.getRawIterator(block_size, interleave)
         if iterator:
+            count = 0
             for block in iterator:
                 fh.write(block)
+                if progress:
+                    progress((count * 100) / num_blocks)
+                count += 1
         else:
             raise ValueError("Unknown interleave %s" % interleave)
 

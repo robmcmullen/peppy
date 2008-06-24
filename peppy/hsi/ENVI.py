@@ -207,7 +207,7 @@ class Header(dict,MetadataMixin):
         return True
     
     @classmethod
-    def export(cls, filename, cube, options=None):
+    def export(cls, filename, cube, options=None, progress=None):
         if options is None:
             options = dict()
         if 'interleave' not in options:
@@ -217,7 +217,8 @@ class Header(dict,MetadataMixin):
         url = vfs.normalize(filename)
         dprint("writing cube to %s" % url)
         fh = vfs.open_write(url)
-        cube.writeRawData(fh, options)
+        cube.writeRawData(fh, options, progress)
+        fh.close()
         
         headername = vfs.normalize(getCanonicalHeader(str(url)))
         dprint("writing header to %s" % headername)
@@ -232,6 +233,7 @@ class Header(dict,MetadataMixin):
         h.getCubeAttributes(c)
         hfh = vfs.open_write(headername)
         hfh.write(str(h))
+        hfh.close()
 
     def read(self,fh):
         """parse the header file for the ENVI key/value pairs."""
