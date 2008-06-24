@@ -226,6 +226,8 @@ class GDALCube(HSI.Cube):
         if count>=3:
             self.rgbbands=rgb
         self.dprint("GDAL reports rgb bands are %s" % str(self.rgbbands))
+        
+        self.initializeSizes()
 
     def getPixel(self,line,sample,band):
         bytes=self.dataset.ReadRaster(sample, line, 1, 1, band_list=[band+1])
