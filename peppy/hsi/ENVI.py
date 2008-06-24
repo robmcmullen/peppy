@@ -224,6 +224,9 @@ class Header(dict,MetadataMixin):
         c = copy.copy(cube)
         for k, v in options.iteritems():
             setattr(c, k, v)
+        c.data_offset = 0
+        c.header_offset = 0
+        c.file_offset = 0
         print c
         h = Header()
         h.getCubeAttributes(c)
