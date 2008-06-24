@@ -174,6 +174,7 @@ class BufferVFSMixin(debugmixin):
         be determined from the real url.
         """
         self.bfh = None
+        self.last_mtime = None
         self.setURL(url)
         self.created_from_url = created_from_url
         
@@ -183,11 +184,26 @@ class BufferVFSMixin(debugmixin):
         else:
             url = vfs.canonical_reference(url)
         self.url = url
+        self.saveTimestamp()
 
     def isURL(self, url):
         url = vfs.canonical_reference(url)
         if url == self.url:
             return True
+        return False
+
+    def saveTimestamp(self):
+        if self.url.scheme == 'file':
+            try:
+                self.last_mtime = vfs.get_mtime(self.url)
+            except OSError:
+                self.last_mtime = None
+
+    def isTimestampChanged(self):
+        if self.last_mtime is not None and self.url.scheme == 'file':
+            mtime = vfs.get_mtime(self.url)
+            #dprint("current=%s saved=%s" % (mtime, self.last_mtime))
+            return mtime != self.last_mtime
         return False
     
     def getFilename(self):
@@ -473,6 +489,7 @@ class Buffer(BufferVFSMixin):
             self.modified = False
             self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
+            self.saveTimestamp()
         except IOError:
             eprint(u"Failed writing to %s" % unicode(self.url))
             raise
@@ -573,6 +590,11 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
             self.modecls = MajorModeMatcherDriver.match(self)
             self.dprint("found major mode = %s" % self.modecls)
         self.stc = LoadingSTC(unicode(url))
+    
+    def isTimestampChanged(self):
+        """Override so that we don't attempt to pop up any dialogs when loading
+        a file"""
+        return False
     
     def allowThreadedLoading(self):
         return self.modecls.allow_threaded_loading

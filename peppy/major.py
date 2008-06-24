@@ -553,6 +553,21 @@ class MajorMode(ClassPrefs, debugmixin):
     def savePostHook(self):
         """Hook to perform any housekeeping after a save"""
         pass
+    
+    def checkFileModified(self):
+        """Check if the buffer has been modified by an external program"""
+        try:
+            changed = self.buffer.isTimestampChanged()
+            self.dprint("%s has been modified: %s" % (str(self.buffer.url), changed))
+            if changed:
+                retval = self.frame.showQuestionDialog("%s\n\nhas changed on disk.  Reload?" % self.buffer.url.path, "File Changed on Disk")
+                if retval == wx.ID_YES:
+                    self.buffer.revert()
+                self.buffer.saveTimestamp()
+        except OSError:
+            self.dprint("%s has been deleted" % str(self.buffer.url))
+            self.frame.showWarningDialog("%s\n\nhas been deleted on disk.  Your changes\nwill be lost unless you save the file." % self.buffer.url.path, "File Deleted on Disk")
+            self.buffer.saveTimestamp()
 
     # If there is no title, return the keyword
     def getTitle(self):

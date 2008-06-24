@@ -351,6 +351,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def __init__(self, urls=[], id=-1, buffer=None):
         BufferFrame.frameid+=1
         self.name="peppy: Window #%d" % BufferFrame.frameid
+        
+        # flags to prevent multiple timestamp checks
+        self.pending_timestamp_check = False
+        self.currently_processing_timestamp = False
 
         size=(int(self.classprefs.width),int(self.classprefs.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
@@ -477,11 +481,25 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             mode = self.getActiveMajorMode()
             mode.idleHandler()
+            
+            # Timestamp checks are performed here for two reasons: 1) windows
+            # reports activate events whenever a dialog is popped up, so
+            # you get an unending stream of dialogs.  2) when trying to use
+            # dialogs after changing tabs on linux, the mouse events seemed to
+            # get eaten.  The only workaround I could find was to put the call
+            # to isModeChangedOnDisk here wrapped by a CallAfter.
+            if self.pending_timestamp_check and not self.currently_processing_timestamp:
+                self.currently_processing_timestamp = True
+                wx.CallAfter(self.isModeChangedOnDisk)
+                self.pending_timestamp_check = False
         evt.Skip()
         
     def OnRaise(self, evt):
         self.dprint("Focus! %s" % self.name)
-        wx.GetApp().SetTopWindow(self)
+        if evt.GetActive():
+            wx.GetApp().SetTopWindow(self)
+            if not self.pending_timestamp_check and not self.currently_processing_timestamp:
+                self.pending_timestamp_check = True
         evt.Skip()
     
     def OnSize(self, evt):
@@ -536,8 +554,18 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     
     def showErrorDialog(self, msg, title="Error"):
         dlg = wx.MessageDialog(self, msg, title, wx.OK | wx.ICON_ERROR )
-        retval=dlg.ShowModal()
-        return
+        retval = dlg.ShowModal()
+        return retval
+    
+    def showWarningDialog(self, msg, title="Warning"):
+        dlg = wx.MessageDialog(self, msg, title, wx.OK | wx.ICON_WARNING )
+        retval = dlg.ShowModal()
+        return retval
+    
+    def showQuestionDialog(self, msg, title="Question"):
+        dlg = wx.MessageDialog(self, msg, title, wx.YES_NO | wx.ICON_QUESTION )
+        retval = dlg.ShowModal()
+        return retval
     
     def setKeys(self,majormodes=[],minormodes=[]):
 ##        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
@@ -807,7 +835,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             cwd = unicode(os.getcwd())
         return cwd
-            
+    
+    def isModeChangedOnDisk(self):
+        """Convenience function to ask user what to if the file has been changed
+        out from under us by an external program.
+        """
+        self.currently_processing_timestamp = True
+        try:
+            major = self.getActiveMajorMode()
+            if major:
+                major.checkFileModified()
+        finally:
+            self.currently_processing_timestamp = False
+
     def switchMode(self):
         last=self.tabs.getPrevious()
         if last:
@@ -846,6 +886,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         # "commit" all changes made to FrameManager   
         self._mgr.Update()
+        
+        # NOTE: using wx.CallAfter(self.isModeChangedOnDisk) here seems to do
+        # something bad to the mouse pointer, because after calling this no
+        # more mouse events are received by the application.  Instead, I have
+        # to set a flag and process in the idle event handler.
+        self.pending_timestamp_check = True
 
     def getAllModes(self):
         modes = []
