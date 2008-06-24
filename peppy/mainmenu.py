@@ -389,9 +389,9 @@ class Exit(SelectAction):
         wx.GetApp().quit()
 
 class Close(SelectAction):
+    """Delete the current document from memory"""
     alias = "close-buffer"
-    name = "&Close Buffer"
-    tooltip = "Close current buffer"
+    name = "&Close Document"
     default_menu = ("File", 890)
     icon = "icons/cross.png"
 
