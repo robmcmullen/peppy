@@ -17,14 +17,22 @@ from peppy.lib.textutil import *
 
 # Mimic the primary selection middle mouse paste on non-X11 platforms, but
 # unfortunately the primary selection will only be application local
+version = wx.version().split('.')
+version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
+if wx.Platform == "__WXGTK__" and version > 287:
+    use_x11_primary_selection = True
+else:
+    use_x11_primary_selection = False
 non_x11_primary_selection = None
+print "version=%d use=%s" % (version, use_x11_primary_selection)
 
 def GetClipboardText(primary_selection=False):
+    global use_x11_primary_selection
     global non_x11_primary_selection
 
     success = False
     if primary_selection:
-        if wx.Platform == "__WXGTK__":
+        if use_x11_primary_selection:
             wx.TheClipboard.UsePrimarySelection(primary_selection)
         else:
             #dprint(non_x11_primary_selection)
@@ -39,10 +47,11 @@ def GetClipboardText(primary_selection=False):
     return None
 
 def SetClipboardText(txt, primary_selection=False):
+    global use_x11_primary_selection
     global non_x11_primary_selection
 
     if primary_selection:
-        if wx.Platform == "__WXGTK__":
+        if use_x11_primary_selection:
             wx.TheClipboard.UsePrimarySelection(primary_selection)
         else:
             non_x11_primary_selection = txt
