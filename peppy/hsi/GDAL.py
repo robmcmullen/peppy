@@ -248,6 +248,22 @@ class GDALCube(HSI.Cube):
         s=numpy.frombuffer(bytes, self.data_type)
         return s
     
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        bytes=self.dataset.ReadRaster(0, line, self.samples, 1, band_list=range(1,self.bands+1))
+        s = numpy.frombuffer(bytes, self.data_type).reshape((self.bands, self.samples))
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        bytes=self.dataset.ReadRaster(sample, 0, 1, self.lines, band_list=[band+1])
+        s = numpy.frombuffer(bytes, self.data_type)
+        return s
+
+    def getLineOfSpectraCopy(self,line):
+        """Get the spectra along the given line."""
+        raise NotImplementedError
+
     def locationToFlat(self, line, sample, band):
         return -1
 
@@ -263,12 +279,14 @@ if __name__ == "__main__":
 
     if args:
         for filename in args:
-            GDALDataset.debug=True
-            h=cube.loadHeader(filename)
+            GDALDataset.debug = True
+            h = GDALDataset(filename)
             print h
-            cube=h.getCube()
+            cube = h.getCube()
             print cube
-            r=cube.getBand(0)
+            r = cube.getBand(0)
             print r
+            f = cube.getFocalPlaneRaw(0)
+            print f
     else:
         print parser.usage
