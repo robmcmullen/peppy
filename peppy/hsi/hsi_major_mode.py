@@ -1020,8 +1020,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.idle_update_menu = True
 
     def getWelcomeMessage(self):
-        return "%dx%dx%d %s image" % (self.cube.samples, self.cube.lines,
-                                      self.cube.bands, self.cube.interleave.upper())
+        return "%dx%dx%d %s image using %s loader" % (self.cube.samples, self.cube.lines, self.cube.bands, self.cube.interleave.upper(), self.dataset.getHandler().format_id)
 
     def setCube(self, index=0):
         self.dataset_index = index

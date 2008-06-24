@@ -25,6 +25,9 @@ class HyperspectralSTC(NonResidentSTC):
     def CanSave(self):
         return False
     
+    def getHandler(self):
+        return self.dataset.__class__
+    
     def getNumCubes(self):
         return self.dataset.getNumCubes()
     
@@ -37,6 +40,7 @@ class HyperspectralSTC(NonResidentSTC):
             # it's not cross-platform.  Use OSError instead, which is the
             # superclass of WindowsError).  Try to load the file using another
             # loader (for example, instead of ENVI, use GDAL)
+            dprint("Caught what is most likely an out-of-memory error.  Trying to load with a different handler")
             dataset = HyperspectralFileFormat.load(self.url, bad=self.dataset.__class__)
             if dataset:
                 #dprint("Using %s instead" % dataset.__class__)
