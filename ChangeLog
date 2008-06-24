@@ -1,3 +1,13 @@
+2008-06-23  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.3.5 update to "Zeta Function"
+	* added close icon to minibuffer
+	* fixed windows ESC keybinding to close minibuffer when active
+	* changed job control to allow interpreter executables to be relative to
+	the user's PATH in addition to absolute pathnames
+	* added File Cabinet management to reorder list and delete items
+	* added Ctrl+Shift click on fold margin to expand/hide all folds
+
 2008-06-18  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.3.4 update to "Zeta Function"
