@@ -247,7 +247,7 @@ class SelectAction(debugmixin):
         focus = self.mode.FindFocus()
         if focus != self.mode:
             is_text = isinstance(focus, wx.TextCtrl)
-            dprint("focus = %s text = %s printable=%s" % (focus, is_text, printable))
+            self.dprint("focus = %s text = %s printable=%s" % (focus, is_text, printable))
             if self.key_needs_focus or (is_text and printable):
                 evt.Skip()
                 return

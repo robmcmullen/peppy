@@ -44,10 +44,10 @@ class MinibufferRepeatAction(MinibufferAction):
     def action(self, index=-1, multiplier=1):
         minibuffer = self.mode.getMinibuffer()
         if minibuffer.__class__ == self.minibuffer:
-            dprint("Using the same type of minibuffer!")
+            self.dprint("Using the same type of minibuffer!")
             minibuffer.repeat(self)
         else:
-            dprint("Not using the same type of minibuffer.  Creating a new one.")
+            self.dprint("Not using the same type of minibuffer.  Creating a new one.")
             MinibufferAction.action(self, index, multiplier)
 
 

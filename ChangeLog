@@ -1,6 +1,7 @@
 2008-06-23  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.7.3.5 update to "Zeta Function"
+	* Released peppy-0.7.4 "Hammer Thrower"
+	* added check for files modified by other applications
 	* added close icon to minibuffer
 	* fixed windows ESC keybinding to close minibuffer when active
 	* changed job control to allow interpreter executables to be relative to

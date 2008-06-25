@@ -24,7 +24,7 @@ if wx.Platform == "__WXGTK__" and version > 287:
 else:
     use_x11_primary_selection = False
 non_x11_primary_selection = None
-print "version=%d use=%s" % (version, use_x11_primary_selection)
+#print "version=%d use=%s" % (version, use_x11_primary_selection)
 
 def GetClipboardText(primary_selection=False):
     global use_x11_primary_selection
