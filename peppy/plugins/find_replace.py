@@ -139,14 +139,16 @@ class FindService(debugmixin):
         @param replacing: the original string from the document
         @return: the string after the substitutions have been made
         """
+        findTxt = self.settings.find
         replaceTxt = self.settings.replace
         
-        # in order to use smart casing, the target string needs to have at
-        # least one alphabetic character.  If the target converted to upper
-        # case is the same as the target converted to lower case, we know that
-        # it doesn't have any alphabetic chars in it so we punt and use the
-        # replace string as is.
-        if self.settings.smart_case and replaceTxt.lower() == replaceTxt and replacing.upper() != replacing.lower():
+        # in order to use smart casing, both the find and replace strings
+        # must be lower case and the target string needs to have at least one
+        # alphabetic character.  If the target converted to upper case is the
+        # same as the target converted to lower case, we know that it doesn't
+        # have any alphabetic chars in it so we punt and use the replace
+        # string as is.
+        if self.settings.smart_case and findTxt.lower() == findTxt and replaceTxt.lower() == replaceTxt and replacing.upper() != replacing.lower():
             if replacing.upper() == replacing:
                 ## print "all upper", replacing
                 replaceTxt = replaceTxt.upper()
