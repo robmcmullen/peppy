@@ -1026,7 +1026,7 @@ class BitmapScroller(wx.ScrolledWindow):
 
     def autoScrollCallback(self, dx, dy):
         self.dbg_call_seq += 1
-        #print("In autoScrollCallback %d" % self.dbg_call_seq)
+        #print("In autoScrollCallback %d: dx=%d dy=%d" % (self.dbg_call_seq, dx, dy))
         spx = self.GetScrollPos(wx.HORIZONTAL)
         spy = self.GetScrollPos(wx.VERTICAL)
         if self.selector:
@@ -1071,7 +1071,9 @@ class BitmapScroller(wx.ScrolledWindow):
             if self.selector:
                 if not self.selector.processEvent(ev):
                     self.endActiveSelector()
+                    self.ReleaseMouse()
             elif self.use_selector.trigger(ev):
+                self.CaptureMouse()
                 self.startSelector(ev)
 
             # Next, if we have a selector, process some user interface
