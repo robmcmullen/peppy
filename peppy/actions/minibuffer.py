@@ -26,8 +26,12 @@ class MinibufferAction(TextModificationAction):
     
     def action(self, index=-1, multiplier=1):
         initial = self.getInitialValueHook()
-        minibuffer=self.minibuffer(self.mode, self, label=self.minibuffer_label,
-                                   initial=initial)
+        if isinstance(self.minibuffer, list):
+            minibuffer = MultiMinibuffer(self.mode, self, label=self.minibuffer_label,
+                                         initial=initial, multi=self.minibuffer)
+        else:
+            minibuffer = self.minibuffer(self.mode, self, label=self.minibuffer_label,
+                                       initial=initial)
         #print minibuffer.win
         self.mode.setMinibuffer(minibuffer)
 
@@ -62,24 +66,30 @@ class Minibuffer(debugmixin):
     error = "Bad input."
     
     def __init__(self, mode, action, label=None, error=None, initial=None,
-                 **kwargs):
-        self.win=None
-        self.mode=mode
+                 parent=None, finish_callback=None, next=None, **kwargs):
+        self.win = None
+        self.mode = mode
         self.action = action
         if error is not None:
             self.error = error
         if label is not None:
             self.label = label
         self.initial = initial
+        self.next_focus = next
+        self.finish_callback = finish_callback
         
-        self.panel = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.createWindow(self.panel)
-        sizer.Add(self.win, 1, wx.EXPAND)
-        close = StatusBarButton(self.panel, -1, getIconBitmap("icons/cancel.png"), style=wx.NO_BORDER)
-        close.Bind(wx.EVT_BUTTON, self.OnClose)
-        sizer.Add(close, 0, wx.EXPAND)
-        self.panel.SetSizer(sizer)
+        if parent:
+            self.createWindow(parent)
+            self.panel = self.win
+        else:
+            self.panel = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER)
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+            self.createWindow(self.panel)
+            sizer.Add(self.win, 1, wx.EXPAND)
+            close = StatusBarButton(self.panel, -1, getIconBitmap("icons/cancel.png"), style=wx.NO_BORDER)
+            close.Bind(wx.EVT_BUTTON, self.OnClose)
+            sizer.Add(close, 0, wx.EXPAND)
+            self.panel.SetSizer(sizer)
         
     def createWindow(self, parent):
         """
@@ -89,6 +99,18 @@ class Minibuffer(debugmixin):
         @param parent: parent window of minibuffer
         """
         raise NotImplementedError
+
+    def bindEvents(self, next=None):
+        """Set up all required event handlers.
+        
+        @param next: optional next control that is used to change focus to the
+        next minibuffer in the list if this is contained in a MultiMinibuffer
+        """
+        pass
+
+    def OnEnterNext(self, evt):
+        if self.next_focus:
+            self.next_focus.focus()
 
     def repeat(self, action):
         """Entry point used to reinitialize the minibuffer without creating
@@ -106,7 +128,6 @@ class Minibuffer(debugmixin):
     def show(self):
         """Show the main minibuffer panel"""
         self.panel.Show()
-        self.win.Show()
         self.focus()
 
     def focus(self):
@@ -182,21 +203,33 @@ class TextMinibuffer(Minibuffer):
 
     def convert(self, text):
         return text
-
-    def OnEnter(self, evt):
+    
+    def getResult(self, show_error=True):
         text = self.text.GetValue()
+        error = None
         assert self.dprint("text=%s" % text)
         try:
             text = self.convert(text)
         except:
-            self.mode.frame.SetStatusText(self.error)
-            text = None
-
-        if text is not None:
-            error = self.action.processMinibuffer(self, self.mode, text)
-            if error is not None:
+            error = self.error
+            if show_error:
                 self.mode.frame.SetStatusText(error)
-        self.removeFromParent()
+            text = None
+        return text, error
+    
+    def OnEnter(self, evt):
+        text, error = self.getResult()
+
+        if self.next_focus:
+            self.next_focus.focus()
+        elif self.finish_callback:
+            self.finish_callback()
+        else:
+            if text is not None:
+                error = self.action.processMinibuffer(self, self.mode, text)
+                if error is not None:
+                    self.mode.frame.SetStatusText(error)
+            self.removeFromParent()
 
 class IntMinibuffer(TextMinibuffer):
     """Dedicated subclass of Minibuffer that prompts for an integer.
@@ -382,3 +415,58 @@ class StaticListCompletionMinibuffer(CompletionMinibuffer):
             if match.startswith(text):
                 found.append(match)
         return found
+
+
+class MultiMinibuffer(Minibuffer):
+    """Base class for a composite minibuffer.
+    
+    This provides multiple minibuffer items wrapped in the same minibuffer.
+    The minibuffers can be different types and have different labels; a
+    multi minibuffer is specified by supplying a list for C{minibuffer} and
+    C{minibuffer_label}, where C{minibuffer} supplies the list of L{Minibuffer}
+    subclasses, and C{minibuffer_label} lists the labels for each.
+    """
+    def __init__(self, *args, **kwargs):
+        labels = kwargs['label']
+        multis = kwargs['multi']
+        if labels is None:
+            labels = [None] * len(multis)
+        if len(labels) != len(multis):
+            raise IndexError("Must have the same number of labels as minibuffers")
+        self.multi_info = zip(multis, labels)
+        self.minibuffers = []
+        Minibuffer.__init__(self, *args, **kwargs)
+        
+    def createWindow(self, parent):
+        self.win = wx.Panel(parent, style=wx.NO_BORDER)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        last = None
+        for minibuffer, label in self.multi_info:
+            self.dprint(minibuffer)
+            mb = minibuffer(self.mode, self.action, label, parent=self.panel, finish_callback=self.finished)
+            mb.addToSizer(sizer)
+            self.minibuffers.append(mb)
+            if last:
+                last.next_focus = mb
+            last = mb
+        
+        self.win.SetSizer(sizer)
+    
+    def focus(self):
+        self.minibuffers[0].focus()
+
+    def finished(self):
+        results = []
+        for minibuffer in self.minibuffers:
+            text, error = minibuffer.getResult()
+            results.append(text)
+            if error:
+                #dprint(error)
+                minibuffer.focus()
+                return
+        
+        error = self.action.processMinibuffer(self, self.mode, results)
+        if error is not None:
+            self.mode.frame.SetStatusText(error)
+        self.removeFromParent()

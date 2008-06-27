@@ -17,15 +17,11 @@ import wx
 
 from peppy.yapsy.plugins import *
 from peppy.actions import *
+from peppy.actions.minibuffer import *
 from peppy.major import *
 
 
-class SlowProgressBarTest(SelectAction):
-    name = "Slow test of the progress bar"
-    tooltip = "Test the progress bar"
-    default_menu = "&Help/Tests"
-    delay = .2
-
+class ProgressBarTestMixin(object):
     def action(self, index=-1, multiplier=1):
         wx.CallAfter(self.statusbarTest)
 
@@ -43,11 +39,17 @@ class SlowProgressBarTest(SelectAction):
                 time.sleep(self.delay)
             statusbar.stopProgress()
             mode.buffer.setBusy(False)
-        
-class FastProgressBarTest(SlowProgressBarTest):
+
+class SlowProgressBarTest(ProgressBarTestMixin, SelectAction):
+    name = "Slow test of the progress bar"
+    default_menu = "&Help/Tests"
+    delay = .2
+
+class FastProgressBarTest(ProgressBarTestMixin, SelectAction):
     name = "Fast test of the progress bar"
     default_menu = "&Help/Tests"
     delay = .01
+
 
 class ShowStyles(SelectAction):
     name = "Show Line Style"
@@ -63,9 +65,23 @@ class ShowStyles(SelectAction):
         self.mode.showStyle()
 
 
+class MultiMinibufferTest(MinibufferAction):
+    """Test of multiple minibuffers imbedded in a single parent"""
+    name = "Multi Minibuffer Test"
+    default_menu = "&Help/Tests"
+    key_bindings = {'default': 'C-S-F3',}
+
+    minibuffer = [IntMinibuffer, IntMinibuffer, TextMinibuffer]
+    minibuffer_label = ["Int #1", "Int #2", "Text"]
+    
+    def processMinibuffer(self, minibuffer, mode, values):
+        dprint(values)
+
+
 class SandboxPlugin(IPeppyPlugin):
     """Plugin to register sandbox tests.
     """
 
     def getActions(self):
-        return [SlowProgressBarTest, FastProgressBarTest, ShowStyles]
+        return [SlowProgressBarTest, FastProgressBarTest, ShowStyles,
+                MultiMinibufferTest]
