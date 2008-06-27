@@ -979,6 +979,9 @@ class ReplaceBar(FindBar):
         
         # Last cursor position, tracked during replace all
         self.last_cursor = 0
+        
+        # focus tracker to make sure that focus events come from us
+        self.focus_tracker = None
     
     def createCtrls(self):
         text = self.service.forward
@@ -1002,13 +1005,12 @@ class ReplaceBar(FindBar):
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
         self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
         self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
-        self.replace.Bind(wx.EVT_KILL_FOCUS, self.OnTabToCommand)
+        self.replace.Bind(wx.EVT_KILL_FOCUS, self.OnReplaceLoseFocus)
         self.replace.Bind(wx.EVT_SET_FOCUS, self.OnReplaceSetFocus)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
         self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
         self.command.Bind(wx.EVT_CHAR, self.OnCommandChar)
         self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
-        self.command.Bind(wx.EVT_KILL_FOCUS, self.OnSearchStop)
     
     def OnReplaceError(self, msg=None):
         self.replace.SetBackgroundColour(wx.RED)
@@ -1026,10 +1028,21 @@ class ReplaceBar(FindBar):
         self.Layout()
 
     def OnFindSetFocus(self, evt):
+        self.dprint(evt.GetWindow())
+        self.cancel()
         self.frame.SetStatusText("Enter search text and press Return")
     
     def OnReplaceSetFocus(self, evt):
+        self.dprint(evt.GetWindow())
         self.frame.SetStatusText("Enter replacement text and press Return")
+        self.focus_tracker = True
+    
+    def OnReplaceLoseFocus(self, evt):
+        self.dprint(evt.GetWindow())
+        # Using tab after changing color when a selection exists in
+        # self.replace causes the text to appear white on a white background.
+        # Force the selection to disappear when tabbing off of self.replace
+        self.replace.SetInsertionPointEnd()
     
     def OnTabToFind(self, evt):
         self.find.SetFocus()
@@ -1045,13 +1058,12 @@ class ReplaceBar(FindBar):
         self.command.SetFocus()
     
     def OnSearchStart(self, evt):
-        self.service.setFindString(self.find.GetValue())
-        self.service.setReplaceString(self.replace.GetValue())
-        self.OnFindN(evt, help=self.help_status)
+        if self.focus_tracker:
+            self.service.setFindString(self.find.GetValue())
+            self.service.setReplaceString(self.replace.GetValue())
+            self.OnFindN(evt, help=self.help_status)
+            self.focus_tracker = False
     
-    def OnSearchStop(self, evt):
-        self.cancel()
-        
     def OnReplace(self, evt, find_next=True, interactive=True):
         """Replace the selection
         
@@ -1060,7 +1072,7 @@ class ReplaceBar(FindBar):
         if self.stc.GetReadOnly():
             return False
 
-        allow_wrap = not interactive
+        allow_wrap = interactive
         sel = self.stc.GetSelection()
         if sel[0] == sel[1]:
             if find_next:
