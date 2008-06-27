@@ -430,10 +430,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         event.Skip ()
 
     def onControlChanged(self, event):
-        print(event)
+        #print(event)
         changed = event.GetEventObject()
         other = event.GetWindow()
-        print("changed=%s other=%s" % (changed, other))
+        #print("changed=%s other=%s" % (changed, other))
         if self.dropdown.IsShown():
             self._showDropDown( False )
 #            if self._mac:
