@@ -266,7 +266,7 @@ def AddCredit(author, contribution):
     substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
         
 AddCredit("Mark James", "for the <a href=\"http://www.famfamfam.com/lab/icons/silk/\">free silk icon set</a>")
-AddCredit("Chris Barker", "for testing on the Mac and many bug reports and feature suggestions")
+AddCredit("Chris Barker", "for testing and bug reports on Mac OSX")
 AddCredit("Julian Back", "for the framework for the C edit mode")
 AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the <a href=\"http://yapsy.sourceforge.net/\">yapsy homepage</a>")
 AddCredit("Peter Damoc", "for the feature suggestions")
@@ -278,6 +278,7 @@ AddCredit("Frank Niessink", "for the i18n utilities from <a href=\"http://www.ta
 AddCredit("Christopher Thoday", "for some code from <a href=\"http://luke-sdk.berlios.de\">Luke SDK</a> that became the spell checker")
 AddCredit("Anders Lund", "for the regex based autoindenter transcribed from Kate, the KDE text editor")
 AddCredit("Christopher Armstrong", "for patches to improve emacs compatibility")
+AddCredit("Jesse Aldridge", "for testing and bug reports on Ubuntu Linux")
 copyrights = {}
 def AddCopyright(project, website, author, date, reason=""):
     copyrights[project] = ({'website': website,
