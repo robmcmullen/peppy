@@ -39,9 +39,18 @@ class HomeConfigDir:
                             eprint("Can't create configuration directory %s" % self.dir)
                             self.dir = None
 
-    def create(self):
+    def create(self, name=None):
+        """Create the main config directory or a subdirectory within it
+        
+        @param name: subdirectory within config directory, or None if you want
+        to create the main config directory.
+        """
         try:
-            os.mkdir(self.dir)
+            if name:
+                path = self.fullpath(name)
+            else:
+                path = self.dir
+            os.mkdir(path)
             return True
         except:
             return False
