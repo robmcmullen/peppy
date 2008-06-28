@@ -388,12 +388,13 @@ class Exit(SelectAction):
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()
 
-class Close(SelectAction):
+class CloseBuffer(SelectAction):
     """Delete the current document from memory"""
     alias = "close-buffer"
     name = "&Close Document"
-    default_menu = ("File", 890)
     icon = "icons/cross.png"
+    default_menu = ("File", 890)
+    key_bindings = {'emacs': "C-X K"}
 
     def isEnabled(self):
         return self.frame.isOpen()
@@ -877,7 +878,7 @@ class MainMenu(IPeppyPlugin):
     def getActions(self):
         return [NewTab, New,
                 OpenFileGUI, OpenFileNewWindowGUI, OpenFile, OpenURL,
-                Save, SaveAs, SaveAsGUI, SaveURL, Close, Revert,
+                Save, SaveAs, SaveAsGUI, SaveURL, CloseBuffer, Revert,
                 Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
