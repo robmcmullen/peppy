@@ -758,15 +758,15 @@ class FindBar(wx.Panel, debugmixin):
         return self._lastcall(evt)
     
     def OnNotFound(self, msg=None):
-        self.find.SetBackgroundColour(wx.RED)
+        self.find.SetForegroundColour(wx.RED)
         if msg is None:
             msg = _("Search string was not found.")
         self.frame.SetStatusText(msg)
         self.Refresh()
 
     def resetColor(self):
-        if self.find.GetBackgroundColour() != wx.WHITE:
-            self.find.SetBackgroundColour(wx.WHITE)
+        if self.find.GetForegroundColour() != wx.BLACK:
+            self.find.SetForegroundColour(wx.BLACK)
             self.Refresh()
 
     def showLine(self, pos, msg):
@@ -1013,7 +1013,7 @@ class ReplaceBar(FindBar):
         self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
     
     def OnReplaceError(self, msg=None):
-        self.replace.SetBackgroundColour(wx.RED)
+        self.replace.SetForegroundColour(wx.RED)
         self.frame.SetStatusText(msg)
         self.Refresh()
 
