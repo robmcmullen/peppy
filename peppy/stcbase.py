@@ -205,6 +205,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     
     def openSuccess(self, buffer, headersize=1024, encoding=None):
         bytes = self.tempstore.getvalue()
+        
+        self.resetText(bytes, headersize, encoding)
+        
+        del self.tempstore
+    
+    def resetText(self, bytes, headersize=1024, encoding=None):
         numbytes = len(bytes)
         if headersize > numbytes:
             headersize = numbytes
@@ -217,8 +223,6 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.refstc.encoding = detectEncoding(header)
         self.decodeText(bytes)
         assert self.dprint("found encoding = %s" % self.refstc.encoding)
-        
-        del self.tempstore
     
     def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
         """Read a chunk of the file from the file-like object.

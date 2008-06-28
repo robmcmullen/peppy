@@ -197,6 +197,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
         
         self.spell = None
+        
+        self.applyTemplate()
 
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
@@ -289,6 +291,24 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.status_info.addIcon("icons/tux.png", "Unix line endings")
         if self.spell and self.spell.hasDictionary():
             self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spell.getLanguage())
+    
+    def applyTemplate(self):
+        """Attempt to load a template when encountering a zero length file
+        
+        """
+        if self.GetLength() == 0:
+            info = dict(url=self.buffer.url, mode=self, templates=list())
+            Publisher().sendMessage('template.find', info)
+            dprint(info)
+            
+            # templates is a list, where each element is a tuple consisting of
+            # the sort order and the template
+            sorted = info['templates']
+            sorted.sort(key=lambda x:x[0])
+            dprint(sorted)
+            if len(sorted) > 0:
+                template = sorted[0][1]
+                self.resetText(template)
 
     def applySettings(self):
         start = time.time()
