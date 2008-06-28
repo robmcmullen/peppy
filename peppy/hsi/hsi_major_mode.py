@@ -1088,14 +1088,6 @@ class ExportAsENVI(SelectAction):
         self.mode.status_info.updateProgress(value)
         wx.GetApp().cooperativeYield()
 
-    def savePreHook(self, url):
-        if url is None:
-            # don't allow save; only save as
-            return False
-        
-        self.dataset.setPreSave(self.cube)
-        return self.dataset.CanExport()
-
 
 class HSIMinorModeMixin(MinorMode):
     @classmethod
