@@ -18,6 +18,23 @@ from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.lib.userparams import *
 
+
+class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
+    """Save as the default (application-wide) template for this major mode.
+    """
+    name = "Save as Global %s Template"
+    default_menu = (("Project/Templates", -700), -100)
+
+    def getMenuItemName(self):
+        return self.__class__.name % self.mode.keyword
+
+    def action(self, index=-1, multiplier=1):
+        pathname = ProjectPlugin.getFilename(self.mode.keyword)
+        dprint(pathname)
+        self.mode.save(pathname)
+
+
+
 def findGlobalTemplate(subdir, mode, url):
     """Find the global template that belongs to the particular major mode
     
@@ -38,8 +55,8 @@ def findGlobalTemplate(subdir, mode, url):
             return template
         except:
             pass
-    template = "# template for %s\n\n" % str(url)
-    return template
+    return None
+
 
 class ProjectPlugin(IPeppyPlugin):
     default_classprefs = (
@@ -56,9 +73,19 @@ class ProjectPlugin(IPeppyPlugin):
 
     def deactivateHook(self):
         Publisher().unsubscribe(self.getTemplate)
-
+    
+    @classmethod
+    def getFilename(self, template_name):
+        return wx.GetApp().config.fullpath("%s/%s" % (self.classprefs.template_directory, template_name))
+    
     def getTemplate(self, msg):
         info = msg.data
         template = findGlobalTemplate(self.classprefs.template_directory, info['mode'], info['url'])
         if template:
             info['templates'].append([1, template])
+    
+    def getCompatibleActions(self, mode):
+        if hasattr(mode, 'applyTemplate'):
+            return [SaveGlobalTemplate,
+                    ]
+        return []
