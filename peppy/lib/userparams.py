@@ -1038,8 +1038,8 @@ class GlobalPrefs(debugmixin):
     class_hierarchy={}
     magic_conversion=True
     
-    @staticmethod
-    def setDefaults(defs):
+    @classmethod
+    def setDefaults(cls, defs):
         """Set system defaults to the dict of dicts.
 
         The GlobalPrefs.default values are used as failsafe defaults
@@ -1049,8 +1049,8 @@ class GlobalPrefs(debugmixin):
         name/value pairs.  Note that the value's type should match
         with the default_classprefs, or there'll be trouble.
         """
-        d = GlobalPrefs.default
-        p = GlobalPrefs.params
+        d = cls.default
+        p = cls.params
         for section, defaults in defs.iteritems():
             if section not in d:
                 d[section] = {}
@@ -1058,28 +1058,28 @@ class GlobalPrefs(debugmixin):
             if section not in p:
                 p[section] = {}
 
-    @staticmethod
-    def addHierarchy(leaf, classhier, namehier):
+    @classmethod
+    def addHierarchy(cls, leaf, classhier, namehier):
         #dprint(namehier)
-        if leaf not in GlobalPrefs.class_hierarchy:
-            GlobalPrefs.class_hierarchy[leaf]=classhier
-        if leaf not in GlobalPrefs.name_hierarchy:
-            GlobalPrefs.name_hierarchy[leaf]=namehier
+        if leaf not in cls.class_hierarchy:
+            cls.class_hierarchy[leaf]=classhier
+        if leaf not in cls.name_hierarchy:
+            cls.name_hierarchy[leaf]=namehier
 
-    @staticmethod
-    def setupHierarchyDefaults(klasshier):
+    @classmethod
+    def setupHierarchyDefaults(cls, klasshier):
         for klass in klasshier:
-            if klass.__name__ not in GlobalPrefs.default:
+            if klass.__name__ not in cls.default:
                 #dprint("%s not seen before" % klass)
                 defs={}
                 params = {}
                 if hasattr(klass,'default_classprefs'):
-                    GlobalPrefs.seen[klass.__name__] = True
+                    cls.seen[klass.__name__] = True
                     for p in klass.default_classprefs:
                         defs[p.keyword] = p.default
                         params[p.keyword] = p
-                GlobalPrefs.default[klass.__name__]=defs
-                GlobalPrefs.params[klass.__name__] = params
+                cls.default[klass.__name__]=defs
+                cls.params[klass.__name__] = params
             else:
                 #dprint("%s app defaults seen" % klass)
                 # we've loaded application-specified defaults for this
@@ -1088,29 +1088,29 @@ class GlobalPrefs(debugmixin):
                 # existing prefs.
                 #print "!!!!! missed %s" % klass
                 if hasattr(klass,'default_classprefs'):
-                    GlobalPrefs.seen[klass.__name__] = True
-                    gd = GlobalPrefs.default[klass.__name__]
-                    gp = GlobalPrefs.params[klass.__name__]
+                    cls.seen[klass.__name__] = True
+                    gd = cls.default[klass.__name__]
+                    gp = cls.params[klass.__name__]
                     for p in klass.default_classprefs:
                         if p.keyword not in gd:
                             gd[p.keyword] = p.default
                         if p.keyword not in gp:
                             gp[p.keyword] = p
                     
-            if klass.__name__ not in GlobalPrefs.user:
-                GlobalPrefs.user[klass.__name__]={}
-        if GlobalPrefs.debuglevel > 1: dprint("default: %s" % GlobalPrefs.default)
-        if GlobalPrefs.debuglevel > 1: dprint("user: %s" % GlobalPrefs.user)
+            if klass.__name__ not in cls.user:
+                cls.user[klass.__name__]={}
+        if cls.debuglevel > 1: dprint("default: %s" % cls.default)
+        if cls.debuglevel > 1: dprint("user: %s" % cls.user)
 
-    @staticmethod
-    def findParam(section, option):
-        params = GlobalPrefs.params
+    @classmethod
+    def findParam(cls, section, option):
+        params = cls.params
         if section in params and option in params[section]:
             param = params[section][option]
-        elif section in GlobalPrefs.name_hierarchy:
+        elif section in cls.name_hierarchy:
             # Need to march up the class hierarchy to find the correct
             # Param
-            klasses=GlobalPrefs.name_hierarchy[section]
+            klasses=cls.name_hierarchy[section]
             #dprint(klasses)
             param = None
             for name in klasses[1:]:
@@ -1120,77 +1120,77 @@ class GlobalPrefs(debugmixin):
         else:
             dprint("Unknown configuration %s[%s]" % (section, option))
             return None
-        if GlobalPrefs.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
+        if cls.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
 
-    @staticmethod
-    def readConfig(fh):
+    @classmethod
+    def readConfig(cls, fh):
         cfg=ConfigParser()
         cfg.optionxform=str
         cfg.readfp(fh)
         for section in cfg.sections():
-            GlobalPrefs.needs_conversion[section] = True
+            cls.needs_conversion[section] = True
             d={}
             for option, text in cfg.items(section):
                 # NOTE! text will be converted later, after all
                 # plugins are loaded and we know what type each
                 # parameter is supposed to be
                 d[option]=text
-            if section in GlobalPrefs.user:
-                GlobalPrefs.user[section].update(d)
+            if section in cls.user:
+                cls.user[section].update(d)
             else:
-                GlobalPrefs.user[section]=d
+                cls.user[section]=d
     
-    @staticmethod
-    def convertSection(section):
-        if section not in GlobalPrefs.params or section in GlobalPrefs.convert_already_seen or section not in GlobalPrefs.seen:
+    @classmethod
+    def convertSection(cls, section):
+        if section not in cls.params or section in cls.convert_already_seen or section not in cls.seen:
             # Don't process values before the param definition for
             # the class is loaded.  Copy the existing text values
             # and defer the conversion till the next time
             # convertConfig is called.
-            if GlobalPrefs.debuglevel > 0:
-                if section not in GlobalPrefs.params:
+            if cls.debuglevel > 0:
+                if section not in cls.params:
                     dprint("haven't loaded class %s" % section)
-                elif section in GlobalPrefs.convert_already_seen:
+                elif section in cls.convert_already_seen:
                     dprint("already converted class %s" % section)
-                elif section not in GlobalPrefs.seen:
+                elif section not in cls.seen:
                     dprint("only defaults loaded, haven't loaded Params for class %s" % section)
             return
         
-        GlobalPrefs.convert_already_seen[section] = True
-        if section in GlobalPrefs.needs_conversion:
-            options = GlobalPrefs.user[section]
+        cls.convert_already_seen[section] = True
+        if section in cls.needs_conversion:
+            options = cls.user[section]
             d = {}
             for option, text in options.iteritems():
-                param = GlobalPrefs.findParam(section, option)
+                param = cls.findParam(section, option)
                 try:
                     if param is not None:
                         val = param.textToValue(text)
-                        if GlobalPrefs.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
+                        if cls.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
                     else:
                         val = text
                     d[option] = val
                 except Exception, e:
                     eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
-            GlobalPrefs.user[section] = d
+            cls.user[section] = d
     
-    @staticmethod
-    def convertConfig():
+    @classmethod
+    def convertConfig(cls):
         # Need to copy dict to temporary one, because BadThings happen
         # while trying to update a dictionary while iterating on it.
-        if GlobalPrefs.debuglevel > 0: dprint("before: %s" % GlobalPrefs.user)
-        if GlobalPrefs.debuglevel > 0: dprint("name_hierarchy: %s" % GlobalPrefs.name_hierarchy)
-        if GlobalPrefs.debuglevel > 0: dprint("params: %s" % GlobalPrefs.params)
-        sections = GlobalPrefs.user.keys()
+        if cls.debuglevel > 0: dprint("before: %s" % cls.user)
+        if cls.debuglevel > 0: dprint("name_hierarchy: %s" % cls.name_hierarchy)
+        if cls.debuglevel > 0: dprint("params: %s" % cls.params)
+        sections = cls.user.keys()
         for section in sections:
-            GlobalPrefs.convertSection(section)
-        if GlobalPrefs.debuglevel > 0: dprint("after: %s" % GlobalPrefs.user)
+            cls.convertSection(section)
+        if cls.debuglevel > 0: dprint("after: %s" % cls.user)
 
         # Save a copy so we can tell if the user changed anything.  Can't
-        # use copy.deepcopy(GlobalPrefs.user) anymore because wx.Font objects
+        # use copy.deepcopy(cls.user) anymore because wx.Font objects
         # are now param types and get a type exception trying to deepcopy them.
         saved = {}
-        for section, options in GlobalPrefs.user.iteritems():
+        for section, options in cls.user.iteritems():
             saved[section] = {}
             for option, val in options.iteritems():
                 try:
@@ -1201,39 +1201,39 @@ class GlobalPrefs(debugmixin):
                     # value to the same reference is probably OK.
                     #dprint(str(e))
                     saved[section][option] = val
-        GlobalPrefs.save_user = saved
+        cls.save_user = saved
             
-    @staticmethod
-    def isUserConfigChanged():
-        d = GlobalPrefs.user
-        saved = GlobalPrefs.save_user
+    @classmethod
+    def isUserConfigChanged(cls):
+        d = cls.user
+        saved = cls.save_user
         for section, options in d.iteritems():
-            if GlobalPrefs.debuglevel > 0: dprint("checking section %s" % section)
+            if cls.debuglevel > 0: dprint("checking section %s" % section)
             if section not in saved:
                 # If we have a new section that didn't exist when we
                 # loaded the file, something's changed
-                if GlobalPrefs.debuglevel > 0: dprint("  new section %s!  Change needs saving." % (section))
+                if cls.debuglevel > 0: dprint("  new section %s!  Change needs saving." % (section))
                 return True
             for option, val in options.iteritems():
                 if option not in saved[section]:
                     # We have a new option in an existing section.
                     # It's changed.
-                    if GlobalPrefs.debuglevel > 0: dprint("  new option %s in section %s!  Change needs saving." % (option, section))
+                    if cls.debuglevel > 0: dprint("  new option %s in section %s!  Change needs saving." % (option, section))
                     return True
                 if val != saved[section][option]:
                     # The value itself has changed.
-                    if GlobalPrefs.debuglevel > 0: dprint("  new value %s for %s[%s]." % (val, section, option))
+                    if cls.debuglevel > 0: dprint("  new value %s for %s[%s]." % (val, section, option))
                     return True
-                if GlobalPrefs.debuglevel > 0: dprint("  nope, %s[%s] is still %s" % (section, option, val))
+                if cls.debuglevel > 0: dprint("  nope, %s[%s] is still %s" % (section, option, val))
         # For completeness, we should check to see if an option has
         # been removed, but currently the interface doesn't provide
         # that ability.
-        if GlobalPrefs.debuglevel > 0: dprint("nope, user configuration hasn't changed.")
+        if cls.debuglevel > 0: dprint("nope, user configuration hasn't changed.")
         return False
 
-    @staticmethod
-    def configToText():
-        if GlobalPrefs.debuglevel > 0: dprint("Saving user configuration: %s" % GlobalPrefs.user)
+    @classmethod
+    def configToText(cls):
+        if cls.debuglevel > 0: dprint("Saving user configuration: %s" % cls.user)
         lines = ["# Automatically generated file!  Do not edit -- use one of the following",
                  "# files instead:",
                  "#",
@@ -1247,17 +1247,17 @@ class GlobalPrefs(debugmixin):
                  "",
                  ]
         
-        sections = GlobalPrefs.user.keys()
+        sections = cls.user.keys()
         sections.sort()
         for section in sections:
-            options = GlobalPrefs.user[section]
+            options = cls.user[section]
             printed_section = False # flag to indicate if need to print header
             if options:
                 keys = options.keys()
                 keys.sort()
                 for option in keys:
                     val = options[option]
-                    param = GlobalPrefs.findParam(section, option)
+                    param = cls.findParam(section, option)
                     if not printed_section:
                         lines.append("[%s]" % section)
                         printed_section = True
@@ -1272,7 +1272,7 @@ class GlobalPrefs(debugmixin):
                         lines.append("%s = %s" % (option, param.valueToText(val)))
                 lines.append("")
         text = os.linesep.join(lines)
-        if GlobalPrefs.debuglevel > 0: dprint(text)
+        if cls.debuglevel > 0: dprint(text)
         return text
         
 
