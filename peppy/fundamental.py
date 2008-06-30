@@ -197,12 +197,12 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
         
         self.spell = None
-        
-        self.applyTemplate()
 
+    def createWindowPostHook(self):
+        """Apply settings for the STC"""
+        start = time.time()
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
-        
         self.buffer.startChangeDetection()
 
     @classmethod
@@ -292,23 +292,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         if self.spell and self.spell.hasDictionary():
             self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spell.getLanguage())
     
-    def applyTemplate(self):
-        """Attempt to load a template when encountering a zero length file
+    def getTemplateCallback(self):
+        """If a template is desired, this function will return a functor that
+        applies the template for this major mode.
         
         """
         if self.GetLength() == 0:
-            info = dict(url=self.buffer.url, mode=self, templates=list())
-            Publisher().sendMessage('template.find', info)
-            dprint(info)
-            
-            # templates is a list, where each element is a tuple consisting of
-            # the sort order and the template
-            sorted = info['templates']
-            sorted.sort(key=lambda x:x[0])
-            dprint(sorted)
-            if len(sorted) > 0:
-                template = sorted[0][1]
-                self.resetText(template)
+            return self.resetText
+        return None
 
     def applySettings(self):
         start = time.time()

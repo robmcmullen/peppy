@@ -179,6 +179,8 @@ class ShellMode(FundamentalMode):
         return False
 
     def createWindowPostHook(self):
+        FundamentalMode.createWindowPostHook(self)
+        
         assert self.dprint("In shell.")
         self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnUpdate)
 

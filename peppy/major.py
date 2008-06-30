@@ -97,6 +97,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
 
         start = time.time()
         self.dprint("starting __init__ at 0.00000s")
+        Publisher().sendMessage('mode.preinit', self.editwin)
+        self.dprint("mode.preinit message done in %0.5fs" % (time.time() - start))
         self.editwin.createWindowPostHook()
         self.dprint("createWindowPostHook done in %0.5fs" % (time.time() - start))
         self.editwin.createStatusBarInfo()
@@ -115,6 +117,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
         self.editwin.createPostHook()
         self.dprint("Created major mode in %0.5fs" % (time.time() - start))
+        Publisher().sendMessage('mode.postinit', self.editwin)
+        self.dprint("mode.postinit message done in %0.5fs" % (time.time() - start))
         
         self._mgr.Update()
         return self.editwin
@@ -417,7 +421,7 @@ class MajorMode(ClassPrefs, debugmixin):
         
         # Create a window here!
         pass
-
+    
     def __del__(self):
         #dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
         self.removeListeners()
