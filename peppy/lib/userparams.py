@@ -1389,6 +1389,82 @@ class ClassPrefsMetaClass(type):
         cls.classprefs = PrefsProxy(expanded)
 
 
+class InstancePrefs(debugmixin):
+    default_prefs = []
+    
+    @classmethod
+    def findParam(cls, section, option):
+        hier = cls.__mro__
+        for cls in hier:
+            dprint("checking %s" % cls)
+            if 'default_prefs' not in dir(cls):
+                continue
+            for param in cls.default_prefs:
+                if param.keyword == option:
+                    return param
+        return None
+    
+    def iterPrefs(self):
+        hier = self.__class__.__mro__
+        for cls in hier:
+            dprint("checking %s" % cls)
+            if 'default_prefs' not in dir(cls):
+                continue
+            for param in cls.default_prefs:
+                yield param
+    
+    def setDefaultPrefs(self):
+        for param in self.iterPrefs():
+            setattr(self, param.keyword, param.default)
+    
+    def isConfigChanged(self):
+        for param in self.iterPrefs():
+            if param.default != getattr(self, param.keyword):
+                return True
+        return False
+
+    def readConfig(self, fh):
+        self.setDefaultPrefs()
+        cfg=ConfigParser()
+        cfg.optionxform=str
+        cfg.readfp(fh)
+        for section in cfg.sections():
+            for option, text in cfg.items(section):
+                param = self.findParam(section, option)
+                try:
+                    if param is not None:
+                        val = param.textToValue(text)
+                        if self.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
+                    else:
+                        val = text
+                    setattr(self, option, val)
+                except Exception, e:
+                    eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
+
+    def configToText(self):
+        seen = {}
+        lines = []
+        
+        hier = self.__class__.__mro__
+        for cls in hier:
+            dprint("checking %s" % cls)
+            if 'default_prefs' not in dir(cls):
+                continue
+            section = cls.__name__
+            printed_section = False # flag to indicate if need to print header
+            for param in cls.default_prefs:
+                if param.keyword not in seen:
+                    if not printed_section:
+                        lines.append("[%s]" % section)
+                        printed_section = True
+                    val = getattr(self, param.keyword)
+                    lines.append("%s = %s" % (param.keyword, param.valueToText(val)))
+                lines.append("")
+        text = os.linesep.join(lines)
+        if self.debuglevel > 0: dprint(text)
+        return text
+
+
 class LocalPrefs(object):
     pass
 
@@ -1653,6 +1729,50 @@ class PrefPanel(ScrolledPanel, debugmixin):
                         locals[param.keyword] = val
                     updated[param] = True
         return locals
+
+
+class InstancePanel(PrefPanel):
+    """Subclass of PrefPanel to manage InstancePrefs objects"""
+    debuglevel = 1
+    
+    def getValue(self, keyword):
+        return getattr(self.obj, keyword)
+    
+    def create(self):
+        """Create the list of classprefs, organized by MRO.
+        
+        Creates a group of StaticBoxes, each one representing the classprefs
+        of a class in the MRO (method resolution order).
+        """
+        row = 0
+        focused = False
+        hier = [c for c in self.obj.__class__.__mro__ if 'default_prefs' in dir(c)]
+        self.dprint(hier)
+        first = True
+        for cls in hier:
+            if first:
+                name = cls.__name__
+                first = False
+            else:
+                name = "Inherited from %s" % cls.__name__
+            self.populateGrid(self, self.sizer, name, cls.default_prefs,
+                              self.ctrls, self.orig, self.getValue)
+        
+    def update(self):
+        """Update the class with the changed preferences.
+        
+        @return: dict of local settings that have been modified.
+        """
+        updated = {}
+        for param in self.obj.iterPrefs():
+            if param in self.ctrls and param.isSettable():
+                ctrl = self.ctrls[param]
+                val = param.getValue(ctrl)
+                if val != self.orig[param]:
+                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
+                    setattr(self.obj, param.keyword, val)
+                updated[param] = True
+        return updated
 
 
 class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
