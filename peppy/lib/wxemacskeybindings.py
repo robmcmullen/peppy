@@ -617,7 +617,7 @@ class KeyProcessor(object):
 #            for keymap in self.keymaps:
 #                print keymap.cur
         
-        if key == self.abortKey:
+        if self.args and key == self.abortKey:
             self.reset()
             self.show("Quit")
         elif self.nextStickyMetaCancel and key==self.stickyMeta:
