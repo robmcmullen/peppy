@@ -295,8 +295,11 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         except:
             import traceback
             error = traceback.format_exc()
-            buffer = Buffer.createErrorBuffer(buffer.url, error)
-            mode = wrapper.createMajorMode(self.frame, buffer)
+            try:
+                buffer = Buffer.createErrorBuffer(buffer.url, error)
+                mode = wrapper.createMajorMode(self.frame, buffer)
+            except:
+                dprint(error)
         self.updateWrapper(wrapper)
         return mode
 
