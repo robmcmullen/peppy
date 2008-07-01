@@ -275,13 +275,14 @@ class ProjectPlugin(IPeppyPlugin):
     @classmethod
     def registerProject(cls, mode):
         url = cls.findProjectURL(mode.buffer.url)
-        if str(url) not in cls.known_projects:
-            info = ProjectInfo(url)
-            cls.known_projects[str(url)] = info
-        else:
-            info = cls.known_projects[str(url)]
-        mode.project_info = info
-        return info
+        if url:
+            if str(url) not in cls.known_projects:
+                info = ProjectInfo(url)
+                cls.known_projects[str(url)] = info
+            else:
+                info = cls.known_projects[str(url)]
+            mode.project_info = info
+            dprint("found project %s" % info)
     
     @classmethod
     def getProjectInfo(cls, mode):
@@ -296,8 +297,7 @@ class ProjectPlugin(IPeppyPlugin):
         
         # Add 'project' keyword to Buffer object if the file belongs to a
         # project
-        project_info = cls.registerProject(mode)
-        dprint("found project %s" % project_info)
+        cls.registerProject(mode)
         if hasattr(mode, "getTemplateCallback"):
             callback = mode.getTemplateCallback()
             if callback:
