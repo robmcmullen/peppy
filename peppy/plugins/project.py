@@ -74,7 +74,6 @@ class RunProject(SelectAction):
     name = "Run..."
     icon = 'icons/application.png'
     default_menu = ("Project", 100)
-    key_bindings = {'default': "F7"}
 
     def isEnabled(self):
         return bool(ProjectPlugin.getProjectInfo(self.mode))
@@ -141,17 +140,30 @@ class ProjectInfo(InstancePrefs):
         )
     
     def __init__(self, url):
-        self.project_url = url
+        self.project_settings_dir = url
+        self.project_top_dir = vfs.get_dirname(url)
         self.loadPrefs()
     
+    def __str__(self):
+        return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
+    
+    def getSettingsRelativeURL(self, name):
+        return self.project_settings_dir.resolve2(name)
+    
+    def getTopRelativeURL(self, name):
+        return self.project_top_dir.resolve2(name)
+    
     def loadPrefs(self):
-        url = self.project_url.resolve2(ProjectPlugin.classprefs.project_file)
-        fh = vfs.open(url)
-        if fh:
-            self.readConfig(fh)
-        for param in self.iterPrefs():
-            dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
-        dprint(self.configToText())
+        url = self.project_settings_dir.resolve2(ProjectPlugin.classprefs.project_file)
+        try:
+            fh = vfs.open(url)
+            if fh:
+                self.readConfig(fh)
+            for param in self.iterPrefs():
+                dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
+            dprint(self.configToText())
+        except LookupError:
+            dprint("Project file not found -- using defaults.")
     
     def build(self):
         dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
@@ -223,6 +235,18 @@ class ProjectPlugin(IPeppyPlugin):
         return cls.findTemplate(template_url, mode, url)
 
     @classmethod
+    def findProjectTemplate(cls, mode):
+        dprint(mode)
+        if hasattr(mode, 'project_info'):
+            url = mode.project_info.getSettingsRelativeURL(cls.classprefs.template_directory)
+            dprint(url)
+            if vfs.is_folder(url):
+                template = cls.findTemplate(url, mode, mode.buffer.url)
+                if template:
+                    return template
+        return cls.findGlobalTemplate(mode, mode.buffer.url)
+    
+    @classmethod
     def findProjectURL(cls, url):
         # Check to see if we already know what the path is, and if we think we
         # do, make sure the project path still exists
@@ -233,8 +257,9 @@ class ProjectPlugin(IPeppyPlugin):
             del cls.known_project_dirs[url]
         
         # Look for a new project path
-        last = vfs.get_dirname(url)
-        while True:
+        last = vfs.normalize(vfs.get_dirname(url))
+        dprint(str(last.path))
+        while not last.path.is_relative() and True:
             path = last.resolve2("%s" % (cls.classprefs.project_directory))
             dprint(path.path)
             if vfs.is_folder(path):
@@ -248,32 +273,21 @@ class ProjectPlugin(IPeppyPlugin):
         return None
 
     @classmethod
-    def findProjectTemplate(cls, mode, url):
-        last = vfs.get_dirname(url)
-        while True:
-            path = last.resolve2("%s/%s" % (cls.classprefs.project_directory, cls.classprefs.template_directory))
-            dprint(path.path)
-            if vfs.is_folder(path):
-                template = cls.findTemplate(path, mode, url)
-                if template:
-                    return template
-            path = vfs.get_dirname(path.resolve2('..'))
-            if path == last:
-                dprint("Done!")
-                break
-            last = path
-        return None
-    
-    @classmethod
-    def registerProject(cls, url):
-        if url not in cls.known_projects:
-            cls.known_projects[url] = ProjectInfo(url)
+    def registerProject(cls, mode):
+        url = cls.findProjectURL(mode.buffer.url)
+        if str(url) not in cls.known_projects:
+            info = ProjectInfo(url)
+            cls.known_projects[str(url)] = info
+        else:
+            info = cls.known_projects[str(url)]
+        mode.project_info = info
+        return info
     
     @classmethod
     def getProjectInfo(cls, mode):
         url = cls.findProjectURL(mode.buffer.url)
-        if url and url in cls.known_projects:
-            return cls.known_projects[url]
+        if url and str(url) in cls.known_projects:
+            return cls.known_projects[str(url)]
         return None
 
     @classmethod
@@ -282,15 +296,12 @@ class ProjectPlugin(IPeppyPlugin):
         
         # Add 'project' keyword to Buffer object if the file belongs to a
         # project
-        url = cls.findProjectURL(mode.buffer.url)
-        if url:
-            cls.registerProject(url)
+        project_info = cls.registerProject(mode)
+        dprint("found project %s" % project_info)
         if hasattr(mode, "getTemplateCallback"):
             callback = mode.getTemplateCallback()
             if callback:
-                template = cls.findProjectTemplate(mode, mode.buffer.url)
-                if not template:
-                    template = cls.findGlobalTemplate(mode, mode.buffer.url)
+                template = cls.findProjectTemplate(mode)
                 if template:
                     callback(template)
 
