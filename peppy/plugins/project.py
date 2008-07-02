@@ -16,6 +16,7 @@ from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
+from peppy.buffers import *
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.lib.userparams import *
@@ -48,7 +49,11 @@ class CTAGS(InstancePrefs):
         ctags_file = str(self.getTagFileURL().path)
         wildcards = self.ctags_exclude.split()
         excludes = " ".join(["--exclude=%s" % w for w in wildcards])
-        args = "-o %s %s %s %s" % (ctags_file, ProjectPlugin.classprefs.ctags_args, self.ctags_extra_args, excludes)
+        
+        # Put the output file last in this list because extra spaces at the end
+        # don't get squashed like they do from the shell.  Ctags will actually
+        # try to look for a filename called " ", which fails.
+        args = "%s %s %s -o %s" % (ProjectPlugin.classprefs.ctags_args, self.ctags_extra_args, excludes, ctags_file)
         cmd = "%s %s" % (ProjectPlugin.classprefs.ctags_command, args)
         dprint(cmd)
         
@@ -85,9 +90,9 @@ class CTAGS(InstancePrefs):
                     #dprint(self.tags[tag])
                 else:
                     self.dprint(line)
-        except Exception, e:
-            raise
-        dprint(self.tags.keys())
+        except LookupError, e:
+            dprint("Tag file %s not found" % filename)
+            pass
     
     def getTag(self, tag):
         return self.tags.get(tag, None)
@@ -95,6 +100,7 @@ class CTAGS(InstancePrefs):
 
 class ProjectInfo(CTAGS):
     default_prefs = (
+        StrParam('project_name', '', 'Project name'),
         DirParam('build_dir', '', 'working directory in which to build', fullwidth=True),
         StrParam('build_command', '', 'shell command to build project, relative to working directory', fullwidth=True),
         DirParam('run_dir', '', 'working directory in which to execute the project', fullwidth=True),
@@ -276,19 +282,62 @@ class ProjectSettings(wx.Dialog):
         self.panel.update()
 
 
-class ShowProjectSettings(SelectAction):
-    """Edit project settigns"""
+
+class ProjectActionMixin(object):
+    def getProjectDir(self, cwd):
+        dlg = wx.DirDialog(self.frame, "Choose Top Level Directory",
+                           defaultPath = cwd)
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            path = dlg.GetPath()
+            dprint(path)
+            info = ProjectPlugin.createProject(path)
+        else:
+            info = None
+        dlg.Destroy()
+        return info
+    
+    def showProjectPreferences(self, info):
+        dlg = ProjectSettings(self.frame, info)
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            dlg.applyPreferences()
+            info.savePrefs()
+    
+    def createProject(self):
+        cwd = self.frame.cwd()
+        info = self.getProjectDir(cwd)
+        if info:
+            self.showProjectPreferences(info)
+            info.regenerateTags()
+
+
+class CreateProject(ProjectActionMixin, SelectAction):
+    """Create a new project"""
+    name = "Project..."
+    default_menu = ("File/New", 20)
+
+    def action(self, index=-1, multiplier=1):
+        self.createProject()
+
+
+class CreateProjectFromExisting(ProjectActionMixin, SelectAction):
+    """Create a new project"""
+    name = "Project From Existing Code..."
+    default_menu = ("File/New", 21)
+
+    def action(self, index=-1, multiplier=1):
+        self.createProject()
+
+class ShowProjectSettings(ProjectActionMixin, SelectAction):
+    """Edit project settings"""
     name = "Project Settings..."
     default_menu = ("Project", -990)
 
     def action(self, index=-1, multiplier=1):
         if self.mode.project_info:
             info = self.mode.project_info
-            dlg = ProjectSettings(self.frame, info)
-            retval = dlg.ShowModal()
-            if retval == wx.ID_OK:
-                dlg.applyPreferences()
-                info.savePrefs()
+            self.showProjectPreferences(info)
 
 
 class ProjectPlugin(IPeppyPlugin):
@@ -397,25 +446,51 @@ class ProjectPlugin(IPeppyPlugin):
         return None
 
     @classmethod
-    def registerProject(cls, mode):
-        url = cls.findProjectURL(mode.buffer.url)
+    def registerProject(cls, mode, url=None):
+        if url is None:
+            url = cls.findProjectURL(mode.buffer.url)
         if url:
-            if str(url) not in cls.known_projects:
+            if url not in cls.known_projects:
                 info = ProjectInfo(url)
-                cls.known_projects[str(url)] = info
+                cls.known_projects[url] = info
             else:
-                info = cls.known_projects[str(url)]
-            mode.project_info = info
+                info = cls.known_projects[url]
+            if mode:
+                mode.project_info = info
             dprint("found project %s" % info)
-        else:
+            return info
+        elif mode:
             mode.project_info = None
     
     @classmethod
     def getProjectInfo(cls, mode):
         url = cls.findProjectURL(mode.buffer.url)
-        if url and str(url) in cls.known_projects:
-            return cls.known_projects[str(url)]
+        if url and url in cls.known_projects:
+            return cls.known_projects[url]
         return None
+    
+    @classmethod
+    def createProject(cls, topdir):
+        url = vfs.normalize(topdir)
+        if url in cls.known_projects:
+            raise TypeError("Project already exists.")
+        proj_dir = url.resolve2(cls.classprefs.project_directory)
+        vfs.make_folder(proj_dir)
+        info = cls.registerProject(None, proj_dir)
+        info.savePrefs()
+        dprint(info)
+        buffers = BufferList.getBuffers()
+        for buffer in buffers:
+            if buffer.url.scheme != "file":
+                continue
+            dprint("prefix=%s topdir=%s" % (buffer.url.path.get_prefix(url.path), url.path))
+            if buffer.url.path.get_prefix(url.path) == url.path:
+                dprint("belongs in project! %s" % buffer.url.path)
+                for mode in buffer.iterViewers():
+                    mode.project_info = info
+            else:
+                dprint("not in project: %s" % buffer.url.path)
+        return info
 
     @classmethod
     def projectInfo(cls, msg):
@@ -437,7 +512,7 @@ class ProjectPlugin(IPeppyPlugin):
             actions.append(SaveGlobalTemplate)
         if mode.buffer.url in self.known_project_dirs:
             actions.extend([SaveProjectTemplate, BuildProject, RunProject, RebuildCtags])
-        actions.append(ShowProjectSettings)
+        actions.extend([CreateProject, CreateProjectFromExisting, ShowProjectSettings])
         return actions
 
     def getFundamentalMenu(self, msg):

@@ -348,6 +348,11 @@ class Buffer(BufferVFSMixin):
         self.viewers.append(mode) # keep track of views
         assert self.dprint("views of %s: %s" % (self,self.viewers))
     
+    def iterViewers(self):
+        """Return an iterator over all the views of this buffer"""
+        for view in self.viewers:
+            yield view
+    
     def forEachView(self, func_name):
         """Call a method for each view of this buffer.
         

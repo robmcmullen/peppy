@@ -63,7 +63,7 @@ class New(SelectAction):
     name = "Text file"
     tooltip = "New plain text file"
     icon = "icons/page_white_text_new.png"
-    default_menu = ("File/New", -2)
+    default_menu = ("File/New", -99)
     key_bindings = {'win': "C-N", 'mac': "C-N"}
 
     def action(self, index=-1, multiplier=1):
