@@ -1726,7 +1726,8 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     if val != self.orig[param]:
                         self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
                         self.obj.classprefs._set(param.keyword, val)
-                        locals[param.keyword] = val
+                        if param.local:
+                            locals[param.keyword] = val
                     updated[param] = True
         return locals
 
