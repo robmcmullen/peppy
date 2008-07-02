@@ -19,6 +19,7 @@ import peppy.vfs as vfs
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.lib.userparams import *
+from peppy.lib.processmanager import *
 
 
 class CTAGS(InstancePrefs):
@@ -30,12 +31,39 @@ class CTAGS(InstancePrefs):
                          1, 'Where to store the tags file'),
         )
     
-    def loadTags(self):
+    def getTagFileURL(self):
         if self.tags_file_location == 0:
             base = self.project_top_dir
         else:
             base = self.project_settings_dir
         url = base.resolve2(ProjectPlugin.classprefs.ctags_tag_file_name)
+        return url
+
+    def regenerateTags(self):
+        # need to operate on the local filesystem
+        dprint(self.project_top_dir)
+        if self.project_top_dir.scheme != "file":
+            raise TypeError("Can only process ctags on local filesystem")
+        cwd = str(self.project_top_dir.path)
+        ctags_file = str(self.getTagFileURL().path)
+        wildcards = self.ctags_exclude.split()
+        excludes = " ".join(["--exclude=%s" % w for w in wildcards])
+        args = "-o %s %s %s %s" % (ctags_file, ProjectPlugin.classprefs.ctags_args, self.ctags_extra_args, excludes)
+        cmd = "%s %s" % (ProjectPlugin.classprefs.ctags_command, args)
+        dprint(cmd)
+        
+        output = JobOutputSaver(self.regenerateFinished)
+        ProcessManager().run(cmd, cwd, output)
+    
+    def regenerateFinished(self, output):
+        dprint(output)
+        if output.exit_code == 0:
+            self.loadTags()
+        else:
+            Publisher().sendMessage('peppy.log.error', output.getErrorText())
+    
+    def loadTags(self):
+        url = self.getTagFileURL()
         self.parseCtags(url)
     
     def parseCtags(self, filename):
@@ -143,6 +171,17 @@ class ShowTagAction(ListAction):
         dprint(self.tags[index])
 
 
+class RebuildCtags(SelectAction):
+    """Rebuild tag file"""
+    name = "Rebuild Tag File"
+    default_menu = ("Project", -500)
+
+    def action(self, index=-1, multiplier=1):
+        if self.mode.project_info:
+            info = self.mode.project_info
+            info.regenerateTags()
+
+
 class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
     """Save as the default (application-wide) template for this major mode.
     """
@@ -184,11 +223,10 @@ class BuildProject(SelectAction):
     key_bindings = {'default': "F7"}
 
     def isEnabled(self):
-        return bool(ProjectPlugin.getProjectInfo(self.mode))
+        return bool(self.mode.project_info and self.mode.project_info.build_command)
 
     def action(self, index=-1, multiplier=1):
-        project = ProjectPlugin.getProjectInfo(self.mode)
-        project.build()
+        self.mode.project_info.build()
 
 
 class RunProject(SelectAction):
@@ -198,11 +236,10 @@ class RunProject(SelectAction):
     default_menu = ("Project", 100)
 
     def isEnabled(self):
-        return bool(ProjectPlugin.getProjectInfo(self.mode))
+        return bool(self.mode.project_info and self.mode.project_info.run_command)
 
     def action(self, index=-1, multiplier=1):
-        project = ProjectPlugin.getProjectInfo(self.mode)
-        project.run()
+        self.mode.project_info.run()
 
 
 class ProjectSettings(wx.Dialog):
@@ -399,7 +436,7 @@ class ProjectPlugin(IPeppyPlugin):
         if hasattr(mode, 'getTemplateCallback'):
             actions.append(SaveGlobalTemplate)
         if mode.buffer.url in self.known_project_dirs:
-            actions.extend([SaveProjectTemplate, BuildProject, RunProject])
+            actions.extend([SaveProjectTemplate, BuildProject, RunProject, RebuildCtags])
         actions.append(ShowProjectSettings)
         return actions
 
@@ -408,5 +445,7 @@ class ProjectPlugin(IPeppyPlugin):
         action_classes.append(ShowTagAction)
 
 if __name__== "__main__":
+    app = wx.PySimpleApp()
     ctags = ProjectInfo(vfs.normalize("/home/rob/src/peppy-git/.peppy-project"))
     print ctags.getTag('GetValue')
+    ctags.regenerateTags()
