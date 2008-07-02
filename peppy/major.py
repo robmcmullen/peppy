@@ -41,6 +41,7 @@ from peppy.menu import *
 from peppy.stcbase import *
 from peppy.debug import *
 from peppy.minor import *
+from peppy.sidebar import *
 from peppy.yapsy.plugins import *
 from peppy.editra import *
 
@@ -948,6 +949,9 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     default_classprefs = (
         PathParam('interpreter_exe', '', 'Program that can interpret this text and return results on standard output', fullwidth=True),
         BoolParam('autosave_before_run', True, 'Automatically save without prompting before running script'),
+        IndexChoiceParam('output_log',
+                         ['use minor mode', 'use sidebar'],
+                         1, 'Does the output stay in the tab (minor mode) or visible to all tabs in the frame (major mode)'),
         )
 
     def getInterpreterArgs(self):
@@ -1051,8 +1055,18 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.frame.showErrorDialog(msg, "Problem with interpreter executable")
         else:
             cmd = self.getCommandLine(bangpath)
-            ProcessManager().run(cmd, self.buffer.cwd(), self)
+            if self.classprefs.output_log == 0:
+                output = self
+            else:
+                output = JobOutputSidebarController(self.frame, self.registerProcess, self.deregisterProcess)
+            ProcessManager().run(cmd, self.buffer.cwd(), output)
 
+    def registerProcess(self, job):
+        self.process = job
+    
+    def deregisterProcess(self, job):
+        del self.process
+    
     def stopInterpreter(self):
         """Interface used by actions to kill the currently running job.
         
@@ -1070,10 +1084,8 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         self.process = job
         self.log = self.findMinorMode("OutputLog")
         if self.log:
-            self.log.showMessage("\n" + _("Started %s on %s") %
-                                 (job.cmd,
-                                  time.asctime(time.localtime(time.time()))) +
-                                 "\n")
+            text = "\n" + _("Started %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+            self.log.showMessage(text)
 
     def stdoutCallback(self, job, text):
         """Callback from the JobOutputMixin for a block of text on stdout."""
@@ -1090,10 +1102,8 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         assert self.dprint()
         del self.process
         if self.log:
-            self.log.showMessage(_("Finished %s on %s") %
-                                 (job.cmd,
-                                  time.asctime(time.localtime(time.time()))) +
-                                 "\n")
+            text = "\n" + _("Finished %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+            self.log.showMessage(text)
 
 
 

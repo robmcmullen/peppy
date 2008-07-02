@@ -139,13 +139,19 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
         paneinfo.Bottom()
 
     def showError(self, message=None):
-        if self.frame == wx.GetApp().GetTopWindow():
-            paneinfo = self.frame._mgr.GetPane(self)
+        data = message.data
+        if isinstance(data, tuple) or isinstance(data, list):
+            frame = data[0]
+            text = data[1]
+        else:
+            frame = wx.GetApp().GetTopWindow()
+            text = data
+        if self.frame == frame:
+            paneinfo = frame._mgr.GetPane(self)
             if self.classprefs.unhide_on_message:
                 if not paneinfo.IsShown():
                     paneinfo.Show(True)
-                    self.frame._mgr.Update()
-            text = message.data
+                    frame._mgr.Update()
             if message.topic[-1] == 'wrap':
                 columns = 72
                 import textwrap
@@ -176,7 +182,8 @@ class InfoLogSidebar(ErrorLogSidebar):
         IntParam('min_width', 100),
         IntParam('min_height', 20),
     )
-    
+
+
 class OutputLogMinorMode(MinorMode, LoggingSTC):
     """An error log using message passing.
 

@@ -20,7 +20,7 @@ import wx
 from peppy.actions import *
 from peppy.debug import *
 from peppy.lib.userparams import *
-
+from peppy.lib.processmanager import *
 
 class Sidebar(ClassPrefs, debugmixin):
     """Mixin class for all frame sidebars.
@@ -84,3 +84,35 @@ class Sidebar(ClassPrefs, debugmixin):
         does anything with it.
         """
         pass
+
+
+class JobOutputSidebarController(JobOutputMixin):
+    """Simple wrapper around the JobOutputMixin interface to direct all output
+    to the Information sidebar.
+    """
+    def __init__(self, frame, startCallback, finishCallback):
+        self.frame = frame
+        self.startCallback = startCallback
+        self.finishCallback = finishCallback
+        
+    def startupCallback(self, job):
+        """Callback from the JobOutputMixin when a job is successfully
+        started.
+        """
+        self.startCallback(job)
+        text = "\n" + _("Started %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        Publisher().sendMessage('peppy.log.info', (self.frame, text))
+
+    def stdoutCallback(self, job, text):
+        """Callback from the JobOutputMixin for a block of text on stdout."""
+        Publisher().sendMessage('peppy.log.info', (self.frame, text))
+
+    def stderrCallback(self, job, text):
+        """Callback from the JobOutputMixin for a block of text on stderr."""
+        Publisher().sendMessage('peppy.log.info', (self.frame, text))
+
+    def finishedCallback(self, job):
+        """Callback from the JobOutputMixin when the job terminates."""
+        self.finishCallback(job)
+        text = "\n" + _("Finished %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        Publisher().sendMessage('peppy.log.info', (self.frame, text))

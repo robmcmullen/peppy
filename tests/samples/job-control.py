@@ -2,7 +2,7 @@
 
 import time
 
-import euaoeu
+#import euaoeu
 
 for x in range(100):
     print 'blah'
