@@ -69,6 +69,51 @@ class JobOutputMixin(object):
         dprint("Finished with pid=%d" % p.pid)
 
 
+class JobOutputSaver(object):
+    def __init__(self, finishCallback):
+        self.start = None
+        self.finish = None
+        self.exit_code = None
+        self.stdout = []
+        self.stderr = []
+        self.callback = finishCallback
+    
+    def __str__(self):
+        lines = []
+        if self.start:
+            lines.append("Started %s" % (time.asctime(time.localtime(self.start))))
+        if self.stdout:
+            lines.append("stdout:")
+            lines.extend(self.stdout)
+        if self.stderr:
+            lines.append("stderr:")
+            lines.extend(self.stderr)
+        if self.finish:
+            lines.append("Finished %s" % (time.asctime(time.localtime(self.finish))))
+        lines.append("Exit code = %s" % self.exit_code)
+        return os.linesep.join(lines)
+    
+    def getErrorText(self):
+        return os.linesep.join(self.stderr)
+    
+    def startupFailureCallback(self, p):
+        self.callback(self)
+
+    def startupCallback(self, p):
+        self.starttime = time.time()
+
+    def stdoutCallback(self, p, text):
+        self.stdout.append(text)
+        
+    def stderrCallback(self, p, text):
+        self.stderr.append(text)
+        
+    def finishedCallback(self, p):
+        self.finish = time.time()
+        self.exit_code = p.exit_code
+        self.callback(self)
+
+
 class Job(debugmixin):
     debuglevel = 0
     
@@ -81,6 +126,7 @@ class Job(debugmixin):
         self.handler = wx.GetApp()
         self.stdout = None
         self.stderr = None
+        self.exit_code = 0
 
     def run(self, text=""):
         assert self.dprint("Running %s in %s" % (self.cmd, self.working_dir))
@@ -151,6 +197,7 @@ class Job(debugmixin):
         """
         assert self.dprint()
         self.readStreams()
+        self.exit_code = evt.GetExitCode()
         if self.process and self.process.Exists(self.pid):
             self.process.Destroy()
             self.process = None
