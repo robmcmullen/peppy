@@ -10,7 +10,7 @@ will override the global templates.  Global templates are stored in the peppy
 configuration directory, while project templates are stored within the project
 directory.
 """
-import os
+import os, re
 
 from wx.lib.pubsub import Publisher
 
@@ -19,6 +19,128 @@ import peppy.vfs as vfs
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.lib.userparams import *
+
+
+class CTAGS(InstancePrefs):
+    default_prefs = (
+        StrParam('ctags_extra_args', '', 'extra arguments for the ctags command', fullwidth=True),
+        StrParam('ctags_exclude', '', 'files, directories, or wildcards to exclude', fullwidth=True),
+        IndexChoiceParam('tags_file_location',
+                         ['project root directory', 'project settings directory'],
+                         1, 'Where to store the tags file'),
+        )
+    
+    def loadTags(self):
+        if self.tags_file_location == 0:
+            base = self.project_top_dir
+        else:
+            base = self.project_settings_dir
+        url = base.resolve2(ProjectPlugin.classprefs.ctags_tag_file_name)
+        self.parseCtags(url)
+    
+    def parseCtags(self, filename):
+        self.tags = {}
+        tagre = re.compile('(.+)\t(.+)\t(.+);"\t(.+)')
+        try:
+            fh = vfs.open(filename)
+            for line in fh:
+                match = tagre.match(line)
+                if match:
+                    tag = match.group(1)
+                    file = match.group(2)
+                    addr = match.group(3)
+                    fields = match.group(4).split('\t')
+                    self.dprint("tag=%s file=%s addr=%s field=%s" % (tag, file, addr, str(fields)))
+                    if tag not in self.tags:
+                        self.tags[tag] = []
+                    self.tags[tag].append((file, addr, fields))
+                    #dprint(self.tags[tag])
+                else:
+                    self.dprint(line)
+        except Exception, e:
+            raise
+        dprint(self.tags.keys())
+    
+    def getTag(self, tag):
+        return self.tags.get(tag, None)
+
+
+class ProjectInfo(CTAGS):
+    default_prefs = (
+        DirParam('build_dir', '', 'working directory in which to build', fullwidth=True),
+        StrParam('build_command', '', 'shell command to build project, relative to working directory', fullwidth=True),
+        DirParam('run_dir', '', 'working directory in which to execute the project', fullwidth=True),
+        StrParam('run_command', '', 'shell command to executee project, relative to working directory', fullwidth=True),
+        )
+    
+    def __init__(self, url):
+        self.project_settings_dir = url
+        self.project_top_dir = vfs.get_dirname(url)
+        self.project_config = None
+        self.loadPrefs()
+        self.loadTags()
+    
+    def __str__(self):
+        return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
+    
+    def getSettingsRelativeURL(self, name):
+        return self.project_settings_dir.resolve2(name)
+    
+    def getTopRelativeURL(self, name):
+        return self.project_top_dir.resolve2(name)
+    
+    def loadPrefs(self):
+        self.project_config = self.project_settings_dir.resolve2(ProjectPlugin.classprefs.project_file)
+        try:
+            fh = vfs.open(self.project_config)
+            if fh:
+                self.readConfig(fh)
+            for param in self.iterPrefs():
+                dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
+            dprint(self.configToText())
+        except LookupError:
+            dprint("Project file not found -- using defaults.")
+            self.setDefaultPrefs()
+    
+    def savePrefs(self):
+        try:
+            fh = vfs.open_write(self.project_config)
+            text = self.configToText()
+            fh.write(text)
+        except:
+            dprint("Failed writing project config file")
+    
+    def build(self):
+        dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
+    
+    def run(self):
+        dprint("Running %s in %s" % (self.run_command, self.run_dir))
+
+
+##### Actions
+
+class ShowTagAction(ListAction):
+    name = "CTAGS"
+    inline = False
+    menumax = 20
+
+    def getItems(self):
+        # Because this is a popup action, we can save stuff to this object.
+        # Otherwise, we'd save it to the major mode
+        if self.mode.project_info:
+            lookup = self.mode.check_spelling[0]
+            dprint(lookup)
+            self.tags = self.mode.project_info.getTag(lookup)
+            if self.tags:
+                links = [t[0] for t in self.tags]
+                return links
+        return [_('No suggestions')]
+    
+    def isEnabled(self):
+        return bool(self.mode.project_info) and hasattr(self, 'tags') and bool(self.tags)
+
+    def action(self, index=-1, multiplier=1):
+        dprint(self.tags[index])
 
 
 class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
@@ -123,53 +245,13 @@ class ShowProjectSettings(SelectAction):
     default_menu = ("Project", -990)
 
     def action(self, index=-1, multiplier=1):
-        project = ProjectPlugin.getProjectInfo(self.mode)
-        if project:
-            dlg = ProjectSettings(self.frame, project)
+        if self.mode.project_info:
+            info = self.mode.project_info
+            dlg = ProjectSettings(self.frame, info)
             retval = dlg.ShowModal()
             if retval == wx.ID_OK:
                 dlg.applyPreferences()
-
-
-class ProjectInfo(InstancePrefs):
-    default_prefs = (
-        DirParam('build_dir', '', 'working directory in which to build', fullwidth=True),
-        StrParam('build_command', '', 'shell command to build project, relative to working directory', fullwidth=True),
-        DirParam('run_dir', '', 'working directory in which to execute the project', fullwidth=True),
-        StrParam('run_command', '', 'shell command to executee project, relative to working directory', fullwidth=True),
-        )
-    
-    def __init__(self, url):
-        self.project_settings_dir = url
-        self.project_top_dir = vfs.get_dirname(url)
-        self.loadPrefs()
-    
-    def __str__(self):
-        return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
-    
-    def getSettingsRelativeURL(self, name):
-        return self.project_settings_dir.resolve2(name)
-    
-    def getTopRelativeURL(self, name):
-        return self.project_top_dir.resolve2(name)
-    
-    def loadPrefs(self):
-        url = self.project_settings_dir.resolve2(ProjectPlugin.classprefs.project_file)
-        try:
-            fh = vfs.open(url)
-            if fh:
-                self.readConfig(fh)
-            for param in self.iterPrefs():
-                dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
-            dprint(self.configToText())
-        except LookupError:
-            dprint("Project file not found -- using defaults.")
-    
-    def build(self):
-        dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
-    
-    def run(self):
-        dprint("Running %s in %s" % (self.run_command, self.run_dir))
+                info.savePrefs()
 
 
 class ProjectPlugin(IPeppyPlugin):
@@ -177,6 +259,9 @@ class ProjectPlugin(IPeppyPlugin):
         StrParam('project_directory', '.peppy-project', 'Directory used within projects to store peppy specific information'),
         StrParam('project_file', 'project.ini', 'File within project directory used to store per-project information'),
         StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
+        PathParam('ctags_command', 'exuberant-ctags', 'Path to ctags command', fullwidth=True),
+        PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
+        StrParam('ctags_args', '-R ', 'extra arguments for the ctags command', fullwidth=True),
         )
     
     # mapping of known project URLs to their Project objects
@@ -192,9 +277,11 @@ class ProjectPlugin(IPeppyPlugin):
 
     def activateHook(self):
         Publisher().subscribe(self.projectInfo, 'mode.preinit')
+        Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
 
     def deactivateHook(self):
         Publisher().unsubscribe(self.projectInfo)
+        Publisher().unsubscribe(self.getFundamentalMenu)
     
     @classmethod
     def getFilename(cls, template_name):
@@ -237,7 +324,7 @@ class ProjectPlugin(IPeppyPlugin):
     @classmethod
     def findProjectTemplate(cls, mode):
         dprint(mode)
-        if hasattr(mode, 'project_info'):
+        if mode.project_info:
             url = mode.project_info.getSettingsRelativeURL(cls.classprefs.template_directory)
             dprint(url)
             if vfs.is_folder(url):
@@ -283,6 +370,8 @@ class ProjectPlugin(IPeppyPlugin):
                 info = cls.known_projects[str(url)]
             mode.project_info = info
             dprint("found project %s" % info)
+        else:
+            mode.project_info = None
     
     @classmethod
     def getProjectInfo(cls, mode):
@@ -313,3 +402,11 @@ class ProjectPlugin(IPeppyPlugin):
             actions.extend([SaveProjectTemplate, BuildProject, RunProject])
         actions.append(ShowProjectSettings)
         return actions
+
+    def getFundamentalMenu(self, msg):
+        action_classes = msg.data
+        action_classes.append(ShowTagAction)
+
+if __name__== "__main__":
+    ctags = ProjectInfo(vfs.normalize("/home/rob/src/peppy-git/.peppy-project"))
+    print ctags.getTag('GetValue')

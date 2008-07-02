@@ -1459,7 +1459,7 @@ class InstancePrefs(debugmixin):
                         printed_section = True
                     val = getattr(self, param.keyword)
                     lines.append("%s = %s" % (param.keyword, param.valueToText(val)))
-                lines.append("")
+            lines.append("")
         text = os.linesep.join(lines)
         if self.debuglevel > 0: dprint(text)
         return text
