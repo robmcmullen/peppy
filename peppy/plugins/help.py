@@ -43,8 +43,7 @@ class HelpAbout(SelectAction):
         info.Name = substitutes['prog']
         info.Version = substitutes['version']
         info.Copyright = substitutes['copyright']
-        info.Description = wordwrap(substitutes['description'],
-            350, wx.ClientDC(self.frame))
+        info.Description = wordwrap("%s\n\nUsing wxPython %s" % (substitutes['description'], wx.version()), 350, wx.ClientDC(self.frame))
         info.WebSite = (__url__, "%(prog)s home page" % substitutes)
         devs = [ substitutes['author'],
                  "",

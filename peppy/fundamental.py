@@ -303,7 +303,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
 
     def applySettings(self):
         start = time.time()
-        self.dprint("starting applySettings at %0.5fs" % start)
+        self.dprint("starting applySettings")
         self.applyDefaultSettings()
         self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         

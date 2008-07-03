@@ -281,8 +281,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
 
         """
         # Parses Syntax Specifications list, ignoring all bad values
-        import traceback
-        dprint("".join(traceback.format_stack()))
+        if self.debuglevel > 1:
+            import traceback
+            dprint("".join(traceback.format_stack()))
         self.UpdateBaseStyles()
         self.LOG(syn_lst)
         valid_settings = list()

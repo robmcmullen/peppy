@@ -482,16 +482,16 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         usage="usage: %prog file [files...]"
         #print sys.argv[1:]
         parser=OptionParser(usage=usage)
-        parser.add_option("-p", action="store_true", dest="profile", default=False)
-        parser.add_option("-v", action="count", dest="verbose", default=0)
-        parser.add_option("-t", "--test", action="store_true", dest="test_mode", default=False)
-        parser.add_option("-d", "--debug-print", action="store_true", dest="log_stderr", default=False)
-        parser.add_option("-c", action="store", dest="confdir", default="")
-        parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False)
-        parser.add_option("--no-server", action="store_true", dest="no_server", default=False)
-        parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False)
-        parser.add_option("--no-splash", action="store_false", dest="splash", default=True)
-        parser.add_option("--thanks", action="store_true", dest="thanks", default=False)
+        parser.add_option("-p", action="store_true", dest="profile", default=False, help="Run with the python profiler")
+        parser.add_option("-v", action="count", dest="verbose", default=0, help="Increase verbosity level.  -vv lots, -vvv insane")
+        parser.add_option("-t", "--test", action="store_true", dest="test_mode", default=False, help="Test mode: disable server and redirect errors to stderr")
+        parser.add_option("-d", "--debug-print", action="store_true", dest="log_stderr", default=False, help="redirect errors to stderr")
+        parser.add_option("-c", action="store", dest="confdir", default="", help="Specify alternate configuration directory")
+        parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False, help="Generate sample config file and exit")
+        parser.add_option("--no-server", action="store_true", dest="no_server", default=False, help="Disable 'server' that listens for file open requents")
+        parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False, help="Disable setuptools plugin loading")
+        parser.add_option("--no-splash", action="store_false", dest="splash", default=True, help="Disable splash screen")
+        parser.add_option("--thanks", action="store_true", dest="thanks", default=False, help="Print thank-you notice")
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
