@@ -288,12 +288,6 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.LOG(syn_lst)
         valid_settings = list()
         
-        # Here's the global hack to fix the problem the first time styles are
-        # modified by the style dialog.
-        if self.global_style_set:
-            self.style_set = self.global_style_set
-        self.dprint(self.style_set)
-        
         for syn in syn_lst:
             if len(syn) != 2:
                 self.LOG("[ed_stc][warn] Error setting syntax spec")
@@ -368,6 +362,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @postcondtion: base style info is updated
 
         """
+        self.dprint("current=%s" % self.style_set)
         self.StyleDefault()
         self.SetMargins(0, 0)
         # Global default styles for all languages
@@ -395,6 +390,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @postcondtion: style scheme is set to specified style
 
         """
+        self.dprint("requested=%s current=%s" % (spec_style, self.style_set))
         if spec_style != self.style_set:
             self.LoadStyleSheet(self.GetStyleSheet(spec_style), force=True)
         self.UpdateBaseStyles()
@@ -462,10 +458,15 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             if sheet.lower() == style.lower():
                 style = sheet
                 break
-        dprint(style)
+        user = wx.GetApp().fonts.getStylePath(style)
+        if os.path.exists(user):
+            self.dprint("found user style %s at %s" % (style, user))
+            return user
         sysp = os.path.join(util.GetResourceDir('styles'), style)
         if os.path.exists(sysp):
+            self.dprint("found system style %s at %s" % (style, sysp))
             return sysp
+        self.dprint("didn't find %s" % style)
 #        user = os.path.join(ed_glob.CONFIG['STYLES_DIR'], style)
 #        sysp = os.path.join(ed_glob.CONFIG['SYS_STYLES_DIR'], style)
 #        if os.path.exists(user):

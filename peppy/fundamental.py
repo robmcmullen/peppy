@@ -136,7 +136,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
 
     #: Default class preferences that relate to all instances of this major mode
     default_classprefs = (
-        StrParam('editra_style_sheet', '', 'Mode specific filename in the config directory containing Editra style sheet information.  Used to override default styles with custom styles for this mode.'),
         BoolParam('use_tab_characters', False,
                   'True: insert tab characters when tab is pressed.  False: insert the equivalent number of spaces instead.', local=True),
         IntParam('tab_size', 8, 'Number of spaces in each expanded tab', local=True),
@@ -325,8 +324,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
         self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
         self.dprint("font styling done in %0.5fs" % (time.time() - start))
+
+        # Here's the global hack to fix the problem the first time styles are
+        # modified by the style dialog.
+        if self.global_style_set and self.global_style_set != self.style_set:
+            self.style_set = self.global_style_set
+            self.dprint("Changing style to global style %s" % self.style_set)
         self.ConfigureLexer(self.editra_lang)
-        self.dprint("styleSTC (if True) done in %0.5fs" % (time.time() - start))
+        self.dprint("ConfigureLexer done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
         self.setEmacsAndVIM()
         self.setSpelling()

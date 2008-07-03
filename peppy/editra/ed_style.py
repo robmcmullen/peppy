@@ -20,8 +20,8 @@ U{http://editra.org/?page=docs&doc=ess_spec}.
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ed_style.py 54467 2008-07-02 19:51:00Z CJP $"
-__revision__ = "$Revision: 54467 $"
+__svnid__ = "$Id: ed_style.py 54472 2008-07-03 03:28:11Z CJP $"
+__revision__ = "$Revision: 54472 $"
 
 #--------------------------------------------------------------------------#
 # Dependancies
@@ -340,7 +340,7 @@ class StyleMgr(object):
 
         """
         sty_dict = dict()
-        for key in self.GetStyleSet().keys():
+        for key in DefaultStyleDictionary().keys():
             if key in ('select_style', 'whitespace_style'):
                 sty_dict[key] = NullStyleItem()
             else:
@@ -422,6 +422,13 @@ class StyleMgr(object):
             rgb = util.HexToRGB(fore[1:])
             fore = wx.Colour(red=rgb[0], green=rgb[1], blue=rgb[2])
         return fore
+
+    def GetCurrentStyleSetName(self):
+        """Get the name of the currently set style
+        @return: string
+
+        """
+        return self.style_set
 
     def GetDefaultBackColour(self, as_hex=False):
         """Gets the background color of the default style and returns
@@ -526,6 +533,8 @@ class StyleMgr(object):
             return ret_val
         elif not StyleMgr.STYLES.has_key(style_sheet):
             self.LOG("[ed_style][warn] Style sheet %s does not exists" % style_sheet)
+            # Reset to default style
+            Profile_Set('SYNTHEME', 'default')
             self.SetStyles('default', DefaultStyleDictionary())
             return False
         else:
@@ -698,9 +707,9 @@ class StyleMgr(object):
             style_dict[key] = new_item
 
         # For any undefined tags load them as empty items
-        for key in DefaultStyleDictionary().keys():
-            if key not in style_dict:
-                style_dict[key] = StyleItem()
+#        for key in DefaultStyleDictionary().keys():
+#            if key not in style_dict:
+#                style_dict[key] = StyleItem()
 
         return style_dict
 
@@ -765,15 +774,18 @@ class StyleMgr(object):
                     return False
 
             self.style_set = name
+            defaultd = DefaultStyleDictionary()
+            dstyle = style_dict.get('default_style', None)
+            if dstyle is None:
+                style_dict['default_style'] = defaultd['default_style']
+
             # Set any undefined styles to match the default_style
-            for tag, item in DefaultStyleDictionary().iteritems():
+            for tag, item in defaultd.iteritems():
                 if tag not in style_dict:
                     if tag in ['select_style', 'whitespace_style']:
                         style_dict[tag] = NullStyleItem()
-                    elif tag in ['foldmargin_style']:
-                        style_dict[tag] = style_dict['default_style']
                     else:
-                        style_dict[tag] = item
+                        style_dict[tag] = style_dict['default_style']
 
             StyleMgr.STYLES[name] = self.PackStyleSet(style_dict)
             return True

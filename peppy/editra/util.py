@@ -22,7 +22,7 @@ def GetResourceDir(resource):
     #dprint(rec_dir)
     return rec_dir
 
-def GetResourceFiles(resource, trim=True, get_all=False, title=True):
+def GetResourceFiles(resource, trim=True, get_all=False, title=False):
     """Gets a list of resource files from a directory and trims the
     file extentions from the names if trim is set to True (default).
     If the get_all parameter is set to True the function will return
@@ -38,9 +38,17 @@ def GetResourceFiles(resource, trim=True, get_all=False, title=True):
     """
     rec_dir = GetResourceDir(resource)
     rec_list = list()
-    if not os.path.exists(rec_dir):
-        return -1
-    else:
+    if get_all:
+        user_dir, user_files = wx.GetApp().config.contents(resource)
+        #dprint("path=%s contents=%s" % (user_dir, user_files))
+        for rec in user_files:
+            if os.path.isfile(os.path.join(user_dir, rec)):
+                if trim:
+                    rec = rec.split(u".")[0]
+                if title:
+                    rec = rec.title()
+                rec_list.append(rec)
+    if os.path.exists(rec_dir):
         recs = os.listdir(rec_dir)
         #dprint(recs)
         for rec in recs:
@@ -50,8 +58,7 @@ def GetResourceFiles(resource, trim=True, get_all=False, title=True):
                 if title:
                     rec = rec.title()
                 rec_list.append(rec)
-        rec_list.sort()
-        return list(set(rec_list))
+    return list(set(rec_list))
     
 def GetExtension(file_str):
     """Gets last atom at end of string as extension if 

@@ -13,12 +13,15 @@ def Profile_Get(index, fmt=None, default=None):
             font = app.fonts.classprefs.secondary_editing_font
             return font
         elif index == 'SYNTHEME':
-            theme = 'Default'
+            theme = app.fonts.classprefs.editra_style_theme
             return theme
     except:
         # catch the exception if we're running a mock object
         pass
     return None
 
-def Profile_Set(index, val, fmt):
+def Profile_Set(index, val, fmt=None):
+    app = wx.GetApp()
+    if index == 'SYNTHEME':
+        app.fonts.classprefs.editra_style_theme = val
     return None

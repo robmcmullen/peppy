@@ -37,14 +37,34 @@ class EditraStyles(SelectAction):
         lexer_lst.SetStringSelection(self.mode.editra_lang)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
-            styles = ed_style.MergeStyles(dlg.preview.BlankStyleDictionary(), dlg.styles_new)
-            dlg.preview.SetStyles(stylesheet, styles, True)
-            EditraSTCMixin.global_style_set = stylesheet
-            sheet = dlg.GenerateStyleSheet()
-            dprint(sheet)
-            fh = wx.GetApp().config.open(stylesheet, 'wb')
-            fh.write(sheet)
-            Publisher().sendMessage('peppy.preferences.changed')
+            # Find style name from controls within the dialog
+            ctrl = dlg.FindWindowById(style_editor.ed_glob.ID_PREF_SYNTHEME)
+            tag = ctrl.GetStringSelection()
+            ctrl = dlg.FindWindowById(wx.ID_NEW)
+            if ctrl.GetValue():
+                tag = "untitled"
+            dlg2 = wx.TextEntryDialog(
+                self.frame, message="Save Style Sheet", defaultValue=tag,
+                style=wx.OK|wx.CANCEL)
+            retval = dlg2.ShowModal()
+            tag = dlg2.GetValue()
+            if not tag:
+                tag = "untitled"
+            dlg2.Destroy()
+            
+            if retval == wx.ID_OK:
+                #dprint("Saving style to %s" % tag)
+                filename = wx.GetApp().fonts.getStylePath(tag)
+
+                styles = ed_style.MergeStyles(dlg.preview.BlankStyleDictionary(), dlg.styles_new)
+                dlg.preview.SetStyles(filename, styles, True)
+                EditraSTCMixin.global_style_set = filename
+                sheet = dlg.GenerateStyleSheet()
+                #dprint(sheet)
+                fh = open(filename, 'wb')
+                fh.write(sheet)
+                wx.GetApp().fonts.classprefs.editra_style_theme = tag
+                Publisher().sendMessage('peppy.preferences.changed')
         elif retval == wx.ID_SAVE:
             dprint("Save!")
             sheet = dlg.GenerateStyleSheet()

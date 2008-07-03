@@ -64,6 +64,12 @@ class HomeConfigDir:
         else:
             d = self.dir
         return os.path.exists(d)
+    
+    def contents(self, subdir):
+        path = self.fullpath(subdir)
+        if os.path.exists(path):
+            return path, os.listdir(path)
+        return None, []
 
     def open(self, name, mode='r'):
         path = self.fullpath(name)

@@ -4,7 +4,7 @@
 Main application class.
 """
 
-import os, sys, imp, platform, random, string
+import os, sys, imp, platform, random, string, time
 import __builtin__
 
 import wx
@@ -77,12 +77,14 @@ class Fonts(ClassPrefs):
     default_classprefs = (
         FontParam('primary_editing_font', None, 'Font name of the primary editing font', fullwidth=True),
         FontParam('secondary_editing_font', None, 'Font name of the secondary scintilla font', fullwidth=True),
-        StrParam('editra_style_sheet', 'styles.ess', 'Filename in the config directory containing Editra style sheet information'),
+        StrParam('editra_style_theme', 'Default', 'Current Editra style theme'),
     )
     if wx.Platform == "__WXMAC__":
         default_fontsize = 12
     else:
         default_fontsize = 10
+    
+    first_time = True
 
     def __init__(self):
         # Can't set fonts in the default_classprefs, because at module load
@@ -92,15 +94,30 @@ class Fonts(ClassPrefs):
         if self.classprefs.secondary_editing_font is None:
             self.classprefs.secondary_editing_font = wx.Font(self.default_fontsize, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
 
+    def getStylePath(self, name=None):
+        c = wx.GetApp().config
+        path = c.fullpath('styles')
+        if not os.path.exists(path):
+            c.create('styles')
+            #dprint("created %s" % path)
+            
+            # Handle conversion from old-style 'styles.ess' to new style
+            # directory of style files
+            if self.__class__.first_time:
+                source = c.fullpath('styles.ess')
+                #dprint("Looking for %s to rename" % source)
+                if os.path.exists(source):
+                    dest = os.path.join(path, '%s.ess' % time.strftime("%Y%m%d", time.localtime(time.time())))
+                    os.rename(source, dest)
+                self.__class__.first_time = False
+        if name:
+            if not name.endswith(".ess"):
+                name += ".ess"
+            path = os.path.join(path, name)
+        return path
+
     def getStyleFile(self, mode=None):
-        if mode:
-            # Find style sheet override if the mode specifies it
-            filename = mode.classprefs.editra_style_sheet
-        else:
-            filename = ''
-        if not filename:
-            filename = self.classprefs.editra_style_sheet
-        pathname = wx.GetApp().getConfigFilePath(filename)
+        pathname = self.getStylePath(self.classprefs.editra_style_theme)
         #dprint(pathname)
         return pathname
     

@@ -378,7 +378,7 @@ class StyleEditor(wx.Dialog):
                 self.styles_orig = self.preview.BlankStyleDictionary()
                 self.styles_new = DuplicateStyleDict(self.styles_orig)
                 self.preview.SetStyles('preview', self.styles_new, nomerge=True)
-                self.preview.UpdateBaseStyles()
+                self.preview.UpdateAllStyles('preview')
 
                 # For some reason this causes the text display to refresh
                 # properly when nothing else would work.
