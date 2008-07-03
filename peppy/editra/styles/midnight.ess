@@ -1,3 +1,9 @@
+/* Editra Style Sheet
+ * Name: Midnight
+ * Author: Cody Precord <cprecord@editra.org>
+ * License: wxWindows License
+ */
+
 default_style {
 		fore: #FFFFFF;
 		back: #000000;
@@ -15,8 +21,12 @@ btick_style {
 }
 
 calltip { 
-           fore: #FFE200;
-           back: #09026A;
+        fore: #FFE200;
+        back: #09026A;
+}
+
+caret_line {
+        back: #262626;
 }
 
 char_style {
@@ -42,13 +52,18 @@ comment_style {
 		face: %(primary)s;
 }
 
+decor_style {
+        fore: #BA0EEA italic;
+        face: %(secondary)s;
+}
+
 directive_style {
-		fore: #0000FF;
+		fore: #0000FF bold;
 		face: %(secondary)s;
 }
 
 dockey_style {
-		fore: #0000FF;
+		fore: #00A6FF;
 }
 
 error_style {
@@ -63,6 +78,10 @@ funct_style {
 global_style {
 		fore: #007F7F bold;
 		face: %(secondary)s;
+}
+
+guide_style {
+        fore: #F6F6F6;
 }
 
 here_style {
@@ -112,8 +131,8 @@ pre_style {
 }
 
 pre2_style {
-	 fore: #AB39F2 bold;
-                back: #666666
+        fore: #AB39F2 bold;
+        back: #101010;
 }
 
 regex_style {
@@ -130,6 +149,10 @@ scalar2_style {
 		face: %(secondary)s;
 }
 
+select_style {
+        back: #03087D;
+}
+
 string_style {
 		fore: #FF3AFF bold;
 }
@@ -144,6 +167,8 @@ stringeol_style {
 unknown_style {
 		fore: #FFFFFF bold;
 		back: #DD0101 eol;
-		face: %(secondary)s;
 }
 
+whitespace_style {
+        fore: #626262;
+}

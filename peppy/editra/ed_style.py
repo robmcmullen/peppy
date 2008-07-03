@@ -522,7 +522,12 @@ class StyleMgr(object):
             if reader == -1:
                 self.LOG("[ed_style][err] Failed to open style sheet: %s" % style_sheet)
                 return False
-            ret_val = self.SetStyles(style_sheet, self.ParseStyleData(reader.read()))
+            
+            # Start from a blank style dictionary so that the user specified
+            # styles don't always extent from the default styles.  Otherwise
+            # there's no way to start from a blank style.
+            style_dict = MergeStyles(self.BlankStyleDictionary(), self.ParseStyleData(reader.read()))
+            ret_val = self.SetStyles(style_sheet, style_dict)
             reader.close()
             return ret_val
         elif not StyleMgr.STYLES.has_key(style_sheet):

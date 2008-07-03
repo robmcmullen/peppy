@@ -9,8 +9,19 @@ from peppy.editra import *
 import peppy.editra.util as util
 from peppy.debug import *
 
+from profiler import Profile_Get as _PGET
+
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
     _synmgr = syntax.SyntaxMgr()
+    # _synmgr._extreg is an ExtensionRegister instance that is a dictionary
+    # from the Editra pretty name to the extension list supported by that
+    # name.  Editra doesn't provide a direct mapping from the pretty name to
+    # the primary extension, however, so this is created here.
+    _editra_lang_to_ext = {}
+    for lang, exts in _synmgr._extreg.iteritems():
+        #dprint("%s: %s" % (lang, exts))
+        _editra_lang_to_ext[lang] = exts[0]
+        _editra_lang_to_ext[lang.replace(' ', '_')] = exts[0]
     
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
@@ -101,30 +112,24 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.ConfigureAutoComp()
         return 0
     
-    def getEditraSyntaxData(self, lang):
-        """Get the Editra syntax data given the keyword of the major mode
+    def getEditraExtFromLang(self, lang):
+        """Get the Editra extension given the keyword of the major mode
         
         Editra uses the filename extension as the basis for most of its
         lookups, but also has a pretty-printing name.  For instance, 'Python'
         is the pretty name of python mode, but Editra uses "py" as its main
-        designator for the mode internally.  This method gets the syntax data
-        based on the peppy keyword, which is designed to be the same as the
-        Editra pretty-printing mode in most cases.
+        designator for the mode internally.
         """
-        # self._synmgr._extreg is an ExtensionRegister instance that is
-        # a dictionary from the Editra style sheet name to the extension
-        # list supported by that name.  If the peppy keyword exists in this
-        # dictionary, we can directly find the filename extensions.
-        ext = ""
-        #dprint("before: %s" % lang)
-        #dprint(self._synmgr._extreg)
-        for guess in [lang, lang.replace('_', ' ')]:
-            #dprint(guess)
-            if guess in self._synmgr._extreg:
-                ext = self._synmgr._extreg[guess][0]
-                break
-        if not ext:
-            ext = lang
+        return self._editra_lang_to_ext.get(lang, lang)
+
+    def getEditraSyntaxData(self, lang):
+        """Get the Editra syntax data given the keyword of the major mode
+        
+        This method gets the syntax data based on the peppy keyword, which is
+        designed to be the same as the Editra pretty-printing mode in most
+        cases.
+        """
+        ext = self.getEditraExtFromLang(lang)
         #dprint("after: %s" % ext)
         syn_data = self._synmgr.SyntaxData(ext)
         return syn_data
@@ -416,3 +421,39 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             if style_id == getattr(wx.stc, data[0]):
                 return data[1]
         return 'default_style'
+    
+    def GetStyleSheet(self, sheet_name=None):
+        """Finds the current style sheet and returns its path. The
+        Lookup is done by first looking in the users config directory
+        and if it is not found there it looks for one on the system
+        level and if that fails it returns None.
+        @param sheet_name: style sheet to look for
+        @return: full path to style sheet
+
+        """
+        if sheet_name:
+            style = sheet_name
+            if sheet_name.split(u'.')[-1] != u"ess":
+                style += u".ess"
+        elif _PGET('SYNTHEME', 'str').split(u'.')[-1] != u"ess":
+            style = (_PGET('SYNTHEME', 'str') + u".ess").lower()
+        else:
+            style = _PGET('SYNTHEME', 'str').lower()
+
+        # Get Correct Filename if it exists
+        for sheet in util.GetResourceFiles('styles', False, True, title=False):
+            if sheet.lower() == style.lower():
+                style = sheet
+                break
+        dprint(style)
+        sysp = os.path.join(util.GetResourceDir('styles'), style)
+        if os.path.exists(sysp):
+            return sysp
+#        user = os.path.join(ed_glob.CONFIG['STYLES_DIR'], style)
+#        sysp = os.path.join(ed_glob.CONFIG['SYS_STYLES_DIR'], style)
+#        if os.path.exists(user):
+#            return user
+#        elif os.path.exists(sysp):
+#            return sysp
+#        else:
+#            return None

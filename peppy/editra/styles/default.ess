@@ -1,165 +1,172 @@
+default_style {
+		fore:#000000;
+		back:#F6F6F6;
+		face:%(primary)s;
+		size:%(size)d;
+
+}
+
+number2_style {
+		fore:#A020F0 bold;
+}
+
+stringeol_style {
+		fore:#000000 bold;
+		back:#EEC0EE eol;
+}
+
+comment_style {
+		fore:#FF0000;
+		size:%(size)d bold;
+}
+
+keyword_style {
+		fore:#000000 bold;
+}
+
+keyword3_style {
+		fore:#0000FF bold;
+}
+
+guide_style {
+		fore:#838383;
+}
+
+keyword4_style {
+		fore:#9D2424;
+}
+
+ideol_style {
+		fore:#E0C0E0;
+}
+
+array_style {
+		fore:#EE8B02 bold;
+		face:%(secondary)s;
+}
+
+global_style {
+		fore:#007F7F bold;
+		face:%(secondary)s;
+}
+
+line_num {
+		back:#C0C0C0;
+		face:%(secondary)s;
+		size:%(size3)d;
+}
+
+pre2_style {
+		fore:#AB39F2 bold;
+		back:#FFFFFF;
+}
+
+string_style {
+		fore:#1A701A;
+}
+
+class_style {
+		fore:#0000FF;
+}
+
+marker_style {
+		fore:#FFFFFF;
+		back:#000000;
+}
+
+keyword2_style {
+		fore:#2E8B57 bold;
+}
+
+class2_style {
+		fore:#2E8B57 bold;
+}
+
+unknown_style {
+		fore:#FFFFFF bold;
+		back:#DD0101 eol;
+		face:%(secondary)s;
+}
+
+calltip {
+		fore:#404040;
+		back:#FFFFB8;
+}
+
+scalar_style {
+		fore:#AB37F2 bold;
+}
+
+operator_style {
+		face:%(primary)s bold;
+}
+
+here_style {
+		fore:#CA61CA bold;
+		face:%(secondary)s;
+}
+
+number_style {
+		fore:#387082;
+}
+
+regex_style {
+		fore:#008B8B;
+}
+
+pre_style {
+		fore:#4939F2 bold;
+}
+
+whitespace_style {
+		fore:#838383;
+}
+
+decor_style {
+		fore:#BA0EEA;
+}
+
+scalar2_style {
+		fore:#AB37F2;
+		face:%(secondary)s;
+}
+
+funct_style {
+		fore:#008B8B italic;
+}
+
 brace_good {
-        fore: #FFFFFF;
-        back: #0000FF bold;
+		back:#75FFA3 bold;
+}
+
+error_style {
+		fore:#DD0101 bold;
+		face:%(secondary)s;
+}
+
+directive_style {
+		fore:#0000FF bold;
+		face:%(secondary)s;
+}
+
+btick_style {
+		fore:#8959F6 bold;
+}
+
+char_style {
+		fore:#FF3AFF;
+}
+
+folder_style {
+		fore:#FFFFFF;
+		back:#000000;
 }
 
 brace_bad {
-        back: #FF0000 bold;
+		back:#FF0090 bold;
 }
 
-calltip { 
-        fore: #404040;
-        back: #FFFFB8;
+dockey_style {
+		fore:#0000FF;
 }
 
-ctrl_char {
-        fore: #000000;
-        back: #F6F6F6; 
-        face: %(primary)s;
-}
-
-line_num { 
-        back: #C0C0C0; 
-        face: %(secondary)s; 
-        size: %(size3)d;
-}
-
-array_style { 
-        fore: #EE8B02 bold; 
-        face: %(secondary)s;
-}
-
-btick_style { 
-        fore: #8959F6 bold; 
-        back: #FFFFFF;
-}
-
-default_style { 
-        fore: #000000; 
-        back: #F6F6F6; 
-        face: %(primary)s; 
-        size: %(size)d;
-}
-
-char_style { 
-        fore: #FF3AFF; 
-        back: #FFFFFF;
-}
-
-class_style { 
-        fore: #2E8B57 bold; 
-}
-
-class2_style { 
-        fore: #2E8B57 bold; 
-        back: #FFFFFF;
-}
-
-comment_style { 
-        fore: #838383; 
-}
-
-directive_style { 
-        fore: #0000FF bold; 
-        face: %(secondary)s; 
-}
-
-dockey_style { 
-        fore: #0000FF; 
-}
-
-error_style { 
-        fore: #DD0101 bold; 
-        face: %(secondary)s;
-}
-
-funct_style { 
-        fore: #008B8B italic; 
-}
-
-global_style { 
-        fore: #007F7F bold; 
-        face: %(secondary)s; 
-}
-
-here_style { 
-        fore: #CA61CA bold; 
-        face: %(secondary)s; 
-}
-
-ideol_style { 
-        fore: #E0C0E0; 
-        face: %(secondary)s; 
-}
-
-keyword_style { 
-        fore: #A52B2B bold;
-}
-
-keyword2_style { 
-        fore: #2E8B57 bold; 
-}
-
-keyword3_style { 
-        fore: #008B8B bold;
-}
-
-keyword4_style { 
-        fore: #9D2424;
-}
-
-margin_style { 
-        fore: #FFFFFF;
-        back: #000000;
-}
-
-number_style { 
-        fore: #DD0101;
-}
-
-number2_style { 
-        fore: #DD0101 bold;
-}
-
-operator_style { 
-        face: %(primary)s bold; 
-}
-
-pre_style { 
-        fore: #AB39F2 bold; 
-}
-
-pre2_style { 
-        fore: #AB39F2 bold; 
-        back: #FFFFFF;
-}
-
-regex_style { 
-        fore: #008B8B; 
-}
-
-scalar_style { 
-        fore: #AB37F2 bold; 
-        face: %(secondary)s; 
-}
-
-scalar2_style { 
-        fore: #AB37F2; 
-        face: %(secondary)s; 
-}
-
-string_style { 
-        fore: #FF3AFF bold;
-        back: #FFFFFF;
-}
-
-stringeol_style { 
-        back: #EEC0EE eol;
-        face: %(secondary)s bold; 
-}
-
-unknown_style { 
-        fore: #FFFFFF bold; 
-        back: #DD0101 eol; 
-        face: %(secondary)s;
-}

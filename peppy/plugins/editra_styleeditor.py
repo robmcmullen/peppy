@@ -31,13 +31,21 @@ class EditraStyles(SelectAction):
     def action(self, index=-1, multiplier=1):
         stylesheet = wx.GetApp().fonts.getStyleFile()
         dlg = style_editor.StyleEditor(self.frame, -1)
+        dlg.OpenPreviewFile(self.mode.editra_lang)
+        lexer_lst = dlg.FindWindowById(style_editor.ed_glob.ID_LEXER)
+        lexer_lst.SetStringSelection(self.mode.editra_lang)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
+            styles = dlg.styles_new
+            #print("default style set = %s" % dlg.preview.style_set)
+            dlg.preview.SetStyles(stylesheet, dlg.styles_new, True)
             sheet = dlg.GenerateStyleSheet()
-            dprint(sheet)
+            #dprint(sheet)
             fh = wx.GetApp().config.open(stylesheet, 'wb')
             fh.write(sheet)
+            Publisher().sendMessage('peppy.preferences.changed')
         elif retval == wx.ID_SAVE:
+            dprint("Save!")
             sheet = dlg.GenerateStyleSheet()
             dprint(sheet)
             self.export_count += 1
@@ -49,7 +57,6 @@ class EditraStyles(SelectAction):
             dprint(fh.read())
             self.frame.open(url)
         dlg.Destroy()
-        Publisher().sendMessage('peppy.preferences.changed')
 
 
 

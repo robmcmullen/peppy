@@ -12,17 +12,17 @@ def GetFileReader(filename):
 
 def GetResourceDir(resource):
     base_dir = os.path.dirname(__file__)
-    dprint(base_dir)
-    dprint(sys.executable)
+    #dprint(base_dir)
+    #dprint(sys.executable)
     if base_dir.find("library.zip") != -1:
         # in a py2exe frozen executable!  Remove the library.zip and use
         # the rest of the path
         base_dir = os.path.normpath(base_dir.replace("library.zip",""))
     rec_dir = os.path.join(base_dir, resource)
-    dprint(rec_dir)
+    #dprint(rec_dir)
     return rec_dir
 
-def GetResourceFiles(resource, trim=True, get_all=False):
+def GetResourceFiles(resource, trim=True, get_all=False, title=True):
     """Gets a list of resource files from a directory and trims the
     file extentions from the names if trim is set to True (default).
     If the get_all parameter is set to True the function will return
@@ -42,12 +42,14 @@ def GetResourceFiles(resource, trim=True, get_all=False):
         return -1
     else:
         recs = os.listdir(rec_dir)
-        print recs
+        #dprint(recs)
         for rec in recs:
             if os.path.isfile(os.path.join(rec_dir, rec)):
                 if trim:
                     rec = rec.split(u".")[0]
-                rec_list.append(rec.title())
+                if title:
+                    rec = rec.title()
+                rec_list.append(rec)
         rec_list.sort()
         return list(set(rec_list))
     
