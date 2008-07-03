@@ -15,6 +15,7 @@ from peppy.yapsy.plugins import *
 from peppy.actions import *
 
 from peppy.editra import *
+from peppy.editra.stcmixin import EditraSTCMixin
 import peppy.editra.style_editor as style_editor
 
 from peppy.about import AddCopyright
@@ -36,11 +37,11 @@ class EditraStyles(SelectAction):
         lexer_lst.SetStringSelection(self.mode.editra_lang)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
-            styles = dlg.styles_new
-            #print("default style set = %s" % dlg.preview.style_set)
-            dlg.preview.SetStyles(stylesheet, dlg.styles_new, True)
+            styles = ed_style.MergeStyles(dlg.preview.BlankStyleDictionary(), dlg.styles_new)
+            dlg.preview.SetStyles(stylesheet, styles, True)
+            EditraSTCMixin.global_style_set = stylesheet
             sheet = dlg.GenerateStyleSheet()
-            #dprint(sheet)
+            dprint(sheet)
             fh = wx.GetApp().config.open(stylesheet, 'wb')
             fh.write(sheet)
             Publisher().sendMessage('peppy.preferences.changed')

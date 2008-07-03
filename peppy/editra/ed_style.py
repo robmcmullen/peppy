@@ -8,21 +8,20 @@
 ###############################################################################
 
 """
-FILE: ed_style.py                                                        
-AUTHOR: Cody Precord                                                     
-LANGUAGE: Python                                                         
-SUMMARY:                                                                 
-  Provides a system for managing styles in the text control. Compiles the data
+Provides a system for managing styles in the text control. Compiles the data
 in an Editra Style Sheet to a format that Scintilla can understand. The
 specification of Editra Style Sheets that this module implements can be found
 either in the _docs_ folder of the source distribution or on Editra's home page
-http://editra.org/?page=docs&doc=ess_spec.
-                                                                      
+U{http://editra.org/?page=docs&doc=ess_spec}.
+
+@summary: Style management system for managing the syntax highlighting of all
+          buffers
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ed_style.py 51983 2008-02-22 07:59:28Z CJP $"
-__revision__ = "$Revision: 51983 $"
+__svnid__ = "$Id: ed_style.py 54467 2008-07-02 19:51:00Z CJP $"
+__revision__ = "$Revision: 54467 $"
 
 #--------------------------------------------------------------------------#
 # Dependancies
@@ -47,11 +46,11 @@ class StyleItem(object):
     """A storage class for holding styling information
     @todo: The extra Attributes should be saved as a separate attribute in the
            StyleItem. This currenlty causes problems when customizing values in
-           the StyleEditor. Changing this is fairly easy in this class but it 
+           the StyleEditor. Changing this is fairly easy in this class but it
            will require changes to the StyleMgr and Editor as well.
 
     """
-    def __init__(self, fore=wx.EmptyString, back=wx.EmptyString, 
+    def __init__(self, fore=wx.EmptyString, back=wx.EmptyString,
                        face=wx.EmptyString, size=wx.EmptyString):
         """Initiliazes the Style Object.
 
@@ -61,13 +60,13 @@ class StyleItem(object):
         @keyword size: Specifies font point size (int/formatted string)
 
         SPECIFICATION:
-          DATA FORMATS:
-            #123456       = hex color code
-            #123456,bold  = hex color code + extra style
-            Monaco        = Font Face Name
-            %(primary)s   = Format string to be swapped at runtime
-            10            = A font point size
-            %(size)s      = Format string to be swapped at runtime
+          - DATA FORMATS:
+            - #123456       = hex color code
+            - #123456,bold  = hex color code + extra style
+            - Monaco        = Font Face Name
+            - %(primary)s   = Format string to be swapped at runtime
+            - 10            = A font point size
+            - %(size)s      = Format string to be swapped at runtime
         """
         object.__init__(self)
         self.null = False
@@ -183,7 +182,7 @@ class StyleItem(object):
     #---- Set Functions ----#
     def SetAttrFromStr(self, style_str):
         """Takes style string and sets the objects attributes
-        by parsing the string for the values. Only sets or 
+        by parsing the string for the values. Only sets or
         overwrites values does not zero out previously set values.
         Returning True if value(s) are set or false otherwise.
         @param style_str: style information string (i.e fore:#888444)
@@ -285,7 +284,7 @@ class StyleItem(object):
 
     def SetNamedAttr(self, attr, value):
         """Sets a StyleItem attribute by named string.
-        @note: This is not intended to be used for setting extra 
+        @note: This is not intended to be used for setting extra
                attributes such as bold, eol, ect..
         @param attr: a particular attribute to set (i.e fore, face, back, size)
         @param value: value to set the attribute to contain
@@ -304,7 +303,7 @@ class StyleItem(object):
 
 class StyleMgr(object):
     """Manages style definitions and provides them on request.
-    Also provides functionality for loading custom style sheets and 
+    Also provides functionality for loading custom style sheets and
     modifying styles during run time.
 
     """
@@ -345,7 +344,7 @@ class StyleMgr(object):
             if key in ('select_style', 'whitespace_style'):
                 sty_dict[key] = NullStyleItem()
             else:
-                sty_dict[key] = StyleItem("#000000", "#FFFFFF", 
+                sty_dict[key] = StyleItem("#000000", "#FFFFFF",
                                           "%(primary)s", "%(size)d")
         return sty_dict
 
@@ -365,18 +364,18 @@ class StyleMgr(object):
         if font is not None:
             mfont = font
         else:
-            mfont = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, 
+            mfont = wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL,
                             wx.FONTWEIGHT_NORMAL)
             Profile_Set('FONT1', mfont, 'font')
         primary = mfont.GetFaceName()
 
         font = Profile_Get('FONT2', 'font', None)
         if font is None:
-            font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, 
+            font = wx.Font(10, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL,
                             wx.FONTWEIGHT_NORMAL)
             Profile_Set('FONT2', font, 'font')
         secondary = font.GetFaceName()
-        faces = { 
+        faces = {
                   self.FONT_PRIMARY   : primary,
                   self.FONT_SECONDARY : secondary,
                   self.FONT_SIZE  : mfont.GetPointSize(),
@@ -431,7 +430,7 @@ class StyleMgr(object):
         @keyword hex: return a hex string or colour object
         @type hex: bool
         @return: wx.Colour of default style background or hex value
-        @rtype: wx.Colour or string 
+        @rtype: wx.Colour or string
 
         """
         back = self.GetItemByName('default_style').GetBack()
@@ -468,10 +467,10 @@ class StyleMgr(object):
 
         """
         if primary:
-            font = wx.FFont(self.fonts[self.FONT_SIZE], wx.DEFAULT, 
+            font = wx.FFont(self.fonts[self.FONT_SIZE], wx.DEFAULT,
                             face=self.fonts[self.FONT_PRIMARY])
         else:
-            font = wx.FFont(self.fonts[self.FONT_SIZE2], wx.DEFAULT, 
+            font = wx.FFont(self.fonts[self.FONT_SIZE2], wx.DEFAULT,
                             face=self.fonts[self.FONT_SECONDARY])
         return font
 
@@ -489,7 +488,7 @@ class StyleMgr(object):
             return wx.EmptyString
 
     def GetStyleSet(self):
-        """Returns the current set of styles or the default set if 
+        """Returns the current set of styles or the default set if
         there is no current set.
         @return: current style set dictionary
         @rtype: dict
@@ -522,12 +521,7 @@ class StyleMgr(object):
             if reader == -1:
                 self.LOG("[ed_style][err] Failed to open style sheet: %s" % style_sheet)
                 return False
-            
-            # Start from a blank style dictionary so that the user specified
-            # styles don't always extent from the default styles.  Otherwise
-            # there's no way to start from a blank style.
-            style_dict = MergeStyles(self.BlankStyleDictionary(), self.ParseStyleData(reader.read()))
-            ret_val = self.SetStyles(style_sheet, style_dict)
+            ret_val = self.SetStyles(style_sheet, self.ParseStyleData(reader.read()))
             reader.close()
             return ret_val
         elif not StyleMgr.STYLES.has_key(style_sheet):
@@ -605,7 +599,7 @@ class StyleMgr(object):
         # Tree Level 2 Build small trees of tag and style attributes
         # Tree Level 3 Branch tree into TAG => Attr => Value String
         for branch in style_tree:
-            tmp2 = [leaf.strip().split(u":") 
+            tmp2 = [leaf.strip().split(u":")
                     for leaf in branch[1].strip().split(u";")]
             if len(tmp2) and tmp2[-1][0] == wx.EmptyString:
                 tmp2.pop()
@@ -640,7 +634,7 @@ class StyleMgr(object):
             if len(tmp[style_def]) == 0:
                 style_dict.pop(style_def)
 
-        # Validate leaf values and format into stylestring
+        # Validate leaf values and format into style string
         for style_def in style_dict:
             if not style_def[0][0].isalpha():
                 self.LOG("[ed_style][err] The style def %s is not a "
@@ -650,7 +644,7 @@ class StyleMgr(object):
             else:
                 style_str = wx.EmptyString
                 for attrib in style_dict[style_def]:
-                    values = [ val for val in attrib[1].split(u" ") 
+                    values = [ val for val in attrib[1].split(u" ")
                                if val != wx.EmptyString ]
                     if len(values) > 2:
                         self.LOG("[ed_style][warn] Only one extra " +
@@ -689,8 +683,8 @@ class StyleMgr(object):
                         value = values[0]
                     else:
                         continue
-                    
-                    style_str = u",".join([style_str, 
+
+                    style_str = u",".join([style_str,
                                            u":".join([attrib[0], value])])
 
                 if style_str != wx.EmptyString:
@@ -702,6 +696,11 @@ class StyleMgr(object):
             if isinstance(value, basestring):
                 new_item.SetAttrFromStr(value)
             style_dict[key] = new_item
+
+        # For any undefined tags load them as empty items
+        for key in DefaultStyleDictionary().keys():
+            if key not in style_dict:
+                style_dict[key] = StyleItem()
 
         return style_dict
 
@@ -766,8 +765,17 @@ class StyleMgr(object):
                     return False
 
             self.style_set = name
-            tmp = MergeStyles(DefaultStyleDictionary(), style_dict)
-            StyleMgr.STYLES[name] = self.PackStyleSet(tmp)
+            # Set any undefined styles to match the default_style
+            for tag, item in DefaultStyleDictionary().iteritems():
+                if tag not in style_dict:
+                    if tag in ['select_style', 'whitespace_style']:
+                        style_dict[tag] = NullStyleItem()
+                    elif tag in ['foldmargin_style']:
+                        style_dict[tag] = style_dict['default_style']
+                    else:
+                        style_dict[tag] = item
+
+            StyleMgr.STYLES[name] = self.PackStyleSet(style_dict)
             return True
         else:
             self.LOG("[ed_style][err] SetStyles expects a " \
@@ -778,17 +786,18 @@ class StyleMgr(object):
 # Utility Functions
 def DefaultStyleDictionary():
     """This is the default style values that are used for styling
-    documents. Its used as a fallback for undefined values in a 
+    documents. Its used as a fallback for undefined values in a
     style sheet.
     @note: incomplete style sheets are merged against this set to ensure
            a full set of definitions is avaiable
 
     """
     def_dict = \
-        {'brace_good' : StyleItem("#000000", "#75FFA3,bold"),
-         'brace_bad'  : StyleItem(back="#FF0090,bold"),
+        {'brace_good' : StyleItem("#FFFFFF", "#0000FF,bold"),
+         'brace_bad'  : StyleItem(back="#FF0000,bold"),
          'calltip'    : StyleItem("#404040", "#FFFFB8"),
-         'ctrl_char'  : StyleItem("#000000"),
+         'caret_line' : StyleItem(back="#D8F8FF"),
+         'ctrl_char'  : StyleItem(),
          'line_num'   : StyleItem(back="#C0C0C0", face="%(secondary)s", \
                                   size="%(size3)d"),
          'array_style': StyleItem("#EE8B02,bold", face="%(secondary)s"),
@@ -796,34 +805,34 @@ def DefaultStyleDictionary():
          'default_style': StyleItem("#000000", "#F6F6F6", \
                                     "%(primary)s", "%(size)d"),
          'char_style' : StyleItem("#FF3AFF"),
-         'class_style' : StyleItem("#0000FF,bold"),
+         'class_style' : StyleItem("#2E8B57,bold"),
          'class2_style' : StyleItem("#2E8B57,bold"),
-         'comment_style' : StyleItem("#FF0000,bold"),
+         'comment_style' : StyleItem("#838383"),
          'decor_style' : StyleItem("#BA0EEA italic", face="%(secondary)s"),
          'directive_style' : StyleItem("#0000FF,bold", face="%(secondary)s"),
          'dockey_style' : StyleItem("#0000FF"),
          'error_style' : StyleItem("#DD0101,bold", face="%(secondary)s"),
+         'foldmargin_style' : StyleItem(back="#D1D1D1"),
          'funct_style' : StyleItem("#008B8B,italic"),
          'global_style' : StyleItem("#007F7F,bold", face="%(secondary)s"),
          'guide_style' : StyleItem("#838383"),
          'here_style' : StyleItem("#CA61CA,bold", face="%(secondary)s"),
          'ideol_style' : StyleItem("#E0C0E0", face="%(secondary)s"),
-         'keyword_style' : StyleItem("#000000,bold"),
+         'keyword_style' : StyleItem("#A52B2B,bold"),
          'keyword2_style' : StyleItem("#2E8B57,bold"),
-         'keyword3_style' : StyleItem("#0000FF,bold"),
+         'keyword3_style' : StyleItem("#008B8B,bold"),
          'keyword4_style' : StyleItem("#9D2424"),
          'marker_style' : StyleItem("#FFFFFF", "#000000"),
-         'folder_style' : StyleItem("#FFFFFF", "#000000"),
-         'number_style' : StyleItem("#387082"),
-         'number2_style' : StyleItem("#A020F0,bold"),
+         'number_style' : StyleItem("#DD0101"),
+         'number2_style' : StyleItem("#DD0101,bold"),
          'operator_style' : StyleItem("#000000", face="%(primary)s,bold"),
-         'pre_style' : StyleItem("#4939F2,bold"),               
+         'pre_style' : StyleItem("#AB39F2,bold"),
          'pre2_style' : StyleItem("#AB39F2,bold", "#FFFFFF"),
          'regex_style' : StyleItem("#008B8B"),
          'scalar_style' : StyleItem("#AB37F2,bold", face="%(secondary)s"),
          'scalar2_style' : StyleItem("#AB37F2", face="%(secondary)s"),
          'select_style' : NullStyleItem(), # Use system default colour
-         'string_style' : StyleItem("#1A701A"),
+         'string_style' : StyleItem("#FF3AFF,bold"),
          'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol", \
                                        "%(secondary)s"),
          'unknown_style' : StyleItem("#FFFFFF,bold", "#DD0101,eol"),

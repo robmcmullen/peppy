@@ -23,6 +23,13 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         _editra_lang_to_ext[lang] = exts[0]
         _editra_lang_to_ext[lang.replace(' ', '_')] = exts[0]
     
+    # When the style sheet doesn't exist the instance var style_set gets set
+    # to 'default'.  But, after changes are made and the styles.ess file gets
+    # saved to the user's conf directory, any currently loaded buffers don't
+    # get automatically changed to point to the new style set.  So, we use
+    # this class attribute and check for it in SetSyntax
+    global_style_set = ""
+    
     def __init__(self, stylefile):
         ed_style.StyleMgr.__init__(self, stylefile)
         
@@ -274,9 +281,18 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
 
         """
         # Parses Syntax Specifications list, ignoring all bad values
+        import traceback
+        dprint("".join(traceback.format_stack()))
         self.UpdateBaseStyles()
         self.LOG(syn_lst)
         valid_settings = list()
+        
+        # Here's the global hack to fix the problem the first time styles are
+        # modified by the style dialog.
+        if self.global_style_set:
+            self.style_set = self.global_style_set
+        self.dprint(self.style_set)
+        
         for syn in syn_lst:
             if len(syn) != 2:
                 self.LOG("[ed_stc][warn] Error setting syntax spec")
