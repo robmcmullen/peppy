@@ -157,6 +157,9 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
                 import textwrap
                 text = textwrap.fill(text, columns)
             self.addMessage(text)
+    
+    def open(self, url):
+        self.frame.findTabOrOpen(url)
 
 class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"
