@@ -426,13 +426,33 @@ class UserActionMap(debugmixin):
     def popupActions(self, parent, action_classes=[]):
         """Create a popup menu from the list of action classes.
         
+        @param parent: window on which to create the popup menu
+        
+        @param action_classes: list of actions to be made into the popup menu.
+        The list entries can either be SelectAction subclasses, or a tuple
+        consisting of an integer and the SelectAction subclass.  The integer
+        if used specifies the relative position between 0 and 1000.  If the
+        integer is not specified, it is assumed to be a value of 500 which
+        will place it at the center of the popup menu items.
         """
         menu = wx.Menu()
         
         self.disconnectEvents()
-        for actioncls in action_classes:
+        sorted = []
+        for item in action_classes:
+            if isinstance(item, tuple):
+                sorted.append((abs(item[0]), item[1], item[0] < 0))
+            else:
+                sorted.append((500, item, False))
+                position = 500
+        sorted.sort(key=lambda a:a[0])
+        
+        first = True
+        for pos, actioncls, sep in sorted:
             action = actioncls(self.frame)
             self.popup_actions[action.global_id] = action
+            if sep and not first:
+                menu.AppendSeparator()
             action.insertIntoMenu(menu)
             action.showEnable()
             self.updateMinMax(action.global_id, action.global_id)
@@ -441,6 +461,8 @@ class UserActionMap(debugmixin):
                 self.updateMinMax(subids[0], subids[-1])
                 for id in subids:
                     self.popup_index_actions[id] = action
+            
+            first = False
         
         # register the new ids and allow the event processing to handle the
         # popup

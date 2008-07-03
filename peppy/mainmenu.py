@@ -869,7 +869,7 @@ class MainMenu(IPeppyPlugin):
         action_classes = msg.data
         # FIXME: the built-in right click menu has a Delete option as well that
         # deletes the current selection.
-        action_classes.extend([Undo, Redo, Cut, Copy, Paste, SelectAll])
+        action_classes.extend([(-500, Undo), Redo, Cut, Copy, Paste, (-600, SelectAll)])
         #dprint(action_classes)
 
     def getMajorModes(self):

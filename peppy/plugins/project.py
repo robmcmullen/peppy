@@ -530,7 +530,7 @@ class ProjectPlugin(IPeppyPlugin):
 
     def getFundamentalMenu(self, msg):
         action_classes = msg.data
-        action_classes.append(ShowTagAction)
+        action_classes.append((-10, ShowTagAction))
 
 if __name__== "__main__":
     app = wx.PySimpleApp()
