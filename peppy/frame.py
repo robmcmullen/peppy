@@ -693,6 +693,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             url = vfs.normalize(url)
             mode.showInitialPosition(url)
         return mode is not None
+    
+    def findTabOrOpen(self, url):
+        """Find a tab that contains this URL, otherwise open a new tab"""
+        if not self.makeTabActive(url):
+            self.open(url)
 
     def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None):
         """Open a new tab to edit the given URL.

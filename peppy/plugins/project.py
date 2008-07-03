@@ -158,6 +158,14 @@ class ShowTagAction(ListAction):
     inline = False
     menumax = 20
 
+    def isEnabled(self):
+        return bool(self.mode.project_info) and hasattr(self, 'tags') and bool(self.tags)
+
+    def getNonInlineName(self):
+        lookup = self.mode.check_spelling[0]
+        dprint(lookup)
+        return lookup or "ctags unavailable"
+
     def getItems(self):
         # Because this is a popup action, we can save stuff to this object.
         # Otherwise, we'd save it to the major mode
@@ -170,11 +178,16 @@ class ShowTagAction(ListAction):
                 return links
         return [_('No suggestions')]
     
-    def isEnabled(self):
-        return bool(self.mode.project_info) and hasattr(self, 'tags') and bool(self.tags)
-
     def action(self, index=-1, multiplier=1):
-        dprint(self.tags[index])
+        file = self.tags[index][0]
+        addr = self.tags[index][1]
+        dprint("opening %s at line %s" % (file, addr))
+        try:
+            line = int(addr)
+            file = "%s#%d" % (file, line)
+        except:
+            pass
+        self.frame.findTabOrOpen(file)
 
 
 class RebuildCtags(SelectAction):
@@ -347,7 +360,7 @@ class ProjectPlugin(IPeppyPlugin):
         StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
         PathParam('ctags_command', 'exuberant-ctags', 'Path to ctags command', fullwidth=True),
         PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
-        StrParam('ctags_args', '-R ', 'extra arguments for the ctags command', fullwidth=True),
+        StrParam('ctags_args', '-R -n', 'extra arguments for the ctags command', fullwidth=True),
         )
     
     # mapping of known project URLs to their Project objects

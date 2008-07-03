@@ -236,8 +236,7 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         self.showMessage(message.data)
     
     def open(self, url):
-        if not self.major.frame.makeTabActive(url):
-            self.major.frame.open(url)
+        self.major.frame.findTabOrOpen(url)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar

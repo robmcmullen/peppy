@@ -374,6 +374,12 @@ class ListAction(SelectAction):
     def getIndexOfId(self, id):
         return self.id2index[id]
     
+    def getNonInlineName(self):
+        """When the list isn't an inline menu, get the name that should be used
+        as the indicator label for the menu.
+        """
+        return _(self.name)
+    
     def insertIntoMenu(self,menu,pos=None):
         self.cache.resetIndex()
         self.menu=menu
@@ -392,7 +398,7 @@ class ListAction(SelectAction):
             
             # Inline list should always use a localized name for the pop-right
             # indicator
-            self._insertMenu(menu, pos, child, _(self.name),True)
+            self._insertMenu(menu, pos, child, self.getNonInlineName(),True)
             self.topindex=pos
             pos=0
             menu=child
