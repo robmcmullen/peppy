@@ -15,3 +15,10 @@ pack .h -side left
 pack .q -side right
 pack .h.hello
 pack .q.quit
+
+# Procedure Definition
+proc printArguments args {
+   foreach arg $args {
+      puts $arg
+   }
+}

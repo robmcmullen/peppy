@@ -30,7 +30,11 @@ EOF
 );
 print $translate[Hello];
 
-# Define a subroutine
+=item B<function1>
+
+This is a POD doc section
+
+=cut
 sub function1 { 
   my %args = @_;
   print "Joe said '$args{Joe}'\n";

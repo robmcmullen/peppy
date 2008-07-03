@@ -46,12 +46,11 @@ def PeppyDefaultStyleDictionaryCopy():
          'pre_style' : StyleItem("#4939F2,bold"),               
          'pre2_style' : StyleItem("#AB39F2,bold", "#FFFFFF"),
          'regex_style' : StyleItem("#008B8B"),
-         'scalar_style' : StyleItem("#AB37F2,bold", face="%(secondary)s"),
-         'scalar2_style' : StyleItem("#AB37F2", face="%(secondary)s"),
+         'scalar_style' : StyleItem("#AB37F2,bold"),
+         'scalar2_style' : StyleItem("#AB37F2"),
          'select_style' : NullStyleItem(), # Use system default colour
          'string_style' : StyleItem("#1A701A"),
-         'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol", \
-                                       "%(secondary)s"),
+         'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol"),
          'unknown_style' : StyleItem("#FFFFFF,bold", "#DD0101,eol"),
          'whitespace_style' : StyleItem("#838383"),
          }

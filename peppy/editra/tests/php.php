@@ -5,6 +5,8 @@
     $hello = "HELLO"
     $world = "WORLD"
 
+    include_once($hello_root_path . 'hellolib.php');
+
     function print_mood()
     {
         switch($_GET['friendly'])
@@ -19,13 +21,32 @@
                 echo "<h1>$hello???</h1>";
         } 
     }
-    function disp_date ()
+
+    /* Class Definition Test */
+    class Foo
     {
-	    $tics=time();
-	    echo date("m/d/Y",$tics);
+        var $myvalue;
+
+        function bar()
+        {
+            if (isset($this))
+            {
+                echo '$this is defined (';
+                echo get_class($this);
+                echo ")\n";
+            } else {
+                echo "\$this is not defined.\n";
+            }
+        }
+        function helloA(param) {
+            echo "$param";
+        }
+
     }
 
-    include_once($hello_root_path . 'hellolib.php');
+    function hello(param) {
+        echo "$param";
+    }
 ?>
 
 <html>

@@ -27,6 +27,6 @@ class MyClass {
     static var name : String = "MyString";
     function foo() : Void {
     }
-        static function bar( s : String, v : Bool ) : Void {
+    static function bar( s : String, v : Bool ) : Void {
     }
 }

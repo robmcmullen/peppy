@@ -561,9 +561,7 @@ class StyleEditor(wx.Dialog):
             elif c_type == "wxChoice":
                 ctrl.SetStringSelection(val_map[sid])
             elif isinstance(ctrl, colorsetter.ColorSetter):
-                ctrl.SetValue(wx.Color(int(val_map[sid][1:3], 16),
-                                       int(val_map[sid][3:5], 16),
-                                       int(val_map[sid][5:7], 16)), post=False)
+                ctrl.SetLabel(val_map[sid][:7])
         return True
 
     def UpdateStyleSet(self, id_):

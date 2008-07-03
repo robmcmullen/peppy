@@ -22,6 +22,6 @@ root
 	HELLO_WORLD: "make"
 cluster
 	"./"
-	end
+end
 	include "$EIFFEL_S/library/lib.pdl"
 end -- hello_prog

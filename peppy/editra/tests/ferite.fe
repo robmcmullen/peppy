@@ -1,7 +1,8 @@
 // Syntax Highlighting Test File for Ferite
 // Comments are like this
-/* Multiline comments are
- * like this
+/** Multiline comments are like this
+ * @summary Documentation keyword
+ * \brief Another Doc keyword
  */
 
 // Hello World
@@ -38,4 +39,28 @@ class A {
     function f() {
         return .value;
     }
+}
+
+// Some Namespace defs
+namespace A {
+    function f() {
+        return "A.f";
+    }
+}
+
+namespace modifies A {
+    function g() {
+        return "A.g";
+    }
+}
+
+// Protocols
+protocol C {
+    function getX();
+    function getY();
+}
+
+class A implements C {
+    function getX() { return "X"; }
+    function getY() { return "Y"; }
 }
