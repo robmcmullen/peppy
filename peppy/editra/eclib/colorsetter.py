@@ -217,7 +217,7 @@ class ColorSetter(wx.Panel):
         self._txt.SetValue(label)
         self.OnTextChange()
 
-    def SetValue(self, colour):
+    def SetValue(self, colour, post=True):
         """Set the color value of the button
         @param colour: wxColour or 3 tuple to set colour value to
 
@@ -228,7 +228,8 @@ class ColorSetter(wx.Panel):
                                hex(green)[2:].zfill(2).upper(),
                                hex(blue)[2:].zfill(2).upper())
         self._txt.SetValue(hex_str)
-        self.__PostEvent()
+        if post:
+            self.__PostEvent()
 
 
 class HexValidator(wx.PyValidator):
