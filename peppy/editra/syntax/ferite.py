@@ -7,14 +7,13 @@
 ###############################################################################
 
 """
-Lexer configuration module for Ferite Scripting Language
-
+@summary: Lexer configuration module for Ferite Scripting Language
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ferite.py 51488 2008-02-01 09:23:51Z CJP $"
-__revision__ = "$Revision: 51488 $"
+__svnid__ = "$Id: ferite.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

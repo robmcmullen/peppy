@@ -3,13 +3,17 @@
 # Purpose: initialize the syntax package                                      #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 """Syntax data package
-1) Provides
-   - keyword data
-   - syntax styling definitions
+
+Provides:
+  - Keyword Data
+  - Syntax styling definitions
+
+For all differn't file types and languages supported by Editra
+
 """
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: __init__.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: __init__.py 52855 2008-03-27 14:53:06Z CJP $"
+__revision__ = "$Revision: 52855 $"

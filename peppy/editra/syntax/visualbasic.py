@@ -3,27 +3,20 @@
 # Purpose: Define Visual Basic syntax for highlighting and other features     #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: visualbasic.py                                                        #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for Visual Basic.                                #
-#                                                                             #
-# @todo: Incomplete requires color/kw tuning                                  #
-#-----------------------------------------------------------------------------#
+FILE: visualbasic.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for Visual Basic.
+@todo: Incomplete requires color/kw tuning
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: visualbasic.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
-
-#-----------------------------------------------------------------------------#
-# Dependancies
+__svnid__ = "$Id: visualbasic.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 

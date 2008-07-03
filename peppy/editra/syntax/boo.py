@@ -3,20 +3,19 @@
 # Purpose: Define Boo language syntax and other features                      #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
 FILE: boo.py
-
-Defines language and syntax highlighting settings for the Boo programming 
-language
-
+@summary: Defines language and syntax highlighting settings for the Boo
+          programming language
+@todo: support for C style comment regions
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: boo.py 50641 2007-12-11 13:54:48Z CJP $"
-__revision__ = "$Revision: 50641 $"
+__svnid__ = "$Id: boo.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

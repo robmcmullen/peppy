@@ -3,25 +3,20 @@
 # Purpose: Define Haskell syntax for highlighting and other features          #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: haskell.py                                                            #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for the Haskell Programming Language             #
-#                                                                             #
-# @todo: more custom highlighting                                             #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+ FILE: haskell.py
+ AUTHOR: Cody Precord
+ @summary: Lexer configuration module for the Haskell Programming Language
+ @todo: More custom highlighting
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: haskell.py 49417 2007-10-25 08:03:01Z CJP $"
-__revision__ = "$Revision: 49417 $"
+__svnid__ = "$Id: haskell.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

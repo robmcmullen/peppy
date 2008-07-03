@@ -4,23 +4,20 @@
 #          other features.                                                    #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: sh.py                                                                 #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# @summary: Lexer configuration file for Bourne, Bash, Kornshell and          #
-#           C-Shell scripts.                                                  #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: sh.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration file for Bourne, Bash, Kornshell and
+          C-Shell scripts.
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: sh.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: sh.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

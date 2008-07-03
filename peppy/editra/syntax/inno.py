@@ -9,17 +9,13 @@
 """
 FILE: inno.py
 AUTHOR: Cody Preord
-
-SUMMARY:
-Lexer configuration module for Inno Setup Scripts
-
-@todo:
+@summary: Lexer configuration module for Inno Setup Scripts
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: inno.py 51954 2008-02-21 08:27:57Z CJP $"
-__revision__ = "$Revision: 51954 $"
+__svnid__ = "$Id: inno.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

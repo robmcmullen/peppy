@@ -8,16 +8,14 @@
 
 """
 FILE: actionscript.py                                                                
-@author: Cody Precord                                                       
-                                                                         
-SUMMARY:                                                                    
-Lexter configuration file for ActionScript                          
+AUTHOR: Cody Precord                                                       
+@summary: Lexer configuration file for ActionScript
                                                                          
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: actionscript.py 52210 2008-03-01 08:32:37Z CJP $"
-__revision__ = "$Revision: 52210 $"
+__svnid__ = "$Id: actionscript.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies

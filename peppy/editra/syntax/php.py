@@ -7,16 +7,15 @@
 ###############################################################################
 
 """
-FILE: php.py                                                                
-AUTHOR: Cody Precord                                                        
-                                                                         
-@summary: Lexer configuration module for PHP.                               
-                                                                         
+FILE: php.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for PHP.
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: php.py 52279 2008-03-03 09:00:42Z CJP $"
-__revision__ = "$Revision: 52279 $"
+__svnid__ = "$Id: php.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -34,7 +33,7 @@ PHP_KEYWORDS = ("__LINE__ __FILE__ declare else enddeclare endswitch elseif "
                 "NULL extends global static include require include_once "
                 "require_once new true false function class object ")
 
-# PHP Standard Functions/Methods 
+# PHP Standard Functions/Methods
 # (roughly based off of PHP Pocket Reference by O'Reilly)
 PHP_FUNC = ("apache_child_terminate apache_lookup_uri apache_note "
             "apache_request_headers apache_response_headers apache_setenv "
@@ -65,14 +64,14 @@ PHP_FUNC = ("apache_child_terminate apache_lookup_uri apache_note "
             "com_propget com_propput com_propset com_release com_set "
             "cpdf_add_annotation cpdf_add_outline cpdf_arc cpdf_begin_text "
             "cpdf_circle cpdf_clip cpdf_close cpdf_closepath_fill_stroke "
-            "cpdf_closepath_stroke cpdf_closepath cpdf_continue_text " 
+            "cpdf_closepath_stroke cpdf_closepath cpdf_continue_text "
             "cpdf_end_text cpdf_fill_stroke cpdf_fill cpdf_finalize_page "
             "cpdf_finalize cpdf_global_set_document_limits cpdf_import_jpeg "
             "cpdf_lineto cpdf_moveto cpdf_newpath cpdf_open cpdf_output_buffer "
             "cpdf_page_init cpdf_place_inline_image cpdf_rect cpdf_restore "
             "cpdf_rlineto cpdf_rmoveto cpdf_rotate_text cpdf_rotate "
             "cpdf_save_to_file cpdf_save cpdf_scale cpdf_set_action_url "
-            "cpdf_set_char_spacing cpdf_set_creator cpdf_set_current_page "  
+            "cpdf_set_char_spacing cpdf_set_creator cpdf_set_current_page "
             "cpdf_set_font_directories cpdf_set_font_map_file cpdf_set_font "
             "cpdf_set_horiz_scaling cpdf_set_keywords cpdf_set_leading "
             "cpdf_set_page_animation cpdf_set_subject cpdf_set_text_matrix "

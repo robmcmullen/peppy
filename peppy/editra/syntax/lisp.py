@@ -9,16 +9,14 @@
 """
 FILE: lisp.py
 AUTHOR: Cody Precord
-
-SUMMARY:
-Lexer configuration module for Lisp Files.
-
+@summary: Lexer configuration module for Lisp Files.
 @todo: Add Standard Variables
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: lisp.py 52177 2008-02-28 12:02:25Z CJP $"
-__revision__ = "$Revision: 52177 $"
+__svnid__ = "$Id: lisp.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

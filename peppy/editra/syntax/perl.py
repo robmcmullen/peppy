@@ -9,14 +9,13 @@
 """
 FILE: perl.py
 AUTHOR: Cody Precord
-
 @summary: Lexer configuration module for Perl.
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: perl.py 51861 2008-02-17 13:14:01Z CJP $"
-__revision__ = "$Revision: 51861 $"
+__svnid__ = "$Id: perl.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

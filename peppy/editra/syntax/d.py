@@ -4,28 +4,24 @@
 #          features.                                                          #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: d.py                                                                  #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for D programming language                       #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: d.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for D programming language
+@todo: When 2.9 is out switch to the dedicated D Lexer
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: d.py 49417 2007-10-25 08:03:01Z CJP $"
-__revision__ = "$Revision: 49417 $"
+__svnid__ = "$Id: d.py 53476 2008-05-07 03:56:14Z CJP $"
+__revision__ = "$Revision: 53476 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
@@ -48,7 +44,7 @@ DOC_KEYWORDS = (2, "TODO FIXME XXX \\author \\brief \\bug \\callgraph "
                    "\\endif \\endverbatim \\example \\exception \\file \\if "
                    "\\ifnot \\image \\include \\link \\mainpage \\name "
                    "\\namespace \\page \\par \\paragraph \\param \\return "
-                   "\\retval \\section \\struct \\subpage \\subsection " 
+                   "\\retval \\section \\struct \\subpage \\subsection "
                    "\\subsubsection \\test \\todo \\typedef \\union \\var "
                    "\\verbatim \\version \\warning \\$ \\@ \\~ \\< \\> \\# \\% "
                    "HACK ")
@@ -78,12 +74,33 @@ SYNTAX_ITEMS = [ ('STC_C_DEFAULT', 'default_style'),
                  ('STC_C_WORD', 'keyword_style'),
                  ('STC_C_WORD2', 'keyword2_style') ]
 
+# For 2.9
+SYNTAX_ITEMS2 = [ ('STC_D_CHARACTER', 'char_style'),
+                  ('STC_D_COMMENT', 'comment_style'),
+                  ('STC_D_COMMENTDOC', 'comment_style'),
+                  ('STC_D_COMMENTDOCKEYWORD', 'dockey_style'),
+                  ('STC_D_COMMENTDOCKEYWORDERROR', 'error_style'),
+                  ('STC_D_COMMENTLINE', 'comment_style'),
+                  ('STC_D_COMMENTLINEDOC', 'comment_style'),
+                  ('STC_D_COMMENTNESTED', 'comment_style'),
+                  ('STC_D_DEFAULT', 'default_style'),
+                  ('STC_D_IDENTIFIER', 'default_style'),
+                  ('STC_D_NUMBER', 'number_style'),
+                  ('STC_D_OPERATOR', 'operator_style'),
+                  ('STC_D_STRING', 'string_style'),
+                  ('STC_D_STRINGEOL', 'stringeol_style'),
+                  ('STC_D_TYPEDEF', 'default_style'), # NEEDS STYLE
+                  ('STC_D_WORD', 'keyword_style'),
+                  ('STC_D_WORD2', 'keyword2_style'),
+                  ('STC_D_WORD3', 'keyword3_style') ]
+
 #---- Extra Properties ----#
 FOLD = ("fold", "1")
 FOLD_PRE = ("styling.within.preprocessor", "0")
 FOLD_COM = ("fold.comment", "1")
 FOLD_COMP = ("fold.compact", "1")
 FOLD_ELSE = ("fold.at.else", "0")
+
 #-----------------------------------------------------------------------------#
 
 #---- Required Module Functions ----#
@@ -113,7 +130,7 @@ def Properties(lang_id=0):
 
     """
     if lang_id == synglob.ID_LANG_D:
-        return [FOLD, FOLD_PRE]
+        return [FOLD, FOLD_PRE, FOLD_COM]
     else:
         return list()
 

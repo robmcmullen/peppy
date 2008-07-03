@@ -4,25 +4,19 @@
 #          and other features.                                                #
 # Author: Rob McMullen <robm@users.sourceforge.net>                           #
 # Copyright: (c) 2007 Rob McMullen <robm@users.sourceforge.net                #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: dot.py                                                                #
-# AUTHOR: Rob McMullen                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for the DOT graph description language           #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: dot.py
+AUTHOR: Rob McMullen
+@summary: Lexer configuration module for the DOT graph description language
+
 """
 
 __author__ = "Rob McMullen <robm@users.sourceforge.net>"
-__svnid__ = "$Id: dot.py 49414 2007-10-25 04:47:46Z CJP $"
-__revision__ = "$Revision: 49414 $"
+__svnid__ = "$Id: dot.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 import synglob
 #-----------------------------------------------------------------------------#

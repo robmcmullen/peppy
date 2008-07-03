@@ -3,28 +3,21 @@
 # Purpose: Define VHDL syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: vhdl.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for VHDL.                                        #
-# Very High Scale Integrated Circuit Hardware Description Language            #
-#                                                                             #
-# @todo: Maybe add highlighting for values S0S, S1S, ect..                    #
-#-----------------------------------------------------------------------------#
+FILE: vhdl.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for VHDL. Very High Scale Integrated
+          Circuit Hardware Description Language
+@todo: Maybe add highlighting for values S0S, S1S, ect..
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: vhdl.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
-
-#-----------------------------------------------------------------------------#
-# Dependancies
+__svnid__ = "$Id: vhdl.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 

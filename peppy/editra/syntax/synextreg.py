@@ -12,17 +12,15 @@
 """
 FILE: synextreg.py
 LANGUAGE: Python
-
-This module defines all supported language/filetype indentifiers and an
-extension register for mapping file extensions to filetypes.
-
+@summary: This module defines all supported language/filetype indentifiers and
+          an extension register for mapping file extensions to filetypes.
 @see: synglob.py for more details on how this data is used
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synextreg.py 52177 2008-02-28 12:02:25Z CJP $"
-__revision__ = "$Revision: 52177 $"
+__svnid__ = "$Id: synextreg.py 54460 2008-07-02 01:56:51Z CJP $"
+__revision__ = "$Revision: 54460 $"
 
 #-----------------------------------------------------------------------------#
 import os
@@ -80,10 +78,12 @@ LANG_APACHE = u'Apache Conf'
 # Use LEX_CPP
 ID_LANG_AS = _NewId()
 LANG_AS = u'ActionScript'
-ID_LANG_C    = _NewId()
+ID_LANG_C = _NewId()
 LANG_C = u'C'
-ID_LANG_CPP  = _NewId()
+ID_LANG_CPP = _NewId()
 LANG_CPP = u'CPP'
+ID_LANG_CSHARP = _NewId()
+LANG_CSHARP = u'C#'
 ID_LANG_D = _NewId()
 LANG_D = u'D'
 ID_LANG_DOT = _NewId()
@@ -100,6 +100,10 @@ ID_LANG_OBJC = _NewId()
 LANG_OBJC = u'Objective C'
 ID_LANG_PIKE = _NewId()
 LANG_PIKE = u'Pike'
+ID_LANG_SQUIRREL = _NewId()
+LANG_SQUIRREL = u'Squirrel'
+ID_LANG_VALA = _NewId()
+LANG_VALA = u'Vala'
 
 # Use LEX_CSS
 ID_LANG_CSS = _NewId()
@@ -233,6 +237,8 @@ LANG_VB = u'Visual Basic'
 # Use LEX_VERILOG
 ID_LANG_VERILOG = _NewId()
 LANG_VERILOG = u'Verilog'
+ID_LANG_SYSVERILOG = _NewId()
+LANG_SYSVERILOG = u'System Verilog'
 
 # Use LEX_VHDL
 ID_LANG_VHDL = _NewId()
@@ -256,6 +262,12 @@ LANG_PROPS = u'Properties'
 ID_LANG_YAML = _NewId()
 LANG_YAML = u'YAML'
 
+# Use LEX_CONTAINER
+ID_LANG_DJANGO = _NewId()
+LANG_DJANGO = u'Django'
+ID_LANG_MAKO = _NewId()
+LANG_MAKO = u'Mako'
+
 #---- End Language Identifier Keys ----#
 
 # Default extensions to file type mapping
@@ -272,10 +284,12 @@ EXT_MAP = {
            'cfm cfc cfml dbm'   : LANG_COLDFUSION,
            'cc c++ cpp cxx hh h++ hpp hxx' : LANG_CPP,
            'csh'                : LANG_CSH,
+           'cs'                 : LANG_CSHARP,
            'css'                : LANG_CSS,
            'd'                  : LANG_D,
-           'dot'                : LANG_DOT,
            'patch diff'         : LANG_DIFF,
+           'django'             : LANG_DJANGO,
+           'dot'                : LANG_DOT,
            'edc'                : LANG_EDJE,
            'e'                  : LANG_EIFFEL,
            'erl'                : LANG_ERLANG,
@@ -286,7 +300,7 @@ EXT_MAP = {
            'fe'                 : LANG_FERITE,
            'gc gui'             : LANG_GUI4CLI,
            'hs'                 : LANG_HASKELL,
-           'hx'                 : LANG_HAXE,
+           'hx hxml'            : LANG_HAXE,
            'htm html shtm shtml xhtml' : LANG_HTML,
            'iss'                : LANG_INNO,
            'java'               : LANG_JAVA,
@@ -298,6 +312,7 @@ EXT_MAP = {
            'lt'                 : LANG_LOUT,
            'lua'                : LANG_LUA,
            'mak makefile'       : LANG_MAKE,
+           'mao mako'           : LANG_MAKO,
            'asm masm'           : LANG_MASM,
            'matlab'             : LANG_MATLAB,
            'mssql'              : LANG_MSSQL,
@@ -316,9 +331,12 @@ EXT_MAP = {
            'rb rbw rbx'         : LANG_RUBY,
            'scm smd ss'         : LANG_SCHEME,
            'sql'                : LANG_SQL,
+           'nut'                : LANG_SQUIRREL,
            'st'                 : LANG_ST,
+           'sv svh'             : LANG_SYSVERILOG,
            'itcl tcl tk'        : LANG_TCL,
            'txt'                : LANG_TXT,
+           'vala'               : LANG_VALA,
            'bas cls ctl frm vb' : LANG_VB,
            'v'                  : LANG_VERILOG,
            'vh vhdl'            : LANG_VHDL,

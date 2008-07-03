@@ -3,87 +3,90 @@
 # Purpose: Define SQL syntax for highlighting and other features              #
 # Author: Thomas Keul <tgkeul@web.de>                                         #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------
-# FILE: sql.py
-# AUTHOR: Thomas Keul
-#
-# SUMMARY:
-# Lexer configuration module for Oracle 10 PL/SQL (and SQL, sqlplus, pldoc).
-# This work is based on sql.properties of SciTE 1.74 and other documents
-# which are linked (these links where current in October 2007)
-#
-# The keywords are divided in several sections which unfortunally overlap.
-# As a fulltime PL/SQL programmer I decided which section I prefer for a
-# keyword which belongs to multiple sections (like 'in', 'to' or 'else').
-# It may be a challange to create an editor which colour the multiple
-# used keywords depending on their context.
-# /*+ HINT use same color for PL/SQL and SQL */
-# Another thing the SQL-Lexer is not able to handle is a token consisting
-# of several keywords. Although zone is only part in type definitions as
-# "timestamp with local time zone" it will be coloured if used as identifier
-# too.
-#
-# If you're unhappy feel free to change it or build a new SQL-Lexer :-)
-#
-# The sections I choose
-# - SQL keywords
-# - Exception names and transaction control (to hilite in a special color)
-# - SQL functions
-# - sqlplus keywords
-# - PL/SQL keywords
-# - data types
-# - standard packages
-# - pseudo variables  and constants
-# There are more section than supported by the lexer. Standard packages and
-# sqlplus keywords share a slot. You may change it.
-#
-# In contrast to Gnome gtk-sourceview sql.lang file I did not divide the
-# function section into subsections like "analytical functions".
-# For my purpose distinct colours or fonts for different function types don't
-# help me reading programs.
-# ... and the Scintilla SQL lexer does not support it.
-#
-# Some useful internals of the Lexer.
-#   It gets an array with 8 lists of keywords. These lists are defined below.
-#
-#       WordList &keywords1  = *keywordlists[0];  : SQL_KW   (SQL Keywords)
-#       WordList &keywords2  = *keywordlists[1];  : SQL_DBO  (Data Types)
-#       WordList &kw_pldoc   = *keywordlists[2];  : SQL_PLD  (epydoc field tags)
-#       WordList &kw_sqlplus = *keywordlists[3];  : SQL_PLUS or SQL_PKG
-#       WordList &kw_user1   = *keywordlists[4];  : SQL_UKW1 (standard functions)
-#       WordList &kw_user2   = *keywordlists[5];  : SQL_UKW2 (exceptions)
-#       WordList &kw_user3   = *keywordlists[6];  : SQL_UKW3 (special variables)
-#       WordList &kw_user4   = *keywordlists[7];  : SQL_UKW4 (PL/SQL Keywords)
-#
-#   As some keywords are used multiple the colour depends on the process in the
-#   lexer. I prefer the same colour for SQL and PL/SQL Keywords.
-#
-#   if a token is realized as identifier, the keyword lists are scanned:
-#       1. keywords1  / SQL_KW
-#       2. keywords2  / SQL_DBO
-#       3. kw_sqlplus / SQL_PLUS
-#       4. kw_user1   / SQL_UKW1
-#       5. kw_user2   / SQL_UKW2
-#       6. kw_user3   / SQL_UKW3
-#       7. kw_user4   / SQL_UKW4
-#   What ever comes first wins. For this reason PL/SQL keyword are last in the
-#   list so no prior used keyword must be removed.
-#   Because of the preceeding @ pldoc is processed seperate.
-#
-#   The Scintilla SQL Lexer 1.75 has a restriction when '#' and '$' are not
-#   identified as valid characters of an (Oracle-)identifier.
-#   wxPython 2.8.7.1 does not use not use lexer version 1.75 yet - so SQL_PKG
-#   wil not work.
-#-----------------------------------------------------------------------------
+FILE: sql.py
+AUTHOR: Thomas Keul
+
+SUMMARY:
+Lexer configuration module for Oracle 10 PL/SQL (and SQL, sqlplus, pldoc).
+This work is based on sql.properties of SciTE 1.74 and other documents
+which are linked (these links where current in October 2007)
+
+The keywords are divided in several sections which unfortunally overlap.
+As a fulltime PL/SQL programmer I decided which section I prefer for a
+keyword which belongs to multiple sections (like 'in', 'to' or 'else').
+It may be a challange to create an editor which colour the multiple
+used keywords depending on their context.
+/*+ HINT use same color for PL/SQL and SQL */
+Another thing the SQL-Lexer is not able to handle is a token consisting
+of several keywords. Although zone is only part in type definitions as
+"timestamp with local time zone" it will be coloured if used as identifier
+too.
+
+If you're unhappy feel free to change it or build a new SQL-Lexer :-)
+
+The sections I choose
+  - SQL keywords
+  - Exception names and transaction control (to hilite in a special color)
+  - SQL functions
+  - sqlplus keywords
+  - PL/SQL keywords
+  - data types
+  - standard packages
+  - pseudo variables  and constants
+
+There are more section than supported by the lexer. Standard packages and
+sqlplus keywords share a slot. You may change it.
+
+In contrast to Gnome gtk-sourceview sql.lang file I did not divide the
+function section into subsections like "analytical functions".
+For my purpose distinct colours or fonts for different function types don't
+help me reading programs.
+... and the Scintilla SQL lexer does not support it.
+
+Some useful internals of the Lexer.
+It gets an array with 8 lists of keywords. These lists are defined below.
+
+  - WordList &keywords1  = *keywordlists[0];  : SQL_KW   (SQL Keywords)
+  - WordList &keywords2  = *keywordlists[1];  : SQL_DBO  (Data Types)
+  - WordList &kw_pldoc   = *keywordlists[2];  : SQL_PLD  (epydoc field tags)
+  - WordList &kw_sqlplus = *keywordlists[3];  : SQL_PLUS or SQL_PKG
+  - WordList &kw_user1   = *keywordlists[4];  : SQL_UKW1 (standard functions)
+  - WordList &kw_user2   = *keywordlists[5];  : SQL_UKW2 (exceptions)
+  - WordList &kw_user3   = *keywordlists[6];  : SQL_UKW3 (special variables)
+  - WordList &kw_user4   = *keywordlists[7];  : SQL_UKW4 (PL/SQL Keywords)
+
+As some keywords are used multiple the colour depends on the process in the
+lexer. I prefer the same colour for SQL and PL/SQL Keywords.
+
+if a token is realized as identifier, the keyword lists are scanned:
+   1. keywords1  / SQL_KW
+   2. keywords2  / SQL_DBO
+   3. kw_sqlplus / SQL_PLUS
+   4. kw_user1   / SQL_UKW1
+   5. kw_user2   / SQL_UKW2
+   6. kw_user3   / SQL_UKW3
+   7. kw_user4   / SQL_UKW4
+
+What ever comes first wins. For this reason PL/SQL keyword are last in the
+list so no prior used keyword must be removed.
+Because of the preceeding @ pldoc is processed seperate.
+
+The Scintilla SQL Lexer 1.75 has a restriction when '#' and '$' are not
+identified as valid characters of an (Oracle-)identifier.
+wxPython 2.8.7.1 does not use not use lexer version 1.75 yet - so SQL_PKG
+wil not work.
+
+@summary: Lexer configuration module for Oracle 10 PL/SQL
+
 """
 
 __author__ = "Thomas Keul <tgkeul@web.de>"
-__svnid__ = "$Id: sql.py 50446 2007-12-03 07:41:20Z CJP $"
-__revision__ = "$Revision: 50446 $"
+__svnid__ = "$Id: sql.py 52978 2008-04-02 10:57:35Z CJP $"
+__revision__ = "$Revision: 52978 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies

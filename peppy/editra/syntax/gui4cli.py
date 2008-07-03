@@ -3,25 +3,19 @@
 # Purpose: Syntax configuration for the Gui4Cli programming language          #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: gui4cli.py                                                            #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for Gui4Cli                                      #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: gui4cli.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for Gui4Cli
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: gui4cli.py 49481 2007-10-27 08:35:12Z CJP $"
-__revision__ = "$Revision: 49481 $"
+__svnid__ = "$Id: gui4cli.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

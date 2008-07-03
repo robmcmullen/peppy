@@ -3,24 +3,20 @@
 # Purpose: Define Lua5 syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: lua.py                                                                #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for Lua                                          #
-#                                                                             #
-# @todo: This setup for Lua5, maybe add Lua4 support                          #
-#-----------------------------------------------------------------------------#
+FILE: lua.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for Lua
+@todo: This setup for Lua5, maybe add Lua4 support
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: lua.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: lua.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 

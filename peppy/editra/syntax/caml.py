@@ -9,17 +9,13 @@
 """
 FILE: caml.py
 AUTHOR: Cody Precord
-
-SUMMARY:
-Lexer configuration module for Caml
-
-@todo:
+@summary: Lexer configuration module for Caml
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: caml.py 52101 2008-02-26 08:12:33Z CJP $"
-__revision__ = "$Revision: 52101 $"
+__svnid__ = "$Id: caml.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -53,7 +49,7 @@ SYNTAX_ITEMS = [('STC_CAML_CHAR', 'char_style'),
                 ('STC_CAML_KEYWORD', 'keyword_style'),
                 ('STC_CAML_KEYWORD2', 'pre_style'),
                 ('STC_CAML_KEYWORD3', 'keyword2_style'),
-                ('STC_CAML_LINE_NUM', 'number_style'),
+                ('STC_CAML_LINENUM', 'number_style'),
                 ('STC_CAML_NUMBER', 'number_style'),
                 ('STC_CAML_OPERATOR', 'operator_style'),
                 ('STC_CAML_STRING', 'string_style'),

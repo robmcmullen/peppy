@@ -2,26 +2,21 @@
 # Name: eiffel.py                                                             #
 # Purpose: Define Eiffel syntax for highlighting and other features           #
 # Author: Cody Precord <cprecord@editra.org>                                  #
-# Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# Copyright: (c) 2008 Cody Precord <staff@editra.org>                         #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: eiffel.py                                                             #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for Eiffel                                       #
-#                                                                             #
-# @todo: look into why io.anything is highlighted as a number                 #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: eiffel.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for Eiffel
+@todo: look into why io.anything is highlighted as a number
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: eiffel.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: eiffel.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -29,14 +24,14 @@ import synglob
 
 #---- Keyword Definitions ----#
 EIFFEL_KW = (0, "alias all and any as bit boolean check class character clone "
-                "create creation current debug deferred div do double else "
-                "elseif end ensure equal expanded export external false "
+                "cluster create creation current debug deferred div do double "
+                "else elseif end ensure equal expanded export external false "
                 "feature forget from frozen general if implies indexing infix "
                 "inherit inspect integer invariant is language like local loop "
                 "mod name nochange none not obsolete old once or platform "
-                "pointer prefix precursor real redefine rename require rescue "
-                "result retry select separate string strip then true undefine "
-                "unique until variant void when xor")
+                "pointer prefix precursor program real redefine rename require "
+                "rescue result retry root select separate string strip then "
+                "true undefine unique until variant void when xor")
 #---- End Keyword Definitions ----#
 
 #---- Syntax Style Specs ----#

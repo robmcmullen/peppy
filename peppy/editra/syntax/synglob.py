@@ -9,18 +9,17 @@
 """
 FILE: synglob.py
 AUTHOR: Cody Precord
-
-SUMMARY:
-Provides configuration and basic API functionality to all the syntax
-modules. It also acts  as a configuration file for the syntax management code.
-When support for a new languages is added it must have a registration entry in
-the below L{LANG_MAP} dictionary in order to be loadable by the syntax module.
+@summary: Provides configuration and basic API functionality to all the syntax
+          modules. It also acts  as a configuration file for the syntax
+          management code. When support for a new languages is added it must
+          have a registration entry in the below L{LANG_MAP} dictionary in
+          order to be loadable by the syntax module.
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synglob.py 52177 2008-02-28 12:02:25Z CJP $"
-__revision__ = "$Revision: 52177 $"
+__svnid__ = "$Id: synglob.py 54460 2008-07-02 01:56:51Z CJP $"
+__revision__ = "$Revision: 54460 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -46,9 +45,11 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_COLDFUSION : (ID_LANG_COLDFUSION, stc.STC_LEX_HTML, 'html'),
             LANG_CPP    : (ID_LANG_CPP,    stc.STC_LEX_CPP,      'cpp'),
             LANG_CSH    : (ID_LANG_CSH,    stc.STC_LEX_BASH,     'sh'),
+            LANG_CSHARP : (ID_LANG_CSHARP, stc.STC_LEX_CPP,      'cpp'),
             LANG_CSS    : (ID_LANG_CSS,    stc.STC_LEX_CSS,      'css'),
             LANG_D      : (ID_LANG_D,      stc.STC_LEX_CPP,      'd'),
             LANG_DIFF   : (ID_LANG_DIFF,   stc.STC_LEX_DIFF,     'diff'),
+            LANG_DJANGO : (ID_LANG_DJANGO, stc.STC_LEX_CONTAINER, 'django'),
             LANG_DOT    : (ID_LANG_DOT,    stc.STC_LEX_CPP,      'dot'),
             LANG_EDJE   : (ID_LANG_EDJE,   stc.STC_LEX_CPP,      'edje'),
             LANG_EIFFEL : (ID_LANG_EIFFEL, stc.STC_LEX_EIFFEL,   'eiffel'),
@@ -72,6 +73,7 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_LOUT   : (ID_LANG_LOUT,   stc.STC_LEX_LOUT,     'lout'),
             LANG_LUA    : (ID_LANG_LUA,    stc.STC_LEX_LUA,      'lua'),
             LANG_MAKE   : (ID_LANG_MAKE,   stc.STC_LEX_MAKEFILE, 'make'),
+            LANG_MAKO   : (ID_LANG_MAKO,   stc.STC_LEX_CONTAINER, 'mako'),
             LANG_MASM   : (ID_LANG_MASM,   stc.STC_LEX_ASM,      'masm'),
             LANG_MATLAB : (ID_LANG_MATLAB, stc.STC_LEX_MATLAB,   'matlab'),
             LANG_MSSQL  : (ID_LANG_MSSQL,  stc.STC_LEX_MSSQL,    'mssql'),
@@ -90,9 +92,12 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_RUBY   : (ID_LANG_RUBY,   stc.STC_LEX_RUBY,     'ruby'),
             LANG_SCHEME : (ID_LANG_SCHEME, stc.STC_LEX_LISP,     'lisp'),
             LANG_SQL    : (ID_LANG_SQL,    stc.STC_LEX_SQL,      'sql'),
+            LANG_SQUIRREL : (ID_LANG_SQUIRREL, stc.STC_LEX_CPP,  'squirrel'),
             LANG_ST     : (ID_LANG_ST,     stc.STC_LEX_SMALLTALK, 'smalltalk'),
+            LANG_SYSVERILOG : (ID_LANG_SYSVERILOG, stc.STC_LEX_VERILOG, 'verilog'),
             LANG_TCL    : (ID_LANG_TCL,    stc.STC_LEX_TCL,      'tcl'),
             LANG_TXT    : (ID_LANG_TXT,    stc.STC_LEX_NULL,     None),
+            LANG_VALA   : (ID_LANG_VALA,   stc.STC_LEX_CPP,      'cpp'),
             LANG_VB     : (ID_LANG_VB,     stc.STC_LEX_VB,       'visualbasic'),
             LANG_VERILOG: (ID_LANG_VERILOG, stc.STC_LEX_VERILOG, 'verilog'),
             LANG_VHDL   : (ID_LANG_VHDL,   stc.STC_LEX_VHDL,     'vhdl'),

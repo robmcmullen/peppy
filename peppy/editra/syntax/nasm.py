@@ -3,24 +3,23 @@
 # Purpose: Define NASM syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: nasm.py                                                               #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration file Netwide Assembly Code                              #
-#                                                                             #
-# @todo: Add mmx, sse, 3dnow, cyrix, amd instruction sets                     #
-#-----------------------------------------------------------------------------#
+FILE: nasm.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration file Netwide Assembly Code
+@todo: Add mmx, sse, 3dnow, cyrix, amd instruction sets
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: nasm.py 49250 2007-10-20 02:40:49Z CJP $"
-__revision__ = "$Revision: 49250 $"
+__svnid__ = "$Id: nasm.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
+
+#-----------------------------------------------------------------------------#
+import synglob
 
 #-----------------------------------------------------------------------------#
 
@@ -118,15 +117,21 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [NASM_CPU_INST, NASM_FPU_INST, NASM_REGISTERS, NASM_DIRECTIVES,
-            NASM_DIREC_OP]
+    if lang_id == synglob.ID_LANG_NASM:
+        return [NASM_CPU_INST, NASM_FPU_INST, NASM_REGISTERS,
+                NASM_DIRECTIVES, NASM_DIREC_OP]
+    else:
+        return list()
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    return SYNTAX_ITEMS
+    if lang_id == synglob.ID_LANG_NASM:
+        return SYNTAX_ITEMS
+    else:
+        return list()
 
 def Properties(lang_id=0):
     """Returns a list of Extra Properties to set
@@ -140,7 +145,11 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    return [u';']
+    if lang_id == synglob.ID_LANG_NASM:
+        return [u';']
+    else:
+        return list()
+
 #---- End Required Functions ----#
 
 #---- Syntax Modules Internal Functions ----#

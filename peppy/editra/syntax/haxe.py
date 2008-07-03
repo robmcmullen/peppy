@@ -7,13 +7,13 @@
 ###############################################################################
 
 """
-Lexer configuration module for haXe web programming language
+@summary: Lexer configuration module for haXe web programming language
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: haxe.py 51489 2008-02-01 10:17:24Z CJP $"
-__revision__ = "$Revision: 51489 $"
+__svnid__ = "$Id: haxe.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob

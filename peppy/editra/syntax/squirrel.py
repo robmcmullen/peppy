@@ -1,46 +1,42 @@
 ###############################################################################
-# Name: pike.py                                                               #
-# Purpose: Define highlighting/syntax for Pike programming language           #
+# Name: squirrel.py                                                           #
+# Purpose: Syntax Definitions for Squirrel programming language               #
 # Author: Cody Precord <cprecord@editra.org>                                  #
-# Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
+# Copyright: (c) 2008 Cody Precord <staff@editra.org>                         #
 # License: wxWindows License                                                  #
 ###############################################################################
 
 """
-FILE: pike.py
-@summary: Defines syntax and highlighting settings for the Pike programming
-          language. Pike is very similar in form to C/CPP so the Cpp lexer is
-          used to provide the highlighting settings.
+@summary: Lexer configuration module for Squirrel Programming Language
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: pike.py 52852 2008-03-27 13:45:40Z CJP $"
+__svnid__ = "$Id: squirrel.py 52852 2008-03-27 13:45:40Z CJP $"
 __revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
 import cpp
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
-PIKE_KW = (0, "goto break return continue case default if else switch while "
-              "foreach do gauge destruct lambda inherit import typeof catch "
-              "for inline nomask")
+SQUIRREL_KW = (0, "break case catch class clone continue const default "
+                  "delegate delete do else enum extends for foreach function "
+                  "if in local null resume return switch this throw try typeof "
+                  "while parent yield constructor vargc vargv instanceof true "
+                  "false static")
 
-PIKE_TYPE = (1, "private protected public static "
-                "int string void float mapping array multiset mixed program "
-                "object function")
-
-PIKE_DOC = tuple(cpp.DOC_KEYWORDS)
+SQUIRREL_TYPES = (1, "")
 
 #---- End Keyword Definitions ----#
 
 #---- Syntax Style Specs ----#
-SYNTAX_ITEMS = list(cpp.SYNTAX_ITEMS)
+# Same as CPP
 
 #---- Extra Properties ----#
-# Fetched from cpp module on request
+# Same as CPP
 
 #-----------------------------------------------------------------------------#
 
@@ -50,8 +46,8 @@ def Keywords(lang_id=0):
     @keyword lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_PIKE:
-        return [PIKE_KW, PIKE_TYPE, PIKE_DOC]
+    if lang_id == synglob.ID_LANG_SQUIRREL:
+        return [SQUIRREL_KW, SQUIRREL_TYPES, cpp.DOC_KEYWORDS]
     else:
         return list()
 
@@ -60,8 +56,8 @@ def SyntaxSpec(lang_id=0):
     @keyword lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_PIKE:
-        return SYNTAX_ITEMS
+    if lang_id == synglob.ID_LANG_SQUIRREL:
+        return cpp.SYNTAX_ITEMS
     else:
         return list()
 
@@ -70,8 +66,8 @@ def Properties(lang_id=0):
     @keyword lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_PIKE:
-        return cpp.Properties(synglob.ID_LANG_CPP)
+    if lang_id == synglob.ID_LANG_SQUIRREL:
+        return [cpp.FOLD,]
     else:
         return list()
 
@@ -80,8 +76,8 @@ def CommentPattern(lang_id=0):
     @keyword lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_PIKE:
-        return cpp.CommentPattern(synglob.ID_LANG_CPP)
+    if lang_id == synglob.ID_LANG_SQUIRREL:
+        return ['//']
     else:
         return list()
 

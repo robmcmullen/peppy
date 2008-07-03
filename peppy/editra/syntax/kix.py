@@ -3,25 +3,19 @@
 # Purpose: Syntax configuration module for KIXtart scripts                    #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
-# Licence: wxWindows Licence                                                  #
+# License: wxWindows License                                                  #
 ###############################################################################
 
 """
-#-----------------------------------------------------------------------------#
-# FILE: kix.py                                                                #
-# AUTHOR: Cody Precord                                                        #
-#                                                                             #
-# SUMMARY:                                                                    #
-# Lexer configuration module for KIXtart scripts                              #
-#                                                                             #
-# @todo:                                                                      #
-#                                                                             #
-#-----------------------------------------------------------------------------#
+FILE: kix.py
+AUTHOR: Cody Precord
+@summary: Lexer configuration module for KIXtart scripts
+
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: kix.py 49501 2007-10-28 02:00:09Z CJP $"
-__revision__ = "$Revision: 49501 $"
+__svnid__ = "$Id: kix.py 52852 2008-03-27 13:45:40Z CJP $"
+__revision__ = "$Revision: 52852 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
