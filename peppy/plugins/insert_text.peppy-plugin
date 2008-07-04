@@ -1,0 +1,9 @@
+[Core]
+Name = Insert Text Plugin
+Module = insert_text
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Plugin providing text creation actions for Fundamental Mode
