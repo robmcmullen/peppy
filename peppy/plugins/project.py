@@ -82,7 +82,7 @@ class CTAGS(InstancePrefs):
                     tag = match.group(1)
                     file = match.group(2)
                     addr = match.group(3)
-                    fields = match.group(4).split('\t')
+                    fields = match.group(4)
                     self.dprint("tag=%s file=%s addr=%s field=%s" % (tag, file, addr, str(fields)))
                     if tag not in self.tags:
                         self.tags[tag] = []
@@ -174,7 +174,17 @@ class ShowTagAction(ListAction):
             dprint(lookup)
             self.tags = self.mode.project_info.getTag(lookup)
             if self.tags:
-                links = [t[0] for t in self.tags]
+                links = []
+                for t in self.tags:
+                    info = ''
+                    fields = t[2].split('\t')
+                    for field in fields:
+                        if ':' in field:
+                            info += field + " "
+                    if info:
+                        info += "in "
+                    info += t[0]
+                    links.append(info)
                 return links
         return [_('No suggestions')]
     
@@ -187,7 +197,8 @@ class ShowTagAction(ListAction):
             file = "%s#%d" % (file, line)
         except:
             pass
-        self.frame.findTabOrOpen(file)
+        url = self.mode.project_info.project_top_dir.resolve2(file)
+        self.frame.findTabOrOpen(url)
 
 
 class RebuildCtags(SelectAction):
@@ -347,6 +358,9 @@ class ShowProjectSettings(ProjectActionMixin, SelectAction):
     name = "Project Settings..."
     default_menu = ("Project", -990)
 
+    def isEnabled(self):
+        return bool(self.mode.project_info)
+    
     def action(self, index=-1, multiplier=1):
         if self.mode.project_info:
             info = self.mode.project_info

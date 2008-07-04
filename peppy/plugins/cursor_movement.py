@@ -125,8 +125,7 @@ class GotoLine(MinibufferAction):
         
         # stc counts lines from zero, but displayed starting at 1.
         #dprint("goto line = %d" % line)
-        mode.EnsureVisible(line - 1)
-        mode.GotoLine(line - 1)
+        mode.showLine(line - 1)
 
 
 class MarkerAction(SelectAction):

@@ -572,9 +572,18 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
     def showLine(self, line):
         # expand folding if any
         self.EnsureVisible(line)
+        
+        # Make line appear at the top of the screen.  ScrollToLine doesn't seem
+        # to work when applied right after a GotoLine, but moving to the end
+        # of the document and then back does seem to put the line at the top
+        # of the screen
+        self.GotoLine(self.GetLineCount())
         self.GotoLine(line)
-        self.ScrollToLine(line + self.LinesOnScreen() - 3)
-        self.GotoLine(line)
+#        dprint("After first GotoLine(%d): FirstVisibleLine = %d" % (line, self.GetFirstVisibleLine()))
+#        self.ScrollToLine(line + self.LinesOnScreen() - 3)
+#        dprint("After first ScrollToLine(%d): FirstVisibleLine = %d" % (line + self.LinesOnScreen() - 3, self.GetFirstVisibleLine()))
+#        self.GotoLine(line)
+#        dprint("After second GotoLine(%d): FirstVisibleLine = %d" % (line, self.GetFirstVisibleLine()))
         self.ScrollToColumn(0)
 
     # --- line indentation stuff
