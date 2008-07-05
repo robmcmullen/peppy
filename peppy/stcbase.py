@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-import os, re, time
+import os, re, time, codecs
 
 import wx
 import wx.stc
@@ -218,7 +218,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         self.detectLineEndings(header)
         
         if encoding:
-            self.refstc.encoding = encoding
+            # Normalize the encoding name by running it through the codecs list
+            self.refstc.encoding = codecs.lookup(encoding).name
         if not self.refstc.encoding:
             self.refstc.encoding = detectEncoding(header)
         self.decodeText(bytes)
@@ -304,6 +305,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                     # If the encoding has changed, update it here
                     self.refstc.encoding = encoding
                     self.decodeText(txt)
+            elif self.refstc.encoding:
+                if self.refstc.encoding != 'utf-8':
+                    txt = txt.encode(self.refstc.encoding)
             else:
                 # Have to use GetStyledText because GetText will truncate the
                 # string at the first zero character.
