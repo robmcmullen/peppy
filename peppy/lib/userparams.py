@@ -1299,6 +1299,12 @@ class PrefsProxy(debugmixin):
 
     def __call__(self, name):
         return self._get(name)
+    
+    def _getNameHierarchy(self):
+        return GlobalPrefs.name_hierarchy[self.__dict__['_startSearch']]
+
+    def _getClassHierarchy(self):
+        return GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]
 
     def _get(self, name, user=True, default=True):
         klasses=GlobalPrefs.name_hierarchy[self.__dict__['_startSearch']]
@@ -1468,7 +1474,6 @@ class InstancePrefs(debugmixin):
 class LocalPrefs(object):
     pass
 
-
 class ClassPrefs(object):
     """Base class to extend in order to support class prefs.
 
@@ -1508,6 +1513,65 @@ class ClassPrefs(object):
                 if param.local:
                     #dprint("setting classpref %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
                     self.classprefs._set(param.keyword, getattr(self.locals, param.keyword))
+    
+    @classmethod
+    def classprefsSetDefaults(cls, new_locals):
+        """Update the class defaults from the locals
+        """
+        hier = cls.classprefs._getMRO()
+        #dprint(hier)
+        updated = {}
+        for cls in hier:
+            if 'default_classprefs' not in dir(cls):
+                continue
+            for param in cls.default_classprefs:
+                if param.local and param.keyword in new_locals:
+                    #dprint("setting classpref %s to %s" % (param.keyword, self.classprefs._get(param.keyword)))
+                    cls.classprefs._set(param.keyword, new_locals[param.keyword])
+    
+    @classmethod
+    def classprefsOverrideSubclassDefaults(cls, new_locals):
+        """Override settings of this class and all subclasses
+        
+        Remove all the user values from GlobalPrefs of items that would
+        override these class settings definitions.  All subclasses of this
+        class will have their settings removed so that this class becomes the
+        default value for all of its subclasses.
+        
+        This is used to change the settings of FundamentalMode so that
+        subclasses like PythonMode or CPlusPlusMode will take their settings
+        from Fundamental mode.
+        """
+        cls.classprefsSetDefaults(new_locals)
+        #dprint("fund: %s" % GlobalPrefs.user)
+        #dprint("defaults: %s" % GlobalPrefs.default)
+        #dprint("name: %s" % GlobalPrefs.name_hierarchy)
+        parent = cls.__name__
+        for name, hier in GlobalPrefs.name_hierarchy.iteritems():
+            if parent in hier:
+                if name == parent:
+                    # Override fundamental mode defaults with user settings
+                    #dprint("before: %s: %s" % (name, GlobalPrefs.user[name]))
+                    for k in new_locals.keys():
+                        if k in GlobalPrefs.default[name] and GlobalPrefs.default[name] != new_locals[k]:
+                            GlobalPrefs.user[name][k] = new_locals[k]
+                    #dprint("after: %s: %s" % (name, GlobalPrefs.user[name]))
+                else:
+                    # erase user settings so that fundamental mode settings
+                    # will show through
+                    #dprint("before: %s: %s" % (name, GlobalPrefs.user[name]))
+                    for k in new_locals.keys():
+                        if k in GlobalPrefs.user[name]:
+                            del GlobalPrefs.user[name][k]
+                    #dprint("after: %s: %s" % (name, GlobalPrefs.user[name]))
+
+    def classprefsDictFromLocals(self):
+        """Return a dict copy of the local settings"""
+        copy = {}
+        for k in dir(self.locals):
+            if not k.startswith('_'):
+                copy[k] = getattr(self.locals, k)
+        return copy
     
     def classprefsUpdateLocals(self, new_locals):
         """Update the locals with new values

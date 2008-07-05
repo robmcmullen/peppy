@@ -857,10 +857,17 @@ class MajorMode(ClassPrefs, debugmixin):
         pass
     
     def applyLocals(self, locals):
-        if locals and self.__class__ in locals:
-            pairs = locals[self.__class__]
-            self.dprint("applying local variables from %s" % str(pairs))
-            self.classprefsUpdateLocals(pairs)
+        if locals:
+            pairs = None
+            if self.__class__ in locals:
+                pairs = locals[self.__class__]
+            elif 'subclass' in locals:
+                cls = locals['subclass']
+                if issubclass(self.__class__, cls):
+                    pairs = locals[cls]
+            if pairs:
+                self.dprint("applying local variables from %s" % str(pairs))
+                self.classprefsUpdateLocals(pairs)
         else:
             self.dprint("%s not found in %s" % (self.__class__, str(locals)))
 

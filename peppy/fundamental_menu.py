@@ -9,6 +9,7 @@ from wx.lib.pubsub import Publisher
 from peppy.actions import *
 from peppy.actions.minibuffer import *
 from peppy.fundamental import *
+from peppy.lib.userparams import *
 
 
 class SpellingSuggestionAction(ListAction):
@@ -311,6 +312,39 @@ class ElectricBackspace(TextModificationAction):
         self.mode.autoindent.electricBackspace(self.mode)
 
 
+class ApplySettingsSameMode(OnDemandActionNameMixin, SelectAction):
+    """Apply view settings to all tabs"""
+    name = "As Defaults for %s Mode"
+    default_menu = ("View/Apply Settings", 100)
+
+    def getMenuItemName(self):
+        """Override in subclass to provide the menu item name."""
+        return self.name % self.mode.keyword
+
+    def action(self, index=-1, multiplier=1):
+        locals = {}
+        locals[self.mode.__class__] = self.mode.classprefsDictFromLocals()
+        Publisher().sendMessage('peppy.preferences.changed', locals)
+        # Make the local values the defaults so that they'll become persistent
+        # by getting saved in the configuration file
+        self.mode.classprefsCopyFromLocals()
+
+
+class ApplySettingsAll(SelectAction):
+    """Apply view settings to editors"""
+    name = "As Defaults for All Modes"
+    default_menu = ("View/Apply Settings", 110)
+
+    def action(self, index=-1, multiplier=1):
+        msg_data = {}
+        settings = self.mode.classprefsDictFromLocals()
+        msg_data[FundamentalMode] = settings
+        msg_data['subclass'] = FundamentalMode
+        Publisher().sendMessage('peppy.preferences.changed', msg_data)
+        
+        FundamentalMode.classprefsOverrideSubclassDefaults(settings)
+
+
 class FundamentalMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -342,5 +376,8 @@ class FundamentalMenu(IPeppyPlugin):
                     
                     EOLModeSelect, SelectBraces,
                     
-                    ElectricReturn, ElectricDelete, ElectricBackspace]
+                    ElectricReturn, ElectricDelete, ElectricBackspace,
+                    
+                    ApplySettingsSameMode, ApplySettingsAll,
+                    ]
         return []

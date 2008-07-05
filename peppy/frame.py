@@ -343,6 +343,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         _("File/Export"): 850, # position within the parent menu for submenus
         _("Edit"): 0.001,
         _("View"): 0.003,
+        _("View/Apply Settings"): -980,
         _("Tools"): 0.004,
         _("Transform"): 0.005,
         _("Documents"): 1000.1,
