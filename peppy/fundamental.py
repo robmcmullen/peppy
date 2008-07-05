@@ -365,6 +365,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.setCaretStyle()
         self.setViewEOL()
         self.setWhitespace()
+        self.SetZoom(self.locals.font_zoom)
         
         # Added call to colourise because some parameter might have changed
         # that requires a styling update.  E.g.  if the tab highlighting style

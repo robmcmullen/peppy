@@ -172,6 +172,7 @@ class FontZoom(ClassprefsTooltipMixin, MinibufferAction):
         """
         Callback function used to set the stc to the correct line.
         """
+        self.mode.locals.font_zoom = zoom
         mode.SetZoom(zoom)
 
 class FontZoomIncrease(SelectAction):
@@ -181,7 +182,8 @@ class FontZoomIncrease(SelectAction):
     icon = "icons/zoom_in.png"
 
     def action(self, index=-1, multiplier=1):
-        self.mode.SetZoom(self.mode.GetZoom() + 1)
+        self.mode.locals.font_zoom += 1
+        self.mode.SetZoom(self.mode.locals.font_zoom)
 
 class FontZoomDecrease(SelectAction):
     name = "Decrease Size"
@@ -190,7 +192,8 @@ class FontZoomDecrease(SelectAction):
     icon = "icons/zoom_out.png"
 
     def action(self, index=-1, multiplier=1):
-        self.mode.SetZoom(self.mode.GetZoom() - 1)
+        self.mode.locals.font_zoom -= 1
+        self.mode.SetZoom(self.mode.locals.font_zoom)
 
 
 class SelectBraces(TextModificationAction):
