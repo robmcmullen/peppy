@@ -1033,14 +1033,6 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         if argstring is not None:
             self.scriptArgs = argstring
             
-        if self.buffer.readonly or not self.classprefs.autosave_before_run:
-            msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
-            retval=dlg.ShowModal()
-            return
-        else:
-            self.save()
-
         bangpath = None
         first = self.GetLine(0)
         if first.startswith("#!"):
@@ -1062,6 +1054,30 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.frame.showErrorDialog(msg, "Problem with interpreter executable")
         else:
             cmd = self.getCommandLine(bangpath)
+            self.startCommandLine(cmd)
+    
+    def expandCommandLine(self, cmd):
+        """Expand the command line to include the filename of the buffer"""
+        if '%' in cmd:
+            cmd = cmd % self.buffer.getFilename()
+        else:
+            cmd = "%s %s" % (cmd, self.buffer.getFilename())
+        return cmd
+    
+    def startCommandLine(self, cmd):
+        """Attempt to create a process using the command line"""
+        if hasattr(self, 'process'):
+            self.frame.setStatusText("Already running a process.")
+        else:
+            if self.buffer.readonly or not self.classprefs.autosave_before_run:
+                msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
+                dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
+                retval=dlg.ShowModal()
+                return
+            else:
+                self.save()
+
+            cmd = self.expandCommandLine(cmd)
             if self.classprefs.output_log == 0:
                 output = self
             else:

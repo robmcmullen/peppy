@@ -468,14 +468,8 @@ class OpenFundamental(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.frame.open("about:demo.txt")
 
-class RunScript(SelectAction):
-    alias = "run-script"
-    name = "Run"
-    tooltip = "Run this script through the interpreter"
-    icon = 'icons/script_go.png'
-    default_menu = ("Tools", 1)
-    key_bindings = {'default': "F5"}
 
+class RunMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
         return hasattr(mode, 'startInterpreter')
@@ -483,20 +477,23 @@ class RunScript(SelectAction):
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
 
+class RunScript(RunMixin, SelectAction):
+    alias = "run-script"
+    name = "Run"
+    tooltip = "Run this script through the interpreter"
+    icon = 'icons/script_go.png'
+    default_menu = ("Tools", 1)
+    key_bindings = {'default': "F5"}
+
     def action(self, index=-1, multiplier=1):
         self.mode.startInterpreter()
 
-
-class RunScriptWithArgs(RunScript):
+class RunScriptWithArgs(RunMixin, SelectAction):
     alias = "run-script-with-args"
     name = "Run with Args"
     tooltip = "Open a file"
     icon = "icons/script_edit.png"
     default_menu = ("Tools", 2)
-    
-    # If subclassing another action, make sure to reset global_id, or the
-    # menu system will use the existing global id for the new action
-    global_id = None
     key_bindings = {'default': "C-F5"}
 
     def action(self, index=-1, multiplier=1):
@@ -507,14 +504,27 @@ class RunScriptWithArgs(RunScript):
     def processMinibuffer(self, minibuffer, mode, text):
         self.mode.startInterpreter(text)
 
+class RunFilter(RunMixin, SelectAction):
+    """Run an external program on this file"""
+    alias = "run-filter"
+    name = "Run Filter"
+    default_menu = ("Tools", 3)
 
-class StopScript(RunScript):
+    def action(self, index=-1, multiplier=1):
+        minibuffer = TextMinibuffer(self.mode, self, label="Command line:",
+                                    initial = self.mode.getScriptArgs())
+        self.mode.setMinibuffer(minibuffer)
+        self.mode.setStatusText("Enter command line, %s will be replaced by full path to file")
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        self.mode.startCommandLine(text)
+
+class StopScript(RunMixin, SelectAction):
     alias = "stop-script"
     name = "Stop"
     tooltip = "Stop the currently running script"
     icon = 'icons/stop.png'
-    default_menu = ("Tools", 3)
-    global_id = None
+    default_menu = ("Tools", 9)
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", 'mac': 'C-.'}
     
     def isEnabled(self):
@@ -883,7 +893,7 @@ class MainMenu(IPeppyPlugin):
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 
-                RunScript, RunScriptWithArgs, StopScript,
+                RunScript, RunScriptWithArgs, RunFilter, StopScript,
 
                 MajorModeSelect, MinorModeShow, SidebarShow,
                 ToolbarShow, 

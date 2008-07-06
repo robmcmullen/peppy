@@ -20,7 +20,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
     default_classprefs = (
         BoolParam('show', False),
         BoolParam('always_scroll', False),
-        StrParam('filename_match_regex', "  File \"(.+)\", line ([0-9]+)", 'Regular expression used to match pathnames in the output'),
+        StrParam('filename_match_regex', "^  File \"(.+)\", line ([0-9]+)", 'Regular expression used to match pathnames in the output'),
         )
 
     def __init__(self, *args, **kwargs):
@@ -31,6 +31,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
         self.IndicatorSetForeground(0, wx.RED)
         
         self.filere = re.compile(self.classprefs.filename_match_regex)
+        self.stdre = re.compile("^((?:[a-zA-Z]:)?.+):([0-9]+):")
 
     def addMessage(self, text):
         if self.classprefs.always_scroll:
@@ -56,6 +57,15 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             self.ScrollToLine(self.GetLineCount())
         self.scanForFilenames()
     
+    def matchLine(self, text, i=0):
+        match = self.filere.search(text, i)
+        if match:
+            return match
+        match = self.stdre.search(text, i)
+        if match:
+            return match
+        return None
+    
     def scanForFilenames(self):
         if not hasattr(self, 'last_matched_filename'):
             self.last_matched_filename = 0
@@ -66,7 +76,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
 
         i = 0
         while i < len(text):
-            match = self.filere.search(text, i)
+            match = self.matchLine(text, i)
             if not match:
                 break
             
@@ -86,7 +96,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             line = self.LineFromPosition(pos)
             text = self.GetLine(line)
             #dprint("text=%s" % text)
-            match = self.filere.search(text)
+            match = self.matchLine(text)
             if match:
                 filename = match.group(1)
                 line = match.group(2)
