@@ -119,10 +119,33 @@ except:
 
 class FileBrowseButton2(FileBrowseButton):
     """Small enhancements to FileBrowseButton"""
-    def createDialog(self, *args, **kwargs):
-        """Automatically hide the label because it's not used here"""
-        FileBrowseButton.createDialog(self, *args, **kwargs)
-        self.label.Hide()
+    def createDialog( self, parent, id, pos, size, style, name ):
+        """Setup the graphic representation of the dialog"""
+        wx.Panel.__init__ (self, parent, id, pos, size, style, name)
+        self.SetMinSize(size) # play nice with sizers
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.label = self.createLabel( )
+        #box.Add( self.label, 0, wx.CENTER )
+
+        self.textControl = self.createTextControl()
+        box.Add( self.textControl, 1, wx.LEFT|wx.CENTER, 0)
+
+        self.browseButton = self.createBrowseButton()
+        box.Add( self.browseButton, 0, wx.LEFT|wx.CENTER, 5)
+
+        # add a border around the whole thing and resize the panel to fit
+        outsidebox = wx.BoxSizer(wx.VERTICAL)
+        outsidebox.Add(box, 1, wx.EXPAND|wx.ALL, 0)
+        outsidebox.Fit(self)
+
+        self.SetAutoLayout(True)
+        self.SetSizer( outsidebox )
+        self.Layout()
+        if type( size ) == types.TupleType:
+            size = apply( wx.Size, size)
+        self.SetDimensions(-1, -1, size.width, size.height, wx.SIZE_USE_EXISTING)
         
     def SetToolTipString(self, text):
         #dprint(text)
@@ -161,10 +184,16 @@ class FileBrowseButton2(FileBrowseButton):
             self.SetValue(dlg.GetPath())
         dlg.Destroy()
     
-class DirBrowseButton2(DirBrowseButton):
+class DirBrowseButton2(FileBrowseButton2):
     """Update to dir browse button to browse to the currently set
     directory instead of always using the initial directory.
     """
+    def createDialog(self, *args, **kwargs):
+        """Automatically hide the label because it's not used here"""
+        FileBrowseButton2.createDialog(self, *args, **kwargs)
+        self.dialogClass = wx.DirDialog
+        self.newDirectory = False
+        
     def OnBrowse(self, ev = None):
         current = self.GetValue()
         directory = os.path.split(current)
