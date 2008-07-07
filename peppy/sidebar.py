@@ -100,7 +100,7 @@ class JobOutputSidebarController(JobOutputMixin):
         started.
         """
         self.startCallback(job)
-        text = "\n" + _("Started %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        text = "\n" + _(">> Started %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
         Publisher().sendMessage('peppy.log.info', (self.frame, text))
 
     def stdoutCallback(self, job, text):
@@ -114,5 +114,5 @@ class JobOutputSidebarController(JobOutputMixin):
     def finishedCallback(self, job):
         """Callback from the JobOutputMixin when the job terminates."""
         self.finishCallback(job)
-        text = "\n" + _("Finished %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        text = "\n" + _(">> exit code = %d\n>> Finished %s on %s") % (job.exit_code, job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
         Publisher().sendMessage('peppy.log.info', (self.frame, text))
