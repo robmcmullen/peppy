@@ -517,7 +517,7 @@ class RunFilter(RunMixin, SelectAction):
         self.mode.setStatusText("Enter command line, %s will be replaced by full path to file")
 
     def processMinibuffer(self, minibuffer, mode, text):
-        self.mode.startCommandLine(text)
+        self.mode.startCommandLine(text, expand=True)
 
 class StopScript(RunMixin, SelectAction):
     alias = "stop-script"

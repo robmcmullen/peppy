@@ -1064,7 +1064,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             cmd = "%s %s" % (cmd, self.buffer.getFilename())
         return cmd
     
-    def startCommandLine(self, cmd):
+    def startCommandLine(self, cmd, expand=False):
         """Attempt to create a process using the command line"""
         if hasattr(self, 'process'):
             self.frame.setStatusText("Already running a process.")
@@ -1077,7 +1077,8 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             else:
                 self.save()
 
-            cmd = self.expandCommandLine(cmd)
+            if expand:
+                cmd = self.expandCommandLine(cmd)
             if self.classprefs.output_log == 0:
                 output = self
             else:
