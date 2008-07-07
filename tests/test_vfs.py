@@ -190,6 +190,10 @@ class FSTestCase(TestCase):
         self.assertEqual('c:/stuff/blah', str(uri.path))
         self.assertEqual('5', uri.fragment)
         self.assertEqual('file', uri.scheme)
+        uri = vfs.get_reference('c:/stuff/blah#whatever')
+        self.assertEqual('c:/stuff/blah#whatever', str(uri.path))
+        self.assertEqual(None, uri.fragment)
+        self.assertEqual('file', uri.scheme)
         
     def test_windows_normalize(self):
         uri = vfs.get_reference('C:/stuff/blah')

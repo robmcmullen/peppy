@@ -737,15 +737,24 @@ class GenericDataType(object):
         # All other cases, split the reference in its components
         scheme, authority, path, query, fragment = urlsplit(data)
         
+        # Convenience function to break out the fragment from a file URL.  This
+        # assumes that the only allowed fragments are digits, specifying line
+        # numbers.
+        def find_fragment(path, fragment):
+            if "#" in path:
+                # the fragment is improperly placed in the path
+                path1, fragment1 = path.rsplit("#", 1)
+                if fragment1.isdigit():
+                    return path1, fragment1
+            return path, fragment
+            
         # Some special cases for Windows paths c:/a/b#4 and file:///c:/a/b#4.
         # urlsplit has problems with the scheme, leading slashes in the path,
         # and doesn't split out the fragment properly
         if len(scheme) == 1:
             # found a windows drive name instead of path, because urlsplit
             # thinks the scheme is "c" for Windows paths like "c:/a/b"
-            if "#" in path:
-                # the fragment is improperly placed in the path
-                path, fragment = path.rsplit("#", 1)
+            path, fragment = find_fragment(path, fragment)
             path = "%s:%s" % (scheme, path)
             scheme = "file"
         elif len(path) > 3 and path[0] == '/' and path[2] == ':':
@@ -754,8 +763,7 @@ class GenericDataType(object):
             # to be correct requires removing the leading slash.
             drive = path[1].lower()
             path = path[3:]
-            if "#" in path:
-                path, fragment = path.rsplit("#", 1)
+            path, fragment = find_fragment(path, fragment)
             path = "%s:%s" % (drive, path)
         
         # The path
