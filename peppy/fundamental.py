@@ -592,6 +592,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             evt.Skip()
 
     def showInitialPosition(self, url):
+        self.dprint("url=%s scheme=%s auth=%s path=%s query=%s fragment=%s" % (url, url.scheme, url.authority, url.path, url.query, url.fragment))
         if url.fragment:
             line = int(url.fragment)
             line -= self.classprefs.line_number_offset

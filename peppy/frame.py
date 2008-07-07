@@ -689,10 +689,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         @return: True if URL was found, False if not.
         """
-        mode = self.tabs.moveSelectionToURL(url)
+        normalized = vfs.normalize(url)
+        self.dprint("url=%s normalized=%s" % (url, normalized))
+        mode = self.tabs.moveSelectionToURL(normalized)
         if mode:
-            url = vfs.normalize(url)
-            mode.showInitialPosition(url)
+            mode.showInitialPosition(normalized)
         return mode is not None
     
     def findTabOrOpen(self, url):
