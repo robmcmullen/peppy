@@ -48,6 +48,7 @@ def ProcessManager():
     if _GlobalProcessManager is None:
         _GlobalProcessManager = _ProcessManager()
         wx.GetApp().Bind(wx.EVT_END_PROCESS, ProcessManager().OnProcessEnded)
+        wx.GetApp().Bind(wx.EVT_TIMER, ProcessManager().OnUpdateOutput)
 
     return _GlobalProcessManager
 
@@ -208,6 +209,7 @@ class _ProcessManager(debugmixin):
     """
     debuglevel = 0
     autoclean = True
+    timer = None
     
     jobs = []
     job_lookup = {}
@@ -217,6 +219,9 @@ class _ProcessManager(debugmixin):
             if job.process:
                 job.readStreams()
     
+    def OnUpdateOutput(self, evt):
+        self.idle()
+    
     def run(self, cmd, working_dir, job_output, input=""):
         job = Job(cmd, working_dir, job_output)
         self.jobs.append(job)
@@ -225,6 +230,9 @@ class _ProcessManager(debugmixin):
         if job.pid > 0:
             self.job_lookup[job.pid] = job
             Publisher().sendMessage('peppy.processmanager.started', job)
+        if not self.timer:
+            self.__class__.timer = wx.Timer(wx.GetApp())
+            self.__class__.timer.Start(500)
         return job
 
     def kill(self, pid):
@@ -254,6 +262,9 @@ class _ProcessManager(debugmixin):
         assert self.dprint("in cleanup")
         if self.autoclean:
             self.removeJob(job)
+        if not self.jobs:
+            self.__class__.timer.Stop()
+            self.__class__.timer = None
         self.finished(job)
 
     def removeJob(self, job):

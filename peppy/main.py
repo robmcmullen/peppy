@@ -410,18 +410,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
         wx.SetDefaultPyEncoding(self.classprefs.default_text_encoding)
         
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
         return True
     
-    def OnIdle(self, evt):
-        """Application-wide idle update events are processed here.
-        """
-        # The process manager is a global, so it should be updated here
-        ProcessManager().idle()
-        evt.Skip()
-
     def OnKeyDown(self, evt):
         """Last chance to handle keystroke processing.
         
