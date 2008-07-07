@@ -1108,7 +1108,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         self.process = job
         self.log = self.findMinorMode("OutputLog")
         if self.log:
-            text = "\n" + _(">> Started %s on %s") % (job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+            text = "\n" + job.getStartMessage()
             self.log.showMessage(text)
 
     def stdoutCallback(self, job, text):
@@ -1126,7 +1126,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         assert self.dprint()
         del self.process
         if self.log:
-            text = "\n" + _(">> exit code = %d\n>> Finished %s on %s") % (job.exit_code, job.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+            text = "\n" + job.getFinishMessage()
             self.log.showMessage(text)
 
 

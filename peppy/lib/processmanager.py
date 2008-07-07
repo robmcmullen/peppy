@@ -118,6 +118,9 @@ class JobOutputSaver(object):
 class Job(debugmixin):
     debuglevel = 0
     
+    # Use the unicode rightward double arrow as a delimiter
+    arrow = u"\u21d2 "
+    
     def __init__(self, cmd, working_dir, job_output):
         self.pid = None
         self.process = None
@@ -128,6 +131,12 @@ class Job(debugmixin):
         self.stdout = None
         self.stderr = None
         self.exit_code = 0
+    
+    def getStartMessage(self):
+        return self.arrow + _("Started %s on %s") % (self.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+
+    def getFinishMessage(self):
+        return self.arrow + _("exit code = %s") % self.exit_code + "\n" + self.arrow + _("Finished %s on %s") % (self.cmd, time.asctime(time.localtime(time.time()))) + "\n"
 
     def run(self, text=""):
         assert self.dprint("Running %s in %s" % (self.cmd, self.working_dir))
