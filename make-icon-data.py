@@ -4,7 +4,54 @@ import os, sys, glob
 from cStringIO import StringIO
 from optparse import OptionParser
 
-from wx.tools.img2py import *
+import zlib
+
+# crunch_data was removed from img2py as of wxPython 2.8.8
+def crunch_data(data, compressed):
+    # compress it?
+    if compressed:
+        data = zlib.compress(data, 9)
+
+    # convert to a printable format, so it can be in a Python source file
+    data = repr(data)
+
+    # This next bit is borrowed from PIL.  It is used to wrap the text intelligently.
+    fp = StringIO()
+    data += " "  # buffer for the +1 test
+    c = i = 0
+    word = ""
+    octdigits = "01234567"
+    hexdigits = "0123456789abcdef"
+    while i < len(data):
+        if data[i] != "\\":
+            word = data[i]
+            i += 1
+        else:
+            if data[i+1] in octdigits:
+                for n in xrange(2, 5):
+                    if data[i+n] not in octdigits:
+                        break
+                word = data[i:i+n]
+                i += n
+            elif data[i+1] == 'x':
+                for n in xrange(2, 5):
+                    if data[i+n] not in hexdigits:
+                        break
+                word = data[i:i+n]
+                i += n
+            else:
+                word = data[i:i+2]
+                i += 2
+
+        l = len(word)
+        if c + l >= 78-1:
+            fp.write("\\\n")
+            c = 0
+        fp.write(word)
+        c += l
+
+    # return the formatted compressed data
+    return fp.getvalue()
 
 def gen(filename):
     fh = open(filename, 'rb')
