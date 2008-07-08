@@ -119,9 +119,9 @@ except:
 
 class FileBrowseButton2(FileBrowseButton):
     """Small enhancements to FileBrowseButton"""
-    def createDialog( self, parent, id, pos, size, style, name ):
+    def createDialog( self, parent, id, pos, size, style, *args, **kwargs):
         """Setup the graphic representation of the dialog"""
-        wx.Panel.__init__ (self, parent, id, pos, size, style, name)
+        wx.Panel.__init__ (self, parent, id, pos, size, style, *args, **kwargs)
         self.SetMinSize(size) # play nice with sizers
 
         box = wx.BoxSizer(wx.HORIZONTAL)
