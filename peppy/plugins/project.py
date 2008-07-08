@@ -19,11 +19,32 @@ import peppy.vfs as vfs
 from peppy.buffers import *
 from peppy.yapsy.plugins import *
 from peppy.actions import *
+from peppy.actions.minibuffer import *
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 
 
 class CTAGS(InstancePrefs):
+    # lookup table for kinds of ctags
+    kind_of_tag = {
+        'c': 'class name',
+        'd': 'define',
+        'e': 'enumerator',
+        'f': 'function',
+        'F': 'file name',
+        'g': 'enumeration name',
+        'm': 'member',
+        'p': 'function prototype',
+        's': 'structure name',
+        't': 'typedef',
+        'u': 'union name',
+        'v': 'variable',
+        }
+    
+    special_tags = {
+        'file:': '(static scope)',
+        }
+    
     default_prefs = (
         StrParam('ctags_extra_args', '', 'extra arguments for the ctags command', fullwidth=True),
         StrParam('ctags_exclude', '', 'files, directories, or wildcards to exclude', fullwidth=True),
@@ -96,6 +117,39 @@ class CTAGS(InstancePrefs):
     
     def getTag(self, tag):
         return self.tags.get(tag, None)
+    
+    def getTagInfo(self, tag):
+        """Get a text description of all the tags associated with the given
+        keyword.
+        
+        Returns a string of text suitable to be used in a grep-style output
+        reporter; that is, a bunch of lines starting with the string
+        'filename:line number:' followed by descriptive text about each tag.
+        """
+        tags = self.getTag(tag)
+        refs = []
+        for t in tags:
+            info = "%s:%s: %s  " % (t[0], t[1], tag)
+            fields = t[2].split('\t')
+            for field in fields:
+                if ':' in field:
+                    if field in self.special_tags:
+                        info += self.special_tags[field]
+                    else:
+                        info += field + " "
+                elif field in self.kind_of_tag:
+                    info += "kind:" + self.kind_of_tag[field] + " "
+            refs.append(info)
+        if refs:
+            text = os.linesep.join(refs) + os.linesep
+        else:
+            text = ''
+        return text
+
+    def getSortedTagList(self):
+        tags = self.tags.keys()
+        tags.sort()
+        return tags
 
 
 class ProjectInfo(CTAGS):
@@ -201,10 +255,28 @@ class ShowTagAction(ListAction):
         self.frame.findTabOrOpen(url)
 
 
+class LookupCtag(SelectAction):
+    """Display all references given a tag name"""
+    name = "Lookup Tag"
+    default_menu = ("Project", -400)
+    key_bindings = {'emacs': "C-c C-t"}
+
+    def action(self, index=-1, multiplier=1):
+        tags = self.mode.project_info.getSortedTagList()
+        minibuffer = StaticListCompletionMinibuffer(self.mode, self, _("Lookup Tag:"), list=tags)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, name):
+        text = self.mode.project_info.getTagInfo(name)
+        if not text:
+            text = "No information about %s" % name
+        Publisher().sendMessage('peppy.log.info', text)
+
+
 class RebuildCtags(SelectAction):
     """Rebuild tag file"""
     name = "Rebuild Tag File"
-    default_menu = ("Project", -500)
+    default_menu = ("Project", 499)
 
     def action(self, index=-1, multiplier=1):
         if self.mode.project_info:
@@ -370,7 +442,7 @@ class ShowProjectSettings(ProjectActionMixin, SelectAction):
 class ProjectPlugin(IPeppyPlugin):
     default_classprefs = (
         StrParam('project_directory', '.peppy-project', 'Directory used within projects to store peppy specific information'),
-        StrParam('project_file', 'project.ini', 'File within project directory used to store per-project information'),
+        StrParam('project_file', 'project.cfg', 'File within project directory used to store per-project information'),
         StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
         PathParam('ctags_command', 'exuberant-ctags', 'Path to ctags command', fullwidth=True),
         PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
@@ -538,7 +610,9 @@ class ProjectPlugin(IPeppyPlugin):
         if hasattr(mode, 'getTemplateCallback'):
             actions.append(SaveGlobalTemplate)
         if mode.buffer.url in self.known_project_dirs:
-            actions.extend([SaveProjectTemplate, BuildProject, RunProject, RebuildCtags])
+            actions.extend([SaveProjectTemplate, BuildProject, RunProject,
+                            
+                            RebuildCtags, LookupCtag])
         actions.extend([CreateProject, CreateProjectFromExisting, ShowProjectSettings])
         return actions
 
