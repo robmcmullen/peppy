@@ -955,6 +955,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     
     default_classprefs = (
         PathParam('interpreter_exe', '', 'Program that can interpret this text and return results on standard output', fullwidth=True),
+        StrParam('interpreter_args', '', 'Standard arguments to be used with the interpreter', fullwidth=True),
         BoolParam('autosave_before_run', True, 'Automatically save without prompting before running script'),
         IndexChoiceParam('output_log',
                          ['use minor mode', 'use sidebar'],
@@ -963,14 +964,19 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
 
     def getInterpreterArgs(self):
         """Hook to pass arguments to the command interpreter"""
-        dprint(hasattr(self, "interpreterArgs"))
+        # FIXME: Why did I put interpreterArgs as an instance attribute?
+        #dprint(hasattr(self, "interpreterArgs"))
         if hasattr(self, "interpreterArgs"):
             return self.interpreterArgs
-        return ""
+        return self.classprefs.interpreter_args
 
     def getScriptArgs(self):
-        """Hook to specify any arguments passed to the script itself"""
-        dprint(hasattr(self, "scriptArgs"))
+        """Hook to specify any arguments passed to the script itself.
+        
+        scriptArgs are saved as an instance attribute so they can be used as
+        defaults the next time you run the script.
+        """
+        #dprint(hasattr(self, "scriptArgs"))
         if hasattr(self, "scriptArgs"):
             return self.scriptArgs
         return ""
