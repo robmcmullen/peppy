@@ -232,6 +232,7 @@ class HighlightListBox(wx.HtmlListBox):
                     found = text
                     most = len(found)
                 else:
+                    most = min(most, len(text))
                     for j in range(start, most):
                         if text[j] != found[j]:
                             most = j
@@ -662,7 +663,7 @@ if __name__ == "__main__":
                     'fabulous', 'fantastic', 'friendly', 'forgiving', 'feature',
                     'sage', 'scarlet', 'scenic', 'seaside', 'showpiece', 'spiffy',
                     'www.wxPython.org', 'www.osafoundation.org',
-                    'zqqqq1', 'zqqqq2222', 'zqqqq2228',
+                    'yyyyyyzqqqq1', 'yyyyyyaqqqq', 'yyyyyyzqqq', 'zqqqq2222', 'zqqqq2228',
                     ]
     app = wx.PySimpleApp()
     frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE)
