@@ -798,6 +798,7 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
     alias = "describe-action"
     tooltip = "Describe an action by name"
     default_menu = ("&Help", -200)
+    key_bindings = {'emacs': "C-h a", }
 
     def __init__(self, *args, **kwargs):
         ActionNameMinibufferMixin.__init__(self, self.alias)
@@ -824,6 +825,25 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
             self.frame.SetStatusText("%s not a known action" % text)
 
 
+class DescribeKey(SelectAction):
+    """Look up the action from the keystroke"""
+    name = "&Describe Key"
+    alias = "describe-key"
+    default_menu = ("&Help", 201)
+    key_bindings = {'emacs': "C-h k", }
+
+    def action(self, index=-1, multiplier=1):
+        self.frame.keys.setReportNext(self.displayAction)
+
+    def displayAction(self, action):
+        if action:
+            dprint("looking up docs for %s" % action)
+            Publisher().sendMessage('peppy.log.info', action.getHelp())
+            self.frame.SetStatusText("Keystroke found.")
+        else:
+            self.frame.SetStatusText("Unbound keystroke.")
+
+
 class CancelMinibuffer(SelectAction):
     alias = "cancel-minibuffer"
     name = "Cancel Minibuffer"
@@ -840,7 +860,7 @@ class HelpMinibuffer(SelectAction):
     name = "Help on Minibuffer"
     tooltip = "Show help for the currently active minibuffer"
     default_menu = ("&Help", 210)
-    key_bindings = {'emacs': "M-S-/ m", }
+    key_bindings = {'emacs': "C-h m", }
     
     def isEnabled(self):
         return bool(self.mode.getMinibuffer())
@@ -902,7 +922,7 @@ class MainMenu(IPeppyPlugin):
 
                 NewWindow, DeleteWindow, WindowList,
                 
-                ExecuteActionByName, DescribeAction, HelpMinibuffer,
+                ExecuteActionByName, DescribeAction, DescribeKey, HelpMinibuffer,
                 
                 CancelMinibuffer,
 

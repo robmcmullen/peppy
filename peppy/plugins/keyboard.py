@@ -24,7 +24,7 @@ class ShowModeKeys(SelectAction):
     name = "&Show Key Bindings"
     alias = "describe-keys"
     default_menu = ("&Help", 210)
-    key_bindings = {'emacs': "M-/ B", }
+    key_bindings = {'emacs': "C-h b", }
 
     def action(self, index=-1, multiplier=1):
         actions = {}

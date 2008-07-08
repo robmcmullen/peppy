@@ -20,25 +20,10 @@ single command.
 import sys
 import wx
 
-wxkeynames = (
-    "BACK", "TAB", "RETURN", "ESCAPE", "SPACE", "DELETE", "START",
-    "LBUTTON", "RBUTTON", "CANCEL", "MBUTTON", "CLEAR", "PAUSE",
-    "CAPITAL", "PRIOR", "NEXT", "END", "HOME", "LEFT", "UP", "RIGHT",
-    "DOWN", "SELECT", "PRINT", "EXECUTE", "SNAPSHOT", "INSERT", "HELP",
-    "NUMPAD0", "NUMPAD1", "NUMPAD2", "NUMPAD3", "NUMPAD4", "NUMPAD5",
-    "NUMPAD6", "NUMPAD7", "NUMPAD8", "NUMPAD9", "MULTIPLY", "ADD",
-    "SEPARATOR", "SUBTRACT", "DECIMAL", "DIVIDE", "F1", "F2", "F3", "F4",
-    "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14",
-    "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24",
-    "NUMLOCK", "SCROLL", "PAGEUP", "PAGEDOWN", "NUMPAD_SPACE",
-    "NUMPAD_TAB", "NUMPAD_ENTER", "NUMPAD_F1", "NUMPAD_F2", "NUMPAD_F3",
-    "NUMPAD_F4", "NUMPAD_HOME", "NUMPAD_LEFT", "NUMPAD_UP",
-    "NUMPAD_RIGHT", "NUMPAD_DOWN", "NUMPAD_PRIOR", "NUMPAD_PAGEUP",
-    "NUMPAD_NEXT", "NUMPAD_PAGEDOWN", "NUMPAD_END", "NUMPAD_BEGIN",
-    "NUMPAD_INSERT", "NUMPAD_DELETE", "NUMPAD_EQUAL", "NUMPAD_MULTIPLY",
-    "NUMPAD_ADD", "NUMPAD_SEPARATOR", "NUMPAD_SUBTRACT", "NUMPAD_DECIMAL",
-    "NUMPAD_DIVIDE",
-    )
+# The list of all the wx keynames (without the WXK_ prefix) is needed by both
+# KeyMap and KeyProcessor objects
+wxkeynames = [i[4:] for i in dir(wx) if i.startswith('WXK_')]
+
 
 class DuplicateKeyError(Exception):
     pass
@@ -332,7 +317,21 @@ class KeyProcessor(object):
     key maps.
     """
     debug = False
-    
+
+    # Mapping of wx keystroke numbers to keystroke names
+    wxkeys = {}
+    for i in wxkeynames:
+        wxkeys[getattr(wx, "WXK_"+i)] = i
+    for i in ("SHIFT", "ALT", "COMMAND", "CONTROL", "MENU"):
+        if wx.Platform == '__WXGTK__':
+            # unix doesn't create a keystroke when a modifier key
+            # is also modified by another modifier key, so we
+            # create entries here so that decode() doesn't have to
+            # have platform-specific code
+            wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
+        else:
+            wxkeys[getattr(wx, "WXK_"+i)] = ''
+
     def __init__(self,status=None):
         self.keymaps=[]
         self.minorKeymaps=[]
@@ -366,27 +365,13 @@ class KeyProcessor(object):
         self.scale=1 # scale factor, usually either 1 or -1
         self.universalArgument="C-U"
         self.processingArgument=0
+        
+        # If reportNext is not None, instead of being processed the next action
+        # is reported to a caller by using reportNext as a callback.
+        self.reportNext = None
 
         self.hasshown=False
         self.reset()
-
-        # Mapping of wx keystroke numbers to keystroke names
-        self.wxkeys={}
-        # set up the wxkeys{} dict
-        self.wxkeymap()
-
-    def wxkeymap(self):
-        for i in wxkeynames:
-            self.wxkeys[getattr(wx, "WXK_"+i)] = i
-        for i in ("SHIFT", "ALT", "COMMAND", "MENU"):
-            if wx.Platform == '__WXGTK__':
-                # unix doesn't create a keystroke when a modifier key
-                # is also modified by another modifier key, so we
-                # create entries here so that decode() doesn't have to
-                # have platform-specific code
-                self.wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
-            else:
-                self.wxkeys[getattr(wx, "WXK_"+i)] = ''
 
     def findStickyMeta(self):
         """Determine if the sticky meta key should be defined for this set
@@ -485,7 +470,7 @@ class KeyProcessor(object):
             if 27 < keycode < 256:
                 keyname = chr(keycode)
             else:
-                keyname = "(%s)unknown" % keycode
+                keyname = "unknown-%s" % keycode
         if self.debug: print("modifiers: raw=%d processed='%s' keyname=%s keycode=%s key=%s" % (emods, modifiers, keyname, keycode, modifiers+keyname))
         return modifiers + keyname
 
@@ -513,6 +498,8 @@ class KeyProcessor(object):
         """Display the current keystroke processing in the status area
         """
         if self.status:
+            if self.reportNext:
+                text = "Describe Key: %s" % text
             self.status.SetStatusText(text)
             self.hasshown=True
 
@@ -607,6 +594,10 @@ class KeyProcessor(object):
                     self.number=10*self.number+num
             self.args+=key + ' '
             self.processingArgument+=1
+    
+    def setReportNext(self, callback):
+        self.reportNext = callback
+        self.show('')
 
     def process(self, evt):
         """The main driver routine.  Get a keystroke and run through
@@ -634,9 +625,13 @@ class KeyProcessor(object):
                 # perform the cancel function if there is one.
                 skip, unknown, function = self.add(key)
             self.reset()
-            self.show("Quit")
-            if function:
-                function(evt, printable=False)
+            if self.reportNext:
+                self.reportNext(function)
+                self.reportNext = None
+            else:
+                self.show("Quit")
+                if function:
+                    function(evt, printable=False)
         elif self.metaNext:
             # OK, the meta sticky key is down, but it's not a quit
             # sequence
@@ -678,21 +673,32 @@ class KeyProcessor(object):
                     save=self.number
                     printable = not self.modifier
                     self.reset()
-                    if save is not None:
-                        function(evt,save, printable=printable)
+                    if self.reportNext:
+                        self.reportNext(function)
+                        self.reportNext = None
                     else:
-                        function(evt, printable=printable)
+                        if save is not None:
+                            function(evt,save, printable=printable)
+                        else:
+                            function(evt, printable=printable)
                 elif unknown:
                     # This is an unknown keystroke combo
                     sf = "%s not defined."%(self.sofar)
                     self.reset()
+                    if self.reportNext:
+                        self.reportNext(None)
+                        self.reportNext = None
                     self.show(sf)
                 elif skip:
                     # this is the first keystroke and it doesn't match
                     # anything.  Skip it up to the next event handler
                     # to get processed elsewhere.
                     self.reset()
-                    evt.Skip()
+                    if self.reportNext:
+                        self.reportNext(None)
+                        self.reportNext = None
+                    else:
+                        evt.Skip()
                 else:
                     self.show(self.args+self.sofar)
 
