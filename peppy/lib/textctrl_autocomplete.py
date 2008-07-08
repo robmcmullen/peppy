@@ -7,41 +7,6 @@ Copyright 2006 (c) CDF Inc. ( http://www.cdf-imaging.com )
 Contributed to the wxPython project under the wxPython project\'s license.
 """
 import locale, wx, sys, cStringIO
-import  wx.lib.mixins.listctrl  as  listmix
-from wx import ImageFromStream, BitmapFromImage
-#----------------------------------------------------------------------
-def getSmallUpArrowData():
-    return \
-'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
-\x00\x00\x00\x1f\xf3\xffa\x00\x00\x00\x04sBIT\x08\x08\x08\x08|\x08d\x88\x00\
-\x00\x00<IDAT8\x8dcddbf\xa0\x040Q\xa4{h\x18\xf0\xff\xdf\xdf\xffd\x1b\x00\xd3\
-\x8c\xcf\x10\x9c\x06\xa0k\xc2e\x08m\xc2\x00\x97m\xd8\xc41\x0c \x14h\xe8\xf2\
-\x8c\xa3)q\x10\x18\x00\x00R\xd8#\xec\xb2\xcd\xc1Y\x00\x00\x00\x00IEND\xaeB`\
-\x82'
-
-def getSmallUpArrowBitmap():
-    return BitmapFromImage(getSmallUpArrowImage())
-
-def getSmallUpArrowImage():
-    stream = cStringIO.StringIO(getSmallUpArrowData())
-    return ImageFromStream(stream)
-
-def getSmallDnArrowData():
-    return \
-"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
-\x00\x00\x00\x1f\xf3\xffa\x00\x00\x00\x04sBIT\x08\x08\x08\x08|\x08d\x88\x00\
-\x00\x00HIDAT8\x8dcddbf\xa0\x040Q\xa4{\xd4\x00\x06\x06\x06\x06\x06\x16t\x81\
-\xff\xff\xfe\xfe'\xa4\x89\x91\x89\x99\x11\xa7\x0b\x90%\ti\xc6j\x00>C\xb0\x89\
-\xd3.\x10\xd1m\xc3\xe5*\xbc.\x80i\xc2\x17.\x8c\xa3y\x81\x01\x00\xa1\x0e\x04e\
-?\x84B\xef\x00\x00\x00\x00IEND\xaeB`\x82"
-
-def getSmallDnArrowBitmap():
-    return BitmapFromImage(getSmallDnArrowImage())
-
-def getSmallDnArrowImage():
-    stream = cStringIO.StringIO(getSmallDnArrowData())
-    return ImageFromStream(stream)
-
 
 
 class FakePopupWindow(wx.MiniFrame):
@@ -170,18 +135,118 @@ class FakePopup(wx.Frame):
             evt.Skip()
 
 
-#----------------------------------------------------------------------
-class myListCtrl(wx.ListCtrl, listmix.ListCtrlAutoWidthMixin):
-    def __init__(self, parent, ID=-1, pos=wx.DefaultPosition,
-                 size=wx.DefaultSize, style=0):
-        wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
-        listmix.ListCtrlAutoWidthMixin.__init__(self)
+class HighlightListBox(wx.HtmlListBox):
+    """Virtual List Box used to highlight partial matches in the ListCtrl"""
+    def setChoices(self, choices):
+        self.choices = choices
+        self.clearBold()
+        self.SetItemCount(len(choices))
+        
+    def setBold(self, index, start, count):
+        self.bold[index] = (start, start+count)
+        #print(self.bold[index])
+        self.RefreshLine(index)
+        
+    def clearBold(self):
+        self.bold = [None] * len(self.choices)
+        if len(self.choices) > 0:
+            self.RefreshLines(0, len(self.choices) - 1)
+        
+    def OnGetItem(self, n):
+        if hasattr(self, 'bold') and self.bold[n] is not None:
+            text = self.choices[n]
+            start = self.bold[n][0]
+            end = self.bold[n][1]
+            val = "%s<b>%s</b>%s" % (text[0:start], text[start:end], text[end:])
+            #print "index %d: %s" % (n, val)
+            return val
+        return self.choices[n]
+    
+    def selectNextMatch(self):
+        """Set the selection to the next match in the list.
+        
+        A match is determined by any item that exists in the bold list.  The
+        selection will wrap around to the top of the list.
+        """
+        start = self.GetSelection()
+        index = start + 1
+        count = self.GetLineCount()
+        while index < count:
+            if self.bold[index] is not None:
+                break
+            index += 1
+        if index >= count:
+            index = 0
+            while index < start:
+                if self.bold[index] is not None:
+                    break
+                index += 1
+            if index == start and self.bold[index] is None:
+                index += 1
+                if index >= count:
+                    index = 0
+        if index < count:
+            self.SetSelection(index)
+    
+    def selectPrevMatch(self):
+        """Set the selection to the previous match in the list.
+        
+        A match is determined by any item that exists in the bold list.  The
+        selection will wrap around to the bottom of the list.
+        """
+        start = self.GetSelection()
+        index = start - 1
+        count = self.GetLineCount()
+        while index >= 0:
+            if self.bold[index] is not None:
+                break
+            index -= 1
+        if index < 0:
+            index = count - 1
+            while index > start:
+                if self.bold[index] is not None:
+                    break
+                index -= 1
+            if index == start and self.bold[index] is None:
+                index -= 1
+                if index < 0:
+                    index = count - 1
+        if index >= 0:
+            self.SetSelection(index)
 
-class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
-    def __init__ ( self, parent, colNames=None, choices = None,
-                  multiChoices=None, showHead=True, dropDownClick=True,
-                  colFetch=-1, colSearch=0, hideOnNoMatch=True,
-                  selectCallback=None, entryCallback=None, matchFunction=None,
+    def getLargestCommon(self, input):
+        """Get the largest common string from the list of already matched strings.
+        
+        Using the list of strings that already have been matched, see if there
+        are any more characters that can be matched that are in common among
+        all of the strings.
+        """
+        found = None
+        start = len(input)
+        most = None
+        for index, bold in enumerate(self.bold):
+            if bold is not None:
+                text = self.choices[index][bold[0]:]
+                if found is None:
+                    # get first match
+                    found = text
+                    most = len(found)
+                else:
+                    for j in range(start, most):
+                        if text[j] != found[j]:
+                            most = j
+                            break
+                #print "after %d %s: found=%s most=%d" % (index, text, found, most)
+        if not found:
+            found = input
+        else:
+            found = found[0:most]
+        return found
+
+
+class TextCtrlAutoComplete(wx.TextCtrl):
+    def __init__ (self, parent, choices=None, dropDownClick=True,
+                  hideOnNoMatch=True, entryCallback=None, matchFunction=None,
                    mac=False,
                   **therest) :
         """
@@ -196,35 +261,22 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         wx.TextCtrl.__init__(self, parent, **therest )
         #Some variables
         self._dropDownClick = dropDownClick
-        self._colNames = colNames
-        self._multiChoices = multiChoices
-        self._showHead = showHead
         self._choices = choices
         self._lastinsertionpoint = 0
         self._hideOnNoMatch = hideOnNoMatch
-        self._selectCallback = selectCallback
         self._entryCallback = entryCallback
         self._matchFunction = matchFunction
         self._screenheight = wx.SystemSettings.GetMetric( wx.SYS_SCREEN_Y )
         self._tabCount = 0
-        #sort variable needed by listmix
-        self.itemDataMap = dict()
-        #Load and sort data
-##        if not (self._multiChoices or self._choices):
-##            raise ValueError, "Pass me at least one of multiChoices OR choices"
-        #widgets
+        self._onlyAtStart = False
+
         self._mac = mac | bool(wx.Platform == '__WXMAC__')
         if self._mac:
             self.dropdown = FakePopupWindow(self)
         else:
             self.dropdown = wx.PopupWindow( self )
-        #Control the style
-        flags = wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_SORT_ASCENDING
-        if not (showHead and multiChoices) :
-            flags = flags | wx.LC_NO_HEADER
-        #Create the list and bind the events
-        self.dropdownlistbox = myListCtrl( self.dropdown, style=flags,
-                                 pos=wx.Point( 0, 0) )
+
+        self.dropdownlistbox = HighlightListBox(self.dropdown)
         if mac:
             self.dropdown.setList(self.dropdownlistbox)
             #self.dropdown.setKillFocus(self.onControlChanged)
@@ -232,19 +284,8 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         else:
             self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
         
-        #initialize the parent
-        if multiChoices: ln = len(multiChoices)
-        else: ln = 1
-        #else: ln = len(choices)
-        listmix.ColumnSorterMixin.__init__(self, ln)
-        #load the data
-        if multiChoices: self.SetMultipleChoices (multiChoices, colSearch=colSearch, colFetch=colFetch)
-        else: self.SetChoices ( choices )
-##        gp = self
-##        while ( gp != None ) :
-##            gp.Bind ( wx.EVT_MOVE , self.onControlChanged, gp )
-##            gp.Bind ( wx.EVT_SIZE , self.onControlChanged, gp )
-##            gp = gp.GetParent()
+        self.SetChoices(choices)
+
         self.Bind( wx.EVT_TEXT , self.onEnteredText, self )
         self.Bind( wx.EVT_KEY_DOWN , self.onKeyDown, self )
         #If need drop down on left click
@@ -254,71 +295,57 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self.dropdown.Bind( wx.EVT_LISTBOX , self.onListItemSelected, self.dropdownlistbox )
         self.dropdownlistbox.Bind(wx.EVT_LEFT_DOWN, self.onListClick)
         self.dropdownlistbox.Bind(wx.EVT_LEFT_DCLICK, self.onListDClick)
-        self.dropdownlistbox.Bind(wx.EVT_LIST_COL_CLICK, self.onListColClick)
-        self.il = wx.ImageList(16, 16)
-        self.sm_dn = self.il.Add(getSmallDnArrowBitmap())
-        self.sm_up = self.il.Add(getSmallUpArrowBitmap())
-        self.dropdownlistbox.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
-        self._ascending = True
-
-    #-- methods called from mixin class
-    def GetSortImages(self):
-        return (self.sm_dn, self.sm_up)
-
-    def GetListCtrl(self):
-        return self.dropdownlistbox
-    # -- event methods
 
     def onListClick(self, evt):
-        toSel, flag = self.dropdownlistbox.HitTest( evt.GetPosition() )
+        toSel = self.dropdownlistbox.HitTest( evt.GetPosition() )
         #no values on poition, return
         if toSel == -1: return
-        self.dropdownlistbox.Select(toSel)
+        self.dropdownlistbox.SetSelection(toSel)
 
     def onListDClick(self, evt):
         self._setValueFromSelected()
-
-    def onListColClick(self, evt):
-        col = evt.GetColumn()
-        #reverse the sort
-        if col == self._colSearch:
-            self._ascending = not self._ascending
-        self.SortListItems( evt.GetColumn(), ascending=self._ascending )
-        self._colSearch = evt.GetColumn()
-        evt.Skip()
 
     def onEnteredText(self, event):
         text = event.GetString()
         if self._entryCallback:
             self._entryCallback()
+        self.dropdownlistbox.clearBold()
         if not text:
             # control is empty; hide dropdown if shown:
             if self.dropdown.IsShown():
                 self._showDropDown(False)
             event.Skip()
             return
+        best = None
         found = False
-        if self._multiChoices:
-            #load the sorted data into the listbox
-            dd = self.dropdownlistbox
-            choices = [dd.GetItem(x, self._colSearch).GetText()
-                for x in xrange(dd.GetItemCount())]
-        else:
-            choices = self._choices
+        nchar = len(text)
+        choices = self._choices
         for numCh, choice in enumerate(choices):
-            if self._matchFunction and self._matchFunction(text, choice):
-                found = True
-            elif choice.lower().startswith(text.lower()) :
-                found = True
+            if self._matchFunction:
+                index, count = self._matchFunction(text, choice)
+                if count > 0:
+                    found = True
+                    self.dropdownlistbox.setBold(numCh, index, count)
+            else:
+                if self._onlyAtStart:
+                    if choice.lower().startswith(text.lower()):
+                        found = True
+                        self.dropdownlistbox.setBold(numCh, 0, nchar)
+                else:
+                    index = choice.lower().find(text.lower())
+                    if index >= 0:
+                        found = True
+                        self.dropdownlistbox.setBold(numCh, index, nchar)
             if found:
-                self._showDropDown(True)
-                item = self.dropdownlistbox.GetItem(numCh)
-                toSel = item.GetId()
-                self.dropdownlistbox.Select(toSel)
-                #self.SetFocus()
-                break
-        if not found:
-            self.dropdownlistbox.Select(self.dropdownlistbox.GetFirstSelected(), False)
+                if best is None:
+                    best = numCh
+        #print("best = %s" % best)
+        if best is not None:
+            self._showDropDown(True)
+            self.dropdownlistbox.SetSelection(best)
+            #self.SetFocus()
+        else:
+            self.dropdownlistbox.SetSelection(-1)
             if self._hideOnNoMatch:
                 self._showDropDown(False)
         self._listItemVisible()
@@ -330,35 +357,40 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
             left and right: move the search
         """
         skip = True
-        sel = self.dropdownlistbox.GetFirstSelected()
+        dd = self.dropdownlistbox
+        sel = dd.GetSelection()
         visible = self.dropdown.IsShown()
         KC = event.GetKeyCode()
         if KC == wx.WXK_DOWN :
-            if sel < (self.dropdownlistbox.GetItemCount () - 1) :
-                self.dropdownlistbox.Select ( sel+1 )
+            if sel < (dd.GetItemCount () - 1) :
+                dd.SetSelection ( sel+1 )
                 self._listItemVisible()
             self._showDropDown ()
             skip = False
         elif KC == wx.WXK_UP :
             if sel > 0 :
-                self.dropdownlistbox.Select ( sel - 1 )
+                dd.SetSelection ( sel - 1 )
                 self._listItemVisible()
             self._showDropDown ()
             skip = False
-        elif KC == wx.WXK_LEFT :
-            if not self._multiChoices:
-                event.Skip()
-                return
-            if self._colSearch > 0:
-                self._colSearch -=1
-            self._showDropDown ()
-        elif KC == wx.WXK_RIGHT:
-            if not self._multiChoices:
-                event.Skip()
-                return
-            if self._colSearch < self.dropdownlistbox.GetColumnCount() -1:
-                self._colSearch += 1
-            self._showDropDown()
+        elif KC == wx.WXK_PAGEDOWN:
+            if sel == -1:
+                dd.SetSelection(0)
+            else:
+                first = dd.GetVisibleBegin()
+                last = dd.GetVisibleEnd()
+                if not dd.IsVisible(last):
+                    last -= 1
+                dd.ScrollPages(1)
+                dd.SetSelection(last)
+        elif KC == wx.WXK_PAGEUP:
+            if sel == -1:
+                dd.SetSelection(dd.GetLineCount() - 1)
+            else:
+                first = dd.GetVisibleBegin()
+                last = dd.GetVisibleEnd()
+                dd.ScrollPages(-1)
+                dd.SetSelection(first)
         if KC == wx.WXK_TAB:
             #print self._choices
             if self._choices:
@@ -366,41 +398,20 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
                 # Find the largest common match in the list of choices
                 # and expand to that
-                start = len(self.GetValue())
-                matched = self._choices[0]
-                most = len(matched)
-                #print "before start=%d most=%d" % (start, most)
-                for match in self._choices[1:]:
-                    for j in range(start, most):
-                        if match[j] != matched[j]:
-                            most = j
-                            break
-                    #print "after %s: start=%d most=%d" % (match, start, most)
-                    if most == start:
-                        break
-                if most > start:
-                    self.AppendText(matched[start:most])
+                input = self.GetValue()
+                text = dd.getLargestCommon(input)
+                if text != input:
+                    self.SetValue(text)
                     self.SetInsertionPointEnd()
+                else:
+                    self._tabCount = 1
                 self._tabCount += 1
                 if self._tabCount > 1:
                     # scroll the list on multiple consecutive tabs
-                    dd = self.dropdownlistbox
-                    count = dd.GetItemCount()
-                    page = dd.GetCountPerPage()
-                    sel = dd.GetFirstSelected()
-                    sel += page
-                    if sel >= count:
-                        sel = 0
-                    dd.Select(sel)
-                    dd.EnsureVisible(sel)
-
-                    # Lacking some "EnsureVisibleIsAtTop" method, make
-                    # the selected item at the top of the list by
-                    # forcing some more entries to be visible.
-                    bot = sel + page - 1
-                    if bot >= count:
-                        bot = count - 1
-                    dd.EnsureVisible(bot)
+                    if event.GetModifiers() & wx.MOD_SHIFT:
+                        dd.selectPrevMatch()
+                    else:
+                        dd.selectNextMatch()
                         
             skip = False
         else:
@@ -445,52 +456,16 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 #                self._showDropDown( False )
         event.Skip()
 
-    # -- Interfaces methods
-    def SetMultipleChoices(self, choices, colSearch=0, colFetch=-1):
-        """ Set multi-column choice
-        """
-        self._multiChoices = choices
-        self._choices = None
-        if not isinstance(self._multiChoices, list):
-            self._multiChoices = [ x for x in self._multiChoices]
-        flags = wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_SORT_ASCENDING
-        if not self._showHead:
-            flags |= wx.LC_NO_HEADER
-        self.dropdownlistbox.SetWindowStyleFlag(flags)
-        #prevent errors on "old" systems
-        if sys.version.startswith("2.3"):
-            self._multiChoices.sort(lambda x, y: cmp(x[0].lower(), y[0].lower()))
-        else:
-            self._multiChoices.sort(key=lambda x: locale.strxfrm(x[0]).lower() )
-        self._updateDataList(self._multiChoices)
-        lChoices = len(choices)
-        if lChoices < 2:
-            raise ValueError, "You have to pass me a multi-dimension list"
-        for numCol, rowValues in enumerate(choices[0]):
-            if self._colNames: colName = self._colNames[numCol]
-            else: colName = "Select %i" % numCol
-            self.dropdownlistbox.InsertColumn(numCol, colName)
-        for numRow, valRow in enumerate(choices):
-            for numCol, colVal in enumerate(valRow):
-                if numCol == 0:
-                    index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
-                self.dropdownlistbox.SetStringItem(index, numCol, colVal)
-                self.dropdownlistbox.SetItemData(index, numRow)
-        self._setListSize()
-        self._colSearch = colSearch
-        self._colFetch = colFetch
-
     def SetChoices(self, choices):
         """
         Sets the choices available in the popup wx.ListBox.
         The items will be sorted case insensitively.
         """
-        self._choices = choices
-        self._multiChoices = None
-        flags = wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_SORT_ASCENDING | wx.LC_NO_HEADER
-        self.dropdownlistbox.SetWindowStyleFlag(flags)
         if not isinstance(choices, list):
             self._choices = [ x for x in choices]
+        else:
+            self._choices = choices
+        self.dropdownlistbox.setChoices(self._choices)
         #prevent errors on "old" systems
         if sys.version.startswith("2.3"):
             self._choices.sort(lambda x, y: cmp(x.lower(), y.lower()))
@@ -499,22 +474,10 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
                 self._choices.sort(key=lambda x: locale.strxfrm(x).lower())
             except UnicodeEncodeError:
                 self._choices.sort(key=lambda x: locale.strxfrm(x.encode("UTF-8")).lower())
-        self._updateDataList(self._choices)
-        self.dropdownlistbox.InsertColumn(0, "")
-        for num, colVal in enumerate(self._choices):
-            index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
-            self.dropdownlistbox.SetStringItem(index, 0, colVal)
-            self.dropdownlistbox.SetItemData(index, num)
         self._setListSize()
-        # there is only one choice for both search and fetch if setting a single column:
-        self._colSearch = 0
-        self._colFetch = -1
 
     def GetChoices(self):
-        if self._choices:
-            return self._choices
-        else:
-            return self._multiChoices
+        return self._choices
 
     def SetSelectCallback(self, cb=None):
         self._selectCallback = cb
@@ -527,23 +490,16 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
     #-- Internal methods
     def _setValueFromSelected( self ) :
-         """
-         Sets the wx.TextCtrl value from the selected wx.ListCtrl item.
-         Will do nothing if no item is selected in the wx.ListCtrl.
-         """
-         sel = self.dropdownlistbox.GetFirstSelected()
-         if sel > -1:
-            if self._colFetch != -1: col = self._colFetch
-            else: col = self._colSearch
-            itemtext = self.dropdownlistbox.GetItem(sel, col).GetText()
-            if self._selectCallback:
-                dd = self.dropdownlistbox
-                values = [dd.GetItem(sel, x).GetText()
-                    for x in xrange(dd.GetColumnCount())]
-                self._selectCallback( values )
+        """
+        Sets the wx.TextCtrl value from the selected wx.ListCtrl item.
+        Will do nothing if no item is selected in the wx.ListCtrl.
+        """
+        sel = self.dropdownlistbox.GetSelection()
+        if sel > -1:
+            itemtext = self._choices[sel]
             self.SetValue (itemtext)
             self.SetInsertionPointEnd ()
-            self.SetSelection ( -1, -1 )
+            self.SetSelection(-1, -1)
             self._showDropDown ( False )
 
     def _showDropDown ( self, show = True ) :
@@ -568,28 +524,12 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         """
         Moves the selected item to the top of the list ensuring it is always visible.
         """
-        toSel =  self.dropdownlistbox.GetFirstSelected ()
+        toSel =  self.dropdownlistbox.GetSelection ()
         if toSel == -1: return
-        self.dropdownlistbox.EnsureVisible( toSel )
-
-    def _updateDataList(self, choices):
-        #delete, if need, all the previous data
-        if self.dropdownlistbox.GetColumnCount() != 0:
-            self.dropdownlistbox.DeleteAllColumns()
-            self.dropdownlistbox.DeleteAllItems()
-        #and update the dict
-        if choices:
-            for numVal, data in enumerate(choices):
-                self.itemDataMap[numVal] = data
-        else:
-            numVal = 0
-        self.SetColumnCount(numVal)
+        self.dropdownlistbox.SetSelection( toSel )
 
     def _setListSize(self):
-        if self._multiChoices:
-            choices = self._multiChoices
-        else:
-            choices = self._choices
+        choices = self._choices
         longest = 0
         for choice in choices :
             longest = max(len(choice), longest)
@@ -693,7 +633,9 @@ class test:
         if c.startswith(r'http://'): c = c[7:]
         if c.startswith(t): return True
         if c.startswith('www.'): c = c[4:]
-        return c.startswith(t)
+        if c.startswith(t):
+            return 0, len(t)
+        return -1, 0
 
     def setDynamicChoices(self):
         ctrl = self._ctrl
@@ -714,12 +656,13 @@ if __name__ == "__main__":
                     'aardvark', 'abandon', 'acorn', 'acute', 'adore',
                     'aegis', 'ascertain', 'asteroid',
                     'beautiful', 'bold', 'classic',
-                    'daring', 'dazzling', 'debonair', 'definitive',
+                    'daring', 'daft', 'debonair', 'definitive', 'defective',
                     'effective', 'elegant',
                     'http://python.org', 'http://www.google.com',
                     'fabulous', 'fantastic', 'friendly', 'forgiving', 'feature',
                     'sage', 'scarlet', 'scenic', 'seaside', 'showpiece', 'spiffy',
-                    'www.wxPython.org', 'www.osafoundation.org'
+                    'www.wxPython.org', 'www.osafoundation.org',
+                    'zqqqq1', 'zqqqq2222', 'zqqqq2228',
                     ]
     app = wx.PySimpleApp()
     frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE)

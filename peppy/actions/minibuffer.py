@@ -412,7 +412,7 @@ class StaticListCompletionMinibuffer(CompletionMinibuffer):
         """Return the list of completions that start with the given text"""
         found = []
         for match in self.sorted:
-            if match.startswith(text):
+            if match.find(text) >= 0:
                 found.append(match)
         return found
 
