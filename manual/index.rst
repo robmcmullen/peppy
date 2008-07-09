@@ -8,13 +8,12 @@ User's Manual
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    intro
    concepts
    running
    preferences
-   majormodes
    hsi
 
 \* not written yet

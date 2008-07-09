@@ -18,6 +18,9 @@ Peppy can display multiple top level windows, each of which can display an
 arbitrary number of tabs.  Each tab contains exactly one major mode, which is
 to say that each tab contains one view of a document.
 
+
+.. _majormodes:
+
 Major Modes
 -----------
 
