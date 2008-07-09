@@ -14,6 +14,7 @@ Contents:
    concepts
    running
    preferences
+   majormodes
    hsi
 
 \* not written yet

@@ -2,10 +2,10 @@
 Up and Running with Peppy
 *************************
 
-Once peppy is installed_, starting the application depends how you installed
+Once peppy is installed__, starting the application depends how you installed
 the code.
 
-.. _installed: /download.html
+__ /download.html
 
 Downloaded from source:
     If you downloaded peppy but did not install the source, you run the
@@ -95,6 +95,34 @@ to documentation.
 Opening Files
 -------------
 
+Peppy provides several commands to open files, from the traditional GUI file
+dialog using the File -> Open -> Open File menu command, to the more emacs-
+like File -> Open -> Open File using Minibuffer command (bound to C-x C-f in
+emacs keybinding mode).
+
+
+Editing Files
+-------------
+
+Once a file has been opened, a new tab will appear in the window that shows
+the GUI that is used to edit that type of file.  There are specific types of
+editing modes, called :ref:`major modes <majormodes>`, for different types
+of files.  For instance, plain text files are editing using the Fundamental
+major mode, while python source files are edited using the Python major mode.
+Both these major modes are similar is that they use a text editing component
+(called the StyledTextCtrl in wxPython, which is based on the Scintilla__
+source code editing component).  However, unlike most editors, text files
+are not the only thing that can be edited.  There are major modes for editing
+:ref:`binary files <hexedit>`, and even :ref:`hyperspectral images <hsi>`.
+
+__ http://www.scintilla.org
+
 Saving Files
 ------------
 
+After editing the file, it must be saved before the changes can be made
+permanent.  Like opening files, there are several ways to save the file.
+You can use the File -> Save to save the file if you want to overwrite your
+changes, or File -> Save As to pull up a traditional file save dialog to save
+it to a new file.  Some major modes provide other ways to save the file in the
+File -> Export menu.
