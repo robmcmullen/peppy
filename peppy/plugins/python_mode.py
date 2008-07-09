@@ -233,6 +233,13 @@ class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
         )
 
     autoindent = PythonAutoindent()
+    
+    def bangpathModificationHook(self, path):
+        """Make sure the '-u' flag is included in the python argument"""
+        if '-u' not in path:
+            path += " -u"
+        self.dprint(path)
+        return path
 
     def findParagraphStart(self, linenum, info):
         """Check to see if a previous line should be included in the

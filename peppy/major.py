@@ -1009,11 +1009,11 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                 cmd = '"%s" %s "%s" %s' % (interpreter, args,
                                        script, self.getScriptArgs())
             else:
-                mode = os.stat(script)[stat.ST_MODE] | stat.S_IXUSR
-                os.chmod(script, mode)
-            
+                # Rather than calling the script directly, simulate how the
+                # operating system uses the bangpath by calling the bangpath
+                # program with the path to the script supplied as the argument
                 script = script.replace(' ', '\ ')
-                cmd = "%s %s" % (script, self.getScriptArgs())
+                cmd = "%s %s %s" % (bangpath, script, self.getScriptArgs())
         else:
             interpreter = self.classprefs.interpreter_exe
             if wx.Platform == '__WXMSW__':
@@ -1026,8 +1026,17 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                 pass
             cmd = "%s %s %s %s" % (interpreter, self.getInterpreterArgs(),
                                    script, self.getScriptArgs())
-        dprint(cmd)
+        #dprint(cmd)
         return cmd
+    
+    def bangpathModificationHook(self, path):
+        """Hook method to modify the bang path as read from the first line in
+        the script.
+        
+        Note that the passed-in string will have already had the "#!" characters
+        stripped off, so only the pathname and arguments will exist.
+        """
+        return path
         
     def startInterpreter(self, argstring=None):
         """Interface used by actions to start the interpreter.
@@ -1042,7 +1051,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         bangpath = None
         first = self.GetLine(0)
         if first.startswith("#!"):
-            bangpath = first[2:]
+            bangpath = self.bangpathModificationHook(first[2:].rstrip())
             
         msg = None
         path = self.classprefs.interpreter_exe
