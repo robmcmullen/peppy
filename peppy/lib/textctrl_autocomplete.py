@@ -4,6 +4,9 @@ Written By: Edward Flick (eddy -=at=- cdf-imaging -=dot=- com)
             Michele Petrazzo (michele -=dot=- petrazzo -=at=- unipex -=dot=- it)
             Will Sadkin (wsadkin-=at=- nameconnector -=dot=- com)
 Copyright 2006 (c) CDF Inc. ( http://www.cdf-imaging.com )
+
+Refactored by Rob McMullen as part of peppy (http://peppy.flipturn.org)
+
 Contributed to the wxPython project under the wxPython project\'s license.
 """
 import locale, wx, sys, cStringIO
@@ -11,17 +14,15 @@ import locale, wx, sys, cStringIO
 
 class FakePopupWindow(wx.MiniFrame):
     def __init__(self, parent, style=None):
-        wx.MiniFrame.__init__(self, parent, style = wx.NO_BORDER
-                              | wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP)
-        self.Panel = wx.Panel(self)
-        self.list = None
-
-    def setList(self, list):
-        #self.GetSizer().Add(list, 1, wx.EXPAND)
-        #self.SetAutoLayout(True)
-        #list.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
-        #list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.list = list
+        super(FakePopupWindow, self).__init__(parent, style = wx.NO_BORDER |wx.FRAME_FLOAT_ON_PARENT
+                              | wx.FRAME_NO_TASKBAR)
+        #self.Bind(wx.EVT_KEY_DOWN , self.OnKeyDown)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+    
+    def OnChar(self, evt):
+        #print("OnChar: keycode=%s" % evt.GetKeyCode())
+        self.GetParent().GetEventHandler().ProcessEvent(evt)
 
     def Position(self, position, size):
         #print("pos=%s size=%s" % (position, size))
@@ -31,12 +32,6 @@ class FakePopupWindow(wx.MiniFrame):
         #print("pos=%s" % (position))
         self.Move((position[0], position[1]))
         
-    def SetBackgroundColour(self, colour):
-        self.Panel.SetBackgroundColour(colour)
-    
-    def Window(self):
-        return self.Panel
-    
     def ActivateParent(self):
         """Activate the parent window
         @postcondition: parent window is raised
@@ -54,89 +49,26 @@ class FakePopupWindow(wx.MiniFrame):
         """
         print("On Focus: set focus to %s" % str(self.GetParent()))
         self.ActivateParent()
-        self.list.SetFocus()
         evt.Skip()
-
-    Window = property(Window)
-    
-if wx.Platform == '__WXMAC__':
-    wx.PopupWindow = FakePopupWindow
-
-
-class FakePopup(wx.Frame):
-    def __init__(self, parent, pos=wx.DefaultPosition):
-        style = wx.FRAME_NO_TASKBAR | wx.FRAME_FLOAT_ON_PARENT
-        if wx.Platform == '__WXMAC__':
-            style = style | wx.BORDER_NONE | wx.POPUP_WINDOW
-        else:
-            style = style | wx.SIMPLE_BORDER
-        wx.Frame.__init__(self, parent, pos=pos, style=style)
-        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.SetSizer(sizer)
-        
-        self.list = None
-    
-    def OnKillFocus(self, evt):
-        win = evt.GetEventObject()
-        print("list losing focus %s" % win)
-        evt.Skip()
-
-    def setKillFocus(self, callback):
-        self.GetParent().Bind(wx.EVT_KILL_FOCUS, callback, self.GetParent())
-        self.list.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
-        pass
-    
-    def setList(self, list):
-        self.GetSizer().Add(list, 1, wx.EXPAND)
-        self.SetAutoLayout(True)
-        list.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
-        list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.list = list
-    
-    def Show(self, state=True):
-        print("Showing %s" % state)
-        import traceback
-        traceback.print_stack()
-        if state:
-            wx.Frame.Show(self, state)
-        else:
-            wx.Frame.Show(self, state)
-
-    def ActivateParent(self):
-        """Activate the parent window
-        @postcondition: parent window is raised
-
-        """
-        parent = self.GetParent()
-        parent.Raise()
-        parent.SetFocus()
-
-    def OnFocus(self, evt):
-        """Raise and reset the focus to the parent window whenever
-        we get focus.
-        @param evt: event that called this handler
-
-        """
-        print("On Focus: set focus to %s" % str(self.GetParent()))
-        self.ActivateParent()
-        self.GetParent().SetFocus()
-        evt.Skip()
-
-    def OnKeyUp(self, evt):
-        """Process key upevents in the control
-        @param evt: event that called this handler
-
-        """
-        if evt.GetKeyCode() == wx.WXK_RETURN:
-            self.__PostEvent()
-        else:
-            evt.Skip()
 
 
 class HighlightListBox(wx.HtmlListBox):
     """Virtual List Box used to highlight partial matches in the ListCtrl"""
+    def __init__(self, *args, **kwargs):
+        wx.HtmlListBox.__init__(self, *args, **kwargs)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+        
+    def OnFocus(self, evt):
+        """Raise and reset the focus to the parent window whenever
+        we get focus.
+        @param evt: event that called this handler
+
+        """
+        focus = self.GetParent().GetParent()
+        #print("On Focus: set focus to %s" % str(focus))
+        focus.SetFocus()
+        evt.Skip()
+
     def setChoices(self, choices):
         self.choices = choices
         self.clearBold()
@@ -256,9 +188,9 @@ class TextCtrlAutoComplete(wx.TextCtrl):
         by calling setChoices.
         """
         if therest.has_key('style'):
-            therest['style']=wx.TE_PROCESS_ENTER | therest['style']
+            therest['style']=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB |therest['style']
         else:
-            therest['style']=wx.TE_PROCESS_ENTER
+            therest['style']=wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB
         wx.TextCtrl.__init__(self, parent, **therest )
         #Some variables
         self._dropDownClick = dropDownClick
@@ -279,16 +211,14 @@ class TextCtrlAutoComplete(wx.TextCtrl):
 
         self.dropdownlistbox = HighlightListBox(self.dropdown)
         if mac:
-            self.dropdown.setList(self.dropdownlistbox)
-            #self.dropdown.setKillFocus(self.onControlChanged)
-            #self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
-        else:
-            self.Bind( wx.EVT_KILL_FOCUS, self.onControlChanged, self )
+            self.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
+        
+        self.Bind(wx.EVT_KILL_FOCUS, self.onControlChanged)
         
         self.SetChoices(choices)
 
-        self.Bind( wx.EVT_TEXT , self.onEnteredText, self )
-        self.Bind( wx.EVT_KEY_DOWN , self.onKeyDown, self )
+        self.Bind(wx.EVT_TEXT, self.OnText)
+        self.Bind(wx.EVT_KEY_DOWN, self.onKeyDown)
         #If need drop down on left click
         if dropDownClick:
             self.Bind ( wx.EVT_LEFT_DOWN , self.onClickToggleDown, self )
@@ -306,16 +236,23 @@ class TextCtrlAutoComplete(wx.TextCtrl):
     def onListDClick(self, evt):
         self._setValueFromSelected()
 
-    def onEnteredText(self, event):
-        text = event.GetString()
+    def OnText(self, evt):
+        text = evt.GetString()
+        #print("OnText: %s" % text)
+        self.processText(text)
+        evt.Skip()
+    
+    def processText(self, text=None):
+        if text is None:
+            text = self.GetValue()
         if self._entryCallback:
             self._entryCallback()
         self.dropdownlistbox.clearBold()
+        #print("processText: %s" % text)
         if not text:
             # control is empty; hide dropdown if shown:
             if self.dropdown.IsShown():
                 self._showDropDown(False)
-            event.Skip()
             return
         best = None
         found = False
@@ -350,7 +287,6 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             if self._hideOnNoMatch:
                 self._showDropDown(False)
         self._listItemVisible()
-        event.Skip ()
 
     def onKeyDown ( self, event ) :
         """ Do some work when the user press on the keys:
@@ -362,6 +298,7 @@ class TextCtrlAutoComplete(wx.TextCtrl):
         sel = dd.GetSelection()
         visible = self.dropdown.IsShown()
         KC = event.GetKeyCode()
+        #print("keycode = %d" % KC)
         if KC == wx.WXK_DOWN :
             if sel < (dd.GetItemCount () - 1) :
                 dd.SetSelection ( sel+1 )
@@ -392,6 +329,10 @@ class TextCtrlAutoComplete(wx.TextCtrl):
                 last = dd.GetVisibleEnd()
                 dd.ScrollPages(-1)
                 dd.SetSelection(first)
+        elif KC == wx.WXK_RIGHT:
+            # A right arrow at the end of the string is equivalent to a tab
+            if self.GetInsertionPoint() == self.GetLastPosition():
+                KC = wx.WXK_TAB
         if KC == wx.WXK_TAB:
             #print self._choices
             if self._choices:
@@ -440,12 +381,20 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             self._showDropDown ( not self.dropdown.IsShown() )
         wx.CallAfter(self.SetFocus)
         event.Skip ()
+    
+    def OnSetFocus(self, evt):
+        #print("OnSetFocus: insertion point = %d" % self.GetLastPosition())
+        wx.CallAfter(self.SetInsertionPointEnd)
 
     def onControlChanged(self, event):
-        #print(event)
         changed = event.GetEventObject()
         other = event.GetWindow()
         #print("changed=%s other=%s" % (changed, other))
+        if self._mac:
+            wx.CallAfter(self.SetFocus)
+            wx.CallAfter(self.SetInsertionPointEnd)
+            event.Skip()
+            return
         if self.dropdown.IsShown():
             self._showDropDown( False )
 #            if self._mac:
@@ -520,6 +469,7 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             else:
                 self.dropdown . SetPosition ( wx.Point(x, y - height - size.GetHeight()) )
         self.dropdown.Show ( show )
+        wx.CallAfter(self.SetFocus)
 
     def _listItemVisible( self ) :
         """
@@ -542,115 +492,6 @@ class TextCtrlAutoComplete(wx.TextCtrl):
         self.dropdownlistbox.SetSize ( self.popupsize )
         self.dropdown.SetClientSize( self.popupsize )
 
-class test:
-    def __init__(self):
-        args = dict()
-        if 1:
-            args["colNames"] = ("col1", "col2")
-            args["multiChoices"] = [ ("Zoey","WOW"), ("Alpha", "wxPython"),
-                                    ("Ceda","Is"), ("Beta", "fantastic"),
-                                    ("zoebob", "!!")]
-            args["colFetch"] = 1
-        else:
-            args["choices"] = ["123", "cs", "cds", "Bob","Marley","Alpha"]
-        args["selectCallback"] = self.selectCallback
-        self.dynamic_choices = [
-                        'aardvark', 'abandon', 'acorn', 'acute', 'adore',
-                        'aegis', 'ascertain', 'asteroid',
-                        'beautiful', 'bold', 'classic',
-                        'daring', 'dazzling', 'debonair', 'definitive',
-                        'effective', 'elegant',
-                        'http://python.org', 'http://www.google.com',
-                        'fabulous', 'fantastic', 'friendly', 'forgiving', 'feature',
-                        'sage', 'scarlet', 'scenic', 'seaside', 'showpiece', 'spiffy',
-                        'www.wxPython.org', 'www.osafoundation.org'
-                        ]
-        app = wx.PySimpleApp()
-        frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE)
-        panel = wx.Panel(frm)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self._ctrl = TextCtrlAutoComplete(panel, **args)
-        but = wx.Button(panel,label="Set other multi-choice")
-        but.Bind(wx.EVT_BUTTON, self.onBtMultiChoice)
-        but2 = wx.Button(panel,label="Set other one-colum choice")
-        but2.Bind(wx.EVT_BUTTON, self.onBtChangeChoice)
-        but3 = wx.Button(panel,label="Set the starting choices")
-        but3.Bind(wx.EVT_BUTTON, self.onBtStartChoices)
-        but4 = wx.Button(panel,label="Enable dynamic choices")
-        but4.Bind(wx.EVT_BUTTON, self.onBtDynamicChoices)
-        sizer.Add(but, 0, wx.ADJUST_MINSIZE, 0)
-        sizer.Add(but2, 0, wx.ADJUST_MINSIZE, 0)
-        sizer.Add(but3, 0, wx.ADJUST_MINSIZE, 0)
-        sizer.Add(but4, 0, wx.ADJUST_MINSIZE, 0)
-        sizer.Add(self._ctrl, 0, wx.EXPAND|wx.ADJUST_MINSIZE, 0)
-        panel.SetAutoLayout(True)
-        panel.SetSizer(sizer)
-        sizer.Fit(panel)
-        sizer.SetSizeHints(panel)
-        panel.Layout()
-        app.SetTopWindow(frm)
-        frm.Show()
-        but.SetFocus()
-        app.MainLoop()
-
-    def onBtChangeChoice(self, event):
-        #change the choices
-        self._ctrl.SetChoices(["123", "cs", "cds", "Bob","Marley","Alpha"])
-        self._ctrl.SetEntryCallback(None)
-        self._ctrl.SetMatchFunction(None)
-
-    def onBtMultiChoice(self, event):
-        #change the choices
-        self._ctrl.SetMultipleChoices( [ ("Test","Hello"), ("Other word","World"),
-                                        ("Yes!","it work?") ], colFetch = 1 )
-        self._ctrl.SetEntryCallback(None)
-        self._ctrl.SetMatchFunction(None)
-
-    def onBtStartChoices(self, event):
-        #change the choices
-        self._ctrl.SetMultipleChoices( [ ("Zoey","WOW"), ("Alpha", "wxPython"),
-                                    ("Ceda","Is"), ("Beta", "fantastic"),
-                                    ("zoebob", "!!")], colFetch = 1 )
-        self._ctrl.SetEntryCallback(None)
-        self._ctrl.SetMatchFunction(None)
-
-    def onBtDynamicChoices(self, event):
-        """
-        Demonstrate dynamic adjustment of the auto-complete list, based on what's
-        been typed so far:
-        """
-        self._ctrl.SetChoices(self.dynamic_choices)
-        self._ctrl.SetEntryCallback(self.setDynamicChoices)
-        self._ctrl.SetMatchFunction(self.match)
-
-    def match(self, text, choice):
-        """
-        Demonstrate "smart" matching feature, by ignoring http:// and www. when doing
-        matches.
-        """
-        t = text.lower()
-        c = choice.lower()
-        if c.startswith(t): return True
-        if c.startswith(r'http://'): c = c[7:]
-        if c.startswith(t): return True
-        if c.startswith('www.'): c = c[4:]
-        if c.startswith(t):
-            return 0, len(t)
-        return -1, 0
-
-    def setDynamicChoices(self):
-        ctrl = self._ctrl
-        text = ctrl.GetValue().lower()
-        current_choices = ctrl.GetChoices()
-        choices = [choice for choice in self.dynamic_choices if self.match(text, choice)]
-        if choices != current_choices:
-            ctrl.SetChoices(choices)
-
-    def selectCallback(self, values):
-        """ Simply function that receive the row values when the
-            user select an item
-        """
-        print "Select Callback called...:",  values
 
 if __name__ == "__main__":
     dynamic_choices = [
