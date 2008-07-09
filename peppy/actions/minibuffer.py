@@ -11,9 +11,12 @@ from peppy.lib.textctrl_autocomplete import TextCtrlAutoComplete
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import StatusBarButton
 
-class MinibufferAction(TextModificationAction):
+class MinibufferMixin(object):
+    minibuffer = None
     minibuffer_label = None
-    key_needs_focus = False
+    
+    def getMinibufferLabel(self):
+        return self.minibuffer_label
     
     def getInitialValueHook(self):
         """Get the initial value (if any)
@@ -24,19 +27,25 @@ class MinibufferAction(TextModificationAction):
         """
         return ""
     
-    def action(self, index=-1, multiplier=1):
+    def showMinibuffer(self, mode):
         initial = self.getInitialValueHook()
+        label = self.getMinibufferLabel()
         if isinstance(self.minibuffer, list):
-            minibuffer = MultiMinibuffer(self.mode, self, label=self.minibuffer_label,
-                                         initial=initial, multi=self.minibuffer)
+            minibuffer = MultiMinibuffer(mode, self, label=label, initial=initial, multi=self.minibuffer)
         else:
-            minibuffer = self.minibuffer(self.mode, self, label=self.minibuffer_label,
-                                       initial=initial)
+            minibuffer = self.minibuffer(mode, self, label=label, initial=initial)
         #print minibuffer.win
-        self.mode.setMinibuffer(minibuffer)
+        mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
         assert self.dprint("processing %s" % text)
+
+
+class MinibufferAction(MinibufferMixin, TextModificationAction):
+    key_needs_focus = False
+    
+    def action(self, index=-1, multiplier=1):
+        self.showMinibuffer(self.mode)
 
 
 class MinibufferRepeatAction(MinibufferAction):

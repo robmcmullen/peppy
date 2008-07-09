@@ -91,6 +91,62 @@ class FundamentalRadioToggle(ClassprefsTooltipMixin, RadioAction):
         setattr(self.mode.locals, self.local_setting, value)
         self.mode.applyDefaultSettings()
 
+class FundamentalBooleanRadioToggle(ClassprefsTooltipMixin, RadioAction):
+    local_setting = None
+    local_true = None
+    local_false = None
+
+    def getIndex(self):
+        # True is shown first
+        if getattr(self.mode.locals, self.local_setting):
+            return 0
+        return 1
+                                           
+    def getItems(self):
+        return [self.local_true, self.local_false]
+
+    def action(self, index=-1, multiplier=1):
+        state = (index == 0)
+        setattr(self.mode.locals, self.local_setting, state)
+        self.mode.applyDefaultSettings()
+
+
+class FundamentalIntRadioToggle(ClassprefsTooltipMixin, RadioAction, MinibufferMixin):
+    local_setting = None
+    local_values = None
+    allow_other = True
+    other_name = _("other")
+    minibuffer = IntMinibuffer
+    
+    def getIndex(self):
+        val = getattr(self.mode.locals, self.local_setting)
+        try:
+            return self.local_values.index(val)
+        except ValueError:
+            if self.allow_other:
+                # Other is always last, after the local values
+                return len(self.local_values)
+            return 0
+                                           
+    def getItems(self):
+        items = [str(i) for i in self.local_values]
+        if self.allow_other:
+            items.append(self.other_name)
+        return items
+
+    def action(self, index=-1, multiplier=1):
+        if index < len(self.local_values):
+            setattr(self.mode.locals, self.local_setting, self.local_values[index])
+            self.mode.applyDefaultSettings()
+        else:
+            self.showMinibuffer(self.mode)
+    
+    def processMinibuffer(self, minibuffer, mode, value):
+        dprint(value)
+        setattr(self.mode.locals, self.local_setting, value)
+        self.mode.applyDefaultSettings()
+
+
 class LineNumbers(FundamentalSettingToggle):
     local_setting = 'line_numbers'
     alias = "line-numbers"
@@ -138,6 +194,32 @@ class IndentationGuides(FundamentalSettingToggle):
     local_setting = 'indentation_guides'
     name = "Indentation Guides"
     default_menu = ("View", 306)
+
+class IndentSize(FundamentalIntRadioToggle):
+    local_setting = 'indent_size'
+    local_values = [2, 4, 8]
+    allow_other = True
+    name = "Indentation Size"
+    minibuffer_label = "Number of spaces per indent:"
+    default_menu = ("View", 306.5)
+
+class IndentWithTabsOrSpaces(FundamentalBooleanRadioToggle):
+    local_setting = 'use_tab_characters'
+    local_true = 'tab characters'
+    local_false = 'spaces'
+    name = "Indent With"
+    default_menu = ("View", 307)
+
+class TabSize(FundamentalIntRadioToggle):
+    local_setting = 'tab_size'
+    local_values = [2, 4, 8]
+    allow_other = True
+    name = "Tab Size"
+    minibuffer_label = "Number of spaces per tab:"
+    default_menu = ("View", 308)
+
+    def isEnabled(self):
+        return self.mode.locals.use_tab_characters
 
 class TabHighlight(FundamentalRadioToggle):
     local_setting = 'tab_highlight_style'
@@ -371,9 +453,13 @@ class FundamentalMenu(IPeppyPlugin):
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
             return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
-                    ViewEOL, IndentationGuides, CaretLineHighlight, CaretWidth,
-                    ViewWhitespace, LongLineIndicator, TabHighlight,
-                    RevertEncoding,
+                    ViewEOL,
+                    
+                    IndentationGuides, IndentSize, IndentWithTabsOrSpaces,
+                    TabSize,
+                    
+                    CaretLineHighlight, CaretWidth, ViewWhitespace,
+                    LongLineIndicator, TabHighlight, RevertEncoding,
                     
                     FontZoom, FontZoomIncrease, FontZoomDecrease,
                     
