@@ -995,6 +995,11 @@ def run():
     @param options: OptionParser option class
     @param args: command line argument list
     """
+    if wx.Platform == "__WXGTK__":
+        # Gnome filemanager puts '//' at the beginning of absolute pathnames
+        sys.argv = [arg[1:] if arg.startswith("//") else arg for arg in sys.argv]
+        dprint(sys.argv)
+    
     peppy = Peppy(redirect=False)
     
     if peppy.otherInstanceRunning():
