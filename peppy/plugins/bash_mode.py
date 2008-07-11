@@ -16,7 +16,7 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 
-class BashMode(JobControlMixin, SimpleFoldFunctionMatchMixin, FundamentalMode):
+class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing Bash/KSH/Bourne shell scripts.
     """
     keyword = 'Bash'

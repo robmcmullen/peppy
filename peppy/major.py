@@ -409,7 +409,10 @@ class MajorMode(ClassPrefs, debugmixin):
     # Settings would propogate up the class hierachy and find a keymap
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
-    
+
+    # Generic storage for all instances of this class
+    class_storage = {}
+
     def __init__(self, parent, wrapper, buffer, frame):
         # set up the view-local versions of classprefs
         self.classprefsCopyToLocals()

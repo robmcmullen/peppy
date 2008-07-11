@@ -76,7 +76,7 @@ class FundamentalSTC(EditraSTCMixin, PeppySTC):
 
 
 class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
-                      PeppySTC, MajorMode):
+                      PeppySTC, MajorMode, JobControlMixin):
     """Major mode for editing generic text files.
     
     This is the most generic major mode used for editing text files.  This uses

@@ -221,8 +221,7 @@ class PythonAutoindent(BasicAutoindent):
         return False
 
 
-class PythonMode(JobControlMixin, SimpleFoldFunctionMatchMixin,
-                 FundamentalMode):
+class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
     regex="\.(py|pyx)$"
