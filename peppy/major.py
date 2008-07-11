@@ -532,6 +532,21 @@ class MajorMode(ClassPrefs, debugmixin):
         if indeterminate.
         """
         return None
+    
+    @classmethod
+    def preferThreadedLoading(cls, url):
+        """Returns preference for using threaded loading of the given URL
+        
+        Loading a file in a background thread is possible in peppy, but it
+        does cause a noticeable delay when loading a file from the local
+        filesystem.  This class method is provided to allow each major mode to
+        state its preference for threaded loading.
+        
+        Note that this preference will not be honored if the global setting for
+        threaded loading is disabled.
+        """
+        return True
+
 
     def save(self, url=None):
         veto = self.savePreHook(url)

@@ -602,7 +602,7 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
         return False
     
     def allowThreadedLoading(self):
-        return self.modecls.allow_threaded_loading
+        return self.modecls.preferThreadedLoading(self.user_url)
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""

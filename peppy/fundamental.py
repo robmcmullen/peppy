@@ -197,6 +197,16 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         
         self.spell = None
 
+    @classmethod
+    def preferThreadedLoading(cls, url):
+        # For Fundamental mode and its descendants (unless overridden),
+        # threaded loading is disabled by default when loading from the local
+        # filesystem
+        if url.scheme == "file":
+            return False
+        return True
+
+
     def createWindowPostHook(self):
         """Apply settings for the STC"""
         start = time.time()
