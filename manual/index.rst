@@ -14,6 +14,9 @@ Contents:
    concepts
    running
    preferences
+   fundamental
+   python
+   project
    hsi
 
 \* not written yet
