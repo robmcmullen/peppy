@@ -1431,7 +1431,7 @@ class InstancePrefs(debugmixin):
     def findParam(cls, section, option):
         hier = cls.__mro__
         for cls in hier:
-            dprint("checking %s" % cls)
+            #dprint("checking %s" % cls)
             if 'default_prefs' not in dir(cls):
                 continue
             for param in cls.default_prefs:
@@ -1442,7 +1442,7 @@ class InstancePrefs(debugmixin):
     def iterPrefs(self):
         hier = self.__class__.__mro__
         for cls in hier:
-            dprint("checking %s" % cls)
+            #dprint("checking %s" % cls)
             if 'default_prefs' not in dir(cls):
                 continue
             for param in cls.default_prefs:
@@ -1482,7 +1482,7 @@ class InstancePrefs(debugmixin):
         
         hier = self.__class__.__mro__
         for cls in hier:
-            dprint("checking %s" % cls)
+            #dprint("checking %s" % cls)
             if 'default_prefs' not in dir(cls):
                 continue
             section = cls.__name__

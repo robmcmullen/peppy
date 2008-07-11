@@ -64,7 +64,7 @@ class CTAGS(InstancePrefs):
 
     def regenerateTags(self):
         # need to operate on the local filesystem
-        dprint(self.project_top_dir)
+        self.dprint(self.project_top_dir)
         if self.project_top_dir.scheme != "file":
             raise TypeError("Can only process ctags on local filesystem")
         cwd = str(self.project_top_dir.path)
@@ -77,13 +77,13 @@ class CTAGS(InstancePrefs):
         # try to look for a filename called " ", which fails.
         args = "%s %s %s -o %s" % (ProjectPlugin.classprefs.ctags_args, self.ctags_extra_args, excludes, ctags_file)
         cmd = "%s %s" % (ProjectPlugin.classprefs.ctags_command, args)
-        dprint(cmd)
+        self.dprint(cmd)
         
         output = JobOutputSaver(self.regenerateFinished)
         ProcessManager().run(cmd, cwd, output)
     
     def regenerateFinished(self, output):
-        dprint(output)
+        self.dprint(output)
         if output.exit_code == 0:
             self.loadTags()
         else:
@@ -113,7 +113,7 @@ class CTAGS(InstancePrefs):
                 else:
                     self.dprint(line)
         except LookupError, e:
-            dprint("Tag file %s not found" % filename)
+            self.dprint("Tag file %s not found" % filename)
             pass
     
     def getTag(self, tag):
@@ -186,10 +186,10 @@ class ProjectInfo(CTAGS):
             if fh:
                 self.readConfig(fh)
             for param in self.iterPrefs():
-                dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
-            dprint(self.configToText())
+                self.dprint("%s = %s" % (param.keyword, getattr(self, param.keyword)))
+            self.dprint(self.configToText())
         except LookupError:
-            dprint("Project file not found -- using defaults.")
+            self.dprint("Project file not found -- using defaults.")
             self.setDefaultPrefs()
     
     def savePrefs(self):
@@ -198,7 +198,7 @@ class ProjectInfo(CTAGS):
             text = self.configToText()
             fh.write(text)
         except:
-            dprint("Failed writing project config file")
+            self.dprint("Failed writing project config file")
     
     def registerProcess(self, job):
         self.process = job
@@ -210,12 +210,12 @@ class ProjectInfo(CTAGS):
         return bool(self.process)
     
     def build(self, frame):
-        dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
+        self.dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
         output = JobOutputSidebarController(frame, self.registerProcess, self.deregisterProcess)
         ProcessManager().run(self.build_command, self.build_dir, output)
     
     def run(self, frame):
-        dprint("Running %s in %s" % (self.run_command, self.run_dir))
+        self.dprint("Running %s in %s" % (self.run_command, self.run_dir))
         output = JobOutputSidebarController(frame, self.registerProcess, self.deregisterProcess)
         ProcessManager().run(self.run_command, self.run_dir, output)
     
@@ -236,7 +236,7 @@ class ShowTagAction(ListAction):
 
     def getNonInlineName(self):
         lookup = self.mode.check_spelling[0]
-        dprint(lookup)
+        self.dprint(lookup)
         return lookup or "ctags unavailable"
 
     def getItems(self):
@@ -244,7 +244,7 @@ class ShowTagAction(ListAction):
         # Otherwise, we'd save it to the major mode
         if self.mode.project_info:
             lookup = self.mode.check_spelling[0]
-            dprint(lookup)
+            self.dprint(lookup)
             self.tags = self.mode.project_info.getTag(lookup)
             if self.tags:
                 links = []
@@ -264,7 +264,7 @@ class ShowTagAction(ListAction):
     def action(self, index=-1, multiplier=1):
         file = self.tags[index][0]
         addr = self.tags[index][1]
-        dprint("opening %s at line %s" % (file, addr))
+        self.dprint("opening %s at line %s" % (file, addr))
         try:
             line = int(addr)
             file = "%s#%d" % (file, line)
@@ -314,7 +314,7 @@ class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
 
     def action(self, index=-1, multiplier=1):
         pathname = ProjectPlugin.getFilename(self.mode.keyword)
-        dprint(pathname)
+        self.dprint(pathname)
         self.mode.save(pathname)
 
 
@@ -395,7 +395,7 @@ class ProjectSettings(wx.Dialog):
         
         pm = wx.GetApp().plugin_manager
         plugins = pm.getPluginInfo(ProjectPlugin)
-        dprint(plugins)
+        self.dprint(plugins)
         
         self.plugin = PluginPanel(self.notebook, plugins[0])
         self.notebook.AddPage(self.plugin, _("Global Project Settings"))
@@ -428,7 +428,7 @@ class ProjectActionMixin(object):
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             path = dlg.GetPath()
-            dprint(path)
+            self.dprint(path)
             info = ProjectPlugin.createProject(path)
         else:
             info = None
@@ -529,7 +529,7 @@ class ProjectPlugin(IPeppyPlugin):
         names.append(confdir.resolve2(mode.keyword))
         for configname in names:
             try:
-                dprint("Trying to load template %s" % configname)
+                cls.dprint("Trying to load template %s" % configname)
                 fh = vfs.open(configname)
                 template = fh.read()
                 return template
@@ -550,10 +550,10 @@ class ProjectPlugin(IPeppyPlugin):
 
     @classmethod
     def findProjectTemplate(cls, mode):
-        dprint(mode)
+        cls.dprint(mode)
         if mode.project_info:
             url = mode.project_info.getSettingsRelativeURL(cls.classprefs.template_directory)
-            dprint(url)
+            cls.dprint(url)
             if vfs.is_folder(url):
                 template = cls.findTemplate(url, mode, mode.buffer.url)
                 if template:
@@ -572,16 +572,16 @@ class ProjectPlugin(IPeppyPlugin):
         
         # Look for a new project path
         last = vfs.normalize(vfs.get_dirname(url))
-        dprint(str(last.path))
+        cls.dprint(str(last.path))
         while not last.path.is_relative() and True:
             path = last.resolve2("%s" % (cls.classprefs.project_directory))
-            dprint(path.path)
+            cls.dprint(path.path)
             if vfs.is_folder(path):
                 cls.known_project_dirs[url] = path
                 return path
             path = vfs.get_dirname(path.resolve2('..'))
             if path == last:
-                dprint("Done!")
+                cls.dprint("Done!")
                 break
             last = path
         return None
@@ -598,7 +598,7 @@ class ProjectPlugin(IPeppyPlugin):
                 info = cls.known_projects[url]
             if mode:
                 mode.project_info = info
-            dprint("found project %s" % info)
+            cls.dprint("found project %s" % info)
             return info
         elif mode:
             mode.project_info = None
@@ -619,18 +619,18 @@ class ProjectPlugin(IPeppyPlugin):
         vfs.make_folder(proj_dir)
         info = cls.registerProject(None, proj_dir)
         info.savePrefs()
-        dprint(info)
+        cls.dprint(info)
         buffers = BufferList.getBuffers()
         for buffer in buffers:
             if buffer.url.scheme != "file":
                 continue
-            dprint("prefix=%s topdir=%s" % (buffer.url.path.get_prefix(url.path), url.path))
+            cls.dprint("prefix=%s topdir=%s" % (buffer.url.path.get_prefix(url.path), url.path))
             if buffer.url.path.get_prefix(url.path) == url.path:
-                dprint("belongs in project! %s" % buffer.url.path)
+                cls.dprint("belongs in project! %s" % buffer.url.path)
                 for mode in buffer.iterViewers():
                     mode.project_info = info
             else:
-                dprint("not in project: %s" % buffer.url.path)
+                cls.dprint("not in project: %s" % buffer.url.path)
         return info
 
     @classmethod
