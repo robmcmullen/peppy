@@ -184,7 +184,12 @@ class Minibuffer(debugmixin):
         # remove the minibuffer if the mode is still valid.
         if self.mode:
             wx.CallAfter(self.mode.removeMinibuffer, self)
-        
+    
+    def performAction(self, value):
+        """Execute the processMinibuffer method of the action"""
+        error = self.action.processMinibuffer(self, self.mode, value)
+        if error is not None:
+            self.mode.frame.SetStatusText(error)
 
 
 
@@ -234,13 +239,15 @@ class TextMinibuffer(Minibuffer):
         elif self.finish_callback:
             self.finish_callback()
         else:
-            self.mode.removeMinibuffer(detach_only=True)
+            # Remove the minibuffer and perform the action in CallAfters so
+            # the tab focus doesn't get confused.  If you try to perform these
+            # actions directly, the focus will return to the original tab if
+            # the action causes a new tab to be created.  Moving everything to
+            # CallAfters prevents this.
+            wx.CallAfter(self.removeFromParent)
             if text is not None:
-                error = self.action.processMinibuffer(self, self.mode, text)
-                if error is not None:
-                    self.mode.frame.SetStatusText(error)
-            self.close()
-            #self.removeFromParent()
+                wx.CallAfter(self.performAction, text)
+        
 
 class IntMinibuffer(TextMinibuffer):
     """Dedicated subclass of Minibuffer that prompts for an integer.
@@ -389,16 +396,20 @@ class CompletionMinibuffer(TextMinibuffer):
         self.text.SetEntryCallback(self.setDynamicChoices)
         #self.text.SetInsertionPointEnd()
 
+        # FIXME: Using the EVT_SET_FOCUS doesn't seem to work to set the cursor
+        # to the end of the text.  It doesn't seem to get called at all, so
+        # the only way to do it appears to be to co-opt the Panel's SetFocus
+        # method
         self.win.saveSetFocus = self.win.SetFocus
         self.win.SetFocus = self.SetFocus
         
     def SetFocus(self):
-        dprint(self)
+        #dprint(self)
         self.win.saveSetFocus()
         self.text.SetInsertionPointEnd()
     
     def OnFocus(self, evt):
-        dprint()
+        #dprint()
         self.text.SetInsertionPointEnd()
 
     def complete(self, text):
@@ -485,7 +496,5 @@ class MultiMinibuffer(Minibuffer):
                 minibuffer.focus()
                 return
         
-        error = self.action.processMinibuffer(self, self.mode, results)
-        if error is not None:
-            self.mode.frame.SetStatusText(error)
-        self.removeFromParent()
+        wx.CallAfter(self.removeFromParent)
+        wx.CallAfter(self.performAction, results)

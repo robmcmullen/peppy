@@ -27,12 +27,13 @@ from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.textutil import piglatin
 
-OrigCallAfter = wx.CallAfter
-def NewCallAfter(*args, **kwargs):
-    dprint("CallAfter: args=%s kwargs=%s" % (str(args), str(kwargs)))
-    OrigCallAfter(*args, **kwargs)
-    #wx.GetApp().cooperativeYield()
-wx.CallAfter = NewCallAfter
+# Debug method to display when CallAfters are being made.
+#OrigCallAfter = wx.CallAfter
+#def NewCallAfter(*args, **kwargs):
+#    dprint("CallAfter: args=%s kwargs=%s" % (str(args), str(kwargs)))
+#    OrigCallAfter(*args, **kwargs)
+#    #wx.GetApp().cooperativeYield()
+#wx.CallAfter = NewCallAfter
 
 #### py2exe support
 
@@ -1005,7 +1006,7 @@ def run():
     if wx.Platform == "__WXGTK__":
         # Gnome filemanager puts '//' at the beginning of absolute pathnames
         sys.argv = [arg[1:] if arg.startswith("//") else arg for arg in sys.argv]
-        dprint(sys.argv)
+        #dprint(sys.argv)
     
     peppy = Peppy(redirect=False)
     

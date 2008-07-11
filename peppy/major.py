@@ -221,11 +221,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 self.minibuffer.close()
             self.minibuffer = None
             self.Layout()
-            dprint("active major mode = %s, trying to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
+            #dprint("active major mode = %s, trying to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
             if self.editwin.frame.getActiveMajorMode() == self.editwin:
                 self.editwin.focus()
-            else:
-                dprint("active major mode = %s, tried to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
+            #else:
+                #dprint("active major mode = %s, tried to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
 
 
 class MajorModeLoadError(RuntimeError):

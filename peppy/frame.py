@@ -76,7 +76,6 @@ class NewWindow(SelectAction):
 
 
 class MyNotebook(wx.aui.AuiNotebook, debugmixin):
-    debuglevel = 1
     
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
@@ -324,7 +323,6 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
 
 
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
-    debuglevel = 1
     frameid=0
     load_error_count = 0
     size_timer = None
