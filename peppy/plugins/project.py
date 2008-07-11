@@ -21,6 +21,7 @@ from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.actions.minibuffer import *
 from peppy.lib.userparams import *
+from peppy.lib.pluginmanager import *
 from peppy.lib.processmanager import *
 
 
@@ -355,9 +356,18 @@ class ProjectSettings(wx.Dialog):
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
+        self.notebook = wx.Notebook(self)
+        sizer.Add(self.notebook, 1, wx.EXPAND)
         
-        self.panel = InstancePanel(self, project)
-        sizer.Add(self.panel, 1, wx.EXPAND)
+        self.local = InstancePanel(self.notebook, project)
+        self.notebook.AddPage(self.local, _("This Project"))
+        
+        pm = wx.GetApp().plugin_manager
+        plugins = pm.getPluginInfo(ProjectPlugin)
+        dprint(plugins)
+        
+        self.plugin = PluginPanel(self.notebook, plugins[0])
+        self.notebook.AddPage(self.plugin, _("Global Project Settings"))
         
         btnsizer = wx.StdDialogButtonSizer()
         
@@ -375,7 +385,8 @@ class ProjectSettings(wx.Dialog):
         self.Layout()
     
     def applyPreferences(self):
-        self.panel.update()
+        self.local.update()
+        self.plugin.update()
 
 
 

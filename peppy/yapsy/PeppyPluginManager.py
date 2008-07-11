@@ -51,6 +51,18 @@ class PeppyPluginManager(VersionedPluginManager, debugmixin):
     def startupCompleted(self):
         IPeppyPlugin.setStartupComplete()
 
+    def getPluginInfo(self, interface=IPeppyPlugin):
+        """Return the list of all plugin_info objects of the requested class
+        """
+        info = []
+        all = self.getAllPlugins()
+        for plugin in all:
+            #print "checking plugin %s for interface %s" % (plugin.name, interface)
+            obj = plugin.plugin_object
+            if isinstance(obj, interface):
+                info.append(plugin)
+        return info
+    
     def getActivePluginObjects(self, interface=IPeppyPlugin):
         """
         Return the list of all plugins.
