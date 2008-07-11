@@ -120,6 +120,10 @@ class Job(debugmixin):
     
     # Use the unicode rightward double arrow as a delimiter
     arrow = u"\u21d2 "
+    started = _("Started %s on")
+    cwd = _("cwd = ")
+    exit = _("exit code = %s")
+    finished = _("Finished %s on")
     
     def __init__(self, cmd, working_dir, job_output):
         self.pid = None
@@ -132,11 +136,24 @@ class Job(debugmixin):
         self.stderr = None
         self.exit_code = 0
     
+    @classmethod
+    def matchCwd(cls, line):
+        """Evaluate if the line contains an embedded working directory specifier
+        
+        """
+        if line.startswith(cls.arrow):
+            start = len(cls.arrow)
+            #dprint(line[start:])
+            if line[start:].startswith(_(cls.cwd)):
+                cwd = line[start + len(cls.cwd):].strip()
+                return cwd
+        return ""
+    
     def getStartMessage(self):
-        return self.arrow + _("Started %s on %s") % (self.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        return "%s%s %s\n%s%s%s\n" % (self.arrow, self.started % self.cmd, time.asctime(time.localtime(time.time())), self.arrow, self.cwd, self.working_dir)
 
     def getFinishMessage(self):
-        return self.arrow + _("exit code = %s") % self.exit_code + "\n" + self.arrow + _("Finished %s on %s") % (self.cmd, time.asctime(time.localtime(time.time()))) + "\n"
+        return "%s%s\n%s%s %s" % (self.arrow, self.exit % self.exit_code, self.arrow, self.finished % self.cmd, time.asctime(time.localtime(time.time())))
 
     def run(self, text=""):
         assert self.dprint("Running %s in %s" % (self.cmd, self.working_dir))

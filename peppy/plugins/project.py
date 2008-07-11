@@ -159,7 +159,7 @@ class ProjectInfo(CTAGS):
         DirParam('build_dir', '', 'working directory in which to build', fullwidth=True),
         StrParam('build_command', '', 'shell command to build project, relative to working directory', fullwidth=True),
         DirParam('run_dir', '', 'working directory in which to execute the project', fullwidth=True),
-        StrParam('run_command', '', 'shell command to executee project, relative to working directory', fullwidth=True),
+        StrParam('run_command', '', 'shell command to execute project, absolute path needed or will search current PATH environment variable', fullwidth=True),
         )
     
     def __init__(self, url):
@@ -168,6 +168,7 @@ class ProjectInfo(CTAGS):
         self.project_config = None
         self.loadPrefs()
         self.loadTags()
+        self.process = None
     
     def __str__(self):
         return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
@@ -199,11 +200,28 @@ class ProjectInfo(CTAGS):
         except:
             dprint("Failed writing project config file")
     
-    def build(self):
-        dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
+    def registerProcess(self, job):
+        self.process = job
     
-    def run(self):
+    def deregisterProcess(self, job):
+        self.process = None
+    
+    def isRunning(self):
+        return bool(self.process)
+    
+    def build(self, frame):
+        dprint("Compiling %s in %s" % (self.build_command, self.build_dir))
+        output = JobOutputSidebarController(frame, self.registerProcess, self.deregisterProcess)
+        ProcessManager().run(self.build_command, self.build_dir, output)
+    
+    def run(self, frame):
         dprint("Running %s in %s" % (self.run_command, self.run_dir))
+        output = JobOutputSidebarController(frame, self.registerProcess, self.deregisterProcess)
+        ProcessManager().run(self.run_command, self.run_dir, output)
+    
+    def stop(self):
+        if self.process:
+            self.process.kill()
 
 
 ##### Actions
@@ -326,23 +344,36 @@ class BuildProject(SelectAction):
     key_bindings = {'default': "F7"}
 
     def isEnabled(self):
-        return bool(self.mode.project_info and self.mode.project_info.build_command)
+        return bool(self.mode.project_info and self.mode.project_info.build_command and not self.mode.project_info.isRunning())
 
     def action(self, index=-1, multiplier=1):
-        self.mode.project_info.build()
+        self.mode.project_info.build(self.frame)
 
 
 class RunProject(SelectAction):
     """Run the project"""
     name = "Run..."
     icon = 'icons/application.png'
-    default_menu = ("Project", 100)
+    default_menu = ("Project", 101)
 
     def isEnabled(self):
-        return bool(self.mode.project_info and self.mode.project_info.run_command)
+        return bool(self.mode.project_info and self.mode.project_info.run_command and not self.mode.project_info.isRunning())
 
     def action(self, index=-1, multiplier=1):
-        self.mode.project_info.run()
+        self.mode.project_info.run(self.frame)
+
+
+class StopProject(SelectAction):
+    """Stop the build or run of the project"""
+    name = "Stop"
+    icon = 'icons/stop.png'
+    default_menu = ("Project", 109)
+
+    def isEnabled(self):
+        return bool(self.mode.project_info and self.mode.project_info.run_command and self.mode.project_info.isRunning())
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.project_info.stop()
 
 
 class ProjectSettings(wx.Dialog):
@@ -621,7 +652,9 @@ class ProjectPlugin(IPeppyPlugin):
         if hasattr(mode, 'getTemplateCallback'):
             actions.append(SaveGlobalTemplate)
         if mode.buffer.url in self.known_project_dirs:
-            actions.extend([SaveProjectTemplate, BuildProject, RunProject,
+            actions.extend([SaveProjectTemplate,
+                            
+                            BuildProject, RunProject, StopProject,
                             
                             RebuildCtags, LookupCtag])
         actions.extend([CreateProject, CreateProjectFromExisting, ShowProjectSettings])

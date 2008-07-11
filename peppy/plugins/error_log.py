@@ -15,6 +15,7 @@ from peppy.yapsy.plugins import *
 from peppy.stcbase import PeppySTC
 from peppy.sidebar import *
 from peppy.minor import *
+from peppy.lib.processmanager import Job
 
 class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
     default_classprefs = (
@@ -87,6 +88,23 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             i = match.end(0)
             #sys.stdout.write("match ends at %d" % i)
             self.last_matched_filename = pos + i
+    
+    def findAbsolutePath(self, line):
+        """If the filename specified on the line is a relative path, search
+        upwards in the stc to locate a cwd specifier.
+        
+        """
+        while line > 0:
+            line -= 1
+            text = self.GetLine(line)
+            if text.startswith(Job.arrow):
+                #dprint("Found a candidate at %d: %s" % (line, text))
+                cwd = Job.matchCwd(text)
+                if cwd is None:
+                    return ""
+                elif cwd:
+                    return cwd
+        return ""
 
     def OnDoubleClick(self, evt):
         #dprint("x=%d y=%d" % (evt.GetX(), evt.GetY()))
@@ -99,6 +117,9 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
             match = self.matchLine(text)
             if match:
                 filename = match.group(1)
+                if not filename.startswith("/"):
+                    path = self.findAbsolutePath(line)
+                    filename = os.path.join(path, filename)
                 line = match.group(2)
                 self.open("%s#%s" % (filename, line))
     
