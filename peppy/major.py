@@ -996,7 +996,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
             retval=dlg.ShowModal()
             return
-        script = str(self.buffer.url.path)
+        script = self.buffer.getFilename()
         if bangpath:
             if wx.Platform == '__WXMSW__':
                 # MSW doesn't pass to a shell, so simulate a bangpath by pulling
@@ -1076,10 +1076,11 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     
     def expandCommandLine(self, cmd):
         """Expand the command line to include the filename of the buffer"""
+        filename = self.buffer.url.path.get_name()
         if '%' in cmd:
-            cmd = cmd % self.buffer.getFilename()
+            cmd = cmd % filename
         else:
-            cmd = "%s %s" % (cmd, self.buffer.getFilename())
+            cmd = "%s %s" % (cmd, filename)
         return cmd
     
     def startCommandLine(self, cmd, expand=False):
