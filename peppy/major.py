@@ -221,7 +221,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 self.minibuffer.close()
             self.minibuffer = None
             self.Layout()
-            self.editwin.focus()
+            dprint("active major mode = %s, trying to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
+            if self.editwin.frame.getActiveMajorMode() == self.editwin:
+                self.editwin.focus()
+            else:
+                dprint("active major mode = %s, tried to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
 
 
 class MajorModeLoadError(RuntimeError):
@@ -899,7 +903,7 @@ class MajorMode(ClassPrefs, debugmixin):
         # The active tab may have changed, so make sure that this mode is
         # still in the active tab before setting focus.  Otherwise we might
         # change tabs unexpectedly.
-        if self.frame.getActiveMajorMode() == self:
+        if self and self.frame.getActiveMajorMode() == self:
             self.SetFocus()
             self.focusPostHook()
 

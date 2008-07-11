@@ -234,11 +234,13 @@ class TextMinibuffer(Minibuffer):
         elif self.finish_callback:
             self.finish_callback()
         else:
+            self.mode.removeMinibuffer(detach_only=True)
             if text is not None:
                 error = self.action.processMinibuffer(self, self.mode, text)
                 if error is not None:
                     self.mode.frame.SetStatusText(error)
-            self.removeFromParent()
+            self.close()
+            #self.removeFromParent()
 
 class IntMinibuffer(TextMinibuffer):
     """Dedicated subclass of Minibuffer that prompts for an integer.
@@ -328,6 +330,7 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         self.win.SetFocus = self.SetFocus
         
     def SetFocus(self):
+        dprint(self)
         self.win.saveSetFocus()
         self.text.SetInsertionPointEnd()
 
@@ -378,17 +381,24 @@ class CompletionMinibuffer(TextMinibuffer):
         self.win.SetSizer(sizer)
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
+        self.win.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
 
         if self.initial is not None:
             self.text.ChangeValue(self.initial)
             self.text.SetChoices(self.complete(self.initial))
         self.text.SetEntryCallback(self.setDynamicChoices)
+        #self.text.SetInsertionPointEnd()
 
         self.win.saveSetFocus = self.win.SetFocus
         self.win.SetFocus = self.SetFocus
         
     def SetFocus(self):
+        dprint(self)
         self.win.saveSetFocus()
+        self.text.SetInsertionPointEnd()
+    
+    def OnFocus(self, evt):
+        dprint()
         self.text.SetInsertionPointEnd()
 
     def complete(self, text):
