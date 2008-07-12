@@ -237,7 +237,7 @@ class ShowTagAction(ListAction):
     def getNonInlineName(self):
         lookup = self.mode.check_spelling[0]
         self.dprint(lookup)
-        return lookup or "ctags unavailable"
+        return "ctags: %s" % lookup or "ctags unavailable"
 
     def getItems(self):
         # Because this is a popup action, we can save stuff to this object.
@@ -396,7 +396,7 @@ class ProjectSettings(wx.Dialog):
         
         pm = wx.GetApp().plugin_manager
         plugins = pm.getPluginInfo(ProjectPlugin)
-        self.dprint(plugins)
+        #dprint(plugins)
         
         self.plugin = PluginPanel(self.notebook, plugins[0])
         self.notebook.AddPage(self.plugin, _("Global Project Settings"))
