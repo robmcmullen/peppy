@@ -216,14 +216,17 @@ class BufferVFSMixin(debugmixin):
         if url.scheme == 'file':
             path = os.path.normpath(os.path.dirname(unicode(url.path)))
         else:
-            # See if the path converts to an existing path in the local
-            # filesystem by converting it to a file:// url and seeing if any
-            # path components exist
+            # If it's an absolute path, see if it converts to an existing path
+            # in the local filesystem by converting it to a file:// url and
+            # seeing if any path components exist
             lastpath = None
+            temp = unicode(url.path)
+            if not temp.startswith('/'):
+                return '/'
             uri = vfs.normalize(unicode(url.path))
             path = os.path.normpath(unicode(uri.path))
             while path != lastpath and path != '/':
-                #dprint("trying %s" % path)
+                dprint("trying %s" % path)
                 if os.path.isdir(path):
                     break
                 lastpath = path
@@ -255,7 +258,7 @@ class BufferVFSMixin(debugmixin):
                 path = self._cwd(self.created_from_url)
         
         if path == '/':
-            path = os.getcwd()
+            path = wx.StandardPaths.Get().GetDocumentsDir()
         return path
 
     def getBufferedReader(self, size=1024):
