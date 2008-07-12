@@ -35,11 +35,26 @@ class InsertCodePoint(SelectAction):
             self.mode.setStatusText("Invalid code point %d (%s)" % (val, e))
 
 
+class InsertRepr(SelectAction):
+    """Enter a Python repr() of the string"""
+    name = "Insert repr"
+    default_menu = ("Tools", 202)
+    
+    def action(self, index=-1, multiplier=1):
+        minibuffer = TextMinibuffer(self.mode, self, label="Text to repr():")
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        self.mode.AddText(repr(text))
+
+
 class InsertTextPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text insertion actions.
     """
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
             return [InsertCodePoint,
+                    
+                    InsertRepr,
                     ]
         return []
