@@ -218,6 +218,18 @@ class MinorModeList(debugmixin):
             self.create(self.order[index])
         self.mgr.Update()
 
+    def hideAll(self):
+        """Toggle the shown state, or create the minor mode if necessary.
+        
+        Minor modes are created on demand if not speficied as one of the modes
+        to load at mode startup time.  If an entry doesn't exist and it is
+        attempted to be toggled, it is created and shown.
+        """
+        for entry in self.map.itervalues():
+            if entry.win:
+                entry.win.paneinfo.Show(False)
+        self.mgr.Update()
+
     def create(self, keyword):
         """Create the minor mode.
         

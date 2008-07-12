@@ -710,6 +710,39 @@ class SidebarShow(ToggleListAction):
         self.frame._mgr.Update()
 
 
+class HideSidebars(SelectAction):
+    """Close all sidebars"""
+    name = "All Sidebars"
+    default_menu = (("View/Hide", 991), 100)
+    key_bindings = {'emacs': "C-x 4 1", }
+
+    def action(self, index=-1, multiplier=1):
+        for m in self.frame.sidebar_panes:
+            m.Show(False)
+        self.frame._mgr.Update()
+
+class HideMinorModes(SelectAction):
+    """Close all minor modes"""
+    name = "All Minor Modes"
+    default_menu = ("View/Hide", 110)
+    key_bindings = {'emacs': "C-x 4 2", }
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.wrapper.minors.hideAll()
+
+class HideAll(SelectAction):
+    """Close all sidebars and minor modes"""
+    name = "All Sidebars and Minor Modes"
+    default_menu = ("View/Hide", 120)
+    key_bindings = {'emacs': "C-x 1", }
+
+    def action(self, index=-1, multiplier=1):
+        for m in self.frame.sidebar_panes:
+            m.Show(False)
+        self.frame._mgr.Update()
+        self.mode.wrapper.minors.hideAll()
+
+
 class ToolbarShow(ToggleAction):
     alias = "show-toolbar"
     name = "&Show Toolbars"
@@ -920,7 +953,10 @@ class MainMenu(IPeppyPlugin):
 
                 RunScript, RunScriptWithArgs, RunFilter, StopScript,
 
-                MajorModeSelect, MinorModeShow, SidebarShow,
+                MajorModeSelect, MinorModeShow,
+                
+                SidebarShow, HideSidebars, HideMinorModes, HideAll,
+                
                 ToolbarShow, 
 
                 BufferList, BufferListSort,
