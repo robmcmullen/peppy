@@ -379,8 +379,19 @@ class TextCtrlAutoComplete(wx.TextCtrl):
     def onClickToggleUp ( self, event ) :
         if ( self.GetInsertionPoint() == self._lastinsertionpoint ) :
             self._showDropDown ( not self.dropdown.IsShown() )
-        wx.CallAfter(self.SetFocus)
+        wx.CallAfter(self.setFocusCallback)
         event.Skip ()
+    
+    def setFocusCallback(self, end=False):
+        """Callback for use within wx.CallAfter to prevent focus being set
+        after the control has been removed.
+        """
+        #print("Here in setFocusCallback")
+        if self:
+            #print("setting focus")
+            self.SetFocus()
+            if end:
+                self.SetInsertionPointEnd()
     
     def OnSetFocus(self, evt):
         #print("OnSetFocus: insertion point = %d" % self.GetLastPosition())
@@ -391,8 +402,7 @@ class TextCtrlAutoComplete(wx.TextCtrl):
         other = event.GetWindow()
         #print("changed=%s other=%s" % (changed, other))
         if self._mac:
-            wx.CallAfter(self.SetFocus)
-            wx.CallAfter(self.SetInsertionPointEnd)
+            wx.CallAfter(self.setFocusCallback, True)
             event.Skip()
             return
         if self.dropdown.IsShown():
@@ -469,7 +479,7 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             else:
                 self.dropdown . SetPosition ( wx.Point(x, y - height - size.GetHeight()) )
         self.dropdown.Show ( show )
-        wx.CallAfter(self.SetFocus)
+        wx.CallAfter(self.setFocusCallback)
 
     def _listItemVisible( self ) :
         """

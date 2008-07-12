@@ -173,7 +173,7 @@ class Minibuffer(debugmixin):
         self.panel.Destroy()
         self.panel = None
 
-    def removeFromParent(self):
+    def removeFromParent(self, call_after=False):
         """
         Convenience routine to destroy minibuffer after the event loop
         exits.
@@ -183,7 +183,10 @@ class Minibuffer(debugmixin):
         # the mode in the current tab with another mode.  So, only attempt to
         # remove the minibuffer if the mode is still valid.
         if self.mode:
-            wx.CallAfter(self.mode.removeMinibuffer, self)
+            if call_after:
+                wx.CallAfter(self.mode.removeMinibuffer, self)
+            else:
+                self.mode.removeMinibuffer(self)
     
     def performAction(self, value):
         """Execute the processMinibuffer method of the action"""
@@ -242,12 +245,14 @@ class TextMinibuffer(Minibuffer):
             # Remove the minibuffer and perform the action in CallAfters so
             # the tab focus doesn't get confused.  If you try to perform these
             # actions directly, the focus will return to the original tab if
-            # the action causes a new tab to be created.  Moving everything to
-            # CallAfters prevents this.
+            # the action causes a new tab to be created.  Moving everything
+            # to CallAfters prevents this.  Also, MSW can crash if performing
+            # these directly, so it's worth the extra milliseconds to use
+            # CallAfter
             wx.CallAfter(self.removeFromParent)
             if text is not None:
                 wx.CallAfter(self.performAction, text)
-        
+
 
 class IntMinibuffer(TextMinibuffer):
     """Dedicated subclass of Minibuffer that prompts for an integer.
