@@ -271,7 +271,8 @@ class ShowTagAction(ListAction):
         except:
             pass
         url = self.mode.project_info.project_top_dir.resolve2(file)
-        self.frame.findTabOrOpen(url)
+        # This can change the tab structure, so use a CallAfter
+        wx.CallAfter(self.frame.findTabOrOpen, url)
 
 
 class LookupCtag(SelectAction):
