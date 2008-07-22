@@ -11,6 +11,54 @@ through the GUI.  Those settings that can't must be modified by hand in the
 configuration directory.
 
 
+Using the Preferences Dialog
+============================
+
+Most of the common configuration options are available through the preferences
+dialog.  
+
+...Picture of the preferences dialog goes here...
+
+
+
+
+Changing Text Styles
+====================
+
+Font colors and styles are changed using the Edit -> Text Styles dialog.  This
+associates particular syntax elements of the text file with styles and colors
+specified here.  If you're familiar with Editra__, you'll recognize the text
+style dialog:
+
+...Picture of the text style dialog goes here...
+
+Peppy uses the same styling system as Editra, and indeed can use the same style
+sheets as created by Editra when placed in the proper configuration directory
+of peppy.  (See below for more information on configuration files.)
+
+The convenient characteristic of the Editra styling system is syntax elements
+are styled using the same font/color combination regardless of language.  So,
+for example, comments in Python will appear the same as comments in C++.  This
+leads to a much quicker setup time when configuring peppy to display syntax
+elements in the manner that you like.
+
+__ www.editra.org
+
+Changing Fonts
+--------------
+
+The only text styling item not set through the text style dialog is the
+specific font used to display the text.  This is set through the main
+Preferences dialog, in the General tab and the Fonts item.
+
+The wxPython StyledTextCtrl uses a single font for the main text, and can
+optionally use a separate font for the line numbers.  These fonts are set in
+the Preferences dialog: in the General tab, choose the Fonts item and select
+the primary editing font (for the main text) and the secondary editing font
+(for the line numbers).
+
+
+
 Configuration Files
 ===================
 
@@ -42,20 +90,6 @@ have been kind enough to translate my English into other languages.  In the
 preferences dialog, click on the General tab and choose the Languages item.
 You can select from any of the languages in the list, and the user interface
 will change immediately.  No need to restart the application!
-
-
-Changing Text Styles
-====================
-
-The wxPython StyledTextCtrl uses a single font for the main text, and can
-optionally use a separate font for the line numbers.  These fonts are set in
-the Preferences dialog: in the General tab, choose the Fonts item and select
-the primary editing font (for the main text) and the secondary editing font
-(for the line numbers).
-
-Font colors and styles are changed using the Edit -> Text Styles dialog.  This
-associates particular syntax elements of the text file with styles and colors
-specified here.
 
 
 Key Bindings
