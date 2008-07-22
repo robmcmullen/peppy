@@ -63,7 +63,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
 
     @classmethod
     def worksWithMajorMode(self, mode):
-        return hasattr(mode, 'stc_viewer_class') and hasattr(mode.stc_viewer_class, 'getFoldHierarchy')
+        return hasattr(mode, 'getFoldHierarchy')
 
     def __init__(self, major, parent):
         wx.TreeCtrl.__init__(self, parent, -1, style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
