@@ -31,7 +31,8 @@ class NewTab(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.open("about:blank", force_new_tab=True)
+        # Have to use a CallAfter because this action may be called in a popup menu
+        wx.CallAfter(self.frame.open, "about:blank", force_new_tab=True)
 
 class CloseTab(SelectAction):
     alias = "close-tab"
@@ -40,7 +41,9 @@ class CloseTab(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.tabs.closeTab()
+        # FIXME: change this so I don't have to break encapsulation on the frame's notebook
+        tab = self.frame.tabs.context_tab
+        wx.CallAfter(self.frame.tabs.closeTab, tab)
 
 class MoveTabToNewWindow(SelectAction):
     alias = "move-tab-to-new-window"
