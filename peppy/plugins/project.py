@@ -617,7 +617,11 @@ class ProjectPlugin(IPeppyPlugin):
         if url in cls.known_projects:
             raise TypeError("Project already exists.")
         proj_dir = url.resolve2(cls.classprefs.project_directory)
-        vfs.make_folder(proj_dir)
+        if not vfs.is_folder(proj_dir):
+            if not vfs.exists(proj_dir):
+                vfs.make_folder(proj_dir)
+            else:
+                raise TypeError("Can't create directory %s -- seems already exist as a file" % proj_dir)
         info = cls.registerProject(None, proj_dir)
         info.savePrefs()
         cls.dprint(info)
