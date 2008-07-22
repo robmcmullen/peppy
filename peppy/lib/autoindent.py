@@ -626,6 +626,10 @@ class CStyleAutoindent(FoldingAutoindent):
     def electricDelete(self, stc):
         """Delete all whitespace after the cursor unless in a string or comment
         """
+        start, end = stc.GetSelection()
+        if start != end:
+            stc.ReplaceSelection("")
+            return
         pos = stc.GetCurrentPos()
         s = stc.GetStyleAt(pos)
         if stc.isStyleComment(s) or stc.isStyleString(s):
@@ -649,6 +653,10 @@ class CStyleAutoindent(FoldingAutoindent):
     def electricBackspace(self, stc):
         """Delete all whitespace before the cursor unless in a string or comment
         """
+        start, end = stc.GetSelection()
+        if start != end:
+            stc.ReplaceSelection("")
+            return
         pos = stc.GetCurrentPos()
         if pos <= 0:
             return
