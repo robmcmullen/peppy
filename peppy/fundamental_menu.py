@@ -10,6 +10,7 @@ from peppy.actions import *
 from peppy.actions.minibuffer import *
 from peppy.fundamental import *
 from peppy.lib.userparams import *
+from peppy.lib.textutil import *
 
 
 class SpellingSuggestionAction(ListAction):
@@ -220,6 +221,30 @@ class TabSize(FundamentalIntRadioToggle):
 
     def isEnabled(self):
         return self.mode.locals.use_tab_characters
+
+class GuessIndentSize(SelectAction):
+    """Guess the tab size of the current document or selection and set the view parameters"""
+    name = "Guess Indent Size"
+    default_menu = ("View", 309)
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        (start, end) = s.GetSelection()
+        if start==end:
+            text = s.GetText()
+        else:
+            text = s.GetTextRange(start, end)
+        size = guessSpacesPerIndent(text)
+        if size == 0:
+            s.locals.use_tab_characters = True
+            self.frame.SetStatusText("Indenting with tab characters")
+        elif size > 0:
+            s.locals.use_tab_characters = False
+            s.locals.indent_size = size
+            self.frame.SetStatusText("%d spaces per indent, indenting with spaces" % (size))
+        else:
+            self.frame.SetStatusText("Can't determine indent size from document")
+        s.setTabStyle()
 
 class TabHighlight(FundamentalRadioToggle):
     local_setting = 'tab_highlight_style'
@@ -456,7 +481,7 @@ class FundamentalMenu(IPeppyPlugin):
                     ViewEOL,
                     
                     IndentationGuides, IndentSize, IndentWithTabsOrSpaces,
-                    TabSize,
+                    TabSize, GuessIndentSize,
                     
                     CaretLineHighlight, CaretWidth, ViewWhitespace,
                     LongLineIndicator, TabHighlight, RevertEncoding,

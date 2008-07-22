@@ -129,3 +129,53 @@ def guessBinary(text, percentage):
     if binary>(len(text)/percentage):
         return True
     return False
+
+
+def guessSpacesPerIndent(text):
+    """Guess the number of spaces per indent level
+    
+    Takes from the SciTE source file SciTEBase::DiscoverIndentSetting
+    """
+    tabsizes = [0]*9
+    indent = 0 # current line indentation
+    previndent = 0 # previous line indentation
+    prevsize = -1 # previous line tab size
+    newline = True
+    for c in text:
+        if c == '\n' or c == '\r':
+            newline = True
+            indent = 0
+        elif newline:
+            if c == ' ':
+                indent += 1
+            else:
+                if indent:
+                    if indent == previndent and prevsize >= 0:
+                        tabsizes[prevsize] += 1
+                    elif indent > previndent and previndent >= 0:
+                        if indent - previndent <= 8:
+                            prevsize = indent - previndent
+                            tabsizes[prevsize] += 1
+                        else:
+                            prevsize = -1
+                    previndent = indent
+                elif c == '\t':
+                    tabsizes[0] += 1
+                newline = False
+    
+    # find maximum non-zero indent
+    index = -1
+    for i, size in enumerate(tabsizes):
+        if size > 0 and (index == -1 or size > tabsizes[index]):
+            index = i
+    
+    return index
+
+
+if __name__ == "__main__":
+    import sys
+    
+    for file in sys.argv[1:]:
+        fh = open(file)
+        text = fh.read()
+        print "file=%s, tabsize=%d" % (file, guessSpacesPerIndent(text))
