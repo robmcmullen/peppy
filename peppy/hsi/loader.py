@@ -25,6 +25,14 @@ class HyperspectralSTC(NonResidentSTC):
     def CanSave(self):
         return False
     
+    def getShortDisplayName(self, url):
+        """Return a short name for display in tabs or other context without
+        needing a pathname.
+        """
+        if url.fragment:
+            return "%s#%s" % (url.path.get_name(), url.fragment)
+        return url.path.get_name()
+
     def getHandler(self):
         return self.dataset.__class__
     

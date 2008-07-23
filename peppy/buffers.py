@@ -163,7 +163,7 @@ class BufferVFSMixin(debugmixin):
     """Mixin class that compartmentalizes the interaction with the vfs
     
     """
-    def __init__(self, url, created_from_url=None):
+    def __init__(self, url, created_from_url=None, canonicalize=True):
         """Initialize the mixin.
         
         @param url: url of the buffer
@@ -172,9 +172,13 @@ class BufferVFSMixin(debugmixin):
         created.  If this exists, it will be used as a secondary place to look
         for a local filesystem working directory if a working directory can't
         be determined from the real url.
+        
+        @param canonicalize: whether or not the url should be canonicalized
+        before storing in the buffer list.
         """
         self.bfh = None
         self.last_mtime = None
+        self.canonicalize = canonicalize
         self.setURL(url)
         self.created_from_url = created_from_url
         
@@ -183,13 +187,18 @@ class BufferVFSMixin(debugmixin):
         self.raw_url = vfs.normalize(url)
         if not url:
             url = vfs.normalize("untitled")
-        else:
+        elif self.canonicalize:
             url = vfs.canonical_reference(url)
+        else:
+            url = vfs.normalize(url)
         self.url = url
         self.saveTimestamp()
 
     def isURL(self, url):
-        url = vfs.canonical_reference(url)
+        if self.canonicalize:
+            url = vfs.canonical_reference(url)
+        else:
+            url = vfs.normalize(url)
         if url == self.url:
             return True
         return False
@@ -392,7 +401,7 @@ class Buffer(BufferVFSMixin):
         assert self.dprint("final count=%d" % len(self.viewers))
 
         if not self.permanent:
-            basename=self.stc.getShortDisplayName(self.url)
+            basename=self.stc.getShortDisplayName(self.raw_url)
 
             BufferList.removeBuffer(self)
             # Need to destroy the base STC or self will never get garbage
@@ -407,10 +416,10 @@ class Buffer(BufferVFSMixin):
                 del self.filenames[basename]
 
     def isBasename(self, basename):
-        return basename == self.stc.getShortDisplayName(self.url)
+        return basename == self.stc.getShortDisplayName(self.raw_url)
 
     def setName(self):
-        basename=self.stc.getShortDisplayName(self.url)
+        basename=self.stc.getShortDisplayName(self.raw_url)
         if basename in self.filenames:
             count=self.filenames[basename]+1
             self.filenames[basename]=count
@@ -581,13 +590,12 @@ class LoadingMode(BlankMode):
 
     def createPostHook(self):
         self.showBusy(True)
-        wx.CallAfter(self.frame.openThreaded, self.buffer.user_url,
+        wx.CallAfter(self.frame.openThreaded, self.buffer.raw_url,
                      self.buffer, mode_to_replace=self)
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
-    def __init__(self, url, modecls=None, created_from_url=None):
-        self.user_url = url
-        BufferVFSMixin.__init__(self, url, created_from_url)
+    def __init__(self, url, modecls=None, created_from_url=None, canonicalize=True):
+        BufferVFSMixin.__init__(self, url, created_from_url, canonicalize)
         self.busy = True
         self.readonly = False
         self.permanent = False
@@ -597,7 +605,7 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
         if modecls:
             self.modecls = modecls
         else:
-            self.modecls = MajorModeMatcherDriver.match(self)
+            self.modecls = MajorModeMatcherDriver.match(self, url=self.raw_url)
             self.dprint("found major mode = %s" % self.modecls)
         self.stc = LoadingSTC(unicode(url))
     
@@ -607,12 +615,11 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
         return False
     
     def allowThreadedLoading(self):
-        return self.modecls.preferThreadedLoading(self.user_url)
+        return self.modecls.preferThreadedLoading(self.raw_url)
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""
-        dprint(self.user_url)
-        return Buffer(self.user_url, self.modecls, self.created_from_url)
+        return Buffer(self.raw_url, self.modecls, self.created_from_url)
 
     def addViewer(self, mode):
         pass

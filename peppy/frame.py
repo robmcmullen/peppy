@@ -703,7 +703,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if not self.makeTabActive(url):
             self.open(url)
 
-    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None):
+    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True):
         """Open a new tab to edit the given URL.
         
         Driver function that loads a file and creates a new tab in the user
@@ -725,39 +725,46 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         used to generate this URL.  This is not typically used unless you're
         creating a new file in the mem: filesystem and want a working directory
         on the local filesystem to be available if needed to save a copy.
+        
+        @param canonicalize: (optional) whether or not the URL should be
+        canonicalized before searching the existing buffer list.  This is used
+        in the rare case where a fragment or query string is significant to
+        locating the data on the file system.
         """
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
         # query string and fragment) it separately.
         user_url = vfs.normalize(url)
-        try:
-            buffer = BufferList.findBufferByURL(user_url)
-        except NotImplementedError:
-            # This means that the vfs implementation doesn't recognize the
-            # filesystem type.  This is the first place in the loading chain
-            # that the error can be encountered, so check for it here and load
-            # a new plugin if necessary.
-            found = False
-            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-            for plugin in plugins:
-                assert self.dprint("Checking %s" % plugin)
-                plugin.loadVirtualFileSystem(user_url)
-                try:
-                    buffer = BufferList.findBufferByURL(user_url)
-                    found = True
-                    break
-                except NotImplementedError:
-                    pass
-            if not found:
-                self.openFailure(user_url, "Unknown URI scheme")
-                return
+        buffer = None
+        if canonicalize:
+            try:
+                buffer = BufferList.findBufferByURL(user_url)
+            except NotImplementedError:
+                # This means that the vfs implementation doesn't recognize the
+                # filesystem type.  This is the first place in the loading chain
+                # that the error can be encountered, so check for it here and load
+                # a new plugin if necessary.
+                found = False
+                plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+                for plugin in plugins:
+                    assert self.dprint("Checking %s" % plugin)
+                    plugin.loadVirtualFileSystem(user_url)
+                    try:
+                        buffer = BufferList.findBufferByURL(user_url)
+                        found = True
+                        break
+                    except NotImplementedError:
+                        pass
+                if not found:
+                    self.openFailure(user_url, "Unknown URI scheme")
+                    return
 
         if buffer is not None:
             #dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), force_new_tab))
             self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab)
         else:
             try:
-                buffer = LoadingBuffer(user_url, modecls, created_from_url)
+                buffer = LoadingBuffer(user_url, modecls, created_from_url, canonicalize)
             except Exception, e:
                 import traceback
                 error = traceback.format_exc()
