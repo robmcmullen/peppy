@@ -309,7 +309,7 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         """
         return
     
-    def attemptOpen(self, buffer):
+    def attemptOpen(self, buffer, url):
         """Last resort to major mode matching: attempting to open the url.
 
         This method is the last resort if all other pattern matching
@@ -318,6 +318,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         libraries.
 
         buffer: the Buffer object to attempt to load
+        
+        url: the user specified URL (which may be different from the buffer's
+        idea of what the URL is if the buffer already exists and we're trying
+        to create a new view using a different major mode)
 
         @returns: tuple (exact, generic_list) where when exact is not None the
         matching will stop, and the generic_list indicates major modes that

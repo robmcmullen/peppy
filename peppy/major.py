@@ -1197,7 +1197,7 @@ class MajorModeMatcherDriver(debugmixin):
         for plugin in plugins:
             cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
             cls.current_modes.extend(plugin.getMajorModes())
-        dprint("Currently active major modes: %s" % str(cls.current_modes))
+        cls.dprint("Currently active major modes: %s" % str(cls.current_modes))
         cls.ignored_modes = set()
     
     @classmethod
@@ -1208,20 +1208,22 @@ class MajorModeMatcherDriver(debugmixin):
     
     @classmethod
     def ignoreMode(cls, mode):
-        dprint("Ignoring mode %s" % mode)
+        cls.dprint("Ignoring mode %s" % mode)
         cls.skipped_modes.add(mode)
 
     @classmethod
-    def match(cls, buffer, magic_size=None):
+    def match(cls, buffer, magic_size=None, url=None):
         app = wx.GetApp()
         if magic_size is None:
             magic_size = app.classprefs.magic_size
+        if url is None:
+            url = buffer.raw_url
 
         plugins = app.plugin_manager.getActivePluginObjects()
         cls.findActiveModes(plugins)
         
         # Try to match a specific protocol
-        modes = cls.scanProtocol(buffer.raw_url)
+        modes = cls.scanProtocol(url)
         cls.dprint("scanProtocol matches %s" % modes)
         if modes:
             return modes[0]
@@ -1229,14 +1231,14 @@ class MajorModeMatcherDriver(debugmixin):
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
         try:
-            metadata = vfs.get_metadata(buffer.raw_url)
+            metadata = vfs.get_metadata(url)
         except:
             metadata = {'mimetype': None,
                         'mtime': None,
                         'size': 0,
                         'description': None,
                         }
-        modes, binary_modes = cls.scanURL(buffer.raw_url, metadata)
+        modes, binary_modes = cls.scanURL(url, metadata)
         cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
 
         # get a buffered file handle to examine some bytes in the file
@@ -1302,7 +1304,7 @@ class MajorModeMatcherDriver(debugmixin):
 
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
-        mode = cls.attemptOpen(plugins, buffer)
+        mode = cls.attemptOpen(plugins, buffer, url)
         cls.dprint("attemptOpen matches %s" % mode)
         if mode:
             return mode
@@ -1490,7 +1492,7 @@ class MajorModeMatcherDriver(debugmixin):
         return None
     
     @classmethod
-    def attemptOpen(cls, plugins, buffer):
+    def attemptOpen(cls, plugins, buffer, url):
         """Use the mode's attemptOpen method to see if it recognizes the url.
         
         @param buffer: Buffer object to scan
@@ -1500,7 +1502,7 @@ class MajorModeMatcherDriver(debugmixin):
         modes = []
         for plugin in plugins:
             try:
-                exact, generics = plugin.attemptOpen(buffer)
+                exact, generics = plugin.attemptOpen(buffer, url)
                 if exact:
                     return exact
                 modes.extend(generics)
