@@ -1,0 +1,9 @@
+[Core]
+Name = Tab Word Completion Plugin
+Module = tab_wordcompletion
+
+[Documentation]
+Author = Frank Atle rød
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Bash like word completion. Use the Tab key for indentation and for completion.
