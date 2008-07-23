@@ -19,7 +19,7 @@ class HyperspectralSTC(NonResidentSTC):
     """Combination of STC and proxy for a hyperspectral dataset"""
     
     def open(self, buffer, message=None):
-        self.url = buffer.url
+        self.url = buffer.raw_url
         self.dataset = HyperspectralFileFormat.load(self.url)
     
     def CanSave(self):

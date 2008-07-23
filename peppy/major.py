@@ -1168,8 +1168,16 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.log.showMessage(text)
 
 
+class IgnoreMajorMode(RuntimeError):
+    """Raise this exception within one of the MajorMode verify classmethods to
+    skip further processing of the major mode in matching operations
+    """ 
+    pass
 
 class MajorModeMatcherDriver(debugmixin):
+    current_modes = []
+    skipped_modes = set()
+    
     @classmethod
     def getCompatibleMajorModes(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
@@ -1184,15 +1192,36 @@ class MajorModeMatcherDriver(debugmixin):
         return modes
 
     @classmethod
+    def findActiveModes(cls, plugins):
+        cls.current_modes = []
+        for plugin in plugins:
+            cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
+            cls.current_modes.extend(plugin.getMajorModes())
+        dprint("Currently active major modes: %s" % str(cls.current_modes))
+        cls.ignored_modes = set()
+    
+    @classmethod
+    def iterActiveModes(cls):
+        for mode in cls.current_modes:
+            if mode not in cls.skipped_modes:
+                yield mode
+    
+    @classmethod
+    def ignoreMode(cls, mode):
+        dprint("Ignoring mode %s" % mode)
+        cls.skipped_modes.add(mode)
+
+    @classmethod
     def match(cls, buffer, magic_size=None):
         app = wx.GetApp()
         if magic_size is None:
             magic_size = app.classprefs.magic_size
 
         plugins = app.plugin_manager.getActivePluginObjects()
+        cls.findActiveModes(plugins)
         
         # Try to match a specific protocol
-        modes = cls.scanProtocol(plugins, buffer.url)
+        modes = cls.scanProtocol(buffer.raw_url)
         cls.dprint("scanProtocol matches %s" % modes)
         if modes:
             return modes[0]
@@ -1200,14 +1229,14 @@ class MajorModeMatcherDriver(debugmixin):
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
         try:
-            metadata = vfs.get_metadata(buffer.url)
+            metadata = vfs.get_metadata(buffer.raw_url)
         except:
             metadata = {'mimetype': None,
                         'mtime': None,
                         'size': 0,
                         'description': None,
                         }
-        modes, binary_modes = cls.scanURL(plugins, buffer.url, metadata)
+        modes, binary_modes = cls.scanURL(buffer.raw_url, metadata)
         cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
 
         # get a buffered file handle to examine some bytes in the file
@@ -1218,7 +1247,7 @@ class MajorModeMatcherDriver(debugmixin):
             if modes:
                 return modes[0]
             else:
-                return cls.findModeByMimetype(plugins, "text/plain")
+                return cls.findModeByMimetype("text/plain")
         header = fh.read(magic_size)
 
         url_match = None
@@ -1245,20 +1274,20 @@ class MajorModeMatcherDriver(debugmixin):
         # Regardless if there's a match on the URL, try to match an
         # emacs mode specifier since a match here means that we should
         # override the match based on filename
-        emacs_match = cls.scanEmacs(plugins, header)
+        emacs_match = cls.scanEmacs(header)
         cls.dprint("scanEmacs matches %s" % emacs_match)
         if emacs_match:
             return emacs_match
 
         # Like the emacs match, a match on a shell bangpath should
         # override anything determined out of the filename
-        bang_match = cls.scanShell(plugins, header)
+        bang_match = cls.scanShell(header)
         cls.dprint("scanShell matches %s" % bang_match)
         if bang_match:
             return bang_match
 
         # Try to match some magic bytes that identify the file
-        modes = cls.scanMagic(plugins, header)
+        modes = cls.scanMagic(header)
         cls.dprint("scanMagic matches %s" % modes)
         if modes:
             # It is unlikely that multiple modes will match the same magic
@@ -1284,21 +1313,18 @@ class MajorModeMatcherDriver(debugmixin):
                 # FIXME: needs to be a better way to select which mode to use
                 # if there are multiple application/octet-stream viewers
                 return binary_modes[0]
-        return cls.findModeByMimetype(plugins, "text/plain")
+        return cls.findModeByMimetype("text/plain")
 
     @classmethod
-    def findModeByMimetype(cls, plugins, mimetype):
-        cls.dprint("checking plugins %s" % plugins)
-        for plugin in plugins:
-            cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
-            for mode in plugin.getMajorModes():
-                cls.dprint("searching %s" % mode.keyword)
-                if mode.verifyMimetype(mimetype):
-                    return mode
+    def findModeByMimetype(cls, mimetype):
+        for mode in cls.iterActiveModes():
+            cls.dprint("searching %s" % mode.keyword)
+            if mode.verifyMimetype(mimetype):
+                return mode
         return None
 
     @classmethod
-    def scanProtocol(cls, plugins, url):
+    def scanProtocol(cls, url):
         """Scan for url protocol match.
         
         Determine if the protocol is enough to specify the major mode.
@@ -1311,10 +1337,12 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         modes = []
-        for plugin in plugins:
-            for mode in plugin.getMajorModes():
+        for mode in cls.iterActiveModes():
+            try:
                 if mode.verifyProtocol(url):
                     modes.append(mode)
+            except IgnoreMajorMode:
+                cls.ignoreMode(mode)
         return modes
     
     @classmethod
@@ -1334,7 +1362,7 @@ class MajorModeMatcherDriver(debugmixin):
         return ext, None
 
     @classmethod
-    def scanURL(cls, plugins, url, metadata):
+    def scanURL(cls, url, metadata):
         """Scan for url filename match.
         
         Determine if the pathname matches some pattern that can
@@ -1355,8 +1383,8 @@ class MajorModeMatcherDriver(debugmixin):
         
         mimetype = metadata['mimetype']
         ext, editra_type = cls.getEditraType(url)
-        for plugin in plugins:
-            for mode in plugin.getMajorModes():
+        for mode in cls.iterActiveModes():
+            try:
                 if mode.verifyMimetype(mimetype):
                     if mimetype == 'application/octet-stream':
                         binary.append(mode)
@@ -1377,12 +1405,14 @@ class MajorModeMatcherDriver(debugmixin):
                     generics.append(mode)
                 elif isinstance(editra, str):
                     modes.append(mode)
+            except IgnoreMajorMode:
+                cls.ignoreMode(mode)
         modes.extend(generics)
         binary.extend(binary_generics)
         return modes, binary
 
     @classmethod
-    def scanMagic(cls, plugins, header):
+    def scanMagic(cls, header):
         """Scan for a pattern match in the first bytes of the file.
         
         Determine if there is a 'magic' pattern in the first n bytes
@@ -1394,14 +1424,16 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         modes = []
-        for plugin in plugins:
-            for mode in plugin.getMajorModes():
+        for mode in cls.iterActiveModes():
+            try:
                 if mode.verifyMagic(header):
                     modes.append(mode)
+            except IgnoreMajorMode:
+                cls.ignoreMode(mode)
         return modes
 
     @classmethod
-    def scanEmacs(cls, plugins, header):
+    def scanEmacs(cls, header):
         """Scan the first two lines of a file for an emacs mode
         specifier.
         
@@ -1415,21 +1447,20 @@ class MajorModeMatcherDriver(debugmixin):
         
         modename, settings = parseEmacs(header)
         cls.dprint("modename = %s, settings = %s" % (modename, settings))
-        for plugin in plugins:
-            for mode in plugin.getMajorModes():
-                if modename == mode.keyword:
-                    return mode
-                if mode.emacs_synonyms:
-                    if isinstance(mode.emacs_synonyms, str):
-                        if modename == mode.emacs_synonyms:
-                            return mode
-                    else:
-                        if modename in mode.emacs_synonyms:
-                            return mode
+        for mode in cls.iterActiveModes():
+            if modename == mode.keyword:
+                return mode
+            if mode.emacs_synonyms:
+                if isinstance(mode.emacs_synonyms, str):
+                    if modename == mode.emacs_synonyms:
+                        return mode
+                else:
+                    if modename in mode.emacs_synonyms:
+                        return mode
         return None
         
     @classmethod
-    def scanShell(cls, plugins, header):
+    def scanShell(cls, header):
         """Scan the first lines of a file for a shell 'bangpath'
         specifier.
         
@@ -1444,19 +1475,18 @@ class MajorModeMatcherDriver(debugmixin):
         if header.startswith("#!"):
             lines = header.splitlines()
             bangpath = lines[0].lower()
-            for plugin in plugins:
-                for mode in plugin.getMajorModes():
-                    keyword = mode.keyword.lower()
+            for mode in cls.iterActiveModes():
+                keyword = mode.keyword.lower()
 
-                    # only match words that are bounded by some sort
-                    # of non-word delimiter.  For instance, if the
-                    # mode is "test", it will match "/usr/bin/test" or
-                    # "/usr/bin/test.exe" or "/usr/bin/env test", but
-                    # not /usr/bin/testing or /usr/bin/attested
-                    regex = r'[\W]%s([\W]|$)' % re.escape(keyword)
-                    match=re.search(regex, bangpath)
-                    if match:
-                        return mode
+                # only match words that are bounded by some sort
+                # of non-word delimiter.  For instance, if the
+                # mode is "test", it will match "/usr/bin/test" or
+                # "/usr/bin/test.exe" or "/usr/bin/env test", but
+                # not /usr/bin/testing or /usr/bin/attested
+                regex = r'[\W]%s([\W]|$)' % re.escape(keyword)
+                match=re.search(regex, bangpath)
+                if match:
+                    return mode
         return None
     
     @classmethod

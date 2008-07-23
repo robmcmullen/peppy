@@ -179,6 +179,8 @@ class BufferVFSMixin(debugmixin):
         self.created_from_url = created_from_url
         
     def setURL(self, url):
+        # raw_url stores the entire URL, including query string and fragments
+        self.raw_url = vfs.normalize(url)
         if not url:
             url = vfs.normalize("untitled")
         else:
@@ -609,7 +611,8 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""
-        return Buffer(self.url, self.modecls, self.created_from_url)
+        dprint(self.user_url)
+        return Buffer(self.user_url, self.modecls, self.created_from_url)
 
     def addViewer(self, mode):
         pass

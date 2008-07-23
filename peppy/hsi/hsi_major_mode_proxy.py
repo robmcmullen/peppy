@@ -12,7 +12,7 @@ class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
     def attemptOpen(self, buffer):
-        url = buffer.url
+        url = buffer.raw_url
         assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
         try:
             import peppy.hsi.hsi_major_mode
