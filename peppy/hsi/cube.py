@@ -176,6 +176,9 @@ class Cube(debugmixin):
 
         # calculated quantities
         self.spectraextrema=[None,None] # min and max over whole cube
+        
+        # progress bar indicator
+        self.progress = None
 
 
     def __str__(self):
@@ -668,6 +671,17 @@ class Cube(debugmixin):
                 count += 1
         else:
             raise ValueError("Unknown interleave %s" % interleave)
+
+    def registerProgress(self, progress):
+        """Register the progress bar that cube functions may use when needed.
+        
+        The progress bar should conform to the L{ModularStatusBarInfo} progress
+        bar methods.
+        """
+        self.progress = progress
+
+    def getProgressBar(self):
+        return self.progress
 
 
 # BIP: (line,sample,band)

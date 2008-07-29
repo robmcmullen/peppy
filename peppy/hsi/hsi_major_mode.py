@@ -972,9 +972,10 @@ class HSIMode(BitmapScroller, MajorMode):
         
         self.show_value_at_cursor = True
         self.immediate_slider_updates = self.classprefs.immediate_slider_updates
-
-    def tabActivatedHook(self):
-        self.update(False) # initial case will refresh automatically
+    
+    def createPostHook(self):
+        # Can't register the progress bar until after it's created!
+        self.cube.registerProgress(self.status_info)
 
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)
@@ -1029,13 +1030,13 @@ class HSIMode(BitmapScroller, MajorMode):
         else:
             viewcls = CubeView
         self.cube = self.dataset.getCube(index=index)
+        self.cube.registerProgress(self.status_info)
         self.setViewer(viewcls)
         #self.cube.open()
         assert self.dprint(self.cube)
     
     def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
-        self.cubeview.loadBands()
         for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
@@ -1055,7 +1056,8 @@ class HSIMode(BitmapScroller, MajorMode):
                 self.setViewer(FocalPlaneView)
             else:
                 self.setViewer(CubeView)
-            self.update()
+        self.cubeview.loadBands()
+        self.update()
 
 
 class ExportAsENVI(SelectAction):
