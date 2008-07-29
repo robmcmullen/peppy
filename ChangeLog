@@ -1,3 +1,8 @@
+2008-07-27  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.4.2 update to "Hammer Thrower"
+	* pulled memory mapping out of Cube into CubeReader
+
 2008-07-23  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.4.1 update to "Hammer Thrower"

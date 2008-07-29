@@ -98,21 +98,284 @@ class MetadataMixin(debugmixin):
             val=self[key]
             fs.write("%s = %s%s" % (key,val,os.linesep))
         return fs.getvalue()
+
+
+class CubeReader(debugmixin):
+    """Abstract class for reading raw data from an HSI cube"""
+    def save(self, url):
+        """Save the data to another file"""
+        raise NotImplementedError
+        
+    def getPixel(self, line, sample, band):
+        """Get a single pixel value"""
+        raise NotImplementedError
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        raise NotImplementedError
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        raise NotImplementedError
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        raise NotImplementedError
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        raise NotImplementedError
+
+    def getLineOfSpectraCopy(self, line):
+        """Get the spectra along the given line"""
+        raise NotImplementedError
+
+    def locationToFlat(self,line,sample,band):
+        """Convert location (line,sample,band) to flat index"""
+        raise NotImplementedError
+
+
+class FileCubeReader(CubeReader):
+    """Base class for direct file access to data cube.
     
+    Note: this is (potentially much) slower than mmap access of the
+    L{MMapCubeReader}, but won't throw out of memory exceptions.
+    """
+    def __init__(self, cube, url=None, array=None):
+        self.fh = vfs.open(url)
+        self.offset = cube.data_offset
+
+
+class MMapCubeReader(CubeReader):
+    """Base class for memory mapped access to data cube using numpy's built-in
+    mmap function.
+    
+    Note: this can fail with MemoryError (or WindowsError on MSW) when
+    attempting to first mmap a file that is larger than physical memory.
+    """
+    def __init__(self, cube, url=None, array=None):
+        self.mmap = None
+        self.raw = None
+        self.lines = cube.lines
+        self.samples = cube.samples
+        self.bands = cube.bands
+        if url:
+            self.open(cube, url)
+        elif array:
+            self.raw = array
+        
+        if self.raw is not None:
+            self.shape(cube)
+    
+#    def __str__(self):
+#        return repr(self.raw)
+    
+    def open(self, cube, url):
+        if url.scheme == "file":
+            self.mmap = numpy.memmap(str(url.path), mode="r")
+        elif url.scheme == "mem":
+            fh = vfs.open(url)
+            data = fh.read()
+            self.mmap = numpy.fromstring(data, dtype=numpy.uint8)
+        else:
+            self.mmap = vfs.open_numpy_mmap(url)
+        
+        if cube.data_offset>0:
+            if cube.data_bytes>0:
+                slice = self.mmap[cube.data_offset:cube.data_offset+cube.data_bytes]
+            else:
+                slice = self.mmap[cube.data_offset:]
+        else:
+            slice = self.mmap[:]
+                
+        view = slice.view(cube.data_type)
+        self.raw = view.newbyteorder(byteordertext[cube.byte_order])
+    
+    def save(self, url):
+        if self.mmap:
+            self.mmap.flush()
+            self.mmap.sync()
+        else:
+            self.raw.tofile(str(url))
+    
+    def shape(self, cube):
+        """Shape the memory mapped to the correct data type and offset within
+        the file."""
+        raise NotImplementedError
+
+
+class MMapBIPCubeReader(MMapCubeReader):
+    def shape(self, cube):
+        self.raw = numpy.reshape(self.raw, (cube.lines, cube.samples, cube.bands))
+
+    def getPixel(self, line, sample, band):
+        return self.raw[line][sample][band]
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[:, :, band]
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        s = self.raw[line, sample, :]
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        # Note: transpose doesn't seem to automatically generate a copy, so
+        # we're safe with this transpose
+        s = self.raw[line, :, :].T
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s = self.raw[:, sample, band]
+        return s
+
+    def getLineOfSpectraCopy(self, line):
+        """Get the spectra along the given line"""
+        s = self.raw[line, :, :].copy()
+        return s
+
+    def getBandBoundary(self):
+        return 1
+
+    def flatToLocation(self,pos):
+        line=pos/(self.bands*self.samples)
+        temp=pos%(self.bands*self.samples)
+        sample=temp/self.bands
+        band=temp%self.bands
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=line*self.bands*self.samples + sample*self.bands + band
+        return pos
+
+
+class MMapBILCubeReader(MMapCubeReader):
+    def shape(self, cube):
+        self.raw = numpy.reshape(self.raw, (cube.lines, cube.bands, cube.samples))
+
+    def getPixel(self, line, sample, band):
+        return self.raw[line][band][sample]
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[:, band, :]
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        s = self.raw[line, :, sample]
+        return s
+    
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        s = self.raw[line, :, :]
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s = self.raw[:, band, sample]
+        return s
+
+    def getLineOfSpectraCopy(self, line):
+        """Get the spectra along the given line"""
+        # FIXME: transpose doesn't automatically generate a copy in the latest
+        # numpy?
+        s = numpy.transpose(self.raw[line, :, :].copy())
+        return s
+
+    def getBandBoundary(self):
+        return self.samples
+
+    def flatToLocation(self,pos):
+        line=pos/(self.bands*self.samples)
+        temp=pos%(self.bands*self.samples)
+        band=temp/self.samples
+        sample=temp%self.samples
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=line*self.bands*self.samples + band*self.samples + sample
+        return pos
+
+
+class MMapBSQCubeReader(MMapCubeReader):
+    def shape(self, cube):
+        self.raw = numpy.reshape(self.raw, (cube.bands, cube.lines, cube.samples))
+
+    def getPixel(self, line, sample, band):
+        return self.raw[band][line][sample]
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[band, :, :]
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        s = self.raw[:, line, sample]
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        s = self.raw[:, line, :]
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values at constant line, the given sample and band"""
+        s = self.raw[band, :, sample]
+        return s
+
+    def getLineOfSpectraCopy(self, line):
+        """Get the spectra along the given line"""
+        # FIXME: transpose doesn't automatically generate a copy in the latest
+        # numpy?
+        s = numpy.transpose(self.raw[:, line, :].copy())
+        return s
+
+    def getBandBoundary(self):
+        return self.samples*self.lines
+
+    def flatToLocation(self,pos):
+        band=pos/(self.lines*self.samples)
+        temp=pos%(self.lines*self.samples)
+        line=temp/self.samples
+        sample=temp%self.samples
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=band*self.lines*self.samples + line*self.samples + sample
+        return pos
+
+def getMMapCubeReader(interleave):
+    i = interleave.lower()
+    if i == 'bip':
+        return MMapBIPCubeReader
+    elif i == 'bil':
+        return MMapBILCubeReader
+    elif i == 'bsq':
+        return MMapBSQCubeReader
+    else:
+        raise TypeError("Unknown interleave %s" % interleave)
+
+
 class Cube(debugmixin):
     """Generic representation of an HSI datacube.  Specific subclasses
     L{BILCube}, L{BIPCube}, and L{BSQCube} exist to fill in the
     concrete implementations of the common formats of HSI data.
     """
 
-    def __init__(self,filename=None):
+    def __init__(self, filename=None, interleave='unknown'):
         self.url = None
         self.setURL(filename)
         
         self.samples=-1
         self.lines=-1
         self.bands=-1
-        self.interleave='unknown'
+        self.interleave = interleave.lower()
         self.sensor_type='unknown'
 
         # date/time metadata
@@ -166,13 +429,9 @@ class Cube(debugmixin):
 
         self.description=''
 
-        # numarray internals
-        self.mmap=None
-        #self.header_data=None
-        self.slice=None
-        self.raw=None
+        # data reader
+        self.cube_io = None
         self.itemsize=0
-        self.flat=None
 
         # calculated quantities
         self.spectraextrema=[None,None] # min and max over whole cube
@@ -196,17 +455,14 @@ class Cube(debugmixin):
         s.write("        bbl: %s\n" % self.bbl)
         # s.write("        fwhm: %s\n" % self.fwhm)
         # s.write("        band_names: %s\n" % self.band_names)
-        s.write("        mmap=%s\n" % repr(self.mmap))
-        s.write("        slice=%s\n" % repr(self.slice))
+        s.write("        cube_io=%s\n" % str(self.cube_io))
         return s.getvalue()
 
     def fileExists(self):
         return vfs.exists(self.url)
                 
     def isDataLoaded(self):
-        if isinstance(self.mmap,numpy.ndarray) or self.mmap or isinstance(self.raw,numpy.ndarray) or self.raw:
-            return True
-        return False
+        return self.cube_io is not None
 
     def setURL(self, url=None):
         #dprint("setting url to %s" % url)
@@ -214,24 +470,31 @@ class Cube(debugmixin):
             self.url = vfs.normalize(url)
         else:
             self.url=None
+    
+    @classmethod
+    def getCubeReader(cls, interleave):
+        i = interleave.lower()
+        try:
+            cls = getMMapCubeReader(interleave)
+        except TypeError:
+            # Interleave not recognized; in the future will try different cube
+            # readers
+            raise
+        return cls
 
     def open(self,url=None):
         if url:
             self.setURL(url)
-            self.mmap = None
+            self.cube_io = None
 
         if self.url:
-            if self.mmap is None: # don't try to reopen if already open
-                #dprint(self.url)
-                if self.url.scheme == "file":
-                    self.mmap = numpy.memmap(str(self.url.path), mode="r")
-                elif self.url.scheme == "mem":
-                    fh = vfs.open(self.url)
-                    data = fh.read()
-                    self.mmap = numpy.fromstring(data, dtype=numpy.uint8)
-                else:
-                    self.mmap = vfs.open_numpy_mmap(self.url)
+            if self.cube_io is None: # don't try to reopen if already open
                 self.initialize()
+                
+                cube_io_cls = self.getCubeReader(self.interleave)
+                self.cube_io = cube_io_cls(self, self.url)
+                
+                self.verifyAttributes()
         else:
             raise IOError("No url specified.")
     
@@ -240,28 +503,11 @@ class Cube(debugmixin):
             self.setURL(url)
 
         if self.url:
-            if self.mmap is not None and not isinstance(self.mmap,bool):
-                self.mmap.flush()
-                self.mmap.sync()
-            else:
-                #dprint(self.url.path)
-                self.raw.tofile(str(self.url.path))
+            self.cube_io.save(self.url)
 
     def initialize(self,datatype=None,byteorder=None):
         self.initializeSizes(datatype,byteorder)
         self.initializeOffset()
-        self.initializeMmap()
-        self.initializeRaw()
-        #dprint("slice=%d, values=%s" % (len(self.slice), self.slice))
-        if self.raw!=None:
-            try:
-                self.shape()
-            except ValueError:
-                dprint(self)
-                dprint("length=%d raw=%s" % (len(self.raw)*self.itemsize, self.raw))
-                raise
-
-        self.verifyAttributes()
 
     def initializeOffset(self):
         if self.header_offset>0 or self.file_offset>0:
@@ -282,31 +528,6 @@ class Cube(debugmixin):
         # calculate the size of the raw data only if it isn't already known
         if self.data_bytes==0:
             self.data_bytes=self.itemsize*self.samples*self.lines*self.bands
-
-    def initializeMmap(self):
-        if isinstance(self.mmap,numpy.ndarray):
-            if self.data_offset>0:
-                #self.header_data=self.mmap[self.file_offset:self.header_offset]
-                if self.data_bytes>0:
-                    self.slice=self.mmap[self.data_offset:self.data_offset+self.data_bytes]
-                else:
-                    self.slice=self.mmap[self.data_offset:]
-            else:
-                #self.header_data=None
-                self.slice=self.mmap[:]
-        elif self.mmap == True:
-            return
-                
-    def initializeRaw(self):
-        if self.raw==None:
-            if isinstance(self.slice,numpy.ndarray):
-                view=self.slice.view(self.data_type)
-                #self.raw.reshape(len(self.slice)/self.itemsize),dtype=self.data_type,byteorder=byteordertext[self.byte_order])
-                self.raw=view.newbyteorder(byteordertext[self.byte_order])
-
-    def shape(self):
-        """Shape the array based on the cube type"""
-        pass
 
     def verifyAttributes(self):
         """Clean up after loading a cube to make sure some values are
@@ -403,7 +624,7 @@ class Cube(debugmixin):
 
     def getPixel(self,line,sample,band):
         """Get an individual pixel at the specified line, sample, & band"""
-        raise NotImplementedError
+        return self.cube_io.getPixel(line, sample, band)
 
     def getBand(self,band):
         """Get a copy of the array of (lines x samples) at the
@@ -421,7 +642,7 @@ class Cube(debugmixin):
         return s
 
     def getBandRaw(self,band):
-        raise NotImplementedError
+        return self.cube_io.getBandRaw(band)
 
     def getFocalPlaneInPlace(self, line):
         """Get the slice of the data array (bands x samples) at the specified
@@ -433,7 +654,7 @@ class Cube(debugmixin):
         return s
 
     def getFocalPlaneRaw(self, line):
-        raise NotImplementedError
+        return self.cube_io.getFocalPlaneRaw(line)
 
     def getFocalPlaneDepthInPlace(self, sample, band):
         """Get the slice of the data array through the cube at the specified
@@ -443,7 +664,7 @@ class Cube(debugmixin):
         return s
 
     def getFocalPlaneDepthRaw(self, sample, band):
-        raise NotImplementedError
+        return self.cube_io.getFocalPlaneDepthRaw(sample, band)
 
     def getSpectra(self,line,sample):
         """Get the spectra at the given pixel.  Calculate the extrema
@@ -463,7 +684,7 @@ class Cube(debugmixin):
 
     def getSpectraRaw(self,line,sample):
         """Get the spectra at the given pixel"""
-        raise NotImplementedError
+        return self.cube_io.getSpectraRaw(line, sample)
 
     def getLineOfSpectra(self,line):
         """Get the all the spectra along the given line.  Calculate
@@ -478,7 +699,7 @@ class Cube(debugmixin):
     def getLineOfSpectraCopy(self,line):
         """Get the spectra along the given line.  Subclasses override
         this."""
-        raise NotImplementedError
+        return self.cube_io.getLineOfSpectraCopy(line)
 
     def normalizeUnits(self,val,units):
         """Normalize a value in the specified units to the cube's
@@ -551,7 +772,8 @@ class Cube(debugmixin):
         """Get a flat, one-dimensional view of the data"""
         #self.flat=self.raw.view()
         #self.flat.setshape((self.raw.size()))
-        return self.raw.flat
+        #return self.raw.flat
+        raise NotImplementedError
 
     def getBandBoundary(self):
         """return the number of items you have to add to a flat
@@ -564,7 +786,7 @@ class Cube(debugmixin):
 
     def locationToFlat(self,line,sample,band):
         """Convert location (line,sample,band) to flat index"""
-        raise NotImplementedError
+        return self.cube_io.locationToFlat(line, sample, band)
     
     def getBadBandList(self,other=None):
         if other:
@@ -684,180 +906,8 @@ class Cube(debugmixin):
         return self.progress
 
 
-# BIP: (line,sample,band)
-class BIPCube(Cube):
-    def __init__(self,url=None):
-        Cube.__init__(self,url)
-        self.interleave='bip'
-        
-    def shape(self):
-        self.raw=numpy.reshape(self.raw,(self.lines,self.samples,self.bands))
-
-    def getPixel(self,line,sample,band):
-        return self.raw[line][sample][band]
-
-    def getBandRaw(self,band):
-        """Get an array of (lines x samples) at the specified band"""
-        s=self.raw[:,:,band]
-        return s
-
-    def getSpectraRaw(self,line,sample):
-        """Get the spectra at the given pixel"""
-        s=self.raw[line,sample,:]
-        return s
-
-    def getFocalPlaneRaw(self, line):
-        """Get an array of (bands x samples) the given line"""
-        # Note: transpose doesn't seem to automatically generate a copy, so
-        # we're safe with this transpose
-        s=self.raw[line,:,:].T
-        return s
-
-    def getFocalPlaneDepthRaw(self, sample, band):
-        """Get an array of values at constant line, the given sample and band"""
-        s=self.raw[:,sample,band]
-        return s
-
-    def getLineOfSpectraCopy(self,line):
-        """Get the spectra along the given line"""
-        s=self.raw[line,:,:].copy()
-        return s
-
-    def getBandBoundary(self):
-        return 1
-
-    def flatToLocation(self,pos):
-        line=pos/(self.bands*self.samples)
-        temp=pos%(self.bands*self.samples)
-        sample=temp/self.bands
-        band=temp%self.bands
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=line*self.bands*self.samples + sample*self.bands + band
-        return pos
-
-    
-class BILCube(Cube):
-    def __init__(self,url=None):
-        Cube.__init__(self,url)
-        self.interleave='bil'
-        
-    def shape(self):
-        self.raw=numpy.reshape(self.raw,(self.lines,self.bands,self.samples))
-
-    def getPixel(self,line,sample,band):
-        return self.raw[line][band][sample]
-
-    def getBandRaw(self,band):
-        """Get an array of (lines x samples) at the specified band"""
-        s=self.raw[:,band,:]
-        return s
-
-    def getSpectraRaw(self,line,sample):
-        """Get the spectra at the given pixel"""
-        s=self.raw[line,:,sample]
-        return s
-    
-    def getFocalPlaneRaw(self, line):
-        """Get an array of (bands x samples) the given line"""
-        s=self.raw[line,:,:]
-        return s
-
-    def getFocalPlaneDepthRaw(self, sample, band):
-        """Get an array of values at constant line, the given sample and band"""
-        s=self.raw[:,band,sample]
-        return s
-
-    def getLineOfSpectraCopy(self,line):
-        """Get the spectra along the given line"""
-        # FIXME: transpose doesn't automatically generate a copy in the latest
-        # numpy?
-        s=numpy.transpose(self.raw[line,:,:].copy())
-        return s
-    
-    def getBandBoundary(self):
-        return self.samples
-
-    def flatToLocation(self,pos):
-        line=pos/(self.bands*self.samples)
-        temp=pos%(self.bands*self.samples)
-        band=temp/self.samples
-        sample=temp%self.samples
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=line*self.bands*self.samples + band*self.samples + sample
-        return pos
-
-
-
-class BSQCube(Cube):
-    def __init__(self,url=None):
-        Cube.__init__(self,url)
-        self.interleave='bsq'
-        
-    def shape(self):
-        self.raw=numpy.reshape(self.raw,(self.bands,self.lines,self.samples))
-
-    def getPixel(self,line,sample,band):
-        return self.raw[band][line][sample]
-
-    def getBandRaw(self,band):
-        """Get an array of (lines x samples) at the specified band"""
-        s=self.raw[band,:,:]
-        return s
-
-    def getSpectraRaw(self,line,sample):
-        """Get the spectra at the given pixel"""
-        s=self.raw[:,line,sample]
-        return s
-
-    def getFocalPlaneRaw(self, line):
-        """Get an array of (bands x samples) the given line"""
-        s=self.raw[:,line,:]
-        return s
-
-    def getFocalPlaneDepthRaw(self, sample, band):
-        """Get an array of values at constant line, the given sample and band"""
-        s=self.raw[band,:,sample]
-        return s
-
-    def getLineOfSpectraCopy(self,line):
-        """Get the spectra along the given line"""
-        # FIXME: transpose doesn't automatically generate a copy in the latest
-        # numpy?
-        s=numpy.transpose(self.raw[:,line,:].copy())
-        return s
-    
-    def getBandBoundary(self):
-        return self.samples*self.lines
-
-    def flatToLocation(self,pos):
-        band=pos/(self.lines*self.samples)
-        temp=pos%(self.lines*self.samples)
-        line=temp/self.samples
-        sample=temp%self.samples
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=band*self.lines*self.samples + line*self.samples + sample
-        return pos
-
-    
-
 def newCube(interleave,url=None):
-    i=interleave.lower()
-    if i=='bil':
-        cube=BILCube(url)
-    elif i=='bip':
-        cube=BIPCube(url)
-    elif i=='bsq':
-        cube=BSQCube(url)
-##    elif i=='gdal':
-##        cube=GDALCube(url)
-    else:
-        raise ValueError("Interleave format %s not supported." % interleave)
+    cube = Cube(url, interleave)
     return cube
 
 def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByteOrder, scalefactor=10000.0, data=None, dummy=False):
@@ -871,16 +921,18 @@ def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByt
     cube.data_type=datatype
     cube.byte_order=byteorder
     cube.scale_factor=scalefactor
+    cube.initialize(datatype,byteorder)
+    
+    cube_io_cls = getMMapCubeReader(interleave)
     if not dummy:
         if data:
-            cube.raw = numpy.frombuffer(data, datatype)
+            raw = numpy.frombuffer(data, datatype)
         else:
-            cube.raw=numpy.zeros((samples*lines*bands),dtype=datatype)
-        cube.mmap=True
+            raw = numpy.zeros((samples*lines*bands), dtype=datatype)
     else:
-        cube.raw = None
-        cube.mmap = True
-    cube.initialize(datatype,byteorder)
+        raw = None
+    cube.cube_io = cube_io_cls(cube, array=raw)
+    cube.verifyAttributes()
     return cube
 
 
