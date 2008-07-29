@@ -1203,7 +1203,7 @@ class MajorModeMatcherDriver(debugmixin):
             cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
             cls.current_modes.extend(plugin.getMajorModes())
         cls.dprint("Currently active major modes: %s" % str(cls.current_modes))
-        cls.ignored_modes = set()
+        cls.skipped_modes = set()
     
     @classmethod
     def iterActiveModes(cls):
