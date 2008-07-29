@@ -13,6 +13,7 @@ import peppy.hsi.datasetfs
 
 from peppy.debug import *
 from peppy.stcinterface import *
+from wx.lib.pubsub import Publisher
 
 
 class HyperspectralSTC(NonResidentSTC):
@@ -20,8 +21,16 @@ class HyperspectralSTC(NonResidentSTC):
     
     def open(self, buffer, message=None):
         self.url = buffer.raw_url
-        self.dataset = HyperspectralFileFormat.load(self.url)
-    
+        self.message = message
+        self.dataset = HyperspectralFileFormat.load(self.url, progress=self.updateGauge)
+
+    def updateGauge(self, current, length=-1):
+        dprint(current)
+        if length < 0:
+            Publisher().sendMessage(self.message, -1)
+        else:
+            Publisher().sendMessage(self.message, (current*100)/length)
+
     def CanSave(self):
         return False
     
@@ -154,13 +163,16 @@ class HyperspectralFileFormat(debugmixin):
         return None
 
     @classmethod
-    def load(cls, url, bad=None):
+    def load(cls, url, bad=None, progress=None):
         """Find an HSI dataset instance corresponding to the url
         
         @param url: url to load
+        
         @param bad: subclass of HSI.MetadataMixin that should be avoided.  This
         is used to select a different dataset reader if an error occurs with
         the one specified here.
+        
+        @param progress: (optional) progress bar callback
         
         @return: instance of HSI.MetadataMixin that can read the file, or None
         if nothing is found.
@@ -188,7 +200,7 @@ class HyperspectralFileFormat(debugmixin):
                 cls.dprint("Skipping format %s" % format.format_name)
                 continue
             cls.dprint("Loading %s format cube" % format.format_name)
-            dataset = format(url)
+            dataset = format(url, progress=progress)
             return dataset
         return None
 

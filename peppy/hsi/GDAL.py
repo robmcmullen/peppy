@@ -41,7 +41,7 @@ class GDALDataset(HSI.MetadataMixin):
     format_id="GDAL"
     format_name="GDAL"
 
-    def __init__(self,filename=None,debug=False):
+    def __init__(self, filename=None, **kwargs):
         self.url = None
         self.subsets=[]
 

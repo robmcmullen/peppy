@@ -102,8 +102,11 @@ class Header(dict,MetadataMixin):
     format_name="ENVI Datacube"
     extensions=['.bil','.bip','.bsq','.sli']
 
-    def __init__(self,filename=None,debug=False):
-        self.debug = debug
+    def __init__(self, filename=None, **kwargs):
+        if 'debug' in kwargs:
+            self.debug = kwargs['debug']
+        else:
+            self.debug = False
         
         self['samples']="98"
         self['lines']="98"
