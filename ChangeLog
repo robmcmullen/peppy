@@ -1,3 +1,24 @@
+2008-07-23  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.4.1 update to "Hammer Thrower"
+	* added project support
+	* added CTAGS support for projects
+	* added templates that are used instead of a blank file
+	* added bash style word completion plugin from Frank Atle Rød
+	* added progress bar capability to HSI.Cube
+	* added SciTE algorithm that guesses the indent size in a file
+	* changed default path to the home directory of the user rather than the
+	directory in which peppy was started
+	* added actions to hide all minor modes and sidebars
+	* fixed popup windows and the completion minibuffer on OSX
+	* added substring matching to completion minibuffer
+	* speeded up local file loading by turning off threaded loading for
+	file:// URLs
+	* added DescribeKey action
+	* fixed delayed display of subprocess output by polling with a timer
+	* added RunFilter action to run an arbitrary command on the current file
+	* improved Editra theme handling
+
 2008-06-23  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.4 "Hammer Thrower"
