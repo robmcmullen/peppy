@@ -1044,15 +1044,18 @@ class HSIMode(BitmapScroller, MajorMode):
     def getPopupActions(self, evt, x, y):
         return [CubeViewAction, ShowPixelValues, BandSliderUpdates]
     
-    def showInitialPosition(self, url):
+    def showInitialPosition(self, url, options=None):
+        if options is None:
+            options = {}
         if url.query:
-            self.dprint(url.query)
-            if 'view' in url.query:
-                if url.query['view'] == 'focalplane':
-                    self.setViewer(FocalPlaneView)
-                else:
-                    self.setViewer(CubeView)
-                self.update()
+            options.update(url.query)
+        self.dprint(options)
+        if 'view' in options:
+            if options['view'] == 'focalplane':
+                self.setViewer(FocalPlaneView)
+            else:
+                self.setViewer(CubeView)
+            self.update()
 
 
 class ExportAsENVI(SelectAction):

@@ -591,16 +591,17 @@ class LoadingMode(BlankMode):
     def createPostHook(self):
         self.showBusy(True)
         wx.CallAfter(self.frame.openThreaded, self.buffer.raw_url,
-                     self.buffer, mode_to_replace=self)
+                     self.buffer, mode_to_replace=self, options=self.buffer.options)
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
-    def __init__(self, url, modecls=None, created_from_url=None, canonicalize=True):
+    def __init__(self, url, modecls=None, created_from_url=None, canonicalize=True, options=None):
         BufferVFSMixin.__init__(self, url, created_from_url, canonicalize)
         self.busy = True
         self.readonly = False
         self.permanent = False
         self.modified = False
         self.defaultmode = LoadingMode
+        self.options = options
         
         if modecls:
             self.modecls = modecls
@@ -640,7 +641,7 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
 class BufferLoadThread(threading.Thread, debugmixin):
     """Background file loading thread.
     """
-    def __init__(self, frame, user_url, buffer, mode_to_replace, progress=None):
+    def __init__(self, frame, user_url, buffer, mode_to_replace, progress=None, options=None):
         threading.Thread.__init__(self)
         
         self.frame = frame
@@ -648,13 +649,14 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.buffer = buffer
         self.mode_to_replace = mode_to_replace
         self.progress = progress
+        self.options = options
 
     def run(self):
         self.dprint(u"starting to load %s" % unicode(self.buffer.url))
         try:
             self.buffer.openBackgroundThread(self.progress.message)
             wx.CallAfter(self.frame.openSuccess, self.user_url, self.buffer,
-                         self.mode_to_replace, self.progress)
+                         self.mode_to_replace, self.progress, self.options)
             self.dprint(u"successfully loaded %s" % unicode(self.buffer.url))
         except Exception, e:
             import traceback

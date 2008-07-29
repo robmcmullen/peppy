@@ -273,7 +273,7 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
             wrapper = self.newWrapper()
         return wrapper
 
-    def newBuffer(self, user_url, buffer, modecls=None, mode_to_replace=None, new_tab=False):
+    def newBuffer(self, user_url, buffer, modecls=None, mode_to_replace=None, new_tab=False, options=None):
         if mode_to_replace:
             wrapper = self.getWrapper(mode_to_replace)
         else:
@@ -281,7 +281,7 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         mode = wrapper.createMajorMode(self.frame, buffer, modecls)
         assert self.dprint("major mode=%s" % mode)
         self.updateWrapper(wrapper)
-        mode.showInitialPosition(user_url)
+        mode.showInitialPosition(user_url, options)
 
     def newMode(self, buffer, mode_to_replace=None):
         assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
@@ -703,7 +703,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if not self.makeTabActive(url):
             self.open(url)
 
-    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True):
+    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
         """Open a new tab to edit the given URL.
         
         Driver function that loads a file and creates a new tab in the user
@@ -730,6 +730,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         canonicalized before searching the existing buffer list.  This is used
         in the rare case where a fragment or query string is significant to
         locating the data on the file system.
+        
+        @param options: (optional) a dict of options to be passed to the major
+        mode's showInitialPosition method
         """
         # The canonical url stored in the buffer will be without query string
         # or fragment, so we need to keep track of the full url (with the
@@ -761,10 +764,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         if buffer is not None:
             #dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), force_new_tab))
-            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab)
+            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab, options)
         else:
             try:
-                buffer = LoadingBuffer(user_url, modecls, created_from_url, canonicalize)
+                buffer = LoadingBuffer(user_url, modecls, created_from_url, canonicalize, options=options)
             except Exception, e:
                 import traceback
                 error = traceback.format_exc()
@@ -774,9 +777,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
                 self.tabs.newBuffer(user_url, buffer, mode_to_replace=mode_to_replace, new_tab=force_new_tab)
             else:
-                self.openNonThreaded(user_url, buffer, mode_to_replace, force_new_tab=force_new_tab)
+                self.openNonThreaded(user_url, buffer, mode_to_replace, force_new_tab=force_new_tab, options=options)
     
-    def openNonThreaded(self, user_url, loading_buffer, mode_to_replace=None, force_new_tab=False):
+    def openNonThreaded(self, user_url, loading_buffer, mode_to_replace=None, force_new_tab=False, options=None):
         #traceon()
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
@@ -785,24 +788,24 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             buffer.openBackgroundThread()
             if force_new_tab:
                 mode_to_replace = None
-            self.openSuccess(user_url, buffer, mode_to_replace)
+            self.openSuccess(user_url, buffer, mode_to_replace, options)
         except Exception, e:
             import traceback
             error = traceback.format_exc()
             self.openFailure(user_url, error)
         wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
 
-    def openThreaded(self, user_url, loading_buffer, mode_to_replace=None):
+    def openThreaded(self, user_url, loading_buffer, mode_to_replace=None, options=None):
         #traceon()
         buffer = loading_buffer.clone()
         buffer.openGUIThreadStart()
         statusbar = mode_to_replace.status_info
         statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
-        thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar)
+        thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar, options)
         wx.GetApp().cooperativeYield()
         thread.start()
 
-    def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None):
+    def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None, options=None):
         try:
             buffer.openGUIThreadSuccess()
             assert self.dprint("buffer=%s" % buffer)
@@ -824,7 +827,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("after addViewer")
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
-        mode.showInitialPosition(user_url)
+        mode.showInitialPosition(user_url, options)
 
     def openFailure(self, url, error, mode_to_replace=None, progress=None):
         #traceoff()

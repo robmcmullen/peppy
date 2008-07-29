@@ -927,8 +927,13 @@ class MajorMode(ClassPrefs, debugmixin):
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
         self.SetCursor(cursor)
 
-    def showInitialPosition(self, url):
-        """Hook to scroll to a non-default initial position if desired."""
+    def showInitialPosition(self, url, options=None):
+        """Hook to scroll to a non-default initial position if desired.
+        
+        @param url: url, including query string and fragment
+        
+        @param options: optional dict of name/value options
+        """
         pass
     
     def getViewPositionData(self):
