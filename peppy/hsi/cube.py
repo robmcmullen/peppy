@@ -115,15 +115,15 @@ class CubeReader(debugmixin):
         raise NotImplementedError
 
     def getSpectraRaw(self, line, sample):
-        """Get the spectra at the given pixel"""
+        """Get the spectra (bands) at the given pixel"""
         raise NotImplementedError
 
     def getFocalPlaneRaw(self, line):
-        """Get an array of (bands x samples) the given line"""
+        """Get an array of (bands x samples) at the given line"""
         raise NotImplementedError
 
     def getFocalPlaneDepthRaw(self, sample, band):
-        """Get an array of values at constant line, the given sample and band"""
+        """Get an array of (lines) at the given sample and band"""
         raise NotImplementedError
 
     def getLineOfSpectraCopy(self, line):
@@ -135,6 +135,52 @@ class CubeReader(debugmixin):
         raise NotImplementedError
 
 
+class BIPMixin(object):
+    def getBandBoundary(self):
+        return 1
+
+    def flatToLocation(self,pos):
+        line=pos/(self.bands*self.samples)
+        temp=pos%(self.bands*self.samples)
+        sample=temp/self.bands
+        band=temp%self.bands
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=line*self.bands*self.samples + sample*self.bands + band
+        return pos
+
+class BILMixin(object):
+    def getBandBoundary(self):
+        return self.samples
+
+    def flatToLocation(self,pos):
+        line=pos/(self.bands*self.samples)
+        temp=pos%(self.bands*self.samples)
+        band=temp/self.samples
+        sample=temp%self.samples
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=line*self.bands*self.samples + band*self.samples + sample
+        return pos
+
+class BSQMixin(object):
+    def getBandBoundary(self):
+        return self.samples*self.lines
+
+    def flatToLocation(self,pos):
+        band=pos/(self.lines*self.samples)
+        temp=pos%(self.lines*self.samples)
+        line=temp/self.samples
+        sample=temp%self.samples
+        return (line,sample,band)
+
+    def locationToFlat(self,line,sample,band):
+        pos=band*self.lines*self.samples + line*self.samples + sample
+        return pos
+
+
 class FileCubeReader(CubeReader):
     """Base class for direct file access to data cube.
     
@@ -144,6 +190,130 @@ class FileCubeReader(CubeReader):
     def __init__(self, cube, url=None, array=None):
         self.fh = vfs.open(url)
         self.offset = cube.data_offset
+        self.lines = cube.lines
+        self.samples = cube.samples
+        self.bands = cube.bands
+        self.data_type = cube.data_type
+        self.itemsize = cube.itemsize
+        self.getProgressBar = cube.getProgressBar
+        if cube.byte_order != nativeByteOrder:
+            self.swap = True
+        else:
+            self.swap = False
+
+
+class FileBIPCubeReader(BIPMixin, FileCubeReader):
+    def getPixel(self, line, sample, band):
+        #return self.raw[line][sample][band]
+        return 0
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = numpy.empty((self.lines, self.samples), dtype=self.data_type)
+        fh = self.fh
+        
+        # Offset into BIP at constand band is calculated by band +
+        # num_samples * sample + (num_samples * num_bands) * line, or if read
+        # sequentially, by adding num_bands to each successive index
+        fh.seek(self.offset + (band * self.itemsize))
+        
+        skip = self.itemsize * (self.bands - 1)
+        samp = 0
+        line = 0
+        progress = self.getProgressBar()
+        if progress:
+            import wx
+            progress.startProgress("Loading Band %d" % band, self.lines)
+            wx.GetApp().cooperativeYield()
+        while True:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[line, samp] = data[0]
+            samp += 1
+            if samp >= self.samples:
+                samp = 0
+                line += 1
+                if line >= self.lines:
+                    break
+                if progress:
+                    progress.updateProgress(line)
+                    wx.GetApp().cooperativeYield()
+            fh.seek(skip, 1)
+        if progress:
+            progress.stopProgress("Loaded Band %d" % band)
+            
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        fh = self.fh
+        
+        # Offset into BIP at constand band is calculated by band +
+        # num_samples * sample + (num_samples * num_bands) * line, or if read
+        # sequentially, by adding num_bands to each successive index
+        skip = (self.bands * self.samples) * line + (self.bands * sample)
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=self.bands)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        fh = self.fh
+        
+        # Offset into BIP at constand band is calculated by band +
+        # num_samples * sample + (num_samples * num_bands) * line, or if read
+        # sequentially, by adding num_bands to each successive index
+        skip = (self.bands * self.samples) * line
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.bands * self.samples))
+        s = s.reshape(self.samples, self.bands).T
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values along a line, the given sample and band"""
+        s = numpy.empty((self.lines,), dtype=self.data_type)
+        fh = self.fh
+        
+        # Offset into BIP at constand sample and band is calculated by band +
+        # num_samples * sample + (num_samples * num_bands) * line, or if read
+        # sequentially, by adding num_bands to each successive index
+        fh.seek(self.offset + (((self.bands * sample) + band) * self.itemsize))
+        
+        skip = self.itemsize * ((self.samples * self.bands) - 1)
+        line = 0
+        progress = self.getProgressBar()
+        while line < self.lines:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[line] = data[0]
+            line += 1
+            fh.seek(skip, 1)
+            
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getLineOfSpectraCopy(self,line):
+        """Get the spectra along the given line"""
+        s = numpy.empty((self.samples, self.bands), dtype=self.data_type)
+        return s
+
+
+def getFileCubeReader(interleave):
+    i = interleave.lower()
+    if i == 'bip':
+        return FileBIPCubeReader
+#    elif i == 'bil':
+#        return FileBILCubeReader
+#    elif i == 'bsq':
+#        return FileBSQCubeReader
+    else:
+        raise TypeError("Unknown interleave %s" % interleave)
+
 
 
 class MMapCubeReader(CubeReader):
@@ -204,7 +374,7 @@ class MMapCubeReader(CubeReader):
         raise NotImplementedError
 
 
-class MMapBIPCubeReader(MMapCubeReader):
+class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
     def shape(self, cube):
         self.raw = numpy.reshape(self.raw, (cube.lines, cube.samples, cube.bands))
 
@@ -238,22 +408,8 @@ class MMapBIPCubeReader(MMapCubeReader):
         s = self.raw[line, :, :].copy()
         return s
 
-    def getBandBoundary(self):
-        return 1
 
-    def flatToLocation(self,pos):
-        line=pos/(self.bands*self.samples)
-        temp=pos%(self.bands*self.samples)
-        sample=temp/self.bands
-        band=temp%self.bands
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=line*self.bands*self.samples + sample*self.bands + band
-        return pos
-
-
-class MMapBILCubeReader(MMapCubeReader):
+class MMapBILCubeReader(BILMixin, MMapCubeReader):
     def shape(self, cube):
         self.raw = numpy.reshape(self.raw, (cube.lines, cube.bands, cube.samples))
 
@@ -287,22 +443,8 @@ class MMapBILCubeReader(MMapCubeReader):
         s = numpy.transpose(self.raw[line, :, :].copy())
         return s
 
-    def getBandBoundary(self):
-        return self.samples
 
-    def flatToLocation(self,pos):
-        line=pos/(self.bands*self.samples)
-        temp=pos%(self.bands*self.samples)
-        band=temp/self.samples
-        sample=temp%self.samples
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=line*self.bands*self.samples + band*self.samples + sample
-        return pos
-
-
-class MMapBSQCubeReader(MMapCubeReader):
+class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
     def shape(self, cube):
         self.raw = numpy.reshape(self.raw, (cube.bands, cube.lines, cube.samples))
 
@@ -336,19 +478,6 @@ class MMapBSQCubeReader(MMapCubeReader):
         s = numpy.transpose(self.raw[:, line, :].copy())
         return s
 
-    def getBandBoundary(self):
-        return self.samples*self.lines
-
-    def flatToLocation(self,pos):
-        band=pos/(self.lines*self.samples)
-        temp=pos%(self.lines*self.samples)
-        line=temp/self.samples
-        sample=temp%self.samples
-        return (line,sample,band)
-
-    def locationToFlat(self,line,sample,band):
-        pos=band*self.lines*self.samples + line*self.samples + sample
-        return pos
 
 def getMMapCubeReader(interleave):
     i = interleave.lower()
@@ -474,13 +603,17 @@ class Cube(debugmixin):
     @classmethod
     def getCubeReader(cls, interleave):
         i = interleave.lower()
+        # FIXME: Temporarily use the direct access file readers before the mmap
+        # readers for testing purposes.
         try:
-            cls = getMMapCubeReader(interleave)
+            return getFileCubeReader(interleave)
         except TypeError:
-            # Interleave not recognized; in the future will try different cube
-            # readers
-            raise
-        return cls
+            pass
+        try:
+            return getMMapCubeReader(interleave)
+        except TypeError:
+            pass
+        raise IndexError("No cube reader found")
 
     def open(self,url=None):
         if url:
