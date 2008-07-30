@@ -32,17 +32,11 @@
 #
 # REPOS="$1"
 # REV="$2"
-# LOG=`/usr/bin/svnlook log -r $REV $REPOS`
-# AUTHOR=`/usr/bin/svnlook author -r $REV $REPOS`
-# TRAC_ENV='/somewhere/trac/project/'
-# TRAC_URL='http://trac.mysite.com/project/'
 #
 # /usr/bin/python /usr/local/src/trac/contrib/trac-post-commit-hook \
-#  -p "$TRAC_ENV"  \
-#  -r "$REV"       \
-#  -u "$AUTHOR"    \
-#  -m "$LOG"       \
-#  -s "$TRAC_URL"
+#  -p "$TRAC_ENV" -r "$REV"
+#
+# (all the other arguments are now deprecated and not needed anymore)
 #
 # It searches commit messages for text in the form of:
 #   command #1
@@ -50,14 +44,23 @@
 #   command #1 & #2 
 #   command #1 and #2
 #
+# Instead of the short-hand syntax "#1", "ticket:1" can be used as well, e.g.:
+#   command ticket:1
+#   command ticket:1, ticket:2
+#   command ticket:1 & ticket:2 
+#   command ticket:1 and ticket:2
+#
+# In addition, the ':' character can be omitted and issue or bug can be used
+# instead of ticket.
+#
 # You can have more then one command in a message. The following commands
 # are supported. There is more then one spelling for each command, to make
 # this as user-friendly as possible.
 #
-#   closes, fixes
+#   close, closed, closes, fix, fixed, fixes
 #     The specified issue numbers are closed with the contents of this
 #     commit message being added to it. 
-#   references, refs, addresses, re 
+#   references, refs, addresses, re, see 
 #     The specified issue numbers are left in their current status, but 
 #     the contents of this commit message are added to their notes. 
 #
@@ -71,7 +74,7 @@
 import re
 import os
 import sys
-import time 
+from datetime import datetime 
 
 from trac.env import open_environment
 from trac.ticket.notification import TicketNotifyEmail
@@ -79,47 +82,46 @@ from trac.ticket import Ticket
 from trac.ticket.web_ui import TicketModule
 # TODO: move grouped_changelog_entries to model.py
 from trac.util.text import to_unicode
-from trac.web.href import Href
+from trac.util.datefmt import utc
+from trac.versioncontrol.api import NoSuchChangeset
 
-try:
-    from optparse import OptionParser
-except ImportError:
-    try:
-        from optik import OptionParser
-    except ImportError:
-        raise ImportError, 'Requires Python 2.3 or the Optik option parsing library.'
+from optparse import OptionParser
 
 parser = OptionParser()
-parser.add_option('-e', '--require-envelope', dest='env', default='',
-                  help='Require commands to be enclosed in an envelope. If -e[], '
-                       'then commands must be in the form of [closes #4]. Must '
-                       'be two characters.')
+depr = '(not used anymore)'
+parser.add_option('-e', '--require-envelope', dest='envelope', default='',
+                  help="""
+Require commands to be enclosed in an envelope.
+If -e[], then commands must be in the form of [closes #4].
+Must be two characters.""")
 parser.add_option('-p', '--project', dest='project',
                   help='Path to the Trac project.')
 parser.add_option('-r', '--revision', dest='rev',
                   help='Repository revision number.')
 parser.add_option('-u', '--user', dest='user',
-                  help='The user who is responsible for this action')
+                  help='The user who is responsible for this action '+depr)
 parser.add_option('-m', '--msg', dest='msg',
-                  help='The log message to search.')
+                  help='The log message to search '+depr)
 parser.add_option('-c', '--encoding', dest='encoding',
-                  help='The encoding used by the log message.')
+                  help='The encoding used by the log message '+depr)
 parser.add_option('-s', '--siteurl', dest='url',
-                  help='The base URL to the project\'s trac website (to which '
-                       '/ticket/## is appended).  If this is not specified, '
-                       'the project URL from trac.ini will be used.')
+                  help=depr+' the base_url from trac.ini will always be used.')
 
 (options, args) = parser.parse_args(sys.argv[1:])
 
-if options.env:
-    leftEnv = '\\' + options.env[0]
-    rghtEnv = '\\' + options.env[1]
-else:
-    leftEnv = ''
-    rghtEnv = ''
 
-commandPattern = re.compile(leftEnv + r'(?P<action>[A-Za-z]*).?(?P<ticket>#[0-9]+(?:(?:[, &]*|[ ]?and[ ]?)#[0-9]+)*)' + rghtEnv)
-ticketPattern = re.compile(r'#([0-9]*)')
+ticket_prefix = '(?:#|(?:ticket|issue|bug)[: ]?)'
+ticket_reference = ticket_prefix + '[0-9]+'
+ticket_command =  (r'(?P<action>[A-Za-z]*).?'
+                   '(?P<ticket>%s(?:(?:[, &]*|[ ]?and[ ]?)%s)*)' %
+                   (ticket_reference, ticket_reference))
+
+if options.envelope:
+    ticket_command = r'\%s%s\%s' % (options.envelope[0], ticket_command,
+                                    options.envelope[1])
+    
+command_re = re.compile(ticket_command)
+ticket_re = re.compile(ticket_prefix + '([0-9]+)')
 
 class CommitHook:
     _supported_cmds = {'close':      '_cmdClose',
@@ -129,51 +131,48 @@ class CommitHook:
                        'fixed':      '_cmdClose',
                        'fixes':      '_cmdClose',
                        'addresses':  '_cmdRefs',
-                       'continues':  '_cmdRefs', # added by me
                        're':         '_cmdRefs',
                        'references': '_cmdRefs',
                        'refs':       '_cmdRefs',
                        'see':        '_cmdRefs'}
 
     def __init__(self, project=options.project, author=options.user,
-                 rev=options.rev, msg=options.msg, url=options.url,
-                 encoding=options.encoding):
-        msg = to_unicode(msg, encoding)
-        self.author = author
+                 rev=options.rev, url=options.url):
+        self.env = open_environment(project)
+        repos = self.env.get_repository()
+        repos.sync()
+        
+        # Instead of bothering with the encoding, we'll use unicode data
+        # as provided by the Trac versioncontrol API (#1310).
+        try:
+            chgset = repos.get_changeset(rev)
+        except NoSuchChangeset:
+            return # out of scope changesets are not cached
+        self.author = chgset.author
         self.rev = rev
         lines = []
-        for line in msg.splitlines():
+        print chgset.message
+        for line in chgset.message.splitlines():
             if line.startswith("*"):
                 lines.append(" "+line)
             else:
                 lines.append(line)
         msg = "\n".join(lines)
+        print msg
         self.msg = "(In [%s]) %s" % (rev, msg)
-        #print "message = %s" % self.msg
+        self.now = datetime.now(utc)
 
-        self.now = int(time.time()) 
-        #print "project = %s" % project
-        self.env = open_environment(project)
-        #print "env = %s" % self.env
-        if url is None:
-            url = self.env.config.get('project', 'url')
-        self.env.href = Href(url)
-        self.env.abs_href = Href(url)
-
-        cmdGroups = commandPattern.findall(msg)
-        #print "cmdGroups = %s" % str(cmdGroups)
+        cmd_groups = command_re.findall(self.msg)
 
         tickets = {}
-        for cmd, tkts in cmdGroups:
+        for cmd, tkts in cmd_groups:
             funcname = CommitHook._supported_cmds.get(cmd.lower(), '')
             if funcname:
-                for tkt_id in ticketPattern.findall(tkts):
+                for tkt_id in ticket_re.findall(tkts):
                     func = getattr(self, funcname)
                     tickets.setdefault(tkt_id, []).append(func)
 
-        #print "tickets = %s" % str(tickets)
         for tkt_id, cmds in tickets.iteritems():
-            #print "id = %s, cmds = %s" % (str(tkt_id),str(cmds))
             try:
                 db = self.env.get_db_cnx()
                 
@@ -209,12 +208,9 @@ class CommitHook:
 
 
 if __name__ == "__main__":
-    #print "here in main"
     if len(sys.argv) < 5:
         print "For usage: %s --help" % (sys.argv[0])
+        print
+        print "Note that the deprecated options will be removed in Trac 0.12."
     else:
-        #print "calling CommitHook"
-        try:
-            CommitHook()
-        except Exception, e:
-            print "error %s" % e
+        CommitHook()
