@@ -208,10 +208,15 @@ class CommitHook:
 
 
 if __name__ == "__main__":
+    print "here in main"
     if len(sys.argv) < 5:
         print "For usage: %s --help" % (sys.argv[0])
         print
         print "Note that the deprecated options will be removed in Trac 0.12."
     else:
-        CommitHook()
+        print "calling CommitHook"
+        try:
+            CommitHook()
+        except Exception, e:
+            print "error %s" % e
 
