@@ -151,14 +151,14 @@ class CommitHook:
         self.author = chgset.author
         self.rev = rev
         lines = []
-        print chgset.message
+        #print chgset.message
         for line in chgset.message.splitlines():
             if line.startswith("*"):
                 lines.append(" "+line)
             else:
                 lines.append(line)
         msg = "\n".join(lines)
-        print msg
+        #print msg
         self.msg = "(In [%s]) %s" % (rev, msg)
         self.now = datetime.now(utc)
 
