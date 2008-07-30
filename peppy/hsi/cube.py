@@ -193,7 +193,13 @@ class FileCubeReader(CubeReader):
     """
     def __init__(self, cube, url=None, array=None):
         self.fh = vfs.open(url)
-        self.offset = cube.data_offset
+        # If we're using a WindowReader on a NITF file, the offset is already
+        # accounted for within the WindowReader
+        if hasattr(self.fh, 'offset') and self.fh.offset == cube.data_offset:
+            self.offset = 0
+        else:
+            self.offset = cube.data_offset
+        dprint("url=%s file=%s offset=%d" % (url, self.fh, self.offset))
         self.lines = cube.lines
         self.samples = cube.samples
         self.bands = cube.bands
@@ -204,6 +210,18 @@ class FileCubeReader(CubeReader):
             self.swap = True
         else:
             self.swap = False
+    
+    def getNumpyArrayFromFile(self, fh, count):
+        """Convenience function to replace call to numpy.fromfile.
+        
+        Numpy can't use fromfile if the file handle is not an actual pointer to
+        a file.  File handles returned by vfs.open can be file-like objects,
+        so we have read the data by hand and use numpy.fromstring instead of
+        numpy.fromfile directly.
+        """
+        bytes = fh.read(count * self.itemsize)
+        s = numpy.fromstring(bytes, dtype=self.data_type, count=count)
+        return s
 
 
 class FileBIPCubeReader(BIPMixin, FileCubeReader):
@@ -218,7 +236,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         fh = self.fh
         skip = (self.bands * self.samples) * line + (self.bands * sample) + band
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        s = self.getNumpyArrayFromFile(fh, 1)
         if self.swap:
             s.byteswap(True)
         return s[0]
@@ -241,7 +259,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
             progress.startProgress("Loading Band %d" % band, self.lines)
             wx.GetApp().cooperativeYield()
         while True:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[line, samp] = data[0]
             samp += 1
             if samp >= self.samples:
@@ -265,7 +283,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         fh = self.fh
         skip = (self.bands * self.samples) * line + (self.bands * sample)
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=self.bands)
+        s = self.getNumpyArrayFromFile(fh, self.bands)
         if self.swap:
             s.byteswap(True)
         return s
@@ -275,7 +293,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         fh = self.fh
         skip = (self.bands * self.samples) * line
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.bands * self.samples))
+        s = self.getNumpyArrayFromFile(fh, (self.bands * self.samples))
         s = s.reshape(self.samples, self.bands).T
         if self.swap:
             s.byteswap(True)
@@ -293,7 +311,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         skip = self.itemsize * ((self.samples * self.bands) - 1)
         line = 0
         while line < self.lines:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[line] = data[0]
             line += 1
             fh.seek(skip, 1)
@@ -315,7 +333,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         fh = self.fh
         skip = (self.bands * self.samples) * line + (self.samples * band) + sample
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        s = self.getNumpyArrayFromFile(fh, 1)
         if self.swap:
             s.byteswap(True)
         return s[0]
@@ -338,7 +356,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
             progress.startProgress("Loading Band %d" % band, self.lines)
             wx.GetApp().cooperativeYield()
         while True:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=self.samples)
+            data = self.getNumpyArrayFromFile(fh, self.samples)
             s[line, :] = data
             line += 1
             if line >= self.lines:
@@ -366,7 +384,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         skip = self.itemsize * (self.samples - 1)
         band = 0
         while band < self.bands:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[band] = data[0]
             band += 1
             fh.seek(skip, 1)
@@ -379,7 +397,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         fh = self.fh
         skip = (self.bands * self.samples) * line
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.bands * self.samples))
+        s = self.getNumpyArrayFromFile(fh, (self.bands * self.samples))
         s = s.reshape(self.bands, self.samples)
         if self.swap:
             s.byteswap(True)
@@ -397,7 +415,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         skip = self.itemsize * ((self.samples * self.bands) - 1)
         line = 0
         while line < self.lines:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[line] = data[0]
             line += 1
             fh.seek(skip, 1)
@@ -419,7 +437,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         fh = self.fh
         skip = (self.lines * self.samples) * band + (self.samples * line) + sample
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        s = self.getNumpyArrayFromFile(fh, 1)
         if self.swap:
             s.byteswap(True)
         return s[0]
@@ -429,7 +447,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         fh = self.fh
         skip = (self.lines * self.samples) * band
         fh.seek(self.offset + (skip * self.itemsize))
-        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.lines * self.samples))
+        s = self.getNumpyArrayFromFile(fh, (self.lines * self.samples))
         s = s.reshape(self.lines, self.samples)
         if self.swap:
             s.byteswap(True)
@@ -447,7 +465,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         skip = self.itemsize * ((self.samples * self.lines) - 1)
         band = 0
         while band < self.bands:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[band] = data[0]
             band += 1
             fh.seek(skip, 1)
@@ -472,7 +490,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
             wx.GetApp().cooperativeYield()
         band = 0
         while True:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=self.samples)
+            data = self.getNumpyArrayFromFile(fh, self.samples)
             s[band, :] = data
             band += 1
             if band >= self.bands:
@@ -499,7 +517,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         skip = self.itemsize * (self.samples - 1)
         line = 0
         while line < self.lines:
-            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            data = self.getNumpyArrayFromFile(fh, 1)
             s[line] = data[0]
             line += 1
             fh.seek(skip, 1)
@@ -508,8 +526,8 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         return s
 
 
-def getFileCubeReader(interleave):
-    i = interleave.lower()
+def getFileCubeReader(cube):
+    i = cube.interleave.lower()
     if i == 'bip':
         return FileBIPCubeReader
     elif i == 'bil':
@@ -684,8 +702,12 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
         return s
 
 
-def getMMapCubeReader(interleave):
-    i = interleave.lower()
+def getMMapCubeReader(cube, check_size=True, size_limit=100000000):
+    if check_size:
+        pixels = cube.samples * cube.lines * cube.bands
+        if pixels > size_limit:
+            raise TypeError("Not using mmap for large cubes")
+    i = cube.interleave.lower()
     if i == 'bip':
         return MMapBIPCubeReader
     elif i == 'bil':
@@ -808,19 +830,16 @@ class Cube(debugmixin):
     @classmethod
     def getCubeReaderList(cls):
         """Return a list of cube readers"""
-        # FIXME: Temporarily use the direct access file readers before the mmap
-        # readers for testing purposes.
-        return [getFileCubeReader, getMMapCubeReader]
+        return [getMMapCubeReader, getFileCubeReader]
     
     def getCubeReader(self):
         """Loop through all the potential cube readers and find the first one
         that works.
         """
-        interleave = self.interleave.lower()
         for cube_reader in self.getCubeReaderList():
             dprint("Trying %s" % cube_reader)
             try:
-                reader = cube_reader(interleave)
+                reader = cube_reader(self)
             except TypeError, e:
                 dprint(e)
                 continue
@@ -1272,7 +1291,7 @@ def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByt
     cube.scale_factor=scalefactor
     cube.initialize(datatype,byteorder)
     
-    cube_io_cls = getMMapCubeReader(interleave)
+    cube_io_cls = getMMapCubeReader(cube, check_size=False)
     if not dummy:
         if data:
             raw = numpy.frombuffer(data, datatype)
