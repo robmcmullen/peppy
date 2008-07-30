@@ -332,8 +332,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         skip = self.itemsize * ((self.samples * self.bands) - self.samples)
         samp = 0
         line = 0
-        #progress = self.getProgressBar()
-        progress = None
+        progress = self.getProgressBar()
         if progress:
             import wx
             progress.startProgress("Loading Band %d" % band, self.lines)
@@ -408,14 +407,115 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         return s
 
 
+class FileBSQCubeReader(BSQMixin, FileCubeReader):
+    """Read a BSQ format data cube using a file handle for direct access to
+    the file.
+    
+    Offset into a BSQ is calculated by:
+    
+    band * (num_samples * num_lines) + line * (num_samples) + sample
+    """
+    def getPixel(self, line, sample, band):
+        fh = self.fh
+        skip = (self.lines * self.samples) * band + (self.samples * line) + sample
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        if self.swap:
+            s.byteswap(True)
+        return s[0]
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        fh = self.fh
+        skip = (self.lines * self.samples) * band
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.lines * self.samples))
+        s = s.reshape(self.lines, self.samples)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        s = numpy.empty((self.bands,), dtype=self.data_type)
+        fh = self.fh
+        fh.seek(self.offset + (((self.samples * line) + sample) * self.itemsize))
+        
+        # amount to skip to read the next band at the same line and sample,
+        # less one because the file pointer will have advanced by one due to
+        # the file read
+        skip = self.itemsize * ((self.samples * self.lines) - 1)
+        band = 0
+        while band < self.bands:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[band] = data[0]
+            band += 1
+            fh.seek(skip, 1)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        s = numpy.empty((self.bands, self.samples), dtype=self.data_type)
+        fh = self.fh
+        fh.seek(self.offset + ((self.samples * line) * self.itemsize))
+
+        # amount to skip to read the next band at the same line and sample,
+        # less one because the file pointer will have advanced by one due to
+        # the file read
+        skip = (self.samples - 1) * self.lines * self.itemsize
+        progress = self.getProgressBar()
+        if progress:
+            import wx
+            progress.startProgress("Loading Focal Plane at line %d" % line, self.bands)
+            wx.GetApp().cooperativeYield()
+        band = 0
+        while True:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=self.samples)
+            s[band, :] = data
+            band += 1
+            if band >= self.bands:
+                break
+            if progress:
+                progress.updateProgress(band)
+                wx.GetApp().cooperativeYield()
+            fh.seek(skip, 1)
+        if progress:
+            progress.stopProgress("Loaded Focal Plate at line %d" % line)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values along a line, the given sample and band"""
+        s = numpy.empty((self.lines,), dtype=self.data_type)
+        fh = self.fh
+        skip = ((self.lines * self.samples) * band) + sample
+        
+        # amount to skip to read the next band at the same line and sample,
+        # less one because the file pointer will have advanced by one due to
+        # the file read
+        skip = self.itemsize * (self.samples - 1)
+        line = 0
+        while line < self.lines:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[line] = data[0]
+            line += 1
+            fh.seek(skip, 1)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+
 def getFileCubeReader(interleave):
     i = interleave.lower()
     if i == 'bip':
         return FileBIPCubeReader
     elif i == 'bil':
         return FileBILCubeReader
-#    elif i == 'bsq':
-#        return FileBSQCubeReader
+    elif i == 'bsq':
+        return FileBSQCubeReader
     else:
         raise TypeError("Unknown interleave %s" % interleave)
 
