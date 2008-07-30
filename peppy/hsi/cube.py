@@ -554,7 +554,7 @@ class MMapCubeReader(CubeReader):
         self.bands = cube.bands
         if url:
             self.open(cube, url)
-        elif array:
+        elif array is not None:
             self.raw = array
         
         if self.raw is not None:
@@ -702,10 +702,10 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
         return s
 
 
-def getMMapCubeReader(cube, check_size=True, size_limit=100000000):
+def getMMapCubeReader(cube, check_size=True):
     if check_size:
         pixels = cube.samples * cube.lines * cube.bands
-        if pixels > size_limit:
+        if cube.mmap_size_limit > 0 and pixels > size_limit:
             raise TypeError("Not using mmap for large cubes")
     i = cube.interleave.lower()
     if i == 'bip':
@@ -723,6 +723,12 @@ class Cube(debugmixin):
     L{BILCube}, L{BIPCube}, and L{BSQCube} exist to fill in the
     concrete implementations of the common formats of HSI data.
     """
+
+    # : mmap is the preferred method of accessing data.  If it's preferable
+    # to use slower the direct file access method, set the size limit here.
+    # Image sizes smaller than the limit specified here will be loaded using
+    # mmap; otherwise will be loaded with direct file access
+    mmap_size_limit = -1
 
     def __init__(self, filename=None, interleave='unknown'):
         self.url = None
