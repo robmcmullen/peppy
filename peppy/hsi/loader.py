@@ -107,13 +107,13 @@ class HyperspectralFileFormat(debugmixin):
         import ENVI
         import FITS
         import subcube
-        try:
-            import GDAL
-        except Exception, e:
-            cls.dprint("GDAL not available")
-            import traceback
-            cls.dprint(traceback.format_exc())
-            pass
+#        try:
+#            import GDAL
+#        except Exception, e:
+#            cls.dprint("GDAL not available")
+#            import traceback
+#            cls.dprint(traceback.format_exc())
+#            pass
         
         cls.handlers = [h for h in cls.default_handlers]
         
