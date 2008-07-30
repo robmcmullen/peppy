@@ -214,3 +214,4 @@ if __name__ == "__main__":
         print "Note that the deprecated options will be removed in Trac 0.12."
     else:
         CommitHook()
+
