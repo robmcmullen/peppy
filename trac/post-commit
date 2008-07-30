@@ -1,0 +1,23 @@
+#!/bin/bash
+
+FILE=/tmp/post-commit-hook-ran.$$
+
+touch $FILE
+echo "started" >> $FILE
+
+REPOS="$1"
+REV="$2"
+TRAC_ENV='/home/robm351/trac_sites/peppy-mysql/'
+
+export PYTHONPATH='/home/robm351/lib:/home/robm351/lib/python2.3/site-packages'
+
+/usr/bin/ls -l /home/robm351/svn/peppy/hooks/trac-post-commit-hook.py >> $FILE
+
+/usr/bin/python -v /home/robm351/svn/peppy/hooks/trac-post-commit-hook.py \
+ -p "$TRAC_ENV" -r "$REV" 2>&1 >> $FILE
+echo "Exit status = $?" >> $FILE
+ 
+echo "finished" >> $FILE
+echo >> $FILE
+#rm $FILE
+
