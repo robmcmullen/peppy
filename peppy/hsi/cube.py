@@ -255,9 +255,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         line = 0
         progress = self.getProgressBar()
         if progress:
-            import wx
-            progress.startProgress("Loading Band %d" % band, self.lines)
-            wx.GetApp().cooperativeYield()
+            progress.startProgress("Loading Band %d" % band, self.lines, delay=1.0)
         while True:
             data = self.getNumpyArrayFromFile(fh, 1)
             s[line, samp] = data[0]
@@ -269,7 +267,6 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
                     break
                 if progress:
                     progress.updateProgress(line)
-                    wx.GetApp().cooperativeYield()
             fh.seek(skip, 1)
         if progress:
             progress.stopProgress("Loaded Band %d" % band)
@@ -352,9 +349,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         line = 0
         progress = self.getProgressBar()
         if progress:
-            import wx
-            progress.startProgress("Loading Band %d" % band, self.lines)
-            wx.GetApp().cooperativeYield()
+            progress.startProgress("Loading Band %d" % band, self.lines, delay=1)
         while True:
             data = self.getNumpyArrayFromFile(fh, self.samples)
             s[line, :] = data
@@ -363,7 +358,6 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
                 break
             if progress:
                 progress.updateProgress(line)
-                wx.GetApp().cooperativeYield()
             fh.seek(skip, 1)
         if progress:
             progress.stopProgress("Loaded Band %d" % band)
@@ -485,9 +479,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         skip = (self.samples - 1) * self.lines * self.itemsize
         progress = self.getProgressBar()
         if progress:
-            import wx
-            progress.startProgress("Loading Focal Plane at line %d" % line, self.bands)
-            wx.GetApp().cooperativeYield()
+            progress.startProgress("Loading Focal Plane at line %d" % line, self.bands, delay=1)
         band = 0
         while True:
             data = self.getNumpyArrayFromFile(fh, self.samples)
@@ -497,7 +489,6 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
                 break
             if progress:
                 progress.updateProgress(band)
-                wx.GetApp().cooperativeYield()
             fh.seek(skip, 1)
         if progress:
             progress.stopProgress("Loaded Focal Plate at line %d" % line)
@@ -705,7 +696,7 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
 def getMMapCubeReader(cube, check_size=True):
     if check_size:
         pixels = cube.samples * cube.lines * cube.bands
-        if cube.mmap_size_limit > 0 and pixels > size_limit:
+        if cube.mmap_size_limit > 0 and pixels > cube.mmap_size_limit:
             raise TypeError("Not using mmap for large cubes")
     i = cube.interleave.lower()
     if i == 'bip':
