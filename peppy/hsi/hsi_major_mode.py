@@ -952,11 +952,14 @@ class HSIMode(BitmapScroller, MajorMode):
         BoolParam('display_rgb', False),
         BoolParam('use_cube_min_max', False, help="Use overall cube min/max for profile min/max"),
         BoolParam('immediate_slider_updates', True, help="Refresh the image as the band slider moves rather than after releasing the slider"),
+        BoolParam('use_mmap', False, help="Use memory mapping for data access when possible"),
         )
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         BitmapScroller.__init__(self, parent)
+        
+        self.applySettings()
 
         self.dataset = self.buffer.stc
         self.cubeview = None
@@ -1010,6 +1013,13 @@ class HSIMode(BitmapScroller, MajorMode):
                     dprint(traceback.format_exc())
         if evt is not None:
             evt.Skip()
+    
+    def applySettings(self):
+        # Change memory mapping limits
+        if self.classprefs.use_mmap:
+            Cube.mmap_size_limit = -1
+        else:
+            Cube.mmap_size_limit = 1
 
     def update(self, refresh=True):
         self.updateInfo()
