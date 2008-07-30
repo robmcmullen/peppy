@@ -13,7 +13,6 @@ import peppy.hsi.datasetfs
 
 from peppy.debug import *
 from peppy.stcinterface import *
-from wx.lib.pubsub import Publisher
 
 
 class HyperspectralSTC(NonResidentSTC):
@@ -25,11 +24,14 @@ class HyperspectralSTC(NonResidentSTC):
         self.dataset = HyperspectralFileFormat.load(self.url, progress=self.updateGauge)
 
     def updateGauge(self, current, length=-1):
+        # Delay importing pubsub until here so that loader can be used without
+        # wx installed.
+        import wx.lib.pubsub.Publisher
         dprint(current)
         if length < 0:
-            Publisher().sendMessage(self.message, -1)
+            wx.lib.pubsub.Publisher().sendMessage(self.message, -1)
         else:
-            Publisher().sendMessage(self.message, (current*100)/length)
+            wx.lib.pubsub.Publisher().sendMessage(self.message, (current*100)/length)
 
     def CanSave(self):
         return False
