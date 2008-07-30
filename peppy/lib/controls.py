@@ -15,7 +15,7 @@ This file contains various wx controls that don't have any
 dependencies on other parts of peppy.
 """
 
-import os, weakref
+import os, weakref, time
 
 import wx
 from wx.lib import buttons
@@ -72,6 +72,13 @@ class ModularStatusBarInfo(object):
         self.gauge_width = 100
         self.gauge_max = 100
         
+        self.gauge_text = None
+        self.gauge_delay = 0
+        self.gauge_start_time = 0
+        self.gauge_shown = False
+        self.gauge_refresh_trigger = 0
+        self.gauge_refresh_count = 0
+        
         self.overlays = []
         self.active_controls = []
         
@@ -91,13 +98,42 @@ class ModularStatusBarInfo(object):
         if self.parent.info == self:
             self.parent.SetStatusText(text, field)
 
-    def startProgress(self, text, max=100, cancel=False, message=None):
+    def startProgress(self, text, max=100, cancel=False, message=None, delay=0):
+        """Create a progress meter in the status bar.
+        
+        Creates a gauge in the status bar with optional cancel button.  Unless
+        a delay is used, it is up to the user to call wx.Yield to show the
+        progress bar.
+        
+        If a delay is used, wx.Yield will be called after the initial delay and
+        during calls to updateProgress after the same number of ticks pass as
+        occurred during the initial delay.
+        
+        @param text: text to display to the left of the progress bar
+        
+        @param max: maximum number of ticks in the gauge
+        
+        @param cancel: (optional) True to display a cancel button
+        
+        @param message: (optional) wx.lib.pubsub message that will be listened
+        for to update the progress bar
+        
+        @param delay: (optional) delay in seconds before displaying the gauge.
+        This can be used if the length of the operation is unknown but want
+        to avoid the progress bar if it turns out to be quick.
+        """
         self.in_progress = True
         self.gauge_value_max = max
         self.cancelled = False
         self.show_cancel = cancel
         
-        self.setText(text)
+        self.gauge_text = text
+        self.gauge_delay = delay
+        self.gauge_show_time = time.time() + delay
+        self.gauge_shown = False
+        self.gauge_refresh_trigger = 0
+        self.gauge_refresh_count = 0
+        
         self.overlays = []
         self.overlays.append((self.parent.gauge, self.gauge_width))
 
@@ -111,18 +147,41 @@ class ModularStatusBarInfo(object):
             Publisher().subscribe(self.updateMessage, message)
             self.message = message
         
-        self.parent.gauge.SetRange(self.gauge_value_max)
         self.updateProgress(0)
-        if self.parent.info == self:
-            self.parent.setWidths()
+        if self.gauge_delay == 0:
+            if self.parent.info == self:
+                self._showProgress()
+            self.gauge_shown = True
+    
+    def _showProgress(self):
+        self.parent.gauge.SetRange(self.gauge_value_max)
+        self.setText(self.gauge_text)
+        self.parent.setWidths()
 
     def updateProgress(self, value):
         self.gauge_value = value
-        if self.parent.info == self:
+        do_yield = False
+        update = False
+        if self.gauge_delay > 0:
+            self.gauge_refresh_count += 1
+            if time.time() > self.gauge_show_time:
+                if not self.gauge_shown:
+                    self._showProgress()
+                    self.gauge_shown = True
+                    self.gauge_refresh_trigger = self.gauge_refresh_count
+                if self.gauge_refresh_count >= self.gauge_refresh_trigger:
+                    self.gauge_refresh_count = 0
+                    do_yield = True
+                    update = True
+        else:
+            update = True
+        if update and self.parent.info == self:
             if value < 0:
                 self.parent.gauge.Pulse()
             else:
                 self.parent.gauge.SetValue(self.gauge_value)
+        if do_yield:
+            wx.GetApp().Yield(True)
     
     def isCancelled(self):
         return self.cancelled
@@ -130,10 +189,10 @@ class ModularStatusBarInfo(object):
     def isInProgress(self):
         return bool(self.overlays)
 
-    def stopProgress(self, text="Completed."):
+    def stopProgress(self, text="Completed.", force_text=True):
         if self.cancelled:
             self.setText("Cancelled.")
-        else:
+        elif self.gauge_shown or force_text:
             self.setText(text)
         self.overlays = []
         Publisher().unsubscribe(self.updateMessage)
