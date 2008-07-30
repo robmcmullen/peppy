@@ -12,7 +12,10 @@ TRAC_ENV='/home/robm351/trac_sites/peppy-mysql/'
 
 export PYTHONPATH='/home/robm351/lib:/home/robm351/lib/python2.3/site-packages'
 export LD_LIBRARY_PATH='/home/robm351/lib'
-export PYTHON_EGG_CACHE='/home/robm351/svn/peppy/hooks/tmp'
+
+# If you're using zipped eggs, you'll need to specify a temp directory
+# that has permissions of the webserver
+#export PYTHON_EGG_CACHE='/home/robm351/svn/peppy/hooks/tmp'
 
 /usr/bin/ls -l /home/robm351/svn/peppy/hooks/trac-post-commit-hook.py >> $FILE 2>&1
 
