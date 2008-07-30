@@ -127,8 +127,12 @@ class CubeReader(debugmixin):
         raise NotImplementedError
 
     def getLineOfSpectraCopy(self, line):
-        """Get the spectra along the given line"""
-        raise NotImplementedError
+        """Get the spectra (samples x bands) along the given line"""
+        # Default implementation is to use the transpose of getFocalPlaneRaw,
+        # but it's possible that this could be overridden to provide a more
+        # optimized version
+        s = self.getFocalPlaneRaw().T
+        return s.copy()
 
     def locationToFlat(self,line,sample,band):
         """Convert location (line,sample,band) to flat index"""
@@ -203,20 +207,31 @@ class FileCubeReader(CubeReader):
 
 
 class FileBIPCubeReader(BIPMixin, FileCubeReader):
+    """Read a BIP format data cube using a file handle for direct access to
+    the file.
+    
+    Offset into a BIP is calculated by:
+    
+    line * (num_samples * num_bands) + sample * (num_bands) + band
+    """
     def getPixel(self, line, sample, band):
-        #return self.raw[line][sample][band]
-        return 0
+        fh = self.fh
+        skip = (self.bands * self.samples) * line + (self.bands * sample) + band
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        if self.swap:
+            s.byteswap(True)
+        return s[0]
 
     def getBandRaw(self, band):
         """Get an array of (lines x samples) at the specified band"""
         s = numpy.empty((self.lines, self.samples), dtype=self.data_type)
         fh = self.fh
-        
-        # Offset into BIP at constand band is calculated by band +
-        # num_samples * sample + (num_samples * num_bands) * line, or if read
-        # sequentially, by adding num_bands to each successive index
         fh.seek(self.offset + (band * self.itemsize))
         
+        # the amount to skip between successive reads will be one less than the
+        # number of bands, because the file pointer advances by one item after
+        # a read
         skip = self.itemsize * (self.bands - 1)
         samp = 0
         line = 0
@@ -248,10 +263,6 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
     def getSpectraRaw(self, line, sample):
         """Get the spectra at the given pixel"""
         fh = self.fh
-        
-        # Offset into BIP at constand band is calculated by band +
-        # num_samples * sample + (num_samples * num_bands) * line, or if read
-        # sequentially, by adding num_bands to each successive index
         skip = (self.bands * self.samples) * line + (self.bands * sample)
         fh.seek(self.offset + (skip * self.itemsize))
         s = numpy.fromfile(fh, dtype=self.data_type, count=self.bands)
@@ -262,10 +273,6 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
     def getFocalPlaneRaw(self, line):
         """Get an array of (bands x samples) the given line"""
         fh = self.fh
-        
-        # Offset into BIP at constand band is calculated by band +
-        # num_samples * sample + (num_samples * num_bands) * line, or if read
-        # sequentially, by adding num_bands to each successive index
         skip = (self.bands * self.samples) * line
         fh.seek(self.offset + (skip * self.itemsize))
         s = numpy.fromfile(fh, dtype=self.data_type, count=(self.bands * self.samples))
@@ -278,15 +285,13 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         """Get an array of values along a line, the given sample and band"""
         s = numpy.empty((self.lines,), dtype=self.data_type)
         fh = self.fh
-        
-        # Offset into BIP at constand sample and band is calculated by band +
-        # num_samples * sample + (num_samples * num_bands) * line, or if read
-        # sequentially, by adding num_bands to each successive index
         fh.seek(self.offset + (((self.bands * sample) + band) * self.itemsize))
         
+        # amount to skip to read the next line at the same sample, band
+        # coordinate is one less because the file pointer will have advanced
+        # by one due to the file read
         skip = self.itemsize * ((self.samples * self.bands) - 1)
         line = 0
-        progress = self.getProgressBar()
         while line < self.lines:
             data = numpy.fromfile(fh, dtype=self.data_type, count=1)
             s[line] = data[0]
@@ -297,9 +302,109 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
             s.byteswap(True)
         return s
 
-    def getLineOfSpectraCopy(self,line):
-        """Get the spectra along the given line"""
-        s = numpy.empty((self.samples, self.bands), dtype=self.data_type)
+
+class FileBILCubeReader(BILMixin, FileCubeReader):
+    """Read a BIL format data cube using a file handle for direct access to
+    the file.
+    
+    Offset into a BIL is calculated by:
+    
+    line * (num_samples * num_bands) + band * (num_samples) + sample
+    """
+    def getPixel(self, line, sample, band):
+        fh = self.fh
+        skip = (self.bands * self.samples) * line + (self.samples * band) + sample
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=1)
+        if self.swap:
+            s.byteswap(True)
+        return s[0]
+
+    def getBandRaw(self, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = numpy.empty((self.lines, self.samples), dtype=self.data_type)
+        fh = self.fh
+        fh.seek(self.offset + ((band * self.samples) * self.itemsize))
+        
+        # the amount to skip between successive reads will be less than the
+        # number of bands * samples, because the file pointer advances by the
+        # number of samples after a read
+        skip = self.itemsize * ((self.samples * self.bands) - self.samples)
+        samp = 0
+        line = 0
+        #progress = self.getProgressBar()
+        progress = None
+        if progress:
+            import wx
+            progress.startProgress("Loading Band %d" % band, self.lines)
+            wx.GetApp().cooperativeYield()
+        while True:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=self.samples)
+            s[line, :] = data
+            line += 1
+            if line >= self.lines:
+                break
+            if progress:
+                progress.updateProgress(line)
+                wx.GetApp().cooperativeYield()
+            fh.seek(skip, 1)
+        if progress:
+            progress.stopProgress("Loaded Band %d" % band)
+            
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getSpectraRaw(self, line, sample):
+        """Get the spectra at the given pixel"""
+        s = numpy.empty((self.bands,), dtype=self.data_type)
+        fh = self.fh
+        fh.seek(self.offset + ((((self.bands * self.samples) * line) + sample) * self.itemsize))
+        
+        # amount to skip to read the next band at the same line and sample,
+        # less one because the file pointer will have advanced by one due to
+        # the file read
+        skip = self.itemsize * (self.samples - 1)
+        band = 0
+        while band < self.bands:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[band] = data[0]
+            band += 1
+            fh.seek(skip, 1)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneRaw(self, line):
+        """Get an array of (bands x samples) the given line"""
+        fh = self.fh
+        skip = (self.bands * self.samples) * line
+        fh.seek(self.offset + (skip * self.itemsize))
+        s = numpy.fromfile(fh, dtype=self.data_type, count=(self.bands * self.samples))
+        s = s.reshape(self.bands, self.samples)
+        if self.swap:
+            s.byteswap(True)
+        return s
+
+    def getFocalPlaneDepthRaw(self, sample, band):
+        """Get an array of values along a line, the given sample and band"""
+        s = numpy.empty((self.lines,), dtype=self.data_type)
+        fh = self.fh
+        fh.seek(self.offset + (((band * self.samples) + sample) * self.itemsize))
+        
+        # amount to skip to read the next line at the same sample, band
+        # coordinate is one less because the file pointer will have advanced
+        # by one due to the file read
+        skip = self.itemsize * ((self.samples * self.bands) - 1)
+        line = 0
+        while line < self.lines:
+            data = numpy.fromfile(fh, dtype=self.data_type, count=1)
+            s[line] = data[0]
+            line += 1
+            fh.seek(skip, 1)
+            
+        if self.swap:
+            s.byteswap(True)
         return s
 
 
@@ -307,8 +412,8 @@ def getFileCubeReader(interleave):
     i = interleave.lower()
     if i == 'bip':
         return FileBIPCubeReader
-#    elif i == 'bil':
-#        return FileBILCubeReader
+    elif i == 'bil':
+        return FileBILCubeReader
 #    elif i == 'bsq':
 #        return FileBSQCubeReader
     else:
@@ -601,18 +706,30 @@ class Cube(debugmixin):
             self.url=None
     
     @classmethod
-    def getCubeReader(cls, interleave):
-        i = interleave.lower()
+    def getCubeReaderList(cls):
+        """Return a list of cube readers"""
         # FIXME: Temporarily use the direct access file readers before the mmap
         # readers for testing purposes.
-        try:
-            return getFileCubeReader(interleave)
-        except TypeError:
-            pass
-        try:
-            return getMMapCubeReader(interleave)
-        except TypeError:
-            pass
+        return [getFileCubeReader, getMMapCubeReader]
+    
+    def getCubeReader(self):
+        """Loop through all the potential cube readers and find the first one
+        that works.
+        """
+        interleave = self.interleave.lower()
+        for cube_reader in self.getCubeReaderList():
+            dprint("Trying %s" % cube_reader)
+            try:
+                reader = cube_reader(interleave)
+            except TypeError, e:
+                dprint(e)
+                continue
+            try:
+                return reader(self, self.url)
+            except OSError, e:
+                # Caught what is most likely an out of memory error
+                dprint(e)
+                continue
         raise IndexError("No cube reader found")
 
     def open(self,url=None):
@@ -624,8 +741,7 @@ class Cube(debugmixin):
             if self.cube_io is None: # don't try to reopen if already open
                 self.initialize()
                 
-                cube_io_cls = self.getCubeReader(self.interleave)
-                self.cube_io = cube_io_cls(self, self.url)
+                self.cube_io = self.getCubeReader()
                 
                 self.verifyAttributes()
         else:
