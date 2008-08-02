@@ -1215,6 +1215,33 @@ class MajorModeMatcherDriver(debugmixin):
     def ignoreMode(cls, mode):
         cls.dprint("Ignoring mode %s" % mode)
         cls.skipped_modes.add(mode)
+    
+    @classmethod
+    def matchKeyword(cls, keyword, buffer, url=None):
+        """Search the list of active major modes for the mode named by the
+        specified keyword.
+        
+        @param keyword: text string matched against the 'keyword' class
+        attribute of the major mode
+        
+        @return: class of the matched major mode, or None if not found
+        """
+        app = wx.GetApp()
+        plugins = app.plugin_manager.getActivePluginObjects()
+        cls.findActiveModes(plugins)
+        for mode in cls.iterActiveModes():
+            if keyword == mode.keyword:
+                return mode
+        
+        if not url:
+            url = buffer.raw_url
+        # As a last resort to open a specific mode, attempt to open it
+        # with any third-party openers that have been registered
+        mode = cls.attemptOpen(plugins, buffer, url)
+        cls.dprint("attemptOpen matches %s" % mode)
+        if mode and keyword == mode.keyword:
+            return mode
+        return None
 
     @classmethod
     def match(cls, buffer, magic_size=None, url=None):

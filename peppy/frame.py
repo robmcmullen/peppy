@@ -764,6 +764,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         if buffer is not None:
             #dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), force_new_tab))
+            # Determine the actual modecls here if it's a keyword
+            if isinstance(modecls, basestring):
+                modecls = MajorModeMatcherDriver.matchKeyword(modecls, buffer, user_url)
+                if not modecls:
+                    raise TypeError("Unrecognized major mode keyword '%s'" % modecls)
+        
             self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab, options)
         else:
             try:

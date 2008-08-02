@@ -604,7 +604,12 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
         self.options = options
         
         if modecls:
-            self.modecls = modecls
+            if isinstance(modecls, basesting):
+                self.modecls = MajorModeMatcherDriver.matchKeyword(modecls, self, url=self.raw_url)
+                if not self.modecls:
+                    raise TypeError("Unrecognized major mode keyword '%s'" % modecls)
+            else:
+                self.modecls = modecls
         else:
             self.modecls = MajorModeMatcherDriver.match(self, url=self.raw_url)
             self.dprint("found major mode = %s" % self.modecls)
