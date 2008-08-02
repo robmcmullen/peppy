@@ -1,3 +1,9 @@
+2008-07-31  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.4.3 update to "Hammer Thrower"
+	* changed HSI loading order to be able to display progress bar if needed
+	* moved GDAL support into plugins
+
 2008-07-27  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.4.2 update to "Hammer Thrower"
