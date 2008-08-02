@@ -825,9 +825,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         #raceoff()
         assert self.dprint("after addViewer")
+        mode.showInitialPosition(user_url, options)
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
-        mode.showInitialPosition(user_url, options)
 
     def openFailure(self, url, error, mode_to_replace=None, progress=None):
         #traceoff()
