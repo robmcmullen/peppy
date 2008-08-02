@@ -1116,7 +1116,7 @@ class HSIMode(BitmapScroller, MajorMode):
         if url.query:
             options.update(url.query)
         self.dprint("loading cube data from %s, options=%s" % (str(self.buffer.url), options))
-        self.cube = self.dataset.getCube(self.buffer.url, progress=self.status_info)
+        self.cube = self.dataset.getCube(self.buffer.url, progress=self.status_info, options=options)
         assert self.dprint(self.cube)
         viewer = CubeView
         if 'view' in options:

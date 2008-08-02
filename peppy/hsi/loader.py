@@ -26,7 +26,7 @@ class HyperspectralSTC(NonResidentSTC):
     def updateGauge(self, current, length=-1):
         # Delay importing pubsub until here so that loader can be used without
         # wx installed.
-        import wx.lib.pubsub.Publisher
+        import wx.lib.pubsub
         dprint(current)
         if length < 0:
             wx.lib.pubsub.Publisher().sendMessage(self.message, -1)
@@ -50,9 +50,9 @@ class HyperspectralSTC(NonResidentSTC):
     def getNumCubes(self):
         return self.dataset.getNumCubes()
     
-    def getCube(self, url=None, index=0, progress=None):
+    def getCube(self, url=None, index=0, progress=None, options=None):
         try:
-            return self.dataset.getCube(filename=url, index=index, progress=progress)
+            return self.dataset.getCube(filename=url, index=index, progress=progress, options=options)
         except OSError:
             # WindowsError here means that we couldn't memmap the file
             # (although we can't actually specify WindowsError here because
@@ -64,7 +64,7 @@ class HyperspectralSTC(NonResidentSTC):
             if dataset:
                 #dprint("Using %s instead" % dataset.__class__)
                 self.dataset = dataset
-                return self.dataset.getCube(filename=url, index=index, progress=progress)
+                return self.dataset.getCube(filename=url, index=index, progress=progress, options=options)
             dprint("Caught OSError; most likely out-of-memory error due to mmap.  Alternate loaders failed.")
             raise
     
