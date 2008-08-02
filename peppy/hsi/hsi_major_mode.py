@@ -273,6 +273,32 @@ class MedianFilter1D(GeneralFilter):
             return filtered
         return raw
 
+class ChainFilter(GeneralFilter):
+    """Apply a sequence of filters to the band.
+    """
+    def __init__(self, pos=0, filters=None):
+        GeneralFilter.__init__(self, pos=pos)
+        if filters:
+            self.filters = filters
+        else:
+            self.filters = []
+   
+    def getPlane(self,raw):
+        for filter in self.filters():
+            raw = filter.getPlane(raw)
+        return raw
+    
+    def getXProfile(self, y, raw):
+        for filter in self.filters():
+            raw = filter.getXProfile(y, raw)
+        return raw
+    
+    def getYProfile(self, x, raw):
+        for filter in self.filters():
+            raw = filter.getYProfile(x, raw)
+        return raw
+
+
 class CubeView(debugmixin):
     """Wrapper around a Cube object that provides a bitmap view.
     
@@ -321,6 +347,7 @@ class CubeView(debugmixin):
         else:
             self.width = 128
             self.height = 128
+        self.swap = False
 
         # Delay loading real bitmap till requested.  Make an empty one
         # for now.
@@ -338,7 +365,10 @@ class CubeView(debugmixin):
             self.max_index = 0
     
     def getBand(self, index):
-        return self.cube.getBandInPlace(index)
+        raw = self.cube.getBandInPlace(index)
+        if self.swap:
+            raw = raw.byteswap()
+        return raw
     
     def loadBands(self, progress=None):
         if not self.cube: return
@@ -359,6 +389,16 @@ class CubeView(debugmixin):
                 emax=maxval
             if progress: progress.Update((count*50)/len(bands))
         self.extrema=(emin,emax)
+    
+    def swapEndian(self, swap):
+        """Swap the data if necessary"""
+        if (swap != self.swap):
+            newbands = []
+            for index, raw, v1, v2 in self.bands:
+                swapped = raw.byteswap()
+                newbands.append((index, swapped, swapped.min(), swapped.max()))
+            self.bands = newbands
+            self.swap = swap
 
     def getHorizontalProfiles(self, y):
         """Get the horizontal profiles at the given height"""
@@ -405,6 +445,8 @@ class CubeView(debugmixin):
     def getDepthProfile(self, x, y):
         """Get the profile into the monitor at the given x,y position"""
         profile = self.cube.getSpectra(y,x)
+        if self.swap:
+            profile.byteswap(True) # swap in place
         return profile
     
     def getBandName(self, band_index):
@@ -533,7 +575,10 @@ class FocalPlaneView(CubeView):
         return (self.indexes[0], x, y)
     
     def getBand(self, index):
-        return self.cube.getFocalPlaneInPlace(index)
+        raw = self.cube.getFocalPlaneInPlace(index)
+        if self.swap:
+            raw = raw.byteswap()
+        return raw
 
     def getDepthXAxisLabel(self):
         return 'line'
@@ -547,6 +592,8 @@ class FocalPlaneView(CubeView):
     def getDepthProfile(self, x, y):
         """Get the profile into the monitor at the given x,y position"""
         profile = self.cube.getFocalPlaneDepthInPlace(x, y)
+        if self.swap:
+            profile = profile.byteswap()
         return profile
 
     def getBandLegend(self, band_index):
@@ -687,7 +734,6 @@ class BandSliderUpdates(HSIActionMixin, ToggleAction):
     
     def action(self, index=-1, multiplier=1):
         self.mode.immediate_slider_updates = not self.mode.immediate_slider_updates
-
 
 
 class ContrastFilterAction(HSIActionMixin, RadioAction):
@@ -853,6 +899,19 @@ class SubtractBandAction(HSIActionMixin, MinibufferAction):
         mode.update()
 
 
+class SwapEndianAction(HSIActionMixin, ToggleAction):
+    """Swap the endianness of the data"""
+    name = "Swap Endian"
+    default_menu = ("View", 309)
+
+    def isChecked(self):
+        return self.mode.swap_endian
+    
+    def action(self, index=-1, multiplier=1):
+        self.mode.swap_endian = not self.mode.swap_endian
+        self.mode.update()
+
+
 class CubeViewAction(HSIActionMixin, RadioAction):
     name = "View Direction"
     default_menu = ("View", -600)
@@ -965,6 +1024,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cube = None
         self.cubeview = CubeView(None)
         self.cubefilter = BandFilter()
+        self.swap_endian = False
         self.filter = GeneralFilter()
         
         self.show_value_at_cursor = True
@@ -1013,7 +1073,9 @@ class HSIMode(BitmapScroller, MajorMode):
 
     def update(self, refresh=True):
         self.setStatusText("Building %dx%d bitmap..." % (self.cube.samples, self.cube.lines))
-        self.cubeview.show(self.filter, self.cubefilter)
+        self.cubeview.swapEndian(self.swap_endian)
+        filter = self.filter
+        self.cubeview.show(filter, self.cubefilter)
         self.setBitmap(self.cubeview.bitmap)
         self.frame.updateMenumap()
         if refresh:
@@ -1038,6 +1100,7 @@ class HSIMode(BitmapScroller, MajorMode):
     
     def setViewer(self, viewcls):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
+        self.cubeview.swapEndian(self.swap_endian)
         for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
                 minor.setCube(self.cube)
