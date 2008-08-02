@@ -23,17 +23,15 @@ class BufferPopupList(ListAction):
     inline = False
     
     def getItems(self):
-        wrapper = self.frame.tabs.getContextMenuWrapper()
+        wrapper = self.popup_options['wrapper']
         tab_mode = wrapper.editwin
         self.savelist = [buf for buf in BufferList.storage if buf.defaultmode == tab_mode.__class__]
         return [buf.displayname for buf in self.savelist]
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index, self.savelist[index]))
-        wrapper = self.frame.tabs.getContextMenuWrapper()
-        # Have to use CallAfter here because the call to setBuffer changes the
-        # tab structure, and we're in the tab callback during this method
-        wx.CallAfter(self.frame.setBuffer, self.savelist[index], wrapper)
+        wrapper = self.popup_options['wrapper']
+        self.frame.setBuffer(self.savelist[index], wrapper)
 
 
 class SwitchToBuffer(SelectAction):

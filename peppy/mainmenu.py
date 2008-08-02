@@ -31,8 +31,7 @@ class NewTab(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        # Have to use a CallAfter because this action may be called in a popup menu
-        wx.CallAfter(self.frame.open, "about:blank", force_new_tab=True)
+        self.frame.open("about:blank", force_new_tab=True)
 
 class CloseTab(SelectAction):
     alias = "close-tab"
@@ -41,9 +40,8 @@ class CloseTab(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        # FIXME: change this so I don't have to break encapsulation on the frame's notebook
-        tab = self.frame.tabs.context_tab
-        wx.CallAfter(self.frame.tabs.closeTab, tab)
+        tab = self.popup_options['context_tab']
+        self.frame.tabs.closeTab(tab)
 
 class MoveTabToNewWindow(SelectAction):
     alias = "move-tab-to-new-window"
@@ -54,11 +52,11 @@ class MoveTabToNewWindow(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         # If it's called from a popup, use the tab on which it was clicked, not
         # the current mode
-        try:
-            mode = self.frame.tabs.getContextMenuWrapper().editwin
-        except IndexError:
+        if hasattr(self, 'popup_options'):
+            mode = self.popup_options['mode']
+        else:
             mode = self.mode
-        wx.CallAfter(BufferFrame, buffer=mode.buffer)
+        BufferFrame(buffer=mode.buffer)
         wx.CallAfter(self.frame.tabs.closeWrapper, mode)
 
 class New(SelectAction):

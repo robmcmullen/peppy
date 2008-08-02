@@ -423,7 +423,7 @@ class UserActionMap(debugmixin):
         self.connectEvents()
         return keymap
     
-    def popupActions(self, parent, action_classes=[]):
+    def popupActions(self, parent, action_classes=[], options=None):
         """Create a popup menu from the list of action classes.
         
         @param parent: window on which to create the popup menu
@@ -434,6 +434,8 @@ class UserActionMap(debugmixin):
         if used specifies the relative position between 0 and 1000.  If the
         integer is not specified, it is assumed to be a value of 500 which
         will place it at the center of the popup menu items.
+        
+        @param options: optional dict of name/value pairs to pass to the action
         """
         menu = wx.Menu()
         
@@ -449,7 +451,7 @@ class UserActionMap(debugmixin):
         
         first = True
         for pos, actioncls, sep in sorted:
-            action = actioncls(self.frame)
+            action = actioncls(self.frame, popup_options=options)
             self.popup_actions[action.global_id] = action
             if sep and not first:
                 menu.AppendSeparator()
@@ -533,24 +535,24 @@ class UserActionMap(debugmixin):
             action = self.popup_index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("popup index %d of %s" % (index, action))
-            action.action(index=index)
+            wx.CallAfter(action.action, index=index)
         elif id in self.index_actions:
             # Some actions are associated with more than one id, like list
             # actions.  These are dispatched here.
             action = self.index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("index %d of %s" % (index, action))
-            action.action(index=index)
+            wx.CallAfter(action.action, index=index)
         elif id in self.popup_actions:
             # The id is in the list of single-event actions
             action = self.popup_actions[id]
-            self.dprint("popup: %s" % action)
-            action.action()
+            self.dprint("popup: %s" % (action))
+            wx.CallAfter(action.action)
         elif id in self.actions:
             # The id is in the list of single-event actions
             action = self.actions[id]
             self.dprint(action)
-            action.action()
+            wx.CallAfter(action.action)
      
     def OnUpdateUI(self, evt):
         """Update the state of the toolbar items.

@@ -132,16 +132,16 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         action_classes = []
         Publisher().sendMessage('tabs.context_menu', action_classes)
         dprint(action_classes)
-        self.context_tab = evt.GetSelection()
+        tab = evt.GetSelection()
+        wrapper = self.GetPage(tab)
+        options = {
+            'context_tab': tab,
+            'wrapper': wrapper,
+            'mode': wrapper.editwin,
+            }
         if action_classes:
-            self.frame.menumap.popupActions(self, action_classes)
-        self.context_tab = -1
+            self.frame.menumap.popupActions(self, action_classes, options)
         #evt.Skip()
-
-    def getContextMenuWrapper(self):
-        if self.context_tab >= 0:
-            return self.GetPage(self.context_tab)
-        raise IndexError("Not currently processing a popup!")
 
     def closeAllTabs(self):
         for index in range(0, self.GetPageCount()):

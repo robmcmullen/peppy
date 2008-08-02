@@ -725,16 +725,16 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         elif index == 2:
             filt = ContrastFilter(0.2)
         else:
-            wx.CallAfter(self.setContrast, mode)
+            self.setContrast(mode)
             return
         mode.cubefilter = filt
-        wx.CallAfter(mode.update)
+        mode.update()
 
     def processMinibuffer(self, minibuffer, mode, percentage):
         assert self.dprint("returned percentage = %f" % percentage)
         filt = ContrastFilter(percentage)
         mode.cubefilter = filt
-        wx.CallAfter(mode.update)
+        mode.update()
         
     def setContrast(self, mode):
         minibuffer = FloatMinibuffer(mode, self, label="Contrast [0.0 - 1.0]")
@@ -781,7 +781,7 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
         elif index == 6:
             filt = MedianFilter1D(5, 5, pos=index)
         mode.filter = filt
-        wx.CallAfter(mode.update)
+        mode.update()
 
 class ClippingFilterAction(HSIActionMixin, RadioAction):
     name = "Clipping Filter"
@@ -825,13 +825,13 @@ class ClippingFilterAction(HSIActionMixin, RadioAction):
             self.mode.setMinibuffer(minibuffer)
         if filt:
             mode.filter = filt
-            wx.CallAfter(mode.update)
+            mode.update()
 
     def processMinibuffer(self, minibuffer, mode, pair):
         dprint("Setting clipping to %s" % str(pair))
         filt = ClipFilter(pair[0], pair[1], pos=len(self.items) - 1)
         mode.filter = filt
-        wx.CallAfter(mode.update)
+        mode.update()
 
 class SubtractBandAction(HSIActionMixin, MinibufferAction):
     name = "Band Subtraction Filter"
@@ -850,7 +850,7 @@ class SubtractBandAction(HSIActionMixin, MinibufferAction):
         band_num = mode.cubeview.getIndex(band_num, user=True)
         band = mode.cube.getBand(band_num)
         mode.filter = SubtractFilter(band)
-        wx.CallAfter(mode.update)
+        mode.update()
 
 
 class CubeViewAction(HSIActionMixin, RadioAction):
@@ -872,7 +872,7 @@ class CubeViewAction(HSIActionMixin, RadioAction):
         current = self.items.index(cls)
         if current != index:
             self.mode.setViewer(self.items[index])
-            wx.CallAfter(self.mode.update)
+            self.mode.update()
 
 
 class ShowPixelValues(HSIActionMixin, ToggleAction):
@@ -905,7 +905,7 @@ class TestSubset(HSIActionMixin, SelectAction):
         subcube = SubCube(cube)
         subcube.subset(0,cube.lines/2,0,cube.samples/2,0,cube.bands/2)
         fh.setCube(subcube)
-        wx.CallAfter(self.frame.open, name)
+        self.frame.open(name)
 
 
 class SpatialSubset(HSIActionMixin, SelectAction):
@@ -933,7 +933,7 @@ class SpatialSubset(HSIActionMixin, SelectAction):
         sample, line, ds, dl = self.mode.selector.getSelectedBox()
         subcube.subset(line, line+dl, sample, sample+ds, 0, cube.bands)
         fh.setCube(subcube)
-        wx.CallAfter(self.frame.open, name)
+        self.frame.open(name)
 
 
 class HSIMode(BitmapScroller, MajorMode):

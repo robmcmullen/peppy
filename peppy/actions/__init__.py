@@ -128,7 +128,7 @@ class SelectAction(debugmixin):
         help = u"\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
         return help
     
-    def __init__(self, frame, menu=None, toolbar=None):
+    def __init__(self, frame, menu=None, toolbar=None, popup_options=None):
         self.widget=None
         self.tool=None
         if self.global_id is None:
@@ -141,6 +141,10 @@ class SelectAction(debugmixin):
         # major mode
         self.frame = frame
         self.mode = frame.getActiveMajorMode()
+        
+        # If the action is associated with a popup, some options may be passed
+        # into it
+        self.popup_options = popup_options
         
         # Flag to indicate whether the keystroke should be displayed in the
         # menu item.  This will be false if the keyboard loader detects that
@@ -352,7 +356,7 @@ class ListAction(SelectAction):
             self.index += 1
             return id
 
-    def __init__(self, frame, menu=None, toolbar=None):
+    def __init__(self, *args, **kwargs):
         # a record of all menu entries at the main level of the menu
         self.toplevel=[]
 
@@ -362,7 +366,7 @@ class ListAction(SelectAction):
         # save the top menu
         self.menu=None
 
-        SelectAction.__init__(self,frame,menu,toolbar)
+        SelectAction.__init__(self, *args, **kwargs)
         self.cache = self.IdCache(self.global_id)
     
     def getSubIds(self):
@@ -525,12 +529,12 @@ class RadioAction(ListAction):
     menumax=-1
     inline=False
 
-    def __init__(self, frame, menu=None, toolbar=None):
+    def __init__(self, *args, **kwargs):
         # mapping of index (that is, position in menu starting from
         # zero) to the wx widget id
         self.index2id={}
         
-        ListAction.__init__(self,frame,menu,toolbar)
+        ListAction.__init__(self, *args, **kwargs)
 
     def insertIntoMenu(self,menu,pos=None):
         ListAction.insertIntoMenu(self,menu,pos)
@@ -579,11 +583,11 @@ class ToggleListAction(ListAction):
     L{OnDemandActionMixin} and override the L{getHash} method to indicate when
     the user interface should redraw the menu.
     """
-    def __init__(self, frame, menu=None, toolbar=None):
+    def __init__(self, *args, **kwargs):
         # list of all toggles so we can switch 'em on and off
         self.toggles=[]
         
-        ListAction.__init__(self,frame,menu,toolbar)
+        ListAction.__init__(self, *args, **kwargs)
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
