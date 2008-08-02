@@ -1061,6 +1061,12 @@ class HSIMode(BitmapScroller, MajorMode):
         self.setViewer(viewer)
         self.cubeview.loadBands()
         self.update()
+    
+    def revertPostHook(self):
+        self.zoom = 1.0
+        self.crop = None
+        self.showInitialPosition(self.buffer.url)
+        self.status_info.setText(self.getWelcomeMessage())
 
 
 class ExportAsENVI(SelectAction):
