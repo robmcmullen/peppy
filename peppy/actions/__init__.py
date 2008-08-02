@@ -644,7 +644,13 @@ class SliderAction(SelectAction):
         """
         self.tool=toolbar
         val, minval, maxval = self.getSliderValues()
+        if minval == maxval:
+            maxval += 1
+            enable = False
+        else:
+            enable = True
         self.slider = wx.Slider(toolbar, -1, val, minval, maxval, size=(self.slider_width, -1))
+        self.slider.Enable(enable)
         #dprint(self.slider)
         toolbar.AddControl(self.slider)
         
@@ -678,6 +684,9 @@ class SliderAction(SelectAction):
         """
         val, minval, maxval = self.getSliderValues()
         #dprint("val=%d min=%d max=%d" % (val, minval, maxval))
+        if minval == maxval:
+            maxval += 1
+            self.slider.Enable(False)
         self.slider.SetRange(minval, maxval)
         self.slider.SetValue(val)
 
