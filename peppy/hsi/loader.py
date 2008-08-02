@@ -85,11 +85,16 @@ class HyperspectralFileFormat(debugmixin):
 
     @classmethod
     def addDefaultHandler(cls, handler):
-        cls.default_handlers.append(handler)
+        cls.dprint("adding handler %s" % handler)
+        if handler not in cls.default_handlers:
+            cls.default_handlers.append(handler)
+        cls.dprint("handlers: %s" % cls.default_handlers)
 
     @classmethod
     def removeHandler(cls, handler):
+        cls.dprint("removing handler %s" % handler)
         cls.default_handlers.remove(handler)
+        cls.dprint("handlers: %s" % cls.default_handlers)
     
     @classmethod
     def getHandlerByName(cls, name):
