@@ -981,13 +981,13 @@ class HSIMode(BitmapScroller, MajorMode):
     def updateInfo(self, x=-1, y=-1):
         line, sample, band = self.cubeview.getCoords(x, y)
         if x >= 0:
-            self.frame.SetStatusText("x=%d y=%d" % (x, y), 1)
+            self.setStatusText("x=%d y=%d" % (x, y), 1)
             pix = self.cube.getPixel(line, sample, band)
             if self.show_value_at_cursor:
                 pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
-                self.frame.SetStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
+                self.setStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
         
-        self.frame.SetStatusText(self.cubeview.getBandName(band), 2)
+        self.setStatusText(self.cubeview.getBandName(band), 2)
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")

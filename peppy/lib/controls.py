@@ -79,6 +79,8 @@ class ModularStatusBarInfo(object):
         self.gauge_refresh_trigger = 0
         self.gauge_refresh_count = 0
         
+        self.disable_during_progress = False
+        
         self.overlays = []
         self.active_controls = []
         
@@ -98,7 +100,7 @@ class ModularStatusBarInfo(object):
         if self.parent.info == self:
             self.parent.SetStatusText(text, field)
 
-    def startProgress(self, text, max=100, cancel=False, message=None, delay=0):
+    def startProgress(self, text, max=100, cancel=False, message=None, delay=0, disable=False):
         """Create a progress meter in the status bar.
         
         Creates a gauge in the status bar with optional cancel button.  Unless
@@ -126,6 +128,7 @@ class ModularStatusBarInfo(object):
         self.gauge_value_max = max
         self.cancelled = False
         self.show_cancel = cancel
+        self.disable_during_progress = disable
         
         self.gauge_text = text
         self.gauge_delay = delay
@@ -181,7 +184,10 @@ class ModularStatusBarInfo(object):
             else:
                 self.parent.gauge.SetValue(self.gauge_value)
         if do_yield:
-            wx.GetApp().Yield(True)
+            if self.disable_during_progress:
+                wx.SafeYield(onlyIfNeeded=True)
+            else:
+                wx.GetApp().Yield(True)
     
     def isCancelled(self):
         return self.cancelled
