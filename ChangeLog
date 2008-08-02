@@ -2,6 +2,7 @@
 
 	* Released peppy-0.7.4.2 update to "Hammer Thrower"
 	* pulled memory mapping out of Cube into CubeReader
+	* added direct file access for HSI data in BIP, BIL, and BSQ formats
 
 2008-07-23  Rob McMullen  <robm@users.sourceforge.net>
 
