@@ -1052,7 +1052,7 @@ class HSIMode(BitmapScroller, MajorMode):
             options = {}
         if url.query:
             options.update(url.query)
-        self.dprint(options)
+        self.dprint("loading cube data from %s, options=%s" % (str(self.buffer.url), options))
         self.cube = self.dataset.getCube(self.buffer.url, progress=self.status_info)
         assert self.dprint(self.cube)
         viewer = CubeView
@@ -1060,6 +1060,7 @@ class HSIMode(BitmapScroller, MajorMode):
             if options['view'] == 'focalplane':
                 viewer = FocalPlaneView
         self.setViewer(viewer)
+        self.dprint("loading bands...")
         self.cubeview.loadBands()
         self.update()
     
