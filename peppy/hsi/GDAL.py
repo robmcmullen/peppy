@@ -145,7 +145,7 @@ class GDALDataset(HSI.MetadataMixin):
         # transfer attributes from cube to self
         pass
     
-    def getCube(self,filename=None,index=0):
+    def getCube(self, filename=None, index=0, progress=None):
         if filename is None:
             filename = self.url
         cube=GDALCube(filename)
@@ -160,8 +160,8 @@ class GDALDataset(HSI.MetadataMixin):
 
 
 class GDALCube(HSI.Cube):
-    def __init__(self,filename=None):
-        HSI.Cube.__init__(self,filename)
+    def __init__(self, filename=None, progress=None):
+        HSI.Cube.__init__(self,filename, progress=progress)
 
         self.interleave='bsq'
         

@@ -962,24 +962,14 @@ class HSIMode(BitmapScroller, MajorMode):
         self.applySettings()
 
         self.dataset = self.buffer.stc
-        self.cubeview = None
+        self.cube = None
+        self.cubeview = CubeView(None)
         self.cubefilter = BandFilter()
         self.filter = GeneralFilter()
-#        self.setCube(0)
-        self.cube = self.dataset.getCube(self.buffer.url)
-        
-        assert self.dprint(self.cube)
-        self.setViewer(CubeView)
-        #self.cube.open()
-        assert self.dprint(self.cube)
         
         self.show_value_at_cursor = True
         self.immediate_slider_updates = self.classprefs.immediate_slider_updates
     
-    def createPostHook(self):
-        # Can't register the progress bar until after it's created!
-        self.cube.registerProgress(self.status_info)
-
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)
 
@@ -1049,6 +1039,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cubeview = viewcls(self.cube, self.classprefs.display_rgb)
         for minor in self.wrapper.getActiveMinorModes():
             if hasattr(minor, 'proxies'):
+                minor.setCube(self.cube)
                 plotproxy = minor.proxies[0]
                 plotproxy.setupAxes()
 
@@ -1061,11 +1052,13 @@ class HSIMode(BitmapScroller, MajorMode):
         if url.query:
             options.update(url.query)
         self.dprint(options)
+        self.cube = self.dataset.getCube(self.buffer.url, progress=self.status_info)
+        assert self.dprint(self.cube)
+        viewer = CubeView
         if 'view' in options:
             if options['view'] == 'focalplane':
-                self.setViewer(FocalPlaneView)
-            else:
-                self.setViewer(CubeView)
+                viewer = FocalPlaneView
+        self.setViewer(viewer)
         self.cubeview.loadBands()
         self.update()
 
@@ -1111,6 +1104,9 @@ class HSIMinorModeMixin(MinorMode):
             return True
         return False
     
+    def setCube(self, cube):
+        pass
+    
     def paneInfoHook(self, paneinfo):
         # adjust the width of the minor mode windows if they are placed on the
         # top or bottom -- the default width is generally too wide and the
@@ -1145,9 +1141,11 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
 
         self.listeners=[]
         self.rgblookup=['red','green','blue']
-        self.setupAxes()
-        self.setupTitle()
         self.setProxy(self)
+    
+    def setCube(self, cube):
+        self.setupTitle()
+        self.setupAxes()
         
     def setupTitle(self):
         self.title=self.keyword

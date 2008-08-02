@@ -50,9 +50,9 @@ class HyperspectralSTC(NonResidentSTC):
     def getNumCubes(self):
         return self.dataset.getNumCubes()
     
-    def getCube(self, url=None, index=0):
+    def getCube(self, url=None, index=0, progress=None):
         try:
-            return self.dataset.getCube(filename=url, index=index)
+            return self.dataset.getCube(filename=url, index=index, progress=progress)
         except OSError:
             # WindowsError here means that we couldn't memmap the file
             # (although we can't actually specify WindowsError here because
@@ -64,7 +64,7 @@ class HyperspectralSTC(NonResidentSTC):
             if dataset:
                 #dprint("Using %s instead" % dataset.__class__)
                 self.dataset = dataset
-                return self.dataset.getCube(filename=url, index=index)
+                return self.dataset.getCube(filename=url, index=index, progress=progress)
             dprint("Caught OSError; most likely out-of-memory error due to mmap.  Alternate loaders failed.")
             raise
     

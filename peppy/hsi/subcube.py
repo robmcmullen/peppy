@@ -38,7 +38,7 @@ class SubDataset(HSI.MetadataMixin):
         if url:
             dprint("Save not implemented yet!\n")
 
-    def getCube(self, filename=None, index=0):
+    def getCube(self, filename=None, index=0, progress=None):
         dprint(filename)
         return self.cube
 

@@ -721,7 +721,7 @@ class Cube(debugmixin):
     # mmap; otherwise will be loaded with direct file access
     mmap_size_limit = -1
 
-    def __init__(self, filename=None, interleave='unknown'):
+    def __init__(self, filename=None, interleave='unknown', progress=None):
         self.url = None
         self.setURL(filename)
         
@@ -790,7 +790,7 @@ class Cube(debugmixin):
         self.spectraextrema=[None,None] # min and max over whole cube
         
         # progress bar indicator
-        self.progress = None
+        self.progress = progress
 
 
     def __str__(self):
@@ -1271,14 +1271,14 @@ class Cube(debugmixin):
         return self.progress
 
 
-def newCube(interleave,url=None):
-    cube = Cube(url, interleave)
+def newCube(interleave, url=None, progress=None):
+    cube = Cube(url, interleave, progress=progress)
     return cube
 
-def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByteOrder, scalefactor=10000.0, data=None, dummy=False):
+def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByteOrder, scalefactor=10000.0, data=None, dummy=False, progress=None):
     if datatype == None:
         datatype = numpy.int16
-    cube=newCube(interleave,None)
+    cube = newCube(interleave, None, progress)
     cube.interleave=interleave
     cube.samples=samples
     cube.lines=lines

@@ -333,9 +333,9 @@ class Header(dict,MetadataMixin):
                 return check
         return None
 
-    def getCube(self,filename=None,index=0):
+    def getCube(self, filename=None, index=0, progress=None):
         #dprint(self.cubeurl, self.headerurl)
-        cube=newCube(self['interleave'],self.cubeurl)
+        cube=newCube(self['interleave'], self.cubeurl, progress)
         #dprint(cube)
         self.setCubeAttributes(cube)
         cube.open()
