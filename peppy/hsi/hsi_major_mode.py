@@ -1012,12 +1012,13 @@ class HSIMode(BitmapScroller, MajorMode):
             Cube.mmap_size_limit = 1
 
     def update(self, refresh=True):
-        self.updateInfo()
+        self.setStatusText("Building %dx%d bitmap..." % (self.cube.samples, self.cube.lines))
         self.cubeview.show(self.filter, self.cubefilter)
         self.setBitmap(self.cubeview.bitmap)
         self.frame.updateMenumap()
         if refresh:
             self.Update()
+        self.updateInfo()
         self.idle_update_menu = True
 
     def getWelcomeMessage(self):
