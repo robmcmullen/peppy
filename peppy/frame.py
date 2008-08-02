@@ -282,6 +282,8 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         assert self.dprint("major mode=%s" % mode)
         self.updateWrapper(wrapper)
         mode.showInitialPosition(user_url, options)
+        msg = mode.getWelcomeMessage()
+        mode.status_info.setText(msg)
 
     def newMode(self, buffer, mode_to_replace=None):
         assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
