@@ -262,6 +262,10 @@ SetAbout('red.png',
 
 credits={}
 def AddCredit(author, contribution):
+    if not isinstance(author, unicode):
+        author = author.decode('utf-8')
+    if not isinstance(contribution, unicode):
+        contribution = contribution.decode('utf-8')
     credits[author] = contribution
     substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
         

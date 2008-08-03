@@ -227,15 +227,15 @@ class PluginManager(object):
 					# collect additional (but usually quite usefull) information
 					if config_parser.has_section("Documentation"):
 						if config_parser.has_option("Documentation","Author"):
-							plugin_info.author	= config_parser.get("Documentation", "Author")
+							plugin_info.author	= config_parser.get("Documentation", "Author").decode('utf-8')
 						if config_parser.has_option("Documentation","Version"):
-							plugin_info.setVersion(config_parser.get("Documentation", "Version"))
+							plugin_info.setVersion(config_parser.get("Documentation", "Version").decode('utf-8'))
 						if config_parser.has_option("Documentation","Website"): 
-							plugin_info.website	= config_parser.get("Documentation", "Website")
+							plugin_info.website	= config_parser.get("Documentation", "Website").decode('utf-8')
 						if config_parser.has_option("Documentation","Copyright"):
-							plugin_info.copyright	= config_parser.get("Documentation", "Copyright")
+							plugin_info.copyright	= config_parser.get("Documentation", "Copyright").decode('utf-8')
 						if config_parser.has_option("Documentation","Description"):
-							plugin_info.description = config_parser.get("Documentation", "Description")
+							plugin_info.description = config_parser.get("Documentation", "Description").decode('utf-8')
 					
 					# now determine the path of the file to execute,
 					# depending on wether the path indicated is a

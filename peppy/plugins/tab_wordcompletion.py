@@ -11,7 +11,7 @@ from peppy.buffers import *
 import re
 
 from peppy.about import AddCredit
-AddCredit(u"Frank Atle r\xc3\xb8d", "for the bash-style tab completion plugin")
+AddCredit("Frank Atle r\xc3\xb8d", "for the bash-style tab completion plugin")
 
 
 class Range:

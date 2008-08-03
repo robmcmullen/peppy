@@ -215,7 +215,7 @@ class PluginPanel(PrefPanel):
             title = wx.StaticText(self, -1, info)
             grid.Add(title, (row,0))
 
-            value = wx.StaticText(self, -1, str(getattr(self.plugin_info, info)))
+            value = wx.StaticText(self, -1, unicode(getattr(self.plugin_info, info)))
             grid.Add(value, (row,1), flag=wx.EXPAND)
 
             row += 1
