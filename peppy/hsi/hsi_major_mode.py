@@ -1088,7 +1088,7 @@ class HSIMode(BitmapScroller, MajorMode):
             endian = "big endian"
         else:
             endian = "little endian"
-        return "%dx%dx%d %s %s %s image using %s loader" % (self.cube.samples, self.cube.lines, self.cube.bands, self.cube.data_type.__name__, endian, self.cube.interleave.upper(), self.dataset.getHandler().format_id)
+        return "%dx%dx%d %s %s %s image using %s loader" % (self.cube.samples, self.cube.lines, self.cube.bands, self.cube.interleave.upper(), self.cube.data_type.__name__, endian, self.dataset.getHandler().format_id)
 
     def setCube(self, index=0):
         self.dataset_index = index
