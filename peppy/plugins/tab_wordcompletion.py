@@ -10,8 +10,8 @@ from peppy.actions import *
 from peppy.buffers import *
 import re
 
-from peppy.about import AddCredit
-AddCredit("Frank Atle r\xc3\xb8d", "for the bash-style tab completion plugin")
+from peppy.about import AddAuthor
+AddAuthor("Frank Atle r\xc3\xb8d", "for the bash-style tab completion plugin")
 
 
 class Range:

@@ -47,7 +47,12 @@ you notice something that shouldn't be happening.
     """,
     'thanks': "",
     'gpl_code': "",
-    'contributors': """<p>GPL code borrowed from the following projects:</p>
+    'authors': "",
+    'contributors': """<p>Contributors to peppy:</p>
+<ul>
+%(authors)s
+</ul>
+<p>GPL code borrowed from the following projects:</p>
 <ul>
 %(gpl_code)s
 </ul>
@@ -92,9 +97,19 @@ def SetAbout(path, text, mimetype=None, encoding=None):
         mimetype = guessMime(text)
     aboutmimetype[path] = mimetype
 
+mutators = {}
+def addMutator(path, callback):
+    """Adds a function that will be used to mutate the about: text."""
+    mutators[path] = callback
+
+def mutate(path, text):
+    if path in mutators:
+        return mutators[path](text)
+    return text
+
 def findAbout(path):
     if path in aboutfiles:
-        return aboutfiles[path]
+        return mutate(path, aboutfiles[path])
     plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
     for plugin in plugins:
         #dprint("checking plugin %s" % plugin)
@@ -103,9 +118,9 @@ def findAbout(path):
             # the file details could include a mimetype
             details = files[path]
             if isinstance(details, str):
-                return details
+                return mutate(path, details)
             else:
-                return details[0]
+                return mutate(path, details[0])
     return None
 
 def findMime(path):
@@ -132,6 +147,7 @@ def findAboutNames():
         files = plugin.aboutFiles()
         names.extend(files)
     return names
+
 
 class AboutFS(vfs.BaseFS):
     mtime = time.time()
@@ -260,17 +276,52 @@ SetAbout('red.png',
 \xcc\x08\x00\x00\x00\x00IEND\xaeB`\x82", "image/png")
 
 
+def unicodify(text):
+    """Change to unicode if not already a unicode string"""
+    if not isinstance(text, unicode):
+        return text.decode('utf-8')
+    return text
+
+
+needs_sort = True
+authors={}
 credits={}
+copyrights = {}
+
+def randomizeCredits(text):
+    global needs_sort
+    if needs_sort:
+        #dprint("Randomizing credits!")
+        for name, map in [('authors', authors), ('thanks', credits)]:
+            items = ["<li>%s - %s</li>" % (a,c) for a,c in map.iteritems()]
+            random.shuffle(items)
+            substitutes[name]="\n".join(items)
+        items = ["<li>%(reason)s <a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights.values()]
+        random.shuffle(items)
+        substitutes['gpl_code']="\n".join(items)
+        
+        needs_sort = False
+    
+    # Don't actually do anything with the text, we just use this as the hook to
+    # sort the stuff.
+    return text
+
+addMutator('peppy', randomizeCredits)
+
+def AddAuthor(author, contribution):
+    global needs_sort
+    needs_sort = True
+    authors[unicodify(author)] = unicodify(contribution)
+AddAuthor("Christopher Armstrong", "for patches to improve emacs compatibility")
+AddAuthor("Jesse Aldridge", "for testing and bug reports on Ubuntu Linux")
+AddAuthor("Chris Barker", "for testing and bug reports on Mac OSX")
+
 def AddCredit(author, contribution):
-    if not isinstance(author, unicode):
-        author = author.decode('utf-8')
-    if not isinstance(contribution, unicode):
-        contribution = contribution.decode('utf-8')
-    credits[author] = contribution
-    substitutes['thanks']="\n".join(["<li>%s - %s</li>" % (a,c) for a,c in credits.iteritems()])
+    global needs_sort
+    needs_sort = True
+    credits[unicodify(author)] = unicodify(contribution)
         
 AddCredit("Mark James", "for the <a href=\"http://www.famfamfam.com/lab/icons/silk/\">free silk icon set</a>")
-AddCredit("Chris Barker", "for testing and bug reports on Mac OSX")
 AddCredit("Julian Back", "for the framework for the C edit mode")
 AddCredit("Thibauld Nion", "for the Yapsy plugin framework.  Note: Yapsy is BSD licensed and can be downloaded under that license from the <a href=\"http://yapsy.sourceforge.net/\">yapsy homepage</a>")
 AddCredit("Peter Damoc", "for the feature suggestions")
@@ -281,15 +332,14 @@ AddCredit("Dinu Gherman", "for the <a href=\"http://aspn.activestate.com/ASPN/Co
 AddCredit("Frank Niessink", "for the i18n utilities from <a href=\"http://www.taskcoach.org\">Task Coach</a>")
 AddCredit("Christopher Thoday", "for some code from <a href=\"http://luke-sdk.berlios.de\">Luke SDK</a> that became the spell checker")
 AddCredit("Anders Lund", "for the regex based autoindenter transcribed from Kate, the KDE text editor")
-AddCredit("Christopher Armstrong", "for patches to improve emacs compatibility")
-AddCredit("Jesse Aldridge", "for testing and bug reports on Ubuntu Linux")
-copyrights = {}
+
 def AddCopyright(project, website, author, date, reason=""):
-    copyrights[project] = ({'website': website,
-                       'project': project,
-                       'author': author,
-                       'date': date,
-                       'reason': reason,
+    global needs_sort
+    needs_sort = True
+    copyrights[project] = ({'website': unicodify(website),
+                       'project': unicodify(project),
+                       'author': unicodify(author),
+                       'date': unicodify(date),
+                       'reason': unicodify(reason),
                        })
-    substitutes['gpl_code']="\n".join(["<li>%(reason)s <a href=\"%(website)s\">%(project)s</a> Copyright (c) %(date)s %(author)s</i>" % c for c in copyrights.values()])
 AddCopyright("itools", "http://www.ikaaro.org/itools", u"Juan David Ibáñez Palomar et al.", "2002-2007", "Virtual filesystem implementation from")
