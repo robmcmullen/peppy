@@ -1052,7 +1052,7 @@ class HSIMode(BitmapScroller, MajorMode):
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
         self.updateInfo(*evt.imageCoords)
-        for minor in self.wrapper.getActiveMinorModes():
+        for minor in self.wrapper.getActiveMinorModes(True):
             if hasattr(minor, 'proxies'):
                 plotproxy = minor.proxies[0]
                 plotproxy.updateLines(*evt.imageCoords)

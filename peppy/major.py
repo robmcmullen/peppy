@@ -190,10 +190,10 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self._mgr.Update()
         return entry.win
 
-    def getActiveMinorModes(self):
+    def getActiveMinorModes(self, ignore_hidden=False):
         """Proxy the minor mode requests up to the wrapper"""
         if self.minors:
-            return self.minors.getActive()
+            return self.minors.getActive(ignore_hidden)
         return []
 
     def setMinibuffer(self, minibuffer=None):

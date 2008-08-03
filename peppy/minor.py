@@ -247,10 +247,16 @@ class MinorModeList(debugmixin):
         assert self.dprint("Created minor mode %s: %s" % (keyword, entry))
         return entry
     
-    def getActive(self):
-        """Get a list of all created minor modes."""
+    def getActive(self, ignore_hidden=False):
+        """Get a list of all created minor modes.
+        
+        @param ignore_hidden: if True, only return the minor mode if it's
+        currently visible
+        """
         for entry in self.map.itervalues():
             if entry.win:
+                if ignore_hidden and not entry.win.paneinfo.IsShown():
+                    continue
                 yield entry.win
 
     def deleteAll(self):
