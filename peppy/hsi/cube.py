@@ -73,7 +73,7 @@ class MetadataMixin(debugmixin):
     def save(self,filename=None):
         pass
     
-    def getCube(self,filename=None,index=None):
+    def getCube(self, filename=None, index=None, progress=None, options=None):
         """Return a cube instance that represents the data pointed to
         by the metadata."""
         return None
