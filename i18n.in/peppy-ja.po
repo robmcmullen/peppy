@@ -6,13 +6,13 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-02-27 17:36+0000\n"
-"PO-Revision-Date: 2008-03-04 18:01+0000\n"
-"Last-Translator: Rob McMullen <robm@users.sourceforge.net>\n"
+"PO-Revision-Date: 2008-07-10 03:36+0000\n"
+"Last-Translator: Cody Precord <Unknown>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-03-24 23:52+0000\n"
+"X-Launchpad-Export-Date: 2008-07-24 04:40+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -22,7 +22,7 @@ msgstr "バージョン情報..."
 
 #: ../peppy/mainmenu.py:363
 msgid "&Close Buffer"
-msgstr ""
+msgstr "バッファを閉じる(&C)"
 
 #: ../peppy/plugins/text_transforms.py:50
 msgid "&Comment Region"
@@ -30,7 +30,7 @@ msgstr ""
 
 #: ../peppy/frame.py:54
 msgid "&Delete Window"
-msgstr ""
+msgstr "ウィンドウを閉じる(&D)"
 
 #: ../peppy/mainmenu.py:913
 msgid "&Describe Action"
@@ -42,7 +42,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:525
 msgid "&Folding"
-msgstr ""
+msgstr "折りたたみ(&F)"
 
 #: ../peppy/frame.py:310 ../peppy/frame.py:346 ../peppy/frame.py:347
 #: ../peppy/mainmenu.py:916 ../peppy/menu.py:330 ../peppy/plugins/help.py:34
@@ -58,11 +58,11 @@ msgstr "&ヘルプ..."
 
 #: ../peppy/mainmenu.py:508
 msgid "&Line Numbers"
-msgstr ""
+msgstr "行番号(&L)"
 
 #: ../peppy/mainmenu.py:471
 msgid "&Line Wrapping"
-msgstr ""
+msgstr "行の折り返し(&L)"
 
 #: ../peppy/frame.py:68
 msgid "&New Window"
@@ -115,11 +115,11 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:826
 msgid "&Show Toolbars"
-msgstr ""
+msgstr "詳細ツールバー(&S)"
 
 #: ../peppy/plugins/text_transforms.py:74
 msgid "&Tabify"
-msgstr ""
+msgstr "スペースをタブにする(&T)"
 
 #: ../peppy/plugins/text_transforms.py:65
 msgid "&Uncomment Region"
@@ -127,19 +127,19 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:92
 msgid "&Untabify"
-msgstr ""
+msgstr "タブスをペースにする(&U)"
 
 #: ../peppy/mainmenu.py:956
 msgid "&Word Count"
-msgstr ""
+msgstr "単語の合計数(&W)"
 
 #: ../peppy/mainmenu.py:488
 msgid "&Wrap Words"
-msgstr ""
+msgstr "行を折り返し(&W)"
 
 #: ../peppy/plugins/help.py:32
 msgid "About this program"
-msgstr ""
+msgstr "プログラム情報"
 
 #: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
@@ -162,7 +162,7 @@ msgstr ""
 #: ../peppy/plugins/buffer_list_mode.py:154
 #: ../peppy/plugins/buffer_list_mode.py:166
 msgid "Actions"
-msgstr ""
+msgstr "アクション"
 
 #: ../peppy/plugins/changelog_mode.py:22
 msgid "Add ChangeLog Entry"
@@ -174,7 +174,7 @@ msgstr ""
 
 #: ../peppy/dired.py:26
 msgid "Apr"
-msgstr ""
+msgstr "4月"
 
 #: ../peppy/editra/style_editor.py:242
 msgid "Attributes"
@@ -182,7 +182,7 @@ msgstr "属性"
 
 #: ../peppy/dired.py:27
 msgid "Aug"
-msgstr ""
+msgstr "8月"
 
 #: ../peppy/editra/style_editor.py:231
 msgid "Background"
@@ -190,7 +190,7 @@ msgstr "背景"
 
 #: ../peppy/actions/minibuffer.py:43 ../peppy/actions/minibuffer.py:99
 msgid "Bad input."
-msgstr ""
+msgstr "不良入力."
 
 #: ../peppy/editra/style_editor.py:307
 msgid "Base new theme of existing one"
@@ -206,8 +206,9 @@ msgid "Cancel"
 msgstr "キャンセル"
 
 #: ../peppy/mainmenu.py:946
+#, fuzzy
 msgid "Cancel Minibuffer"
-msgstr ""
+msgstr "ミニバッファをキャンセルする"
 
 #: ../peppy/mainmenu.py:947
 msgid "Cancel any currently active minibuffer"
@@ -215,21 +216,21 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:131
 msgid "Capitalize"
-msgstr ""
+msgstr "先頭を大文字に"
 
 #: ../peppy/plugins/text_transforms.py:133
 #: ../peppy/plugins/text_transforms.py:149
 #: ../peppy/plugins/text_transforms.py:166
 msgid "Case"
-msgstr ""
+msgstr "大文字小文字"
 
 #: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
-msgstr ""
+msgstr "フラグをクリアする"
 
 #: ../peppy/plugins/mpd_major_mode.py:582
 msgid "Clear Playlist"
-msgstr ""
+msgstr "プレイリストを消去する"
 
 #: ../peppy/dired.py:136 ../peppy/plugins/buffer_list_mode.py:129
 msgid "Clear all flags from the selected item(s)."
@@ -237,15 +238,15 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:41
 msgid "Close Tab"
-msgstr ""
+msgstr "タブを閉じる"
 
 #: ../peppy/mainmenu.py:364
 msgid "Close current buffer"
-msgstr ""
+msgstr "バッファを閉じる"
 
 #: ../peppy/mainmenu.py:42
 msgid "Close the current tab"
-msgstr ""
+msgstr "現在のタブを閉じる"
 
 #: ../peppy/plugins/text_transforms.py:108
 msgid "Collapse blank lines"
@@ -309,19 +310,19 @@ msgstr "デバグ"
 
 #: ../peppy/plugins/debug_classes.py:54
 msgid "DebugClassMenu"
-msgstr ""
+msgstr "デバッグクラスメニュ"
 
 #: ../peppy/dired.py:27
 msgid "Dec"
-msgstr ""
+msgstr "12月"
 
 #: ../peppy/plugins/mpd_major_mode.py:547
 msgid "Decrease Volume"
-msgstr ""
+msgstr "音量を下げる"
 
 #: ../peppy/plugins/mpd_major_mode.py:548
 msgid "Decrease the volume"
-msgstr ""
+msgstr "音量を下げる"
 
 #: ../peppy/plugins/mpd_major_mode.py:571
 msgid "Delete Playlist Entry"
@@ -350,15 +351,15 @@ msgstr "文書"
 
 #: ../peppy/plugins/text_transforms.py:164
 msgid "Downcase"
-msgstr ""
+msgstr "小文字する"
 
 #: ../peppy/mainmenu.py:348
 msgid "E&xit"
-msgstr ""
+msgstr "終了(&X)"
 
 #: ../peppy/mainmenu.py:720
 msgid "EOL Characters"
-msgstr ""
+msgstr "EOL文字"
 
 #: ../peppy/actions/pypefind.py:131 ../peppy/actions/pypefind.py:139
 #: ../peppy/frame.py:304 ../peppy/mainmenu.py:601 ../peppy/mainmenu.py:617
@@ -400,7 +401,7 @@ msgstr ""
 
 #: ../peppy/dired.py:26
 msgid "Feb"
-msgstr ""
+msgstr "2月"
 
 #: ../peppy/frame.py:303 ../peppy/mainmenu.py:355 ../peppy/mainmenu.py:365
 #: ../peppy/mainmenu.py:379 ../peppy/mainmenu.py:400 ../peppy/mainmenu.py:417
@@ -422,7 +423,7 @@ msgstr ""
 
 #: ../peppy/actions/minibuffer.py:160
 msgid "Floating Point"
-msgstr ""
+msgstr "浮動小数点"
 
 #: ../peppy/hsi/hsi_major_mode.py:404
 msgid "Focal Plane View"
@@ -446,11 +447,11 @@ msgstr "コマ数"
 
 #: ../peppy/plugins/function_menu.py:26 ../peppy/plugins/function_menu.py:29
 msgid "Functions"
-msgstr ""
+msgstr "関数"
 
 #: ../peppy/plugins/games/hangman_mode.py:63
 msgid "Games"
-msgstr ""
+msgstr "ゲーム"
 
 #: ../peppy/plugins/debug_classes.py:26
 msgid "Garbage Objects"
@@ -467,7 +468,7 @@ msgstr ""
 
 #: ../peppy/plugins/function_menu.py:28
 msgid "Go to a function"
-msgstr ""
+msgstr "関数を見に行く"
 
 #: ../peppy/hsi/hsi_major_mode.py:509
 msgid "Go to a particular band in the cube"
@@ -496,7 +497,7 @@ msgstr ""
 #: ../peppy/plugins/games/hangman_mode.py:61
 #: ../peppy/plugins/games/hangman_mode.py:84
 msgid "Hangman"
-msgstr ""
+msgstr "ハングマン"
 
 #: ../peppy/plugins/tutorial_plugin.py:36
 msgid "Hello World Action"
@@ -504,15 +505,15 @@ msgstr ""
 
 #: ../peppy/hsi/hsi_major_mode.py:204
 msgid "Image View"
-msgstr ""
+msgstr "画像ビュー"
 
 #: ../peppy/plugins/mpd_major_mode.py:534
 msgid "Increase Volume"
-msgstr ""
+msgstr "音量を上げる"
 
 #: ../peppy/plugins/mpd_major_mode.py:535
 msgid "Increase the volume"
-msgstr ""
+msgstr "音量を上げる"
 
 #: ../peppy/plugins/python_mode.py:56
 msgid "Indent the current line when a colon is pressed"
@@ -536,19 +537,19 @@ msgstr "整数"
 
 #: ../peppy/dired.py:26
 msgid "Jan"
-msgstr ""
+msgstr "1月"
 
 #: ../peppy/dired.py:27
 msgid "Jul"
-msgstr ""
+msgstr "7月"
 
 #: ../peppy/dired.py:26
 msgid "Jun"
-msgstr ""
+msgstr "6月"
 
 #: ../peppy/mainmenu.py:736
 msgid "Line Endings"
-msgstr ""
+msgstr "行末コード"
 
 #: ../peppy/plugins/buffer_list_mode.py:24
 msgid "List All Documents"
@@ -572,19 +573,19 @@ msgstr "ログイン"
 #: ../peppy/plugins/mpd_major_mode.py:584
 #: ../peppy/plugins/mpd_major_mode.py:595
 msgid "MPD"
-msgstr ""
+msgstr "MPD"
 
 #: ../peppy/plugins/mpd_major_mode.py:428
 msgid "MPD Server..."
-msgstr ""
+msgstr "MPDのサーバー"
 
 #: ../peppy/mainmenu.py:762
 msgid "Major Mode"
-msgstr ""
+msgstr "メジャーモード"
 
 #: ../peppy/dired.py:26
 msgid "Mar"
-msgstr ""
+msgstr "3月"
 
 #: ../peppy/dired.py:101 ../peppy/plugins/buffer_list_mode.py:77
 msgid "Mark for Deletion"
@@ -641,19 +642,19 @@ msgstr "五月"
 
 #: ../peppy/hsi/hsi_major_mode.py:588
 msgid "Median Filter"
-msgstr ""
+msgstr "メジアンフィルター"
 
 #: ../peppy/hsi/hsi_major_mode.py:589
 msgid "Median filter"
-msgstr ""
+msgstr "メジアンフィルター"
 
 #: ../peppy/mainmenu.py:792
 msgid "Minor Modes"
-msgstr ""
+msgstr "マイナーモード"
 
 #: ../peppy/major.py:372
 msgid "Modes"
-msgstr ""
+msgstr "モード"
 
 #: ../peppy/plugins/cursor_movement.py:52
 msgid "Move the cursor down a line"
@@ -698,11 +699,11 @@ msgstr ""
 
 #: ../peppy/plugins/mpd_major_mode.py:521
 msgid "Mute"
-msgstr ""
+msgstr "ミュート"
 
 #: ../peppy/plugins/mpd_major_mode.py:522
 msgid "Mute the volume"
-msgstr ""
+msgstr "ミュート"
 
 #: ../peppy/editra/style_editor.py:309 ../peppy/mainmenu.py:33
 #: ../peppy/mainmenu.py:53
@@ -715,16 +716,16 @@ msgstr "新規タブ"
 
 #: ../peppy/mainmenu.py:51
 msgid "New plain text file"
-msgstr ""
+msgstr "新しいテキストファイル"
 
 #: ../peppy/hsi/hsi_major_mode.py:487 ../peppy/hsi/hsi_major_mode.py:488
 msgid "Next Band"
-msgstr ""
+msgstr "次のバンド"
 
 #: ../peppy/plugins/mpd_major_mode.py:479
 #: ../peppy/plugins/mpd_major_mode.py:480
 msgid "Next Song"
-msgstr ""
+msgstr "次の曲"
 
 #: ../peppy/actions/minibuffer.py:161
 msgid "Not a numeric expression."
@@ -736,11 +737,11 @@ msgstr ""
 
 #: ../peppy/dired.py:27
 msgid "Nov"
-msgstr ""
+msgstr "11月"
 
 #: ../peppy/dired.py:27
 msgid "Oct"
-msgstr ""
+msgstr "10月"
 
 #: ../peppy/editra/style_editor.py:155
 msgid "Ok"
@@ -761,7 +762,7 @@ msgstr "ファイルを開く..."
 
 #: ../peppy/plugins/openrecent.py:20
 msgid "Open Recent"
-msgstr ""
+msgstr "最近使ったものを開く"
 
 #: ../peppy/mainmenu.py:288
 msgid "Open URL Using Minibuffer..."
@@ -773,7 +774,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:62 ../peppy/mainmenu.py:562
 msgid "Open a file"
-msgstr ""
+msgstr "ファイルを開きます"
 
 #: ../peppy/mainmenu.py:289
 msgid "Open a file using URL name completion"
@@ -785,11 +786,11 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:32
 msgid "Open a new tab"
-msgstr ""
+msgstr "新規タブを開く"
 
 #: ../peppy/frame.py:69
 msgid "Open a new window"
-msgstr ""
+msgstr "新しいウィンドウを開きます"
 
 #: ../peppy/plugins/c_mode.py:31
 msgid "Open a sample C file"
@@ -846,19 +847,20 @@ msgstr ""
 
 #: ../peppy/yapsy/plugins.py:105
 msgid "Plugins"
-msgstr ""
+msgstr "プラグイン"
 
 #: ../peppy/plugins/preferences.py:23
+#, fuzzy
 msgid "Preferences, settings, and configurations..."
-msgstr ""
+msgstr "環境設定"
 
 #: ../peppy/hsi/hsi_major_mode.py:466
 msgid "Prev Band"
-msgstr ""
+msgstr "前のバンド"
 
 #: ../peppy/plugins/mpd_major_mode.py:465
 msgid "Prev Song"
-msgstr ""
+msgstr "前の曲"
 
 #: ../peppy/editra/style_editor.py:146
 msgid "Preview"
@@ -866,11 +868,11 @@ msgstr "プレビュー"
 
 #: ../peppy/hsi/hsi_major_mode.py:467
 msgid "Previous Band"
-msgstr ""
+msgstr "前のバンド"
 
 #: ../peppy/plugins/mpd_major_mode.py:466
 msgid "Previous Song"
-msgstr ""
+msgstr "前の曲"
 
 #: ../peppy/plugins/help.py:89
 msgid "Project Homepage"
@@ -878,11 +880,11 @@ msgstr "プロジェクトのホームページ"
 
 #: ../peppy/mainmenu.py:349
 msgid "Quit the program."
-msgstr ""
+msgstr "プログラムを終了する"
 
 #: ../peppy/plugins/mpd_major_mode.py:593
 msgid "Random Playlist"
-msgstr ""
+msgstr "ランダムプレイリスト"
 
 #: ../peppy/plugins/hexedit_mode.py:64
 msgid "Record Format..."
@@ -894,7 +896,7 @@ msgstr "やり直す"
 
 #: ../peppy/dired.py:56
 msgid "Refresh"
-msgstr ""
+msgstr "更新"
 
 #: ../peppy/dired.py:57
 msgid "Refresh the current view to show any changes."
@@ -902,7 +904,7 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:190
 msgid "Reindent"
-msgstr ""
+msgstr "再インデント"
 
 #: ../peppy/plugins/mpd_major_mode.py:583
 msgid "Remove all songs from the current playlist"
@@ -926,7 +928,7 @@ msgstr "置換..."
 
 #: ../peppy/plugins/help.py:105
 msgid "Report a bug"
-msgstr ""
+msgstr "バグを報告する"
 
 #: ../peppy/plugins/mpd_major_mode.py:561
 msgid "Rescan the filesystem and update the MPD database"
@@ -935,7 +937,7 @@ msgstr ""
 #: ../peppy/plugins/games/hangman_mode.py:82
 #: ../peppy/plugins/games/hangman_mode.py:83
 msgid "Restart Game"
-msgstr ""
+msgstr "ゲームを再起動する"
 
 #: ../peppy/mainmenu.py:378
 msgid "Revert to last saved version"
@@ -943,11 +945,11 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:178
 msgid "Rot13"
-msgstr ""
+msgstr "Rot13"
 
 #: ../peppy/mainmenu.py:542
 msgid "Run"
-msgstr ""
+msgstr "実行"
 
 #: ../peppy/mainmenu.py:543
 msgid "Run this script through the interpreter"
@@ -974,11 +976,11 @@ msgstr "サンプル数"
 
 #: ../peppy/mainmenu.py:183 ../peppy/mainmenu.py:414
 msgid "Save &As..."
-msgstr ""
+msgstr "別名で保存(&A)"
 
 #: ../peppy/editra/style_editor.py:357
 msgid "Save Styles"
-msgstr ""
+msgstr "スタイルを保存"
 
 #: ../peppy/mainmenu.py:184 ../peppy/mainmenu.py:415
 msgid "Save as a new file"
@@ -1010,7 +1012,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:692
 msgid "Select all text"
-msgstr ""
+msgstr "全てのテキストを選択します"
 
 #: ../peppy/plugins/image_mode.py:69
 msgid "Select rectangular region."
@@ -1018,7 +1020,7 @@ msgstr ""
 
 #: ../peppy/dired.py:27
 msgid "Sep"
-msgstr ""
+msgstr "9月"
 
 #: ../peppy/editra/style_editor.py:195
 msgid "Set the preview file type"
@@ -1026,11 +1028,11 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:25
 msgid "Shift &Left"
-msgstr ""
+msgstr "左シフト(&L)"
 
 #: ../peppy/plugins/text_transforms.py:34
 msgid "Shift &Right"
-msgstr ""
+msgstr "右シフト(&R)"
 
 #: ../peppy/dired.py:159 ../peppy/plugins/buffer_list_mode.py:152
 msgid "Show Buffer"
@@ -1078,7 +1080,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:808
 msgid "Sidebars"
-msgstr ""
+msgstr "サイドバー"
 
 #: ../peppy/editra/style_editor.py:276
 msgid "Size"
@@ -1094,7 +1096,7 @@ msgstr ""
 
 #: ../peppy/buffers.py:140
 msgid "Sort Order"
-msgstr ""
+msgstr "ソート順序"
 
 #: ../peppy/buffers.py:143
 msgid "Sort document list"
@@ -1106,7 +1108,7 @@ msgstr ""
 
 #: ../peppy/plugins/games/hangman_mode.py:62
 msgid "Start a hangman game"
-msgstr ""
+msgstr "ハングマンゲームを起動する"
 
 #: ../peppy/major.py:996
 msgid "Started %s on %s"
@@ -1156,7 +1158,7 @@ msgstr ""
 #: ../peppy/plugins/sandbox.py:26 ../peppy/plugins/sandbox.py:49
 #: ../peppy/plugins/sandbox.py:55 ../peppy/plugins/tutorial_plugin.py:52
 msgid "Tests"
-msgstr ""
+msgstr "テスト"
 
 #: ../peppy/actions/minibuffer.py:98
 msgid "Text"
@@ -1164,11 +1166,11 @@ msgstr "ラベル"
 
 #: ../peppy/plugins/editra_styleeditor.py:26
 msgid "Text Styles..."
-msgstr ""
+msgstr "テキストのスタイル。。。"
 
 #: ../peppy/mainmenu.py:50
 msgid "Text file"
-msgstr ""
+msgstr "テキストファイル"
 
 #: ../peppy/mainmenu.py:721
 msgid "Toggle display of line-end (cr/lf) characters"
@@ -1216,15 +1218,15 @@ msgstr "元に戻す"
 
 #: ../peppy/plugins/text_transforms.py:147
 msgid "Upcase"
-msgstr ""
+msgstr "大文字する"
 
 #: ../peppy/plugins/mpd_major_mode.py:560
 msgid "Update Database"
-msgstr ""
+msgstr "データベース更新"
 
 #: ../peppy/plugins/help.py:71
 msgid "User manual"
-msgstr ""
+msgstr "ユーザーズマニュアル"
 
 #: ../peppy/actions/gotoline.py:27 ../peppy/frame.py:305
 #: ../peppy/hsi/hsi_major_mode.py:468 ../peppy/hsi/hsi_major_mode.py:489
@@ -1246,7 +1248,7 @@ msgstr ""
 
 #: ../peppy/plugins/widget_inspector.py:14
 msgid "Widget Inspector..."
-msgstr ""
+msgstr "ウィジェットインスペクタ。。。"
 
 #: ../peppy/frame.py:30 ../peppy/frame.py:55 ../peppy/frame.py:70
 #: ../peppy/frame.py:309
@@ -1279,7 +1281,7 @@ msgstr ""
 
 #: ../peppy/hsi/hsi_major_mode.py:302
 msgid "band"
-msgstr ""
+msgstr "バンド"
 
 #: ../peppy/editra/style_editor.py:245
 msgid "bold"
@@ -1295,7 +1297,7 @@ msgstr "eol"
 
 #: ../peppy/plugins/games/hangman_mode.py:60
 msgid "hangman"
-msgstr ""
+msgstr "ハングマン"
 
 #: ../peppy/editra/style_editor.py:247
 msgid "italic"

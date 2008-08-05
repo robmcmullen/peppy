@@ -1,48 +1,49 @@
-# peppy Copyright (c) 2006-2008 Rob McMullen
-# Licenced under the GPLv2; see http://peppy.flipturn.org for more info
+# Czech translation for peppy
+# Copyright (c) 2008 Rosetta Contributors and Canonical Ltd 2008
+# This file is distributed under the same license as the peppy package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
+"Project-Id-Version: peppy\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2008-02-27 17:36+0000\n"
-"PO-Revision-Date: 2008-03-04 18:01+0000\n"
-"Last-Translator: Rob McMullen <robm@users.sourceforge.net>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2008-04-21 21:07+0000\n"
+"Last-Translator: defr <Unknown>\n"
+"Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2008-07-24 04:40+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
-"Generated-By: pygettext.py 1.5\n"
 
 #: ../peppy/plugins/help.py:31
 msgid "&About..."
-msgstr "&Pri..."
+msgstr "&O programu..."
 
 #: ../peppy/mainmenu.py:363
 msgid "&Close Buffer"
-msgstr ""
+msgstr "&Uzavřít zásobník"
 
 #: ../peppy/plugins/text_transforms.py:50
 msgid "&Comment Region"
-msgstr ""
+msgstr "O&komentovat oblast"
 
 #: ../peppy/frame.py:54
 msgid "&Delete Window"
-msgstr ""
+msgstr "&Smazat okno"
 
 #: ../peppy/mainmenu.py:913
 msgid "&Describe Action"
-msgstr ""
+msgstr "&Popsat akci"
 
 #: ../peppy/mainmenu.py:877
 msgid "&Execute Action"
-msgstr ""
+msgstr "&Spustit akci"
 
 #: ../peppy/mainmenu.py:525
 msgid "&Folding"
-msgstr ""
+msgstr "Skrývání kódu"
 
 #: ../peppy/frame.py:310 ../peppy/frame.py:346 ../peppy/frame.py:347
 #: ../peppy/mainmenu.py:916 ../peppy/menu.py:330 ../peppy/plugins/help.py:34
@@ -50,100 +51,100 @@ msgstr ""
 #: ../peppy/plugins/help.py:106 ../peppy/plugins/keyboard.py:25
 #: ../peppy/plugins/widget_inspector.py:16
 msgid "&Help"
-msgstr "&Helpo"
+msgstr "&Nápověda"
 
 #: ../peppy/plugins/help.py:70
 msgid "&Help..."
-msgstr "&Helpo..."
+msgstr "&Nápověda..."
 
 #: ../peppy/mainmenu.py:508
 msgid "&Line Numbers"
-msgstr ""
+msgstr "Čís&la řádků"
 
 #: ../peppy/mainmenu.py:471
 msgid "&Line Wrapping"
-msgstr ""
+msgstr "Za&lamování textu"
 
 #: ../peppy/frame.py:68
 msgid "&New Window"
-msgstr "&Nova fenestro"
+msgstr "&Nové okno"
 
 #: ../peppy/plugins/hexedit_mode.py:19
 msgid "&Open Hex Editor..."
-msgstr ""
+msgstr "&Otevřít hex editor..."
 
 #: ../peppy/plugins/image_mode.py:35
 msgid "&Open Image Viewer..."
-msgstr ""
+msgstr "&Otevřít prohlížeč obrázků..."
 
 #: ../peppy/plugins/c_mode.py:30
 msgid "&Open Sample C File"
-msgstr ""
+msgstr "&Otevřít ukázkový soubor C"
 
 #: ../peppy/plugins/games/hangman_mode.py:131
 #: ../peppy/plugins/graphviz_mode.py:35
 msgid "&Open Sample Graphviz dot file"
-msgstr ""
+msgstr "&Otevřít ukázkový soubor Graphviz dot"
 
 #: ../peppy/plugins/makefile_mode.py:45
 msgid "&Open Sample Makefile"
-msgstr ""
+msgstr "&Otevřít ukázkový MakeFile"
 
 #: ../peppy/plugins/python_mode.py:46
 msgid "&Open Sample Python"
-msgstr ""
+msgstr "&Otevřít ukázkový Python"
 
 #: ../peppy/mainmenu.py:461
 msgid "&Open Sample Text"
-msgstr ""
+msgstr "&Otevřít ukázkový text"
 
 #: ../peppy/plugins/preferences.py:22
 msgid "&Preferences..."
-msgstr "&Agordoj..."
+msgstr "&Předvolby..."
 
 #: ../peppy/mainmenu.py:377
 msgid "&Revert"
-msgstr "Malfa&ri"
+msgstr "V&rátit"
 
 #: ../peppy/mainmenu.py:397
 msgid "&Save..."
-msgstr "&Konservu..."
+msgstr "&Uložit..."
 
 #: ../peppy/plugins/keyboard.py:23
 msgid "&Show Key Bindings"
-msgstr ""
+msgstr "Zobrazit &klávesové zkratky"
 
 #: ../peppy/mainmenu.py:826
 msgid "&Show Toolbars"
-msgstr ""
+msgstr "&Zobrazit nástrojové lišty"
 
 #: ../peppy/plugins/text_transforms.py:74
 msgid "&Tabify"
-msgstr ""
+msgstr "&Panelovat"
 
 #: ../peppy/plugins/text_transforms.py:65
 msgid "&Uncomment Region"
-msgstr ""
+msgstr "&Odkomentovat oblast"
 
 #: ../peppy/plugins/text_transforms.py:92
 msgid "&Untabify"
-msgstr ""
+msgstr "&Obnovit"
 
 #: ../peppy/mainmenu.py:956
 msgid "&Word Count"
-msgstr "Nombro da vortoj"
+msgstr "Poč&et slov"
 
 #: ../peppy/mainmenu.py:488
 msgid "&Wrap Words"
-msgstr ""
+msgstr "&Zalamovat slova"
 
 #: ../peppy/plugins/help.py:32
 msgid "About this program"
-msgstr ""
+msgstr "O programu"
 
 #: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
-msgstr ""
+msgstr "Postupovat nad označenými zásobníky podle jejich příznaků."
 
 #: ../peppy/dired.py:58 ../peppy/dired.py:88 ../peppy/dired.py:95
 #: ../peppy/dired.py:103 ../peppy/dired.py:111 ../peppy/dired.py:120
@@ -162,203 +163,205 @@ msgstr ""
 #: ../peppy/plugins/buffer_list_mode.py:154
 #: ../peppy/plugins/buffer_list_mode.py:166
 msgid "Actions"
-msgstr "Agoj"
+msgstr "Akce"
 
 #: ../peppy/plugins/changelog_mode.py:22
 msgid "Add ChangeLog Entry"
-msgstr ""
+msgstr "Přidat záznam do ChangeLog"
 
 #: ../peppy/plugins/changelog_mode.py:23
 msgid "Add new ChangeLog entry to the top of the ChangeLog"
-msgstr ""
+msgstr "Přidat nový záznam na začátek ChangeLog"
 
 #: ../peppy/dired.py:26
 msgid "Apr"
-msgstr "Apr"
+msgstr "dub"
 
 #: ../peppy/editra/style_editor.py:242
 msgid "Attributes"
-msgstr "Atributoj"
+msgstr "Atributy"
 
 #: ../peppy/dired.py:27
 msgid "Aug"
-msgstr "Aŭg"
+msgstr "srp"
 
 #: ../peppy/editra/style_editor.py:231
 msgid "Background"
-msgstr "Fono"
+msgstr "Pozadí"
 
 #: ../peppy/actions/minibuffer.py:43 ../peppy/actions/minibuffer.py:99
 msgid "Bad input."
-msgstr ""
+msgstr "Chybný vstup."
 
 #: ../peppy/editra/style_editor.py:307
 msgid "Base new theme of existing one"
-msgstr ""
+msgstr "Založit nový motiv na existujícím"
 
 #: ../peppy/mainmenu.py:489
 msgid "Break wrapped lines at word boundaries"
-msgstr ""
+msgstr "Zalamovat řádky na hranici slov"
 
 #: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:64
 #: ../peppy/lib/controls.py:162
 msgid "Cancel"
-msgstr "Forigu"
+msgstr "Zrušit"
 
 #: ../peppy/mainmenu.py:946
 msgid "Cancel Minibuffer"
-msgstr ""
+msgstr "Zrušit minibuffer"
 
 #: ../peppy/mainmenu.py:947
 msgid "Cancel any currently active minibuffer"
-msgstr ""
+msgstr "Zrušit jakýkoliv právě aktivní minibuffer"
 
 #: ../peppy/plugins/text_transforms.py:131
 msgid "Capitalize"
-msgstr "Majuskligi"
+msgstr "Kapitálky"
 
 #: ../peppy/plugins/text_transforms.py:133
 #: ../peppy/plugins/text_transforms.py:149
 #: ../peppy/plugins/text_transforms.py:166
 msgid "Case"
-msgstr "Uskleco"
+msgstr "Zvětšit"
 
 #: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
-msgstr ""
+msgstr "Vymazat příznaky"
 
 #: ../peppy/plugins/mpd_major_mode.py:582
 msgid "Clear Playlist"
-msgstr "Froviŝi kantaron"
+msgstr "Vymazat seznam skladeb"
 
 #: ../peppy/dired.py:136 ../peppy/plugins/buffer_list_mode.py:129
 msgid "Clear all flags from the selected item(s)."
-msgstr ""
+msgstr "Vymazat všechny příznaky z vybraných položek."
 
 #: ../peppy/mainmenu.py:41
 msgid "Close Tab"
-msgstr "Fermu Langeton"
+msgstr "Zavřít panel"
 
 #: ../peppy/mainmenu.py:364
 msgid "Close current buffer"
-msgstr ""
+msgstr "Uzavřít aktivní zásobník"
 
 #: ../peppy/mainmenu.py:42
 msgid "Close the current tab"
-msgstr "Fermu la nunan folion"
+msgstr "Uzavřít aktivní panel"
 
 #: ../peppy/plugins/text_transforms.py:108
 msgid "Collapse blank lines"
-msgstr ""
+msgstr "Sbalit prázdné řádky"
 
 #: ../peppy/editra/style_editor.py:214
 msgid "Color"
-msgstr "_Koloro"
+msgstr "Barva"
 
 #: ../peppy/hsi/hsi_major_mode.py:537
 msgid "Contrast"
-msgstr "Kontrasto"
+msgstr "Kontrast"
 
 #: ../peppy/hsi/hsi_major_mode.py:538
 msgid "Contrast adjustment method"
-msgstr ""
+msgstr "Metoda přízpůsobení kontrastu"
 
 #: ../peppy/plugins/help.py:51
 msgid "Contributions by:"
-msgstr ""
+msgstr "Příspěvky od:"
 
 #: ../peppy/mainmenu.py:644 ../peppy/mainmenu.py:645
 msgid "Copy"
-msgstr "Kopiu"
+msgstr "Kopírovat"
 
 #: ../peppy/plugins/cursor_movement.py:37
 msgid "Cursor to End of Line"
-msgstr ""
+msgstr "Kurzor na konec řádku"
 
 #: ../peppy/plugins/cursor_movement.py:23
 msgid "Cursor to Start of Line"
-msgstr ""
+msgstr "Kurzor na začátek řádku"
 
 #: ../peppy/plugins/cursor_movement.py:67
 msgid "Cursor to end of the buffer"
-msgstr ""
+msgstr "Kurzor na konec zásobníku"
 
 #: ../peppy/plugins/cursor_movement.py:58
 msgid "Cursor to first character in the buffer"
-msgstr ""
+msgstr "Kurzor na první znak v zásobníku"
 
 #: ../peppy/plugins/cursor_movement.py:30
 msgid "Cursor to first non-blank character in the line"
-msgstr ""
+msgstr "Kurzor na první neprázdný znak řádku"
 
 #: ../peppy/plugins/cursor_movement.py:51
 msgid "Cursor to next line"
-msgstr ""
+msgstr "Kurzor na další řádek"
 
 #: ../peppy/plugins/cursor_movement.py:44
 msgid "Cursor to previous line"
-msgstr ""
+msgstr "Kurzor na předchozí řádek"
 
 #: ../peppy/mainmenu.py:629 ../peppy/mainmenu.py:630
 msgid "Cut"
-msgstr "Eltondu"
+msgstr "Vyjmout"
 
 #: ../peppy/plugins/debug_classes.py:28 ../peppy/plugins/debug_classes.py:57
 msgid "Debug"
-msgstr "Sencimigo"
+msgstr "Ladění"
 
 #: ../peppy/plugins/debug_classes.py:54
 msgid "DebugClassMenu"
-msgstr ""
+msgstr "DebugClassMenu"
 
 #: ../peppy/dired.py:27
 msgid "Dec"
-msgstr "10ume"
+msgstr "pro"
 
 #: ../peppy/plugins/mpd_major_mode.py:547
 msgid "Decrease Volume"
-msgstr "Mallaŭtigu"
+msgstr "Snížit hlasitost"
 
 #: ../peppy/plugins/mpd_major_mode.py:548
 msgid "Decrease the volume"
-msgstr ""
+msgstr "Snížit hlasitost"
 
 #: ../peppy/plugins/mpd_major_mode.py:571
 msgid "Delete Playlist Entry"
-msgstr ""
+msgstr "Odstranit záznam ze seznamu skladeb"
 
 #: ../peppy/frame.py:56
 msgid "Delete current window"
-msgstr ""
+msgstr "Odstranit aktuální okno"
 
 #: ../peppy/plugins/mpd_major_mode.py:572
 msgid "Delete selected songs from playlist"
-msgstr ""
+msgstr "Odstranit vybrané skladby z playlistu"
 
 #: ../peppy/mainmenu.py:915
 msgid "Describe an action by name"
-msgstr ""
+msgstr "Popsat akci podle jména"
 
 #: ../peppy/plugins/buffer_list_mode.py:25
 msgid "Display a list of all buffers."
-msgstr ""
+msgstr "Zobrazit seznam zásobníků"
 
 #: ../peppy/buffers.py:25 ../peppy/buffers.py:26 ../peppy/buffers.py:144
 #: ../peppy/frame.py:308 ../peppy/plugins/buffer_list_mode.py:26
 msgid "Documents"
-msgstr "Dokumentoj"
+msgstr "Dokumenty"
 
 #: ../peppy/plugins/text_transforms.py:164
 msgid "Downcase"
-msgstr ""
+msgstr "Zmenšit"
 
 #: ../peppy/mainmenu.py:348
+#, fuzzy
 msgid "E&xit"
-msgstr "&Finu"
+msgstr "&Konec"
 
 #: ../peppy/mainmenu.py:720
+#, fuzzy
 msgid "EOL Characters"
-msgstr ""
+msgstr "Znaky konce řádky"
 
 #: ../peppy/actions/pypefind.py:131 ../peppy/actions/pypefind.py:139
 #: ../peppy/frame.py:304 ../peppy/mainmenu.py:601 ../peppy/mainmenu.py:617
@@ -367,197 +370,243 @@ msgstr ""
 #: ../peppy/plugins/editra_styleeditor.py:28
 #: ../peppy/plugins/hexedit_mode.py:44 ../peppy/plugins/image_mode.py:70
 #: ../peppy/plugins/preferences.py:24
+#, fuzzy
 msgid "Edit"
-msgstr "Redaktu"
+msgstr "Upravit"
 
 #: ../peppy/plugins/python_mode.py:55
+#, fuzzy
 msgid "Electric Colon"
-msgstr ""
+msgstr "Elektrická dvojtečka"
 
 #: ../peppy/mainmenu.py:709
+#, fuzzy
 msgid "Electric Return"
-msgstr ""
+msgstr "Elektrický návrat"
 
 #: ../peppy/mainmenu.py:827
+#, fuzzy
 msgid "Enable or disable toolbar display in this frame"
-msgstr ""
+msgstr "Zapne nebo vypne nástrojovou lištu v okně"
 
 #: ../peppy/editra/style_editor.py:748
+#, fuzzy
 msgid "Enter a hex color value"
-msgstr ""
+msgstr "Napište hex hodnotu barvy"
 
 #: ../peppy/mainmenu.py:879
+#, fuzzy
 msgid "Execute an action by name"
-msgstr ""
+msgstr "Spusťte akci podle názvu"
 
 #: ../peppy/editra/style_editor.py:154
+#, fuzzy
 msgid "Export"
-msgstr "Eksportu"
+msgstr "Exportovat"
 
 #: ../peppy/plugins/sandbox.py:48
+#, fuzzy
 msgid "Fast test of the progress bar"
-msgstr ""
+msgstr "Rychlá zkouška čáry postupu"
 
 #: ../peppy/dired.py:26
+#, fuzzy
 msgid "Feb"
-msgstr ""
+msgstr "úno"
 
 #: ../peppy/frame.py:303 ../peppy/mainmenu.py:355 ../peppy/mainmenu.py:365
 #: ../peppy/mainmenu.py:379 ../peppy/mainmenu.py:400 ../peppy/mainmenu.py:417
 #: ../peppy/plugins/openrecent.py:21
+#, fuzzy
 msgid "File"
-msgstr "Dosiero"
+msgstr "Soubor"
 
 #: ../peppy/plugins/text_transforms.py:208
+#, fuzzy
 msgid "Fill Paragraph"
-msgstr ""
+msgstr "Naplnit odstavec"
 
 #: ../peppy/actions/pypefind.py:129
+#, fuzzy
 msgid "Find..."
-msgstr "Trovu..."
+msgstr "Najít..."
 
 #: ../peppy/major.py:1016
+#, fuzzy
 msgid "Finished %s on %s"
-msgstr ""
+msgstr "Dokončeno %s ze %s"
 
 #: ../peppy/actions/minibuffer.py:160
+#, fuzzy
 msgid "Floating Point"
-msgstr "Glitkoma nombro"
+msgstr "S plovoucí řádovou čárkou"
 
 #: ../peppy/hsi/hsi_major_mode.py:404
+#, fuzzy
 msgid "Focal Plane View"
-msgstr ""
+msgstr "Ústřední prostý náhled"
 
 #: ../peppy/editra/style_editor.py:262
+#, fuzzy
 msgid "Font"
-msgstr "Tiparo"
+msgstr "Písmo"
 
 #: ../peppy/editra/style_editor.py:257
+#, fuzzy
 msgid "Font Settings"
-msgstr "Elektoj pri Signaro"
+msgstr "Nastavení písem"
 
 #: ../peppy/editra/style_editor.py:219
+#, fuzzy
 msgid "Foreground"
-msgstr "Malfono"
+msgstr "Popředí"
 
 #: ../peppy/frame.py:29
+#, fuzzy
 msgid "Frames"
-msgstr "Filmeroj"
+msgstr "Rámce"
 
 #: ../peppy/plugins/function_menu.py:26 ../peppy/plugins/function_menu.py:29
+#, fuzzy
 msgid "Functions"
-msgstr "Funkcioj"
+msgstr "Funkce"
 
 #: ../peppy/plugins/games/hangman_mode.py:63
+#, fuzzy
 msgid "Games"
-msgstr "Ludoj"
+msgstr "Hry"
 
 #: ../peppy/plugins/debug_classes.py:26
+#, fuzzy
 msgid "Garbage Objects"
-msgstr ""
+msgstr "Odpadové objekty"
 
 #: ../peppy/main.py:56 ../peppy/main.py:90 ../peppy/main.py:99
 #: ../peppy/main.py:123 ../peppy/main.py:148 ../peppy/main.py:275
+#, fuzzy
 msgid "General"
-msgstr "Ĝenerala"
+msgstr "Obecné"
 
 #: ../peppy/plugins/mpd_major_mode.py:594
+#, fuzzy
 msgid "Generate a random playlist"
-msgstr ""
+msgstr "Vygenerovat náhodný seznam skladeb"
 
 #: ../peppy/plugins/function_menu.py:28
+#, fuzzy
 msgid "Go to a function"
-msgstr ""
+msgstr "Přejít na funkci"
 
 #: ../peppy/hsi/hsi_major_mode.py:509
+#, fuzzy
 msgid "Go to a particular band in the cube"
-msgstr ""
+msgstr "Přejít na konkrétní pruh na kostce"
 
 #: ../peppy/hsi/hsi_major_mode.py:508
+#, fuzzy
 msgid "Goto Band"
-msgstr ""
+msgstr "Přejít na pruh"
 
 #: ../peppy/actions/gotoline.py:25
+#, fuzzy
 msgid "Goto Line..."
-msgstr "Iri al linio..."
+msgstr "Přejít na řádek..."
 
 #: ../peppy/plugins/hexedit_mode.py:42
+#, fuzzy
 msgid "Goto Offset..."
-msgstr "Iru al pozicio..."
+msgstr "Přejít na offset..."
 
 #: ../peppy/actions/gotoline.py:26
+#, fuzzy
 msgid "Goto a line in the text."
-msgstr ""
+msgstr "Přejít na řádek v textu."
 
 #: ../peppy/plugins/hexedit_mode.py:43
+#, fuzzy
 msgid "Goto an offset."
-msgstr ""
+msgstr "Přejít na offset."
 
 #: ../peppy/plugins/games/hangman_mode.py:61
 #: ../peppy/plugins/games/hangman_mode.py:84
+#, fuzzy
 msgid "Hangman"
-msgstr ""
+msgstr "Oběšenec"
 
 #: ../peppy/plugins/tutorial_plugin.py:36
+#, fuzzy
 msgid "Hello World Action"
-msgstr ""
+msgstr "Akce ahoj světe"
 
 #: ../peppy/hsi/hsi_major_mode.py:204
+#, fuzzy
 msgid "Image View"
-msgstr ""
+msgstr "Prohlížeč obrázků"
 
 #: ../peppy/plugins/mpd_major_mode.py:534
+#, fuzzy
 msgid "Increase Volume"
-msgstr "Laŭtigu"
+msgstr "Zvýšit hlasitost"
 
 #: ../peppy/plugins/mpd_major_mode.py:535
+#, fuzzy
 msgid "Increase the volume"
-msgstr ""
+msgstr "Zvýšit hlasitost"
 
 #: ../peppy/plugins/python_mode.py:56
 msgid "Indent the current line when a colon is pressed"
-msgstr ""
+msgstr "Odsadit aktuální řádek, když je stisknuta dvojtečka"
 
 #: ../peppy/mainmenu.py:710
+#, fuzzy
 msgid "Indent the next line following a return"
-msgstr ""
+msgstr "Odsazovat nové řádek"
 
 #: ../peppy/actions/minibuffer.py:42
+#, fuzzy
 msgid "Input:"
-msgstr "Enigo:"
+msgstr "Vstup:"
 
 #: ../peppy/plugins/tutorial_plugin.py:40
+#, fuzzy
 msgid "Insert 'Hello, world' at the current cursor position"
-msgstr ""
+msgstr "Vložit \"Ahoj, světe\" na současnou pozici kurzoru"
 
 #: ../peppy/actions/minibuffer.py:141
+#, fuzzy
 msgid "Integer"
-msgstr ""
+msgstr "Celé číslo"
 
 #: ../peppy/dired.py:26
+#, fuzzy
 msgid "Jan"
-msgstr ""
+msgstr "led"
 
 #: ../peppy/dired.py:27
+#, fuzzy
 msgid "Jul"
-msgstr ""
+msgstr "čec"
 
 #: ../peppy/dired.py:26
+#, fuzzy
 msgid "Jun"
-msgstr ""
+msgstr "čen"
 
 #: ../peppy/mainmenu.py:736
+#, fuzzy
 msgid "Line Endings"
-msgstr ""
+msgstr "Konce řádků"
 
 #: ../peppy/plugins/buffer_list_mode.py:24
+#, fuzzy
 msgid "List All Documents"
-msgstr ""
+msgstr "Projít všechny dokumenty"
 
 #: ../peppy/plugins/mpd_major_mode.py:413
 #: ../peppy/plugins/mpd_major_mode.py:414
+#, fuzzy
 msgid "Login"
-msgstr "Saluto"
+msgstr "Přihlášení"
 
 #: ../peppy/plugins/mpd_major_mode.py:415
 #: ../peppy/plugins/mpd_major_mode.py:467
@@ -571,626 +620,779 @@ msgstr "Saluto"
 #: ../peppy/plugins/mpd_major_mode.py:573
 #: ../peppy/plugins/mpd_major_mode.py:584
 #: ../peppy/plugins/mpd_major_mode.py:595
+#, fuzzy
 msgid "MPD"
-msgstr ""
+msgstr "MPD"
 
 #: ../peppy/plugins/mpd_major_mode.py:428
+#, fuzzy
 msgid "MPD Server..."
-msgstr ""
+msgstr "MPD Server..."
 
 #: ../peppy/mainmenu.py:762
+#, fuzzy
 msgid "Major Mode"
-msgstr ""
+msgstr "Hlavní režim"
 
 #: ../peppy/dired.py:26
+#, fuzzy
 msgid "Mar"
-msgstr ""
+msgstr "bře"
 
 #: ../peppy/dired.py:101 ../peppy/plugins/buffer_list_mode.py:77
+#, fuzzy
 msgid "Mark for Deletion"
-msgstr ""
+msgstr "Označit ke smazání"
 
 #: ../peppy/dired.py:109 ../peppy/plugins/buffer_list_mode.py:85
+#, fuzzy
 msgid "Mark for Deletion and Move Backwards"
-msgstr ""
+msgstr "Označit ke smazání a vrátit se zpět"
 
 #: ../peppy/dired.py:118 ../peppy/plugins/buffer_list_mode.py:111
+#, fuzzy
 msgid "Mark for Display"
-msgstr ""
+msgstr "Označit k zobrazení"
 
 #: ../peppy/dired.py:126 ../peppy/plugins/buffer_list_mode.py:119
+#, fuzzy
 msgid "Mark for Display and Move Backwards"
-msgstr ""
+msgstr "Označit k zobrazení a vrátit se zpět"
 
 #: ../peppy/plugins/buffer_list_mode.py:94
+#, fuzzy
 msgid "Mark for Save"
-msgstr ""
+msgstr "Označit k uložení"
 
 #: ../peppy/plugins/buffer_list_mode.py:102
+#, fuzzy
 msgid "Mark for Save and Move Backwards"
-msgstr ""
+msgstr "Označit k uložení a vrátit se zpět"
 
 #: ../peppy/dired.py:110 ../peppy/plugins/buffer_list_mode.py:86
+#, fuzzy
 msgid "Mark the selected buffer for deletion and move to the previous item."
-msgstr ""
+msgstr "Označit vybraný zásobník k výmazu a přesunout se k původnímu."
 
 #: ../peppy/dired.py:102 ../peppy/plugins/buffer_list_mode.py:78
+#, fuzzy
 msgid "Mark the selected buffer for deletion."
-msgstr ""
+msgstr "Označit vybraný zásobník k výmazu."
 
 #: ../peppy/dired.py:127 ../peppy/plugins/buffer_list_mode.py:120
+#, fuzzy
 msgid ""
 "Mark the selected buffer to be displayed and move to the previous item."
-msgstr ""
+msgstr "Označit vybraný zásobník k zobrazení a vrátit se k původnímu."
 
 #: ../peppy/dired.py:119 ../peppy/plugins/buffer_list_mode.py:112
+#, fuzzy
 msgid "Mark the selected buffer to be displayed."
-msgstr ""
+msgstr "Označit vybraný zásobník k zobrazení."
 
 #: ../peppy/plugins/buffer_list_mode.py:103
+#, fuzzy
 msgid "Mark the selected buffer to be saved and move to the previous item."
-msgstr ""
+msgstr "Označit vybraný zásobník k uložení a vrátit se k původnímu."
 
 #: ../peppy/plugins/buffer_list_mode.py:95
+#, fuzzy
 msgid "Mark the selected buffer to be saved."
-msgstr ""
+msgstr "Označit vybraný zásobník k uložení."
 
 #: ../peppy/dired.py:26
+#, fuzzy
 msgid "May"
-msgstr "majo"
+msgstr "Květen"
 
 #: ../peppy/hsi/hsi_major_mode.py:588
+#, fuzzy
 msgid "Median Filter"
-msgstr ""
+msgstr "Filtr median"
 
 #: ../peppy/hsi/hsi_major_mode.py:589
+#, fuzzy
 msgid "Median filter"
-msgstr ""
+msgstr "Filtr median"
 
 #: ../peppy/mainmenu.py:792
+#, fuzzy
 msgid "Minor Modes"
-msgstr ""
+msgstr "Vedlejší režim"
 
 #: ../peppy/major.py:372
+#, fuzzy
 msgid "Modes"
-msgstr ""
+msgstr "Režimy"
 
 #: ../peppy/plugins/cursor_movement.py:52
+#, fuzzy
 msgid "Move the cursor down a line"
-msgstr ""
+msgstr "Posunout kurzor dolu o řádek"
 
 #: ../peppy/plugins/cursor_movement.py:68
+#, fuzzy
 msgid "Move the cursor to the end of the buffer"
-msgstr ""
+msgstr "Přesunout kurzor nakonec zásobníku"
 
 #: ../peppy/plugins/cursor_movement.py:38
+#, fuzzy
 msgid "Move the cursor to the end of the current line"
-msgstr ""
+msgstr "Přesunout kurzor nakonec řádky"
 
 #: ../peppy/plugins/cursor_movement.py:59
+#, fuzzy
 msgid "Move the cursor to the start of the buffer"
-msgstr ""
+msgstr "Přesunout kurzor na začátek zásobníku"
 
 #: ../peppy/plugins/cursor_movement.py:24
 #: ../peppy/plugins/cursor_movement.py:31
+#, fuzzy
 msgid "Move the cursor to the start of the current line"
-msgstr ""
+msgstr "Přesunout kurzor na začátek řádky"
 
 #: ../peppy/plugins/cursor_movement.py:45
+#, fuzzy
 msgid "Move the cursor up a line"
-msgstr ""
+msgstr "Posunout kurzor o řádku nahoru"
 
 #: ../peppy/dired.py:87 ../peppy/plugins/buffer_list_mode.py:63
+#, fuzzy
 msgid "Move the selection to the next item in the list."
-msgstr ""
+msgstr "Posunout výběr na další položku v seznamu."
 
 #: ../peppy/dired.py:94 ../peppy/plugins/buffer_list_mode.py:70
+#, fuzzy
 msgid "Move the selection to the previous item in the list."
-msgstr ""
+msgstr "Posunout výběr na předchozí položku v seznamu."
 
 #: ../peppy/dired.py:86 ../peppy/plugins/buffer_list_mode.py:62
+#, fuzzy
 msgid "Move to Next Item"
-msgstr ""
+msgstr "Posunout na další"
 
 #: ../peppy/dired.py:93 ../peppy/plugins/buffer_list_mode.py:69
+#, fuzzy
 msgid "Move to Previous Item"
-msgstr ""
+msgstr "Posunout na předchozí"
 
 #: ../peppy/plugins/mpd_major_mode.py:521
+#, fuzzy
 msgid "Mute"
-msgstr "Mutu"
+msgstr "Ztlumit"
 
 #: ../peppy/plugins/mpd_major_mode.py:522
+#, fuzzy
 msgid "Mute the volume"
-msgstr ""
+msgstr "Ztlumit hlasitost"
 
 #: ../peppy/editra/style_editor.py:309 ../peppy/mainmenu.py:33
 #: ../peppy/mainmenu.py:53
+#, fuzzy
 msgid "New"
-msgstr "Nova"
+msgstr "Nový"
 
 #: ../peppy/mainmenu.py:31
+#, fuzzy
 msgid "New Tab"
-msgstr "Nova tabo"
+msgstr "Nový panel"
 
 #: ../peppy/mainmenu.py:51
+#, fuzzy
 msgid "New plain text file"
-msgstr ""
+msgstr "Nový prázdný textový soubor"
 
 #: ../peppy/hsi/hsi_major_mode.py:487 ../peppy/hsi/hsi_major_mode.py:488
+#, fuzzy
 msgid "Next Band"
-msgstr ""
+msgstr "Další pruh"
 
 #: ../peppy/plugins/mpd_major_mode.py:479
 #: ../peppy/plugins/mpd_major_mode.py:480
+#, fuzzy
 msgid "Next Song"
-msgstr ""
+msgstr "Další skladba"
 
 #: ../peppy/actions/minibuffer.py:161
+#, fuzzy
 msgid "Not a numeric expression."
-msgstr ""
+msgstr "Není číselný výraz."
 
 #: ../peppy/actions/minibuffer.py:142
+#, fuzzy
 msgid "Not an integer expression."
-msgstr ""
+msgstr "není celo číselný výraz."
 
 #: ../peppy/dired.py:27
+#, fuzzy
 msgid "Nov"
-msgstr ""
+msgstr "lis"
 
 #: ../peppy/dired.py:27
+#, fuzzy
 msgid "Oct"
-msgstr "8ume"
+msgstr "říj"
 
 #: ../peppy/editra/style_editor.py:155
+#, fuzzy
 msgid "Ok"
-msgstr "Bone"
+msgstr "Ok"
 
 #: ../peppy/mainmenu.py:64 ../peppy/mainmenu.py:166 ../peppy/mainmenu.py:290
 #: ../peppy/plugins/mpd_major_mode.py:430
+#, fuzzy
 msgid "Open"
-msgstr "Malfermu"
+msgstr "Otevřít"
 
 #: ../peppy/mainmenu.py:164
+#, fuzzy
 msgid "Open File Using Minibuffer..."
-msgstr ""
+msgstr "Otevřít soubor použitím Minibuffer..."
 
 #: ../peppy/mainmenu.py:61
+#, fuzzy
 msgid "Open File..."
-msgstr "Malfermu dosieron..."
+msgstr "Otevřít soubor..."
 
 #: ../peppy/plugins/openrecent.py:20
+#, fuzzy
 msgid "Open Recent"
-msgstr "Malfermu lastajn"
+msgstr "Otevřít nedávné"
 
 #: ../peppy/mainmenu.py:288
+#, fuzzy
 msgid "Open URL Using Minibuffer..."
-msgstr ""
+msgstr "Otevřít URL použitím Minibuffer..."
 
 #: ../peppy/plugins/hexedit_mode.py:20
+#, fuzzy
 msgid "Open a Hex Editor"
-msgstr ""
+msgstr "Otevřít hex editor"
 
 #: ../peppy/mainmenu.py:62 ../peppy/mainmenu.py:562
+#, fuzzy
 msgid "Open a file"
-msgstr ""
+msgstr "Otevřít soubor"
 
 #: ../peppy/mainmenu.py:289
+#, fuzzy
 msgid "Open a file using URL name completion"
-msgstr ""
+msgstr "Otevřít soubor doplněním názvu URL"
 
 #: ../peppy/mainmenu.py:165
+#, fuzzy
 msgid "Open a file using filename completion"
-msgstr ""
+msgstr "Otevřít soubor doplněním názvu souboru"
 
 #: ../peppy/mainmenu.py:32
+#, fuzzy
 msgid "Open a new tab"
-msgstr "Malfermu novan folion"
+msgstr "Otevřít nový panel"
 
 #: ../peppy/frame.py:69
+#, fuzzy
 msgid "Open a new window"
-msgstr ""
+msgstr "Otevřít nové okno"
 
 #: ../peppy/plugins/c_mode.py:31
+#, fuzzy
 msgid "Open a sample C file"
-msgstr ""
+msgstr "Otevřít ukázku souboru v C"
 
 #: ../peppy/plugins/graphviz_mode.py:36
+#, fuzzy
 msgid "Open a sample Graphviz file"
-msgstr ""
+msgstr "Otevřít ukázku souboru Graphviz"
 
 #: ../peppy/plugins/makefile_mode.py:49
+#, fuzzy
 msgid "Open a sample Makefile"
-msgstr ""
+msgstr "Otevřít ukázku Makefile"
 
 #: ../peppy/plugins/python_mode.py:47
+#, fuzzy
 msgid "Open a sample Python file"
-msgstr ""
+msgstr "Otevřít ukázku souboru Python"
 
 #: ../peppy/plugins/image_mode.py:36
+#, fuzzy
 msgid "Open an Image Viewer"
-msgstr ""
+msgstr "Otevřít prohlížeč obrázků"
 
 #: ../peppy/plugins/mpd_major_mode.py:429
+#, fuzzy
 msgid "Open an MPD server through a URL"
-msgstr ""
+msgstr "Otevřít MPD server skrz URL"
 
 #: ../peppy/mainmenu.py:462
+#, fuzzy
 msgid "Open some sample text"
-msgstr ""
+msgstr "Otevřít ukázkový text"
 
 #: ../peppy/plugins/editra_styleeditor.py:27
+#, fuzzy
 msgid "Open the STC Style Editor to edit the current mode's text display."
-msgstr ""
+msgstr "Otevřít STC editor stylů k úpravě režimu zobrazení textu."
 
 #: ../peppy/plugins/widget_inspector.py:15
+#, fuzzy
 msgid "Open the wxPython widget inspector."
-msgstr ""
+msgstr "Otevřít wxPython widget inspektor."
 
 #: ../peppy/mainmenu.py:659 ../peppy/mainmenu.py:660
+#, fuzzy
 msgid "Paste"
-msgstr "Enmetu"
+msgstr "Vložit"
 
 #: ../peppy/mainmenu.py:674
+#, fuzzy
 msgid "Paste at Column"
-msgstr ""
+msgstr "Vložit do sloupce"
 
 #: ../peppy/mainmenu.py:675
+#, fuzzy
 msgid "Paste selection indented to the cursor's column"
-msgstr ""
+msgstr "Vložit výběr odsazený podle pozice kurzoru"
 
 #: ../peppy/plugins/mpd_major_mode.py:507
 #: ../peppy/plugins/mpd_major_mode.py:508
+#, fuzzy
 msgid "Play/Pause Song"
-msgstr ""
+msgstr "Přehrát/Pozastavit skladbu"
 
 #: ../peppy/yapsy/plugins.py:105
+#, fuzzy
 msgid "Plugins"
-msgstr "Kromaĵoj"
+msgstr "Zásuvné moduly"
 
 #: ../peppy/plugins/preferences.py:23
+#, fuzzy
 msgid "Preferences, settings, and configurations..."
-msgstr ""
+msgstr "Předvolby, nastavení a konfigurace..."
 
 #: ../peppy/hsi/hsi_major_mode.py:466
+#, fuzzy
 msgid "Prev Band"
-msgstr ""
+msgstr "Předchozí"
 
 #: ../peppy/plugins/mpd_major_mode.py:465
+#, fuzzy
 msgid "Prev Song"
-msgstr ""
+msgstr "Předchozí"
 
 #: ../peppy/editra/style_editor.py:146
+#, fuzzy
 msgid "Preview"
-msgstr "Antaŭmonto"
+msgstr "Náhled"
 
 #: ../peppy/hsi/hsi_major_mode.py:467
+#, fuzzy
 msgid "Previous Band"
-msgstr ""
+msgstr "Předchozí pruh"
 
 #: ../peppy/plugins/mpd_major_mode.py:466
+#, fuzzy
 msgid "Previous Song"
-msgstr ""
+msgstr "Předchozí skladba"
 
 #: ../peppy/plugins/help.py:89
+#, fuzzy
 msgid "Project Homepage"
-msgstr ""
+msgstr "Domácí stránka projektu"
 
 #: ../peppy/mainmenu.py:349
+#, fuzzy
 msgid "Quit the program."
-msgstr ""
+msgstr "Ukončit program."
 
 #: ../peppy/plugins/mpd_major_mode.py:593
+#, fuzzy
 msgid "Random Playlist"
-msgstr ""
+msgstr "Náhodný seznam skladeb"
 
 #: ../peppy/plugins/hexedit_mode.py:64
+#, fuzzy
 msgid "Record Format..."
-msgstr ""
+msgstr "Nahrát formát..."
 
 #: ../peppy/mainmenu.py:614 ../peppy/mainmenu.py:615
+#, fuzzy
 msgid "Redo"
-msgstr "Refaru"
+msgstr "Udělat znovu"
 
 #: ../peppy/dired.py:56
+#, fuzzy
 msgid "Refresh"
-msgstr "Refreŝigu"
+msgstr "Obnovit"
 
 #: ../peppy/dired.py:57
+#, fuzzy
 msgid "Refresh the current view to show any changes."
-msgstr ""
+msgstr "Obnovit pohled k zobrazení změn."
 
 #: ../peppy/plugins/text_transforms.py:190
+#, fuzzy
 msgid "Reindent"
-msgstr ""
+msgstr "Vrátit odsazení"
 
 #: ../peppy/plugins/mpd_major_mode.py:583
+#, fuzzy
 msgid "Remove all songs from the current playlist"
-msgstr ""
+msgstr "Odstranit všechny skladby ze seznamu"
 
 #: ../peppy/plugins/text_transforms.py:109
+#, fuzzy
 msgid "Remove whitespace from blank lines"
-msgstr ""
+msgstr "Odebrat mezery z prázdných řádků"
 
 #: ../peppy/dired.py:171 ../peppy/plugins/buffer_list_mode.py:164
+#, fuzzy
 msgid "Replace Buffer"
-msgstr ""
+msgstr "Nahradit zásobník"
 
 #: ../peppy/actions/pypefind.py:138
+#, fuzzy
 msgid "Replace a string in the text."
-msgstr ""
+msgstr "Nahradit řetězec znaků v textu"
 
 #: ../peppy/actions/pypefind.py:137
+#, fuzzy
 msgid "Replace..."
-msgstr "Anstataŭigu..."
+msgstr "Nahradit..."
 
 #: ../peppy/plugins/help.py:105
+#, fuzzy
 msgid "Report a bug"
-msgstr ""
+msgstr "Nahlásit chybu"
 
 #: ../peppy/plugins/mpd_major_mode.py:561
+#, fuzzy
 msgid "Rescan the filesystem and update the MPD database"
-msgstr ""
+msgstr "Znovu projít systém souborů a aktualizovat MPD databázi"
 
 #: ../peppy/plugins/games/hangman_mode.py:82
 #: ../peppy/plugins/games/hangman_mode.py:83
+#, fuzzy
 msgid "Restart Game"
-msgstr ""
+msgstr "Restartovat hru"
 
 #: ../peppy/mainmenu.py:378
+#, fuzzy
 msgid "Revert to last saved version"
-msgstr ""
+msgstr "Vrátit se k poslední uložené verzi"
 
 #: ../peppy/plugins/text_transforms.py:178
+#, fuzzy
 msgid "Rot13"
-msgstr ""
+msgstr "Rot13"
 
 #: ../peppy/mainmenu.py:542
+#, fuzzy
 msgid "Run"
-msgstr "Rulu"
+msgstr "Spustit"
 
 #: ../peppy/mainmenu.py:543
+#, fuzzy
 msgid "Run this script through the interpreter"
-msgstr ""
+msgstr "Spustit skript pomocí překladače"
 
 #: ../peppy/mainmenu.py:561
+#, fuzzy
 msgid "Run with Args"
-msgstr ""
+msgstr "Spustit s argumenty"
 
 #: ../peppy/plugins/process_list.py:26
+#, fuzzy
 msgid "Running Jobs"
-msgstr ""
+msgstr "Běžící úkoly"
 
 #: ../peppy/buffers.py:124
+#, fuzzy
 msgid "Same Major Mode"
-msgstr ""
+msgstr "Stejný hlavní režim"
 
 #: ../peppy/mainmenu.py:463 ../peppy/plugins/c_mode.py:32
 #: ../peppy/plugins/graphviz_mode.py:37 ../peppy/plugins/hexedit_mode.py:21
 #: ../peppy/plugins/image_mode.py:37 ../peppy/plugins/makefile_mode.py:52
 #: ../peppy/plugins/python_mode.py:48
+#, fuzzy
 msgid "Samples"
-msgstr "Samploj"
+msgstr "Ukázky"
 
 #: ../peppy/mainmenu.py:183 ../peppy/mainmenu.py:414
+#, fuzzy
 msgid "Save &As..."
-msgstr "Konservu &kiel..."
+msgstr "Uložit j&ako..."
 
 #: ../peppy/editra/style_editor.py:357
+#, fuzzy
 msgid "Save Styles"
-msgstr ""
+msgstr "Uložit styly"
 
 #: ../peppy/mainmenu.py:184 ../peppy/mainmenu.py:415
+#, fuzzy
 msgid "Save as a new file"
-msgstr ""
+msgstr "Uložit jako nový soubor"
 
 #: ../peppy/dired.py:148 ../peppy/plugins/buffer_list_mode.py:141
+#, fuzzy
 msgid "Save or Delete Marked Buffers"
-msgstr ""
+msgstr "Uložit nebo odstranit označené zásobníky"
 
 #: ../peppy/mainmenu.py:398
+#, fuzzy
 msgid "Save the current file"
-msgstr ""
+msgstr "Uložit aktuální soubor"
 
 #: ../peppy/mainmenu.py:305
+#, fuzzy
 msgid "Save to URL Using Minibuffer..."
-msgstr ""
+msgstr "Uložit URL použitím Minibuffer..."
 
 #: ../peppy/actions/pypefind.py:130
+#, fuzzy
 msgid "Search for a string in the text."
-msgstr ""
+msgstr "Vyhledat řetězec znaků v textu."
 
 #: ../peppy/mainmenu.py:691
+#, fuzzy
 msgid "Select All"
-msgstr "Elektu Ĉion"
+msgstr "Vybrat vše"
 
 #: ../peppy/plugins/image_mode.py:68
+#, fuzzy
 msgid "Select Rect"
-msgstr ""
+msgstr "Vybrat obdélník"
 
 #: ../peppy/mainmenu.py:692
+#, fuzzy
 msgid "Select all text"
-msgstr ""
+msgstr "Vybrat všechen text"
 
 #: ../peppy/plugins/image_mode.py:69
+#, fuzzy
 msgid "Select rectangular region."
-msgstr ""
+msgstr "Vybrat oblast obdélníku."
 
 #: ../peppy/dired.py:27
+#, fuzzy
 msgid "Sep"
-msgstr ""
+msgstr "zář"
 
 #: ../peppy/editra/style_editor.py:195
+#, fuzzy
 msgid "Set the preview file type"
-msgstr ""
+msgstr "Nastavit náhled nad typem souboru"
 
 #: ../peppy/plugins/text_transforms.py:25
+#, fuzzy
 msgid "Shift &Left"
-msgstr ""
+msgstr "Posunout v&levo"
 
 #: ../peppy/plugins/text_transforms.py:34
+#, fuzzy
 msgid "Shift &Right"
-msgstr ""
+msgstr "Posunout vp&ravo"
 
 #: ../peppy/dired.py:159 ../peppy/plugins/buffer_list_mode.py:152
+#, fuzzy
 msgid "Show Buffer"
-msgstr ""
+msgstr "Ukázat zásobník"
 
 #: ../peppy/plugins/hexedit_mode.py:82
+#, fuzzy
 msgid "Show Hex Digits"
-msgstr ""
+msgstr "Ukázat hex číslice"
 
 #: ../peppy/plugins/sandbox.py:53
+#, fuzzy
 msgid "Show Line Style"
-msgstr ""
+msgstr "Ukázat styl řádku"
 
 #: ../peppy/hsi/hsi_major_mode.py:652
+#, fuzzy
 msgid "Show Pixel Values"
-msgstr ""
+msgstr "Ukázat hodnoty pixelů"
 
 #: ../peppy/plugins/hexedit_mode.py:97
+#, fuzzy
 msgid "Show Record Numbers"
-msgstr ""
+msgstr "Ukázat čísla záznamu"
 
 #: ../peppy/mainmenu.py:794
+#, fuzzy
 msgid "Show or hide minor mode windows"
-msgstr ""
+msgstr "Ukázat nebo skrýt režim vedlejších oken"
 
 #: ../peppy/mainmenu.py:810
+#, fuzzy
 msgid "Show or hide sidebar windows"
-msgstr ""
+msgstr "Ukázat nebo skrýt postraní panel oken"
 
 #: ../peppy/dired.py:160 ../peppy/plugins/buffer_list_mode.py:153
+#, fuzzy
 msgid "Show the buffer in a new tab."
-msgstr ""
+msgstr "Ukázat zásobník v novém panelu."
 
 #: ../peppy/dired.py:172 ../peppy/plugins/buffer_list_mode.py:165
+#, fuzzy
 msgid "Show the buffer in place of this tab."
-msgstr ""
+msgstr "Ukázat zásobník na místě vybraného panelu."
 
 #: ../peppy/plugins/sandbox.py:54
+#, fuzzy
 msgid "Show the styling information of the current line"
-msgstr ""
+msgstr "Ukázat informace stylu řádku"
 
 #: ../peppy/plugins/debug_classes.py:27
+#, fuzzy
 msgid "Show uncollectable objects"
-msgstr ""
+msgstr "Ukázat nesesbíratelné objekty"
 
 #: ../peppy/mainmenu.py:808
+#, fuzzy
 msgid "Sidebars"
-msgstr ""
+msgstr "Postraní panely"
 
 #: ../peppy/editra/style_editor.py:276
+#, fuzzy
 msgid "Size"
-msgstr "Grando"
+msgstr "Velikost"
 
 #: ../peppy/plugins/sandbox.py:24
+#, fuzzy
 msgid "Slow test of the progress bar"
-msgstr ""
+msgstr "Pomalý test postupného panelu"
 
 #: ../peppy/editra/style_editor.py:355
+#, fuzzy
 msgid "Some styles have been changed would you like to save before exiting?"
 msgstr ""
+"Některé styly byly změněny. Přejete si před ukončením provedené změny uložit?"
 
 #: ../peppy/buffers.py:140
+#, fuzzy
 msgid "Sort Order"
-msgstr ""
+msgstr "Pořadí řazení"
 
 #: ../peppy/buffers.py:143
+#, fuzzy
 msgid "Sort document list"
-msgstr ""
+msgstr "Seřadit seznam dokumentů"
 
 #: ../peppy/editra/style_editor.py:310
+#, fuzzy
 msgid "Start a blank new style"
-msgstr ""
+msgstr "Začít nový styl"
 
 #: ../peppy/plugins/games/hangman_mode.py:62
+#, fuzzy
 msgid "Start a hangman game"
-msgstr ""
+msgstr "Spustit hru oběšence"
 
 #: ../peppy/major.py:996
+#, fuzzy
 msgid "Started %s on %s"
-msgstr ""
+msgstr "Spuštěno %s na %s"
 
 #: ../peppy/mainmenu.py:582 ../peppy/plugins/mpd_major_mode.py:493
 #: ../peppy/plugins/mpd_major_mode.py:494
+#, fuzzy
 msgid "Stop"
-msgstr "Stop!"
+msgstr "Stop"
 
 #: ../peppy/mainmenu.py:583
+#, fuzzy
 msgid "Stop the currently running script"
-msgstr ""
+msgstr "Zastavit právě běžící skript"
 
 #: ../peppy/editra/style_editor.py:87
+#, fuzzy
 msgid "Style Editor"
-msgstr ""
+msgstr "Editor stylu"
 
 #: ../peppy/editra/style_editor.py:326
+#, fuzzy
 msgid "Style Tags"
-msgstr ""
+msgstr "Tagy stylu"
 
 #: ../peppy/editra/style_editor.py:302
+#, fuzzy
 msgid "Style Theme"
-msgstr ""
+msgstr "Téma stylu"
 
 #: ../peppy/editra/syntax/syntax.py:217
+#, fuzzy
 msgid "Switch Lexer to %s"
-msgstr ""
+msgstr "Přepnout lexer na %s"
 
 #: ../peppy/mainmenu.py:739
+#, fuzzy
 msgid "Switch line endings"
-msgstr ""
+msgstr "Přepnout konce řádků"
 
 #: ../peppy/mainmenu.py:764
+#, fuzzy
 msgid "Switch major mode"
-msgstr ""
+msgstr "Přepnout hlavní režim"
 
 #: ../peppy/editra/style_editor.py:192
+#, fuzzy
 msgid "Syntax Files"
-msgstr ""
+msgstr "Soubory se syntaxí"
 
 #: ../peppy/plugins/sandbox.py:25
+#, fuzzy
 msgid "Test the progress bar"
-msgstr ""
+msgstr "Vyzkoušet běžící pruh"
 
 #: ../peppy/plugins/sandbox.py:26 ../peppy/plugins/sandbox.py:49
 #: ../peppy/plugins/sandbox.py:55 ../peppy/plugins/tutorial_plugin.py:52
+#, fuzzy
 msgid "Tests"
-msgstr "Testoj"
+msgstr "Testy"
 
 #: ../peppy/actions/minibuffer.py:98
+#, fuzzy
 msgid "Text"
-msgstr "Teksto"
+msgstr "Text"
 
 #: ../peppy/plugins/editra_styleeditor.py:26
+#, fuzzy
 msgid "Text Styles..."
-msgstr ""
+msgstr "Styly textu..."
 
 #: ../peppy/mainmenu.py:50
+#, fuzzy
 msgid "Text file"
-msgstr "Textdosiero"
+msgstr "Textový soubor"
 
 #: ../peppy/mainmenu.py:721
+#, fuzzy
 msgid "Toggle display of line-end (cr/lf) characters"
-msgstr ""
+msgstr "Zapnout zobrazení znaků konce řádků (cr/lf)"
 
 #: ../peppy/mainmenu.py:526
+#, fuzzy
 msgid "Toggle folding in this view"
-msgstr ""
+msgstr "Zapnout skrývání v tomto pohledu"
 
 #: ../peppy/mainmenu.py:509
+#, fuzzy
 msgid "Toggle line numbers in this view"
-msgstr ""
+msgstr "Zapnout čísla řádků v tomto pohledu"
 
 #: ../peppy/mainmenu.py:472
+#, fuzzy
 msgid "Toggle line wrap in this view"
-msgstr ""
+msgstr "Zapnout zalamování řádku v tomto pohledu"
 
 #: ../peppy/frame.py:306 ../peppy/mainmenu.py:545 ../peppy/mainmenu.py:564
 #: ../peppy/mainmenu.py:585 ../peppy/mainmenu.py:881 ../peppy/mainmenu.py:958
 #: ../peppy/plugins/changelog_mode.py:24
+#, fuzzy
 msgid "Tools"
-msgstr "Iloj"
+msgstr "Nástroje"
 
 #: ../peppy/frame.py:307 ../peppy/mainmenu.py:740
 #: ../peppy/plugins/text_transforms.py:26
@@ -1203,28 +1405,34 @@ msgstr "Iloj"
 #: ../peppy/plugins/text_transforms.py:179
 #: ../peppy/plugins/text_transforms.py:191
 #: ../peppy/plugins/text_transforms.py:209
+#, fuzzy
 msgid "Transform"
-msgstr "Transformu"
+msgstr "Transformovat"
 
 #: ../peppy/plugins/debug_classes.py:56
+#, fuzzy
 msgid "Turn on/off debugging for listed classes"
-msgstr ""
+msgstr "Zapnout/vypnout ladění pro zmíněné třídy"
 
 #: ../peppy/mainmenu.py:598 ../peppy/mainmenu.py:599
+#, fuzzy
 msgid "Undo"
-msgstr "Nuligu"
+msgstr "Vrátit změny"
 
 #: ../peppy/plugins/text_transforms.py:147
+#, fuzzy
 msgid "Upcase"
-msgstr ""
+msgstr "Zvětšit"
 
 #: ../peppy/plugins/mpd_major_mode.py:560
+#, fuzzy
 msgid "Update Database"
-msgstr ""
+msgstr "Aktualizovat databázi"
 
 #: ../peppy/plugins/help.py:71
+#, fuzzy
 msgid "User manual"
-msgstr ""
+msgstr "Uživatelský manuál"
 
 #: ../peppy/actions/gotoline.py:27 ../peppy/frame.py:305
 #: ../peppy/hsi/hsi_major_mode.py:468 ../peppy/hsi/hsi_major_mode.py:489
@@ -1237,90 +1445,112 @@ msgstr ""
 #: ../peppy/plugins/hexedit_mode.py:65 ../peppy/plugins/hexedit_mode.py:83
 #: ../peppy/plugins/hexedit_mode.py:98 ../peppy/plugins/image_mode.py:50
 #: ../peppy/plugins/image_mode.py:60
+#, fuzzy
 msgid "View"
-msgstr "Videbligu"
+msgstr "Pohled"
 
 #: ../peppy/hsi/hsi_major_mode.py:630
+#, fuzzy
 msgid "View Direction"
-msgstr ""
+msgstr "Směr pohledu"
 
 #: ../peppy/plugins/widget_inspector.py:14
+#, fuzzy
 msgid "Widget Inspector..."
-msgstr ""
+msgstr "Widget inspektor..."
 
 #: ../peppy/frame.py:30 ../peppy/frame.py:55 ../peppy/frame.py:70
 #: ../peppy/frame.py:309
+#, fuzzy
 msgid "Window"
-msgstr "Fenestro"
+msgstr "Okno"
 
 #: ../peppy/mainmenu.py:957
+#, fuzzy
 msgid "Word count in region or document"
-msgstr ""
+msgstr "Počet slov v regionu nebo dokumentu"
 
 #: ../peppy/mainmenu.py:306
+#, fuzzy
 msgid "Write to a new URL using name completion"
-msgstr ""
+msgstr "Zapsat do nové URL použitím dokončování názvu"
 
 #: ../peppy/plugins/image_mode.py:48
+#, fuzzy
 msgid "Zoom In"
-msgstr "Zomu"
+msgstr "Zvětšit"
 
 #: ../peppy/plugins/image_mode.py:58
+#, fuzzy
 msgid "Zoom Out"
-msgstr "Malzomu"
+msgstr "Změnšit"
 
 #: ../peppy/plugins/image_mode.py:49
+#, fuzzy
 msgid "Zoom in (magnify) image"
-msgstr ""
+msgstr "Přiblížit (zvětšit) obrázek"
 
 #: ../peppy/plugins/image_mode.py:59
+#, fuzzy
 msgid "Zoom out (demagnify) image"
-msgstr ""
+msgstr "Zmenšit (odálit) obrázek"
 
 #: ../peppy/hsi/hsi_major_mode.py:302
+#, fuzzy
 msgid "band"
-msgstr ""
+msgstr "pruh"
 
 #: ../peppy/editra/style_editor.py:245
+#, fuzzy
 msgid "bold"
-msgstr "grasa"
+msgstr "tučné"
 
 #: ../peppy/plugins/chatbots.py:37
+#, fuzzy
 msgid "chatbot-%s"
-msgstr ""
+msgstr "chatbot-%s"
 
 #: ../peppy/editra/style_editor.py:246
+#, fuzzy
 msgid "eol"
-msgstr ""
+msgstr "eol"
 
 #: ../peppy/plugins/games/hangman_mode.py:60
+#, fuzzy
 msgid "hangman"
-msgstr ""
+msgstr "oběšenec"
 
 #: ../peppy/editra/style_editor.py:247
+#, fuzzy
 msgid "italic"
-msgstr "kursiva"
+msgstr "kurzíva"
 
 #: ../peppy/plugins/error_log.py:150
+#, fuzzy
 msgid "peppy.log.debug"
-msgstr ""
+msgstr "peppy.log.debug"
 
 #: ../peppy/plugins/error_log.py:114
+#, fuzzy
 msgid "peppy.log.error"
-msgstr ""
+msgstr "peppy.log.error"
 
 #: ../peppy/plugins/error_log.py:161
+#, fuzzy
 msgid "peppy.log.info"
-msgstr ""
+msgstr "peppy.log.info"
 
 #: ../peppy/plugins/games/hangman_mode.py:81
+#, fuzzy
 msgid "restart-game"
-msgstr ""
+msgstr "restart-game"
 
 #: ../peppy/editra/style_editor.py:248
+#, fuzzy
 msgid "underline"
-msgstr "emfazi"
+msgstr "podtržené"
 
 #: ../peppy/debug.py:186
+#, fuzzy
 msgid "unknown"
-msgstr "nekonata"
+msgstr "neznámý"

@@ -6,43 +6,43 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-02-27 17:36+0000\n"
-"PO-Revision-Date: 2008-03-04 18:01+0000\n"
-"Last-Translator: Rob McMullen <robm@users.sourceforge.net>\n"
+"PO-Revision-Date: 2008-07-21 20:33+0000\n"
+"Last-Translator: Giasone <giasone@free.fr>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-03-24 23:52+0000\n"
+"X-Launchpad-Export-Date: 2008-07-24 04:40+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
 #: ../peppy/plugins/help.py:31
 msgid "&About..."
-msgstr "Informazioni &su..."
+msgstr "&Informazioni su..."
 
 #: ../peppy/mainmenu.py:363
 msgid "&Close Buffer"
-msgstr ""
+msgstr "&Chiudi il buffer"
 
 #: ../peppy/plugins/text_transforms.py:50
 msgid "&Comment Region"
-msgstr ""
+msgstr "C&ommenta Parte"
 
 #: ../peppy/frame.py:54
 msgid "&Delete Window"
-msgstr ""
+msgstr "Canc&ella finestra"
 
 #: ../peppy/mainmenu.py:913
 msgid "&Describe Action"
-msgstr ""
+msgstr "&Descrivi l'azione"
 
 #: ../peppy/mainmenu.py:877
 msgid "&Execute Action"
-msgstr ""
+msgstr "&Esegui azione"
 
 #: ../peppy/mainmenu.py:525
 msgid "&Folding"
-msgstr ""
+msgstr "&Raggruppamento"
 
 #: ../peppy/frame.py:310 ../peppy/frame.py:346 ../peppy/frame.py:347
 #: ../peppy/mainmenu.py:916 ../peppy/menu.py:330 ../peppy/plugins/help.py:34
@@ -50,15 +50,15 @@ msgstr ""
 #: ../peppy/plugins/help.py:106 ../peppy/plugins/keyboard.py:25
 #: ../peppy/plugins/widget_inspector.py:16
 msgid "&Help"
-msgstr "&Guida"
+msgstr "Ai&uto"
 
 #: ../peppy/plugins/help.py:70
 msgid "&Help..."
-msgstr "&&Guida..."
+msgstr "&Aiuto..."
 
 #: ../peppy/mainmenu.py:508
 msgid "&Line Numbers"
-msgstr ""
+msgstr "&Numeri di linea"
 
 #: ../peppy/mainmenu.py:471
 msgid "&Line Wrapping"
@@ -66,36 +66,36 @@ msgstr "&A capo automatico"
 
 #: ../peppy/frame.py:68
 msgid "&New Window"
-msgstr "&Nuova finestra"
+msgstr "&Nuova Finestra"
 
 #: ../peppy/plugins/hexedit_mode.py:19
 msgid "&Open Hex Editor..."
-msgstr ""
+msgstr "Apri &Editor esadecimale...."
 
 #: ../peppy/plugins/image_mode.py:35
 msgid "&Open Image Viewer..."
-msgstr ""
+msgstr "Apri &visualizzatore Immagini..."
 
 #: ../peppy/plugins/c_mode.py:30
 msgid "&Open Sample C File"
-msgstr ""
+msgstr "Apri un &File C di esempio...."
 
 #: ../peppy/plugins/games/hangman_mode.py:131
 #: ../peppy/plugins/graphviz_mode.py:35
 msgid "&Open Sample Graphviz dot file"
-msgstr ""
+msgstr "Apri un file Graphviz di esempio"
 
 #: ../peppy/plugins/makefile_mode.py:45
 msgid "&Open Sample Makefile"
-msgstr ""
+msgstr "Apri un &Makefile di esempio"
 
 #: ../peppy/plugins/python_mode.py:46
 msgid "&Open Sample Python"
-msgstr ""
+msgstr "Apri un file Python di esempio"
 
 #: ../peppy/mainmenu.py:461
 msgid "&Open Sample Text"
-msgstr ""
+msgstr "Apri un File di &Testo"
 
 #: ../peppy/plugins/preferences.py:22
 msgid "&Preferences..."
@@ -103,7 +103,7 @@ msgstr "&Preferenze..."
 
 #: ../peppy/mainmenu.py:377
 msgid "&Revert"
-msgstr "&Ricarica"
+msgstr "&Ripristina"
 
 #: ../peppy/mainmenu.py:397
 msgid "&Save..."
@@ -111,39 +111,39 @@ msgstr "&Salva..."
 
 #: ../peppy/plugins/keyboard.py:23
 msgid "&Show Key Bindings"
-msgstr ""
+msgstr "Mostra collegamento &tasti rapidi"
 
 #: ../peppy/mainmenu.py:826
 msgid "&Show Toolbars"
-msgstr ""
+msgstr "&Mostra Toolbar"
 
 #: ../peppy/plugins/text_transforms.py:74
 msgid "&Tabify"
-msgstr ""
+msgstr "&Inserisci tab"
 
 #: ../peppy/plugins/text_transforms.py:65
 msgid "&Uncomment Region"
-msgstr ""
+msgstr "&Decommenta regione"
 
 #: ../peppy/plugins/text_transforms.py:92
 msgid "&Untabify"
-msgstr ""
+msgstr "&Rimuovi tab"
 
 #: ../peppy/mainmenu.py:956
 msgid "&Word Count"
-msgstr "&Conta parole"
+msgstr "&Conteggio parole"
 
 #: ../peppy/mainmenu.py:488
 msgid "&Wrap Words"
-msgstr ""
+msgstr "&Riepilogo parole"
 
 #: ../peppy/plugins/help.py:32
 msgid "About this program"
-msgstr ""
+msgstr "Informazioni"
 
 #: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
-msgstr ""
+msgstr "Opera sul buffer selezionato in base ai segnali"
 
 #: ../peppy/dired.py:58 ../peppy/dired.py:88 ../peppy/dired.py:95
 #: ../peppy/dired.py:103 ../peppy/dired.py:111 ../peppy/dired.py:120
@@ -165,16 +165,18 @@ msgid "Actions"
 msgstr "Azioni"
 
 #: ../peppy/plugins/changelog_mode.py:22
+#, fuzzy
 msgid "Add ChangeLog Entry"
-msgstr ""
+msgstr "Aggiungi cambiamento"
 
 #: ../peppy/plugins/changelog_mode.py:23
+#, fuzzy
 msgid "Add new ChangeLog entry to the top of the ChangeLog"
-msgstr ""
+msgstr "Aggiungi indicazione di cambiamento in cima al file"
 
 #: ../peppy/dired.py:26
 msgid "Apr"
-msgstr ""
+msgstr "Apr"
 
 #: ../peppy/editra/style_editor.py:242
 msgid "Attributes"
@@ -182,7 +184,7 @@ msgstr "Attributi"
 
 #: ../peppy/dired.py:27
 msgid "Aug"
-msgstr ""
+msgstr "Ago"
 
 #: ../peppy/editra/style_editor.py:231
 msgid "Background"
@@ -190,15 +192,15 @@ msgstr "Sfondo"
 
 #: ../peppy/actions/minibuffer.py:43 ../peppy/actions/minibuffer.py:99
 msgid "Bad input."
-msgstr ""
+msgstr "Input non corretto"
 
 #: ../peppy/editra/style_editor.py:307
 msgid "Base new theme of existing one"
-msgstr ""
+msgstr "Basa il nuovo tema su uno esistente"
 
 #: ../peppy/mainmenu.py:489
 msgid "Break wrapped lines at word boundaries"
-msgstr ""
+msgstr "Interrompi linee di riepilogo alla fine della parola"
 
 #: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:64
 #: ../peppy/lib/controls.py:162
@@ -207,11 +209,11 @@ msgstr "Annulla"
 
 #: ../peppy/mainmenu.py:946
 msgid "Cancel Minibuffer"
-msgstr ""
+msgstr "Cancella Minibuffer"
 
 #: ../peppy/mainmenu.py:947
 msgid "Cancel any currently active minibuffer"
-msgstr ""
+msgstr "Cancella tutti i minibuffer attivi"
 
 #: ../peppy/plugins/text_transforms.py:131
 msgid "Capitalize"
@@ -221,27 +223,28 @@ msgstr "Iniziali maiuscole"
 #: ../peppy/plugins/text_transforms.py:149
 #: ../peppy/plugins/text_transforms.py:166
 msgid "Case"
-msgstr ""
+msgstr "Maiuscolo/minuscolo"
 
 #: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
-msgstr ""
+msgstr "Cancella segnali"
 
 #: ../peppy/plugins/mpd_major_mode.py:582
 msgid "Clear Playlist"
-msgstr ""
+msgstr "Svuota Playlist"
 
 #: ../peppy/dired.py:136 ../peppy/plugins/buffer_list_mode.py:129
+#, fuzzy
 msgid "Clear all flags from the selected item(s)."
-msgstr ""
+msgstr "Cancella tutti i segnali dal(dagli) elemento(i) selezionato(i)"
 
 #: ../peppy/mainmenu.py:41
 msgid "Close Tab"
-msgstr "Chiudi la linguetta corrente"
+msgstr "Chiudi scheda"
 
 #: ../peppy/mainmenu.py:364
 msgid "Close current buffer"
-msgstr ""
+msgstr "Chiudi buffer corrente"
 
 #: ../peppy/mainmenu.py:42
 msgid "Close the current tab"
@@ -249,7 +252,7 @@ msgstr "Chiudi la scheda corrente"
 
 #: ../peppy/plugins/text_transforms.py:108
 msgid "Collapse blank lines"
-msgstr ""
+msgstr "Racchiudi linee vuote"
 
 #: ../peppy/editra/style_editor.py:214
 msgid "Color"
@@ -261,11 +264,11 @@ msgstr "Contrasto"
 
 #: ../peppy/hsi/hsi_major_mode.py:538
 msgid "Contrast adjustment method"
-msgstr ""
+msgstr "Modalità di apllicazione contrasto"
 
 #: ../peppy/plugins/help.py:51
 msgid "Contributions by:"
-msgstr ""
+msgstr "Contributi da:"
 
 #: ../peppy/mainmenu.py:644 ../peppy/mainmenu.py:645
 msgid "Copy"
@@ -273,31 +276,31 @@ msgstr "Copia"
 
 #: ../peppy/plugins/cursor_movement.py:37
 msgid "Cursor to End of Line"
-msgstr ""
+msgstr "Cursore alla fine della linea"
 
 #: ../peppy/plugins/cursor_movement.py:23
 msgid "Cursor to Start of Line"
-msgstr ""
+msgstr "Cursore all'inizio della linea"
 
 #: ../peppy/plugins/cursor_movement.py:67
 msgid "Cursor to end of the buffer"
-msgstr ""
+msgstr "Cursore alla fine del buffer"
 
 #: ../peppy/plugins/cursor_movement.py:58
 msgid "Cursor to first character in the buffer"
-msgstr ""
+msgstr "Cursore sul primo carattere del buffer"
 
 #: ../peppy/plugins/cursor_movement.py:30
 msgid "Cursor to first non-blank character in the line"
-msgstr ""
+msgstr "Cursore sul primo carattere non vuoto della linea"
 
 #: ../peppy/plugins/cursor_movement.py:51
 msgid "Cursor to next line"
-msgstr ""
+msgstr "Cursore sulla prossima linea"
 
 #: ../peppy/plugins/cursor_movement.py:44
 msgid "Cursor to previous line"
-msgstr ""
+msgstr "Cursore sulla linea precedente"
 
 #: ../peppy/mainmenu.py:629 ../peppy/mainmenu.py:630
 msgid "Cut"
@@ -313,35 +316,35 @@ msgstr ""
 
 #: ../peppy/dired.py:27
 msgid "Dec"
-msgstr "Dec"
+msgstr "Dic"
 
 #: ../peppy/plugins/mpd_major_mode.py:547
 msgid "Decrease Volume"
-msgstr "Diminuisci volume"
+msgstr "Abbassa volume"
 
 #: ../peppy/plugins/mpd_major_mode.py:548
 msgid "Decrease the volume"
-msgstr ""
+msgstr "Abbassa volume"
 
 #: ../peppy/plugins/mpd_major_mode.py:571
 msgid "Delete Playlist Entry"
-msgstr ""
+msgstr "Elimina voce dalla Playlist"
 
 #: ../peppy/frame.py:56
 msgid "Delete current window"
-msgstr ""
+msgstr "Elimina finestra corrente"
 
 #: ../peppy/plugins/mpd_major_mode.py:572
 msgid "Delete selected songs from playlist"
-msgstr ""
+msgstr "Elimina la canzone selezionata dalla playlist"
 
 #: ../peppy/mainmenu.py:915
 msgid "Describe an action by name"
-msgstr ""
+msgstr "Descrivi una azione con nome"
 
 #: ../peppy/plugins/buffer_list_mode.py:25
 msgid "Display a list of all buffers."
-msgstr ""
+msgstr "Mostra la lista di tutti i buffer"
 
 #: ../peppy/buffers.py:25 ../peppy/buffers.py:26 ../peppy/buffers.py:144
 #: ../peppy/frame.py:308 ../peppy/plugins/buffer_list_mode.py:26
@@ -350,7 +353,7 @@ msgstr "Documenti"
 
 #: ../peppy/plugins/text_transforms.py:164
 msgid "Downcase"
-msgstr ""
+msgstr "Minuscolo"
 
 #: ../peppy/mainmenu.py:348
 msgid "E&xit"
@@ -358,7 +361,7 @@ msgstr "E&sci"
 
 #: ../peppy/mainmenu.py:720
 msgid "EOL Characters"
-msgstr ""
+msgstr "Carattere di fine riga"
 
 #: ../peppy/actions/pypefind.py:131 ../peppy/actions/pypefind.py:139
 #: ../peppy/frame.py:304 ../peppy/mainmenu.py:601 ../peppy/mainmenu.py:617
@@ -380,15 +383,15 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:827
 msgid "Enable or disable toolbar display in this frame"
-msgstr ""
+msgstr "Abilita o disabilita visualizzazione toolbar in questo frame"
 
 #: ../peppy/editra/style_editor.py:748
 msgid "Enter a hex color value"
-msgstr ""
+msgstr "Inserire un valore esadecimale per il colore"
 
 #: ../peppy/mainmenu.py:879
 msgid "Execute an action by name"
-msgstr ""
+msgstr "Esegui un azione da nome"
 
 #: ../peppy/editra/style_editor.py:154
 msgid "Export"
@@ -396,11 +399,11 @@ msgstr "Esporta"
 
 #: ../peppy/plugins/sandbox.py:48
 msgid "Fast test of the progress bar"
-msgstr ""
+msgstr "Test veloce della barra di progresso"
 
 #: ../peppy/dired.py:26
 msgid "Feb"
-msgstr ""
+msgstr "Feb"
 
 #: ../peppy/frame.py:303 ../peppy/mainmenu.py:355 ../peppy/mainmenu.py:365
 #: ../peppy/mainmenu.py:379 ../peppy/mainmenu.py:400 ../peppy/mainmenu.py:417
@@ -410,7 +413,7 @@ msgstr "File"
 
 #: ../peppy/plugins/text_transforms.py:208
 msgid "Fill Paragraph"
-msgstr ""
+msgstr "Riempi paragrafo"
 
 #: ../peppy/actions/pypefind.py:129
 msgid "Find..."
@@ -418,7 +421,7 @@ msgstr "Trova..."
 
 #: ../peppy/major.py:1016
 msgid "Finished %s on %s"
-msgstr ""
+msgstr "Finiti %s di %s"
 
 #: ../peppy/actions/minibuffer.py:160
 msgid "Floating Point"
@@ -426,15 +429,15 @@ msgstr "Virgola mobile"
 
 #: ../peppy/hsi/hsi_major_mode.py:404
 msgid "Focal Plane View"
-msgstr ""
+msgstr "Vista planimetrica focale"
 
 #: ../peppy/editra/style_editor.py:262
 msgid "Font"
-msgstr "Tipo di carattere"
+msgstr "Font"
 
 #: ../peppy/editra/style_editor.py:257
 msgid "Font Settings"
-msgstr "Impostazioni tipi di carattere"
+msgstr "Impostazioni Font"
 
 #: ../peppy/editra/style_editor.py:219
 msgid "Foreground"
@@ -454,7 +457,7 @@ msgstr "Giochi"
 
 #: ../peppy/plugins/debug_classes.py:26
 msgid "Garbage Objects"
-msgstr ""
+msgstr "Oggetti cancellati"
 
 #: ../peppy/main.py:56 ../peppy/main.py:90 ../peppy/main.py:99
 #: ../peppy/main.py:123 ../peppy/main.py:148 ../peppy/main.py:275
@@ -463,11 +466,11 @@ msgstr "Generale"
 
 #: ../peppy/plugins/mpd_major_mode.py:594
 msgid "Generate a random playlist"
-msgstr ""
+msgstr "Genera playlist casuale"
 
 #: ../peppy/plugins/function_menu.py:28
 msgid "Go to a function"
-msgstr ""
+msgstr "Vai alla funzione"
 
 #: ../peppy/hsi/hsi_major_mode.py:509
 msgid "Go to a particular band in the cube"
@@ -483,24 +486,25 @@ msgstr "Vai alla linea..."
 
 #: ../peppy/plugins/hexedit_mode.py:42
 msgid "Goto Offset..."
-msgstr "Vai all'offset..."
+msgstr "Spostati di..."
 
 #: ../peppy/actions/gotoline.py:26
 msgid "Goto a line in the text."
-msgstr ""
+msgstr "Vai in una linea del testo"
 
 #: ../peppy/plugins/hexedit_mode.py:43
 msgid "Goto an offset."
-msgstr ""
+msgstr "Spostati a."
 
 #: ../peppy/plugins/games/hangman_mode.py:61
 #: ../peppy/plugins/games/hangman_mode.py:84
+#, fuzzy
 msgid "Hangman"
-msgstr ""
+msgstr "Boia"
 
 #: ../peppy/plugins/tutorial_plugin.py:36
 msgid "Hello World Action"
-msgstr ""
+msgstr "Azione Hello World"
 
 #: ../peppy/hsi/hsi_major_mode.py:204
 msgid "Image View"
@@ -512,15 +516,15 @@ msgstr "Aumenta volume"
 
 #: ../peppy/plugins/mpd_major_mode.py:535
 msgid "Increase the volume"
-msgstr ""
+msgstr "Aumenta il volume"
 
 #: ../peppy/plugins/python_mode.py:56
 msgid "Indent the current line when a colon is pressed"
-msgstr ""
+msgstr "Indenta la linea corrente quando la colonna viene premuta"
 
 #: ../peppy/mainmenu.py:710
 msgid "Indent the next line following a return"
-msgstr ""
+msgstr "Indenta la linea successiva dopo aver premuto invio"
 
 #: ../peppy/actions/minibuffer.py:42
 msgid "Input:"
@@ -528,7 +532,7 @@ msgstr "Inserimento:"
 
 #: ../peppy/plugins/tutorial_plugin.py:40
 msgid "Insert 'Hello, world' at the current cursor position"
-msgstr ""
+msgstr "Inserisci 'Hello, world' nella posizione del cursore"
 
 #: ../peppy/actions/minibuffer.py:141
 msgid "Integer"
@@ -536,23 +540,23 @@ msgstr "Interi"
 
 #: ../peppy/dired.py:26
 msgid "Jan"
-msgstr ""
+msgstr "Gen"
 
 #: ../peppy/dired.py:27
 msgid "Jul"
-msgstr ""
+msgstr "Lug"
 
 #: ../peppy/dired.py:26
 msgid "Jun"
-msgstr ""
+msgstr "Giu"
 
 #: ../peppy/mainmenu.py:736
 msgid "Line Endings"
-msgstr ""
+msgstr "Fine riga"
 
 #: ../peppy/plugins/buffer_list_mode.py:24
 msgid "List All Documents"
-msgstr ""
+msgstr "Mostra tutti i documenti"
 
 #: ../peppy/plugins/mpd_major_mode.py:413
 #: ../peppy/plugins/mpd_major_mode.py:414
@@ -572,129 +576,133 @@ msgstr "Login"
 #: ../peppy/plugins/mpd_major_mode.py:584
 #: ../peppy/plugins/mpd_major_mode.py:595
 msgid "MPD"
-msgstr ""
+msgstr "MPD"
 
 #: ../peppy/plugins/mpd_major_mode.py:428
 msgid "MPD Server..."
-msgstr ""
+msgstr "Server MPD..."
 
 #: ../peppy/mainmenu.py:762
 msgid "Major Mode"
-msgstr ""
+msgstr "Modalita Major"
 
 #: ../peppy/dired.py:26
 msgid "Mar"
-msgstr ""
+msgstr "Mar"
 
 #: ../peppy/dired.py:101 ../peppy/plugins/buffer_list_mode.py:77
 msgid "Mark for Deletion"
-msgstr ""
+msgstr "Marca per l'eliminazione"
 
 #: ../peppy/dired.py:109 ../peppy/plugins/buffer_list_mode.py:85
 msgid "Mark for Deletion and Move Backwards"
-msgstr ""
+msgstr "Marca per l'eliminazione e torna indietro"
 
 #: ../peppy/dired.py:118 ../peppy/plugins/buffer_list_mode.py:111
 msgid "Mark for Display"
-msgstr ""
+msgstr "Marca per la visualizzazione"
 
 #: ../peppy/dired.py:126 ../peppy/plugins/buffer_list_mode.py:119
 msgid "Mark for Display and Move Backwards"
-msgstr ""
+msgstr "Marca per la visualizzazione e torna indietro"
 
 #: ../peppy/plugins/buffer_list_mode.py:94
 msgid "Mark for Save"
-msgstr ""
+msgstr "Marca per il salvataggio"
 
 #: ../peppy/plugins/buffer_list_mode.py:102
 msgid "Mark for Save and Move Backwards"
-msgstr ""
+msgstr "Marca per il salvataggio e torna indietro"
 
 #: ../peppy/dired.py:110 ../peppy/plugins/buffer_list_mode.py:86
 msgid "Mark the selected buffer for deletion and move to the previous item."
 msgstr ""
+"Marca il buffer selezionato per l'eliminazione e vai al elemento precedente."
 
 #: ../peppy/dired.py:102 ../peppy/plugins/buffer_list_mode.py:78
 msgid "Mark the selected buffer for deletion."
-msgstr ""
+msgstr "Marca il buffer selezionato per l'eliminazione."
 
 #: ../peppy/dired.py:127 ../peppy/plugins/buffer_list_mode.py:120
 msgid ""
 "Mark the selected buffer to be displayed and move to the previous item."
 msgstr ""
+"Marca il buffer selezionato per la visualizzazione e torna al elemento "
+"precedente"
 
 #: ../peppy/dired.py:119 ../peppy/plugins/buffer_list_mode.py:112
 msgid "Mark the selected buffer to be displayed."
-msgstr ""
+msgstr "Marca il buffer selezionato per la visualizzazione."
 
 #: ../peppy/plugins/buffer_list_mode.py:103
 msgid "Mark the selected buffer to be saved and move to the previous item."
 msgstr ""
+"Marca il buffer selezionato per il salvataggio e vai al elemento precedente."
 
 #: ../peppy/plugins/buffer_list_mode.py:95
 msgid "Mark the selected buffer to be saved."
-msgstr ""
+msgstr "Marca il buffer selezionato per il salvataggio."
 
 #: ../peppy/dired.py:26
 msgid "May"
-msgstr "maggio"
+msgstr "Mag"
 
 #: ../peppy/hsi/hsi_major_mode.py:588
 msgid "Median Filter"
-msgstr ""
+msgstr "Filtro mediano"
 
 #: ../peppy/hsi/hsi_major_mode.py:589
 msgid "Median filter"
-msgstr ""
+msgstr "Filtro mediano"
 
 #: ../peppy/mainmenu.py:792
 msgid "Minor Modes"
-msgstr ""
+msgstr "Modalità minore"
 
 #: ../peppy/major.py:372
 msgid "Modes"
-msgstr ""
+msgstr "Modalità"
 
 #: ../peppy/plugins/cursor_movement.py:52
 msgid "Move the cursor down a line"
-msgstr ""
+msgstr "Muovi il cursore alla linea successiva"
 
 #: ../peppy/plugins/cursor_movement.py:68
 msgid "Move the cursor to the end of the buffer"
-msgstr ""
+msgstr "Muovi il cursore alla fine del buffer"
 
 #: ../peppy/plugins/cursor_movement.py:38
 msgid "Move the cursor to the end of the current line"
-msgstr ""
+msgstr "Muovi il cursore alla fine della linea corrente"
 
 #: ../peppy/plugins/cursor_movement.py:59
 msgid "Move the cursor to the start of the buffer"
-msgstr ""
+msgstr "Muovi il cursore all'inizio del buffer"
 
 #: ../peppy/plugins/cursor_movement.py:24
 #: ../peppy/plugins/cursor_movement.py:31
 msgid "Move the cursor to the start of the current line"
-msgstr ""
+msgstr "Muovi il cursore all'inizio della linea corrente"
 
 #: ../peppy/plugins/cursor_movement.py:45
 msgid "Move the cursor up a line"
-msgstr ""
+msgstr "Muovi il cursore alla linea precedente"
 
 #: ../peppy/dired.py:87 ../peppy/plugins/buffer_list_mode.py:63
 msgid "Move the selection to the next item in the list."
-msgstr ""
+msgstr "Muovi la selezione al prossimo elemento della lista"
 
 #: ../peppy/dired.py:94 ../peppy/plugins/buffer_list_mode.py:70
 msgid "Move the selection to the previous item in the list."
-msgstr ""
+msgstr "Muovi la selezione all'elemento precedente della lista"
 
 #: ../peppy/dired.py:86 ../peppy/plugins/buffer_list_mode.py:62
 msgid "Move to Next Item"
-msgstr ""
+msgstr "Spostati al prossimo elemento"
 
 #: ../peppy/dired.py:93 ../peppy/plugins/buffer_list_mode.py:69
 msgid "Move to Previous Item"
-msgstr ""
+msgstr "Spostati all'elemento precedente"
 
 #: ../peppy/plugins/mpd_major_mode.py:521
 msgid "Mute"
@@ -702,7 +710,7 @@ msgstr "Muto"
 
 #: ../peppy/plugins/mpd_major_mode.py:522
 msgid "Mute the volume"
-msgstr ""
+msgstr "Disabilita volume"
 
 #: ../peppy/editra/style_editor.py:309 ../peppy/mainmenu.py:33
 #: ../peppy/mainmenu.py:53
@@ -715,28 +723,28 @@ msgstr "Nuova scheda"
 
 #: ../peppy/mainmenu.py:51
 msgid "New plain text file"
-msgstr ""
+msgstr "Nuovo file di testo"
 
 #: ../peppy/hsi/hsi_major_mode.py:487 ../peppy/hsi/hsi_major_mode.py:488
 msgid "Next Band"
-msgstr ""
+msgstr "Prossimo Gruppo"
 
 #: ../peppy/plugins/mpd_major_mode.py:479
 #: ../peppy/plugins/mpd_major_mode.py:480
 msgid "Next Song"
-msgstr ""
+msgstr "Brano successivo"
 
 #: ../peppy/actions/minibuffer.py:161
 msgid "Not a numeric expression."
-msgstr ""
+msgstr "Non è un'espressione numerica"
 
 #: ../peppy/actions/minibuffer.py:142
 msgid "Not an integer expression."
-msgstr ""
+msgstr "Non è un'espressione intera"
 
 #: ../peppy/dired.py:27
 msgid "Nov"
-msgstr ""
+msgstr "Nov"
 
 #: ../peppy/dired.py:27
 msgid "Oct"
@@ -753,7 +761,7 @@ msgstr "Apri"
 
 #: ../peppy/mainmenu.py:164
 msgid "Open File Using Minibuffer..."
-msgstr ""
+msgstr "Apri file con Minibuffer..."
 
 #: ../peppy/mainmenu.py:61
 msgid "Open File..."
@@ -765,23 +773,23 @@ msgstr "Apri recenti"
 
 #: ../peppy/mainmenu.py:288
 msgid "Open URL Using Minibuffer..."
-msgstr ""
+msgstr "Apri URL con Minibuffer..."
 
 #: ../peppy/plugins/hexedit_mode.py:20
 msgid "Open a Hex Editor"
-msgstr ""
+msgstr "Apri Editor esadecimale"
 
 #: ../peppy/mainmenu.py:62 ../peppy/mainmenu.py:562
 msgid "Open a file"
-msgstr ""
+msgstr "Apri un file"
 
 #: ../peppy/mainmenu.py:289
 msgid "Open a file using URL name completion"
-msgstr ""
+msgstr "Apri un file utilizzando completamento degli URL"
 
 #: ../peppy/mainmenu.py:165
 msgid "Open a file using filename completion"
-msgstr ""
+msgstr "Apri un file utilizzando completamento dei nomi dei file"
 
 #: ../peppy/mainmenu.py:32
 msgid "Open a new tab"
@@ -789,43 +797,45 @@ msgstr "Apri una nuova scheda"
 
 #: ../peppy/frame.py:69
 msgid "Open a new window"
-msgstr ""
+msgstr "Apri una nuova finestra"
 
 #: ../peppy/plugins/c_mode.py:31
 msgid "Open a sample C file"
-msgstr ""
+msgstr "Apri un file C di esempio"
 
 #: ../peppy/plugins/graphviz_mode.py:36
 msgid "Open a sample Graphviz file"
-msgstr ""
+msgstr "Apri un file Graphviz di esempio"
 
 #: ../peppy/plugins/makefile_mode.py:49
 msgid "Open a sample Makefile"
-msgstr ""
+msgstr "Apri un Makefile di esempio"
 
 #: ../peppy/plugins/python_mode.py:47
 msgid "Open a sample Python file"
-msgstr ""
+msgstr "Apri un file Python di esempio"
 
 #: ../peppy/plugins/image_mode.py:36
 msgid "Open an Image Viewer"
-msgstr ""
+msgstr "Apri un visualizzatore di immagini"
 
 #: ../peppy/plugins/mpd_major_mode.py:429
 msgid "Open an MPD server through a URL"
-msgstr ""
+msgstr "Apri un server MPD attraverso un URL"
 
 #: ../peppy/mainmenu.py:462
 msgid "Open some sample text"
-msgstr ""
+msgstr "Apri alcuni testi di esempio"
 
 #: ../peppy/plugins/editra_styleeditor.py:27
 msgid "Open the STC Style Editor to edit the current mode's text display."
 msgstr ""
+"Apri l'editor di stile STC per modificare la visualizzazione dei testi "
+"corrente"
 
 #: ../peppy/plugins/widget_inspector.py:15
 msgid "Open the wxPython widget inspector."
-msgstr ""
+msgstr "Apri lo strumento di ispezione degli elementi di wxPython"
 
 #: ../peppy/mainmenu.py:659 ../peppy/mainmenu.py:660
 msgid "Paste"
@@ -833,32 +843,32 @@ msgstr "Incolla"
 
 #: ../peppy/mainmenu.py:674
 msgid "Paste at Column"
-msgstr ""
+msgstr "Incolla nella colonna"
 
 #: ../peppy/mainmenu.py:675
 msgid "Paste selection indented to the cursor's column"
-msgstr ""
+msgstr "Incolla la selezione indentata alla colonna del cursore"
 
 #: ../peppy/plugins/mpd_major_mode.py:507
 #: ../peppy/plugins/mpd_major_mode.py:508
 msgid "Play/Pause Song"
-msgstr ""
+msgstr "Play/Pausa Brano"
 
 #: ../peppy/yapsy/plugins.py:105
 msgid "Plugins"
-msgstr "Plugin"
+msgstr "Plug-in"
 
 #: ../peppy/plugins/preferences.py:23
 msgid "Preferences, settings, and configurations..."
-msgstr ""
+msgstr "Preferenze, impostazioni e configurazioni..."
 
 #: ../peppy/hsi/hsi_major_mode.py:466
 msgid "Prev Band"
-msgstr ""
+msgstr "Gruppo Prec"
 
 #: ../peppy/plugins/mpd_major_mode.py:465
 msgid "Prev Song"
-msgstr ""
+msgstr "Brano Prec"
 
 #: ../peppy/editra/style_editor.py:146
 msgid "Preview"
@@ -866,27 +876,27 @@ msgstr "Anteprima"
 
 #: ../peppy/hsi/hsi_major_mode.py:467
 msgid "Previous Band"
-msgstr ""
+msgstr "Gruppo Precedente"
 
 #: ../peppy/plugins/mpd_major_mode.py:466
 msgid "Previous Song"
-msgstr ""
+msgstr "Brano Precedente"
 
 #: ../peppy/plugins/help.py:89
 msgid "Project Homepage"
-msgstr ""
+msgstr "Pagina Principale del progetto"
 
 #: ../peppy/mainmenu.py:349
 msgid "Quit the program."
-msgstr ""
+msgstr "Esci dal programma."
 
 #: ../peppy/plugins/mpd_major_mode.py:593
 msgid "Random Playlist"
-msgstr ""
+msgstr "Playlist casuale"
 
 #: ../peppy/plugins/hexedit_mode.py:64
 msgid "Record Format..."
-msgstr ""
+msgstr "Formato registrazione..."
 
 #: ../peppy/mainmenu.py:614 ../peppy/mainmenu.py:615
 msgid "Redo"
@@ -898,27 +908,27 @@ msgstr "Aggiorna"
 
 #: ../peppy/dired.py:57
 msgid "Refresh the current view to show any changes."
-msgstr ""
+msgstr "Aggiorna vista corrente per mostrare i cambiamenti"
 
 #: ../peppy/plugins/text_transforms.py:190
 msgid "Reindent"
-msgstr ""
+msgstr "Reindenta"
 
 #: ../peppy/plugins/mpd_major_mode.py:583
 msgid "Remove all songs from the current playlist"
-msgstr ""
+msgstr "Rimuovi tutti i brani dalla playlist corrente"
 
 #: ../peppy/plugins/text_transforms.py:109
 msgid "Remove whitespace from blank lines"
-msgstr ""
+msgstr "Rimuovi spazi bianchi dalle linee bianche"
 
 #: ../peppy/dired.py:171 ../peppy/plugins/buffer_list_mode.py:164
 msgid "Replace Buffer"
-msgstr ""
+msgstr "Sostituisci Buffer"
 
 #: ../peppy/actions/pypefind.py:138
 msgid "Replace a string in the text."
-msgstr ""
+msgstr "Sostituisci una stringa nel testo"
 
 #: ../peppy/actions/pypefind.py:137
 msgid "Replace..."
@@ -926,7 +936,7 @@ msgstr "Sostituisci..."
 
 #: ../peppy/plugins/help.py:105
 msgid "Report a bug"
-msgstr ""
+msgstr "Segnala un bug"
 
 #: ../peppy/plugins/mpd_major_mode.py:561
 msgid "Rescan the filesystem and update the MPD database"
@@ -943,11 +953,11 @@ msgstr ""
 
 #: ../peppy/plugins/text_transforms.py:178
 msgid "Rot13"
-msgstr ""
+msgstr "Rot13"
 
 #: ../peppy/mainmenu.py:542
 msgid "Run"
-msgstr "Avvia"
+msgstr "Esegui"
 
 #: ../peppy/mainmenu.py:543
 msgid "Run this script through the interpreter"

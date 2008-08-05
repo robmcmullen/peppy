@@ -6,13 +6,13 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-02-27 17:36+0000\n"
-"PO-Revision-Date: 2008-03-19 17:53+0000\n"
-"Last-Translator: dorian <Unknown>\n"
+"PO-Revision-Date: 2008-07-21 00:13+0000\n"
+"Last-Translator: BluePyth <Unknown>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-03-24 23:52+0000\n"
+"X-Launchpad-Export-Date: 2008-07-24 04:40+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -112,7 +112,7 @@ msgstr "&Enregistrer..."
 
 #: ../peppy/plugins/keyboard.py:23
 msgid "&Show Key Bindings"
-msgstr ""
+msgstr "&Afficher les raccourcis clavier"
 
 #: ../peppy/mainmenu.py:826
 msgid "&Show Toolbars"
@@ -146,7 +146,7 @@ msgstr "À propos de ce programme"
 
 #: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
-msgstr ""
+msgstr "Agir sur les buffers marqués par rapport à leurs flags."
 
 #: ../peppy/dired.py:58 ../peppy/dired.py:88 ../peppy/dired.py:95
 #: ../peppy/dired.py:103 ../peppy/dired.py:111 ../peppy/dired.py:120
@@ -202,7 +202,7 @@ msgstr "baser le nouveau thème sur l'ancien"
 
 #: ../peppy/mainmenu.py:489
 msgid "Break wrapped lines at word boundaries"
-msgstr ""
+msgstr "Aller à la ligne sans couper les mots"
 
 #: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:64
 #: ../peppy/lib/controls.py:162
@@ -289,15 +289,15 @@ msgstr "Curseur en Début de ligne"
 
 #: ../peppy/plugins/cursor_movement.py:67
 msgid "Cursor to end of the buffer"
-msgstr ""
+msgstr "Curseur à la fin du buffer"
 
 #: ../peppy/plugins/cursor_movement.py:58
 msgid "Cursor to first character in the buffer"
-msgstr ""
+msgstr "Curseur au premier caractère du buffer"
 
 #: ../peppy/plugins/cursor_movement.py:30
 msgid "Cursor to first non-blank character in the line"
-msgstr ""
+msgstr "Curseur sur le premier caractère non vide de la ligne"
 
 #: ../peppy/plugins/cursor_movement.py:51
 msgid "Cursor to next line"
@@ -316,8 +316,9 @@ msgid "Debug"
 msgstr "Débogage"
 
 #: ../peppy/plugins/debug_classes.py:54
+#, fuzzy
 msgid "DebugClassMenu"
-msgstr ""
+msgstr "DebugClassMenu"
 
 #: ../peppy/dired.py:27
 msgid "Dec"
@@ -349,7 +350,7 @@ msgstr "Décrir une action par son nom"
 
 #: ../peppy/plugins/buffer_list_mode.py:25
 msgid "Display a list of all buffers."
-msgstr ""
+msgstr "Afficher une liste de tous les buffers."
 
 #: ../peppy/buffers.py:25 ../peppy/buffers.py:26 ../peppy/buffers.py:144
 #: ../peppy/frame.py:308 ../peppy/plugins/buffer_list_mode.py:26
@@ -384,7 +385,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:709
 msgid "Electric Return"
-msgstr ""
+msgstr "Retour Eléctrique"
 
 #: ../peppy/mainmenu.py:827
 msgid "Enable or disable toolbar display in this frame"
@@ -532,7 +533,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:710
 msgid "Indent the next line following a return"
-msgstr ""
+msgstr "Indenter la prochaine ligne qui suit un retour à la ligne"
 
 #: ../peppy/actions/minibuffer.py:42
 msgid "Input:"
@@ -540,7 +541,7 @@ msgstr "Entrée:"
 
 #: ../peppy/plugins/tutorial_plugin.py:40
 msgid "Insert 'Hello, world' at the current cursor position"
-msgstr ""
+msgstr "Insert 'Hello, world' à la position actuelle du curseur"
 
 #: ../peppy/actions/minibuffer.py:141
 msgid "Integer"
@@ -596,7 +597,7 @@ msgstr "Serveur MPD..."
 
 #: ../peppy/mainmenu.py:762
 msgid "Major Mode"
-msgstr ""
+msgstr "Mode Majeur"
 
 #: ../peppy/dired.py:26
 msgid "Mar"
@@ -629,27 +630,31 @@ msgstr "Marquer pour enregistrement et revenir en arrière"
 #: ../peppy/dired.py:110 ../peppy/plugins/buffer_list_mode.py:86
 msgid "Mark the selected buffer for deletion and move to the previous item."
 msgstr ""
+"Marquer le buffer sélectionner pour suppression et avancer au prochain objet."
 
 #: ../peppy/dired.py:102 ../peppy/plugins/buffer_list_mode.py:78
 msgid "Mark the selected buffer for deletion."
-msgstr ""
+msgstr "Marquer le buffer sélectionné pour suppression."
 
 #: ../peppy/dired.py:127 ../peppy/plugins/buffer_list_mode.py:120
 msgid ""
 "Mark the selected buffer to be displayed and move to the previous item."
 msgstr ""
+"Marquer le buffer sélectionné pour affichage et reculer à l'objet précédent."
 
 #: ../peppy/dired.py:119 ../peppy/plugins/buffer_list_mode.py:112
 msgid "Mark the selected buffer to be displayed."
-msgstr ""
+msgstr "Marquer le buffer sélectionné pour affichage."
 
 #: ../peppy/plugins/buffer_list_mode.py:103
 msgid "Mark the selected buffer to be saved and move to the previous item."
 msgstr ""
+"Marquer le buffer sélectionné pour enregistrement et reculer à l'objet "
+"précédent."
 
 #: ../peppy/plugins/buffer_list_mode.py:95
 msgid "Mark the selected buffer to be saved."
-msgstr ""
+msgstr "Marquer le buffer sélectionné pour enregistrement."
 
 #: ../peppy/dired.py:26
 msgid "May"
@@ -657,11 +662,11 @@ msgstr "mai"
 
 #: ../peppy/hsi/hsi_major_mode.py:588
 msgid "Median Filter"
-msgstr ""
+msgstr "Filtre Médien"
 
 #: ../peppy/hsi/hsi_major_mode.py:589
 msgid "Median filter"
-msgstr ""
+msgstr "Filtre médien"
 
 #: ../peppy/mainmenu.py:792
 #, fuzzy
@@ -687,12 +692,12 @@ msgstr "déplacer le curseur à la fin de la ligne en cours"
 
 #: ../peppy/plugins/cursor_movement.py:59
 msgid "Move the cursor to the start of the buffer"
-msgstr ""
+msgstr "Déplacer le curseur au début du buffer"
 
 #: ../peppy/plugins/cursor_movement.py:24
 #: ../peppy/plugins/cursor_movement.py:31
 msgid "Move the cursor to the start of the current line"
-msgstr ""
+msgstr "Envoyer le curseur au début de la ligne courrante"
 
 #: ../peppy/plugins/cursor_movement.py:45
 msgid "Move the cursor up a line"
@@ -700,7 +705,7 @@ msgstr "Déplacer le curseur une ligne plus haut"
 
 #: ../peppy/dired.py:87 ../peppy/plugins/buffer_list_mode.py:63
 msgid "Move the selection to the next item in the list."
-msgstr ""
+msgstr "Déplacer la séléction au prochain objet sur la liste."
 
 #: ../peppy/dired.py:94 ../peppy/plugins/buffer_list_mode.py:70
 #, fuzzy
@@ -733,8 +738,9 @@ msgid "New Tab"
 msgstr "Nouvel onglet"
 
 #: ../peppy/mainmenu.py:51
+#, fuzzy
 msgid "New plain text file"
-msgstr ""
+msgstr "Nouveau fichier texte plat"
 
 #: ../peppy/hsi/hsi_major_mode.py:487 ../peppy/hsi/hsi_major_mode.py:488
 msgid "Next Band"
@@ -772,7 +778,7 @@ msgstr "Ouvrir"
 
 #: ../peppy/mainmenu.py:164
 msgid "Open File Using Minibuffer..."
-msgstr ""
+msgstr "Ouvrir fichier en utilisant Minibuffer..."
 
 #: ../peppy/mainmenu.py:61
 msgid "Open File..."
@@ -784,7 +790,7 @@ msgstr "Récemment ouvert(s)"
 
 #: ../peppy/mainmenu.py:288
 msgid "Open URL Using Minibuffer..."
-msgstr ""
+msgstr "Ouvrir URL avec Minibuffer..."
 
 #: ../peppy/plugins/hexedit_mode.py:20
 #, fuzzy
@@ -802,6 +808,7 @@ msgstr ""
 #: ../peppy/mainmenu.py:165
 msgid "Open a file using filename completion"
 msgstr ""
+"Ouvrir un fichier en utilisant la complétion pour les noms de fichiers"
 
 #: ../peppy/mainmenu.py:32
 msgid "Open a new tab"
@@ -813,19 +820,19 @@ msgstr "Ouvrir une nouvelle fenêtre"
 
 #: ../peppy/plugins/c_mode.py:31
 msgid "Open a sample C file"
-msgstr ""
+msgstr "Ouvrir un fichier d'exemple C"
 
 #: ../peppy/plugins/graphviz_mode.py:36
 msgid "Open a sample Graphviz file"
-msgstr ""
+msgstr "Ouvrir un fichier d'exemple Graphviz"
 
 #: ../peppy/plugins/makefile_mode.py:49
 msgid "Open a sample Makefile"
-msgstr ""
+msgstr "Ouvrir un exemple de Makefile"
 
 #: ../peppy/plugins/python_mode.py:47
 msgid "Open a sample Python file"
-msgstr ""
+msgstr "Ouvrir un exemple de fichier Python"
 
 #: ../peppy/plugins/image_mode.py:36
 msgid "Open an Image Viewer"
@@ -923,7 +930,7 @@ msgstr "rafraichir la vue courante pour montrer les changement"
 
 #: ../peppy/plugins/text_transforms.py:190
 msgid "Reindent"
-msgstr ""
+msgstr "Réindenter"
 
 #: ../peppy/plugins/mpd_major_mode.py:583
 msgid "Remove all songs from the current playlist"
@@ -931,7 +938,7 @@ msgstr "enlever toutes les chansons de la liste de lecture en cours"
 
 #: ../peppy/plugins/text_transforms.py:109
 msgid "Remove whitespace from blank lines"
-msgstr ""
+msgstr "Supprimer les espaces dans les lignes vides"
 
 #: ../peppy/dired.py:171 ../peppy/plugins/buffer_list_mode.py:164
 msgid "Replace Buffer"
@@ -979,7 +986,7 @@ msgstr "lancer le script dans l'interpréteur"
 
 #: ../peppy/mainmenu.py:561
 msgid "Run with Args"
-msgstr ""
+msgstr "Labcer avec des arguments"
 
 #: ../peppy/plugins/process_list.py:26
 msgid "Running Jobs"
@@ -1074,7 +1081,7 @@ msgstr ""
 
 #: ../peppy/plugins/hexedit_mode.py:97
 msgid "Show Record Numbers"
-msgstr ""
+msgstr "Afficher le nombre d'enregistrements"
 
 #: ../peppy/mainmenu.py:794
 #, fuzzy
@@ -1207,8 +1214,9 @@ msgid "Toggle folding in this view"
 msgstr ""
 
 #: ../peppy/mainmenu.py:509
+#, fuzzy
 msgid "Toggle line numbers in this view"
-msgstr ""
+msgstr "Activer/Désactiver l'afficher du numéro de lignes dans cette vue"
 
 #: ../peppy/mainmenu.py:472
 msgid "Toggle line wrap in this view"

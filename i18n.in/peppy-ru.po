@@ -6,13 +6,13 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-02-27 17:36+0000\n"
-"PO-Revision-Date: 2008-03-04 18:01+0000\n"
-"Last-Translator: Rob McMullen <robm@users.sourceforge.net>\n"
+"PO-Revision-Date: 2008-07-23 14:29+0000\n"
+"Last-Translator: Alexander Pugachev <Unknown>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2008-03-24 23:52+0000\n"
+"X-Launchpad-Export-Date: 2008-07-24 04:40+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -22,27 +22,28 @@ msgstr "&О программе..."
 
 #: ../peppy/mainmenu.py:363
 msgid "&Close Buffer"
-msgstr ""
+msgstr "Закрыть буфер"
 
 #: ../peppy/plugins/text_transforms.py:50
 msgid "&Comment Region"
-msgstr ""
+msgstr "Закомментировать область"
 
 #: ../peppy/frame.py:54
+#, fuzzy
 msgid "&Delete Window"
-msgstr ""
+msgstr "Удалить окно"
 
 #: ../peppy/mainmenu.py:913
 msgid "&Describe Action"
-msgstr ""
+msgstr "Описать действие"
 
 #: ../peppy/mainmenu.py:877
 msgid "&Execute Action"
-msgstr ""
+msgstr "Выполнить действие"
 
 #: ../peppy/mainmenu.py:525
 msgid "&Folding"
-msgstr ""
+msgstr "&Свертка блоков кода"
 
 #: ../peppy/frame.py:310 ../peppy/frame.py:346 ../peppy/frame.py:347
 #: ../peppy/mainmenu.py:916 ../peppy/menu.py:330 ../peppy/plugins/help.py:34
@@ -50,7 +51,7 @@ msgstr ""
 #: ../peppy/plugins/help.py:106 ../peppy/plugins/keyboard.py:25
 #: ../peppy/plugins/widget_inspector.py:16
 msgid "&Help"
-msgstr "&Помощь"
+msgstr "&Справка"
 
 #: ../peppy/plugins/help.py:70
 msgid "&Help..."
@@ -58,11 +59,11 @@ msgstr "&Справка..."
 
 #: ../peppy/mainmenu.py:508
 msgid "&Line Numbers"
-msgstr ""
+msgstr "Номера строк"
 
 #: ../peppy/mainmenu.py:471
 msgid "&Line Wrapping"
-msgstr "&Перенос строки"
+msgstr "&Перенос строк"
 
 #: ../peppy/frame.py:68
 msgid "&New Window"
@@ -70,32 +71,32 @@ msgstr "&Новое окно"
 
 #: ../peppy/plugins/hexedit_mode.py:19
 msgid "&Open Hex Editor..."
-msgstr ""
+msgstr "&Открыть шестнадцатеричный редактор"
 
 #: ../peppy/plugins/image_mode.py:35
 msgid "&Open Image Viewer..."
-msgstr ""
+msgstr "&Открыть просмотрщик изображений"
 
 #: ../peppy/plugins/c_mode.py:30
 msgid "&Open Sample C File"
-msgstr ""
+msgstr "&Открыть образец файла C"
 
 #: ../peppy/plugins/games/hangman_mode.py:131
 #: ../peppy/plugins/graphviz_mode.py:35
 msgid "&Open Sample Graphviz dot file"
-msgstr ""
+msgstr "&Открыть образец точечного файла Graphviz"
 
 #: ../peppy/plugins/makefile_mode.py:45
 msgid "&Open Sample Makefile"
-msgstr ""
+msgstr "&Открыть образец Makefile"
 
 #: ../peppy/plugins/python_mode.py:46
 msgid "&Open Sample Python"
-msgstr ""
+msgstr "&Открыть образец Python"
 
 #: ../peppy/mainmenu.py:461
 msgid "&Open Sample Text"
-msgstr ""
+msgstr "&Открыть образец текста"
 
 #: ../peppy/plugins/preferences.py:22
 msgid "&Preferences..."
@@ -103,7 +104,7 @@ msgstr "&Настройки..."
 
 #: ../peppy/mainmenu.py:377
 msgid "&Revert"
-msgstr "&Восстановить"
+msgstr "&Вернуть"
 
 #: ../peppy/mainmenu.py:397
 msgid "&Save..."
@@ -111,39 +112,40 @@ msgstr "&Сохранить..."
 
 #: ../peppy/plugins/keyboard.py:23
 msgid "&Show Key Bindings"
-msgstr ""
+msgstr "&Показать клавиатурные сочетания"
 
 #: ../peppy/mainmenu.py:826
 msgid "&Show Toolbars"
-msgstr ""
+msgstr "&Показать панели инструментов"
 
 #: ../peppy/plugins/text_transforms.py:74
 msgid "&Tabify"
-msgstr ""
+msgstr "&Вставить отступ"
 
 #: ../peppy/plugins/text_transforms.py:65
 msgid "&Uncomment Region"
-msgstr ""
+msgstr "&Раскомментировать область"
 
 #: ../peppy/plugins/text_transforms.py:92
 msgid "&Untabify"
-msgstr ""
+msgstr "&Удалить отступ"
 
 #: ../peppy/mainmenu.py:956
 msgid "&Word Count"
-msgstr "&Подсчёт слов"
+msgstr "&Количество слов"
 
 #: ../peppy/mainmenu.py:488
 msgid "&Wrap Words"
-msgstr ""
+msgstr "&Перенести по словам"
 
 #: ../peppy/plugins/help.py:32
 msgid "About this program"
-msgstr ""
+msgstr "Об этой программе"
 
 #: ../peppy/dired.py:149 ../peppy/plugins/buffer_list_mode.py:142
 msgid "Act on the marked buffers according to their flags."
 msgstr ""
+"Производить действия над отмеченными буферами в соответствии с их флагами"
 
 #: ../peppy/dired.py:58 ../peppy/dired.py:88 ../peppy/dired.py:95
 #: ../peppy/dired.py:103 ../peppy/dired.py:111 ../peppy/dired.py:120
@@ -166,15 +168,15 @@ msgstr "Действия"
 
 #: ../peppy/plugins/changelog_mode.py:22
 msgid "Add ChangeLog Entry"
-msgstr ""
+msgstr "Добавить запись в историю изменений"
 
 #: ../peppy/plugins/changelog_mode.py:23
 msgid "Add new ChangeLog entry to the top of the ChangeLog"
-msgstr ""
+msgstr "Добавить запись истории изменений в верх истории"
 
 #: ../peppy/dired.py:26
 msgid "Apr"
-msgstr ""
+msgstr "Апр"
 
 #: ../peppy/editra/style_editor.py:242
 msgid "Attributes"
@@ -182,7 +184,7 @@ msgstr "Атрибуты"
 
 #: ../peppy/dired.py:27
 msgid "Aug"
-msgstr ""
+msgstr "Авг"
 
 #: ../peppy/editra/style_editor.py:231
 msgid "Background"
@@ -190,15 +192,15 @@ msgstr "Фон"
 
 #: ../peppy/actions/minibuffer.py:43 ../peppy/actions/minibuffer.py:99
 msgid "Bad input."
-msgstr ""
+msgstr "Неправильные входные данные"
 
 #: ../peppy/editra/style_editor.py:307
 msgid "Base new theme of existing one"
-msgstr ""
+msgstr "Новая тема на основе существующей"
 
 #: ../peppy/mainmenu.py:489
 msgid "Break wrapped lines at word boundaries"
-msgstr ""
+msgstr "Разбивать переносимые строки по краям слов"
 
 #: ../peppy/editra/style_editor.py:153 ../peppy/lib/controls.py:64
 #: ../peppy/lib/controls.py:162
@@ -207,33 +209,34 @@ msgstr "Отмена"
 
 #: ../peppy/mainmenu.py:946
 msgid "Cancel Minibuffer"
-msgstr ""
+msgstr "Отменить минибуфер"
 
 #: ../peppy/mainmenu.py:947
 msgid "Cancel any currently active minibuffer"
-msgstr ""
+msgstr "Отменить любой активный в данный момент минибуфер"
 
 #: ../peppy/plugins/text_transforms.py:131
 msgid "Capitalize"
-msgstr "Как в предложениях"
+msgstr "Капитализировать"
 
 #: ../peppy/plugins/text_transforms.py:133
 #: ../peppy/plugins/text_transforms.py:149
 #: ../peppy/plugins/text_transforms.py:166
 msgid "Case"
-msgstr ""
+msgstr "Регистр"
 
 #: ../peppy/dired.py:135 ../peppy/plugins/buffer_list_mode.py:128
 msgid "Clear Flags"
-msgstr ""
+msgstr "Сбросить флаги"
 
 #: ../peppy/plugins/mpd_major_mode.py:582
 msgid "Clear Playlist"
-msgstr ""
+msgstr "Очистить список воспроизведения"
 
 #: ../peppy/dired.py:136 ../peppy/plugins/buffer_list_mode.py:129
+#, fuzzy
 msgid "Clear all flags from the selected item(s)."
-msgstr ""
+msgstr "Сбросить все флаги выбранного(ых) элемента(ов)"
 
 #: ../peppy/mainmenu.py:41
 msgid "Close Tab"
@@ -241,7 +244,7 @@ msgstr "Закрыть вкладку"
 
 #: ../peppy/mainmenu.py:364
 msgid "Close current buffer"
-msgstr ""
+msgstr "Закрыть текущий буфер"
 
 #: ../peppy/mainmenu.py:42
 msgid "Close the current tab"
@@ -249,7 +252,7 @@ msgstr "Закрыть текущую вкладку"
 
 #: ../peppy/plugins/text_transforms.py:108
 msgid "Collapse blank lines"
-msgstr ""
+msgstr "Удалить пустые строки"
 
 #: ../peppy/editra/style_editor.py:214
 msgid "Color"
@@ -265,7 +268,7 @@ msgstr ""
 
 #: ../peppy/plugins/help.py:51
 msgid "Contributions by:"
-msgstr ""
+msgstr "Добавлено:"
 
 #: ../peppy/mainmenu.py:644 ../peppy/mainmenu.py:645
 msgid "Copy"
@@ -273,31 +276,31 @@ msgstr "Копировать"
 
 #: ../peppy/plugins/cursor_movement.py:37
 msgid "Cursor to End of Line"
-msgstr ""
+msgstr "Установить курсор в конце строки"
 
 #: ../peppy/plugins/cursor_movement.py:23
 msgid "Cursor to Start of Line"
-msgstr ""
+msgstr "Установить курсор в начале строки"
 
 #: ../peppy/plugins/cursor_movement.py:67
 msgid "Cursor to end of the buffer"
-msgstr ""
+msgstr "Установить курсор в конце буфера"
 
 #: ../peppy/plugins/cursor_movement.py:58
 msgid "Cursor to first character in the buffer"
-msgstr ""
+msgstr "Установить курсор на первом символе буфера"
 
 #: ../peppy/plugins/cursor_movement.py:30
 msgid "Cursor to first non-blank character in the line"
-msgstr ""
+msgstr "Установить курсор на первом непустом символе строки"
 
 #: ../peppy/plugins/cursor_movement.py:51
 msgid "Cursor to next line"
-msgstr ""
+msgstr "Переместить курсор к следующей строке"
 
 #: ../peppy/plugins/cursor_movement.py:44
 msgid "Cursor to previous line"
-msgstr ""
+msgstr "Переместить курсор к предыдущей строке"
 
 #: ../peppy/mainmenu.py:629 ../peppy/mainmenu.py:630
 msgid "Cut"
@@ -309,11 +312,11 @@ msgstr "Отладка"
 
 #: ../peppy/plugins/debug_classes.py:54
 msgid "DebugClassMenu"
-msgstr ""
+msgstr "Меню отладки классов"
 
 #: ../peppy/dired.py:27
 msgid "Dec"
-msgstr "Скл."
+msgstr "Дек"
 
 #: ../peppy/plugins/mpd_major_mode.py:547
 msgid "Decrease Volume"
@@ -321,27 +324,27 @@ msgstr "Уменьшить громкость"
 
 #: ../peppy/plugins/mpd_major_mode.py:548
 msgid "Decrease the volume"
-msgstr ""
+msgstr "Уменьшить громкость"
 
 #: ../peppy/plugins/mpd_major_mode.py:571
 msgid "Delete Playlist Entry"
-msgstr ""
+msgstr "Удалить элемент списка воспроизведения"
 
 #: ../peppy/frame.py:56
 msgid "Delete current window"
-msgstr ""
+msgstr "Удалить текущее окно"
 
 #: ../peppy/plugins/mpd_major_mode.py:572
 msgid "Delete selected songs from playlist"
-msgstr ""
+msgstr "Удалить из списка выбранные песни"
 
 #: ../peppy/mainmenu.py:915
 msgid "Describe an action by name"
-msgstr ""
+msgstr "Описать действие по имени"
 
 #: ../peppy/plugins/buffer_list_mode.py:25
 msgid "Display a list of all buffers."
-msgstr ""
+msgstr "Показать список всех буферов"
 
 #: ../peppy/buffers.py:25 ../peppy/buffers.py:26 ../peppy/buffers.py:144
 #: ../peppy/frame.py:308 ../peppy/plugins/buffer_list_mode.py:26
@@ -350,7 +353,7 @@ msgstr "Документы"
 
 #: ../peppy/plugins/text_transforms.py:164
 msgid "Downcase"
-msgstr ""
+msgstr "В нижний регистр"
 
 #: ../peppy/mainmenu.py:348
 msgid "E&xit"
@@ -358,7 +361,7 @@ msgstr "В&ыход"
 
 #: ../peppy/mainmenu.py:720
 msgid "EOL Characters"
-msgstr ""
+msgstr "Сиволы конца строки"
 
 #: ../peppy/actions/pypefind.py:131 ../peppy/actions/pypefind.py:139
 #: ../peppy/frame.py:304 ../peppy/mainmenu.py:601 ../peppy/mainmenu.py:617
@@ -380,7 +383,7 @@ msgstr ""
 
 #: ../peppy/mainmenu.py:827
 msgid "Enable or disable toolbar display in this frame"
-msgstr ""
+msgstr "Включить или выключить отображение панели инструментов в этом окне"
 
 #: ../peppy/editra/style_editor.py:748
 msgid "Enter a hex color value"
@@ -388,7 +391,7 @@ msgstr "Введите шестнадцатеричный цвет"
 
 #: ../peppy/mainmenu.py:879
 msgid "Execute an action by name"
-msgstr ""
+msgstr "Выполнить действие по имени"
 
 #: ../peppy/editra/style_editor.py:154
 msgid "Export"
@@ -396,11 +399,11 @@ msgstr "Экспорт"
 
 #: ../peppy/plugins/sandbox.py:48
 msgid "Fast test of the progress bar"
-msgstr ""
+msgstr "Быстрая проверка полоски состояния"
 
 #: ../peppy/dired.py:26
 msgid "Feb"
-msgstr ""
+msgstr "Фев"
 
 #: ../peppy/frame.py:303 ../peppy/mainmenu.py:355 ../peppy/mainmenu.py:365
 #: ../peppy/mainmenu.py:379 ../peppy/mainmenu.py:400 ../peppy/mainmenu.py:417
@@ -410,7 +413,7 @@ msgstr "Файл"
 
 #: ../peppy/plugins/text_transforms.py:208
 msgid "Fill Paragraph"
-msgstr ""
+msgstr "Заполнить абзац"
 
 #: ../peppy/actions/pypefind.py:129
 msgid "Find..."
@@ -418,7 +421,7 @@ msgstr "Найти..."
 
 #: ../peppy/major.py:1016
 msgid "Finished %s on %s"
-msgstr ""
+msgstr "Завершено %s из %s"
 
 #: ../peppy/actions/minibuffer.py:160
 msgid "Floating Point"
@@ -463,11 +466,11 @@ msgstr "Основные"
 
 #: ../peppy/plugins/mpd_major_mode.py:594
 msgid "Generate a random playlist"
-msgstr ""
+msgstr "Сгенерировать случайный список"
 
 #: ../peppy/plugins/function_menu.py:28
 msgid "Go to a function"
-msgstr ""
+msgstr "Перейти к функции"
 
 #: ../peppy/hsi/hsi_major_mode.py:509
 msgid "Go to a particular band in the cube"
@@ -487,11 +490,11 @@ msgstr "Перейти на адрес..."
 
 #: ../peppy/actions/gotoline.py:26
 msgid "Goto a line in the text."
-msgstr ""
+msgstr "Перейти к строке в тексте"
 
 #: ../peppy/plugins/hexedit_mode.py:43
 msgid "Goto an offset."
-msgstr ""
+msgstr "Перейти к смещению"
 
 #: ../peppy/plugins/games/hangman_mode.py:61
 #: ../peppy/plugins/games/hangman_mode.py:84
@@ -500,7 +503,7 @@ msgstr ""
 
 #: ../peppy/plugins/tutorial_plugin.py:36
 msgid "Hello World Action"
-msgstr ""
+msgstr "Приложение \"Hello World\""
 
 #: ../peppy/hsi/hsi_major_mode.py:204
 msgid "Image View"
@@ -512,11 +515,11 @@ msgstr "Увеличить громкость"
 
 #: ../peppy/plugins/mpd_major_mode.py:535
 msgid "Increase the volume"
-msgstr ""
+msgstr "Увеличить громкость"
 
 #: ../peppy/plugins/python_mode.py:56
 msgid "Indent the current line when a colon is pressed"
-msgstr ""
+msgstr "Добавить отступ к текущей строке, когда нажато двоеточие"
 
 #: ../peppy/mainmenu.py:710
 msgid "Indent the next line following a return"
@@ -528,7 +531,7 @@ msgstr "Ввод:"
 
 #: ../peppy/plugins/tutorial_plugin.py:40
 msgid "Insert 'Hello, world' at the current cursor position"
-msgstr ""
+msgstr "Вставить \"Hello. world\" в текущем положении курсора"
 
 #: ../peppy/actions/minibuffer.py:141
 msgid "Integer"
