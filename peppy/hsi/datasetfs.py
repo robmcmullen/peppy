@@ -81,6 +81,8 @@ class DatasetFS(BaseFS):
     def exists(cls, reference):
         path = str(reference.path)
         item = cls._find(path)
+#        print("root = %s" % cls.root)
+#        print("item = %s" % item)
         return item is not None
 
     @classmethod
@@ -106,7 +108,7 @@ class DatasetFS(BaseFS):
         path = str(reference.path)
         item = cls._find(path)
         if item:
-            return item.data_bytes
+            return item.cube.data_bytes
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @classmethod
@@ -114,7 +116,7 @@ class DatasetFS(BaseFS):
         path = str(reference.path)
         item = cls._find(path)
         if item:
-            return item.file_date
+            return item.cube.file_date
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
 

@@ -15,12 +15,13 @@ from peppy.debug import *
 from peppy.stcinterface import *
 
 
-class HyperspectralSTC(NonResidentSTC):
+class HyperspectralSTC(NonResidentSTC, debugmixin):
     """Combination of STC and proxy for a hyperspectral dataset"""
     
     def open(self, buffer, message=None):
         self.url = buffer.raw_url
         self.message = message
+        self.dprint("Loading %s" % str(self.url))
         self.dataset = HyperspectralFileFormat.load(self.url, progress=self.updateGauge)
 
     def updateGauge(self, current, length=-1):

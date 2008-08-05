@@ -26,8 +26,7 @@ class SubDataset(HSI.MetadataMixin):
         
     def __str__(self):
         fs=StringIO()
-        for subset in self.subsets:
-            fs.write(str(subset))
+        fs.write("Subset of cube %s" % self.cube)
         return fs.getvalue()
 
     @classmethod
@@ -38,7 +37,7 @@ class SubDataset(HSI.MetadataMixin):
         if url:
             dprint("Save not implemented yet!\n")
 
-    def getCube(self, filename=None, index=0, progress=None):
+    def getCube(self, filename=None, index=0, progress=None, options=None):
         dprint(filename)
         return self.cube
 
@@ -53,15 +52,16 @@ class SubCube(HSI.Cube):
 
     def setParent(self, parent):
         self.parent = parent
+        #self.parent.progress = None
         self.clearSubset()
 
         # date/time metadata
         self.imaging_date = parent.imaging_date
         self.file_date = parent.file_date
 
-        self.data_bytes = parent.data_bytes # number of bytes in the data part of the file
-
-        # Data type is a numarray data type, one of: [None,Int8,Int16,Int32,Float32,Float64,Complex32,Complex64,None,None,UInt16,UInt32,Int64,UInt64]
+        self.interleave = parent.interleave
+        self.byte_order = parent.byte_order
+        self.data_bytes = 0 # will be calculated when subset is defined
         self.data_type = parent.data_type
 
         # wavelength units: 'nm' for nanometers, 'um' for micrometers,
@@ -95,6 +95,10 @@ class SubCube(HSI.Cube):
         self.b1 = 0
         self.b2 = self.bands
         
+        self.data_type = None
+        self.data_bytes = 0
+        self.byte_order = HSI.nativeByteOrder
+        
         self.wavelengths = self.parent.wavelengths[:]
         self.bbl = self.parent.bbl[:]
         self.fwhm = self.parent.fwhm[:]
@@ -113,6 +117,8 @@ class SubCube(HSI.Cube):
         self.bands = b2 - b1
         self.b1 = b1
         self.b2 = b2
+        
+        self.initializeSizes()
         
         self.wavelengths = self.parent.wavelengths[self.b1:self.b2]
         self.bbl = self.parent.bbl[self.b1:self.b2]

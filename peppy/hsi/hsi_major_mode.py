@@ -992,6 +992,9 @@ class SpatialSubset(HSIActionMixin, SelectAction):
         sample, line, ds, dl = self.mode.selector.getSelectedBox()
         subcube.subset(line, line+dl, sample, sample+ds, 0, cube.bands)
         fh.setCube(subcube)
+        # must close file handle or it won't be registered with the DatasetFS
+        # file system
+        fh.close()
         self.frame.open(name)
 
 
