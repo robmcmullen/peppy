@@ -28,12 +28,24 @@ class RecentFiles(OnDemandGlobalListAction):
     name = "Open Recent"
     default_menu = ("File", 10)
     inline = False
+    
+    #: Controls where the new files are added: top or bottom
     add_at_top = True
+    
+    #: This value is used as the keyword into RecentFilesPlugin's classprefs
+    # to determine the filename containing the history list
+    save_file_classpref = 'history_file'
     
     @classmethod
     def isAcceptableURL(cls, url):
         # skip files with the about: protocol
         return url.scheme != 'about' and url.scheme != 'mem'
+    
+    @classmethod
+    def setStorage(cls, items, save=True):
+        cls.storage = items
+        if save:
+            RecentFilesPlugin.saveStorage(cls)
     
     @classmethod
     def append(cls, msg):
@@ -91,16 +103,18 @@ class FileCabinet(RecentFiles):
     This list is not limited in size.
     """
     name = "File Cabinet"
+    save_file_classpref = 'file_cabinet'
     default_menu = (("File/File Cabinet", 11), 0)
     inline = True
-    add_at_top = False
-    global_id = None
     
-    # Have to set tooltip to none, otherwise menu system picks up the tooltip
-    # from the parent class (RecentFiles) and doesn't attempt to scan this
-    # class's docstring for the tooltip
+    # Have to set tooltip and global_id to None, otherwise menu system picks
+    # up the values from the parent class (RecentFiles)
+    global_id = None
     tooltip = None
     
+    #: For this list, we add new entries at the bottom
+    add_at_top = False
+
     @classmethod
     def isAcceptableURL(cls, url):
         return True
@@ -108,6 +122,7 @@ class FileCabinet(RecentFiles):
     @classmethod
     def trimList(cls):
         pass
+
 
 class AddToFileCabinet(SelectAction):
     """Add to the saved URL (i.e. file cabinet) list"""
@@ -142,9 +157,9 @@ class ReorderFileCabinet(SelectAction):
 
 class RecentFilesPlugin(IPeppyPlugin):
     default_classprefs = (
-        StrParam('history_file', 'recentfiles.txt', 'Filename used in the peppy configuration directory to store the list of recently opened files.'),
+        StrParam(RecentFiles.save_file_classpref, 'recentfiles.txt', 'Filename used in the peppy configuration directory to store the list of recently opened files.'),
         IntParam('list_length', 20, 'Truncate the list to this number of files most recently opened.'),
-        StrParam('file_cabinet', 'file_cabinet.txt', 'Filename used in the peppy configuration directory to store the list of URLs saved in the File Cabinet.'),
+        StrParam(FileCabinet.save_file_classpref, 'file_cabinet.txt', 'Filename used in the peppy configuration directory to store the list of URLs saved in the File Cabinet.'),
         )
 
     def activateHook(self):
@@ -156,38 +171,36 @@ class RecentFilesPlugin(IPeppyPlugin):
         Publisher().unsubscribe(self.getTabMenu)
 
     @classmethod
-    def getFile(cls, filename):
+    def getFile(cls, actioncls):
         app = wx.GetApp()
+        classpref_name = actioncls.save_file_classpref
+        filename = cls.classprefs._get(classpref_name)
         pathname=app.getConfigFilePath(filename)
         return pathname
 
     @classmethod
-    def loadStorage(cls, actioncls, filename):
+    def loadStorage(cls, actioncls):
         storage=[]
-        pathname = cls.getFile(filename)
+        pathname = cls.getFile(actioncls)
         try:
             fh=open(pathname)
             for line in fh:
                 storage.append(line.decode('utf8').rstrip())
         except:
             pass
-        actioncls.setStorage(storage)
+        actioncls.setStorage(storage, save=False)
 
     def initialActivation(self):
-        self.loadStorage(RecentFiles, self.classprefs.history_file)
-        self.loadStorage(FileCabinet, self.classprefs.file_cabinet)
+        self.loadStorage(RecentFiles)
+        self.loadStorage(FileCabinet)
     
     @classmethod
-    def saveStorage(cls, actioncls, filename):
-        pathname = cls.getFile(filename)
+    def saveStorage(cls, actioncls):
+        pathname = cls.getFile(actioncls)
         fh=open(pathname,'w')
         for file in actioncls.storage:
             #print "saving %s to %s" % (file,pathname)
             fh.write("%s%s" % (file.encode('utf8'),os.linesep))
-
-    def requestedShutdown(self):
-        self.saveStorage(RecentFiles, self.classprefs.history_file)
-        self.saveStorage(FileCabinet, self.classprefs.file_cabinet)
 
     def getTabMenu(self, msg):
         action_classes = msg.data
