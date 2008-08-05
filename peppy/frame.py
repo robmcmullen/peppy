@@ -350,6 +350,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         _("View/Apply Settings"): -980,
         _("Tools"): 0.004,
         _("Transform"): 0.005,
+        _("Project"): 1000.05,
         _("Documents"): 1000.1,
         _("Window"): 1000.2,
         _("&Help"): 1000.3,
