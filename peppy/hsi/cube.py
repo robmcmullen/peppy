@@ -580,7 +580,7 @@ class MMapCubeReader(CubeReader):
             self.mmap.flush()
             self.mmap.sync()
         else:
-            self.raw.tofile(str(url))
+            self.raw.tofile(str(url.path))
     
     def shape(self, cube):
         """Shape the memory mapped to the correct data type and offset within
@@ -748,8 +748,7 @@ class Cube(debugmixin):
         # Data type is a numarray data type, one of: [None,Int8,Int16,Int32,Float32,Float64,Complex32,Complex64,None,None,UInt16,UInt32,Int64,UInt64]
         self.data_type=None
 
-        self.byte_order=nativeByteOrder
-        self.swap=False
+        self.byte_order = nativeByteOrder
 
         # per band information, should be lists of dimension self.bands
         self.wavelengths=[]
@@ -911,14 +910,6 @@ class Cube(debugmixin):
         if len(self.wavelengths)>0 and not self.wavelength_units:
             self.guessWavelengthUnits()
 
-        if self.byte_order != nativeByteOrder:
-            #dprint("byteswapped data!")
-            #self.swap=True
-
-            # with numarray's byteorder parameter, we don't have to
-            # actually perform any swapping by hand.
-            pass
-
         if self.url is not None:
             self.file_date = vfs.get_mtime(self.url)
 
@@ -995,8 +986,6 @@ class Cube(debugmixin):
         """Get a copy of the array of (lines x samples) at the
         specified band.  You are not working on the original data."""
         s=self.getBandInPlace(band).copy()
-        if self.swap:
-            s.byteswap(True)
         return s
 
     def getBandInPlace(self,band):
@@ -1035,8 +1024,6 @@ class Cube(debugmixin):
         """Get the spectra at the given pixel.  Calculate the extrema
         as we go along."""
         spectra=self.getSpectraInPlace(line,sample).copy()
-        if self.swap:
-            spectra.byteswap()
         spectra*=self.bbl
         self.updateExtrema(spectra)
         return spectra
@@ -1055,8 +1042,6 @@ class Cube(debugmixin):
         """Get the all the spectra along the given line.  Calculate
         the extrema as we go along."""
         spectra=self.getLineOfSpectraCopy(line)
-        if self.swap:
-            spectra.byteswap()
         spectra*=self.bbl
         self.updateExtrema(spectra)
         return spectra
