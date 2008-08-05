@@ -195,6 +195,7 @@ class MouseSelector(object):
         handled by the processEvent method.
         """
         coords = self.scroller.convertEventCoords(ev)
+        self.scroller.CaptureMouse()
         self.start_img_coords = self.scroller.getImageCoords(*coords)
         self.setWorldCoordsFromImageCoords(*self.start_img_coords)
         self.draw()
@@ -237,6 +238,7 @@ class MouseSelector(object):
         the selector should be destroyed.
         """
         self.want_autoscroll = False
+        self.scroller.ReleaseMouse()
         self.cleanup()
         self.finishEventPostHook(ev)
     
@@ -430,6 +432,7 @@ class RubberBand(MouseSelector):
         events where the user can grab a corner or edge and make the
         rectangular area bigger.
         """
+        self.scroller.CaptureMouse()
         coords = self.scroller.convertEventCoords(ev)
         # dprint("mouse=%s world=%s" % (coords, self.world_coords))
         if self.isOnBorder(coords):
@@ -506,6 +509,7 @@ class RubberBand(MouseSelector):
 
     def finishEvent(self, ev):
         # dprint()
+        self.scroller.ReleaseMouse()
         self.want_autoscroll = False
 
     def handleEventPostHook(self, ev):
@@ -1066,20 +1070,20 @@ class BitmapScroller(wx.ScrolledWindow):
         further mouse events are directed to its handler.
         """
         if self.img:
+            inside = self.isEventInClientArea(ev)
+            
             # First, process the event itself or start it up if it has
             # been triggered.
             if self.selector:
                 if not self.selector.processEvent(ev):
                     self.endActiveSelector()
-                    self.ReleaseMouse()
-            elif self.use_selector.trigger(ev):
-                self.CaptureMouse()
+            elif inside and self.use_selector.trigger(ev):
                 self.startSelector(ev)
 
             # Next, if we have a selector, process some user interface
             # side effects
             if self.selector:
-                if self.selector.want_autoscroll and not self.isEventInClientArea(ev):
+                if self.selector.want_autoscroll and not inside:
                     self.autoScroll(ev)
                 if self.selector.want_blank_cursor:
                     self.blankCursor(ev)
