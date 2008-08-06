@@ -677,6 +677,7 @@ class KeyProcessor(object):
                         self.reportNext(function)
                         self.reportNext = None
                     else:
+                        if self.debug: print("function = %s" % function)
                         if save is not None:
                             function(evt,save, printable=printable)
                         else:

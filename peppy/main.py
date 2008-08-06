@@ -908,7 +908,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         for frame in wx.GetTopLevelWindows():
             assert self.dprint(frame)
             try:
-                frame.switchMode()
+                frame.switchMode(set_focus=False)
             except:
                 # not all top level windows will be BufferFrame
                 # subclasses, so just use the easy way out and catch

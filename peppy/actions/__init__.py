@@ -159,6 +159,9 @@ class SelectAction(debugmixin):
             self.insertIntoToolbar(toolbar)
 
         self.initPostHook()
+    
+    def __str__(self):
+        return "%s id=%s mode=%s frame=%s" % (self.__class__.__name__, hex(id(self)), self.mode, self.frame)
 
 #    def __del__(self):
 #        self.dprint("DELETING action %s" % self.name)

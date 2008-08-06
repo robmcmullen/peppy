@@ -427,6 +427,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.loadList(urls)
         self.Show()
+    
+    def __str__(self):
+        return "%s %s id=%s" % (self.__class__.__name__, self.name, hex(id(self)))
         
     def bindEvents(self):
         self.Bind(wx.EVT_CLOSE,self.OnClose)
@@ -879,12 +882,26 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         finally:
             self.currently_processing_timestamp = False
 
-    def switchMode(self):
+    def switchMode(self, set_focus=True):
+        """Update the user interface to reflect the current mode.
+        
+        This changes the menu bar, tool bar, status bar, and keystroke commands
+        to reflect the currently active major mode.  Can also be used to
+        update the existing major mode if actions were added to the major mode
+        in response to some user action.
+        
+        @param set_focus: should the major mode take the focus.  There is a
+        problem if this method is used to loop through and update all frames:
+        the focus seems to be stolen by the first mode in the loop regardless
+        of which mode is in the top frame (see bug #492).  When using this
+        method in a loop, set_focus should be false.
+        """
         last=self.tabs.getPrevious()
         if last:
             last = last.editwin
         mode=self.getActiveMajorMode()
         if mode is None:
+            assert self.dprint("No currently active mode for %s" % (self))
             # If there were multiple tabs open and they were all the
             # same, they will go away when the buffer is closed.  In
             # this case, don't try to do anything more because there
@@ -893,7 +910,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
-        mode.focus()
+        if set_focus:
+            mode.focus()
         self.setTitle()
         #self.setKeys(majors)
         self.setMenumap(mode)

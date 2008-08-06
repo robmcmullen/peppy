@@ -906,6 +906,7 @@ class MajorMode(ClassPrefs, debugmixin):
         if self and self.frame.getActiveMajorMode() == self:
             self.SetFocus()
             self.focusPostHook()
+            self.dprint("Set focus to %s (sanity check: FindFocus = %s, should be same)" % (self, self.FindFocus()))
 
     def focusPostHook(self):
         pass
