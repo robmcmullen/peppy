@@ -664,10 +664,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return True
         return False
 
-    def setBuffer(self, buffer, wrapper=None, options=None):
+    def setBuffer(self, buffer, wrapper=None, use_current=None, options=None):
         if wrapper is None:
-            # this gets a default view for the selected buffer
-            wrapper = self.tabs.getDocumentWrapper()
+            if use_current:
+                wrapper = self.tabs.getCurrent()
+            else:
+                # this gets a default view for the selected buffer
+                wrapper = self.tabs.getDocumentWrapper()
         mode = wrapper.createMajorMode(self, buffer)
         assert self.dprint("set buffer to new view %s" % mode)
         self.tabs.updateWrapper(wrapper)

@@ -77,13 +77,13 @@ class SwitchToBuffer(SelectAction):
             self.__class__.last_buffer = mode.buffer.displayname
             self.__class__.last_options[mode.buffer.displayname] = mode.getViewPositionData()
             index = self.display_names.index(text)
-            url = self.full_names[index]
+            buf = self.full_names[index]
             if text in self.__class__.last_options:
                 options = self.__class__.last_options[text]
             else:
                 options = None
-            dprint("found %s, switching to %s with options %s" % (text, url, options))
-            wx.CallAfter(self.frame.setBuffer, url, options=options)
+            dprint("found %s, switching to %s with options %s" % (text, buf, options))
+            wx.CallAfter(self.frame.setBuffer, buf, use_current=True, options=options)
         else:
             dprint("buffer %s doesn't exist" % text)
 
