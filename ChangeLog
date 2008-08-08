@@ -1,6 +1,6 @@
-2008-08-04  Rob McMullen  <robm@users.sourceforge.net>
+2008-08-05  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.7.4.4 update to "Hammer Thrower"
+	* Released peppy-0.7.5 "Manny Being Manny"
 	* recent file list now saves after every change rather than at exit
 	* minor bugfixes to HSI mode
 
