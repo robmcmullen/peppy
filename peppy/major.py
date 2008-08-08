@@ -935,7 +935,7 @@ class MajorMode(ClassPrefs, debugmixin):
         
         @param options: optional dict of name/value options
         """
-        pass
+        self.setViewPositionData(options)
     
     def getViewPositionData(self):
         """Get a dictionary containing enough information to restore the cursor
@@ -952,11 +952,13 @@ class MajorMode(ClassPrefs, debugmixin):
         """Hook to save any view parameters that should be restored after a revert"""
         self._revert_data = self.getViewPositionData()
     
-    def setViewPositionData(self, data={}):
+    def setViewPositionData(self, options=None):
         """Attempt to restore the state of the view from the given data.
         
         Note that the revert data passed in may be from a different major mode,
         so the data should be tested for compatibility.
+        
+        @param options: optional dict of name/value options
         """
         pass
     
