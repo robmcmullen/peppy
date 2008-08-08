@@ -84,11 +84,13 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         
         self.updating = False
         self.url = self.buffer.url
-        self.reset()
-        self.setSelectedIndexes([0])
         
         # Assign icons for up and down arrows for column sorter
         getIconStorage().assignList(self)
+    
+    def setViewPositionData(self, options=None):
+        self.reset()
+        self.setSelectedIndexes([0])
         
         # default to sort by filename
         self.SortListItems(1)
