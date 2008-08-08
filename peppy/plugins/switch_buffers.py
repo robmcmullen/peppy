@@ -46,6 +46,10 @@ class SwitchToBuffer(SelectAction):
     # to quickly switch back to the previous buffer.
     last_buffer = ""
     
+    # Store options used to restore view state when switching back to a
+    # previous buffer
+    last_options = {}
+    
     def createList(self):
         """Generate list of possible buffer names to complete.
 
@@ -71,10 +75,15 @@ class SwitchToBuffer(SelectAction):
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.display_names:
             self.__class__.last_buffer = mode.buffer.displayname
+            self.__class__.last_options[mode.buffer.displayname] = mode.getViewPositionData()
             index = self.display_names.index(text)
             url = self.full_names[index]
-            dprint("found %s, switching to %s" % (text, url))
-            wx.CallAfter(self.frame.setBuffer, url)
+            if text in self.__class__.last_options:
+                options = self.__class__.last_options[text]
+            else:
+                options = None
+            dprint("found %s, switching to %s with options %s" % (text, url, options))
+            wx.CallAfter(self.frame.setBuffer, url, options=options)
         else:
             dprint("buffer %s doesn't exist" % text)
 

@@ -607,6 +607,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             line = int(url.fragment)
             line -= self.classprefs.line_number_offset
             self.showLine(line)
+        if options:
+            self.setViewPositionData(options)
 
     ##### Comment handling
     def setCommentDelimiters(self, start='', end=''):
