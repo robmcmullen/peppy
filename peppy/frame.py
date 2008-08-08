@@ -433,13 +433,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
     def bindEvents(self):
         self.Bind(wx.EVT_CLOSE,self.OnClose)
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def unbindEvents(self):
         self.Unbind(wx.EVT_CLOSE)
-        self.Unbind(wx.EVT_IDLE)
         self.Unbind(wx.EVT_ACTIVATE)
         self.Unbind(wx.EVT_SIZE)
 
@@ -484,14 +482,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.sidebar_panes.append(sidebar)
         self.sidebar_panes.sort(key=lambda s:s.caption)
 
-
-    # Overrides of wx methods
-    def OnIdle(self, evt):
-        if wx.GetApp().GetTopWindow() != self:
-            self.dprint("idle events only on top window: top=%s self=%s" % (wx.GetApp().GetTopWindow(), self.name))
-            pass
-        else:
-            mode = self.getActiveMajorMode()
+    def processIdleEvent(self):
+        mode = self.getActiveMajorMode()
+        if mode:
             mode.idleHandler()
             
             # Timestamp checks are performed here for two reasons: 1) windows
@@ -504,8 +497,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.currently_processing_timestamp = True
                 wx.CallAfter(self.isModeChangedOnDisk)
                 self.pending_timestamp_check = False
-        evt.Skip()
-        
+
+
+    # Overrides of wx methods
     def OnRaise(self, evt):
         self.dprint("Focus! %s" % self.name)
         if evt.GetActive():

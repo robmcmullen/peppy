@@ -419,6 +419,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         wx.SetDefaultPyEncoding(self.classprefs.default_text_encoding)
         
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         return True
     
@@ -442,6 +443,21 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             if isinstance(frame, BufferFrame):
                 frame.OnKeyDown(evt)
                 break
+
+    def OnIdle(self, evt):
+        """Process EVT_IDLE events on the currently active window.
+        
+        Note that only the top BufferFrame will get idle events, and further
+        only the currently active major mode of that frame will get idle
+        events.  This prevents a huge slowdown due to toolbar management --
+        because toolbars need to update their enable state continually, if
+        idle events were processed on all frames, there would be a noticeable
+        delay after only a few frames were open.
+        """
+        top = self.getTopFrame()
+        if top:
+            #dprint("Processing idle event on %s" % top)
+            top.processIdleEvent()
 
     def bootstrapCommandLineOptions(self):
         """Process a small number of configuration options before
@@ -884,11 +900,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         frame = self.GetTopWindow()
         if not hasattr(frame, 'open'):
             # FIXME: can this ever happen?
-            dprint("Top window not a Peppy frame!")
+            #dprint("Top window not a Peppy frame!")
             for frame in wx.GetTopLevelWindows():
                 if hasattr(frame, 'open'):
                     return frame
-            dprint("No top level Peppy frames found!")
+            #dprint("No top level Peppy frames found!")
+            return None
         return frame
     
     def MacOpenFile(self, filename):
