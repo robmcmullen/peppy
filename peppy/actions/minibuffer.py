@@ -88,19 +88,19 @@ class Minibuffer(debugmixin):
         self.finish_callback = finish_callback
         
         if parent:
-            self.createWindow(parent)
+            self.createWindow(parent, **kwargs)
             self.panel = self.win
         else:
             self.panel = wx.Panel(self.mode.wrapper, style=wx.NO_BORDER)
             sizer = wx.BoxSizer(wx.HORIZONTAL)
-            self.createWindow(self.panel)
+            self.createWindow(self.panel, **kwargs)
             sizer.Add(self.win, 1, wx.EXPAND)
             close = StatusBarButton(self.panel, -1, getIconBitmap("icons/cancel.png"), style=wx.NO_BORDER)
             close.Bind(wx.EVT_BUTTON, self.OnClose)
             sizer.Add(close, 0, wx.EXPAND)
             self.panel.SetSizer(sizer)
         
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         """
         Create a window that represents the minibuffer, and set
         self.win to that window.
@@ -203,7 +203,7 @@ class TextMinibuffer(Minibuffer):
     label = "Text"
     error = "Bad input."
     
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -321,7 +321,7 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
     This class doesn't implement the complete method, leaving its
     implementation to subclasses.
     """
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -381,8 +381,14 @@ class CompletionMinibuffer(TextMinibuffer):
 
     This class doesn't implement the complete method, leaving its
     implementation to subclasses.
+    
+    Most of the time completion minibuffers will want to extend the
+    initial value when the use types something, but in case you want the
+    initial buffer to be selected so that a keystroke replaces it, the
+    'highlight_initial' kwarg can be passed to the constructor (which in turn
+    passes it to createWindow).
     """
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = wx.Panel(parent, style=wx.NO_BORDER|wx.TAB_TRAVERSAL)
         
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -394,6 +400,11 @@ class CompletionMinibuffer(TextMinibuffer):
 
         self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.win.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+
+        if 'highlight_initial' in kwargs:
+            self.highlight_initial = kwargs['highlight_initial']
+        else:
+            self.highlight_initial = False
 
         if self.initial is not None:
             self.text.ChangeValue(self.initial)
@@ -411,11 +422,14 @@ class CompletionMinibuffer(TextMinibuffer):
     def SetFocus(self):
         #dprint(self)
         self.win.saveSetFocus()
-        self.text.SetInsertionPointEnd()
+        self.OnFocus(None)
     
     def OnFocus(self, evt):
         #dprint()
-        self.text.SetInsertionPointEnd()
+        if self.highlight_initial and self.text.GetValue() == self.initial:
+            self.text.SetSelection(-1, -1)
+        else:
+            self.text.SetInsertionPointEnd()
 
     def complete(self, text):
         raise NotImplementedError
@@ -472,7 +486,7 @@ class MultiMinibuffer(Minibuffer):
         self.minibuffers = []
         Minibuffer.__init__(self, *args, **kwargs)
         
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = wx.Panel(parent, style=wx.NO_BORDER)
         sizer = wx.BoxSizer(wx.VERTICAL)
         

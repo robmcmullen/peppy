@@ -41,6 +41,11 @@ class SwitchToBuffer(SelectAction):
     key_bindings = {'emacs': "C-X B", }
     default_menu = ("Tools", 610)
     
+    # Save the buffer that was replaced by a successful switch to provide the
+    # default value the next time this action is called.  This provides a way
+    # to quickly switch back to the previous buffer.
+    last_buffer = ""
+    
     def createList(self):
         """Generate list of possible buffer names to complete.
 
@@ -50,18 +55,22 @@ class SwitchToBuffer(SelectAction):
         self.map = {}
         self.full_names = [buf for buf in BufferList.storage]
         self.display_names = [buf.displayname for buf in self.full_names]
+        if self.__class__.last_buffer and self.__class__.last_buffer not in self.display_names:
+            # Remove the last buffer if it no longer exists in the buffer list
+            self.__class__.last_buffer = ""
 
     def action(self, index=-1, multiplier=1):
-        # FIXME: ignoring number right now
         self.createList()
         minibuffer = StaticListCompletionMinibuffer(self.mode, self,
                                                     label = self.name,
                                                     list = self.display_names,
-                                                    initial = "")
+                                                    initial = self.__class__.last_buffer,
+                                                    highlight_initial = True)
         self.mode.setMinibuffer(minibuffer)
 
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.display_names:
+            self.__class__.last_buffer = mode.buffer.displayname
             index = self.display_names.index(text)
             url = self.full_names[index]
             dprint("found %s, switching to %s" % (text, url))

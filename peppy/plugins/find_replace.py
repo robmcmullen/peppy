@@ -882,7 +882,7 @@ class FindMinibuffer(Minibuffer):
     """
     search_storage = {}
     
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = FindBar(parent, self.mode.frame, self.mode, self.search_storage, direction=self.action.find_direction, service=self.action.find_service)
     
     def getHelp(self):
@@ -1193,7 +1193,7 @@ class ReplaceMinibuffer(FindMinibuffer):
     """
     search_storage = {}
     
-    def createWindow(self, parent):
+    def createWindow(self, parent, **kwargs):
         self.win = ReplaceBar(parent, self.mode.frame, self.mode,
                               self.search_storage, on_exit=self.removeFromParent,
                               direction=self.action.find_direction,
