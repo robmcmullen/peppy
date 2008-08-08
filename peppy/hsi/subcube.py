@@ -38,7 +38,7 @@ class SubDataset(HSI.MetadataMixin):
             dprint("Save not implemented yet!\n")
 
     def getCube(self, filename=None, index=0, progress=None, options=None):
-        dprint(filename)
+        self.dprint(filename)
         return self.cube
 
     def write(self,fh):

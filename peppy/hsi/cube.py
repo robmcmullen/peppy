@@ -199,7 +199,7 @@ class FileCubeReader(CubeReader):
             self.offset = 0
         else:
             self.offset = cube.data_offset
-        dprint("url=%s file=%s offset=%d" % (url, self.fh, self.offset))
+        self.dprint("url=%s file=%s offset=%d" % (url, self.fh, self.offset))
         self.lines = cube.lines
         self.samples = cube.samples
         self.bands = cube.bands
@@ -833,17 +833,17 @@ class Cube(debugmixin):
         that works.
         """
         for cube_reader in self.getCubeReaderList():
-            dprint("Trying %s" % cube_reader)
+            self.dprint("Trying %s" % cube_reader)
             try:
                 reader = cube_reader(self)
             except TypeError, e:
-                dprint(e)
+                self.dprint(e)
                 continue
             try:
                 return reader(self, self.url)
             except OSError, e:
                 # Caught what is most likely an out of memory error
-                dprint(e)
+                self.dprint(e)
                 continue
         raise IndexError("No cube reader found")
 

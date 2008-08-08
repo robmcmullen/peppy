@@ -75,7 +75,6 @@ class RectangularSelect(ImageActionMixin, ToggleAction):
         return mode.use_selector == RubberBand
 
     def action(self, index=-1, multiplier=1):
-        print "Select mode!!!"
         mode = self.mode
         if mode.use_selector == RubberBand:
             mode.setSelector(Crosshair)
