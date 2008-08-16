@@ -95,6 +95,9 @@ class SelectAction(debugmixin):
     #: Current keybinding of the action.  This is set by the keyboard configuration loader and shouldn't be modified directly.  Subclasses should leave this set to None.
     keyboard = None
     
+    #: Flag to indicate that the user has specified the keybinding of the action, and should therefore override built-in key bindings.  This attribute is set by the keyboard configuration loader and shouldn't be modified directly.  Subclasses should leave this set to None.
+    user_keyboard = None
+    
     #: If this menu action has a stock wx id, such as wx.ID_ABOUT or wx.ID_PREFERENCES, add it here and the wx menu system can do some special things to it, like automatically give it the correct location on WXMAC.
     stock_id = None
     

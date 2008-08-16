@@ -267,7 +267,7 @@ class KeyMap(object):
             actions.append(hotkeys)
         return actions
         
-    def define(self,acc,fcn):
+    def define(self, acc, fcn, replace=False):
         """Create the nested dicts that point to the function to be
         executed on the completion of the keystroke
         """
@@ -291,7 +291,7 @@ class KeyMap(object):
                 hotkeys = hotkeys[keystroke]
 
             # the last keystroke maps to the function to execute
-            if self.exceptionsWhenDuplicate and keystrokes[-1] in hotkeys:
+            if not replace and self.exceptionsWhenDuplicate and keystrokes[-1] in hotkeys:
                 raise DuplicateKeyError("Some other hotkey shares a prefix with this hotkey: %s"%acc)
             hotkeys[keystrokes[-1]] = fcn
         return " ".join(keystrokes)

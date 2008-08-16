@@ -176,9 +176,11 @@ class KeyboardConf(IPeppyPlugin):
                         action.keyboard = None
                     else:
                         action.keyboard = acc
+                        action.user_keyboard = True
                     found = True
             if not found:
                 action.keyboard = self.getKey(action)
+                action.user_keyboard = None
 
             # Determine up the accelerator text here, up front, rather
             # than computing it every time the menu is displayed.
