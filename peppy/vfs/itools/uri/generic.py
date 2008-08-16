@@ -750,12 +750,14 @@ class GenericDataType(object):
             
         # Some special cases for Windows paths c:/a/b#4 and file:///c:/a/b#4.
         # urlsplit has problems with the scheme, leading slashes in the path,
-        # and doesn't split out the fragment properly
+        # and doesn't split out the fragment properly.  Also, replace windows-
+        # style backslash separators with forward slashes
         if len(scheme) == 1:
             # found a windows drive name instead of path, because urlsplit
             # thinks the scheme is "c" for Windows paths like "c:/a/b"
             path, fragment = find_fragment(path, fragment)
-            path = "%s:%s" % (scheme, path)
+            # Also replace backslash characters if present
+            path = "%s:%s" % (scheme, path.replace('\\', '/'))
             scheme = "file"
         elif len(path) > 3 and path[0] == '/' and path[2] == ':':
             # urlsplit also doesn't correctly handle windows path in url form
@@ -764,7 +766,7 @@ class GenericDataType(object):
             drive = path[1].lower()
             path = path[3:]
             path, fragment = find_fragment(path, fragment)
-            path = "%s:%s" % (drive, path)
+            path = "%s:%s" % (drive, path.replace('\\', '/'))
         
         # The path
         if path:
