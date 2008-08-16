@@ -19,25 +19,6 @@ from peppy.actions import *
 from peppy.debug import *
 
 
-class ShiftLeft(ScintillaCmdKeyExecute):
-    """Unindent a line or region"""
-    alias = "unindent-region"
-    name = "Shift &Left"
-    default_menu = ("Transform", -500)
-    icon = 'icons/text_indent_remove_rob.png'
-    key_bindings = {'default': 'C-[',}
-    cmd = wx.stc.STC_CMD_BACKTAB
-
-class ShiftRight(ScintillaCmdKeyExecute):
-    """Indent a line or region"""
-    alias = "indent-region"
-    name = "Shift &Right"
-    default_menu = ("Transform", 501)
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'C-]',}
-    cmd = wx.stc.STC_CMD_TAB
-
-
 class CommentRegion(TextModificationAction):
     """Comment a line or region.
     
@@ -413,8 +394,6 @@ class TextTransformPlugin(IPeppyPlugin):
     """
     def getActions(self):
         return [CapitalizeWord, UpcaseWord, DowncaseWord, SwapcaseWord,
-
-                ShiftLeft, ShiftRight,
 
                 Reindent, CommentRegion, UncommentRegion,
                 FillParagraphOrRegion, Backslashify, UnBackslashify,

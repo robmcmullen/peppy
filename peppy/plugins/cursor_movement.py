@@ -18,25 +18,6 @@ from peppy.actions.base import *
 from peppy.debug import *
 
 
-class BeginningOfBuffer(SelectAction):
-    alias = "beginning-of-buffer"
-    name = "Cursor to first character in the buffer"
-    tooltip = "Move the cursor to the start of the buffer"
-    key_bindings = {'default': 'C-HOME'}
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.DocumentStart()
-
-class EndOfBuffer(SelectAction):
-    alias = "end-of-buffer"
-    name = "Cursor to end of the buffer"
-    tooltip = "Move the cursor to the end of the buffer"
-    key_bindings = {'default': 'C-END'}
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.DocumentEnd()
-
-
 class GotoLine(MinibufferAction):
     """Goto a line number.
     
@@ -151,8 +132,7 @@ class CursorMovementPlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [BeginningOfBuffer, EndOfBuffer,
-                GotoLine,
+        return [GotoLine,
                 
                 SetBookmark, ToggleBookmark, DelBookmark,
                 NextBookmark, PrevBookmark,

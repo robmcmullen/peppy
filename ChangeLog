@@ -1,3 +1,14 @@
+2008-08-14  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.5.1 update to "Manny Being Manny"
+	* changed idle handler to improve performance when many windows open
+	* now saving view position data when switching buffers
+	* dired mode now reverts correctly
+	* added action to sort lines by a particular field in each line
+	* user keystroke settings now take precedence if multiple actions have
+	the same keystroke
+	* added peppy actions for most scintilla keystrokes
+
 2008-08-05  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.5 "Manny Being Manny"
