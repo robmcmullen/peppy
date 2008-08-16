@@ -639,12 +639,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 wx.GetApp().close(buffer)
     
     def setTitle(self):
-        major=self.getActiveMajorMode()
-        if major:
-            self.SetTitle(u"peppy: %s" % major.getTabName())
-        else:
-            self.SetTitle(u"peppy")
+        self.SetTitle(self.getTitle())
 
+    def getTitle(self):
+        major = self.getActiveMajorMode()
+        if major:
+            return u"peppy: %s" % major.getTabName()
+        return self.name
+    
     def showModified(self, major):
         current=self.getActiveMajorMode()
         if current:
@@ -964,12 +966,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         # all instances?"
         self.switchMode()
 
-    def getTitle(self):
-        mode = self.getActiveMajorMode()
-        if mode:
-            return "peppy: %s" % mode.buffer.getTabName()
-        return self.name
-    
     def showSaveAs(self, title, default_name=None, extra=None, wildcard="*.*"):
         """Show a save as dialog relative to the currently active major mode.
         
