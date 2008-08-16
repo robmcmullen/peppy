@@ -13,7 +13,7 @@ lastfake = False
 
 def entry(filename, out=None, copythese=None, fake=False):
     print "Processing filename %s" % filename
-    if filename.endswith(".py"):
+    if filename.endswith(".py") and 'EGG-INFO' not in filename:
         if copythese is not None and not fake:
             copythese.append(filename)
         if not filename.endswith("__init__.py") or True:
