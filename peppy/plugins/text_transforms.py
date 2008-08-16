@@ -314,6 +314,58 @@ class SortLines(LineOrRegionMutateAction):
         return out
 
 
+class SortLinesByField(MinibufferAction, LineOrRegionMutateAction):
+    """Sort lines based on a particular field in the line
+    
+    This action subclasses from both L{MinibufferAction} and
+    L{LineOrRegionMutateAction}, but because MinibufferAction occurs first in
+    the method resolution order, its action method is the one that's used by
+    the menu system (the MinibufferAction.action method is hidden).
+    """
+    alias = "sort-lines-by-field"
+    name = "Sort Lines by Field"
+    default_menu = ("Transform/Reorder", 110)
+
+    minibuffer = [TextMinibuffer, IntMinibuffer]
+    minibuffer_label = ["Text Delimiter", "Sort Field (fields numbered starting from 1)"]
+    
+    def isActionAvailable(self):
+        """The action is makes sense if a region has multiple lines."""
+        (pos, end) = self.mode.GetSelection()
+        return self.mode.LineFromPosition(pos) < self.mode.LineFromPosition(end) - 1
+
+    def mutateLines(self, lines):
+        """Sort the lines by field
+        """
+        # Create a decorated list that will be sorted so that the new order can
+        # be applied to the original list
+        order = []
+        count = 0
+        for line in lines:
+            fields = line.split(self.delimiter)
+            if self.field < len(fields):
+                order.append((fields[self.field].strip(), count))
+            else:
+                order.append(('', count))
+            count += 1
+        #dprint(order)
+        order.sort()
+        out = [lines[index] for text, index in order]
+        #dprint(out)
+        return out
+
+    def processMinibuffer(self, minibuffer, mode, values):
+        dprint(values)
+        self.delimiter = values[0]
+        self.field = values[1] - 1
+        if self.field < 0:
+            self.mode.setStatusText("Invalid field number.")
+        else:
+            # This uses the LineOrRegionMutateAction method to call mutateLines
+            # with the correct lines
+            self.mutateSelection(self.mode)
+        
+
 class ReverseLines(LineOrRegionMutateAction):
     """Reverse the selected lines
     """
@@ -371,5 +423,5 @@ class TextTransformPlugin(IPeppyPlugin):
                 
                 Rot13,
                 
-                SortLines, ReverseLines, ShuffleLines,
+                SortLines, SortLinesByField, ReverseLines, ShuffleLines,
                 ]
