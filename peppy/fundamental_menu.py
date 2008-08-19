@@ -208,7 +208,7 @@ class IndentWithTabsOrSpaces(FundamentalBooleanRadioToggle):
     local_setting = 'use_tab_characters'
     local_true = 'tab characters'
     local_false = 'spaces'
-    name = "Indent With"
+    name = "Indent Character"
     default_menu = ("View", 307)
 
 class TabSize(FundamentalIntRadioToggle):
