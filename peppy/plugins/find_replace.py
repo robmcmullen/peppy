@@ -10,6 +10,7 @@ import os, glob, re
 
 import wx
 import wx.lib.stattext
+from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
 from peppy.actions.minibuffer import *
@@ -960,11 +961,17 @@ class ReplaceBar(FindBar):
     
     Type the search string in 'Replace:' and hit enter.  Type the replacement
     string in 'with:' and hit enter.  Then, use the keyboard to control the
-    replacements: 'y' or 'space' to replace one match, 'n' or 'delete' to skip
-    to the next match, 'q' to quit, '.' to replace one match and quit, '!' to
-    replace all remaining matches', 'p' or '^' to move to the previous match.
+    replacements:
+    
+    'y' or SPACE: replace one match and advance to the next match
+    ',': replace the current match but not advance to the next match
+    'n' or DELETE: skip to the next match
+    'p' or '^': move to the previous match
+    'q': quit matching and remove the replace bar
+    '.': replace one match and quit matching
+    '!': replace all remaining matches and quit matching
     """
-    help_status = "y: replace, n: skip, q: exit, !:replace all, f: edit find, r: edit replace"
+    help_status = "y: replace, n: skip, q: exit, !:replace all, f: edit find, r: edit replace, ?: help"
     
     def __init__(self, *args, **kwargs):
         FindBar.__init__(self, *args, **kwargs)
@@ -1148,12 +1155,16 @@ class ReplaceBar(FindBar):
         elif uchar in u'.':
             self.OnReplace(None, find_next=False)
             self.OnExit()
+        elif uchar in u',':
+            self.OnReplace(None, find_next=False)
         elif uchar in u'!':
             self.OnReplaceAll(None)
         elif uchar in u'fF':
             self.OnTabToFind(None)
         elif uchar in u'rR':
             self.OnTabToReplace(None)
+        elif uchar in u'?':
+            Publisher().sendMessage('peppy.log.info', (self.frame, self.__doc__))
         else:
             evt.Skip()
     
