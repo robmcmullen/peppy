@@ -112,7 +112,7 @@ def applyKateVariables(stc, linelist):
             stc.SetViewWhiteSpace(wx.stc.STC_WS_VISIBLEALWAYS)
         else:
             stc.SetViewWhiteSpace(wx.stc.STC_WS_INVISIBLE)
-        settings_changed.append('SetViewWhiteSpace')
+        settings_changed.append('ViewWhiteSpace')
     
     return settings_changed, vars
 

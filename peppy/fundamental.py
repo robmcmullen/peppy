@@ -9,9 +9,9 @@ from wx.lib.pubsub import Publisher
 from peppy.major import *
 from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
-from peppy.lib.vimutil import *
-from peppy.lib.emacsutil import *
-from peppy.lib.kateutil import *
+import peppy.lib.vimutil as vim
+import peppy.lib.emacsutil as emacs
+import peppy.lib.kateutil as kate
 
 from peppy.editra import *
 from peppy.editra.stcmixin import *
@@ -314,6 +314,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         start = time.time()
         self.dprint("starting applySettings")
         self.applyDefaultSettings()
+        Publisher().sendMessage('fundamental.default_settings_applied', self)
         self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         # Try to find the editra style corresponding to the major mode.  If
@@ -343,7 +344,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.ConfigureLexer(self.editra_lang)
         self.dprint("ConfigureLexer done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
-        self.setEmacsAndVIM()
+        self.applyFileLocalComments()
         self.setSpelling()
         self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
     
@@ -483,31 +484,45 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     def setWhitespace(self):
         self.SetViewWhiteSpace(self.locals.view_whitespace)
     
-    def setEmacsAndVIM(self):
-        lines = self.getFileLocalComments()
-        settings = applyVIMModeline(self, lines)
-        emacs_settings, emacs_locals = applyEmacsFileLocalSettings(self)
+    # Map the STC function to the local variable name so the local variables
+    # can be properly updated to whatever VIM or EMACS set them to
+    stc_to_local_mapping = {
+        'Indent': 'indent_size',
+        'TabWidth': 'tab_size',
+        'UseTabs': 'use_tab_characters',
+        'EdgeColumn': 'edge_column',
+        'CaretWidth': 'caret_width',
+        'CaretLineVisible': 'caret_line_indicator',
+        'ViewWhiteSpace': 'view_whitespace',
+        }
+    
+    def applyFileLocalComments(self, text=None):
+        if text is None:
+            lines = self.scanFileLocalComments()
+        else:
+            lines = text.splitlines()
+        settings = vim.applyVIMModeline(self, lines)
+        emacs_settings, emacs_locals = emacs.applyEmacsFileLocalSettings(self)
         settings.extend(emacs_settings)
-        kate_settings, kate_locals = applyKateVariables(self, lines)
+        kate_settings, kate_locals = kate.applyKateVariables(self, lines)
         settings.extend(kate_settings)
         
-        # Map the STC function to the local variable name so the local variables
-        # can be properly updated to whatever VIM or EMACS set them to
-        mapping = {'Indent': 'indent_size',
-                   'TabWidth': 'tab_size',
-                   'UseTabs': 'use_tab_characters',
-                   'EdgeColumn': 'edge_column',
-                   'CaretWidth': 'caret_width',
-                   'CaretLineVisible': 'caret_line_indicator',
-                   'SetViewWhiteSpace': 'view_whitespace',
-                   }
         for setting in settings:
-            if setting in mapping:
+            if setting in self.stc_to_local_mapping:
                 value = getattr(self, "Get%s" % setting)()
                 #dprint("Setting %s to %s" % (mapping[setting], value))
-                setattr(self.locals, mapping[setting], value)
+                setattr(self.locals, self.stc_to_local_mapping[setting], value)
 
-    def getFileLocalComments(self):
+    def scanFileLocalComments(self):
+        """Scan the first several and last several lines for file-local
+        comments.
+        
+        File local comments contain information about settings that only apply
+        to the current file.  In an attempt to be compatible with Emacs, VIM,
+        and Kate, groups of lines are considered at the beginning and ending
+        of the file.  (The number of lines is controlled by the parameter
+        vim_settings_lines)
+        """
         start = min(self.GetLineCount(), self.classprefs.vim_settings_lines)
         lines = range(0, start)
         ending = max(start, self.GetLineCount() - self.classprefs.vim_settings_lines)
@@ -519,6 +534,11 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             if match.group(1).endswith(self.start_line_comment):
                 #dprint("line %d: %s" % (linenum, str(match.groups())))
                 text.append(line)
+        return text
+    
+    def getTextFileLocalComments(self):
+        """Get a text version of the file local comments"""
+        text = kate.serializeKateVariables(self)
         return text
     
     ##### Revert hooks

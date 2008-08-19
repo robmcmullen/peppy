@@ -11,6 +11,7 @@ configuration directory, while project templates are stored within the project
 directory.
 """
 import os, re
+import cPickle as pickle
 
 from wx.lib.pubsub import Publisher
 
@@ -173,7 +174,7 @@ class ProjectInfo(CTAGS):
     def __str__(self):
         return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
     
-    def getSettingsRelativeURL(self, name):
+    def getSettingsRelativeURL(self, name=""):
         return self.project_settings_dir.resolve2(name)
     
     def getTopRelativeURL(self, name):
@@ -336,6 +337,41 @@ class SaveProjectTemplate(OnDemandActionNameMixin, SelectAction):
             self.mode.setStatusText("Not in a project.")
 
 
+class SaveProjectSettingsMode(OnDemandActionNameMixin, SelectAction):
+    """Save view settings for this major mode as the default settings for all
+    new instances of this mode in this project.
+    """
+    name = "As Defaults for %s Mode in Project"
+    default_menu = ("View/Apply Settings", -500)
+
+    def getMenuItemName(self):
+        return self.__class__.name % self.mode.keyword
+
+    def action(self, index=-1, multiplier=1):
+        url = ProjectPlugin.findProjectSettingsURL(self.mode)
+        if url:
+            locals = self.mode.classprefsDictFromLocals()
+            fh = vfs.open_write(url)
+            pickle.dump(locals, fh)
+            fh.close()
+
+
+class SaveProjectSettingsAll(SelectAction):
+    """Save as the project template for this major mode.
+    """
+    name = "As Defaults for All Modes in Project"
+    default_menu = ("View/Apply Settings", 510)
+
+    def action(self, index=-1, multiplier=1):
+        base = ProjectPlugin.findProjectConfigDir(self.mode)
+        if base:
+            url = base.resolve2(ProjectPlugin.classprefs.default_settings_file_name)
+            locals = self.mode.classprefsDictFromLocals()
+            fh = vfs.open_write(url)
+            pickle.dump(locals, fh)
+            fh.close()
+
+
 class BuildProject(SelectAction):
     """Build the project"""
     name = "Build..."
@@ -486,6 +522,8 @@ class ProjectPlugin(IPeppyPlugin):
         StrParam('project_directory', '.peppy-project', 'Directory used within projects to store peppy specific information'),
         StrParam('project_file', 'project.cfg', 'File within project directory used to store per-project information'),
         StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
+        StrParam('settings_directory', 'settings', 'Directory used to store files used to save project-specific settings for major modes'),
+        StrParam('default_settings_file_name', 'default-settings', 'File name used to store default view settings for all major modes in this project'),
         PathParam('ctags_command', 'exuberant-ctags', 'Path to ctags command', fullwidth=True),
         PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
         StrParam('ctags_args', '-R -n', 'extra arguments for the ctags command', fullwidth=True),
@@ -505,21 +543,36 @@ class ProjectPlugin(IPeppyPlugin):
     def activateHook(self):
         Publisher().subscribe(self.projectInfo, 'mode.preinit')
         Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
+        Publisher().subscribe(self.applyProjectSettings, 'fundamental.default_settings_applied')
 
     def deactivateHook(self):
         Publisher().unsubscribe(self.projectInfo)
         Publisher().unsubscribe(self.getFundamentalMenu)
+        Publisher().unsubscribe(self.applyProjectSettings)
     
     @classmethod
     def getFilename(cls, template_name):
         return wx.GetApp().config.fullpath("%s/%s" % (cls.classprefs.template_directory, template_name))
     
     @classmethod
-    def findTemplate(cls, confdir, mode, url):
-        """Find the template (if any) that belongs to the particular major mode
+    def getConfigFileHandle(cls, confdir, mode, url):
+        """Get a file handle to data in the project's configuration directory.
         
+        Files within the configuration directory should be based on the major
+        mode name, and optionally for added specificity can append a filename
+        extension.
+        
+        For instance, the template system used for projects uses the
+        "$PROJROOT/.peppy- project/templates" directory by default, where
+        $PROJROOT is the root directory of the project.  Within that templates
+        directory, the file "Python" is the default for python files, but
+        "Python.pyx" could be used as a default for pyrex files.
+        
+        @param confdir: pathname of configuration directory
         @param mode: major mode instance
         @param url: url of file that is being created
+        
+        @return: file-like object to read the data, or None if not found
         """
         filename = vfs.get_filename(url)
         names = []
@@ -529,14 +582,45 @@ class ProjectPlugin(IPeppyPlugin):
         names.append(confdir.resolve2(mode.keyword))
         for configname in names:
             try:
-                cls.dprint("Trying to load template %s" % configname)
+                cls.dprint("Trying to load file %s" % configname)
                 fh = vfs.open(configname)
-                template = fh.read()
-                return template
+                return fh
             except:
                 pass
         return None
 
+    @classmethod
+    def findProjectConfigFileHandle(cls, mode, subdir):
+        """Get a file handle to data in a sub-directory of the project's
+        configuration directory.
+        
+        Uses L{getConfigFileHandle} to return a file-like object inside a
+        subdirectory of the project's config directory.
+        """
+        cls.dprint(mode)
+        if mode.project_info:
+            url = mode.project_info.getSettingsRelativeURL(subdir)
+            cls.dprint(url)
+            if vfs.is_folder(url):
+                fh = cls.getConfigFileHandle(url, mode, mode.buffer.url)
+                return fh
+        return None
+    
+    @classmethod
+    def findProjectConfigFile(cls, mode, subdir):
+        fh = cls.findProjectConfigFileHandle(mode, subdir)
+        if fh:
+            return fh.read()
+        return None
+    
+    @classmethod
+    def findProjectConfigObject(cls, mode, subdir):
+        fh = cls.findProjectConfigFileHandle(mode, subdir)
+        if fh:
+            item = pickle.load(fh)
+            return item
+        return None
+    
     @classmethod
     def findGlobalTemplate(cls, mode, url):
         """Find the global template that belongs to the particular major mode
@@ -546,18 +630,35 @@ class ProjectPlugin(IPeppyPlugin):
         """
         subdir = wx.GetApp().config.fullpath(cls.classprefs.template_directory)
         template_url = vfs.normalize(subdir)
-        return cls.findTemplate(template_url, mode, url)
+        fh = cls.getConfigFileHandle(template_url, mode, url)
+        if fh:
+            return fh.read()
+
+    @classmethod
+    def findProjectConfigDir(cls, mode, subdir=""):
+        cls.dprint(mode)
+        if mode.project_info:
+            url = mode.project_info.getSettingsRelativeURL(subdir)
+            if subdir:
+                url = url.resolve2(mode.keyword)
+            cls.dprint(url)
+            return url
+        return None
+
+    @classmethod
+    def findProjectTemplateURL(cls, mode):
+        return cls.findProjectConfigDir(mode, cls.classprefs.template_directory)
+
+    @classmethod
+    def findProjectSettingsURL(cls, mode):
+        return cls.findProjectConfigDir(mode, cls.classprefs.settings_directory)
 
     @classmethod
     def findProjectTemplate(cls, mode):
         cls.dprint(mode)
-        if mode.project_info:
-            url = mode.project_info.getSettingsRelativeURL(cls.classprefs.template_directory)
-            cls.dprint(url)
-            if vfs.is_folder(url):
-                template = cls.findTemplate(url, mode, mode.buffer.url)
-                if template:
-                    return template
+        template = cls.findProjectConfigFile(mode, cls.classprefs.template_directory)
+        if template is not None:
+            return template
         return cls.findGlobalTemplate(mode, mode.buffer.url)
     
     @classmethod
@@ -651,6 +752,36 @@ class ProjectPlugin(IPeppyPlugin):
                 if template:
                     callback(template)
 
+    @classmethod
+    def applyProjectSettings(cls, msg):
+        """Publish/subscribe callback to load project view settings.
+        
+        This is called by the major mode loading process to set the default
+        view parameters based on per-project defaults.
+        """
+        mode = msg.data
+        if not mode.project_info:
+            return
+        
+        cls.dprint("Applying settings for %s" % mode)
+        # Add 'project' keyword to Buffer object if the file belongs to a
+        # project
+        settings = cls.findProjectConfigObject(mode, cls.classprefs.settings_directory)
+        if not settings:
+            # Try the global settings
+            cls.dprint("Trying default settings for project %s" % mode.project_info.project_name)
+            base = mode.project_info.getSettingsRelativeURL()
+            url = base.resolve2(ProjectPlugin.classprefs.default_settings_file_name)
+            if vfs.exists(url):
+                fh = vfs.open(url)
+                settings = pickle.load(fh)
+                fh.close()
+        if settings and isinstance(settings, dict):
+            #dprint(settings)
+            #mode.applyFileLocalComments(settings)
+            mode.classprefsUpdateLocals(settings)
+            mode.applyDefaultSettings()
+
     def getCompatibleActions(self, mode):
         actions = []
         if hasattr(mode, 'getTemplateCallback'):
@@ -660,7 +791,9 @@ class ProjectPlugin(IPeppyPlugin):
                             
                             BuildProject, RunProject, StopProject,
                             
-                            RebuildCtags, LookupCtag])
+                            RebuildCtags, LookupCtag,
+                            
+                            SaveProjectSettingsMode, SaveProjectSettingsAll])
         actions.extend([CreateProject, CreateProjectFromExisting, ShowProjectSettings])
         return actions
 
