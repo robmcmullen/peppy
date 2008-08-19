@@ -311,6 +311,10 @@ class TextCtrlAutoComplete(wx.TextCtrl):
                 self._listItemVisible()
             self._showDropDown ()
             skip = False
+        elif KC == wx.WXK_HOME:
+            dd.SetSelection(0)
+        elif KC == wx.WXK_END:
+            dd.SetSelection(dd.GetLineCount() - 1)
         elif KC == wx.WXK_PAGEDOWN:
             if sel == -1:
                 dd.SetSelection(0)
