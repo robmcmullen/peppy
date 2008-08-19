@@ -34,6 +34,15 @@ class TestEmacs(object):
         applyKateVariables(self.stc, [test[0]])
         for fcn, val in test[1]:
             eq_((fcn, getattr(self.stc, fcn)()), (fcn, val))
+        
+        # Compare the serializer by setting a new stc to the serialized vars
+        # and verifying against the same tests
+        text = serializeKateVariables(self.stc)
+        print(text)
+        newstc = getPlainSTC()
+        applyKateVariables(newstc, [text])
+        for fcn, val in test[1]:
+            eq_((fcn, getattr(newstc, fcn)()), (fcn, val))
 
     def testSettings(self):
         for test in self.tests:

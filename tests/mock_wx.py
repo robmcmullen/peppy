@@ -1,6 +1,8 @@
 import os,sys,re
-import __builtin__
 from cStringIO import StringIO
+
+import __builtin__
+__builtin__._ = str
 
 import wx
 import wx.stc
@@ -55,8 +57,6 @@ class MockFrame(wx.Frame):
     def getActiveMajorMode(self):
         return self.mode
 
-__builtin__._ = str
-    
 
 def getPlainSTC():
     stc = wx.stc.StyledTextCtrl(MockWX.root, -1)

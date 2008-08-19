@@ -455,6 +455,28 @@ class ApplySettingsAll(SelectAction):
         FundamentalMode.classprefsOverrideSubclassDefaults(settings)
 
 
+class ApplySettingsKate(SelectAction):
+    """Save view settings as kate variables at top of file"""
+    name = "As Kate Variables at Top of File"
+    default_menu = ("View/Apply Settings", -200)
+
+    def action(self, index=-1, multiplier=1):
+        import peppy.lib.kateutil as kateutil
+        text = kateutil.serializeKateVariables(self.mode, column_width=self.mode.locals.edge_column)
+        lines = []
+        for line in text.splitlines():
+            lines.append("%s%s%s" % (self.mode.start_line_comment, line, self.mode.end_line_comment))
+        text = self.mode.getLinesep().join(lines) + self.mode.getLinesep()
+        # Insert below any bangpath line if there is one
+        bangpath = self.mode.GetLine(0)
+        if bangpath.startswith(u"#!"):
+            pos = self.mode.PositionFromLine(1)
+        else:
+            pos = 0
+        self.mode.InsertText(pos, text)
+        self.mode.GotoPos(pos)
+
+
 class FundamentalMenu(IPeppyPlugin):
     """Trac plugin that provides the global menubar and toolbar.
 
@@ -492,6 +514,6 @@ class FundamentalMenu(IPeppyPlugin):
                     
                     ElectricReturn, ElectricDelete, ElectricBackspace,
                     
-                    ApplySettingsSameMode, ApplySettingsAll,
+                    ApplySettingsSameMode, ApplySettingsAll, ApplySettingsKate,
                     ]
         return []

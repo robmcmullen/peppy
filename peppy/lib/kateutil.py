@@ -41,8 +41,27 @@ def kateParseLine(line):
                 pass
     return vars
 
+# mapping for the kate identifier to the name of the stc getter/setter function
+# that uses integers.  For this to work correctly, the integer must mean the
+# same in the kate context as it does to the stc.
+int_mapping = {
+    'tab-width': 'TabWidth',
+    'indent-width': 'Indent',
+    }
+
+# boolean mapping of kate identifier to the stc getter/setter function.  The
+# boolean value must have the same sense as the stc getter/setter expects
+bool_mapping = {
+    }
+
+# convenience mapping that maps the kate identifier to the opposite sense of
+# the stc getter/setter.
+not_bool_mapping = {
+    'space-indent': 'UseTabs',
+    }
+
 def applyKateVariables(stc, linelist):
-    """Scan the stc for kate settings.
+    """Scan the text for kate settings that will be applied to the stc
     
     Kate uses U{Kate variables<http://wiki.kde.org/tiki-index.php?page=Configuring%20Kate%20with%20variables>}
 
@@ -69,11 +88,6 @@ def applyKateVariables(stc, linelist):
     for line in linelist:
         vars.update(kateParseLine(line))
     
-    # check for integers.  int_mapping takes the emacs string to the name of
-    # the stc getter/setter function.
-    int_mapping = {'tab-width': 'TabWidth',
-                   'indent-width': 'Indent',
-                   }
     for name, setting in int_mapping.iteritems():
         if name in vars:
             # Construct the name of the stc setting function and set the value
@@ -81,10 +95,6 @@ def applyKateVariables(stc, linelist):
             func(int(vars[name]))
             settings_changed.append(setting)
     
-    # check for booleans -- emacs uses 'nil' for false, everything else for true
-    bool_mapping = {}
-    not_bool_mapping = {'space-indent': 'UseTabs',
-                    }
     for name, setting in bool_mapping.iteritems():
         if name in vars:
             func = getattr(stc, "Set%s" % setting)
@@ -105,3 +115,47 @@ def applyKateVariables(stc, linelist):
         settings_changed.append('SetViewWhiteSpace')
     
     return settings_changed, vars
+
+def kateTruthFromBool(value):
+    if value:
+        return 'on'
+    return 'off'
+
+def serializeKateVariables(stc, column_width=-1):
+    """Serialize the current stc's settings into kate-compatible variables
+    
+    Using the current settings of the stc, this generates a text string that
+    encodes all the settings that can be converted into kate identifiers.
+    """
+    settings = {}
+    
+    for name, setting in int_mapping.iteritems():
+        # Construct the name of the stc setting function and set the value
+        func = getattr(stc, "Get%s" % setting)
+        settings[name] = "%d" % func()
+    for name, setting in bool_mapping.iteritems():
+        func = getattr(stc, "Get%s" % setting)
+        settings[name] = "%s" % kateTruthFromBool(func())
+    for name, setting in not_bool_mapping.iteritems():
+        func = getattr(stc, "Get%s" % setting)
+        settings[name] = "%s" % (kateTruthFromBool(not func()))
+        
+    # check for more complicated settings
+    val = stc.GetViewWhiteSpace()
+    if val == wx.stc.STC_WS_VISIBLEALWAYS:
+        settings['show-tabs'] = 'on'
+    else:
+        settings['show-tabs'] = 'off'
+    
+    names = settings.keys()
+    names.sort()
+    text = "kate:"
+    count = 0
+    for name in names:
+        var = " %s %s;" % (name, settings[name])
+        if column_width > 0 and count + len(var) > column_width:
+            text += "\nkate:"
+            count = 5
+        text += var
+        count += len(var)
+    return text
