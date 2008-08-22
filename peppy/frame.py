@@ -620,6 +620,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.unbindEvents()
         self.clearMenumap()
         WindowList.remove(self)
+        self.Hide()
         self.tabs.closeAllTabs()
         self.Destroy()
 
