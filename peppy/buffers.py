@@ -367,6 +367,10 @@ class Buffer(BufferVFSMixin):
         for view in self.viewers:
             yield view
     
+    def numViewers(self):
+        """Return the number of views of this buffer"""
+        return len(self.viewers)
+    
     def forEachView(self, func_name):
         """Call a method for each view of this buffer.
         

@@ -637,7 +637,23 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             if buffer.permanent:
                 self.tabs.closeWrapper(major)
             else:
-                wx.GetApp().close(buffer)
+                if buffer.modified:
+                    dlg = wx.MessageDialog(self, "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                    retval=dlg.ShowModal()
+                    dlg.Destroy()
+                else:
+                    retval=wx.ID_YES
+
+                if retval==wx.ID_YES:
+                    if buffer.numViewers() > 1:
+                        dlg = wx.MessageDialog(self, "Multiple views of:\n\n%s\n\nexist.  Really remove buffer?" % str(buffer.url), "Remove All Views?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                        retval=dlg.ShowModal()
+                        dlg.Destroy()
+                    else:
+                        retval=wx.ID_YES
+                        
+                    if retval==wx.ID_YES:
+                        buffer.removeAllViewsAndDelete()
     
     def setTitle(self):
         self.SetTitle(self.getTitle())

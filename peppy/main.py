@@ -932,17 +932,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 # all exceptions.
                 pass
 
-    def close(self, buffer):
-        if buffer.modified:
-            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "%s\n\nhas unsaved changes.\n\nClose anyway?" % buffer.displayname, "Unsaved Changes", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
-            retval=dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            retval=wx.ID_YES
-
-        if retval==wx.ID_YES:
-            buffer.removeAllViewsAndDelete()
-
     def quit(self):
         doit=self.quitHook()
         if doit:
