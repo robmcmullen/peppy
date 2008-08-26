@@ -514,7 +514,7 @@ class FindRegexService(FindService):
         
         self.flags = re.MULTILINE
         if not match_case:
-            self.flags = re.IGNORECASE
+            self.flags |= re.IGNORECASE
         
         # Force the next search to start from a new shadow copy of the text
         self.shadow = None
