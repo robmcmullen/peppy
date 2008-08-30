@@ -144,3 +144,6 @@ const float& Things(const int *Crud) {
     stuff;
 }
 
+template<class PixelT> int Band<PixelT>::Blur(const int& k_size) {
+    stuff;
+}

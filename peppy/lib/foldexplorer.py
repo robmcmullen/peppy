@@ -174,12 +174,14 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
     # http://dev.pocoo.org/projects/pygments/browser/pygments/lexers/compiled.py
     _ws = r'(?:\s|//.*?\n|/[*].*?[*]/)+'
     
-    funcre = re.compile(r'(?:\s*const)?\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
-                        r'([a-zA-Z_][a-zA-Z0-9_:]*)'              # method name
-                        r'(\s*\((?:([^;]*?|\s*))\))'              # signature
-                        r'(?:\s*const)?'                          # const
-                        r'(' + _ws + r')({)'
-                        )
+    funcre = re.compile(
+        r'(?:\s*const)?' # function might return const reference
+        r'\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
+        r'([a-zA-Z_][a-zA-Z0-9_:<>]*)' # method name including possible template type parameter
+        r'(\s*\((?:([^;]*?|\s*))\))' # signature
+        r'(?:\s*const)?' # const
+        r'(' + _ws + r')({)'
+        )
     
     def getFoldEntryFunctionName(self, line):
         fold = (self.GetFoldLevel(line)&wx.stc.STC_FOLDLEVELNUMBERMASK) - wx.stc.STC_FOLDLEVELBASE
