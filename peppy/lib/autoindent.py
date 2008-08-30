@@ -269,7 +269,7 @@ class FoldingAutoindent(BasicAutoindent):
         """
         fold = self.getFold(stc, linenum)
         ln = linenum
-        while ln > 1:
+        while ln > 0:
             f = self.getFold(stc, ln - 1)
             if f != fold:
                 break
@@ -520,6 +520,24 @@ class CStyleAutoindent(FoldingAutoindent):
                 statement = match.group(1)
         return statement
     
+    def isInsideStatement(self, stc, pos):
+        """Find out if the position is inside a statement
+        
+        Being inside a statement means that the position is after an opening
+        paren and the matching close paran either doesn't exist yet or is
+        after the position.
+        
+        @return: True if pos is after an unbalanced amount of opening parens
+        """
+        linenum = stc.LineFromPosition(pos)
+
+        start = self.getFoldSectionStart(stc, linenum)
+        self.dprint("fold start=%d, linenum=%d" % (start, linenum))
+        text = self.getCodeChars(stc, start, pos)
+        parens = self.getBraceMatch(text)
+        self.dprint("text=%s, parens=%d" % (text, parens))
+        return parens != 0
+    
     def findIndent(self, stc, linenum=None):
         """Reindent the specified line to the correct level.
 
@@ -640,6 +658,11 @@ class CStyleAutoindent(FoldingAutoindent):
                             stc.SetSelection(prev + 1, pos)
                             #dprint("selection: %d - %d" % (prev + 1, pos))
                         implicit_return = False
+                elif uchar == u';':
+                    # Don't process the semicolon if we're in the middle of an
+                    # open statement
+                    if self.isInsideStatement(stc, pos):
+                        return False
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()
                 if start == end:
