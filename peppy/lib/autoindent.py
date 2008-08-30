@@ -276,6 +276,20 @@ class FoldingAutoindent(BasicAutoindent):
             ln -= 1
         return ln
     
+    def getNonCodeStyles(self, stc):
+        """Return a list of styling integers that indicate characters that are
+        outside the normal code flow.
+        
+        Character styles that are outside code flow are strings, comments,
+        preprocessor statements, and stuff that should be ignored when
+        indenting.
+        """
+        styles = []
+        styles.extend(stc.getStringStyles())
+        styles.extend(stc.getCommentStyles())
+        #self.dprint(styles)
+        return styles
+    
     def getCodeChars(self, stc, ln, lc=-1):
         """Get a version of the given line with all non code chars blanked out.
         
@@ -303,11 +317,12 @@ class FoldingAutoindent(BasicAutoindent):
         i = len(line)
         
         # replace all uninteresting chars with blanks
+        skip = self.getNonCodeStyles(stc)
         while i > 0:
             i -= 1
             s = ord(line[i]) & mask
             i -= 1
-            if stc.isStyleComment(s) or stc.isStyleString(s):
+            if s in skip:
                 c = ' '
             else:
                 c = line[i]
@@ -325,6 +340,7 @@ class FoldingAutoindent(BasicAutoindent):
         @return: tuple of the matching char and the position
         """
         found = ''
+        skip = self.getNonCodeStyles(stc)
         while pos > 0:
             check = pos - 1
             c = unichr(stc.GetCharAt(check))
@@ -333,7 +349,7 @@ class FoldingAutoindent(BasicAutoindent):
             
             # Comment or string terminates the search and will return with the
             # character after the last comment/string char.
-            if stc.isStyleComment(s) or stc.isStyleString(s):
+            if s in skip:
                 break
             
             found = c
@@ -432,6 +448,23 @@ class CStyleAutoindent(FoldingAutoindent):
         self.reBreak = re.compile(r'^\s*break\s*;\s*$')
         self.reLabel = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*:((?!:)|$)')
     
+    def getNonCodeStyles(self, stc):
+        """Return a list of styling integers that indicate characters that are
+        outside the normal code flow.
+        
+        Character styles that are outside code flow are strings, comments,
+        preprocessor statements, and stuff that should be ignored when
+        indenting.
+        """
+        styles = []
+        styles.extend(stc.getStringStyles())
+        styles.extend(stc.getCommentStyles())
+        # add preprocessor styles for C-like modes -- everything that uses the
+        # C syntax highlighter should also use the STC_C_PREPROCESSOR token
+        styles.append(wx.stc.STC_C_PREPROCESSOR)
+        #self.dprint(styles)
+        return styles
+    
     def getBraceOpener(self, stc, linenum):
         """Find the statement related to the brace's opening.
         
@@ -507,7 +540,7 @@ class CStyleAutoindent(FoldingAutoindent):
         s = stc.GetStyleAt(pos)
         indent = stc.GetIndent()
         partial = 0
-        self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, chr(c)))
+        self.dprint("col=%d (pos=%d), fold=%d char=%s" % (col, pos, fold, repr(chr(c))))
         if c == ord('}'):
             # Scintilla doesn't automatically dedent the closing brace, so we
             # force that here.

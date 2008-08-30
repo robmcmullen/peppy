@@ -51,6 +51,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         """
         return style in self._string_styles
     
+    def getStringStyles(self):
+        return self._string_styles
+    
     def _alwaysStyleString(self, style):
         """Function to be used in place of isStyleString when lexer is NULL
         """
@@ -66,6 +69,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         """
         return style in self._comment_styles
 
+    def getCommentStyles(self):
+        return self._comment_styles
+    
     def isStyleKeyword(self, style):
         """Is the style a keyword reserved by the language?
         
@@ -309,7 +315,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                     valid_settings.append(syn)
                     if syn[1] in ['string_style', 'char_style', 'stringeol_style']:
                         self._string_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] in ['comment_style']:
+                    elif syn[1] in ['comment_style', 'dockey_style', 'error_style']:
                         self._comment_styles.append(getattr(wx.stc, syn[0]))
                     elif syn[1] in ['keyword_style']:
                         self._keyword_styles.append(getattr(wx.stc, syn[0]))
