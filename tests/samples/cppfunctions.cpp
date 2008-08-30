@@ -136,3 +136,11 @@ class TestClass {
     }
 }
 
+const float& Stuff::Things(const Gunk *Crud) {
+    stuff;
+}
+
+const float& Things(const int *Crud) {
+    stuff;
+}
+

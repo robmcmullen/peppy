@@ -174,7 +174,7 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
     # http://dev.pocoo.org/projects/pygments/browser/pygments/lexers/compiled.py
     _ws = r'(?:\s|//.*?\n|/[*].*?[*]/)+'
     
-    funcre = re.compile(r'\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
+    funcre = re.compile(r'(?:\s*const)?\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
                         r'([a-zA-Z_][a-zA-Z0-9_:]*)'              # method name
                         r'(\s*\((?:([^;]*?|\s*))\))'              # signature
                         r'(?:\s*const)?'                          # const
