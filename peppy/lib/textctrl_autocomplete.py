@@ -52,11 +52,20 @@ class FakePopupWindow(wx.MiniFrame):
         evt.Skip()
 
 
-class HighlightListBox(wx.HtmlListBox):
+class HighlightListBox(wx.VListBox):
     """Virtual List Box used to highlight partial matches in the ListCtrl"""
     def __init__(self, *args, **kwargs):
-        wx.HtmlListBox.__init__(self, *args, **kwargs)
+        wx.VListBox.__init__(self, *args, **kwargs)
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+        self.widths = []
+        self.heights = []
+        self.total_width = 0
+        default_font = self.GetFont()
+        self.bold_font = wx.Font(default_font.GetPointSize(), 
+                                 default_font.GetFamily(),
+                                 default_font.GetStyle(), wx.BOLD)
+        self.bold_dc = wx.MemoryDC()
+        self.bold_dc.SetFont(self.bold_font)
         
     def OnFocus(self, evt):
         """Raise and reset the focus to the parent window whenever
@@ -76,24 +85,80 @@ class HighlightListBox(wx.HtmlListBox):
         
     def setBold(self, index, start, count):
         self.bold[index] = (start, start+count)
+        self.calcWidth(index)
         #print(self.bold[index])
         self.RefreshLine(index)
         
     def clearBold(self):
         self.bold = [None] * len(self.choices)
+        self.calcWidths()
         if len(self.choices) > 0:
             self.RefreshLines(0, len(self.choices) - 1)
+    
+    def calcWidth(self, index):
+        height = 0
+        width = 0
+        text1, bold, text2 = self.getTextParts(index)
+        w1, h1 = self.GetTextExtent(text1)
+        w2, h2 = self.bold_dc.GetTextExtent(bold)
+        w3, h3 = self.GetTextExtent(text2)
+        self.heights[index] = (max(h1, h2), h1, h2, h3)
+        self.widths[index] = (w1 + w2 + w3, w1, w2, w3)
+    
+    def calcWidths(self):
+        self.total_width, dum = self.GetClientSizeTuple()
+        count = len(self.choices)
+        self.widths = [None] * count
+        self.heights = [None] * count
+        for i in range(count):
+            self.calcWidth(i)
         
-    def OnGetItem(self, n):
+    def getTextParts(self, n):
+        """Return the non-bold and bold parts of the text
+        
+        @returns tuple of non-bold, bold, non-bold text
+        """
         if hasattr(self, 'bold') and self.bold[n] is not None:
             text = self.choices[n]
             start = self.bold[n][0]
             end = self.bold[n][1]
-            val = "%s<b>%s</b>%s" % (text[0:start], text[start:end], text[end:])
-            #print "index %d: %s" % (n, val)
-            return val
-        return self.choices[n]
+            return (text[0:start], text[start:end], text[end:])
+        return (self.choices[n], "", "")
     
+    # This method must be overridden.  When called it should draw the
+    # n'th item on the dc within the rect.  How it is drawn, and what
+    # is drawn is entirely up to you.
+    def OnDrawItem(self, dc, rect, n):
+        if self.GetSelection() == n:
+            c = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+        else:
+            c = self.GetForegroundColour()
+        dc.SetTextForeground(c)
+        text1, bold, text2 = self.getTextParts(n)
+        x = rect.x + 2
+        if text1:
+            dc.SetFont(self.GetFont())
+            h = self.heights[n][1]
+            y = rect.y + (rect.height - h) / 2
+            dc.DrawText(text1, x, y)
+            x += self.widths[n][1]
+        if bold:
+            dc.SetFont(self.bold_font)
+            h = self.heights[n][2]
+            y = rect.y + (rect.height - h) / 2
+            dc.DrawText(bold, x, y)
+            x += self.widths[n][2]
+        if text2:
+            dc.SetFont(self.GetFont())
+            h = self.heights[n][3]
+            y = rect.y + (rect.height - h) / 2
+            dc.DrawText(text2, x, y)
+
+    # This method must be overridden.  It should return the height
+    # required to draw the n'th item.
+    def OnMeasureItem(self, n):
+        return self.heights[n][0] + 5
+
     def selectNextMatch(self):
         """Set the selection to the next match in the list.
         
