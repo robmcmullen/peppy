@@ -59,7 +59,8 @@ class HighlightListBox(wx.VListBox):
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
         self.widths = []
         self.heights = []
-        self.total_width = 0
+        self.popup_width = 0
+        self.largest_width = 0
         default_font = self.GetFont()
         self.bold_font = wx.Font(default_font.GetPointSize(), 
                                  default_font.GetFamily(),
@@ -79,39 +80,85 @@ class HighlightListBox(wx.VListBox):
         evt.Skip()
 
     def setChoices(self, choices):
+        """Resets the pulldown to contain a new list of possible matches
+        
+        @param choices: a list of text strings
+        """
         self.choices = choices
         self.clearBold()
         self.SetItemCount(len(choices))
         
     def setBold(self, index, start, count):
+        """Make an item show matched text at a given position
+        
+        Highlights a potential match by making showing part of the text using
+        a bold font.
+        
+        @param index: index number of the item
+        @param start: character position of first bold character
+        @param count: number of bold characters
+        """
         self.bold[index] = (start, start+count)
-        self.calcWidth(index)
+        self._calcWidth(index)
         #print(self.bold[index])
         self.RefreshLine(index)
         
     def clearBold(self):
+        """Resets the entire list to clear any bold text.
+        """
         self.bold = [None] * len(self.choices)
         self.calcWidths()
         if len(self.choices) > 0:
             self.RefreshLines(0, len(self.choices) - 1)
     
-    def calcWidth(self, index):
+    def _calcWidth(self, index):
+        """Calculate the widths of an individual entry.
+        
+        This is an internally used method that recalculates the widths of all
+        the parts of a single entry -- the non-bold part before a match, the
+        bold part of the match itself, and the non-bold part that hasn't been
+        matched yet.
+        
+        @param index: index number of the item
+        """
         height = 0
         width = 0
         text1, bold, text2 = self.getTextParts(index)
         w1, h1 = self.GetTextExtent(text1)
         w2, h2 = self.bold_dc.GetTextExtent(bold)
         w3, h3 = self.GetTextExtent(text2)
+        total = w1 + w2 + w3
         self.heights[index] = (max(h1, h2), h1, h2, h3)
-        self.widths[index] = (w1 + w2 + w3, w1, w2, w3)
+        self.widths[index] = (total, w1, w2, w3)
+        if self.largest_width is None:
+            self.calc_scroll = (text1, bold, w1, w2)
+            self.largest_width = total
+        elif self.largest_width >= 0:
+            if text1 == self.calc_scroll[0] and bold == self.calc_scroll[1]:
+                if total > self.largest_width:
+                    self.largest_width = total
+            else:
+                # found an entry that doesn't have the same prefix, so we can't
+                # scroll the whole list
+                self.largest_width = -1
+        #print("%d: largest_width=%d text1=%s bold=%s" % (index, self.largest_width, text1, bold))
     
     def calcWidths(self):
-        self.total_width, dum = self.GetClientSizeTuple()
+        """Calculate the widths of all entries in the list
+        
+        Creates data structures used by the text positioning code when the
+        choices are wide enough that they can't be shown in their entirety.
+        This sets up the offset value so that the text can be drawn to show
+        the part of the match that is at the end of the string so the user can
+        see what's coming up next.
+        """
+        self.popup_width, dum = self.GetClientSizeTuple()
         count = len(self.choices)
         self.widths = [None] * count
         self.heights = [None] * count
+        self.largest_width = None
         for i in range(count):
-            self.calcWidth(i)
+            self._calcWidth(i)
         
     def getTextParts(self, n):
         """Return the non-bold and bold parts of the text
@@ -135,7 +182,10 @@ class HighlightListBox(wx.VListBox):
             c = self.GetForegroundColour()
         dc.SetTextForeground(c)
         text1, bold, text2 = self.getTextParts(n)
-        x = rect.x + 2
+        if self.largest_width > self.popup_width:
+            x = rect.x + self.popup_width - self.largest_width
+        else:
+            x = rect.x + 2
         if text1:
             dc.SetFont(self.GetFont())
             h = self.heights[n][1]
@@ -345,6 +395,10 @@ class TextCtrlAutoComplete(wx.TextCtrl):
         #print("best = %s" % best)
         if best is not None:
             self._showDropDown(True)
+            # added call to calcWidths to allow popup to set the horizontal
+            # offset if it turns out that the interesting parts of the
+            # completion text would be off the screen to the right
+            self.dropdownlistbox.calcWidths()
             self.dropdownlistbox.SetSelection(best)
             #self.SetFocus()
         else:
@@ -581,12 +635,16 @@ if __name__ == "__main__":
                     'effective', 'elegant',
                     'http://python.org', 'http://www.google.com',
                     'fabulous', 'fantastic', 'friendly', 'forgiving', 'feature',
+                    'really long entry with lots of qqqqqqqqqqq 1',
+                    'really long entry with lots of qqqqqqqqqqq 2',
+                    'really long entry with lots of qqqqqqqqqqq 3',
                     'sage', 'scarlet', 'scenic', 'seaside', 'showpiece', 'spiffy',
                     'www.wxPython.org', 'www.osafoundation.org',
                     'yyyyyyzqqqq1', 'yyyyyyaqqqq', 'yyyyyyzqqq', 'zqqqq2222', 'zqqqq2228',
                     ]
     app = wx.PySimpleApp()
-    frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE)
+    frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE,
+                   size=(300,300))
     panel = wx.Panel(frm)
     stack = wx.BoxSizer(wx.VERTICAL)
     sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -604,6 +662,18 @@ if __name__ == "__main__":
     sizer.Add(text, 0, wx.ALIGN_CENTER)
     mac = TextCtrlAutoComplete(panel, mac=True, choices=dynamic_choices)
     sizer.Add(mac, 1, wx.EXPAND)
+    stack.Add(sizer, 0, wx.EXPAND)
+    
+    text = wx.StaticText(panel, -1, "\n\n")
+    stack.Add(text, 0, wx.EXPAND)
+    
+    sizer = wx.BoxSizer(wx.HORIZONTAL)
+    text = wx.StaticText(panel, -1, "Long:")
+    sizer.Add(text, 0, wx.ALIGN_CENTER)
+    count = 15
+    long_choices = ['really really long entry with lots of qqqqqqqqqqqs: %d' % i for i in range(count)]
+    long = TextCtrlAutoComplete(panel, choices=long_choices)
+    sizer.Add(long, 1, wx.EXPAND)
     stack.Add(sizer, 0, wx.EXPAND)
     
     panel.SetAutoLayout(True)
