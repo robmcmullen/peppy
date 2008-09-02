@@ -1,9 +1,13 @@
-2008-08-20  Rob McMullen  <robm@users.sourceforge.net>
+2008-09-01  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.5.2 update to "Manny Being Manny"
 	* added per-project view settings
-	* added keystroke to replace without moving to next match
+	* added keystroke in find/replace minibuffer to replace without moving
+	to next match
 	* fixed some usability issues with frame and buffer closing
+	* fixed problem with long filenames in text completion popup
+	* improved C/C++ function name matching in Functions menu
+	* fixed C style autoindenter's handling of semicolons
 
 2008-08-14  Rob McMullen  <robm@users.sourceforge.net>
 
