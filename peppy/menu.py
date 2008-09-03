@@ -391,32 +391,32 @@ class UserActionMap(debugmixin):
                 keymap.define(action.keyboard, action)
             except DuplicateKeyError:
                 dups = keymap.find(action.keyboard)
-                #eprint(dups)
+                #dprint(dups)
                 names = [d.__class__.__name__ for d in dups]
                 if action.user_keyboard:
                     # The current action is the one that's been set by the
                     # user, so override other actions with the same keystroke
-                    eprint("User defined action %s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
+                    dprint("User defined action %s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
                     # The user defined this keystroke, so it should take
                     # precedence
                     for existing_action in dups:
                         if existing_action.user_keyboard:
-                            eprint("Removing keystroke %s from other user defined action %s" % (action.keyboard, existing_action.__class__.__name__))
+                            dprint("Removing keystroke %s from other user defined action %s" % (action.keyboard, existing_action.__class__.__name__))
                         existing_action.keystroke_valid = False
                     action.keystroke_valid = True
                 else:
                     # The current action isn't user defined, so it will only
                     # be used as a keystroke command if nothing else is user
                     # defined
-                    eprint("%s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
+                    dprint("%s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
                     found = False
                     for existing_action in dups:
                         if existing_action.user_keyboard and not found:
-                            eprint("%s is the user defined action for %s" % (existing_action.__class__.__name__, action.keyboard))
+                            dprint("%s is the user defined action for %s" % (existing_action.__class__.__name__, action.keyboard))
                             existing_action.keystroke_valid = True
                             found = True
                         else:
-                            eprint("Removed duplicate keystroke %s from %s" % (action.keyboard, existing_action.__class__.__name__))
+                            dprint("Removed duplicate keystroke %s from %s" % (action.keyboard, existing_action.__class__.__name__))
                             existing_action.keystroke_valid = False
                     if found:
                         action.keystroke_valid = False
