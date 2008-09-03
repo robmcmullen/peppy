@@ -61,7 +61,7 @@ class Tabify(LineOrRegionMutateAction):
             unspace = line.lstrip(' ')
             if len(unspace) < len(line):
                 tabs, extraspaces = divmod(len(line) - len(unspace),
-                                           self.mode.classprefs.tab_size)
+                                           self.mode.locals.tab_size)
                 out.append((tabs)*'\t' + extraspaces*' ' + unspace)
             else:
                 out.append(line)
@@ -78,7 +78,7 @@ class Untabify(LineOrRegionMutateAction):
         for line in lines:
             untab = line.lstrip('\t')
             if len(untab) < len(line):
-                out.append((len(line) - len(untab))*self.mode.classprefs.tab_size*' ' + untab)
+                out.append((len(line) - len(untab))*self.mode.locals.tab_size*' ' + untab)
             else:
                 out.append(line)
         return out
