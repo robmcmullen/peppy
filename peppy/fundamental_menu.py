@@ -197,6 +197,7 @@ class IndentationGuides(FundamentalSettingToggle):
     default_menu = ("View", 306)
 
 class IndentSize(FundamentalIntRadioToggle):
+    """Number of spaces per logical indent"""
     local_setting = 'indent_size'
     local_values = [2, 4, 8]
     allow_other = True
@@ -211,16 +212,14 @@ class IndentWithTabsOrSpaces(FundamentalBooleanRadioToggle):
     name = "Indent Character"
     default_menu = ("View", 307)
 
-class TabSize(FundamentalIntRadioToggle):
+class SpacesPerTab(FundamentalIntRadioToggle):
+    """Number of spaces per tab character"""
     local_setting = 'tab_size'
     local_values = [2, 4, 8]
     allow_other = True
-    name = "Tab Size"
+    name = "Spaces Per Tab"
     minibuffer_label = "Number of spaces per tab:"
-    default_menu = ("View", 308)
-
-    def isEnabled(self):
-        return self.mode.locals.use_tab_characters
+    default_menu = ("View", 306.7)
 
 class GuessIndentSize(SelectAction):
     """Guess the tab size of the current document or selection and set the view parameters"""
@@ -503,7 +502,7 @@ class FundamentalMenu(IPeppyPlugin):
                     ViewEOL,
                     
                     IndentationGuides, IndentSize, IndentWithTabsOrSpaces,
-                    TabSize, GuessIndentSize,
+                    SpacesPerTab, GuessIndentSize,
                     
                     CaretLineHighlight, CaretWidth, ViewWhitespace,
                     LongLineIndicator, TabHighlight, RevertEncoding,
