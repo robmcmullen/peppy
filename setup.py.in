@@ -90,7 +90,7 @@ try:
 except ImportError:
     pass
 
-if HAVE_NUMPY and not USE_PY2EXE:
+if HAVE_NUMPY:
     # Don't try building extension modules when using py2exe, because
     # I don't have the correct microsoft compiler
     ext_modules.append(Extension('peppy.hsi._utils',
