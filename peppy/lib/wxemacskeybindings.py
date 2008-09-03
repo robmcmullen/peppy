@@ -144,26 +144,27 @@ class KeyMap(object):
         return 0,None
 
     @classmethod
-    def matchKey(self,str):
+    def matchKey(self, text):
         """Find a keyname (not modifier name) in the accelerator
         string, matching any special keys or abbreviations of the
         special keys
         """
-        key=None
-        i=0
+        text = text.upper()
+        key = None
+        i = 0
         for name in self.keyaliases:
-            if str.startswith(name):
-                val=self.keyaliases[name]
-                if str.startswith(val):
+            if text.startswith(name):
+                val = self.keyaliases[name]
+                if text.startswith(val):
                     return i+len(val), val
                 else:
                     return i+len(name), val
         for name in wxkeynames:
-            if str.startswith(name):
-                return i+len(name),name
-        if i<len(str) and not str[i].isspace():
-            return i+1,str[i].upper()
-        return i,None
+            if text.startswith(name):
+                return i+len(name), name
+        if i<len(text) and not text[i].isspace():
+            return i+1, text[i].upper()
+        return i, None
 
     @classmethod
     def split(self,acc):
