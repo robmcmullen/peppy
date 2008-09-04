@@ -68,6 +68,11 @@ class HighlightListBox(wx.VListBox):
         self.bold_dc = wx.MemoryDC()
         self.bold_dc.SetFont(self.bold_font)
         
+        # Since GetTextExtents is an expensive operation, we create a cache
+        # here to store extents for the entire lifetime of this instance
+        self.text_cache = {}
+        self.bold_cache = {}
+        
     def OnFocus(self, evt):
         """Raise and reset the focus to the parent window whenever
         we get focus.
@@ -124,12 +129,36 @@ class HighlightListBox(wx.VListBox):
         height = 0
         width = 0
         text1, bold, text2 = self.getTextParts(index)
-        w1, h1 = self.GetTextExtent(text1)
-        w2, h2 = self.bold_dc.GetTextExtent(bold)
-        w3, h3 = self.GetTextExtent(text2)
+        if text1:
+            try:
+                w1, h1 = self.text_cache[text1]
+            except KeyError:
+                w1, h1 = self.GetTextExtent(text1)
+                self.text_cache[text1] = (w1, h1)
+        else:
+            w1, h1 = 0, 0
+        
+        if bold:
+            try:
+                w2, h2 = self.bold_cache[bold]
+            except KeyError:
+                w2, h2 = self.bold_dc.GetTextExtent(bold)
+                self.bold_cache[bold] = (w2, h2)
+        else:
+            w2, h2 = 0, 0
+        
+        if text2:
+            try:
+                w3, h3 = self.text_cache[text2]
+            except KeyError:
+                w3, h3 = self.GetTextExtent(text2)
+                self.text_cache[text2] = (w3, h3)
+        else:
+            w3, h3 = 0, 0
         total = w1 + w2 + w3
         self.heights[index] = (max(h1, h2), h1, h2, h3)
         self.widths[index] = (total, w1, w2, w3)
+        #print("_calcWidth: index=%d widths=%s" % (index, str(self.widths[index])))
         if self.largest_width is None:
             self.calc_scroll = (text1, bold, w1, w2)
             self.largest_width = total
@@ -157,6 +186,7 @@ class HighlightListBox(wx.VListBox):
         self.widths = [None] * count
         self.heights = [None] * count
         self.largest_width = None
+        #print("calcWidths: %d items" % count)
         for i in range(count):
             self._calcWidth(i)
         
