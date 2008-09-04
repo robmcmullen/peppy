@@ -185,7 +185,6 @@ class Histogram(object):
         else:
             self.bbl=self.cube.getBadBandList()
         # print "Histogram: self.bbl=%s" % self.bbl
-        
 
     def info(self):
         lastbin=[]
@@ -211,8 +210,6 @@ class Histogram(object):
         print "max percentage difference:"
         print numpy.array2string((self.maxdiff*1000/self.maxvalue)/10.0,
                         precision=2,suppress_small=1)
-        
-        
 
     def calcAccumulation(self,numcolors=20):
         self.info()
@@ -282,9 +279,44 @@ class Histogram(object):
             print "  Threshold %f reflectance units: valid=%d  percentage=%f" % ((self.thresholds[i]*1.0),pixelsbelowthreshold[i],(pixelsbelowthreshold[i]*100.0/validpixels))
 
 
-
 class CubeCompare(object):
-
+    """Compare two HSI cubes for differences.
+    
+    This class produces a single chart that attempts to show the differences
+    between two hyperspectral cubes.  I found the need to have some way to
+    quickly check how an algorithm processed a data cube as the algorithm
+    evolved, and to do this I was comparing a "known good" data cube to the
+    just-processed cube.  It was time consuming because I'd have to load it up
+    into a viewer and compare bands manually.
+    
+    I invented this histogram approach to produce a one-page chart that
+    attempts to show how different two data cubes are.  It works on a pixel-
+    by-pixel basis on each band, measuring the difference in magnitude is at
+    the same (sample, line, band) location between the two cubes.  All these
+    measurements are placed in a histogram, which reduces the 4 dimensional
+    problem (sample, line, band, value) into 3 dimensions (count, band, value)
+    that can be shown on a count vs band plot where the value at each (count,
+    band) pair is the number of pixels in that band that have 'count' as the
+    difference in magnitude.
+    
+    To make it even easier to see, the plot is changed to an accumulation where
+    the value at each (count, band) pair is the percentage of pixels in the
+    image that are less different than that magnitude.  A good comparison will
+    have small values for 'count', so all the values will be squashed down
+    near the X axis, and at constant band, the 'percentage more different'
+    will monotonically decrease.
+    
+    The simplistic algorithm to generate a histogram is:
+    
+    for each band index:
+        get band1
+        get band2
+        for each sample index:
+            for each line index:
+                val = band1[samp,line] - band2[samp,line]
+                bin = abs(val)
+                histogram[band][bin] += 1
+    """
     def __init__(self,c1,c2):
         if c1.bands!=c2.bands or c1.lines!=c2.lines or c1.samples!=c2.samples:
             raise ValueError("Cubes don't have same dimensions")
@@ -296,164 +328,77 @@ class CubeCompare(object):
         self.bbl=self.cube1.getBadBandList(self.cube2)
         # print "CubeCompare: bbl=%s" % self.bbl
         
-    def getHistogramByFlatPython(self,nbins=500):
-        f1=self.cube1.getFlatView()
-        #print f1
-        f2=self.cube2.getFlatView()
-        bandBoundary=self.cube1.getBandBoundary()
-        
-        if self.cube1.interleave != self.cube2.interleave:
-            diff=True
-        else:
-            diff=False
-
-        self.histogram=Histogram(self.cube1,nbins,self.bbl)
-        h=self.histogram.data
-        i1=0
-        i2=0
-        count=0
-        band=0
-        progress=0
-        try:
-            while True:
-                val=f1[i1]-f2[i2]
-                bin=abs(val)
-                if bin>=nbins: bin=nbins-1
-                h[band][bin]+=1
-                count+=1
-                if count>=bandBoundary:
-                    count=0
-                    band+=1
-                    if band>=self.cube1.bands: band=0
-                progress+=1
-                if progress>1000:
-                    #print "#",
-                    print "i1=%d i2=%d diff=%s" % (i1,i2,str(diff))
-                    progress=0
-                i1+=1
-                if diff:
-                    s,l,b=self.cube1.flatToLocation(i1)
-                    i2=self.cube2.locationToFlat(s,l,b)
-                else:
-                    i2+=1
-                    
-        except IndexError:
-            pass
-        return self.histogram
-    
     def getHistogramByBand(self,nbins=500):
+        """Generate a histogram using bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.  The
+        most straight-forward algorithm, but is slow unless the cubes are in
+        BSQ format.  Differences the corresponding bands, runs a histogram on
+        them, and puts the results into the instance histogram.
+        """
         self.histogram=Histogram(self.cube1,nbins,self.bbl)
         h=self.histogram.data
 
-        for i1 in range(self.cube1.bands):
-            band1=self.cube1.getBand(i1)
-            band2=self.cube2.getBand(i1)
+        for i in range(self.cube1.bands):
+            band1=self.cube1.getBand(i)
+            band2=self.cube2.getBand(i)
             count=(self.cube1.samples*self.cube1.lines)
             band=abs(band1-band2)
             mx=band.max()
             mn=band.min()
-            print "band %d: local min/max=(%d,%d) " % (i1,mn,mx)
-##            for samp in range(self.cube1.samples):
-##                for line in range(self.cube1.lines):
-##                    val=band1[samp,line]-band2[samp,line]
-##                    bin=abs(val)
-##                    if bin>=nbins: bin=nbins-1
-##                    h[band][bin]+=1
-##
-##            print "band %d" % (band)
+            print "band %d: local min/max=(%d,%d) " % (i,mn,mx)
+            counts, bins = numpy.histogram(band, bins=nbins, range=(0, nbins))
+            h[i,:] = counts
+        print h
         return self.histogram
     
-    def getHistogramByFlatChunk(self,nbins=500):
-        f1=self.cube1.getFlatView()
-        f2=self.cube2.getFlatView()
-        bandBoundary=self.cube1.getBandBoundary()
+    def iterBILBIP(self):
+        """Iterate by line returning the same focal plane in each cube
         
-        if self.cube1.interleave != self.cube2.interleave:
-            diff=True
-        else:
-            diff=False
-
-        self.histogram=Histogram(self.cube1,nbins,self.bbl)
-        h=self.histogram.data
-
-        chunksize=100000
-
-        count=0
-        band=0
-        for i1 in range(0,f1.size(),chunksize):
-            i2=i1+chunksize
-            if i2>f1.size(): i2=f1.size()
-            c1=f1[i1:i2]
-            c2=f2[i1:i2]
-            #bins=abs(c1-c2)
-            #mx=bins.max()
-            #mn=bins.min()
-
-            for val in c1-c2:
-                bin=abs(val)
-                if bin>=nbins: bin=nbins-1
-                h[band][bin]+=1
-                count+=1
-                if count>=bandBoundary:
-                    count=0
-                    band+=1
-                    if band>=self.cube1.bands: band=0
-                    
-            print "chunk %d " % (i1)
-##            for samp in range(self.cube1.samples):
-##                for line in range(self.cube1.lines):
-##                    val=band1[samp,line]-band2[samp,line]
-##                    bin=abs(val)
-##                    if bin>=nbins: bin=nbins-1
-##                    h[band][bin]+=1
-##
-##            print "band %d" % (band)
-        return self.histogram
+        @return: line number, focal plane image 1, focal plane image 2
+        """
+        for i in range(self.cube1.lines):
+            plane1 = self.cube1.getFocalPlaneRaw(i)
+            plane2 = self.cube2.getFocalPlaneRaw(i)
+            yield i, plane1, plane2
     
-    def getHistogramByFlat(self,nbins=500):
-        f1=self.cube1.getFlatView()
-        f2=self.cube2.getFlatView()
-
-        bandBoundary=self.cube1.getBandBoundary()
+    def getHistogramByFocalPlane(self, iter, nbins=500):
+        """Generate a histogram using focal planes
         
-        if self.cube1.interleave != self.cube2.interleave:
-            diff=True
-        else:
-            diff=False
+        Fast for BIP and BIL, slow for BSQ.  This is a slightly more
+        complicated algorithm that uses focal planes to create the histogram.
+        Because there's an extra python loop inside this method, the
+        theoretical speed of this method is slower than L{getHistogramByBand}.
+        However, because BIL and BIP cubes are structured to read focal
+        plane images very quickly, this method is many times faster than
+        L{getHistogramByBand} when both cubes are BIL or BIP.  If one cube is
+        BSQ, it's probably faster to use L{getHistogramByBand} because more
+        work is done by numpy.
+        """
+        self.histogram = Histogram(self.cube1,nbins,self.bbl)
+        h = self.histogram.data
 
-        self.histogram=Histogram(self.cube1,nbins,self.bbl)
-        h=self.histogram.data
+        bandrange = range(self.cube1.bands)
+        for i, plane1, plane2 in iter:
+            plane = abs(plane1 - plane2)
+            
+            # Need to accumulate by bands, so loop through each band in the
+            # focal plane image (bands x samples) and calculate the histogram
+            # of those samples.  The small histogram is then accumulated into
+            # the total histogram at the band.
+            for band in bandrange:
+                counts, bins = numpy.histogram(plane[band], bins=nbins, range=(0, nbins))
+                h[band,:] += counts
 
-        print "Calling _utils.CubeHistogram..."
-        _utils.CubeHistogram(self.cube1,self.cube2,self.histogram)
-
-        
-        chunksize=100000
-
-        count=0
-        band=0
-        i1=0
-        progress=0
-        for val in f1-f2:
-            bin=abs(val)
-            if bin>=nbins: bin=nbins-1
-            h[band][bin]+=1
-            count+=1
-            if count>=bandBoundary:
-                count=0
-                band+=1
-                if band>=self.cube1.bands: band=0
-
-            i1+=1
-            progress+=1
-            if progress>100000:
-                #print "#",
-                print "processed %d" % (i1)
-                progress=0
-
+            print "line %d" % (i)
+        print h
         return self.histogram
     
     def getHistogramFast(self,nbins=500):
+        """Generate a histogram using the C extension library
+        
+        Fast for all types, but requires the _util C extension library.
+        """
         self.histogram=Histogram(self.cube1,nbins,self.bbl)
         h=self.histogram.data
 
@@ -463,8 +408,18 @@ class CubeCompare(object):
         return self.histogram
 
     def getHistogram(self, nbins=500):
+        """Generate a histogram.
+        
+        The driver method for generating a histogram.  Selects the best
+        histogram calculation method as appropriate for both cubes.
+        """
         if _utils is not None:
             return self.getHistogramFast(nbins)
+        i1 = self.cube1.interleave.lower()
+        i2 = self.cube2.interleave.lower()
+        if i1 in ['bip', 'bil'] and i2 in ['bip', 'bil']:
+            iter = self.iterBILBIP()
+            return self.getHistogramByFocalPlane(iter, nbins)
         return self.getHistogramByBand(nbins)
     
     def getExtrema(self):
