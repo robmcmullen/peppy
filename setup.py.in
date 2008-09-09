@@ -90,14 +90,6 @@ try:
 except ImportError:
     pass
 
-if HAVE_NUMPY:
-    # Don't try building extension modules when using py2exe, because
-    # I don't have the correct microsoft compiler
-    ext_modules.append(Extension('peppy.hsi._utils',
-                                 sources = ['peppy/hsi/_utils.c'],
-                                 include_dirs = include_dirs,
-                                 ))
-
 # Create the data files for Editra's styling stuff
 DATA_FILES = [("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")),
               ("peppy/editra/tests", glob.glob("peppy/editra/tests/*")),

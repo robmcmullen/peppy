@@ -15,10 +15,6 @@ from peppy.debug import *
 import numpy
 
 import cube
-try:
-    import _utils
-except ImportError:
-    _utils = None
 
 # number of meters per unit
 units_scale={
@@ -394,27 +390,12 @@ class CubeCompare(object):
         print h
         return self.histogram
     
-    def getHistogramFast(self,nbins=500):
-        """Generate a histogram using the C extension library
-        
-        Fast for all types, but requires the _util C extension library.
-        """
-        self.histogram=Histogram(self.cube1,nbins,self.bbl)
-        h=self.histogram.data
-
-        print "Calling _utils.CubeHistogram..."
-        _utils.CubeHistogram(self.cube1,self.cube2,self.histogram)
-
-        return self.histogram
-
     def getHistogram(self, nbins=500):
         """Generate a histogram.
         
         The driver method for generating a histogram.  Selects the best
         histogram calculation method as appropriate for both cubes.
         """
-        if _utils is not None:
-            return self.getHistogramFast(nbins)
         i1 = self.cube1.interleave.lower()
         i2 = self.cube2.interleave.lower()
         if i1 in ['bip', 'bil'] and i2 in ['bip', 'bil']:

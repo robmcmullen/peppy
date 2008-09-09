@@ -1,3 +1,9 @@
+2008-XX-XX  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.5.3 update to "Manny Being Manny"
+	* removed hsi/_utils C extension because the new numpy histogram stuff
+	is fast enough
+
 2008-09-01  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.5.2 update to "Manny Being Manny"
