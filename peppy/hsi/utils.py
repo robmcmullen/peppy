@@ -14,7 +14,7 @@ from peppy.debug import *
 
 import numpy
 
-import cube
+import cube as HSI
 
 # number of meters per unit
 units_scale={
@@ -348,6 +348,15 @@ class CubeCompare(object):
         print h
         return self.histogram
     
+    def isBILBIP(self):
+        """Test to see if both cubes are BIL or BIP.
+        
+        They don't need to be the same, but they both must either be BIP or BIL.
+        """
+        i1 = self.cube1.interleave.lower()
+        i2 = self.cube2.interleave.lower()
+        return i1 in ['bip', 'bil'] and i2 in ['bip', 'bil']
+    
     def iterBILBIP(self):
         """Iterate by line returning the same focal plane in each cube
         
@@ -396,12 +405,72 @@ class CubeCompare(object):
         The driver method for generating a histogram.  Selects the best
         histogram calculation method as appropriate for both cubes.
         """
-        i1 = self.cube1.interleave.lower()
-        i2 = self.cube2.interleave.lower()
-        if i1 in ['bip', 'bil'] and i2 in ['bip', 'bil']:
+        if self.isBILBIP():
             iter = self.iterBILBIP()
             return self.getHistogramByFocalPlane(iter, nbins)
         return self.getHistogramByBand(nbins)
+    
+    def getHeatMapByBand(self,nbins=500):
+        """Generate a heat map using bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.  The
+        most straight-forward algorithm, but is slow unless the cubes are in
+        BSQ format.  Differences the corresponding bands, runs a histogram on
+        them, and puts the results into the instance histogram.
+        """
+        self.heatmap = HSI.createCube('bsq', self.cube1.lines, self.cube1.samples, 1, numpy.uint32)
+        data = self.heatmap.getBandRaw(0)
+
+        for i in range(self.cube1.bands):
+            band1 = self.cube1.getBand(i)
+            band2 = self.cube2.getBand(i)
+            band = abs(band1-band2)
+            data += band
+        print data
+        return self.heatmap
+    
+    def getHeatMapByFocalPlane(self, iter):
+        """Generate a heat map using focal planes
+        
+        Fast for BIP and BIL, slow for BSQ.  This is a slightly more
+        complicated algorithm that uses focal planes to create the histogram.
+        Because there's an extra python loop inside this method, the
+        theoretical speed of this method is slower than L{getHistogramByBand}.
+        However, because BIL and BIP cubes are structured to read focal
+        plane images very quickly, this method is many times faster than
+        L{getHistogramByBand} when both cubes are BIL or BIP.  If one cube is
+        BSQ, it's probably faster to use L{getHistogramByBand} because more
+        work is done by numpy.
+        """
+        self.heatmap = HSI.createCube('bsq', self.cube1.lines, self.cube1.samples, 1, numpy.uint32)
+        data = self.heatmap.getBandRaw(0)
+        
+        # band band mask is array of (bands, samples) to multiple against the
+        # retrieved focal planes to ignore all the data in the bad bands
+        bblmask = numpy.array(self.cube1.bbl).repeat(self.cube1.samples).reshape(self.cube1.bands,self.cube1.samples)
+        print bblmask
+        print bblmask.shape
+
+        bandrange = range(self.cube1.bands)
+        for i, plane1, plane2 in iter:
+            p1 = plane1 * bblmask
+            p2 = plane2 * bblmask
+            line = numpy.add.reduce(abs(p1 - p2), axis=0)
+            print line.shape, line
+            data[i,:] = line
+        print data
+        return self.heatmap
+    
+    def getHeatMap(self):
+        """Generate a heat map
+        
+        The driver method for generating a heat map.  Selects the best
+        heat map calculation method as appropriate for both cubes.
+        """
+        if self.isBILBIP():
+            iter = self.iterBILBIP()
+            return self.getHeatMapByFocalPlane(iter)
+        return self.getHeatMapByBand()
     
     def getExtrema(self):
         """Really just a test function to see how long it takes to
