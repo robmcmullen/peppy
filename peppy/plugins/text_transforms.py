@@ -251,7 +251,20 @@ class Reindent(TextModificationAction):
 
     def action(self, index=-1, multiplier=1):
         s = self.mode
-        s.autoindent.processTab(s)
+        start, end = s.GetSelection2()
+        if start == end:
+            s.autoindent.processTab(s)
+        else:
+            line = s.LineFromPosition(start)
+            end = s.LineFromPosition(end)
+            s.autoindent.debuglevel = True
+            s.BeginUndoAction()
+            while line <= end:
+                pos = s.autoindent.reindentLine(s, linenum=line)
+                line += 1
+            s.SetSelection(start, pos)
+            s.GetLineRegion()
+            s.EndUndoAction()
 
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
