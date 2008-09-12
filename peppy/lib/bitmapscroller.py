@@ -825,7 +825,7 @@ class BitmapScroller(wx.ScrolledWindow):
             self._drawBackground(dc, w, h)
             dc.DrawBitmap(wx.BitmapFromImage(self.img.Scale(w, h)), 0,0, True)
             self.width = self.scaled_bmp.GetWidth()
-            self.height = self.scaled_bmp.GetHeight()           
+            self.height = self.scaled_bmp.GetHeight()
         else:
             self.width = 10
             self.height = 10
@@ -909,6 +909,26 @@ class BitmapScroller(wx.ScrolledWindow):
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(bmpdo)
             wx.TheClipboard.Close()
+
+    def saveImage(self, filename):
+        """Copies current image to clipboard.
+
+        Copies the current image, including scaling, zooming, etc. to
+        the clipboard.
+        """
+        handlers = {'.png': wx.BITMAP_TYPE_PNG,
+                    '.jpg': wx.BITMAP_TYPE_JPEG,
+                    }
+
+        root, ext = os.path.splitext(filename)
+        ext = ext.lower()
+        if ext in handlers:
+            try:
+                status = self.scaled_bmp.SaveFile(filename, handlers[ext])
+            except:
+                status = False
+            return status
+        raise TypeError("Unknown image file extension %s" % ext)
 
     def convertEventCoords(self, ev):
         """Convert event coordinates to world coordinates.

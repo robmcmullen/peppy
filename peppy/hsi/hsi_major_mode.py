@@ -1141,6 +1141,26 @@ class HSIMode(BitmapScroller, MajorMode):
         self.status_info.setText(self.getWelcomeMessage())
 
 
+class ExportAsImage(SelectAction):
+    """Export the current datacube in ENVI BIL format
+    """
+    name = "as Image"
+    default_menu = ("File/Export", -200)
+
+    def action(self, index=-1, multiplier=1):
+        filename = self.frame.showSaveAs("Save Image",
+                                         wildcard="PNG (*.png)|*.png|JPEG (*.jpg)|*.jpg")
+        if filename:
+            try:
+                status = self.mode.saveImage(filename)
+                if status:
+                    self.mode.setStatusText("Saved image as %s" % filename)
+                else:
+                    self.mode.setStatusText("Failed saving %s" % filename)
+            except:
+                self.frame.showErrorDialog("Unrecognized file format %s\n\nThe filename extension determines the\nimage format.  Use a filename extension of\n.png or .jpg" % ext)
+
+
 class ExportAsENVI(SelectAction):
     """Export the current datacube in ENVI BIL format
     """
