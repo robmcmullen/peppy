@@ -321,33 +321,16 @@ class CubeCompare(object):
         self.cube2=c2
         self.histogram=None
         self.hashPrintCount=100000
-        self.bbl=self.cube1.getBadBandList(self.cube2)
-        # print "CubeCompare: bbl=%s" % self.bbl
         
-    def getHistogramByBand(self,nbins=500):
-        """Generate a histogram using bands
+        # Parameters common to both cubes
+        self.bbl = self.cube1.getBadBandList(self.cube2)
+        self.lines = self.cube1.lines
+        self.bands = self.cube1.bands
+        self.samples = self.cube1.samples
         
-        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.  The
-        most straight-forward algorithm, but is slow unless the cubes are in
-        BSQ format.  Differences the corresponding bands, runs a histogram on
-        them, and puts the results into the instance histogram.
-        """
-        self.histogram=Histogram(self.cube1,nbins,self.bbl)
-        h=self.histogram.data
-
-        for i in range(self.cube1.bands):
-            band1=self.cube1.getBand(i)
-            band2=self.cube2.getBand(i)
-            count=(self.cube1.samples*self.cube1.lines)
-            band=abs(band1-band2)
-            mx=band.max()
-            mn=band.min()
-            print "band %d: local min/max=(%d,%d) " % (i,mn,mx)
-            counts, bins = numpy.histogram(band, bins=nbins, range=(0, nbins))
-            h[i,:] = counts
-        print h
-        return self.histogram
-    
+        # The data type that can hold both types without losing precision
+        self.dtype = numpy.find_common_type([self.cube1.data_type, self.cube2.data_type], [])
+        
     def isBILBIP(self):
         """Test to see if both cubes are BIL or BIP.
         
@@ -362,10 +345,46 @@ class CubeCompare(object):
         
         @return: line number, focal plane image 1, focal plane image 2
         """
-        for i in range(self.cube1.lines):
+        for i in range(self.lines):
             plane1 = self.cube1.getFocalPlaneRaw(i)
             plane2 = self.cube2.getFocalPlaneRaw(i)
             yield i, plane1, plane2
+    
+    def getFocalPlaneBadBandMask(self):
+        """Calculate the bad band mask for focal plane data
+        
+        The band band mask is array of (bands, samples) used to multiply
+        against the retrieved focal planes that results in zeroing out all the
+        data in the bad bands.
+        """
+        bblmask = numpy.array(self.bbl).repeat(self.samples).reshape(self.bands,self.samples)
+        print bblmask
+        print bblmask.shape
+        return bblmask
+
+    def getHistogramByBand(self,nbins=500):
+        """Generate a histogram using bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.  The
+        most straight-forward algorithm, but is slow unless the cubes are in
+        BSQ format.  Differences the corresponding bands, runs a histogram on
+        them, and puts the results into the instance histogram.
+        """
+        self.histogram=Histogram(self.cube1,nbins,self.bbl)
+        h=self.histogram.data
+
+        for i in range(self.cube1.bands):
+            band1=self.cube1.getBand(i)
+            band2=self.cube2.getBand(i)
+            count=(self.samples*self.lines)
+            band=abs(band1-band2)
+            mx=band.max()
+            mn=band.min()
+            print "band %d: local min/max=(%d,%d) " % (i,mn,mx)
+            counts, bins = numpy.histogram(band, bins=nbins, range=(0, nbins))
+            h[i,:] = counts
+        print h
+        return self.histogram
     
     def getHistogramByFocalPlane(self, iter, nbins=500):
         """Generate a histogram using focal planes
@@ -383,7 +402,7 @@ class CubeCompare(object):
         self.histogram = Histogram(self.cube1,nbins,self.bbl)
         h = self.histogram.data
 
-        bandrange = range(self.cube1.bands)
+        bandrange = range(self.bands)
         for i, plane1, plane2 in iter:
             plane = abs(plane1 - plane2)
             
@@ -418,14 +437,15 @@ class CubeCompare(object):
         BSQ format.  Differences the corresponding bands, runs a histogram on
         them, and puts the results into the instance histogram.
         """
-        self.heatmap = HSI.createCube('bsq', self.cube1.lines, self.cube1.samples, 1, numpy.uint32)
+        self.heatmap = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
         data = self.heatmap.getBandRaw(0)
 
-        for i in range(self.cube1.bands):
-            band1 = self.cube1.getBand(i)
-            band2 = self.cube2.getBand(i)
-            band = abs(band1-band2)
-            data += band
+        for i in range(self.bands):
+            if self.bbl[i]:
+                band1 = self.cube1.getBand(i)
+                band2 = self.cube2.getBand(i)
+                band = abs(band1-band2)
+                data += band
         print data
         return self.heatmap
     
@@ -442,16 +462,10 @@ class CubeCompare(object):
         BSQ, it's probably faster to use L{getHistogramByBand} because more
         work is done by numpy.
         """
-        self.heatmap = HSI.createCube('bsq', self.cube1.lines, self.cube1.samples, 1, numpy.uint32)
+        self.heatmap = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
         data = self.heatmap.getBandRaw(0)
-        
-        # band band mask is array of (bands, samples) to multiple against the
-        # retrieved focal planes to ignore all the data in the bad bands
-        bblmask = numpy.array(self.cube1.bbl).repeat(self.cube1.samples).reshape(self.cube1.bands,self.cube1.samples)
-        print bblmask
-        print bblmask.shape
+        bblmask = self.getFocalPlaneBadBandMask()
 
-        bandrange = range(self.cube1.bands)
         for i, plane1, plane2 in iter:
             p1 = plane1 * bblmask
             p2 = plane2 * bblmask
@@ -471,6 +485,56 @@ class CubeCompare(object):
             iter = self.iterBILBIP()
             return self.getHeatMapByFocalPlane(iter)
         return self.getHeatMapByBand()
+    
+    def getDifferenceByFocalPlane(self, iter):
+        """Difference the cubes using focal planes
+        
+        Fast for BIP and BIL, slow for BSQ.
+        """
+        self.difference = HSI.createCube('bil', self.lines, self.samples, self.bands, self.dtype)
+        bblmask = self.getFocalPlaneBadBandMask()
+
+        for i, plane1, plane2 in iter:
+            p1 = plane1 * bblmask
+            p2 = plane2 * bblmask
+            diff = p1 - p2
+            plane = self.difference.getFocalPlaneRaw(i)
+            plane[:,:] = diff
+            print plane.shape, plane
+        return self.difference
+    
+    def getDifferenceByBand(self,nbins=500):
+        """Difference two cubes using bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.  The most
+        straight-forward algorithm, but is slow unless the cubes are in BSQ
+        format.  Differences two cubes on a band-by-band basis and puts the
+        results in a new cube.
+        """
+        self.difference = HSI.createCube('bsq', self.lines, self.samples, self.bands, self.dtype)
+
+        for i in range(self.cube1.bands):
+            if self.bbl[i]:
+                band = self.difference.getBandRaw(i)
+                band1 = self.cube1.getBand(i)
+                band2 = self.cube2.getBand(i)
+                band[:,:] = band1 - band2
+                print band
+        return self.difference
+    
+    def getDifference(self):
+        """Generate a cube containing the difference between the two cubes
+        
+        The driver method for generating a cube difference.  Selects the best
+        difference calculation method as appropriate for both cubes.
+        """
+        if self.isBILBIP():
+            iter = self.iterBILBIP()
+            self.getDifferenceByFocalPlane(iter)
+        else:
+            self.getDifferenceByBand()
+        self.difference.bbl = self.bbl[:]
+        return self.difference
     
     def getExtrema(self):
         """Really just a test function to see how long it takes to
