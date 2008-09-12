@@ -275,7 +275,7 @@ class Histogram(object):
             print "  Threshold %f reflectance units: valid=%d  percentage=%f" % ((self.thresholds[i]*1.0),pixelsbelowthreshold[i],(pixelsbelowthreshold[i]*100.0/validpixels))
 
 
-class CubeCompare(object):
+class CubeCompare(debugmixin):
     """Compare two HSI cubes for differences.
     
     This class produces a single chart that attempts to show the differences
@@ -313,23 +313,40 @@ class CubeCompare(object):
                 bin = abs(val)
                 histogram[band][bin] += 1
     """
-    def __init__(self,c1,c2):
-        if c1.bands!=c2.bands or c1.lines!=c2.lines or c1.samples!=c2.samples:
-            raise ValueError("Cubes don't have same dimensions")
+    def __init__(self, c1, c2, line_offset=0):
+        """Create the comparitor instance
         
-        self.cube1=c1
-        self.cube2=c2
-        self.histogram=None
-        self.hashPrintCount=100000
+        @param offset: a tuple containing the spatial offset of the smaller
+        cube inside the larger cube as (line_offset, sample_offset)
+        """
+        # Set up the cube attributes so cube1 holds the bigger cube
+        if c1.lines >= c2.lines and c1.samples >= c2.samples and c1.bands == c2.bands:
+            self.cube1 = c1
+            self.cube2 = c2
+        elif c2.lines > c1.lines and c2.samples > c1.samples and c1.bands == c2.bands:
+            self.cube1 = c2
+            self.cube2 = c1
+        else:
+            raise ValueError("Can't determine which cube is supposed to be the subset of the other: if cubes aren't the same size, one cube must be a spatial subset of the other and both must have the same number of bands")
+            
+        # common dimensions are from the smaller cube
+        self.lines = self.cube2.lines
+        self.bands = self.cube2.bands
+        self.samples = self.cube2.samples
+        
+        if line_offset > 0:
+            self.line_offset = line_offset
+        else:
+            self.line_offset = 0
         
         # Parameters common to both cubes
         self.bbl = self.cube1.getBadBandList(self.cube2)
-        self.lines = self.cube1.lines
-        self.bands = self.cube1.bands
-        self.samples = self.cube1.samples
         
         # The data type that can hold both types without losing precision
         self.dtype = numpy.find_common_type([self.cube1.data_type, self.cube2.data_type], [])
+        
+        self.histogram=None
+        self.hashPrintCount=100000
         
     def isBILBIP(self):
         """Test to see if both cubes are BIL or BIP.
@@ -346,7 +363,7 @@ class CubeCompare(object):
         @return: line number, focal plane image 1, focal plane image 2
         """
         for i in range(self.lines):
-            plane1 = self.cube1.getFocalPlaneRaw(i)
+            plane1 = self.cube1.getFocalPlaneRaw(i + self.line_offset)
             plane2 = self.cube2.getFocalPlaneRaw(i)
             yield i, plane1, plane2
     
@@ -358,8 +375,8 @@ class CubeCompare(object):
         data in the bad bands.
         """
         bblmask = numpy.array(self.bbl).repeat(self.samples).reshape(self.bands,self.samples)
-        print bblmask
-        print bblmask.shape
+        self.dprint(bblmask)
+        self.dprint(bblmask.shape)
         return bblmask
 
     def getHistogramByBand(self,nbins=500):
@@ -380,10 +397,10 @@ class CubeCompare(object):
             band=abs(band1-band2)
             mx=band.max()
             mn=band.min()
-            print "band %d: local min/max=(%d,%d) " % (i,mn,mx)
+            self.dprint("band %d: local min/max=(%d,%d) " % (i,mn,mx))
             counts, bins = numpy.histogram(band, bins=nbins, range=(0, nbins))
             h[i,:] = counts
-        print h
+        self.dprint(h)
         return self.histogram
     
     def getHistogramByFocalPlane(self, iter, nbins=500):
@@ -414,8 +431,8 @@ class CubeCompare(object):
                 counts, bins = numpy.histogram(plane[band], bins=nbins, range=(0, nbins))
                 h[band,:] += counts
 
-            print "line %d" % (i)
-        print h
+            self.dprint("line %d" % (i))
+        self.dprint(h)
         return self.histogram
     
     def getHistogram(self, nbins=500):
@@ -446,7 +463,7 @@ class CubeCompare(object):
                 band2 = self.cube2.getBand(i)
                 band = abs(band1-band2)
                 data += band
-        print data
+        self.dprint(data)
         return self.heatmap
     
     def getHeatMapByFocalPlane(self, iter):
@@ -470,9 +487,9 @@ class CubeCompare(object):
             p1 = plane1 * bblmask
             p2 = plane2 * bblmask
             line = numpy.add.reduce(abs(p1 - p2), axis=0)
-            print line.shape, line
+            self.dprint("%s %s" % (line.shape, line))
             data[i,:] = line
-        print data
+        self.dprint(data)
         return self.heatmap
     
     def getHeatMap(self):
@@ -500,7 +517,7 @@ class CubeCompare(object):
             diff = p1 - p2
             plane = self.difference.getFocalPlaneRaw(i)
             plane[:,:] = diff
-            print plane.shape, plane
+            self.dprint("%s %s" % (plane.shape, plane))
         return self.difference
     
     def getDifferenceByBand(self,nbins=500):
@@ -519,7 +536,7 @@ class CubeCompare(object):
                 band1 = self.cube1.getBand(i)
                 band2 = self.cube2.getBand(i)
                 band[:,:] = band1 - band2
-                print band
+                self.dprint(band)
         return self.difference
     
     def getDifference(self):
@@ -551,9 +568,9 @@ class CubeCompare(object):
             p2 = plane2 * bblmask
             plane = p1 - p2
             line = numpy.sqrt(numpy.add.reduce(plane * plane, axis=0))
-            print line.shape, line
+            self.dprint("%s %s" % (line.shape, line))
             data[i,:] = line
-        print data
+        self.dprint(data)
         return self.euclidean
     
     def getEuclideanDistanceByBand(self,nbins=500):
@@ -574,7 +591,7 @@ class CubeCompare(object):
                 working += numpy.square(band)
         
         data = numpy.sqrt(working)
-        print data
+        self.dprint(data)
         return self.euclidean
     
     def getEuclideanDistance(self):
@@ -603,13 +620,20 @@ class CubeCompare(object):
         for i, plane1, plane2 in iter:
             p1 = numpy.cast[numpy.float32](plane1 * bblmask)
             p2 = numpy.cast[numpy.float32](plane2 * bblmask)
+            zerotest = numpy.add.reduce(plane1 - plane2)
+            
             top = numpy.add.reduce(p1 * p2)
             bot = numpy.sqrt(numpy.add.reduce(p1 * p1)) * numpy.sqrt(numpy.add.reduce(p2 * p2))
-            tot = top/bot
+            # the arccos may not be zero if the spectra are exactly the same due
+            # to round-off error in the squaring/sqrt.  So, we add this check
+            # here to force the total to 1.0 if any pixel in plane1 is exactly
+            # equal to the pixel in plane 2
+            tot = numpy.where(zerotest == 0.0, 1.0, top/bot)
             line = numpy.nan_to_num(numpy.arccos(tot) * (180.0 / math.pi))
-            print line.shape, line
+            
+            self.dprint("%s %s" % (line.shape, line))
             data[i,:] = line
-        print data
+        self.dprint(data)
         return self.sam
     
     def getSpectralAngleByBand(self,nbins=500):
@@ -635,7 +659,7 @@ class CubeCompare(object):
         bot = numpy.sqrt(bot1 + bot2)
         tot = top/bot
         data[:,:] = numpy.nan_to_num(numpy.arccos(tot) * (180.0 / math.pi))
-        print data
+        self.dprint(data)
         return self.sam
     
     def getSpectralAngle(self):
@@ -656,7 +680,7 @@ class CubeCompare(object):
         seek all the way through one file."""
         
         f1=self.cube1.getFlatView()
-        print f1
+        self.dprint(f1)
         i1=0
         progress=0
         minval=100000
@@ -669,7 +693,7 @@ class CubeCompare(object):
                 progress+=1
                 if progress>1000:
                     #print "#",
-                    print "i1=%d " % (i1)
+                    self.dprint("i1=%d " % (i1))
                     progress=0
                 i1+=1
                     
@@ -690,6 +714,6 @@ class CubeCompare(object):
             mn=band.min()
             if (mx>maxval): maxval=mx
             if (mn<minval): minval=mn
-            print "band %d: local min/max=(%d,%d)  accumulated min/max=(%d,%d)" % (i1,mn,mx,minval,maxval)
+            self.dprint("band %d: local min/max=(%d,%d)  accumulated min/max=(%d,%d)" % (i1,mn,mx,minval,maxval))
             
         return (minval,maxval)
