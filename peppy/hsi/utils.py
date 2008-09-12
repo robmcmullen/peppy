@@ -538,7 +538,7 @@ class CubeCompare(object):
     
     def getEuclideanDistanceByFocalPlane(self, iter):
         """Calculate the euclidean distance for every pixel in two cubes using
-        bands
+        focal planes
         
         Fast for BIP and BIL, slow for BSQ.
         """
@@ -589,7 +589,68 @@ class CubeCompare(object):
         else:
             self.getEuclideanDistanceByBand()
         return self.euclidean
+
+    def getSpectralAngleByFocalPlane(self, iter):
+        """Calculate the spectral angle between every pixel in two cubes using
+        focal planes
+        
+        Fast for BIP and BIL, slow for BSQ.
+        """
+        self.sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
+        data = self.sam.getBandRaw(0)
+        bblmask = self.getFocalPlaneBadBandMask()
+
+        for i, plane1, plane2 in iter:
+            p1 = numpy.cast[numpy.float32](plane1 * bblmask)
+            p2 = numpy.cast[numpy.float32](plane2 * bblmask)
+            top = numpy.add.reduce(p1 * p2)
+            bot = numpy.sqrt(numpy.add.reduce(p1 * p1)) * numpy.sqrt(numpy.add.reduce(p2 * p2))
+            tot = top/bot
+            line = numpy.nan_to_num(numpy.arccos(tot) * (180.0 / math.pi))
+            print line.shape, line
+            data[i,:] = line
+        print data
+        return self.sam
     
+    def getSpectralAngleByBand(self,nbins=500):
+        """Calculate the spectral angle between every pixel in two cubes using
+        bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
+        """
+        self.sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
+        data = self.sam.getBandRaw(0)
+        
+        top = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
+        bot1 = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
+        bot2 = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
+        for i in range(self.bands):
+            if self.bbl[i]:
+                band1 = self.cube1.getBand(i)
+                band2 = self.cube2.getBand(i)
+                top += band1 * band2
+                bot1 += numpy.square(band1)
+                bot2 += numpy.square(band2)
+        
+        bot = numpy.sqrt(bot1 + bot2)
+        tot = top/bot
+        data[:,:] = numpy.nan_to_num(numpy.arccos(tot) * (180.0 / math.pi))
+        print data
+        return self.sam
+    
+    def getSpectralAngle(self):
+        """Generate a cube containing the spectral angle between the two cubes
+        
+        The driver method -- selects the fastest calculation method based
+        on the interleave of both cubes.
+        """
+        if self.isBILBIP():
+            iter = self.iterBILBIP()
+            self.getSpectralAngleByFocalPlane(iter)
+        else:
+            self.getSpectralAngleByBand()
+        return self.sam
+
     def getExtrema(self):
         """Really just a test function to see how long it takes to
         seek all the way through one file."""
