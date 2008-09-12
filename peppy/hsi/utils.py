@@ -478,8 +478,8 @@ class CubeCompare(object):
     def getHeatMap(self):
         """Generate a heat map
         
-        The driver method for generating a heat map.  Selects the best
-        heat map calculation method as appropriate for both cubes.
+        The driver method -- selects the fastest calculation method based
+        on the interleave of both cubes.
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
@@ -525,8 +525,8 @@ class CubeCompare(object):
     def getDifference(self):
         """Generate a cube containing the difference between the two cubes
         
-        The driver method for generating a cube difference.  Selects the best
-        difference calculation method as appropriate for both cubes.
+        The driver method -- selects the fastest calculation method based
+        on the interleave of both cubes.
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
@@ -535,6 +535,60 @@ class CubeCompare(object):
             self.getDifferenceByBand()
         self.difference.bbl = self.bbl[:]
         return self.difference
+    
+    def getEuclideanDistanceByFocalPlane(self, iter):
+        """Calculate the euclidean distance for every pixel in two cubes using
+        bands
+        
+        Fast for BIP and BIL, slow for BSQ.
+        """
+        self.euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        data = self.euclidean.getBandRaw(0)
+        bblmask = self.getFocalPlaneBadBandMask()
+
+        for i, plane1, plane2 in iter:
+            p1 = plane1 * bblmask
+            p2 = plane2 * bblmask
+            plane = p1 - p2
+            line = numpy.sqrt(numpy.add.reduce(plane * plane, axis=0))
+            print line.shape, line
+            data[i,:] = line
+        print data
+        return self.euclidean
+    
+    def getEuclideanDistanceByBand(self,nbins=500):
+        """Calculate the euclidean distance for every pixel in two cubes using
+        bands
+        
+        Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
+        """
+        self.heatmap = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        data = self.heatmap.getBandRaw(0)
+        
+        working = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
+        for i in range(self.bands):
+            if self.bbl[i]:
+                band1 = self.cube1.getBand(i)
+                band2 = self.cube2.getBand(i)
+                band = band1 - band2
+                working += numpy.square(band)
+        
+        data = numpy.sqrt(working)
+        print data
+        return self.euclidean
+    
+    def getEuclideanDistance(self):
+        """Generate a cube containing the euclidean distance between the two cubes
+        
+        The driver method -- selects the fastest calculation method based
+        on the interleave of both cubes.
+        """
+        if self.isBILBIP():
+            iter = self.iterBILBIP()
+            self.getEuclideanDistanceByFocalPlane(iter)
+        else:
+            self.getEuclideanDistanceByBand()
+        return self.euclidean
     
     def getExtrema(self):
         """Really just a test function to see how long it takes to
