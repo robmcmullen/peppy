@@ -429,7 +429,7 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             # offset if it turns out that the interesting parts of the
             # completion text would be off the screen to the right
             self.dropdownlistbox.calcWidths()
-            self.dropdownlistbox.SetSelection(best)
+            self.dropdownlistbox.SetSelection(-1)
             #self.SetFocus()
         else:
             self.dropdownlistbox.SetSelection(-1)
@@ -455,7 +455,10 @@ class TextCtrlAutoComplete(wx.TextCtrl):
             self._showDropDown ()
             skip = False
         elif KC == wx.WXK_UP :
-            if sel > 0 :
+            if sel == -1:
+                dd.SetSelection(dd.GetLineCount() - 1)
+                self._listItemVisible()
+            elif sel > 0 :
                 dd.SetSelection ( sel - 1 )
                 self._listItemVisible()
             self._showDropDown ()
