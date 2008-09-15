@@ -9,6 +9,12 @@ Templates can exist as global templates, or can exist within projects that
 will override the global templates.  Global templates are stored in the peppy
 configuration directory, while project templates are stored within the project
 directory.
+
+The project plugin adds the attribute 'project_info' to all major mode
+instances when the plugin is activated.  Its value with be an instance of the
+L{ProjectInfo} object if there is a project associated with the major mode,
+otherwise it will be C{None}.  Therefore, you don't have to use hasattr(mode,
+'project_info') before checking the value of project_info.
 """
 import os, re
 import cPickle as pickle
@@ -173,6 +179,9 @@ class ProjectInfo(CTAGS):
     
     def __str__(self):
         return "ProjectInfo: settings=%s top=%s" % (self.project_settings_dir, self.project_top_dir)
+    
+    def getProjectName(self):
+        return self.project_name
     
     def getSettingsRelativeURL(self, name=""):
         return self.project_settings_dir.resolve2(name)
@@ -740,11 +749,30 @@ class ProjectPlugin(IPeppyPlugin):
 
     @classmethod
     def projectInfo(cls, msg):
+        """Publish/subscribe callback called by major mode creation process.
+        
+        This is used to add the L{ProjectInfo} to a major mode when it's
+        contained in a project.  If the file is found to belong to a project,
+        another message is sent indicating that the mode does belong to a
+        project.  This is currently used, for instance, in the openrecent
+        plugin to add the project file to a recent projects menu.
+        
+        Additionally, this is where template processing is handled for project
+        files.  If the major mode determines that it would like to use a
+        template, it is applied here.
+        """
         mode = msg.data
         
         # Add 'project' keyword to Buffer object if the file belongs to a
         # project
         cls.registerProject(mode)
+        
+        # If the file belongs to a project, send message to anyone interested
+        # that we've found the project
+        if mode.project_info:
+            Publisher().sendMessage('project.file.opened', mode)
+        
+        # handle templates for empty files
         if hasattr(mode, "getTemplateCallback"):
             callback = mode.getTemplateCallback()
             if callback:

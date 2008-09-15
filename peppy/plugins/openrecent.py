@@ -44,8 +44,35 @@ class RecentFiles(OnDemandGlobalListAction):
     @classmethod
     def setStorage(cls, items, save=True):
         cls.storage = items
+        cls.trimList()
         if save:
-            RecentFilesPlugin.saveStorage(cls)
+            pathname = RecentFilesPlugin.getFile(cls)
+            fh = open(pathname,'w')
+            cls.serializeStorage(fh)
+    
+    @classmethod
+    def serializeStorage(cls, fh):
+        """Serialize the current items to the file"""
+        for file in cls.storage:
+            fh.write("%s%s" % (file.encode('utf8'),os.linesep))
+    
+    @classmethod
+    def loadStorage(cls):
+        pathname = RecentFilesPlugin.getFile(cls)
+        try:
+            fh = open(pathname)
+            storage = cls.unserializeStorage(fh)
+        except:
+            storage = []
+        cls.setStorage(storage, save=False)
+    
+    @classmethod
+    def unserializeStorage(cls, fh):
+        """Unserialize items from the file into a list"""
+        storage = []
+        for line in fh:
+            storage.append(line.decode('utf8').rstrip())
+        return storage
     
     @classmethod
     def append(cls, msg):
@@ -58,9 +85,11 @@ class RecentFiles(OnDemandGlobalListAction):
         cls.trimStorage(RecentFilesPlugin.classprefs.list_length)
     
     @classmethod
-    def appendURL(cls, url):
+    def appendURL(cls, url, extra=None):
         if cls.isAcceptableURL(url):
             item = unicode(url)
+            if extra:
+                item = (item, extra)
             # if we're adding an item that's already in the list, move it
             # to the top of the list by recreating the list
             storage = cls.storage
@@ -81,15 +110,90 @@ class RecentFiles(OnDemandGlobalListAction):
                 else:
                     storage.append(item)
                 cls.setStorage(storage)
-
-            # Trim list to max number of items
-            cls.trimList()
-                
+            
             cls.calcHash()
         
     def action(self, index=-1, multiplier=1):
         assert self.dprint("opening file %s" % (self.storage[index]))
         self.frame.open(self.storage[index])
+
+
+class RecentProjectFiles(RecentFiles):
+    """Open a file from the list of recently opened files that belong to
+    a project.
+    
+    Maintains a list of the most recently opened files in a project.  The list
+    of files for each project is maintained separately so the list is limited
+    in size by the classpref 'list_length' in L{RecentFilesPlugin}.
+    """
+    name = "Recent Projects"
+    save_file_classpref = 'recent_project_files'
+    default_menu = (("File/Recent Projects", 11), 0)
+    inline = True
+    
+    # Have to set tooltip and global_id to None, otherwise menu system picks
+    # up the values from the parent class (RecentFiles)
+    global_id = None
+    tooltip = None
+    
+    #: For this list, we add new entries at the bottom
+    add_at_top = True
+    
+    @classmethod
+    def append(cls, msg):
+        mode = msg.data
+        if hasattr(mode, 'project_info'):
+            proj = mode.project_info
+            if proj:
+                name = proj.getProjectName()
+                if name:
+                    url = mode.buffer.url
+                    cls.appendURL(url, name)
+    
+    @classmethod
+    def serializeStorage(cls, fh):
+        """Serialize the current items to the file"""
+        for url, project_name in cls.storage:
+            fh.write("%s%s%s%s" % (project_name.encode('utf-8'), os.linesep,
+                                   url.encode('utf8'), os.linesep))
+    
+    @classmethod
+    def unserializeStorage(cls, fh):
+        """Unserialize items from the file into a list"""
+        storage = []
+        project_name = None
+        for line in fh:
+            if project_name is None:
+                project_name = line.decode('utf8').strip()
+            else:
+                storage.append((line.decode('utf8').rstrip(), project_name))
+                project_name = None
+        return storage
+
+    @classmethod
+    def isAcceptableURL(cls, url):
+        return True
+
+    @classmethod
+    def trimList(cls):
+        list_length = RecentFilesPlugin.classprefs.list_length
+        found = {}
+        new_list = []
+        for name, group in cls.storage:
+            if group not in found:
+                found[group] = 0
+            if found[group] < list_length:
+                new_list.append((name, group))
+            found[group] += 1
+        cls.storage = new_list
+    
+    def getItems(self):
+        return self.storage
+    
+    def action(self, index=-1, multiplier=1):
+        url, project_name = self.storage[index]
+        assert self.dprint("opening file %s" % (url))
+        self.frame.open(url)
 
 
 class FileCabinet(RecentFiles):
@@ -104,7 +208,7 @@ class FileCabinet(RecentFiles):
     """
     name = "File Cabinet"
     save_file_classpref = 'file_cabinet'
-    default_menu = (("File/File Cabinet", 11), 0)
+    default_menu = (("File/File Cabinet", 12), 0)
     inline = True
     
     # Have to set tooltip and global_id to None, otherwise menu system picks
@@ -128,7 +232,7 @@ class AddToFileCabinet(SelectAction):
     """Add to the saved URL (i.e. file cabinet) list"""
     alias = "add-file-cabinet"
     name = "Add To File Cabinet"
-    default_menu = (("File/File Cabinet", 11), -900)
+    default_menu = ("File/File Cabinet", -900)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -144,7 +248,7 @@ class ReorderFileCabinet(SelectAction):
     """Reorder list of files in File Cabinet"""
     alias = "reorder-file-cabinet"
     name = "Reorder File Cabinet"
-    default_menu = (("File/File Cabinet", 11), 910)
+    default_menu = ("File/File Cabinet", 910)
 
     def action(self, index=-1, multiplier=1):
         dlg = ListReorderDialog(self.frame, FileCabinet.storage, "Reorder File Cabinet", "URL")
@@ -159,15 +263,18 @@ class RecentFilesPlugin(IPeppyPlugin):
     default_classprefs = (
         StrParam(RecentFiles.save_file_classpref, 'recentfiles.txt', 'Filename used in the peppy configuration directory to store the list of recently opened files.'),
         IntParam('list_length', 20, 'Truncate the list to this number of files most recently opened.'),
+        StrParam(RecentProjectFiles.save_file_classpref, 'recent_project_files.txt', 'Filename used in the peppy configuration directory to store the list of recently opened files.'),
         StrParam(FileCabinet.save_file_classpref, 'file_cabinet.txt', 'Filename used in the peppy configuration directory to store the list of URLs saved in the File Cabinet.'),
         )
 
     def activateHook(self):
         Publisher().subscribe(RecentFiles.append, 'buffer.opened')
+        Publisher().subscribe(RecentProjectFiles.append, 'project.file.opened')
         Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
 
     def deactivateHook(self):
         Publisher().unsubscribe(RecentFiles.append)
+        Publisher().unsubscribe(RecentProjectFiles.append)
         Publisher().unsubscribe(self.getTabMenu)
 
     @classmethod
@@ -178,33 +285,14 @@ class RecentFilesPlugin(IPeppyPlugin):
         pathname=app.getConfigFilePath(filename)
         return pathname
 
-    @classmethod
-    def loadStorage(cls, actioncls):
-        storage=[]
-        pathname = cls.getFile(actioncls)
-        try:
-            fh=open(pathname)
-            for line in fh:
-                storage.append(line.decode('utf8').rstrip())
-        except:
-            pass
-        actioncls.setStorage(storage, save=False)
-
     def initialActivation(self):
-        self.loadStorage(RecentFiles)
-        self.loadStorage(FileCabinet)
-    
-    @classmethod
-    def saveStorage(cls, actioncls):
-        pathname = cls.getFile(actioncls)
-        fh=open(pathname,'w')
-        for file in actioncls.storage:
-            #print "saving %s to %s" % (file,pathname)
-            fh.write("%s%s" % (file.encode('utf8'),os.linesep))
+        RecentFiles.loadStorage()
+        RecentProjectFiles.loadStorage()
+        FileCabinet.loadStorage()
 
     def getTabMenu(self, msg):
         action_classes = msg.data
         action_classes.extend([AddToFileCabinet])
 
     def getActions(self):
-        return [RecentFiles, FileCabinet, AddToFileCabinet, ReorderFileCabinet]
+        return [RecentFiles, RecentProjectFiles, FileCabinet, AddToFileCabinet, ReorderFileCabinet]
