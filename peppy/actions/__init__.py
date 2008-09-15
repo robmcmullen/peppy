@@ -330,8 +330,14 @@ class ListAction(SelectAction):
     action to display the entire list.
     
     The subclass should override the L{getItems} method to return the list of
-    items to display.  These items should be strings.  Overriding L{isEnabled}
-    will determine the enable/disable state for all of the items in the list.
+    items to display.  These items should be strings or tuples.  Overriding
+    L{isEnabled} will determine the enable/disable state for all of the items
+    in the list.
+    
+    If the items are tuples, they are taken to be grouped items to be displayed
+    in submenus.  The first item is the string to be displayed and the second
+    item is the submenu name.  Submenus will be displayed as an additional
+    level of pull-right menus as children of this action.
     
     If the items change their text strings, you should add the
     L{OnDemandActionMixin} and override the L{getHash} method to indicate when
@@ -420,8 +426,14 @@ class ListAction(SelectAction):
 
     def _insertItems(self,menu,pos,is_toplevel=False):
         items = self.getItems()
-        
         self.count=0
+        if items and (isinstance(items[0], tuple) or isinstance(items[0], list)):
+            self._insertGroupedItems(items, menu, pos, is_toplevel)
+        else:
+            self._insertTextItems(items, menu, pos, is_toplevel)
+        self.savehash=self.getHash()
+    
+    def _insertTextItems(self, items, menu, pos, is_toplevel):
         if self.menumax>0 and len(items)>self.menumax:
             for group in range(0,len(items),self.menumax):
                 last=min(group+self.menumax,len(items))
@@ -439,8 +451,29 @@ class ListAction(SelectAction):
             for name in items:
                 self._insert(menu,pos,name,is_toplevel=is_toplevel)
                 pos+=1
-                
-        self.savehash=self.getHash()
+
+    def _insertGroupedItems(self, items, menu, pos, is_toplevel=False):
+        """Insert a list of grouped items into the menu
+
+        If each item is a tuple in the form (text of the item, group name) the
+        items will be grouped into sub-menus.  The menu will be structured so
+        that each group name will appear as a submenu of the menu item with
+        the items in each group appearing in the order appearing in the list.
+        """
+        order = []
+        found = {}
+        for name, group in items:
+            if group not in found:
+                order.append(group)
+                found[group] = (wx.Menu(), 0)
+            child, i = found[group]
+            self._insert(child, i, name)
+            i += 1
+            found[group] = (child, i)
+        for group in order:
+            child, dum = found[group]
+            self._insertMenu(menu, pos, child, group, is_toplevel)
+            pos += 1
 
     def _insert(self,menu,pos,name,is_toplevel=False):
         id = self.cache.getNewId()
