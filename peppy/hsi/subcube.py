@@ -166,23 +166,3 @@ class SubCube(HSI.Cube):
         return -1
 
 HSI.HyperspectralFileFormat.addDefaultHandler(SubDataset)
-
-
-if __name__ == "__main__":
-    from optparse import OptionParser
-    usage="usage: %prog [files...]"
-    parser=OptionParser(usage=usage)
-    (options, args) = parser.parse_args()
-    print options
-
-    if args:
-        for filename in args:
-            GDALDataset.debug=True
-            h=cube.loadHeader(filename)
-            print h
-            cube=h.getCube()
-            print cube
-            r=cube.getBand(0)
-            print r
-    else:
-        print parser.usage
