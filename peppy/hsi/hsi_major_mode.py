@@ -974,7 +974,7 @@ class SpatialSubset(HSIActionMixin, SelectAction):
     testcube = 1
     
     def isEnabled(self):
-        if self.mode.selector.__class__ == RubberBand:
+        if self.mode.cubeview.__class__ == CubeView and self.mode.selector.__class__ == RubberBand:
             x, y, w, h = self.mode.selector.getSelectedBox()
             return w > 1 and h > 1
         return False
@@ -1115,7 +1115,7 @@ class HSIMode(BitmapScroller, MajorMode):
                 plotproxy.setupAxes()
 
     def getPopupActions(self, evt, x, y):
-        return [CubeViewAction, ShowPixelValues, BandSliderUpdates]
+        return [CubeViewAction, ShowPixelValues, BandSliderUpdates, SpatialSubset]
     
     def showInitialPosition(self, url, options=None):
         if options is None:
