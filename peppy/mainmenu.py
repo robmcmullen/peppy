@@ -585,13 +585,18 @@ class Cut(STCModificationAction):
     def action(self, index=-1, multiplier=1):
         return self.mode.Cut()
 
-class Copy(STCModificationAction):
+class Copy(BufferBusyActionMixin, SelectAction):
     alias = "copy-primary-selection"
     name = "Copy"
     tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
     key_bindings = {'win': "C-C", 'mac': "C-C", 'emacs': "M-W"}
+    key_needs_focus = True
+    
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'CanCopy')
 
     def isActionAvailable(self):
         return self.mode.CanCopy()
