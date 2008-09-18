@@ -16,16 +16,36 @@ dependencies on other parts of peppy.
 """
 
 import os, weakref, time
+from cStringIO import StringIO
 
 import wx
 from wx.lib import buttons
 from wx.lib import imageutils
 from wx.lib.pubsub import Publisher
+import wx.gizmos
 
 from peppy.lib.iconstorage import *
 
 if not '_' in dir():
     _ = unicode
+
+
+class TreeListCtrl(wx.gizmos.TreeListCtrl):
+    def getText(self, parent=None, cookie=None, fh=None, indent=""):
+        if parent is None:
+            fh = StringIO()
+            parent = self.GetRootItem()
+        (child, cookie) = self.GetFirstChild(parent)
+
+        while child.IsOk():
+            text = "\t".join([self.GetItemText(child, i) for i in range(self.GetColumnCount())])
+            fh.write("%s%s%s" % (indent, text, os.linesep))
+            if self.ItemHasChildren(child) and self.IsExpanded(child):
+                self.getText(child, cookie, fh, indent + "  ")
+            (child, cookie) = self.GetNextChild(parent, cookie)
+        
+        if not indent:
+            return fh.getvalue()
 
 
 class StatusBarButton(wx.lib.buttons.GenBitmapButton):
