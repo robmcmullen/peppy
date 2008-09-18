@@ -1276,10 +1276,13 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
         lo = min([min(line.points[:,1]) for line in lines])
         hi = max([max(line.points[:,1]) for line in lines])
         if lo == hi:
-            lo = lo / 2
-            hi = lo * 3
+            if lo == 0.0:
+                hi = 1.0
+            else:
+                lo = lo / 2
+                hi = lo * 3
         self.yaxis=(float(lo), float(hi))
-        # dprint("yaxis=%s" % self.yaxis)
+        #dprint("yaxis=%s" % str(self.yaxis))
         self.updateListenerExtrema()
 
 
