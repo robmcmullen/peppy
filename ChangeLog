@@ -1,8 +1,22 @@
-2008-XX-XX  Rob McMullen  <robm@users.sourceforge.net>
+2008-09-16  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.7.5.4 update to "Manny Being Manny"
+	* modified autocomplete minibuffer to allow item not in drop down list
+	* improved rendering performance of autocomplete minibuffer
+	* added Recent Projects menu that lists recent files opened by project
+
+2008-09-12  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.5.3 update to "Manny Being Manny"
+	* tab now reindents a region
+	* fixed bugs in tab size and tabify/untabify calculations
+	* removed error message when duplicate keybinding is user specified
+	* fixed keybinding specification to be case-insensitive
 	* removed hsi/_utils C extension because the new numpy histogram stuff
 	is fast enough
+	* added spectral angle/euclidean distance and other spectral comparison
+	routines
+	* added image export to save a hyperspectral image view as png or jpg
 
 2008-09-01  Rob McMullen  <robm@users.sourceforge.net>
 

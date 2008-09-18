@@ -1343,7 +1343,7 @@ class PrefsProxy(debugmixin):
                 #assert self.dprint("checking %s for %s in user dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
                     if klass not in GlobalPrefs.convert_already_seen:
-                        dprint("warning: GlobalPrefs[%s] not converted yet." % klass)
+                        self.dprint("warning: GlobalPrefs[%s] not converted yet." % klass)
                         GlobalPrefs.convertSection(klass)
                         d = GlobalPrefs.user
                     return d[klass][name]
