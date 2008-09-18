@@ -575,6 +575,10 @@ class MMapCubeReader(CubeReader):
         view = slice.view(cube.data_type)
         self.raw = view.newbyteorder(byteordertext[cube.byte_order])
     
+    def getRaw(self):
+        """Return the raw numpy array"""
+        return self.raw
+    
     def save(self, url):
         if self.mmap:
             self.mmap.flush()
@@ -1148,6 +1152,37 @@ class Cube(debugmixin):
         else:
             return self.bbl
     
+    def isFasterFocalPlane(self):
+        return self.interleave in ["bip", "bil"]
+    
+    def isFasterBand(self):
+        return self.interleave in ["bsq"]
+    
+    def iterFocalPlanes(self):
+        """Iterate over all focal planes.
+        
+        Note that this will be slow when the cube is in BSQ format
+        """
+        for i in range(self.lines):
+            fp = self.getFocalPlaneRaw(i)
+            yield fp
+    
+    def iterBands(self):
+        """Iterate over all bands.
+        
+        Note that this will be slow when the cube is in BIL format, and
+        extremely slow when the cube is BIP.
+        """
+        for i in range(self.bands):
+            band = self.getBandRaw(i)
+            yield band
+    
+    def getNumpyArray(self):
+        """Get a pointer to the raw numpy array if it's capable"""
+        if hasattr(self.cube_io, 'getRaw'):
+            return self.cube_io.getRaw()
+        raise TypeError("Cube is not using numpy to store its data")
+    
     def iterRawBIP(self):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
@@ -1281,6 +1316,37 @@ def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByt
             raw = numpy.zeros((samples*lines*bands), dtype=datatype)
     else:
         raw = None
+    cube.cube_io = cube_io_cls(cube, array=raw)
+    cube.verifyAttributes()
+    return cube
+
+def createCubeLike(other, interleave=None, lines=None, samples=None, bands=None, datatype=None, byteorder=None, data=None):
+    if interleave is None:
+        interleave = other.interleave
+    cube = newCube(interleave, None)
+    if samples is None:
+        cube.samples = other.samples
+    else:
+        cube.samples = samples
+    if lines is None:
+        cube.lines = other.lines
+    else:
+        cube.lines = lines
+    if bands is None:
+        cube.bands = other.bands
+    else:
+        cube.bands = bands
+    if datatype is None:
+        datatype = other.data_type
+    if byteorder is None:
+        byteorder = other.byte_order
+    cube.initialize(datatype, byteorder)
+    
+    cube_io_cls = getMMapCubeReader(cube, check_size=False)
+    if data:
+        raw = numpy.frombuffer(data, datatype)
+    else:
+        raw = numpy.zeros((cube.samples*cube.lines*cube.bands), dtype=datatype)
     cube.cube_io = cube_io_cls(cube, array=raw)
     cube.verifyAttributes()
     return cube

@@ -72,6 +72,7 @@ class HSIPlugin(IPeppyPlugin):
                         
                         peppy.hsi.hsi_major_mode.TestSubset,
                         peppy.hsi.hsi_major_mode.SpatialSubset,
+                        peppy.hsi.hsi_major_mode.FocalPlaneAverage,
                         
                         peppy.hsi.hsi_major_mode.ExportAsENVI,
                         peppy.hsi.hsi_major_mode.ExportAsImage,

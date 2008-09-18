@@ -969,7 +969,7 @@ class TestSubset(HSIActionMixin, SelectAction):
 
 class SpatialSubset(HSIActionMixin, SelectAction):
     name = "Spatial Subset"
-    default_menu = ("Edit", 800)
+    default_menu = ("Tools", -200)
     
     testcube = 1
     
@@ -996,6 +996,59 @@ class SpatialSubset(HSIActionMixin, SelectAction):
         # file system
         fh.close()
         self.frame.open(name)
+
+
+class FocalPlaneAverage(HSIActionMixin, SelectAction):
+    """Average all focal planes down to a single focal plane.
+    
+    """
+    name = "Average Focal Planes"
+    default_menu = ("Tools", -100)
+    
+    testcube = 1
+    
+    def getTempName(self):
+        name = "dataset:focal_plane_average%d" % self.__class__.testcube
+        self.__class__.testcube += 1
+        return name
+    
+    def action(self, index=-1, multiplier=1):
+        cube = self.mode.cube
+        name = self.getTempName()
+        fh = vfs.make_file(name)
+        avg = createCubeLike(cube, lines=1, interleave='bip')
+        data = avg.getNumpyArray()
+        #dprint("%d,%d,%d: %s" %(avg.lines, avg.samples, avg.bands, data.shape))
+        if cube.isFasterFocalPlane():
+            self.mode.status_info.startProgress("Averaging...", cube.lines, delay=1.0)
+            temp = numpy.zeros((avg.bands, avg.samples), dtype=numpy.float32)
+            line = 0
+            for plane in cube.iterFocalPlanes():
+                temp += plane
+                line += 1
+                self.mode.status_info.updateProgress(line)
+            temp /= cube.lines
+            data[0,:,:] = temp.T
+            self.mode.status_info.stopProgress("Averaged %s" % cube.url)
+        else:
+            self.mode.status_info.startProgress("Averaging...", cube.bands, delay=1.0)
+            band = 0
+            for plane in cube.iterBands():
+                a = numpy.average(plane, axis=0)
+                #dprint("band=%d: plane=%s a=%s" % (band, str(plane.shape), str(a.shape)))
+                data[0,:,band] = a
+                band += 1
+                self.mode.status_info.updateProgress(band)
+            self.mode.status_info.stopProgress("Averaged %s" % cube.url)
+            
+        fh.setCube(avg)
+        # must close file handle or it won't be registered with the DatasetFS
+        # file system
+        fh.close()
+        options = {
+            'view': 'focalplane',
+            }
+        self.frame.open(name, options=options)
 
 
 class HSIMode(BitmapScroller, MajorMode):
