@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os,sys,re,os.path,time
+import os,sys,re,os.path,time, subprocess
 from cStringIO import StringIO
 from datetime import date
 from optparse import OptionParser
@@ -101,6 +101,27 @@ def findLatestInArchive():
                 filename=name
     print version, date.fromtimestamp(timestamp)
     return version, date.fromtimestamp(timestamp)
+
+def findLatestInGit():
+    version = ""
+    tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
+    for tag in tags.splitlines():
+        match = re.match(r'([0-9]+\.[0-9]+\.[0-9]+)$', tag)
+        if match:
+            found = match.group(1)
+            if found > version:
+                version = found
+            print "found %s, latest = %s" % (found, version)
+    return version
+
+def getCurrentGitPatchlevel():
+    version = findLatestInGit()
+    text = subprocess.Popen(["git-rev-list", "%s..HEAD" % version], stdout=subprocess.PIPE).communicate()[0]
+    md5s = text.splitlines()
+    patchlevel = len(md5s)
+    version = "%s.%d" % (version, patchlevel)
+    print version
+    return version
 
 def setnamespace(mil=False):
     if module:
@@ -241,6 +262,7 @@ if __name__=='__main__':
     
     findChangeLogVersion()
     findLatestInArchive()
+    getCurrentGitPatchlevel()
     sys.exit()
 
     if options.module:
