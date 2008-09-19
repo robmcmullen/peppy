@@ -105,27 +105,17 @@ eggs:
 
 distdir: eggs
 	./make-changelog.py -m peppy
+	./make-doc.py -m peppy -o README README.pre.in
+	./make-doc.py -m peppy -o INSTALL INSTALL.pre.in
 	-rm -rf $(distdir)
-	mkdir $(distdir)
-	-chmod 777 $(distdir)
-	tar cf - $(DISTFILES) | (cd $(distdir); tar xf -)
+	python setup.py sdist -k
 	chmod 644 $(distdir)/tests/*.py
-	./make-doc.py -m peppy -o $(distdir)/README README.pre.in
-	./make-doc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
-	cp setup.py $(distdir)
 	
-	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
-	cp peppy/i18n/*.py $(distdir)/peppy/i18n
-	
-	mkdir $(distdir)/plugins
+	mkdir -p $(distdir)/plugins
 	cp ./plugins/build/*.egg $(distdir)/plugins
 	
 	cp win-executable.nsi $(distdir)
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
-	
-	mkdir $(distdir)/scripts
-	cp $(distdir)/$(APPMAIN) $(distdir)/$(SCRIPTMAIN)
-	cp $(WINBATCH) $(distdir)/scripts
 
 nsis:
 	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in

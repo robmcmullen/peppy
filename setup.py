@@ -5,8 +5,12 @@
 # packaged module itself, so this file shouldn't have to be changed
 # much.
 
-import os,sys,distutils, glob
-from distutils.core import setup, Extension
+import os, sys, distutils, glob, zlib
+from cStringIO import StringIO
+from distutils.core import setup, Extension, Command
+from distutils.command.build_py import build_py as _build_py
+from distutils import util
+platform = util.get_platform()
 
 if sys.version < '2.5':
     raise SystemExit('Sorry, peppy requires at least Python 2.5.')
@@ -16,6 +20,100 @@ prog = 'peppy'
 module = __import__(prog)
 
 version = module.__version__
+
+
+
+# crunch_data was removed from img2py as of wxPython 2.8.8
+def crunch_data(data, compressed):
+    # compress it?
+    if compressed:
+        data = zlib.compress(data, 9)
+
+    # convert to a printable format, so it can be in a Python source file
+    data = repr(data)
+
+    # This next bit is borrowed from PIL.  It is used to wrap the text intelligently.
+    fp = StringIO()
+    data += " "  # buffer for the +1 test
+    c = i = 0
+    word = ""
+    octdigits = "01234567"
+    hexdigits = "0123456789abcdef"
+    while i < len(data):
+        if data[i] != "\\":
+            word = data[i]
+            i += 1
+        else:
+            if data[i+1] in octdigits:
+                for n in xrange(2, 5):
+                    if data[i+n] not in octdigits:
+                        break
+                word = data[i:i+n]
+                i += n
+            elif data[i+1] == 'x':
+                for n in xrange(2, 5):
+                    if data[i+n] not in hexdigits:
+                        break
+                word = data[i:i+n]
+                i += n
+            else:
+                word = data[i:i+2]
+                i += 2
+
+        l = len(word)
+        if c + l >= 78-1:
+            fp.write("\\\n")
+            c = 0
+        fp.write(word)
+        c += l
+
+    # return the formatted compressed data
+    return fp.getvalue()
+
+class build_extra_peppy(_build_py):
+    def generate_printable_icon(self, filename, remove, out):
+        if filename.endswith('.py') or filename.endswith('.pyc'):
+            return
+        fh = open(filename, 'rb')
+        data = fh.read()
+        printable = crunch_data(data, False)
+        # Change all windows backslashes to forward slashes
+        if filename.startswith(remove):
+            filename = filename[len(remove):]
+        filename = filename.replace('\\', '/')
+        out.write("'%s':\n%s,\n" % (filename, printable))
+
+    def process_icons(self, path, remove, out):
+        files = glob.glob('%s/*' % path)
+        for path in files:
+            if os.path.isdir(path):
+                self.process_icons(path, remove, out)
+            else:
+                self.generate_printable_icon(path, remove, out)
+
+    def create_iconmap(self, filename="peppy/iconmap.py"):
+        print self.build_lib
+        out = StringIO()
+        out.write("""\
+from peppy.lib.iconstorage import *
+
+icondict = {
+""")
+        self.process_icons('peppy/icons', 'peppy/', out)
+        out.write("""\
+}
+
+addIconsFromDict(icondict)
+""")
+        pathname = os.path.join(self.build_lib, filename)
+        fh = open(pathname, 'wb')
+        fh.write(out.getvalue())
+        print("created %s" % pathname)
+        
+    def build_package_data(self):
+        self.create_iconmap()
+        _build_py.build_package_data(self)
+
 
 # Find the long description based on the doc string of the root module
 def findLongDescription():
@@ -49,24 +147,19 @@ def findPackages(name):
             if mod not in packages:
                 packages.append(mod)
     os.path.walk(path, addmodules, None)
-    #print "packages = %s" % packages
+    print "packages = %s" % packages
     return packages
 packages = findPackages(prog)
 
 
 # Create the list of scripts to be installed in /usr/bin
-scripts = ['scripts/peppy']
-from distutils import util
-if util.get_platform()[:3] == 'win':
-    # or if we're on windows, use batch files instead
-    scripts = [script + '.bat' for script in scripts]
+scripts = ['peppy.py', 'peppy.bat']
 
 
 # Create the data files for Editra's styling stuff
 data_files = [("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")),
               ("peppy/editra/tests", glob.glob("peppy/editra/tests/*")),
               ("peppy/editra/syntax", glob.glob("peppy/editra/syntax/*.*"))]
-
 
 # Support for bundling the application with py2exe
 try:
@@ -130,7 +223,8 @@ manifestVersion="1.0">
 """
 
 
-setup(name = prog,
+setup(cmdclass={'build_py': build_extra_peppy,},
+      name = prog,
       version = version,
       description = module.__description__,
       long_description = long_description,
@@ -143,6 +237,11 @@ setup(name = prog,
       platforms = 'any',
       scripts = scripts,
       packages = packages,
+      package_data = {
+          'peppy.plugins': ['*.peppy-plugin' ],
+          'peppy.hsi': ['*.peppy-plugin' ],
+          'peppy.editra': ['styles/*.ess', 'tests/*'],
+          },
 
       # FIXME: the excludes option still doesn't work.  py2exe still
       # picks up a bunch of unnecessary stuff that I'm trying to get

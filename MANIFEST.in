@@ -1,0 +1,15 @@
+include AUTHORS ChangeLog FAQ INSTALL LICENSE.* NEWS README TODO MANIFEST.in
+recursive-include docs *
+recursive-include tests *
+recursive-include manual *
+recursive-include peppy/editra/styles *
+recursive-include peppy/editra/tests *
+recursive-include peppy/editra/syntax *
+global-include *.peppy-plugin
+recursive-include peppy/icons *
+prune manual/_build
+recursive-include plugins *
+prune plugins/build/*
+prune plugins/*/build/*
+prune plugins/.git
+prune peppy-*
