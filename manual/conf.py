@@ -38,13 +38,14 @@ master_doc = 'index'
 project = 'peppy'
 copyright = '2008, Rob McMullen'
 
+import peppy
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = 'svn-devel'
+version = peppy.__version__
 # The full version, including alpha/beta/rc tags.
-release = 'svn-devel'
+release = peppy.__version__
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:

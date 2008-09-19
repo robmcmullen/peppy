@@ -13,8 +13,7 @@ TAROPTS = --exclude=.git --exclude=.svn --exclude='*.pyc' --exclude='*~'
 COMPRESS = bzip2 -f
 
 PACKAGE := peppy
-VERSION_CODENAME := $(shell grep "Released peppy-" ChangeLog|head -n1|cut -d '"' -f 2)
-VERSION := $(shell grep "Released peppy-" ChangeLog|head -n1|cut -d '-' -f 2|cut -d ' ' -f 1)
+VERSION := $(shell python make-changelog.py  --version)
 
 EPYDOC = epydoc -v -v -v --no-sourcecode --debug
 
@@ -37,7 +36,7 @@ DISTFILES := AUTHORS ChangeLog docs FAQ INSTALL LICENSE.* NEWS README TODO peppy
 .SUFFIXES:      .html.in .pre.in .html
 
 .html.in.html: web/template.html.in web/mainmenu.html.in
-	./make-doc.py -m peppy -o $*.html -k codename "$(VERSION_CODENAME)" -n mainMenu web/mainmenu.html.in -n htmlBody $*.html.in -t web/template.html.in
+	./make-doc.py -m peppy -o $*.html -n mainMenu web/mainmenu.html.in -n htmlBody $*.html.in -t web/template.html.in
 
 .pre.in.html: web/template.html.in web/mainmenu.html.in
 	./make-doc.py -m peppy -o $*.html -n mainMenu web/mainmenu.html.in -n preBody $*.pre.in -t web/template.html.in
@@ -105,6 +104,7 @@ eggs:
 	./plugins/egg-utils.py -d ./plugins/build egg
 
 distdir: eggs
+	./make-changelog.py -m peppy
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
@@ -113,10 +113,6 @@ distdir: eggs
 	./make-doc.py -m peppy -o $(distdir)/README README.pre.in
 	./make-doc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
 	./make-doc.py -m peppy -o $(distdir)/setup.py setup.py.in
-	rm $(distdir)/$(DISTMAIN)
-	./make-doc.py -m peppy -d -o $(distdir)/$(DISTMAIN).tmp $(DISTMAIN)
-	sed -e "s/svn-devel/$(VERSION)/" -e "s/svn-codename/$(VERSION_CODENAME)/" $(distdir)/$(DISTMAIN).tmp > $(distdir)/$(DISTMAIN)
-	rm $(distdir)/$(DISTMAIN).tmp
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	cp peppy/i18n/*.py $(distdir)/peppy/i18n

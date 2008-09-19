@@ -29,24 +29,6 @@ namespace={
     'preBody':'',
     }
 
-def findChangeLogVersion():
-    fh=open("ChangeLog")
-    release_date=date.today().strftime("%d %B %Y")
-    version="0.0.0"
-    for line in fh:
-        match=re.match('(\d+-\d+-\d+).*',line)
-        if match:
-            print 'found date %s' % match.group(1)
-            release_date=date.fromtimestamp(time.mktime(time.strptime(match.group(1),'%Y-%m-%d'))).strftime('%d %B %Y')
-        match=re.match('\s+\*\s*[Rr]eleased peppy-([\d\.]+)',line)
-        if match:
-            print 'found version %s' % match.group(1)
-            version=match.group(1)
-            break
-    namespace['release_date']=release_date
-    namespace['version']=version
-    #print namespace
-
 def findLongDescription():
     # skip the opening one-line description and grab the first paragraph
     # out of the module's docstring to use as the long description.
@@ -82,33 +64,12 @@ def findPackages(mil=False):
         packages.remove('peppy.hsi.mil')
     namespace['packages'] = str(packages)
 
-def findlatest():
-    files=os.listdir('archive')
-    timestamp=0
-    filename=None
-    for name in files:
-        mtime=os.path.getmtime(os.path.join('archive',name))
-        if mtime>timestamp:
-            timestamp=mtime
-            filename=name
-    if timestamp>0:
-        namespace['release_date']=date.fromtimestamp(timestamp).strftime("%d %B %Y")
-        namespace['release_file']=filename
-        match=re.search(r'-([0-9]+\.[0-9]+(\.[0-9]+([ab][0-9]+)?))',filename)
-        if match:
-            namespace['release_version']=match.group(1)
-    else:
-        namespace['release_date']='... er, soon'
-
-    if namespace['release_version']:
-        namespace['version']=namespace['release_version']
-    else:
-        namespace['version']=namespace['cvs_version']
-
 def setnamespace(mil=False):
     if module:
         defaults={
             'prog':'__name__',
+            'version': '__version__',
+            'codename': '__codename__',
             'author':'__author__',
             'author_email':'__author_email__',
             'url':'__url__',
@@ -124,8 +85,6 @@ def setnamespace(mil=False):
                 namespace[key]=getattr(module, val)
             # print "%s=%s" % (key,val)
     
-    # findlatest()
-    findChangeLogVersion()
     findLongDescription()
     findPackages(mil)
     

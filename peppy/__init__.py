@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """peppy - (ap)Proximated (X)Emacs Powered by Python.
 
 An experiment using the modern software development process -- this is
@@ -75,18 +74,12 @@ The virtual filesystem is extensible, but it's currently beyond the scope of
 this documentation.  If you're interested, you can see the L{TarFS} example to
 see how I implemented a pseudo-filesystem that allows reading individual files
 from within tar archives without decompressing the whole file first.
-
-
-@author: $author
-@version: $version
 """
 
 # setup.py requires that these be defined, and the OnceAndOnlyOnce
 # principle is used here.  This is the only place where these values
 # are defined in the source distribution, and everything else that
 # needs this should grab it from here.
-__version__ = "svn-devel"
-__codename__ = "svn-codename"
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
 __url__ = "http://peppy.flipturn.org/"
@@ -94,3 +87,13 @@ __download_url__ = "http://peppy.flipturn.org/archive/"
 __description__ = "(ap)Proximated (X)Emacs Powered by Python"
 __keywords__ = "text editor, wxwindows, scintilla"
 __license__ = "GPL"
+
+# The real version number is maintained in a file that's under version control
+# so I don't have to keep updating and checking in the file
+try:
+    import _peppy_version
+    __version__ = _peppy_version.version
+    __codename__ = _peppy_version.codename
+except ImportError:
+    __version__ = "svn-devel"
+    __codename__ = "svn-codename"
