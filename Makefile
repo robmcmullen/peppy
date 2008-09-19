@@ -112,7 +112,7 @@ distdir: eggs
 	chmod 644 $(distdir)/tests/*.py
 	./make-doc.py -m peppy -o $(distdir)/README README.pre.in
 	./make-doc.py -m peppy -o $(distdir)/INSTALL INSTALL.pre.in
-	./make-doc.py -m peppy -o $(distdir)/setup.py setup.py.in
+	cp setup.py $(distdir)
 	
 	./make-icon-data.py -o $(distdir)/peppy/iconmap.py
 	cp peppy/i18n/*.py $(distdir)/peppy/i18n
