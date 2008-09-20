@@ -374,6 +374,17 @@ class OpenDialog(SelectAction):
         self.frame.open(url)
 
 
+class Properties(SelectAction):
+    """Display properties of the currently open document"""
+    name = "Properties"
+    default_menu = ("File", -990)
+    
+    def action(self, index=-1, multiplier=1):
+        pairs = self.mode.getProperties()
+        text = "\n".join("%s: %s" % (k,v) for k,v in pairs) + "\n"
+        Publisher().sendMessage('peppy.log.info', text)
+
+
 class Exit(SelectAction):
     alias = "exit-peppy-to-return-again-soon"
     name = "E&xit"
@@ -388,6 +399,7 @@ class Exit(SelectAction):
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()
+
 
 class CloseBuffer(SelectAction):
     """Delete the current document from memory"""
@@ -953,7 +965,7 @@ class MainMenu(IPeppyPlugin):
         return [NewTab, New,
                 OpenFileGUI, OpenFileNewWindowGUI, OpenFile, OpenURL,
                 Save, SaveAs, SaveAsGUI, SaveURL, CloseBuffer, Revert,
-                Exit,
+                Properties, Exit,
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 

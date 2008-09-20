@@ -148,6 +148,13 @@ class HSIMode(BitmapScroller, MajorMode):
             self.Update()
         self.updateInfo()
         self.idle_update_menu = True
+    
+    def getProperties(self):
+        pairs = MajorMode.getProperties(self)
+        msg = self.getWelcomeMessage()
+        pairs.append(("Format", msg))
+        self.setStatusText(msg)
+        return pairs
 
     def getWelcomeMessage(self):
         if self.cube.byte_order == HSI.BigEndian:

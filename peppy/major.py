@@ -36,6 +36,7 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 
+import peppy.vfs as vfs
 from peppy.actions import *
 from peppy.menu import *
 from peppy.stcbase import *
@@ -608,6 +609,22 @@ class MajorMode(ClassPrefs, debugmixin):
 
     def getWelcomeMessage(self):
         return "%s major mode" % self.keyword
+    
+    def getProperties(self):
+        """Return a list of properties about the currently open file and any
+        mode-specific info desired.
+        
+        @return: list of (name, value) pairs
+        """
+        lines = []
+        lines.append(("URL", str(self.buffer.url)))
+        lines.append(("File Size", vfs.get_size(self.buffer.url)))
+        lines.append(("Read-only", self.buffer.readonly))
+        lines.append(("Major Mode", self.keyword))
+        if self.buffer.defaultmode != self.__class__:
+            lines.append(("Default Major Mode", self.buffer.defaultmode.keyword))
+        self.setStatusText(str(self.buffer.url))
+        return lines
     
     def createWindowPostHook(self):
         """User hook to add resources after the edit window is created.
