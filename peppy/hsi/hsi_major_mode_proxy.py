@@ -11,27 +11,36 @@ from peppy.hsi.loader import *
 class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
-    def attemptOpen(self, buffer, url):
-        assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
+    def getHSIModeClass(self):
+        """Attempt to import the HSI mode and initialize any needed resources
+        """
         try:
             import peppy.hsi.hsi_major_mode
-            format = HyperspectralFileFormat.identify(url)
-            if format:
-                assert self.dprint("found %s" % repr(format))
-                return (None, [peppy.hsi.hsi_major_mode.HSIMode])
+            mode = peppy.hsi.hsi_major_mode.HSIMode
         except Exception, e:
-                dprint("FAILED Loading hsi_major_mode")
-                import traceback
-                error = traceback.format_exc()
-                dprint(error)
-                raise
+            dprint("FAILED Loading hsi_major_mode")
+            import traceback
+            error = traceback.format_exc()
+            dprint(error)
+            raise
+        import peppy.hsi.common
+        peppy.hsi.common.scipy_module()
+        
+        return mode
+    
+    def attemptOpen(self, buffer, url):
+        assert self.dprint("Trying to open url: %s" % repr(unicode(url)))
+        mode = self.getHSIModeClass()
+        format = HyperspectralFileFormat.identify(url)
+        if format:
+            assert self.dprint("found %s" % repr(format))
+            return (None, [peppy.hsi.hsi_major_mode.HSIMode])
         return (None, [])
     
     def getCompatibleMajorModes(self, stc_class):
         if stc_class == HyperspectralSTC:
             try:
-                import peppy.hsi.hsi_major_mode
-                return [peppy.hsi.hsi_major_mode.HSIMode]
+                return [self.getHSIModeClass()]
             except:
                 dprint("FAILED Loading hsi_major_mode")
                 import traceback
@@ -56,27 +65,29 @@ class HSIPlugin(IPeppyPlugin):
         assert self.dprint("Checking for HSI mode %s" % mode)
         if mode.keyword == "HSI":
             try:
-                import peppy.hsi.hsi_major_mode
-                return [peppy.hsi.hsi_major_mode.PrevBand,
-                        peppy.hsi.hsi_major_mode.NextBand,
-                        peppy.hsi.hsi_major_mode.GotoBand,
-                        peppy.hsi.hsi_major_mode.BandSlider,
-                        peppy.hsi.hsi_major_mode.BandSliderUpdates,
-                        peppy.hsi.hsi_major_mode.ContrastFilterAction,
-                        peppy.hsi.hsi_major_mode.MedianFilterAction,
-                        peppy.hsi.hsi_major_mode.ClippingFilterAction,
-                        peppy.hsi.hsi_major_mode.SubtractBandAction,
-                        peppy.hsi.hsi_major_mode.SwapEndianAction,
-                        peppy.hsi.hsi_major_mode.CubeViewAction,
-                        peppy.hsi.hsi_major_mode.ShowPixelValues,
+                import peppy.hsi.hsi_menu
+                import peppy.hsi.filter
+                return [peppy.hsi.hsi_menu.PrevBand,
+                        peppy.hsi.hsi_menu.NextBand,
+                        peppy.hsi.hsi_menu.GotoBand,
+                        peppy.hsi.hsi_menu.BandSlider,
+                        peppy.hsi.hsi_menu.BandSliderUpdates,
+                        peppy.hsi.filter.ContrastFilterAction,
+                        peppy.hsi.filter.MedianFilterAction,
+                        peppy.hsi.filter.ClippingFilterAction,
+                        peppy.hsi.filter.SubtractBandAction,
+                        peppy.hsi.hsi_menu.SwapEndianAction,
+                        peppy.hsi.hsi_menu.CubeViewAction,
+                        peppy.hsi.hsi_menu.ShowPixelValues,
                         
-                        peppy.hsi.hsi_major_mode.TestSubset,
-                        peppy.hsi.hsi_major_mode.SpatialSubset,
-                        peppy.hsi.hsi_major_mode.FocalPlaneAverage,
+                        peppy.hsi.hsi_menu.TestSubset,
+                        peppy.hsi.hsi_menu.SpatialSubset,
+                        peppy.hsi.hsi_menu.FocalPlaneAverage,
                         
-                        peppy.hsi.hsi_major_mode.ExportAsENVI,
-                        peppy.hsi.hsi_major_mode.ExportAsImage,
+                        peppy.hsi.hsi_menu.ExportAsENVI,
+                        peppy.hsi.hsi_menu.ExportAsImage,
                         ]
-            except:
+            except Exception, e:
+                dprint(e)
                 pass
         return []
