@@ -476,7 +476,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         # amount to skip to read the next band at the same line and sample,
         # less one because the file pointer will have advanced by one due to
         # the file read
-        skip = (self.samples - 1) * self.lines * self.itemsize
+        skip = (self.lines - 1) * self.samples * self.itemsize
         progress = self.getProgressBar()
         if progress:
             progress.startProgress("Loading Focal Plane at line %d" % line, self.bands, delay=1)
@@ -500,11 +500,11 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         """Get an array of values along a line, the given sample and band"""
         s = numpy.empty((self.lines,), dtype=self.data_type)
         fh = self.fh
-        skip = ((self.lines * self.samples) * band) + sample
+        fh.seek(self.offset + (((band * self.samples * self.lines) + sample) * self.itemsize))
         
-        # amount to skip to read the next band at the same line and sample,
-        # less one because the file pointer will have advanced by one due to
-        # the file read
+        # amount to skip to read the next line at the same sample, band
+        # coordinate is one less because the file pointer will have advanced
+        # by one due to the file read
         skip = self.itemsize * (self.samples - 1)
         line = 0
         while line < self.lines:
