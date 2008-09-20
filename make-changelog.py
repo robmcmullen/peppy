@@ -41,15 +41,54 @@ def findLatestInGit(options):
             if options.verbose: print "found %s, latest = %s" % (found, version)
     return version
 
-def getCurrentGitPatchlevel(options):
-    version = findLatestInGit(options)
-    text = subprocess.Popen(["git-rev-list", "%s..HEAD" % version], stdout=subprocess.PIPE).communicate()[0]
-    md5s = text.splitlines()
-    patchlevel = len(md5s)
-    version = "%s.%d" % (version, patchlevel)
-    if options.verbose: print version
-    return version
+def findReleasesOf(tag, options):
+    base = tag + "."
+    tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
+    releases = []
+    for tag in tags.splitlines():
+        if tag.startswith(base):
+            releases.append(tag)
+    if options.verbose: print releases
+    return releases
 
+def getCurrentGitMD5s(tag, options):
+    text = subprocess.Popen(["git-rev-list", "%s..HEAD" % tag], stdout=subprocess.PIPE).communicate()[0]
+    md5s = text.splitlines()
+    return md5s
+
+def getCurrentGitPatchlevel(options):
+    tag = findLatestInGit(options)
+    md5s = getCurrentGitMD5s(tag, options)
+    patchlevel = len(md5s)
+    version = "%s.%d" % (tag, patchlevel)
+    if options.verbose: print version
+    return tag, version
+
+def getGitChangeLogSuggestions(tag, options):
+    if options.verbose: print tag
+    subtags = findReleasesOf(tag, options)
+    subtags[0:0] = [tag]
+    top = "HEAD"
+    subtags.reverse()
+    suggestions = []
+    for version in subtags:
+        suggestions.append("Released %s" % version)
+        text = subprocess.Popen(["git-log", "--pretty=format:%s", "%s..%s" % (version, top)], stdout=subprocess.PIPE).communicate()[0]
+        lines = text.splitlines()
+        print lines
+        pat = re.compile("Fixed (\#[0-9]+:\s+)?(.+)")
+        for line in lines:
+            found = pat.match(line)
+            if found:
+                if found.group(1):
+                    suggestions.append("* %s" % found.group(2))
+                else:
+                    suggestions.append("* fixed %s" % found.group(2))
+            else:
+                suggestions.append("* %s" % line)
+        
+        top = version
+    return suggestions
 
 if __name__=='__main__':
     usage="usage: %prog [-m module] [-o file] [-n variablename file] [-t template] [files...]"
@@ -65,10 +104,12 @@ if __name__=='__main__':
                       dest="codename", help="codename to use for the new release")
     parser.add_option("--version", action="store_true",
                       dest="version", help="display current version and exit")
+    parser.add_option("-f", action="store_true",
+                      dest="fixed", help="display list of bugs fixed since last major release")
     (options, args) = parser.parse_args()
 
     changelog_version, dum, codename = findChangeLogVersion(options)
-    version = getCurrentGitPatchlevel(options)
+    last_tag, version = getCurrentGitPatchlevel(options)
     if options.version:
         print version
         sys.exit()
@@ -98,3 +139,8 @@ if __name__=='__main__':
         fh = open(options.outputfile,"wb")
         fh.write(text)
         fh.close()
+    
+    if options.fixed:
+        suggestions = getGitChangeLogSuggestions(last_tag, options)
+        for line in suggestions:
+            print line
