@@ -86,6 +86,9 @@ class CubeView(debugmixin):
             self.indexes = [0]
             self.max_index = 0
     
+    def getWorkingMessage(self):
+        return "Building %dx%d bitmap..." % (self.cube.samples, self.cube.lines)
+    
     def getBand(self, index):
         raw = self.cube.getBandInPlace(index)
         if self.swap:
@@ -290,6 +293,9 @@ class FocalPlaneView(CubeView):
         if self.cube:
             self.max_index = self.cube.lines - 1
 
+    def getWorkingMessage(self):
+        return "Building %dx%d bitmap..." % (self.cube.samples, self.cube.bands)
+    
     def getCoords(self, x, y):
         """In a focal plane view, x is samples and y is the band number.  The
         line is the first element in the indexes list.

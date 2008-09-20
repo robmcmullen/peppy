@@ -138,7 +138,7 @@ class HSIMode(BitmapScroller, MajorMode):
             Cube.mmap_size_limit = 1
 
     def update(self, refresh=True):
-        self.setStatusText("Building %dx%d bitmap..." % (self.cube.samples, self.cube.lines))
+        self.setStatusText(self.cubeview.getWorkingMessage())
         self.cubeview.swapEndian(self.swap_endian)
         filter = self.filter
         self.cubeview.show(filter, self.cubefilter)

@@ -491,7 +491,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
                 progress.updateProgress(band)
             fh.seek(skip, 1)
         if progress:
-            progress.stopProgress("Loaded Focal Plate at line %d" % line)
+            progress.stopProgress("Loaded Focal Plane at line %d" % line)
         if self.swap:
             s.byteswap(True)
         return s
