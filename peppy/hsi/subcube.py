@@ -129,13 +129,13 @@ class SubCube(HSI.Cube):
         """Get an individual pixel at the specified line, sample, & band"""
         return self.parent.getPixel(self.l1 + line, self.s1 + sample, self.b1 + band)
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=False):
         """Get the slice of the data array (lines x samples) at the
         specified band.  This points to the actual in-memory array."""
         s=self.parent.getBandRaw(self.b1 + band)[self.l1:self.l2, self.s1:self.s2]
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=False):
         """Get the slice of the data array (bands x samples) at the specified
         line, which corresponds to a view of the data as the focal plane would
         see it.  This points to the actual in-memory array.
