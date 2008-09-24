@@ -52,7 +52,7 @@ you notice something that shouldn't be happening.
 <ul>
 %(authors)s
 </ul>
-<p>GPL code borrowed from the following projects:</p>
+<p>Some code has been borrowed from the following open source projects:</p>
 <ul>
 %(gpl_code)s
 </ul>
