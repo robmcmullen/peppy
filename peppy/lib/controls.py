@@ -100,6 +100,7 @@ class ModularStatusBarInfo(object):
         self.gauge_refresh_count = 0
         
         self.disable_during_progress = False
+        self.message = None
         
         self.overlays = []
         self.active_controls = []
@@ -181,7 +182,19 @@ class ModularStatusBarInfo(object):
         self.setText(self.gauge_text)
         self.parent.setWidths()
 
-    def updateProgress(self, value):
+    def updateProgress(self, value, text=None):
+        """Update the progress bar with a new value
+        
+        @param value: either a number or a list.  If it is a number, it will
+        be taken as the value of the progress bar.  If it is a list, the first
+        item in the list must be the value of the progress bar, and the second
+        item must be a text string with will be used to update the status text.
+        
+        @param text: another way to specify the optional text with which to
+        update the status string.
+        """
+        if isinstance(value, list):
+            value, text = value
         self.gauge_value = value
         do_yield = False
         update = False
@@ -203,6 +216,8 @@ class ModularStatusBarInfo(object):
                 self.parent.gauge.Pulse()
             else:
                 self.parent.gauge.SetValue(self.gauge_value)
+            if text is not None:
+                self.setText(text)
         if do_yield:
             if self.disable_during_progress:
                 wx.SafeYield(onlyIfNeeded=True)
