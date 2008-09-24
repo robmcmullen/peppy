@@ -1183,25 +1183,31 @@ class Cube(debugmixin):
             return self.cube_io.getRaw()
         raise TypeError("Cube is not using numpy to store its data")
     
-    def iterRawBIP(self):
+    def iterRawBIP(self, swap):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
             band = self.getFocalPlaneRaw(i, use_progress=False).transpose()
+            if swap:
+                band = band.byteswap(False)
             yield band.tostring()
     
-    def iterRawBIL(self):
+    def iterRawBIL(self, swap):
         # samples vary fastest, then bands, then lines
         for i in range(self.lines):
             band = self.getFocalPlaneRaw(i, use_progress=False)
+            if swap:
+                band = band.byteswap(False)
             yield band.tostring()
     
-    def iterRawBSQ(self):
+    def iterRawBSQ(self, swap):
         # samples vary fastest, then lines, then bands 
         for i in range(self.bands):
             band = self.getBandRaw(i, use_progress=False)
+            if swap:
+                band = band.byteswap(False)
             yield band.tostring()
     
-    def iterRaw(self, size, interleaveiter):
+    def iterRaw(self, size, interleaveiter, byte_order=None):
         """Iterator used to return the raw data of the cube in manageable chunks.
         
         Uses one of L{iterRawBIP}, L{iterRawBIL}, or L{iterRawBSQ} to grab the
@@ -1214,10 +1220,19 @@ class Cube(debugmixin):
         
         @param iterleaveiter: an interleave functor taking no arguments and
         yielding chunks of data at each iteration
+        
+        @param byte_order: the desired byte order of the output data
         """
         fh = StringIO()
         i = 0
-        for bytes in interleaveiter():
+        if byte_order is None:
+            byte_order = self.byte_order
+        elif byte_order == '<':
+            byte_order = LittleEndian
+        elif byte_order == '>':
+            byte_order = BigEndian
+        swap = bool(byte_order != nativeByteOrder)
+        for bytes in interleaveiter(swap):
             count = len(bytes)
             if (i + count) < size:
                 fh.write(bytes)
@@ -1240,7 +1255,7 @@ class Cube(debugmixin):
         if len(leftover) > 0:
             yield leftover
     
-    def getRawIterator(self, block_size, interleave=None):
+    def getRawIterator(self, block_size, interleave=None, byte_order=None):
         """Get an iterator to return the raw data of the cube in manageable
         chunks.
         
@@ -1260,7 +1275,7 @@ class Cube(debugmixin):
                 'bsq': self.iterRawBSQ,
                 }.get(interleave.lower(), None)
         if iter:
-            return self.iterRaw(block_size, iter)
+            return self.iterRaw(block_size, iter, byte_order)
         return None
     
     def writeRawData(self, fh, options=None, progress=None, block_size=100000):
