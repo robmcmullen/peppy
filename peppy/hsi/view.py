@@ -253,7 +253,7 @@ class CubeView(debugmixin):
     def getCurrentPlanes(self):
         return self.planes
 
-    def show(self, colorfilter, progress=None):
+    def show(self, colormapper, progress=None):
         if not self.cube: return
 
         refresh=False
@@ -270,7 +270,7 @@ class CubeView(debugmixin):
             self.loadBands()
         
         self.processFilters(progress)
-        self.rgb = colorfilter.getRGB(self.height, self.width, self.planes)
+        self.rgb = colormapper.getRGB(self.height, self.width, self.planes)
         image=wx.ImageFromData(self.width, self.height, self.rgb.tostring())
         self.bitmap=wx.BitmapFromImage(image)
         # wx.StaticBitmap(self, -1, self.bitmap, (0,0), (self.cube.samples,self.cube.lines))

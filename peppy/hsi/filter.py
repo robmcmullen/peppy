@@ -22,7 +22,7 @@ import peppy.hsi.colors as colors
 import numpy
 
 
-class RGBFilter(debugmixin):
+class RGBMapper(debugmixin):
     def __init__(self):
         self.rgb=None
         
@@ -54,7 +54,7 @@ class RGBFilter(debugmixin):
         
         return self.rgb
 
-class PaletteFilter(RGBFilter):
+class PaletteFilter(RGBMapper):
     def __init__(self, name=None):
         self.rgb = None
         self.colormap_name = name
@@ -83,7 +83,7 @@ class PaletteFilter(RGBFilter):
         # plane, the standard RGB method is used
         count = len(planes)
         if count > 1 or self.colormap is None:
-            return RGBFilter.getRGB(lines, samples, planes)
+            return RGBMapper.getRGB(lines, samples, planes)
         
         self.rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
         assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, planes[0].shape))
@@ -98,18 +98,43 @@ class PaletteFilter(RGBFilter):
         
         return self.rgb
 
-class ContrastFilter(RGBFilter):
+
+class GeneralFilter(debugmixin):
+    def __init__(self, pos=0):
+        self.pos = pos
+        
+    def getPlane(self,raw):
+        return raw
+    
+    def getXProfile(self, y, raw):
+        """Get the x profile at a constant y.
+        
+        Not all filters will be appropriate for use with profile plots, but if
+        so, this is the hook to provide the modification.
+        """
+        return raw
+
+    def getYProfile(self, x, raw):
+        """Get the y profile at a constant x.
+        
+        Not all filters will be appropriate for use with profile plots, but if
+        so, this is the hook to provide the modification.
+        """
+        return raw
+
+
+class ContrastFilter(GeneralFilter):
     def __init__(self, stretch=0.0):
-        RGBFilter.__init__(self)
-        self.contraststretch=stretch # percentage
-        self.bins=256
+        GeneralFilter.__init__(self)
+        self.contraststretch = stretch # percentage
+        self.bins = 256
    
     def setContrast(self,stretch):
-        self.contraststretch=stretch
+        self.contraststretch = stretch
 
-    def getGrayMapping(self,raw):
-        if self.contraststretch<=0.0:
-            return self.getGray(raw)
+    def getPlane(self, raw):
+        if self.contraststretch <= 0.0:
+            return raw
         
         minval=raw.min()
         maxval=raw.max()
@@ -139,46 +164,9 @@ class ContrastFilter(RGBFilter):
             count-=h[i]
         maxscaled=minval+valrange*i/self.bins
         assert self.dprint("scaled: min=%d max=%d" % (minscaled,maxscaled))
-        if minscaled==maxscaled:
-            gray=numpy.zeros(raw.shape,numpy.uint8)
-        else:
-            gray=(raw-minscaled)*(255.0/(maxscaled-minscaled))
-            # orig=(raw-minval)*(255.0/(maxval-minval))
-            # dprint(gray[0,:])
-            # dprint(orig[0,:])
-            gray=numpy.clip(gray,0,255).astype(numpy.uint8)
+        filtered = numpy.clip(raw, minscaled, maxscaled)
+        return filtered
 
-            # histogram uses min <= val < max, so we need to use 256 as
-            # the max
-            h,bins = numpy.histogram(gray,256,range=(0,256))
-            assert self.dprint("h[255]=%d" % h[255])
-            # dprint(h)
-
-        return gray
-
-
-class GeneralFilter(debugmixin):
-    def __init__(self, pos=0):
-        self.pos = pos
-        
-    def getPlane(self,raw):
-        return raw
-    
-    def getXProfile(self, y, raw):
-        """Get the x profile at a constant y.
-        
-        Not all filters will be appropriate for use with profile plots, but if
-        so, this is the hook to provide the modification.
-        """
-        return raw
-
-    def getYProfile(self, x, raw):
-        """Get the y profile at a constant x.
-        
-        Not all filters will be appropriate for use with profile plots, but if
-        so, this is the hook to provide the modification.
-        """
-        return raw
 
 class SubtractFilter(GeneralFilter):
     """Apply a subtraction filter to the band.
@@ -334,7 +322,7 @@ class ColormapAction(HSIActionMixin, RadioAction):
 
     def getIndex(self):
         mode = self.mode
-        filt = mode.colorfilter
+        filt = mode.colormapper
         #dprint(filt)
         if hasattr(filt, 'colormap_name'):
             val = filt.colormap_name
@@ -349,10 +337,10 @@ class ColormapAction(HSIActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         if index == 0:
-            filt = RGBFilter()
+            filt = RGBMapper()
         else:
-            filt = PaletteFilter(self.items[index])
-        mode.colorfilter = filt
+            filt = PaletteMapper(self.items[index])
+        mode.colormapper = filt
         mode.update()
 
 
@@ -365,7 +353,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
 
     def getIndex(self):
         mode = self.mode
-        filt = mode.colorfilter
+        filt = mode.filter
         #dprint(filt)
         if hasattr(filt, 'contraststretch'):
             val = filt.contraststretch
@@ -385,7 +373,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         if index == 0:
-            filt = RGBFilter()
+            filt = GeneralFilter(pos=0)
         elif index == 1:
             filt = ContrastFilter(0.1)
         elif index == 2:
@@ -393,13 +381,13 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         else:
             self.setContrast(mode)
             return
-        mode.colorfilter = filt
+        mode.filter = filt
         mode.update()
 
     def processMinibuffer(self, minibuffer, mode, percentage):
         assert self.dprint("returned percentage = %f" % percentage)
         filt = ContrastFilter(percentage)
-        mode.colorfilter = filt
+        mode.filter = filt
         mode.update()
         
     def setContrast(self, mode):

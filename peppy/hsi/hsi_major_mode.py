@@ -88,7 +88,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.dataset = self.buffer.stc
         self.cube = None
         self.cubeview = CubeView(self, None)
-        self.colorfilter = RGBFilter()
+        self.colormapper = RGBMapper()
         self.swap_endian = False
         self.filter = GeneralFilter()
         
@@ -140,7 +140,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.setStatusText(self.cubeview.getWorkingMessage())
         self.cubeview.swapEndian(self.swap_endian)
         self.cubeview.setFilterOrder([self.filter])
-        self.cubeview.show(self.colorfilter)
+        self.cubeview.show(self.colormapper)
         self.setBitmap(self.cubeview.bitmap)
         self.frame.updateMenumap()
         if refresh:
