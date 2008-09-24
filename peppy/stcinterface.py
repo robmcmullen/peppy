@@ -157,6 +157,13 @@ class STCInterface(object):
         @param url: the url that was used to open the file-like object
         """
         pass
+    
+    def getProperties(self):
+        """Return a list of properties to be displayed as text to the user
+        
+        @return: list of (name, value) pairs
+        """
+        return []
 
     def showStyle(self, linenum=None):
         """Debugging routine to show the styling information on a line.

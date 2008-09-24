@@ -620,6 +620,7 @@ class MajorMode(ClassPrefs, debugmixin):
         lines.append(("URL", str(self.buffer.url)))
         lines.append(("File Size", vfs.get_size(self.buffer.url)))
         lines.append(("Read-only", self.buffer.readonly))
+        lines.extend(self.buffer.stc.getProperties())
         lines.append(("Major Mode", self.keyword))
         if self.buffer.defaultmode != self.__class__:
             lines.append(("Default Major Mode", self.buffer.defaultmode.keyword))
