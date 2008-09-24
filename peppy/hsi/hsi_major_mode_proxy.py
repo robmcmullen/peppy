@@ -8,6 +8,9 @@ from peppy.debug import *
 
 from peppy.hsi.loader import *
 
+from peppy.about import AddCopyright
+AddCopyright("Matplotlib", "http://matplotlib.sourceforge.org/", "John D. Hunter", "2003-2008", "Colormaps from")
+
 class HSIPlugin(IPeppyPlugin):
     """HSI viewer plugin to register modes and user interface.
     """
@@ -72,6 +75,7 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_menu.GotoBand,
                         peppy.hsi.hsi_menu.BandSlider,
                         peppy.hsi.hsi_menu.BandSliderUpdates,
+                        peppy.hsi.filter.ColormapAction,
                         peppy.hsi.filter.ContrastFilterAction,
                         peppy.hsi.filter.MedianFilterAction,
                         peppy.hsi.filter.GaussianFilterAction,

@@ -45,7 +45,6 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.stcinterface import *
 
-from peppy.about import SetAbout
 from peppy.lib.iconstorage import *
 from peppy.lib.bitmapscroller import *
 
@@ -189,6 +188,7 @@ class HSIMode(BitmapScroller, MajorMode):
         import peppy.hsi.view
         return [
             peppy.hsi.view.CubeViewAction,
+            peppy.hsi.filter.ColormapAction,
             peppy.hsi.hsi_menu.ShowPixelValues,
             peppy.hsi.hsi_menu.BandSliderUpdates,
             peppy.hsi.hsi_menu.SpatialSubset,

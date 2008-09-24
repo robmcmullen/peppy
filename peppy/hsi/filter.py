@@ -15,6 +15,7 @@ from peppy.actions import *
 
 from peppy.hsi.common import *
 from peppy.hsi.subcube import *
+import peppy.hsi.colors as colors
 
 # hsi mode and the plotting utilities require numpy, the check for which is
 # handled by the major mode wrapper
@@ -50,6 +51,50 @@ class RGBFilter(debugmixin):
             for i in range(count,3,1):
                 self.rgb[:,:,i] = self.getGrayMapping(planes[0])
         #dprint(rgb[0,:,0])
+        
+        return self.rgb
+
+class PaletteFilter(RGBFilter):
+    def __init__(self, name=None):
+        self.rgb = None
+        self.colormap_name = name
+        if name:
+            self.colormap = colors.getColormap(name)
+        else:
+            self.colormap = None
+        
+    def getGray(self,raw):
+        minval=raw.min()
+        maxval=raw.max()
+        valrange=maxval-minval
+        assert self.dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
+        if valrange==0.0:
+            gray=(raw-minval).astype(numpy.uint8)
+        else:
+            gray=((raw-minval)*(255.0/(maxval-minval))).astype(numpy.uint8)
+
+        return gray
+
+    def getGrayMapping(self,raw):
+        return self.getGray(raw)
+
+    def getRGB(self, lines, samples, planes):
+        # This is designed for grayscale images only; if there is more than one
+        # plane, the standard RGB method is used
+        count = len(planes)
+        if count > 1 or self.colormap is None:
+            return RGBFilter.getRGB(lines, samples, planes)
+        
+        self.rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
+        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, planes[0].shape))
+        if count > 0:
+            gray = self.getGrayMapping(planes[0])
+            
+            rgba = self.colormap(gray, bytes=True)
+            # Matplotlib returns alpha values in the colormap, so we only need
+            # the first 3 bands
+            for i in range(3):
+                self.rgb[:,:,i] = rgba[:,:,i]
         
         return self.rgb
 
@@ -277,6 +322,38 @@ class ChainFilter(GeneralFilter):
             raw = filter.getYProfile(x, raw)
         return raw
 
+
+
+class ColormapAction(HSIActionMixin, RadioAction):
+    """Color map from grayscale intensity to colors""" 
+    name = "Color Map"
+    default_menu = ("View", 601)
+
+    items = ['None']
+    items.extend(colors.getColormapNames())
+
+    def getIndex(self):
+        mode = self.mode
+        filt = mode.colorfilter
+        #dprint(filt)
+        if hasattr(filt, 'colormap_name'):
+            val = filt.colormap_name
+            return self.items.index(val)
+        else:
+            return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("index=%d" % index)
+        mode = self.mode
+        if index == 0:
+            filt = RGBFilter()
+        else:
+            filt = PaletteFilter(self.items[index])
+        mode.colorfilter = filt
+        mode.update()
 
 
 class ContrastFilterAction(HSIActionMixin, RadioAction):
