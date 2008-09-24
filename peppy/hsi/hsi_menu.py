@@ -295,18 +295,9 @@ class FocalPlaneAverage(HSIActionMixin, SelectAction):
         self.frame.open(name, options=options)
 
 
-class ScaleImageDimensions(HSIActionMixin, MinibufferAction):
-    """Create a new image that is a scaled version of the current view
-    
-    Uses the current CubeView image to create a new image that is scaled in
-    pixel dimensions.  Note that the CubeView image that is used is after all
-    the filters are applied.
-    """
-    name = "Scale Image Dimensions"
-    default_menu = ("Tools", -300)
-    
+class ScaledImageMixin(HSIActionMixin):
     minibuffer = IntMinibuffer
-    minibuffer_label = "Scale Each Pixel by:"
+    minibuffer_label = "Scale Dimensions by Integer Factor:"
 
     last_scale = 2
     testcube = 1
@@ -315,15 +306,29 @@ class ScaleImageDimensions(HSIActionMixin, MinibufferAction):
         return len(self.mode.cubeview.getCurrentPlanes()) > 0
     
     def getTempName(self):
-        name = "dataset:scaled_band%d" % self.__class__.testcube
-        self.__class__.testcube += 1
+        name = "dataset:scaled%d" % ScaledImageMixin.testcube
+        ScaledImageMixin.testcube += 1
         return name
 
+    def setLastValue(self, value):
+        self.__class__.last_scale = value
+        
     def getInitialValueHook(self):
-        return str(self.last_scale)
+        return str(self.__class__.last_scale)
 
+
+class ScaleImageDimensions(ScaledImageMixin, MinibufferAction):
+    """Create a new image that is a larger scaled version of the current view
+    
+    Uses the current CubeView image to create a new image that is scaled in
+    pixel dimensions.  Note that the CubeView image that is used is after all
+    the filters are applied.
+    """
+    name = "Scale Dimensions by Integer"
+    default_menu = ("Tools", -300)
+    
     def processMinibuffer(self, minibuffer, mode, scale):
-        self.__class__.last_scale = scale
+        self.setLastValue(scale)
         
         cube = self.mode.cube
         view = self.mode.cubeview
@@ -341,6 +346,59 @@ class ScaleImageDimensions(HSIActionMixin, MinibufferAction):
             scaled = numpy.repeat(numpy.repeat(plane, scale, axis=1), scale, axis=0)
             dprint("scaled: %s" % str(scaled.shape))
             data[band,:,:] = scaled
+            band += 1
+            
+        fh.setCube(newcube)
+        # must close file handle or it won't be registered with the DatasetFS
+        # file system
+        fh.close()
+        self.frame.open(name)
+
+
+class ReduceImageDimensions(ScaledImageMixin, MinibufferAction):
+    """Create a new image by reducing the size of the current view by an
+    integer scale factor.
+    
+    Uses the current CubeView image to create a new image that is scaled in
+    pixel dimensions.  Note that the CubeView image that is used is after all
+    the filters are applied.
+    """
+    name = "Reduce Dimensions by Integer"
+    default_menu = ("Tools", 301)
+    minibuffer_label = "Reduce Dimensions by Integer Factor:"
+
+    def processMinibuffer(self, minibuffer, mode, scale):
+        self.setLastValue(scale)
+        
+        cube = self.mode.cube
+        view = self.mode.cubeview
+        planes = view.getCurrentPlanes()
+        
+        name = self.getTempName()
+        fh = vfs.make_file(name)
+        newcube = createCubeLike(cube, samples=planes[0].shape[1] / scale,
+                                 lines=planes[0].shape[0] / scale,
+                                 bands=len(planes), interleave='bsq')
+        data = newcube.getNumpyArray()
+        dprint("%d,%d,%d: %s" % (newcube.lines, newcube.samples, newcube.bands, data.shape))
+        band = 0
+        for plane in planes:
+            # This is a slow implementation of a pixel resampling function
+            # that simply averages the pixels in a moving square of [scale
+            # x scale] pixels in the source image.  I couldn't find a quick
+            # resampling/interpolation/decimation function in numpy.
+            for sample in range(0, newcube.samples):
+                for line in range(0, newcube.lines):
+                    s1 = sample * scale
+                    s2 = s1 + scale
+                    if s2 > plane.shape[1]:
+                        s2 = plane.shape[1]
+                    l1 = line * scale
+                    l2 = l1 + scale
+                    if l2 > plane.shape[0]:
+                        l2 = plane.shape[0]
+                    avg = numpy.average(plane[l1:l2, s1:s2])
+                    data[band, line, sample] = avg
             band += 1
             
         fh.setCube(newcube)

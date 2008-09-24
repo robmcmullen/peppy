@@ -85,6 +85,7 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_menu.SpatialSubset,
                         peppy.hsi.hsi_menu.FocalPlaneAverage,
                         peppy.hsi.hsi_menu.ScaleImageDimensions,
+                        peppy.hsi.hsi_menu.ReduceImageDimensions,
                         
                         peppy.hsi.hsi_menu.ExportAsENVI,
                         peppy.hsi.hsi_menu.ExportAsImage,
