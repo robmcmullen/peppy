@@ -21,9 +21,8 @@ from peppy.hsi.subcube import *
 import numpy
 
 
-class BandFilter(debugmixin):
+class RGBFilter(debugmixin):
     def __init__(self):
-        self.planes=[]
         self.rgb=None
         
     def getGray(self,raw):
@@ -38,41 +37,32 @@ class BandFilter(debugmixin):
 
         return gray
 
-    def getPlane(self,raw):
+    def getGrayMapping(self,raw):
         return self.getGray(raw)
 
-    def getRGB(self, cubeview, filt, progress=None):
-        if not cubeview.cube: return None
-        
-        self.planes=[]
-
-        count=0
-        for band in cubeview.bands:
-            assert self.dprint("getRGB: band=%s" % str(band))
-            self.planes.append(self.getPlane(filt.getPlane(band[1])))
-            if progress: progress.Update(50+((count+1)*50)/len(cubeview.bands))
-            count+=1
-        self.rgb=numpy.zeros((cubeview.height, cubeview.width, 3),numpy.uint8)
-        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, self.planes[0].shape))
-        if count>0:
+    def getRGB(self, lines, samples, planes):
+        self.rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
+        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, planes[0].shape))
+        count = len(planes)
+        if count > 0:
             for i in range(count):
-                self.rgb[:,:,i]=self.planes[i]
+                self.rgb[:,:,i] = self.getGrayMapping(planes[i])
             for i in range(count,3,1):
-                self.rgb[:,:,i]=self.planes[0]
+                self.rgb[:,:,i] = self.getGrayMapping(planes[0])
         #dprint(rgb[0,:,0])
         
         return self.rgb
 
-class ContrastFilter(BandFilter):
+class ContrastFilter(RGBFilter):
     def __init__(self, stretch=0.0):
-        BandFilter.__init__(self)
+        RGBFilter.__init__(self)
         self.contraststretch=stretch # percentage
         self.bins=256
    
     def setContrast(self,stretch):
         self.contraststretch=stretch
 
-    def getPlane(self,raw):
+    def getGrayMapping(self,raw):
         if self.contraststretch<=0.0:
             return self.getGray(raw)
         
@@ -298,7 +288,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
 
     def getIndex(self):
         mode = self.mode
-        filt = mode.cubefilter
+        filt = mode.colorfilter
         #dprint(filt)
         if hasattr(filt, 'contraststretch'):
             val = filt.contraststretch
@@ -318,7 +308,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         assert self.dprint("index=%d" % index)
         mode = self.mode
         if index == 0:
-            filt = BandFilter()
+            filt = RGBFilter()
         elif index == 1:
             filt = ContrastFilter(0.1)
         elif index == 2:
@@ -326,13 +316,13 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
         else:
             self.setContrast(mode)
             return
-        mode.cubefilter = filt
+        mode.colorfilter = filt
         mode.update()
 
     def processMinibuffer(self, minibuffer, mode, percentage):
         assert self.dprint("returned percentage = %f" % percentage)
         filt = ContrastFilter(percentage)
-        mode.cubefilter = filt
+        mode.colorfilter = filt
         mode.update()
         
     def setContrast(self, mode):

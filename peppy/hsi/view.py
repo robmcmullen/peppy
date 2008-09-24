@@ -43,6 +43,10 @@ class CubeView(debugmixin):
         # list of tuples (band number, band) where band is an array as
         # returned from cube.getBand
         self.bands=[]
+        
+        # list of arrays containing filtered data, one step before turning into
+        # RGB that can be displayed on the screen
+        self.planes = []
 
         # Min/max for this group of bands only.  The cube's extrema is
         # held in cube.spectraextrema and is updated as more bands are
@@ -230,7 +234,23 @@ class CubeView(debugmixin):
                 self.indexes[i]=newbands[i]
         return display
 
-    def show(self, prefilter, colorfilter, progress=None):
+    def setFilterOrder(self, filters):
+        self.filters = filters[:]
+
+    def processFilters(self, progress):
+        """Process a chain of L{GeneralFilters} for each displayed band
+        
+        """
+        self.planes = []
+        for band in self.bands:
+            assert self.dprint("getRGB: band=%s" % str(band))
+            plane = band[1]
+            for filt in self.filters:
+                plane = filt.getPlane(plane)
+            self.planes.append(plane)
+            if progress: progress.Update(50+((count+1)*50)/len(self.bands))
+
+    def show(self, colorfilter, progress=None):
         if not self.cube: return
 
         refresh=False
@@ -246,7 +266,8 @@ class CubeView(debugmixin):
         if refresh or not self.bands:
             self.loadBands()
         
-        self.rgb=colorfilter.getRGB(self, prefilter, progress)
+        self.processFilters(progress)
+        self.rgb = colorfilter.getRGB(self.height, self.width, self.planes)
         image=wx.ImageFromData(self.width, self.height, self.rgb.tostring())
         self.bitmap=wx.BitmapFromImage(image)
         # wx.StaticBitmap(self, -1, self.bitmap, (0,0), (self.cube.samples,self.cube.lines))
