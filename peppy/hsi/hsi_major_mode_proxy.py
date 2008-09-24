@@ -74,6 +74,7 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_menu.BandSliderUpdates,
                         peppy.hsi.filter.ContrastFilterAction,
                         peppy.hsi.filter.MedianFilterAction,
+                        peppy.hsi.filter.GaussianFilterAction,
                         peppy.hsi.filter.ClippingFilterAction,
                         peppy.hsi.filter.SubtractBandAction,
                         peppy.hsi.hsi_menu.SwapEndianAction,

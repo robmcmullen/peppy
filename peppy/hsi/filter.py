@@ -5,7 +5,7 @@
 This file is a repository of actions that operate on the HSI mode.
 """
 
-import os, struct, mmap
+import os, struct, mmap, math
 from cStringIO import StringIO
 
 import wx
@@ -228,6 +228,40 @@ class MedianFilter1D(GeneralFilter):
             return filtered
         return raw
 
+class GaussianFilter(GeneralFilter):
+    """Apply a gaussian filter to the band.
+
+    A gaussian filter colvolves the image with a gaussian shape to blur the
+    image
+    """
+    def __init__(self, radius=10, pos=0):
+        GeneralFilter.__init__(self, pos=pos)
+
+        # A gaussian is linearly independent, so the same filtering kernel is
+        # used is both the X and Y directions
+        # The full kernel size is the radius on either side of the pixel
+        self.radius = radius
+        self.diameter = (radius * 2)
+        self.offset = self.diameter / 2.0
+        self.stddev = 4.0
+        self.kernel = numpy.array([self.gaussian(x) for x in range(0,self.diameter + 1)], numpy.float32)
+        scale = numpy.sum(self.kernel)
+        self.kernel /= scale
+        self.dprint("scale=%f kernel=%s" % (scale, self.kernel))
+   
+    def gaussian(self, x):
+        return 1.0/(math.sqrt(2*math.pi))/self.stddev * math.exp(-(math.pow(x-self.offset,2))/2.0/self.stddev/self.stddev)
+
+    def getPlane(self,raw):
+        """Compute the convolution using separable convolutions
+        """
+        filtered = numpy.zeros_like(raw)
+        for line in range(raw.shape[0]):
+            filtered[line,:] = numpy.convolve(raw[line,:], self.kernel, mode='same')
+        for sample in range(raw.shape[1]):
+            filtered[:, sample] = numpy.convolve(filtered[:,sample], self.kernel, mode='same')
+        return filtered
+
 class ChainFilter(GeneralFilter):
     """Apply a sequence of filters to the band.
     """
@@ -258,7 +292,7 @@ class ChainFilter(GeneralFilter):
 class ContrastFilterAction(HSIActionMixin, RadioAction):
     name = "Contrast"
     tooltip = "Contrast adjustment method"
-    default_menu = ("View", -300)
+    default_menu = ("Filter", -300)
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
 
@@ -309,7 +343,7 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
 class MedianFilterAction(HSIActionMixin, RadioAction):
     name = "Median Filter"
     tooltip = "Median filter"
-    default_menu = ("View", 301)
+    default_menu = ("Filter", 301)
 
     items = ['No median',
              'Median 3x1 pixel', 'Median 1x3 pixel', 'Median 3x3 pixel',
@@ -350,10 +384,56 @@ class MedianFilterAction(HSIActionMixin, RadioAction):
         mode.update()
 
 
+class GaussianFilterAction(HSIActionMixin, RadioAction):
+    """2D Gaussian blur filter
+    
+    """
+    name = "Gaussian"
+    default_menu = ("Filter", 305)
+
+    items = ['No filter', '5 Pixel Kernel', '10 Pixel Kernel', 'User-defined']
+
+    def getIndex(self):
+        mode = self.mode
+        filt = mode.filter
+        assert self.dprint(filt)
+        if isinstance(filt, GaussianFilter):
+            return filt.pos
+        return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("index=%d" % index)
+        mode = self.mode
+        filt = None
+        if index == 0:
+            filt = GeneralFilter(pos=0)
+        elif index == 1:
+            filt = GaussianFilter(5, pos=index)
+        elif index == 2:
+            filt = GaussianFilter(10, pos=index)
+        elif index == 3:
+            minibuffer = IntMinibuffer(self.mode, self,
+                                       label="Enter pixel radius:",
+                                       initial = "10")
+            self.mode.setMinibuffer(minibuffer)
+        if filt:
+            mode.filter = filt
+            mode.update()
+
+    def processMinibuffer(self, minibuffer, mode, value):
+        dprint("Setting gaussian kernel to %s" % str(value))
+        filt = GaussianFilter(value, pos=len(self.items) - 1)
+        mode.filter = filt
+        mode.update()
+
+
 class ClippingFilterAction(HSIActionMixin, RadioAction):
     name = "Clipping Filter"
     tooltip = "Clip pixel values to limits"
-    default_menu = ("View", 302)
+    default_menu = ("Filter", -400)
 
     items = ['No Clipping',
              'Pixel > 0', '0 <= Pixel < 256', '0 <= Pixel < 1000',
@@ -404,7 +484,7 @@ class ClippingFilterAction(HSIActionMixin, RadioAction):
 class SubtractBandAction(HSIActionMixin, MinibufferAction):
     name = "Band Subtraction Filter"
     tooltip = "Subtract a band from the rest of the bands"
-    default_menu = ("View", 303)
+    default_menu = ("Filter", -500)
     
     key_bindings = None
     minibuffer = IntMinibuffer
