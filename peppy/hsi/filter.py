@@ -54,7 +54,7 @@ class RGBMapper(debugmixin):
         
         return self.rgb
 
-class PaletteFilter(RGBMapper):
+class PaletteMapper(RGBMapper):
     def __init__(self, name=None):
         self.rgb = None
         self.colormap_name = name
