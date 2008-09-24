@@ -110,7 +110,7 @@ distdir: eggs
 	-rm -rf $(distdir)
 	
 	# Force setup to use MANIFEST.in
-	-rm MANIFEST
+	-rm -f MANIFEST
 	python setup.py sdist -k
 	chmod 644 $(distdir)/tests/*.py
 	
