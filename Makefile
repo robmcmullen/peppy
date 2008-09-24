@@ -108,6 +108,9 @@ distdir: eggs
 	./make-doc.py -m peppy -o README README.pre.in
 	./make-doc.py -m peppy -o INSTALL INSTALL.pre.in
 	-rm -rf $(distdir)
+	
+	# Force setup to use MANIFEST.in
+	-rm MANIFEST
 	python setup.py sdist -k
 	chmod 644 $(distdir)/tests/*.py
 	
