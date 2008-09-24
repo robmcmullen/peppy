@@ -110,7 +110,7 @@ class CubeReader(debugmixin):
         """Get a single pixel value"""
         raise NotImplementedError
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         raise NotImplementedError
 
@@ -118,7 +118,7 @@ class CubeReader(debugmixin):
         """Get the spectra (bands) at the given pixel"""
         raise NotImplementedError
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) at the given line"""
         raise NotImplementedError
 
@@ -241,7 +241,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
             s.byteswap(True)
         return s[0]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = numpy.empty((self.lines, self.samples), dtype=self.data_type)
         fh = self.fh
@@ -253,7 +253,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         skip = self.itemsize * (self.bands - 1)
         samp = 0
         line = 0
-        progress = self.getProgressBar()
+        progress = self.getProgressBar(use_progress)
         if progress:
             progress.startProgress("Loading Band %d" % band, self.lines, delay=1.0)
         while True:
@@ -285,7 +285,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
             s.byteswap(True)
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         fh = self.fh
         skip = (self.bands * self.samples) * line
@@ -335,7 +335,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
             s.byteswap(True)
         return s[0]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = numpy.empty((self.lines, self.samples), dtype=self.data_type)
         fh = self.fh
@@ -347,7 +347,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         skip = self.itemsize * ((self.samples * self.bands) - self.samples)
         samp = 0
         line = 0
-        progress = self.getProgressBar()
+        progress = self.getProgressBar(use_progress)
         if progress:
             progress.startProgress("Loading Band %d" % band, self.lines, delay=1)
         while True:
@@ -386,7 +386,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
             s.byteswap(True)
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         fh = self.fh
         skip = (self.bands * self.samples) * line
@@ -436,7 +436,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
             s.byteswap(True)
         return s[0]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         fh = self.fh
         skip = (self.lines * self.samples) * band
@@ -467,7 +467,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
             s.byteswap(True)
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         s = numpy.empty((self.bands, self.samples), dtype=self.data_type)
         fh = self.fh
@@ -477,7 +477,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         # less one because the file pointer will have advanced by one due to
         # the file read
         skip = (self.lines - 1) * self.samples * self.itemsize
-        progress = self.getProgressBar()
+        progress = self.getProgressBar(use_progress)
         if progress:
             progress.startProgress("Loading Focal Plane at line %d" % line, self.bands, delay=1)
         band = 0
@@ -599,7 +599,7 @@ class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
     def getPixel(self, line, sample, band):
         return self.raw[line][sample][band]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = self.raw[:, :, band]
         return s
@@ -609,7 +609,7 @@ class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
         s = self.raw[line, sample, :]
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         # Note: transpose doesn't seem to automatically generate a copy, so
         # we're safe with this transpose
@@ -634,7 +634,7 @@ class MMapBILCubeReader(BILMixin, MMapCubeReader):
     def getPixel(self, line, sample, band):
         return self.raw[line][band][sample]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = self.raw[:, band, :]
         return s
@@ -644,7 +644,7 @@ class MMapBILCubeReader(BILMixin, MMapCubeReader):
         s = self.raw[line, :, sample]
         return s
     
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         s = self.raw[line, :, :]
         return s
@@ -669,7 +669,7 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
     def getPixel(self, line, sample, band):
         return self.raw[band][line][sample]
 
-    def getBandRaw(self, band):
+    def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = self.raw[band, :, :]
         return s
@@ -679,7 +679,7 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
         s = self.raw[:, line, sample]
         return s
 
-    def getFocalPlaneRaw(self, line):
+    def getFocalPlaneRaw(self, line, use_progress=True):
         """Get an array of (bands x samples) the given line"""
         s = self.raw[:, line, :]
         return s
@@ -986,33 +986,33 @@ class Cube(debugmixin):
         """Get an individual pixel at the specified line, sample, & band"""
         return self.cube_io.getPixel(line, sample, band)
 
-    def getBand(self,band):
+    def getBand(self, band, use_progress=True):
         """Get a copy of the array of (lines x samples) at the
         specified band.  You are not working on the original data."""
-        s=self.getBandInPlace(band).copy()
+        s = self.getBandInPlace(band, use_progress).copy()
         return s
 
-    def getBandInPlace(self,band):
+    def getBandInPlace(self, band, use_progress=True):
         """Get the slice of the data array (lines x samples) at the
         specified band.  This points to the actual in-memory array."""
-        s=self.getBandRaw(band)
+        s = self.getBandRaw(band, use_progress)
         self.updateExtrema(s)
         return s
 
-    def getBandRaw(self,band):
-        return self.cube_io.getBandRaw(band)
+    def getBandRaw(self, band, use_progress=True):
+        return self.cube_io.getBandRaw(band, use_progress)
 
-    def getFocalPlaneInPlace(self, line):
+    def getFocalPlaneInPlace(self, line, use_progress=True):
         """Get the slice of the data array (bands x samples) at the specified
         line, which corresponds to a view of the data as the focal plane would
         see it.  This points to the actual in-memory array.
         """
-        s=self.getFocalPlaneRaw(line)
+        s = self.getFocalPlaneRaw(line, use_progress)
         self.updateExtrema(s)
         return s
 
-    def getFocalPlaneRaw(self, line):
-        return self.cube_io.getFocalPlaneRaw(line)
+    def getFocalPlaneRaw(self, line, use_progress=True):
+        return self.cube_io.getFocalPlaneRaw(line, use_progress)
 
     def getFocalPlaneDepthInPlace(self, sample, band):
         """Get the slice of the data array through the cube at the specified
@@ -1164,7 +1164,7 @@ class Cube(debugmixin):
         Note that this will be slow when the cube is in BSQ format
         """
         for i in range(self.lines):
-            fp = self.getFocalPlaneRaw(i)
+            fp = self.getFocalPlaneRaw(i, use_progress=False)
             yield fp
     
     def iterBands(self):
@@ -1174,7 +1174,7 @@ class Cube(debugmixin):
         extremely slow when the cube is BIP.
         """
         for i in range(self.bands):
-            band = self.getBandRaw(i)
+            band = self.getBandRaw(i, use_progress=False)
             yield band
     
     def getNumpyArray(self):
@@ -1186,19 +1186,19 @@ class Cube(debugmixin):
     def iterRawBIP(self):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
-            band = self.getFocalPlaneRaw(i).transpose()
+            band = self.getFocalPlaneRaw(i, use_progress=False).transpose()
             yield band.tostring()
     
     def iterRawBIL(self):
         # samples vary fastest, then bands, then lines
         for i in range(self.lines):
-            band = self.getFocalPlaneRaw(i)
+            band = self.getFocalPlaneRaw(i, use_progress=False)
             yield band.tostring()
     
     def iterRawBSQ(self):
         # samples vary fastest, then lines, then bands 
         for i in range(self.bands):
-            band = self.getBandRaw(i)
+            band = self.getBandRaw(i, use_progress=False)
             yield band.tostring()
     
     def iterRaw(self, size, interleaveiter):
@@ -1287,8 +1287,17 @@ class Cube(debugmixin):
         """
         self.progress = progress
 
-    def getProgressBar(self):
-        return self.progress
+    def getProgressBar(self, use_progress=True):
+        """Return the progress bar generator previously registered with this
+        cube.
+        
+        @param use_progress: Defaults to True, but if False will cause this
+        method to return None.  This is used to override the progress bar if
+        in some long running calculation that also uses the progress bar and
+        you don't want the band loading code to use the progress bar for each
+        band.
+        """
+        return use_progress and self.progress
 
 
 def newCube(interleave, url=None, progress=None):
