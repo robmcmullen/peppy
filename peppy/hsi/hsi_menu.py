@@ -295,6 +295,61 @@ class FocalPlaneAverage(HSIActionMixin, SelectAction):
         self.frame.open(name, options=options)
 
 
+class ScaleImageDimensions(HSIActionMixin, MinibufferAction):
+    """Create a new image that is a scaled version of the current view
+    
+    Uses the current CubeView image to create a new image that is scaled in
+    pixel dimensions.  Note that the CubeView image that is used is after all
+    the filters are applied.
+    """
+    name = "Scale Image Dimensions"
+    default_menu = ("Tools", -300)
+    
+    minibuffer = IntMinibuffer
+    minibuffer_label = "Scale Each Pixel by:"
+
+    last_scale = 2
+    testcube = 1
+    
+    def isEnabled(self):
+        return len(self.mode.cubeview.getCurrentPlanes()) > 0
+    
+    def getTempName(self):
+        name = "dataset:scaled_band%d" % self.__class__.testcube
+        self.__class__.testcube += 1
+        return name
+
+    def getInitialValueHook(self):
+        return str(self.last_scale)
+
+    def processMinibuffer(self, minibuffer, mode, scale):
+        self.__class__.last_scale = scale
+        
+        cube = self.mode.cube
+        view = self.mode.cubeview
+        planes = view.getCurrentPlanes()
+        
+        name = self.getTempName()
+        fh = vfs.make_file(name)
+        newcube = createCubeLike(cube, samples=planes[0].shape[1] * scale,
+                                 lines=planes[0].shape[0] * scale,
+                                 bands=len(planes), interleave='bsq')
+        data = newcube.getNumpyArray()
+        dprint("%d,%d,%d: %s" % (newcube.lines, newcube.samples, newcube.bands, data.shape))
+        band = 0
+        for plane in planes:
+            scaled = numpy.repeat(numpy.repeat(plane, scale, axis=1), scale, axis=0)
+            dprint("scaled: %s" % str(scaled.shape))
+            data[band,:,:] = scaled
+            band += 1
+            
+        fh.setCube(newcube)
+        # must close file handle or it won't be registered with the DatasetFS
+        # file system
+        fh.close()
+        self.frame.open(name)
+
+
 class ExportAsImage(SelectAction):
     """Export the current datacube in ENVI BIL format
     """

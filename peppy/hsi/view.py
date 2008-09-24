@@ -250,6 +250,9 @@ class CubeView(debugmixin):
             self.planes.append(plane)
             if progress: progress.Update(50+((count+1)*50)/len(self.bands))
 
+    def getCurrentPlanes(self):
+        return self.planes
+
     def show(self, colorfilter, progress=None):
         if not self.cube: return
 
