@@ -79,15 +79,19 @@ class StatusBarButton(wx.lib.buttons.GenBitmapButton):
 
 
 class ModularStatusBarInfo(object):
+    """Data object used to store the state of a particular major mode's status
+    bar.
+    
+    This is a flyweight object -- the data stored here is applied to the
+    L{ModularStatusBar} instance that actually contains the controls.
+    """
     def __init__(self, parent, widths=[-1, 150]):
         self.parent = parent
         self.widths = widths
         
         self.cancel_label = _("Cancel")
         self.text = [' ' for w in self.widths]
-        self.reset()
-
-    def reset(self):
+        
         self.gauge_value = 0
         self.gauge_width = 100
         self.gauge_max = 100
@@ -107,8 +111,25 @@ class ModularStatusBarInfo(object):
         
         self.show_cancel = False
         self.cancelled = False
+
+        self.reset()
+
+    def reset(self):
+        """Reset the parent's state based on the info contained in this object
+        
+        Because this class is a Flyweight, the parent's controls are updated
+        using the data contained in this object, and this method forces the
+        objects back to the state that this major mode is expecting.  For
+        example, it resets the progress bar max value to the value that was
+        last set by this major mode.
+        """
         if self.parent.info == self:
             self.parent.setWidths()
+            self.parent.gauge.SetRange(self.gauge_max)
+            # Force gauge text to be reset
+            text = self.gauge_text
+            self.gauge_text = None
+            self.setProgressPosition(self.gauge_value, text)
 
     def addIcon(self, bmp, tooltip=None):
         b = self.parent.getIcon(bmp, tooltip)
@@ -146,7 +167,7 @@ class ModularStatusBarInfo(object):
         to avoid the progress bar if it turns out to be quick.
         """
         self.in_progress = True
-        self.gauge_value_max = max
+        self.gauge_max = max
         self.cancelled = False
         self.show_cancel = cancel
         self.disable_during_progress = disable
@@ -178,9 +199,26 @@ class ModularStatusBarInfo(object):
             self.gauge_shown = True
     
     def _showProgress(self):
-        self.parent.gauge.SetRange(self.gauge_value_max)
+        self.parent.gauge.SetRange(self.gauge_max)
         self.setText(self.gauge_text)
         self.parent.setWidths()
+
+    def setProgressPosition(self, value, text=None):
+        """Set the progress bar and text to the current values
+        
+        This is used to set the text and gauge position based on the current
+        values stored in this info object.
+        """
+        if self.gauge_shown:
+            if value < 0:
+                self.parent.gauge.Pulse()
+            else:
+                self.parent.gauge.SetValue(value)
+            self.gauge_value = value
+            if text is not None:
+                if text != self.gauge_text:
+                    self.setText(text)
+                    self.gauge_text = text
 
     def updateProgress(self, value, text=None):
         """Update the progress bar with a new value
@@ -195,7 +233,6 @@ class ModularStatusBarInfo(object):
         """
         if isinstance(value, list):
             value, text = value
-        self.gauge_value = value
         do_yield = False
         update = False
         if self.gauge_delay > 0:
@@ -212,12 +249,7 @@ class ModularStatusBarInfo(object):
         else:
             update = True
         if update and self.parent.info == self:
-            if value < 0:
-                self.parent.gauge.Pulse()
-            else:
-                self.parent.gauge.SetValue(self.gauge_value)
-            if text is not None:
-                self.setText(text)
+            self.setProgressPosition(value, text)
         if do_yield:
             if self.disable_during_progress:
                 wx.SafeYield(onlyIfNeeded=True)
@@ -279,7 +311,7 @@ class ModularStatusBar(wx.StatusBar):
             self.info = info
         else:
             self.info = self.default_info
-        self.setWidths()
+        self.info.reset()
 
     def setWidths(self):
         self.widths = [i for i in self.info.widths]
