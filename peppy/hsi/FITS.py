@@ -225,7 +225,7 @@ class FITSDataset(HSI.MetadataMixin):
         # transfer attributes from cube to self
         pass
     
-    def getCube(self, filename=None, index=0, progress=None):
+    def getCube(self, filename=None, index=0, progress=None, options=None):
         if filename is None:
             filename = self.url
         hdu = None
