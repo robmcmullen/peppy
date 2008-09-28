@@ -1,6 +1,15 @@
-2008-09-17  Rob McMullen  <robm@users.sourceforge.net>
+2008-09-25  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.7.5.5 update to "Manny Being Manny"
+	* added File -> Properties menu action
+	* progress bar maximum value now correctly set when switching modes
+	* changed title screen text to reflect that not all borrowed code is GPL
+	* added colormaps to HSI mode
+	* added image scaling command in HSI mode that generates a new image
+	* added capability in HSI mode to apply multiple filters in sequence
+	* added Gaussian convolution filter
+	* fixed seek errors in BSQ focal plane loading
+	* refactored HSI source code into multiple files for easier maintenance
 
 2008-09-16  Rob McMullen  <robm@users.sourceforge.net>
 
