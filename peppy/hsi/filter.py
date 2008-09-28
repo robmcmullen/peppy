@@ -26,15 +26,32 @@ class RGBMapper(debugmixin):
     def __init__(self):
         self.rgb=None
         
-    def getGray(self,raw):
+    def scaleChunk(self, raw, minval, maxval, u1, u2, v1, v2, output):
+        assert self.dprint("processing chunk [%d:%d, %d:%d]" % (u1, u2, v1, v2))
+        if minval == maxval:
+            output[u1:u2, v1:v2] = (raw[u1:u2, v1:v2] - minval).astype(numpy.uint8)
+        else:
+            #gray=((raw-minval)*(255.0/(maxval-minval))).astype(numpy.uint8)
+            temp1 = raw[u1:u2, v1:v2] - minval
+            temp2 = temp1 * (255.0/(maxval-minval))
+            output[u1:u2, v1:v2] = temp2.astype(numpy.uint8)
+
+    def getGray(self, raw, tile_size=256):
         minval=raw.min()
         maxval=raw.max()
         valrange=maxval-minval
-        assert self.dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
-        if valrange==0.0:
-            gray=(raw-minval).astype(numpy.uint8)
-        else:
-            gray=((raw-minval)*(255.0/(maxval-minval))).astype(numpy.uint8)
+        assert self.dprint("data: min=%s max=%s range=%s len(raw)=%d" % (str(minval),str(maxval),str(valrange), raw.size))
+        gray = numpy.empty(raw.shape, dtype=numpy.uint8)
+        v1 = 0
+        v2 = raw.shape[1]
+        u1 = 0
+        assert self.dprint("raw size: %s" % (str(raw.shape)))
+        while u1 < raw.shape[0]:
+            u2 = u1 + tile_size
+            if u2 > raw.shape[0]:
+                u2 = raw.shape[0]
+            self.scaleChunk(raw, minval, maxval, u1, u2, v1, v2, gray)
+            u1 = u2
 
         return gray
 
@@ -63,21 +80,6 @@ class PaletteMapper(RGBMapper):
         else:
             self.colormap = None
         
-    def getGray(self,raw):
-        minval=raw.min()
-        maxval=raw.max()
-        valrange=maxval-minval
-        assert self.dprint("data: min=%s max=%s range=%s" % (str(minval),str(maxval),str(valrange)))
-        if valrange==0.0:
-            gray=(raw-minval).astype(numpy.uint8)
-        else:
-            gray=((raw-minval)*(255.0/(maxval-minval))).astype(numpy.uint8)
-
-        return gray
-
-    def getGrayMapping(self,raw):
-        return self.getGray(raw)
-
     def getRGB(self, lines, samples, planes):
         # This is designed for grayscale images only; if there is more than one
         # plane, the standard RGB method is used

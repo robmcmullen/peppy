@@ -271,9 +271,7 @@ class CubeView(debugmixin):
         
         self.processFilters(progress)
         self.rgb = colormapper.getRGB(self.height, self.width, self.planes)
-        image=wx.ImageFromData(self.width, self.height, self.rgb.tostring())
-        self.bitmap=wx.BitmapFromImage(image)
-        # wx.StaticBitmap(self, -1, self.bitmap, (0,0), (self.cube.samples,self.cube.lines))
+        self.bitmap = wx.BitmapFromBuffer(self.width, self.height, self.rgb)
         # self.Refresh()
     
     def saveImage(self,name):
