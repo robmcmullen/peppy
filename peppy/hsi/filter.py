@@ -49,7 +49,7 @@ class RGBMapper(debugmixin):
             for i in range(count):
                 self.rgb[:,:,i] = self.getGrayMapping(planes[i])
             for i in range(count,3,1):
-                self.rgb[:,:,i] = self.getGrayMapping(planes[0])
+                self.rgb[:,:,i] = self.rgb[:,:,0]
         #dprint(rgb[0,:,0])
         
         return self.rgb
