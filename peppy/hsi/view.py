@@ -54,7 +54,6 @@ class CubeView(debugmixin):
         self.extrema=(0,1)
 
         # simple list of arrays, one array for each color plane r, g, b
-        self.rgb=None
         self.bitmap=None
         self.contraststretch=0.0 # percentage
 
@@ -270,8 +269,8 @@ class CubeView(debugmixin):
             self.loadBands()
         
         self.processFilters(progress)
-        self.rgb = colormapper.getRGB(self.height, self.width, self.planes)
-        self.bitmap = wx.BitmapFromBuffer(self.width, self.height, self.rgb)
+        rgb = colormapper.getRGB(self.height, self.width, self.planes)
+        self.bitmap = wx.BitmapFromBuffer(self.width, self.height, rgb)
         # self.Refresh()
     
     def saveImage(self,name):

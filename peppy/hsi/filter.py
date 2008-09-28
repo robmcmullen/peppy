@@ -23,9 +23,6 @@ import numpy
 
 
 class RGBMapper(debugmixin):
-    def __init__(self):
-        self.rgb=None
-        
     def scaleChunk(self, raw, minval, maxval, u1, u2, v1, v2, output):
         assert self.dprint("processing chunk [%d:%d, %d:%d]" % (u1, u2, v1, v2))
         if minval == maxval:
@@ -59,21 +56,20 @@ class RGBMapper(debugmixin):
         return self.getGray(raw)
 
     def getRGB(self, lines, samples, planes):
-        self.rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
-        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, planes[0].shape))
+        rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
+        assert self.dprint("shapes: rgb=%s planes=%s" % (rgb.shape, planes[0].shape))
         count = len(planes)
         if count > 0:
             for i in range(count):
-                self.rgb[:,:,i] = self.getGrayMapping(planes[i])
+                rgb[:,:,i] = self.getGrayMapping(planes[i])
             for i in range(count,3,1):
-                self.rgb[:,:,i] = self.rgb[:,:,0]
+                rgb[:,:,i] = rgb[:,:,0]
         #dprint(rgb[0,:,0])
         
-        return self.rgb
+        return rgb
 
 class PaletteMapper(RGBMapper):
     def __init__(self, name=None):
-        self.rgb = None
         self.colormap_name = name
         if name:
             self.colormap = colors.getColormap(name)
@@ -87,18 +83,21 @@ class PaletteMapper(RGBMapper):
         if count > 1 or self.colormap is None:
             return RGBMapper.getRGB(lines, samples, planes)
         
-        self.rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
-        assert self.dprint("shapes: rgb=%s planes=%s" % (self.rgb.shape, planes[0].shape))
         if count > 0:
             gray = self.getGrayMapping(planes[0])
             
-            rgba = self.colormap(gray, bytes=True)
             # Matplotlib returns alpha values in the colormap, so we only need
             # the first 3 bands
+            rgba = self.colormap(gray, bytes=True)
+            rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
             for i in range(3):
-                self.rgb[:,:,i] = rgba[:,:,i]
-        
-        return self.rgb
+                rgb[:,:,i] = rgba[:,:,i]
+            #rgb = rgba[:,:,0:3]
+        else:
+            # blank image
+            rgb = numpy.zeros((lines, samples, 3),numpy.uint8)
+        assert self.dprint("shape: rgb=%s" % str(rgb.shape))
+        return rgb
 
 
 class GeneralFilter(debugmixin):
