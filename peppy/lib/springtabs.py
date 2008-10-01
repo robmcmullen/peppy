@@ -33,12 +33,11 @@ except:
 
 class FakePopupWindow(wx.MiniFrame):
     def __init__(self, parent, style=None):
-        super(FakePopupWindow, self).__init__(parent, style = wx.NO_BORDER |wx.FRAME_FLOAT_ON_PARENT
-                              | wx.FRAME_NO_TASKBAR)
+        super(FakePopupWindow, self).__init__(parent, style = wx.NO_BORDER |wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_NO_TASKBAR)
         #self.Bind(wx.EVT_KEY_DOWN , self.OnKeyDown)
         self.Bind(wx.EVT_CHAR, self.OnChar)
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
-    
+
     def OnChar(self, evt):
         #print("OnChar: keycode=%s" % evt.GetKeyCode())
         self.GetParent().GetEventHandler().ProcessEvent(evt)
@@ -115,8 +114,8 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
         button based on the label and bezel size.
         """
         h, w, useMin = item._GetLabelSize()
-        width = w + item.border + item.bezelWidth - 1
-        height = h + item.border + item.bezelWidth - 1
+        width = w + 2 * item.border + item.bezelWidth - 1
+        height = h + 2 * item.border + item.bezelWidth - 1
         #dprint("width=%d height=%d" % (width, height))
         return (width, height)
 
@@ -129,32 +128,45 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
         label = item.GetLabel()
         th, tw = dc.GetTextExtent(label)
         #dc.DrawText(label, (width-tw)/2+dx, (height-th)/2+dy)
-        dc.DrawRotatedText(label, (width-tw)/2+dx, height+dy, 90.0)
+        dc.DrawRotatedText(label, (width-tw)/2+dx, height + dy - item.border, 90.0)
 
     def showPopup(self, parent, item, show=True):
-        popup = item.getPopup()
-        child = popup.GetChildren()[0]
+        popup, child = item.getPopup()
         if show:
-            size = child.GetSize()
-            dprint(size)
+            pw, ph = popup.GetSizeTuple()
+            pcw, pch = popup.GetClientSizeTuple()
+            cw, ch = child.GetSizeTuple()
+            dprint("popup size=%s  popup client size=%s  child=%s" % (str((pw, ph)), str((pcw, pch)), str((cw, ch))))
+            
+            # The client size may be smaller than the popup window if the popup
+            # has a border decoration.
+            diffwidth =  pw - pcw
+            diffheight =  ph - pch
+            
+            # The popup will be at least as tall as the SpringTabs panel
             width, height = parent.GetSizeTuple()
-            dprint(height)
             x, y = parent.ClientToScreenXY(width, 0)
-            if size.GetHeight() != height:
-                size.SetHeight(height)
-                popup.SetSize(size)
-                child.SetSize(popup.GetClientSize())
+            if ph < height:
+                ph = height
+            pw = cw + diffwidth
+            popup.SetSize(wx.Size(pw, ph))
+            
+#            # Set the child size to match the popup size
+#            ch = height - diffheight
+#            child.SetSize(cw, ch)
+            
             if self.popleft:
-                popup.SetPosition(wx.Point(x - width - size.GetWidth(), y))
-            else:
-                popup.SetPosition(wx.Point(x, y))
+                x -= width + pw
+            dprint("popping up at %s" % str((x,y)))
+            child.SetPosition(wx.Point(0, 0))
+            popup.SetPosition(wx.Point(x, y))
         popup.Show(show)
-        #wx.CallAfter(self.setFocusCallback)
+        wx.CallAfter(item.setPopupFocusCallback)
 
 
 class SpringTabItem(GenToggleButton):
     def __init__(self, parent, id=-1, label='', **kwargs):
-        self.border = 6
+        self.border = 2
         self.hover = False
         
         GenToggleButton.__init__(self, parent, id, label)
@@ -215,7 +227,33 @@ class SpringTabItem(GenToggleButton):
             
             # Create the window using the popup as the parent
             self.window_cb(self.popup, self)
-        return self.popup
+        child = self.popup.GetChildren()[0]
+        return self.popup, child
+    
+    def setPopupFocusCallback(self, end=False):
+        """Callback for use within wx.CallAfter to prevent focus being set
+        after the control has been removed.
+        """
+        dprint()
+        popup, child = self.getPopup()
+        if popup.IsShown():
+            dprint("setting focus")
+            child.SetFocus()
+
+    def OnGainFocus(self, event):
+        self.hasFocus = True
+        self.Refresh()
+        self.Update()
+        # performing this in a call after because Windows never relinquishes
+        # the current tab otherwise
+        wx.CallAfter(self.setPopupFocusCallback)
+        dprint()
+
+    def OnLoseFocus(self, event):
+        self.hasFocus = False
+        self.Refresh()
+        self.Update()
+        dprint()
 
 
 class SpringTabs(wx.Panel):
@@ -229,14 +267,14 @@ class SpringTabs(wx.Panel):
         self._tab_renderer = SpringTabItemVerticalRenderer(popright=True)
         self._radio = None
 
-        if wx.Platform == '__WXMAC__':
-            self._popup_cls = FakePopupWindow
-        else:
-            self._popup_cls = wx.PopupWindow
+        # Using a real wx.PopupWindow seems prevent the focus from being set to
+        # the window in the popup.
+        self._popup_cls = FakePopupWindow
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
     
     def getRenderer(self):
         return self._tab_renderer
@@ -291,6 +329,9 @@ class SpringTabs(wx.Panel):
         self.Refresh()
         evt.Skip()
 
+    def OnFocus(self, evt):
+        dprint()
+
     def addTab(self, title, window_create_callback):
         tab = SpringTabItem(self, label=title, window_cb=window_create_callback)
         self.GetSizer().Add(tab, 0, wx.EXPAND)
@@ -303,8 +344,54 @@ class SpringTabs(wx.Panel):
 
 
 if __name__ == "__main__":
+    import wx.calendar
+    
+    class FontList(wx.Panel):
+        def __init__(self, parent, *args, **kwargs):
+            wx.Panel.__init__(self, parent, -1)
+
+            e = wx.FontEnumerator()
+            e.EnumerateFacenames()
+            list = e.GetFacenames()
+
+            list.sort()
+
+            self.lb1 = wx.ListBox(self, -1, wx.DefaultPosition, (200, 250),
+                                 list, wx.LB_SINGLE)
+
+            self.Bind(wx.EVT_LISTBOX, self.OnSelect, id=self.lb1.GetId())
+
+            self.txt = wx.StaticText(self, -1, "Sample text...", (285, 50))
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.txt, 0, wx.EXPAND)
+            sizer.Add(self.lb1, 0, wx.EXPAND|wx.TOP, 20)
+
+            self.SetSizer(sizer)
+            self.Fit()
+            self.Layout()
+            dprint(self.GetSize())
+
+            self.lb1.SetSelection(0)
+            self.OnSelect(None)
+            wx.FutureCall(300, self.SetTextSize)
+
+        def SetTextSize(self):
+            self.txt.SetSize(self.txt.GetBestSize())
+
+        def OnSelect(self, evt):
+            face = self.lb1.GetStringSelection()
+            font = wx.Font(28, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, face)
+            self.txt.SetLabel(face)
+            self.txt.SetFont(font)
+            if wx.Platform == "__WXMAC__": self.Refresh()
+
+    
     def ButtonCB(parent, item):
         button = GenToggleButton(parent, -1, "Whatevar!!! %s" % item.GetLabel())
+    
+    def CalendarCB(parent, item):
+        wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
         
     app = wx.PySimpleApp()
     frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE,
@@ -312,8 +399,8 @@ if __name__ == "__main__":
     panel = wx.Panel(frm)
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     tabs = SpringTabs(panel)
-    tabs.addTab("One", ButtonCB)
-    tabs.addTab("Two", ButtonCB)
+    tabs.addTab("Calendar", CalendarCB)
+    tabs.addTab("Fonts", FontList)
     tabs.addTab("Three", ButtonCB)
     sizer.Add(tabs, 0, wx.EXPAND)
     text = wx.StaticText(panel, -1, "Just a placeholder here.  The real action is to the left!")
