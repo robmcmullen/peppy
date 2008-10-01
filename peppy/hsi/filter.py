@@ -274,7 +274,18 @@ class GaussianFilter(GeneralFilter):
     def getPlane(self,raw):
         """Compute the convolution using separable convolutions
         """
-        filtered = numpy.zeros_like(raw)
+        # FIXME:  very strange error here.  If I use
+        #
+        # filtered = numpy.zeros_like(raw)
+        #
+        # I get the following exception at script exit time:
+        #
+        # Exception exceptions.AttributeError: AttributeError("'NoneType'
+        # object has no attribute 'tell'",) in <bound method memmap.__del__
+        # of memmap([[ 0.03383528, 0.03949283, 0.04434881, ...
+        #
+        # But, if I use numpy.zeros directly, this doesn't happen
+        filtered = numpy.zeros((raw.shape[0], raw.shape[1]), dtype=raw.dtype)
         for line in range(raw.shape[0]):
             filtered[line,:] = numpy.convolve(raw[line,:], self.kernel, mode='same')
         for sample in range(raw.shape[1]):
