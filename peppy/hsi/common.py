@@ -30,4 +30,5 @@ __all__ = ['HSIActionMixin', 'scipy_module',
            'ROI', 'ROIFile',
            'HyperspectralROIFormat',
            'spectralAngle', 'resample', 'normalizeUnits',
+           'bandPixelize', 'bandReduceSampling',
            ]

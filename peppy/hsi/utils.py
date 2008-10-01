@@ -159,6 +159,51 @@ def euclideanDistance(lam1, spectra1, lam2, spectra2, bbl=None):
     return dist
 
 
+def bandPixelize(band, scale):
+    """Increase the dimensions of the band by turning each pixel into a scale x
+    scale block of pixels.
+    
+    @param band: 2D numpy array in line x sample format, e.g.  as returned from
+    Cube.getBandRaw or similar 
+    
+    @param scale: scale factor for both pixel dimensions
+    
+    @return: copy of band scaled to the new dimensions
+    """
+    return numpy.repeat(numpy.repeat(band, scale, axis=1), scale, axis=0)
+
+
+def bandReduceSampling(band, scale):
+    """Reduce the size of the band by dividing the current dimensions by the
+    scale factor.
+    
+    @param band: 2D numpy array in line x sample format, e.g.  as returned from
+    Cube.getBandRaw or similar 
+    
+    @param scale: scale factor for both pixel dimensions
+    
+    @return: copy of band scaled to the new dimensions
+    """
+    # This is a slow implementation of a pixel resampling function
+    # that simply averages the pixels in a moving square of [scale
+    # x scale] pixels in the source image.  I couldn't find a quick
+    # resampling/interpolation/decimation function in numpy.
+    output = numpy.empty((band.shape[0] / scale, band.shape[1] / scale), dtype=band.dtype)
+    for sample in range(0, output.shape[1]):
+        for line in range(0, output.shape[0]):
+            s1 = sample * scale
+            s2 = s1 + scale
+            if s2 > band.shape[1]:
+                s2 = band.shape[1]
+            l1 = line * scale
+            l2 = l1 + scale
+            if l2 > band.shape[0]:
+                l2 = band.shape[0]
+            avg = numpy.average(band[l1:l2, s1:s2])
+            output[line, sample] = avg
+    return output
+
+
 class Histogram(object):
     def __init__(self,cube,nbins=500,bbl=None):
         self.cube=cube

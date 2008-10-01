@@ -343,9 +343,7 @@ class ScaleImageDimensions(ScaledImageMixin, MinibufferAction):
         dprint("%d,%d,%d: %s" % (newcube.lines, newcube.samples, newcube.bands, data.shape))
         band = 0
         for plane in planes:
-            scaled = numpy.repeat(numpy.repeat(plane, scale, axis=1), scale, axis=0)
-            dprint("scaled: %s" % str(scaled.shape))
-            data[band,:,:] = scaled
+            data[band,:,:] = bandPixelize(plane, scale)
             band += 1
             
         fh.setCube(newcube)
@@ -383,22 +381,7 @@ class ReduceImageDimensions(ScaledImageMixin, MinibufferAction):
         dprint("%d,%d,%d: %s" % (newcube.lines, newcube.samples, newcube.bands, data.shape))
         band = 0
         for plane in planes:
-            # This is a slow implementation of a pixel resampling function
-            # that simply averages the pixels in a moving square of [scale
-            # x scale] pixels in the source image.  I couldn't find a quick
-            # resampling/interpolation/decimation function in numpy.
-            for sample in range(0, newcube.samples):
-                for line in range(0, newcube.lines):
-                    s1 = sample * scale
-                    s2 = s1 + scale
-                    if s2 > plane.shape[1]:
-                        s2 = plane.shape[1]
-                    l1 = line * scale
-                    l2 = l1 + scale
-                    if l2 > plane.shape[0]:
-                        l2 = plane.shape[0]
-                    avg = numpy.average(plane[l1:l2, s1:s2])
-                    data[band, line, sample] = avg
+            data[band,:,:] = bandReduceSampling(plane, scale)
             band += 1
             
         fh.setCube(newcube)
