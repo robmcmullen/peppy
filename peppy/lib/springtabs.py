@@ -103,6 +103,12 @@ class SpringTabItemRenderer(object):
 
 
 class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
+    def __init__(self, popleft=True, popright=False):
+        if popleft and not popright:
+            self.popleft = True
+        else:
+            self.popleft = False
+            
     def DoGetBestSize(self, item):
         """
         Overridden base class virtual.  Determines the best size of the
@@ -125,6 +131,26 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
         #dc.DrawText(label, (width-tw)/2+dx, (height-th)/2+dy)
         dc.DrawRotatedText(label, (width-tw)/2+dx, height+dy, 90.0)
 
+    def showPopup(self, parent, item, show=True):
+        popup = item.getPopup()
+        child = popup.GetChildren()[0]
+        if show:
+            size = child.GetSize()
+            dprint(size)
+            width, height = parent.GetSizeTuple()
+            dprint(height)
+            x, y = parent.ClientToScreenXY(width, 0)
+            if size.GetHeight() != height:
+                size.SetHeight(height)
+                popup.SetSize(size)
+                child.SetSize(popup.GetClientSize())
+            if self.popleft:
+                popup.SetPosition(wx.Point(x - width - size.GetWidth(), y))
+            else:
+                popup.SetPosition(wx.Point(x, y))
+        popup.Show(show)
+        #wx.CallAfter(self.setFocusCallback)
+
 
 class SpringTabItem(GenToggleButton):
     def __init__(self, parent, id=-1, label='', **kwargs):
@@ -134,6 +160,9 @@ class SpringTabItem(GenToggleButton):
         GenToggleButton.__init__(self, parent, id, label)
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
+        
+        self.window_cb = kwargs['window_cb']
+        self.popup = None
     
     def InitColours(self):
         faceClr = self.GetBackgroundColour()
@@ -179,6 +208,14 @@ class SpringTabItem(GenToggleButton):
     def OnLeave(self, evt):
         self.hover = False
         self.Refresh()
+    
+    def getPopup(self):
+        if self.popup is None:
+            self.popup = self.GetParent().getNewPopup()
+            
+            # Create the window using the popup as the parent
+            self.window_cb(self.popup, self)
+        return self.popup
 
 
 class SpringTabs(wx.Panel):
@@ -189,8 +226,13 @@ class SpringTabs(wx.Panel):
         self.SetSizer(sizer)
         
         self._tabs = []
-        self._tab_renderer = SpringTabItemVerticalRenderer()
+        self._tab_renderer = SpringTabItemVerticalRenderer(popright=True)
         self._radio = None
+
+        if wx.Platform == '__WXMAC__':
+            self._popup_cls = FakePopupWindow
+        else:
+            self._popup_cls = wx.PopupWindow
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -210,13 +252,19 @@ class SpringTabs(wx.Panel):
         elif not item.GetToggle():
             self.popdownItem(item)
     
+    def getNewPopup(self):
+        popup = self._popup_cls(self)
+        return popup
+    
     def popupItem(self, item):
         self._radio = item
         dprint("Popping up %s" % item.GetLabel())
+        self._tab_renderer.showPopup(self, item)
     
     def popdownItem(self, item):
         if self._radio is not None:
             dprint("Removing popup %s" % self._radio.GetLabel())
+            self._tab_renderer.showPopup(self, self._radio, False)
         self._radio = None
     
     def OnPaint(self, evt):
@@ -243,8 +291,8 @@ class SpringTabs(wx.Panel):
         self.Refresh()
         evt.Skip()
 
-    def addTab(self, title, window):
-        tab = SpringTabItem(self, label=title, window=window)
+    def addTab(self, title, window_create_callback):
+        tab = SpringTabItem(self, label=title, window_cb=window_create_callback)
         self.GetSizer().Add(tab, 0, wx.EXPAND)
         self._tabs.append(tab)
         
@@ -255,15 +303,18 @@ class SpringTabs(wx.Panel):
 
 
 if __name__ == "__main__":
+    def ButtonCB(parent, item):
+        button = GenToggleButton(parent, -1, "Whatevar!!! %s" % item.GetLabel())
+        
     app = wx.PySimpleApp()
     frm = wx.Frame(None,-1,"Test",style=wx.TAB_TRAVERSAL|wx.DEFAULT_FRAME_STYLE,
                    size=(300,300))
     panel = wx.Panel(frm)
     sizer = wx.BoxSizer(wx.HORIZONTAL)
     tabs = SpringTabs(panel)
-    tabs.addTab("One", None)
-    tabs.addTab("Two", None)
-    tabs.addTab("Three", None)
+    tabs.addTab("One", ButtonCB)
+    tabs.addTab("Two", ButtonCB)
+    tabs.addTab("Three", ButtonCB)
     sizer.Add(tabs, 0, wx.EXPAND)
     text = wx.StaticText(panel, -1, "Just a placeholder here.  The real action is to the left!")
     sizer.Add(text, 1, wx.EXPAND)
