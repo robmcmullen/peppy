@@ -823,7 +823,25 @@ class BitmapScroller(wx.ScrolledWindow):
             self.scaled_bmp = wx.EmptyBitmap(w, h)
             dc.SelectObject(self.scaled_bmp)
             self._drawBackground(dc, w, h)
-            dc.DrawBitmap(wx.BitmapFromImage(self.img.Scale(w, h)), 0,0, True)
+            
+            # For very large bitmaps, the memory consumption of the
+            # BitmapFromImage call can cause memory errors.  So, here
+            # it breaks up the source image into chunks and only calls
+            # BitmapFromImage on the chunk.
+            ydest = 0
+            source_step = 256
+            for ysource in range(0, self.img.GetHeight(), source_step):
+                if ysource + source_step > self.img.GetHeight():
+                    hsource = self.img.GetHeight() - ysource
+                else:
+                    hsource = source_step
+                hdest = hsource * self.zoom
+                crop = [0, ysource, self.img.GetWidth(), hsource]
+                #dprint(crop)
+                subimg = self.orig_img.GetSubImage(crop)
+                bmp = wx.BitmapFromImage(subimg.Scale(w, hdest))
+                dc.DrawBitmap(bmp, 0, ydest, True)
+                ydest += hdest
             self.width = self.scaled_bmp.GetWidth()
             self.height = self.scaled_bmp.GetHeight()
         else:

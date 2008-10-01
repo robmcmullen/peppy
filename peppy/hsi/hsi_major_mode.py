@@ -141,7 +141,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cubeview.swapEndian(self.swap_endian)
         self.cubeview.setFilterOrder([self.filter])
         self.cubeview.show(self.colormapper)
-        self.setBitmap(self.cubeview.bitmap)
+        self.setImage(self.cubeview.image)
         self.frame.updateMenumap()
         if refresh:
             self.Update()

@@ -11,6 +11,7 @@ import os, struct, mmap
 from cStringIO import StringIO
 
 import wx
+from wx.lib.pubsub import Publisher
 from peppy.actions import *
 
 from peppy.debug import *
@@ -37,6 +38,7 @@ class CubeView(debugmixin):
     def __init__(self, mode, cube, display_rgb=True):
         self.mode = mode
         self.display_rgb = display_rgb
+        self.cube = None
         self.setCube(cube)
     
     def setCube(self, cube):
@@ -54,15 +56,15 @@ class CubeView(debugmixin):
         self.extrema=(0,1)
 
         # simple list of arrays, one array for each color plane r, g, b
-        self.bitmap=None
+        self.image = None
         self.contraststretch=0.0 # percentage
 
         self.initBitmap(cube)
         self.initDisplayIndexes()
 
-    def initBitmap(self, cube, width=None, height=None):
-        self.cube = cube
+    def initBitmap(self, cube=None, width=None, height=None):
         if cube:
+            self.cube = cube
             if width:
                 self.width = width
                 self.height = height
@@ -76,7 +78,7 @@ class CubeView(debugmixin):
 
         # Delay loading real bitmap till requested.  Make an empty one
         # for now.
-        self.bitmap=wx.EmptyBitmap(self.width, self.height)
+        self.image = wx.EmptyImage(self.width, self.height)
 
     def initDisplayIndexes(self):
         if self.cube:
@@ -255,34 +257,49 @@ class CubeView(debugmixin):
     def show(self, colormapper, progress=None):
         if not self.cube: return
 
-        refresh=False
-        if self.indexes:
-            if len(self.indexes)!=len(self.bands):
-                refresh=True
-            else:
-                for i in range(len(self.indexes)):
-                    if self.indexes[i]!=self.bands[i][0]:
-                        refresh=True
-                        break
-        
-        if refresh or not self.bands:
-            self.loadBands()
-        
-        self.processFilters(progress)
-        rgb = colormapper.getRGB(self.height, self.width, self.planes)
-        self.bitmap = wx.BitmapFromBuffer(self.width, self.height, rgb)
-        # self.Refresh()
+        try:
+            # remove old image for memory management purposes
+            del self.image
+            self.image = None
+            
+            refresh=False
+            if self.indexes:
+                if len(self.indexes)!=len(self.bands):
+                    refresh=True
+                else:
+                    for i in range(len(self.indexes)):
+                        if self.indexes[i]!=self.bands[i][0]:
+                            refresh=True
+                            break
+            
+            if refresh or not self.bands:
+                self.loadBands()
+            
+            self.processFilters(progress)
+            rgb = colormapper.getRGB(self.height, self.width, self.planes)
+            
+            # image uses the rgb data and doesn't create a new copy
+            self.image = wx.ImageFromBuffer(self.width, self.height, rgb)
+            # self.Refresh()
+        except Exception, e:
+            import traceback
+            dprint(traceback.format_exc())
+            Publisher().sendMessage('peppy.log.error', traceback.format_exc())
+            
+            # recreate empty image if necessary
+            self.initBitmap()
+
     
     def saveImage(self,name):
         # convert to image so that save file can automatically
         # determine type from the filename.
-        image=wx.ImageFromBitmap(self.bitmap)
         type=getImageType(name)
         assert self.dprint("saving image to %s with type=%d" % (name,type))
-        return image.SaveFile(name,type)
+        return self.image.SaveFile(name,type)
 
     def copyImageToClipboard(self):
-        bmpdo = wx.BitmapDataObject(self.bitmap)
+        bitmap = wx.BitmapFromImage(self.image)
+        bmpdo = wx.BitmapDataObject(bitmap)
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(bmpdo)
             wx.TheClipboard.Close()
