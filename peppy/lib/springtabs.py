@@ -22,6 +22,7 @@ import wx
 import wx.stc
 from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
+from wx.lib.buttons import GenToggleButton
 
 try:
     from peppy.debug import *
@@ -71,48 +72,154 @@ class FakePopupWindow(wx.MiniFrame):
 
 
 
-class SpringTabItem(object):
-    def __init__(self, title, window, icon=None):
-        self.title = title
-        self.window = window
-        self.border = 4
+class SpringTabItemRenderer(object):
+    def OnPaint(self, item, evt):
+        (width, height) = item.GetClientSizeTuple()
+        x1 = y1 = 0
+        x2 = width-1
+        y2 = height-1
+
+        dc = wx.PaintDC(item)
+        if item.hover:
+            self.DrawHoverBackground(item, dc)
+        else:
+            brush = item.GetBackgroundBrush(dc)
+            if brush is not None:
+                dc.SetBackground(brush)
+                dc.Clear()
+
+        item.DrawLabel(dc, width, height)
+        self.DrawHoverDecorations(item, dc, width, height)
+        
+        dprint("button %s: pressed=%s" % (item.GetLabel(), not item.up))
     
-    def getBorder(self):
-        return self.border
-    
-    def getSize(self, dc):
-        w, h = dc.GetTextExtent(self.title)
-        return w, h
+    def DrawHoverBackground(self, item, dc):
+        brush = wx.Brush(item.faceDnClr, wx.SOLID)
+        dc.SetBackground(brush)
+        dc.Clear()
+
+    def DrawHoverDecorations(self, item, dc, width, height):
+        pass
 
 
-class SpringTabVerticalRenderer(object):
-    def drawTabs(self, dc, width, tabs):
-        x = 0
-        y = 0
-        for tab in tabs:
-            h, w = tab.getSize(dc)
-            border = tab.getBorder()
-            dc.DrawRectangle(0, y, width, h + (2 * border))
-            
-            x = (width - w) / 2 + 1
-            # If text is rotated 90 degrees counterclockwise, the rectangle
-            # that contains it has its lower left corner at x, y
-            dc.DrawRotatedText(tab.title, x, y + border + h, 90.0)
-            y += h + 2 * border
+class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
+    def DoGetBestSize(self, item):
+        """
+        Overridden base class virtual.  Determines the best size of the
+        button based on the label and bezel size.
+        """
+        h, w, useMin = item._GetLabelSize()
+        width = w + item.border + item.bezelWidth - 1
+        height = h + item.border + item.bezelWidth - 1
+        #dprint("width=%d height=%d" % (width, height))
+        return (width, height)
+
+    def DrawLabel(self, item, dc, width, height, dx=0, dy=0):
+        dc.SetFont(item.GetFont())
+        if item.IsEnabled():
+            dc.SetTextForeground(item.GetForegroundColour())
+        else:
+            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+        label = item.GetLabel()
+        th, tw = dc.GetTextExtent(label)
+        #dc.DrawText(label, (width-tw)/2+dx, (height-th)/2+dy)
+        dc.DrawRotatedText(label, (width-tw)/2+dx, height+dy, 90.0)
+
+
+class SpringTabItem(GenToggleButton):
+    def __init__(self, parent, id=-1, label='', **kwargs):
+        self.border = 6
+        self.hover = False
+        
+        GenToggleButton.__init__(self, parent, id, label)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
+    
+    def InitColours(self):
+        faceClr = self.GetBackgroundColour()
+        r, g, b = faceClr.Get()
+        fr, fg, fb = max(0,r-32), max(0,g-32), max(0,b-32)
+        dprint(str((fr, fg, fb)))
+        self.faceDnClr = wx.Colour(fr, fg, fb)
+        sr, sg, sb = max(0,r-32), max(0,g-32), max(0,b-32)
+        self.shadowPen = wx.Pen(wx.Colour(sr,sg,sb), 1, wx.SOLID)
+        hr, hg, hb = min(255,r+64), min(255,g+64), min(255,b+64)
+        self.highlightPen = wx.Pen(wx.Colour(hr,hg,hb), 1, wx.SOLID)
+        self.focusClr = wx.Colour(hr, hg, hb)
+    
+    def DoGetBestSize(self):
+        return self.GetParent().getRenderer().DoGetBestSize(self)
+
+    def DrawLabel(self, dc, width, height, dx=0, dy=0):
+        self.GetParent().getRenderer().DrawLabel(self, dc, width, height, dx, dy)
+    
+    def OnPaint(self, evt):
+        self.GetParent().getRenderer().OnPaint(self, evt)
+    
+    def SetToggle(self, flag, check_popup=True):
+        self.up = not flag
+        if check_popup:
+            self.GetParent().setRadio(self)
+        self.Refresh()
+
+    def OnLeftDown(self, event):
+        if not self.IsEnabled():
+            return
+        self.saveUp = self.up
+        self.up = not self.up
+        self.GetParent().setRadio(self)
+        self.CaptureMouse()
+        self.SetFocus()
+        self.Refresh()
+
+    def OnEnter(self, evt):
+        self.hover = True
+        self.Refresh()
+    
+    def OnLeave(self, evt):
+        self.hover = False
+        self.Refresh()
 
 
 class SpringTabs(wx.Panel):
     def __init__(self, parent, *args, **kwargs):
         wx.Panel.__init__(self, parent, *args, **kwargs)
         
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(sizer)
+        
         self._tabs = []
-        self._tab_renderer = SpringTabVerticalRenderer()
+        self._tab_renderer = SpringTabItemVerticalRenderer()
+        self._radio = None
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
     
-    def OnPaint(self, event):
+    def getRenderer(self):
+        return self._tab_renderer
+    
+    def setRadio(self, item):
+        self._processing_radio = True
+        for tab in self._tabs:
+            if tab != item and tab.GetToggle():
+                tab.SetToggle(False, check_popup=False)
+        if self._radio != item:
+            self.popdownItem(self._radio)
+            self.popupItem(item)
+        elif not item.GetToggle():
+            self.popdownItem(item)
+    
+    def popupItem(self, item):
+        self._radio = item
+        dprint("Popping up %s" % item.GetLabel())
+    
+    def popdownItem(self, item):
+        if self._radio is not None:
+            dprint("Removing popup %s" % self._radio.GetLabel())
+        self._radio = None
+    
+    def OnPaint(self, evt):
         dc = wx.PaintDC(self)
         
         size = self.GetClientSize()
@@ -124,20 +231,21 @@ class SpringTabs(wx.Panel):
         dc.DrawLine(0, 0, size.x, size.y)
         dc.DrawLine(0, size.y, size.x, 0)
         
-        dc.SetPen(wx.BLACK_PEN)
-        self._tab_renderer.drawTabs(dc, size.x, self._tabs)
+        #self._tab_renderer.drawTabs(dc, size.x, self._tabs)
+        evt.Skip()
 
 
-    def OnEraseBackground(self, event):
+    def OnEraseBackground(self, evt):
         # intentionally empty
         pass
 
-    def OnSize(self, event):
+    def OnSize(self, evt):
         self.Refresh()
-        event.Skip()
+        evt.Skip()
 
     def addTab(self, title, window):
-        tab = SpringTabItem(title, window)
+        tab = SpringTabItem(self, label=title, window=window)
+        self.GetSizer().Add(tab, 0, wx.EXPAND)
         self._tabs.append(tab)
         
         self.Refresh()
