@@ -69,18 +69,18 @@ class HSIPlugin(IPeppyPlugin):
         if mode.keyword == "HSI":
             try:
                 import peppy.hsi.hsi_menu
-                import peppy.hsi.filter
+                import peppy.hsi.filter_menu
                 return [peppy.hsi.hsi_menu.PrevBand,
                         peppy.hsi.hsi_menu.NextBand,
                         peppy.hsi.hsi_menu.GotoBand,
                         peppy.hsi.hsi_menu.BandSlider,
                         peppy.hsi.hsi_menu.BandSliderUpdates,
-                        peppy.hsi.filter.ColormapAction,
-                        peppy.hsi.filter.ContrastFilterAction,
-                        peppy.hsi.filter.MedianFilterAction,
-                        peppy.hsi.filter.GaussianFilterAction,
-                        peppy.hsi.filter.ClippingFilterAction,
-                        peppy.hsi.filter.SubtractBandAction,
+                        peppy.hsi.filter_menu.ColormapAction,
+                        peppy.hsi.filter_menu.ContrastFilterAction,
+                        peppy.hsi.filter_menu.MedianFilterAction,
+                        peppy.hsi.filter_menu.GaussianFilterAction,
+                        peppy.hsi.filter_menu.ClippingFilterAction,
+                        peppy.hsi.filter_menu.SubtractBandAction,
                         peppy.hsi.hsi_menu.SwapEndianAction,
                         peppy.hsi.hsi_menu.CubeViewAction,
                         peppy.hsi.hsi_menu.ShowPixelValues,

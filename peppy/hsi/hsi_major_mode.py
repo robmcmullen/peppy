@@ -185,10 +185,11 @@ class HSIMode(BitmapScroller, MajorMode):
 
     def getPopupActions(self, evt, x, y):
         import peppy.hsi.hsi_menu
+        import peppy.hsi.filter_menu
         import peppy.hsi.view
         return [
             peppy.hsi.view.CubeViewAction,
-            peppy.hsi.filter.ColormapAction,
+            peppy.hsi.filter_menu.ColormapAction,
             peppy.hsi.hsi_menu.ShowPixelValues,
             peppy.hsi.hsi_menu.BandSliderUpdates,
             peppy.hsi.hsi_menu.SpatialSubset,
