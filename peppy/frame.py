@@ -380,10 +380,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.SetSizer(hsplit)
         
         self.spring = SpringTabs(self)
-        def CalendarCB(parent, item):
-            import wx.calendar
-            wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
-        self.spring.addTab("Calendar", CalendarCB)
 
         # tell FrameManager to manage this frame        
         self._mgr = wx.aui.AuiManager()
@@ -394,9 +390,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                           CenterPane())
         self.sidebar_panes = []
         self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
-                                  Name("SpringTabs").Caption("SpringTabs").
-                                  Left().CloseButton(False).CaptionVisible(False).
-                                  LeftDockable(False).RightDockable(False))
+                          Name("SpringTabs").Caption("SpringTabs").
+                          Left().CloseButton(False).CaptionVisible(False).
+                          LeftDockable(False).RightDockable(False).DockFixed())
 
         UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()

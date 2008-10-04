@@ -54,10 +54,6 @@ from peppy.lib.textutil import *
 from peppy.lib.springtabs import SpringTabs
 
 
-def CalendarCB(parent, item):
-    import wx.calendar
-    wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
-
 class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
     
@@ -78,7 +74,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.splitter=wx.Panel(self)
         hsplit.Add(self.splitter,1,wx.EXPAND)
         self.spring = SpringTabs(self, popup_direction="left")
-        self.spring.addTab("Calendar", CalendarCB)
         hsplit.Add(self.spring, 0, wx.EXPAND)
         
         box.Add(hsplit, 1, wx.EXPAND)
