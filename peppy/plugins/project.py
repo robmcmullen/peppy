@@ -3,7 +3,8 @@
 """Project support in peppy
 
 This plugin provides support for projects, including individual templates for
-projects, makefile and compilation support, and more.  Eventually.
+projects, makefile and compilation support, and eventually even more good
+stuff.
 
 Templates can exist as global templates, or can exist within projects that
 will override the global templates.  Global templates are stored in the peppy
@@ -14,7 +15,8 @@ The project plugin adds the attribute 'project_info' to all major mode
 instances when the plugin is activated.  Its value with be an instance of the
 L{ProjectInfo} object if there is a project associated with the major mode,
 otherwise it will be C{None}.  Therefore, you don't have to use hasattr(mode,
-'project_info') before checking the value of project_info.
+'project_info') before checking the value of project_info assuming that this
+plugin is loaded.
 """
 import os, re
 import cPickle as pickle
@@ -33,6 +35,19 @@ from peppy.lib.processmanager import *
 
 
 class CTAGS(InstancePrefs):
+    """Exuberant CTAGS support for projects.
+    
+    Exuberant-ctags is a modern update to the classic Unix ctags program.  It
+    scans files and creates relationships among the source files of a project.
+    
+    Peppy uses exuberant-ctags as way to cross-reference files within
+    the project.  Rather than writing a similar program in python, it's
+    much easier just to call an external program to do the work for you.
+    But, because ctags is an external program, it must be installed
+    before the ctags functionality can be used.  Check your system's
+    package manager for instructions on how to add exuberant-ctags, or see
+    U{ctags.sourceforge.net} for instructions.
+    """
     # lookup table for kinds of ctags
     kind_of_tag = {
         'c': 'class name',
@@ -161,6 +176,17 @@ class CTAGS(InstancePrefs):
 
 
 class ProjectInfo(CTAGS):
+    """Main project support class for peppy.
+    
+    A project is simply a directory that contains related files.  The root
+    directory of the project is indicated by a project settings directory,
+    by default named ".peppy-project".  Any directory on the filesystem that
+    contains the project settings directory will become a project directory.
+    
+    It unsupported and not recommended, but it is possible to nest projects
+    inside other projects.  Files in the nested project will only report being
+    members of the nested project, not the outer level project.
+    """
     default_prefs = (
         StrParam('project_name', '', 'Project name'),
         DirParam('build_dir', '', 'working directory in which to build', fullwidth=True),
@@ -323,7 +349,7 @@ class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
         return self.__class__.name % self.mode.keyword
 
     def action(self, index=-1, multiplier=1):
-        pathname = ProjectPlugin.getFilename(self.mode.keyword)
+        pathname = ProjectPlugin.getTemplateFilename(self.mode.keyword)
         self.dprint(pathname)
         self.mode.save(pathname)
 
@@ -560,7 +586,8 @@ class ProjectPlugin(IPeppyPlugin):
         Publisher().unsubscribe(self.applyProjectSettings)
     
     @classmethod
-    def getFilename(cls, template_name):
+    def getTemplateFilename(cls, template_name):
+        """Convenience function to return the full path to a global template"""
         return wx.GetApp().config.fullpath("%s/%s" % (cls.classprefs.template_directory, template_name))
     
     @classmethod
@@ -698,6 +725,13 @@ class ProjectPlugin(IPeppyPlugin):
 
     @classmethod
     def registerProject(cls, mode, url=None):
+        """Associate a L{ProjectInfo} object with a major mode.
+        
+        A file is associated with a project by being inside a project
+        directory.  If the URL of the file used in the buffer of the major
+        mode is inside a project directory, the keyword 'project_info' will be
+        added to the major mode's instance attributes.
+        """
         if url is None:
             url = cls.findProjectURL(mode.buffer.url)
         if url:
@@ -709,10 +743,17 @@ class ProjectPlugin(IPeppyPlugin):
             if mode:
                 mode.project_info = info
             cls.dprint("found project %s" % info)
-            return info
         elif mode:
+            cls.dprint("no project for %s" % str(mode.buffer.url))
             mode.project_info = None
-    
+        
+        if cls.debuglevel > 0:
+            cls.dprint("Registered projects:")
+            for url, info in cls.known_projects.iteritems():
+                cls.dprint("%s\t%s" % (info.getProjectName(), str(url)))
+        
+        return mode.project_info
+
     @classmethod
     def getProjectInfo(cls, mode):
         url = cls.findProjectURL(mode.buffer.url)
