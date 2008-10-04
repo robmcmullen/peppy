@@ -80,7 +80,7 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
         wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
         
-        self.frame=parent
+        self.frame = parent
         self.lastActivePage=None
         self.context_tab = -1 # which tab is currently displaying a context menu?
         
@@ -375,6 +375,16 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         ModularStatusBar(self)
 
+        hsplit = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetAutoLayout(True)
+        self.SetSizer(hsplit)
+        
+        self.spring = SpringTabs(self)
+        def CalendarCB(parent, item):
+            import wx.calendar
+            wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
+        self.spring.addTab("Calendar", CalendarCB)
+
         # tell FrameManager to manage this frame        
         self._mgr = wx.aui.AuiManager()
         self._mgr.SetManagedWindow(self)
@@ -383,6 +393,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
         self.sidebar_panes = []
+        self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
+                                  Name("SpringTabs").Caption("SpringTabs").
+                                  Left().CloseButton(False).CaptionVisible(False).
+                                  LeftDockable(False).RightDockable(False))
 
         UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()
@@ -462,6 +476,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             sidebars = Sidebar.getClasses(self,sidebar_names)
             for sidebarcls in sidebars:
                 self.createSidebar(sidebarcls)
+                if sidebarcls.keyword == "filebrowser":
+                    self.spring.addTab(sidebarcls.caption, sidebarcls)
             self.createSidebarList()
 
     def createSidebar(self, sidebarcls):

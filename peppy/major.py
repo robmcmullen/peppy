@@ -51,6 +51,12 @@ from peppy.lib.processmanager import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 from peppy.lib.textutil import *
+from peppy.lib.springtabs import SpringTabs
+
+
+def CalendarCB(parent, item):
+    import wx.calendar
+    wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
 
 class MajorModeWrapper(wx.Panel, debugmixin):
     """Container around major mode that controls the AUI manager
@@ -67,8 +73,15 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         box=wx.BoxSizer(wx.VERTICAL)
         self.SetAutoLayout(True)
         self.SetSizer(box)
+        
+        hsplit = wx.BoxSizer(wx.HORIZONTAL)
         self.splitter=wx.Panel(self)
-        box.Add(self.splitter,1,wx.EXPAND)
+        hsplit.Add(self.splitter,1,wx.EXPAND)
+        self.spring = SpringTabs(self, popup_direction="left")
+        self.spring.addTab("Calendar", CalendarCB)
+        hsplit.Add(self.spring, 0, wx.EXPAND)
+        
+        box.Add(hsplit, 1, wx.EXPAND)
         self._mgr = wx.aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
         self._mgr.Update()
@@ -673,6 +686,7 @@ class MajorMode(ClassPrefs, debugmixin):
     def createEventBindings(self):
         if hasattr(self, 'addUpdateUIEvent'):
             self.addUpdateUIEvent(self.OnUpdateUI)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyDown)
         self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
         self.idle_update_menu = False
@@ -753,6 +767,11 @@ class MajorMode(ClassPrefs, debugmixin):
 
     def OnUpdateUIHook(self, evt):
         pass
+
+    def OnFocus(self, evt):
+        self.wrapper.spring.clearRadio()
+        self.frame.spring.clearRadio()
+        evt.Skip()
 
     def idleHandler(self):
         #dprint("Idle starting for %s at %f" % (self.buffer.url, time.time()))
