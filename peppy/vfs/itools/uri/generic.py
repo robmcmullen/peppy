@@ -208,7 +208,7 @@ class Path(list):
     called an absolute path, otherwise it is called a relative path.
     """
 
-    __slots__ = ['startswith_slash', 'endswith_slash']
+    __slots__ = ['startswith_slash', 'endswith_slash', 'dospath']
 
 
     def __init__(self, path):
@@ -217,6 +217,12 @@ class Path(list):
 
         path = normalize_path(path)
 
+        self.dospath = False
+        if len(path) > 1:
+            doschar = path[0].lower()
+            if doschar >= 'a' and doschar <= 'z' and path[1] == ':':
+                self.dospath = True
+        
         # Absolute or relative
         self.startswith_slash = path.startswith('/')
         if self.startswith_slash:
@@ -295,11 +301,11 @@ class Path(list):
 
 
     def is_absolute(self):
-        return self.startswith_slash
+        return self.startswith_slash or self.dospath
 
 
     def is_relative(self):
-        return not self.startswith_slash
+        return not self.dospath and not self.startswith_slash
 
 
     def get_name(self):

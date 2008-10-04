@@ -97,7 +97,9 @@ class PathComparisonTestCase(unittest.TestCase):
         """The path to the same with a trailing slash equals '.'."""
         self.assertEqual(self.wo_to_w, '.')
 
-
+    def test_absolute(self):
+        self.assert_(self.path_w_slash.is_absolute())
+        self.assert_(self.path_wo_slash.is_absolute())
 
 class UnicodePathComparisonTestCase(PathComparisonTestCase):
 
@@ -250,8 +252,10 @@ class PathTestCase(TestCase):
         """
         path = Path('./a/./b//c/')
         self.assertEqual(str(path), 'a/b/c/')
+        self.assert_(path.is_relative())
         path = Path(u'./a/./b//c/')
         self.assertEqual(unicode(path), u'a/b/c/')
+        self.assert_(path.is_relative())
 
 
     def test_backnorm(self):
@@ -260,8 +264,10 @@ class PathTestCase(TestCase):
         """
         path = Path('a/b/c/../d')
         self.assertEqual(str(path), 'a/b/d')
+        self.assert_(path.is_relative())
         path = Path(u'a/b/c/../d')
         self.assertEqual(unicode(path), u'a/b/d')
+        self.assert_(path.is_relative())
 
 
     def test_absnorm(self):
@@ -270,8 +276,10 @@ class PathTestCase(TestCase):
         """
         path = Path('/../../a/b/c')
         self.assertEqual(str(path), '/a/b/c')
+        self.assert_(path.is_absolute())
         path = Path(u'/../../a/b/c')
         self.assertEqual(unicode(path), u'/a/b/c')
+        self.assert_(path.is_absolute())
 
 
     def test_relnorm(self):
@@ -280,8 +288,33 @@ class PathTestCase(TestCase):
         """
         path = Path('../../a//.//b/c')
         self.assertEqual(str(path), '../../a/b/c')
+        self.assert_(path.is_relative())
         path = Path(u'../../a//.//b\u03A0\u03A3\u03A9/c')
         self.assertEqual(path, u'../../a/b\u03A0\u03A3\u03A9/c')
+        self.assert_(path.is_relative())
+
+
+    def test_absolute(self):
+        path = Path(u'/a/b/c')
+        self.assert_(path.is_absolute())
+        self.assert_(not path.is_relative())
+
+
+    def test_relative(self):
+        path = Path(u'a/b/c')
+        self.assert_(not path.is_absolute())
+        self.assert_(path.is_relative())
+
+
+    def test_windows_absolute(self):
+        # Note that there is no such thing as a windows relative path when a
+        # drive letter is also specified.
+        path = Path(u'c:/a/b/c')
+        self.assert_(path.is_absolute())
+        self.assert_(not path.is_relative())
+        path = Path(u'c:a/b/c')
+        self.assert_(path.is_absolute())
+        self.assert_(not path.is_relative())
 
 
 class ParseTestCase(TestCase):
@@ -295,6 +328,7 @@ class ParseTestCase(TestCase):
         self.assertEqual(ref.scheme, 'http')
         self.assertEqual(ref.authority, 'example.com')
         self.assertEqual(ref.path, '/a/b/c')
+        self.assert_(ref.path.is_absolute())
         self.assertEqual(ref.query, {'query': None})
         self.assertEqual(ref.fragment, 'fragment')
 
@@ -305,6 +339,7 @@ class ParseTestCase(TestCase):
         self.assertEqual(bool(ref.scheme), False)
         self.assertEqual(ref.authority, 'example.com')
         self.assertEqual(ref.path, '/a/b')
+        self.assert_(ref.path.is_absolute())
 
 
     def test_path(self):
@@ -313,6 +348,7 @@ class ParseTestCase(TestCase):
         self.assertEqual(bool(ref.scheme), False)
         self.assertEqual(bool(ref.authority), False)
         self.assertEqual(ref.path, '/a/b/c')
+        self.assert_(ref.path.is_absolute())
 
 
     def test_query(self):
@@ -330,9 +366,11 @@ class ParseTestCase(TestCase):
         self.assertEqual('file', uri.scheme)
         uri = GenericDataType.decode('file:///c:/stuff/blah')
         self.assertEqual('c:/stuff/blah', uri.path)
+        self.assert_(uri.path.is_absolute())
         self.assertEqual('file', uri.scheme)
         uri = GenericDataType.decode('C:/stuff/blah')
         self.assertEqual('c:/stuff/blah', uri.path)
+        self.assert_(uri.path.is_absolute())
         self.assertEqual('file', uri.scheme)
 
 
