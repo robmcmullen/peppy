@@ -181,8 +181,8 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
             #dprint("popping up at %s" % str((x,y)))
             child.SetPosition(wx.Point(0, 0))
             popup.SetPosition(wx.Point(x, y))
+            wx.CallAfter(item.showPopupCallback)
         popup.Show(show)
-        wx.CallAfter(item.setPopupFocusCallback)
 
 
 class SpringTabItem(GenToggleButton):
@@ -257,6 +257,17 @@ class SpringTabItem(GenToggleButton):
     def OnActivate(self, evt):
         dprint("Activating %s: %s" % (self.GetLabel(), evt.GetActive()))
         evt.Skip()
+    
+    def showPopupCallback(self):
+        """Callback used each time the popup is initially displayed to the user.
+        
+        If the child implements the activeSprintTab method, that will be called
+        to let the popup initialize its state.
+        """
+        popup, child = self.getPopup()
+        if hasattr(child, 'activateSpringTab'):
+            child.activateSpringTab()
+        self.setPopupFocusCallback()
     
     def setPopupFocusCallback(self):
         """Callback for use within wx.CallAfter to prevent focus being set

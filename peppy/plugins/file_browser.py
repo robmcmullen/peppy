@@ -37,6 +37,17 @@ class FileBrowser(wx.GenericDirCtrl, Sidebar):
         self.ShowHidden(self.classprefs.show_hidden)
         tree = self.GetTreeCtrl()
         tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
+    
+    def activateSpringTab(self):
+        """Callback function from the SpringTab handler requesting that we
+        initialize ourselves.
+        
+        """
+        mode = self.frame.getActiveMajorMode()
+        dprint(mode)
+        path = mode.buffer.cwd()
+        dprint(path)
+        self.ExpandPath(path)
 
     def OnActivate(self, evt):
         path = self.GetFilePath()
