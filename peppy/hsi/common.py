@@ -20,7 +20,8 @@ class HSIActionMixin(object):
         cwd = self.mode.buffer.cwd()
         import peppy.vfs as vfs
         url = vfs.normalize(cwd)
-        name = "dataset:%s/%s" % (url.path, name)
+        path = unicode(url.path)
+        name = u"dataset:%s/%s" % (path, name)
         return name
 
 _scipy_mod = "not loaded"

@@ -232,16 +232,20 @@ class BufferVFSMixin(debugmixin):
             # seeing if any path components exist
             lastpath = None
             temp = unicode(url.path)
-            if not temp.startswith('/'):
-                return '/'
-            uri = vfs.normalize(unicode(url.path))
-            path = os.path.normpath(unicode(uri.path))
-            while path != lastpath and path != '/':
-                dprint("trying %s" % path)
-                if os.path.isdir(path):
-                    break
-                lastpath = path
-                path = os.path.dirname(path)
+            
+            # Absolute path may be indicated by a drive letter and a colon
+            # on windows
+            if temp.startswith('/') or (len(temp) > 2 and temp[1] == ':'):
+                uri = vfs.normalize(unicode(url.path))
+                path = os.path.normpath(unicode(uri.path))
+                while path != lastpath and path != '/':
+                    dprint("trying %s" % path)
+                    if os.path.isdir(path):
+                        break
+                    lastpath = path
+                    path = os.path.dirname(path)
+            else:
+                path = '/'
         return path
             
     def cwd(self, use_vfs=False):
