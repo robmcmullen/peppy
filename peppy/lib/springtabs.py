@@ -279,17 +279,6 @@ class SpringTabItem(GenToggleButton):
             dprint("setting focus to %s" % self.GetLabel())
             child.SetFocus()
 
-    def OnGainFocus(self, evt):
-        self.hasFocus = True
-        self.Refresh()
-        self.Update()
-        # performing this in a call after because Windows never relinquishes
-        # the current tab otherwise
-        wx.CallAfter(self.setPopupFocusCallback)
-        dprint()
-        evt.Skip()
-
-    
     # FIXME: This attempt, using OnChildFocus, setPopupsLoseFocusCallback, and
     # OnChildLoseFocus, was to see if I could find out when the focus was set
     # to something other than one of the popup windows.  I can not make this
