@@ -3,7 +3,7 @@
 """Simple sidebar to display a hierarchy of the filesystem
 """
 
-import os
+import os, os.path
 import wx
 
 from peppy.yapsy.plugins import *
@@ -51,7 +51,10 @@ class FileBrowser(wx.GenericDirCtrl, Sidebar):
 
     def OnActivate(self, evt):
         path = self.GetFilePath()
-        self.frame.open(path)
+        if os.path.isfile(path):
+            self.frame.open(path)
+        else:
+            evt.Skip()
 
 
 class FileBrowserPlugin(IPeppyPlugin):
