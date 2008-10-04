@@ -69,7 +69,7 @@ class Sidebar(ClassPrefs, debugmixin):
         """
         while parent is not None:
             if isinstance(parent, wx.Frame) and hasattr(parent, 'open'):
-                print("Found frame: %s" % parent)
+                self.dprint("Found frame: %s" % parent)
                 break
             parent = parent.GetParent()
         return parent
