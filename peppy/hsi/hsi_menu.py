@@ -30,11 +30,6 @@ from peppy.hsi.view import *
 import numpy
 
 
-class HSIActionMixin(object):
-    @classmethod
-    def worksWithMajorMode(cls, mode):
-        return isinstance(mode, HSIMode)
-
 class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     name = "Prev Band"
     default_menu = ("View", -200)
@@ -197,9 +192,9 @@ class TestSubset(HSIActionMixin, SelectAction):
     testcube = 1
     
     def getTempName(self):
-        name = "dataset:test%d" % self.__class__.testcube
+        name = "test%d" % self.__class__.testcube
         self.__class__.testcube += 1
-        return name
+        return self.getDatasetPath(name)
     
     def action(self, index=-1, multiplier=1):
         cube = self.mode.cube
@@ -224,9 +219,9 @@ class SpatialSubset(HSIActionMixin, SelectAction):
         return False
     
     def getTempName(self):
-        name = "dataset:spatial_subset%d" % self.__class__.testcube
+        name = "spatial_subset%d" % self.__class__.testcube
         self.__class__.testcube += 1
-        return name
+        return self.getDatasetPath(name)
     
     def action(self, index=-1, multiplier=1):
         cube = self.mode.cube
@@ -252,9 +247,9 @@ class FocalPlaneAverage(HSIActionMixin, SelectAction):
     testcube = 1
     
     def getTempName(self):
-        name = "dataset:focal_plane_average%d" % self.__class__.testcube
+        name = "focal_plane_average%d" % self.__class__.testcube
         self.__class__.testcube += 1
-        return name
+        return self.getDatasetPath(name)
     
     def action(self, index=-1, multiplier=1):
         cube = self.mode.cube
@@ -306,9 +301,9 @@ class ScaledImageMixin(HSIActionMixin):
         return len(self.mode.cubeview.getCurrentPlanes()) > 0
     
     def getTempName(self):
-        name = "dataset:scaled%d" % ScaledImageMixin.testcube
+        name = "scaled%d" % ScaledImageMixin.testcube
         ScaledImageMixin.testcube += 1
-        return name
+        return self.getDatasetPath(name)
 
     def setLastValue(self, value):
         self.__class__.last_scale = value

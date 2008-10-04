@@ -7,6 +7,19 @@ class HSIActionMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
         return mode.keyword == "HSI"
+    
+    def getDatasetPath(self, name):
+        """Convenience method to get a full pathname to the dataset filesystem
+        that is based on the source pathname.
+        
+        This adds a prefix to the dataset pathname so that it corresponds to
+        the same path used in the source image.  This allows any save commands
+        to use the same path on the filesystem as the initial directory shown
+        in the file save dialog.
+        """
+        cwd = self.mode.buffer.cwd()
+        name = "dataset:%s/%s" % (cwd, name)
+        return name
 
 _scipy_mod = "not loaded"
 # Some features require scipy, so set this flag to allow the features
