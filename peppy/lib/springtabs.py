@@ -245,6 +245,7 @@ class SpringTabItem(GenToggleButton):
     def getPopup(self):
         if self.popup is None:
             self.popup = self.GetParent().getNewPopup()
+            self.popup.Bind(wx.EVT_ACTIVATE, self.OnActivate)
             
             # Create the window using the popup as the parent
             self.window_cb(self.popup, self)
@@ -252,6 +253,10 @@ class SpringTabItem(GenToggleButton):
 #        child.Bind(wx.EVT_SET_FOCUS, self.OnChildFocus)
 #        child.Bind(wx.EVT_KILL_FOCUS, self.OnLoseChildFocus)
         return self.popup, child
+
+    def OnActivate(self, evt):
+        dprint("Activating %s: %s" % (self.GetLabel(), evt.GetActive()))
+        evt.Skip()
     
     def setPopupFocusCallback(self):
         """Callback for use within wx.CallAfter to prevent focus being set
