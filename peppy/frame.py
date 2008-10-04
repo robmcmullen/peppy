@@ -941,6 +941,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
 
+        self.spring.clearRadio()
+
         if set_focus:
             mode.focus()
         self.setTitle()
