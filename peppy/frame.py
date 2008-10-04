@@ -475,9 +475,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             assert self.dprint("loading %s" % sidebar_names)
             sidebars = Sidebar.getClasses(self,sidebar_names)
             for sidebarcls in sidebars:
-                self.createSidebar(sidebarcls)
-                if sidebarcls.keyword == "filebrowser":
+                if sidebarcls.classprefs.springtab:
                     self.spring.addTab(sidebarcls.caption, sidebarcls)
+                else:
+                    self.createSidebar(sidebarcls)
             self.createSidebarList()
 
     def createSidebar(self, sidebarcls):

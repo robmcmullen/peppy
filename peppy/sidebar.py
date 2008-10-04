@@ -39,6 +39,7 @@ class Sidebar(ClassPrefs, debugmixin):
         IntParam('best_height', 100, 'Desired height of sidebar in pixels'),
         IntParam('min_width', 100, 'Minimum width of sidebar in pixels\nenforced by the AuiManager'),
         IntParam('min_height', 100, 'Minimum height of sidebar in pixels\nenforced by the AuiManager'),
+        BoolParam('springtab', False, 'Display in a springtab instead of its own sidebar window'),
         BoolParam('show', True),
         )
 
@@ -54,9 +55,25 @@ class Sidebar(ClassPrefs, debugmixin):
                     classes.append(sidebar)
         return classes
 
-    def __init__(self, frame):
-        self.frame=frame
+    def __init__(self, parent, *args, **kwargs):
+        self.frame = self.getFrame(parent)
+    
+    def getFrame(self, parent):
+        """Utility function to find the peppy frame given the parent window.
         
+        It's not always the case that they immediate parent of this window
+        will be the L{BufferFrame}, for example when the sidebar is used in
+        a L{SpringTab}, the parent of the sidebar will actually be a pop-up
+        window.  This method finds the frame in the ancestry that is the real
+        peppy frame.
+        """
+        while parent is not None:
+            if isinstance(parent, wx.Frame) and hasattr(parent, 'open'):
+                print("Found frame: %s" % parent)
+                break
+            parent = parent.GetParent()
+        return parent
+
     def getPaneInfo(self):
         """Create the AuiPaneInfo object for this minor mode.
         """
