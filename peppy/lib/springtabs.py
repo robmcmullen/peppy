@@ -327,6 +327,8 @@ class SpringTabs(wx.Panel):
         else:
             self._tab_renderer = SpringTabItemHorizontalRenderer(popup_direction)
         self._radio = None
+        
+        self._debug_paint = False
 
         # Using a real wx.PopupWindow seems prevent the focus from being set to
         # the window in the popup.
@@ -334,7 +336,6 @@ class SpringTabs(wx.Panel):
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
         Publisher().subscribe(self.clearRadio, 'springtabs.remove')
     
     def getRenderer(self):
@@ -365,24 +366,20 @@ class SpringTabs(wx.Panel):
         self._radio = None
     
     def OnPaint(self, evt):
-        dc = wx.PaintDC(self)
-        
-        size = self.GetClientSize()
-        dc.SetFont(wx.NORMAL_FONT)
-        dc.SetBrush(wx.WHITE_BRUSH)
-        dc.SetPen(wx.WHITE_PEN)
-        dc.DrawRectangle(0, 0, size.x, size.y)
-        dc.SetPen(wx.LIGHT_GREY_PEN)
-        dc.DrawLine(0, 0, size.x, size.y)
-        dc.DrawLine(0, size.y, size.x, 0)
+        if self._debug_paint:
+            dc = wx.PaintDC(self)
+            
+            size = self.GetClientSize()
+            dc.SetFont(wx.NORMAL_FONT)
+            dc.SetBrush(wx.WHITE_BRUSH)
+            dc.SetPen(wx.WHITE_PEN)
+            dc.DrawRectangle(0, 0, size.x, size.y)
+            dc.SetPen(wx.LIGHT_GREY_PEN)
+            dc.DrawLine(0, 0, size.x, size.y)
+            dc.DrawLine(0, size.y, size.x, 0)
         
         #self._tab_renderer.drawTabs(dc, size.x, self._tabs)
         evt.Skip()
-
-
-    def OnEraseBackground(self, evt):
-        # intentionally empty
-        pass
 
     def OnSize(self, evt):
         self.Refresh()
