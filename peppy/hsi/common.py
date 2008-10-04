@@ -18,7 +18,9 @@ class HSIActionMixin(object):
         in the file save dialog.
         """
         cwd = self.mode.buffer.cwd()
-        name = "dataset:%s/%s" % (cwd, name)
+        import peppy.vfs as vfs
+        url = vfs.normalize(cwd)
+        name = "dataset:%s/%s" % (url.path, name)
         return name
 
 _scipy_mod = "not loaded"
