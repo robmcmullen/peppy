@@ -54,25 +54,29 @@ class DebugClass(ToggleListAction):
     name = "DebugClassMenu"
     empty = "< list of classes >"
     tooltip = "Turn on/off debugging for listed classes"
-    default_menu = "Debug"
+    default_menu = (("Tools/Debug", -1000), 500)
     categories = False
     inline = True
 
     # File list is shared among all windows
     itemlist = []
+    
+    # Initial debug activation from the command line
+    initial_activation = []
 
     @staticmethod
-    def append(kls,text=None):
+    def append(kls, name=None):
         """Add a class to the list of entries
 
-        @param kls: class
-        @type kls: class
-        @param text: (optional) name of class
-        @type text: text
+        @param kls: class object for debuggable class
+        @param name: (optional) name of class
         """
-        if not text:
-            text=kls.__name__
-        DebugClass.itemlist.append({'item':kls,'name':text,'icon':None,'checked':kls.debuglevel>0})
+        if not name:
+            name = kls.__name__
+        if name in DebugClass.initial_activation:
+            dprint("Activating %s for debug printing" % name)
+            kls.debuglevel = 1
+        DebugClass.itemlist.append({'item':kls, 'name':name, 'icon':None, 'checked':kls.debuglevel>0})
 
     @staticmethod
     def setup(msg):
@@ -85,6 +89,13 @@ class DebugClass(ToggleListAction):
             #assert dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
             DebugClass.append(kls)
 
+    @staticmethod
+    def setInitialActivation(names):
+        """Find the class object from the text name"""
+        active = {}
+        for name in names:
+            active[name] = True
+        DebugClass.initial_activation = active
         
     def getHash(self):
         return len(DebugClass.itemlist)
@@ -156,8 +167,19 @@ class DebugClassPlugin(IPeppyPlugin):
     are hidden behind asserts, and asserts are removed when running in
     optimize mode.
     """
-    use_menu = False
+    default_classprefs = (
+        BoolParam('use_menu', False, 'Place the debug class list in the menu bar'),
+    )
 
+    def addCommandLineOptions(self, parser):
+        parser.add_option("--dbg", action="append",
+                          dest="debug_classes", default=[])
+
+    def processCommandLineOptions(self, options):
+        if options.debug_classes:
+            dprint(options.debug_classes)
+            DebugClass.setInitialActivation(options.debug_classes)
+    
     def getSidebars(self):
         # Don't show the sidebar in optimize mode (__debug == False)
         if __debug__:
@@ -169,7 +191,7 @@ class DebugClassPlugin(IPeppyPlugin):
         # Don't show menu if in optimize mode
         if __debug__:
             yield DebugGarbage
-            if self.use_menu:
+            if self.classprefs.use_menu:
                 yield DebugClass
         else:
             raise StopIteration
