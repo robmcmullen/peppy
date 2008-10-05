@@ -42,22 +42,26 @@ class DebugGarbage(SelectAction):
         print "--summary: %d objects" % (len(gc.garbage))
 
 
-class DebugClass(ToggleListAction):
-    """A multi-entry menu list that allows individual toggling of debug
-    printing for classes.
+class DebugClass(Sidebar, wx.CheckListBox, debugmixin):
+    """Turn debug printing on or off for the listed classes.
 
-    All frames will share the same list, which makes sense since the
-    debugging is controlled by class attributes.
+    This is a global plugin that is used to turn on or off debug
+    printing for all the classes that subclass from L{debugmixin}.
     """
-    debuglevel=0
+    debuglevel = 0
     
-    name = "DebugClassMenu"
-    empty = "< list of classes >"
-    tooltip = "Turn on/off debugging for listed classes"
-    default_menu = (("Tools/Debug", -1000), 500)
-    categories = False
-    inline = True
+    keyword = "debug_list"
+    caption = "Debug Printing"
 
+    default_classprefs = (
+        IntParam('best_width', 200),
+        IntParam('best_height', 500),
+        IntParam('min_width', 100),
+        IntParam('min_height', 100),
+        BoolParam('springtab', True),
+        BoolParam('show', False),
+        )
+    
     # File list is shared among all windows
     itemlist = []
     
@@ -96,9 +100,16 @@ class DebugClass(ToggleListAction):
         for name in names:
             active[name] = True
         DebugClass.initial_activation = active
+    
+    def __init__(self, parent, *args, **kwargs):
+        Sidebar.__init__(self, parent, *args, **kwargs)
+        items = self.getItems()
+        wx.CheckListBox.__init__(self, parent, choices=items, pos=(9000,9000))
         
-    def getHash(self):
-        return len(DebugClass.itemlist)
+        assert self.dprint(items)
+        for i in range(len(items)):
+            self.Check(i, self.isChecked(i))
+        self.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
 
     def getItems(self):
         return [item['name'] for item in DebugClass.itemlist]
@@ -106,11 +117,10 @@ class DebugClass(ToggleListAction):
     def isChecked(self, index):
         return DebugClass.itemlist[index]['checked']
 
-    def action(self, index=-1, multiplier=1):
+    def setDebug(self, index):
         """
         Turn on or off the debug logging for the selected class
         """
-        assert self.dprint("DebugClass.action: id(self)=%x name=%s index=%d id(itemlist)=%x" % (id(self),self.name,index,id(DebugClass.itemlist)))
         kls=DebugClass.itemlist[index]['item']
         DebugClass.itemlist[index]['checked']=not DebugClass.itemlist[index]['checked']
         if DebugClass.itemlist[index]['checked']:
@@ -118,46 +128,13 @@ class DebugClass(ToggleListAction):
         else:
             kls.debuglevel=0
         assert self.dprint("class=%s debuglevel=%d" % (kls,kls.debuglevel))
-
-Publisher().subscribe(DebugClass.setup, 'peppy.startup.complete')
-
-
-class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
-    """Turn debug printing on or off for the listed classes.
-
-    This is a global plugin that is used to turn on or off debug
-    printing for all the classes that subclass from L{debugmixin}.
-    """
-    debuglevel = 0
     
-    keyword = "debug_list"
-    caption = "Debug Printing"
-
-    default_classprefs = (
-        IntParam('best_width', 200),
-        IntParam('best_height', 500),
-        IntParam('min_width', 100),
-        IntParam('min_height', 100),
-        BoolParam('springtab', True),
-        BoolParam('show', False),
-        )
-    
-    def __init__(self, parent, *args, **kwargs):
-        Sidebar.__init__(self, parent, *args, **kwargs)
-        self.debuglist = DebugClass(self.frame)
-        items = self.debuglist.getItems()
-        wx.CheckListBox.__init__(self, parent, choices=items, pos=(9000,9000))
-        
-        assert self.dprint(items)
-        for i in range(len(items)):
-            self.Check(i, self.debuglist.isChecked(i))
-        self.Bind(wx.EVT_CHECKLISTBOX, self.OnCheckListBox)
-
     def OnCheckListBox(self, evt):
         index = evt.GetSelection()
-        self.debuglist.action(index)
-        assert self.dprint("index=%d checked=%s" % (index, self.debuglist.isChecked(index)))
-        self.Check(index, self.debuglist.isChecked(index))
+        self.setDebug(index)
+        assert self.dprint("index=%d checked=%s" % (index, self.isChecked(index)))
+        self.Check(index, self.isChecked(index))
+
 
 class DebugClassPlugin(IPeppyPlugin):
     """Plugin to show all classes capable of debug printing.
@@ -169,8 +146,11 @@ class DebugClassPlugin(IPeppyPlugin):
     optimize mode.
     """
     default_classprefs = (
-        BoolParam('use_menu', False, 'Place the debug class list in the menu bar'),
+        BoolParam('use_gui', False, 'Place the debug class list in the user interface'),
     )
+
+    def initialActivation(self):
+        Publisher().subscribe(DebugClass.setup, 'peppy.startup.complete')
 
     def addCommandLineOptions(self, parser):
         parser.add_option("--dbg", action="append",
@@ -184,7 +164,8 @@ class DebugClassPlugin(IPeppyPlugin):
     def getSidebars(self):
         # Don't show the sidebar in optimize mode (__debug == False)
         if __debug__:
-            yield DebugClassList
+            if self.classprefs.use_gui:
+                yield DebugClass
         else:
             raise StopIteration
 
@@ -192,7 +173,5 @@ class DebugClassPlugin(IPeppyPlugin):
         # Don't show menu if in optimize mode
         if __debug__:
             yield DebugGarbage
-            if self.classprefs.use_menu:
-                yield DebugClass
         else:
             raise StopIteration
