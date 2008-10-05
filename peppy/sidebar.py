@@ -44,15 +44,14 @@ class Sidebar(ClassPrefs, debugmixin):
         )
 
     @classmethod
-    def getClasses(cls, frame, sidebarlist=[]):
-        cls.dprint("Loading sidebars %s for %s" % (str(sidebarlist),frame))
+    def getClasses(cls, frame):
+        cls.dprint("Loading sidebars for %s" % (frame))
         classes = []
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
             for sidebar in plugin.getSidebars():
-                if sidebar.keyword in sidebarlist:
-                    cls.dprint("found %s" % sidebar.keyword)
-                    classes.append(sidebar)
+                cls.dprint("found %s" % sidebar.keyword)
+                classes.append(sidebar)
         return classes
 
     def __init__(self, parent, *args, **kwargs):

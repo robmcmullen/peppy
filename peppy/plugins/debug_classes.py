@@ -138,12 +138,13 @@ class DebugClassList(Sidebar, wx.CheckListBox, debugmixin):
         IntParam('best_height', 500),
         IntParam('min_width', 100),
         IntParam('min_height', 100),
+        BoolParam('springtab', True),
         BoolParam('show', False),
         )
     
-    def __init__(self, parent):
-##        self.browser=wx.TextCtrl(parent, -1, "Stuff" , style=wx.TE_MULTILINE)
-        self.debuglist = DebugClass(parent)
+    def __init__(self, parent, *args, **kwargs):
+        Sidebar.__init__(self, parent, *args, **kwargs)
+        self.debuglist = DebugClass(self.frame)
         items = self.debuglist.getItems()
         wx.CheckListBox.__init__(self, parent, choices=items, pos=(9000,9000))
         

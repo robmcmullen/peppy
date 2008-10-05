@@ -315,7 +315,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     
     minimal_config={'BufferFrame':{'width':700,
                                    'height':700,
-                                   'sidebars':'filebrowser, debug_log, error_log, info_log, processes',
                                    },
                    }
     preferences_tab = "General"

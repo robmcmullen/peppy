@@ -334,7 +334,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     default_classprefs = (
         IntParam('width', 800, 'Width of the main frame in pixels'),
         IntParam('height', 600, 'Height of the main frame in pixels'),
-        StrParam('sidebars', '', 'List of sidebars to activate with the frame', fullwidth=True),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
         # FIXME: this attempt at fast resizing caused Freeze() mismatch
         # problems.  It's not worth that much, so I'm disabling it for
@@ -464,18 +463,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self._mgr.AddPane(win, paneinfo)
 
     def loadSidebars(self):
-        sidebar_list = self.classprefs.sidebars
-        assert self.dprint(sidebar_list)
-        if sidebar_list is not None:
-            sidebar_names = [s.strip() for s in sidebar_list.split(',')]
-            assert self.dprint("loading %s" % sidebar_names)
-            sidebars = Sidebar.getClasses(self,sidebar_names)
-            for sidebarcls in sidebars:
-                if sidebarcls.classprefs.springtab:
-                    self.spring.addTab(sidebarcls.caption, sidebarcls)
-                else:
-                    self.createSidebar(sidebarcls)
-            self.createSidebarList()
+        sidebars = Sidebar.getClasses(self)
+        for sidebarcls in sidebars:
+            if sidebarcls.classprefs.springtab:
+                self.spring.addTab(sidebarcls.caption, sidebarcls)
+            else:
+                self.createSidebar(sidebarcls)
+        self.createSidebarList()
 
     def createSidebar(self, sidebarcls):
         """Create the sidebar and register it with the frame's AUI
