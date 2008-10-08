@@ -559,7 +559,7 @@ class ProjectPlugin(IPeppyPlugin):
         StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
         StrParam('settings_directory', 'settings', 'Directory used to store files used to save project-specific settings for major modes'),
         StrParam('default_settings_file_name', 'default-settings', 'File name used to store default view settings for all major modes in this project'),
-        PathParam('ctags_command', 'exuberant-ctags', 'Path to ctags command', fullwidth=True),
+        PathParam('ctags_command', 'ctags', 'Path to ctags command', fullwidth=True),
         PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
         StrParam('ctags_args', '-R -n', 'extra arguments for the ctags command', fullwidth=True),
         )
