@@ -568,6 +568,10 @@ class FindRegexService(FindService):
         
         self.verifyShadow(start, incremental)
         
+        # Start of this round of searching occurs at the stc_equiv_pos, i.e.
+        # the end of the last search
+        start = self.stc_equiv_pos
+        
         match = self.regex.search(self.shadow, self.shadow_equiv_pos)
         if match:
             # Because unicode characters are stored as utf-8 in the stc and the
