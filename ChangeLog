@@ -1,7 +1,12 @@
-2008-09-25  Rob McMullen  <robm@users.sourceforge.net>
+2008-10-07  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.7.5.5 update to "Manny Being Manny"
+	* Released peppy-0.8 "Bloviation Season"
+	* added SpringTabs, a popup system for sidebars
+	* fixed regex search/replace using only '^' or '$'
+	* Added --dbg command line option to turn on debug printing for
+	specified class name
 	* added File -> Properties menu action
+	* fixed bug where DOS paths weren't being identified as absolute paths
 	* progress bar maximum value now correctly set when switching modes
 	* changed title screen text to reflect that not all borrowed code is GPL
 	* added colormaps to HSI mode
