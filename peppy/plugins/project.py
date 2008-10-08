@@ -740,19 +740,19 @@ class ProjectPlugin(IPeppyPlugin):
                 cls.known_projects[url] = info
             else:
                 info = cls.known_projects[url]
-            if mode:
-                mode.project_info = info
             cls.dprint("found project %s" % info)
         elif mode:
             cls.dprint("no project for %s" % str(mode.buffer.url))
-            mode.project_info = None
+            info = None
         
         if cls.debuglevel > 0:
             cls.dprint("Registered projects:")
-            for url, info in cls.known_projects.iteritems():
-                cls.dprint("%s\t%s" % (info.getProjectName(), str(url)))
+            for url, project_info in cls.known_projects.iteritems():
+                cls.dprint("%s\t%s" % (project_info.getProjectName(), str(url)))
         
-        return mode.project_info
+        if mode:
+            mode.project_info = info
+        return info
 
     @classmethod
     def getProjectInfo(cls, mode):
