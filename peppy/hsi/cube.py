@@ -137,6 +137,15 @@ class CubeReader(debugmixin):
     def locationToFlat(self,line,sample,band):
         """Convert location (line,sample,band) to flat index"""
         raise NotImplementedError
+    
+    def getBytesFromArray(self, band, swap=False):
+        """Get raw bytes from the band, swapping endian state if desired
+        
+        @param band: array of bytes from getBandRaw, getFocalPlaneRaw, etc.
+        
+        @param swap: if True, swap the endian state
+        """
+        raise NotImplementedError
 
 
 class BIPMixin(object):
@@ -222,6 +231,14 @@ class FileCubeReader(CubeReader):
         bytes = fh.read(count * self.itemsize)
         s = numpy.fromstring(bytes, dtype=self.data_type, count=count)
         return s
+    
+    def getBytesFromArray(self, band, swap=False):
+        # Because arrays used by FileCubeReaders are created on the fly during
+        # calls to getBandRaw and the others, we can use byteswap to force the
+        # bytes to change in the array itself.
+        if swap:
+            band = band.byteswap(False)
+        return band.tostring()
 
 
 class FileBIPCubeReader(BIPMixin, FileCubeReader):
@@ -590,6 +607,19 @@ class MMapCubeReader(CubeReader):
         """Shape the memory mapped to the correct data type and offset within
         the file."""
         raise NotImplementedError
+    
+    def getBytesFromArray(self, band, swap=False):
+        # Unlike FileCubeReader, arrays from calls to getBandRaw and similar
+        # methods are views into the entire mmap'd array and byteswapping
+        # the individual arrays only creates a view.  Attempting a tostring()
+        # call on those arrays results in the underlying bytes being generated
+        # using the original order, not the byteswapped order that we want.
+        if swap:
+            if band.dtype.byteorder == ">":
+                band.newbyteorder("<")
+            else:
+                band.newbyteorder(">")
+        return band.tostring()
 
 
 class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
@@ -1186,26 +1216,23 @@ class Cube(debugmixin):
     def iterRawBIP(self, swap):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
-            band = self.getFocalPlaneRaw(i, use_progress=False).transpose()
-            if swap:
-                band = band.byteswap(False)
-            yield band.tostring()
+            band = self.cube_io.getFocalPlaneRaw(i, use_progress=False).transpose()
+            bytes = self.cube_io.getBytesFromArray(band, swap)
+            yield bytes
     
     def iterRawBIL(self, swap):
         # samples vary fastest, then bands, then lines
         for i in range(self.lines):
-            band = self.getFocalPlaneRaw(i, use_progress=False)
-            if swap:
-                band = band.byteswap(False)
-            yield band.tostring()
+            band = self.cube_io.getFocalPlaneRaw(i, use_progress=False)
+            bytes = self.cube_io.getBytesFromArray(band, swap)
+            yield bytes
     
     def iterRawBSQ(self, swap):
         # samples vary fastest, then lines, then bands 
         for i in range(self.bands):
-            band = self.getBandRaw(i, use_progress=False)
-            if swap:
-                band = band.byteswap(False)
-            yield band.tostring()
+            band = self.cube_io.getBandRaw(i, use_progress=False)
+            bytes = self.cube_io.getBytesFromArray(band, swap)
+            yield bytes
     
     def iterRaw(self, size, interleaveiter, byte_order=None):
         """Iterator used to return the raw data of the cube in manageable chunks.
@@ -1282,8 +1309,9 @@ class Cube(debugmixin):
         if options is None:
             options = dict()
         interleave = options.get('interleave', self.interleave)
+        byte_order = options.get('byte_order', self.byte_order)
         num_blocks = (self.data_bytes / block_size) + 1
-        iterator = self.getRawIterator(block_size, interleave)
+        iterator = self.getRawIterator(block_size, interleave, byte_order)
         if iterator:
             count = 0
             for block in iterator:
