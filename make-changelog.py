@@ -5,11 +5,12 @@ from cStringIO import StringIO
 from datetime import date
 from optparse import OptionParser
 from string import Template
+from distutils.version import LooseVersion
 
 module=None
 
 def findChangeLogVersion(options):
-    fh=open("ChangeLog")
+    fh = open("ChangeLog")
     release_date = date.today().strftime("%d %B %Y")
     version = "0.0.0"
     codename = ""
@@ -18,7 +19,7 @@ def findChangeLogVersion(options):
         if match:
             if options.verbose: print 'found date %s' % match.group(1)
             release_date = date.fromtimestamp(time.mktime(time.strptime(match.group(1),'%Y-%m-%d'))).strftime('%d %B %Y')
-        match = re.match('\s+\*\s*[Rr]eleased peppy-([0-9]+\.[0-9]+\.[0-9]+) \"(.+)\"',line)
+        match = re.match('\s+\*\s*[Rr]eleased peppy-([0-9]+\.[0-9]+(?:\.[0-9]+)?) \"(.+)\"',line)
         if match:
             if options.verbose: print 'found version %s' % match.group(1)
             version = match.group(1)
@@ -30,16 +31,16 @@ def findChangeLogVersion(options):
     return version, release_date, codename
 
 def findLatestInGit(options):
-    version = ""
+    version = LooseVersion("0")
     tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
     for tag in tags.splitlines():
-        match = re.match(r'([0-9]+\.[0-9]+\.[0-9]+)$', tag)
+        match = re.match(r'([0-9]+\.[0-9]+(?:(?:\.[0-9]+|pre))?)$', tag)
         if match:
-            found = match.group(1)
+            found = LooseVersion(match.group(1))
             if found > version:
                 version = found
             if options.verbose: print "found %s, latest = %s" % (found, version)
-    return version
+    return str(version)
 
 def findReleasesOf(tag, options):
     base = tag + "."
@@ -58,9 +59,12 @@ def getCurrentGitMD5s(tag, options):
 
 def getCurrentGitPatchlevel(options):
     tag = findLatestInGit(options)
-    md5s = getCurrentGitMD5s(tag, options)
-    patchlevel = len(md5s)
-    version = "%s.%d" % (tag, patchlevel)
+    if tag.endswith("pre"):
+        version = tag[:-3]
+    else:
+        md5s = getCurrentGitMD5s(tag, options)
+        patchlevel = len(md5s)
+        version = "%s.%d" % (tag, patchlevel)
     if options.verbose: print version
     return tag, version
 
