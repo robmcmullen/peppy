@@ -73,3 +73,26 @@ class TestFindRegex(TestFind):
         self.service.setFindString("line [0-9]")
         self.findAll([(0,0), (7,6), (21,13), (-1,27)])
 
+    def testFindStart1(self):
+        self.service.setFindString("^line")
+        self.findAll([(0,0), (7,4), (14,11), (21,18), (-1,25)])
+
+    def testFindStart2(self):
+        self.service.setFindString("^.")
+        self.findAll([(0,0), (7,1), (14,8), (21,15), (28,22), (43,29), (49,44), (-1,50)])
+
+    def testFindStart3(self):
+        self.service.setFindString("^")
+        self.findAll([(0,0), (7,0), (14,7), (21,14), (28,21), (43,28), (49,43), (-1,49)])
+
+    def testFindEnd1(self):
+        self.service.setFindString("ne [0-9]$")
+        self.findAll([(2,0), (9,6), (23,13), (-1,27)])
+
+    def testFindEnd2(self):
+        self.service.setFindString(".$")
+        self.findAll([(5,0), (12,6), (19,13), (26,20), (41,27), (47,42), (54,48), (-1,55)])
+
+    def testFindEnd3(self):
+        self.service.setFindString("$")
+        self.findAll([(6,0), (13,6), (20,13), (27,20), (42,27), (48,42), (55,48), (-1,55)])

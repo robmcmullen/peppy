@@ -286,6 +286,13 @@ class FindService(debugmixin):
         
         return pos, start
 
+    def hasMatch(self):
+        """Return True if the service currently has a match.
+        
+        This is used by the GUI to find if replacement is allowed in the text.
+        """
+        return self.stc.GetSelectionStart() != self.stc.GetSelectionEnd()
+
     def doReplace(self):
         """Replace the selection
         
@@ -542,9 +549,11 @@ class FindRegexService(FindService):
                 else:
                     start = max(sel)
             self.shadow = self.stc.GetTextRange(start, self.stc.GetTextLength())
+            self.shadow_length = len(self.shadow)
             self.shadow_equiv_pos = 0
             self.stc_equiv_start = start
             self.stc_equiv_pos = start
+            self.stc_next_offset = 0
 
     def doFindNext(self, start=-1, incremental=False):
         """Find and highlight the next match in the document.
@@ -572,6 +581,15 @@ class FindRegexService(FindService):
         # the end of the last search
         start = self.stc_equiv_pos
         
+        if self.stc_next_offset > 0:
+            self.shadow_equiv_pos += 1
+            self.stc_equiv_pos += self.stc_next_offset
+        
+        # Added check here to make sure that stc_next_offset doesn't push us
+        # past the end of the search text.
+        if self.shadow_equiv_pos > self.shadow_length:
+            return -1, start
+
         match = self.regex.search(self.shadow, self.shadow_equiv_pos)
         if match:
             # Because unicode characters are stored as utf-8 in the stc and the
@@ -583,6 +601,21 @@ class FindRegexService(FindService):
             self.stc_equiv_start = pos
             self.stc_equiv_pos = pos + count
             
+            if count == 0:
+                # We've found a match, but it translates into zero characters.
+                # We need to advance the pointer so the next search starts
+                # from the next character but the matched text itself still
+                # must show zero characters.  But, we can't change the
+                # equiv_start and equiv_pos because any replacement depends on
+                # their position.
+                if match.start(0) == self.shadow_length:
+                    # off the end! force the next attempt at matching to return
+                    # the end of search indicator
+                    self.stc_next_offset = 1
+                else:
+                    self.stc_next_offset = len(self.shadow[match.start(0)].encode('utf-8'))
+            else:
+                self.stc_next_offset = 0
             self.shadow_equiv_pos = match.end(0)
             
             #dprint("match=%s shadow: (%d-%d) equiv=%d, stc: (%d-%d) equiv=%d" % (match.group(0), match.start(0), match.end(0), self.shadow_equiv_pos, pos, pos+count, self.stc_equiv_pos))
@@ -592,6 +625,13 @@ class FindRegexService(FindService):
             pos = -1
         
         return pos, start
+
+    def hasMatch(self):
+        """Return True if the service currently has a match.
+        
+        This is used by the GUI to find if replacement is allowed in the text.
+        """
+        return (self.stc_next_offset and (self.shadow_equiv_pos <= self.shadow_length)) or (self.stc.GetSelectionStart() != self.stc.GetSelectionEnd())
     
     def getReplacement(self, replacing):
         """Extended regex replacement
@@ -1084,8 +1124,7 @@ class ReplaceBar(FindBar):
             return False
 
         allow_wrap = interactive
-        sel = self.stc.GetSelection()
-        if sel[0] == sel[1]:
+        if not self.service.hasMatch():
             if find_next:
                 self.OnFindN(None, allow_wrap=allow_wrap, help=self.help_status, interactive=interactive)
             return True
