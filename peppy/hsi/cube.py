@@ -1313,6 +1313,26 @@ class Cube(debugmixin):
         band.
         """
         return use_progress and self.progress
+    
+    
+    #### Utility functions
+    def getRGBImage(self):
+        """Return a 3-band image suitable for further conversion into a JPEG.
+        
+        """
+        rgb = self.guessDisplayBands() # returned in r,g,b order
+        rgb.reverse() # need to get it in increasing wavelength b,g,r order
+        image = createCube('bsq', self.lines, self.samples,
+                                 len(rgb), numpy.uint16, self.byte_order,
+                                 self.scale_factor)
+        index = 0
+        for i in rgb:
+            image.wavelengths.append(self.wavelengths[i])
+            store = image.getBandRaw(index)
+            source = self.getBandRaw(i)
+            store[:,:] = source[:,:]
+            index += 1
+        return image
 
 
 def newCube(interleave, url=None, progress=None):
