@@ -95,7 +95,6 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         else:
             # root node shows line zero
             self.mode.showLine(0)
-        self.mode.focus()
     
     def OnExpand(self, evt):
         node = self.GetPyData(evt.GetItem())
