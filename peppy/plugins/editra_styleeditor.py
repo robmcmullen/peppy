@@ -32,9 +32,13 @@ class EditraStyles(SelectAction):
     def action(self, index=-1, multiplier=1):
         stylesheet = wx.GetApp().fonts.getStyleFile()
         dlg = style_editor.StyleEditor(self.frame, -1)
-        dlg.OpenPreviewFile(self.mode.editra_lang)
+        if hasattr(self.mode, 'editra_lang'):
+            lang = self.mode.editra_lang
+        else:
+            lang = "Python"
+        dlg.OpenPreviewFile(lang)
         lexer_lst = dlg.FindWindowById(style_editor.ed_glob.ID_LEXER)
-        lexer_lst.SetStringSelection(self.mode.editra_lang)
+        lexer_lst.SetStringSelection(lang)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             # Find style name from controls within the dialog
@@ -44,7 +48,7 @@ class EditraStyles(SelectAction):
             if ctrl.GetValue():
                 tag = "untitled"
             dlg2 = wx.TextEntryDialog(
-                self.frame, message="Save Style Sheet", defaultValue=tag,
+                self.frame, caption="Save Style Sheet", message="Enter name for style sheet.\n\nThis style sheet must be saved in your personal\nconfiguration directory before it can be used.\n\nIf you cancel, the style sheet changes will be lost.", defaultValue=tag,
                 style=wx.OK|wx.CANCEL)
             retval = dlg2.ShowModal()
             tag = dlg2.GetValue()
