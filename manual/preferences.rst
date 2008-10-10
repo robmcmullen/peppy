@@ -17,8 +17,20 @@ Using the Preferences Dialog
 Most of the common configuration options are available through the preferences
 dialog.  
 
-...Picture of the preferences dialog goes here...
+.. image:: peppy-preferences-dialog.png
+   :align: center
 
+The settings are grouped into four different tabs: General, Modes, Misc,
+and Plugins, where General settings apply to global or application level
+configuration objects, Modes apply to the various major modes, Misc contains
+a bunch of stuff that didn't have any other tab to be placed, and Plugins
+unsurprisingly contains options for plugin objects.  Clicking any item on in
+the left hand list will bring up the specific settings for that item.
+
+Note that any changes to settings are only only applied after clicking OK to
+the dialog; they are not applied immediately.  Note that you may change tabs
+at any time before hitting OK; your settings aren't lost when investigating
+settings of other items.
 
 
 
@@ -30,7 +42,8 @@ associates particular syntax elements of the text file with styles and colors
 specified here.  If you're familiar with Editra__, you'll recognize the text
 style dialog:
 
-...Picture of the text style dialog goes here...
+.. image:: peppy-text-style-dialog.png
+   :align: center
 
 Peppy uses the same styling system as Editra, and indeed can use the same style
 sheets as created by Editra when placed in the proper configuration directory
@@ -48,15 +61,16 @@ Changing Fonts
 --------------
 
 The only text styling item not set through the text style dialog is the
-specific font used to display the text.  This is set through the main
-Preferences dialog, in the General tab and the Fonts item.
+specific font used to display the text.  The wxPython StyledTextCtrl uses a
+single font for the main text, and can optionally use a separate font for the
+line numbers.  These fonts are set in the Preferences dialog: in the General
+tab:
 
-The wxPython StyledTextCtrl uses a single font for the main text, and can
-optionally use a separate font for the line numbers.  These fonts are set in
-the Preferences dialog: in the General tab, choose the Fonts item and select
-the primary editing font (for the main text) and the secondary editing font
-(for the line numbers).
+.. image:: peppy-preferences-fonts.png
+   :align: center
 
+choose the Fonts item and select the primary editing font (for the main
+text) and the secondary editing font (for the line numbers).
 
 
 Configuration Files
