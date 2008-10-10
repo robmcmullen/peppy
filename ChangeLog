@@ -2,8 +2,9 @@
 
 	* Released peppy-0.8 "Bloviation Season"
 	* added SpringTabs, a popup system for sidebars
+	* added code explorer in SpringTabs, replacing function menu
 	* fixed regex search/replace using only '^' or '$'
-	* Added --dbg command line option to turn on debug printing for
+	* added --dbg command line option to turn on debug printing for
 	specified class name
 	* added File -> Properties menu action
 	* fixed bug where DOS paths weren't being identified as absolute paths
