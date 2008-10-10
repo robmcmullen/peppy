@@ -103,7 +103,7 @@ dist: distdir
 eggs:
 	./plugins/egg-utils.py -d ./plugins/build egg
 
-distdir: eggs
+distdir:
 	./make-changelog.py -m peppy
 	./make-doc.py -m peppy -o README README.pre.in
 	./make-doc.py -m peppy -o INSTALL INSTALL.pre.in

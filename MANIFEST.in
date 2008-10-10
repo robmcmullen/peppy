@@ -8,8 +8,4 @@ recursive-include peppy/editra/syntax *
 global-include *.peppy-plugin
 recursive-include peppy/icons *
 prune manual/_build
-recursive-include plugins *
-prune plugins/build/*
-prune plugins/*/build/*
-prune plugins/.git
 prune peppy-*
