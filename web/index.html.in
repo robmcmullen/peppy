@@ -28,6 +28,19 @@ bindings, but it's not necessary to memorize keystrokes to start using peppy.
 <br>
 <br>
 
+<h3><img src="peppy-icon-16.png"> Spring Tabs</h3>
+
+<p>Why should IDE-like features take up all that real-estate? Wouldn't it be
+convenient to be looking at more code on the screen? With peppy, the file
+browser and code browser are resting behind spring-loaded popups that appear
+when you need them and don't take up valuable screen space when you don't:
+
+<p><img src="springtabs.png" alt="image of two top-level windows"/>
+
+<br>
+<br>
+
+
 <h3><img src="peppy-icon-16.png"> Python Regular Expression Search and Replace</h3>
 
 <P>Including extended replace functionality to alter the case of matched
