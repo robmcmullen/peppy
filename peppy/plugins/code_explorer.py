@@ -41,8 +41,10 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         MinorMode.__init__(self, parent, **kwargs)
         if wx.Platform == '__WXGTK__':
             style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
+            self.has_root = False
         else:
             style = wx.TR_HAS_BUTTONS
+            self.has_root = True
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         self.root = self.AddRoot(self.mode.getTabName())
         self.hierarchy = None
@@ -67,7 +69,8 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             self.hierarchy = hierarchy
             self.DeleteChildren(self.root)
             self.appendChildren(self.root,self.hierarchy)
-            self.Expand(self.root)
+            if self.has_root:
+                self.Expand(self.root)
         if evt:
             evt.Skip()
     
@@ -87,10 +90,12 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())
-        # don't allow the root node to be activated
         if node:
             self.mode.showLine(node.start)
-            self.mode.focus()
+        else:
+            # root node shows line zero
+            self.mode.showLine(0)
+        self.mode.focus()
     
     def OnExpand(self, evt):
         node = self.GetPyData(evt.GetItem())
