@@ -195,6 +195,7 @@ class SpringTabItem(GenToggleButton):
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
         
         self.window_cb = kwargs['window_cb']
+        self.kwargs = kwargs
         self.popup = None
     
     def InitColours(self):
@@ -248,7 +249,7 @@ class SpringTabItem(GenToggleButton):
             self.popup.Bind(wx.EVT_ACTIVATE, self.OnActivate)
             
             # Create the window using the popup as the parent
-            self.window_cb(self.popup, self)
+            self.window_cb(self.popup, springtabitem=self, **self.kwargs)
         child = self.popup.GetChildren()[0]
 #        child.Bind(wx.EVT_SET_FOCUS, self.OnChildFocus)
 #        child.Bind(wx.EVT_KILL_FOCUS, self.OnLoseChildFocus)
@@ -385,8 +386,8 @@ class SpringTabs(wx.Panel):
         self.Refresh()
         evt.Skip()
 
-    def addTab(self, title, window_create_callback):
-        tab = SpringTabItem(self, label=title, window_cb=window_create_callback)
+    def addTab(self, title, window_create_callback, **kwargs):
+        tab = SpringTabItem(self, label=title, window_cb=window_create_callback, **kwargs)
         self.GetSizer().Add(tab, 0, wx.EXPAND)
         self._tabs.append(tab)
         
