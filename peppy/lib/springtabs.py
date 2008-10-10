@@ -256,8 +256,9 @@ class SpringTabItem(GenToggleButton):
         return self.popup, child
 
     def OnActivate(self, evt):
-        dprint("Activating %s: %s" % (self.GetLabel(), evt.GetActive()))
-        evt.Skip()
+        dprint("Activating %s: %s, shown=%s" % (self.GetLabel(), evt.GetActive(), self.popup.IsShown()))
+        if self.popup.IsShown():
+            evt.Skip()
     
     def showPopupCallback(self):
         """Callback used each time the popup is initially displayed to the user.
@@ -360,6 +361,9 @@ class SpringTabs(wx.Panel):
         self._tab_renderer.showPopup(self, item)
     
     def clearRadio(self, data=None):
+        # uncomment this to show where the clearRadio is being called
+        #import traceback
+        #dprint("".join(traceback.format_stack()))
         if self._radio is not None:
             dprint("Removing popup %s" % self._radio.GetLabel())
             self._tab_renderer.showPopup(self, self._radio, False)
@@ -392,7 +396,15 @@ class SpringTabs(wx.Panel):
         self._tabs.append(tab)
         
         self.Refresh()
-
+    
+    def hasTabs(self):
+        return bool(self._tabs)
+    
+    def deleteTabs(self):
+        self.clearRadio()
+        for tab in self._tabs:
+            tab.Destroy()
+        self._tabs = []
 
 
 
