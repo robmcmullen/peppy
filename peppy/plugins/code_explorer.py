@@ -1,8 +1,8 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """
-FoldExplorerMinorMode and FoldExplorerMenu use Stani's fold explorer idea to
-display a subset of the fold hierarchy of the file.
+CodeExplorerMinorMode uses Stani's fold explorer idea to display a subset of
+the fold hierarchy of the file.
 
 Scintilla has language lexers built in to the C code that are capable of
 doing a lot of preprocessing of the source file.  It's typically used for
@@ -22,36 +22,7 @@ from peppy.minor import *
 from peppy.actions import *
 
 
-class FoldExplorerMenu(ListAction, OnDemandActionMixin):
-    name="Functions"
-    inline=True
-    tooltip="Go to a function"
-    default_menu = ("Functions", 100)
-    
-    def getItems(self):
-        fold = self.mode.getFoldHierarchy()
-        nodes = fold.flatten()
-        flat = [node.text.rstrip().expandtabs() for node in nodes]
-        #dprint(flat)
-        return flat
-    
-    def getHash(self):
-        return (self.mode.getFoldHierarchy(), self.mode.GetLineCount())
-
-    def updateOnDemand(self):
-        # Update the dynamic menu here
-        self.mode.getFoldHierarchy()
-        self.dynamic()
-
-    def action(self, index=-1, multiplier=1):
-        fold = self.mode.getFoldHierarchy()
-        node = fold.findFlattenedNode(index)
-        #dprint("index=%d node=%s" % (index, node))
-        self.mode.showLine(node.start)
-        self.mode.focus()
-
-
-class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
+class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
     keyword="Code Explorer"
@@ -68,14 +39,27 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
 
     def __init__(self, parent, **kwargs):
         MinorMode.__init__(self, parent, **kwargs)
-        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
-        self.root = self.AddRoot('foldExplorer root')
+        if wx.Platform == '__WXGTK__':
+            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
+        else:
+            style = wx.TR_HAS_BUTTONS
+        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
+        self.root = self.AddRoot(self.mode.getTabName())
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
+        self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnExpand)
+        self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnCollapse)
+        self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
         self.Bind(wx.EVT_TREE_KEY_DOWN, self.update)
+    
+    def activateSpringTab(self):
+        """Callback function from the SpringTab handler requesting that we
+        initialize ourselves.
+        
+        """
         self.update()
         
-    def update(self, event=None):
+    def update(self, evt=None):
         """Update tree with the source code of the editor"""
         hierarchy = self.mode.getFoldHierarchy()
         #dprint(hierarchy)
@@ -83,6 +67,9 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
             self.hierarchy = hierarchy
             self.DeleteChildren(self.root)
             self.appendChildren(self.root,self.hierarchy)
+            self.Expand(self.root)
+        if evt:
+            evt.Skip()
     
     def appendChildren(self, wxParent, nodeParent):
         for nodeItem in nodeParent.children:
@@ -90,28 +77,40 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
                 wxItem = self.AppendItem(wxParent, nodeItem.text.strip())
                 self.SetPyData(wxItem, nodeItem)
                 self.appendChildren(wxItem, nodeItem)
+                if nodeItem.expanded:
+                    self.Expand(wxItem)
+                else:
+                    self.Collapse(wxItem)
             else:
                 # Append children of a hidden node to the parent
                 self.appendChildren(wxParent, nodeItem)
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())
-        self.mode.showLine(node.start)
-        self.mode.focus()
-
-
-class FunctionMenuPlugin(IPeppyPlugin):
-    def getMinorModes(self):
-        yield FoldExplorerMinorMode
+        # don't allow the root node to be activated
+        if node:
+            self.mode.showLine(node.start)
+            self.mode.focus()
     
-    def getCompatibleActions(self, major):
-        if hasattr(major, 'getFoldHierarchy'):
-            # Only if the major mode has the 'fold' property will the fold
-            # explorer actually return anything meaningful, so to prevent an
-            # empty 'Functions' menu, make sure the mode supports folding.
-            props = major.getEditraSyntaxProperties(major.editra_lang)
-            #dprint(props)
-            for prop in props:
-                if prop[0] == 'fold' and prop[1] == '1':
-                    return [FoldExplorerMenu]
-        return []
+    def OnExpand(self, evt):
+        node = self.GetPyData(evt.GetItem())
+        if node:
+            node.expanded = True
+    
+    def OnCollapse(self, evt):
+        node = self.GetPyData(evt.GetItem())
+        if node:
+            node.expanded = False
+    
+    def OnCollapsing(self, evt):
+        item = evt.GetItem()
+        dprint(item)
+        if item == self.root:
+            # Don't allow the root item to be collapsed
+            evt.Veto()
+        evt.Skip()
+
+
+class CodeExplorerPlugin(IPeppyPlugin):
+    def getMinorModes(self):
+        yield CodeExplorerMinorMode

@@ -20,33 +20,10 @@ class FoldExplorerNode(object):
         self.end = end
         self.text = text
         self.styles = styles #can be useful for icon detection
+        self.expanded = True
         
         self.show = True
         self.children   = []
-        
-        # Storage for a flattened version of the hierarchy for use in menus.
-        # This is typically only used in the root of the hierarchy.
-        self.flattened = None
-    
-    def _flatten(self, parent):
-        for node in parent.children:
-            if node.show:
-                self.flattened.append(node)
-                self._flatten(node)
-            else:
-                # Append children of a hidden node to the parent
-                self._flatten(node)
-
-    def flatten(self):
-        if not self.flattened:
-            self.flattened = []
-            self._flatten(self)
-        return self.flattened
-    
-    def findFlattenedNode(self, index):
-        flat = self.flatten()
-        node = flat[index]
-        return node
 
     def __str__(self):
         return "L%d s%d e%d %s" % (self.level, self.start, self.end, self.text.rstrip())
@@ -96,7 +73,7 @@ class FoldExplorerMixin(object):
         node.show = text
         return node
     
-    def recomputeFoldHierarchy(self, start_line, root, prevNode):
+    def recomputeFoldHierarchy(self, start_line, root, prevNode, expanded=True):
         t = time.time()
         n = self.GetLineCount()+1
         for line in range(start_line, n-1):
@@ -104,6 +81,7 @@ class FoldExplorerMixin(object):
             if foldBits&wx.stc.STC_FOLDLEVELHEADERFLAG:
                 level = foldBits & wx.stc.STC_FOLDLEVELNUMBERMASK
                 node = self.getFoldEntry(level, line, n)
+                node.expanded = expanded
                 
                 #folding point
                 prevLevel = prevNode.level
@@ -133,13 +111,38 @@ class FoldExplorerMixin(object):
         prevNode.end = line
         #print("Finished fold node creation: %0.5fs" % (time.time() - t))
 
-    def computeFoldHierarchy(self):
+    def computeFoldHierarchy(self, expanded=True):
         t = time.time()
         n = self.GetLineCount()+1
         prevNode = root = FoldExplorerNode(level=0,start=0,end=n,text='root',parent=None)
-        self.recomputeFoldHierarchy(0, root, prevNode)
+        root.expanded = expanded
+        self.recomputeFoldHierarchy(0, root, prevNode, expanded)
         return root
     
+    def copyFoldHierarchyTreeExpansion(self, old_folds, new_folds):
+        """Attempt to keep the same tree expansion state from the old fold list
+        to the new one.
+        
+        For this to work well, the nodes should be in the same order
+        """
+        new_items = new_folds.children
+        new_index = 0
+        for old in old_folds.children:
+            #print("old: %s" % old.text.strip())
+            found = False
+            for index in range(new_index, len(new_items)):
+                if new_items[index].text == old.text:
+                    new_items[index].expanded = old.expanded
+                    #print(" found new %s. expanded=%s from %s" % (new_items[index].text.strip(), old.expanded, old.text.strip()))
+                    self.copyFoldHierarchyTreeExpansion(new_items[index], old)
+                    found = True
+                    break
+                #else:
+                    #print(" skipping new %s" % new_items[index].text.strip())
+            if found:
+                new_index = index + 1
+
+
 class SimpleFoldFunctionMatchMixin(object):
     """Simple getFoldEntryFunctionName provider that matches at the beginning
     of the line.

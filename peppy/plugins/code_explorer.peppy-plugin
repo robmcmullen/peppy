@@ -1,6 +1,6 @@
 [Core]
-Name = Function Menu
-Module = function_menu
+Name = Code Explorer
+Module = code_explorer
 
 [Documentation]
 Author = Rob McMullen, Stani Michiels

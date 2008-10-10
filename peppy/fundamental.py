@@ -832,7 +832,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         # getSharedClassInfo interface to store data common to all views of
         # this buffer that use this major mode.
         stc_class_info = self.getSharedClassInfo(self.__class__)
-        stc_class_info['fold_hierarchy'] = self.computeFoldHierarchy()
+        new_folds = self.computeFoldHierarchy()
+        
+        # Attempt to copy the tree expansion from the old tree to the new one
+        if 'fold_hierarchy' in stc_class_info:
+            old_folds = stc_class_info['fold_hierarchy']
+            self.copyFoldHierarchyTreeExpansion(old_folds, new_folds)
+            
+        stc_class_info['fold_hierarchy'] = new_folds
         stc_class_info['fold_changed'] = []
         
         # Note: folding events aren't fired when only blank lines are inserted
