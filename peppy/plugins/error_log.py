@@ -248,19 +248,19 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
             return True
         return False
     
-    def __init__(self, major, parent):
+    def __init__(self, parent, **kwargs):
+        MinorMode.__init__(self, parent, **kwargs)
         LoggingSTC.__init__(self, parent)
-        self.major = major
         
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
 
     def showMessage(self, text):
         """Display a message and raise the output log if it is hidden."""
-        paneinfo = self.major.wrapper._mgr.GetPane(self)
+        paneinfo = self.mode.wrapper._mgr.GetPane(self)
         if not paneinfo.IsShown():
             paneinfo.Show(True)
-            self.major.wrapper._mgr.Update()
+            self.mode.wrapper._mgr.Update()
         self.addMessage(text)
 
     def showPubsubMessage(self, message=None):
@@ -270,7 +270,7 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         self.showMessage(message.data)
     
     def open(self, url):
-        self.major.frame.findTabOrOpen(url)
+        self.mode.frame.findTabOrOpen(url)
 
 class ErrorLogPlugin(IPeppyPlugin):
     """Plugin to advertize the presense of the ErrorLog sidebar

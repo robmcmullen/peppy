@@ -54,20 +54,21 @@ class FoldExplorerMenu(ListAction, OnDemandActionMixin):
 class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
-    keyword="Stani's Fold Explorer"
+    keyword="Code Explorer"
     
     default_classprefs = (
-        IntParam('best_width', 200),
-        IntParam('min_width', 200),
+        IntParam('best_width', 300),
+        IntParam('best_height', 500),
+        BoolParam('springtab', True),
     )
 
     @classmethod
     def worksWithMajorMode(self, mode):
         return hasattr(mode, 'getFoldHierarchy')
 
-    def __init__(self, major, parent):
-        wx.TreeCtrl.__init__(self, parent, -1, style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
-        self.major = major
+    def __init__(self, parent, **kwargs):
+        MinorMode.__init__(self, parent, **kwargs)
+        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
         self.root = self.AddRoot('foldExplorer root')
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
@@ -76,7 +77,7 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
         
     def update(self, event=None):
         """Update tree with the source code of the editor"""
-        hierarchy = self.major.getFoldHierarchy()
+        hierarchy = self.mode.getFoldHierarchy()
         #dprint(hierarchy)
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
@@ -95,8 +96,8 @@ class FoldExplorerMinorMode(MinorMode, wx.TreeCtrl):
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())
-        self.major.showLine(node.start)
-        self.major.focus()
+        self.mode.showLine(node.start)
+        self.mode.focus()
 
 
 class FunctionMenuPlugin(IPeppyPlugin):

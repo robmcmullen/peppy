@@ -84,9 +84,9 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
             return True
         return False
 
-    def __init__(self, major, parent):
+    def __init__(self, parent, **kwargs):
+        MinorMode.__init__(self, parent, **kwargs)
         wx.Panel.__init__(self, parent)
-        self.major = major
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -128,13 +128,13 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         self.prog.Enable(not busy)
 
     def OnRegenerate(self, event):
-        prog = os.path.normpath(os.path.join(self.major.classprefs.path,self.prog.GetStringSelection()))
+        prog = os.path.normpath(os.path.join(self.mode.classprefs.path,self.prog.GetStringSelection()))
         assert self.dprint("using %s to run graphviz" % repr(prog))
 
         cmd = "%s -Tpng" % prog
 
-        ProcessManager().run(cmd, self.major.buffer.cwd(), self,
-            self.major.buffer.stc.GetText())
+        ProcessManager().run(cmd, self.mode.buffer.cwd(), self,
+            self.mode.buffer.stc.GetText())
 
     def startupCallback(self, job):
         self.process = job
@@ -154,7 +154,7 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
     def createImage(self):
         assert self.dprint("using image, size=%s" % len(self.preview.getvalue()))
         if len(self.preview.getvalue())==0:
-            self.major.setStatusText("Error running graphviz!")
+            self.mode.setStatusText("Error running graphviz!")
             return
         
 ##        fh = open("test.png",'wb')
@@ -164,10 +164,10 @@ class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
         img = wx.EmptyImage()
         if img.LoadStream(fh):
             self.bmp = wx.BitmapFromImage(img)
-            self.major.setStatusText("Graphviz completed.")
+            self.mode.setStatusText("Graphviz completed.")
         else:
             self.bmp = None
-            self.major.setStatusText("Invalid image")
+            self.mode.setStatusText("Invalid image")
         self.drawing.setBitmap(self.bmp)
 
     def OnSize(self, evt):

@@ -54,6 +54,7 @@ class MinorMode(ClassPrefs, debugmixin):
         IntParam('min_height', 100, 'Minimum height of minor mode in pixels\nenforced by the AuiManager'),
         ChoiceParam('side', ['top', 'right', 'bottom', 'left'], 'right',
                     help='Positioning of the minor mode window relative to the main window'),
+        BoolParam('springtab', False, 'Display in a springtab instead of its own sidebar window'),
         )
 
     @classmethod
@@ -74,12 +75,11 @@ class MinorMode(ClassPrefs, debugmixin):
     def worksWithMajorMode(self, mode):
         raise NotImplementedError("Must override this each minor mode subclass to determine if it can work with specified major mode")
     
-    def __init__(self, major, parent):
+    def __init__(self, parent, mode=None, **kwargs):
         """Classes using this mixin should call this method, or at
         least save the major mode."""
-        
-        self.major = major
         self.parent = parent
+        self.mode = mode
         self.window = None
         self.paneinfo = None
         
@@ -168,10 +168,13 @@ class MinorModeList(debugmixin):
             minors = MinorMode.getValidMinorModes(mode)
             assert self.dprint("major = %s, minors = %s" % (mode, minors))
             for minorcls in minors:
-                self.map[minorcls.keyword] = MinorModeEntry(minorcls)
-                self.order.append(minorcls.keyword)
-                if minorcls.__name__ in initial or minorcls.keyword in initial:
-                    self.create(minorcls.keyword)
+                if minorcls.classprefs.springtab:
+                    self.mode.wrapper.spring.addTab(minorcls.keyword, minorcls, mode=self.mode)
+                else:
+                    self.map[minorcls.keyword] = MinorModeEntry(minorcls)
+                    self.order.append(minorcls.keyword)
+                    if minorcls.__name__ in initial or minorcls.keyword in initial:
+                        self.create(minorcls.keyword)
             self.mgr.Update()
 
         self.order.sort()
@@ -236,7 +239,7 @@ class MinorModeList(debugmixin):
         Create the minor mode given its keyword.  It is shown automatically.
         """
         entry = self.map[keyword]
-        entry.win = entry.minorcls(self.mode, self.parent)
+        entry.win = entry.minorcls(self.parent, mode=self.mode)
         paneinfo = entry.win.getPaneInfo()
         paneinfo.Show(True)
         try:

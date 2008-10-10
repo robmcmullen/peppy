@@ -256,10 +256,9 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
         )
     plot_proxy = None
 
-    def __init__(self, major, parent):
-        plotter.MultiPlotter.__init__(self, parent, statusbarframe=major.frame)
-
-        self.major = major
+    def __init__(self, parent, **kwargs):
+        MinorMode.__init__(self, parent, **kwargs)
+        plotter.MultiPlotter.__init__(self, parent, statusbarframe=self.mode.frame)
 
         self.listeners=[]
         self.rgblookup=['red','green','blue']
@@ -316,7 +315,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
     keyword = "Spectrum"
 
     def setupAxes(self):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
         self.xlabel = cubeview.getDepthXAxisLabel()
         self.xaxis = cubeview.getDepthXAxisExtrema()
         
@@ -327,7 +326,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
         self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
         # dprint("SpectrumPlotProxy: (%d,%d)" % (x,y))
         profile = cubeview.getDepthProfile(x, y)
         num = len(profile)
@@ -347,7 +346,7 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
     keyword="X Profile"
     
     def setupAxes(self):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
         self.xlabel = cubeview.xProfileXAxisLabel
         self.xaxis=(0,cubeview.width)
 
@@ -355,7 +354,7 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
         self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
         profiles=cubeview.getHorizontalProfiles(y)
 
         abscissas = numpy.arange(1,cubeview.width+1,1)
@@ -364,12 +363,12 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
         for values in profiles:
             data=numpy.zeros((cubeview.width,2))
             data[:,0] = abscissas
-            data[:,1] = self.major.filter.getXProfile(y, values)
+            data[:,1] = self.mode.filter.getXProfile(y, values)
             #line=plot.PolyLine(data, legend= 'band #%d' % cubeview.bands[colorindex][0], colour=self.rgblookup[colorindex])
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        if self.major.classprefs.use_cube_min_max:
+        if self.mode.classprefs.use_cube_min_max:
             yaxis=cubeview.cube.getUpdatedExtrema()
             self.updateYAxis(yaxis)
         else:
@@ -382,7 +381,7 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
     keyword="Y Profile"
     
     def setupAxes(self):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
 
         self.xlabel = cubeview.yProfileXAxisLabel
         self.xaxis=(0, cubeview.height)
@@ -391,7 +390,7 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
         self.yaxis=(float(cubeview.extrema[0]), float(cubeview.extrema[1]))
         
     def getLines(self, x, y):
-        cubeview = self.major.cubeview
+        cubeview = self.mode.cubeview
         profiles=cubeview.getVerticalProfiles(x)
 
         abscissas = numpy.arange(1,cubeview.height+1,1)
@@ -400,11 +399,11 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
         for values in profiles:
             data=numpy.zeros((cubeview.height,2))
             data[:,0] = abscissas
-            data[:,1] = self.major.filter.getYProfile(x, values)
+            data[:,1] = self.mode.filter.getYProfile(x, values)
             line=plot.PolyLine(data, legend=cubeview.getBandLegend(cubeview.bands[colorindex][0]), colour=self.rgblookup[colorindex])
             lines.append(line)
             colorindex+=1
-        if self.major.classprefs.use_cube_min_max:
+        if self.mode.classprefs.use_cube_min_max:
             yaxis=cubeview.cube.getUpdatedExtrema()
             self.updateYAxis(yaxis)
         else:
