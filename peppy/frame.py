@@ -390,8 +390,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.sidebar_panes = []
         self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
                           Name("SpringTabs").Caption("SpringTabs").
-                          Left().CloseButton(False).CaptionVisible(False).
-                          LeftDockable(False).RightDockable(False).DockFixed())
+                          Left().Layer(10).DockFixed().
+                          CloseButton(False).CaptionVisible(False).
+                          LeftDockable(False).RightDockable(False))
 
         UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()
