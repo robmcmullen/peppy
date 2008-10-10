@@ -924,6 +924,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         """
         last=self.tabs.getPrevious()
         if last:
+            last.clearPopups()
             last = last.editwin
         mode=self.getActiveMajorMode()
         if mode is None:

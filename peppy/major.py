@@ -252,6 +252,10 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 self.editwin.focus()
             #else:
                 #dprint("active major mode = %s, tried to remove minibuffer from %s" % (self.editwin.frame.getActiveMajorMode(), self.editwin))
+    
+    def clearPopups(self):
+        """Clear any popups that the mode may be using"""
+        self.spring.clearRadio()
 
 
 class MajorModeLoadError(RuntimeError):
