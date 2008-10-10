@@ -175,6 +175,14 @@ class MinorModeList(debugmixin):
                     self.order.append(minorcls.keyword)
                     if minorcls.__name__ in initial or minorcls.keyword in initial:
                         self.create(minorcls.keyword)
+            if self.mode.wrapper.spring_aui:
+                spring_paneinfo = self.mgr.GetPane(self.mode.wrapper.spring)
+                if self.mode.wrapper.spring.hasTabs():
+                    spring_paneinfo.Show()
+                else:
+                    spring_paneinfo.Hide()
+            else:
+                self.mode.wrapper.Layout()
             self.mgr.Update()
 
         self.order.sort()

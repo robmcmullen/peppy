@@ -70,15 +70,31 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.SetAutoLayout(True)
         self.SetSizer(box)
         
-        hsplit = wx.BoxSizer(wx.HORIZONTAL)
-        self.splitter=wx.Panel(self)
-        hsplit.Add(self.splitter,1,wx.EXPAND)
+        self.splitter = wx.Panel(self)
         self.spring = SpringTabs(self, popup_direction="left")
-        hsplit.Add(self.spring, 0, wx.EXPAND)
         
-        box.Add(hsplit, 1, wx.EXPAND)
+        # There seems to be a bug in the AUI layout using DockFixed, so there's
+        # an alternate way to set up the springtabs using a box sizer.  The
+        # AUI layout problem seems to make the width too narrow, and has
+        # additional problems on windows where it prevents the SpringTab from
+        # getting mouse clicks to open the popup.
+        self.spring_aui = False
+        if self.spring_aui:
+            box.Add(self.splitter, 1, wx.EXPAND)
+        else:
+            hsplit = wx.BoxSizer(wx.HORIZONTAL)
+            hsplit.Add(self.splitter, 1, wx.EXPAND)
+            hsplit.Add(self.spring, 0, wx.EXPAND)
+            box.Add(hsplit, 1, wx.EXPAND)
         self._mgr = wx.aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
+        
+        if self.spring_aui:
+            self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
+                              Name("MinorSpringTabs").Caption("MinorSpringTabs").
+                              Right().Layer(10).Hide().DockFixed().
+                              CloseButton(False).CaptionVisible(False).
+                              LeftDockable(False).RightDockable(False))
         self._mgr.Update()
         
         self.minors = None
@@ -137,6 +153,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         if self.editwin:
             self.dprint("deleting major mode %s" % self.editwin)
             self.deleteMinorModes()
+            self.spring.deleteTabs()
             self.removeMinibuffer()
             self._mgr.DetachPane(self.editwin)
             self.editwin.frame.clearMenumap()
