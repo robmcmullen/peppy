@@ -612,10 +612,20 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         linenum = self.GetCurrentLine()
         pos = self.GetCurrentPos()
         col = self.GetColumn(pos)
-        self.status_info.setText("L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
+        status = "L%d C%d F%d S%d %d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset,
             self.GetFoldLevel(linenum)&wx.stc.STC_FOLDLEVELNUMBERMASK - wx.stc.STC_FOLDLEVELBASE,
-            self.GetStyleAt(pos), pos),1)
+            self.GetStyleAt(pos), pos)
+        
+        # FIXME: workaround for bug #552: on OSX, setting the status bar inside
+        # an event handler apparently generates CGContextRestoreGState errors.
+        # Using a CallAfter works around this issue.  I wonder if it would
+        # be better to put this in an idle event handler? More testing will
+        # probably have to wait until after I get a mac.
+        if wx.Platform == '__WXMAC__':
+            wx.CallAfter(self.status_info.setText, status, 1)
+        else:
+            self.status_info.setText(status ,1)
         self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
