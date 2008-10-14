@@ -285,11 +285,11 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
 
-    def newMode(self, buffer, modecls=None, mode_to_replace=None):
+    def newMode(self, buffer, modecls=None, mode_to_replace=None, wrapper=None):
         assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
         if mode_to_replace:
             wrapper = self.getWrapper(mode_to_replace)
-        else:
+        elif not wrapper:
             wrapper = self.getNewModeWrapper()
         try:
             mode = wrapper.createMajorMode(self.frame, buffer, modecls)
@@ -698,10 +698,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             else:
                 # this gets a default view for the selected buffer
                 wrapper = self.tabs.getDocumentWrapper()
-        mode = wrapper.createMajorMode(self, buffer)
+        mode = self.tabs.newMode(buffer, wrapper=wrapper)
         assert self.dprint("set buffer to new view %s" % mode)
-        self.tabs.updateWrapper(wrapper)
-        if options:
+        if options and not mode.isErrorMode():
             mode.showInitialPosition(buffer.raw_url, options)
 
     def newBuffer(self, buffer):

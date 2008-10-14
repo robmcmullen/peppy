@@ -109,12 +109,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         
         if not requested:
             requested = buffer.defaultmode
-        else:
-            # Change the default major mode if the old default is the most
-            # general major mode.
-            if buffer.defaultmode.verifyMimetype('text/plain'):
-                self.dprint("Changing default mode of %s to %s" % (buffer, requested))
-                buffer.defaultmode = requested
         self.dprint("creating major mode %s" % requested)
         self.editwin = requested(self.splitter, self, buffer, frame)
         buffer.addViewer(self.editwin)
@@ -147,6 +141,13 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("mode.postinit message done in %0.5fs" % (time.time() - start))
         
         self._mgr.Update()
+        
+        if not requested:
+            # If the major mode creation was successful, change the default
+            # major mode if the old default is the most general major mode.
+            if buffer.defaultmode.verifyMimetype('text/plain'):
+                self.dprint("Changing default mode of %s to %s" % (buffer, requested))
+                buffer.defaultmode = requested
         return self.editwin
     
     def deleteMajorMode(self):
