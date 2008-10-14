@@ -285,14 +285,14 @@ class MyNotebook(wx.aui.AuiNotebook, debugmixin):
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
 
-    def newMode(self, buffer, mode_to_replace=None):
+    def newMode(self, buffer, modecls=None, mode_to_replace=None):
         assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))
         if mode_to_replace:
             wrapper = self.getWrapper(mode_to_replace)
         else:
             wrapper = self.getNewModeWrapper()
         try:
-            mode = wrapper.createMajorMode(self.frame, buffer)
+            mode = wrapper.createMajorMode(self.frame, buffer, modecls)
         except MajorModeLoadError, error:
             buffer = Buffer.createErrorBuffer(buffer.url, error)
             mode = wrapper.createMajorMode(self.frame, buffer)
@@ -709,12 +709,16 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.tabs.newBuffer(buffer.url, buffer)
     
     def changeMajorMode(self, requested):
-        wrapper = self.tabs.getCurrent()
-        cursor_data = wrapper.editwin.getViewPositionData()
-        newmode = wrapper.createMajorMode(self, wrapper.editwin.buffer, requested)
-        assert self.dprint("new mode=%s" % newmode)
-        newmode.setViewPositionData(cursor_data)
-        self.tabs.updateWrapper(wrapper)
+        """Change the currently active major mode to the requested mode
+        
+        This changes the view of the current buffer to the new mode, but
+        doesn't change any of the data in the buffer.
+        """
+        mode = self.getActiveMajorMode()
+        cursor_data = mode.getViewPositionData()
+        newmode = self.tabs.newMode(mode.buffer, requested, mode)
+        if not newmode.isErrorMode():
+            newmode.setViewPositionData(cursor_data)
 
     def makeTabActive(self, url):
         """Make the tab current that corresponds to the url.
@@ -858,7 +862,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             wx.GetApp().cooperativeYield()
 
         assert self.dprint("mode to replace = %s" % mode_to_replace)
-        mode = self.tabs.newMode(buffer, mode_to_replace)
+        mode = self.tabs.newMode(buffer, mode_to_replace=mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
         
         #raceoff()
@@ -871,7 +875,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         #traceoff()
         msg = "Failed opening %s.\n" % unicode(url)
         buffer = Buffer.createErrorBuffer(url, error)
-        mode = self.tabs.newMode(buffer, mode_to_replace)
+        mode = self.tabs.newMode(buffer, mode_to_replace=mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
         if progress:
             progress.stopProgress(msg)

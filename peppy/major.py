@@ -581,6 +581,12 @@ class MajorMode(ClassPrefs, debugmixin):
         """
         return True
 
+    @classmethod
+    def isErrorMode(cls):
+        """Return true if this mode is an error reporting mode rather than a
+        normal view/edit mode.
+        """
+        return False
 
     def save(self, url=None):
         veto = self.savePreHook(url)

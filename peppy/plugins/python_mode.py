@@ -295,6 +295,10 @@ class PythonErrorMode(FundamentalMode):
     @classmethod
     def verifyMagic(cls, header):
         return header.find("Traceback (most recent call last):") >= 0
+    
+    @classmethod
+    def isErrorMode(cls):
+        return True
 
 
 class PythonPlugin(IPeppyPlugin):

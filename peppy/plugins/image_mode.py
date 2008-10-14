@@ -110,8 +110,7 @@ class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
         if img.LoadStream(fh):
             self.setImage(img)
         else:
-            self.setImage(None)
-            self.setStatusText("Invalid image")
+            raise TypeError("Bad image -- either it really isn't an image, or wxPython doesn't support the image format.")
 
     def createListenersPostHook(self):
         eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
