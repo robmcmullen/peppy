@@ -5,7 +5,7 @@ from cStringIO import StringIO
 from datetime import date
 from optparse import OptionParser
 from string import Template
-from distutils.version import LooseVersion
+from distutils.version import StrictVersion
 
 module=None
 
@@ -31,12 +31,12 @@ def findChangeLogVersion(options):
     return version, release_date, codename
 
 def findLatestInGit(options):
-    version = LooseVersion("0")
+    version = StrictVersion("0.0")
     tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
     for tag in tags.splitlines():
-        match = re.match(r'([0-9]+\.[0-9]+(?:(?:\.[0-9]+|pre))?)$', tag)
+        match = re.match(r'([0-9]+\.[0-9]+(?:(?:\.[0-9]+|[ab][0-9]+))?)$', tag)
         if match:
-            found = LooseVersion(match.group(1))
+            found = StrictVersion(match.group(1))
             if found > version:
                 version = found
             if options.verbose: print "found %s, latest = %s" % (found, version)
