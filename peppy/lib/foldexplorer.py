@@ -67,48 +67,57 @@ class FoldExplorerMixin(object):
         start = self._findRecomputeStart(root, recompute_from, None)
         print "found starting position for line %d: %s" % (recompute_from, start)
     
-    def getFoldEntry(self, level, line, end):
-        text = self.getFoldEntryFunctionName(line)
-        node = FoldExplorerNode(level=level, start=line, end=end, text=text)
-        node.show = text
-        return node
+    def iterFoldEntries(self, line, last_line=-1):
+        """Iterator returning items to be included in code explorer.
+        
+        Given the range of lines in the current mode, return a FoldExplorerNode
+        for each item that should be included in the code explorer.
+        """
+        if last_line < 0:
+            last_line = self.GetLineCount()
+        while line < last_line:
+            foldBits = self.GetFoldLevel(line)
+            if foldBits&wx.stc.STC_FOLDLEVELHEADERFLAG:
+                level = foldBits & wx.stc.STC_FOLDLEVELNUMBERMASK
+                text = self.getFoldEntryFunctionName(line)
+                if text:
+                    node = FoldExplorerNode(level=level, start=line, end=last_line, text=text)
+                    node.show = True
+                    yield node
+            line += 1
     
     def recomputeFoldHierarchy(self, start_line, root, prevNode, expanded=True):
         t = time.time()
-        n = self.GetLineCount()+1
-        for line in range(start_line, n-1):
-            foldBits    = self.GetFoldLevel(line)
-            if foldBits&wx.stc.STC_FOLDLEVELHEADERFLAG:
-                level = foldBits & wx.stc.STC_FOLDLEVELNUMBERMASK
-                node = self.getFoldEntry(level, line, n)
-                node.expanded = expanded
-                
-                #folding point
-                prevLevel = prevNode.level
-                #print node
-                if level == prevLevel:
-                    #say hello to new brother or sister
-                    node.parent = prevNode.parent
-                    node.parent.children.append(node)
-                    prevNode.end= line
-                elif level>prevLevel:
-                    #give birth to child (only one level deep)
-                    node.parent = prevNode
-                    prevNode.children.append(node)
+        last = self.GetLineCount()
+        for node in self.iterFoldEntries(start_line, last):
+            node.expanded = expanded
+            
+            #folding point
+            prevLevel = prevNode.level
+            #print node
+            if node.level == prevLevel:
+                #say hello to new brother or sister
+                node.parent = prevNode.parent
+                node.parent.children.append(node)
+                prevNode.end = node.start
+            elif node.level>prevLevel:
+                #give birth to child (only one level deep)
+                node.parent = prevNode
+                prevNode.children.append(node)
+            else:
+                #find your uncles and aunts (can be several levels up)
+                while node.level < prevNode.level:
+                    prevNode.end = node.start
+                    prevNode = prevNode.parent
+                if prevNode.parent == None:
+                    node.parent = root
                 else:
-                    #find your uncles and aunts (can be several levels up)
-                    while level < prevNode.level:
-                        prevNode.end = line
-                        prevNode = prevNode.parent
-                    if prevNode.parent == None:
-                        node.parent = root
-                    else:
-                        node.parent = prevNode.parent
-                    node.parent.children.append(node)
-                    prevNode.end= line
-                prevNode = node
+                    node.parent = prevNode.parent
+                node.parent.children.append(node)
+                prevNode.end = node.start
+            prevNode = node
 
-        prevNode.end = line
+        prevNode.end = last
         #print("Finished fold node creation: %0.5fs" % (time.time() - t))
 
     def computeFoldHierarchy(self, expanded=True):

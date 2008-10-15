@@ -16,6 +16,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import *
 from peppy.lib.autoindent import *
+from peppy.lib.foldexplorer import *
 
 # A sample makefile is provided
 _sample_file = """\
@@ -59,6 +60,7 @@ class SampleMakefile(SelectAction):
 
 
 class MakefileAutoindent(BasicAutoindent):
+    foldre = re.compile("^[^\s\"\']+:", flags=re.MULTILINE)
     commandre = re.compile("[^\s\"\']+:")
     
     def findIndent(self, stc, linenum):
@@ -136,6 +138,33 @@ class MakefileMode(FundamentalMode):
         )
 
     autoindent = MakefileAutoindent()
+
+    def iterFoldEntries(self, line, last_line=-1):
+        """Iterator returning items to be included in code explorer.
+        
+        Given the range of lines in the current mode, return a FoldExplorerNode
+        for each item that should be included in the code explorer.
+        """
+        if last_line < 0:
+            last_line = self.GetLineCount()
+        start = self.PositionFromLine(line)
+        end = self.GetLineEndPosition(last_line)
+        text = self.GetTextRange(start, end)
+        pos = 0
+        lastpos = end - start
+        while pos < lastpos:
+            self.dprint("start=%d pos=%d last=%d" % (start, pos, lastpos))
+            match = MakefileAutoindent.foldre.search(text, pos)
+            if match:
+                self.dprint(match.group(0))
+                line = self.LineFromPosition(start + match.start(0))
+                node = FoldExplorerNode(level=1, start=line, end=last_line, text=match.group(0))
+                node.show = True
+                yield node
+                pos = match.end(0)
+            else:
+                break
+        raise StopIteration
 
 
 # This is the plugin definition for MakefileMode.  This is the only way

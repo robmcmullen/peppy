@@ -6,6 +6,7 @@ from tests.mock_wx import *
 
 from peppy.stcbase import *
 from peppy.plugins.python_mode import *
+from peppy.plugins.makefile_mode import *
 from peppy.plugins.find_replace import *
 
 from nose.tools import *
@@ -69,3 +70,36 @@ class TestFoldExpansion(object):
         eq_(folds2.children[0].expanded, True)
         dprint(folds2.children[1])
         eq_(folds2.children[1].expanded, True)
+
+class TestMakefileCodeExplorer(object):
+    def setUp(self):
+        self.stc = getSTC(stcclass=MakefileMode, lexer="Makefile")
+        self.stc.SetText("""\
+VAR = something
+OTHER = $(VAR)
+OTHER1 = ${VAR}
+DIR = $(shell ls -1)
+
+.SUFFIXES: .o
+
+all: foo
+	echo stuff
+
+foo: bar.o baz.o
+
+clean:
+	rm -rf *~ *.o
+    
+.PHONY: print-% clean
+
+print-%: ; @ echo $* = $($*)
+""")
+    
+    def testBasic(self):
+        nodes = [e for e in self.stc.iterFoldEntries(0)]
+        eq_(nodes[0].text, '.SUFFIXES:')
+        eq_(nodes[1].text, 'all:')
+        eq_(nodes[2].text, 'foo:')
+        eq_(nodes[3].text, 'clean:')
+        eq_(nodes[4].text, '.PHONY:')
+        eq_(nodes[5].text, 'print-%:')
