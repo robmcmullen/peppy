@@ -453,4 +453,3 @@ class BufferListModePlugin(IPeppyPlugin):
                 BufferListShow, BufferListReplace,
                 BufferListExecute,
                 ]
-        return []

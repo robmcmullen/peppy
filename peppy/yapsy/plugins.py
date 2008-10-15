@@ -337,8 +337,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         is compatible with the given stc.  This is used to provide the list
         of allowable major modes when the user wants to switch the major mode
         view.
+        
+        You may also return None to indicate an empty list.
         """
-        return []
+        return None
 
     def getCompatibleMinorModes(self, majorcls):
         """Return list of minor modes provided by the plugin that are
@@ -346,8 +348,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         
         Return an iterator containing the minor modes if they are compatible
         with the specified major mode class.
+        
+        You may also return None to indicate an empty list.
         """
-        return []
+        return None
     
     def getCompatibleActions(self, major):
         """Return list of actions compatible with the major mode.
@@ -356,8 +360,10 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         plugin that are compatible with the given major mode.  Actions are
         defined as subclasses of the SelectAction class in menu.py.  They
         define the menubar, toolbar, and keyboard control commands.
+        
+        You may also return None to indicate an empty list.
         """
-        return []
+        return None
 
 
 #-----

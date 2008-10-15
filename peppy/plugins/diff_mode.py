@@ -111,5 +111,4 @@ class DiffPlugin(IPeppyPlugin):
         if issubclass(mode.__class__, DiffEditMode):
             return [NextDiff, PrevDiff,
                    ]
-        return []
 

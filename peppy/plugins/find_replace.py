@@ -1308,7 +1308,7 @@ class FindReplacePlugin(IPeppyPlugin):
                     
                     CaseSensitiveSearch,
                     ]
-        return []
+
 
 if __name__ == "__main__":
     import sys

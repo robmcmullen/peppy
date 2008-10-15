@@ -1254,8 +1254,9 @@ class MajorModeMatcherDriver(debugmixin):
             # Only display those modes that use the same type of STC as the
             # current mode.
             modes.extend([m for m in plugin.getMajorModes() if m.stc_class == stc_class])
-        
-            modes.extend(plugin.getCompatibleMajorModes(stc_class))
+            compatible = plugin.getCompatibleMajorModes(stc_class)
+            if compatible is not None:
+                modes.extend(compatible)
         cls.dprint("%s: compatible modes = %s" % (stc_class, str(modes)))
         return modes
 

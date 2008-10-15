@@ -57,4 +57,3 @@ class InsertTextPlugin(IPeppyPlugin):
                     
                     InsertRepr,
                     ]
-        return []
