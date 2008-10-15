@@ -157,8 +157,11 @@ class SimpleFoldFunctionMatchMixin(object):
         name = text.lstrip()
         for start in self.fold_function_match:
             if name.startswith(start):
-                return text
+                return self.getFoldEntryPrettyName(start, text)
         return ""
+    
+    def getFoldEntryPrettyName(self, start, text):
+        return text
 
 class SimpleCLikeFoldFunctionMatchMixin(object):
     """Simple getFoldEntryFunctionName provider for C-like languages that
