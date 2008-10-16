@@ -11,12 +11,14 @@ plugin_count = 0
 
 lastfake = False
 
-def entry(filename, out=None, copythese=None, fake=False):
+def entry(filename, out=None, copythese=None, fake=False, pyc=False):
     print "Processing filename %s" % filename
+    if filename.endswith(".pyc") and pyc:
+        filename = filename[:-1]
     if filename.endswith(".py") and 'EGG-INFO' not in filename:
         if copythese is not None and not fake:
             copythese.append(filename)
-        if not filename.endswith("__init__.py") or True:
+        if not filename.endswith("__init__.py"):
             module = filename[:-3].replace('/', '.').replace('\\', '.')
             if out:
                 if fake:
@@ -38,13 +40,13 @@ def entry(filename, out=None, copythese=None, fake=False):
                     print "importing %s" % module
                     out.write("try:\n    import %s\nexcept:\n    pass\n" % (module))
 
-def process(path, out=None, copythese=None, fake=False):
+def process(path, out=None, copythese=None, fake=False, pyc=False):
     files = glob.glob('%s/*' % path)
     for path in files:
         if os.path.isdir(path):
-            process(path, out, fake=fake)
+            process(path, out, fake=fake, pyc=pyc)
         else:
-            entry(path, out, copythese, fake)
+            entry(path, out, copythese, fake, pyc)
 
 if __name__ == "__main__":
     usage="usage: %prog [-s dir] [-o file]"
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     process('peppy/editra/syntax', out, fake=True)
     
     if options.eggs:
-        process(options.eggs, out)
+        process(options.eggs, out, pyc=True)
 
     filename = os.path.join(savepath, options.output)
     fh = open(filename, 'w')

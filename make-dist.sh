@@ -9,33 +9,27 @@ echo $distdir
 mv $distdir/peppy/hsi/hsi_major_mode_proxy.py $distdir/peppy/plugins
 mv $distdir/peppy/hsi/hsi_major_mode.peppy-plugin $distdir/peppy/plugins
 
-# Create the eggs that are normally used for standalone plugins, but include
-# the source
+# Create the eggs directory that will be used to store plugins
 mkdir $distdir/eggs
-./plugins/egg-utils.py -d $distdir/eggs -k egg
-
-# prevent duplicate plugins -- if plugins dir exists, they will also be pulled
-# from there.  Had a problem with rm -rf in a script once, so just rename it. :)
-mv $distdir/plugins $distdir/plugins-src
-
-mv $distdir/eggs/*win32.egg $distdir
-
-# Unzip them into the eggs directory so we can search for plugins
 touch $distdir/eggs/__init__.py
-ls -1 $distdir/eggs/*.egg | while read EGG; do
+
+# Unzip the platform independent eggs
+ls -1 $distdir/plugins/*py2.5.egg | while read EGG; do
     unzip -o $EGG -d $distdir/eggs
 done
 
+# add the platform independent eggs to the py2exe include list
 ./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins -e eggs
 
 # Handle eggs with compiled objects.  They don't seem to do well when placed in
 # the eggs directory -- they need to be in the top level directory
-ls -1 $distdir/*win32.egg | while read EGG; do
+ls -1 $distdir/plugins/*win32.egg | while read EGG; do
     unzip -o $EGG -d $distdir
     cat $distdir/EGG-INFO/top_level.txt | while read TOPLEVEL; do
         echo "import $TOPLEVEL" >> $distdir/peppy/py2exe_plugins.py
     done
 done
+mv $distdir/plugins $distdir/plugins-src
 
 cat > $distdir/py2exe.sh <<EOF
 #!/bin/bash

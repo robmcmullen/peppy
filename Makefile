@@ -101,7 +101,7 @@ dist: distdir
 	-rm -rf $(distdir)
 
 eggs:
-	./plugins/egg-utils.py -d ./plugins/build egg
+	./plugins/egg-utils.py -d ./plugins/build -k egg
 
 distdir:
 	./make-changelog.py -m peppy
