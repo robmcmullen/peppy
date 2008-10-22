@@ -158,11 +158,17 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
         self.sidebar_panes = []
-        self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
-                          Name("SpringTabs").Caption("SpringTabs").
-                          Left().Layer(10).DockFixed().
-                          CloseButton(False).CaptionVisible(False).
-                          LeftDockable(False).RightDockable(False))
+        
+        # paneinfo can use the C++ style notation for setting flags because
+        # each method of AuiPaneInfo returns itself
+        paneinfo = wx.aui.AuiPaneInfo().Name("SpringTabs").Caption("SpringTabs").Left().Layer(10).CloseButton(False).CaptionVisible(False).LeftDockable(False).RightDockable(False)
+        
+        # Stock wxPython distributed with OS X 10.5 is version 2.8.4.0, which
+        # apparently doesn't have the DockFixed method.  So, I check for that
+        # here before using it.
+        if hasattr(paneinfo, 'DockFixed'):
+            paneinfo.DockFixed()
+        self._mgr.AddPane(self.spring, paneinfo)
 
         UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()
