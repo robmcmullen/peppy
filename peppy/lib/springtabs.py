@@ -71,6 +71,9 @@ class FakePopupWindow(wx.MiniFrame):
 
 
 class SpringTabItemRenderer(object):
+    def __init__(self):
+        self.spacing_between_items = 8
+        
     def OnPaint(self, item, evt):
         (width, height) = item.GetClientSizeTuple()
         x1 = y1 = 0
@@ -104,6 +107,7 @@ class SpringTabItemHorizontalRenderer(SpringTabItemRenderer):
     default_direction = "down"
     
     def __init__(self, popup_direction="default"):
+        SpringTabItemRenderer.__init__(self)
         if popup_direction == "default":
             popup_direction = self.default_direction
             
@@ -119,6 +123,7 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
     default_direction = "right"
     
     def __init__(self, popup_direction="default"):
+        SpringTabItemRenderer.__init__(self)
         if popup_direction == "default":
             popup_direction = self.default_direction
             
@@ -136,7 +141,7 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
         """
         h, w, useMin = item._GetLabelSize()
         width = w + 2 * item.border + item.bezelWidth - 1
-        height = h + 2 * item.border + item.bezelWidth - 1
+        height = h + 2 * item.border + item.bezelWidth - 1 + self.spacing_between_items
         #dprint("width=%d height=%d" % (width, height))
         return (width, height)
 
@@ -149,7 +154,7 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
         label = item.GetLabel()
         th, tw = dc.GetTextExtent(label)
         #dc.DrawText(label, (width-tw)/2+dx, (height-th)/2+dy)
-        dc.DrawRotatedText(label, (width-tw)/2+dx, height + dy - item.border, 90.0)
+        dc.DrawRotatedText(label, (width-tw)/2+dx, height + dy - item.border - self.spacing_between_items/2, 90.0)
 
     def showPopup(self, parent, item, show=True):
         popup, child = item.getPopup()
