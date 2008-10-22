@@ -13,8 +13,6 @@ lastfake = False
 
 def entry(filename, out=None, copythese=None, fake=False, pyc=False):
     print "Processing filename %s" % filename
-    if filename.endswith(".pyc") and pyc:
-        filename = filename[:-1]
     if filename.endswith(".py") and 'EGG-INFO' not in filename:
         if copythese is not None and not fake:
             copythese.append(filename)
