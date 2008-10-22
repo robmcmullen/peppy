@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-import os, re, threading
+import os, re
 from cStringIO import StringIO
 
 import wx
@@ -18,7 +18,7 @@ from peppy.lib.bufferedreader import *
 from peppy.dialogs import *
 from peppy.stcinterface import *
 from peppy.stcbase import *
-from peppy.major import *
+from peppy.majormodematcher import *
 from peppy.debug import *
 
 class BufferList(OnDemandGlobalListAction):
@@ -548,132 +548,3 @@ class Buffer(BufferVFSMixin):
         if changed!=self.modified:
             self.modified=changed
             wx.CallAfter(self.showModifiedAll)
-
-
-class BlankMode(MajorMode, wx.Window):
-    """
-    A temporary Major Mode to load another mode in the background
-    """
-    keyword = "Blank"
-    icon='icons/application.png'
-    temporary = True
-    allow_threaded_loading = False
-    
-    stc_class = NonResidentSTC
-
-    def __init__(self, parent, wrapper, buffer, frame):
-        MajorMode.__init__(self, parent, wrapper, buffer, frame)
-        wx.Window.__init__(self, parent, -1, pos=(9000,9000))
-        text = self.buffer.stc.GetText()
-        lines = wx.StaticText(self, -1, text, (10,10))
-        lines.Wrap(500)
-        self.stc = self.buffer.stc
-        self.buffer.stc.is_permanent = True
-
-    @classmethod
-    def verifyProtocol(cls, url):
-        # Use the verifyProtocol to hijack the loading process and
-        # immediately return the match if we're trying to load
-        # about:blank
-        if url.scheme == 'about' and url.path == 'blank':
-            return True
-        return False
-
-
-class LoadingSTC(NonResidentSTC):
-    def __init__(self, text):
-        self.text = text
-
-    def GetText(self):
-        return self.text
-
-
-class LoadingMode(BlankMode):
-    """
-    A temporary Major Mode to load another mode in the background
-    """
-    keyword = 'Loading...'
-    temporary = False
-    stc_class = LoadingSTC
-
-    def createPostHook(self):
-        self.showBusy(True)
-        wx.CallAfter(self.frame.openThreaded, self.buffer.raw_url,
-                     self.buffer, mode_to_replace=self, options=self.buffer.options)
-
-class LoadingBuffer(BufferVFSMixin, debugmixin):
-    def __init__(self, url, modecls=None, created_from_url=None, canonicalize=True, options=None):
-        BufferVFSMixin.__init__(self, url, created_from_url, canonicalize)
-        self.busy = True
-        self.readonly = False
-        self.permanent = False
-        self.modified = False
-        self.defaultmode = LoadingMode
-        self.options = options
-        
-        if modecls:
-            if isinstance(modecls, basesting):
-                self.modecls = MajorModeMatcherDriver.matchKeyword(modecls, self, url=self.raw_url)
-                if not self.modecls:
-                    raise TypeError("Unrecognized major mode keyword '%s'" % modecls)
-            else:
-                self.modecls = modecls
-        else:
-            self.modecls = MajorModeMatcherDriver.match(self, url=self.raw_url)
-            self.dprint("found major mode = %s" % self.modecls)
-        self.stc = LoadingSTC(unicode(url))
-    
-    def isTimestampChanged(self):
-        """Override so that we don't attempt to pop up any dialogs when loading
-        a file"""
-        return False
-    
-    def allowThreadedLoading(self):
-        return self.modecls.preferThreadedLoading(self.raw_url)
-    
-    def clone(self):
-        """Get a real Buffer instance from this temporary buffer"""
-        return Buffer(self.raw_url, self.modecls, self.created_from_url)
-
-    def addViewer(self, mode):
-        pass
-
-    def removeViewer(self, mode):
-        pass
-
-    def removeAllViewsAndDelete(self):
-        pass
-    
-    def save(self, url):
-        pass
-
-    def getTabName(self):
-        return self.defaultmode.keyword
-
-
-class BufferLoadThread(threading.Thread, debugmixin):
-    """Background file loading thread.
-    """
-    def __init__(self, frame, user_url, buffer, mode_to_replace, progress=None, options=None):
-        threading.Thread.__init__(self)
-        
-        self.frame = frame
-        self.user_url = user_url
-        self.buffer = buffer
-        self.mode_to_replace = mode_to_replace
-        self.progress = progress
-        self.options = options
-
-    def run(self):
-        self.dprint(u"starting to load %s" % unicode(self.buffer.url))
-        try:
-            self.buffer.openBackgroundThread(self.progress.message)
-            wx.CallAfter(self.frame.openSuccess, self.user_url, self.buffer,
-                         self.mode_to_replace, self.progress, self.options)
-            self.dprint(u"successfully loaded %s" % unicode(self.buffer.url))
-        except Exception, e:
-            import traceback
-            traceback.print_exc()
-            self.dprint("Exception: %s" % str(e))
-            wx.CallAfter(self.frame.openFailure, self.user_url, str(e),
-                         self.mode_to_replace, self.progress)

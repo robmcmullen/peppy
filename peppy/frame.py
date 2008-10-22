@@ -10,6 +10,8 @@ from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
+from peppy.fileopener import FileOpener
+
 from peppy.actions import *
 from peppy.menu import *
 from peppy.lib.wxemacskeybindings import *
@@ -738,148 +740,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if not self.makeTabActive(url):
             self.open(url)
 
-    def open(self, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
+    def open(self, *args, **kwargs):
         """Open a new tab to edit the given URL.
         
-        Driver function that loads a file and creates a new tab in the user
-        interface.  Depending on settings, the file may be loaded by a thread.
-        
-        @param url: URL of the file to open
-        
-        @param modecls: (optional) L{MajorMode} sublass to be used to edit
-        the file
-        
-        @param mode_to_replace: (optional) if used, this L{MajorMode} instance
-        will be replaced in the GUI with the newly created major mode.
-        
-        @param force_new_tab: (optional) force a new tab to be reused,
-        regardless of preference settings that would otherwise cause a tab to
-        be replaced.
-        
-        @param create_from_url: (optional) the URL of the buffer that was
-        used to generate this URL.  This is not typically used unless you're
-        creating a new file in the mem: filesystem and want a working directory
-        on the local filesystem to be available if needed to save a copy.
-        
-        @param canonicalize: (optional) whether or not the URL should be
-        canonicalized before searching the existing buffer list.  This is used
-        in the rare case where a fragment or query string is significant to
-        locating the data on the file system.
-        
-        @param options: (optional) a dict of options to be passed to the major
-        mode's showInitialPosition method
+        Driver function that uses L{FileOpener} to open URLs
         """
-        # The canonical url stored in the buffer will be without query string
-        # or fragment, so we need to keep track of the full url (with the
-        # query string and fragment) it separately.
-        user_url = vfs.normalize(url)
-        buffer = None
-        if canonicalize:
-            try:
-                buffer = BufferList.findBufferByURL(user_url)
-            except NotImplementedError:
-                # This means that the vfs implementation doesn't recognize the
-                # filesystem type.  This is the first place in the loading chain
-                # that the error can be encountered, so check for it here and load
-                # a new plugin if necessary.
-                found = False
-                plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-                for plugin in plugins:
-                    assert self.dprint("Checking %s" % plugin)
-                    plugin.loadVirtualFileSystem(user_url)
-                    try:
-                        buffer = BufferList.findBufferByURL(user_url)
-                        found = True
-                        break
-                    except NotImplementedError:
-                        pass
-                if not found:
-                    self.openFailure(user_url, "Unknown URI scheme")
-                    return
-
-        if buffer is not None:
-            #dprint("found permanent buffer %s, new_tab=%s" % (unicode(url), force_new_tab))
-            # Determine the actual modecls here if it's a keyword
-            if isinstance(modecls, basestring):
-                modecls = MajorModeMatcherDriver.matchKeyword(modecls, buffer, user_url)
-                if not modecls:
-                    raise TypeError("Unrecognized major mode keyword '%s'" % modecls)
-        
-            self.tabs.newBuffer(user_url, buffer, modecls, mode_to_replace, force_new_tab, options)
-        else:
-            try:
-                buffer = LoadingBuffer(user_url, modecls, created_from_url, canonicalize, options=options)
-            except Exception, e:
-                import traceback
-                error = traceback.format_exc()
-                self.openFailure(user_url, error)
-                return
-            
-            if wx.GetApp().classprefs.load_threaded and buffer.allowThreadedLoading():
-                self.tabs.newBuffer(user_url, buffer, mode_to_replace=mode_to_replace, new_tab=force_new_tab)
-            else:
-                self.openNonThreaded(user_url, buffer, mode_to_replace, force_new_tab=force_new_tab, options=options)
-    
-    def openNonThreaded(self, user_url, loading_buffer, mode_to_replace=None, force_new_tab=False, options=None):
-        #traceon()
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
-        try:
-            buffer = loading_buffer.clone()
-            buffer.openGUIThreadStart()
-            buffer.openBackgroundThread()
-            if force_new_tab:
-                mode_to_replace = None
-            self.openSuccess(user_url, buffer, mode_to_replace, options)
-        except Exception, e:
-            import traceback
-            error = traceback.format_exc()
-            self.openFailure(user_url, error)
-        wx.SetCursor(wx.StockCursor(wx.CURSOR_DEFAULT))
-
-    def openThreaded(self, user_url, loading_buffer, mode_to_replace=None, options=None):
-        #traceon()
-        buffer = loading_buffer.clone()
-        buffer.openGUIThreadStart()
-        statusbar = mode_to_replace.status_info
-        statusbar.startProgress(u"Loading %s" % user_url, message=str(mode_to_replace))
-        thread = BufferLoadThread(self, user_url, buffer, mode_to_replace, statusbar, options)
-        wx.GetApp().cooperativeYield()
-        thread.start()
-
-    def openSuccess(self, user_url, buffer, mode_to_replace=None, progress=None, options=None):
-        try:
-            buffer.openGUIThreadSuccess()
-            assert self.dprint("buffer=%s" % buffer)
-        except:
-            import traceback
-            error = traceback.format_exc()
-            self.openFailure(user_url, error, mode_to_replace, progress)
-            return
-        
-        if progress:
-            progress.stopProgress("Parsing...")
-            wx.GetApp().cooperativeYield()
-
-        assert self.dprint("mode to replace = %s" % mode_to_replace)
-        mode = self.tabs.newMode(buffer, mode_to_replace=mode_to_replace)
-        assert self.dprint("major mode=%s" % mode)
-        
-        #raceoff()
-        assert self.dprint("after addViewer")
-        mode.showInitialPosition(user_url, options)
-        msg = mode.getWelcomeMessage()
-        mode.status_info.setText(msg)
-
-    def openFailure(self, url, error, mode_to_replace=None, progress=None):
-        #traceoff()
-        msg = "Failed opening %s.\n" % unicode(url)
-        buffer = Buffer.createErrorBuffer(url, error)
-        mode = self.tabs.newMode(buffer, mode_to_replace=mode_to_replace)
-        assert self.dprint("major mode=%s" % mode)
-        if progress:
-            progress.stopProgress(msg)
-        else:
-            mode.status_info.setText(msg)
+        opener = FileOpener(self, *args, **kwargs)
+        opener.open()
 
     def save(self):        
         mode=self.getActiveMajorMode()
