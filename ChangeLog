@@ -1,3 +1,11 @@
+2008-10-15  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.8.9
+	* added DiffEditMode to view diff files
+	* added make commands to code explorer in MakefileMode
+	* fixed CGContextRestoreGState errors on mac
+	* added better error handler when changing major modes
+
 2008-10-07  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.8 "Bloviation Season"
