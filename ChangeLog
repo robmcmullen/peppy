@@ -1,3 +1,11 @@
+2008-10-21  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.8.17
+	* added Editra source code management status to project plugin
+	* moved project plugin to google code for development
+	* added workaround for Mac OS X lacking an AuiPaneInfo method
+	* refactoring of file load process into fileopener.py
+
 2008-10-15  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.8.9
