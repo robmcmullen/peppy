@@ -11,7 +11,7 @@ from peppy.buffers import *
 import re
 
 from peppy.about import AddAuthor
-AddAuthor("Frank Atle r\xc3\xb8d", "for the bash-style tab completion plugin")
+AddAuthor("Frank Atle R\xc3\xb8d", "for the bash-style tab completion plugin")
 
 
 class Range:
