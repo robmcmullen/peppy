@@ -12,6 +12,7 @@ from wx.lib.pubsub import Publisher
 
 from peppy.debug import *
 from peppy.major import *
+from peppy.buffers import BufferList
 
 
 class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
