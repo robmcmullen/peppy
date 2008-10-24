@@ -540,6 +540,16 @@ class Reference(object):
 ##    netpath = property(get_netpath, None, None, '')
 
 
+    def __getstate__(self):
+        return unicode(self)
+
+
+    def __setstate__(self, data):
+        ref = GenericDataType.decode(data)
+        for attr in self.__slots__:
+            setattr(self, attr, getattr(ref, attr))
+
+
     def __str__(self):
         path = str(self.path)
         if path == '.':
