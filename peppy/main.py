@@ -152,7 +152,7 @@ class Tabs(ClassPrefs):
     )
     
     def useNewTab(self, mode, new_tab):
-        if new_tab == 0 or (new_tab == 1 and not mode.temporary):
+        if new_tab == 0 or (new_tab == 1 and not mode.isTemporaryMode()):
             return True
         return False
     

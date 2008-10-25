@@ -41,6 +41,11 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
             self.SetStandardFonts()
             
         self.update()
+    
+    def isTemporaryMode(self):
+        if self.buffer.url.scheme == 'about':
+            return True
+        return False
 
     def OnLinkClicked(self, linkinfo):
         assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())

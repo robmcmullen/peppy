@@ -584,6 +584,15 @@ class MajorMode(ClassPrefs, debugmixin):
         normal view/edit mode.
         """
         return False
+    
+    def isTemporaryMode(self):
+        """Return true if this mode can be replaced when the user loads a new
+        file.
+        
+        Normally just returns the class's C{temporary} attribute, but this
+        method can be overridden on an instance basis.
+        """
+        return self.temporary
 
     def save(self, url=None):
         veto = self.savePreHook(url)
