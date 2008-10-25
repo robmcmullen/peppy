@@ -85,6 +85,65 @@ class MinorMode(ClassPrefs, debugmixin):
         self.window = None
         self.paneinfo = None
         
+        wx.CallAfter(self.initPostCallback)
+    
+    def initPostCallback(self):
+        """Callback method called to register any event handlers or
+        publish/subscribe messages
+        """
+        self.createDefaultEventBindings()
+        self.createEventBindings()
+        self.createListeners()
+    
+    def createDefaultEventBindings(self):
+        """Create the event bindings needed for all minor modes."""
+        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+    
+    def OnContextMenu(self, evt):
+        """Hook to display a context menu relevant to this minor mode.
+
+        For standard usage, subclasses should override L{getPopupActions} to
+        provide a list of actions to display in the popup menu.  Nonstandard
+        behaviour on a right click can be implemented by overriding this
+        method instead.
+        
+        Currently, this event gets triggered when it happens over the
+        major mode AND the minor modes.  So, that means the minor
+        modes won't get their own EVT_CONTEXT_MENU events unless
+        evt.Skip() is called here.
+
+        This may or may not be the best behavior to implement.  I'll
+        have to see as I get further into it.
+        """
+        pos = evt.GetPosition()
+        screen = self.GetScreenPosition()
+        dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
+        action_classes = self.getPopupActions(evt, pos.x - screen.x, pos.y - screen.y)
+        if action_classes:
+            self.mode.frame.menumap.popupActions(self, action_classes)
+
+    def getPopupActions(self, evt, x, y):
+        """Return the list of action classes to use as a context menu.
+        
+        If the subclass is capable of displaying a popup menu, it needs to
+        return a list of action classes.  The x, y pixel coordinates (relative
+        to the origin of major mode window) are included in case the subclass
+        can display different popup items depending on the position in the
+        editing window.
+        """
+        return []
+
+    def createEventBindings(self):
+        """Hook to create any event bindings needed by the minor mode.
+        """
+        pass
+    
+    def createListeners(self):
+        """Hook to register any publish/subscribe messages needed by the minor
+        mode.
+        """
+        pass
+    
     def setup(self):
         """Hook for minor modes that don't need any user inteface
         elements.

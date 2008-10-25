@@ -1,6 +1,6 @@
 [Core]
 Name = Hyperspectral Image Mode
-Module = hsi_major_mode_proxy
+Module = hsi_plugin
 
 [Documentation]
 Author = Rob McMullen

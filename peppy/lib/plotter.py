@@ -106,6 +106,9 @@ class MultiPlotter(plot.PlotCanvas, debugmixin):
     
     def __init__(self, parent, id=-1, proxy=None, grid=True, legend=True, fullscale=True, statusbarframe=None):
         plot.PlotCanvas.__init__(self, parent, id)
+        
+        # unbinding this allows context menu to work
+        self.canvas.Unbind(wx.EVT_RIGHT_DOWN)
 
         self.proxies=[]
         self.setProxy(proxy)
