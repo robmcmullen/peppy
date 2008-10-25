@@ -9,6 +9,8 @@ handlers that allow the context menu to be popped up.
 import os
 import wx
 
+from peppy.debug import *
+
 class ContextMenuMixin(object):
     """Mixin class to provide content menu on right click.
     

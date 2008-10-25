@@ -22,7 +22,9 @@ from peppy.debug import *
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 
-class Sidebar(ClassPrefs, debugmixin):
+from peppy.context_menu import ContextMenuMixin
+
+class Sidebar(ContextMenuMixin, ClassPrefs, debugmixin):
     """Mixin class for all frame sidebars.
 
     A frame sidebar is generally used to create a new UI window in a
@@ -55,9 +57,13 @@ class Sidebar(ClassPrefs, debugmixin):
         return classes
 
     def __init__(self, parent, *args, **kwargs):
-        self.frame = self.getFrame(parent)
+        self.frame = self.findFrameInWindowHierarchy(parent)
+        wx.CallAfter(self.initPostCallback)
     
-    def getFrame(self, parent):
+    def getFrame(self):
+        return self.frame
+    
+    def findFrameInWindowHierarchy(self, parent):
         """Utility function to find the peppy frame given the parent window.
         
         It's not always the case that they immediate parent of this window
@@ -73,6 +79,29 @@ class Sidebar(ClassPrefs, debugmixin):
             parent = parent.GetParent()
         return parent
 
+    def initPostCallback(self):
+        """Callback method called to register any event handlers or
+        publish/subscribe messages
+        """
+        self.createContextMenuEventBindings()
+        self.createEventBindings()
+        self.createListeners()
+    
+    def getOptionsForPopupActions(self):
+        options = {'sidebar': self}
+        return options
+
+    def createEventBindings(self):
+        """Hook to create any event bindings needed by the minor mode.
+        """
+        pass
+    
+    def createListeners(self):
+        """Hook to register any publish/subscribe messages needed by the minor
+        mode.
+        """
+        pass
+    
     def getPaneInfo(self):
         """Create the AuiPaneInfo object for this minor mode.
         """
