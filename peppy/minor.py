@@ -26,7 +26,9 @@ from peppy.actions import *
 from peppy.debug import *
 from peppy.lib.userparams import *
 
-class MinorMode(ClassPrefs, debugmixin):
+from peppy.context_menu import ContextMenuMixin
+
+class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     """
     Mixin class for all minor modes.  A minor mode should generally be
     a subclass of wx.Window (windowless minor modes are coming in the
@@ -87,52 +89,20 @@ class MinorMode(ClassPrefs, debugmixin):
         
         wx.CallAfter(self.initPostCallback)
     
+    def getFrame(self):
+        return self.mode.frame
+    
     def initPostCallback(self):
         """Callback method called to register any event handlers or
         publish/subscribe messages
         """
-        self.createDefaultEventBindings()
+        self.createContextMenuEventBindings()
         self.createEventBindings()
         self.createListeners()
     
-    def createDefaultEventBindings(self):
-        """Create the event bindings needed for all minor modes."""
-        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
-    
-    def OnContextMenu(self, evt):
-        """Hook to display a context menu relevant to this minor mode.
-
-        For standard usage, subclasses should override L{getPopupActions} to
-        provide a list of actions to display in the popup menu.  Nonstandard
-        behaviour on a right click can be implemented by overriding this
-        method instead.
-        
-        Currently, this event gets triggered when it happens over the
-        major mode AND the minor modes.  So, that means the minor
-        modes won't get their own EVT_CONTEXT_MENU events unless
-        evt.Skip() is called here.
-
-        This may or may not be the best behavior to implement.  I'll
-        have to see as I get further into it.
-        """
-        pos = evt.GetPosition()
-        screen = self.GetScreenPosition()
-        #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
-        action_classes = self.getPopupActions(evt, pos.x - screen.x, pos.y - screen.y)
+    def getOptionsForPopupActions(self):
         options = {'minor_mode': self}
-        if action_classes:
-            self.mode.frame.menumap.popupActions(self, action_classes, options)
-
-    def getPopupActions(self, evt, x, y):
-        """Return the list of action classes to use as a context menu.
-        
-        If the subclass is capable of displaying a popup menu, it needs to
-        return a list of action classes.  The x, y pixel coordinates (relative
-        to the origin of major mode window) are included in case the subclass
-        can display different popup items depending on the position in the
-        editing window.
-        """
-        return []
+        return options
 
     def createEventBindings(self):
         """Hook to create any event bindings needed by the minor mode.

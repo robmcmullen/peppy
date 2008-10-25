@@ -42,6 +42,7 @@ from peppy.debug import *
 from peppy.minor import *
 from peppy.sidebar import *
 from peppy.yapsy.plugins import *
+from peppy.context_menu import ContextMenuMixin
 
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
@@ -259,7 +260,7 @@ class MajorModeLoadError(RuntimeError):
     pass
 
 
-class MajorMode(ClassPrefs, debugmixin):
+class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     """Mixin class for all major modes.
     
     Major modes are associated with some type (or types) of file, and
@@ -456,6 +457,9 @@ class MajorMode(ClassPrefs, debugmixin):
         
         # Create a window here!
         pass
+    
+    def getFrame(self):
+        return self.frame
     
     def __del__(self):
         #dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
@@ -716,7 +720,7 @@ class MajorMode(ClassPrefs, debugmixin):
             self.addUpdateUIEvent(self.OnUpdateUI)
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyDown)
-        self.Bind(wx.EVT_CONTEXT_MENU, self.OnContextMenu)
+        self.createContextMenuEventBindings()
         self.idle_update_menu = False
 
     def createEventBindingsPostHook(self):
@@ -815,42 +819,6 @@ class MajorMode(ClassPrefs, debugmixin):
         """Hook for subclasses to process during idle time.
         """
         pass
-
-    def getPopupActions(self, evt, x, y):
-        """Return the list of action classes to use as a context menu.
-        
-        If the subclass is capable of displaying a popup menu, it needs to
-        return a list of action classes.  The x, y pixel coordinates (relative
-        to the origin of major mode window) are included in case the subclass
-        can display different popup items depending on the position in the
-        editing window.
-        """
-        return []
-
-    def OnContextMenu(self, evt):
-        """Hook to display a context menu relevant to this major mode.
-
-        For standard usage, subclasses should override L{getPopupActions} to
-        provide a list of actions to display in the popup menu.  Nonstandard
-        behaviour on a right click can be implemented by overriding this
-        method instead.
-        
-        Currently, this event gets triggered when it happens over the
-        major mode AND the minor modes.  So, that means the minor
-        modes won't get their own EVT_CONTEXT_MENU events unless
-        evt.Skip() is called here.
-
-        This may or may not be the best behavior to implement.  I'll
-        have to see as I get further into it.
-        """
-        pos = evt.GetPosition()
-        screen = self.GetScreenPosition()
-        #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
-        action_classes = self.getPopupActions(evt, pos.x - screen.x, pos.y - screen.y)
-        if action_classes:
-            self.frame.menumap.popupActions(self, action_classes)
-        else:
-            evt.Skip()
 
     def createEditWindow(self,parent):
         win=wx.Window(parent, -1, pos=(9000,9000))
