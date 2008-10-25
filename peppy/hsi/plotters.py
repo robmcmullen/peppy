@@ -66,6 +66,7 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
         self.listeners=[]
         self.rgblookup=['red','green','blue']
         self.setProxy(self)
+        self.last_coords = (0,0)
     
     def setCube(self, cube):
         self.setupTitle()
@@ -110,6 +111,45 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
         self.yaxis=(float(lo), float(hi))
         #dprint("yaxis=%s" % str(self.yaxis))
         self.updateListenerExtrema()
+    
+    def updateProxies(self, *coords):
+        plotproxy = self.proxies[0]
+        plotproxy.updateLines(*coords)
+        try:
+            plotproxy.updateListeners()
+        except Exception, e:
+            import traceback
+            dprint(traceback.format_exc())
+        self.last_coords = coords
+    
+    def redisplayProxies(self):
+        self.updateProxies(*self.last_coords)
+
+
+class SpectrumXLabelAction(HSIActionMixin, RadioAction):
+    """Change the X axis label of the spectrum plot""" 
+    name = "X Axis Label"
+
+    def getIndex(self):
+        cubeview = self.mode.cubeview
+        labels = cubeview.getAvailableXAxisLabels()
+        minor = self.popup_options['minor_mode']
+        current = minor.xlabel
+        return labels.index(current)
+
+    def getItems(self):
+        cubeview = self.mode.cubeview
+        labels = cubeview.getAvailableXAxisLabels()
+        return labels
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("index=%d" % index)
+        cubeview = self.mode.cubeview
+        labels = cubeview.getAvailableXAxisLabels()
+        label = labels[index]
+        minor = self.popup_options['minor_mode']
+        minor.setupAxes(label)
+        minor.redisplayProxies()
 
 
 class HSISpectrumMinorMode(HSIPlotMinorMode):
@@ -117,10 +157,19 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
     """
     keyword = "Spectrum"
 
-    def setupAxes(self):
+    def getPopupActions(self, evt, x, y):
+        return [
+            SpectrumXLabelAction,
+            ]
+
+    def setupAxes(self, label=None):
         cubeview = self.mode.cubeview
-        self.xlabel = cubeview.getDepthXAxisLabel()
-        self.xaxis = cubeview.getDepthXAxisExtrema()
+        labels = cubeview.getAvailableXAxisLabels()
+        if label:
+            self.xlabel = label
+        else:
+            self.xlabel = labels[0]
+        self.xaxis = cubeview.getDepthXAxisExtrema(self.xlabel)
         
         # syncing over the whole cube takes too long, so we'll grow
         # the axis as it gets bigger.  Start with the extrema of the
@@ -135,7 +184,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
         num = len(profile)
         
         data=numpy.zeros((num, 2))
-        data[:,0] = cubeview.getDepthXAxis()
+        data[:,0] = cubeview.getDepthXAxis(self.xlabel)
         data[:,1] = profile
         yaxis=cubeview.cube.getUpdatedExtrema()
         self.updateYAxis(yaxis)

@@ -110,14 +110,8 @@ class HSIMode(BitmapScroller, MajorMode):
         assert self.dprint("updating HSI user interface!")
         self.updateInfo(*evt.imageCoords)
         for minor in self.wrapper.getActiveMinorModes(True):
-            if hasattr(minor, 'proxies'):
-                plotproxy = minor.proxies[0]
-                plotproxy.updateLines(*evt.imageCoords)
-                try:
-                    plotproxy.updateListeners()
-                except Exception, e:
-                    import traceback
-                    dprint(traceback.format_exc())
+            if hasattr(minor, 'updateProxies'):
+                minor.updateProxies(*evt.imageCoords)
         if evt is not None:
             evt.Skip()
     
@@ -170,10 +164,8 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cubeview = viewcls(self, self.cube, self.classprefs.display_rgb)
         self.cubeview.swapEndian(self.swap_endian)
         for minor in self.wrapper.getActiveMinorModes():
-            if hasattr(minor, 'proxies'):
+            if hasattr(minor, 'setCube'):
                 minor.setCube(self.cube)
-                plotproxy = minor.proxies[0]
-                plotproxy.setupAxes()
 
     def getPopupActions(self, evt, x, y):
         import peppy.hsi.hsi_menu

@@ -117,10 +117,11 @@ class MinorMode(ClassPrefs, debugmixin):
         """
         pos = evt.GetPosition()
         screen = self.GetScreenPosition()
-        dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
+        #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
         action_classes = self.getPopupActions(evt, pos.x - screen.x, pos.y - screen.y)
+        options = {'minor_mode': self}
         if action_classes:
-            self.mode.frame.menumap.popupActions(self, action_classes)
+            self.mode.frame.menumap.popupActions(self, action_classes, options)
 
     def getPopupActions(self, evt, x, y):
         """Return the list of action classes to use as a context menu.

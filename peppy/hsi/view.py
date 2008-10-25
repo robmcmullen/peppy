@@ -150,23 +150,22 @@ class CubeView(debugmixin):
             profiles.append(profile)
         return profiles
     
-    def getDepthXAxisLabel(self):
+    def getAvailableXAxisLabels(self):
+        labels = ['band']
         if self.cube.wavelengths:
-            label = self.cube.wavelength_units
-        else:
-            label='band'
-        return label
-
-    def getDepthXAxisExtrema(self):
-        if self.cube.wavelengths:
+            labels.append(self.cube.wavelength_units)
+        return labels
+    
+    def getDepthXAxisExtrema(self, label='band'):
+        if self.cube.wavelengths and label == self.cube.wavelength_units:
             axis = (self.cube.wavelengths[0],
                     self.cube.wavelengths[-1])
         else:
             axis=(0,self.cube.bands)
         return axis
 
-    def getDepthXAxis(self):
-        if self.cube.wavelengths:
+    def getDepthXAxis(self, label='band'):
+        if self.cube.wavelengths and label == self.cube.wavelength_units:
             values = self.cube.wavelengths
         else:
             values = numpy.arange(1, self.cube.bands+1, 1)
@@ -346,13 +345,14 @@ class FocalPlaneView(CubeView):
             raw = raw.byteswap()
         return raw
 
-    def getDepthXAxisLabel(self):
-        return 'line'
+    def getAvailableXAxisLabels(self):
+        labels = ['line']
+        return labels
 
-    def getDepthXAxisExtrema(self):
+    def getDepthXAxisExtrema(self, label='line'):
         return (0,self.cube.lines)
 
-    def getDepthXAxis(self):
+    def getDepthXAxis(self, label='line'):
         return numpy.arange(1, self.cube.lines+1, 1)
 
     def getDepthProfile(self, x, y):
