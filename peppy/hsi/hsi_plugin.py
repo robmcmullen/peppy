@@ -55,10 +55,10 @@ class HSIPlugin(IPeppyPlugin):
     def getCompatibleMinorModes(self, cls):
         if cls.keyword == "HSI":
             try:
-                import peppy.hsi.hsi_major_mode
-                for mode in [peppy.hsi.hsi_major_mode.HSIXProfileMinorMode,
-                             peppy.hsi.hsi_major_mode.HSIYProfileMinorMode,
-                             peppy.hsi.hsi_major_mode.HSISpectrumMinorMode]:
+                import peppy.hsi.plotters
+                for mode in [peppy.hsi.plotters.HSIXProfileMinorMode,
+                             peppy.hsi.plotters.HSIYProfileMinorMode,
+                             peppy.hsi.plotters.HSISpectrumMinorMode]:
                     yield mode
             except:
                 pass
