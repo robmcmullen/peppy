@@ -515,6 +515,7 @@ class Buffer(BufferVFSMixin):
                 vfs.set_permissions(saveas, permissions)
                 self.setURL(saveas)
                 self.setName()
+                Publisher().sendMessage('buffer.opened', self)
             self.modified = False
             self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
