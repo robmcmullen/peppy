@@ -24,7 +24,7 @@ class FileOpener(debugmixin):
     """Open a URL into an existing BufferFrame
     
     """
-    debuglevel = 1
+    debuglevel = 0
     
     def __init__(self, frame, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
         """Create an opener for the specified url
