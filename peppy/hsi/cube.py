@@ -1361,6 +1361,12 @@ class Cube(debugmixin):
             store[:,:] = source[:,:]
             index += 1
         return image
+    
+    
+    #### Data modification functions
+    def fillBandWithConstant(self, band, value):
+        data = self.getBandRaw(band)
+        data[:,:] = value
 
 
 def newCube(interleave, url=None, progress=None):
