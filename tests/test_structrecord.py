@@ -788,6 +788,8 @@ class Teststring2(BaseTest):
 def NInt(name,length,default=None):
     return CookedInt(FormatField(name,"%ds" % length,default))
 def NStr(name,length,default=None):
+    if default is None:
+        default=" "*length
     return FormatField(name,"%ds" % length,default)
 
 class TRE_PIAPEA(Record):
@@ -863,7 +865,86 @@ class Testtre2(BaseTest):
                                        )),
               ],
         )
+
+
+
+class NStrSub1(Record):
+    typedef=(
+        NStr('ONE',1,'U'),
+        NStr('TWO',2),
+        NStr('THREE',3),
+        )
+
+class TestSubNStr1(BaseTest):
+    typedef=(
+        Anchor('subheader_start'),
+        NStr('F1',2,'IM'),
+        NStr('F2',2),
+        NStr('F3',2),
+        NStrSub1('SUB'),
+        )
+    raw="IMF2F3U22333"
+    values=ExampleData(
+        F1='IM',
+        F2='F2',
+        F3='F3',
+        SUB=ExampleData(
+            ONE='U',
+            TWO='22',
+            THREE='333',
+            ),
+        )
+
+class SubNStr1(Record):
+    typedef=(
+        Anchor('subheader_start'),
+        NStr('F1',2,'IM'),
+        NStr('F2',2),
+        NStr('F3',2),
+        NStrSub1('SUB'),
+        )
     
+def testSubNStr():
+    rec = SubNStr1()
+    rec.F2='QQ'
+    rec.SUB.TWO='44'
+    fh = StringIO()
+    rec.serialize(fh)
+    eq_(fh.getvalue(), 'IMQQ  U44   ')
+    rec2 = SubNStr1()
+    rec2.SUB.TWO='55'
+    fh = StringIO()
+    rec2.serialize(fh)
+    eq_(fh.getvalue(), 'IM    U55   ')
+
+class Image1(Record):
+    typedef=(
+        NStr('F1',2,'IM'),
+        NStr('F2',2),
+        NStrSub1('SUB'),
+        )
+
+class ImageFile(Record):
+    typedef=(
+        NInt('num_images',2),
+        MetaList(Image1('images'),lambda s:s.num_images),
+        )
+
+def testRecordGetCopyHandlesMetaLists():
+    file1 = ImageFile()
+    raw1 = StringIO('03IMF2122333IMF2455666IMF2788999')
+    file1.unserialize(raw1)
+    file2 = ImageFile()
+    raw2 = StringIO('03IMF2099888IMF2766555IMF2433222')
+    file2.unserialize(raw2)
+    assert file1.num_images == 3
+    assert file2.num_images == 3
+    print file1
+    print file2
+    assert file1.images[0].SUB.TWO != file2.images[0].SUB.TWO
+    
+
+
 class Testformatfields(BaseTest):
     typedef=(
         SLInt8('SLInt8'),
@@ -937,7 +1018,6 @@ class Testchecksum(BaseTest):
         UBInt32=256*256*256*256-2,
         checksum=67108874,
         )
-
 
     
 if __name__ == "__main__":

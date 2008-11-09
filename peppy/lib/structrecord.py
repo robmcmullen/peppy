@@ -876,7 +876,30 @@ class Record(Field):
         self._currentlyprocessing=None
         
         self.storeDefault(self)
-
+    
+    def getCopy(self, obj):
+        """Deep copy of subrecord
+        
+        Any Record that uses Records in the typedef needs to be deep copied
+        rather than shallow copied as done in Field.  If it is shallow copied,
+        the subrecords created by the shallow copy all point to the same
+        object.
+        """
+        #dprint("Deep copy of %s: %s" % (self._name, self))
+        template = Field.getCopy(self, obj)
+#        return Field.getCopy(self, obj)
+        for field in self.typedef:
+            if isinstance(field,Record):
+                # set temporary reference of subobject to None
+                setattr(template,field._name,field.getCopy(obj))
+                assert self.debuglevel == 0 or self.dprint("  copy of %s = %s" % (field._name,getattr(obj,field._name)))
+                child=getattr(template,field._name)
+                # set obj._ to be obj for parent object reference
+                assert self.debuglevel == 0 or self.dprint("  child=%s" % child.__class__.__name__)
+                setattr(child,"_",template)
+                #field.storeDefault(child)
+        return template
+    
     def storeDefault(self,obj):
         assert self.debuglevel == 0 or self.dprint("storing defaults for %s" % self.__class__.__name__)
         for field in self.typedef:
@@ -884,7 +907,7 @@ class Record(Field):
             assert self.debuglevel == 0 or self.dprint("  typedef=%s" % field)
             if isinstance(field,Record):
                 # set temporary reference of subobject to None
-                setattr(obj,field._name,field.getCopy(obj))
+                setattr(obj,field._name,Field.getCopy(field, obj))
                 assert self.debuglevel == 0 or self.dprint("  copy of %s = %s" % (field._name,getattr(obj,field._name)))
                 child=getattr(obj,field._name)
                 # set obj._ to be obj for parent object reference
