@@ -1045,6 +1045,10 @@ class Record(Field):
                     break
                 #dprint("name=%s" % name)
                 if isinstance(field,Record):
+                    # the typedef holds a blank copy of the record; we want the
+                    # actual data instead of the template so we need to use
+                    # getattr to get the real record
+                    field = getattr(self, name)
                     #dprint("record=%s" % str(field))
                     items.append((name, field))
                 else:
