@@ -200,6 +200,8 @@ __all__ = [
     'is_folder',
     'can_read',
     'can_write',
+    'get_permissions',
+    'set_permissions',
     'get_ctime',
     'get_mtime',
     'get_atime',

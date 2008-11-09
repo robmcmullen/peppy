@@ -18,7 +18,7 @@
 # Import from the Standard Library
 from datetime import datetime
 from os import (listdir, makedirs, mkdir, remove, rename, rmdir, stat, walk,
-                access, R_OK, W_OK)
+                access, chmod, R_OK, W_OK)
 from os.path import (exists, getatime, getctime, getmtime, getsize, isfile,
     isdir, join)
 from subprocess import call
@@ -28,6 +28,7 @@ from peppy.vfs.itools.uri import Path, Reference
 from vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from base import BaseFS
 from registry import register_file_system
+from permissions import Permissions
 
 
 class FileFS(BaseFS):
@@ -63,6 +64,35 @@ class FileFS(BaseFS):
             return access(path, R_OK)
         except UnicodeEncodeError:
             return access(path.encode('utf-8'), R_OK)
+
+
+    @classmethod
+    def can_write(cls, reference):
+        path = unicode(reference.path)
+        try:
+            return access(path, W_OK)
+        except UnicodeEncodeError:
+            return access(path.encode('utf-8'), W_OK)
+
+
+    @classmethod
+    def get_permissions(cls, reference):
+        path = unicode(reference.path)
+        try:
+            mode = stat(path)[0]
+        except UnicodeEncodeError:
+            mode = stat(path.encode('utf-8'))[0]
+        return Permissions(mode)
+
+
+    @classmethod
+    def set_permissions(cls, reference, permissions):
+        path = unicode(reference.path)
+        mode = permissions.get_mode_integer_value()
+        try:
+            chmod(path, mode)
+        except UnicodeEncodeError:
+            chmod(path.encode('utf-8'), mode)
 
 
     @classmethod

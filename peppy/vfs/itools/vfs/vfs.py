@@ -49,6 +49,14 @@ def can_write(reference):
     return cwd.can_write(reference)
 
 
+def get_permissions(reference):
+    return cwd.get_permissions(reference)
+
+
+def set_permissions(reference, permissions):
+    return cwd.set_permissions(reference, permissions)
+
+
 def get_ctime(reference):
     return cwd.get_ctime(reference)
 

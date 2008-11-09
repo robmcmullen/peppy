@@ -80,6 +80,16 @@ class Folder(object):
         return fs.can_write(reference)
 
 
+    def get_permissions(self, reference):
+        fs, reference = self.get_fs_and_reference(reference)
+        return fs.get_permissions(reference)
+
+
+    def set_permissions(self, reference, permissions):
+        fs, reference = self.get_fs_and_reference(reference)
+        return fs.set_permissions(reference, permissions)
+
+
     def get_ctime(self, reference):
         fs, reference = self.get_fs_and_reference(reference)
         return fs.get_ctime(reference)

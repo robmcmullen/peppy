@@ -511,6 +511,8 @@ class Buffer(BufferVFSMixin):
             fh.close()
             self.stc.SetSavePoint()
             if saveas != self.url:
+                permissions = vfs.get_permissions(self.url)
+                vfs.set_permissions(saveas, permissions)
                 self.setURL(saveas)
                 self.setName()
             self.modified = False

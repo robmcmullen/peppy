@@ -164,6 +164,25 @@ class FileTestCase(TestCase):
 
 
 
+class FilePermissions(TestCase):
+    """
+    Test permissions of the file:// filesystem
+    """
+
+    def test00_get(self):
+        filename = 'vfs/perms.txt'
+        with vfs.make_file(filename) as file:
+            file.write('test\n')
+        perms = vfs.get_permissions(filename)
+        self.assert_(perms.is_mode_set('user', 'read'))
+        perms.set_mode('user', 'execute', True)
+        vfs.set_permissions(filename, perms)
+        perms = vfs.get_permissions(filename)
+        self.assert_(perms.is_mode_set('user', 'execute'))
+        vfs.remove(filename)
+
+
+
 class FSTestCase(TestCase):
 
     def test_linux(self):

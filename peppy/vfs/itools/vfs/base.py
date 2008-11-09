@@ -53,6 +53,16 @@ class BaseFS(object):
 
 
     @staticmethod
+    def get_permissions(reference):
+        raise NotImplementedError
+
+
+    @staticmethod
+    def set_permissions(reference, permissions):
+        raise NotImplementedError
+
+
+    @staticmethod
     def get_ctime(reference):
         raise NotImplementedError
 
