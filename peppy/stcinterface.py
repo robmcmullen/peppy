@@ -142,7 +142,11 @@ class STCInterface(object):
         This is called by the GUI thread, so can update any GUI elements here.
         """
         pass
-    
+
+    def getAutosaveTemporaryFilename(self, buffer):
+        """Hook to allow STC to specify autosave filename"""
+        pass
+
     def prepareEncoding(self):
         """Convert the raw bytes in the file to the correct encoding before
         writing.

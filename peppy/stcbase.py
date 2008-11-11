@@ -336,6 +336,10 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             # clean up temporary encoded version of the text
             self.refstc.encoded = None
 
+    def getAutosaveTemporaryFilename(self, buffer):
+        """Hook to allow STC to override autosave filename"""
+        return wx.GetApp().autosave.getFilename(buffer.url)
+
     ## Additional functionality
     def checkUndoEOL(self):
         """Check to see if the last change was converting all EOL characters.

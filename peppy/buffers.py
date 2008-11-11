@@ -4,7 +4,6 @@ import os, re
 from cStringIO import StringIO
 
 import wx
-import wx.aui
 import wx.stc
 
 import peppy.vfs as vfs
@@ -84,7 +83,13 @@ class BufferList(OnDemandGlobalListAction):
         if retval==wx.ID_OK:
             return True
         return False
-            
+    
+    @staticmethod
+    def removeAllAutosaveFiles():
+        for buf in BufferList.storage:
+            if buf.modified and not buf.permanent:
+                buf.removeAutosaveIfExists()
+        
     def getItems(self):
         return ["%s  (%s)" % (buf.displayname, unicode(buf.url)) for buf in self.storage]
 
@@ -304,6 +309,8 @@ class Buffer(BufferVFSMixin):
     """
     count=0
     error_buffer_count = 0
+    
+    keystrokes_until_autosave = 10
 
     filenames={}
     
@@ -497,7 +504,7 @@ class Buffer(BufferVFSMixin):
         self.forEachView('applySettings')
         self.forEachView('revertPostHook')
         self.showModifiedAll()
-        
+    
     def save(self, url=None):
         assert self.dprint(u"Buffer: saving buffer %s as %s" % (unicode(self.url), url))
         try:
@@ -510,6 +517,7 @@ class Buffer(BufferVFSMixin):
             self.stc.writeTo(fh, saveas)
             fh.close()
             self.stc.SetSavePoint()
+            self.removeAutosaveIfExists()
             if saveas != self.url:
                 permissions = vfs.get_permissions(self.url)
                 vfs.set_permissions(saveas, permissions)
@@ -541,13 +549,45 @@ class Buffer(BufferVFSMixin):
             self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
     def OnChanged(self, evt):
-        #dprint("stc = %s" % self.stc)
+        dprint("stc = %s" % self.stc)
         if self.stc.GetModify():
             assert self.dprint("modified!")
             changed=True
+            self.change_count += 1
+            if self.change_count > self.keystrokes_until_autosave:
+                wx.CallAfter(self.autosaveCallback)
         else:
             assert self.dprint("clean!")
             changed=False
+            self.change_count = 0
         if changed!=self.modified:
             self.modified=changed
             wx.CallAfter(self.showModifiedAll)
+    
+    def autosaveCallback(self):
+        dprint(self.change_count)
+        if self.change_count > 0:
+            self.autosave()
+            self.change_count = 0
+
+    def autosave(self):
+        # Update keystrokes in case user has changed the settings
+        self.keystrokes_until_autosave = wx.GetApp().autosave.getKeystrokeInterval()
+        if self.readonly:
+            return
+        temp_url = self.stc.getAutosaveTemporaryFilename(self)
+        if temp_url:
+            dprint("Saving backup copy to %s" % temp_url)
+            try:
+                self.stc.prepareEncoding()
+                fh = vfs.open_write(temp_url)
+                self.stc.writeTo(fh, temp_url)
+                fh.close()
+            except Exception, e:
+                dprint("Failed autosaving to %s with %s" % (temp_url, e))
+
+    def removeAutosaveIfExists(self):
+        temp_url = self.stc.getAutosaveTemporaryFilename(self)
+        if vfs.exists(temp_url):
+            vfs.remove(temp_url)
+            dprint("Removed autosave file %s" % temp_url)

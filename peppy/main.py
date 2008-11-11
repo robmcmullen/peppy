@@ -27,6 +27,8 @@ from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.textutil import piglatin
 
+from peppy.autosave import Autosave
+
 # Debug method to display when CallAfters are being made.
 #OrigCallAfter = wx.CallAfter
 #def NewCallAfter(*args, **kwargs):
@@ -335,6 +337,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     user = User()
     tabs = Tabs()
     language = Language()
+    autosave = Autosave()
     
     config = None
     yielding = False
@@ -949,6 +952,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             return False
         if not BufferList.promptUnsaved():
             return False
+        BufferList.removeAllAutosaveFiles()
         plugins = self.plugin_manager.getActivePluginObjects()
         exceptions = []
         for plugin in plugins:
