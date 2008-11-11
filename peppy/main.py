@@ -27,7 +27,7 @@ from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.textutil import piglatin
 
-from peppy.autosave import Autosave
+from peppy.autosave import Autosave, BackupFiles
 
 # Debug method to display when CallAfters are being made.
 #OrigCallAfter = wx.CallAfter
@@ -338,6 +338,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     tabs = Tabs()
     language = Language()
     autosave = Autosave()
+    backup = BackupFiles()
     
     config = None
     yielding = False

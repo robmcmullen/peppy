@@ -147,6 +147,10 @@ class STCInterface(object):
         """Hook to allow STC to specify autosave filename"""
         pass
 
+    def getBackupTemporaryFilename(self, buffer):
+        """Hook to allow STC to override backup filename"""
+        pass
+
     def prepareEncoding(self):
         """Convert the raw bytes in the file to the correct encoding before
         writing.

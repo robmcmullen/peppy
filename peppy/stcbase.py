@@ -340,6 +340,10 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """Hook to allow STC to override autosave filename"""
         return wx.GetApp().autosave.getFilename(buffer.url)
 
+    def getBackupTemporaryFilename(self, buffer):
+        """Hook to allow STC to override backup filename"""
+        return wx.GetApp().backup.getFilename(buffer.url)
+
     ## Additional functionality
     def checkUndoEOL(self):
         """Check to see if the last change was converting all EOL characters.
