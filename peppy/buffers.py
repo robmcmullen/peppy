@@ -363,6 +363,8 @@ class Buffer(BufferVFSMixin):
 
         self.modified=False
         self.permanent = False
+        
+        self.backup_saved = False
 
         self.stc=None
 
@@ -551,15 +553,17 @@ class Buffer(BufferVFSMixin):
             self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
 
     def OnChanged(self, evt):
-        dprint("stc = %s" % self.stc)
+        #dprint("stc = %s" % self.stc)
         if self.stc.GetModify():
-            assert self.dprint("modified!")
+            #self.dprint("modified!")
             changed=True
             self.change_count += 1
             if self.change_count > self.keystrokes_until_autosave:
                 wx.CallAfter(self.autosaveCallback)
+            if not self.backup_saved:
+                wx.CallAfter(self.backupCallback)
         else:
-            assert self.dprint("clean!")
+            #self.dprint("clean!")
             changed=False
             self.change_count = 0
         if changed!=self.modified:
@@ -567,7 +571,7 @@ class Buffer(BufferVFSMixin):
             wx.CallAfter(self.showModifiedAll)
     
     def autosaveCallback(self):
-        dprint(self.change_count)
+        #dprint(self.change_count)
         if self.change_count > 0:
             self.autosave()
             self.change_count = 0
@@ -579,24 +583,26 @@ class Buffer(BufferVFSMixin):
             return
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url:
-            dprint("Saving backup copy to %s" % temp_url)
-            try:
-                self.stc.prepareEncoding()
-                fh = vfs.open_write(temp_url)
-                self.stc.writeTo(fh, temp_url)
-                fh.close()
-            except Exception, e:
-                dprint("Failed autosaving to %s with %s" % (temp_url, e))
+            self.saveTemporaryCopy(temp_url)
 
+    def saveTemporaryCopy(self, temp_url):
+        self.dprint("Saving backup copy to %s" % temp_url)
+        try:
+            self.stc.prepareEncoding()
+            fh = vfs.open_write(temp_url)
+            self.stc.writeTo(fh, temp_url)
+            fh.close()
+        except Exception, e:
+            self.dprint("Failed autosaving to %s with %s" % (temp_url, e))
+    
     def removeAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
             vfs.remove(temp_url)
-            dprint("Removed autosave file %s" % temp_url)
+            self.dprint("Removed autosave file %s" % temp_url)
 
     def restoreFromAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
-        dprint(temp_url)
         if temp_url and vfs.exists(temp_url):
             if vfs.get_mtime(temp_url) >= vfs.get_mtime(self.url) and vfs.get_size(temp_url) > 0:
                 # backup file is newer than saved file.
@@ -604,8 +610,11 @@ class Buffer(BufferVFSMixin):
                 retval=dlg.ShowModal()
                 dlg.Destroy()
                 if retval==wx.ID_OK:
-                    dprint("Recovering from autosave file %s" % temp_url)
-                    backup_url = self.stc.getBackupTemporaryFilename(self)
+                    self.dprint("Recovering from autosave file %s" % temp_url)
+                    # We need a temporary filename even if backups are turned
+                    # off, so we go right to the backup manager to calculate
+                    # the temporary filename instead of going through the STC
+                    backup_url = wx.GetApp().backup.calculateFilename(self.url)
                     permissions = vfs.get_permissions(self.url)
                     try:
                         if vfs.exists(backup_url):
@@ -623,3 +632,15 @@ class Buffer(BufferVFSMixin):
                     vfs.set_permissions(self.url, permissions)
             else:
                 vfs.remove(temp_url)
+
+    def backupCallback(self):
+        # This is only called once, the first time the document is modified,
+        # regardless of the outcome of this method.
+        self.backup_saved = True
+        
+        temp_url = self.stc.getBackupTemporaryFilename(self)
+        if temp_url:
+            if vfs.exists(temp_url):
+                vfs.remove(temp_url)
+            vfs.copy(self.url, temp_url)
+
