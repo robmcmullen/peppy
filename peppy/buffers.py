@@ -460,6 +460,8 @@ class Buffer(BufferVFSMixin):
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(self.dummyframe)
+        
+        self.restoreFromAutosaveIfExists()
 
     def openBackgroundThread(self, progress_message=None):
         self.stc.open(self, progress_message)
@@ -588,6 +590,36 @@ class Buffer(BufferVFSMixin):
 
     def removeAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
-        if vfs.exists(temp_url):
+        if temp_url and vfs.exists(temp_url):
             vfs.remove(temp_url)
             dprint("Removed autosave file %s" % temp_url)
+
+    def restoreFromAutosaveIfExists(self):
+        temp_url = self.stc.getAutosaveTemporaryFilename(self)
+        dprint(temp_url)
+        if temp_url and vfs.exists(temp_url):
+            if vfs.get_mtime(temp_url) >= vfs.get_mtime(self.url) and vfs.get_size(temp_url) > 0:
+                # backup file is newer than saved file.
+                dlg = CustomOkDialog(wx.GetApp().GetTopWindow(), "Autosave file for %s\nis newer than last saved version.\n\nRestore from autosave file?" % self.url, "Restore from Autosave", "Ignore Autosave")
+                retval=dlg.ShowModal()
+                dlg.Destroy()
+                if retval==wx.ID_OK:
+                    dprint("Recovering from autosave file %s" % temp_url)
+                    backup_url = self.stc.getBackupTemporaryFilename(self)
+                    permissions = vfs.get_permissions(self.url)
+                    try:
+                        if vfs.exists(backup_url):
+                            vfs.remove(backup_url)
+                        vfs.move(self.url, backup_url)
+                    except:
+                        eprint("Failed copying original file %s to backup %s" % (self.url, backup_url))
+                        raise
+                    try:
+                        vfs.move(temp_url, self.url)
+                    except:
+                        eprint("Failed copying autosave file %s to original %s" % (temp_url, self.url))
+                        raise
+                    self.saveTimestamp()
+                    vfs.set_permissions(self.url, permissions)
+            else:
+                vfs.remove(temp_url)
