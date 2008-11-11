@@ -333,6 +333,28 @@ class ParseTestCase(TestCase):
         self.assertEqual(ref.fragment, 'fragment')
 
 
+    def test_file_with_fragment(self):
+        ref = 'file:///path/to/a/b/c#fragment'
+        ref = GenericDataType.decode(ref)
+        self.assertEqual(ref.scheme, 'file')
+        self.assertEqual(ref.authority, '')
+        self.assertEqual(ref.path, '/path/to/a/b/c')
+        self.assert_(ref.path.is_absolute())
+        self.assertEqual(ref.query, {})
+        self.assertEqual(ref.fragment, 'fragment')
+
+
+    def test_file_with_escaped_fragment(self):
+        ref = 'file:///path/to/a/b/c%23fragment'
+        ref = GenericDataType.decode(ref)
+        self.assertEqual(ref.scheme, 'file')
+        self.assertEqual(ref.authority, '')
+        self.assertEqual(ref.path, '/path/to/a/b/c#fragment')
+        self.assert_(ref.path.is_absolute())
+        self.assertEqual(ref.query, {})
+        self.assertEqual(ref.fragment, None)
+
+
     def test_network(self):
         ref = '//example.com/a/b'
         ref = GenericDataType.decode(ref)
