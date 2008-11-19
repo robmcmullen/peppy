@@ -210,6 +210,35 @@ class STCInterface(object):
         """
         pass
 
+    def addUpdateUIEvent(self, callback):
+        """Add the equivalent to STC_UPDATEUI event for UI changes.
+
+        The STC supplies the EVT_STC_UPDATEUI event that fires for
+        every change that could be used to update the user interface:
+        a text change, a style change, or a selection change.  If the
+        editing (viewing) window does not use the STC to display
+        information, you should supply the equivalent event for the
+        edit window.
+        
+        @param callback: event handler to execute on event
+        """
+        pass
+        
+    def addDocumentChangeEvent(self, callback):
+        """Add the equivalent to EVT_STC_CHANGE event for document changes.
+
+        The STC supplies the EVT_STC_CHANGE event that fires for every change
+        to the contents of the document.  If you want peppy to be able to show
+        indications that the document has been modified (which also allows
+        peppy to display a dialog prompting for unsaved changes), register an
+        event handler here that calls the specified callback when the document
+        is changed.
+        
+        @param callback: event handler to execute on event
+        """
+        pass
+
+
 class STCProxy(object):
     """Proxy object to defer requests to a real STC.
 

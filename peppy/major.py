@@ -139,6 +139,8 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         
         self._mgr.Update()
         
+        buffer.startChangeDetection()
+
         if not requested:
             # If the major mode creation was successful, change the default
             # major mode if the old default is the most general major mode.

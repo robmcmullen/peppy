@@ -291,6 +291,9 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
 
     def getTabName(self):
         return self.defaultmode.keyword
+    
+    def startChangeDetection(self):
+        pass
 
 
 class BufferLoadThread(threading.Thread, debugmixin):

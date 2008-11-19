@@ -214,7 +214,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         start = time.time()
         self.applySettings()
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
-        self.buffer.startChangeDetection()
 
     @classmethod
     def verifyEditraType(cls, ext, file_type):

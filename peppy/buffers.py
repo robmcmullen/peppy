@@ -549,8 +549,8 @@ class Buffer(BufferVFSMixin):
             view.showBusy(self.busy)
 
     def startChangeDetection(self):
-        if isinstance(self.stc, PeppySTC):
-            self.stc.Bind(wx.stc.EVT_STC_CHANGE, self.OnChanged)
+        self.change_count = 0
+        self.stc.addDocumentChangeEvent(self.OnChanged)
 
     def OnChanged(self, evt):
         #dprint("stc = %s" % self.stc)

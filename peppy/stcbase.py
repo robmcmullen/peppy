@@ -891,18 +891,10 @@ class PeppySTC(PeppyBaseSTC):
             wx.PostEvent(otherstc,evt())
 
     def addUpdateUIEvent(self, callback):
-        """Add the equivalent to STC_UPDATEUI event for UI changes.
-
-        The STC supplies the EVT_STC_UPDATEUI event that fires for
-        every change that could be used to update the user interface:
-        a text change, a style change, or a selection change.  If the
-        editing (viewing) window does not use the STC to display
-        information, you should supply the equivalent event for the
-        edit window.
-        
-        @param callback: event handler to execute on event
-        """
         self.Bind(wx.stc.EVT_STC_UPDATEUI, callback)
+        
+    def addDocumentChangeEvent(self, callback):
+        self.Bind(wx.stc.EVT_STC_CHANGE, callback)
         
     def OnDestroy(self, evt):
         """
