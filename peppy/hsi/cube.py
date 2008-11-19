@@ -843,6 +843,14 @@ class Cube(debugmixin):
         # s.write("        band_names: %s\n" % self.band_names)
         s.write("        cube_io=%s\n" % str(self.cube_io))
         return s.getvalue()
+    
+    def getExtraWelcomeMessage(self):
+        """Return small string with extra information to be displayed after
+        successful load.
+        
+        See L{HSIMode.getWelcomeMessage} for more.
+        """
+        return ""
 
     def fileExists(self):
         return vfs.exists(self.url)
