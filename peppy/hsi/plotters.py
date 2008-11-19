@@ -164,7 +164,7 @@ class SpectrumXLabelAction(HSIActionMixin, RadioAction):
 class HSISpectrumMinorMode(HSIPlotMinorMode):
     """Display a spectrum at the current crosshair point.
     """
-    keyword = "Spectrum"
+    keyword = "Depth Profile"
 
     def getPopupActions(self, evt, x, y):
         return [
@@ -206,7 +206,7 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
 class HSIXProfileMinorMode(HSIPlotMinorMode):
     """Display the X profile at the current crosshair line.
     """
-    keyword="X Profile"
+    keyword="Horizontal Profile"
     
     def isPlottableView(self, cubeview):
         return cubeview.isHorizontalProfilePlottable()
@@ -243,7 +243,7 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
 class HSIYProfileMinorMode(HSIPlotMinorMode):
     """Display the Y profile at the current crosshair line.
     """
-    keyword="Y Profile"
+    keyword="Vertical Profile"
     
     def isPlottableView(self, cubeview):
         return cubeview.isVerticalProfilePlottable()

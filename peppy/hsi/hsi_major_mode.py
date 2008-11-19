@@ -63,7 +63,7 @@ class HSIMode(BitmapScroller, MajorMode):
     stc_class = HyperspectralSTC
 
     default_classprefs = (
-        StrParam('minor_modes', 'Spectrum, X Profile, Y Profile'),
+        StrParam('minor_modes', 'Depth Profile, Horizontal Profile, Vertical Profile'),
         IntParam('band_number_offset', 1, help="Start counting band numbers from this value"),
         BoolParam('display_rgb', False),
         BoolParam('use_cube_min_max', False, help="Use overall cube min/max for profile min/max"),
