@@ -130,6 +130,9 @@ class CubeView(debugmixin):
             self.bands = newbands
             self.swap = swap
 
+    def isHorizontalProfilePlottable(self):
+        return self.cube.samples > 1
+
     def getHorizontalProfiles(self, y):
         """Get the horizontal profiles at the given height"""
         if not self.cube: return
@@ -139,6 +142,9 @@ class CubeView(debugmixin):
             profile=band[1][y,:]
             profiles.append(profile)
         return profiles
+
+    def isVerticalProfilePlottable(self):
+        return self.cube.lines > 1
 
     def getVerticalProfiles(self, x):
         """Get the vertical profiles at the given width"""
@@ -155,6 +161,9 @@ class CubeView(debugmixin):
         if self.cube.wavelengths:
             labels.append(self.cube.wavelength_units)
         return labels
+    
+    def isDepthPlottable(self):
+        return self.cube.bands > 1
     
     def getDepthXAxisExtrema(self, label='band'):
         if self.cube.wavelengths and label == self.cube.wavelength_units:
@@ -348,6 +357,15 @@ class FocalPlaneView(CubeView):
     def getAvailableXAxisLabels(self):
         labels = ['line']
         return labels
+
+    def isHorizontalProfilePlottable(self):
+        return self.cube.samples > 1
+
+    def isVerticalProfilePlottable(self):
+        return self.cube.bands > 1
+    
+    def isDepthPlottable(self):
+        return self.cube.lines > 1
 
     def getDepthXAxisExtrema(self, label='line'):
         return (0,self.cube.lines)

@@ -169,8 +169,8 @@ class HSIMode(BitmapScroller, MajorMode):
         self.cubeview = viewcls(self, self.cube, self.classprefs.display_rgb)
         self.cubeview.swapEndian(self.swap_endian)
         for minor in self.wrapper.getActiveMinorModes():
-            if hasattr(minor, 'setCube'):
-                minor.setCube(self.cube)
+            if hasattr(minor, 'setCubeView'):
+                minor.setCubeView(self.cubeview)
 
     def getPopupActions(self, evt, x, y):
         import peppy.hsi.hsi_menu

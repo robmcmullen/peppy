@@ -29,7 +29,7 @@ class HSIMinorModeMixin(MinorMode):
             return True
         return False
     
-    def setCube(self, cube):
+    def setCubeView(self, cubeview):
         pass
     
     def paneInfoHook(self, paneinfo):
@@ -68,14 +68,23 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
         self.setProxy(self)
         self.last_coords = (0,0)
     
-    def setCube(self, cube):
+    def isPlottableView(self, cubeview):
+        return True
+    
+    def setCubeView(self, cubeview):
+        if self.isPlottableView(cubeview):
+            self.paneinfo.Show(True)
+        else:
+            self.paneinfo.Show(False)
+        self.mode.updateAui()
         self.setupTitle()
-        self.setupAxes()
+        self.setupAxes(cubeview)
         
     def setupTitle(self):
         self.title=self.keyword
 
-    def setupAxes(self):
+    def setupAxes(self, cubeview):
+        dprint("Here instead of subclass")
         pass
     
     def updateYAxis(self, yaxis):
@@ -148,7 +157,7 @@ class SpectrumXLabelAction(HSIActionMixin, RadioAction):
         labels = cubeview.getAvailableXAxisLabels()
         label = labels[index]
         minor = self.popup_options['minor_mode']
-        minor.setupAxes(label)
+        minor.setupAxes(cubeview, label)
         minor.redisplayProxies()
 
 
@@ -162,8 +171,10 @@ class HSISpectrumMinorMode(HSIPlotMinorMode):
             SpectrumXLabelAction,
             ]
 
-    def setupAxes(self, label=None):
-        cubeview = self.mode.cubeview
+    def isPlottableView(self, cubeview):
+        return cubeview.isDepthPlottable()
+
+    def setupAxes(self, cubeview, label=None):
         labels = cubeview.getAvailableXAxisLabels()
         if label:
             self.xlabel = label
@@ -197,8 +208,10 @@ class HSIXProfileMinorMode(HSIPlotMinorMode):
     """
     keyword="X Profile"
     
-    def setupAxes(self):
-        cubeview = self.mode.cubeview
+    def isPlottableView(self, cubeview):
+        return cubeview.isHorizontalProfilePlottable()
+
+    def setupAxes(self, cubeview):
         self.xlabel = cubeview.xProfileXAxisLabel
         self.xaxis=(0,cubeview.width)
 
@@ -232,9 +245,10 @@ class HSIYProfileMinorMode(HSIPlotMinorMode):
     """
     keyword="Y Profile"
     
-    def setupAxes(self):
-        cubeview = self.mode.cubeview
+    def isPlottableView(self, cubeview):
+        return cubeview.isVerticalProfilePlottable()
 
+    def setupAxes(self, cubeview):
         self.xlabel = cubeview.yProfileXAxisLabel
         self.xaxis=(0, cubeview.height)
 
