@@ -50,6 +50,8 @@ class ContextMenuMixin(object):
         This may or may not be the best behavior to implement.  I'll
         have to see as I get further into it.
         """
+        parent = evt.GetEventObject()
+        
         pos = evt.GetPosition()
         screen = self.GetScreenPosition()
         #dprint("context menu for %s at %d, %d" % (self, pos.x - screen.x, pos.y - screen.y))
@@ -57,7 +59,7 @@ class ContextMenuMixin(object):
         options = self.getOptionsForPopupActions()
         if action_classes:
             frame = self.getFrame()
-            frame.menumap.popupActions(self, action_classes, options)
+            frame.menumap.popupActions(parent, action_classes, options)
     
     def getOptionsForPopupActions(self):
         return None

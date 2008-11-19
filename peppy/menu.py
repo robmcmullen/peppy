@@ -14,6 +14,7 @@ import wx
 import weakref
 
 from peppy.debug import *
+from peppy.major import MajorMode
 
 from peppy.lib.iconstorage import *
 from peppy.lib.wxemacskeybindings import *
@@ -478,9 +479,14 @@ class UserActionMap(debugmixin):
                 position = 500
         sorted.sort(key=lambda a:a[0])
         
+        if isinstance(parent, MajorMode):
+            mode = parent
+        else:
+            mode = self.frame.getActiveMajorMode()
+        
         first = True
         for pos, actioncls, sep in sorted:
-            action = actioncls(self.frame, popup_options=options)
+            action = actioncls(self.frame, popup_options=options, mode=mode)
             self.popup_actions[action.global_id] = action
             if sep and not first:
                 menu.AppendSeparator()
