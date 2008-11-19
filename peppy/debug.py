@@ -15,8 +15,9 @@ dlogfh=sys.stderr
 elogfh=sys.stderr
 
 TRACING = False
+INSPECT = True
 
-__all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'debugmixin',
+__all__ = ['debuglog', 'errorlog', 'dprint', 'eprint', 'wprint', 'debugmixin',
            'get_all_objects', 'get_all_referrers', 'traceon', 'traceoff',
            'storeWeakref', 'printWeakrefs']
 
@@ -54,39 +55,47 @@ def errorlog(file):
     else:
         elogfh=open(file,"w")
 
-def dprint(str=''):
+def writeToLog(logfh, text):
     if TRACING: _traceoff()
-    caller=inspect.stack()[1]
+    
+    # Need to reference the 3rd caller from the top of the stack...  stack[0]
+    # is dprint, stack[1] is writeToLog, and stack[2] is the function we're
+    # interested in.
+    caller=inspect.stack()[2]
     try:
         namespace=caller[0].f_locals
         if 'self' in namespace:
             cls=namespace['self'].__class__.__name__+'.'
         else:
             cls=''
-        if isinstance(str, unicode):
-            str = str.encode("utf-8")
-        dlogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
+        if isinstance(text, unicode):
+            text = text.encode("utf-8")
+        logfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],text,os.linesep))
     finally:
         del caller
     if TRACING: _traceon()
+
+def dprint(str=''):
+    if not INSPECT:
+        dlogfh.write("%s%s" % (str, os.linesep))
+    else:
+        writeToLog(dlogfh, str)
     return True
 
 def eprint(str=''):
-    if TRACING: _traceoff()
-    caller=inspect.stack()[1]
-    try:
-        namespace=caller[0].f_locals
-        if 'self' in namespace:
-            cls=namespace['self'].__class__.__name__+'.'
-        else:
-            cls=''
-        if isinstance(str, unicode):
-            str = str.encode("utf-8")
-        elogfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],str,os.linesep))
-    finally:
-        del caller
-    if TRACING: _traceon()
+    if not INSPECT:
+        elogfh.write("ERROR: %s%s" % (str, os.linesep))
+    else:
+        writeToLog(elogfh, str)
     return True
+
+def wprint(str=''):
+    if not INSPECT:
+        elogfh.write("WARNING: %s%s" % (str, os.linesep))
+    else:
+        writeToLog(elogfh, str)
+    return True
+
 
 class debugmixin(object):
     debuglevel=0
@@ -94,6 +103,9 @@ class debugmixin(object):
     @classmethod
     def dprint(cls,str='',level=1):
         if not hasattr(cls, 'debuglevel') or cls.debuglevel>=level:
+            if not INSPECT:
+                dlogfh.write("%s%s" % (str, os.linesep))
+                return True
             if TRACING: _traceoff()
             caller=inspect.stack()[1]
             try:
@@ -203,7 +215,16 @@ def traceoff():
 
 def _traceoff():
     sys.settrace(None)
-    
+
+
+def inspecton():
+    global INSPECT
+    INSPECT = True
+
+def inspectoff():
+    global INSPECT
+    INSPECT = False
+
 
 
 _weakref_storage = {}
