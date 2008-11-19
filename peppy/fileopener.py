@@ -60,7 +60,10 @@ class FileOpener(debugmixin):
         self.frame = frame
         self.buffer = None
         self.url = vfs.normalize(url)
-        self.modecls = modecls
+        if 'mode' in self.url.query:
+            self.modecls = self.url.query['mode']
+        else:
+            self.modecls = modecls
         self.mode_to_replace = mode_to_replace
         self.force_new_tab = force_new_tab
         self.created_from_url = created_from_url
