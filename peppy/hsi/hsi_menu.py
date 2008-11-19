@@ -387,7 +387,7 @@ class ReduceImageDimensions(ScaledImageMixin, MinibufferAction):
 
 
 class ExportAsImage(SelectAction):
-    """Export the current datacube in ENVI BIL format
+    """Export the current datacube in image format like PNG, JPEG, etc.
     """
     name = "as Image"
     default_menu = ("File/Export", -200)
