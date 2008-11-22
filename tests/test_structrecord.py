@@ -329,6 +329,11 @@ class Testlist1(BaseTest):
         testh=[0x1043,0x2575,0x3922,],
         )
      
+    def testEmpty(self):
+        fh = StringIO()
+        assert len(self.rec.testh) == 3
+
+
 class Testlist2(BaseTest):
     typedef=(
         List(List(FormatField('testb','>b'),3),2),

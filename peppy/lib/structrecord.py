@@ -110,11 +110,14 @@ class Field(debugmixin):
 
     def getCopy(self,obj):
         return copy.copy(self)
+    
+    def getDefault(self, obj):
+        return copy.copy(self._default)
 
     def storeDefault(self,obj):
         # make a copy of the default value, in case the default
         # specified is not a primitive object.
-        setattr(obj,self._name,copy.copy(self._default))
+        setattr(obj, self._name, self.getDefault(obj))
         
     def getNumBytes(self,obj):
         return 0
@@ -734,9 +737,28 @@ class List(Wrapper):
     def storeDefault(self,obj):
         proxy=self.getProxy(None)
         setattr(obj,proxy._name,[])
-        #proxy.storeDefault(obj)
-        ##save=getattr(obj,proxy._name)
-        ##setattr(obj,proxy._name,[save])
+
+    def storeDefault(self,obj):
+        proxy=self.getProxy(None)
+        data=[]
+        num=self.getRepeats(obj)
+        assert self.debuglevel == 0 or self.dprint("looping %d times for proxy %s" % (num,proxy._name))
+        if isinstance(proxy,Record):
+            for i in range(num):
+                # call superclass unpack that handles Record subclasses
+                assert self.debuglevel == 0 or self.dprint("attempting to read %s.%s" % (obj.__class__.__name__,proxy._name))
+                copy=proxy.getCopy(obj)
+                setattr(copy,"_",obj)
+                setattr(copy,"_listindex",i)
+                copy.storeDefault(obj)
+                data.append(copy)
+        else:
+            default = proxy.getDefault(obj)
+            for i in range(num):
+                data.append(default)
+            
+        # replace the parent's copy of the proxied object with the new list
+        setattr(obj,proxy._name,data)
 
     def getRepeats(self,obj):
         return self._num
@@ -823,6 +845,10 @@ class MetaList(List):
     def __init__(self,proxy,func):
         List.__init__(self,proxy,func)
         #self._debug=1
+
+    def storeDefault(self,obj):
+        proxy=self.getProxy(None)
+        setattr(obj,proxy._name,[])
 
     def getRepeats(self,obj):
         return self._num(obj)
