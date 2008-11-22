@@ -62,6 +62,10 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
     
     stc_class = DiredSTC
 
+    default_classprefs = (
+        StrParam('sort_filenames_if_scheme', 'file', help="Comma separated list of URI schemes that cause the initial display of files to be sorted by filename"),
+        )
+    
     @classmethod
     def verifyProtocol(cls, url):
         # Use the verifyProtocol to hijack the loading process and
@@ -93,7 +97,9 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         self.setSelectedIndexes([0])
         
         # default to sort by filename
-        self.SortListItems(1)
+        initial_sort = self.classprefs.sort_filenames_if_scheme.split(',')
+        if self.url.scheme in initial_sort:
+            self.SortListItems(1)
     
     # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
     def GetListCtrl(self):
