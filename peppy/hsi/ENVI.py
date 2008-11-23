@@ -381,7 +381,7 @@ class Header(dict,MetadataMixin):
             self.setCubeMapInfo(cube)
     
     def setCubeMapInfo(self, cube):
-        dprint("found map info: %s" % self['map info'])
+        if self.debug: dprint("found map info: %s" % self['map info'])
         # map info looks like this for UTM:
         # UTM, 1.000, 1.000, 469734.460, 4429870.640, 3.7700000000e+00, 3.7700000000e+00, 13, North, WGS-84, units=Meters}
         # or this for lat/long:
