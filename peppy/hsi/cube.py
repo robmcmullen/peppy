@@ -1008,6 +1008,11 @@ class Cube(debugmixin):
         if self.band_names and band >=0 and band < len(self.band_names):
             text.append(unicode(self.band_names[band]))
         return u" ".join(text)
+    
+    def getImagingDate(self):
+        if self.imaging_date:
+            return self.imaging_date
+        return self.file_date
 
     def updateExtrema(self, spectra):
         mn=spectra.min()
