@@ -127,7 +127,8 @@ class Header(dict,MetadataMixin):
             (lambda s:s.lower() , ['interleave','sensor type']),
             (normalizeUnits, ['wavelength units']),
             (lambda s:enviDataType[int(s)], ['data type']),
-            (lambda s:s, ['description','band names','default bands']),
+            (lambda s:s, ['description','default bands']),
+            (lambda s:s.strip(), ['band names']),
             )
 
         # convert from the object attributes to the ENVI text format
