@@ -801,6 +801,7 @@ class Cube(debugmixin):
         
         # UTM Georeferencing information
         self.utm_zone = -1
+        self.utm_hemisphere = 'North'
         self.utm_origin = (0, 0)
         self.utm_pixel_size = (0, 0)
         self.utm_easting = 0
@@ -834,7 +835,7 @@ class Cube(debugmixin):
         samples=%d lines=%d bands=%d data_bytes=%d
         interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,self.file_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
         if self.utm_zone >= 0:
-            s.write("        utm: zone=%s easting=%f northing=%f\n" % (self.utm_zone, self.utm_easting, self.utm_northing))
+            s.write("        utm: zone=%s %s easting=%f northing=%f\n" % (self.utm_zone, self.utm_hemisphere, self.utm_easting, self.utm_northing))
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
         # s.write("        wavelengths: %s\n" % self.wavelengths)

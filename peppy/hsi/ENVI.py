@@ -390,6 +390,7 @@ class Header(dict,MetadataMixin):
         mapinfo = self['map info'].split(',')
         if mapinfo[0] == 'UTM':
             cube.utm_zone = int(float(mapinfo[7]))
+            cube.utm_hemisphere = mapinfo[8].strip().title()
             cube.utm_origin = (int(float(mapinfo[1])) - 1, int(float(mapinfo[2])) - 1)
             cube.utm_easting = float(mapinfo[3])
             cube.utm_northing = float(mapinfo[4])
