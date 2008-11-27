@@ -271,3 +271,43 @@ class testFilenames(object):
         format = HSI.HyperspectralFileFormat.identify(filename)
         eq_(format.format_id, 'ENVI')
         
+
+class testGuessBands(object):
+    def setup(self):
+        self.cube = HSI.newCube("bsq")
+    
+    def testNormal(self):
+        self.cube.wavelengths = [440, 555, 670]
+        self.cube.bbl = [1, 1, 1]
+        self.cube.bands = 3
+        self.cube.wavelength_units = 'nm'
+        bands = self.cube.getBandListByWavelength(305.0,units='nm')
+        eq_(bands,[0])
+        bands = self.cube.getBandListByWavelength(450.0,units='nm')
+        eq_(bands,[0])
+        bands = self.cube.getBandListByWavelength(550.0,units='nm')
+        eq_(bands,[1])
+        bands = self.cube.getBandListByWavelength(570.0,units='nm')
+        eq_(bands,[1])
+        bands = self.cube.getBandListByWavelength(660.0,units='nm')
+        eq_(bands,[2])
+        bands = self.cube.getBandListByWavelength(680.0,units='nm')
+        eq_(bands,[2])
+    
+    def testReverse(self):
+        self.cube.wavelengths = [670, 555, 440]
+        self.cube.bbl = [1, 1, 1]
+        self.cube.bands = 3
+        self.cube.wavelength_units = 'nm'
+        bands = self.cube.getBandListByWavelength(305.0,units='nm')
+        eq_(bands,[2])
+        bands = self.cube.getBandListByWavelength(450.0,units='nm')
+        eq_(bands,[2])
+        bands = self.cube.getBandListByWavelength(550.0,units='nm')
+        eq_(bands,[1])
+        bands = self.cube.getBandListByWavelength(570.0,units='nm')
+        eq_(bands,[1])
+        bands = self.cube.getBandListByWavelength(660.0,units='nm')
+        eq_(bands,[0])
+        bands = self.cube.getBandListByWavelength(680.0,units='nm')
+        eq_(bands,[0])

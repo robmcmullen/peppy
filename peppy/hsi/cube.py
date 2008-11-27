@@ -1146,36 +1146,47 @@ class Cube(debugmixin):
         if len(self.wavelengths)==0:
             return bandlist
         
+        wavelengths = self.wavelengths[:]
+        bbl = self.bbl[:]
+        if wavelengths[-1] < wavelengths[0]:
+            wavelengths.reverse()
+            bbl.reverse()
+            reversed = True
+        else:
+            reversed = False
+        
         for channel in range(self.bands):
             # dprint("wavelen[%d]=%f" % (channel,self.wavelengths[channel]))
-            if (self.bbl[channel]==1 and
-                  self.wavelengths[channel]>=wavelen_min and
-                  self.wavelengths[channel]<=wavelen_max):
+            if (bbl[channel]==1 and
+                  wavelengths[channel]>=wavelen_min and
+                  wavelengths[channel]<=wavelen_max):
                 bandlist.append(channel)
         if not bandlist:
             center=(wavelen_max+wavelen_min)/2.0
-            if center<self.wavelengths[0]:
+            if center<wavelengths[0]:
                 for channel in range(self.bands):
-                    if self.bbl[channel]==1:
+                    if bbl[channel]==1:
                         bandlist.append(channel)
                         break
-            elif center>self.wavelengths[self.bands-1]:
+            elif center>wavelengths[self.bands-1]:
                 for channel in range(self.bands-1,-1,-1):
-                    if self.bbl[channel]==1:
+                    if bbl[channel]==1:
                         bandlist.append(channel)
                         break
             else:
                 for channel in range(self.bands-1):
-                    if (self.bbl[channel]==1 and
-                           self.wavelengths[channel]<center and
-                           self.wavelengths[channel+1]>center):
-                        if (center-self.wavelengths[channel] <
-                               self.wavelengths[channel+1]-center):
+                    if (bbl[channel]==1 and
+                           wavelengths[channel]<center and
+                           wavelengths[channel+1]>center):
+                        if (center-wavelengths[channel] <
+                               wavelengths[channel+1]-center):
                             bandlist.append(channel)
                             break
                         else:
                             bandlist.append(channel+1)
                             break
+        if reversed:
+            bandlist = [(self.bands - 1) - i for i in bandlist]
         return bandlist
 
     def getFlatView(self):
