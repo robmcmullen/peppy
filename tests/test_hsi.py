@@ -7,9 +7,9 @@ import os,os.path,sys,re,time,commands
 
 from nose.tools import *
 
-from peppy.iofilter import *
-from peppy.trac.core import *
-import peppy.hsi as hsi
+import peppy.vfs as vfs
+
+import peppy.hsi.common as HSI
 import peppy.hsi.ENVI as ENVI
 
 from cStringIO import StringIO
@@ -41,7 +41,7 @@ wavelength = {
 wavelength units = nm
 fwhm = {
           9.610,          9.580,          9.550,          9.530 }
-""" % hsi.nativeByteOrder
+""" % HSI.nativeByteOrder
 
 fakeUmFile="""ENVI
 description = {
@@ -65,7 +65,7 @@ wavelength = {
 wavelength units = um
 fwhm = {
         .009610,        .009580,          .009550,          .009530 }
-""" % hsi.nativeByteOrder
+""" % HSI.nativeByteOrder
 
 
 def fakeCube(interleave,default=None, file=fakeNmFile):
@@ -73,14 +73,17 @@ def fakeCube(interleave,default=None, file=fakeNmFile):
     h=ENVI.Header()
     h.read(file)
     h['interleave']=interleave
-    cube=hsi.newCube(interleave)
-    h.setCubeAttributes(cube)
-    if default!=None:
-        cube.raw=numpy.zeros((cube.samples*cube.lines*cube.bands),dtype=cube.data_type)
-        cube.raw+=default
+    other = HSI.newCube(interleave)
+    h.setCubeAttributes(other)
+    
+    if default is None:
+        data = numpy.array(numpy.arange(other.samples*other.lines*other.bands),dtype=other.data_type)
     else:
-        cube.raw=numpy.array(numpy.arange(cube.samples*cube.lines*cube.bands),dtype=cube.data_type)
-    cube.initialize()
+        data = numpy.zeros((other.samples*other.lines*other.bands),dtype=other.data_type)
+        data += default
+    
+    cube = HSI.createCubeLike(other, data=data.tostring())
+    h.setCubeAttributes(cube)
     return cube
    
 def loadCube(filename):
@@ -249,22 +252,22 @@ class testFilenames(object):
     def testHeader1(self):
         filename = localfile('hsi/test1.bil')
         urls = ENVI.findHeaders(filename)
-        header = URLInfo(localfile('hsi/test1.hdr'))
-        eq_(urls[0].path, header.path)
+        header = vfs.normalize(localfile('hsi/test1.hdr'))
+        eq_(urls[0], header)
         
     def testHeader2(self):
         filename = localfile('hsi/test2.bip')
         urls = ENVI.findHeaders(filename)
-        header = URLInfo(localfile('hsi/test2.bip.hdr'))
-        eq_(urls[0].path, header.path)
+        header = vfs.normalize(localfile('hsi/test2.bip.hdr'))
+        eq_(urls[0], header)
         
     def testIdentify1(self):
         filename = localfile('hsi/test1.bil')
-        format = hsi.HyperspectralFileFormat.identify(filename)
+        format = HSI.HyperspectralFileFormat.identify(filename)
         eq_(format.format_id, 'ENVI')
         
     def testIdentify2(self):
         filename = localfile('hsi/test2.bip')
-        format = hsi.HyperspectralFileFormat.identify(filename)
+        format = HSI.HyperspectralFileFormat.identify(filename)
         eq_(format.format_id, 'ENVI')
         
