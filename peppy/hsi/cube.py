@@ -838,10 +838,10 @@ class Cube(debugmixin):
             s.write("        utm: zone=%s %s easting=%f northing=%f\n" % (self.utm_zone, self.utm_hemisphere, self.utm_easting, self.utm_northing))
         if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
         s.write("        wavelength units: %s\n" % self.wavelength_units)
-        # s.write("        wavelengths: %s\n" % self.wavelengths)
+        s.write("        wavelengths: %s\n" % self.wavelengths)
         s.write("        bbl: %s\n" % self.bbl)
-        # s.write("        fwhm: %s\n" % self.fwhm)
-        # s.write("        band_names: %s\n" % self.band_names)
+        s.write("        fwhm: %s\n" % self.fwhm)
+        s.write("        band_names: %s\n" % self.band_names)
         s.write("        cube_io=%s\n" % str(self.cube_io))
         return s.getvalue()
     
@@ -996,6 +996,18 @@ class Cube(debugmixin):
             text = "%.2f %s" % (self.wavelengths[band], self.wavelength_units)
             return text
         return "no value"
+
+    def getBandName(self, band):
+        """Get a short text string that describes the band.
+        
+        Use the wavelength array and the array of band names to create a text
+        string that describes the band.
+        """
+        if self.band_names and band >=0 and band < len(self.band_names):
+            text = unicode(self.band_names[band])
+        else:
+            text = ""
+        return text
 
     def getDescriptiveBandName(self, band):
         """Get a text string that describes the band.
@@ -1195,6 +1207,12 @@ class Cube(debugmixin):
             return bbl2
         else:
             return self.bbl
+    
+    def isBadBand(self, index):
+        if self.bbl:
+            # bbl is stored in the opposite sense: 1 = good, 0 = bad
+            return not bool(self.bbl[index])
+        return False
     
     def isFasterFocalPlane(self):
         return self.interleave in ["bip", "bil"]
