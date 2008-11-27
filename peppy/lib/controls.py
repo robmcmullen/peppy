@@ -198,12 +198,14 @@ class ModularStatusBarInfo(object):
                 self._showProgress()
             self.gauge_shown = True
     
-    def _showProgress(self):
+    def _showProgress(self, max=None):
+        if max is not None:
+            self.gauge_max = max
         self.parent.gauge.SetRange(self.gauge_max)
         self.setText(self.gauge_text)
         self.parent.setWidths()
 
-    def setProgressPosition(self, value, text=None):
+    def setProgressPosition(self, value, text=None, max=None):
         """Set the progress bar and text to the current values
         
         This is used to set the text and gauge position based on the current
@@ -213,6 +215,9 @@ class ModularStatusBarInfo(object):
             if value < 0:
                 self.parent.gauge.Pulse()
             else:
+                if max is not None:
+                    self.gauge_max = max
+                    self.parent.gauge.SetRange(self.gauge_max)
                 self.parent.gauge.SetValue(value)
             self.gauge_value = value
             if text is not None:
@@ -220,7 +225,7 @@ class ModularStatusBarInfo(object):
                     self.setText(text)
                     self.gauge_text = text
 
-    def updateProgress(self, value, text=None):
+    def updateProgress(self, value, text=None, max=None):
         """Update the progress bar with a new value
         
         @param value: either a number or a list.  If it is a number, it will
@@ -230,6 +235,8 @@ class ModularStatusBarInfo(object):
         
         @param text: another way to specify the optional text with which to
         update the status string.
+        
+        @param max: change the maximum value of the gauge if given
         """
         if isinstance(value, list):
             value, text = value
@@ -239,7 +246,7 @@ class ModularStatusBarInfo(object):
             self.gauge_refresh_count += 1
             if time.time() > self.gauge_show_time:
                 if not self.gauge_shown:
-                    self._showProgress()
+                    self._showProgress(max)
                     self.gauge_shown = True
                     self.gauge_refresh_trigger = self.gauge_refresh_count
                 if self.gauge_refresh_count >= self.gauge_refresh_trigger:
@@ -249,7 +256,7 @@ class ModularStatusBarInfo(object):
         else:
             update = True
         if update and self.parent.info == self:
-            self.setProgressPosition(value, text)
+            self.setProgressPosition(value, text, max)
         if do_yield:
             if self.disable_during_progress:
                 wx.SafeYield(onlyIfNeeded=True)
