@@ -81,6 +81,26 @@ def repr1(name,value,indent, printall=False):
     else:
         txt="%s%s = %s" % (indent,name,repr(value))
     return txt
+
+def repr2(name, value, prefix, printall=False):
+    if isinstance(value,Field):
+        txt=value._getDottedString(prefix)
+    elif isinstance(value,list):
+        stuff=[]
+        print_all = False
+        index = 0
+        for item in value:
+            if isinstance(item,Field):
+                stuff.append(item._getDottedString(prefix, index=index))
+            else:
+                stuff.append("%s.%s[%d] = %s" % (prefix, name, index, repr(item)))
+            index += 1
+        if printall==False and len(stuff)>10:
+            stuff[2:-2]=["\n%s..." % (indent+base_indent)]
+        txt = "\n".join(stuff)
+    else:
+        txt="%s.%s = %s" % (prefix,name,repr(value))
+    return txt
     
 
 class FieldError(Exception):
@@ -151,7 +171,25 @@ class Field(debugmixin):
         if "_" in self.__dict__.keys():
             lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
         return "\n".join(lines)
-                                 
+
+    def _getDottedString(self, prefix, index=-1):
+        names=self.__dict__.keys()
+        names.sort()
+        lines=[]
+        if "_print_all" in self.__dict__ or self.print_all:
+            printall = True
+        else:
+            printall = False
+        if index < 0:
+            prefix = "%s.%s" % (prefix, self._name)
+        for name in names:
+            # ignore all keys that start with an underscore
+            if not name.startswith("_"):
+                value=self.__dict__[name]
+                if index >= 0:
+                    name = "%s[%d]" % (name, index)
+                lines.append(repr2(name, value, prefix, printall))
+        return "\n".join(lines)
 
     def __str__(self):
         #pp=pprint.PrettyPrinter(indent=4)
