@@ -172,25 +172,6 @@ class Field(debugmixin):
             lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
         return "\n".join(lines)
 
-    def _getDottedString(self, prefix, index=-1):
-        names=self.__dict__.keys()
-        names.sort()
-        lines=[]
-        if "_print_all" in self.__dict__ or self.print_all:
-            printall = True
-        else:
-            printall = False
-        if index < 0:
-            prefix = "%s.%s" % (prefix, self._name)
-        for name in names:
-            # ignore all keys that start with an underscore
-            if not name.startswith("_"):
-                value=self.__dict__[name]
-                if index >= 0:
-                    name = "%s[%d]" % (name, index)
-                lines.append(repr2(name, value, prefix, printall))
-        return "\n".join(lines)
-
     def __str__(self):
         #pp=pprint.PrettyPrinter(indent=4)
         #return pp.pformat(self)
@@ -1110,6 +1091,28 @@ class Record(Field):
                 lines.append(repr1(name,value,indent+base_indent, printall))
         if "_" in self.__dict__.keys():
             lines.append("%s_ = %s" % (indent+base_indent,repr(self.__dict__["_"])))
+        return "\n".join(lines)
+    
+    def _getDottedStringPrefix(self, prefix, index=-1):
+        if index < 0:
+            prefix = "%s.%s" % (prefix, self._name)
+        return prefix
+    
+    def _getDottedString(self, prefix, index=-1):
+        lines=[]
+        if "_print_all" in self.__dict__ or self.print_all:
+            printall = True
+        else:
+            printall = False
+        prefix = self._getDottedStringPrefix(prefix, index)
+        for field in self.typedef:
+            name = field._name
+            # ignore all keys that start with an underscore
+            if not name.startswith("_"):
+                value=self.__dict__[name]
+                if index >= 0:
+                    name = "%s[%d]" % (name, index)
+                lines.append(repr2(name, value, prefix, printall))
         return "\n".join(lines)
     
     def getTree(self):
