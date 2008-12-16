@@ -380,6 +380,8 @@ class Header(dict,MetadataMixin):
 ##                    dprint(" item %s not found in header." % item_txt)
         if 'map info' in self:
             self.setCubeMapInfo(cube)
+        if 'data gain values' in self:
+            self.setScaleFactors(cube)
     
     def setCubeMapInfo(self, cube):
         if self.debug: dprint("found map info: %s" % self['map info'])
@@ -404,6 +406,15 @@ class Header(dict,MetadataMixin):
             cube.georef_pixel_size = (float(mapinfo[5]), float(mapinfo[6]))
         else:
             dprint("Unrecognized map info %s" % mapinfo[0])
+    
+    def setScaleFactors(self, cube):
+        gains = self.convertList([], self["data gain values"], lambda s:float(s))
+        cube.scale_factor = gains[0]
+        for gain in gains[1:]:
+            if abs(cube.scale_factor - gain) > 0.00001:
+                cube.scale_factor = -1.0
+                break
+        #dprint("scale factor = %f" % cube.scale_factor)
 
     def getCubeAttributes(self,cube):
         """Create header strings from the attributes in the cube."""
