@@ -523,8 +523,13 @@ class Buffer(BufferVFSMixin):
             self.stc.SetSavePoint()
             self.removeAutosaveIfExists()
             if saveas != self.url:
-                permissions = vfs.get_permissions(self.url)
-                vfs.set_permissions(saveas, permissions)
+                try:
+                    permissions = vfs.get_permissions(self.url)
+                    vfs.set_permissions(saveas, permissions)
+                except OSError:
+                    # The original file may have been deleted, in which case
+                    # the permissions setting will fail.
+                    pass
                 self.setURL(saveas)
                 self.setName()
                 Publisher().sendMessage('buffer.opened', self)
