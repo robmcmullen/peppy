@@ -153,7 +153,18 @@ packages = findPackages(prog)
 
 
 # Create the list of scripts to be installed in /usr/bin
-scripts = ['peppy.py', 'peppy.bat']
+if sys.platform.startswith('win'):
+    scripts = ['scripts/peppy.bat']
+else:
+    # Can't include peppy.py at the root level of the distribution or as one
+    # of the scripts because python ends up trying to include peppy.py on an
+    # "import peppy" statement rather than looking for the peppy directory
+    # in site-packages.  So, on unix it is installed as 'peppy' without an
+    # extension to work around this.
+    if os.path.exists('peppy.py') and not os.path.exists('scripts/peppy.py'):
+        import shutil
+        shutil.copy('peppy.py', 'scripts/peppy')
+    scripts = ['scripts/peppy']
 
 
 # Create the data files for Editra's styling stuff
