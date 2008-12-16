@@ -476,7 +476,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 wrapper = self.tabs.getDocumentWrapper()
         mode = self.tabs.newMode(buffer, wrapper=wrapper)
         assert self.dprint("set buffer to new view %s" % mode)
-        if options and not mode.isErrorMode():
+        if not mode.isErrorMode():
             mode.showInitialPosition(buffer.raw_url, options)
 
     def newBuffer(self, buffer):
