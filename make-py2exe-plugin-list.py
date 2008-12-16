@@ -77,6 +77,8 @@ if __name__ == "__main__":
                       default="", help="process unpacked eggs")
     parser.add_option("-m", action="append", dest="modules",
                       default=[], help="process global modules")
+    parser.add_option("--alternate-include-path", action="store",
+                      dest="include_path", default="", help="additional include path to search for modules if not found in system include path")
     (options, args) = parser.parse_args()
 
     out = StringIO()
@@ -99,7 +101,11 @@ if __name__ == "__main__":
     
     if options.modules:
         for module in options.modules:
-            process_modules(module, out)
+            try:
+                process_modules(module, out)
+            except ImportError:
+                sys.path.append(options.include_path)
+                process_modules(module, out)
 
     filename = os.path.join(savepath, options.output)
     fh = open(filename, 'w')
