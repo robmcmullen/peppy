@@ -20,6 +20,13 @@ from peppy.major import BlankMode
 from peppy.buffers import *
 
 
+class FileOpenerExceptionHandled(Exception):
+    """This exception is raised to show that the error message has been printed
+    by the FileOpener and no further exception processing is necessary.
+    """
+    pass
+
+
 class FileOpener(debugmixin):
     """Open a URL into an existing BufferFrame
     
@@ -142,6 +149,7 @@ class FileOpener(debugmixin):
             import traceback
             error = traceback.format_exc()
             self.finalizeAfterFailedLoad(error)
+            raise FileOpenerExceptionHandled
     
     def useThreadedLoading(self):
         return wx.GetApp().classprefs.load_threaded and self.modecls.preferThreadedLoading(self.url)
@@ -150,11 +158,17 @@ class FileOpener(debugmixin):
         """If the major mode is specified by name or class, use that; otherwise
         scan the buffer to determine the major mode
         """
-        if self.modecls:
-            self.findMajorModeClassFromString()
-        else:
-            self.scanBufferForMajorMode()
-    
+        try:
+            if self.modecls:
+                self.findMajorModeClassFromString()
+            else:
+                self.scanBufferForMajorMode()
+        except Exception, e:
+            import traceback
+            error = traceback.format_exc()
+            self.finalizeAfterFailedLoad(error)
+            raise FileOpenerExceptionHandled
+
     def findMajorModeClassFromString(self):
         """Change the major mode class to a MajorMode object if it's currently
         a string

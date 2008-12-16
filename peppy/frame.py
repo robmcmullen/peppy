@@ -10,7 +10,7 @@ from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
-from peppy.fileopener import FileOpener
+from peppy.fileopener import FileOpener, FileOpenerExceptionHandled
 from peppy.notebook import FrameNotebook
 
 from peppy.actions import *
@@ -519,8 +519,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         Driver function that uses L{FileOpener} to open URLs
         """
-        opener = FileOpener(self, *args, **kwargs)
-        opener.open()
+        try:
+            opener = FileOpener(self, *args, **kwargs)
+            opener.open()
+        except FileOpenerExceptionHandled:
+            pass
 
     def save(self):        
         mode=self.getActiveMajorMode()
