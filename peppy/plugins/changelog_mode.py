@@ -22,7 +22,7 @@ class AddChangeLogEntry(STCModificationAction):
     name = "Add ChangeLog Entry"
     tooltip = "Add new ChangeLog entry to the top of the ChangeLog"
     default_menu = ("Tools", 500)
-    key_bindings = {'emacs': "C-C C-N",}
+    key_bindings = {'emacs': "C-c C-n",}
     
     @classmethod
     def worksWithMajorMode(cls, mode):

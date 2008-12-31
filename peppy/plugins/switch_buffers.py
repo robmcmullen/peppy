@@ -38,7 +38,7 @@ class SwitchToBuffer(SelectAction):
     name = "Switch to Buffer"
     alias = "switch-to-buffer"
     tooltip = "Change to a document by typing part of its name"
-    key_bindings = {'emacs': "C-X B", }
+    key_bindings = {'emacs': "C-x b", }
     default_menu = ("Tools", 610)
     
     # Save the buffer that was replaced by a successful switch to provide the

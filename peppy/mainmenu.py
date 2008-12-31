@@ -65,7 +65,7 @@ class New(SelectAction):
     tooltip = "New plain text file"
     icon = "icons/page_white_text_new.png"
     default_menu = ("File/New", -99)
-    key_bindings = {'win': "C-N", 'mac': "C-N"}
+    key_bindings = {'win': "C-n", 'mac': "C-n"}
 
     def action(self, index=-1, multiplier=1):
         self.frame.open(getNewUntitled())
@@ -76,7 +76,7 @@ class OpenFileGUI(SelectAction):
     tooltip = "Open a file"
     icon = "icons/folder_page.png"
     default_menu = (("File/Open", 2), 1) 
-    key_bindings = {'default': "C-O", 'emacs': "C-X C-S-F" }
+    key_bindings = {'default': "C-o", 'emacs': "C-x C-S-f" }
 
     def openFiles(self, paths):
         for path in paths:
@@ -192,7 +192,7 @@ class OpenFile(SelectAction):
     name = "Open File Using Minibuffer..."
     tooltip = "Open a file using filename completion"
     default_menu = ("File/Open", 10)
-    key_bindings = {'emacs': "C-X C-F", }
+    key_bindings = {'emacs': "C-x C-f", }
 
     def action(self, index=-1, multiplier=1):
         cwd=self.frame.cwd()
@@ -211,7 +211,7 @@ class SaveAs(SelectAction):
     alias = "write-file"
     name = "Save &As..."
     icon = "icons/disk_edit.png"
-    key_bindings = {'emacs': "C-X C-W",}
+    key_bindings = {'emacs': "C-x C-w",}
     
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
@@ -316,7 +316,7 @@ class OpenURL(SelectAction):
     name = "Open URL Using Minibuffer..."
     tooltip = "Open a file using URL name completion"
     default_menu = ("File/Open", 20)
-    key_bindings = {'emacs': "C-X C-A", }
+    key_bindings = {'emacs': "C-x C-a", }
 
     def action(self, index=-1, multiplier=1):
         cwd = str(self.frame.cwd(use_vfs=True))
@@ -332,7 +332,7 @@ class SaveURL(SelectAction):
     alias = "write-url"
     name = "Save to URL Using Minibuffer..."
     tooltip = "Write to a new URL using name completion"
-    key_bindings = {'emacs': "C-X C-Y", }
+    key_bindings = {'emacs': "C-x C-y", }
 
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
@@ -395,7 +395,7 @@ class Exit(SelectAction):
         # automatic Ctrl-Q keybinding AFAICT
         stock_id = wx.ID_EXIT
     default_menu = ("File", -1000)
-    key_bindings = {'default': "C-Q", 'emacs': "C-X C-C"}
+    key_bindings = {'default': "C-q", 'emacs': "C-x C-c"}
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()
@@ -407,7 +407,7 @@ class CloseBuffer(SelectAction):
     name = "&Close Document"
     icon = "icons/cross.png"
     default_menu = ("File", 890)
-    key_bindings = {'emacs': "C-X K"}
+    key_bindings = {'emacs': "C-x k"}
 
     def isEnabled(self):
         return self.frame.isOpen()
@@ -440,7 +440,7 @@ class Save(SelectAction):
     tooltip = "Save the current file"
     icon = "icons/disk.png"
     default_menu = ("File", -801)
-    key_bindings = {'default': "C-S", 'emacs': "C-X C-S",}
+    key_bindings = {'default': "C-s", 'emacs': "C-x C-s",}
 
     def isEnabled(self):
         if self.mode.buffer.readonly or not self.mode.buffer.stc.CanSave():
@@ -457,7 +457,7 @@ class SaveAsGUI(SelectAction):
     name = "Save &As..."
     icon = "icons/disk_edit.png"
     default_menu = ("File", 802)
-    key_bindings = {'default': "C-S-S"}
+    key_bindings = {'default': "C-S-s"}
     
     def isEnabled(self):
         return self.mode.buffer.stc.CanSave()
@@ -558,7 +558,7 @@ class Undo(STCModificationAction):
     tooltip = "Undo"
     icon = "icons/undo.png"
     default_menu = ("Edit", 0)
-    key_bindings = {'default': "C-Z", 'emacs': "C-/",}
+    key_bindings = {'default': "C-z", 'emacs': "C-/",}
     
     def isActionAvailable(self):
         return self.mode.CanUndo()
@@ -574,7 +574,7 @@ class Redo(STCModificationAction):
     tooltip = "Redo"
     icon = "icons/redo.png"
     default_menu = ("Edit", 1)
-    key_bindings = {'win': "C-Y", 'emacs': "C-S-/", 'mac': "C-S-Z"}
+    key_bindings = {'win': "C-y", 'emacs': "C-S-/", 'mac': "C-S-z"}
     
     def isActionAvailable(self):
         return self.mode.CanRedo()
@@ -589,7 +589,7 @@ class Cut(STCModificationAction):
     tooltip = "Cut"
     icon = "icons/cut.png"
     default_menu = ("Edit", -100)
-    key_bindings = {'win': "C-X", 'mac': "C-X", 'emacs': "C-W"}
+    key_bindings = {'win': "C-x", 'mac': "C-x", 'emacs': "C-w"}
 
     def isActionAvailable(self):
         return self.mode.CanCut()
@@ -603,7 +603,7 @@ class Copy(BufferBusyActionMixin, SelectAction):
     tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
-    key_bindings = {'win': "C-C", 'mac': "C-C", 'emacs': "M-W"}
+    key_bindings = {'win': "C-c", 'mac': "C-c", 'emacs': "M-w"}
     key_needs_focus = True
     
     @classmethod
@@ -622,7 +622,7 @@ class Paste(STCModificationAction):
     tooltip = "Paste"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 102)
-    key_bindings = {'win': "C-V", 'mac': "C-V", 'emacs': "C-Y"}
+    key_bindings = {'win': "C-v", 'mac': "C-v", 'emacs': "C-y"}
 
     def isActionAvailable(self):
         return not self.mode.GetReadOnly()
@@ -654,7 +654,7 @@ class SelectAll(STCModificationAction):
     icon = None
     default_menu = ("Edit", -125)
     default_toolbar = False
-    key_bindings = {'win': "C-A", 'mac': "C-A", 'emacs': "C-X H"}
+    key_bindings = {'win': "C-a", 'mac': "C-a", 'emacs': "C-x h"}
     global_id = None
 
     @classmethod
@@ -817,7 +817,7 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
     name = "&Execute Action"
     alias = "execute-action"
     tooltip = "Execute an action by name"
-    key_bindings = {'default': "M-X", }
+    key_bindings = {'default': "M-x", }
     default_menu = ("Tools", -600)
     
     def __init__(self, *args, **kwargs):

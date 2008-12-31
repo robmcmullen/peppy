@@ -22,7 +22,7 @@ class NextDiff(SelectAction):
     alias = "next-diff"
     name = "Next Diff"
     default_menu = ("Tools", 252)
-    key_bindings = {'default': 'S-M-N'}
+    key_bindings = {'default': 'S-M-n'}
 
     def action(self, index=-1, multiplier=1):
         stc = self.mode
@@ -46,7 +46,7 @@ class PrevDiff(SelectAction):
     alias = "prev-diff"
     name = "Prev Diff"
     default_menu = ("Tools", 253)
-    key_bindings = {'default': 'S-M-P'}
+    key_bindings = {'default': 'S-M-p'}
 
     def action(self, index=-1, multiplier=1):
         stc = self.mode

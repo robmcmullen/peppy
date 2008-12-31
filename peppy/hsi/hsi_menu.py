@@ -34,7 +34,7 @@ class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     name = "Prev Band"
     default_menu = ("View", -200)
     icon = 'icons/hsi-band-prev.png'
-    key_bindings = {'default': "C-P"}
+    key_bindings = {'default': "C-p"}
     
     def getMenuItemName(self):
         return _("Prev %s") % self.mode.cubeview.imageDirectionLabel
@@ -64,7 +64,7 @@ class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
     tooltip = "Next Band"
     default_menu = ("View", 201)
     icon = 'icons/hsi-band-next.png'
-    key_bindings = {'default': "C-N"}
+    key_bindings = {'default': "C-n"}
     
     def getMenuItemName(self):
         return _("Next %s") % self.mode.cubeview.imageDirectionLabel
@@ -93,7 +93,7 @@ class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
     name = "Goto Band"
     default_menu = ("View", 202)
     
-    key_bindings = {'default': 'M-G',}
+    key_bindings = {'default': 'M-g',}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Band:"
 
@@ -187,7 +187,7 @@ class ShowPixelValues(HSIActionMixin, ToggleAction):
 class TestSubset(HSIActionMixin, SelectAction):
     name = "Test HSI Spatial Subset"
     default_menu = ("&Help/Tests", 888)
-    key_bindings = {'default': "C-T"}
+    key_bindings = {'default': "C-t"}
     
     testcube = 1
     

@@ -42,7 +42,7 @@ class GotoOffset(WorksWithHexEdit, MinibufferAction):
     name = "Goto Offset..."
     tooltip = "Goto an offset."
     default_menu = ("Edit", 500)
-    key_bindings = {'default': 'M-G',}
+    key_bindings = {'default': 'M-g',}
     minibuffer = IntMinibuffer
     minibuffer_label = "Goto Offset:"
 
@@ -63,7 +63,7 @@ class HexRecordFormat(WorksWithHexEdit, MinibufferAction):
 
     name = "Record Format..."
     default_menu = ("View", -500)
-    key_bindings = {'default': 'M-F',}
+    key_bindings = {'default': 'M-f',}
     minibuffer = TextMinibuffer
     minibuffer_label = "Record Format:"
 

@@ -30,7 +30,7 @@ class CommentRegion(TextModificationAction):
     alias = "comment-region"
     name = "&Comment Region"
     default_menu = ("Transform", -600)
-    key_bindings = {'emacs': 'C-C C-C',}
+    key_bindings = {'emacs': 'C-c C-c',}
 
     def action(self, index=-1, multiplier=1):
         self.mode.commentRegion(multiplier != 4)
@@ -110,7 +110,7 @@ class CapitalizeWord(WordOrRegionMutateAction):
     """
     alias = "capitalize-region-or-word"
     name = "Capitalize"
-    key_bindings = {'emacs': 'M-C',}
+    key_bindings = {'emacs': 'M-c',}
     default_menu = (("Transform/Case", 810), 100)
 
     def mutate(self, txt):
@@ -126,7 +126,7 @@ class UpcaseWord(WordOrRegionMutateAction):
     """
     alias = "upcase-region-or-word"
     name = "Upcase"
-    key_bindings = {'emacs': 'M-U',}
+    key_bindings = {'emacs': 'M-u',}
     default_menu = ("Transform/Case", 101)
     icon = "icons/text_uppercase.png"
     default_toolbar = False
@@ -143,7 +143,7 @@ class DowncaseWord(WordOrRegionMutateAction):
     """
     alias = "downcase-region-or-word"
     name = "Downcase"
-    key_bindings = {'emacs': 'M-L',}
+    key_bindings = {'emacs': 'M-l',}
     default_menu = ("Transform/Case", 102)
     icon = "icons/text_lowercase.png"
     default_toolbar = False
@@ -272,7 +272,7 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     alias = "fill-paragraph-or-region"
     name = "Fill Paragraph"
     default_menu = ("Transform", 603)
-    key_bindings = {'default': 'M-Q',}
+    key_bindings = {'default': 'M-q',}
 
     def mutateParagraph(self, info):
         """Word wrap the current paragraph using the TeX algorithm."""

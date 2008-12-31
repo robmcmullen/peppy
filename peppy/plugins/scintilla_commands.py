@@ -45,7 +45,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_LEFT,          SCI_NORM,       SCI_CHARLEFT},
     class PreviousCharacter(ScintillaCmdKeyExecute):
         """Move the cursor to previous character"""
-        key_bindings = {'default': 'LEFT', 'emacs': 'C-B',}
+        key_bindings = {'default': 'LEFT', 'emacs': 'C-b',}
         cmd = wx.stc.STC_CMD_CHARLEFT
         
     #    {SCK_LEFT,          SCI_SHIFT,      SCI_CHARLEFTEXTEND},
@@ -63,7 +63,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_RIGHT,         SCI_NORM,       SCI_CHARRIGHT},
     class NextCharacter(ScintillaCmdKeyExecute):
         """Move the cursor to next character"""
-        key_bindings = {'default': 'RIGHT', 'emacs': 'C-F',}
+        key_bindings = {'default': 'RIGHT', 'emacs': 'C-f',}
         cmd = wx.stc.STC_CMD_CHARRIGHT
 
     #    {SCK_RIGHT,         SCI_SHIFT,      SCI_CHARRIGHTEXTEND},
@@ -173,7 +173,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_DOWN,          SCI_NORM,       SCI_LINEDOWN},
     class NextLine(ScintillaCmdKeyExecute):
         """Move the cursor down a line"""
-        key_bindings = {'default': 'DOWN', 'emacs': 'C-N',}
+        key_bindings = {'default': 'DOWN', 'emacs': 'C-n',}
         cmd = wx.stc.STC_CMD_LINEDOWN
 
     #    {SCK_DOWN,          SCI_SHIFT,      SCI_LINEDOWNEXTEND},
@@ -191,7 +191,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_END,           SCI_NORM,       SCI_LINEEND},
     class EndOfLine(ScintillaCmdKeyExecute):
         """Move the cursor to the end of the current line"""
-        key_bindings = {'default': 'END', 'emacs': 'C-E',}
+        key_bindings = {'default': 'END', 'emacs': 'C-e',}
         cmd = wx.stc.STC_CMD_LINEEND
 
     #    {SCK_END,           SCI_ALT,        SCI_LINEENDDISPLAY},
@@ -229,13 +229,13 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {'T',               SCI_CTRL,       SCI_LINETRANSPOSE},
     class TransposeLine(ScintillaCmdKeyExecute):
         """Swap the current line for the previous line"""
-        key_bindings = {'default': 'C-T',}
+        key_bindings = {'default': 'C-t',}
         cmd = wx.stc.STC_CMD_LINETRANSPOSE
 
     #    {SCK_UP,            SCI_NORM,       SCI_LINEUP},
     class PreviousLine(ScintillaCmdKeyExecute):
         """Move the cursor up a line"""
-        key_bindings = {'default': 'UP', 'emacs': 'C-P',}
+        key_bindings = {'default': 'UP', 'emacs': 'C-p',}
         cmd = wx.stc.STC_CMD_LINEUP
 
     #    {SCK_UP,            SCI_SHIFT,      SCI_LINEUPEXTEND},
@@ -323,7 +323,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {'D',               SCI_CTRL,       SCI_SELECTIONDUPLICATE},
     class DuplicateSelection(ScintillaCmdKeyExecute):
         """Duplicate the selection"""
-        key_bindings = {'default': 'C-D',}
+        key_bindings = {'default': 'C-d',}
         # wx.stc.STC_CMD_SELECTIONDUPLICATE isn't mapped from the scintilla
         # source SCI_SELECTIONDUPLICATE as of wxPython 2.8.8.1, but the
         # integer equivalent works
@@ -345,7 +345,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_HOME,          SCI_NORM,       SCI_VCHOME},
     class BeginningTextOfLine(ScintillaCmdKeyExecute):
         """Move the cursor to first non-blank character in the line"""
-        key_bindings = {'default': 'HOME', 'emacs': 'C-A',}
+        key_bindings = {'default': 'HOME', 'emacs': 'C-a',}
         cmd = wx.stc.STC_CMD_VCHOME
             
     #    {SCK_HOME,          SCI_SHIFT,      SCI_VCHOMEEXTEND},
@@ -369,7 +369,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_LEFT,          SCI_CTRL,       SCI_WORDLEFT},
     class PreviousWord(ScintillaCmdKeyExecute):
         """Move the cursor to the previous word break"""
-        key_bindings = {'default': 'C-LEFT', 'emacs': 'M-B',}
+        key_bindings = {'default': 'C-LEFT', 'emacs': 'M-b',}
         cmd = wx.stc.STC_CMD_WORDLEFT
 
     # STC_CMD_WORDLEFTENDEXTEND
@@ -410,7 +410,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_RIGHT,         SCI_CTRL,       SCI_WORDRIGHT},
     class NextWord(ScintillaCmdKeyExecute):
         """Move the cursor to the next word break"""
-        key_bindings = {'default': 'C-RIGHT', 'emacs': 'M-F',}
+        key_bindings = {'default': 'C-RIGHT', 'emacs': 'M-f',}
         cmd = wx.stc.STC_CMD_WORDRIGHT
 
     # STC_CMD_WORDRIGHTENDEXTEND

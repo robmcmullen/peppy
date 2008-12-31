@@ -952,7 +952,7 @@ class FindText(MinibufferRepeatAction):
     tooltip = "Search for a string in the text."
     default_menu = ("Edit", -400)
     icon = "icons/find.png"
-    key_bindings = {'default': "C-F", 'emacs': 'C-S', }
+    key_bindings = {'default': "C-f", 'emacs': 'C-s', }
     minibuffer = FindMinibuffer
     find_service = FindService
     find_direction = 1
@@ -961,7 +961,7 @@ class FindRegex(MinibufferRepeatAction):
     name = "Find Regex..."
     tooltip = "Search for a python regular expression."
     default_menu = ("Edit", 401)
-    key_bindings = {'emacs': 'C-M-S', }
+    key_bindings = {'emacs': 'C-M-s', }
     minibuffer = FindMinibuffer
     find_service = FindRegexService
     find_direction = 1
@@ -970,7 +970,7 @@ class FindWildcard(MinibufferRepeatAction):
     name = "Find Wildcard..."
     tooltip = "Search using shell-style wildcards."
     default_menu = ("Edit", 402)
-    key_bindings = {'emacs': 'C-S-M-S', }
+    key_bindings = {'emacs': 'C-S-M-s', }
     minibuffer = FindMinibuffer
     find_service = FindWildcardService
     find_direction = 1
@@ -979,7 +979,7 @@ class FindPrevText(MinibufferRepeatAction):
     name = "Find Previous..."
     tooltip = "Search backwards for a string in the text."
     default_menu = ("Edit", 402)
-    key_bindings = {'default': "C-S-F", 'emacs': 'C-R', }
+    key_bindings = {'default': "C-S-f", 'emacs': 'C-r', }
     minibuffer = FindMinibuffer
     find_service = FindService
     find_direction = -1
@@ -1260,7 +1260,7 @@ class Replace(MinibufferRepeatAction):
     tooltip = "Replace a string in the text."
     default_menu = ("Edit", 410)
     icon = "icons/text_replace.png"
-    key_bindings = {'win': 'C-H', 'emacs': 'F6', }
+    key_bindings = {'win': 'C-h', 'emacs': 'F6', }
     minibuffer = ReplaceMinibuffer
     find_service = FindService
     find_direction = 1

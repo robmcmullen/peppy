@@ -49,14 +49,14 @@ class DiredNext(FlagMixin, SelectAction):
     name = "Move to Next Item"
     tooltip = "Move the selection to the next item in the list."
     default_menu = ("Actions", 100)
-    key_bindings = {'default': "N", }
+    key_bindings = {'default': "n", }
 
 class DiredPrevious(FlagBackwardsMixin, SelectAction):
     alias = "dired-previous"
     name = "Move to Previous Item"
     tooltip = "Move the selection to the previous item in the list."
     default_menu = ("Actions", 101)
-    key_bindings = {'default': "P", }
+    key_bindings = {'default': "p", }
 
 
 class DiredDelete(FlagMixin, SelectAction):
@@ -64,7 +64,7 @@ class DiredDelete(FlagMixin, SelectAction):
     name = "Mark for Deletion"
     tooltip = "Mark the selected buffer for deletion."
     default_menu = ("Actions", 120)
-    key_bindings = {'default': "D", }
+    key_bindings = {'default': "d", }
     flag = 'D'
 
 class DiredDeleteBackwards(FlagBackwardsMixin, SelectAction):
@@ -72,7 +72,7 @@ class DiredDeleteBackwards(FlagBackwardsMixin, SelectAction):
     name = "Mark for Deletion and Move Backwards"
     tooltip = "Mark the selected buffer for deletion and move to the previous item."
     default_menu = ("Actions", 121)
-    key_bindings = {'default': "C-D", }
+    key_bindings = {'default': "C-d", }
     flag = 'D'
 
 
@@ -81,7 +81,7 @@ class DiredMark(FlagMixin, SelectAction):
     name = "Mark for Display"
     tooltip = "Mark the selected buffer to be displayed."
     default_menu = ("Actions", 130)
-    key_bindings = {'default': "M", }
+    key_bindings = {'default': "m", }
     flag = 'M'
 
 class DiredMarkBackwards(FlagBackwardsMixin, SelectAction):
@@ -89,7 +89,7 @@ class DiredMarkBackwards(FlagBackwardsMixin, SelectAction):
     name = "Mark for Display and Move Backwards"
     tooltip = "Mark the selected buffer to be displayed and move to the previous item."
     default_menu = ("Actions", 130)
-    key_bindings = {'default': "C-M", }
+    key_bindings = {'default': "C-m", }
     flag = 'M'
 
 
@@ -98,7 +98,7 @@ class DiredClearFlags(SelectAction):
     name = "Clear Flags"
     tooltip = "Clear all flags from the selected item(s)."
     default_menu = ("Actions", 199)
-    key_bindings = {'default': "U", }
+    key_bindings = {'default': "u", }
 
     def action(self, index=-1, multiplier=1):
         self.mode.clearFlags()
@@ -111,7 +111,7 @@ class DiredExecute(SelectAction):
     name = "Save or Delete Marked Buffers"
     tooltip = "Act on the marked buffers according to their flags."
     default_menu = ("Actions", -300)
-    key_bindings = {'default': "X", }
+    key_bindings = {'default': "x", }
 
     def action(self, index=-1, multiplier=1):
         self.mode.execute()
@@ -122,7 +122,7 @@ class DiredShow(SelectAction):
     name = "Show Buffer"
     tooltip = "Show the buffer in a new tab."
     default_menu = ("Actions", -400)
-    key_bindings = {'default': "O", }
+    key_bindings = {'default': "o", }
 
     def action(self, index=-1, multiplier=1):
         url = self.mode.getFirstSelectedKey()
@@ -134,7 +134,7 @@ class DiredReplace(SelectAction):
     name = "Replace Buffer"
     tooltip = "Show the buffer in place of this tab."
     default_menu = ("Actions", 401)
-    key_bindings = {'default': "F", }
+    key_bindings = {'default': "f", }
 
     def action(self, index=-1, multiplier=1):
         url = self.mode.getFirstSelectedKey()
