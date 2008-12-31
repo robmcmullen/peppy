@@ -207,9 +207,9 @@ class OpenFile(SelectAction):
         self.frame.open(text)
 
 class SaveAs(SelectAction):
+    """Save with new filename using the minibuffer"""
     alias = "write-file"
     name = "Save &As..."
-    tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     key_bindings = {'emacs': "C-X C-W",}
     
@@ -452,9 +452,9 @@ class Save(SelectAction):
         self.mode.save()
 
 class SaveAsGUI(SelectAction):
+    """Save with new filename using the file save dialog box"""
     alias = "save-buffer-as"
     name = "Save &As..."
-    tooltip = "Save as a new file"
     icon = "icons/disk_edit.png"
     default_menu = ("File", 802)
     key_bindings = {'default': "C-S-S"}
