@@ -191,6 +191,10 @@ class HSIMode(BitmapScroller, MajorMode):
             options.update(url.query)
         self.dprint("loading cube data from %s, options=%s" % (str(self.buffer.url), options))
         self.cube = self.dataset.getCube(self.buffer.url, progress=self.status_info, options=options)
+        if self.cube.lines > 10000 or self.cube.samples > 10000:
+            self.zoom = 0.125
+        else:
+            self.zoom = 1.0
         assert self.dprint(self.cube)
         viewer = CubeView
         if 'view' in options:
