@@ -161,7 +161,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {'L',               SCI_CTRL,       SCI_LINECUT},
     class CutLine(ScintillaCmdKeyExecute):
         """Cut the current line"""
-        key_bindings = {'default': 'C-l',}
+        key_bindings = {'default': 'C-l', 'emacs': 'C-k'}
         cmd = wx.stc.STC_CMD_LINECUT
 
     #    {'L',               SCI_CSHIFT,     SCI_LINEDELETE},
