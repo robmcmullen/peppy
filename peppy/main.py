@@ -680,7 +680,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     def otherInstanceRunning(self):
         self.dprint(self.server)
-        return self.server is not None and self.server.socket is not None
+        return self.classprefs.request_server and not hasattr(self, 'no_server_option') and self.server is not None and self.server.socket is not None
 
     def sendToOtherInstance(self, filename):
         self.server.send(filename)
