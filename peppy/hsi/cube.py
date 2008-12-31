@@ -220,6 +220,26 @@ class FileCubeReader(CubeReader):
         else:
             self.swap = False
     
+    def getNumpyArrayFromFilePiecewise(self, fh, count):
+        """Convenience function to replace call to numpy.fromfile, but using
+        small chunks.
+        
+        If there's a memory limitation, load the array from file using a series
+        of smaller loads.
+        """
+        s = numpy.empty(count, dtype=self.data_type)
+        step = 1024 * 1024
+        start = 0
+        while start < count:
+            len = step
+            if start + len > count:
+                len = count - start
+            bytes = fh.read(len * self.itemsize)
+            section = numpy.fromstring(bytes, dtype=self.data_type, count=len)
+            s[start:start+len] = section
+            start += len
+        return s
+    
     def getNumpyArrayFromFile(self, fh, count):
         """Convenience function to replace call to numpy.fromfile.
         
@@ -228,9 +248,15 @@ class FileCubeReader(CubeReader):
         so we have read the data by hand and use numpy.fromstring instead of
         numpy.fromfile directly.
         """
-        bytes = fh.read(count * self.itemsize)
-        s = numpy.fromstring(bytes, dtype=self.data_type, count=count)
-        return s
+        pos = fh.tell()
+        try:
+            bytes = fh.read(count * self.itemsize)
+            s = numpy.fromstring(bytes, dtype=self.data_type, count=count)
+            return s
+        except IOError:
+            # hit out of memory error, so load in pieces
+            fh.seek(pos)
+            return self.getNumpyArrayFromFilePiecewise(fh, count)
     
     def getBytesFromArray(self, band, swap=False):
         # Because arrays used by FileCubeReaders are created on the fly during
