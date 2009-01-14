@@ -823,10 +823,12 @@ class Cube(debugmixin):
         # None for unknown
         self.wavelength_units=None
 
-        # scale_factor is the value by which the samples in the cube
-        # have already been multiplied.  To get values in the range of
-        # 0.0 - 1.0, you must B{divide} by this value.
-        self.scale_factor=None
+        # scale_factor is the value by which the samples in the cube have
+        # already been multiplied.  To get values in the range of 0.0 - 1.0,
+        # you must B{divide} by this value and subtract the offset.  In other
+        # words: stored_value = scale_offset + scale_factor * original_data.
+        self.scale_factor = None
+        self.scale_offset = 0.0
         
         # UTM Georeferencing information
         self.utm_zone = -1
@@ -865,12 +867,12 @@ class Cube(debugmixin):
         interleave=%s byte_order=%d (native byte order=%d)\n""" % (self.url,self.description,self.data_offset,self.header_offset,self.file_offset,str(self.data_type),self.samples,self.lines,self.bands,self.data_bytes,self.interleave,self.byte_order,nativeByteOrder))
         if self.utm_zone >= 0:
             s.write("        utm: zone=%s %s easting=%f northing=%f\n" % (self.utm_zone, self.utm_hemisphere, self.utm_easting, self.utm_northing))
-        if self.scale_factor: s.write("        scale_factor=%f\n" % self.scale_factor)
+        if self.scale_factor: s.write("        scale_factor=%f scale_offset=%f\n" % (self.scale_factor, self.scale_offset))
         s.write("        wavelength units: %s\n" % self.wavelength_units)
-        s.write("        wavelengths: %s\n" % self.wavelengths)
-        s.write("        bbl: %s\n" % self.bbl)
-        s.write("        fwhm: %s\n" % self.fwhm)
-        s.write("        band_names: %s\n" % self.band_names)
+        s.write("        wavelengths: %s\n" % str(self.wavelengths))
+        s.write("        bbl: %s\n" % str(self.bbl))
+        s.write("        fwhm: %s\n" % str(self.fwhm))
+        s.write("        band_names: %s\n" % str(self.band_names))
         s.write("        cube_io=%s\n" % str(self.cube_io))
         return s.getvalue()
     

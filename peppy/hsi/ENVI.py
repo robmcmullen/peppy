@@ -408,6 +408,7 @@ class Header(dict,MetadataMixin):
             dprint("Unrecognized map info %s" % mapinfo[0])
     
     def setScaleFactors(self, cube):
+        if self.debug: dprint("found gain values: %s" % self['data gain values'])
         gains = self.convertList([], self["data gain values"], lambda s:float(s))
         cube.scale_factor = gains[0]
         for gain in gains[1:]:
