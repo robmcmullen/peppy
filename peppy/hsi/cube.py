@@ -102,6 +102,9 @@ class MetadataMixin(debugmixin):
 
 class CubeReader(debugmixin):
     """Abstract class for reading raw data from an HSI cube"""
+    def __init__(self):
+        self.user_counts_from = 1
+        
     def save(self, url):
         """Save the data to another file"""
         raise NotImplementedError
@@ -201,6 +204,7 @@ class FileCubeReader(CubeReader):
     L{MMapCubeReader}, but won't throw out of memory exceptions.
     """
     def __init__(self, cube, url=None, array=None):
+        CubeReader.__init__(self)
         self.fh = vfs.open(url)
         # If we're using a WindowReader on a NITF file, the offset is already
         # accounted for within the WindowReader
@@ -298,7 +302,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
         line = 0
         progress = self.getProgressBar(use_progress)
         if progress:
-            progress.startProgress("Loading Band %d" % band, self.lines, delay=1.0)
+            progress.startProgress("Loading Band %d" % (band + self.user_counts_from), self.lines, delay=1.0)
         while True:
             data = self.getNumpyArrayFromFile(fh, 1)
             s[line, samp] = data[0]
@@ -312,7 +316,7 @@ class FileBIPCubeReader(BIPMixin, FileCubeReader):
                     progress.updateProgress(line)
             fh.seek(skip, 1)
         if progress:
-            progress.stopProgress("Loaded Band %d" % band)
+            progress.stopProgress("Loaded Band %d" % (band + self.user_counts_from))
             
         if self.swap:
             s.byteswap(True)
@@ -392,7 +396,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
         line = 0
         progress = self.getProgressBar(use_progress)
         if progress:
-            progress.startProgress("Loading Band %d" % band, self.lines, delay=1)
+            progress.startProgress("Loading Band %d" % (band + self.user_counts_from), self.lines, delay=1)
         while True:
             data = self.getNumpyArrayFromFile(fh, self.samples)
             s[line, :] = data
@@ -403,7 +407,7 @@ class FileBILCubeReader(BILMixin, FileCubeReader):
                 progress.updateProgress(line)
             fh.seek(skip, 1)
         if progress:
-            progress.stopProgress("Loaded Band %d" % band)
+            progress.stopProgress("Loaded Band %d" % (band + self.user_counts_from))
             
         if self.swap:
             s.byteswap(True)
@@ -522,7 +526,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
         skip = (self.lines - 1) * self.samples * self.itemsize
         progress = self.getProgressBar(use_progress)
         if progress:
-            progress.startProgress("Loading Focal Plane at line %d" % line, self.bands, delay=1)
+            progress.startProgress("Loading Focal Plane at line %d" % (line + self.user_counts_from), self.bands, delay=1)
         band = 0
         while True:
             data = self.getNumpyArrayFromFile(fh, self.samples)
@@ -534,7 +538,7 @@ class FileBSQCubeReader(BSQMixin, FileCubeReader):
                 progress.updateProgress(band)
             fh.seek(skip, 1)
         if progress:
-            progress.stopProgress("Loaded Focal Plane at line %d" % line)
+            progress.stopProgress("Loaded Focal Plane at line %d" % (line + self.user_counts_from))
         if self.swap:
             s.byteswap(True)
         return s
@@ -581,6 +585,7 @@ class MMapCubeReader(CubeReader):
     attempting to first mmap a file that is larger than physical memory.
     """
     def __init__(self, cube, url=None, array=None):
+        CubeReader.__init__(self)
         self.mmap = None
         self.raw = None
         self.lines = cube.lines
