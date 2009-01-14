@@ -141,14 +141,33 @@ class CubeReader(debugmixin):
         """Convert location (line,sample,band) to flat index"""
         raise NotImplementedError
     
-    def getBytesFromArray(self, band, swap=False):
+    def getByteOrderOfArray(self, band):
+        """Return a byte order string, '<', '>', or '|' representing the
+        array's endianness.
+        
+        I can't find in the numpy docs that the byteorder returned from
+        dtype.byteorder is guaranteed to be either '<' or '>': it might happen
+        that it returns '=' meaning native byte order.  This routine is to
+        remove the possibility of this case so it will never return '='.
+        """
+        current = band.dtype.byteorder
+        if current == '=':
+            current = byteordertext[nativeByteOrder]
+        return current
+    
+    def getBytesFromArray(self, band, endian):
         """Get raw bytes from the band, swapping endian state if desired
         
         @param band: array of bytes from getBandRaw, getFocalPlaneRaw, etc.
         
-        @param swap: if True, swap the endian state
+        @param endian: '<' or '>' representing the desired output endian state
         """
-        raise NotImplementedError
+        if endian not in ['<', '>']:
+            raise TypeError("Endian state must be specified as '<' or '>'")
+        current = self.getByteOrderOfArray(band)
+        if current != '|' and endian != current:
+            band = band.byteswap()
+        return band.tostring()
 
 
 class BIPMixin(object):
@@ -261,14 +280,6 @@ class FileCubeReader(CubeReader):
             # hit out of memory error, so load in pieces
             fh.seek(pos)
             return self.getNumpyArrayFromFilePiecewise(fh, count)
-    
-    def getBytesFromArray(self, band, swap=False):
-        # Because arrays used by FileCubeReaders are created on the fly during
-        # calls to getBandRaw and the others, we can use byteswap to force the
-        # bytes to change in the array itself.
-        if swap:
-            band = band.byteswap(False)
-        return band.tostring()
 
 
 class FileBIPCubeReader(BIPMixin, FileCubeReader):
@@ -638,19 +649,6 @@ class MMapCubeReader(CubeReader):
         """Shape the memory mapped to the correct data type and offset within
         the file."""
         raise NotImplementedError
-    
-    def getBytesFromArray(self, band, swap=False):
-        # Unlike FileCubeReader, arrays from calls to getBandRaw and similar
-        # methods are views into the entire mmap'd array and byteswapping
-        # the individual arrays only creates a view.  Attempting a tostring()
-        # call on those arrays results in the underlying bytes being generated
-        # using the original order, not the byteswapped order that we want.
-        if swap:
-            if band.dtype.byteorder == ">":
-                band.newbyteorder("<")
-            else:
-                band.newbyteorder(">")
-        return band.tostring()
 
 
 class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
@@ -1287,25 +1285,25 @@ class Cube(debugmixin):
             return self.cube_io.getRaw()
         raise TypeError("Cube is not using numpy to store its data")
     
-    def iterRawBIP(self, swap):
+    def iterRawBIP(self, endian):
         # bands vary fastest, then samples, then lines
         for i in range(self.lines):
             band = self.cube_io.getFocalPlaneRaw(i, use_progress=False).transpose()
-            bytes = self.cube_io.getBytesFromArray(band, swap)
+            bytes = self.cube_io.getBytesFromArray(band, endian)
             yield bytes
     
-    def iterRawBIL(self, swap):
+    def iterRawBIL(self, endian):
         # samples vary fastest, then bands, then lines
         for i in range(self.lines):
             band = self.cube_io.getFocalPlaneRaw(i, use_progress=False)
-            bytes = self.cube_io.getBytesFromArray(band, swap)
+            bytes = self.cube_io.getBytesFromArray(band, endian)
             yield bytes
     
-    def iterRawBSQ(self, swap):
+    def iterRawBSQ(self, endian):
         # samples vary fastest, then lines, then bands 
         for i in range(self.bands):
             band = self.cube_io.getBandRaw(i, use_progress=False)
-            bytes = self.cube_io.getBytesFromArray(band, swap)
+            bytes = self.cube_io.getBytesFromArray(band, endian)
             yield bytes
     
     def iterRaw(self, size, interleaveiter, byte_order=None):
@@ -1328,12 +1326,11 @@ class Cube(debugmixin):
         i = 0
         if byte_order is None:
             byte_order = self.byte_order
-        elif byte_order == '<':
-            byte_order = LittleEndian
-        elif byte_order == '>':
-            byte_order = BigEndian
-        swap = bool(byte_order != nativeByteOrder)
-        for bytes in interleaveiter(swap):
+        if byte_order == LittleEndian:
+            byte_order = '<'
+        elif byte_order == BigEndian:
+            byte_order = '>'
+        for bytes in interleaveiter(byte_order):
             count = len(bytes)
             if (i + count) < size:
                 fh.write(bytes)
@@ -1365,7 +1362,11 @@ class Cube(debugmixin):
         is used.
         
         @param block_size: size of data chunks to be returned
+        
         @param interleave: string, one of 'bip', 'bil', or 'bsq'
+        
+        @param byte_order: the desired byte order of the output data
+        
         @return: iterator used to loop over blocks of data, or None if unknown
         interleave
         """
