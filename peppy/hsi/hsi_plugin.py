@@ -72,6 +72,7 @@ class HSIPlugin(IPeppyPlugin):
                 import peppy.hsi.filter_menu
                 return [peppy.hsi.hsi_menu.PrevBand,
                         peppy.hsi.hsi_menu.NextBand,
+                        peppy.hsi.hsi_menu.SelectBand,
                         peppy.hsi.hsi_menu.GotoBand,
                         peppy.hsi.hsi_menu.BandSlider,
                         peppy.hsi.hsi_menu.BandSliderUpdates,

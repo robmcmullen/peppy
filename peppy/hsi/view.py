@@ -224,6 +224,13 @@ class CubeView(debugmixin):
 
     def getIndexes(self):
         return self.indexes
+    
+    def getIndexNames(self):
+        names = []
+        if self.cube:
+            for i in range(self.cube.bands):
+                names.append(self.getBandName(i))
+        return names
 
     def setIndexes(self, newbands):
         display=True
@@ -338,6 +345,13 @@ class FocalPlaneView(CubeView):
         self.indexes = [0]
         if self.cube:
             self.max_index = self.cube.lines - 1
+
+    def getIndexNames(self):
+        names = []
+        if self.cube:
+            for i in range(self.cube.lines):
+                names.append("%s %d" % (self.imageDirectionLabel, i+1))
+        return names
 
     def getWorkingMessage(self):
         return "Building %dx%d bitmap..." % (self.cube.samples, self.cube.bands)

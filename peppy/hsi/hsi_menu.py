@@ -113,9 +113,49 @@ class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
         if mode.cubeview.gotoIndex(band, user=True):
             mode.update(refresh=False)
 
+class SelectBand(HSIActionMixin, OnDemandActionMixin, RadioAction):
+    """Select a band to view by name"""
+    name = "View Band"
+    default_menu = ("View", 205)
+
+    def initPreHook(self):
+        self.cubeview = CubeView(self.mode, None)
+
+    def getNonInlineName(self):
+        return _("View %s") % self.cubeview.imageDirectionLabel
+    
+    def updateOnDemand(self):
+        self.cubeview = self.mode.cubeview
+        self.dprint()
+        self.dynamic()
+    
+    def getHash(self):
+        hash = (self.cubeview, self.cubeview.imageDirectionLabel)
+        self.dprint(hash)
+        return hash
+
+    def getIndex(self):
+        if self.cubeview is not None:
+            indexes = self.cubeview.getIndexes()
+            return indexes[0]
+        return 0
+    
+    def getItems(self):
+        if self.cubeview is not None:
+            items = self.cubeview.getIndexNames()
+        else:
+            items = []
+        self.dprint(items)
+        return items
+
+    def action(self, index=-1, multiplier=1):
+        if self.mode.cubeview.gotoIndex(index):
+            self.mode.update(refresh=False)
+
+
 class BandSlider(HSIActionMixin, SliderAction):
     name = "Seek Band"
-    default_menu = ("View", 203)
+    default_menu = ("View", 210)
     
     slider_width = 200
     
@@ -151,7 +191,7 @@ class BandSlider(HSIActionMixin, SliderAction):
 class BandSliderUpdates(HSIActionMixin, ToggleAction):
     """Refresh image during slider dragging"""
     name = "Refresh While Dragging Slider"
-    default_menu = ("View", 209)
+    default_menu = ("View", 211)
 
     def isChecked(self):
         return self.mode.immediate_slider_updates
