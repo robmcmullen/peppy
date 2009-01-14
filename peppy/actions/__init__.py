@@ -303,7 +303,7 @@ class ToggleAction(SelectAction):
     display the button as toggled-on (for a toolbar).
     """
     def insertIntoMenu(self,menu):
-        self.widget=menu.AppendCheckItem(self.global_id, _(self.name), self.getDefaultTooltip())
+        self.widget=menu.AppendCheckItem(self.global_id, self.getDefaultMenuItemName(), self.getDefaultTooltip())
         #storeWeakref('menuitem', self.widget)
 
     def insertIntoToolbar(self,toolbar):
@@ -397,7 +397,7 @@ class ListAction(SelectAction):
         """When the list isn't an inline menu, get the name that should be used
         as the indicator label for the menu.
         """
-        return _(self.name)
+        return self.getDefaultMenuItemName()
     
     def insertIntoMenu(self,menu,pos=None):
         self.cache.resetIndex()
