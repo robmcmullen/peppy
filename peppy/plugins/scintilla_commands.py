@@ -121,13 +121,13 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
         cmd = wx.stc.STC_CMD_DOCUMENTENDEXTEND
 
     #    {SCK_HOME,          SCI_CTRL,       SCI_DOCUMENTSTART},
-    class BeginningOfBuffer(SelectAction):
+    class BeginningOfBuffer(ScintillaCmdKeyExecute):
         """Move the cursor to first character in the buffer"""
         key_bindings = {'default': 'C-HOME'}
         cmd = wx.stc.STC_CMD_DOCUMENTSTART
 
     #    {SCK_HOME,          SCI_CSHIFT,     SCI_DOCUMENTSTARTEXTEND},
-    class BeginningOfBufferExtend(SelectAction):
+    class BeginningOfBufferExtend(ScintillaCmdKeyExecute):
         """Move the cursor to first character in the buffer and extend the
         selection
         """
