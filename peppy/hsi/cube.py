@@ -1231,6 +1231,17 @@ class Cube(debugmixin):
                         else:
                             bandlist.append(channel+1)
                             break
+                if not bandlist:
+                    # find nearest good band to the center
+                    nearest = wavelengths[self.bands-1] - wavelengths[0]
+                    found = -1
+                    for channel in range(self.bands):
+                        if bbl[channel]==1:
+                            dist = abs(wavelengths[channel] - center)
+                            if dist < nearest:
+                                found = channel
+                                nearest = dist
+                    bandlist.append(found)
         if reversed:
             bandlist = [(self.bands - 1) - i for i in bandlist]
         return bandlist

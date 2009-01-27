@@ -311,3 +311,21 @@ class testGuessBands(object):
         eq_(bands,[0])
         bands = self.cube.getBandListByWavelength(680.0,units='nm')
         eq_(bands,[0])
+    
+    def testBadBandsAtStart(self):
+        self.cube.wavelengths = [200, 250, 300, 350, 400, 440, 555, 670]
+        self.cube.bbl = [0, 0, 0, 0, 0, 1, 1, 1]
+        self.cube.bands = 8
+        self.cube.wavelength_units = 'nm'
+        bands = self.cube.getBandListByWavelength(305.0,units='nm')
+        eq_(bands,[5])
+        bands = self.cube.getBandListByWavelength(450.0,units='nm')
+        eq_(bands,[5])
+        bands = self.cube.getBandListByWavelength(550.0,units='nm')
+        eq_(bands,[6])
+        bands = self.cube.getBandListByWavelength(570.0,units='nm')
+        eq_(bands,[6])
+        bands = self.cube.getBandListByWavelength(660.0,units='nm')
+        eq_(bands,[7])
+        bands = self.cube.getBandListByWavelength(680.0,units='nm')
+        eq_(bands,[7])
