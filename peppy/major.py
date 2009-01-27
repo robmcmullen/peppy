@@ -601,13 +601,21 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         return self.temporary
 
     def save(self, url=None):
+        """Save the file.
+        
+        Saves the file to the URL specified, or if not specified to the
+        original URL from which the file was loaded.
+        
+        Returns True if the file save was successful; False otherwise.
+        """
         veto = self.savePreHook(url)
         if veto == False:
-            return
+            return False
         try:
             self.buffer.save(url)
             self.savePostHook()
             self.status_info.setText(u"Saved %s" % self.buffer.url)
+            return True
         except IOError, e:
             self.status_info.setText(unicode(e))
         except UnicodeEncodeError, e:
@@ -615,6 +623,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         except LookupError, e:
             # Bad encoding name!
             self.status_info.setText(unicode(e))
+        return False
 
     def savePreHook(self, url=None):
         """Hook before the buffer is saved.
@@ -1152,11 +1161,12 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         else:
             if self.buffer.readonly or not self.classprefs.autosave_before_run:
                 msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
-                dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
-                retval=dlg.ShowModal()
+                self.frame.showErrorDialog(msg, "Save the file!")
                 return
             else:
-                self.save()
+                if not self.save():
+                    self.frame.showErrorDialog("Error attempting to save file -- interpreter was not started.", "File Save Error")
+                    return
 
             if expand:
                 cmd = self.expandCommandLine(cmd)
