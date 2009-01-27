@@ -181,5 +181,14 @@ class MemTestCase(TestCase):
         for x in vfs.traverse('mem:'):
             self.assertEqual(vfs.exists(x), True)
 
+    def test40_permissions(self):
+        perms = vfs.get_permissions('mem:tmp/blah.txt')
+        self.assertEqual(perms.is_mode_set('u', 'r'), True)
+        self.assertEqual(perms.is_mode_set('u', 'w'), True)
+        self.assertEqual(perms.is_mode_set('g', 'r'), True)
+        self.assertEqual(perms.is_mode_set('g', 'w'), False)
+        self.assertEqual(perms.is_mode_set('o', 'r'), True)
+        self.assertEqual(perms.is_mode_set('o', 'w'), False)
+
 if __name__ == '__main__':
     unittest.main()

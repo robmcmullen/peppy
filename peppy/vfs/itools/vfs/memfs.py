@@ -23,6 +23,7 @@ from peppy.vfs.itools.uri import Path, Reference
 from vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from base import BaseFS
 from registry import register_file_system
+from permissions import Permissions
 
 
 class MemDir(dict):
@@ -222,6 +223,19 @@ class MemFS(BaseFS):
     @staticmethod
     def can_write(reference):
         return MemFS.is_file(reference)
+
+    @classmethod
+    def get_permissions(cls, reference):
+        perm = Permissions(0)
+        perm.set_mode('u', 'r', True)
+        perm.set_mode('u', 'w', True)
+        perm.set_mode('g', 'r', True)
+        perm.set_mode('o', 'r', True)
+        return perm
+
+    @classmethod
+    def set_permissions(cls, reference, permissions):
+        pass
 
     @staticmethod
     def get_size(reference):

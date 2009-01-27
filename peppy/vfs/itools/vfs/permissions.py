@@ -67,7 +67,7 @@ class Permissions(object):
 
     def set_mode(self, who, perm, state):
         bit = self._get_mode_bit(who, perm)
-        state = self.mode & ~bit
+        current = self.mode & ~bit
         if state:
-            state |= bit
-        self.mode = state
+            current |= bit
+        self.mode = current
