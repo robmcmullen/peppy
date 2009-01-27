@@ -41,7 +41,7 @@ def scipy_module():
 
 __all__ = ['HSIActionMixin', 'scipy_module',
            'Cube', 'MetadataMixin', 'newCube', 'createCube', 'createCubeLike',
-           'LittleEndian', 'BigEndian', 'nativeByteOrder',
+           'LittleEndian', 'BigEndian', 'nativeByteOrder', 'native_endian',
            'HyperspectralFileFormat', 'HyperspectralSTC',
            'ROI', 'ROIFile',
            'HyperspectralROIFormat',

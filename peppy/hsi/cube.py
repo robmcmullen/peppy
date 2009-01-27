@@ -23,8 +23,10 @@ LittleEndian=0
 BigEndian=1
 if sys.byteorder=='little':
     nativeByteOrder=LittleEndian
+    native_endian = '<'
 else:
     nativeByteOrder=BigEndian
+    native_endian = '>'
 byteordertext=['<','>']
 
 
@@ -944,8 +946,18 @@ class Cube(debugmixin):
             self.cube_io.save(self.url)
 
     def initialize(self,datatype=None,byteorder=None):
-        self.initializeSizes(datatype,byteorder)
+        self.initializeSizes(datatype)
+        self.initializeEndian(byteorder)
         self.initializeOffset()
+    
+    def initializeEndian(self, byteorder=None):
+        if byteorder:
+            if byteorder == '<':
+                self.byte_order = LittleEndian
+            elif byteorder == '>':
+                self.byte_order = BigEndian
+            else:
+                self.byte_order=byteorder
 
     def initializeOffset(self):
         if self.header_offset>0 or self.file_offset>0:
@@ -953,11 +965,9 @@ class Cube(debugmixin):
                 # if it's not already set, set it
                 self.data_offset=self.file_offset+self.header_offset
 
-    def initializeSizes(self,datatype=None,byteorder=None):
+    def initializeSizes(self,datatype=None):
         if datatype:
             self.data_type=datatype
-        if byteorder:
-            self.byte_order=byteorder
         
         # find out how many bytes per element in this datatype
         if self.data_type:
@@ -1465,7 +1475,7 @@ def createCube(interleave,lines,samples,bands,datatype=None, byteorder=nativeByt
     
     cube_io_cls = getMMapCubeReader(cube, check_size=False)
     if not dummy:
-        if data:
+        if data is not None:
             raw = numpy.frombuffer(data, datatype)
         else:
             raw = numpy.zeros((samples*lines*bands), dtype=datatype)
@@ -1498,7 +1508,7 @@ def createCubeLike(other, interleave=None, lines=None, samples=None, bands=None,
     cube.initialize(datatype, byteorder)
     
     cube_io_cls = getMMapCubeReader(cube, check_size=False)
-    if data:
+    if data is not None:
         raw = numpy.frombuffer(data, datatype)
     else:
         raw = numpy.zeros((cube.samples*cube.lines*cube.bands), dtype=datatype)
