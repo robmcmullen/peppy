@@ -814,6 +814,7 @@ class Cube(debugmixin):
         self.data_type=None
 
         self.byte_order = nativeByteOrder
+        self.endian = native_endian
 
         # per band information, should be lists of dimension self.bands
         self.wavelengths=[]
@@ -952,12 +953,16 @@ class Cube(debugmixin):
     
     def initializeEndian(self, byteorder=None):
         if byteorder:
-            if byteorder == '<':
-                self.byte_order = LittleEndian
-            elif byteorder == '>':
-                self.byte_order = BigEndian
-            else:
-                self.byte_order=byteorder
+            self.byte_order = byteorder
+            
+        if self.byte_order == '<':
+            self.byte_order = LittleEndian
+            self.endian = '<'
+        elif self.byte_order == '>':
+            self.byte_order = BigEndian
+            self.endian = '>'
+        else:
+            self.endian = byteordertext[self.byte_order]
 
     def initializeOffset(self):
         if self.header_offset>0 or self.file_offset>0:
