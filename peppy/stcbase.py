@@ -859,6 +859,35 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                         return False
         return False
 
+    def findSameStyle(self, pos=None):
+        """Given a point, find the region that has the same style
+        
+        @param pos: starting position
+        @return: tuple of start, end position
+        """
+        if pos is None:
+            pos = self.GetCurrentPos()
+        
+        style = self.GetStyleAt(pos)
+
+        i = pos
+        last = self.GetLength()
+        while i < last:
+            s = self.GetStyleAt(i)
+            i += 1
+            if s != style:
+                break
+        last = i
+        
+        i = pos
+        while i > 0:
+            s = self.GetStyleAt(i - 1)
+            if s != style:
+                break
+            i -= 1
+        first = i
+        return first, last
+
 
 class PeppySTC(PeppyBaseSTC):
     """Base class used by major modes that use the STC.
