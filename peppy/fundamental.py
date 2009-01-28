@@ -908,4 +908,5 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
 
     def updateRegion(self, start, end):
         self.Colourise(start, end)
-        self.spell.checkRange(start, end)
+        if self.spell:
+            self.spell.checkRange(start, end)

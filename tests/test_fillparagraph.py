@@ -13,7 +13,7 @@ from nose.tools import *
 
 class TestFundamentalCommentDelimiters(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer="None")
+        self.stc = getSTC(stcclass=FundamentalMode, lexer="None")
     
     def testCommentDelim(self):
         eq_(("", "blah blah", ""), self.stc.splitCommentLine("blah blah"))
@@ -23,7 +23,7 @@ class TestFundamentalCommentDelimiters(object):
 
 class TestPythonCommentDelimiters(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=PythonSTC, lexer="Python")
+        self.stc = getSTC(stcclass=FundamentalMode, lexer="Python")
     
     def testCommentDelim(self):
         eq_(("#", "blah blah", ""), self.stc.splitCommentLine("#blah blah"))
@@ -39,7 +39,7 @@ class TestPythonCommentDelimiters(object):
 
 class TestCCommentDelimiters(object):
     def setUp(self):
-        self.stc = getSTC(stcclass=FundamentalSTC, lexer="C")
+        self.stc = getSTC(stcclass=FundamentalMode, lexer="C")
     
     def testCommentDelim(self):
         eq_(("/*", "blah blah", "*/"), self.stc.splitCommentLine("/*blah blah*/"))
@@ -52,11 +52,11 @@ class DumClassPrefs(object):
     
 class TestFundamentalFill(object):
     lexer = "None"
-    stcclass = FundamentalSTC
+    stcclass = FundamentalMode
     
     def setUp(self):
         self.stc = getSTC(stcclass=self.stcclass, lexer=self.lexer)
-        self.wrap = FillParagraphOrRegion(self)
+        self.wrap = FillParagraphOrRegion(self.stc.frame)
         self.classprefs = DumClassPrefs
         
     def getActiveMajorMode(self):
@@ -147,7 +147,7 @@ line at column zero
 
 class TestPythonFill(TestFundamentalFill):
     lexer = "Python"
-    stcclass = PythonSTC
+    stcclass = FundamentalMode
     
     def testPythonFind(self):
         tests = """\
