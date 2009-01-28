@@ -236,7 +236,6 @@ class SpringTabItem(GenToggleButton):
         self.saveUp = self.up
         self.up = not self.up
         self.GetParent().setRadio(self)
-        self.CaptureMouse()
         self.SetFocus()
         self.Refresh()
 
