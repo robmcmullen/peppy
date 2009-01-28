@@ -33,14 +33,15 @@ class ParagraphInfo(object):
         """
         self.s = stc
         self.cursor_linenum = linenum
+        self.clearLines()
+        
         line = self.s.GetLine(linenum)
         self.leader_pattern, line, self.trailer = self.s.splitCommentLine(line)
+        #dprint("leader=%s trailer=%s" % (self.leader_pattern, self.trailer))
         
         # The line list is maintained in reverse when searching backward,
         # then is reversed before being added to the final list
-        self._startlines = [line]
-        self._endlines = []
-        self._lines = []
+        self._startlines = [line.strip()]
         
         # set initial region start and end positions
         self.start = self.s.PositionFromLine(linenum)
@@ -64,6 +65,26 @@ class ParagraphInfo(object):
             self._lines.extend(self._startlines)
             self._lines.extend(self._endlines)
         return self._lines
+    
+    def clearLines(self):
+        self.start = 0
+        self.end = 0
+        self._startlines = []
+        self._endlines = []
+        self._lines = []
+    
+    def replaceLines(self, lines):
+        self._lines = lines[:]
+    
+    def addPrefix(self):
+        """Add the original prefix to all the lines.
+        
+        This restores the prefix to all of the saved lines; used, for example,
+        after reformatting the lines to remove excess whitespace or line
+        breaks.
+        """
+        newlines = [self.leader_pattern + line for line in self._lines]
+        self._lines = newlines
 
 
 class FundamentalSTC(EditraSTCMixin, PeppySTC):
@@ -712,12 +733,15 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         finally:
             self.EndUndoAction()
             
-    def splitCommentLine(self, line):
+    def splitCommentLine(self, line, info=None):
         """Split the line into the whitespace leader and body of the line.
         
         Return a tuple containing the leading whitespace and comment
         character(s), the body of the line, and any trailing comment
         character(s)
+        
+        @param info: optional ParagraphInfo object to allow subclasses to have
+        access to the object.
         """
         match = self.comment_regex.match(line)
         if match is None:
@@ -740,7 +764,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         Return True if findParagraph should continue searching; otherwise
         return False
         """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum), info)
         self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
@@ -760,7 +784,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         Return True if findParagraph should continue searching; otherwise
         return False
         """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum), info)
         self.dprint(line)
         if leader != info.leader_pattern or len(line.strip())==0:
             return False
@@ -768,6 +792,12 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         return True
         
     def findParagraph(self, start, end=-1):
+        """Return a ParagraphInfo object from the current paragraph.
+        
+        A paragraph is defined as either: 1) a group of lines delimited by
+        lines that only contain whitespace, or 2) a group of lines that share
+        a common prefix.
+        """
         if end == -1:
             end = start
         linenum = self.LineFromPosition(start)
@@ -787,7 +817,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             linenum = info.cursor_linenum
             while linenum < endlinenum:
                 linenum += 1
-                leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
+                leader, line, trailer = self.splitCommentLine(self.GetLine(linenum), info)
                 info.addEndLine(linenum, line)
                 
         # Now, find the end of the paragraph by searching forward until the

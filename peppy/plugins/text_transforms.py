@@ -284,8 +284,9 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
         self.dprint(info.getLines())
         lines = texwrap(info.getLines(), column)
         self.dprint(lines)
-        newlines = [prefix + line for line in lines]
-        return newlines
+        info.replaceLines(lines)
+        info.addPrefix()
+        return info.getLines()
 
 
 class SortLines(LineOrRegionMutateAction):
