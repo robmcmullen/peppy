@@ -777,6 +777,7 @@ class FindBar(wx.Panel, debugmixin):
         
         self.find.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.find.Bind(wx.EVT_TEXT, self.OnChar)
+        self.find.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
     
     def setDirection(self, dir=1):
         if dir > 0:
@@ -787,6 +788,16 @@ class FindBar(wx.Panel, debugmixin):
             text = self.service.backward
         self.label.SetLabel(_(text) + u":")
         self.Layout()
+
+    def OnCommandKeyDown(self, evt):
+        key = evt.GetKeyCode()
+        mods = evt.GetModifiers()
+        
+        #dprint("key=%s mods=%s" % (key, mods))
+        if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
+            self.moveFocusToText()
+        else:
+            evt.Skip()
 
     def OnChar(self, evt):
         #handle updating the background color
@@ -831,12 +842,24 @@ class FindBar(wx.Panel, debugmixin):
     def cancel(self, pos_at_end=False):
         self.resetColor()
         self.frame.SetStatusText('')
+        self.removeSelection(pos_at_end)
+    
+    def removeSelection(self, pos_at_end=False):
+        """Remove the selected text and place the cursor at either the
+        beginning or the end of the selection.
+        """
         if pos_at_end:
             pos = self.stc.GetSelectionEnd()
         else:
             pos = self.stc.GetSelectionStart()
         self.stc.GotoPos(pos)
         self.stc.EnsureCaretVisible()
+    
+    def moveFocusToText(self):
+        """Move the focus to the main editing window so the user can begin
+        typing at the selection.
+        """
+        self.stc.focus()
     
     def OnFindN(self, evt, allow_wrap=True, help='', interactive=True, incremental=False):
         self._lastcall = self.OnFindN
