@@ -295,6 +295,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         
         Automatic spell checking is handled here.
         """
+        if self.frame.keys.processQuotedChar(evt):
+            return
         
         # Make sure that we have the focus before processing chars.
         if self.FindFocus() != self:

@@ -35,6 +35,22 @@ class InsertCodePoint(SelectAction):
             self.mode.setStatusText("Invalid code point %d (%s)" % (val, e))
 
 
+class InsertQuotedChar(SelectAction):
+    """Quoted insert: insert the next keystroke as a raw character"""
+    name = "Insert Raw Char"
+    alias = "quoted-insert"
+    key_bindings = {'emacs': "C-q", }
+    default_menu = ("Tools", 201)
+
+    def action(self, index=-1, multiplier=1):
+        self.frame.keys.getNextKeystroke(self.quotedInsert)
+        wx.CallAfter(self.frame.SetStatusText, "Quote Next Character:")
+
+    def quotedInsert(self, key):
+        #dprint("Quoted character: %s" % repr(key))
+        self.mode.AddText(key)
+        self.frame.SetStatusText("")
+
 class InsertRepr(SelectAction):
     """Enter a Python repr() of the string"""
     name = "Insert repr"
@@ -53,7 +69,8 @@ class InsertTextPlugin(IPeppyPlugin):
     """
     def getCompatibleActions(self, mode):
         if issubclass(mode.__class__, FundamentalMode):
-            return [InsertCodePoint,
-                    
-                    InsertRepr,
-                    ]
+            return [
+                InsertCodePoint,
+                InsertQuotedChar,
+                InsertRepr,
+                ]

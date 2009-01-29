@@ -381,6 +381,10 @@ class KeyProcessor(object):
         # is reported to a caller by using reportNext as a callback.
         self.reportNext = None
 
+        # If getNext is not None, instead of being processed the next keystroke
+        # is reported to a caller by using getNext as a callback
+        self.getNext = None
+
         self.hasshown=False
         self.reset()
 
@@ -610,10 +614,36 @@ class KeyProcessor(object):
         self.reportNext = callback
         self.show('')
 
-    def process(self, evt):
-        """The main driver routine.  Get a keystroke and run through
-        the processing chain.
+    def getNextKeystroke(self, callback):
+        self.getNext = callback
+        self.show('')
+
+    def processQuotedChar(self, evt):
+        """Processor for quoted characters.
+        
+        This is called from an EVT_CHAR handler so that all the interpretation
+        of modifier keys can happen.
         """
+        if self.getNext:
+            uchar = unichr(evt.GetKeyCode())
+            #print("processQuotedChar: %s" % repr(uchar))
+            self.getNext(uchar)
+            self.getNext = None
+            return True
+        return False
+
+    def process(self, evt):
+        """The main driver routine for keystroke interpretation.
+        
+        This is called from an EVT_KEY_DOWN handler so that it catches all
+        keystrokes individually (including modifier keys) as they occur
+        without waiting for wx to interpret them.
+        """
+        if self.getNext:
+            #If we are waiting for a quoted character, skip all keycode
+            #processing and let the EVT_CHAR event handle the keystrokes.
+            evt.Skip()
+            return
         key = self.decode(evt)
 #        if self.debug:
 #            for keymap in self.keymaps:
