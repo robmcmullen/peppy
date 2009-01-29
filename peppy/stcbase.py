@@ -908,6 +908,10 @@ class PeppySTC(PeppyBaseSTC):
         self.Bind(wx.EVT_LEFT_UP, self.OnSelectionEnd)
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        # Remove all default scintilla keybindings so they will be replaced by
+        # peppy actions.
+        self.CmdKeyClearAll()
 
         self.debug_dnd=False
 
