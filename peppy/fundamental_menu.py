@@ -286,6 +286,7 @@ class FontZoomIncrease(SelectAction):
     tooltip = "Increase the size of the font in the current view"
     default_menu = ("View/Font Size", 100)
     icon = "icons/zoom_in.png"
+    key_bindings = {'default': 'C-NUMPAD_ADD',}
 
     def action(self, index=-1, multiplier=1):
         self.mode.locals.font_zoom += 1
@@ -296,6 +297,7 @@ class FontZoomDecrease(SelectAction):
     tooltip = "Decrease the size of the font in the current view"
     default_menu = ("View/Font Size", 101)
     icon = "icons/zoom_out.png"
+    key_bindings = {'default': 'C-NUMPAD_SUBTRACT',}
 
     def action(self, index=-1, multiplier=1):
         self.mode.locals.font_zoom -= 1

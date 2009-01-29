@@ -267,7 +267,17 @@ class KeyMap(object):
         else:
             actions.append(hotkeys)
         return actions
+    
+    def createKeybinding(self, key_specifier, action, replace=False):
+        """Create keybinding(s) for all key combinations for the given action
         
+        """
+        if isinstance(key_specifier, list):
+            for key in key_specifier:
+                self.define(key, action, replace)
+        else:
+            self.define(key_specifier, action, replace)
+    
     def define(self, acc, fcn, replace=False):
         """Create the nested dicts that point to the function to be
         executed on the completion of the keystroke

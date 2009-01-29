@@ -45,7 +45,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_LEFT,          SCI_NORM,       SCI_CHARLEFT},
     class PreviousCharacter(ScintillaCmdKeyExecute):
         """Move the cursor to previous character"""
-        key_bindings = {'default': 'LEFT', 'emacs': 'C-b',}
+        key_bindings = {'default': 'LEFT', 'emacs': ['LEFT', 'C-b'],}
         cmd = wx.stc.STC_CMD_CHARLEFT
         
     #    {SCK_LEFT,          SCI_SHIFT,      SCI_CHARLEFTEXTEND},
@@ -63,7 +63,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_RIGHT,         SCI_NORM,       SCI_CHARRIGHT},
     class NextCharacter(ScintillaCmdKeyExecute):
         """Move the cursor to next character"""
-        key_bindings = {'default': 'RIGHT', 'emacs': 'C-f',}
+        key_bindings = {'default': 'RIGHT', 'emacs': ['RIGHT', 'C-f'],}
         cmd = wx.stc.STC_CMD_CHARRIGHT
 
     #    {SCK_RIGHT,         SCI_SHIFT,      SCI_CHARRIGHTEXTEND},
@@ -145,7 +145,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_HOME,          SCI_ALT,        SCI_HOMEDISPLAY},
     class BeginningOfLine(ScintillaCmdKeyExecute):
         """Move the cursor to Start of Line"""
-        key_bindings = {'default': 'M-HOME', 'emacs': 'M-C-A',}
+        key_bindings = {'default': 'M-HOME', 'emacs': ['M-HOME', 'M-C-A'],}
         cmd = wx.stc.STC_CMD_HOMEDISPLAY
 
     #//    {SCK_HOME,        SCI_ASHIFT,     SCI_HOMEDISPLAYEXTEND},
@@ -173,7 +173,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_DOWN,          SCI_NORM,       SCI_LINEDOWN},
     class NextLine(ScintillaCmdKeyExecute):
         """Move the cursor down a line"""
-        key_bindings = {'default': 'DOWN', 'emacs': 'C-n',}
+        key_bindings = {'default': 'DOWN', 'emacs': ['DOWN', 'C-n'],}
         cmd = wx.stc.STC_CMD_LINEDOWN
 
     #    {SCK_DOWN,          SCI_SHIFT,      SCI_LINEDOWNEXTEND},
@@ -191,7 +191,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_END,           SCI_NORM,       SCI_LINEEND},
     class EndOfLine(ScintillaCmdKeyExecute):
         """Move the cursor to the end of the current line"""
-        key_bindings = {'default': 'END', 'emacs': 'C-e',}
+        key_bindings = {'default': 'END', 'emacs': ['END', 'C-e'],}
         cmd = wx.stc.STC_CMD_LINEEND
 
     #    {SCK_END,           SCI_ALT,        SCI_LINEENDDISPLAY},
@@ -235,7 +235,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_UP,            SCI_NORM,       SCI_LINEUP},
     class PreviousLine(ScintillaCmdKeyExecute):
         """Move the cursor up a line"""
-        key_bindings = {'default': 'UP', 'emacs': 'C-p',}
+        key_bindings = {'default': 'UP', 'emacs': ['UP', 'C-p'],}
         cmd = wx.stc.STC_CMD_LINEUP
 
     #    {SCK_UP,            SCI_SHIFT,      SCI_LINEUPEXTEND},
@@ -256,7 +256,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_NEXT,          SCI_NORM,       SCI_PAGEDOWN},
     class PageDown(ScintillaCmdKeyExecute):
         """Scroll down a page"""
-        key_bindings = {'default': 'PAGEDOWN',}
+        key_bindings = {'default': ['PAGEDOWN', 'NEXT'],}
         cmd = wx.stc.STC_CMD_PAGEDOWN
 
     #    {SCK_NEXT,          SCI_SHIFT,      SCI_PAGEDOWNEXTEND},
@@ -274,7 +274,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_PRIOR,         SCI_NORM,       SCI_PAGEUP},
     class PageUp(ScintillaCmdKeyExecute):
         """Scroll up a page"""
-        key_bindings = {'default': 'PAGEUP',}
+        key_bindings = {'default': ['PAGEUP', 'PRIOR'],}
         cmd = wx.stc.STC_CMD_PAGEUP
 
     #    {SCK_PRIOR,         SCI_SHIFT,      SCI_PAGEUPEXTEND},
@@ -345,7 +345,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_HOME,          SCI_NORM,       SCI_VCHOME},
     class BeginningTextOfLine(ScintillaCmdKeyExecute):
         """Move the cursor to first non-blank character in the line"""
-        key_bindings = {'default': 'HOME', 'emacs': 'C-a',}
+        key_bindings = {'default': 'HOME', 'emacs': ['HOME', 'C-a'],}
         cmd = wx.stc.STC_CMD_VCHOME
             
     #    {SCK_HOME,          SCI_SHIFT,      SCI_VCHOMEEXTEND},
@@ -369,7 +369,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_LEFT,          SCI_CTRL,       SCI_WORDLEFT},
     class PreviousWord(ScintillaCmdKeyExecute):
         """Move the cursor to the previous word break"""
-        key_bindings = {'default': 'C-LEFT', 'emacs': 'M-b',}
+        key_bindings = {'default': 'C-LEFT', 'emacs': ['C-LEFT', 'M-b'],}
         cmd = wx.stc.STC_CMD_WORDLEFT
 
     # STC_CMD_WORDLEFTENDEXTEND
@@ -410,7 +410,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_RIGHT,         SCI_CTRL,       SCI_WORDRIGHT},
     class NextWord(ScintillaCmdKeyExecute):
         """Move the cursor to the next word break"""
-        key_bindings = {'default': 'C-RIGHT', 'emacs': 'M-f',}
+        key_bindings = {'default': 'C-RIGHT', 'emacs': ['C-RIGHT', 'M-f'],}
         cmd = wx.stc.STC_CMD_WORDRIGHT
 
     # STC_CMD_WORDRIGHTENDEXTEND
@@ -420,6 +420,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
         key_bindings = {'default': 'C-S-RIGHT',}
         cmd = wx.stc.STC_CMD_WORDRIGHTEXTEND
 
+    # Font zooming is handled in fundamental_menu.py
     #    {SCK_ADD,           SCI_CTRL,       SCI_ZOOMIN},
     #    {SCK_SUBTRACT,      SCI_CTRL,       SCI_ZOOMOUT},
 

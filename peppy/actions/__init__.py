@@ -184,14 +184,18 @@ class SelectAction(debugmixin):
     @classmethod
     def setAcceleratorText(cls, force_emacs=False):
         if cls.keyboard:
-            keystrokes = KeyMap.split(cls.keyboard)
+            if isinstance(cls.keyboard, list):
+                key_sequence = cls.keyboard[0]
+            else:
+                key_sequence = cls.keyboard
+            keystrokes = KeyMap.split(key_sequence)
             if len(keystrokes) == 1 and (cls.stock_id is not None or not force_emacs):
                 # if it has a stock id, always force it to use the our
                 # accelerator because wxWidgets will put one there anyway and
                 # we need to overwrite it with our definition
                 cls._accelerator_text = u"\t%s" % KeyMap.nonEmacsName(keystrokes[0])
             else:
-                cls._accelerator_text = u"    %s" % cls.keyboard
+                cls._accelerator_text = u"    %s" % key_sequence
                 if cls.stock_id is not None and (cls.global_id is None or cls.global_id == cls.stock_id):
                     # Can't use a stock id if we're also using emacs
                     # keybindings, because the stock id injects a one

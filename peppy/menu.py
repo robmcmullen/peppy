@@ -391,7 +391,7 @@ class UserActionMap(debugmixin):
             if action.keyboard is None:
                 continue
             try:
-                keymap.define(action.keyboard, action)
+                keymap.createKeybinding(action.keyboard, action)
             except DuplicateKeyError:
                 dups = keymap.find(action.keyboard)
                 #dprint(dups)
@@ -426,7 +426,7 @@ class UserActionMap(debugmixin):
                     else:
                         action.keystroke_valid = True
                 if action.keystroke_valid:
-                    keymap.define(action.keyboard, action, replace=True)
+                    keymap.createKeybinding(action.keyboard, action, replace=True)
         return keymap
             
     def updateActions(self, toolbar=True):
