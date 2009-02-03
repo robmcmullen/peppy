@@ -113,7 +113,7 @@ class FileOpener(debugmixin):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
             assert self.dprint("Checking %s" % plugin)
-            plugin.loadVirtualFileSystem(self.user_url)
+            plugin.loadVirtualFileSystem(self.url)
             try:
                 self.buffer = BufferList.findBufferByURL(self.url)
                 found = True
