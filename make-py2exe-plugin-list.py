@@ -38,7 +38,7 @@ def entry(filename, out=None, copythese=None, fake=False, pyc=False, remove_pref
                         plugin_count += 1
                         out.write("app.gaugeCallback('%s')\n" % name)
                     print "importing %s" % module
-                    out.write("try:\n    import %s\nexcept:\n    pass\n" % (module))
+                    out.write("try:\n    import %s\nexcept:\n    print('error importing %s')\n    import traceback\n    error = traceback.format_exc()\n    print(error)\n" % (module, module))
 
 def process(path, out=None, copythese=None, fake=False, pyc=False, remove_prefix=None):
     files = glob.glob('%s/*' % path)
@@ -47,6 +47,12 @@ def process(path, out=None, copythese=None, fake=False, pyc=False, remove_prefix
             process(path, out, fake=fake, pyc=pyc, remove_prefix=remove_prefix)
         else:
             entry(path, out, copythese, fake, pyc, remove_prefix=remove_prefix)
+
+def processModuleListFromFile(filename, out=None, copythese=None, fake=False, pyc=False, remove_prefix=None):
+    fh = open(filename)
+    for line in fh:
+        path = line.strip()
+        entry(path, out, copythese, fake, pyc, remove_prefix=remove_prefix)
 
 def process_modules(module_name, out=None):
     file, pathname, desc = imp.find_module(module_name)
@@ -75,6 +81,8 @@ if __name__ == "__main__":
                       default="peppy/py2exe_plugins.py", help="output filename")
     parser.add_option("-e", action="store", dest="eggs",
                       default="", help="process unpacked eggs")
+    parser.add_option("-t", action="store", dest="toplevel",
+                      default="", help="list of toplevel modules from file")
     parser.add_option("-m", action="append", dest="modules",
                       default=[], help="process global modules")
     parser.add_option("--alternate-include-path", action="store",
@@ -98,6 +106,9 @@ if __name__ == "__main__":
     
     if options.eggs:
         process(options.eggs, out, pyc=True)
+    
+    if options.toplevel:
+        processModuleListFromFile(options.toplevel, out, pyc=True)
     
     if options.modules:
         for module in options.modules:
