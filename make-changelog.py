@@ -32,7 +32,7 @@ def findChangeLogVersion(options):
 
 def findLatestInGit(options):
     version = StrictVersion("0.0")
-    tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
+    tags = subprocess.Popen(["git", "tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
     for tag in tags.splitlines():
         match = re.match(r'([0-9]+\.[0-9]+(?:(?:\.[0-9]+|[ab][0-9]+))?)$', tag)
         if match:
@@ -44,7 +44,7 @@ def findLatestInGit(options):
 
 def findReleasesOf(tag, options):
     base = tag + "."
-    tags = subprocess.Popen(["git-tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
+    tags = subprocess.Popen(["git", "tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
     releases = []
     for tag in tags.splitlines():
         if tag.startswith(base):
@@ -53,7 +53,7 @@ def findReleasesOf(tag, options):
     return releases
 
 def getCurrentGitMD5s(tag, options):
-    text = subprocess.Popen(["git-rev-list", "%s..HEAD" % tag], stdout=subprocess.PIPE).communicate()[0]
+    text = subprocess.Popen(["git", "rev-list", "%s..HEAD" % tag], stdout=subprocess.PIPE).communicate()[0]
     md5s = text.splitlines()
     return md5s
 
@@ -77,7 +77,7 @@ def getGitChangeLogSuggestions(tag, options):
     suggestions = []
     for version in subtags:
         suggestions.append("Released %s" % version)
-        text = subprocess.Popen(["git-log", "--pretty=format:%s", "%s..%s" % (version, top)], stdout=subprocess.PIPE).communicate()[0]
+        text = subprocess.Popen(["git", "log", "--pretty=format:%s", "%s..%s" % (version, top)], stdout=subprocess.PIPE).communicate()[0]
         lines = text.splitlines()
         print lines
         pat = re.compile("Fixed (\#[0-9]+:\s+)?(.+)")
