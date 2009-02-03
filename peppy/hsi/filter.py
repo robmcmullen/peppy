@@ -19,7 +19,7 @@ import numpy
 
 class RGBMapper(debugmixin):
     def scaleChunk(self, raw, minval, maxval, u1, u2, v1, v2, output):
-        assert self.dprint("processing chunk [%d:%d, %d:%d]" % (u1, u2, v1, v2))
+        assert self.dprint("processing chunk [%d:%d, %d:%d], min=%d max=%d" % (u1, u2, v1, v2, minval, maxval))
         if minval == maxval:
             output[u1:u2, v1:v2] = (raw[u1:u2, v1:v2] - minval).astype(numpy.uint8)
         else:
@@ -29,9 +29,14 @@ class RGBMapper(debugmixin):
             output[u1:u2, v1:v2] = temp2.astype(numpy.uint8)
 
     def getGray(self, raw, tile_size=256):
-        minval=raw.min()
-        maxval=raw.max()
-        valrange=maxval-minval
+        # Without the following casts, raw.min() and raw.max() remain as ctype
+        # variables rather than python ints and will be clamped to the ctype
+        # max value.  I was getting the following bad result without the cast:
+        # 
+        # min=-3624 max=32767 range=-29145 len(raw)=78388745
+        minval = float(raw.min())
+        maxval = float(raw.max())
+        valrange = int(maxval-minval)
         assert self.dprint("data: min=%s max=%s range=%s len(raw)=%d" % (str(minval),str(maxval),str(valrange), raw.size))
         gray = numpy.empty(raw.shape, dtype=numpy.uint8)
         v1 = 0
