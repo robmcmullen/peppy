@@ -233,6 +233,12 @@ manifestVersion="1.0">
 </assembly>
 """
 
+# Define any extensions in setup_extensions.py
+try:
+    from setup_extensions import *
+except:
+    ext_modules = None
+
 
 setup(cmdclass={'build_py': build_extra_peppy,},
       name = prog,
@@ -253,6 +259,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
           'peppy.hsi': ['*.peppy-plugin' ],
           'peppy.editra': ['styles/*.ess', 'tests/*'],
           },
+      ext_modules = ext_modules,
 
       # FIXME: the excludes option still doesn't work.  py2exe still
       # picks up a bunch of unnecessary stuff that I'm trying to get
