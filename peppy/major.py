@@ -1221,14 +1221,12 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.log.showMessage(text)
 
 
-class BlankMode(MajorMode, wx.Window):
+class EmptyMode(MajorMode, wx.Window):
     """
     The most minimal major mode: a blank screen
     """
-    keyword = "Blank"
+    keyword = "Empty"
     icon='icons/application.png'
-    temporary = True
-    allow_threaded_loading = False
     
     stc_class = NonResidentSTC
 
@@ -1237,9 +1235,22 @@ class BlankMode(MajorMode, wx.Window):
         wx.Window.__init__(self, parent, -1, pos=(9000,9000))
         text = self.buffer.stc.GetText()
         lines = wx.StaticText(self, -1, text, (10,10))
+        font_family = self.getFontFamily()
+        if font_family is not None:
+            lines.SetFont(wx.Font(10, font_family, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         lines.Wrap(500)
         self.stc = self.buffer.stc
         self.buffer.stc.is_permanent = True
+    
+    def getFontFamily(self):
+        return None
+
+
+class BlankMode(EmptyMode):
+    """Special case of EmptyMode to short circuit the about:blank url
+    """
+    temporary = True
+    allow_threaded_loading = False
 
     @classmethod
     def verifyProtocol(cls, url):
