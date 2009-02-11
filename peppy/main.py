@@ -918,6 +918,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         frame = self.getTopFrame()
         frame.open(filename)
 
+    def MacReopenApp(self):
+        """Called when the doc icon is clicked, and ???
+
+        This will assure that a Frame is brought up, even if they all were
+        minimized.
+        """
+        frame = self.getTopFrame()
+        frame.Raise()
+
     def updateAllFrames(self):
         """Recreate the UI for all frames.
 
