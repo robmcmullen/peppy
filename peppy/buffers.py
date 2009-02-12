@@ -507,6 +507,7 @@ class Buffer(BufferVFSMixin):
         self.modified=False
         self.forEachView('applySettings')
         self.forEachView('revertPostHook')
+        self.removeAutosaveIfExists()
         self.showModifiedAll()
     
     def save(self, url=None):
