@@ -558,7 +558,7 @@ class Undo(STCModificationAction):
     tooltip = "Undo"
     icon = "icons/undo.png"
     default_menu = ("Edit", 0)
-    key_bindings = {'default': "C-z", 'emacs': "C-/",}
+    key_bindings = {'default': "C-z", 'emacs': ["C-/", "C-S--",]}
     
     def isActionAvailable(self):
         return self.mode.CanUndo()
