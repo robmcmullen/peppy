@@ -15,6 +15,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import *
 from peppy.actions.base import *
+from peppy.paragraph import *
 
 from peppy.lib.autoindent import BasicAutoindent
 import peppy.lib.PyParse as PyParse
@@ -221,6 +222,51 @@ class PythonAutoindent(BasicAutoindent):
         return False
 
 
+class PythonParagraph(ParagraphInfo):
+    def findParagraphStart(self, linenum):
+        """Check to see if a previous line should be included in the
+        paragraph match.
+        """
+        leader, line, trailer = self.s.splitCommentLine(self.s.GetLine(linenum))
+        self.dprint(line)
+        if leader != self.leader_pattern or len(line.strip())==0:
+            return False
+        stripped = line.strip()
+        if stripped == "'''" or stripped == '"""':
+            # triple quotes on line by themselves: don't include
+            return False
+        self.addStartLine(linenum, line)
+        
+        # Triple quotes embedded in the string are included, but then
+        # we're done
+        if line.startswith("'''") or line.startswith('"""'):
+            return False
+        return True
+    
+    def findParagraphEnd(self, linenum):
+        """Check to see if a following line should be included in the
+        paragraph match.
+        """
+        leader, line, trailer = self.s.splitCommentLine(self.s.GetLine(linenum))
+        self.dprint(line)
+        if leader != self.leader_pattern or len(line.strip())==0:
+            return False
+        stripped = line.strip()
+        if stripped == "'''" or stripped == '"""':
+            # triple quotes on line by themselves: don't include
+            return False
+        self.addEndLine(linenum, line)
+        
+        # A triple quote at the end of the line will be included in the
+        # word wrap, but this ends the search
+        if line.startswith("'''") or line.startswith('"""'):
+            return False
+        line = line.rstrip()
+        if line.endswith("'''") or line.endswith('"""'):
+            return False
+        return True
+
+
 class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
@@ -232,6 +278,7 @@ class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
         )
 
     autoindent = PythonAutoindent()
+    paragraph_cls = PythonParagraph
     
     def bangpathModificationHook(self, path):
         """Make sure the '-u' flag is included in the python argument"""
@@ -240,48 +287,6 @@ class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
         self.dprint(path)
         return path
 
-    def findParagraphStart(self, linenum, info):
-        """Check to see if a previous line should be included in the
-        paragraph match.
-        """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        self.dprint(line)
-        if leader != info.leader_pattern or len(line.strip())==0:
-            return False
-        stripped = line.strip()
-        if stripped == "'''" or stripped == '"""':
-            # triple quotes on line by themselves: don't include
-            return False
-        info.addStartLine(linenum, line)
-        
-        # Triple quotes embedded in the string are included, but then
-        # we're done
-        if line.startswith("'''") or line.startswith('"""'):
-            return False
-        return True
-    
-    def findParagraphEnd(self, linenum, info):
-        """Check to see if a following line should be included in the
-        paragraph match.
-        """
-        leader, line, trailer = self.splitCommentLine(self.GetLine(linenum))
-        self.dprint(line)
-        if leader != info.leader_pattern or len(line.strip())==0:
-            return False
-        stripped = line.strip()
-        if stripped == "'''" or stripped == '"""':
-            # triple quotes on line by themselves: don't include
-            return False
-        info.addEndLine(linenum, line)
-        
-        # A triple quote at the end of the line will be included in the
-        # word wrap, but this ends the search
-        if line.startswith("'''") or line.startswith('"""'):
-            return False
-        line = line.rstrip()
-        if line.endswith("'''") or line.endswith('"""'):
-            return False
-        return True
 
 
 class PythonErrorMode(FundamentalMode):

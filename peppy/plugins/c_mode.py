@@ -16,6 +16,7 @@ from peppy.lib.autoindent import CStyleAutoindent
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode, ParagraphInfo
+from peppy.paragraph import *
 
 _sample_file="""\
 #include <stdio.h>
@@ -37,6 +38,35 @@ class SampleCFile(SelectAction):
 
 
 class CCommentParagraph(ParagraphInfo):
+    def findParagraph(self, start, end):
+        style = self.s.GetStyleAt(start)
+        if style in self.s.getCommentStyles():
+            start, end = self.s.findSameStyle(start)
+            dprint((start, end))
+            linenum = self.s.LineFromPosition(start)
+            self.initParagraph(linenum)
+            self.addCommentLinesToParagraph(linenum, start, end)
+            return
+        raise BadParagraphError
+
+    def addCommentLinesToParagraph(self, linenum, start, end):
+        # First line is already in info.  Need to add subsequent lines
+        first = True
+        linenum += 1
+        start = self.s.PositionFromLine(linenum)
+        while start < end:
+            line = self.s.GetLine(linenum)
+            #dprint("%d: %s" % (linenum, line))
+            leader, line, trailer = self.s.splitCommentLine(line)
+            match = self.s.mid_comment_regex.match(line)
+            if match:
+                #dprint(match.groups())
+                line = match.group(2)
+            line = line.strip()
+            self.addEndLine(linenum, line)
+            linenum += 1
+            start = self.s.PositionFromLine(linenum)
+
     def addPrefix(self, prefix=None):
         """Add the comment prefix and suffix to all the lines.
         
@@ -82,25 +112,7 @@ class CMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
             else:
                 return ("", line, "")
         #dprint(match.groups())
-        return match.group(1, 2, 3)
-
-    def addCommentLinesToParagraph(self, linenum, start, end, info):
-        # First line is already in info.  Need to add subsequent lines
-        first = True
-        linenum += 1
-        start = self.PositionFromLine(linenum)
-        while start < end:
-            line = self.GetLine(linenum)
-            #dprint("%d: %s" % (linenum, line))
-            leader, line, trailer = self.splitCommentLine(line, info)
-            match = self.mid_comment_regex.match(line)
-            if match:
-                #dprint(match.groups())
-                line = match.group(2)
-            line = line.strip()
-            info.addEndLine(linenum, line)
-            linenum += 1
-            start = self.PositionFromLine(linenum)
+        return match.group(1), match.group(2).strip(), match.group(3)
 
     def findParagraph(self, start, end=-1):
         """Override the standard findParagraph to properly handle several
@@ -128,32 +140,19 @@ class CMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
         ParagraphInfo object if it finds a comment block.
         """
         # See if cursor is inside a comment block
-        info = self.getCCommentParagraph(start)
-        if info is not None:
-            return info
-        
-        # Check if cursor is on the last line of a comment block, possibly
-        # after the comment.
-        linenum = self.LineFromPosition(start)
-        start = self.PositionFromLine(linenum)
-        info = self.getCCommentParagraph(start)
-        if info is not None:
-            return info
-        
-        # Nope, treat it as a regular paragraph
-        info = FundamentalMode.findParagraph(self, start, end)
-        return info
-    
-    def getCCommentParagraph(self, start):
-        style = self.GetStyleAt(start)
-        if style in self.getCommentStyles():
-            start, end = self.findSameStyle(start)
-            #dprint((start, end))
+        try:
+            info = CCommentParagraph(self, start)
+        except BadParagraphError:
+            # Check if cursor is on the last line of a comment block, possibly
+            # after the comment.
             linenum = self.LineFromPosition(start)
-            info = CCommentParagraph(self, linenum)
-            self.addCommentLinesToParagraph(linenum, start, end, info)
-            return info
-        return None
+            start = self.PositionFromLine(linenum)
+            try:
+                info = CCommentParagraph(self, start)
+            except BadParagraphError:
+                # Nope, treat it as a regular paragraph
+                info = FundamentalMode.findParagraph(self, start, end)
+        return info
 
 
 class CModePlugin(IPeppyPlugin):
