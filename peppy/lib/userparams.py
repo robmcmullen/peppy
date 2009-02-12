@@ -297,6 +297,12 @@ class Param(debugmixin):
         else:
             self.enable = True
         
+        # The control can also be hidden entirely from the UI
+        if 'hidden' in kwargs:
+            self.hidden = kwargs['hidden']
+        else:
+            self.hidden = False
+        
         # Params marked as 'local' will be placed in the instance's local
         # namespace as well as in the classprefs.  This means that the
         # instance can have different values for the local version of the
@@ -326,7 +332,7 @@ class Param(debugmixin):
 
     def isVisible(self):
         """True if this item is to be displayed."""
-        return True
+        return not self.hidden
 
     def getLabel(self, parent):
         if self.alt_label == False:
