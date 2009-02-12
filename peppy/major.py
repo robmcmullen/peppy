@@ -1044,6 +1044,15 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             return self.interpreterArgs
         return self.classprefs.interpreter_args
 
+    def getScriptPath(self):
+        """Hook to specify the filename to be run by the interpreter.
+        
+        This defaults to the full pathname of the buffer on the local machine,
+        but this method can be used as a hook to modify the filename to point
+        to an arbitrary location.
+        """
+        return self.buffer.getFilename()
+
     def getScriptArgs(self):
         """Hook to specify any arguments passed to the script itself.
         
@@ -1067,7 +1076,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), msg, "Save the file!", wx.OK | wx.ICON_ERROR )
             retval=dlg.ShowModal()
             return
-        script = self.buffer.getFilename()
+        script = self.getScriptPath()
         if bangpath:
             if wx.Platform == '__WXMSW__':
                 # MSW doesn't pass to a shell, so simulate a bangpath by pulling
