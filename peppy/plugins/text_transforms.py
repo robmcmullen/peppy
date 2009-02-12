@@ -285,7 +285,7 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
         lines = texwrap(info.getLines(), column)
         self.dprint(lines)
         info.replaceLines(lines)
-        info.addPrefix()
+        info.addPrefix(prefix)
         return info.getLines()
 
 

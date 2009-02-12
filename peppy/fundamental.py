@@ -76,14 +76,16 @@ class ParagraphInfo(object):
     def replaceLines(self, lines):
         self._lines = lines[:]
     
-    def addPrefix(self):
+    def addPrefix(self, prefix=None):
         """Add the original prefix to all the lines.
         
         This restores the prefix to all of the saved lines; used, for example,
         after reformatting the lines to remove excess whitespace or line
         breaks.
         """
-        newlines = [self.leader_pattern + line for line in self._lines]
+        if prefix is None:
+            prefix = self.leader_pattern
+        newlines = [prefix + line for line in self._lines]
         self._lines = newlines
 
 

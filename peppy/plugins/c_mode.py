@@ -37,7 +37,7 @@ class SampleCFile(SelectAction):
 
 
 class CCommentParagraph(ParagraphInfo):
-    def addPrefix(self):
+    def addPrefix(self, prefix=None):
         """Add the comment prefix and suffix to all the lines.
         
         This restores the comment block to all of the saved lines; used, for
