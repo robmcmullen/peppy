@@ -924,6 +924,8 @@ class FindBar(wx.Panel, debugmixin):
 
     def repeat(self, direction, service=None):
         self.resetColor()
+        self.find.SetInsertionPointEnd()
+        self.find.SetSelection(0, self.find.GetLastPosition())
         if service is not None:
             self.service = service(self.stc, self.settings)
         
