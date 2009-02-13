@@ -766,6 +766,8 @@ class FindBar(wx.Panel, debugmixin):
         # PyPE compat
         self._lastcall = None
         self.setDirection(direction)
+        
+        self.repeatLastUserInput()
     
     def createCtrls(self):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -919,13 +921,12 @@ class FindBar(wx.Panel, debugmixin):
             self.service.unserialize(self.storage)
             self.find.ChangeValue(self.settings.find_user)
             self.find.SetInsertionPointEnd()
+            self.find.SetSelection(0, self.find.GetLastPosition())
             return True
         return False
 
-    def repeat(self, direction, service=None):
+    def repeat(self, direction, service=None, last_focus=None):
         self.resetColor()
-        self.find.SetInsertionPointEnd()
-        self.find.SetSelection(0, self.find.GetLastPosition())
         if service is not None:
             self.service = service(self.stc, self.settings)
         
@@ -934,7 +935,7 @@ class FindBar(wx.Panel, debugmixin):
         else:
             self.setDirection(1)
         
-        if self.repeatLastUserInput():
+        if self.repeatLastUserInput() or last_focus != self.find:
             return
         
         # replace doesn't use an automatic search, so make sure that a method
@@ -959,8 +960,9 @@ class FindMinibuffer(Minibuffer):
         return self.win.service.help
 
     def repeat(self, action):
+        last_focus = self.win.FindFocus()
         self.win.SetFocus()
-        self.win.repeat(action.find_direction, action.find_service)
+        self.win.repeat(action.find_direction, action.find_service, last_focus)
 
     def focus(self):
         # When the focus is asked for by the minibuffer driver, set it
