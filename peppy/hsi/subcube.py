@@ -45,86 +45,25 @@ class SubDataset(HSI.MetadataMixin):
         pass
 
 
-class SubCube(HSI.Cube):
-    def __init__(self, parent=None):
-        HSI.Cube.__init__(self)
-        self.setParent(parent)
-
-    def setParent(self, parent):
+class SubCubeReader(HSI.CubeReader):
+    def __init__(self, parent):
+        HSI.CubeReader.__init__(self)
         self.parent = parent
-        #self.parent.progress = None
-        self.clearSubset()
-
-        # date/time metadata
-        self.imaging_date = parent.imaging_date
-        self.file_date = parent.file_date
-
-        self.interleave = parent.interleave
-        self.byte_order = parent.byte_order
-        self.data_bytes = 0 # will be calculated when subset is defined
-        self.data_type = parent.data_type
-
-        # wavelength units: 'nm' for nanometers, 'um' for micrometers,
-        # None for unknown
-        self.wavelength_units = parent.wavelength_units
-
-        self.description = parent.description
-
-        self.rgbbands=[0]
-        
-    def open(self, url=None):
-        pass
-
-    def save(self,filename=None):
-        if filename:
-            self.setURL(filename)
-
-        if self.url:
-            pass
-
-    def clearSubset(self):
-        self.lines = self.parent.lines
         self.l1 = 0
-        self.l2 = self.lines
-        
-        self.samples = self.parent.samples
+        self.l2 = self.parent.lines
         self.s1 = 0
-        self.s2 = self.samples
-        
-        self.bands = self.parent.bands
+        self.s2 = self.parent.samples
         self.b1 = 0
-        self.b2 = self.bands
-        
-        self.data_type = None
-        self.data_bytes = 0
-        self.byte_order = HSI.nativeByteOrder
-        
-        self.wavelengths = self.parent.wavelengths[:]
-        self.bbl = self.parent.bbl[:]
-        self.fwhm = self.parent.fwhm[:]
-        self.band_names = self.parent.band_names[:]
-
-    def subset(self, l1, l2, s1, s2, b1, b2):
-        """Subset the parent cube by line, sample, and band"""
-        self.lines = l2 - l1
+        self.b2 = self.parent.bands
+    
+    def markSubset(self, l1, l2, s1, s2, b1, b2):
         self.l1 = l1
         self.l2 = l2
-        
-        self.samples = s2 - s1
         self.s1 = s1
         self.s2 = s2
-        
-        self.bands = b2 - b1
         self.b1 = b1
         self.b2 = b2
-        
-        self.initializeSizes()
-        
-        self.wavelengths = self.parent.wavelengths[self.b1:self.b2]
-        self.bbl = self.parent.bbl[self.b1:self.b2]
-        self.fwhm = self.parent.fwhm[self.b1:self.b2]
-        self.band_names = self.parent.band_names[self.b1:self.b2]
-        
+
     def getPixel(self, line, sample, band):
         """Get an individual pixel at the specified line, sample, & band"""
         return self.parent.getPixel(self.l1 + line, self.s1 + sample, self.b1 + band)
@@ -164,5 +103,73 @@ class SubCube(HSI.Cube):
 
     def locationToFlat(self, line, sample, band):
         return -1
+
+
+class SubCube(HSI.Cube):
+    def __init__(self, parent=None):
+        HSI.Cube.__init__(self)
+        self.setParent(parent)
+
+    def setParent(self, parent):
+        self.parent = parent
+        #self.parent.progress = None
+        self.clearSubset()
+
+        # date/time metadata
+        self.imaging_date = parent.imaging_date
+        self.file_date = parent.file_date
+
+        self.interleave = parent.interleave
+        self.byte_order = parent.byte_order
+        self.data_bytes = 0 # will be calculated when subset is defined
+        self.data_type = parent.data_type
+
+        # wavelength units: 'nm' for nanometers, 'um' for micrometers,
+        # None for unknown
+        self.wavelength_units = parent.wavelength_units
+
+        self.description = parent.description
+
+        self.rgbbands=[0]
+        
+        self.cube_io = SubCubeReader(parent)
+        
+    def open(self, url=None):
+        pass
+
+    def save(self,filename=None):
+        if filename:
+            self.setURL(filename)
+
+        if self.url:
+            pass
+
+    def clearSubset(self):
+        self.lines = self.parent.lines
+        self.samples = self.parent.samples
+        self.bands = self.parent.bands
+        self.data_type = None
+        self.data_bytes = 0
+        self.byte_order = HSI.nativeByteOrder
+        
+        self.wavelengths = self.parent.wavelengths[:]
+        self.bbl = self.parent.bbl[:]
+        self.fwhm = self.parent.fwhm[:]
+        self.band_names = self.parent.band_names[:]
+
+    def subset(self, l1, l2, s1, s2, b1, b2):
+        """Subset the parent cube by line, sample, and band"""
+        self.cube_io.markSubset(l1, l2, s1, s2, b1, b2)
+        self.lines = l2 - l1
+        self.samples = s2 - s1
+        self.bands = b2 - b1
+        
+        self.initializeSizes()
+        
+        self.wavelengths = self.parent.wavelengths[b1:b2]
+        self.bbl = self.parent.bbl[b1:b2]
+        self.fwhm = self.parent.fwhm[b1:b2]
+        self.band_names = self.parent.band_names[b1:b2]
+
 
 HSI.HyperspectralFileFormat.addDefaultHandler(SubDataset)
