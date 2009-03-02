@@ -918,6 +918,7 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
         assert self.dprint("OnUnderlyingUpdate: slow way of updating the grid -- updating the whole thing.")
         assert self.dprint(evt)
 
+        self.table.invalidateCache()
         self.table.ResetView(self,self.table.stc) # FIXME: this is slow.  Put it in a thread or something.
 
         if loc is not None:
