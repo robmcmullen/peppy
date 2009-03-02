@@ -672,8 +672,9 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     default_menu = ("View", 0)
 
     def initPreHook(self):
-        currentmode = self.mode
-        modes = MajorModeMatcherDriver.getCompatibleMajorModes(currentmode.stc_class)
+        buffer = self.mode.buffer
+        stc_class = buffer.stc.__class__
+        modes = MajorModeMatcherDriver.getCompatibleMajorModes(stc_class)
 
         modes.sort(key=lambda s:s.keyword)
         assert self.dprint(modes)
