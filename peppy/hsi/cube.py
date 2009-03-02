@@ -106,6 +106,11 @@ class CubeReader(debugmixin):
     """Abstract class for reading raw data from an HSI cube"""
     def __init__(self):
         self.user_counts_from = 1
+    
+    def getSizeFromCube(self, cube):
+        self.lines = cube.lines
+        self.samples = cube.samples
+        self.bands = cube.bands
         
     def save(self, url):
         """Save the data to another file"""
@@ -234,9 +239,7 @@ class FileCubeReader(CubeReader):
         else:
             self.offset = cube.data_offset
         self.dprint("url=%s file=%s offset=%d" % (url, self.fh, self.offset))
-        self.lines = cube.lines
-        self.samples = cube.samples
-        self.bands = cube.bands
+        self.getSizeFromCube(cube)
         self.data_type = cube.data_type
         self.itemsize = cube.itemsize
         self.getProgressBar = cube.getProgressBar
@@ -601,9 +604,7 @@ class MMapCubeReader(CubeReader):
         CubeReader.__init__(self)
         self.mmap = None
         self.raw = None
-        self.lines = cube.lines
-        self.samples = cube.samples
-        self.bands = cube.bands
+        self.getSizeFromCube(cube)
         if url:
             self.open(cube, url)
         elif array is not None:
