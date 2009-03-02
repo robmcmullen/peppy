@@ -9,6 +9,7 @@ from wx.lib.pubsub import Publisher
 from peppy.majormodematcher import MajorModeMatcherDriver
 
 from peppy.major import *
+from peppy.jobcontrol import *
 from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
 import peppy.lib.vimutil as vim
