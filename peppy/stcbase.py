@@ -909,6 +909,8 @@ class PeppySTC(PeppyBaseSTC):
 
         self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
         
+        self.modified_callbacks = []
+        
         # Remove all default scintilla keybindings so they will be replaced by
         # peppy actions.
         self.CmdKeyClearAll()
@@ -1050,7 +1052,16 @@ class PeppySTC(PeppyBaseSTC):
                     stats['likely'] = True
         elif mod & wx.stc.STC_MOD_CHANGEFOLD:
             self.OnFoldChanged(evt)
+        for cb in self.modified_callbacks:
+            cb(evt)
         evt.Skip()
+    
+    def addModifyCallback(self, func):
+        self.modified_callbacks.append(func)
+    
+    def removeModifyCallback(self, func):
+        if func in self.modified_callbacks:
+            self.modified_callbacks.remove(func)
     
     def OnFoldChanged(self, evt):
         pass

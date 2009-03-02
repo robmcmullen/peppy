@@ -893,12 +893,13 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
         # trying to do self.buffer.stc.Bind(wx.stc.EVT_STC_MODIFIED,
         # self.underlyingSTCChanged) don't work.  Need to use the
         # event manager for multiple bindings.
-        eventManager.Bind(self.underlyingSTCChanged, wx.stc.EVT_STC_MODIFIED,
-                          self.buffer.stc)
+        if hasattr(self.buffer.stc, 'addModifyCallback'):
+            self.buffer.stc.addModifyCallback(self.underlyingSTCChanged)
 
     def removeListenersPostHook(self):
-        assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
-        eventManager.DeregisterListener(self.underlyingSTCChanged)
+        if hasattr(self.buffer.stc, 'removeModifyCallback'):
+            assert self.dprint("unregistering %s" % self.underlyingSTCChanged)
+            self.buffer.stc.removeModifyCallback(self.underlyingSTCChanged)
         
     def Update(self, stc=None, format=None, col_labels=None):
         assert self.dprint("Need to update grid")
