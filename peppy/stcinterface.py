@@ -84,9 +84,6 @@ class STCInterface(object):
     def AddRefDocument(self,ptr):
         pass
 
-    def GetBinaryData(self,start,end):
-        return []
-
     def GuessBinary(self,amount,percentage):
         return False
 
@@ -237,6 +234,19 @@ class STCInterface(object):
         @param callback: event handler to execute on event
         """
         pass
+
+
+class STCBinaryMixin(object):
+    """Interface that major modes must implement to be editable with the HexEdit
+    mode.
+    """
+    def GetBinaryData(self, start, end=-1):
+        """Return the raw bytes between the given locations.
+        
+        @param start: starting offset
+        @param end: ending offset, passing -1 means end of file
+        """
+        raise NotImplementedError
 
 
 class STCProxy(object):

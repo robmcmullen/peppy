@@ -185,7 +185,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
     def setSTC(self, stc):
         self.stc=stc
         assert self.dprint("stc = %s" % self.stc        )
-        self._rows=((self.stc.GetTextLength()-1)/self.nbytes)+1
+        self._rows=((self.stc.GetLength()-1)/self.nbytes)+1
         assert self.dprint(" rows=%d cols=%d" % (self._rows,self._cols))
 
 ##    def GetAttr(self, row, col, kind):
@@ -324,7 +324,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
 
     def IsEmptyCell(self, row, col):
         if col<self._hexcols:
-            if self.getLoc(row,col)>self.stc.GetTextLength():
+            if self.getLoc(row,col)>self.stc.GetLength():
                 return True
             else:
                 return False
@@ -356,7 +356,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         if row not in self._cache:
             startpos = row*self.nbytes
             endpos = startpos + self.nbytes
-            data = self.stc.GetStyledText(startpos,endpos)[::2]
+            data = self.stc.GetBinaryData(startpos,endpos)
             s = struct.unpack(self.format, data)
             self._cache[row] = (data, s)
             #dprint("Storing cached data for row %d: %s, %s" % (row, repr(data), str(s)))
@@ -1069,8 +1069,12 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
 
 
 class HexEditPlugin(IPeppyPlugin, debugmixin):
-    def getMajorModes(self):
-        yield HexEditMode
+    def getCompatibleMajorModes(self, stc_class):
+        # HexEdit mode is compatible with all stc classes that have a
+        # GetBinaryData method
+        if hasattr(stc_class, 'GetBinaryData'):
+            yield HexEditMode
+        raise StopIteration
 
     def getActions(self):
         return [OpenHexEditor, GotoOffset, HexRecordFormat, ShowHexDigits,
