@@ -154,9 +154,39 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
 
         if msg:
             self.frame.showErrorDialog(msg, "Problem with interpreter executable")
-        else:
+        elif hasattr(self, 'process'):
+            self.frame.setStatusText("Already running a process.")
+        elif self.saveScript():
             cmd = self.getCommandLine(bangpath)
             self.startCommandLine(cmd)
+    
+    def saveScript(self):
+        """Save the file before executing the script.
+        
+        @return True if save successful, False otherwise.
+        """
+        if not self.isInterpreterURLSchemeValid():
+            return False
+        elif self.buffer.modified and not self.classprefs.autosave_before_run:
+            msg = "You must save this file before you\ncan run it through the interpreter."
+            self.frame.showErrorDialog(msg, "Save the file!")
+            return False
+        else:
+            if not self.save():
+                self.frame.showErrorDialog("Error attempting to save file -- interpreter was not started.", "File Save Error")
+                return False
+        return True
+    
+    def isInterpreterURLSchemeValid(self):
+        """Check that the interpreter can process the URL scheme
+        
+        Defaults to only being able to process file:// URLs
+        """
+        if self.buffer.url.scheme != "file":
+            msg = "%s\n\nis not a regular file on your hard disk.\nThe URL must start with file:// to be run\nby this interpreter." % str(self.buffer.url)
+            self.frame.showErrorDialog(msg, "URL Scheme Error!")
+            return False
+        return True
     
     def expandCommandLine(self, cmd):
         """Expand the command line to include the filename of the buffer"""
@@ -169,25 +199,13 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     
     def startCommandLine(self, cmd, expand=False):
         """Attempt to create a process using the command line"""
-        if hasattr(self, 'process'):
-            self.frame.setStatusText("Already running a process.")
+        if expand:
+            cmd = self.expandCommandLine(cmd)
+        if self.classprefs.output_log == 0:
+            output = self
         else:
-            if self.buffer.readonly or not self.classprefs.autosave_before_run:
-                msg = "You must save this file to the local filesystem\nbefore you can run it through the interpreter."
-                self.frame.showErrorDialog(msg, "Save the file!")
-                return
-            else:
-                if not self.save():
-                    self.frame.showErrorDialog("Error attempting to save file -- interpreter was not started.", "File Save Error")
-                    return
-
-            if expand:
-                cmd = self.expandCommandLine(cmd)
-            if self.classprefs.output_log == 0:
-                output = self
-            else:
-                output = JobOutputSidebarController(self.frame, self.registerProcess, self.deregisterProcess)
-            ProcessManager().run(cmd, self.buffer.cwd(), output)
+            output = JobOutputSidebarController(self.frame, self.registerProcess, self.deregisterProcess)
+        ProcessManager().run(cmd, self.buffer.cwd(), output)
 
     def registerProcess(self, job):
         self.process = job
