@@ -173,7 +173,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             return False
         else:
             if not self.save():
-                self.frame.showErrorDialog("Error attempting to save file -- interpreter was not started.", "File Save Error")
+                self.frame.showErrorDialog("Error attempting to save file:\n\n%s\n\nInterpreter was not started." % self.status_info.getLastMessage(), "File Save Error")
                 return False
         return True
     

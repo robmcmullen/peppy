@@ -141,6 +141,9 @@ class ModularStatusBarInfo(object):
         self.text[field] = text
         if self.parent.info == self:
             self.parent.SetStatusText(text, field)
+    
+    def getLastMessage(self, field=0):
+        return self.text[field]
 
     def startProgress(self, text, max=100, cancel=False, message=None, delay=0, disable=False):
         """Create a progress meter in the status bar.

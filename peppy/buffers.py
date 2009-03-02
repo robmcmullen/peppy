@@ -538,8 +538,8 @@ class Buffer(BufferVFSMixin):
             self.readonly = not vfs.can_write(saveas)
             self.showModifiedAll()
             self.saveTimestamp()
-        except IOError:
-            eprint(u"Failed writing to %s" % unicode(self.url))
+        except IOError, e:
+            eprint(u"Failed writing to %s: %s" % (unicode(self.url), e))
             raise
 
     def showModifiedAll(self):
