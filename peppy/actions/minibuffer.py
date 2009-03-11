@@ -217,7 +217,9 @@ class TextMinibuffer(Minibuffer):
 
         if self.initial:
             self.text.ChangeValue(self.initial)
-
+            self.text.SetInsertionPointEnd() 
+            self.text.SetSelection(0, self.text.GetLastPosition()) 
+        
     def convert(self, text):
         return text
     
