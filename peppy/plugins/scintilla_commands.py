@@ -17,6 +17,25 @@ from peppy.actions.base import *
 from peppy.debug import *
 
 
+class ScintillaCmdKeyExecuteOnLine(ScintillaCmdKeyExecute):
+    """Subclass of ScintillaCmdKeyExecute to operate on at full line at minimum.
+    
+    If a selection already exists, nothing is done to alter the region;
+    however, if the cursor is on a line and there is no selection, a selection
+    is made out of the current line and the Scintilla command is called to
+    operate on the selection.
+    """
+    
+    def action(self, index=-1, multiplier=1):
+        pos, end = self.mode.GetSelection()
+        if pos == end:
+            line = self.mode.GetCurrentLine()
+            start = self.mode.PositionFromLine(line)
+            end = self.mode.PositionFromLine(line+1)
+            self.mode.SetSelection(start, end)
+        ScintillaCmdKeyExecute.action(self, index, multiplier)
+
+
 class ScintillaCommandsPlugin(IPeppyPlugin):
     """Plugin containing overridable actions for most of the default Scintilla
     keystrokes.
@@ -32,7 +51,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     
     # Stuff from the scintilla source showing the default key bindings
     #    {SCK_TAB,           SCI_SHIFT,      SCI_BACKTAB},
-    class ShiftLeft(ScintillaCmdKeyExecute):
+    class ShiftLeft(ScintillaCmdKeyExecuteOnLine):
         """Unindent a line or region"""
         alias = "unindent-region"
         name = "Shift &Left"
@@ -331,7 +350,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
 
     #    {SCK_DIVIDE,        SCI_CTRL,       SCI_SETZOOM},
     #    {SCK_TAB,           SCI_NORM,       SCI_TAB},
-    class ShiftRight(ScintillaCmdKeyExecute):
+    class ShiftRight(ScintillaCmdKeyExecuteOnLine):
         """Indent a line or region"""
         alias = "indent-region"
         name = "Shift &Right"
