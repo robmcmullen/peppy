@@ -396,45 +396,7 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
         loc = self.getLoc(row, col)
         locend = loc + len(bytes)
         
-        # FIXME: the set/replace selection can fail if we start or end in the
-        # middle of a multi-byte sequence.  To properly handle this, we'd
-        # have to search backwards and forwards to make sure that we aren't
-        # splitting a UTF-8 sequence
-        start = loc
-        valid = False
-        while not valid:
-            try:
-                self.stc.GotoPos(start)
-                valid = True
-            except wx._core.PyAssertionError:
-                self.dprint("Trying back one... start=%d" % start)
-                if start > 0:
-                    start -= 1
-        if start > 0:
-            self.stc.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFTEXTEND)
-        start = self.stc.GetSelectionStart()
-        end = locend
-        valid = False
-        while not valid:
-            try:
-                self.stc.GotoPos(end)
-                valid = True
-            except wx._core.PyAssertionError:
-                self.dprint("Trying ahead one... end=%d" % end)
-                if end < self.stc.GetLength():
-                    end += 1
-        self.stc.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHTEXTEND)
-        end = self.stc.GetSelectionEnd()
-        data = self.stc.GetStyledText(start, end)
-        self.stc.SetSelection(start, end)
-        self.stc.ReplaceSelection('')
-        
-        styled = '\0'.join(bytes) + '\0'
-        gap1 = loc - start
-        gap2 = gap1 + locend - loc
-        replacement = data[:gap1 * 2] + styled + data[gap2 * 2:]
-        self.dprint("start=%d loc=%d locend=%d end=%d  data=%s styled=%s replace=%s" % (start, loc, locend, end, repr(data), repr(styled), repr(replacement)))
-        self.stc.AddStyledText(replacement)
+        self.stc.SetBinaryData(loc, locend, bytes)
         
         self.invalidateCacheRow(row)
 

@@ -248,6 +248,18 @@ class STCBinaryMixin(object):
         """
         raise NotImplementedError
 
+    def SetBinaryData(self, start, end, bytes):
+        """Set raw bytes between the given locations.
+        
+        Note that bytes can be inserted or deleted if the length of the new
+        byte string is different than the specified range.
+        
+        @param start: starting offset
+        @param end: ending offset
+        @param bytes: new bytes to replace existing data
+        """
+        raise NotImplementedError
+
 
 class STCProxy(object):
     """Proxy object to defer requests to a real STC.

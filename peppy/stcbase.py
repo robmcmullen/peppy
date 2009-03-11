@@ -396,6 +396,54 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if end == -1:
             end = self.GetTextLength()
         return self.GetStyledText(start,end)[::2]
+    
+    def SetBinaryData(self, loc, locend, bytes):
+        """Replace the binary data in the specified range.
+        
+        Given a start and end position, this method replaces the binary bytes
+        with the given string of bytes.  Note that bytes can be inserted or
+        deleted if the length of the new byte string is different than the
+        specified range.
+        """
+        # FIXME: the set/replace selection can fail if we start or end in the
+        # middle of a multi-byte sequence.  To properly handle this, we'd
+        # have to search backwards and forwards to make sure that we aren't
+        # splitting a UTF-8 sequence
+        start = loc
+        valid = False
+        while not valid:
+            try:
+                self.GotoPos(start)
+                valid = True
+            except wx._core.PyAssertionError:
+                self.dprint("Trying back one... start=%d" % start)
+                if start > 0:
+                    start -= 1
+        if start > 0:
+            self.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFTEXTEND)
+        start = self.GetSelectionStart()
+        end = locend
+        valid = False
+        while not valid:
+            try:
+                self.GotoPos(end)
+                valid = True
+            except wx._core.PyAssertionError:
+                self.dprint("Trying ahead one... end=%d" % end)
+                if end < self.GetLength():
+                    end += 1
+        self.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHTEXTEND)
+        end = self.GetSelectionEnd()
+        data = self.GetStyledText(start, end)
+        self.SetSelection(start, end)
+        self.ReplaceSelection('')
+        
+        styled = '\0'.join(bytes) + '\0'
+        gap1 = loc - start
+        gap2 = gap1 + locend - loc
+        replacement = data[:gap1 * 2] + styled + data[gap2 * 2:]
+        self.dprint("start=%d loc=%d locend=%d end=%d  data=%s styled=%s replace=%s" % (start, loc, locend, end, repr(data), repr(styled), repr(replacement)))
+        self.AddStyledText(replacement)
 
     def GuessBinary(self,amount,percentage):
         """
