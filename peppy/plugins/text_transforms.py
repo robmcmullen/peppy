@@ -289,6 +289,23 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
         return info.getLines()
 
 
+class JoinLines(LineOrRegionMutateAction):
+    """Join selected lines into a single line separated by spaces."""
+    alias = "join-lines"
+    name = "Join Lines"
+    default_menu = ("Transform", 610)
+    key_bindings = {'default': 'M-j',}
+
+    def mutateLines(self, lines):
+        if len(lines) <= 1:
+            return lines
+        out = [lines[0].rstrip()]
+        for line in lines[1:]:
+            out.append(line.strip())
+        line = " ".join(out) + self.mode.getLinesep()
+        return [line]
+
+
 class SortLines(LineOrRegionMutateAction):
     """Sort lines using a simple string comparison sort
     """
@@ -412,7 +429,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 Reindent, CommentRegion, UncommentRegion,
                 FillParagraphOrRegion, Backslashify, UnBackslashify,
 
-                Tabify, Untabify, RemoveTrailingWhitespace,
+                Tabify, Untabify, RemoveTrailingWhitespace, JoinLines,
                 
                 Rot13,
                 
