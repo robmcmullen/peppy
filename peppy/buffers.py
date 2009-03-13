@@ -285,7 +285,7 @@ class BufferVFSMixin(debugmixin):
         assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
         if self.bfh is None:
             if vfs.exists(self.url):
-                fh = vfs.open(url)
+                fh = vfs.open(self.url)
                 self.bfh = BufferedReader(fh, size)
         if self.bfh:
             self.bfh.seek(0)
@@ -477,7 +477,7 @@ class Buffer(BufferVFSMixin):
         
         self.setName()
 
-        self.modified = self.isLoadedFromBackupURL()
+        self.modified = False
         
         # If it doesn't exist, that means we are creating the file, so it
         # should be writable.
