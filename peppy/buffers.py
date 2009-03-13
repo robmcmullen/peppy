@@ -184,7 +184,6 @@ class BufferVFSMixin(debugmixin):
         self.bfh = None
         self.last_mtime = None
         self.canonicalize = canonicalize
-        self.backup_load_url = None
         self.setURL(url)
         self.created_from_url = created_from_url
         
@@ -282,20 +281,10 @@ class BufferVFSMixin(debugmixin):
             path = wx.StandardPaths.Get().GetDocumentsDir()
         return path
 
-    def setLoadFromBackupURL(self, temp_url):
-        self.backup_load_url = temp_url
-    
-    def isLoadedFromBackupURL(self):
-        return self.backup_load_url is not None
-
     def getBufferedReader(self, size=1024):
         assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
         if self.bfh is None:
-            if self.backup_load_url is not None:
-                url = self.backup_load_url
-            else:
-                url = self.url
-            if vfs.exists(url):
+            if vfs.exists(self.url):
                 fh = vfs.open(url)
                 self.bfh = BufferedReader(fh, size)
         if self.bfh:
@@ -473,8 +462,6 @@ class Buffer(BufferVFSMixin):
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
         self.stc = self.defaultmode.stc_class(self.dummyframe)
-        
-        self.restoreFromAutosaveIfExists()
 
     def openBackgroundThread(self, progress_message=None):
         self.stc.open(self, progress_message)
@@ -512,10 +499,10 @@ class Buffer(BufferVFSMixin):
         self.openBackgroundThread()
         self.openGUIThreadSuccess()
 
-    def revert(self, encoding=None):
+    def revert(self, alternate_url=None, encoding=None, allow_undo=False):
         # don't use the buffered reader: get a new file handle
         self.forEachView('revertPreHook')
-        self.stc.revertEncoding(self, encoding=encoding)
+        self.stc.revertEncoding(self, url=alternate_url, encoding=encoding, allow_undo=allow_undo)
         self.modified=False
         self.forEachView('applySettings')
         self.forEachView('revertPostHook')
@@ -614,7 +601,6 @@ class Buffer(BufferVFSMixin):
             self.dprint("Failed autosaving to %s with %s" % (temp_url, e))
     
     def removeAutosaveIfExists(self):
-        self.backup_load_url = None
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
             vfs.remove(temp_url)
@@ -630,7 +616,7 @@ class Buffer(BufferVFSMixin):
                 dlg.Destroy()
                 if retval==wx.ID_OK:
                     self.dprint("Recovering from autosave file %s" % temp_url)
-                    self.setOneTimeLoadFromBackupURL(temp_url)
+                    self.revert(temp_url, allow_undo=True)
             else:
                 vfs.remove(temp_url)
 

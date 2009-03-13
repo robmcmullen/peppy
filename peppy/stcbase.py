@@ -180,12 +180,19 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         fh = buffer.getBufferedReader()
         self.readThreaded(fh, buffer, message)
     
-    def revertEncoding(self, buffer, message=None, encoding=None):
-        fh = vfs.open(buffer.url)
+    def revertEncoding(self, buffer, url=None, message=None, encoding=None, allow_undo=False):
+        if url is None:
+            url = buffer.url
+        fh = vfs.open(url)
+        if allow_undo:
+            self.BeginUndoAction()
         self.ClearAll()
         self.readThreaded(fh, buffer, message)
         self.openSuccess(buffer, encoding=encoding)
-        self.EmptyUndoBuffer()
+        if allow_undo:
+            self.EndUndoAction()
+        else:
+            self.EmptyUndoBuffer()
 
     def readThreaded(self, fh, buffer, message=None):
         self.refstc.tempstore = StringIO()

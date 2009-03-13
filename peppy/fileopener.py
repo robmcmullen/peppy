@@ -233,6 +233,8 @@ class FileOpener(debugmixin):
         mode = self.frame.tabs.newMode(self.buffer, mode_to_replace=self.mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
         
+        self.buffer.restoreFromAutosaveIfExists()
+        
         #raceoff()
         assert self.dprint("after addViewer")
         mode.showInitialPosition(self.url, self.options)
