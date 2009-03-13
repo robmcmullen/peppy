@@ -184,6 +184,7 @@ class BufferVFSMixin(debugmixin):
         self.bfh = None
         self.last_mtime = None
         self.canonicalize = canonicalize
+        self.backup_load_url = None
         self.setURL(url)
         self.created_from_url = created_from_url
         
@@ -281,11 +282,21 @@ class BufferVFSMixin(debugmixin):
             path = wx.StandardPaths.Get().GetDocumentsDir()
         return path
 
+    def setLoadFromBackupURL(self, temp_url):
+        self.backup_load_url = temp_url
+    
+    def isLoadedFromBackupURL(self):
+        return self.backup_load_url is not None
+
     def getBufferedReader(self, size=1024):
         assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
         if self.bfh is None:
-            if vfs.exists(self.url):
-                fh = vfs.open(self.url)
+            if self.backup_load_url is not None:
+                url = self.backup_load_url
+            else:
+                url = self.url
+            if vfs.exists(url):
+                fh = vfs.open(url)
                 self.bfh = BufferedReader(fh, size)
         if self.bfh:
             self.bfh.seek(0)
@@ -479,7 +490,7 @@ class Buffer(BufferVFSMixin):
         
         self.setName()
 
-        self.modified = False
+        self.modified = self.isLoadedFromBackupURL()
         
         # If it doesn't exist, that means we are creating the file, so it
         # should be writable.
@@ -494,6 +505,7 @@ class Buffer(BufferVFSMixin):
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.
         Publisher().sendMessage('buffer.opened', self)
+        wx.CallAfter(self.showModifiedAll)
 
     def open(self):
         self.openGUIThreadStart()
@@ -602,6 +614,7 @@ class Buffer(BufferVFSMixin):
             self.dprint("Failed autosaving to %s with %s" % (temp_url, e))
     
     def removeAutosaveIfExists(self):
+        self.backup_load_url = None
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
             vfs.remove(temp_url)
@@ -617,25 +630,7 @@ class Buffer(BufferVFSMixin):
                 dlg.Destroy()
                 if retval==wx.ID_OK:
                     self.dprint("Recovering from autosave file %s" % temp_url)
-                    # We need a temporary filename even if backups are turned
-                    # off, so we go right to the backup manager to calculate
-                    # the temporary filename instead of going through the STC
-                    backup_url = wx.GetApp().backup.calculateFilename(self.url)
-                    permissions = vfs.get_permissions(self.url)
-                    try:
-                        if vfs.exists(backup_url):
-                            vfs.remove(backup_url)
-                        vfs.move(self.url, backup_url)
-                    except:
-                        eprint("Failed copying original file %s to backup %s" % (self.url, backup_url))
-                        raise
-                    try:
-                        vfs.move(temp_url, self.url)
-                    except:
-                        eprint("Failed copying autosave file %s to original %s" % (temp_url, self.url))
-                        raise
-                    self.saveTimestamp()
-                    vfs.set_permissions(self.url, permissions)
+                    self.setOneTimeLoadFromBackupURL(temp_url)
             else:
                 vfs.remove(temp_url)
 
