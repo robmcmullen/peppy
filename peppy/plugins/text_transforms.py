@@ -1,4 +1,5 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
+# Copyright (c) 2009 Christopher Barker
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Some simple text transformation actions.
 
@@ -30,7 +31,9 @@ class CommentRegion(TextModificationAction):
     alias = "comment-region"
     name = "&Comment Region"
     default_menu = ("Transform", -600)
-    key_bindings = {'emacs': 'C-c C-c',}
+    key_bindings = {'emacs': 'C-c C-c',
+                    'mac': 'C-3',
+                    }
 
     def action(self, index=-1, multiplier=1):
         self.mode.commentRegion(multiplier != 4)
@@ -45,6 +48,9 @@ class UncommentRegion(TextModificationAction):
     alias = "uncomment-region"
     name = "&Uncomment Region"
     default_menu = ("Transform", 601)
+    key_bindings = {'emacs': 'C-u C-c C-c',
+                    'mac': 'M-3',
+                    }
 
     def action(self, index=-1, multiplier=1):
         self.mode.commentRegion(False)
@@ -266,6 +272,80 @@ class Reindent(TextModificationAction):
             s.GetLineRegion()
             s.EndUndoAction()
 
+def RemoveExtraSpace(text, pos):
+    """
+    Remove any amount of whitespace at pos, replacing it with a single space.
+    
+    If pos is at the end or beginning of the line, then remove the whitesapce
+    there, rather than leaving a single space.
+    
+    It is assumed that there is no newline on the end.
+    
+    returns new_text, new_pos
+    
+    """
+    # move back in from the end if we are over the end
+    if pos >= len(text):
+        pos = len(text)-1
+        new_pos = len(text)
+    else:
+        new_pos = pos
+
+    if text[pos].isspace() or text[pos-1].isspace(): # don't do anything if there is not whitespace here.
+        left = text[:pos].rstrip()
+        right  = text[pos:].lstrip()
+        if left and right:
+            text = " ".join( (left, right) )
+        else:
+            text = left or right
+        new_pos = len(left)
+    return text, new_pos
+       
+
+class JustOneSpace(TextModificationAction):
+    
+    """
+    Remove extra whitespace:
+
+    Replaces any amount of whitespace surrounding the cursor with one space
+    except at the begining and ends of lines, where it removes all white space.
+    """
+    alias = "just-one-space"
+    name = "JustOneSpace"
+    default_menu = ("Transform", 602)
+    key_bindings = {'default': 'M-SPACE',}
+    key_needs_focus = True
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        cursor = s.GetCurrentPos()
+        line = s.LineFromPosition(cursor)
+        start = s.PositionFromLine(line)
+        end = s.GetLineEndPosition(line)
+        if end > start: # no point in doing anything for a zero-length line
+            text, pos = s.GetCurLine()
+            
+            # text is unicode but pos is the cursor position within the line
+            # as the utf-8 byte offset, so we need to convert to unicode
+            # character index.
+            utf_before_cursor = text.encode('utf-8')[:pos]
+            unicode_before_cursor = utf_before_cursor.decode('utf-8')
+            pos = len(unicode_before_cursor)
+            
+            new_line, new_pos = RemoveExtraSpace(text, pos)
+            
+            # new_line is unicode, and new_pos is the unicode character index.
+            # Need to convert pos to utf-8 offset for cursor position.
+            new_pos = len(new_line[:new_pos].encode('utf-8'))
+            
+            s.BeginUndoAction()
+            s.SetTargetStart(start)
+            s.SetTargetEnd(end)
+            s.ReplaceTarget(new_line)
+            s.SetAnchor(start + new_pos)
+            s.SetCurrentPos(start + new_pos)
+            s.EndUndoAction()
+        
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     """Word-wrap the current paragraph or region."""
@@ -434,4 +514,6 @@ class TextTransformPlugin(IPeppyPlugin):
                 Rot13,
                 
                 SortLines, SortLinesByField, ReverseLines, ShuffleLines,
+                
+                JustOneSpace,
                 ]
