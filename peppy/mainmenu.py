@@ -47,12 +47,13 @@ class MoveTabToNewWindow(SelectAction):
     alias = "move-tab-to-new-window"
     name = "Move Tab to New Window"
     tooltip = "Move the current tab to a new window"
+    default_menu = ("Window", 150)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         # If it's called from a popup, use the tab on which it was clicked, not
         # the current mode
-        if hasattr(self, 'popup_options'):
+        if self.popup_options is not None:
             mode = self.popup_options['mode']
         else:
             mode = self.mode
@@ -988,7 +989,7 @@ class MainMenu(IPeppyPlugin):
 
                 BufferList, BufferListSort,
 
-                NewWindow, DeleteWindow, WindowList,
+                NewWindow, DeleteWindow, MoveTabToNewWindow, WindowList,
                 
                 ExecuteActionByName, DescribeAction, DescribeKey, HelpMinibuffer,
                 
