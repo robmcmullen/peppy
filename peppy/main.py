@@ -1049,6 +1049,8 @@ def run():
     Buffer.loadPermanent('about:scratch')
     
     peppy.language.setLanguage()
+    
+    Publisher().sendMessage('peppy.before_initial_frame_creation')
     frame=BufferFrame(peppy.args)
 
     peppy.stopSplash()
