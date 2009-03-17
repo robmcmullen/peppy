@@ -268,6 +268,8 @@ class LoadingMode(BlankMode):
     keyword = 'Loading...'
     temporary = False
     stc_class = LoadingSTC
+    
+    preferences_tab = None
 
     def createPostHook(self):
         self.showBusy(True)

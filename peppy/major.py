@@ -1021,6 +1021,8 @@ class EmptyMode(MajorMode, wx.Window):
     icon='icons/application.png'
     
     stc_class = NonResidentSTC
+    
+    preferences_tab = None
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
