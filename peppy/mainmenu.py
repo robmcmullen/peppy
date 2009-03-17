@@ -989,7 +989,8 @@ class MainMenu(IPeppyPlugin):
 
                 BufferList, BufferListSort,
 
-                NewWindow, DeleteWindow, MoveTabToNewWindow, WindowList,
+                NewWindow, DeleteWindow, MoveTabToNewWindow, BringAllToFront,
+                WindowList,
                 
                 ExecuteActionByName, DescribeAction, DescribeKey, HelpMinibuffer,
                 

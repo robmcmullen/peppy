@@ -102,6 +102,18 @@ class NewWindow(SelectAction):
         frame.Show(True)
 
 
+class BringAllToFront(SelectAction):
+    """Bring all peppy windows to the front of the window stack"""
+    name = "Bring All to Front"
+    default_menu = ("Window", -300)
+
+    def action(self, index=-1, multiplier=1):
+        top = wx.GetApp().GetTopWindow()
+        for frame in WindowList.getFrames():
+            frame.Raise()
+        top.Raise()
+
+
 ## BufferFrames
 
 class FrameDropTarget(wx.FileDropTarget, debugmixin):
