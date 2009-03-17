@@ -33,7 +33,7 @@ class MacHiddenFrame(BufferFrame):
     preferences_tab = None
     
     def initPositionAndSize(self):
-        pos = (9000, 9000)
+        pos = (90000, 90000)
         size = (int(self.classprefs.width), int(self.classprefs.height))
         return pos, size
     
