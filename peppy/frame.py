@@ -158,8 +158,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.currently_processing_timestamp = False
 
         # initialize superclass
-        size=(int(self.classprefs.width),int(self.classprefs.height))
-        wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
+        pos, size = self.initPositionAndSize()
+        wx.Frame.__init__(self, None, id=-1, title=self.name, pos=pos, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
 
         self.initIcon()
         self.initLayout()
@@ -169,6 +169,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.initLoad(buffer, urls)
         self.initRegisterWindow()
         self.Show()
+    
+    def initPositionAndSize(self):
+        pos = wx.DefaultPosition
+        size = (int(self.classprefs.width), int(self.classprefs.height))
+        return pos, size
     
     def initIcon(self):
         icon = wx.EmptyIcon()

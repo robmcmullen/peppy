@@ -30,6 +30,11 @@ class MacHiddenFrame(BufferFrame):
     typically stays active with the ability to load files or handle files
     dropped onto the dock.
     """
+    def initPositionAndSize(self):
+        pos = (9000, 9000)
+        size = (int(self.classprefs.width), int(self.classprefs.height))
+        return pos, size
+    
     def initRegisterWindow(self):
         # The Mac hidden frame isn't registered, so it doesn't show up in the
         # Window menu
