@@ -72,10 +72,6 @@ class New(SelectAction):
         url = getNewUntitled()
         self.frame.open(url)
 
-    def actionOSXMinimalMenu(self, index=-1, multiplier=1):
-        url = getNewUntitled()
-        frame = BufferFrame([url])
-
 
 class OpenFileGUIMixin(object):
     def openFiles(self, paths):
@@ -106,11 +102,6 @@ class OpenFileGUIMixin(object):
         paths = self.showFileDialog()
         if paths:
             self.openFiles(paths)
-
-    def actionOSXMinimalMenu(self, index=-1, multiplier=1):
-        paths = self.showFileDialog()
-        if paths:
-            BufferFrame(paths)
 
 class OpenFileGUI(OpenFileGUIMixin, SelectAction):
     alias = "gui-find-file"
@@ -412,6 +403,7 @@ class Exit(SelectAction):
         stock_id = wx.ID_EXIT
     default_menu = ("File", -1000)
     key_bindings = {'default': "C-q", 'emacs': "C-x C-c"}
+    osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().quit()

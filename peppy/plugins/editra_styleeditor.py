@@ -28,6 +28,7 @@ class EditraStyles(SelectAction):
     tooltip = "Open the STC Style Editor to edit the current mode's text display."
     default_menu = ("Edit", -1000)
     export_count = 0
+    osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
         stylesheet = wx.GetApp().fonts.getStyleFile()

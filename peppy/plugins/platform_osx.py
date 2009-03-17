@@ -41,13 +41,27 @@ class MacHiddenFrame(BufferFrame):
         WindowList.setHiddenFrame(self)
     
     def initLoad(self, buffer, urls):
-        self.loadList(["about:osx_menu"])
+        wx.CallAfter(self.titleBuffer)
     
     def loadSidebars(self):
         pass
 
     def isOSXMinimalMenuFrame(self):
         return True
+    
+    def titleBuffer(self):
+        BufferFrame.open(self, "about:osx_menu")
+    
+    def open(self, *args, **kwargs):
+        """Convenience function overriding BufferFrame.open to open URLs in
+        a new frame.
+        
+        This may be a temporary solution -- actions that set osx_minimal_menu
+        may find that this leads to unexpected consequences if they are
+        expecting all methods of BufferFrame to have this implicit behavior.
+        """
+        frame = BufferFrame(['about:blank'])
+        wx.CallAfter(frame.open, *args, **kwargs)
 
 
 class MacHiddenMode(EmptyMode):
