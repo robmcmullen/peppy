@@ -243,7 +243,7 @@ class AddToFileCabinet(SelectAction):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         # If it's called from a popup, use the tab on which it was clicked, not
         # the current mode
-        if hasattr(self, 'popup_options'):
+        if self.popup_options is not None:
             mode = self.popup_options['mode']
         else:
             mode = self.mode
