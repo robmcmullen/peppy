@@ -30,7 +30,7 @@ from peppy.buffers import *
     
 class WindowList(OnDemandGlobalListAction):
     name="Frames"
-    default_menu = ("Window", -100)
+    default_menu = ("Window", -999)
     inline = True
     
     # provide storage to be shared among instances
@@ -95,6 +95,7 @@ class NewWindow(SelectAction):
     tooltip = "Open a new window"
     default_menu = ("Window", 0)
     key_bindings = {'emacs': "C-X 5 2",}
+    osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
         frame=BufferFrame()
