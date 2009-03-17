@@ -26,6 +26,7 @@ class Preferences(SelectAction):
     icon = "icons/wrench.png"
     stock_id = wx.ID_PREFERENCES
     key_bindings = {'mac': 'C-,', }
+    osx_minimal_menu = True
 
     @classmethod
     def showDialog(self, msg=None):

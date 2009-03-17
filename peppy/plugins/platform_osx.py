@@ -72,6 +72,8 @@ class MacHiddenMode(EmptyMode):
     icon='icons/apple.png'
     
     stc_class = NonResidentSTC
+    
+    preferences_tab = None
 
     @classmethod
     def verifyProtocol(cls, url):

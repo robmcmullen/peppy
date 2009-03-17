@@ -2082,12 +2082,25 @@ class PrefDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
 
-        index = self.getPageIndex(self.obj.__class__)
-        self.notebook.SetSelection(index)
-        page = self.notebook.GetPage(index)
-        page.changePanel(self.obj.__class__)
+        self.showRequestedPreferences()
 
         self.Layout()
+    
+    def showRequestedPreferences(self):
+        """Sets the notebook page and initial panel to the preferences of the
+        initial object passed to the constructor.
+        """
+        # It is possible that the object won't be found if its preferences_tab
+        # class attribute has been set to None.
+        try:
+            index = self.getPageIndex(self.obj.__class__)
+            cls = self.obj.__class__
+        except KeyError:
+            index = 0
+            cls = None
+        self.notebook.SetSelection(index)
+        page = self.notebook.GetPage(index)
+        page.changePanel(cls)
     
     def OnTabChanged(self, evt):
         #dprint()
@@ -2114,6 +2127,13 @@ class PrefDialog(wx.Dialog):
         for cls in classes:
             if hasattr(cls, 'preferences_tab'):
                 tab = cls.preferences_tab
+                
+                # preferences_tab = None means that we shouldn't display
+                # preferences for this object, so it isn't added to
+                # any of the lists.  We have to special-case this in
+                # showRequestedPreferences above, however.
+                if tab is None:
+                    continue
             else:
                 tab = "Misc"
             if tab not in self.tab_map:
