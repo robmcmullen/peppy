@@ -323,7 +323,8 @@ class JustOneSpace(TextModificationAction):
         start = s.PositionFromLine(line)
         end = s.GetLineEndPosition(line)
         if end > start: # no point in doing anything for a zero-length line
-            text, pos = s.GetCurLine()
+            text = s.GetTextRange(start,end)
+            pos = cursor - start
             
             # text is unicode but pos is the cursor position within the line
             # as the utf-8 byte offset, so we need to convert to unicode
