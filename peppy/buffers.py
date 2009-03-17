@@ -24,6 +24,7 @@ class BufferList(OnDemandGlobalListAction):
     name = "Documents"
     default_menu = ("Documents", -500)
     inline = True
+    osx_minimal_menu = True
     
     # keep track of only changes to this on demand action
     localhash = 0

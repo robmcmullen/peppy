@@ -64,6 +64,17 @@ class MacHiddenFrame(BufferFrame):
         """
         frame = BufferFrame(['about:blank'])
         wx.CallAfter(frame.open, *args, **kwargs)
+    
+    def setBuffer(self, buffer):
+        """Convenience function overriding BufferFrame.setBuffer to open an
+        existing document in a new frame.
+        
+        This may be a temporary solution -- actions that set osx_minimal_menu
+        may find that this leads to unexpected consequences if they are
+        expecting all methods of BufferFrame to have this implicit behavior.
+        """
+        frame = BufferFrame(['about:blank'])
+        wx.CallAfter(frame.setBuffer, buffer)
 
 
 class MacHiddenMode(EmptyMode):
