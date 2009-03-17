@@ -32,6 +32,7 @@ class HelpAbout(SelectAction):
     tooltip = "About this program"
     stock_id = wx.ID_ABOUT
     default_menu = ("&Help", 0)
+    osx_minimal_menu = True
 
     about = "Test program"
     title = "Test program title"
@@ -71,6 +72,7 @@ class HelpManual(SelectAction):
     tooltip = "User manual"
     stock_id = wx.ID_HELP
     default_menu = ("&Help", -100)
+    osx_minimal_menu = True
     
     # mac should be cmd-?, but wx doesn't understand shifted keys as a target
     # for keybindings, so have to specify shift-/, which on standard keyboard
@@ -98,6 +100,7 @@ class ProjectHome(SelectAction):
     default_menu = ("&Help", 101)
     icon = "icons/peppy.png"
     default_toolbar = False
+    osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
         from peppy import __url__
@@ -112,6 +115,7 @@ class BugReport(SelectAction):
     """
     name = "Report a bug"
     default_menu = ("&Help", 102)
+    osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
         import webbrowser
