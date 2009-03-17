@@ -28,6 +28,7 @@ class RecentFiles(OnDemandGlobalListAction):
     name = "Open Recent"
     default_menu = ("File", 10)
     inline = False
+    osx_minimal_menu = True
     
     #: Controls where the new files are added: top or bottom
     add_at_top = True
@@ -233,6 +234,10 @@ class AddToFileCabinet(SelectAction):
     alias = "add-file-cabinet"
     name = "Add To File Cabinet"
     default_menu = ("File/File Cabinet", -900)
+    osx_minimal_menu = True
+    
+    def isEnabled(self):
+        return not self.frame.isOSXMinimalMenuFrame()
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -249,6 +254,7 @@ class ReorderFileCabinet(SelectAction):
     alias = "reorder-file-cabinet"
     name = "Reorder File Cabinet"
     default_menu = ("File/File Cabinet", 910)
+    osx_minimal_menu = True
 
     def action(self, index=-1, multiplier=1):
         dlg = ListReorderDialog(self.frame, FileCabinet.storage, "Reorder File Cabinet", "URL")

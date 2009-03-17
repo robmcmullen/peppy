@@ -27,7 +27,7 @@ class NewTab(SelectAction):
     alias = "new-tab"
     name = "New Tab"
     tooltip = "Open a new tab"
-    default_menu = (("File/New", 1), 1)
+    default_menu = ("File/New", 1)
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -64,7 +64,7 @@ class New(SelectAction):
     name = "Text file"
     tooltip = "New plain text file"
     icon = "icons/page_white_text_new.png"
-    default_menu = ("File/New", -99)
+    default_menu = (("File/New", 1), -99)
     key_bindings = {'win': "C-n", 'mac': "C-n"}
     osx_minimal_menu = True
 
