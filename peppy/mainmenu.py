@@ -76,21 +76,15 @@ class New(SelectAction):
         url = getNewUntitled()
         frame = BufferFrame([url])
 
-class OpenFileGUI(SelectAction):
-    alias = "gui-find-file"
-    name = "Open File..."
-    tooltip = "Open a file"
-    icon = "icons/folder_page.png"
-    default_menu = (("File/Open", 2), 1) 
-    key_bindings = {'default': "C-o", 'emacs': "C-x C-S-f" }
 
+class OpenFileGUIMixin(object):
     def openFiles(self, paths):
         for path in paths:
             assert self.dprint("open file %s:" % path)
             # Force the loader to use the file: protocol
             self.frame.open("file:%s" % path)
 
-    def action(self, index=-1, multiplier=1):
+    def showFileDialog(self):
         wildcard="*"
         cwd=self.frame.cwd()
         dlg = wx.FileDialog(
@@ -102,20 +96,36 @@ class OpenFileGUI(SelectAction):
         if dlg.ShowModal() == wx.ID_OK:
             # This returns a Python list of files that were selected.
             paths = dlg.GetPaths()
-            self.openFiles(paths)
+            return paths
 
         # Destroy the dialog. Don't do this until you are done with it!
         # BAD things can happen otherwise!
         dlg.Destroy()
 
-class OpenFileNewWindowGUI(OpenFileGUI):
+    def action(self, index=-1, multiplier=1):
+        paths = self.showFileDialog()
+        if paths:
+            self.openFiles(paths)
+
+    def actionOSXMinimalMenu(self, index=-1, multiplier=1):
+        paths = self.showFileDialog()
+        if paths:
+            BufferFrame(paths)
+
+class OpenFileGUI(OpenFileGUIMixin, SelectAction):
+    alias = "gui-find-file"
+    name = "Open File..."
+    tooltip = "Open a file"
+    icon = "icons/folder_page.png"
+    default_menu = (("File/Open", 2), 1) 
+    key_bindings = {'default': "C-o", 'emacs': "C-x C-S-f" }
+    osx_minimal_menu = True
+
+class OpenFileNewWindowGUI(OpenFileGUIMixin, SelectAction):
     alias = "gui-find-file-new-window"
     name = "Open File in New Window..."
     tooltip = "Open a file in a new window"
-    icon = None
     default_menu = (("File/Open", 2), 2) 
-    key_bindings = None
-    global_id = None
 
     def openFiles(self, paths):
         BufferFrame(paths)
