@@ -104,6 +104,8 @@ class SelectAction(debugmixin):
     #: If the action doesn't use a stock id, it will automatically get assigned a global id here.  Note that if you are subclassing an action, you should explicitly assign a global id (or None) to your subclass's global_id attribute, otherwise the menu system will get confused and attempt to use the superclass's global_id
     global_id = None
 
+    #: Special case support item for OS X.  Under OS X, it is possible to have a menubar when no windows are open.  If the action is usable when operating on an empty frame (see plugins/platform_osx.py), set osx_minimal_menu to True or override worksWithOSXMinimalMenu
+    osx_minimal_menu = None
     
     # The rest of these class attributes aren't for individual class
     # customization
@@ -124,6 +126,13 @@ class SelectAction(debugmixin):
         mode
         """
         return True
+    
+    @classmethod
+    def worksWithOSXMinimalMenu(cls, mode):
+        """Hook that allows the action to appear on the OSX default menu when
+        no editing frames are open
+        """
+        return cls.osx_minimal_menu
     
     @classmethod
     def getHelp(cls):
@@ -256,6 +265,9 @@ class SelectAction(debugmixin):
         4, would mean that the next 4 words get uppercased.  The default is 1.
         """
         pass
+    
+    def actionOSXMinimalMenu(self, index=-1, multiplier=1):
+        self.action(index, multiplier)
 
     def __call__(self, evt, number=1, printable=False):
         assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, number))
@@ -270,7 +282,10 @@ class SelectAction(debugmixin):
                 return
         if self.isEnabled():
             try:
-                self.action(0, number)
+                if self.frame.isOSXMinimalMenuFrame():
+                    self.actionOSXMinimalMenu(0, number)
+                else:
+                    self.action(0, number)
             except ActionNeedsFocusException:
                 evt.Skip()
 

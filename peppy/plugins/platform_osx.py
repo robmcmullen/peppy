@@ -37,6 +37,12 @@ class MacHiddenFrame(BufferFrame):
     
     def initLoad(self, buffer, urls):
         self.loadList(["about:osx_menu"])
+    
+    def loadSidebars(self):
+        pass
+
+    def isOSXMinimalMenuFrame(self):
+        return True
 
 
 class MacHiddenMode(EmptyMode):

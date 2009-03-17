@@ -63,6 +63,8 @@ class UserActionClassList(debugmixin):
     def getActiveActions(self, mode):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         #assert self.dprint(plugins)
+        
+        osx_menu = mode.frame.isOSXMinimalMenuFrame()
 
         actions = []
         for plugin in plugins:
@@ -71,9 +73,10 @@ class UserActionClassList(debugmixin):
             # old-style way of checking each action for compatibility
             for action in plugin.getActions():
                 if action.worksWithMajorMode(mode):
-                    # Only if the action works with the major mode do we want
-                    # it to be an action that fires events
-                    actions.append(action)
+                    if not osx_menu or (osx_menu and action.worksWithOSXMinimalMenu(mode)):
+                        # Only if the action works with the major mode do we
+                        # want it to be an action that fires events
+                        actions.append(action)
 
             # new-style way of having the plugin check for compatibility
             compatible = plugin.getCompatibleActions(mode)
@@ -561,6 +564,9 @@ class UserActionMap(debugmixin):
         self.dprint(evt)
         id = evt.GetId()
         
+        action = None
+        index = None
+        
         # FIXME: Check for index actions first, because the global id for
         # a list is used as the first item in a list and also shows up in
         # self.actions.  Should the global id be used in lists???
@@ -570,25 +576,33 @@ class UserActionMap(debugmixin):
             action = self.popup_index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("popup index %d of %s" % (index, action))
-            wx.CallAfter(action.action, index=index)
         elif id in self.index_actions:
             # Some actions are associated with more than one id, like list
             # actions.  These are dispatched here.
             action = self.index_actions[id]
             index = action.getIndexOfId(id)
             self.dprint("index %d of %s" % (index, action))
-            wx.CallAfter(action.action, index=index)
         elif id in self.popup_actions:
             # The id is in the list of single-event actions
             action = self.popup_actions[id]
             self.dprint("popup: %s" % (action))
-            wx.CallAfter(action.action)
         elif id in self.actions:
             # The id is in the list of single-event actions
             action = self.actions[id]
             self.dprint(action)
-            wx.CallAfter(action.action)
-     
+        
+        # Handle the special case when the action is called from the OS X menu
+        if index is not None:
+            if action.frame.isOSXMinimalMenuFrame():
+                wx.CallAfter(action.actionOSXMinimalMenu, index=index)
+            else:
+                wx.CallAfter(action.action, index=index)
+        elif action is not None:
+            if action.frame.isOSXMinimalMenuFrame():
+                wx.CallAfter(action.actionOSXMinimalMenu)
+            else:
+                wx.CallAfter(action.action)
+    
     def OnUpdateUI(self, evt):
         """Update the state of the toolbar items.
         

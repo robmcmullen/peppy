@@ -66,9 +66,15 @@ class New(SelectAction):
     icon = "icons/page_white_text_new.png"
     default_menu = ("File/New", -99)
     key_bindings = {'win': "C-n", 'mac': "C-n"}
+    osx_minimal_menu = True
 
     def action(self, index=-1, multiplier=1):
-        self.frame.open(getNewUntitled())
+        url = getNewUntitled()
+        self.frame.open(url)
+
+    def actionOSXMinimalMenu(self, index=-1, multiplier=1):
+        url = getNewUntitled()
+        frame = BufferFrame([url])
 
 class OpenFileGUI(SelectAction):
     alias = "gui-find-file"

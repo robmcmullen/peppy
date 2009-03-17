@@ -248,6 +248,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def __str__(self):
         return "%s %s id=%s" % (self.__class__.__name__, self.name, hex(id(self)))
+    
+    def isOSXMinimalMenuFrame(self):
+        return False
         
     def bindEvents(self):
         self.Bind(wx.EVT_CLOSE,self.OnClose)
