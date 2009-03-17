@@ -18,10 +18,10 @@ from peppy.debug import *
 
 class TabLeft(SelectAction):
     alias = "tab-left"
-    name = "Change Focus to Tab on Left"
+    name = "Select Previous Tab"
     tooltip = "Move the focus to the tab left of the current tab."
-    default_menu = (("View/Tabs", -110), 100)
-    key_bindings = {'default': "M-LEFT", }
+    default_menu = ("Window", 110)
+    key_bindings = {'default': "M-LEFT", 'mac': "C-{",}
 
     def action(self, index=-1, multiplier=1):
         self.frame.tabs.moveSelectionLeft()
@@ -29,10 +29,10 @@ class TabLeft(SelectAction):
 
 class TabRight(SelectAction):
     alias = "tab-right"
-    name = "Change Focus to Tab on Right"
+    name = "Select Next Tab"
     tooltip = "Move the focus to the tab right of the current tab."
-    default_menu = ("View/Tabs", 110)
-    key_bindings = {'default': "M-RIGHT", }
+    default_menu = ("Window", -100)
+    key_bindings = {'default': "M-RIGHT", 'mac': "C-}",}
 
     def action(self, index=-1, multiplier=1):
         self.frame.tabs.moveSelectionRight()
