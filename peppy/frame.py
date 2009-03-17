@@ -36,6 +36,9 @@ class WindowList(OnDemandGlobalListAction):
     # provide storage to be shared among instances
     storage = []
     
+    # hidden frame for use on Mac OS X
+    hidden = None
+    
     @classmethod
     def calcHash(cls):
         cls.globalhash = None
@@ -44,6 +47,26 @@ class WindowList(OnDemandGlobalListAction):
     def getFrames(self):
         return [frame for frame in WindowList.storage]
     
+    @classmethod
+    def setHiddenFrame(cls, hidden):
+        cls.hidden = hidden
+    
+    @classmethod
+    def canCloseWindow(cls, frame):
+        if cls.hidden:
+            # When on OS X, the user is always allowed to close windows unless
+            # the user somehow tries to close the hidden window (which should
+            # never be possible)
+            if frame == cls.hidden:
+                dprint("Attempting to close the hidden window on OS X.  Should never happen!")
+                return False
+            return True
+        elif len(WindowList.storage) == 1:
+            # If attempting to close the last window when not on OS X, check to
+            # make sure that the user didn't cancel the quit
+            close = wx.GetApp().quit()
+        return True
+
     def getItems(self):
         return [frame.getTitle() for frame in WindowList.storage]
 
@@ -134,14 +157,25 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.pending_timestamp_check = False
         self.currently_processing_timestamp = False
 
+        # initialize superclass
         size=(int(self.classprefs.width),int(self.classprefs.height))
         wx.Frame.__init__(self, None, id=-1, title=self.name, pos=wx.DefaultPosition, size=size, style=wx.DEFAULT_FRAME_STYLE|wx.CLIP_CHILDREN)
+
+        self.initIcon()
+        self.initLayout()
+        self.initMenu()
+        self.loadSidebars()
+        self.initEventBindings()
+        self.initLoad(buffer, urls)
+        self.initRegisterWindow()
+        self.Show()
+    
+    def initIcon(self):
         icon = wx.EmptyIcon()
         icon.CopyFromBitmap(getIconBitmap('icons/peppy.png'))
         self.SetIcon(icon)
 
-        WindowList.append(self)
-        
+    def initLayout(self):
         ModularStatusBar(self)
 
         hsplit = wx.BoxSizer(wx.HORIZONTAL)
@@ -170,6 +204,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             paneinfo.DockFixed()
         self._mgr.AddPane(self.spring, paneinfo)
 
+    def initMenu(self):
         UserActionClassList.setDefaultMenuBarWeights(self.default_menubar)
         menubar = wx.MenuBar()
         if wx.Platform == '__WXMAC__':
@@ -190,11 +225,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         self.menumap=None
         self.show_toolbar = self.classprefs.show_toolbar
-        
+
+    def initEventBindings(self):
         self.keys=KeyProcessor(self)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
-        self.loadSidebars()
 
         self.dropTarget=FrameDropTarget(self)
         self.SetDropTarget(self.dropTarget)        
@@ -203,17 +237,15 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         wx.GetApp().SetTopWindow(self)
         self.bindEvents()
         
-        #dprint(urls)
-        
-        # counter to make sure the title buffer is shown if we attempt
-        # to load files and they all fail.
-        self.initial_load = 0
+    def initLoad(self, buffer, urls):
         if buffer:
             self.newBuffer(buffer)
         else:
             self.loadList(urls)
-        self.Show()
     
+    def initRegisterWindow(self):
+        WindowList.append(self)
+
     def __str__(self):
         return "%s %s id=%s" % (self.__class__.__name__, self.name, hex(id(self)))
         
@@ -232,7 +264,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             for url in urls:
                 #dprint("Opening %s" % url)
                 wx.CallAfter(self.open, url, force_new_tab=True)
-                self.initial_load += 1
         else:
             wx.CallAfter(self.titleBuffer)
         
@@ -314,12 +345,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def OnClose(self, evt=None):
         assert self.dprint(evt)
-        close = True
-        if len(WindowList.storage)==1:
-            # If attempting to close the last window, check to make sure that
-            # the user didn't cancel the quit
-            close = wx.GetApp().quit()
-        if close:
+        if WindowList.canCloseWindow(self):
             self.closeWindow()
 
     def OnKeyDown(self, evt):
