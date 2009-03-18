@@ -49,7 +49,8 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
 
     def OnLinkClicked(self, linkinfo):
         assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
-        self.frame.open(linkinfo.GetHref())
+        url = linkinfo.GetHref()
+        wx.CallAfter(self.frame.open, url)
 
     def OnCellMouseHover(self, cell, x, y):
         assert self.dprint('OnCellMouseHover: %s\n' % cell)
