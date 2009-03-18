@@ -501,6 +501,119 @@ class ShuffleLines(LineOrRegionMutateAction):
         return out
 
 
+class TransposeChars(TextModificationAction):
+    """Interchange the characters around the cursor
+
+    Emacs compatibility command, transposing the two characters around the
+    cursor and moving the cursor forward one character.
+    
+    This is a reverse-engineering of the Emacs function 'transpose-chars'
+    with all of its quirks.  At the beginning of a line, it swaps the last
+    character on the previous line but doesn't advance the cursor.  At the end
+    of a line, it swaps the last two characters and also doesn't advance the
+    cursor.  Otherwise, it swaps the characters on either side of the cursor
+    and advances the cursor one position.
+    """
+    alias = "transpose-chars"
+    name = "Transpose Characters"
+    default_menu = ("Transform/Reorder", -300)
+    key_bindings = {'emacs': 'C-t',}
+    key_needs_focus = True
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        cursor = s.GetCurrentPos()
+        linenum = s.LineFromPosition(cursor)
+        line_start = s.PositionFromLine(linenum)
+        line_end = s.GetLineEndPosition(linenum)
+        eol = ''
+        originally_at_end = False
+        if cursor == line_end and cursor > line_start:
+            cursor = s.PositionBefore(cursor)
+            originally_at_end = True
+        if cursor == line_start:
+            # cursor at start of line: move character to end of previous line
+            if linenum == 0:
+                return
+            prev_linenum = linenum - 1
+            prev_line_start = s.PositionFromLine(prev_linenum)
+            prev_line_end = s.GetLineEndPosition(prev_linenum)
+            if line_start == line_end:
+                # if the current line is empty, swap with end of previous line
+                start1 = s.PositionBefore(prev_line_end)
+            else:
+                # otherwise, swap with empty string
+                start1 = prev_line_end
+            end1 = prev_line_end
+            eol = s.getLinesep()
+        else:
+            start1 = s.PositionBefore(cursor)
+            end1 = cursor
+        
+        if cursor == line_start:
+            # At the beginning of a line, nothing is swapped into the current
+            # line
+            start2 = line_start
+            end2 = line_start
+        if cursor < line_end:
+            # normal conditions means the character after the cursor is swapped
+            start2 = cursor
+            end2 = s.PositionAfter(cursor)
+        else:
+            # at the end of line, we don't advance to the next line and swap
+            # the final two characters.
+            start2 = line_end
+            end2 = line_end
+        
+        char1 = s.GetTextRange(start1, end1)
+        char2 = s.GetTextRange(start2, end2)
+        replacement = char2 + eol + char1
+        s.BeginUndoAction()
+        s.SetTargetStart(start1)
+        s.SetTargetEnd(end2)
+        s.ReplaceTarget(replacement)
+        s.SetAnchor(end2)
+        s.SetCurrentPos(end2)
+        s.EndUndoAction()
+
+
+class TransposeLineDown(TextModificationAction):
+    """Transpose line with line below, moving cursor down
+
+    Emacs compatibility command, transposing the current line with the one
+    below it, moving the cursor down one line as a side effect.
+    """
+    alias = "transpose-line-down"
+    name = "Transpose Line Down"
+    default_menu = ("Transform/Reorder", 301)
+    key_bindings = {'emacs': 'C-S-t',}
+    key_needs_focus = True
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        cursor = s.GetCurrentPos()
+        linenum = s.LineFromPosition(cursor)
+        if linenum < s.GetLineCount() - 1:
+            start1 = s.PositionFromLine(linenum)
+            end1 = s.GetLineEndPosition(linenum)
+            current_line = s.GetTextRange(start1, end1)
+            
+            linenum += 1
+            start2 = s.PositionFromLine(linenum)
+            end2 = s.GetLineEndPosition(linenum)
+            next_line = s.GetTextRange(start2, end2)
+            
+            replacement = next_line + s.getLinesep() + current_line
+            s.BeginUndoAction()
+            s.SetTargetStart(start1)
+            s.SetTargetEnd(end2)
+            s.ReplaceTarget(replacement)
+            new_cursor = s.PositionFromLine(linenum)
+            s.SetAnchor(new_cursor)
+            s.SetCurrentPos(new_cursor)
+            s.EndUndoAction()
+
+
 class TextTransformPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text transformation actions.
     """
@@ -515,6 +628,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 Rot13,
                 
                 SortLines, SortLinesByField, ReverseLines, ShuffleLines,
+                TransposeChars, TransposeLineDown,
                 
                 JustOneSpace,
                 ]

@@ -184,7 +184,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {'T',               SCI_CSHIFT,     SCI_LINECOPY},
     class CopyLine(ScintillaCmdKeyExecute):
         """Copy the current line"""
-        key_bindings = {'default': 'C-S-t',}
+        key_bindings = {'default': 'C-S-t', 'emacs': None,}
         cmd = wx.stc.STC_CMD_LINECOPY
 
     #    {'L',               SCI_CTRL,       SCI_LINECUT},
@@ -258,7 +258,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {'T',               SCI_CTRL,       SCI_LINETRANSPOSE},
     class TransposeLine(ScintillaCmdKeyExecute):
         """Swap the current line for the previous line"""
-        key_bindings = {'default': 'C-t',}
+        key_bindings = {'default': 'C-t', 'emacs': None,}
         cmd = wx.stc.STC_CMD_LINETRANSPOSE
 
     #    {SCK_UP,            SCI_NORM,       SCI_LINEUP},
