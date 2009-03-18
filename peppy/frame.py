@@ -151,6 +151,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         IntParam('width', 800, 'Width of the main frame in pixels'),
         IntParam('height', 600, 'Height of the main frame in pixels'),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
+        BoolParam('resize_becomes_default', True, 'Should the new size following a resize become the default size of all subsequently created frames?'),
         # FIXME: this attempt at fast resizing caused Freeze() mismatch
         # problems.  It's not worth that much, so I'm disabling it for
         # now.
@@ -365,7 +366,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.__class__.size_timer = wx.PyTimer(self.OnSizeTimer)
             self.__class__.size_timer.Start(50, oneShot=True)
         else:
+            self.rememberFrameSize()
             evt.Skip()
+    
+    def rememberFrameSize(self):
+        if self.classprefs.resize_becomes_default:
+            size = self.GetSize()
+            self.classprefs.width = size.GetWidth()
+            self.classprefs.height = size.GetHeight()
 
     def OnSizeTimer(self, evt=None):
         if self.tabs.IsFrozen():
