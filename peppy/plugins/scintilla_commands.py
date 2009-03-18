@@ -112,7 +112,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     #    {SCK_DELETE,        SCI_CSHIFT,     SCI_DELLINERIGHT},
     class DeleteLineAfterCursor(ScintillaCmdKeyExecute):
         """Delete all characters on the line after the cursor"""
-        key_bindings = {'default': 'C-S-DELETE'}
+        key_bindings = {'default': 'C-S-DELETE', 'emacs': 'C-k', 'mac': 'C-k'}
         cmd = wx.stc.STC_CMD_DELLINERIGHT
 
     #    {SCK_BACK,          SCI_CTRL,       SCI_DELWORDLEFT},
