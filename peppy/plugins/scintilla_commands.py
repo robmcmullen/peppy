@@ -98,10 +98,20 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
         cmd = wx.stc.STC_CMD_CHARRIGHTRECTEXTEND
 
     #    {SCK_DELETE,        SCI_NORM,       SCI_CLEAR},
+    class DeleteNextCharacter(ScintillaCmdKeyExecute):
+        """Delete character to the right of the cursor"""
+        cmd = wx.stc.STC_CMD_CLEAR
+
     #    {SCK_INSERT,        SCI_CTRL,       SCI_COPY},
     #    {SCK_DELETE,        SCI_SHIFT,      SCI_CUT},
+
     #    {SCK_BACK,          SCI_NORM,       SCI_DELETEBACK},
     #    {SCK_BACK,          SCI_SHIFT,      SCI_DELETEBACK},
+    class DeletePreviousCharacter(ScintillaCmdKeyExecute):
+        """Delete character to the left of the cursor"""
+        key_bindings = {'default': 'S-BACK'}
+        cmd = wx.stc.STC_CMD_DELETEBACK
+
     # STC_CMD_DELETEBACKNOTLINE
     #    {SCK_BACK,          SCI_CSHIFT,     SCI_DELLINELEFT},
     class DeleteLineBeforeCursor(ScintillaCmdKeyExecute):
