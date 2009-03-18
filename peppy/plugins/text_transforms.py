@@ -311,7 +311,7 @@ class JustOneSpace(TextModificationAction):
     except at the begining and ends of lines, where it removes all white space.
     """
     alias = "just-one-space"
-    name = "JustOneSpace"
+    name = "Just One Space"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'M-SPACE',}
     key_needs_focus = True
@@ -346,7 +346,7 @@ class JustOneSpace(TextModificationAction):
             s.SetAnchor(start + new_pos)
             s.SetCurrentPos(start + new_pos)
             s.EndUndoAction()
-        
+
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     """Word-wrap the current paragraph or region."""
