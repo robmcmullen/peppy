@@ -12,7 +12,7 @@ import peppy.vfs as vfs
 
 class Autosave(ClassPrefs):
     preferences_tab = "General"
-    icon = "icons/disk_multiple.png"
+    icon = "icons/clock.png"
     default_classprefs = (
         BoolParam('use_autosave', True, 'Periodically save all files that have been changed to allow for recovery if there is a system crash'),
         IntParam('keystroke_interval', 10, 'Number of keystrokes before file is autosaved'),
