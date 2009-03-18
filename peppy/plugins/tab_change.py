@@ -20,7 +20,7 @@ class TabLeft(SelectAction):
     alias = "tab-left"
     name = "Select Previous Tab"
     tooltip = "Move the focus to the tab left of the current tab."
-    default_menu = ("Window", 110)
+    default_menu = ("Window", 210)
     key_bindings = {'default': "M-LEFT", 'mac': "C-{",}
 
     def action(self, index=-1, multiplier=1):
@@ -31,7 +31,7 @@ class TabRight(SelectAction):
     alias = "tab-right"
     name = "Select Next Tab"
     tooltip = "Move the focus to the tab right of the current tab."
-    default_menu = ("Window", -100)
+    default_menu = ("Window", -200)
     key_bindings = {'default': "M-RIGHT", 'mac': "C-}",}
 
     def action(self, index=-1, multiplier=1):

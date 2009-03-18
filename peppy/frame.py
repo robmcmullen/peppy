@@ -32,6 +32,7 @@ class WindowList(OnDemandGlobalListAction):
     name="Frames"
     default_menu = ("Window", -999)
     inline = True
+    osx_minimal_menu = True
     
     # provide storage to be shared among instances
     storage = []
@@ -78,7 +79,7 @@ class WindowList(OnDemandGlobalListAction):
 class DeleteWindow(SelectAction):
     alias = "delete-window"
     name = "&Delete Window"
-    default_menu = ("Window", 1)
+    default_menu = ("Window", 101)
     tooltip = "Delete current window"
     
     def action(self, index=-1, multiplier=1):
@@ -93,7 +94,7 @@ class NewWindow(SelectAction):
     alias = "new-window"
     name = "&New Window"
     tooltip = "Open a new window"
-    default_menu = ("Window", 0)
+    default_menu = ("Window", -100)
     key_bindings = {'emacs': "C-X 5 2",}
     osx_minimal_menu = True
     
@@ -112,6 +113,15 @@ class BringAllToFront(SelectAction):
         for frame in WindowList.getFrames():
             frame.Raise()
         top.Raise()
+
+
+class Minimize(SelectAction):
+    """Minimize the current window"""
+    name = "Minimize"
+    default_menu = ("Window", -1)
+
+    def action(self, index=-1, multiplier=1):
+        self.frame.Iconize(not self.frame.IsIconized())
 
 
 ## BufferFrames
