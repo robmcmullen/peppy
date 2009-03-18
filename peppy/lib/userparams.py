@@ -1517,9 +1517,20 @@ class ClassPrefs(object):
     """
     __metaclass__ = ClassPrefsMetaClass
     
-    #: Sorting weight (from 0 to 1000) if you want to group items out of the
-    # ordinary the dictionary sort order
+    #: Tab in the preferences dialog in which the object will show up
+    preferences_tab = "Misc"
+    
+    #: Alternate label to be used instead of the class name in the preferences list
+    preferences_label = None
+    
+    #: Sorting weight (from 0 to 1000) if you want to group items out of the ordinary the dictionary sort order
     preferences_sort_weight = 500
+    
+    @classmethod
+    def classprefsGetClassLabel(cls):
+        if cls.preferences_label is not None:
+            return cls.preferences_label
+        return cls.__name__
     
     def classprefsCopyToLocals(self):
         if not hasattr(self, 'locals'):
@@ -1898,20 +1909,20 @@ class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
 
     def createColumns(self):
         self.InsertSizedColumn(0, "Class")
-
+    
     def reset(self, classes):
         index = 0
         list_count = self.GetItemCount()
         self.class_names = []
         self.class_map = {}
         for cls in classes:
-            name = cls.__name__
-            self.class_names.append(name)
-            self.class_map[name] = cls
+            label = cls.classprefsGetClassLabel()
+            self.class_names.append(label)
+            self.class_map[label] = cls
             if index >= list_count:
-                self.appendItem(name)
+                self.appendItem(label)
             else:
-                self.setItem(index, name)
+                self.setItem(index, label)
             index += 1
 
         if index < list_count:
@@ -1944,7 +1955,8 @@ class PrefClassList(ColumnAutoSizeMixin, wx.ListCtrl, debugmixin):
     def ensureClassVisible(self, cls):
         self.clearSelected()
         try:
-            index = self.class_names.index(cls.__name__)
+            label = cls.classprefsGetClassLabel()
+            index = self.class_names.index(label)
             self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
             self.EnsureVisible(index)
         except:
@@ -2120,29 +2132,24 @@ class PrefDialog(wx.Dialog):
             unique[cls.__name__] = cls
         self.class_map = unique
         classes = unique.values()
-        classes.sort(key=lambda x: (x.preferences_sort_weight, x.__name__))
+        classes.sort(key=lambda x: (x.preferences_sort_weight, x.classprefsGetClassLabel()))
         
         self.tab_map= {}
         self.class_to_tab = {}
         for cls in classes:
-            if hasattr(cls, 'preferences_tab'):
-                tab = cls.preferences_tab
-                
-                # preferences_tab = None means that we shouldn't display
-                # preferences for this object, so it isn't added to
-                # any of the lists.  We have to special-case this in
-                # showRequestedPreferences above, however.
-                if tab is None:
-                    continue
-            else:
-                tab = "Misc"
+            tab = cls.preferences_tab
+            
+            # preferences_tab = None means that we shouldn't display preferences
+            # for this object, so it isn't added to any of the lists.  We have
+            # to special-case this in showRequestedPreferences above, however.
+            if tab is None:
+                continue
             if tab not in self.tab_map:
                 self.tab_map[tab] = []
             self.tab_map[tab].append(cls)
             self.class_to_tab[cls.__name__] = tab
         #dprint(self.tab_map)
         #dprint(self.class_to_tab)
-        self.class_names = [x.__name__ for x in classes]
     
     def createPage(self, tab, classes):
         splitter = PrefPage(self.notebook, classes)

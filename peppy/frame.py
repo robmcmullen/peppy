@@ -145,6 +145,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     load_error_count = 0
     size_timer = None
     
+    preferences_tab = "General"
+    preferences_label = "Windows"
+    if wx.Platform == "__WXMAC__":
+        icon = "icons/application_osx.png"
+    else:
+        icon = "icons/application.png"
+    
     perspectives={}
 
     default_classprefs = (
