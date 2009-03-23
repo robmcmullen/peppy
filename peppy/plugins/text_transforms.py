@@ -410,6 +410,13 @@ class SortLines(LineOrRegionMutateAction):
 class SortLinesByField(MinibufferAction, LineOrRegionMutateAction):
     """Sort lines based on a particular field in the line
     
+    The region will be extended to include complete lines if the beginning or
+    the end of the region starts in the middle of a line.
+    
+    Currently, non-printable delimiter characters (e.g.  the tab character) can
+    be entered only by pasting into the desired text field.  This is a bug and
+    will be fixed in future versions to use the InsertQuotedChar action.
+    
     This action subclasses from both L{MinibufferAction} and
     L{LineOrRegionMutateAction}, but because MinibufferAction occurs first in
     the method resolution order, its action method is the one that's used by
@@ -460,7 +467,10 @@ class SortLinesByField(MinibufferAction, LineOrRegionMutateAction):
         
 
 class ReverseLines(LineOrRegionMutateAction):
-    """Reverse the selected lines
+    """Reverse the order of lines in the current selection
+    
+    The region will be extended to include complete lines if the beginning or
+    the end of the region starts in the middle of a line.
     """
     alias = "reverse-lines"
     name = "Reverse Lines"
@@ -481,6 +491,9 @@ class ReverseLines(LineOrRegionMutateAction):
 
 class ShuffleLines(LineOrRegionMutateAction):
     """Shuffle the selected lines randomly
+    
+    The region will be extended to include complete lines if the beginning or
+    the end of the region starts in the middle of a line.
     """
     alias = "shuffle-lines"
     name = "Shuffle Lines"
