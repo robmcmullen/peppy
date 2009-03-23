@@ -106,7 +106,23 @@ class ProjectHome(SelectAction):
         from peppy import __url__
         import webbrowser
         webbrowser.open(__url__)
-        
+
+
+class LocateConfigDirectory(SelectAction):
+    """Locate the configuration directory.
+    
+    Bring up the configuration directory in dired mode to show where the per-
+    user configuration files are stored for peppy.
+    """
+    name = "Locate Config Dir"
+    default_menu = ("&Help", -300)
+    default_toolbar = False
+    osx_minimal_menu = True
+    
+    def action(self, index=-1, multiplier=1):
+        confdir = wx.GetApp().config.dir
+        self.frame.open(confdir)
+
 
 class BugReport(SelectAction):
     """Report a bug.
@@ -127,5 +143,6 @@ class HelpPlugin(IPeppyPlugin):
         return {'User Manual': _user_manual}
 
     def getActions(self):
-        return [HelpAbout, HelpManual, ProjectHome, BugReport]
-
+        return [HelpAbout, HelpManual, ProjectHome, BugReport,
+                
+                LocateConfigDirectory]
