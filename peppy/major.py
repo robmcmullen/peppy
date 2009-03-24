@@ -731,7 +731,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
         self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyDown)
         self.createContextMenuEventBindings()
-        self.idle_update_menu = False
 
     def createEventBindingsPostHook(self):
         pass
@@ -802,7 +801,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         col = self.GetColumn(pos)
         self.status_info.setText("L%d C%d" % (linenum+self.classprefs.line_number_offset,
             col+self.classprefs.column_number_offset),1)
-        self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
@@ -817,11 +815,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
 
     def idleHandler(self):
         #dprint("Idle starting for %s at %f" % (self.buffer.url, time.time()))
-        if self.idle_update_menu:
-            # FIXME: this was the old way to update the UI; now toolbar buttons
-            # are automatically updated in the event handler OnUpdateUI in
-            # UserActionMap.
-            self.idle_update_menu = False
         self.idlePostHook()
         #dprint("Idle finished for %s at %f" % (self.buffer.url, time.time()))
 

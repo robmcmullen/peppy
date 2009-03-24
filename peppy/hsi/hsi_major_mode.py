@@ -132,7 +132,6 @@ class HSIMode(BitmapScroller, MajorMode):
         if refresh:
             self.Update()
         self.updateInfo()
-        self.idle_update_menu = True
     
     def getProperties(self):
         pairs = MajorMode.getProperties(self)

@@ -586,7 +586,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             wx.CallAfter(self.status_info.setText, status, 1)
         else:
             self.status_info.setText(status ,1)
-        self.idle_update_menu = True
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
