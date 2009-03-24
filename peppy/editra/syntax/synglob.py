@@ -18,8 +18,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synglob.py 54460 2008-07-02 01:56:51Z CJP $"
-__revision__ = "$Revision: 54460 $"
+__svnid__ = "$Id: synglob.py 57169 2008-12-07 16:25:44Z CJP $"
+__revision__ = "$Revision: 57169 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -33,7 +33,8 @@ from synextreg import *
 #-----------------------------------------------------------------------------#
 
 # Maps file types to syntax definitions
-LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
+LANG_MAP = {LANG_4GL    : (ID_LANG_4GL,    stc.STC_LEX_SQL,      'progress'),
+            LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_ADA    : (ID_LANG_ADA,    stc.STC_LEX_ADA,      'ada'),
             LANG_APACHE : (ID_LANG_APACHE, stc.STC_LEX_CONF,     'apache'),
             LANG_AS     : (ID_LANG_AS,     stc.STC_LEX_CPP,      'actionscript'),
@@ -64,6 +65,7 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_HAXE   : (ID_LANG_HAXE, stc.STC_LEX_CPP,        'haxe'),
             LANG_HTML   : (ID_LANG_HTML,   stc.STC_LEX_HTML,     'html'),
             LANG_INNO   : (ID_LANG_INNO,   stc.STC_LEX_INNOSETUP, 'inno'),
+            LANG_ISSL   : (ID_LANG_ISSL,   stc.STC_LEX_CONTAINER, 'issuelist'),
             LANG_JAVA   : (ID_LANG_JAVA,   stc.STC_LEX_CPP,      'java'),
             LANG_JS     : (ID_LANG_JS,     stc.STC_LEX_CPP,      'javascript'),
             LANG_KIX    : (ID_LANG_KIX,    stc.STC_LEX_KIX,      'kix'),
@@ -78,6 +80,7 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_MATLAB : (ID_LANG_MATLAB, stc.STC_LEX_MATLAB,   'matlab'),
             LANG_MSSQL  : (ID_LANG_MSSQL,  stc.STC_LEX_MSSQL,    'mssql'),
             LANG_NASM   : (ID_LANG_NASM,   stc.STC_LEX_ASM,      'nasm'),
+            LANG_NEWLISP: (ID_LANG_NEWLISP, stc.STC_LEX_LISP,    'lisp'),
             LANG_NSIS   : (ID_LANG_NSIS,   stc.STC_LEX_NSIS,     'nsis'),
             LANG_OBJC   : (ID_LANG_OBJC,   stc.STC_LEX_CPP,      'cpp'),
             LANG_OCTAVE : (ID_LANG_OCTAVE, stc.STC_LEX_OCTAVE,   'matlab'),
@@ -89,7 +92,9 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_PROPS  : (ID_LANG_PROPS,  stc.STC_LEX_PROPERTIES, 'props'),
             LANG_PS     : (ID_LANG_PS,     stc.STC_LEX_PS,       'postscript'),
             LANG_PYTHON : (ID_LANG_PYTHON, stc.STC_LEX_PYTHON,   'python'),
+            LANG_R      : (ID_LANG_R,      stc.STC_LEX_CONTAINER, 's'),
             LANG_RUBY   : (ID_LANG_RUBY,   stc.STC_LEX_RUBY,     'ruby'),
+            LANG_S      : (ID_LANG_S,      stc.STC_LEX_CONTAINER, 's'),
             LANG_SCHEME : (ID_LANG_SCHEME, stc.STC_LEX_LISP,     'lisp'),
             LANG_SQL    : (ID_LANG_SQL,    stc.STC_LEX_SQL,      'sql'),
             LANG_SQUIRREL : (ID_LANG_SQUIRREL, stc.STC_LEX_CPP,  'squirrel'),
@@ -99,6 +104,7 @@ LANG_MAP = {LANG_68K    : (ID_LANG_68K,    stc.STC_LEX_ASM,      'asm68k'),
             LANG_TXT    : (ID_LANG_TXT,    stc.STC_LEX_NULL,     None),
             LANG_VALA   : (ID_LANG_VALA,   stc.STC_LEX_CPP,      'cpp'),
             LANG_VB     : (ID_LANG_VB,     stc.STC_LEX_VB,       'visualbasic'),
+            LANG_VBSCRIPT : (ID_LANG_VBSCRIPT, stc.STC_LEX_VBSCRIPT, 'vbscript'),
             LANG_VERILOG: (ID_LANG_VERILOG, stc.STC_LEX_VERILOG, 'verilog'),
             LANG_VHDL   : (ID_LANG_VHDL,   stc.STC_LEX_VHDL,     'vhdl'),
             LANG_XML    : (ID_LANG_XML,    stc.STC_LEX_XML,      'xml'),

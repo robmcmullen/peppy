@@ -2,6 +2,7 @@
 # Name: lisp.py                                                               #
 # Purpose: Define Lisp syntax for highlighting and other features             #
 # Author: Cody Precord <cprecord@editra.org>                                  #
+# Author: Jeff                                                                #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
 # License: wxWindows License                                                  #
 ###############################################################################
@@ -15,8 +16,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: lisp.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: lisp.py 55074 2008-08-12 23:46:33Z CJP $"
+__revision__ = "$Revision: 55074 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -298,6 +299,56 @@ LISP_KEYWORDS = (1, ":abort :adjustable :append :array :base :case :circle "
                     ":start1 :start2 :stream :supersede :test :test-not :use "
                     ":verbose :version")
 
+NEWLISP_FUNC = (0, "! != % & * + - / : < << <= = > >= >> ? @ NaN? abort abs "
+                   "acos acosh add address " "amb and append append-file apply "
+                   "args array array-list array? asin asinh assoc assoc-set "
+                   "atan atan2 atanh atom? base64-dec base64-enc bayes-query "
+                   "bayes-train begin beta betai bind binomial callback case "
+                   "catch ceil change-dir char chop clean close command-event "
+                   "cond cons constant context context? copy-file cos cosh "
+                   "count cpymem crc32 crit-chi2 crit-z current-line curry "
+                   "date date-value debug dec def-new default define "
+                   "define-macro delete delete-file delete-url destroy det "
+                   "device difference directory directory? div do-until "
+                   "do-while doargs dolist dostring dotimes dotree dump dup "
+                   "empty? encrypt ends-with env erf error-event error-number "
+                   "error-text eval eval-string exec exists exit exp expand "
+                   "explode factor fft file-info file? filter find find-all "
+                   "first flat " "float float? floor flt for for-all fork "
+                   "format fv gammai gammaln gcd get-char get-float get-int "
+                   "get-long get-string get-url global global? if if-not ifft "
+                   "import inc index int integer integer? intersect invert irr "
+                   "join lambda? last legal? length let letex letn list list? "
+                   "load local log lookup lower-case macro? main-args make-dir "
+                   "map mat match max member min mod mul multiply name "
+                   "net-accept net-close net-connect net-error net-eval "
+                   "net-listen net-local net-lookup net-peek net-peer net-ping"
+                   "-receive " "net-receive-from net-receive-udp net-select "
+                   "net-send net-send-to net-send-udp net-service net-sessions "
+                   "new nil nil? normal not now nper npv nth nth-set null? "
+                   "number? open or ostype pack parse parse-date peek pipe pmt "
+                   "pop pop-assoc post-url pow pretty-print primitive? print "
+                   "println prob-chi2 prob-z process prompt-event protected? "
+                   "push put-url pv quote quote? rand random randomize "
+                   "read-buffer read-char read-expr read-file read-key "
+                   "read-line real-path ref ref-all ref-set regex regex-comp "
+                   "remove-dir rename-file replace reset rest reverse rotate "
+                   "round save search seed seek select semaphore sequence "
+                   "series set set-assoc set-locale set-nth set-ref "
+                   "set-ref-all setq sgn share signal silent sin sinh sleep "
+                   "slice sort source spawn sqrt starts-with string string? "
+                   "sub swap sym symbol? symbols sync sys-error sys-info tan "
+                   "tanh throw throw-error time time-of-day timer title-case "
+                   "trace trace-highlight transpose trim true true? unicode "
+                   "unify unique unless unpack until upper-case utf8 utf8len "
+                   "uuid wait-pid when while write-buffer write-char "
+                   "write-file write-line xml-error xml-parse xml-type-tags "
+                   "zero? | ~ lambda")
+ 
+# Lisp Keywords
+NEWLISP_KEYWORDS = (1, "$ $0 $1 $10 $11 $12 $13 $14 $15 $2 $3 $4 $5 $6 $7 $8 "
+                       "$9 $args $idx $main-args MAIN :")
+
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_LISP_DEFAULT', 'default_style'),
                  ('STC_LISP_COMMENT', 'comment_style'),
@@ -327,6 +378,8 @@ def Keywords(lang_id=0):
         return [LISP_FUNC, LISP_KEYWORDS]
     elif lang_id == synglob.ID_LANG_SCHEME:
         return [SCHEME_KW]
+    elif lang_id == synglob.ID_LANG_NEWLISP:
+        return [NEWLISP_FUNC, NEWLISP_KEYWORDS]
     else:
         return list()
 
@@ -335,7 +388,9 @@ def SyntaxSpec(lang_id=0):
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id in [ synglob.ID_LANG_LISP, synglob.ID_LANG_SCHEME ]:
+    if lang_id in [ synglob.ID_LANG_LISP,
+                    synglob.ID_LANG_SCHEME,
+                    synglob.ID_LANG_NEWLISP]:
         return SYNTAX_ITEMS
     else:
         return list()
@@ -345,7 +400,9 @@ def Properties(lang_id=0):
     @param lang_id: used to select a specific set of properties
 
     """
-    if lang_id in [ synglob.ID_LANG_LISP, synglob.ID_LANG_SCHEME ]:
+    if lang_id in [ synglob.ID_LANG_LISP,
+                    synglob.ID_LANG_SCHEME,
+                    synglob.ID_LANG_NEWLISP]:
         return [FOLD]
     else:
         return list()
@@ -355,7 +412,9 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id in [ synglob.ID_LANG_LISP, synglob.ID_LANG_SCHEME ]:
+    if lang_id in [ synglob.ID_LANG_LISP,
+                    synglob.ID_LANG_SCHEME,
+                    synglob.ID_LANG_NEWLISP]:
         return [u';']
     else:
         return list()

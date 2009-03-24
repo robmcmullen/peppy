@@ -16,11 +16,12 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: d.py 53476 2008-05-07 03:56:14Z CJP $"
-__revision__ = "$Revision: 53476 $"
+__svnid__ = "$Id: d.py 55174 2008-08-22 15:12:27Z CJP $"
+__revision__ = "$Revision: 55174 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
+from cpp import AutoIndenter
 
 #-----------------------------------------------------------------------------#
 

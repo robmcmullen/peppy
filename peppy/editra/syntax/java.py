@@ -14,12 +14,14 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: java.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: java.py 55174 2008-08-22 15:12:27Z CJP $"
+__revision__ = "$Revision: 55174 $"
 
 #-----------------------------------------------------------------------------#
-# Dependencies
+# Local Imports
 import synglob
+from cpp import AutoIndenter
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Specifications ----#

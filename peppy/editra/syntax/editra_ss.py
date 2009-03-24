@@ -15,17 +15,20 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: editra_ss.py 52882 2008-03-28 01:00:32Z CJP $"
-__revision__ = "$Revision: 52882 $"
+__svnid__ = "$Id: editra_ss.py 55178 2008-08-22 15:39:56Z CJP $"
+__revision__ = "$Revision: 55178 $"
 
 #-----------------------------------------------------------------------------#
+# Local Imports
 import synglob
+from css import AutoIndenter
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Specifications ----#
 
 # Editra Style Sheet Keywords
-ESS_KEYWORDS = (0, "fore back face size eol bold italic")
+ESS_KEYWORDS = (0, "fore back face size eol bold italic modifiers")
 
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_CSS_DEFAULT', 'default_style'),

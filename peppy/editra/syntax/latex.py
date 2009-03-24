@@ -15,8 +15,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: latex.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: latex.py 58334 2009-01-23 16:32:44Z CJP $"
+__revision__ = "$Revision: 58334 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -71,7 +71,7 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_TEX:
+    if lang_id in [synglob.ID_LANG_LATEX, synglob.ID_LANG_TEX]:
         return [TEX_KW]
     else:
         return list()
@@ -81,7 +81,7 @@ def SyntaxSpec(lang_id=0):
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_TEX:
+    if lang_id in [synglob.ID_LANG_LATEX, synglob.ID_LANG_TEX]:
         return SYNTAX_ITEMS1
     else:
         return SYNTAX_ITEMS2
@@ -91,7 +91,7 @@ def Properties(lang_id=0):
     @param lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_TEX:
+    if lang_id in [synglob.ID_LANG_LATEX, synglob.ID_LANG_TEX]:
         return list()
     else:
         return list()
@@ -101,7 +101,7 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_TEX:
+    if lang_id in [synglob.ID_LANG_LATEX, synglob.ID_LANG_TEX]:
         return [u'%']
     else:
         return list()

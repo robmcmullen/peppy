@@ -14,10 +14,14 @@ AUTHOR: Cody Preord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: inno.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: inno.py 55356 2008-08-29 16:27:34Z CJP $"
+__revision__ = "$Revision: 55356 $"
 
 #-----------------------------------------------------------------------------#
+# Imports
+import re
+
+# Syntax Package Imports
 import synglob
 
 #-----------------------------------------------------------------------------#
@@ -149,6 +153,36 @@ def CommentPattern(lang_id=0):
         return list()
 
 #---- End Required Module Functions ----#
+
+def AutoIndenter(stc, pos, ichar):
+    """Auto indent Inno Setup Scripts. uses \n the text buffer will
+    handle any eol character formatting.
+    @param stc: EditraStyledTextCtrl
+    @param pos: current carat position
+    @param ichar: Indentation character
+    @return: string
+
+    """
+    rtxt = u''
+    line = stc.GetCurrentLine()
+    text = stc.GetTextRange(stc.PositionFromLine(line), pos)
+
+    indent = stc.GetLineIndentation(line)
+    if ichar == u"\t":
+        tabw = stc.GetTabWidth()
+    else:
+        tabw = stc.GetIndent()
+
+    i_space = indent / tabw
+    ndent = u"\n" + ichar * i_space
+    rtxt = ndent + ((indent - (tabw * i_space)) * u' ')
+
+    if_pat = re.compile('if\s+.*\sthen')
+    text = text.strip()
+    if text == u'begin' or if_pat.match(text):
+        rtxt += ichar
+
+    return rtxt
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString():

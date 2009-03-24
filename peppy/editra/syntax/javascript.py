@@ -15,24 +15,27 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: javascript.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: javascript.py 59542 2009-03-15 00:23:37Z CJP $"
+__revision__ = "$Revision: 59542 $"
 
 #-----------------------------------------------------------------------------#
+# Local Imports
 import synglob
 import cpp
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Specifications ----#
 
 # JavaScript Keywords # set to 1 for embeded
-JS_KEYWORDS = (0, "if else while for break continue switch case default new in "
-                  "this var const return with function true false abstract and "
-                  "array as catch class char debugger delete declare double "
-                  "else enum export extend final finally float goto implements "
-                  "import instanceof int interface long native null package "
-                  "private protected public return short static syncronized "
-                  "throw throws transient try typeof void while")
+JS_KEYWORDS = (0, "abstract break boolean byte case const continue catch "
+                  "class char debugger default delete do double default "
+                  "export false else enum export extend final finally "
+                  "float for function goto if implements import in " 
+                  "instanceof int interface long native new null "
+                  "package private protected public return short static "
+                  "synchronized switch super this throw throws transient "
+                  "try true typeof var void volatile with while")
 
 #---- Syntax Style Spec ----#
 SYNTAX_ITEMS = [ ('STC_HJ_COMMENT', 'comment_style'),
@@ -71,7 +74,7 @@ def Keywords(lang_id=0):
 
     """
     if lang_id == synglob.ID_LANG_JS:
-        return [JS_KEYWORDS]
+        return [JS_KEYWORDS,]
     else:
         return list()
 
@@ -106,6 +109,8 @@ def CommentPattern(lang_id=0):
         return list()
 
 #---- End Required Module Functions ----#
+
+AutoIndenter = cpp.AutoIndenter
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString(option=0):

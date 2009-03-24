@@ -9,18 +9,23 @@ using GLib;
 
 //! \summary Documentation keyword
 public class Sample : Object {
-        public Sample () {
-        }
 
-        public void run () {
-                stdout.printf ("Hello World\n");
-                stdout.printf ("Unclosed string);
-                stdout.printf ('a'); // <- Char
-        }
+    // Some Variable definitions
+    public static const double ASPECT = 8.0/6.0;
+    static unichar a_char = 'a';
 
-        static int main (string[] args) {
-                var sample = new Sample ();
-                sample.run ();
-                return 0;
-        }
+    public Sample () {
+    }
+
+    public void run () {
+            stdout.printf ("Hello World\n");
+            stdout.printf ("Unclosed string);
+            stdout.printf ('a'); // <- Char
+    }
+
+    static int main (string[] args) {
+            var sample = new Sample ();
+            sample.run ();
+            return 0;
+    }
 }

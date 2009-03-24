@@ -15,12 +15,16 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ruby.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: ruby.py 55179 2008-08-22 17:06:44Z CJP $"
+__revision__ = "$Revision: 55179 $"
 
 #-----------------------------------------------------------------------------#
-# Dependancies
+# Imports
+import re
+
+# Local Imports
 import synglob
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Specifications ----#
@@ -31,7 +35,8 @@ import synglob
 RUBY_KW = (0, "__FILE__ and def end in or self unless __LINE__ begin defined "
               "ensure module redo super until BEGIN break do false next "
               "require rescue then when END case else for nil retry true while "
-              "alias class elsif if not return undef yieldr puts")
+              "alias class elsif if not return undef yieldr puts raise "
+              "protected private")
 
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_RB_BACKTICKS', 'scalar_style'),
@@ -115,6 +120,36 @@ def CommentPattern(lang_id=0):
         return list()
 
 #---- End Required Module Functions ----#
+
+def AutoIndenter(stc, pos, ichar):
+    """Auto indent cpp code. uses \n the text buffer will
+    handle any eol character formatting.
+    @param stc: EditraStyledTextCtrl
+    @param pos: current carat position
+    @param ichar: Indentation character
+    @return: string
+
+    """
+    rtxt = u''
+    line = stc.GetCurrentLine()
+    text = stc.GetTextRange(stc.PositionFromLine(line), pos)
+
+    indent = stc.GetLineIndentation(line)
+    if ichar == u"\t":
+        tabw = stc.GetTabWidth()
+    else:
+        tabw = stc.GetIndent()
+
+    i_space = indent / tabw
+    ndent = u"\n" + ichar * i_space
+    rtxt = ndent + ((indent - (tabw * i_space)) * u' ')
+
+    def_pat = re.compile('\s*(class|def)\s+[a-zA-Z_][a-zA-Z0-9_]*')
+    text = text.strip()
+    if text.endswith('{') or def_pat.match(text):
+        rtxt += ichar
+
+    return rtxt
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString(option=0):

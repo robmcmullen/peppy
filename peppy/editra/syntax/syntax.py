@@ -34,8 +34,8 @@ objects such as the Extension Register.
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: syntax.py 54429 2008-06-30 04:42:44Z CJP $"
-__revision__ = "$Revision: 54429 $"
+__svnid__ = "$Id: syntax.py 57226 2008-12-10 03:13:03Z CJP $"
+__revision__ = "$Revision: 57226 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -59,6 +59,7 @@ PROPERTIES = 3    # Extra Properties
 LANGUAGE   = 4    # Language ID
 COMMENT    = 5    # Gets the comment characters pattern
 CLEXER     = 6    # Container Lexer Styler Method
+INDENTER   = 7    # Auto-indenter method
 
 _ = wx.GetTranslation
 #-----------------------------------------------------------------------------#
@@ -83,9 +84,9 @@ class SyntaxMgr(object):
         @keyword config: path of config file to load file extension config from
 
         """
-        if self.first:
+        if SyntaxMgr.first:
             object.__init__(self)
-            self.first = False
+            SyntaxMgr.first = False
             self._extreg = ExtensionRegister()
             self._config = config
             if self._config:
@@ -94,14 +95,14 @@ class SyntaxMgr(object):
                 self._extreg.LoadDefault()
             self._loaded = dict()
 
-    def __new__(cls, *args, **kargs):
+    def __new__(cls, config=None):
         """Ensure only a single instance is shared amongst
         all objects.
         @return: class instance
 
         """
-        if not cls.instance:
-            cls.instance = object.__new__(cls, *args, **kargs)
+        if cls.instance is None:
+            cls.instance = object.__new__(cls)
         return cls.instance
 
     def _ExtToMod(self, ext):
@@ -149,7 +150,7 @@ class SyntaxMgr(object):
             try:
                 self._loaded[modname] = __import__(modname, globals(), 
                                                    locals(), [''])
-            except ImportError:
+            except ImportError, msg:
                 return False
         return True
 
@@ -204,9 +205,9 @@ class SyntaxMgr(object):
             syn_data[CLEXER] = mod.StyleText
         else:
             syn_data[CLEXER] = None
+        syn_data[INDENTER] = getattr(mod, 'AutoIndenter', None)
 
         return syn_data
-
 
 #-----------------------------------------------------------------------------#
 
@@ -221,7 +222,7 @@ def GenLexerMenu():
     for key in synglob.LANG_MAP:
         f_types[key] = synglob.LANG_MAP[key][LANG_ID]
     f_order = list(f_types)
-    f_order.sort()
+    f_order.sort(NoCaseCmp)
 
     for lang in f_order:
         lex_menu.Append(f_types[lang], lang, 
@@ -238,6 +239,9 @@ def GenFileFilters():
     f_dict = dict()
     for key, val in extreg.iteritems():
         val.sort()
+        if key.lower() == 'makefile':
+            continue
+
         f_dict[key] = u";*." + u";*.".join(val)
 
     # Build the final list of properly formated strings
@@ -245,7 +249,7 @@ def GenFileFilters():
     for key in f_dict:
         tmp = u" (%s)|%s|" % (f_dict[key][1:], f_dict[key][1:])
         filters.append(key + tmp)
-    filters.sort()
+    filters.sort(NoCaseCmp)
     filters.insert(0, u"All Files (*)|*|")
     filters[-1] = filters[-1][:-1] # IMPORTANT trim last '|' from item in list
     return filters
@@ -262,6 +266,7 @@ def GetLexerList():
     f_order.sort()
     return f_order
 
+#---- Syntax id set ----#
 def SyntaxIds():
     """Gets a list of all Syntax Ids and returns it
     @return: list of all syntax language ids
@@ -280,6 +285,10 @@ def SyntaxIds():
 
     return ret_ids
 
+SYNTAX_IDS = SyntaxIds()
+
+#---- End Syntax ids ----#
+
 def GetExtFromId(ext_id):
     """Takes a language ID and fetches an appropriate file extension string
     @param ext_id: language id to get extension for
@@ -290,6 +299,20 @@ def GetExtFromId(ext_id):
     extreg = ExtensionRegister()
     ftype = synglob.GetDescriptionFromId(ext_id)
     return extreg[ftype][0]
+
+def GetFtypeDisplayName(lang_id):
+    """Get the file type display string for the given lang_id
+    @param lang_id: ID_LANG_*
+    @todo: make file types translatable
+
+    """
+    for item in dir(synglob):
+        if item.startswith("ID_LANG"):
+            if getattr(synglob, item) == lang_id:
+                return getattr(synglob, item[3:], u"Plain Text")
+    else:
+        return u"Plain Text"
+
 
 def GetIdFromExt(ext):
     """Get the language id from the given file extension
@@ -312,3 +335,14 @@ def GetTypeFromExt(ext):
 
     """
     return ExtensionRegister().FileTypeFromExt(ext)
+
+#-----------------------------------------------------------------------------#
+# Utility
+def NoCaseCmp(x, y):
+    """Case insensitive sort method"""
+    if x.lower() < y.lower():
+        return -1
+    elif x.lower() > y.lower():
+        return 1
+    else:
+        return 0

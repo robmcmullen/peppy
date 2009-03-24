@@ -15,11 +15,16 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: fortran.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: fortran.py 55180 2008-08-22 17:35:29Z CJP $"
+__revision__ = "$Revision: 55180 $"
 
 #-----------------------------------------------------------------------------#
+# Imports
+import re
+
+# Local Imports
 import synglob
+
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Definitions ----#
@@ -166,6 +171,37 @@ def CommentPattern(lang_id=0):
         return list()
 
 #---- End Required Module Functions ----#
+
+def AutoIndenter(stc, pos, ichar):
+    """Auto indent cpp code. uses \n the text buffer will
+    handle any eol character formatting.
+    @param stc: EditraStyledTextCtrl
+    @param pos: current carat position
+    @param ichar: Indentation character
+    @return: string
+
+    """
+    rtxt = u''
+    line = stc.GetCurrentLine()
+    text = stc.GetTextRange(stc.PositionFromLine(line), pos)
+
+    indent = stc.GetLineIndentation(line)
+    if ichar == u"\t":
+        tabw = stc.GetTabWidth()
+    else:
+        tabw = stc.GetIndent()
+
+    i_space = indent / tabw
+    ndent = u"\n" + ichar * i_space
+    rtxt = ndent + ((indent - (tabw * i_space)) * u' ')
+
+    blks = '(program|function|subroutine|if|do|while)'
+    blk_pat = re.compile(blks + '\s*[(a-zA-Z][a-zA-Z0-9]*', re.IGNORECASE)
+    text = text.strip()
+    if text.endswith('{') or blk_pat.match(text) or text == 'else':
+        rtxt += ichar
+
+    return rtxt
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString():

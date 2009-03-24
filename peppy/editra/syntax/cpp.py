@@ -14,11 +14,14 @@ FILE: cpp.py
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: cpp.py 53596 2008-05-15 15:21:42Z CJP $"
-__revision__ = "$Revision: 53596 $"
+__svnid__ = "$Id: cpp.py 58027 2009-01-11 17:58:04Z CJP $"
+__revision__ = "$Revision: 58027 $"
 
 #-----------------------------------------------------------------------------#
-# Dependencies
+# Imports
+import re
+
+# Local imports
 import synglob
 
 #-----------------------------------------------------------------------------#
@@ -45,13 +48,13 @@ DOC_KEYWORDS = (2, "TODO FIXME XXX author brief bug callgraph category class "
                    "code date def depreciated dir dot dotfile else elseif em "
                    "endcode enddot endif endverbatim example exception file if "
                    "ifnot image include link mainpage name namespace page par "
-                   "paragraph param return retval section struct subpage "
-                   "subsection subsubsection test todo typedef union var "
-                   "verbatim version warning $ @ ~ < > # % HACK")
+                   "paragraph param pre post return retval section struct "
+                   "subpage subsection subsubsection test todo typedef union "
+                   "var verbatim version warning $ @ ~ < > # % HACK")
 
 # CPP Keyword Extensions
 CPP_KEYWORDS = ("and and_eq bitand bitor catch class compl const_cast delete "
-                "dynamic_cast false friend new not not_eq opperator or or_eq "
+                "dynamic_cast false friend new not not_eq operator or or_eq "
                 "private protected public reinterpret_cast static_cast this "
                 "throw try true typeid using xor xor_eq")
 
@@ -110,7 +113,7 @@ SYNTAX_ITEMS = [ ('STC_C_DEFAULT', 'default_style'),
                  ('STC_C_STRING', 'string_style'),
                  ('STC_C_STRINGEOL', 'stringeol_style'),
                  ('STC_C_UUID', 'pre_style'),
-                 ('STC_C_VERBATIM', "number2_style"),
+                 ('STC_C_VERBATIM', 'number2_style'),
                  ('STC_C_WORD', 'keyword_style'),
                  ('STC_C_WORD2', 'keyword2_style') ]
 
@@ -195,6 +198,37 @@ def CommentPattern(lang_id=0):
         return [u'/*', u'*/']
 
 #---- End Required Functions ----#
+
+def AutoIndenter(stc, pos, ichar):
+    """Auto indent cpp code. uses \n the text buffer will
+    handle any eol character formatting.
+    @param stc: EditraStyledTextCtrl
+    @param pos: current carat position
+    @param ichar: Indentation character
+    @return: string
+
+    """
+    rtxt = u''
+    line = stc.GetCurrentLine()
+    text = stc.GetTextRange(stc.PositionFromLine(line), pos)
+
+    indent = stc.GetLineIndentation(line)
+    if ichar == u"\t":
+        tabw = stc.GetTabWidth()
+    else:
+        tabw = stc.GetIndent()
+
+    i_space = indent / tabw
+    ndent = u"\n" + ichar * i_space
+    rtxt = ndent + ((indent - (tabw * i_space)) * u' ')
+
+    cdef_pat = re.compile('(public|private|protected)\s*\:')
+    case_pat = re.compile('(case\s+.+|default)\:')
+    text = text.strip()
+    if text.endswith('{') or cdef_pat.match(text) or case_pat.match(text):
+        rtxt += ichar
+
+    return rtxt
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString():

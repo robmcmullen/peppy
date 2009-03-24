@@ -12,10 +12,11 @@
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ferite.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: ferite.py 55174 2008-08-22 15:12:27Z CJP $"
+__revision__ = "$Revision: 55174 $"
 
 #-----------------------------------------------------------------------------#
+# Local Imports
 import synglob
 import cpp
 
@@ -87,6 +88,8 @@ def CommentPattern(lang_id=0):
         return list()
 
 #---- End Required Module Functions ----#
+
+AutoIndenter = cpp.AutoIndenter
 
 #---- Syntax Modules Internal Functions ----#
 def KeywordString():

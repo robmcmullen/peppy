@@ -16,8 +16,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: html.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: html.py 59542 2009-03-15 00:23:37Z CJP $"
+__revision__ = "$Revision: 59542 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -39,13 +39,12 @@ HTML_TAGS = (0, "address applet area a base basefont big blockquote br caption "
                 "iframe ins legend object optgroup q s tbody tfoot thead "
                 # Tag Attributes / Arguments
                 "action align alink alt archive background bgcolor border "
-                "bordercolor cellpadding cellspacing checked class clear code "
+                "bordercolor cellpadding cellspacing checked class clear "
                 "codebase color cols colspan content coords enctype face "
                 "gutter height hspace id link lowsrc marginheight marginwidth "
                 "maxlength method name prompt rel rev rows rowspan scrolling "
                 "selected shape size src start target text type url usemap "
-                "ismap valign value vlink vspace width wrap href title "
-                "http-equiv "
+                "ismap valign value vlink vspace width wrap href http-equiv "
                 # HTML 4 Tag Attributes /Arguments
                 "accept accesskey axis char charoff charset cite classid "
                 "codetype compact data datetime declare defer dir disabled for "
@@ -97,9 +96,10 @@ PY_KEYWORDS = (3, "")
 # embedded xml highlighting it is currently not being used.
 
 # SGML Keywords
-SGML_KEYWORDS = (6, "#CURRENT #IMPLIED #REQUIRED ATTLIST CDATA DOCTYPE "
-                    "ELEMENT ENTITY HTML IDREF INCLUDE IGNORE NMTOKEN NUMBER "
-                    "RCDATA TEMP")
+SGML_KEYWORDS = (5, "ELEMENT DOCTYPE ATTLIST ENTITY NOTATION")
+#SGML_KEYWORDS = (5, "#CURRENT #IMPLIED #REQUIRED ATTLIST CDATA DOCTYPE "
+#                    "ELEMENT ENTITY HTML IDREF INCLUDE IGNORE NMTOKEN NUMBER "
+#                    "RCDATA TEMP")
 
 # SGML Block Keywords
 SGML_BLOCK = (7, "")
@@ -118,10 +118,10 @@ SYNTAX_ITEMS = [ ('STC_H_DEFAULT', 'default_style'),
                  ('STC_H_OTHER', 'default_style'),  # Style ME
                  ('STC_H_QUESTION', 'scalar_style'),
                  ('STC_H_SCRIPT', 'funct_style'), # STYLE ME
-                 ('STC_H_SGML_1ST_PARAM', 'default_style'), # STYLE ME
+                 ('STC_H_SGML_1ST_PARAM', 'keyword2_style'), # STYLE ME
                  ('STC_H_SGML_1ST_PARAM_COMMENT', 'comment_style'),
                  ('STC_H_SGML_BLOCK_DEFAULT', 'default_style'), # STYLE ME
-                 ('STC_H_SGML_COMMAND', 'default_style'), # STYLE ME
+                 ('STC_H_SGML_COMMAND', 'keyword_style'), # STYLE ME
                  ('STC_H_SGML_COMMENT', 'comment_style'),
                  ('STC_H_SGML_DEFAULT', 'array_style'), # STYLE ME
                  ('STC_H_SGML_DOUBLESTRING', 'string_style'),

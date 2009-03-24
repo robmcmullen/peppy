@@ -19,8 +19,8 @@ LANGUAGE: Python
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synextreg.py 54460 2008-07-02 01:56:51Z CJP $"
-__revision__ = "$Revision: 54460 $"
+__svnid__ = "$Id: synextreg.py 58860 2009-02-12 23:57:42Z CJP $"
+__revision__ = "$Revision: 58860 $"
 
 #-----------------------------------------------------------------------------#
 import os
@@ -113,7 +113,7 @@ LANG_ESS = u'Editra Style Sheet'
 
 # Use LEX_EIFFEL
 ID_LANG_EIFFEL = _NewId()
-LANG_EIFFEL = u"Eiffel"
+LANG_EIFFEL = u'Eiffel'
 
 # Use LEX_ERLANG
 ID_LANG_ERLANG = _NewId()
@@ -146,8 +146,6 @@ ID_LANG_HTML = _NewId()
 LANG_HTML = u'HTML'
 ID_LANG_JS   = _NewId()
 LANG_JS = u'JavaScript'
-ID_LANG_VBS  = _NewId()
-LANG_VBS = u'VB Script'
 ID_LANG_PHP  = _NewId()
 LANG_PHP = u'PHP'
 ID_LANG_XML  = _NewId()
@@ -167,6 +165,8 @@ ID_LANG_LISP = _NewId()
 LANG_LISP = u'Lisp'
 ID_LANG_SCHEME = _NewId()
 LANG_SCHEME = u'Scheme'
+ID_LANG_NEWLISP = _NewId()
+LANG_NEWLISP = u'newLISP'
 
 # Use LEX_LOUT
 ID_LANG_LOUT = _NewId()
@@ -204,7 +204,7 @@ LANG_PYTHON = u'Python'
 
 # Use LEX_MATLAB
 ID_LANG_MATLAB = _NewId()
-LANG_MATLAB = u"Matlab"
+LANG_MATLAB = u'Matlab'
 
 # Use LEX_RUBY
 ID_LANG_RUBY = _NewId()
@@ -219,6 +219,8 @@ ID_LANG_SQL = _NewId()
 LANG_SQL = u'SQL'
 ID_LANG_PLSQL = _NewId()
 LANG_PLSQL = u'PL/SQL'
+ID_LANG_4GL = _NewId()
+LANG_4GL = u"Progress 4GL"
 
 # Use LEX_TCL
 ID_LANG_TCL  = _NewId()
@@ -233,6 +235,10 @@ LANG_LATEX = u'LaTeX'
 # Use LEX_VB
 ID_LANG_VB = _NewId()
 LANG_VB = u'Visual Basic'
+
+# Use LEX_VBSCRIPT
+ID_LANG_VBSCRIPT = _NewId()
+LANG_VBSCRIPT = u'VBScript'
 
 # Use LEX_VERILOG
 ID_LANG_VERILOG = _NewId()
@@ -265,13 +271,20 @@ LANG_YAML = u'YAML'
 # Use LEX_CONTAINER
 ID_LANG_DJANGO = _NewId()
 LANG_DJANGO = u'Django'
+ID_LANG_ISSL = _NewId()
+LANG_ISSL = u'IssueList'
 ID_LANG_MAKO = _NewId()
 LANG_MAKO = u'Mako'
+ID_LANG_R = _NewId()
+LANG_R = u'R'
+ID_LANG_S = _NewId()
+LANG_S = u'S'
 
 #---- End Language Identifier Keys ----#
 
 # Default extensions to file type mapping
 EXT_MAP = {
+           '4gl'                : LANG_4GL,
            '68k'                : LANG_68K,
            'ada adb ads a'      : LANG_ADA,
            'conf htaccess'      : LANG_APACHE,
@@ -302,13 +315,15 @@ EXT_MAP = {
            'hs'                 : LANG_HASKELL,
            'hx hxml'            : LANG_HAXE,
            'htm html shtm shtml xhtml' : LANG_HTML,
+           'isl'                : LANG_ISSL,
            'iss'                : LANG_INNO,
            'java'               : LANG_JAVA,
            'js'                 : LANG_JS,
            'kix'                : LANG_KIX,
            'ksh'                : LANG_KSH,
            'aux tex sty'        : LANG_LATEX,
-           'cl lisp lsp'        : LANG_LISP,
+           'cl lisp'            : LANG_LISP,
+           'lsp'                : LANG_NEWLISP,
            'lt'                 : LANG_LOUT,
            'lua'                : LANG_LUA,
            'mak makefile'       : LANG_MAKE,
@@ -328,7 +343,9 @@ EXT_MAP = {
            'ini inf reg url cfg cnf' : LANG_PROPS,
            'ai ps'              : LANG_PS,
            'py pyw python'      : LANG_PYTHON,
-           'rb rbw rbx'         : LANG_RUBY,
+           'r'                  : LANG_R,        
+           'rake rb rbw rbx gemspec' : LANG_RUBY,
+           's'                  : LANG_S,
            'scm smd ss'         : LANG_SCHEME,
            'sql'                : LANG_SQL,
            'nut'                : LANG_SQUIRREL,
@@ -338,6 +355,7 @@ EXT_MAP = {
            'txt'                : LANG_TXT,
            'vala'               : LANG_VALA,
            'bas cls ctl frm vb' : LANG_VB,
+           'vbs dsm'            : LANG_VBSCRIPT,
            'v'                  : LANG_VERILOG,
            'vh vhdl'            : LANG_VHDL,
            'axl dtd plist rdf svg xml xrc xsd xsl xslt xul' : LANG_XML,

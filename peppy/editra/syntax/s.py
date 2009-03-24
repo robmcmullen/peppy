@@ -1,26 +1,27 @@
 ###############################################################################
-# Name: mako.py                                                               #
-# Purpose: Define Mako syntax for highlighting and other features             #
+# Name: s.py                                                                  #
+# Purpose: Define S and R syntax for highlighting and other features          #
 # Author: Cody Precord <cprecord@editra.org>                                  #
 # Copyright: (c) 2007 Cody Precord <staff@editra.org>                         #
 # License: wxWindows License                                                  #
 ###############################################################################
 
 """
-FILE: mako.py
+FILE: s.py
 AUTHOR: Cody Precord
-@summary: Lexer configuration module for Mako Templates.
+@summary: Lexer configuration module for the S and R statistical languages
 
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: mako.py 55737 2008-09-19 16:12:31Z CJP $"
-__revision__ = "$Revision: 55737 $"
+__svnid__ = "$Id: s.py 55738 2008-09-19 16:40:49Z CJP $"
+__revision__ = "$Revision: 55738 $"
 
 #-----------------------------------------------------------------------------#
 # Imports
 from pygments.token import Token
 from pygments.lexers import get_lexer_by_name
+import wx.stc
 
 #Local Imports
 import synglob
@@ -28,39 +29,29 @@ import synglob
 #-----------------------------------------------------------------------------#
 # Style Id's
 
-STC_MAKO_DEFAULT, \
-STC_MAKO_COMMENT, \
-STC_MAKO_NUMBER, \
-STC_MAKO_STRING, \
-STC_MAKO_STRINGEOL, \
-STC_MAKO_SCALAR, \
-STC_MAKO_OPERATOR, \
-STC_MAKO_PREPROCESSOR, \
-STC_MAKO_ATTRIBUTE, \
-STC_MAKO_TAG, \
-STC_MAKO_BUILTIN, \
-STC_MAKO_KEYWORD = range(12)
+STC_S_DEFAULT, \
+STC_S_COMMENT, \
+STC_S_NUMBER, \
+STC_S_STRING, \
+STC_S_STRINGEOL, \
+STC_S_OPERATOR, \
+STC_S_KEYWORD = range(7)
 
 #-----------------------------------------------------------------------------#
 
 #---- Keyword Specifications ----#
 
 # Python Keywords
-KEYWORDS = "include inherit namespace page"
+KEYWORDS = "for while if else break return function NULL NA TRUE FALSE"
 
 #---- Syntax Style Specs ----#
-SYNTAX_ITEMS = [ (STC_MAKO_DEFAULT, 'default_style'),
-                 (STC_MAKO_COMMENT, 'comment_style'),
-                 (STC_MAKO_NUMBER, 'number_style'),
-                 (STC_MAKO_STRING, 'string_style'),
-                 (STC_MAKO_STRINGEOL, 'stringeol_style'),
-                 (STC_MAKO_SCALAR, 'scalar_style'),
-                 (STC_MAKO_OPERATOR, 'operator_style'),
-                 (STC_MAKO_PREPROCESSOR, 'pre_style'),
-                 (STC_MAKO_ATTRIBUTE, 'keyword2_style'),
-                 (STC_MAKO_TAG, 'keyword_style'),       # Need new tag
-                 (STC_MAKO_BUILTIN, 'keyword4_style'),
-                 (STC_MAKO_KEYWORD, 'keyword_style'), ]
+SYNTAX_ITEMS = [ (STC_S_DEFAULT,   'default_style'),
+                 (STC_S_COMMENT,   'comment_style'),
+                 (STC_S_NUMBER,    'number_style'),
+                 (STC_S_STRING,    'string_style'),
+                 (STC_S_STRINGEOL, 'stringeol_style'),
+                 (STC_S_OPERATOR,  'operator_style'),
+                 (STC_S_KEYWORD,   'keyword_style') ]
 
 #---- Extra Properties ----#
 
@@ -72,7 +63,7 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    if lang_id == synglob.ID_LANG_MAKO:
+    if lang_id in [synglob.ID_LANG_R, synglob.ID_LANG_S]:
         return [(1, KEYWORDS)]
 
 def SyntaxSpec(lang_id=0):
@@ -80,7 +71,7 @@ def SyntaxSpec(lang_id=0):
     @param lang_id: used for selecting a specific subset of syntax specs
 
     """
-    if lang_id == synglob.ID_LANG_MAKO:
+    if lang_id in [synglob.ID_LANG_R, synglob.ID_LANG_S]:
         return SYNTAX_ITEMS
 
 def Properties(lang_id=0):
@@ -88,7 +79,7 @@ def Properties(lang_id=0):
     @param lang_id: used to select a specific set of properties
 
     """
-    if lang_id == synglob.ID_LANG_MAKO:
+    if lang_id in [synglob.ID_LANG_R, synglob.ID_LANG_S]:
         return []
 
 def CommentPattern(lang_id=0):
@@ -96,7 +87,7 @@ def CommentPattern(lang_id=0):
     @param lang_id: used to select a specific subset of comment pattern(s)
 
     """
-    if lang_id == synglob.ID_LANG_MAKO:
+    if lang_id in [synglob.ID_LANG_R, synglob.ID_LANG_S]:
         return [u"#",]
 
 #---- End Required Module Functions ----#
@@ -106,20 +97,23 @@ def StyleText(stc, start, end):
     @param stc: Styled text control instance
     @param start: Start position
     @param end: end position
+    @todo: performance improvements
+    @todo: style errors caused by unicode characters (related to internal utf8)
 
     """
     cpos = 0
     stc.StartStyling(cpos, 0x1f)
-    lexer = get_lexer_by_name("html+mako")
+    lexer = get_lexer_by_name("s")
+    is_wineol = stc.GetEOLMode() == wx.stc.STC_EOL_CRLF
     for token, txt in lexer.get_tokens(stc.GetTextRange(0, end)):
-#        print token, txt
-        style = TOKEN_MAP.get(token, STC_MAKO_DEFAULT)
-        if style == STC_MAKO_PREPROCESSOR and txt.startswith(u'#'):
-            style = STC_MAKO_COMMENT
-#        elif style == STC_MAKO_STRING and txt[-1] not in '"\'':
-#            style = STC_MAKO_STRINGEOL
+        style = TOKEN_MAP.get(token, STC_S_DEFAULT)
 
         tlen = len(txt)
+
+        # Account for \r\n end of line characters
+        if is_wineol and "\n" in txt:
+            tlen += txt.count("\n")
+
         if tlen:
             stc.SetStyling(tlen, style)
         cpos += tlen
@@ -127,15 +121,13 @@ def StyleText(stc, start, end):
 
 #-----------------------------------------------------------------------------#
 
-TOKEN_MAP = { Token.Literal.String : STC_MAKO_STRING,
-              Token.Comment.Preproc : STC_MAKO_PREPROCESSOR,
-              Token.Comment : STC_MAKO_COMMENT,
-              Token.Name.Builtin : STC_MAKO_BUILTIN,
-              Token.Operator : STC_MAKO_OPERATOR,
-              Token.Punctuation : STC_MAKO_OPERATOR,
-              Token.Number : STC_MAKO_NUMBER,
-              Token.Keyword : STC_MAKO_KEYWORD,
-              Token.Name.Attribute : STC_MAKO_ATTRIBUTE,
-              Token.String.Interpol : STC_MAKO_SCALAR,
-              Token.Name.Tag : STC_MAKO_TAG }
+TOKEN_MAP = { Token.Literal.String  : STC_S_STRING,
+              Token.Comment         : STC_S_COMMENT,
+              Token.Comment.Single  : STC_S_COMMENT,
+              Token.Operator        : STC_S_OPERATOR,
+              Token.Punctuation     : STC_S_OPERATOR,
+              Token.Number          : STC_S_NUMBER,
+              Token.Literal.Number  : STC_S_NUMBER,
+              Token.Keyword         : STC_S_KEYWORD,
+              Token.Keyword.Constant: STC_S_KEYWORD }
               

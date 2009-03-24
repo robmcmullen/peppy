@@ -70,7 +70,7 @@ it out to match the specs of the language you want to provide highlighting for.
             - Bash: [ "#" ]
             - C:    ["/*", "*/]
 
-      - FUNCTION: KeywordString(option=0)
+    - FUNCTION: KeywordString(option=0)
         DESC: Provided primarly for other syntax modules that may wish to request
               resources from this module.
         PARAM: integer "option", is an optional argument for requesting a subset
@@ -79,3 +79,26 @@ it out to match the specs of the language you want to provide highlighting for.
         SPECIFICATIONS:
         EXAMPLE RETURN: "int double short"
 
+    - FUNCTION: StyleText(stc, start, end)
+        DESC: Used for styling the text in a buffer that is using a container
+              lexer.
+        PARAM: stc The EditraStyledText control instance to do the styling in
+        PARAM: start The start position of the styling
+        PARAM: end The end position to style to
+        SPECIFICATIONS:
+        EXAMPLE:
+
+    - FUNCTION: AutoIndenter(stc, current_pos, indent_char)
+        DESC: Provide context sensitive auto indentation support
+        PARAM: stc The buffer to do the indentation in
+        PARAM: current_pos The current position of the caret in the buffer
+        PARAM: indent_char Prefered character to use for indentation 
+               ("\t" or " " * tabwidth)
+        RETURN: Text to insert at current_pos
+        SPECIFICATIONS: Called when the Return key is hit. Note that the new
+                        line character is not sent to the buffer so it needs
+                        to be handled by this method. For any new line lines
+                        that need to be inserted use a '\n' character. The
+                        buffer will handle any necessary conversions on
+                        platforms that use other characters or for preferences
+                        set at the user level.

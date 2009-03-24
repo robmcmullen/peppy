@@ -14,8 +14,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: python.py 52852 2008-03-27 13:45:40Z CJP $"
-__revision__ = "$Revision: 52852 $"
+__svnid__ = "$Id: python.py 59312 2009-03-04 14:35:51Z CJP $"
+__revision__ = "$Revision: 59312 $"
 
 #-----------------------------------------------------------------------------#
 # Dependancies
@@ -25,13 +25,27 @@ import keyword
 
 #---- Keyword Specifications ----#
 
+# Indenter keywords
+INDENT_KW = (u"def", u"if", u"elif", u"else", u"for", u"while",
+             u"class", u"try", u"except", u"finally")
+UNINDENT_KW = (u"return", u"raise", u"break", u"continue",
+               u"pass", u"exit", u"quit")
+
 # Python Keywords
 KEYWORDS = keyword.kwlist
 KEYWORDS.extend(['True', 'False', 'None', 'self'])
-PY_KW = (0, " ".join(KEYWORDS))
+PY_KW = (0, u" ".join(KEYWORDS))
 
-# Highlighted Identifiers
-PY_ID = (1, "")
+# Highlighted builtins
+try:
+    import __builtin__
+    BUILTINS = dir(__builtin__)
+except:
+    BUILTINS = list()
+#BUILTINS.append('self')
+BUILTINS = list(set(BUILTINS))
+
+PY_BIN = (1, u" ".join(sorted(BUILTINS)))
 
 #---- Syntax Style Specs ----#
 SYNTAX_ITEMS = [ ('STC_P_DEFAULT', 'default_style'),
@@ -49,7 +63,7 @@ SYNTAX_ITEMS = [ ('STC_P_DEFAULT', 'default_style'),
                  ('STC_P_TRIPLE', 'string_style'),
                  ('STC_P_TRIPLEDOUBLE', 'string_style'),
                  ('STC_P_WORD', 'keyword_style'),
-                 ('STC_P_WORD2', 'default_style')]
+                 ('STC_P_WORD2', 'userkw_style')]
 
 #---- Extra Properties ----#
 FOLD = ("fold", "1")
@@ -63,7 +77,7 @@ def Keywords(lang_id=0):
     @param lang_id: used to select specific subset of keywords
 
     """
-    return [PY_KW]
+    return [PY_KW, PY_BIN]
 
 def SyntaxSpec(lang_id=0):
     """Syntax Specifications
@@ -85,6 +99,67 @@ def CommentPattern(lang_id=0):
 
     """
     return [u'#']
+
+def AutoIndenter(stc, pos, ichar):
+    """Auto indent python code. uses \n the text buffer will
+    handle any eol character formatting.
+    @param stc: EditraStyledTextCtrl
+    @param pos: current carat position
+    @param ichar: Indentation character
+    @return: string
+
+    """
+    rtxt = u''
+    line = stc.GetCurrentLine()
+    spos = stc.PositionFromLine(line)
+    text = stc.GetTextRange(spos, pos)
+    epos = stc.GetLineEndPosition(line)
+    inspace = text.isspace()
+
+    # Cursor is in the indent area somewhere
+    if inspace:
+        return u"\n" + text
+
+    # Check if the cursor is in column 0 and just return newline.
+    if not len(text):
+        return u"\n"
+
+    # Ignore empty lines and backtrace to find the previous line that we can
+    # get the indent position from
+#    while text.isspace():
+#        line -= 1
+#        if line < 0:
+#            return u''
+#        text = stc.GetTextRange(stc.PositionFromLine(line), pos)
+
+    indent = stc.GetLineIndentation(line)
+    if ichar == u"\t":
+        tabw = stc.GetTabWidth()
+    else:
+        tabw = stc.GetIndent()
+
+    i_space = indent / tabw
+    end_spaces = ((indent - (tabw * i_space)) * u" ")
+
+    tokens = filter(None, text.strip().split())
+    if tokens and not inspace:
+        if tokens[-1].endswith(u":"):
+            if tokens[0].rstrip(u":") in INDENT_KW:
+                i_space += 1
+        elif tokens[-1].endswith(u"\\"):
+            i_space += 1
+        elif tokens[0] in UNINDENT_KW:
+            i_space = max(i_space - 1, 0)
+
+    rval = u"\n" + (ichar * i_space) + end_spaces
+    if inspace and ichar != u"\t":
+        rpos = indent - (pos - spos)
+        if rpos < len(rval) and rpos > 0:
+            rval = rval[:-rpos]
+        elif rpos >= len(rval):
+            rval = u"\n"
+
+    return rval
 
 #---- End Required Module Functions ----#
 
