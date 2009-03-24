@@ -42,19 +42,19 @@ class ProgressBarTestMixin(object):
 
 class SlowProgressBarTest(ProgressBarTestMixin, SelectAction):
     name = "Slow test of the progress bar"
-    default_menu = "&Help/Tests"
+    default_menu = "Tools/Debug"
     delay = .2
 
 class FastProgressBarTest(ProgressBarTestMixin, SelectAction):
     name = "Fast test of the progress bar"
-    default_menu = "&Help/Tests"
+    default_menu = "Tools/Debug"
     delay = .01
 
 
 class ShowStyles(SelectAction):
     name = "Show Line Style"
     tooltip = "Show the styling information of the current line"
-    default_menu = "&Help/Tests"
+    default_menu = "Tools/Debug"
     key_bindings = {'default': 'M-S',}
 
     @classmethod
@@ -68,7 +68,7 @@ class ShowStyles(SelectAction):
 class MultiMinibufferTest(MinibufferAction):
     """Test of multiple minibuffers imbedded in a single parent"""
     name = "Multi Minibuffer Test"
-    default_menu = "&Help/Tests"
+    default_menu = "Tools/Debug"
     key_bindings = {'default': 'C-S-F3',}
 
     minibuffer = [IntMinibuffer, IntMinibuffer, TextMinibuffer]
