@@ -82,6 +82,7 @@ from within tar archives without decompressing the whole file first.
 # needs this should grab it from here.
 __author__ = "Rob McMullen"
 __author_email__ = "robm@users.sourceforge.net"
+__bug_report_email__ = "bugs@peppy.flipturn.org"
 __url__ = "http://peppy.flipturn.org/"
 __download_url__ = "http://peppy.flipturn.org/archive/"
 __description__ = "(ap)Proximated (X)Emacs Powered by Python"

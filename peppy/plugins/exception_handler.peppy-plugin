@@ -1,0 +1,9 @@
+[Core]
+Name = Exception Handler
+Module = exception_handler
+
+[Documentation]
+Author = Rob McMullen, Cory Precord
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Exception handling dialog for user notification on unhandled exceptions
