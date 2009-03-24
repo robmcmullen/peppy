@@ -443,8 +443,10 @@ class Exit(SelectAction):
         # with the emacs style keybindings, and there's no way to disable the
         # automatic Ctrl-Q keybinding AFAICT
         stock_id = wx.ID_EXIT
+        key_bindings = {'default': "C-q"}
+    else:
+        key_bindings = {'default': "C-q", 'emacs': "C-x C-c"}
     default_menu = ("File", -1000)
-    key_bindings = {'default': "C-q", 'emacs': "C-x C-c"}
     osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):

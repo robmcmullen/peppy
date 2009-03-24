@@ -39,7 +39,10 @@ class InsertQuotedChar(SelectAction):
     """Quoted insert: insert the next keystroke as a raw character"""
     name = "Insert Raw Char"
     alias = "quoted-insert"
-    key_bindings = {'emacs': "C-q", }
+    if wx.Platform != '__WXMAC__':
+        # Default keybinding on Mac can't be C-q because that is always
+        # reserved for quitting the application
+        key_bindings = {'emacs': "C-q", }
     default_menu = ("Tools", 201)
 
     def action(self, index=-1, multiplier=1):
