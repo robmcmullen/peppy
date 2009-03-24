@@ -24,9 +24,12 @@ from peppy.debug import *
 
 
 class NewTab(SelectAction):
+    """Open a new tab
+    
+    Open a blank tab in the current frame.
+    """
     alias = "new-tab"
     name = "New Tab"
-    tooltip = "Open a new tab"
     default_menu = ("File/New", 1)
 
     def action(self, index=-1, multiplier=1):
@@ -34,9 +37,9 @@ class NewTab(SelectAction):
         self.frame.open("about:blank", force_new_tab=True)
 
 class CloseTab(SelectAction):
+    """Close the current tab"""
     alias = "close-tab"
     name = "Close Tab"
-    tooltip = "Close the current tab"
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -44,9 +47,13 @@ class CloseTab(SelectAction):
         self.frame.tabs.closeTab(tab)
 
 class MoveTabToNewWindow(SelectAction):
+    """Move the current tab to a new window
+    
+    Creates a new window and moves the current tab from the current window to
+    the newly created window.
+    """
     alias = "move-tab-to-new-window"
     name = "Move Tab to New Window"
-    tooltip = "Move the current tab to a new window"
     default_menu = ("Window", 150)
 
     def action(self, index=-1, multiplier=1):
@@ -61,9 +68,14 @@ class MoveTabToNewWindow(SelectAction):
         wx.CallAfter(self.frame.tabs.closeWrapper, mode)
 
 class New(SelectAction):
+    """New plain text file
+    
+    Opens a new tab with a new blank document in Fundamental mode.  This
+    document will not be linked to any file on the computer, so it must be
+    saved using the L{SaveAs} menu item.
+    """
     alias = "new-file"
     name = "Text file"
-    tooltip = "New plain text file"
     icon = "icons/page_white_text_new.png"
     default_menu = (("File/New", 1), -99)
     key_bindings = {'win': "C-n", 'mac': "C-n"}
@@ -105,18 +117,26 @@ class OpenFileGUIMixin(object):
             self.openFiles(paths)
 
 class OpenFileGUI(OpenFileGUIMixin, SelectAction):
+    """Open a file
+    
+    Opens a file in a new tab in the current window, using the standard "File
+    Open" dialog of the platform on which peppy is running.
+    """
     alias = "gui-find-file"
     name = "Open File..."
-    tooltip = "Open a file"
     icon = "icons/folder_page.png"
     default_menu = (("File/Open", 2), 1) 
     key_bindings = {'default': "C-o", 'emacs': "C-x C-S-f" }
     osx_minimal_menu = True
 
 class OpenFileNewWindowGUI(OpenFileGUIMixin, SelectAction):
+    """Open a file in a new window
+    
+    Same as L{OpenFileGUI} except the selected file is opened in a new window
+    instead of in a tab in the current window.
+    """
     alias = "gui-find-file-new-window"
     name = "Open File in New Window..."
-    tooltip = "Open a file in a new window"
     default_menu = (("File/Open", 2), 2) 
 
     def openFiles(self, paths):
@@ -196,9 +216,14 @@ class LocalFileMinibuffer(CompletionMinibuffer):
         return text
 
 class OpenFile(SelectAction):
+    """Open a file using filename completion
+    
+    Emacs compatibility command that emulates 'find-file'.  This uses the
+    minibuffer and tab-completion to provide an alternate way to load files
+    rather than using the file open dialog.
+    """
     alias = "find-file"
     name = "Open File Using Minibuffer..."
-    tooltip = "Open a file using filename completion"
     default_menu = ("File/Open", 10)
     key_bindings = {'emacs': "C-x C-f", }
 
@@ -215,7 +240,12 @@ class OpenFile(SelectAction):
         self.frame.open(text)
 
 class SaveAs(SelectAction):
-    """Save with new filename using the minibuffer"""
+    """Save with new filename using the minibuffer
+    
+    Emacs compatibility command that emulates 'write-file'.  This uses the
+    minibuffer to provide means to enter a filename without using the file
+    save dialog.
+    """
     alias = "write-file"
     name = "Save &As..."
     icon = "icons/disk_edit.png"
@@ -320,9 +350,12 @@ class URLMinibuffer(CompletionMinibuffer):
         return text
 
 class OpenURL(SelectAction):
-    alias = "find-url"
+    """Open a file using URL name completion
+    
+    Similar to L{OpenFile} except allows filename completion using URI schemes
+    other than C{file://}
+    """
     name = "Open URL Using Minibuffer..."
-    tooltip = "Open a file using URL name completion"
     default_menu = ("File/Open", 20)
     key_bindings = {'emacs': "C-x C-a", }
 
@@ -337,9 +370,13 @@ class OpenURL(SelectAction):
         self.frame.open(text)
 
 class SaveURL(SelectAction):
+    """Write to a new URL using name completion
+    
+    Similar to L{SaveAs} except allows filename completion using URI schemes
+    other than C{file://}
+    """
     alias = "write-url"
     name = "Save to URL Using Minibuffer..."
-    tooltip = "Write to a new URL using name completion"
     key_bindings = {'emacs': "C-x C-y", }
 
     def isEnabled(self):
@@ -394,9 +431,13 @@ class Properties(SelectAction):
 
 
 class Exit(SelectAction):
+    """Quit the program.
+    
+    Exits peppy, prompting to save any files that have been modified but not
+    yet saved.
+    """
     alias = "exit-peppy-to-return-again-soon"
     name = "E&xit"
-    tooltip = "Quit the program."
     if wx.Platform == '__WXMAC__':
         # Only add the stock ID where we must: on the mac.  It interferes
         # with the emacs style keybindings, and there's no way to disable the
@@ -411,7 +452,16 @@ class Exit(SelectAction):
 
 
 class CloseBuffer(SelectAction):
-    """Delete the current document from memory"""
+    """Delete the current document from memory
+    
+    Peppy is a document-centric editor, not a window-centric editor.  A tab that
+    shows a view of a document can be deleted, but the document itself is kept
+    in memory (and therefore shows up in the Documents menu) until explicitly
+    removed using this action.
+    
+    Note for advanced users: there are other ways to delete a document from
+    memory, including the L{ListAllDocuments} menu item.
+    """
     alias = "close-buffer"
     name = "&Close Document"
     icon = "icons/cross.png"
@@ -426,9 +476,13 @@ class CloseBuffer(SelectAction):
         self.frame.closeBuffer()
 
 class Revert(SelectAction):
+    """Revert to last saved version
+    
+    Throw away all current edits and revert the document to the last saved
+    version.
+    """
     alias = "revert-buffer"
     name = "&Revert"
-    tooltip = "Revert to last saved version"
     default_menu = ("File", -900)
     default_toolbar = False
     icon = "icons/page_refresh.png"
@@ -444,9 +498,14 @@ class Revert(SelectAction):
 
 
 class Save(SelectAction):
+    """Save the current file
+    
+    Saves the changes in the current file to the same filename as was loaded
+    in.  A backup of the original file can optionally be saved by setting the
+    options in the L{BackupFiles} item in the Preferences dialog.
+    """
     alias = "save-buffer"
     name = "&Save..."
-    tooltip = "Save the current file"
     icon = "icons/disk.png"
     default_menu = ("File", -801)
     key_bindings = {'default': "C-s", 'emacs': "C-x C-s",}
@@ -461,7 +520,10 @@ class Save(SelectAction):
         self.mode.save()
 
 class SaveAsGUI(SelectAction):
-    """Save with new filename using the file save dialog box"""
+    """Save with new filename using the file save dialog box
+    
+    The data in the original filename is left unchanged.
+    """
     alias = "save-buffer-as"
     name = "Save &As..."
     icon = "icons/disk_edit.png"
@@ -481,16 +543,6 @@ class SaveAsGUI(SelectAction):
                 self.mode.save(saveas)
 
 
-class OpenFundamental(SelectAction):
-    name = "&Open Sample Text"
-    tooltip = "Open some sample text"
-    default_menu = (("&Help/Samples", -500), 1)
-
-    def action(self, index=-1, multiplier=1):
-        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.frame.open("about:demo.txt")
-
-
 class RunMixin(object):
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -500,9 +552,15 @@ class RunMixin(object):
         return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
 
 class RunScript(RunMixin, SelectAction):
+    """Run this script through the interpreter
+    
+    If an interpreter has been set up for this major mode, this action causes
+    the file to be saved and the interpreter to run using this file as input.
+    Interpreter settings are controlled using the L{JobControlMixin} settings
+    of the major mode in the Preferences dialog.
+    """
     alias = "run-script"
     name = "Run"
-    tooltip = "Run this script through the interpreter"
     icon = 'icons/script_go.png'
     default_menu = ("Tools", 1)
     key_bindings = {'default': "F5"}
@@ -511,9 +569,13 @@ class RunScript(RunMixin, SelectAction):
         self.mode.startInterpreter()
 
 class RunScriptWithArgs(RunMixin, SelectAction):
+    """Run this script through the interpreter with optional arguments
+    
+    Like L{RunScript}, except provides the capability to specify optional
+    arguments to the command line that runs the interpreter.
+    """
     alias = "run-script-with-args"
     name = "Run with Args"
-    tooltip = "Open a file"
     icon = "icons/script_edit.png"
     default_menu = ("Tools", 2)
     key_bindings = {'default': "C-F5"}
@@ -527,7 +589,11 @@ class RunScriptWithArgs(RunMixin, SelectAction):
         self.mode.startInterpreter(text)
 
 class RunFilter(RunMixin, SelectAction):
-    """Run an external program on this file"""
+    """Run an external program on this file
+    
+    Similar to L{RunScript} except it provides the opportunity to specify the
+    entire command line used to process the current file.
+    """
     alias = "run-filter"
     name = "Run Filter"
     default_menu = ("Tools", 3)
@@ -547,9 +613,13 @@ class RunFilter(RunMixin, SelectAction):
         self.mode.startCommandLine(text, expand=True)
 
 class StopScript(RunMixin, SelectAction):
+    """Stop the currently running script
+    
+    If an interpreter is processing the current document, it can be forcefully
+    stopped using this command.
+    """
     alias = "stop-script"
     name = "Stop"
-    tooltip = "Stop the currently running script"
     icon = 'icons/stop.png'
     default_menu = ("Tools", 9)
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", 'mac': 'C-.'}
@@ -562,9 +632,12 @@ class StopScript(RunMixin, SelectAction):
 
 
 class Undo(STCModificationAction):
+    """Undo the last undoable action
+    
+    Note that not all actions are undoable.
+    """
     alias = "undo"
     name = "Undo"
-    tooltip = "Undo"
     icon = "icons/undo.png"
     default_menu = ("Edit", 0)
     key_bindings = {'default': "C-z", 'emacs': ["C-/", "C-S--",]}
@@ -578,9 +651,12 @@ class Undo(STCModificationAction):
 
 
 class Redo(STCModificationAction):
+    """Redo the last action that was undone
+    
+    Applies the last action that was unapplied from the most recent L{Undo}.
+    """
     alias = "redo"
     name = "Redo"
-    tooltip = "Redo"
     icon = "icons/redo.png"
     default_menu = ("Edit", 1)
     key_bindings = {'win': "C-y", 'emacs': "C-S-/", 'mac': "C-S-z"}
@@ -593,9 +669,13 @@ class Redo(STCModificationAction):
         return self.mode.Redo()
 
 class Cut(STCModificationAction):
+    """Cut the current selection
+    
+    Removes the current selection and places it in the clipboard for later
+    L{Paste}.
+    """
     alias = "cut-primary-selection"
     name = "Cut"
-    tooltip = "Cut"
     icon = "icons/cut.png"
     default_menu = ("Edit", -100)
     key_bindings = {'win': "C-x", 'mac': "C-x", 'emacs': "C-w"}
@@ -607,9 +687,13 @@ class Cut(STCModificationAction):
         return self.mode.Cut()
 
 class Copy(BufferBusyActionMixin, SelectAction):
+    """Copy the current selection
+    
+    Copies the current selection and places it in the clipboard for later
+    L{Paste}.
+    """
     alias = "copy-primary-selection"
     name = "Copy"
-    tooltip = "Copy"
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
     key_bindings = {'win': "C-c", 'mac': "C-c", 'emacs': "M-w"}
@@ -626,9 +710,14 @@ class Copy(BufferBusyActionMixin, SelectAction):
         return self.mode.Copy()
 
 class Paste(STCModificationAction):
+    """Paste from the current clipboard
+    
+    Inserts at the current position or overwrites the current selection with
+    the data from the clipboard.  Clipboard data may come from Peppy or an
+    external program.
+    """
     alias = "paste-from-clipboard"
     name = "Paste"
-    tooltip = "Paste"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 102)
     key_bindings = {'win': "C-v", 'mac': "C-v", 'emacs': "C-y"}
@@ -639,27 +728,43 @@ class Paste(STCModificationAction):
     def action(self, index=-1, multiplier=1):
         return self.mode.Paste()
 
-class PasteAtColumn(Paste):
+class PasteAtColumn(STCModificationAction):
+    """Paste selection indented to the cursor's column
+    
+    Feature only available in text modes where the clipboard text will be
+    indented to match the column position of the cursor.  Each subsequent
+    line in the clipboard text will be indented to the same level, inserting
+    leading spaces if necessary so that the first column of each line of the
+    clipboard text matches the cursor's column position.
+    
+    This is not rectangular paste, however, and any existing text in the lines
+    will be shifted over only the number of characters in the respective line
+    inserted from the clipboard.  The clipboard text is not converted into a
+    rectangular block of text with spaces added to the right margins of lines.    """
     alias = "paste-at-column"
     name = "Paste at Column"
-    tooltip = "Paste selection indented to the cursor's column"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 103)
     default_toolbar = False
-    key_bindings = None
-    global_id = None
 
     @classmethod
     def worksWithMajorMode(cls, mode):
         return hasattr(mode, 'PasteAtColumn')
 
+    def isActionAvailable(self):
+        return not self.mode.GetReadOnly()
+
     def action(self, index=-1, multiplier=1):
         self.mode.PasteAtColumn()
 
 class SelectAll(STCModificationAction):
+    """Select all text
+    
+    Selects all text in the document, but the cursor remains in the same
+    position.
+    """
     alias = "select-all"
     name = "Select All"
-    tooltip = "Select all text"
     icon = None
     default_menu = ("Edit", -125)
     default_toolbar = False
@@ -675,9 +780,14 @@ class SelectAll(STCModificationAction):
 
 
 class MajorModeSelect(BufferBusyActionMixin, RadioAction):
+    """Switch major mode
+    
+    Switch the major mode (i.e.  the view of the document) to a compatible
+    major mode.  Some modes will not be available because they can not display
+    the data in the document, and these incompatible modes will not be listed.
+    """
     name="Major Mode"
     inline=False
-    tooltip="Switch major mode"
     default_menu = ("View", 0)
 
     def initPreHook(self):
@@ -706,9 +816,16 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class MinorModeShow(ToggleListAction):
+    """Show or hide minor mode windows
+    
+    Minor modes are extra sub-windows that are associated with a tab.
+    Note that each tab has its own minor modes and these can be toggled
+    individually.  By default, minor mode windows are usually hidden.  Their
+    visibility state is toggled here, and their initial visibility can be set
+    using the preferences for the major mode.
+    """
     name = "Minor Modes"
     inline = False
-    tooltip = "Show or hide minor mode windows"
     default_menu = ("View", 1)
 
     def getItems(self):
@@ -722,9 +839,15 @@ class MinorModeShow(ToggleListAction):
 
 
 class SidebarShow(ToggleListAction):
+    """Show or hide minor mode windows
+    
+    Sidebars are sub-windows that are attached to each peppy toplevel window.
+    By default, sidebars are usually hidden except for L{SpringTabs} which
+    are shown.  Their visibility state is toggled here, and their initial
+    visibility can be set using the preferences for the major mode.
+    """
     name="Sidebars"
     inline=False
-    tooltip="Show or hide sidebar windows"
     default_menu = ("View", -100)
 
     def getItems(self):
@@ -739,7 +862,10 @@ class SidebarShow(ToggleListAction):
 
 
 class HideSidebars(SelectAction):
-    """Close all sidebars"""
+    """Close all sidebars
+    
+    Hides all sidebars (including L{SpringTabs}) from the current window.
+    """
     name = "All Sidebars"
     default_menu = (("View/Hide", 991), 100)
     key_bindings = {'emacs': "C-x 4 1", }
@@ -750,7 +876,10 @@ class HideSidebars(SelectAction):
         self.frame._mgr.Update()
 
 class HideMinorModes(SelectAction):
-    """Close all minor modes"""
+    """Close all minor modes
+    
+    Hides all minor modes from the current document.
+    """
     name = "All Minor Modes"
     default_menu = ("View/Hide", 110)
     key_bindings = {'emacs': "C-x 4 2", }
@@ -759,7 +888,11 @@ class HideMinorModes(SelectAction):
         self.mode.wrapper.minors.hideAll()
 
 class HideAll(SelectAction):
-    """Close all sidebars and minor modes"""
+    """Close all sidebars and minor modes
+    
+    Hides all sidebars from the current window and all minor modes from the
+    current document.
+    """
     name = "All Sidebars and Minor Modes"
     default_menu = ("View/Hide", 120)
     key_bindings = {'emacs': "C-x 1", }
@@ -772,9 +905,12 @@ class HideAll(SelectAction):
 
 
 class ToolbarShow(ToggleAction):
+    """Enable or disable toolbar display in this window
+    
+    Toggles the visibility of the toolbar for this window.
+    """
     alias = "show-toolbar"
     name = "&Show Toolbars"
-    tooltip = "Enable or disable toolbar display in this frame"
     default_menu = ("View", -990)
 
     def isChecked(self):
@@ -824,9 +960,15 @@ class ActionNameMinibufferMixin(object):
         self.mode.setMinibuffer(minibuffer)
 
 class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
+    """Execute an action by name
+    
+    In addition to key bindings, menu items, and toolbar buttons, all actions
+    have a name and can be performed by using their name.  This action displays
+    a minibuffer where action names can be searched using tab completion, and
+    the action will be performed once the action name has been selected.
+    """
     name = "&Execute Action"
     alias = "execute-action"
-    tooltip = "Execute an action by name"
     key_bindings = {'default': "M-x", }
     default_menu = ("Tools", -600)
     
@@ -860,9 +1002,12 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
 
 
 class DescribeAction(ActionNameMinibufferMixin, SelectAction):
+    """Describe an action by name
+    
+    Displays help text and keyboard bindings for any action in peppy.
+    """
     name = "&Describe Action"
     alias = "describe-action"
-    tooltip = "Describe an action by name"
     default_menu = ("&Help", -200)
     key_bindings = {'emacs': "C-h a", }
 
@@ -892,7 +1037,14 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
 
 
 class DescribeKey(SelectAction):
-    """Look up the action from the keystroke"""
+    """Look up the action from the keystroke
+    
+    This shows the action (if any) that is bound to a keystroke.  Using this
+    action displays a special minibuffer, which waits for a key sequence.
+    The key sequence that is entered is compared to all known key sequences
+    for the current mode, and if a match is found, the action and its
+    documentation are displayed.  If no match is found, an error is printed.
+    """
     name = "&Describe Key"
     alias = "describe-key"
     default_menu = ("&Help", 201)
@@ -911,9 +1063,13 @@ class DescribeKey(SelectAction):
 
 
 class CancelMinibuffer(SelectAction):
+    """Cancel any currently active minibuffer
+    
+    This is a special key sequence that will remove the minibuffer regardless
+    of the state of the minibuffer.
+    """
     alias = "cancel-minibuffer"
     name = "Cancel Minibuffer"
-    tooltip = "Cancel any currently active minibuffer"
     icon = 'icons/control_stop.png'
     key_bindings = {'default': "ESC", 'emacs': "M-ESC ESC", }
     
@@ -922,9 +1078,9 @@ class CancelMinibuffer(SelectAction):
 
 
 class HelpMinibuffer(SelectAction):
+    """Show help for the currently active minibuffer"""
     alias = "help-minibuffer"
     name = "Help on Minibuffer"
-    tooltip = "Show help for the currently active minibuffer"
     default_menu = ("&Help", 210)
     key_bindings = {'emacs': "C-h m", }
     
@@ -995,6 +1151,4 @@ class MainMenu(IPeppyPlugin):
                 ExecuteActionByName, DescribeAction, DescribeKey, HelpMinibuffer,
                 
                 CancelMinibuffer,
-
-                OpenFundamental,
                 ]
