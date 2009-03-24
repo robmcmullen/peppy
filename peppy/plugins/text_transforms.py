@@ -90,10 +90,13 @@ class Untabify(LineOrRegionMutateAction):
         return out
 
 class RemoveTrailingWhitespace(LineOrRegionMutateAction):
-    """Remove all trailing whitespace from a line."""
+    """Remove all trailing whitespace
+    
+    Operates on the current line, or lines that make up the currently selected
+    region.
+    """
     alias = "remove-trailing-whitespace"
     name = "Remove Trailing Whitespace"
-    tooltip = "Remove all trailing whitespace from selected lines"
     default_menu = ("Transform/Whitespace", 200)
 
     def mutateLines(self, lines):
@@ -248,7 +251,11 @@ class UnBackslashify(LineOrRegionMutateAction):
 
 
 class Reindent(TextModificationAction):
-    """Reindent a line or region."""
+    """Reindent a line or region.
+    
+    Recalculates the indentation for the selected region, using the current
+    major mode's algorithm for indentation.
+    """
     alias = "reindent-region"
     name = "Reindent"
     default_menu = ("Transform", 602)
@@ -273,8 +280,7 @@ class Reindent(TextModificationAction):
             s.EndUndoAction()
 
 def RemoveExtraSpace(text, pos):
-    """
-    Remove any amount of whitespace at pos, replacing it with a single space.
+    """Remove any amount of whitespace at pos, replacing it with a single space.
     
     If pos is at the end or beginning of the line, then remove the whitesapce
     there, rather than leaving a single space.
@@ -282,7 +288,6 @@ def RemoveExtraSpace(text, pos):
     It is assumed that there is no newline on the end.
     
     returns new_text, new_pos
-    
     """
     # move back in from the end if we are over the end
     if pos >= len(text):
@@ -303,9 +308,7 @@ def RemoveExtraSpace(text, pos):
        
 
 class JustOneSpace(TextModificationAction):
-    
-    """
-    Remove extra whitespace:
+    """Remove extra whitespace
 
     Replaces any amount of whitespace surrounding the cursor with one space
     except at the begining and ends of lines, where it removes all white space.
@@ -349,7 +352,12 @@ class JustOneSpace(TextModificationAction):
 
 
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
-    """Word-wrap the current paragraph or region."""
+    """Word-wrap the current paragraph or region.
+    
+    Reformats the current paragraph or selection by breaking long lines at word
+    boundaries.  The lines are at most C{edge_column} characters long, where
+    edge_column is defined in the Preferences for the major mode.
+    """
     alias = "fill-paragraph-or-region"
     name = "Fill Paragraph"
     default_menu = ("Transform", 603)
@@ -389,6 +397,11 @@ class JoinLines(LineOrRegionMutateAction):
 
 class SortLines(LineOrRegionMutateAction):
     """Sort lines using a simple string comparison sort
+    
+    The selected lines are reordered lexicographically starting from the first
+    character of each line.  Note that whitespace is also considered in the
+    sort, so a line starting with " A quick brown fox" will be sorted before
+    "A quick brown fox".
     """
     alias = "sort-lines"
     name = "Sort Lines"
