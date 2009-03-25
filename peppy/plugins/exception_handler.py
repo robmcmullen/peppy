@@ -200,7 +200,7 @@ class ErrorDialog(wx.Dialog):
         if e_id == wx.ID_CLOSE:
             self.Close()
         elif e_id == ID_SEND:
-            msg = "mailto:%s?subject=Error Report&body=%s"
+            msg = "mailto:%s?subject=Peppy Error Report&body=%s"
             msg = msg % (__bug_report_email__, self.err_msg)
             msg = msg.replace("'", '')
             webbrowser.open(msg)
