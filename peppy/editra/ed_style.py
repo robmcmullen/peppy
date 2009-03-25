@@ -848,6 +848,7 @@ def DefaultStyleDictionary():
          'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol", \
                                        "%(secondary)s"),
          'unknown_style' : StyleItem("#FFFFFF,bold", "#DD0101,eol"),
+         'userkw_style' : StyleItem(),
          'whitespace_style' : StyleItem('#838383')
          }
     return def_dict

@@ -52,6 +52,7 @@ def PeppyDefaultStyleDictionaryCopy():
          'string_style' : StyleItem("#1A701A"),
          'stringeol_style' : StyleItem("#000000,bold", "#EEC0EE,eol"),
          'unknown_style' : StyleItem("#FFFFFF,bold", "#DD0101,eol"),
+         'userkw_style' : StyleItem("#505050,bold"),
          'whitespace_style' : StyleItem("#838383"),
          }
     return def_dict
