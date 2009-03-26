@@ -73,7 +73,7 @@ class MajorModeMatcherDriver(debugmixin):
         plugins = app.plugin_manager.getActivePluginObjects()
         cls.findActiveModes(plugins)
         for mode in cls.iterActiveModes():
-            if keyword == mode.keyword:
+            if mode.verifyKeyword(keyword):
                 return mode
         
         if not url:
@@ -82,7 +82,7 @@ class MajorModeMatcherDriver(debugmixin):
         # with any third-party openers that have been registered
         mode = cls.attemptOpen(plugins, buffer, url)
         cls.dprint("attemptOpen matches %s" % mode)
-        if mode and keyword == mode.keyword:
+        if mode and mode.verifyKeyword(keyword):
             return mode
         return None
 
@@ -325,15 +325,8 @@ class MajorModeMatcherDriver(debugmixin):
         modename, settings = parseEmacs(header)
         cls.dprint("modename = %s, settings = %s" % (modename, settings))
         for mode in cls.iterActiveModes():
-            if modename == mode.keyword:
+            if mode.verifyKeyword(modename):
                 return mode
-            if mode.emacs_synonyms:
-                if isinstance(mode.emacs_synonyms, str):
-                    if modename == mode.emacs_synonyms:
-                        return mode
-                else:
-                    if modename in mode.emacs_synonyms:
-                        return mode
         return None
         
     @classmethod

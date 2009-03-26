@@ -568,6 +568,27 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         if indeterminate.
         """
         return None
+
+    @classmethod
+    def verifyKeyword(cls, keyword):
+        """Hook to verify the mode's keyword or emacs alias matches the given
+        string.
+
+        @param keyword: text string that identifies a major mode
+
+        @returns: boolean if the keyword matches either the keyword class
+        attribute or one of the emacs aliases
+        """
+        if keyword == cls.keyword:
+            return True
+        if cls.emacs_synonyms:
+            if isinstance(cls.emacs_synonyms, str):
+                if keyword == cls.emacs_synonyms:
+                    return True
+            else:
+                if keyword in cls.emacs_synonyms:
+                    return True
+        return False
     
     @classmethod
     def preferThreadedLoading(cls, url):
