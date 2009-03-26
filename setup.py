@@ -209,15 +209,14 @@ if USE_PY2EXE:
 # Manifest file to allow py2exe to use the winxp look and feel
 manifest = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1"
-manifestVersion="1.0">
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
     version="0.64.1.0"
     processorArchitecture="x86"
     name="Controls"
     type="win32"
 />
-<description>Your Application</description>
+<description>Peppy - (ap)Proximated (X)Emacs Powered by Python</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity
@@ -230,6 +229,16 @@ manifestVersion="1.0">
         />
     </dependentAssembly>
 </dependency>
+<trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+        <requestedPrivileges>
+        <requestedExecutionLevel
+            level="requireAdministrator"
+            uiAccess="false"
+        />
+        </requestedPrivileges>
+    </security>
+</trustInfo>
 </assembly>
 """
 
