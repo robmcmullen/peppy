@@ -42,16 +42,16 @@ class HSIPlugin(IPeppyPlugin):
         return (None, [])
     
     def getCompatibleMajorModes(self, stc_class):
-        if stc_class == HyperspectralSTC:
+        if hasattr(stc_class, 'getCube'):
             try:
-                return [self.getHSIModeClass()]
+                yield self.getHSIModeClass()
             except:
                 dprint("FAILED Loading hsi_major_mode")
                 import traceback
                 error = traceback.format_exc()
                 dprint(error)
                 pass
-        return []
+        raise StopIteration
 
     def getCompatibleMinorModes(self, cls):
         if cls.keyword == "HSI":

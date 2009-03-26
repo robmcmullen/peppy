@@ -795,6 +795,7 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
     def initPreHook(self):
         buffer = self.mode.buffer
         stc_class = buffer.stc.__class__
+        assert self.dprint("stc_class=%s" % stc_class)
         modes = MajorModeMatcherDriver.getCompatibleMajorModes(stc_class)
 
         modes.sort(key=lambda s:s.keyword)
