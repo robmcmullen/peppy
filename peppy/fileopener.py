@@ -91,6 +91,7 @@ class FileOpener(debugmixin):
             self.findMajorModeClassFromString()
             self.frame.tabs.newBuffer(self.url, self.buffer, self.modecls, self.mode_to_replace, self.force_new_tab, self.options)
         else:
+            self.dprint("Didn't found %s in current buffer list; loading..." % self.url)
             self.openNewBuffer()
     
     def findBufferIfAlreadyLoaded(self):
@@ -168,6 +169,7 @@ class FileOpener(debugmixin):
             error = traceback.format_exc()
             self.finalizeAfterFailedLoad(error)
             raise FileOpenerExceptionHandled
+        self.dprint("Using major mode %s" % self.modecls)
 
     def findMajorModeClassFromString(self):
         """Change the major mode class to a MajorMode object if it's currently
@@ -178,6 +180,7 @@ class FileOpener(debugmixin):
             self.modecls = MajorModeMatcherDriver.matchKeyword(self.modecls, self.buffer, self.url)
             if not self.modecls:
                 self.finalizeAfterFailedLoad("Unrecognized major mode keyword '%s'" % self.modecls)
+        self.dprint("found major mode = %s" % self.modecls)
     
     def scanBufferForMajorMode(self):
         """Use the L{MajorModeMatcherDriver} to match the buffer's data to a
@@ -273,6 +276,12 @@ class LoadingMode(BlankMode):
 
     def createPostHook(self):
         self.showBusy(True)
+
+# This major mode doesn't show up in a plugin, so we need to tell the major
+# mode matcher driver about it otherwise it won't show up in the list of
+# compatible major modes and the menu will fail
+MajorModeMatcherDriver.addGlobalMajorMode(LoadingMode)
+
 
 class LoadingBuffer(BufferVFSMixin, debugmixin):
     """A temporary buffer used to determine which major mode to use

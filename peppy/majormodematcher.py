@@ -25,14 +25,28 @@ class MajorModeMatcherDriver(debugmixin):
     current_modes = []
     skipped_modes = set()
     
+    # This list holds all major modes that aren't defined in a plugin
+    global_major_modes = []
+    
+    @classmethod
+    def addGlobalMajorMode(cls, mode):
+        """Inform the major mode matcher about a MajorMode that isn't in
+        a plugin
+        
+        Most major modes are defined in plugins; but certain special modes are
+        defined globally.  They must be added using this method.
+        """
+        if mode not in cls.global_major_modes:
+            cls.global_major_modes.append(mode)
+    
     @classmethod
     def getCompatibleMajorModes(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
-        modes = []
+        modes = [m for m in cls.global_major_modes if m.verifyCompatibleSTC(stc_class)]
         for plugin in plugins:
             # Only display those modes that use the same type of STC as the
             # current mode.
-            modes.extend([m for m in plugin.getMajorModes() if m.stc_class == stc_class])
+            modes.extend([m for m in plugin.getMajorModes() if m.verifyCompatibleSTC(stc_class)])
             compatible = plugin.getCompatibleMajorModes(stc_class)
             if compatible is not None:
                 modes.extend(compatible)

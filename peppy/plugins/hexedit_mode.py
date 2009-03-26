@@ -814,6 +814,10 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
     
     icon='icons/tux.png'
     mimetype = 'application/octet-stream'
+    
+    @classmethod
+    def verifyCompatibleSTC(self, stc_class):
+        return hasattr(stc_class, 'GetBinaryData')
 
     def __init__(self, parent, wrapper, buffer, frame):
         """Create the HexEdit viewer
@@ -1033,12 +1037,8 @@ class HexEditMode(STCInterface, Grid.Grid, MajorMode):
 
 
 class HexEditPlugin(IPeppyPlugin, debugmixin):
-    def getCompatibleMajorModes(self, stc_class):
-        # HexEdit mode is compatible with all stc classes that have a
-        # GetBinaryData method
-        if hasattr(stc_class, 'GetBinaryData'):
-            yield HexEditMode
-        raise StopIteration
+    def getMajorModes(self):
+        yield HexEditMode
 
     def getActions(self):
         return [OpenHexEditor, GotoOffset, HexRecordFormat, ShowHexDigits,

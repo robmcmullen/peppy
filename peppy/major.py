@@ -589,6 +589,17 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
                 if keyword in cls.emacs_synonyms:
                     return True
         return False
+
+    @classmethod
+    def verifyCompatibleSTC(cls, stc_class):
+        """Hook to verify the mode can work with the specified STC class
+
+        @param stc_class: STC class of interest
+
+        @returns: boolean if the major mode works with the STC
+        """
+        #dprint("%s: subclass=%s other=%s self=%s" % (cls.keyword, issubclass(stc_class, cls.stc_class), stc_class, cls.stc_class))
+        return issubclass(stc_class, cls.stc_class)
     
     @classmethod
     def preferThreadedLoading(cls, url):
