@@ -7,6 +7,7 @@ from peppy.yapsy.plugins import *
 from peppy.debug import *
 
 from peppy.hsi.loader import *
+from peppy.hsi.hsi_stc import *
 
 from peppy.about import AddCopyright
 AddCopyright("Matplotlib", "http://matplotlib.sourceforge.org/", "John D. Hunter", "2003-2008", "Colormaps from")

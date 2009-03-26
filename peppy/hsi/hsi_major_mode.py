@@ -50,6 +50,7 @@ from peppy.hsi.common import *
 from peppy.hsi.subcube import *
 from peppy.hsi.filter import *
 from peppy.hsi.view import *
+from peppy.hsi.hsi_stc import *
 
 
 class HSIMode(BitmapScroller, MajorMode):
