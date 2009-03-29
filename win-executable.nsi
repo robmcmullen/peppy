@@ -12,6 +12,7 @@ Name 'Peppy'
 OutFile ${exe}
 SilentInstall silent
 Icon '..\graphics\peppy48.ico'
+RequestExecutionLevel user
 
 Section
     InitPluginsDir
