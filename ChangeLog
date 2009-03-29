@@ -1,3 +1,23 @@
+2009-03-29  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.9 "Spring Cleaning"
+	* much better Mac OS X integration
+	* OS X menubar now available when no windows are open
+	* added typical OS X Window menu functions
+	* added ability to define multiple keybindings for the same action
+	* many bug fixes to hyperspectral image display mode
+	* improved error handling during major mode creation
+	* standardized interactive search to work like Firefox
+	* changed HexEdit mode to use new STCBinaryMixin
+	* fixed some missing emacs keybindings
+	* added emacs style transpose-chars and transpose-line-down functions
+	* added autosave after a user-configurable number of keystrokes
+	* added prompt to restore from autosave if autosave is newer than file
+	* added automatic backup file
+	* added Just One Space function from Chris Barker
+	* updated Editra style definitions
+	* added dialog box for unhandled exceptions, borrowed from Editra
+
 2008-11-09  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.8.34
