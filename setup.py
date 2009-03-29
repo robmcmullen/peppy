@@ -232,10 +232,9 @@ manifest = """
 <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
         <requestedPrivileges>
-        <requestedExecutionLevel
-            level="requireAdministrator"
-            uiAccess="false"
-        />
+            <requestedExecutionLevel
+                level="AsInvoker"
+                uiAccess="false"/>
         </requestedPrivileges>
     </security>
 </trustInfo>
