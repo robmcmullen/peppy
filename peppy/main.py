@@ -491,6 +491,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                 del sys.argv[index:index + 2]
         self.config = HomeConfigDir(confdir)
 
+        if "--dbg" in sys.argv:
+            index = sys.argv.index("--dbg")
+            if len(sys.argv) > index:
+                if sys.argv[index + 1 ] == "all":
+                    debugmixin.debuglevel = 1
+
         if "--no-server" in sys.argv:
             index = sys.argv.index("--no-server")
             del sys.argv[index:index + 1]

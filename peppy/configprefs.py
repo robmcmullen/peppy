@@ -10,9 +10,10 @@ import cPickle as pickle
 
 import wx
 
+from peppy.lib.userparams import *
 from peppy.debug import *
 
-class HomeConfigDir:
+class HomeConfigDir(ClassPrefs, debugmixin):
     """Simple loader for config files in the home directory.
 
     Wrapper around home directory files.  Load and save files or
@@ -24,6 +25,7 @@ class HomeConfigDir:
             self.dir = os.path.normpath(dirname)
         else:
             self.dir = wx.StandardPaths.Get().GetUserDataDir()
+        self.dprint("Configuration dir: %s" % self.dir)
             
         if not self.exists():
             if create:
@@ -50,9 +52,13 @@ class HomeConfigDir:
                 path = self.fullpath(name)
             else:
                 path = self.dir
+            self.dprint("Creating %s" % path)
             os.mkdir(path)
             return True
         except:
+            import traceback
+            self.dprint("Failed creating %s" % path)
+            self.dprint("".join(traceback.format_stack()))
             return False
 
     def fullpath(self, name):

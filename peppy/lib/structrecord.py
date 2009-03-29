@@ -120,6 +120,7 @@ class FieldAbortError(FieldError):
 
 
 class Field(debugmixin):
+    debuglevel = 0
     print_all = False
     
     def __init__(self,name,default=None):
