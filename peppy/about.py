@@ -328,7 +328,7 @@ def AddAuthor(author, contribution):
     authors[unicodify(author)] = unicodify(contribution)
 AddAuthor("Christopher Armstrong", "for patches to improve emacs compatibility")
 AddAuthor("Jesse Aldridge", "for testing and bug reports on Ubuntu Linux")
-AddAuthor("Chris Barker", "for testing and bug reports on Mac OSX")
+AddAuthor("Chris Barker", "for patches, testing and bug reports on Mac OSX")
 
 def AddCredit(author, contribution):
     global needs_sort
