@@ -16,6 +16,10 @@ from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.debug import *
 
+from peppy.about import AddCopyright
+
+AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2009", "The error reporting dialog from")
+
 
 def EnvironmentInfo():
     """Returns a string of the systems information

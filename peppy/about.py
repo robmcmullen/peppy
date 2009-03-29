@@ -350,7 +350,8 @@ AddCredit("Anders Lund", "for the regex based autoindenter transcribed from Kate
 def AddCopyright(project, website, author, date, reason=""):
     global needs_sort
     needs_sort = True
-    copyrights[project] = ({'website': unicodify(website),
+    key = project + reason
+    copyrights[key] = ({'website': unicodify(website),
                        'project': unicodify(project),
                        'author': unicodify(author),
                        'date': unicodify(date),

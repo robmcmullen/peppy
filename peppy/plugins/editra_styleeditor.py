@@ -20,7 +20,7 @@ import peppy.editra.style_editor as style_editor
 
 from peppy.about import AddCopyright
 
-AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2007", "The styling dialog and syntax definitions for over 30 languages from")
+AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2009", "The styling dialog and syntax definitions from")
 
 
 class EditraStyles(SelectAction):
