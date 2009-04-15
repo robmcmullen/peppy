@@ -20,6 +20,21 @@ blah:
     }
 }
 
+float TestClass::operator=(const float arg) 
+{
+    printf("blah");
+}
+
+float TestClass::operator()(const float arg) 
+{
+    printf("blah");
+}
+
+float TestClass::operator+(const float arg) 
+{
+    printf("blah");
+}
+
 class blah :: public blah {
   public:
     int blah;
