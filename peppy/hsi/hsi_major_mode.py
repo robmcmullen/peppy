@@ -90,6 +90,8 @@ class HSIMode(BitmapScroller, MajorMode):
     
     def addUpdateUIEvent(self, callback):
         self.Bind(EVT_CROSSHAIR_MOTION, callback)
+        self.Bind(EVT_RUBBERBAND_SIZE, callback)
+        self.Bind(EVT_RUBBERBAND_MOTION, callback)
 
     def getStatusBarWidths(self):
         """Get the HSI status bar
@@ -106,13 +108,20 @@ class HSIMode(BitmapScroller, MajorMode):
                 self.setStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
         
         self.setStatusText(self.cubeview.getBandName(band), 2)
+    
+    def updateBox(self, ul, lr):
+        self.setStatusText(u"(%d, %d) \u2192 (%d, %d): w=%d h=%d" % (ul[0], ul[1], lr[0], lr[1], lr[0] - ul[0] + 1, lr[1] - ul[1] + 1), 0)
 
     def OnUpdateUI(self, evt):
         assert self.dprint("updating HSI user interface!")
-        self.updateInfo(*evt.imageCoords)
-        for minor in self.wrapper.getActiveMinorModes(True):
-            if hasattr(minor, 'updateProxies'):
-                minor.updateProxies(*evt.imageCoords)
+        if hasattr(evt, 'imageCoords'):
+            self.updateInfo(*evt.imageCoords)
+            for minor in self.wrapper.getActiveMinorModes(True):
+                if hasattr(minor, 'updateProxies'):
+                    minor.updateProxies(*evt.imageCoords)
+        elif hasattr(evt, 'upperLeftImageCoords'):
+            
+            self.updateBox(evt.upperLeftImageCoords, evt.lowerRightImageCoords)
         if evt is not None:
             evt.Skip()
     
