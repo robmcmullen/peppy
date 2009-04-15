@@ -61,6 +61,9 @@ html: $(HTML) $(PRE) README.html doc
 	mkdir -p web/manual
 	rsync -avuz manual/_build/html/ web/manual/
 
+peppy/_peppy_version.py: .git/index
+	./make-changelog.py -m peppy
+
 web/thanks.html.in:
 	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
 web/screenshots.html.in: web/0.*
@@ -68,7 +71,7 @@ web/screenshots.html.in: web/0.*
 web/ChangeLog.html.in: ChangeLog
 	./make-doc.py -c -m peppy -o web/ChangeLog.html.in ChangeLog
 
-$(HTML): web/template.html.in web/mainmenu.html.in web/ChangeLog.html.in ChangeLog
+$(HTML): web/template.html.in web/mainmenu.html.in web/ChangeLog.html.in ChangeLog peppy/_peppy_version.py
 
 publish_html: html
 	rsync -avuz $(WEBSITE) robm351@www.flipturn.org:peppy.flipturn.org/
@@ -103,8 +106,7 @@ dist: distdir
 eggs:
 	./plugins/egg-utils.py -d ./plugins/build -k egg
 
-distdir:
-	./make-changelog.py -m peppy
+distdir: peppy/_peppy_version.py
 	./make-doc.py -m peppy -o README README.pre.in
 	./make-doc.py -m peppy -o INSTALL INSTALL.pre.in
 	-rm -rf $(distdir)
