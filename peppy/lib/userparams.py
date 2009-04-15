@@ -312,6 +312,9 @@ class Param(debugmixin):
         else:
             self.local = False
         
+        # User options are anything leftover in the kwargs dict.
+        self.user_options = dict(kwargs)
+        
         # Flag to indicate if any callbacks should be processed.  When the
         # value has been changed programmatically (i.e.  not by the user typing
         # something), it may be desirable to turn off callbacks.  This happens
