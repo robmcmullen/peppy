@@ -36,15 +36,16 @@ substitutes = {
     'author_email': __author_email__,
     'url': __url__,
     'license': "Application licensed under the GPLv3; most code also dual licensed under GPLv2",
-    'warning': """<P>I'm dogfooding!  This is now my primary editor,
-but caveat emptor: it is still alpha code.  It has the features that I need for
-my day-to-day editing, and it has all but replaced XEmacs as my daily editor.
-I've planned much more development, though, and I also intend to work on a
-lot of documentation to make it easier for contributors to extend the editor.
+    'warning': """<P>I've been dogfooding with peppy for over a year and I'm
+very happy with its stability.  It's certainly good enough to finally get rid
+of the alpha tag and move into beta.  It's not production yet as there are
+still rough edges and a general lack of documentation on the internals, but it
+is suitable for day-to-day editing tasks.
 
-<P>Save your work often and file a bug report using the <b>Help</b> ->
-<b>Report a Bug</b> menu item (or at http://trac.flipturn.org/newticket) if
-you notice something that shouldn't be happening.
+<P>However, it's always a good idea to turn on the autosave and backup options
+in the preferences and save your work often.  Should you run across a problem,
+don't hesitate to file a bug report using the <b>Help</b> ->
+<b>Report a Bug</b> menu item (or at http://trac.flipturn.org/newticket).
     """,
     'thanks': "",
     'gpl_code': "",
