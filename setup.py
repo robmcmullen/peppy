@@ -167,10 +167,8 @@ else:
     scripts = ['scripts/peppy']
 
 
-# Create the data files for Editra's styling stuff
-data_files = [("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")),
-              ("peppy/editra/tests", glob.glob("peppy/editra/tests/*")),
-              ("peppy/editra/syntax", glob.glob("peppy/editra/syntax/*.*"))]
+# Any files to be installed outsite site-packages are declared here
+data_files = []
 
 # Support for bundling the application with py2exe
 try:
