@@ -321,6 +321,7 @@ def randomizeCredits(text):
     return text
 
 addMutator('peppy', randomizeCredits)
+addMutator('thanks', randomizeCredits)
 
 def AddAuthor(author, contribution):
     global needs_sort
