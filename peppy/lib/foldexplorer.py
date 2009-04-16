@@ -192,7 +192,7 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
     funcre = re.compile(
         r'(?:\s*const)?' # function might return const reference
         r'\s*((?:[a-zA-Z0-9_*&\s])+?(?:\s|[*]+))' # return arguments
-        r'([a-zA-Z_][a-zA-Z0-9_:<>]*)' # method name including possible template type parameter
+        r'([a-zA-Z_][a-zA-Z0-9_:<>]*(?:operator\s*(?:[+\-/*=<>&|%!^\[\]]+|new(?:\s*\[\])?|delete(?:\s*\[\])?))?)' # method name including possible template type parameter
         r'(\s*\((?:([^;]*?|\s*))\))' # signature
         r'(?:\s*const)?' # const
         r'(' + _ws + r')({)'
@@ -239,8 +239,16 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
                 if not self.isStyleKeyword(style[match.start(1)]) and not self.isStyleKeyword(style[match.start(2)]):
                     #print repr(code)
                     #print style
-                    self.dprint("matches!!!: return args=%s (index=%d, %d) name=%s (index=%d %d) sig=%s" % (match.group(1).strip(), match.start(1), style[match.start(1)], match.group(2).strip(), match.start(2), style[match.start(2)], match.group(3).strip()))
-                    return "%s" % match.group(2).strip()
+                    name = match.group(2).strip()
+                    sig = match.group(3).strip()
+                    # FIXME: can't seem to tweak the regex to get it to match
+                    # for operator() as it leaves out the ().  So here's a
+                    # special case.
+                    if name.endswith('operator') and sig.startswith("()"):
+                        name += '()'
+                        
+                    self.dprint("matches!!!: return args=%s (index=%d, %d) name=%s (index=%d %d) sig=%s" % (match.group(1).strip(), match.start(1), style[match.start(1)], name, match.start(2), style[match.start(2)], sig))
+                    return "%s" % name
                 else:
                     self.dprint("%s or %s is a keyword" % (match.group(1).strip(), match.group(2).strip()))
             else:
