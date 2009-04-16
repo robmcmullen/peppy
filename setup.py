@@ -258,6 +258,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
       url = module.__url__,
       download_url = module.__download_url__,
       platforms = 'any',
+      zip_safe = False,
       scripts = scripts,
       packages = packages,
       package_data = {
