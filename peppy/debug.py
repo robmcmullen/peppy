@@ -70,7 +70,11 @@ def writeToLog(logfh, text):
             cls=''
         if isinstance(text, unicode):
             text = text.encode("utf-8")
-        logfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],text,os.linesep))
+        try:
+            logfh.write("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],text,os.linesep))
+        except IOError, e:
+            print("Caught IOError %s on %s" % (e, str(logfh)))
+            print("%s:%d %s%s: %s%s" % (os.path.basename(caller[1]),caller[2],cls,caller[3],text,os.linesep))
     finally:
         del caller
     if TRACING: _traceon()
