@@ -443,7 +443,7 @@ class CStyleAutoindent(FoldingAutoindent):
         else:
             self.reUnindent = None
         self.reStatement = re.compile(r'^([^\s]+)\s*(\(.+\)|.+)?$')
-        self.reCase = re.compile(r'^\s*(case|default).*:$')
+        self.reCase = re.compile(r'^\s*(case|default).*:\s*$')
         self.reClassAttrScope = re.compile(r'^\s*(public|private).*:$')
         self.reBreak = re.compile(r'^\s*break\s*;\s*$')
         self.reLabel = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*:((?!:)|$)')

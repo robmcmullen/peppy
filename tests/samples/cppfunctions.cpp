@@ -2,7 +2,7 @@ float TestClass::test1a(float arg)
 {
     printf("blah");
     switch (blah) {
-      case 1:
+      case 1: //blah
         stuff;
         stuff;
         goto blah;

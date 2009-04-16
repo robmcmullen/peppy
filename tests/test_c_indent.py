@@ -75,6 +75,16 @@ switch (blah) {
     |
 
 --------
+switch (blah) {
+  case 0: //extra
+     |
+
+--
+switch (blah) {
+  case 0: //extra
+    |
+
+--------
 switch (func(blah,
         stuff)) {
   case 0:
@@ -89,6 +99,20 @@ switch (func(blah,
   case 1:|
 
 --------
+switch (func(blah,
+        stuff)) {
+  case 0:
+    printf("stuff");
+    case 1: //extra|
+
+--
+switch (func(blah,
+        stuff)) {
+  case 0:
+    printf("stuff");
+  case 1: //extra|
+
+--------
 class A::public B {
   private:
     int blah;
@@ -101,8 +125,6 @@ class A::public B {
   public:|
 
 --------
-"""
-        tests = """\
 void main(void)
     {|
 
