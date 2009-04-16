@@ -1,3 +1,31 @@
+<h1>Easy Install</h1>
+
+<P>Peppy is updated at the <a href="http://pypi.python.org/pypi/peppy/">Python
+Package Index</a>, and the preferred install method is to use <a
+href="http://pypi.python.org/pypi/setuptools">setuptools</a> to install peppy
+into your python site-packages directory.
+
+<P>You may need to be the root user (or have administrator privileges on
+Windows) to do this, but at a command line all you need to do to install peppy
+is:
+
+<ul>
+<li>easy_install -U peppy
+</ul>
+
+<P>which will install peppy from scratch or upgrade the peppy currently
+residing in your site-packages directory.  It also places a startup program
+named "peppy" in a directory that should by default be included in your system
+PATH environment.  (Typically, this is the same directory that python itself
+is installed into.)
+
+<P>If you don't have setuptools installed, you can install it by downloading
+the <a href="http://peak.telecommunity.com/dist/ez_setup.py">ez_setup.py</a>
+script and running it, or you can go to the <a
+href="http://pypi.python.org/pypi/setuptools">setuptools</a> homepage to
+locate other installers.
+
+
 <h1>Binary Installers</h1>
 
 <P>Binary installers are self-contained: they do not depend on python or
@@ -5,11 +33,12 @@ wxpython being installed on the host system.  Everything you need to run peppy
 (including optional modules like pyenchant, NumPy, and GDAL) is contained within
 the installer.
 
-<P>Note 1: If you're interested in developing plugins or extending the
+<P><strong>Note 1:</strong> Plugins aren't available when using binary
+installers.  If you're interested in developing plugins or extending the
 functionality of peppy, you should install from source code.
 
-<P>Note 2: there is no installer for unix-like operating systems.  You should
-install from source code, as described below.
+<P><strong>Note 2:</strong> there is no installer for unix-like operating
+systems.  You should install using one of the other methods.
 
 <h2>Windows Installer</h2>
 <P><a href="http://peppy.flipturn.org/archive/peppy-$version-win32.exe">peppy-$version-win32.exe</a>
@@ -17,7 +46,7 @@ install from source code, as described below.
 <h2>Mac OSX Installer</h2>
 <P>coming soon (hopefully)...
 
-<h1>Source Code</h1>
+<h1>Source Code for Developers</h1>
 
 <P>There are two ways to get the source code: download the current
 release, or use subversion to get the current development tree.  In both
