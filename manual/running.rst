@@ -7,21 +7,24 @@ the code.
 
 __ /download.html
 
+Installed using easy_install: (RECOMMENDED)
+    If you used ``easy_install`` to install the latest version from the Python
+    Package Index, a python script named ``peppy`` will be installed in the
+    system binary directory, so simply typing ``peppy`` on the command line
+    will start the program.
+
 Downloaded from source:
     If you downloaded peppy but did not install the source, you run the
-    application with the command line ``python peppy.py``
+    application with the command line ``python peppy.py`` from within the
+    peppy directory.
 
-Installed from source:
-    If you ran ``python setup.py install`` (which is not recommended at this
-    point because this is still alpha code), a python script named ``peppy``
-    will be installed in the system binary directory, and you can run peppy
-    with that command line.
+Installed from the downloaded source:
+    If you ran ``python setup.py install`` on the downloaded source, a python
+    script named ``peppy`` will be installed in the system binary directory.
 
 Installed a binary distribution:
     This is only applicable to Windows and Mac OS X. The install process will
     leave an icon somewhere, and you can just click on that.
-
-The recommended way to run peppy is directly from a source distribution.
 
 Command Line Use
 ================
@@ -41,8 +44,8 @@ Options
 -------
 
 There are many command line options available, the most useful of which are
-outlined below.  You can see the full list by running peppy with the ``--
-help`` argument.
+outlined below.  You can see the full list by running peppy with the ``--help``
+argument.
 
 -d:
     Send all debug printing to the console
