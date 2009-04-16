@@ -38,7 +38,6 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         return hasattr(mode, 'getFoldHierarchy')
 
     def __init__(self, parent, **kwargs):
-        MinorMode.__init__(self, parent, **kwargs)
         if wx.Platform == '__WXGTK__':
             style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
             self.has_root = False
@@ -46,6 +45,7 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             style = wx.TR_HAS_BUTTONS
             self.has_root = True
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
+        MinorMode.__init__(self, parent, **kwargs)
         self.root = self.AddRoot(self.mode.getTabName())
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
