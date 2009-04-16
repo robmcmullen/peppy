@@ -28,11 +28,16 @@ class FileBrowser(wx.GenericDirCtrl, Sidebar):
         )
     
     def __init__(self, parent, *args, **kwargs):
-        Sidebar.__init__(self, parent)
         self.wildcard=u"All Files (*)|*"
-        self.current_path=""
         
+        # Must initialize the wx component first, otherwise will get strange
+        # errors because the event handler called by Sidebar.__init__ allows
+        # an event to be processed before the two-phase init of the window is
+        # finished.  See bug #566 for more info.
         wx.GenericDirCtrl.__init__(self, parent, -1, style=wx.DIRCTRL_SHOW_FILTERS, size=(self.classprefs.best_width, self.classprefs.best_height), filter=self.wildcard)
+        Sidebar.__init__(self, parent)
+        
+        self.current_path=""
         self.SetFilter(self.wildcard)
         self.ShowHidden(self.classprefs.show_hidden)
         tree = self.GetTreeCtrl()
