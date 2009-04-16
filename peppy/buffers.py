@@ -626,9 +626,14 @@ class Buffer(BufferVFSMixin):
         # regardless of the outcome of this method.
         self.backup_saved = True
         
-        temp_url = self.stc.getBackupTemporaryFilename(self)
-        if temp_url:
-            if vfs.exists(temp_url):
-                vfs.remove(temp_url)
-            vfs.copy(self.url, temp_url)
+        try:
+            temp_url = self.stc.getBackupTemporaryFilename(self)
+            if temp_url:
+                if vfs.exists(temp_url):
+                    vfs.remove(temp_url)
+                vfs.copy(self.url, temp_url)
+        except NotImplementedError:
+            # Some URI schemes won't be writable, so don't cause a failure in
+            # this case; just ignore it.
+            pass
 
