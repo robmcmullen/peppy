@@ -1,26 +1,28 @@
 """peppy - (ap)Proximated (X)Emacs Powered by Python.
 
-An experiment using the modern software development process -- this is
-a wxPython/Scintilla-based editor written in and extensible through
-Python. It attempts to provide an XEmacs-like multi-window,
-multi-tabbed interface using the Advanced User Interface (wx.aui)
-framework of wxPython.
+A full-featured editor for text files and more, Peppy provides an XEmacs-like
+multi-window, multi-tabbed interface using the Advanced User Interface
+(wx.aui) framework of wxPython.  It is built around the emacs concept of major
+modes -- different views are presented to the user depending on the type of
+data being edited.  Text files are shown using the wx.stc (Scintilla) editing
+component, binary files use a grid layout showing hexadecimal representation
+of the binary data, scientific image datasets are displayed using a raster
+band image displayer, and more.  Peppy is designed to be very extensible using
+setuptools plugins.
 
-The program is designed around the emacs idea of major modes and minor
-modes, and further extends this with global plugins.  In writing the
-editor, I also borrowed quite a lot from emacs terminology, including
-frames and buffers, the minibuffer concept, and the keyboard bindings.
-
-I did not borrow emacs lisp, however; that being the primary reason
-for me wanting to move away from emacs.  I find it easy to think in
-Python, unlike lisp which my brain can't seem to flush fast enough
+The program is inspired by emacs, and I borrowed quite a lot of emacs
+terminology, including frames and buffers, the minibuffer concept, and the
+keyboard bindings.  I did not borrow emacs lisp, however; that being the
+primary reason for me wanting to move away from emacs.  I find it easy to
+think in Python, unlike lisp which my brain can't seem to flush fast enough
 after learning just enough to hack XEmacs.
 
 Plugins
 =======
 
 peppy is extended by plugins.  Plugins are based on the U{yapsy component
-architecture<http://yapsy.sourceforge.net>}.
+architecture<http://yapsy.sourceforge.net>} and are discovered using
+setuptools plugins.
 
 Many parts of the peppy system are exposed through the L{IPeppyPlugin}
 interface, but most interesting for now are L{IPeppyPlugin.getMajorModes}
