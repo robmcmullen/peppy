@@ -33,7 +33,7 @@ class FileOpener(debugmixin):
     """
     debuglevel = 0
     
-    def __init__(self, frame, url, modecls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
+    def __init__(self, frame, url, modecls=None, stccls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
         """Create an opener for the specified url
         
         Transient class that loads a file and creates a new tab in the user
@@ -41,8 +41,12 @@ class FileOpener(debugmixin):
         
         @param url: URL of the file to open
         
-        @param modecls: (optional) L{MajorMode} sublass to be used to edit
+        @param modecls: (optional) L{MajorMode} subclass to be used to edit
         the file
+        
+        @param stccls: (optional) L{STCInterface} class to be used if it is
+        different than what would automatically be determined from the major
+        mode
         
         @param mode_to_replace: (optional) if used, this L{MajorMode} instance
         will be replaced in the GUI with the newly created major mode.
@@ -71,6 +75,10 @@ class FileOpener(debugmixin):
             self.modecls = self.url.query['mode']
         else:
             self.modecls = modecls
+        if 'stc' in self.url.query:
+            self.stccls = self.url.query['stc']
+        else:
+            self.stccls = stccls
         self.mode_to_replace = mode_to_replace
         self.force_new_tab = force_new_tab
         self.created_from_url = created_from_url
@@ -305,7 +313,8 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""
-        return Buffer(self.raw_url, self.opener.modecls, self.created_from_url)
+        return Buffer(self.raw_url, self.opener.modecls, self.created_from_url,
+                      self.opener.stccls)
 
     def addViewer(self, mode):
         pass

@@ -345,7 +345,7 @@ class Buffer(BufferVFSMixin):
         buffer.openGUIThreadSuccess()
         return buffer
 
-    def __init__(self, url, defaultmode=None, created_from_url=None):
+    def __init__(self, url, defaultmode=None, created_from_url=None, defaultstc=None):
         BufferVFSMixin.__init__(self, url, created_from_url)
         
         if Buffer.dummyframe is None:
@@ -353,7 +353,9 @@ class Buffer(BufferVFSMixin):
 
         self.busy = False
         self.readonly = False
-        self.defaultmode=defaultmode
+        
+        self.defaultmode = defaultmode
+        self.defaultstc = defaultstc
 
         self.guessBinary=False
         self.guessLength=1024
@@ -460,9 +462,11 @@ class Buffer(BufferVFSMixin):
         self.dprint(u"url: %s" % unicode(self.url))
         if self.defaultmode is None:
             self.defaultmode = MajorModeMatcherDriver.match(self)
+        if self.defaultstc is None:
+            self.defaultstc = self.defaultmode.stc_class
         self.dprint("mode=%s" % (str(self.defaultmode)))
 
-        self.stc = self.defaultmode.stc_class(self.dummyframe)
+        self.stc = self.defaultstc(self.dummyframe)
 
     def openBackgroundThread(self, progress_message=None):
         self.stc.open(self, progress_message)
