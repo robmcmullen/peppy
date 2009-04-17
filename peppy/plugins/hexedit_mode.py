@@ -357,6 +357,12 @@ class HugeTable(Grid.PyGridTableBase,debugmixin):
             startpos = row*self.nbytes
             endpos = startpos + self.nbytes
             data = self.stc.GetBinaryData(startpos,endpos)
+            
+            # pad data with dummy bytes if we've hit the end of file and it's
+            # not an even multiple of the column size
+            if len(data) < self.nbytes:
+                data += '\0' * (self.nbytes - len(data))
+            
             s = struct.unpack(self.format, data)
             self._cache[row] = (data, s)
             #dprint("Storing cached data for row %d: %s, %s" % (row, repr(data), str(s)))
