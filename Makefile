@@ -119,11 +119,10 @@ distdir: peppy/_peppy_version.py
 	mkdir -p $(distdir)/plugins
 	cp ./plugins/build/*.egg $(distdir)/plugins
 	
-	cp win-executable.nsi $(distdir)
-	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
+	./make-doc.py -m peppy -o $(distdir)/py2exe/win-installer.nsi $(distdir)/py2exe/win-installer.nsi.in
 
 nsis:
-	./make-doc.py -m peppy -o $(distdir)/win-installer.nsi win-installer.nsi.in
+	./make-doc.py -m peppy -o $(distdir)/py2exe/win-installer.nsi $(distdir)/py2exe/win-installer.nsi.in
 
 api: distdir
 	(cd $(distdir); $(EPYDOC) -o docs/api --exclude "peppy\.editra\..+" --no-private --url 'http://peppy.flipturn.org/' peppy) 2>&1 | tee epydoc.out

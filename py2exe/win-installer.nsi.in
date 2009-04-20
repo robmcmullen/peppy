@@ -16,13 +16,13 @@ SetCompressor lzma
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON "..\graphics\peppy48.ico"
-!define MUI_UNICON "..\graphics\peppy48.ico"
+!define MUI_ICON "..\..\graphics\peppy48.ico"
+!define MUI_UNICON "..\..\graphics\peppy48.ico"
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
 ; License page
-!insertmacro MUI_PAGE_LICENSE "LICENSE.v3"
+!insertmacro MUI_PAGE_LICENSE "..\LICENSE.v3"
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 ; Instfiles page
@@ -62,7 +62,7 @@ ShowUnInstDetails show
 Section "MainSection" SEC02
   SetOverwrite try
   SetOutPath "$INSTDIR\"
-  File /r "dist\*.*"
+  File /r "..\dist\*.*"
   CreateDirectory "$SMPROGRAMS\$prog"
   CreateShortCut "$SMPROGRAMS\$prog\$prog.lnk" "$INSTDIR\$prog.exe"
   CreateShortCut "$DESKTOP\$prog.lnk" "$INSTDIR\$prog.exe"

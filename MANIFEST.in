@@ -7,5 +7,6 @@ recursive-include peppy/editra/tests *
 recursive-include peppy/editra/syntax *
 global-include *.peppy-plugin
 recursive-include peppy/icons *
+recursive-include py2exe *
 prune manual/_build
 prune peppy-*

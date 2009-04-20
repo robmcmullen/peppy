@@ -276,7 +276,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
                             'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'numpy.f2py', 'matplotlib', 'doctest'],
                             }
                  },
-      windows = [{"script": "run.py",
+      windows = [{"script": "py2exe/peppy.py",
                   "other_resources": [(24,1,manifest)],
                   "icon_resources": [(2, "../graphics/peppy48.ico")],
                   }
