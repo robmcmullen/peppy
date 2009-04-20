@@ -60,7 +60,13 @@ import wx.stc
 try:
     import enchant
 except ImportError:
+    # no big deal; support for enchant simply won't be included
     pass
+except:
+    # big deal; enchant is there but there's some error that is preventing
+    # its import
+    import traceback
+    traceback.print_exc()
 
 class STCSpellCheck(object):
     """Spell checking for use with wx.StyledTextControl.
