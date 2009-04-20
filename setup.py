@@ -161,9 +161,9 @@ else:
     # "import peppy" statement rather than looking for the peppy directory
     # in site-packages.  So, on unix it is installed as 'peppy' without an
     # extension to work around this.
-    if os.path.exists('peppy.py') and not os.path.exists('scripts/peppy'):
+    if os.path.exists('run.py') and not os.path.exists('scripts/peppy'):
         import shutil
-        shutil.copy('peppy.py', 'scripts/peppy')
+        shutil.copy('run.py', 'scripts/peppy')
     scripts = ['scripts/peppy']
 
 
@@ -276,7 +276,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
                             'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'numpy.f2py', 'matplotlib', 'doctest'],
                             }
                  },
-      windows = [{"script": "peppy.py",
+      windows = [{"script": "run.py",
                   "other_resources": [(24,1,manifest)],
                   "icon_resources": [(2, "../graphics/peppy48.ico")],
                   }

@@ -24,12 +24,12 @@ top_builddir = .
 distdir := $(PACKAGE)-$(VERSION)
 top_distdir := $(distdir)
 
-APPMAIN = peppy.py
+APPMAIN = run.py
 WINBATCH = peppy.bat
 SCRIPTMAIN = scripts/peppy
 DISTMAIN = peppy/__init__.py
 
-DISTFILES := AUTHORS ChangeLog docs FAQ INSTALL LICENSE.* NEWS README TODO peppy peppy.py peppy.bat setup_mac.py tests
+DISTFILES := AUTHORS ChangeLog docs FAQ INSTALL LICENSE.* NEWS README TODO peppy $(APPMAIN) peppy.bat setup_mac.py tests
 
 
 
@@ -65,7 +65,7 @@ peppy/_peppy_version.py: .git/index
 	./make-changelog.py -m peppy
 
 web/thanks.html.in:
-	python peppy.py --no-server --no-splash --thanks > web/thanks.html.in
+	python $(APPMAIN) --no-server --no-splash --thanks > web/thanks.html.in
 web/screenshots.html.in: web/0.*
 	(cd web; photo-album.py --nodatedir 0.*; photo-index.py -a -b -r -o screenshots.html.in)
 web/ChangeLog.html.in: ChangeLog

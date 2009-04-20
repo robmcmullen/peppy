@@ -81,13 +81,13 @@ on your system in order to run peppy.  (See above.)
 <ul>
 <li>tar xvf peppy-$version.tar.bz2
 <li>cd peppy-$version
-<li>python peppy.py
+<li>python run.py
 </ul>
 <dd>If you're using windows:
 <ul>
 <li>extract the archive using winzip, 7zip, or another extractor
 <li>go to the extracted folder peppy-$version
-<li>double-click on peppy.py
+<li>double-click on run.py
 </ul>
 
 <dt><strong>Advanced:</strong> checkout using svn to get the current development tree.
@@ -95,7 +95,7 @@ on your system in order to run peppy.  (See above.)
 <ul>
 <li>svn co http://svn.flipturn.org/peppy/trunk peppy
 <li>cd peppy
-<li>python peppy.py
+<li>python run.py
 </ul>
 
 <dt><strong>Browse:</strong> look at the source code before you download using <a href="http://svn.flipturn.org/peppy/trunk/">svn</a> or <a href="http://trac.flipturn.org/browser/">trac</a>.

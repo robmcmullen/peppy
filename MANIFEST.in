@@ -1,4 +1,4 @@
-include AUTHORS ChangeLog FAQ INSTALL LICENSE.* NEWS README TODO MANIFEST.in web/peppy-web-logo.png
+include AUTHORS ChangeLog FAQ INSTALL LICENSE.* NEWS README TODO MANIFEST.in web/peppy-web-logo.png run.py
 recursive-include docs *
 recursive-include tests *
 recursive-include manual *

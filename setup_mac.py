@@ -18,7 +18,7 @@ Plist = dict(CFBundleDocumentTypes= [dict(CFBundleTypeExtensions=["*"],
                                     ]
              )
 
-APP = ['peppy.py']
+APP = ['run.py']
 DATA_FILES = ["peppy/icons"]
 OPTIONS = {'argv_emulation': True, # this puts the names of dropped files into sys.argv when starting the app. 
            'iconfile': 'graphics/peppy.icns',
