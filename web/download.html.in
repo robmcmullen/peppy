@@ -1,29 +1,50 @@
+<P>The recommended way to install peppy on all systems (unless you want to
+develop plugins) is to use easy_install to install peppy into your python
+site-packages directory.
+
 <h1>Easy Install</h1>
 
-<P>Peppy is updated at the <a href="http://pypi.python.org/pypi/peppy/">Python
-Package Index</a>, and the preferred install method is to use <a
-href="http://pypi.python.org/pypi/setuptools">setuptools</a> to install peppy
-into your python site-packages directory.
+<P>The de-facto package management system in Python is <a
+href="http://pypi.python.org/pypi/setuptools">setuptools </a>.  Setuptools
+provides a program called <tt>easy_install</tt> that manages dependencies
+among packages.
 
-<P>You may need to be the root user (or have administrator privileges on
-Windows) to do this, but at a command line all you need to do to install peppy
-is:
+<P>You'll have to have python and wxPython installed on your system for this to
+work.  If you don't have python and wxPython installed, you can try one of the
+binary installers below.
 
 <ul>
-<li>easy_install -U peppy
+<li>Install python following <a href="http://www.python.org/download/">these
+instructions</a> for your platform.
+
+<li>Install wxpython following <a
+href="http://www.wxpython.org/download.php">these instructions</a> for your
+platform.
 </ul>
 
-<P>which will install peppy from scratch or upgrade the peppy currently
-residing in your site-packages directory.  It also places a startup program
-named "peppy" in a directory that should by default be included in your system
-PATH environment.  (Typically, this is the same directory that python itself
-is installed into.)
-
-<P>If you don't have setuptools installed, you can install it by downloading
+<P>If you don't have setuptools installed, you can bootstrap it by downloading
 the <a href="http://peak.telecommunity.com/dist/ez_setup.py">ez_setup.py</a>
-script and running it, or you can go to the <a
-href="http://pypi.python.org/pypi/setuptools">setuptools</a> homepage to
-locate other installers.
+script and running it.  This will add setuptools to your python site-packages
+directory and place the easy_install script in your system PATH.
+
+<P>Once all the prerequisites are satisfied, all you need to do to install
+peppy is:
+
+<pre>
+easy_install -U peppy
+</pre>
+
+<P>which will install or upgrade peppy in your site-packages directory.  you
+may need to be the root user (or have administrator privileges on Windows) to
+do this.
+
+<P>The setup procedure also places a startup program named "peppy" in a directory
+that should by default be included in your system PATH environment.
+(Typically, this is the same directory that python itself is installed into.)
+
+<P>Peppy is updated at the <a href="http://pypi.python.org/pypi/peppy/">Python
+Package Index</a>, so this install method will always get the latest version
+of the code.
 
 
 <h1>Binary Installers</h1>
@@ -52,18 +73,8 @@ systems.  You should install using one of the other methods.
 release, or use subversion to get the current development tree.  In both
 cases, however, <a href="http://www.python.org">Python</a> and the <a
 href="http://www.wxpython.org">wxPython</a> widget toolkit must be installed
-on your system in order to run peppy.
+on your system in order to run peppy.  (See above.)
 
-<ul>
-<li>Install python following <a href="http://www.python.org/download/">these
-instructions</a> for your platform.
-
-<li>Install wxpython following <a
-href="http://www.wxpython.org/download.php">these instructions</a> for your
-platform.
-</ul>
-
-<h2>Unix and Source Code Download</h2>
 <dl>
 <dt><strong>Recommended:</strong> download current release: <a href="http://peppy.flipturn.org/archive/peppy-$version.tar.bz2">peppy-$version.tar.bz2</a>
 <dd>If you're using unix, linux or Mac OSX:
@@ -91,10 +102,28 @@ platform.
 
 </dl>
 
-<P>Older releases are <a href="archive/">archived here</a>.
+<P>Peppy is designed so that you can develop and test right out of the
+directory you downloaded.  Nothing has to be installed unless you are on OS X.
+
+<h2>OS X development</h2>
+
+<P>On OS X, you can run the script setup_mac.py to create symbolic links in the
+python site-packages directory that will allow you to develop peppy in place
+but have a nice peppy icon instead of the rocketship launcher icon.  Simply
+run:
+
+<pre>
+python setup_mac.py py2app -A
+</pre>
+
+<P>to create a .dmg that you can use just like a regular disk image, including
+installing peppy in the dock for use with drag and drop file opening.
 
 
 <h2>Optional Modules</h2>
+
+<P>Peppy has some additional capability that can be used if the following
+optional modules are installed:
 
 <dl>
 <dt><a href="http://pyenchant.sourceforge.net">pyenchant</a>
@@ -131,4 +160,6 @@ webpage above.
 
 </dl>
 
+<h1>Older Releases</h1>
 
+<P>Older releases are <a href="archive/">archived here</a>.
