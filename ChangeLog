@@ -1,10 +1,11 @@
-2009-03-29  Rob McMullen  <robm@users.sourceforge.net>
+2009-04-20  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.9 "Spring Cleaning"
+	* Released peppy-0.9.27 "Spring Cleaning"
 	* much better Mac OS X integration
 	* OS X menubar now available when no windows are open
 	* added typical OS X Window menu functions
 	* added ability to define multiple keybindings for the same action
+	* fixed bugs in C++ class browser
 	* many bug fixes to hyperspectral image display mode
 	* improved error handling during major mode creation
 	* standardized interactive search to work like Firefox
