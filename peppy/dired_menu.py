@@ -62,7 +62,13 @@ class DiredPrevious(FlagBackwardsMixin, SelectAction):
     key_bindings = {'default': "p", }
 
 
-class DiredDelete(FlagMixin, SelectAction):
+class DeleteMixin(object):
+    def isEnabled(self):
+        # can only delete if the user has write permissions on the directory
+        return not self.mode.buffer.readonly
+
+
+class DiredDelete(FlagMixin, DeleteMixin, SelectAction):
     alias = "dired-delete"
     name = "Mark for Deletion"
     tooltip = "Mark the selected buffer for deletion."
@@ -70,7 +76,8 @@ class DiredDelete(FlagMixin, SelectAction):
     key_bindings = {'default': "d", }
     flag = 'D'
 
-class DiredDeleteBackwards(FlagBackwardsMixin, SelectAction):
+
+class DiredDeleteBackwards(FlagBackwardsMixin, DeleteMixin, SelectAction):
     alias = "dired-delete-backwards"
     name = "Mark for Deletion and Move Backwards"
     tooltip = "Mark the selected buffer for deletion and move to the previous item."
@@ -112,7 +119,7 @@ class DiredClearFlags(SelectAction):
 
 class DiredExecute(SelectAction):
     alias = "dired-execute"
-    name = "Save or Delete Marked Buffers"
+    name = "Perform Marked Actions"
     tooltip = "Act on the marked buffers according to their flags."
     default_menu = ("Actions", -300)
     key_bindings = {'default': "x", }
