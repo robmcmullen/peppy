@@ -43,6 +43,15 @@ def getCompactDate(mtime, recent_months=6):
     return s
 
 
+class DiredPopupActions(list):
+    def __init__(self, mime):
+        list.__init__(self)
+        self.mime_type = mime
+        
+    def getMimeType(self):
+        return self.mime_type
+
+
 class DiredSTC(NonResidentSTC):
     """Dummy STC just to prevent other modes from being able to change their
     major mode to this one.
@@ -326,3 +335,12 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         if sort:
             self.SortListItems()
         self.Thaw()
+        
+    def getPopupActions(self, evt, x, y):
+        # id will be -1 if the point is not on any list item; otherwise it is
+        # the index of the item.
+        id, flags = self.HitTest(wx.Point(x, y))
+        dprint("id=%d flags=%d" % (id, flags))
+        action_classes = DiredPopupActions("text/plain")
+        Publisher().sendMessage('dired.context_menu', action_classes)
+        return action_classes

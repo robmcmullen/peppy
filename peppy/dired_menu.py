@@ -32,7 +32,9 @@ class FlagMixin(object):
     def action(self, index=-1, multiplier=1):
         if self.flag:
             self.mode.setFlag(self.flag)
-        self.mode.moveSelected(multiplier)
+        dprint(self.popup_options)
+        if self.popup_options is None:
+            self.mode.moveSelected(multiplier)
 
 class FlagBackwardsMixin(object):
     """Mixin to set a flag and move to the previous item in the list."""
@@ -41,7 +43,8 @@ class FlagBackwardsMixin(object):
     def action(self, index=-1, multiplier=1):
         if self.flag:
             self.mode.setFlag(self.flag)
-        self.mode.moveSelected(-1)
+        if self.popup_options is None:
+            self.mode.moveSelected(-1)
 
 
 class DiredNext(FlagMixin, SelectAction):
@@ -102,8 +105,9 @@ class DiredClearFlags(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         self.mode.clearFlags()
-        if multiplier > 1: multiplier = -1
-        self.mode.moveSelected(multiplier)
+        if self.popup_options is None:
+            if multiplier > 1: multiplier = -1
+            self.mode.moveSelected(multiplier)
 
 
 class DiredExecute(SelectAction):
@@ -145,6 +149,17 @@ class DiredReplace(SelectAction):
 class DiredMenu(IPeppyPlugin):
     """Plugin providing the dired-specific menu items
     """
+    def activateHook(self):
+        Publisher().subscribe(self.getDiredMenu, 'dired.context_menu')
+    
+    def deactivateHook(self):
+        Publisher().unsubscribe(self.getDiredMenu)
+    
+    def getDiredMenu(self, msg):
+        action_classes = msg.data
+        action_classes.extend(((500, DiredMark), (510, DiredDelete), (520, DiredClearFlags), (-999, DiredExecute), (-1000, DiredRefresh)))
+        #dprint(action_classes)
+
     def getMajorModes(self):
         yield DiredMode
 
