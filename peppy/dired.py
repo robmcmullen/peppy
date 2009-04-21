@@ -44,12 +44,106 @@ def getCompactDate(mtime, recent_months=6):
 
 
 class DiredPopupActions(list):
+    """Helper class to pass as an argument to the pubsub call to
+    'dired.context_menu'
+    """
     def __init__(self, mime):
         list.__init__(self)
         self.mime_type = mime
         
     def getMimeType(self):
         return self.mime_type
+
+
+class DiredEntry(object):
+    """Helper class representing one line in the dired list
+    
+    """
+    def __init__(self, index, base_url, name):
+        self.index = index
+        self.basename = name
+        self.url, self.mode = self.getKey(base_url, name)
+        self.flags = ""
+        self.metadata = vfs.get_metadata(self.url)
+    
+    def __getitem__(self, k):
+        if k==0:
+            return self.index
+        elif k==1:
+            return self.getBasename()
+        elif k==2:
+            return self.getSize()
+        elif k==3:
+            return self.getDate()
+        elif k==4:
+            return self.getMode()
+        elif k==5:
+            return self.getDescription()
+        return self.getURL()
+
+    def getKey(self, base_url, name):
+        if isinstance(name, str):
+            name = name.decode("utf-8")
+        url = base_url.resolve2(name)
+        mode = []
+        if vfs.is_folder(url):
+            url.path.endswith_slash = True
+            mode.append("d")
+        else:
+            url.path.endswith_slash = False
+            mode.append("-")
+        if vfs.can_read(url):
+            mode.append("r")
+        else:
+            mode.append("-")
+        if vfs.can_write(url):
+            mode.append("w")
+        else:
+            mode.append("-")
+        url = unicode(url)
+        return url, "".join(mode)
+
+    def getBasename(self):
+        return self.basename
+    
+    def getURL(self):
+        return self.url
+    
+    def getSize(self):
+        return self.metadata['size']
+    
+    def getDate(self):
+        return self.metadata['mtime']
+    
+    def getCompactDate(self):
+        return getCompactDate(self.metadata['mtime'])
+    
+    def getMode(self):
+        return self.mode
+    
+    def getDescription(self):
+        desc = self.metadata['description']
+        if not desc:
+            desc = self.metadata['mimetype']
+        return desc
+    
+    def getMimeType(self):
+        return self.metadata['mimetype']
+
+    def getFlags(self):
+        """Get the flags for the given key.
+        
+        If the key has not been seen before, create an initial state for those
+        flags (which is all flags cleared) and return that.
+        """
+        return self.flags
+    
+    def setFlags(self, flags):
+        """Set the specified flag for all the selected items.
+        
+        flag: a single character representing the flag to set
+        """
+        self.flags = flags
 
 
 class DiredSTC(NonResidentSTC):
@@ -90,9 +184,15 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
 
-        self.flags = {}
         self.createColumns()
+        
+        # Need to maintain two maps; the original order based on the index
+        # number when the entries were inserted into the list, and
+        self.origDataMap = {}
+        # the current order that is used by the ColumnSorterMixin to reorder
+        # the list when one of the column headings is clicked.
         self.itemDataMap = {}
+        
         ColumnSorterMixin.__init__(self, self.GetColumnCount())
         
         self.updating = False
@@ -118,9 +218,10 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         down = getIconStorage("icons/bullet_arrow_down.png")
         up = getIconStorage("icons/bullet_arrow_up.png")
         return (down, up)
-
+    
     def GetSecondarySortValues(self, col, key1, key2):
-        return (self.itemDataMap[key1][1], self.itemDataMap[key2][1])
+        return (self.itemDataMap[key1].getBasename(),
+                self.itemDataMap[key2].getBasename())
 
     def createListenersPostHook(self):
 #        Publisher().subscribe(self.reset, 'buffer.opened')
@@ -142,7 +243,8 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        path = self.GetItem(index, 6).GetText()
+        entry = self.getEntryFromIndex(index)
+        path = entry.getURL()
         self.dprint("clicked on %d: path=%s" % (index, path))
         self.frame.open(path)
 
@@ -198,16 +300,6 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
             self.setSelectedIndexes([index])
             self.EnsureVisible(index)
     
-    def getFlags(self, key):
-        """Get the flags for the given key.
-        
-        If the key has not been seen before, create an initial state for those
-        flags (which is all flags cleared) and return that.
-        """
-        if key not in self.flags:
-            self.flags[key] = ""
-        return self.flags[key]
-    
     def setFlag(self, flag):
         """Set the specified flag for all the selected items.
         
@@ -215,9 +307,9 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         """
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 6).GetText()
-            dprint("index=%d key=%s" % (index, key))
-            flags = self.getFlags(key)
+            entry = self.getEntryFromIndex(index)
+            flags = entry.getFlags()
+            dprint("index=%d key=%s" % (index, entry.getURL()))
             if flag not in flags:
                 # flags are stored as a sorted string, but there's no direct
                 # way to sort a string, so it has to be converted to a list,
@@ -226,16 +318,17 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
                 tmp.append(flag)
                 tmp.sort()
                 flags = "".join(tmp)
-                self.flags[key] = flags
+                entry.setFlags(flags)
                 self.SetStringItem(index, 0, flags)
-    
+
     def clearFlags(self):
         """Clear all flags for the selected items."""
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 6).GetText()
-            self.flags[key] = ""
-            self.SetStringItem(index, 0, self.flags[key])
+            entry = self.getEntryFromIndex(index)
+            flags = ""
+            entry.setFlags(flags)
+            self.SetStringItem(index, 0, flags)
     
     def execute(self):
         """Operate on all the flags for each of the buffers.
@@ -244,8 +337,9 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         """
         list_count = self.GetItemCount()
         for index in range(list_count):
-            url = self.GetItem(index, 6).GetText()
-            flags = self.flags[url]
+            entry = self.getEntryFromIndex(index)
+            url = entry.getURL()
+            flags = entry.getFlags()
             dprint("flags %s for %s" % (flags, url))
             if not flags:
                 continue
@@ -253,27 +347,22 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
                 dprint("Not actually deleting %s" % url)
             elif 'M' in flags:
                 self.frame.open(url)
-            self.flags[url] = ""
-            self.SetStringItem(index, 0, self.flags[url])
-
-    def getKey(self, name):
-        url = self.url.resolve2(name)
-        mode = []
-        if vfs.is_folder(url):
-            url.path.endswith_slash = True
-            mode.append("d")
-        else:
-            url.path.endswith_slash = False
-            mode.append("-")
-        if vfs.can_read(url):
-            mode.append("r")
-        else:
-            mode.append("-")
-        if vfs.can_write(url):
-            mode.append("w")
-        else:
-            mode.append("-")
-        return url, "".join(mode)
+            flags = ""
+            entry.setFlags(flags)
+            self.SetStringItem(index, 0, flags)
+    
+    def getEntryFromIndex(self, index):
+        """Return the DiredEntry from the list index.
+        
+        This is not as simple as it may seem because the list can be reordered,
+        changing the meaning of index as it was originally created.  To
+        return the correct entry given the list index, an additional layer of
+        abstraction is needed: the ItemData field of the list points to the
+        real entry.
+        """
+        orig_index = self.GetItemData(index)
+        entry = self.origDataMap[orig_index]
+        return entry
 
     def reset(self, msg=None, sort=False):
         """Reset the list.
@@ -294,31 +383,25 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         cache = []
         show = -1
         self.itemDataMap = {}
+        self.origDataMap = {}
         for name in vfs.get_names(self.url):
             # FIXME: should get_names always return unicode? Until then, create
             # a unicode version of the name
-            if isinstance(name, str):
-                name = name.decode("utf-8")
-            key, mode = self.getKey(name)
-            flags = self.getFlags(key)
-            metadata = vfs.get_metadata(key)
+            entry = DiredEntry(index, self.url, name)
+            
             if index >= list_count:
-                self.InsertStringItem(sys.maxint, flags)
+                self.InsertStringItem(sys.maxint, entry.getFlags())
             else:
-                self.SetStringItem(index, 0, flags)
-            self.SetStringItem(index, 1, name)
-            self.SetStringItem(index, 2, str(metadata['size']))
-            self.SetStringItem(index, 3, getCompactDate(metadata['mtime']))
-            self.SetStringItem(index, 4, mode)
-            desc = metadata['description']
-            if not desc:
-                desc = metadata['mimetype']
-            self.SetStringItem(index, 5, desc)
-            self.SetStringItem(index, 6, unicode(key))
+                self.SetStringItem(index, 0, entry.getFlags())
+            self.SetStringItem(index, 1, entry.getBasename())
+            self.SetStringItem(index, 2, str(entry.getSize()))
+            self.SetStringItem(index, 3, entry.getCompactDate())
+            self.SetStringItem(index, 4, entry.getMode())
+            self.SetStringItem(index, 5, entry.getDescription())
+            self.SetStringItem(index, 6, entry.getURL())
             self.SetItemData(index, index)
-            self.itemDataMap[index] = (index, name, metadata['size'],
-                                       metadata['mtime'], mode,
-                                       metadata['description'], unicode(key))
+            self.origDataMap[index] = entry
+            self.itemDataMap[index] = entry
 
             index += 1
         
