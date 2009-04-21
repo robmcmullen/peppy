@@ -18,6 +18,7 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.buffers import *
 from peppy.stcinterface import *
+from peppy.context_menu import *
 from peppy.debug import *
 
 # Can't reliably use strftime, because it returns the month encoded in some
@@ -43,16 +44,36 @@ def getCompactDate(mtime, recent_months=6):
     return s
 
 
-class DiredPopupActions(list):
+class DiredPopupActions(ContextMenuActions):
     """Helper class to pass as an argument to the pubsub call to
     'dired.context_menu'
     """
-    def __init__(self, mime):
-        list.__init__(self)
-        self.mime_type = mime
-        
+    def __init__(self, entries):
+        ContextMenuActions.__init__(self)
+        self.entries = entries
+    
+    def getEntries(self):
+        return self.entries
+    
     def getMimeType(self):
-        return self.mime_type
+        """Returns the MIME type of the entries if they are all the same, or
+        None if they are different.
+        
+        """
+        mime = None
+        for entry in self.entries:
+            if mime is None:
+                mime = entry.getMimeType()
+            elif mime != entry.getMimeType():
+                mime = None
+                break
+        return mime
+    
+    def getOptions(self):
+        options = ContextMenuActions.getOptions(self)
+        options['mimetype'] = self.getMimeType()
+        options['dired.entries'] = self.getEntries()
+        return options
 
 
 class DiredEntry(object):
@@ -364,6 +385,19 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         entry = self.origDataMap[orig_index]
         return entry
 
+    def getSelectedEntries(self):
+        """Return the currently selected entries.
+        
+        The entries are returned in the same order as currently displayed in
+        the list.
+        """
+        entries = []
+        indexes = self.getSelectedIndexes()
+        for index in indexes:
+            entry = self.getEntryFromIndex(index)
+            entries.append(entry)
+        return entries
+    
     def reset(self, msg=None, sort=False):
         """Reset the list.
         
@@ -424,6 +458,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         # the index of the item.
         id, flags = self.HitTest(wx.Point(x, y))
         dprint("id=%d flags=%d" % (id, flags))
-        action_classes = DiredPopupActions("text/plain")
+        entries = self.getSelectedEntries()
+        action_classes = DiredPopupActions(entries)
         Publisher().sendMessage('dired.context_menu', action_classes)
         return action_classes

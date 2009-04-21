@@ -487,6 +487,12 @@ class UserActionMap(debugmixin):
         else:
             mode = self.frame.getActiveMajorMode()
         
+        if options is None:
+            options = {}
+        if hasattr(action_classes, 'getOptions'):
+            options.update(action_classes.getOptions())
+        dprint(options)
+        
         first = True
         for pos, actioncls, sep in sorted:
             action = actioncls(self.frame, popup_options=options, mode=mode)

@@ -11,6 +11,35 @@ import wx
 
 from peppy.debug import *
 
+
+class ContextMenuActions(list):
+    """Helper class to provide options to the list of actions.
+    
+    A normal list can be used as the return value for
+    L{ContextMenuMixin.getPopupActions}, but this class can also be used if
+    you want to include additional options to the popup actions.
+    """
+    def __init__(self, options=None, **kwargs):
+        """Constructor used to supply options for later use by the menu system.
+        
+        Options can be passed in as a dict using the 'options' keyword
+        parameter, or as name/value pairs as keyword arguments to this
+        constructor.  Either way, the name/value pairs will be returned from
+        L{getOptions} when L{UserActionMap.popupActions} creates the actions.
+        """
+        list.__init__(self)
+        self.options = {}
+        if options is not None:
+            self.options.update(options)
+        self.options.update(kwargs)
+    
+    def getOptions(self):
+        """Called by L{UserActionMap.popupActions} when constructing the
+        popup_options list for the actions.
+        """
+        return self.options
+
+
 class ContextMenuMixin(object):
     """Mixin class to provide content menu on right click.
     
@@ -79,6 +108,8 @@ class ContextMenuMixin(object):
         to the origin of major mode window) are included in case the subclass
         can display different popup items depending on the position in the
         editing window.
+        
+        You can use a regular list or a L{ContextMenuActions} instance.
         """
         return []
 
