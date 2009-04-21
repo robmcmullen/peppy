@@ -48,9 +48,13 @@ class DiredPopupActions(ContextMenuActions):
     """Helper class to pass as an argument to the pubsub call to
     'dired.context_menu'
     """
-    def __init__(self, entries):
+    def __init__(self, mode, entries):
         ContextMenuActions.__init__(self)
+        self.mode = mode
         self.entries = entries
+    
+    def getMajorMode(self):
+        return self.mode
     
     def getEntries(self):
         return self.entries
@@ -459,6 +463,6 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         id, flags = self.HitTest(wx.Point(x, y))
         dprint("id=%d flags=%d" % (id, flags))
         entries = self.getSelectedEntries()
-        action_classes = DiredPopupActions(entries)
+        action_classes = DiredPopupActions(self, entries)
         Publisher().sendMessage('dired.context_menu', action_classes)
         return action_classes
