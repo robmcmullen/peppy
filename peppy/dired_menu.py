@@ -157,7 +157,7 @@ class DiredMenu(IPeppyPlugin):
     
     def getDiredMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend(((500, DiredMark), (510, DiredDelete), (520, DiredClearFlags), (-999, DiredExecute), (-1000, DiredRefresh)))
+        action_classes.extend(((-500, DiredMark), (510, DiredDelete), (520, DiredClearFlags), (-999, DiredExecute), (-1000, DiredRefresh)))
         #dprint(action_classes)
 
     def getMajorModes(self):
