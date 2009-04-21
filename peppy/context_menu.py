@@ -62,7 +62,14 @@ class ContextMenuMixin(object):
             frame.menumap.popupActions(parent, action_classes, options)
     
     def getOptionsForPopupActions(self):
-        return None
+        """Override this to provide options to the popup actions.
+        
+        The default implementation returns an empty dict.  By convention,
+        the presence of a dict rather than None in an action's popup_options
+        attribute can be used to check whether or not the action has been
+        called from a popup.
+        """
+        return {}
 
     def getPopupActions(self, evt, x, y):
         """Return the list of action classes to use as a context menu.
