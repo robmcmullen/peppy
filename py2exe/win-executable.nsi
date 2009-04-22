@@ -1,4 +1,4 @@
-!define py2exeOutputDirectory 'dist'
+!define py2exeOutputDirectory '..\dist'
 !define exe 'peppy.exe'
 
 ; Comment out the "SetCompress Off" line and uncomment
@@ -11,7 +11,7 @@ SetCompressor lzma
 Name 'Peppy'
 OutFile ${exe}
 SilentInstall silent
-Icon '..\graphics\peppy48.ico'
+Icon '..\..\graphics\peppy48.ico'
 RequestExecutionLevel user
 
 Section
