@@ -125,7 +125,7 @@ if __name__=='__main__':
             print "Command line specified: '%s'" % options.codename
             print "Update version number if you want to change codenames"
             sys.exit()
-    elif not options.codename:
+    elif not (codename or options.codename):
         # new version means codename must be specified
         print "Codename must be specified on command line when changing versions"
         sys.exit()
