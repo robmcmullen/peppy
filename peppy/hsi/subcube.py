@@ -49,6 +49,9 @@ class SubCubeReader(HSI.CubeReader):
     def __init__(self, parent):
         HSI.CubeReader.__init__(self)
         self.parent = parent
+        self.clearSubset()
+    
+    def clearSubset(self):
         self.l1 = 0
         self.l2 = self.parent.lines
         self.s1 = 0
@@ -57,13 +60,35 @@ class SubCubeReader(HSI.CubeReader):
         self.b2 = self.parent.bands
     
     def markSubset(self, l1, l2, s1, s2, b1, b2):
-        self.l1 = l1
-        self.l2 = l2
-        self.s1 = s1
-        self.s2 = s2
-        self.b1 = b1
-        self.b2 = b2
+        self.clearSubset()
+        if l1 >= 0:
+            self.l1 = l1
+        if l2 >= 0:
+            self.l2 = l2
+        if s1 >= 0:
+            self.s1 = s1
+        if s2 >= 0:
+            self.s2 = s2
+        if b1 >= 0:
+            self.b1 = b1
+        if b2 >= 0:
+            self.b2 = b2
 
+    def getRaw(self):
+        """Return the raw numpy array"""
+        parent_io = self.parent.cube_io
+        interleave = parent_io.getInterleave()
+        raw = parent_io.getRaw()
+        if interleave == 'bip':
+            raw = raw[self.l1:self.l2, self.s1:self.s2, self.b1:self.b2]
+        elif interleave == 'bil':
+            raw = raw[self.l1:self.l2, self.b1:self.b2, self.s1:self.s2]
+        elif interleave == 'bsq':
+            raw = raw[self.b1:self.b2, self.l1:self.l2, self.s1:self.s2]
+        else:
+            raise RuntimeError("Parent cube %s not memory mapped." % str(self.parent.url))
+        return raw
+    
     def getPixel(self, line, sample, band):
         """Get an individual pixel at the specified line, sample, & band"""
         return self.parent.getPixel(self.l1 + line, self.s1 + sample, self.b1 + band)
@@ -110,6 +135,11 @@ class SubCube(HSI.Cube):
         HSI.Cube.__init__(self)
         self.setParent(parent)
 
+    def __str__(self):
+        current = HSI.Cube.__str__(self)
+        parent = str(self.parent)
+        return "%s%s--subset of %s" % (current, os.linesep, parent)
+        
     def setParent(self, parent):
         self.parent = parent
         #self.parent.progress = None
@@ -157,19 +187,27 @@ class SubCube(HSI.Cube):
         self.fwhm = self.parent.fwhm[:]
         self.band_names = self.parent.band_names[:]
 
-    def subset(self, l1, l2, s1, s2, b1, b2):
-        """Subset the parent cube by line, sample, and band"""
+    def subset(self, l1=-1, l2=-1, s1=-1, s2=-1, b1=-1, b2=-1):
+        """Subset the parent cube by line, sample, and band.
+        
+        Any of the entries may be -1 indicating that the original value from
+        the full cube should be used.
+        """
         self.cube_io.markSubset(l1, l2, s1, s2, b1, b2)
-        self.lines = l2 - l1
-        self.samples = s2 - s1
-        self.bands = b2 - b1
+        self.lines = self.cube_io.l2 - self.cube_io.l1
+        self.samples = self.cube_io.s2 - self.cube_io.s1
+        self.bands = self.cube_io.b2 - self.cube_io.b1
         
         self.initializeSizes()
         
+        b1 = self.cube_io.b1
+        b2 = self.cube_io.b2
         self.wavelengths = self.parent.wavelengths[b1:b2]
         self.bbl = self.parent.bbl[b1:b2]
         self.fwhm = self.parent.fwhm[b1:b2]
         self.band_names = self.parent.band_names[b1:b2]
+        
+        self.url = "%dx%dx%d subset of %s" % (self.samples, self.lines, self.bands, str(self.parent.url))
 
 
 HSI.HyperspectralFileFormat.addDefaultHandler(SubDataset)

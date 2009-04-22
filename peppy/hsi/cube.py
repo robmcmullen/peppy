@@ -178,6 +178,9 @@ class CubeReader(debugmixin):
 
 
 class BIPMixin(object):
+    def getInterleave(self):
+        return 'bip'
+    
     def getBandBoundary(self):
         return 1
 
@@ -193,6 +196,9 @@ class BIPMixin(object):
         return pos
 
 class BILMixin(object):
+    def getInterleave(self):
+        return 'bil'
+    
     def getBandBoundary(self):
         return self.samples
 
@@ -208,6 +214,9 @@ class BILMixin(object):
         return pos
 
 class BSQMixin(object):
+    def getInterleave(self):
+        return 'bsq'
+    
     def getBandBoundary(self):
         return self.samples*self.lines
 
