@@ -36,6 +36,7 @@ class FindSettings(debugmixin):
         self.find_user = ''
         self.replace = ''
         self.replace_user = ''
+        self.first_found = -1
     
     def serialize(self, storage):
         storage['last_search'] = self.find_user
@@ -134,6 +135,12 @@ class FindService(debugmixin):
         self.settings.replace_user = text
         self.settings.replace = self.expandReplaceText(text)
 
+    def resetFirstFound(self):
+        self.settings.first_found = -1
+        
+    def getFirstFound(self):
+        return self.settings.first_found
+        
     def getReplacement(self, replacing):
         """Return the string that will be substituted in the text
         
@@ -253,6 +260,9 @@ class FindService(debugmixin):
             
             start = pos + 1
         
+        if pos >=0 and self.settings.first_found == -1:
+            self.settings.first_found = pos
+            
         return pos, start
 
     def doFindPrev(self, start=-1, incremental=False):
@@ -283,6 +293,9 @@ class FindService(debugmixin):
         if pos >= 0:
             count = self.findMatchLength(pos)
             self.highlightSelection(pos, count)
+        
+        if pos >=0 and self.settings.first_found == -1:
+            self.settings.first_found = pos
         
         return pos, start
 
@@ -624,6 +637,9 @@ class FindRegexService(FindService):
         else:
             pos = -1
         
+        if pos >=0 and self.settings.first_found == -1:
+            self.settings.first_found = pos            
+        
         return pos, start
 
     def hasMatch(self):
@@ -806,6 +822,7 @@ class FindBar(wx.Panel, debugmixin):
         self.resetColor()
 
         self.service.setFindString(self.find.GetValue())
+        self.service.resetFirstFound()
         
         #search in whatever direction we were before
         self._lastcall(evt, incremental=True)
@@ -819,6 +836,13 @@ class FindBar(wx.Panel, debugmixin):
         self.find.SetForegroundColour(wx.RED)
         if msg is None:
             msg = _("Search string was not found.")
+        self.frame.SetStatusText(msg)
+        self.Refresh()
+        
+    def OnFinished(self, msg=None):
+        self.find.SetForegroundColour(wx.GREEN)
+        if msg is None:
+            msg = _("Returned to the starting point")
         self.frame.SetStatusText(msg)
         self.Refresh()
 
@@ -866,6 +890,7 @@ class FindBar(wx.Panel, debugmixin):
     def OnFindN(self, evt, allow_wrap=True, help='', interactive=True, incremental=False):
         self._lastcall = self.OnFindN
         
+        first = self.service.getFirstFound()
         posn, st = self.service.doFindNext(incremental=incremental)
         self.dprint("start=%s pos=%s" % (st, posn))
         if posn is None:
@@ -878,6 +903,8 @@ class FindBar(wx.Panel, debugmixin):
             if interactive:
                 self.showLine(posn, help)
             self.loop = 0
+            if posn == first:
+                self.OnFinished()
             return
         
         if allow_wrap and st != 0:
@@ -888,6 +915,8 @@ class FindBar(wx.Panel, debugmixin):
         if posn != -1:
             if interactive:
                 self.showLine(posn, "Reached end of document, continued from start.")
+            if posn == first:
+                self.OnFinished()
             return
         
         self.dprint("not found: start=%d pos=%d" % (st, posn))
@@ -896,10 +925,13 @@ class FindBar(wx.Panel, debugmixin):
     def OnFindP(self, evt, allow_wrap=True, help='', incremental=False):
         self._lastcall = self.OnFindP
         
+        first = self.service.getFirstFound()        
         posn, st = self.service.doFindPrev(incremental=incremental)
         if posn != -1:
             self.showLine(posn, help)
             self.loop = 0
+            if posn == first:
+                self.OnFinished()            
             return
         
         if allow_wrap and st != self.stc.GetTextLength():
@@ -908,6 +940,8 @@ class FindBar(wx.Panel, debugmixin):
         
         if posn != -1:
             self.showLine(posn, "Reached start of document, continued from end.")
+            if posn == first:
+                self.OnFinished()            
             return
         
         self.OnNotFound()
