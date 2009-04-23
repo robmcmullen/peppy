@@ -29,9 +29,10 @@ class ReplacementError(Exception):
 
 
 class FindSettings(debugmixin):
-    def __init__(self, match_case=False, smart_case=True):
+    def __init__(self, match_case=False, smart_case=True, whole_word=False):
         self.match_case = match_case
         self.smart_case = smart_case
+        self.whole_word = whole_word
         self.find = ''
         self.find_user = ''
         self.replace = ''
@@ -85,22 +86,27 @@ class FindService(debugmixin):
         return True
     
     def setFlags(self):
-        text = self.settings.find
+        self.flags = 0
         
+        text = self.settings.find       
         if text != text.lower():
             match_case = True
         else:
             match_case = self.settings.match_case
         
         if match_case:
-            self.flags = wx.stc.STC_FIND_MATCHCASE
-        else:
-            self.flags = 0
+            self.flags |= wx.stc.STC_FIND_MATCHCASE
+        
+        if self.settings.whole_word:
+            self.flags |= wx.stc.STC_FIND_WHOLEWORD
+        
     
     def getFlags(self, user_flags=0):
         if self.settings.match_case != self.stc.locals.case_sensitive_search:
             self.settings.match_case = self.stc.locals.case_sensitive_search
-            self.setFlags()
+        if self.settings.whole_word != self.stc.locals.whole_word_search:
+            self.settings.whole_word = self.stc.locals.whole_word_search
+        self.setFlags()
         
         return self.flags | user_flags
         
@@ -1356,6 +1362,17 @@ class CaseSensitiveSearch(ToggleAction):
     def action(self, index=-1, multiplier=1):
         self.mode.locals.case_sensitive_search = not self.mode.locals.case_sensitive_search
 
+class WholeWordSearch(ToggleAction):
+    """Should search string exactly matching within sep"""
+    name = "Whole Word Search"
+    default_menu = ("Edit", 499)
+    
+    def isChecked(self):
+        return self.mode.locals.whole_word_search
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.locals.whole_word_search = not self.mode.locals.whole_word_search
+
 
 class FindReplacePlugin(IPeppyPlugin):
     """Plugin containing of a bunch of cursor movement (i.e. non-destructive)
@@ -1367,7 +1384,7 @@ class FindReplacePlugin(IPeppyPlugin):
             return [FindText, FindRegex, FindWildcard, FindPrevText,
                     Replace, ReplaceRegex, ReplaceWildcard,
                     
-                    CaseSensitiveSearch,
+                    CaseSensitiveSearch, WholeWordSearch, 
                     ]
 
 

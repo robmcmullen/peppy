@@ -134,6 +134,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         BoolParam('spell_check_strings_only', True, 'Only spell check strings and comments'),
         IntParam('vim_settings_lines', 20, 'Number of lines from start or end of file to search for vim modeline comments'),
         BoolParam('case_sensitive_search', False, 'Case of search string must match exactly if True; otherwise mixed case requires exact match and lower case matches all', local=True),
+        BoolParam('whole_word_search', False, 'Whole word between common separators must match if True; Otherwise matches every substring', local=True),
         BoolParam('case_matching_replace', True, 'Case will be modified to match if True; otherwise case will be left as was found', local=True),
         )
     
