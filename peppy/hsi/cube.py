@@ -124,6 +124,10 @@ class CubeReader(debugmixin):
         """Get an array of (lines x samples) at the specified band"""
         raise NotImplementedError
 
+    def getBandTile(self, line1, line2, sample1, sample2, band):
+        """Get an array of (line1:line2, sample1:sample2) at the specified band"""
+        raise NotImplementedError
+
     def getSpectraRaw(self, line, sample):
         """Get the spectra (bands) at the given pixel"""
         raise NotImplementedError
@@ -675,6 +679,11 @@ class MMapBIPCubeReader(BIPMixin, MMapCubeReader):
         s = self.raw[:, :, band]
         return s
 
+    def getBandTile(self, line1, line2, sample1, sample2, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[line1:line2, sample1:sample2, band]
+        return s
+
     def getSpectraRaw(self, line, sample):
         """Get the spectra at the given pixel"""
         s = self.raw[line, sample, :]
@@ -710,6 +719,11 @@ class MMapBILCubeReader(BILMixin, MMapCubeReader):
         s = self.raw[:, band, :]
         return s
 
+    def getBandTile(self, line1, line2, sample1, sample2, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[line1:line2, band, sample1:sample2]
+        return s
+
     def getSpectraRaw(self, line, sample):
         """Get the spectra at the given pixel"""
         s = self.raw[line, :, sample]
@@ -743,6 +757,11 @@ class MMapBSQCubeReader(BSQMixin, MMapCubeReader):
     def getBandRaw(self, band, use_progress=True):
         """Get an array of (lines x samples) at the specified band"""
         s = self.raw[band, :, :]
+        return s
+
+    def getBandTile(self, line1, line2, sample1, sample2, band):
+        """Get an array of (lines x samples) at the specified band"""
+        s = self.raw[band, line1:line2, sample1:sample2]
         return s
 
     def getSpectraRaw(self, line, sample):
@@ -1113,6 +1132,20 @@ class Cube(debugmixin):
 
     def getBandRaw(self, band, use_progress=True):
         return self.cube_io.getBandRaw(band, use_progress)
+    
+    def getBandTile(self, line1, line2, sample1, sample2, band):
+        """Return a rectangular subset of a band.
+        
+        The band is specified using standard python slice indexes.
+        
+        @param line1: starting line index
+        @param line2: one past the last line, or -1 for the last line
+        @param sample1: starting sample index
+        @param sample2: one past the last sample, or -1 for the last sample
+        @param band: band number
+        @returns: numpy array containing the slice of the band
+        """
+        return self.cube_io.getBandTile(line1, line2, sample1, sample2, band)
 
     def getFocalPlaneInPlace(self, line, use_progress=True):
         """Get the slice of the data array (bands x samples) at the specified
