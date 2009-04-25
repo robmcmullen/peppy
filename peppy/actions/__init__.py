@@ -107,6 +107,9 @@ class SelectAction(debugmixin):
     #: Special case support item for OS X.  Under OS X, it is possible to have a menubar when no windows are open.  If the action is usable when operating on an empty frame (see plugins/platform_osx.py), set osx_minimal_menu to True or override worksWithOSXMinimalMenu
     osx_minimal_menu = None
     
+    #: Author's name for credits
+    author = None
+    
     # The rest of these class attributes aren't for individual class
     # customization
     _use_accelerators = True

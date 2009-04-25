@@ -318,6 +318,7 @@ class JustOneSpace(TextModificationAction):
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'M-SPACE',}
     key_needs_focus = True
+    author = "Christopher Barker"
 
     def action(self, index=-1, multiplier=1):
         s = self.mode
