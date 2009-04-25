@@ -576,6 +576,7 @@ class Buffer(BufferVFSMixin):
             #self.dprint("clean!")
             changed=False
             self.change_count = 0
+            self.removeAutosaveIfExists()
         if changed!=self.modified:
             self.modified=changed
             wx.CallAfter(self.showModifiedAll)
