@@ -1365,6 +1365,7 @@ class CaseSensitiveSearch(ToggleAction):
 class WholeWordSearch(ToggleAction):
     """Should search string exactly matching within sep"""
     name = "Whole Word Search"
+    author = "\u0412\u043e\u0432\u0430 \u0410\u043d\u0442\u043e\u043d\u043e\u0432"
     default_menu = ("Edit", 499)
     
     def isChecked(self):
