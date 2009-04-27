@@ -975,7 +975,17 @@ class FindBar(wx.Panel, debugmixin):
         else:
             self.setDirection(1)
         
-        if self.repeatLastUserInput() or last_focus != self.find:
+        if self.repeatLastUserInput():
+            return
+        
+        # If this method gets called but the last object to have focus wasn't
+        # the find textfield, that means that the search minibuffer existed
+        # but the user was typing in the main editing window.  The search
+        # string should then be highlighted in case the user wants to start a
+        # new search from scratch.
+        if last_focus != self.find:
+            self.find.SetInsertionPointEnd()
+            self.find.SetSelection(0, self.find.GetLastPosition())
             return
         
         # replace doesn't use an automatic search, so make sure that a method
