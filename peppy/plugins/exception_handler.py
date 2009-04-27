@@ -58,6 +58,10 @@ def ExceptionHook(exctype, value, trace):
     """
     ftrace = FormatTrace(exctype, value, trace)
 
+    if ErrorDialog.ignore(ftrace):
+        print("Ignoring %s: %s" % (exctype, value))
+        return
+
     # Ensure that error gets raised to console as well
     print ftrace
 
@@ -75,7 +79,6 @@ def FormatTrace(etype, value, trace):
 
     """
     exc = traceback.format_exception(etype, value, trace)
-    exc.insert(0, u"*** %s ***%s" % (TimeStamp(), os.linesep))
     return u"".join(exc)
 
 def TimeStamp():
@@ -145,6 +148,7 @@ class ErrorReporter(object):
 #-----------------------------------------------------------------------------#
 
 ID_SEND = wx.NewId()
+ID_IGNORE = wx.NewId()
 class ErrorDialog(wx.Dialog):
     """Dialog for showing errors and and notifying Editra.org should the
     user choose so.
@@ -152,6 +156,13 @@ class ErrorDialog(wx.Dialog):
     """
     ABORT = False
     REPORTER_ACTIVE = False
+    
+    user_requested_ignore = {}
+    
+    @classmethod
+    def ignore(cls, message):
+        return message in cls.user_requested_ignore
+    
     def __init__(self, message):
         """Initialize the dialog
         @param message: Error message to display
@@ -161,7 +172,11 @@ class ErrorDialog(wx.Dialog):
         wx.Dialog.__init__(self, None, title=_("Error/Crash Reporter"), 
                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         
-        # Give message to ErrorReporter
+        # Save message in case the user wants to ignore further occurrences
+        self._message = message
+        
+        # Add timestamp and give message to ErrorReporter
+        message = u"*** %s ***%s" % (TimeStamp(), os.linesep) + message
         ErrorReporter().AddMessage(message)
 
         # Attributes
@@ -214,6 +229,9 @@ class ErrorDialog(wx.Dialog):
             # Try a nice shutdown first time through
             wx.CallLater(500, wx.GetApp().quit)
             self.Close()
+        elif e_id == wx.ID_IGNORE:
+            self.user_requested_ignore[self._message] = True
+            self.Close()
         else:
             evt.Skip()
 
@@ -257,6 +275,7 @@ class ErrorPanel(wx.Panel):
         send_b = wx.Button(self, ID_SEND, _("Send Error Report"))
         send_b.SetDefault()
         close_b = wx.Button(self, wx.ID_CLOSE, ("Attempt to Continue"))
+        ignore_b = wx.Button(self, wx.ID_IGNORE, ("Ignore Reoccurrences"))
 
         # Layout
         vsizer = wx.BoxSizer(wx.VERTICAL)
@@ -270,7 +289,8 @@ class ErrorPanel(wx.Panel):
 
         bsizer = wx.BoxSizer(wx.HORIZONTAL)
         bsizer.AddMany([((5, 5), 0), (abort_b, 0), ((-1, -1), 1, wx.EXPAND),
-                        (send_b, 0), ((5, 5), 0), (close_b, 0), ((5, 5), 0)])
+                        (send_b, 0), ((5, 5), 0), (close_b, 0), ((5, 5), 0),
+                        (ignore_b, 0), ((5, 5), 0)])
 
         vsizer.AddMany([((5, 5), 0),
                         (hsizer1, 0),
