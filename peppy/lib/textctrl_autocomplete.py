@@ -61,12 +61,10 @@ class HighlightListBox(wx.VListBox):
         self.heights = []
         self.popup_width = 0
         self.largest_width = 0
-        default_font = self.GetFont()
-        self.bold_font = wx.Font(default_font.GetPointSize(), 
-                                 default_font.GetFamily(),
-                                 default_font.GetStyle(), wx.BOLD)
-        self.bold_dc = wx.MemoryDC()
-        self.bold_dc.SetFont(self.bold_font)
+        self.font = self.GetFont()
+        self.bold_font = wx.Font(self.font.GetPointSize(), 
+                                 self.font.GetFamily(),
+                                 self.font.GetStyle(), wx.BOLD)
         
         # Since GetTextExtents is an expensive operation, we create a cache
         # here to store extents for the entire lifetime of this instance
@@ -133,6 +131,7 @@ class HighlightListBox(wx.VListBox):
             try:
                 w1, h1 = self.text_cache[text1]
             except KeyError:
+                self.SetFont(self.font)
                 w1, h1 = self.GetTextExtent(text1)
                 self.text_cache[text1] = (w1, h1)
         else:
@@ -142,7 +141,8 @@ class HighlightListBox(wx.VListBox):
             try:
                 w2, h2 = self.bold_cache[bold]
             except KeyError:
-                w2, h2 = self.bold_dc.GetTextExtent(bold)
+                self.SetFont(self.bold_font)
+                w2, h2 = self.GetTextExtent(bold)
                 self.bold_cache[bold] = (w2, h2)
         else:
             w2, h2 = 0, 0
@@ -151,6 +151,7 @@ class HighlightListBox(wx.VListBox):
             try:
                 w3, h3 = self.text_cache[text2]
             except KeyError:
+                self.SetFont(self.font)
                 w3, h3 = self.GetTextExtent(text2)
                 self.text_cache[text2] = (w3, h3)
         else:
@@ -217,7 +218,7 @@ class HighlightListBox(wx.VListBox):
         else:
             x = rect.x + 2
         if text1:
-            dc.SetFont(self.GetFont())
+            dc.SetFont(self.font)
             h = self.heights[n][1]
             y = rect.y + (rect.height - h) / 2
             dc.DrawText(text1, x, y)
@@ -229,7 +230,7 @@ class HighlightListBox(wx.VListBox):
             dc.DrawText(bold, x, y)
             x += self.widths[n][2]
         if text2:
-            dc.SetFont(self.GetFont())
+            dc.SetFont(self.font)
             h = self.heights[n][3]
             y = rect.y + (rect.height - h) / 2
             dc.DrawText(text2, x, y)
