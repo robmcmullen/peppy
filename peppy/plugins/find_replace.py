@@ -933,7 +933,12 @@ class FindBar(wx.Panel, debugmixin):
         
         first = self.service.getFirstFound()        
         posn, st = self.service.doFindPrev(incremental=incremental)
-        if posn != -1:
+        if posn is None:
+            self.cancel()
+            return
+        elif not isinstance(posn, int):
+            return self.OnNotFound(posn)
+        elif posn != -1:
             self.showLine(posn, help)
             self.loop = 0
             if posn == first:
