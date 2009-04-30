@@ -25,8 +25,10 @@ override to change the text.  See L{peppy.actions.base} for more convenience
 classes and mixins.
 """
 
+import wx
+
 from peppy.debug import *
-from peppy.lib.wxemacskeybindings import *
+from peppy.lib.wxemacskeybindings import KeyAccelerator
 from peppy.lib.iconstorage import *
 
 
@@ -200,12 +202,12 @@ class SelectAction(debugmixin):
                 key_sequence = cls.keyboard[0]
             else:
                 key_sequence = cls.keyboard
-            keystrokes = KeyMap.split(key_sequence)
+            keystrokes = KeyAccelerator.split(key_sequence)
             if len(keystrokes) == 1 and (cls.stock_id is not None or not force_emacs):
                 # if it has a stock id, always force it to use the our
                 # accelerator because wxWidgets will put one there anyway and
                 # we need to overwrite it with our definition
-                cls._accelerator_text = u"\t%s" % KeyMap.nonEmacsName(keystrokes[0])
+                cls._accelerator_text = u"\t%s" % KeyAccelerator.nonEmacsName(keystrokes[0])
             else:
                 cls._accelerator_text = u"    %s" % key_sequence
                 if cls.stock_id is not None and (cls.global_id is None or cls.global_id == cls.stock_id):

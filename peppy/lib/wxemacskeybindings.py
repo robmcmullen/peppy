@@ -24,9 +24,188 @@ import wx
 # KeyMap and KeyProcessor objects
 wxkeynames = [i[4:] for i in dir(wx) if i.startswith('WXK_')]
 
+# Mapping of wx keystroke numbers to keystroke names
+wxkeys = {}
+for i in wxkeynames:
+    wxkeys[getattr(wx, "WXK_"+i)] = i
+for i in ("SHIFT", "ALT", "COMMAND", "CONTROL", "MENU"):
+    if wx.Platform == '__WXGTK__':
+        # unix doesn't create a keystroke when a modifier key
+        # is also modified by another modifier key, so we
+        # create entries here so that decode() doesn't have to
+        # have platform-specific code
+        wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
+    else:
+        wxkeys[getattr(wx, "WXK_"+i)] = ''
+
+# Aliases for WXK_ names
+keyaliases={'RET':'RETURN',
+            'SPC':'SPACE',
+            'ESC':'ESCAPE',
+            }
+
+# Emacs style modifiers are used internally to specify which of the modifier
+# keys are pressed.  They are used as in "C-x" to mean Control-X.
+#
+# Prefixes:
+#  C-   Control
+#  S-   Shift
+#  M-   Alt/Option on MAC; Alt on MSW/GTK
+#  A-   Apple/Command on MAC; aliased to M- on MSW/GTK
+emacs_modifiers=['C-','S-','A-','M-']
+
+if wx.Platform == '__WXMAC__':
+    # WXMAC needs Command to appear as Ctrl- in the accelerator text.  It
+    # converts Ctrl into the command symbol
+    modaccelerator = {'C-': None,
+                      'S-': 'Shift-',
+                      'A-': 'Alt-',
+                      'M-': 'Ctrl-',
+                      }
+    modaliases={'Command-':'A-',
+                'Cmd-':'A-',
+                'Ctrl-':'C-',
+                'Shift-':'S-',
+                'Alt-':'M-',
+                'Meta-':'M-',
+                'Command+':'A-',
+                'Cmd+':'A-',
+                'Ctrl+':'C-',
+                'Shift+':'S-',
+                'Alt+':'M-',
+                'Meta+':'M-',
+                }
+else:
+    modaccelerator = {'C-': 'Ctrl-',
+                      'S-': 'Shift-',
+                      'A-': 'Alt-',
+                      'M-': 'Alt-',
+                      }
+    modaliases={'Ctrl-':'C-',
+                'Shift-':'S-',
+                'Alt-':'A-',
+                'Meta-':'M-',
+                'Ctrl+':'C-',
+                'Shift+':'S-',
+                'Alt+':'A-',
+                'Meta+':'M-',
+                }
+
+
 
 class DuplicateKeyError(Exception):
     pass
+
+
+class KeyAccelerator(object):
+    debug = False
+    
+    # Cache that maps accelerator string to the sequence of keystrokes
+    cache = {}
+
+    @classmethod
+    def split(cls, acc):
+        """Split the accelerator string (e.g. "C-X C-S") into
+        individual keystrokes, expanding abbreviations and
+        standardizing the order of modifier keys.
+        """
+        try:
+            return cls.cache[acc]
+        except KeyError:
+            if cls.debug: print("accelerator %s not found; creating keystrokes" % acc)
+            return cls._splitAccelerator(acc)
+    
+    @classmethod
+    def _splitAccelerator(cls, acc):
+        if acc.find('\t')>=0:
+            # match the original format from the wxpython wiki, where
+            # keystrokes are delimited by tab characters
+            keystrokes = [i for i in acc.split('\t') if i]
+        else:
+            # find the individual keystrokes from a more emacs style
+            # list, where the keystrokes are separated by whitespace.
+            keystrokes=[]
+            i=0
+            flags={}
+            while i<len(acc):
+                while acc[i].isspace() and i<len(acc): i+=1
+
+                # check all modifiers in any order.  C-S-key and
+                # S-C-key mean the same thing.
+                j=i
+                for m in emacs_modifiers: flags[m]=False
+                while j<len(acc):
+                    chars,m=cls.matchModifier(acc[j:])
+                    if m:
+                        j+=chars
+                        flags[m]=True
+                    else:
+                        break
+                if cls.debug: print "modifiers found: %s.  remaining='%s'" % (str(flags), acc[j:])
+                
+                chars,key=cls.matchKey(acc[j:])
+                if key is not None:
+                    if cls.debug: print "key found: %s, chars=%d" % (key, chars)
+                    keys="".join([m for m in emacs_modifiers if flags[m]])+key
+                    if cls.debug: print "keystroke = %s" % keys
+                    keystrokes.append(keys)
+                else:
+                    if cls.debug: print "unknown key %s" % acc[j:j+chars]
+                if j+chars < len(acc):
+                    if cls.debug: print "remaining='%s'" % acc[j+chars:]
+                i=j+chars
+        cls.cache[acc] = keystrokes
+        if cls.debug: print "keystrokes: %s" % keystrokes
+        return keystrokes
+
+    @classmethod
+    def matchModifier(cls, str):
+        """Find a modifier in the accelerator string
+        """        
+        for m in emacs_modifiers:
+            if str.startswith(m):
+                return len(m),m
+        for m in modaliases.keys():
+            if str.startswith(m):
+                return len(m),modaliases[m]
+        return 0,None
+
+    @classmethod
+    def matchKey(cls, text):
+        """Find a keyname (not modifier name) in the accelerator
+        string, matching any special keys or abbreviations of the
+        special keys
+        """
+        text = text.upper()
+        key = None
+        i = 0
+        for name in keyaliases:
+            if text.startswith(name):
+                val = keyaliases[name]
+                if text.startswith(val):
+                    return i+len(val), val
+                else:
+                    return i+len(name), val
+        for name in wxkeynames:
+            if text.startswith(name):
+                return i+len(name), name
+        if i<len(text) and not text[i].isspace():
+            return i+1, text[i].upper()
+        return i, None
+
+    @classmethod
+    def nonEmacsName(cls, acc):
+        modifiers=[]
+        j=0
+        while j<len(acc):
+            chars,m=cls.matchModifier(acc[j:])
+            if m:
+                j+=chars
+                modifiers.append(modaccelerator[m])
+            else:
+                modifiers.append(acc[j:])
+                break
+        return "".join(modifiers)
 
 
 class KeyMap(object):
@@ -37,47 +216,6 @@ class KeyMap(object):
     one for local keymaps, and an arbitrary number of other keymaps
     for any additional minor modes that need other keymappings.
     """    
-    modifiers=['C-','S-','A-','M-']
-    if wx.Platform == '__WXMAC__':
-        # WXMAC needs Command to appear as Ctrl- in the accelerator text.  It
-        # converts Ctrl into the command symbol
-        modaccelerator = {'C-': 'Ctrl-',
-                          'S-': 'Shift-',
-                          'A-': 'Alt-',
-                          'M-': 'Alt-',
-                          }
-        modaliases={'Command-':'C-',
-                    'Cmd-':'C-',
-                    'Ctrl-':'C-',
-                    'Shift-':'S-',
-                    'Alt-':'A-',
-                    'Meta-':'M-',
-                    'Command+':'C-',
-                    'Cmd+':'C-',
-                    'Ctrl+':'C-',
-                    'Shift+':'S-',
-                    'Alt+':'A-',
-                    'Meta+':'M-',
-                    }
-    else:
-        modaccelerator = {'C-': 'Ctrl-',
-                          'S-': 'Shift-',
-                          'A-': 'Alt-',
-                          'M-': 'Alt-',
-                          }
-        modaliases={'Ctrl-':'C-',
-                    'Shift-':'S-',
-                    'Alt-':'A-',
-                    'Meta-':'M-',
-                    'Ctrl+':'C-',
-                    'Shift+':'S-',
-                    'Alt+':'A-',
-                    'Meta+':'M-',
-                    }
-    keyaliases={'RET':'RETURN',
-                'SPC':'SPACE',
-                'ESC':'ESCAPE',
-                }
     debug = False
 
     def __init__(self):
@@ -131,101 +269,6 @@ class KeyMap(object):
         """        
         return self.cur==None and self.function==None
 
-    @classmethod
-    def matchModifier(self,str):
-        """Find a modifier in the accelerator string
-        """        
-        for m in self.modifiers:
-            if str.startswith(m):
-                return len(m),m
-        for m in self.modaliases.keys():
-            if str.startswith(m):
-                return len(m),self.modaliases[m]
-        return 0,None
-
-    @classmethod
-    def matchKey(self, text):
-        """Find a keyname (not modifier name) in the accelerator
-        string, matching any special keys or abbreviations of the
-        special keys
-        """
-        text = text.upper()
-        key = None
-        i = 0
-        for name in self.keyaliases:
-            if text.startswith(name):
-                val = self.keyaliases[name]
-                if text.startswith(val):
-                    return i+len(val), val
-                else:
-                    return i+len(name), val
-        for name in wxkeynames:
-            if text.startswith(name):
-                return i+len(name), name
-        if i<len(text) and not text[i].isspace():
-            return i+1, text[i].upper()
-        return i, None
-
-    @classmethod
-    def split(self,acc):
-        """Split the accelerator string (e.g. "C-X C-S") into
-        individual keystrokes, expanding abbreviations and
-        standardizing the order of modifier keys.
-        """
-        if acc.find('\t')>=0:
-            # match the original format from the wxpython wiki, where
-            # keystrokes are delimited by tab characters
-            keystrokes = [i for i in acc.split('\t') if i]
-        else:
-            # find the individual keystrokes from a more emacs style
-            # list, where the keystrokes are separated by whitespace.
-            keystrokes=[]
-            i=0
-            flags={}
-            while i<len(acc):
-                while acc[i].isspace() and i<len(acc): i+=1
-
-                # check all modifiers in any order.  C-S-key and
-                # S-C-key mean the same thing.
-                j=i
-                for m in self.modifiers: flags[m]=False
-                while j<len(acc):
-                    chars,m=self.matchModifier(acc[j:])
-                    if m:
-                        j+=chars
-                        flags[m]=True
-                    else:
-                        break
-                if self.debug: print "modifiers found: %s.  remaining='%s'" % (str(flags), acc[j:])
-                
-                chars,key=self.matchKey(acc[j:])
-                if key is not None:
-                    if self.debug: print "key found: %s, chars=%d" % (key, chars)
-                    keys="".join([m for m in self.modifiers if flags[m]])+key
-                    if self.debug: print "keystroke = %s" % keys
-                    keystrokes.append(keys)
-                else:
-                    if self.debug: print "unknown key %s" % acc[j:j+chars]
-                if j+chars < len(acc):
-                    if self.debug: print "remaining='%s'" % acc[j+chars:]
-                i=j+chars
-        if self.debug: print "keystrokes: %s" % keystrokes
-        return keystrokes
-
-    @classmethod
-    def nonEmacsName(self, acc):
-        modifiers=[]
-        j=0
-        while j<len(acc):
-            chars,m=self.matchModifier(acc[j:])
-            if m:
-                j+=chars
-                modifiers.append(self.modaccelerator[m])
-            else:
-                modifiers.append(acc[j:])
-                break
-        return "".join(modifiers)
-    
     def findNested(self, hotkeys, actions):
         """Convenience function to find all the actions starting at the given
         spot in the nested dict.
@@ -249,7 +292,7 @@ class KeyMap(object):
         """
         hotkeys = self.lookup
         if self.debug: print "define: acc=%s" % acc
-        keystrokes = self.split(acc)
+        keystrokes = KeyAccelerator.split(acc)
         if self.debug: print "define: keystrokes=%s" % str(keystrokes)
         actions = []
         for keystroke in keystrokes:
@@ -284,7 +327,7 @@ class KeyMap(object):
         """
         hotkeys = self.lookup
         if self.debug: print "define: acc=%s" % acc
-        keystrokes = self.split(acc)
+        keystrokes = KeyAccelerator.split(acc)
         if self.debug: print "define: keystrokes=%s" % str(keystrokes)
         if keystrokes:
             # create the nested dicts for everything but the last keystroke
@@ -328,20 +371,6 @@ class KeyProcessor(object):
     key maps.
     """
     debug = False
-
-    # Mapping of wx keystroke numbers to keystroke names
-    wxkeys = {}
-    for i in wxkeynames:
-        wxkeys[getattr(wx, "WXK_"+i)] = i
-    for i in ("SHIFT", "ALT", "COMMAND", "CONTROL", "MENU"):
-        if wx.Platform == '__WXGTK__':
-            # unix doesn't create a keystroke when a modifier key
-            # is also modified by another modifier key, so we
-            # create entries here so that decode() doesn't have to
-            # have platform-specific code
-            wxkeys[getattr(wx, "WXK_"+i)] = i[0:1]+'-'
-        else:
-            wxkeys[getattr(wx, "WXK_"+i)] = ''
 
     def __init__(self,status=None):
         self.keymaps=[]
@@ -444,22 +473,37 @@ class KeyProcessor(object):
         """
         keycode = evt.GetKeyCode()
         raw = evt.GetRawKeyCode()
-        keyname = self.wxkeys.get(keycode, None)
+        keyname = wxkeys.get(keycode, None)
         modifiers = ""
         metadown = False
         emods = evt.GetModifiers()
         
-        # Get the modifier string in order C-, S-, A-, M-
-        if emods & wx.MOD_CMD:
-            modifiers += "C-"
-            self.modifier = True
-        if emods & wx.MOD_SHIFT:
-            modifiers += "S-"
-        # A- not used currently; meta is called alt
-        if emods & wx.MOD_ALT:
-            modifiers += "M-"
-            metadown = True
-            self.modifier = True
+        if wx.Platform == '__WXMAC__':
+            # Get the modifier string in order C-, S-, A-, M-
+            if emods & wx.MOD_CONTROL:
+                modifiers += "C-"
+                self.modifier = True
+            if emods & wx.MOD_META:
+                modifiers += "A-"
+                self.modifier = True
+            if emods & wx.MOD_SHIFT:
+                modifiers += "S-"
+            if emods & wx.MOD_ALT:
+                modifiers += "M-"
+                metadown = True
+                self.modifier = True
+        else:
+            # Get the modifier string in order C-, S-, A-, M-
+            if emods & wx.MOD_CMD:
+                modifiers += "C-"
+                self.modifier = True
+            if emods & wx.MOD_SHIFT:
+                modifiers += "S-"
+            # A- not used currently; meta is called alt
+            if emods & wx.MOD_ALT:
+                modifiers += "M-"
+                metadown = True
+                self.modifier = True
         if keycode == wx.WXK_ESCAPE:
             self.modifier = True
 
@@ -754,7 +798,7 @@ if __name__ == '__main__':
         def __init__(self, frame, message):
             self.frame = frame
             self.message = message
-        def __call__(self, evt, number=None):
+        def __call__(self, evt, number=None, **kwargs):
             if number is not None:
                 self.frame.SetStatusText("%d x %s" % (number,self.message))
             else:
@@ -788,6 +832,7 @@ if __name__ == '__main__':
 
             self.globalKeyMap=KeyMap()
             self.localKeyMap=KeyMap()
+            self.macKeyMap=KeyMap()
             self.keys=KeyProcessor(status=self)
 
             menuBar = wx.MenuBar()
@@ -829,9 +874,20 @@ if __name__ == '__main__':
             self.menuAdd(lmap, "ESC\tM-ESC ESC", "M-ESC ESC", StatusUpdater(self, "Meta-Escape-Escape"))
             self.menuAdd(lmap, "ESC\tM-ESC A", "M-ESC A", StatusUpdater(self, "Meta-Escape-A"))
 
+            mmap = wx.Menu()
+            self.whichkeymap[mmap]=self.macKeyMap
+            self.menuAddM(menuBar, mmap, "Mac", "Mac key map")
+            self.menuAdd(mmap, "Cut\tCmd-X", "Mac Cut", StatusUpdater(self, "cut..."))
+            self.menuAdd(mmap, "Copy\tCmd-C", "Mac Copy", StatusUpdater(self, "copy..."))
+            self.menuAdd(mmap, "Paste\tCmd-V", "Mac Paste", StatusUpdater(self, "paste..."))
+            self.menuAdd(mmap, "Save As...\tShift-Cmd-S", "Save As", StatusUpdater(self, "save as..."))
+            self.menuAdd(mmap, "Show Toolbar...\tOption-Cmd-T", "Toolbar", StatusUpdater(self, "show toolbar..."))
+            self.menuAdd(mmap, "Option test\tOption-N", "Option N", StatusUpdater(self, "Option N..."))
+
             #print self.lookup
             self.keys.setGlobalKeyMap(self.globalKeyMap)
             self.keys.setLocalKeyMap(self.localKeyMap)
+            self.keys.addMinorKeyMap(self.macKeyMap)
             print self.localKeyMap.getBindings()
             print self.globalKeyMap.getBindings()
             self.Show(1)
@@ -870,7 +926,12 @@ if __name__ == '__main__':
                 # wx doesn't allow displaying arbitrary text as the accelerator,
                 # so we have to just put it in the menu itself.  This doesn't
                 # look very nice, but that's about all we can do.
-                menu.SetLabel(id, '%s (%s)'%(ns,acc))
+                if acc.count(" ") == 0:
+                    acc=acc.replace("Cmd", "Ctrl")
+                    acc=acc.replace("Option", "Alt")
+                    menu.SetLabel(id, "%s\t%s" % (ns, acc))
+                else:
+                    menu.SetLabel(id, '%s (%s)'%(ns,acc))
             else:
                 menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
