@@ -48,48 +48,60 @@ keyaliases={'RET':'RETURN',
 # keys are pressed.  They are used as in "C-x" to mean Control-X.
 #
 # Prefixes:
-#  C-   Control
+#  C-   Control on MSW/GTK; Command on Mac
+#  ^-   Control on Mac, aliased to C- on MSW/GTK
 #  S-   Shift
 #  M-   Alt/Option on MAC; Alt on MSW/GTK
-#  A-   Apple/Command on MAC; aliased to M- on MSW/GTK
-emacs_modifiers=['C-','S-','A-','M-']
+#  A-   aliased to M- on all platforms
+emacs_modifiers=['^-', 'C-','S-','A-','M-']
 
 if wx.Platform == '__WXMAC__':
     # WXMAC needs Command to appear as Ctrl- in the accelerator text.  It
-    # converts Ctrl into the command symbol
-    modaccelerator = {'C-': None,
-                      'S-': 'Shift-',
-                      'A-': 'Alt-',
-                      'M-': 'Ctrl-',
-                      }
-    modaliases={'Command-':'A-',
-                'Cmd-':'A-',
-                'Ctrl-':'C-',
-                'Shift-':'S-',
-                'Alt-':'M-',
-                'Meta-':'M-',
-                'Command+':'A-',
-                'Cmd+':'A-',
-                'Ctrl+':'C-',
-                'Shift+':'S-',
-                'Alt+':'M-',
-                'Meta+':'M-',
-                }
+    # converts Ctrl into the command symbol.  Note that there is no mapping
+    # for the C- prefix because wx doesn't have the ability to put a Control
+    # character in a menu.
+    modaccelerator = {
+        '^-': '^',
+        'S-': 'Shift-', # Shift appears in the menu item as an up arrow
+        'C-': 'Ctrl-', # Ctrl appears in the menu item as the command cloverleaf
+        'M-': 'Alt-', # Alt appears in the menu item as the option character
+        }
+    modaliases={
+        'Command-':'C-',
+        'Cmd-':'C-',
+        'Command+':'C-',
+        'Cmd+':'C-',
+        '^':'^-',
+        'Ctrl-':'^-',
+        'Ctrl+':'^-',
+        'Shift-':'S-',
+        'Shift+':'S-',
+        'Alt-':'M-',
+        'Alt+':'M-',
+        'Option-':'M-',
+        'Option+':'M-',
+        'Meta-':'M-',
+        'Meta+':'M-',
+        }
 else:
-    modaccelerator = {'C-': 'Ctrl-',
-                      'S-': 'Shift-',
-                      'A-': 'Alt-',
-                      'M-': 'Alt-',
-                      }
-    modaliases={'Ctrl-':'C-',
-                'Shift-':'S-',
-                'Alt-':'A-',
-                'Meta-':'M-',
-                'Ctrl+':'C-',
-                'Shift+':'S-',
-                'Alt+':'A-',
-                'Meta+':'M-',
-                }
+    modaccelerator = {
+        '^-': 'Ctrl-',
+        'C-': 'Ctrl-',
+        'S-': 'Shift-',
+        'A-': 'Alt-',
+        'M-': 'Alt-',
+        }
+    modaliases={
+        '^':'C-',
+        'Ctrl-':'C-',
+        'Shift-':'S-',
+        'Alt-':'A-',
+        'Meta-':'M-',
+        'Ctrl+':'C-',
+        'Shift+':'S-',
+        'Alt+':'A-',
+        'Meta+':'M-',
+        }
 
 
 
@@ -197,26 +209,45 @@ class KeyAccelerator(object):
     def nonEmacsName(cls, acc):
         modifiers=[]
         j=0
-        while j<len(acc):
-            chars,m=cls.matchModifier(acc[j:])
-            if m:
-                j+=chars
-                modifiers.append(modaccelerator[m])
-            else:
-                modifiers.append(acc[j:])
-                break
+        try:
+            while j<len(acc):
+                chars,m=cls.matchPlatformModifier(acc[j:])
+                if m:
+                    j+=chars
+                    modifiers.append(m)
+                else:
+                    modifiers.append(acc[j:])
+                    break
+        except TypeError:
+            # Type error will result from trying to take the length of None,
+            # should a control character be specified on the Mac.  wx doesn't
+            # have the ability to put a control character in a Mac menu.
+            return ""
         return "".join(modifiers)
 
     @classmethod
-    def getAcceleratorText(cls, acc, force_emacs=False):
-        keystrokes = cls.split(acc)
+    def matchPlatformModifier(cls, str):
+        """Find a modifier in the accelerator string
+        """        
+        for m in modaccelerator.keys():
+            if str.startswith(m):
+                return len(m),modaccelerator[m]
+        return 0,None
+
+    @classmethod
+    def getAcceleratorText(cls, key_sequence, force_emacs=False):
+        keystrokes = cls.split(key_sequence)
         if len(keystrokes) == 1 and not force_emacs:
             # if it has a stock id, always force it to use the our
             # accelerator because wxWidgets will put one there anyway and
             # we need to overwrite it with our definition
-            text = u"\t%s" % KeyAccelerator.nonEmacsName(keystrokes[0])
+            acc = KeyAccelerator.nonEmacsName(keystrokes[0])
+            if acc:
+                text = u"\t%s" % acc
+            else:
+                text = ""
         else:
-            text = u"    %s" % acc
+            text = u"    %s" % " ".join(keystrokes)
         return text
 
 
@@ -493,10 +524,10 @@ class KeyProcessor(object):
         if wx.Platform == '__WXMAC__':
             # Get the modifier string in order C-, S-, A-, M-
             if emods & wx.MOD_CONTROL:
-                modifiers += "C-"
+                modifiers += "^-"
                 self.modifier = True
             if emods & wx.MOD_META:
-                modifiers += "A-"
+                modifiers += "C-"
                 self.modifier = True
             if emods & wx.MOD_SHIFT:
                 modifiers += "S-"
@@ -892,6 +923,8 @@ if __name__ == '__main__':
             self.menuAdd(mmap, "Cut\tCmd-X", "Mac Cut", StatusUpdater(self, "cut..."))
             self.menuAdd(mmap, "Copy\tCmd-C", "Mac Copy", StatusUpdater(self, "copy..."))
             self.menuAdd(mmap, "Paste\tCmd-V", "Mac Paste", StatusUpdater(self, "paste..."))
+            self.menuAdd(mmap, "Zippy\t^Z", "Zippy!", StatusUpdater(self, "zippy..."))
+            self.menuAdd(mmap, "Zippy\t^X^Z", "Psychoanalize Zippy!", StatusUpdater(self, "psycho zippy..."))
             self.menuAdd(mmap, "Save As...\tShift-Cmd-S", "Save As", StatusUpdater(self, "save as..."))
             self.menuAdd(mmap, "Show Toolbar...\tOption-Cmd-T", "Toolbar", StatusUpdater(self, "show toolbar..."))
             self.menuAdd(mmap, "Option test\tOption-N", "Option N", StatusUpdater(self, "Option N..."))
@@ -935,15 +968,12 @@ if __name__ == '__main__':
                 # no longer works for windows, so use the same hack below for
                 # all platforms.
 
-                # wx doesn't allow displaying arbitrary text as the accelerator,
-                # so we have to just put it in the menu itself.  This doesn't
-                # look very nice, but that's about all we can do.
-                if acc.count(" ") == 0:
-                    acc=acc.replace("Cmd", "Ctrl")
-                    acc=acc.replace("Option", "Alt")
-                    menu.SetLabel(id, "%s\t%s" % (ns, acc))
-                else:
-                    menu.SetLabel(id, '%s (%s)'%(ns,acc))
+                # wx doesn't allow displaying arbitrary text as the
+                # accelerator, so we have format it according to what's
+                # allowed by the current platform.  Emacs style multi-
+                # keystroke bindings are not right-aligned, unfortunately.
+                acc_text = KeyAccelerator.getAcceleratorText(acc)
+                menu.SetLabel(id, "%s%s" % (ns, acc_text))
             else:
                 menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
