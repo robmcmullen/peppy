@@ -207,6 +207,18 @@ class KeyAccelerator(object):
                 break
         return "".join(modifiers)
 
+    @classmethod
+    def getAcceleratorText(cls, acc, force_emacs=False):
+        keystrokes = cls.split(acc)
+        if len(keystrokes) == 1 and not force_emacs:
+            # if it has a stock id, always force it to use the our
+            # accelerator because wxWidgets will put one there anyway and
+            # we need to overwrite it with our definition
+            text = u"\t%s" % KeyAccelerator.nonEmacsName(keystrokes[0])
+        else:
+            text = u"    %s" % acc
+        return text
+
 
 class KeyMap(object):
     """Group of key mappings.

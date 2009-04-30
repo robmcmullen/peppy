@@ -203,19 +203,27 @@ class SelectAction(debugmixin):
             else:
                 key_sequence = cls.keyboard
             keystrokes = KeyAccelerator.split(key_sequence)
-            if len(keystrokes) == 1 and (cls.stock_id is not None or not force_emacs):
-                # if it has a stock id, always force it to use the our
-                # accelerator because wxWidgets will put one there anyway and
-                # we need to overwrite it with our definition
-                cls._accelerator_text = u"\t%s" % KeyAccelerator.nonEmacsName(keystrokes[0])
-            else:
-                cls._accelerator_text = u"    %s" % key_sequence
-                if cls.stock_id is not None and (cls.global_id is None or cls.global_id == cls.stock_id):
+            
+            # Special handling if we are using a stock wx id -- wx automatically
+            # places a stock icon and a default accelerator in the menu item.
+            # We may have to adjust this depending on a few things...
+            if cls.stock_id is not None:
+                if len(keystrokes) == 1:
+                    # If it's a stock ID with a single keystroke, it must
+                    # be placed in standard menu format (not emacs format)
+                    # because wx will place the stock accelerator there and we
+                    # need to override it
+                    force_emacs = False
+                elif cls.global_id is None or cls.global_id == cls.stock_id:
                     # Can't use a stock id if we're also using emacs
-                    # keybindings, because the stock id injects a one
-                    # keystroke accelerator that we can't override unless we
-                    # also use a one keystroke accelerator.
+                    # keybindings, because the stock id forces the standard
+                    # one character key binding and we'll end up with an emacs
+                    # style keybinding also appearing in the menu.  So, by
+                    # forcing the ID to have a new ID number, wx won't insert
+                    # its default stuff.
                     cls.global_id = wx.NewId()
+            
+            cls._accelerator_text = KeyAccelerator.getAcceleratorText(key_sequence, force_emacs)
                         
             #dprint("%s %s %s" % (cls.__name__, str(keystrokes), cls._accelerator_text))
             return len(keystrokes)
