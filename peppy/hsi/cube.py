@@ -908,6 +908,13 @@ class Cube(debugmixin):
         s.write("        cube_io=%s\n" % str(self.cube_io))
         return s.getvalue()
     
+    def getFormatSummary(self):
+        if self.data_type:
+            pretty_dtype = self.data_type().dtype.name
+        else:
+            pretty_dtype = None
+        return "%dx%dx%d %s %s" % (self.samples, self.lines, self.bands, self.interleave, pretty_dtype)
+    
     def getExtraWelcomeMessage(self):
         """Return small string with extra information to be displayed after
         successful load.
