@@ -366,7 +366,7 @@ class AcceleratorList(object):
                 lines.append(self.id_next_level[key].getPrettyStr(prefix + "  "))
         return os.linesep.join(lines)
     
-    def addKeyBinding(self, key_binding):
+    def addKeyBinding(self, key_binding, action=None):
         """Add a key binding to the list.
         
         @param key_binding: text string representing the keystroke(s) to
@@ -379,7 +379,7 @@ class AcceleratorList(object):
             current.id_to_keystroke[keystroke.id] = keystroke
             current.valid_keystrokes[(keystroke.flags, keystroke.keycode)] = True
             if next_keystroke is None:
-                current.keystroke_id_to_action[keystroke.id] = True
+                current.keystroke_id_to_action[keystroke.id] = action
             else:
                 try:
                     current = current.id_next_level[keystroke.id]
@@ -388,7 +388,7 @@ class AcceleratorList(object):
                     current.id_next_level[keystroke.id] = accel_list
                     current = accel_list
     
-    def addMenuItem(self, id):
+    def addMenuItem(self, id, action=None):
         """Add a menu item that doesn't have an equivalent keystroke.
         
         Note that even if a menu item has a keystroke and that keystroke has
@@ -398,7 +398,7 @@ class AcceleratorList(object):
         
         @param id: wx ID of the menu item
         """
-        self.menu_id_to_action[id] = True
+        self.menu_id_to_action[id] = action
     
     def getTable(self):
         """Returns a L{wx.AcceleratorTable} that corresponds to the key bindings
@@ -424,6 +424,9 @@ class AcceleratorList(object):
             if eid in self.menu_id_to_action:
                 dprint("in processEvent: evt=%s id=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, self.menu_id_to_action[eid]))
                 self.resetMenuSuccess()
+                action = self.menu_id_to_action[eid]
+                if action is not None:
+                    action(evt)
             elif eid in self.id_to_keystroke:
                 keystroke = self.id_to_keystroke[eid]
                 self.addCurrentKeystroke(keystroke)
@@ -433,6 +436,9 @@ class AcceleratorList(object):
                 else:
                     dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
                     self.resetKeyboardSuccess()
+                    action = self.keystroke_id_to_action[eid]
+                    if action is not None:
+                        action(evt)
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
                 self.reset()
@@ -499,10 +505,12 @@ if __name__ == '__main__':
             self.menuBar = menuBar
             
             gmap = wx.Menu()
-            self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "^X^F", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c", frame=self)
+            self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c", frame=self)
             dprint(self.root_accel)
             
             self.menuAddM(menuBar, gmap, "Global", "Global key map")
+            self.menuAdd(gmap, "Open\tC-O", "Open...", StatusUpdater(self, "Open File..."))
+            self.menuAdd(gmap, "Emacs Open\tC-X C-F", "Open...", StatusUpdater(self, "Emacs Open File..."))
             self.menuAdd(gmap, "Exit\tC-Q", "Exit", sys.exit)
 
             dprint("HERE")
@@ -628,8 +636,8 @@ if __name__ == '__main__':
                 acc_text = KeyAccelerator.getAcceleratorText(acc)
                 menu.SetLabel(id, "%s%s" % (ns, acc_text))
                 
-                self.root_accel.addKeyBinding(acc)
-                self.root_accel.addMenuItem(id)
+                self.root_accel.addKeyBinding(acc, fcn)
+                self.root_accel.addMenuItem(id, fcn)
             else:
                 menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
