@@ -323,6 +323,7 @@ class AcceleratorList(object):
             if not hasattr(self, 'frame'):
                 raise KeyError('Root level needs wx.Frame instance')
             self.root = self
+            self.pending_cancel_key_registration = []
             self.current_keystrokes = []
         
         # Cached value of wx.AcceleratorTable; will be regenerated
@@ -377,6 +378,10 @@ class AcceleratorList(object):
         trigger the action.
         
         @param action: action to be called by this key binding
+        
+        @param cancel_Key: if True, this keystroke will be added to all levels
+        and will cause the current keystrokes to be cancelled along with
+        calling the action.
         """
         keystrokes = list(KeyAccelerator.split(key_binding))
         keystrokes.append(None)
@@ -394,7 +399,7 @@ class AcceleratorList(object):
                     current.id_next_level[keystroke.id] = accel_list
                     current = accel_list
         self.accelerator_table = None
-    
+        
     def addMenuItem(self, id, action=None):
         """Add a menu item that doesn't have an equivalent keystroke.
         
@@ -410,10 +415,53 @@ class AcceleratorList(object):
         self.menu_id_to_action[id] = action
         self.accelerator_table = None
     
+    def addCancelKeyBinding(self, key_binding, action=None):
+        """Add a cancel key binding.
+        
+        Cancel keys are special keystrokes that are added to all levels.  A
+        cancel key will cancel the current keystrokes without processing them,
+        and will also call the action specified here.
+        
+        @param key_binding: text string representing the keystroke(s) to
+        trigger the action.
+        
+        @param action: optional action to be called when the cancel key
+        keystroke combination is pressed.
+        """
+        # Cancel keys can't be added until all other keystrokes have been added
+        # to the list because a copy of the cancel key binding is added to all
+        # levels.  If the key binding were added when this method is called,
+        # key bindings added later that create new levels wouldn't have the
+        # cancel key binding in them.  So, this is used as a flag to create
+        # new keybindings the first time getTable is called.
+        self.root.pending_cancel_key_registration.append((key_binding, action))
+    
+    def addCancelKeys(self):
+        """Add cancel keys to all keybinding levels
+        
+        """
+        for key_binding, action in self.root.pending_cancel_key_registration:
+            dprint("Adding cancel key %s" % key_binding)
+            self.root.addCancelKeysToLevels(key_binding, action)
+        self.root.pending_cancel_key_registration = []
+    
+    def addCancelKeysToLevels(self, key_binding, action):
+        """Recursive function to add the cancel keybinding to the current level
+        and all sub levels
+        """
+        for accel_list in self.id_next_level.values():
+            accel_list.addCancelKeysToLevels(key_binding, action)
+            
+            # Reset the accelerator table flag to force its regeneration
+            accel_list.accelerator_table = None
+        self.addKeyBinding(key_binding, action)
+    
     def getTable(self):
         """Returns a L{wx.AcceleratorTable} that corresponds to the key bindings
         in the current level.
         """
+        if self.root.pending_cancel_key_registration:
+            self.root.addCancelKeys()
         if self.accelerator_table is None:
             table = []
             for keystroke in self.id_to_keystroke.values():
@@ -423,9 +471,17 @@ class AcceleratorList(object):
         return self.accelerator_table
     
     def setAccelerators(self):
+        """Set the accelerator table of the frame
+        
+        """
         self.root.frame.SetAcceleratorTable(self.getTable())
     
     def processEvent(self, evt):
+        """Main event processing loop to be called from the Frame's EVT_MENU
+        callback.
+        
+        @param evt: the CommandEvent instance from the EVT_MENU callback
+        """
         if self.skip_next:
             # The incoming character has been already marked as being bad by a
             # KeyDown event, so we should't process it.
@@ -441,7 +497,7 @@ class AcceleratorList(object):
                     action(evt)
             elif eid in self.id_to_keystroke:
                 keystroke = self.id_to_keystroke[eid]
-                self.addCurrentKeystroke(keystroke)
+                self.displayCurrentKeystroke(keystroke)
                 if eid in self.id_next_level:
                     dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
                     return self.id_next_level[eid]
@@ -456,7 +512,10 @@ class AcceleratorList(object):
                 self.reset()
         return None
     
-    def addCurrentKeystroke(self, keystroke):
+    def displayCurrentKeystroke(self, keystroke):
+        """Add the keystroke to the list of keystrokes displayed in the status
+        bar as the user is typing.
+        """
         self.root.current_keystrokes.append(keystroke)
         text = KeyAccelerator.getEmacsAccelerator(self.root.current_keystrokes)
         self.root.frame.SetStatusText(text)
@@ -514,7 +573,6 @@ if __name__ == '__main__':
             
             gmap = wx.Menu()
             self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c", frame=self)
-            dprint(self.root_accel)
             
             self.menuAddM(menuBar, gmap, "Global", "Global key map")
             self.menuAdd(gmap, "Open\tC-O", StatusUpdater)
@@ -522,19 +580,16 @@ if __name__ == '__main__':
             self.menuAdd(gmap, "Not Quitting\tC-X C-Q", StatusUpdater)
             self.menuAdd(gmap, "Exit\tC-Q", sys.exit)
 
-            dprint("HERE")
-            
+            self.root_accel.addCancelKeyBinding("C-g", StatusUpdater(self, "Cancel"))
+            self.root_accel.addCancelKeyBinding("ESC ESC ESC", StatusUpdater(self, "Cancel"))
             self.setAcceleratorLevel()
-            dprint("HERE")
+            dprint(self.root_accel)
             
             self.Bind(wx.EVT_MENU, self.OnMenu)
             self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
-            dprint("HERE")
             self.ctrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
             #self.ctrl.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-            dprint("HERE")
             self.Show(1)
-            dprint("HERE")
         
         def setToolbar(self):
             self.toolbar = self.CreateToolBar(wx.TB_HORIZONTAL)
