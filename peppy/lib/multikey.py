@@ -297,19 +297,53 @@ class KeyAccelerator(object):
 
 
 class AcceleratorList(object):
-    def __init__(self, frame, *args, **kwargs):
-        self.frame = frame
+    """Driver class for multi-keystroke processing of CommandEvents.
+    
+    This class creates nested accelerator tables for processing multi-keystroke
+    commands.  The tables are switched in and out dynamically as key events
+    come into the L{processEvent} method.  Menu actions are also handled here.
+    If the user selects a menu item, any in-progress multi-key sequence is
+    cancelled.
+    
+    Multiple instances of this class are nested in the root instance.  The
+    root instance holds the first character in all keystroke commands as
+    well as all menu IDs.  Any multi-key combinations additional instances of
+    AcceleratorList to the root level so that when the first keystroke is hit,
+    the class switches out the frame's accelerator table to the table holding
+    the next level's valid keystrokes.  This can be nested as far as necessary.
+    
+    
+    """
+    def __init__(self, *args, **kwargs):
+        if 'frame' in kwargs:
+            self.frame = kwargs['frame']
         if 'root' in kwargs:
             self.root = kwargs['root']
         else:
+            if not hasattr(self, 'frame'):
+                raise KeyError('Root level needs wx.Frame instance')
             self.root = self
+            self.current_keystrokes = []
         
-        # Flag to indicate that the 
+        # Flag to indicate that the next keystroke should be ignored.  This is
+        # needed because no OnMenu event is generated when a keystroke doesn't
+        # exist in the translation table.
         self.skip_next = False
-            
+        
+        # Map of ID to keystroke for the current level
         self.id_to_keystroke = {}
+        
+        # Map of all IDs that have additional keystrokes, used in multi-key
+        # processing.
         self.id_next_level = {}
-        self.id_to_action = {}
+        
+        # Map of all keystroke IDs in this level to actions
+        self.keystroke_id_to_action = {}
+        
+        # Map of all menu IDs in this level to actions
+        self.menu_id_to_action = {}
+        
+        # Map used to quickly identify all valid keystrokes at this level
         self.valid_keystrokes = {}
         for arg in args:
             dprint(str(arg))
@@ -319,6 +353,9 @@ class AcceleratorList(object):
         return self.getPrettyStr()
     
     def getPrettyStr(self, prefix=""):
+        """Recursive-capable function to return a list of keystrokes at this
+        level and below.
+        """
         lines = []
         keys = self.id_to_keystroke.keys()
         keys.sort()
@@ -330,6 +367,11 @@ class AcceleratorList(object):
         return os.linesep.join(lines)
     
     def addKeyBinding(self, key_binding):
+        """Add a key binding to the list.
+        
+        @param key_binding: text string representing the keystroke(s) to
+        trigger the action.
+        """
         keystrokes = list(KeyAccelerator.split(key_binding))
         keystrokes.append(None)
         current = self
@@ -337,19 +379,31 @@ class AcceleratorList(object):
             current.id_to_keystroke[keystroke.id] = keystroke
             current.valid_keystrokes[(keystroke.flags, keystroke.keycode)] = True
             if next_keystroke is None:
-                current.id_to_action[keystroke.id] = True
+                current.keystroke_id_to_action[keystroke.id] = True
             else:
                 try:
                     current = current.id_next_level[keystroke.id]
                 except KeyError:
-                    accel_list = AcceleratorList(self.frame)
+                    accel_list = AcceleratorList(root=self.root)
                     current.id_next_level[keystroke.id] = accel_list
                     current = accel_list
     
     def addMenuItem(self, id):
-        self.id_to_action[id] = True
+        """Add a menu item that doesn't have an equivalent keystroke.
+        
+        Note that even if a menu item has a keystroke and that keystroke has
+        been added to the list using L{addKeyBinding}, this method still needs
+        to be called because the menu item ID is different from the keystroke
+        ID.
+        
+        @param id: wx ID of the menu item
+        """
+        self.menu_id_to_action[id] = True
     
     def getTable(self):
+        """Returns a L{wx.AcceleratorTable} that corresponds to the key bindings
+        in the current level.
+        """
         table = []
         for keystroke in self.id_to_keystroke.values():
             table.append(keystroke.getAcceleratorTableEntry())
@@ -357,7 +411,7 @@ class AcceleratorList(object):
         return wx.AcceleratorTable(table)
     
     def setAccelerators(self):
-        self.frame.SetAcceleratorTable(self.getTable())
+        self.root.frame.SetAcceleratorTable(self.getTable())
     
     def processEvent(self, evt):
         if self.skip_next:
@@ -367,18 +421,41 @@ class AcceleratorList(object):
             self.skip_next = False
         else:
             eid = evt.GetId()
-            if eid in self.id_to_keystroke or eid in self.id_to_action:
+            if eid in self.menu_id_to_action:
+                dprint("in processEvent: evt=%s id=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, self.menu_id_to_action[eid]))
+                self.resetMenuSuccess()
+            elif eid in self.id_to_keystroke:
+                keystroke = self.id_to_keystroke[eid]
+                self.addCurrentKeystroke(keystroke)
                 if eid in self.id_next_level:
                     dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
                     return self.id_next_level[eid]
                 else:
-                    dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.id_to_action[eid]))
+                    dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
+                    self.resetKeyboardSuccess()
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
+                self.reset()
         return None
+    
+    def addCurrentKeystroke(self, keystroke):
+        self.root.current_keystrokes.append(keystroke)
+        text = KeyAccelerator.getEmacsAccelerator(self.root.current_keystrokes)
+        self.root.frame.SetStatusText(text)
+    
+    def reset(self):
+        self.root.current_keystrokes = []
+        self.root.frame.SetStatusText("")
+    
+    def resetKeyboardSuccess(self):
+        self.root.current_keystrokes = []
+    
+    def resetMenuSuccess(self):
+        self.root.current_keystrokes = []
     
     def skipNext(self):
         self.skip_next = True
+        self.reset()
     
     def isValidAccelerator(self, evt):
         key = (evt.GetModifiers(), evt.GetKeyCode())
@@ -422,7 +499,7 @@ if __name__ == '__main__':
             self.menuBar = menuBar
             
             gmap = wx.Menu()
-            self.root_accel = AcceleratorList(self, "^X", "Ctrl-S", "Ctrl-TAB", "^X^F", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c")
+            self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "^X^F", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c", frame=self)
             dprint(self.root_accel)
             
             self.menuAddM(menuBar, gmap, "Global", "Global key map")
@@ -463,18 +540,28 @@ if __name__ == '__main__':
             # and cancel the current key sequence
             dprint("in OnMenuOpen: id=%s" % evt.GetId())
             if self.current_accel != self.root_accel:
+                self.SetStatusText("Cancelled multi-key keystroke")
                 self.setAcceleratorLevel()
             
         def OnKeyDown(self, evt):
             self.LogKeyEvent("KeyDown", evt)
             if not self.current_accel.isValidAccelerator(evt):
+                # If the keystroke isn't valid for the current level but would
+                # be recognized by the root level, we have to skip it because
+                # we're about to reset the current level to the root level and
+                # the keystroke would be processed by the root level
+                if self.root_accel.isValidAccelerator(evt):
+                    self.root_accel.skipNext()
+                else:
+                    self.root_accel.reset()
+
                 # OnMenu event will never get generated if it doesn't appear in
                 # the accelerator table, so reset the accelerator table to the
                 # root table
                 dprint("Unknown accelerator; resetting to root")
                 if self.current_accel != self.root_accel:
                     self.setAcceleratorLevel()
-                self.root_accel.skipNext()
+                
             evt.Skip()
 
         def OnKeyUp(self, evt):
