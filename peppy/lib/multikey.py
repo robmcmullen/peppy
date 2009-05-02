@@ -505,9 +505,10 @@ if __name__ == '__main__':
             dprint(self.root_accel)
             
             self.menuAddM(menuBar, gmap, "Global", "Global key map")
-            self.menuAdd(gmap, "Open\tC-O", "Open...", StatusUpdater(self, "Open File..."))
-            self.menuAdd(gmap, "Emacs Open\tC-X C-F", "Open...", StatusUpdater(self, "Emacs Open File..."))
-            self.menuAdd(gmap, "Exit\tC-Q", "Exit", sys.exit)
+            self.menuAdd(gmap, "Open\tC-O", StatusUpdater)
+            self.menuAdd(gmap, "Emacs Open\tC-X C-F", StatusUpdater)
+            self.menuAdd(gmap, "Not Quitting\tC-X C-Q", StatusUpdater)
+            self.menuAdd(gmap, "Exit\tC-Q", sys.exit)
 
             dprint("HERE")
             
@@ -538,7 +539,11 @@ if __name__ == '__main__':
             self.toolbar.AddLabelTool(id, "Open", bmp, shortHelp="Open", longHelp="Long help for 'Open'")
             self.root_accel.addMenuItem(id, StatusUpdater(self, "Toolbar Open"))
             
-            self.Bind(wx.EVT_TOOL_ENTER, self.OnToolEnter)
+            # EVT_TOOL_ENTER and EVT_TOOR_RCLICKED don't work on OS X
+            self.toolbar.Bind(wx.EVT_TOOL_ENTER, self.OnToolEnter)
+            self.toolbar.Bind(wx.EVT_TOOL_RCLICKED, self.OnToolContext)
+            
+            self.toolbar.Realize()
         
         def setAcceleratorLevel(self, level=None):
             if level is None:
@@ -571,6 +576,11 @@ if __name__ == '__main__':
             if self.current_accel != self.root_accel:
                 self.setAcceleratorLevel()
                 self.root_accel.reset("Cancelled multi-key keystroke")
+            
+        def OnToolContext(self, evt):
+            # When a menu is opened, reset the accelerator level to the root
+            # and cancel the current key sequence
+            dprint("in OnToolContext: id=%s" % evt.GetId())
             
         def OnKeyDown(self, evt):
             self.LogKeyEvent("KeyDown", evt)
@@ -628,19 +638,19 @@ if __name__ == '__main__':
             
             dprint("%s: id=%d %s code=%s modifiers=%s" % (evType, evt.GetId(), keyname, keycode, modifiers))
 
-        def menuAdd(self, menu, name, desc, fcn, id=-1, kind=wx.ITEM_NORMAL):
+        def menuAdd(self, menu, name, fcn, id=-1, kind=wx.ITEM_NORMAL):
             if id == -1:
                 id = wx.NewId()
-            a = wx.MenuItem(menu, id, 'TEMPORARYNAME', desc, kind)
-            menu.AppendItem(a)
-            #wx.EVT_MENU(self, id, fcn)
-
+                
             def _spl(st):
                 if '\t' in st:
                     return st.split('\t', 1)
                 return st, ''
 
             ns, acc = _spl(name)
+
+            a = wx.MenuItem(menu, id, 'TEMPORARYNAME', ns, kind)
+            menu.AppendItem(a)
 
             if acc:
                 acc=acc.replace('\t',' ')
@@ -657,11 +667,13 @@ if __name__ == '__main__':
                 acc_text = KeyAccelerator.getAcceleratorText(acc)
                 menu.SetLabel(id, "%s%s" % (ns, acc_text))
                 
+                if fcn == StatusUpdater:
+                    fcn = StatusUpdater(self, ns)
                 self.root_accel.addKeyBinding(acc, fcn)
                 self.root_accel.addMenuItem(id, fcn)
             else:
                 menu.SetLabel(id,ns)
-            menu.SetHelpString(id, desc)
+            menu.SetHelpString(id, name)
 
         def menuAddM(self, parent, menu, name, help=''):
             if isinstance(parent, wx.Menu):
