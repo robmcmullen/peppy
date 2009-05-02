@@ -398,6 +398,8 @@ class AcceleratorList(object):
         
         @param id: wx ID of the menu item
         """
+        if self.root != self:
+            raise RuntimeError("Menu actions can only be added to the root level accelerators")
         self.menu_id_to_action[id] = action
     
     def getTable(self):
