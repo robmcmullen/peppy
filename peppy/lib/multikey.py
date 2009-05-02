@@ -309,10 +309,11 @@ class AcceleratorList(object):
             
         self.id_to_keystroke = {}
         self.id_next_level = {}
+        self.id_to_action = {}
         self.valid_keystrokes = {}
         for arg in args:
             dprint(str(arg))
-            self.add(arg)
+            self.addKeyBinding(arg)
     
     def __str__(self):
         return self.getPrettyStr()
@@ -328,20 +329,25 @@ class AcceleratorList(object):
                 lines.append(self.id_next_level[key].getPrettyStr(prefix + "  "))
         return os.linesep.join(lines)
     
-    def add(self, key_binding):
+    def addKeyBinding(self, key_binding):
         keystrokes = list(KeyAccelerator.split(key_binding))
         keystrokes.append(None)
         current = self
         for keystroke, next_keystroke in zip(keystrokes, keystrokes[1:]):
             current.id_to_keystroke[keystroke.id] = keystroke
             current.valid_keystrokes[(keystroke.flags, keystroke.keycode)] = True
-            if next_keystroke is not None:
+            if next_keystroke is None:
+                current.id_to_action[keystroke.id] = True
+            else:
                 try:
                     current = current.id_next_level[keystroke.id]
                 except KeyError:
                     accel_list = AcceleratorList(self.frame)
                     current.id_next_level[keystroke.id] = accel_list
                     current = accel_list
+    
+    def addMenuItem(self, id):
+        self.id_to_action[id] = True
     
     def getTable(self):
         table = []
@@ -361,14 +367,14 @@ class AcceleratorList(object):
             self.skip_next = False
         else:
             eid = evt.GetId()
-            if eid in self.id_to_keystroke:
+            if eid in self.id_to_keystroke or eid in self.id_to_action:
                 if eid in self.id_next_level:
-                    dprint("in processEvent: id=%s FOUND MULTI-KEYSTROKE" % eid)
+                    dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
                     return self.id_next_level[eid]
                 else:
-                    dprint("in processEvent: id=%s FOUND ACTION" % eid)
+                    dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.id_to_action[eid]))
             else:
-                dprint("in processEvent: id=%s not found in this level" % eid)
+                dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
         return None
     
     def skipNext(self):
@@ -428,6 +434,7 @@ if __name__ == '__main__':
             dprint("HERE")
             
             self.Bind(wx.EVT_MENU, self.OnMenu)
+            self.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
             dprint("HERE")
             self.ctrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
             #self.ctrl.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -450,6 +457,13 @@ if __name__ == '__main__':
             else:
                 if self.current_accel != self.root_accel:
                     self.setAcceleratorLevel()
+            
+        def OnMenuOpen(self, evt):
+            # When a menu is opened, reset the accelerator level to the root
+            # and cancel the current key sequence
+            dprint("in OnMenuOpen: id=%s" % evt.GetId())
+            if self.current_accel != self.root_accel:
+                self.setAcceleratorLevel()
             
         def OnKeyDown(self, evt):
             self.LogKeyEvent("KeyDown", evt)
@@ -527,7 +541,8 @@ if __name__ == '__main__':
                 acc_text = KeyAccelerator.getAcceleratorText(acc)
                 menu.SetLabel(id, "%s%s" % (ns, acc_text))
                 
-                self.root_accel.add(acc)
+                self.root_accel.addKeyBinding(acc)
+                self.root_accel.addMenuItem(id)
             else:
                 menu.SetLabel(id,ns)
             menu.SetHelpString(id, desc)
