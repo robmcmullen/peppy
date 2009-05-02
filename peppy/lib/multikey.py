@@ -449,9 +449,9 @@ class AcceleratorList(object):
         text = KeyAccelerator.getEmacsAccelerator(self.root.current_keystrokes)
         self.root.frame.SetStatusText(text)
     
-    def reset(self):
+    def reset(self, message=""):
         self.root.current_keystrokes = []
-        self.root.frame.SetStatusText("")
+        self.root.frame.SetStatusText(message)
     
     def resetKeyboardSuccess(self):
         self.root.current_keystrokes = []
@@ -492,12 +492,8 @@ if __name__ == '__main__':
             self.ctrl = self.ctrl = wx.TextCtrl(self, -1, style=wx.TE_MULTILINE|wx.WANTS_CHARS|wx.TE_RICH2)
             self.ctrl.SetFocus()
 
-            try:
-                self.setMenu()
-            except:
-                import traceback
-                traceback.print_exc()
-                raise
+            self.setMenu()
+            self.setToolbar()
 
         def setMenu(self):
             menuBar = wx.MenuBar()
@@ -527,6 +523,23 @@ if __name__ == '__main__':
             self.Show(1)
             dprint("HERE")
         
+        def setToolbar(self):
+            self.toolbar = self.CreateToolBar(wx.TB_HORIZONTAL)
+            tsize = (16, 16)
+            self.toolbar.SetToolBitmapSize(tsize)
+            
+            id = wx.NewId()
+            bmp =  wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, tsize)
+            self.toolbar.AddLabelTool(id, "New", bmp, shortHelp="New", longHelp="Long help for 'New'")
+            self.root_accel.addMenuItem(id, StatusUpdater(self, "Toolbar New"))
+            
+            id = wx.NewId()
+            bmp =  wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR, tsize)
+            self.toolbar.AddLabelTool(id, "Open", bmp, shortHelp="Open", longHelp="Long help for 'Open'")
+            self.root_accel.addMenuItem(id, StatusUpdater(self, "Toolbar Open"))
+            
+            self.Bind(wx.EVT_TOOL_ENTER, self.OnToolEnter)
+        
         def setAcceleratorLevel(self, level=None):
             if level is None:
                 self.current_accel = self.root_accel
@@ -548,8 +561,16 @@ if __name__ == '__main__':
             # and cancel the current key sequence
             dprint("in OnMenuOpen: id=%s" % evt.GetId())
             if self.current_accel != self.root_accel:
-                self.SetStatusText("Cancelled multi-key keystroke")
                 self.setAcceleratorLevel()
+                self.root_accel.reset("Cancelled multi-key keystroke")
+            
+        def OnToolEnter(self, evt):
+            # When a menu is opened, reset the accelerator level to the root
+            # and cancel the current key sequence
+            dprint("in OnToolEnter: id=%s" % evt.GetId())
+            if self.current_accel != self.root_accel:
+                self.setAcceleratorLevel()
+                self.root_accel.reset("Cancelled multi-key keystroke")
             
         def OnKeyDown(self, evt):
             self.LogKeyEvent("KeyDown", evt)
