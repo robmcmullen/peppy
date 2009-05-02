@@ -18,6 +18,19 @@ precedence over any remapping in an accelerator table.  Short of removing the
 accelerator from the menu, there is no way to prevent this.
 
 
+Specifying Keystrokes:
+
+Keystrokes are specified using text strings like "Ctrl-X", "Shift-M", "Alt-G",
+"Meta-Q", and on MAC keystrokes like "Command-O", and "Option-Z".  In addition
+to standard modifier keys, Emacs style modifiers are available.  They are
+specified as in "C-x" to mean Control-X.
+
+Emacs-style Prefixes:
+ C-   Control on MSW/GTK; Command on Mac
+ ^-   Control on Mac, aliased to C- on MSW/GTK
+ S-   Shift
+ M-   Alt/Option on MAC; Alt on MSW/GTK
+ A-   aliased to M- on all platforms
 """
 
 import os, sys
@@ -49,16 +62,6 @@ keyaliases={'RET':'RETURN',
             'ESC':'ESCAPE',
             }
 
-# Emacs style modifiers are used internally to specify which of the modifier
-# keys are pressed.  They are used as in "C-x" to mean Control-X.
-#
-# Prefixes:
-#  C-   Control on MSW/GTK; Command on Mac
-#  ^-   Control on Mac, aliased to C- on MSW/GTK
-#  S-   Shift
-#  M-   Alt/Option on MAC; Alt on MSW/GTK
-#  A-   aliased to M- on all platforms
-emacs_modifiers=['^-', 'C-','S-','A-','M-']
 
 if wx.Platform == '__WXMAC__':
     # Note that WXMAC needs Command to appear as Ctrl- in the accelerator
@@ -314,6 +317,9 @@ class AcceleratorList(object):
     
     
     """
+    esc_keystroke = KeyAccelerator.split("ESC")[0]
+    meta_esc_keystroke = KeyAccelerator.split("M-ESC")[0]
+    
     def __init__(self, *args, **kwargs):
         if 'frame' in kwargs:
             self.frame = kwargs['frame']
@@ -323,6 +329,7 @@ class AcceleratorList(object):
             if not hasattr(self, 'frame'):
                 raise KeyError('Root level needs wx.Frame instance')
             self.root = self
+            self.meta_next = False
             self.pending_cancel_key_registration = []
             self.current_keystrokes = []
         
@@ -350,6 +357,10 @@ class AcceleratorList(object):
         
         # Map used to quickly identify all valid keystrokes at this level
         self.valid_keystrokes = {}
+        
+        # Always have an ESC keybinding for emacs-style ESC-as-sticky-meta
+        # processing
+        self.addKeyBinding("ESC")
         for arg in args:
             dprint(str(arg))
             self.addKeyBinding(arg)
@@ -497,6 +508,24 @@ class AcceleratorList(object):
                     action(evt)
             elif eid in self.id_to_keystroke:
                 keystroke = self.id_to_keystroke[eid]
+                
+                if eid == self.esc_keystroke.id:
+                    if self.root.meta_next:
+                        keystroke = self.meta_esc_keystroke
+                        eid = keystroke.id
+                        self.root.meta_next = False
+                        self.root.current_keystrokes.pop()
+                        dprint("in processEvent: evt=%s id=%s FOUND M-ESC" % (str(evt.__class__), eid))
+                    elif self.root.current_keystrokes and self.root.current_keystrokes[-1] == self.meta_esc_keystroke:
+                        # M-ESC ESC is processed as a regular keystroke
+                        dprint("in processEvent: evt=%s id=%s FOUND M-ESC ESC" % (str(evt.__class__), eid))
+                        pass
+                    else:
+                        dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
+                        self.root.meta_next = True
+                        self.displayCurrentKeystroke(keystroke)
+                        return None
+                    
                 self.displayCurrentKeystroke(keystroke)
                 if eid in self.id_next_level:
                     dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
@@ -521,14 +550,18 @@ class AcceleratorList(object):
         self.root.frame.SetStatusText(text)
     
     def reset(self, message=""):
-        self.root.current_keystrokes = []
+        self.resetRoot()
         self.root.frame.SetStatusText(message)
     
-    def resetKeyboardSuccess(self):
+    def resetRoot(self):
+        self.root.meta_next = False
         self.root.current_keystrokes = []
     
+    def resetKeyboardSuccess(self):
+        self.resetRoot()
+    
     def resetMenuSuccess(self):
-        self.root.current_keystrokes = []
+        self.resetRoot()
     
     def skipNext(self):
         self.skip_next = True
@@ -578,10 +611,11 @@ if __name__ == '__main__':
             self.menuAdd(gmap, "Open\tC-O", StatusUpdater)
             self.menuAdd(gmap, "Emacs Open\tC-X C-F", StatusUpdater)
             self.menuAdd(gmap, "Not Quitting\tC-X C-Q", StatusUpdater)
+            self.menuAdd(gmap, "Emacs M-ESC test\tM-ESC A", StatusUpdater)
             self.menuAdd(gmap, "Exit\tC-Q", sys.exit)
 
             self.root_accel.addCancelKeyBinding("C-g", StatusUpdater(self, "Cancel"))
-            self.root_accel.addCancelKeyBinding("ESC ESC ESC", StatusUpdater(self, "Cancel"))
+            self.root_accel.addCancelKeyBinding("M-ESC ESC", StatusUpdater(self, "Cancel"))
             self.setAcceleratorLevel()
             dprint(self.root_accel)
             
