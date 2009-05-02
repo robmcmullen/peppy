@@ -325,6 +325,10 @@ class AcceleratorList(object):
             self.root = self
             self.current_keystrokes = []
         
+        # Cached value of wx.AcceleratorTable; will be regenerated
+        # automatically by getTable if set to None
+        self.accelerator_table = None
+        
         # Flag to indicate that the next keystroke should be ignored.  This is
         # needed because no OnMenu event is generated when a keystroke doesn't
         # exist in the translation table.
@@ -371,6 +375,8 @@ class AcceleratorList(object):
         
         @param key_binding: text string representing the keystroke(s) to
         trigger the action.
+        
+        @param action: action to be called by this key binding
         """
         keystrokes = list(KeyAccelerator.split(key_binding))
         keystrokes.append(None)
@@ -387,6 +393,7 @@ class AcceleratorList(object):
                     accel_list = AcceleratorList(root=self.root)
                     current.id_next_level[keystroke.id] = accel_list
                     current = accel_list
+        self.accelerator_table = None
     
     def addMenuItem(self, id, action=None):
         """Add a menu item that doesn't have an equivalent keystroke.
@@ -401,16 +408,19 @@ class AcceleratorList(object):
         if self.root != self:
             raise RuntimeError("Menu actions can only be added to the root level accelerators")
         self.menu_id_to_action[id] = action
+        self.accelerator_table = None
     
     def getTable(self):
         """Returns a L{wx.AcceleratorTable} that corresponds to the key bindings
         in the current level.
         """
-        table = []
-        for keystroke in self.id_to_keystroke.values():
-            table.append(keystroke.getAcceleratorTableEntry())
-        dprint("AcceleratorTable: %s" % str(table))
-        return wx.AcceleratorTable(table)
+        if self.accelerator_table is None:
+            table = []
+            for keystroke in self.id_to_keystroke.values():
+                table.append(keystroke.getAcceleratorTableEntry())
+            dprint("AcceleratorTable: %s" % str(table))
+            self.accelerator_table = wx.AcceleratorTable(table)
+        return self.accelerator_table
     
     def setAccelerators(self):
         self.root.frame.SetAcceleratorTable(self.getTable())
