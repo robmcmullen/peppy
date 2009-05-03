@@ -328,7 +328,14 @@ class AcceleratorList(object):
         else:
             if not hasattr(self, 'frame'):
                 raise KeyError('Root level needs wx.Frame instance')
+            
+            # Root also needs several extra variables to keep track of
             self.root = self
+            
+            # The root keeps track of the current level that is another
+            # instance of AcceleratorList from the id_next_level map
+            self.current_level = None
+            
             self.meta_next = False
             self.pending_cancel_key_registration = []
             self.current_keystrokes = []
@@ -481,15 +488,55 @@ class AcceleratorList(object):
             self.accelerator_table = wx.AcceleratorTable(table)
         return self.accelerator_table
     
-    def setAccelerators(self):
-        """Set the accelerator table of the frame
-        
-        """
-        self.root.frame.SetAcceleratorTable(self.getTable())
+    def setAcceleratorTable(self, level=None):
+        if level is None:
+            level = self.root
+        if self.root.current_level != level:
+            self.root.current_level = level
+            self.root.frame.SetAcceleratorTable(level.getTable())
     
-    def processEvent(self, evt):
+    def processKeyDownEvent(self, evt):
+        """Helper event processing loop to be called from the Frame's
+        EVT_KEY_DOWN callback.
+        
+        This is needed because there's no other way to cancel a bad multi-key
+        keystroke.  EVT_MENU won't be called at all on an unrecognized
+        keystroke but EVT_KEY_DOWN will will always be called, so we use this
+        to preemptively check to see if the keystroke will be accepted or not
+        and set appropriate flags for later use.
+        
+        @param evt: the CommandEvent instance from the EVT_MENU callback
+        """
+        if not self.root.current_level.isValidAccelerator(evt):
+            # If the keystroke isn't valid for the current level but would
+            # be recognized by the root level, we have to skip it because
+            # we're about to reset the current level to the root level and
+            # the keystroke would be processed by the root level
+            if self.root.isValidAccelerator(evt):
+                self.root.skipNext()
+            else:
+                self.root.reset()
+
+            # OnMenu event will never get generated if it doesn't appear in
+            # the accelerator table, so reset the accelerator table to the
+            # root table
+            dprint("Unknown accelerator; resetting to root")
+            if self.root.current_level != self.root:
+                self.setAcceleratorTable()
+
+    def processMenuEvent(self, evt):
         """Main event processing loop to be called from the Frame's EVT_MENU
         callback.
+        
+        This method is designed to be called from the root level as it
+        redirects the event processing to the current keystroke level.
+        
+        @param evt: the CommandEvent instance from the EVT_MENU callback
+        """
+        self.root.current_level.processEvent(evt)
+
+    def processEvent(self, evt):
+        """Main processing loop used on the current keystroke level.
         
         @param evt: the CommandEvent instance from the EVT_MENU callback
         """
@@ -524,22 +571,22 @@ class AcceleratorList(object):
                         dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                         self.root.meta_next = True
                         self.displayCurrentKeystroke(keystroke)
-                        return None
+                        return
                     
                 self.displayCurrentKeystroke(keystroke)
                 if eid in self.id_next_level:
                     dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
-                    return self.id_next_level[eid]
+                    self.setAcceleratorTable(self.id_next_level[eid])
                 else:
                     dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
                     self.resetKeyboardSuccess()
                     action = self.keystroke_id_to_action[eid]
                     if action is not None:
                         action(evt)
+                    self.setAcceleratorTable()
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
                 self.reset()
-        return None
     
     def displayCurrentKeystroke(self, keystroke):
         """Add the keystroke to the list of keystrokes displayed in the status
@@ -549,9 +596,14 @@ class AcceleratorList(object):
         text = KeyAccelerator.getEmacsAccelerator(self.root.current_keystrokes)
         self.root.frame.SetStatusText(text)
     
+    def cancelMultiKey(self):
+        if self.root.current_level != self.root:
+            self.reset("Cancelled multi-key keystroke")
+            
     def reset(self, message=""):
         self.resetRoot()
         self.root.frame.SetStatusText(message)
+        self.setAcceleratorTable()
     
     def resetRoot(self):
         self.root.meta_next = False
@@ -616,7 +668,8 @@ if __name__ == '__main__':
 
             self.root_accel.addCancelKeyBinding("C-g", StatusUpdater(self, "Cancel"))
             self.root_accel.addCancelKeyBinding("M-ESC ESC", StatusUpdater(self, "Cancel"))
-            self.setAcceleratorLevel()
+            
+            self.root_accel.setAcceleratorTable()
             dprint(self.root_accel)
             
             self.Bind(wx.EVT_MENU, self.OnMenu)
@@ -646,37 +699,22 @@ if __name__ == '__main__':
             
             self.toolbar.Realize()
         
-        def setAcceleratorLevel(self, level=None):
-            if level is None:
-                self.current_accel = self.root_accel
-            else:                self.current_accel = level
-            self.current_accel.setAccelerators()
-        
         def OnMenu(self, evt):
             eid = evt.GetId()
             dprint("in OnMenu: id=%s" % eid)
-            level = self.current_accel.processEvent(evt)
-            if level:
-                self.setAcceleratorLevel(level)
-            else:
-                if self.current_accel != self.root_accel:
-                    self.setAcceleratorLevel()
+            self.root_accel.processMenuEvent(evt)
             
         def OnMenuOpen(self, evt):
             # When a menu is opened, reset the accelerator level to the root
             # and cancel the current key sequence
             dprint("in OnMenuOpen: id=%s" % evt.GetId())
-            if self.current_accel != self.root_accel:
-                self.setAcceleratorLevel()
-                self.root_accel.reset("Cancelled multi-key keystroke")
+            self.root_accel.cancelMultiKey()
             
         def OnToolEnter(self, evt):
             # When a menu is opened, reset the accelerator level to the root
             # and cancel the current key sequence
             dprint("in OnToolEnter: id=%s" % evt.GetId())
-            if self.current_accel != self.root_accel:
-                self.setAcceleratorLevel()
-                self.root_accel.reset("Cancelled multi-key keystroke")
+            self.root_accel.cancelMultiKey()
             
         def OnToolContext(self, evt):
             # When a menu is opened, reset the accelerator level to the root
@@ -685,22 +723,7 @@ if __name__ == '__main__':
             
         def OnKeyDown(self, evt):
             self.LogKeyEvent("KeyDown", evt)
-            if not self.current_accel.isValidAccelerator(evt):
-                # If the keystroke isn't valid for the current level but would
-                # be recognized by the root level, we have to skip it because
-                # we're about to reset the current level to the root level and
-                # the keystroke would be processed by the root level
-                if self.root_accel.isValidAccelerator(evt):
-                    self.root_accel.skipNext()
-                else:
-                    self.root_accel.reset()
-
-                # OnMenu event will never get generated if it doesn't appear in
-                # the accelerator table, so reset the accelerator table to the
-                # root table
-                dprint("Unknown accelerator; resetting to root")
-                if self.current_accel != self.root_accel:
-                    self.setAcceleratorLevel()
+            self.root_accel.processKeyDownEvent(evt)
                 
             evt.Skip()
 
