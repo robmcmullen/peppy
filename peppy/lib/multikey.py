@@ -320,6 +320,17 @@ class AcceleratorList(object):
     esc_keystroke = KeyAccelerator.split("ESC")[0]
     meta_esc_keystroke = KeyAccelerator.split("M-ESC")[0]
     
+    digit_value = {}
+    meta_digit_keystroke = {}
+    plain_digit_keystroke = {}
+    for i in range(10):
+        keystroke = KeyAccelerator.split("M-%d" % i)[0]
+        meta_digit_keystroke[keystroke.id] = keystroke
+        digit_value[keystroke.id] = i
+        keystroke = KeyAccelerator.split("%d" % i)[0]
+        plain_digit_keystroke[keystroke.id] = keystroke
+        digit_value[keystroke.id] = i
+    
     def __init__(self, *args, **kwargs):
         if 'frame' in kwargs:
             self.frame = kwargs['frame']
@@ -371,6 +382,13 @@ class AcceleratorList(object):
         for arg in args:
             dprint(str(arg))
             self.addKeyBinding(arg)
+        
+        # Special keybindings for the root level
+        if self.root == self:
+            for i in range(10):
+                self.addKeyBinding("M-%d" % i)
+                self.addKeyBinding("%d" % i)
+            self.resetRoot()
     
     def __str__(self):
         return self.getPrettyStr()
@@ -585,6 +603,22 @@ class AcceleratorList(object):
                 self.root.meta_next = True
                 self.displayCurrentKeystroke(keystroke)
                 return
+        elif eid in self.meta_digit_keystroke:
+            self.displayCurrentKeystroke(keystroke)
+            if self.root.repeat_value is None:
+                self.root.repeat_value = self.digit_value[eid]
+            else:
+                self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
+            dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
+            return
+        elif eid in self.plain_digit_keystroke and self.meta_next:
+            self.displayCurrentKeystroke(keystroke)
+            if self.root.repeat_value is None:
+                self.root.repeat_value = self.digit_value[eid]
+            else:
+                self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
+            dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
+            return
             
         self.displayCurrentKeystroke(keystroke)
         if eid in self.id_next_level:
@@ -617,6 +651,7 @@ class AcceleratorList(object):
     
     def resetRoot(self):
         self.root.meta_next = False
+        self.root.repeat_value = None
         self.root.current_keystrokes = []
     
     def resetKeyboardSuccess(self):
