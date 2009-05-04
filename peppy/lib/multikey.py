@@ -548,45 +548,55 @@ class AcceleratorList(object):
         else:
             eid = evt.GetId()
             if eid in self.menu_id_to_action:
-                dprint("in processEvent: evt=%s id=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, self.menu_id_to_action[eid]))
-                self.resetMenuSuccess()
-                action = self.menu_id_to_action[eid]
-                if action is not None:
-                    action(evt)
+                self.foundMenuAction(evt)
             elif eid in self.id_to_keystroke:
-                keystroke = self.id_to_keystroke[eid]
-                
-                if eid == self.esc_keystroke.id:
-                    if self.root.meta_next:
-                        keystroke = self.meta_esc_keystroke
-                        eid = keystroke.id
-                        self.root.meta_next = False
-                        self.root.current_keystrokes.pop()
-                        dprint("in processEvent: evt=%s id=%s FOUND M-ESC" % (str(evt.__class__), eid))
-                    elif self.root.current_keystrokes and self.root.current_keystrokes[-1] == self.meta_esc_keystroke:
-                        # M-ESC ESC is processed as a regular keystroke
-                        dprint("in processEvent: evt=%s id=%s FOUND M-ESC ESC" % (str(evt.__class__), eid))
-                        pass
-                    else:
-                        dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
-                        self.root.meta_next = True
-                        self.displayCurrentKeystroke(keystroke)
-                        return
-                    
-                self.displayCurrentKeystroke(keystroke)
-                if eid in self.id_next_level:
-                    dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
-                    self.setAcceleratorTable(self.id_next_level[eid])
-                else:
-                    dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
-                    self.resetKeyboardSuccess()
-                    action = self.keystroke_id_to_action[eid]
-                    if action is not None:
-                        action(evt)
-                    self.setAcceleratorTable()
+                self.foundKeyAction(evt)
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
                 self.reset()
+    
+    def foundMenuAction(self, evt):
+        """Fire off an action found in menu item or toolbar item list
+        """
+        eid = evt.GetId()
+        dprint("evt=%s id=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, self.menu_id_to_action[eid]))
+        self.resetMenuSuccess()
+        action = self.menu_id_to_action[eid]
+        if action is not None:
+            action(evt)
+    
+    def foundKeyAction(self, evt):
+        eid = evt.GetId()
+        keystroke = self.id_to_keystroke[eid]
+        
+        if eid == self.esc_keystroke.id:
+            if self.root.meta_next:
+                keystroke = self.meta_esc_keystroke
+                eid = keystroke.id
+                self.root.meta_next = False
+                self.root.current_keystrokes.pop()
+                dprint("in processEvent: evt=%s id=%s FOUND M-ESC" % (str(evt.__class__), eid))
+            elif self.root.current_keystrokes and self.root.current_keystrokes[-1] == self.meta_esc_keystroke:
+                # M-ESC ESC is processed as a regular keystroke
+                dprint("in processEvent: evt=%s id=%s FOUND M-ESC ESC" % (str(evt.__class__), eid))
+                pass
+            else:
+                dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
+                self.root.meta_next = True
+                self.displayCurrentKeystroke(keystroke)
+                return
+            
+        self.displayCurrentKeystroke(keystroke)
+        if eid in self.id_next_level:
+            dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
+            self.setAcceleratorTable(self.id_next_level[eid])
+        else:
+            dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
+            self.resetKeyboardSuccess()
+            action = self.keystroke_id_to_action[eid]
+            if action is not None:
+                action(evt)
+            self.setAcceleratorTable()
     
     def displayCurrentKeystroke(self, keystroke):
         """Add the keystroke to the list of keystrokes displayed in the status
