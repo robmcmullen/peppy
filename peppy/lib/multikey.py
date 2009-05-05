@@ -323,6 +323,7 @@ class AcceleratorList(object):
     digit_value = {}
     meta_digit_keystroke = {}
     plain_digit_keystroke = {}
+    digit_keycode = {}
     for i in range(10):
         keystroke = KeyAccelerator.split("M-%d" % i)[0]
         meta_digit_keystroke[keystroke.id] = keystroke
@@ -330,6 +331,7 @@ class AcceleratorList(object):
         keystroke = KeyAccelerator.split("%d" % i)[0]
         plain_digit_keystroke[keystroke.id] = keystroke
         digit_value[keystroke.id] = i
+        digit_keycode[keystroke.keycode] = i
     
     def __init__(self, *args, **kwargs):
         if 'frame' in kwargs:
@@ -348,6 +350,7 @@ class AcceleratorList(object):
             self.current_level = None
             
             self.meta_next = False
+            self.processing_esc_digit = False
             self.pending_cancel_key_registration = []
             self.current_keystrokes = []
         
@@ -387,7 +390,7 @@ class AcceleratorList(object):
         if self.root == self:
             for i in range(10):
                 self.addKeyBinding("M-%d" % i)
-                self.addKeyBinding("%d" % i)
+                self.addKeyBinding("ESC %d" % i)
             self.resetRoot()
     
     def __str__(self):
@@ -525,6 +528,33 @@ class AcceleratorList(object):
         
         @param evt: the CommandEvent instance from the EVT_MENU callback
         """
+        if self.root.meta_next and self.root.current_level == self.root:
+            # digit processing is only available at the root level
+            
+            dprint("char: %d" % evt.GetKeyCode())
+            if evt.GetKeyCode() in self.digit_keycode:
+                # digit processing after the ESC key is available in a special
+                # sublevel of ESC.  If digits are instead included in the root
+                # level, the digits will never get sent to the application's
+                # OnChar event because they'll be processed by the root
+                # accelerator table
+                self.setAcceleratorTable(self.id_next_level[self.esc_keystroke.id])
+                self.root.meta_next = False
+                self.root.processing_esc_digit = True
+            else:
+                # If we run into anything else while we're processing a digit
+                # string, stop the digit processing and reset the accelerator
+                # table to the root
+                self.setAcceleratorTable()
+                self.root.processing_esc_digit = False
+        elif self.root.processing_esc_digit and evt.GetKeyCode() not in self.digit_keycode:
+            # A non-digit character during digit processing will reset the
+            # accelerator table back to the root so we can then find out the
+            # command to which the digits will be applied.
+            self.processing_esc_digit = False
+            self.setAcceleratorTable()
+            
+            
         if not self.root.current_level.isValidAccelerator(evt):
             # If the keystroke isn't valid for the current level but would
             # be recognized by the root level, we have to skip it because
@@ -577,11 +607,11 @@ class AcceleratorList(object):
         """Fire off an action found in menu item or toolbar item list
         """
         eid = evt.GetId()
-        dprint("evt=%s id=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, self.menu_id_to_action[eid]))
+        dprint("evt=%s id=%s FOUND MENU ACTION %s repeat=%s" % (str(evt.__class__), eid, self.menu_id_to_action[eid], self.root.repeat_value))
         self.resetMenuSuccess()
         action = self.menu_id_to_action[eid]
         if action is not None:
-            action(evt)
+            action(evt, number=self.root.repeat_value)
     
     def foundKeyAction(self, evt):
         eid = evt.GetId()
@@ -611,7 +641,7 @@ class AcceleratorList(object):
                 self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
             dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
             return
-        elif eid in self.plain_digit_keystroke and self.meta_next:
+        elif eid in self.plain_digit_keystroke:
             self.displayCurrentKeystroke(keystroke)
             if self.root.repeat_value is None:
                 self.root.repeat_value = self.digit_value[eid]
@@ -625,11 +655,11 @@ class AcceleratorList(object):
             dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
             self.setAcceleratorTable(self.id_next_level[eid])
         else:
-            dprint("in processEvent: evt=%s id=%s FOUND ACTION %s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid]))
+            dprint("in processEvent: evt=%s id=%s FOUND ACTION %s repeat=%s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid], self.root.repeat_value))
             self.resetKeyboardSuccess()
             action = self.keystroke_id_to_action[eid]
             if action is not None:
-                action(evt)
+                action(evt, number=self.root.repeat_value)
             self.setAcceleratorTable()
     
     def displayCurrentKeystroke(self, keystroke):
