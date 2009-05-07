@@ -422,6 +422,13 @@ class AcceleratorList(object):
         and will cause the current keystrokes to be cancelled along with
         calling the action.
         """
+        if isinstance(key_binding, list):
+            for key_binding_entry in key_binding:
+                self._addKeyBinding(key_binding_entry, action)
+        else:
+            self._addKeyBinding(key_binding, action)
+    
+    def _addKeyBinding(self, key_binding, action=None):
         keystrokes = list(KeyAccelerator.split(key_binding))
         keystrokes.append(None)
         current = self
