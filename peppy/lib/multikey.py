@@ -661,7 +661,7 @@ class AcceleratorList(object):
                 self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
             dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
             return
-        elif eid in self.plain_digit_keystroke:
+        elif self.root.processing_esc_digit and eid in self.plain_digit_keystroke:
             self.displayCurrentKeystroke(keystroke)
             if self.root.repeat_value is None:
                 self.root.repeat_value = self.digit_value[eid]
