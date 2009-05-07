@@ -376,6 +376,10 @@ class AcceleratorList(object):
         # Map of all menu IDs in this level to actions
         self.menu_id_to_action = {}
         
+        # If the menu id has an index, i.e.  it's part of a list or radio
+        # button group, the index of the id is stored in this map
+        self.menu_id_to_index = {}
+        
         # Map used to quickly identify all valid keystrokes at this level
         self.valid_keystrokes = {}
         
@@ -446,7 +450,7 @@ class AcceleratorList(object):
                     current = accel_list
         self.accelerator_table = None
         
-    def addMenuItem(self, id, action=None):
+    def addMenuItem(self, id, action=None, index=-1):
         """Add a menu item that doesn't have an equivalent keystroke.
         
         Note that even if a menu item has a keystroke and that keystroke has
@@ -459,6 +463,9 @@ class AcceleratorList(object):
         if self.root != self:
             raise RuntimeError("Menu actions can only be added to the root level accelerators")
         self.menu_id_to_action[id] = action
+        if index >= 0:
+            dprint("Adding index %d to %d, %s" % (index, id, str(action)))
+            self.menu_id_to_index[id] = index
         self.accelerator_table = None
     
     def addCancelKeyBinding(self, key_binding, action=None):
@@ -614,11 +621,17 @@ class AcceleratorList(object):
         """Fire off an action found in menu item or toolbar item list
         """
         eid = evt.GetId()
-        dprint("evt=%s id=%s FOUND MENU ACTION %s repeat=%s" % (str(evt.__class__), eid, self.menu_id_to_action[eid], self.root.repeat_value))
         self.resetMenuSuccess()
         action = self.menu_id_to_action[eid]
         if action is not None:
-            action(evt, index=-1, multiplier=self.root.repeat_value)
+            try:
+                index = self.menu_id_to_index[eid]
+            except KeyError:
+                index = -1
+            dprint("evt=%s id=%s index=%d repeat=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, index, self.root.repeat_value, self.menu_id_to_action[eid]))
+            action.action(index, self.root.repeat_value)
+        else:
+            dprint("evt=%s id=%s repeat=%s FOUND MENU ACTION NONE" % (str(evt.__class__), eid, index, self.root.repeat_value))
     
     def foundKeyAction(self, evt):
         eid = evt.GetId()
@@ -666,7 +679,7 @@ class AcceleratorList(object):
             self.resetKeyboardSuccess()
             action = self.keystroke_id_to_action[eid]
             if action is not None:
-                action(evt, -1, multiplier=self.root.repeat_value)
+                action.actionKeystroke(evt, multiplier=self.root.repeat_value)
             self.setAcceleratorTable()
     
     def displayCurrentKeystroke(self, keystroke):
@@ -715,11 +728,13 @@ if __name__ == '__main__':
         def __init__(self, frame, message):
             self.frame = frame
             self.message = message
-        def __call__(self, evt, index=-1, multiplier=-1, **kwargs):
+        def action(self, index, multiplier=-1, **kwargs):
             if multiplier is not None:
                 self.frame.SetStatusText("%d x %s" % (multiplier, self.message))
             else:
                 self.frame.SetStatusText(self.message)
+        def actionKeystroke(self, evt, multiplier, **kwargs):
+            self.action(0, multiplier)
 
     #The frame with hotkey chaining.
 
@@ -747,6 +762,12 @@ if __name__ == '__main__':
             self.menuAdd(gmap, "Not Quitting\tC-X C-Q", StatusUpdater)
             self.menuAdd(gmap, "Emacs M-ESC test\tM-ESC A", StatusUpdater)
             self.menuAdd(gmap, "Exit\tC-Q", sys.exit)
+            
+            indexmap = wx.Menu()
+            self.menuAddM(menuBar, indexmap, "List", "List of items")
+            self.menuAdd(indexmap, "Item 1\tC-X 1", StatusUpdater, index=0)
+            self.menuAdd(indexmap, "Item 2\tC-X 2", StatusUpdater, index=1)
+            self.menuAdd(indexmap, "Item 3\tC-X 3", StatusUpdater, index=2)
 
             self.root_accel.addCancelKeyBinding("C-g", StatusUpdater(self, "Cancel"))
             self.root_accel.addCancelKeyBinding("M-ESC ESC", StatusUpdater(self, "Cancel"))
@@ -844,7 +865,7 @@ if __name__ == '__main__':
             
             dprint("%s: id=%d %s code=%s modifiers=%s" % (evType, evt.GetId(), keyname, keycode, modifiers))
 
-        def menuAdd(self, menu, name, fcn, id=-1, kind=wx.ITEM_NORMAL):
+        def menuAdd(self, menu, name, fcn, id=-1, kind=wx.ITEM_NORMAL, index=-1):
             def _spl(st):
                 if '\t' in st:
                     return st.split('\t', 1)
@@ -888,7 +909,7 @@ if __name__ == '__main__':
             
             if id == -1:
                 id = wx.NewId()
-            self.root_accel.addMenuItem(id, fcn)
+            self.root_accel.addMenuItem(id, fcn, index)
             
             a = wx.MenuItem(menu, id, label, name, kind)
             menu.AppendItem(a)
