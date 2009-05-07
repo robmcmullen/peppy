@@ -883,12 +883,12 @@ if __name__ == '__main__':
                     id = keystrokes[0].id
                 
                 self.root_accel.addKeyBinding(acc, fcn)
-                self.root_accel.addMenuItem(id, fcn)
             else:
                 label = ns
             
             if id == -1:
                 id = wx.NewId()
+            self.root_accel.addMenuItem(id, fcn)
             
             a = wx.MenuItem(menu, id, label, name, kind)
             menu.AppendItem(a)
