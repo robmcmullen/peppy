@@ -165,7 +165,7 @@ class Keystroke(object):
 
 
 class KeyAccelerator(object):
-    debug = True
+    debug = False
     
     # Cache that maps accelerator string to the sequence of keystrokes
     accelerator_cache = {}
@@ -209,14 +209,14 @@ class KeyAccelerator(object):
             
             chars, key = cls.matchKey(acc[j:])
             if key is not None:
-                if cls.debug: print "key found: %s, chars=%d" % (key, chars)
+                if cls.debug: dprint("key found: %s, chars=%d" % (key, chars))
                 normalized.append((flags, key))
             else:
-                if cls.debug: print "unknown key %s" % acc[j:j+chars]
+                if cls.debug: dprint("unknown key %s" % acc[j:j+chars])
             if j + chars < len(acc):
-                if cls.debug: print "remaining='%s'" % acc[j+chars:]
+                if cls.debug: dprint("remaining='%s'" % acc[j+chars:])
             i = j + chars
-        if cls.debug: print "keystrokes: %s" % normalized
+        if cls.debug: dprint("keystrokes: %s" % normalized)
         return normalized
     
     @classmethod
@@ -225,10 +225,10 @@ class KeyAccelerator(object):
         for key in normalized:
             try:
                 keystroke = cls.normalized_keystroke_cache[key]
-                dprint("Found cached keystroke %s" % keystroke.getEmacsAccelerator())
+                if cls.debug: dprint("Found cached keystroke %s" % keystroke.getEmacsAccelerator())
             except KeyError:
                 keystroke = Keystroke(key[0], key[1])
-                dprint("Created and cached keystroke %s" % keystroke.getEmacsAccelerator())
+                if cls.debug: dprint("Created and cached keystroke %s" % keystroke.getEmacsAccelerator())
                 cls.normalized_keystroke_cache[key] = keystroke
             keystrokes.append(keystroke)
         return tuple(keystrokes)
@@ -611,7 +611,7 @@ class AcceleratorList(object):
         self.resetMenuSuccess()
         action = self.menu_id_to_action[eid]
         if action is not None:
-            action(evt, number=self.root.repeat_value)
+            action(evt, index=-1, multiplier=self.root.repeat_value)
     
     def foundKeyAction(self, evt):
         eid = evt.GetId()
@@ -659,7 +659,7 @@ class AcceleratorList(object):
             self.resetKeyboardSuccess()
             action = self.keystroke_id_to_action[eid]
             if action is not None:
-                action(evt, number=self.root.repeat_value)
+                action(evt, -1, multiplier=self.root.repeat_value)
             self.setAcceleratorTable()
     
     def displayCurrentKeystroke(self, keystroke):
@@ -708,9 +708,9 @@ if __name__ == '__main__':
         def __init__(self, frame, message):
             self.frame = frame
             self.message = message
-        def __call__(self, evt, number=None, **kwargs):
-            if number is not None:
-                self.frame.SetStatusText("%d x %s" % (number,self.message))
+        def __call__(self, evt, index=-1, multiplier=-1, **kwargs):
+            if multiplier is not None:
+                self.frame.SetStatusText("%d x %s" % (multiplier, self.message))
             else:
                 self.frame.SetStatusText(self.message)
 
