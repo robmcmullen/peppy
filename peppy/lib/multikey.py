@@ -303,7 +303,7 @@ class KeyAccelerator(object):
 
 
 class FakeQuotedCharEvent(object):
-    def __init__(self, keystroke, id=-1):
+    def __init__(self, event_object, keystroke, id=-1):
         self.id = id
         self.modifiers = keystroke.flags
         keycode = keystroke.keycode
@@ -316,6 +316,10 @@ class FakeQuotedCharEvent(object):
             elif self.modifiers == wx.ACCEL_SHIFT:
                 keycode += 32
         self.keycode = self.unicode = keycode
+        self.event_object = event_object
+    
+    def GetEventObject(self):
+        return self.event_object
     
     def GetId(self):
         return self.id
@@ -352,7 +356,7 @@ class QuotedCharAction(object):
         return self.multiplier
     
     def copyLastEvent(self, evt):
-        self.last_event = FakeQuotedCharEvent(evt)
+        self.last_event = FakeQuotedCharEvent(evt.GetEventObject())
     
     def getLastEvent(self):
         return self.last_event
@@ -379,10 +383,12 @@ class AcceleratorList(object):
     esc_keystroke = KeyAccelerator.split("ESC")[0]
     meta_esc_keystroke = KeyAccelerator.split("M-ESC")[0]
     
+    # Various mappings between keystrokes, keystroke IDs, and keycodes
     digit_value = {}
     meta_digit_keystroke = {}
     plain_digit_keystroke = {}
     digit_keycode = {}
+    digit_keycode_to_keystroke = {}
     for i in range(10):
         keystroke = KeyAccelerator.split("M-%d" % i)[0]
         meta_digit_keystroke[keystroke.id] = keystroke
@@ -391,18 +397,13 @@ class AcceleratorList(object):
         plain_digit_keystroke[keystroke.id] = keystroke
         digit_value[keystroke.id] = i
         digit_keycode[keystroke.keycode] = i
-    
+        digit_keycode_to_keystroke[keystroke.keycode] = keystroke
             
     # Blank level used in quoted character processing
     def __init__(self, *args, **kwargs):
-        if 'frame' in kwargs:
-            self.frame = kwargs['frame']
         if 'root' in kwargs:
             self.root = kwargs['root']
         else:
-            if not hasattr(self, 'frame'):
-                raise KeyError('Root level needs wx.Frame instance')
-            
             # Root also needs several extra variables to keep track of
             self.root = self
             
@@ -422,6 +423,9 @@ class AcceleratorList(object):
             self.quoted_next = False
             
             self.blank_quoted_level = None
+            
+            self.bound_controls = []
+            self.current_target = None
         
         # Cached value of wx.AcceleratorTable; will be regenerated
         # automatically by getTable if set to None
@@ -472,7 +476,7 @@ class AcceleratorList(object):
         return self.getPrettyStr()
     
     def __del__(self):
-        print("deleting %s" % self)
+        print("deleting %s, root=%s" % (repr(self), repr(self.root)))
     
     def getPrettyStr(self, prefix=""):
         """Recursive-capable function to return a list of keystrokes at this
@@ -487,6 +491,37 @@ class AcceleratorList(object):
             if key in self.id_next_level:
                 lines.append(self.id_next_level[key].getPrettyStr(prefix + "  "))
         return os.linesep.join(lines)
+    
+    def manageFrame(self, frame, *ctrls):
+        """Initialize the frame and controls to be managed by the key
+        processor.
+        
+        """
+        self.root.bindEvents(frame, *ctrls)
+        self.root.setAcceleratorTable()
+    
+    def cleanup(self):
+        """Remove events and cleanup recursive structure.
+        
+        Because there are recursive references to other AcceleratorLists inside
+        the root lists, the root won't be automatically garbarge collected.
+        
+        I might be able to use weak references to get rid of all this stuff.
+        """
+        root = self.root
+        root.unbindEvents()
+        wx.CallAfter(root.cleanSubLevels)
+    
+    def cleanSubLevels(self):
+        """Recursive function to remove all references to the root object
+        """
+        self.current_level = None
+        self.root = repr(self.root)
+        for accel_list in self.id_next_level.values():
+            accel_list.cleanSubLevels()
+        self.id_next_level = None
+        self.menu_id_to_action = None
+        self.keystroke_id_to_action = None
     
     def addDefaultKeyAction(self, action):
         """If no other action is matched, this action is used.
@@ -577,30 +612,6 @@ class AcceleratorList(object):
         self.setAcceleratorTable(self.getQuotedLevel())
         dprint(self.root.blank_quoted_level.accelerator_table_entries)
     
-    def disableAllMenus(self):
-        menubar = self.frame.GetMenuBar()
-        count = menubar.GetMenuCount()
-        save = []
-        
-        newmenubar = wx.MenuBar()
-        for i in range(count):
-            menubar.EnableTop(i, False)
-            label = menubar.GetMenuLabel(i)
-            newmenu = wx.Menu()
-            #oldmenu = menubar.Replace(i, newmenu, label)
-            newmenubar.Append(newmenu, label)
-            #menu = menubar.GetMenu(i)
-            #self.disableMenuItems(menu)
-        self.frame.SetMenuBar(newmenubar)
-        self.frame.Unbind(wx.EVT_MENU)
-    
-    def disableMenuItems(self, menu):
-        items = menu.GetMenuItems()
-        dprint(items)
-        for item in items:
-            dprint(item)
-            item.Enable(False)
-    
     def getQuotedLevel(self):
         if self.root.blank_quoted_level is None:
             self.root.blank_quoted_level = AcceleratorList(root=self.root, blank=True)
@@ -667,26 +678,47 @@ class AcceleratorList(object):
             level = self.root
         if self.root.current_level != level:
             self.root.current_level = level
-            dprint(self.root.frame.GetAcceleratorTable())
-            self.root.frame.SetAcceleratorTable(wx.NullAcceleratorTable)
-            self.root.frame.SetAcceleratorTable(level.getTable())
+            table = level.getTable()
+            self.root.frame.SetAcceleratorTable(table)
             dprint("Changed table to %s" % str(level.accelerator_table_entries))
     
-    def bindEvents(self, ctrl):
-        root = self.root
-        self.frame.Bind(wx.EVT_MENU, root.OnMenu)
-        self.frame.Bind(wx.EVT_MENU_CLOSE, root.OnMenuClose)
-        self.frame.Bind(wx.EVT_CHAR_HOOK, root.OnCharHook)
-        ctrl.Bind(wx.EVT_KEY_DOWN, root.OnKeyDown)
-        ctrl.Bind(wx.EVT_CHAR, root.OnChar)
+    def bindEvents(self, frame, *ctrls):
+        """Initialization function to create all necessary event bindings
+        between the frame and the managed controls.
         
-    def unbindEvents(self, ctrl):
+        """
         root = self.root
-        self.frame.Unbind(wx.EVT_MENU)
-        self.frame.Unbind(wx.EVT_MENU_CLOSE)
-        self.frame.Unbind(wx.EVT_CHAR_HOOK)
-        ctrl.Unbind(wx.EVT_KEY_DOWN)
-        ctrl.Unbind(wx.EVT_CHAR)
+        root.frame = frame
+        frame.Bind(wx.EVT_MENU, root.OnMenu)
+        frame.Bind(wx.EVT_MENU_CLOSE, root.OnMenuClose)
+        frame.Bind(wx.EVT_CHAR_HOOK, root.OnCharHook)
+        for ctrl in ctrls:
+            root.bound_controls.append(ctrl)
+            ctrl.Bind(wx.EVT_KEY_DOWN, root.OnKeyDown)
+            ctrl.Bind(wx.EVT_CHAR, root.OnChar)
+            ctrl.Bind(wx.EVT_SET_FOCUS, root.OnSetFocus)
+        root.current_target = frame.FindFocus()
+        
+    def unbindEvents(self):
+        """Cleanup function to remove event bindings
+        
+        """
+        root = self.root
+        root.frame.Unbind(wx.EVT_MENU)
+        root.frame.Unbind(wx.EVT_MENU_CLOSE)
+        root.frame.Unbind(wx.EVT_CHAR_HOOK)
+        for ctrl in self.bound_controls:
+            ctrl.Unbind(wx.EVT_KEY_DOWN)
+            ctrl.Unbind(wx.EVT_CHAR)
+            ctrl.Unbind(wx.EVT_SET_FOCUS)
+        self.bound_controls = []
+        root.frame = None
+    
+    def OnSetFocus(self, evt):
+        dprint("Setting focus to %s" % evt.GetEventObject())
+        self.root.cancelMultiKey()
+        self.root.current_target = evt.GetEventObject()
+        evt.Skip()
         
     def OnCharHook(self, evt):
         """Character event processor that handles everything not recognized
@@ -705,7 +737,7 @@ class AcceleratorList(object):
             self.root.repeat_value = self.root.quoted_next.getMultiplier()
             dprint("Processing quoted character, multiplier=%s" % self.root.repeat_value)
             self.frame.SetStatusText("")
-        elif self.current_keystrokes:
+        elif self.root.current_level != self.root and not self.root.processing_esc_digit:
             # If we get an unhandled keystroke after a multi-key sequence, we
             # ignore it as a bad key combination.
             self.reset("Unknown multi-key sequence")
@@ -728,37 +760,45 @@ class AcceleratorList(object):
         
         @param evt: the CommandEvent instance from the EVT_MENU callback
         """
-        dprint("char=%s, unichar=%s, multiplier=%d, id=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), self.root.repeat_value, evt.GetId()))
+        eid = evt.GetId()
+        dprint("char=%s, unichar=%s, multiplier=%d, id=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), self.root.repeat_value, eid))
         if self.root.quoted_next:
             dprint("Quoted next; skipping OnKeyDown to be processed by OnChar")
             evt.Skip()
             return
         
-        if self.root.meta_next and self.root.current_level == self.root:
+        if self.root.meta_next:
             # digit processing is only available at the root level
             
-            dprint("char: %d" % evt.GetKeyCode())
             if evt.GetKeyCode() in self.digit_keycode:
                 # digit processing after the ESC key is available in a special
                 # sublevel of ESC.  If digits are instead included in the root
                 # level, the digits will never get sent to the application's
                 # OnChar event because they'll be processed by the root
                 # accelerator table
+                dprint("After ESC, found digit char: %d" % evt.GetKeyCode())
                 self.setAcceleratorTable(self.id_next_level[self.esc_keystroke.id])
                 self.root.meta_next = False
                 self.root.processing_esc_digit = True
+                self.root.processEscDigit(self.digit_keycode_to_keystroke[evt.GetKeyCode()])
+                return
             else:
                 # If we run into anything else while we're processing a digit
                 # string, stop the digit processing and reset the accelerator
                 # table to the root
+                dprint("After ESC, found non-digit char: %d" % evt.GetKeyCode())
                 self.setAcceleratorTable()
                 self.root.processing_esc_digit = False
-        elif self.root.processing_esc_digit and evt.GetKeyCode() not in self.digit_keycode:
-            # A non-digit character during digit processing will reset the
-            # accelerator table back to the root so we can then find out the
-            # command to which the digits will be applied.
-            self.processing_esc_digit = False
-            self.setAcceleratorTable()
+        elif self.root.processing_esc_digit:
+            if evt.GetKeyCode() in self.digit_keycode:
+                self.root.processEscDigit(self.digit_keycode_to_keystroke[evt.GetKeyCode()])
+                return
+            else:
+                # A non-digit character during digit processing will reset the
+                # accelerator table back to the root so we can then find out
+                # the command to which the digits will be applied.
+                self.processing_esc_digit = False
+                self.setAcceleratorTable()
             
             
         if not self.root.current_level.isValidAccelerator(evt):
@@ -775,7 +815,7 @@ class AcceleratorList(object):
             dprint("Unknown accelerator; processing as character event")
         
         if wx.Platform == '__WXMSW__' and evt.GetKeyCode() == wx.WXK_ESCAPE:
-            evt = FakeQuotedCharEvent(self.esc_keystroke, self.esc_keystroke.id)
+            evt = FakeQuotedCharEvent(self.root.current_target, self.esc_keystroke, self.esc_keystroke.id)
             self.OnMenu(evt)
         else:
             evt.Skip()
@@ -820,7 +860,7 @@ class AcceleratorList(object):
                 except KeyError:
                     keystroke = self.root.findKeystrokeFromMenuId(eid)
                 dprint(keystroke)
-                evt = FakeQuotedCharEvent(keystroke)
+                evt = FakeQuotedCharEvent(self.root.current_target, keystroke)
                 self.root.OnChar(evt)
             elif eid in self.menu_id_to_action:
                 self.foundMenuAction(evt)
@@ -855,6 +895,14 @@ class AcceleratorList(object):
                 index = -1
             dprint("evt=%s id=%s index=%d repeat=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, index, self.root.repeat_value, self.menu_id_to_action[eid]))
             action.action(index, self.root.repeat_value)
+        elif self.root.meta_next and eid in self.plain_digit_keystroke:
+            self.root.meta_next = False
+            self.root.processing_esc_digit = True
+            self.root.processEscDigit(self.plain_digit_keystroke[eid])
+            return
+        elif self.root.processing_esc_digit and eid in self.plain_digit_keystroke:
+            self.root.processEscDigit(self.plain_digit_keystroke[eid])
+            return
         else:
             dprint("evt=%s id=%s repeat=%s FOUND MENU ACTION NONE" % (str(evt.__class__), eid, index, self.root.repeat_value))
             self.frame.SetStatusText("None")
@@ -878,25 +926,15 @@ class AcceleratorList(object):
             else:
                 dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                 self.root.meta_next = True
-                self.displayCurrentKeystroke(keystroke)
-                return
+                #self.displayCurrentKeystroke(keystroke)
+                #return
         elif eid in self.meta_digit_keystroke:
-            self.displayCurrentKeystroke(keystroke)
-            if not self.root.repeat_initialized:
-                self.root.repeat_value = self.digit_value[eid]
-                self.root.repeat_initialized = True
-            else:
-                self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
-            dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
+            self.root.processEscDigit(keystroke)
             return
-        elif self.root.processing_esc_digit and eid in self.plain_digit_keystroke:
-            self.displayCurrentKeystroke(keystroke)
-            if not self.root.repeat_initialized:
-                self.root.repeat_value = self.digit_value[eid]
-                self.root.repeat_initialized = True
-            else:
-                self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[eid]
-            dprint("in processEvent: evt=%s id=%s FOUND REPEAT %d" % (str(evt.__class__), eid, self.root.repeat_value))
+        elif (self.root.meta_next or self.root.processing_esc_digit) and eid in self.plain_digit_keystroke:
+            self.root.meta_next = False
+            self.root.processing_esc_digit = True
+            self.root.processEscDigit(keystroke)
             return
             
         self.displayCurrentKeystroke(keystroke)
@@ -914,6 +952,15 @@ class AcceleratorList(object):
             if not self.root.quoted_next:
                 self.resetKeyboardSuccess()
                 self.setAcceleratorTable()
+    
+    def processEscDigit(self, keystroke):
+        self.displayCurrentKeystroke(keystroke)
+        if not self.root.repeat_initialized:
+            self.root.repeat_value = self.digit_value[keystroke.id]
+            self.root.repeat_initialized = True
+        else:
+            self.root.repeat_value = 10 * self.root.repeat_value + self.digit_value[keystroke.id]
+        dprint("in processEscDigit: FOUND REPEAT %d" % self.root.repeat_value)
     
     def displayCurrentKeystroke(self, keystroke):
         """Add the keystroke to the list of keystrokes displayed in the status
@@ -979,10 +1026,11 @@ if __name__ == '__main__':
         def actionKeystroke(self, evt, multiplier=1, **kwargs):
             text = unichr(evt.GetUnicodeKey()) * multiplier
             dprint("char=%s, unichar=%s, multiplier=%s, text=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), multiplier, text))
-            if hasattr(self.frame.ctrl, 'WriteText'):
-                self.frame.ctrl.WriteText(text)
+            ctrl = evt.GetEventObject()
+            if hasattr(ctrl, 'WriteText'):
+                ctrl.WriteText(text)
             else:
-                self.frame.ctrl.AddText(text)
+                ctrl.AddText(text)
 
     class PrimaryMenu(object):
         def __init__(self, frame):
@@ -1000,33 +1048,42 @@ if __name__ == '__main__':
         def actionKeystroke(self, evt, multiplier, **kwargs):
             self.action(0, multiplier)
     
-    #The frame with hotkey chaining.
-
+    
     class MainFrame(wx.Frame):
         def __init__(self):
             wx.Frame.__init__(self, None, -1, "test")
             self.CreateStatusBar()
+            
+            sizer = wx.BoxSizer(wx.VERTICAL)
             self.ctrl = wx.stc.StyledTextCtrl(self, -1)
             self.ctrl.CmdKeyClearAll()
-            self.ctrl.SetFocus()
+            sizer.Add(self.ctrl, 0, wx.EXPAND)
+            
+            # ESC repeat works for TextCtrl, but not for STC
+            self.text = wx.TextCtrl(self, -1, style=wx.TE_MULTILINE|wx.WANTS_CHARS)
+            self.text.SetFocus()
+
+            sizer.Add(self.text, 0, wx.EXPAND)
+            
+            self.SetSizer(sizer)
 
             menuBar = wx.MenuBar()
             self.SetMenuBar(menuBar)  # Adding empty sample menubar
 
             self.root_accel = AcceleratorList(frame=self)
-            self.root_accel.bindEvents(self.ctrl)
-
+            self.root_accel.manageFrame(self, self.ctrl, self.text)
+            
             self.setPrimaryMenu()
             self.setToolbar()
             
             self.Show(True)
 
         def setPrimaryMenu(self):
-            self.root_accel.unbindEvents(self.ctrl)
+            self.root_accel.cleanup()
 
             menuBar = wx.MenuBar()
             gmap = wx.Menu()
-            self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c", frame=self)
+            self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c")
             
             self.menuAddM(menuBar, gmap, "Global", "Global key map")
             self.menuAdd(gmap, "Open\tC-O", StatusUpdater)
@@ -1049,16 +1106,17 @@ if __name__ == '__main__':
             self.root_accel.addQuotedCharKeyBinding("M-q")
             self.root_accel.addDefaultKeyAction(SelfInsertCommand(self))
             
-            self.root_accel.setAcceleratorTable()
             dprint(self.root_accel)
-            self.root_accel.bindEvents(self.ctrl)
+            dprint(self)
+            dprint(self.ctrl)
+            self.root_accel.manageFrame(self, self.ctrl, self.text)
         
         def setAlternateMenu(self):
-            self.root_accel.unbindEvents(self.ctrl)
+            self.root_accel.cleanup()
             
             menuBar = wx.MenuBar()
             gmap = wx.Menu()
-            self.root_accel = AcceleratorList("^X", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-x C-c", frame=self)
+            self.root_accel = AcceleratorList("^X", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-x C-c")
             
             self.menuAddM(menuBar, gmap, "Alternate", "Global key map")
             self.menuAdd(gmap, "New\tC-N", StatusUpdater)
@@ -1073,9 +1131,8 @@ if __name__ == '__main__':
             self.root_accel.addQuotedCharKeyBinding("M-q")
             self.root_accel.addDefaultKeyAction(SelfInsertCommand(self))
             
-            self.root_accel.setAcceleratorTable()
             dprint(self.root_accel)
-            self.root_accel.bindEvents(self.ctrl)
+            self.root_accel.manageFrame(self, self.ctrl, self.text)
         
         def setToolbar(self):
             self.toolbar = self.CreateToolBar(wx.TB_HORIZONTAL)
