@@ -303,8 +303,8 @@ class KeyAccelerator(object):
 
 
 class FakeQuotedCharEvent(object):
-    def __init__(self, keystroke):
-        self.id = -1
+    def __init__(self, keystroke, id=-1):
+        self.id = id
         self.modifiers = keystroke.flags
         keycode = keystroke.keycode
         # If the keycode is ASCII, normalize it to a capital letter
@@ -773,7 +773,12 @@ class AcceleratorList(object):
             # the accelerator table, so reset the accelerator table to the
             # root table
             dprint("Unknown accelerator; processing as character event")
-        evt.Skip()
+        
+        if wx.Platform == '__WXMSW__' and evt.GetKeyCode() == wx.WXK_ESCAPE:
+            evt = FakeQuotedCharEvent(self.esc_keystroke, self.esc_keystroke.id)
+            self.OnMenu(evt)
+        else:
+            evt.Skip()
 
     def OnMenu(self, evt):
         """Main event processing loop to be called from the Frame's EVT_MENU
