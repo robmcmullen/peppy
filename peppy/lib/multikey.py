@@ -305,9 +305,17 @@ class KeyAccelerator(object):
 class FakeQuotedCharEvent(object):
     def __init__(self, keystroke):
         self.id = -1
-        self.keycode = keystroke.keycode
         self.modifiers = keystroke.flags
-        self.unicode = keystroke.keycode
+        keycode = keystroke.keycode
+        # If the keycode is ASCII, normalize it to a capital letter
+        if keycode >= ord('a') and keycode <= ord('z'):
+            keycode -= 32
+        if keycode >= ord('A') and keycode <= ord('Z'):
+            if self.modifiers == wx.ACCEL_CTRL:
+                keycode -= 64
+            elif self.modifiers == wx.ACCEL_SHIFT:
+                keycode += 32
+        self.keycode = self.unicode = keycode
     
     def GetId(self):
         return self.id
@@ -459,8 +467,6 @@ class AcceleratorList(object):
                     self.addKeyBinding("M-%d" % i)
                     self.addKeyBinding("ESC %d" % i)
                 self.resetRoot()
-        else:
-            self.addKeyBinding("ESC")
     
     def __str__(self):
         return self.getPrettyStr()
@@ -669,16 +675,25 @@ class AcceleratorList(object):
     def bindEvents(self, ctrl):
         root = self.root
         self.frame.Bind(wx.EVT_MENU, root.OnMenu)
-        self.frame.Bind(wx.EVT_MENU_OPEN, root.OnMenuOpen)
+        self.frame.Bind(wx.EVT_MENU_CLOSE, root.OnMenuClose)
+        self.frame.Bind(wx.EVT_CHAR_HOOK, root.OnCharHook)
         ctrl.Bind(wx.EVT_KEY_DOWN, root.OnKeyDown)
         ctrl.Bind(wx.EVT_CHAR, root.OnChar)
         
     def unbindEvents(self, ctrl):
         root = self.root
         self.frame.Unbind(wx.EVT_MENU)
-        self.frame.Unbind(wx.EVT_MENU_OPEN)
+        self.frame.Unbind(wx.EVT_MENU_CLOSE)
+        self.frame.Unbind(wx.EVT_CHAR_HOOK)
         ctrl.Unbind(wx.EVT_KEY_DOWN)
         ctrl.Unbind(wx.EVT_CHAR)
+        
+    def OnCharHook(self, evt):
+        """Character event processor that handles everything not recognized
+        by the menu or keyboard events.
+        """
+        dprint("char=%s, unichar=%s, multiplier=%d, id=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), self.root.repeat_value, evt.GetId()))
+        evt.Skip()
         
     def OnChar(self, evt):
         """Character event processor that handles everything not recognized
@@ -690,6 +705,12 @@ class AcceleratorList(object):
             self.root.repeat_value = self.root.quoted_next.getMultiplier()
             dprint("Processing quoted character, multiplier=%s" % self.root.repeat_value)
             self.frame.SetStatusText("")
+        elif self.current_keystrokes:
+            # If we get an unhandled keystroke after a multi-key sequence, we
+            # ignore it as a bad key combination.
+            self.reset("Unknown multi-key sequence")
+            return
+        
         self.root.default_key_action.actionKeystroke(evt, multiplier=self.root.repeat_value)
         self.resetRoot()
         if self.root.current_level != self.root:
@@ -764,18 +785,17 @@ class AcceleratorList(object):
         @param evt: the CommandEvent instance from the EVT_MENU callback
         """
         dprint("id=%d event=%s" % (evt.GetId(), evt))
-#        if self.root.quoted_reset:
-#            # Short circuit this character so that it isn't processed
-#            dprint("Found quoted character %s, multpilier=%s" % (evt.GetString(), self.root.repeat_value))
-#            return
         self.root.current_level.processEvent(evt)
     
-    def OnMenuOpen(self, evt):
-        dprint("id=%d event=%s" % (evt.GetId(), evt))
-        if not self.root.quoted_next:
-            # On Windows, the EVT_MENU_OPEN event is triggered when an
-            # accelerator exists in a menu item.
-            self.cancelMultiKey()
+    def OnMenuClose(self, evt):
+        """Helper event processing to cancel multi-key keystrokes
+        
+        Using EVT_MENU_CLOSE instead of EVT_MENU_OPEN because on MSW the
+        EVT_MENU_OPEN event is called when a keyboard accelerator matches the
+        menu accelerator, regardless of the state of the accelerator table.
+        """
+        dprint("id=%d menu_id=%d" % (evt.GetId(), evt.GetMenuId()))
+        self.cancelMultiKey()
 
     def processEvent(self, evt):
         """Main processing loop used on the current keystroke level.
@@ -790,10 +810,13 @@ class AcceleratorList(object):
         else:
             eid = evt.GetId()
             if self.root.quoted_next:
-                keystroke = self.id_to_keystroke[eid]
+                try:
+                    keystroke = self.root.id_to_keystroke[eid]
+                except KeyError:
+                    keystroke = self.root.findKeystrokeFromMenuId(eid)
                 dprint(keystroke)
                 evt = FakeQuotedCharEvent(keystroke)
-                self.OnChar(evt)
+                self.root.OnChar(evt)
             elif eid in self.menu_id_to_action:
                 self.foundMenuAction(evt)
             elif eid in self.id_to_keystroke:
@@ -801,6 +824,19 @@ class AcceleratorList(object):
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
                 self.reset()
+    
+    def findKeystrokeFromMenuId(self, eid):
+        """Find the keystroke that corresponds to the current menu ID
+        
+        Will raise KeyError if eid not fount in the list of valid menu actions
+        """
+        action = self.menu_id_to_action[eid]
+        dprint("checking %s" % str(self.keystroke_id_to_action))
+        for keystroke_id, keystroke_action in self.keystroke_id_to_action.iteritems():
+            if action == keystroke_action:
+                keystroke = self.id_to_keystroke[keystroke_id]
+                return keystroke
+        raise KeyError
     
     def foundMenuAction(self, evt):
         """Fire off an action found in menu item or toolbar item list
