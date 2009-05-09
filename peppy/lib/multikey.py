@@ -606,6 +606,9 @@ class CurrentKeystrokes(object):
         self.quoted_next = False
         
         self.blank_quoted_level = None
+        
+        # temporary variable to hold the last keycode from key down event
+        self.unknown_keystroke = None
     
         # Repeat values
         self.repeat_initialized = False
@@ -845,7 +848,9 @@ class AcceleratorManager(AcceleratorList):
         try:
             self.entry.processChar(evt, self)
         except UnknownKeySequence:
-            self.reset("Unknown multi-key sequence")
+            keystroke = self.entry.unknown_keystroke
+            dprint(keystroke)
+            self.resetKeyboardFail(keystroke, "Unknown multi-key sequence")
             return
         
         action = self.default_key_action.getAction(self.current_target)
@@ -890,6 +895,7 @@ class AcceleratorManager(AcceleratorList):
             evt = FakeQuotedCharEvent(self.current_target, self.esc_keystroke)
             self.OnMenu(evt)
         else:
+            self.entry.unknown_keystroke = keystroke
             evt.Skip()
     
     def processEsc(self, evt, keystroke):
@@ -922,18 +928,18 @@ class AcceleratorManager(AcceleratorList):
             else:
                 dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                 self.entry.meta_next = True
-                self.displayCurrentKeystroke(keystroke)
+                self.updateCurrentKeystroke(keystroke)
                 return True, keystroke
         elif eid in self.meta_digit_keystroke:
             self.entry.processEscDigit(keystroke)
-            self.displayCurrentKeystroke(keystroke)
+            self.updateCurrentKeystroke(keystroke)
             return True, keystroke
         elif (self.entry.meta_next or self.entry.processing_esc_digit) and eid in self.plain_digit_keystroke:
             dprint("After ESC, found digit char: %d" % evt.GetKeyCode())
             self.entry.meta_next = False
             self.entry.processing_esc_digit = True
             self.entry.processEscDigit(keystroke)
-            self.displayCurrentKeystroke(keystroke)
+            self.updateCurrentKeystroke(keystroke)
             return True, keystroke
         elif self.entry.meta_next:
             # If we run into anything else while we're processing a digit
@@ -974,10 +980,10 @@ class AcceleratorManager(AcceleratorList):
         level) it will return False.
         """
         eid = keystroke.id
-        self.displayCurrentKeystroke(keystroke)
         if eid in self.current_level.id_next_level:
             dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
             self.current_level = self.current_level.id_next_level[eid]
+            self.updateCurrentKeystroke(keystroke)
             return True
         elif eid in self.current_level.keystroke_id_to_action:
             dprint("in processEvent: evt=%s id=%s FOUND ACTION %s repeat=%s" % (str(evt.__class__), eid, self.current_level.keystroke_id_to_action[eid], self.entry.repeat_value))
@@ -985,7 +991,7 @@ class AcceleratorManager(AcceleratorList):
             if action is not None:
                 action.actionKeystroke(evt, multiplier=self.entry.repeat_value)
             else:
-                self.frame.SetStatusText("%s: No action specified for keystroke" % KeyAccelerator.getEmacsAccelerator(self.entry.current_keystrokes))
+                self.updateCurrentKeystroke(keystroke, "No action specified for keystroke")
             
             if not self.entry.quoted_next:
                 self.resetKeyboardSuccess()
@@ -1085,7 +1091,7 @@ class AcceleratorManager(AcceleratorList):
             if processed:
                 return
             
-            self.reset("Unknown multi-key sequence")
+            self.resetKeyboardFail(keystroke, "Unknown multi-key sequence")
             return
             
         action = self.getMenuAction(eid)
@@ -1109,12 +1115,20 @@ class AcceleratorManager(AcceleratorList):
             self.frame.SetStatusText("None")
         self.resetMenuSuccess()
     
-    def displayCurrentKeystroke(self, keystroke):
+    def updateCurrentKeystroke(self, keystroke, info=None):
         """Add the keystroke to the list of keystrokes displayed in the status
         bar as the user is typing.
         """
         self.entry.current_keystrokes.append(keystroke)
+        self.displayCurrentKeystroke(info)
+    
+    def displayCurrentKeystroke(self, info=None):
+        """Display the list of keystrokes (with an optional informational
+        message) in the status bar
+        """
         text = KeyAccelerator.getEmacsAccelerator(self.entry.current_keystrokes)
+        if info is not None:
+            text += ": " + info
         self.frame.SetStatusText(text)
     
     def cancelMultiKey(self):
@@ -1127,6 +1141,11 @@ class AcceleratorManager(AcceleratorList):
         self.current_level = self
     
     def resetKeyboardSuccess(self):
+        self.entry = CurrentKeystrokes()
+        self.current_level = self
+    
+    def resetKeyboardFail(self, keystroke, info=None):
+        self.updateCurrentKeystroke(keystroke, info)
         self.entry = CurrentKeystrokes()
         self.current_level = self
     
