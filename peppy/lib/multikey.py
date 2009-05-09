@@ -854,6 +854,35 @@ class AcceleratorManager(AcceleratorList):
             evt.Skip()
             return
         
+        processed, keystroke = self.processEsc(evt, keystroke)
+        if processed:
+            return
+        
+        processed = self.processMultiKey(evt, keystroke)
+        if processed:
+            return
+        
+        if wx.Platform == '__WXMSW__' and evt.GetKeyCode() == wx.WXK_ESCAPE:
+            evt = FakeQuotedCharEvent(self.current_target, self.esc_keystroke)
+            self.OnMenu(evt)
+        else:
+            evt.Skip()
+    
+    def processEsc(self, evt, keystroke):
+        """Process the keystroke for the ESC key.
+        
+        The ESC key can be used as a modifier for the next character, either by
+        transforming it into an alt key, or by using it to prefix digits to be
+        used as a repeat value.
+        
+        @param evt: KeyEvent
+        
+        @param keystroke: Keystroke converted from the event
+        
+        @return: 2-tuple of boolean status indicating if the keystroke was
+        processed and no further processing is needed, and the new transformed
+        keystroke if a previous ESC character modified this keystroke.
+        """
         eid = keystroke.id
         if keystroke == self.esc_keystroke:
             if self.entry.meta_next:
@@ -870,18 +899,18 @@ class AcceleratorManager(AcceleratorList):
                 dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                 self.entry.meta_next = True
                 self.displayCurrentKeystroke(keystroke)
-                return
+                return True, keystroke
         elif eid in self.meta_digit_keystroke:
             self.entry.processEscDigit(keystroke)
             self.displayCurrentKeystroke(keystroke)
-            return
+            return True, keystroke
         elif (self.entry.meta_next or self.entry.processing_esc_digit) and eid in self.plain_digit_keystroke:
             dprint("After ESC, found digit char: %d" % evt.GetKeyCode())
             self.entry.meta_next = False
             self.entry.processing_esc_digit = True
             self.entry.processEscDigit(keystroke)
             self.displayCurrentKeystroke(keystroke)
-            return
+            return True, keystroke
         elif self.entry.meta_next:
             # If we run into anything else while we're processing a digit
             # string, stop the digit processing change the accelerator to an alt
@@ -892,18 +921,34 @@ class AcceleratorManager(AcceleratorList):
             # A non-digit character during digit processing will reset the
             # accelerator table back to the root so we can then find out
             # the command to which the digits will be applied.
-            self.processing_esc_digit = False
-            
-        if self.processMultiKey(evt, keystroke):
-            return
-        
-        if wx.Platform == '__WXMSW__' and evt.GetKeyCode() == wx.WXK_ESCAPE:
-            evt = FakeQuotedCharEvent(self.current_target, self.esc_keystroke)
-            self.OnMenu(evt)
-        else:
-            evt.Skip()
-    
+            self.entry.processing_esc_digit = False
+        return False, keystroke
+
     def processMultiKey(self, evt, keystroke):
+        """Process the next keystroke.
+        
+        Examine the keystroke to see if it's part of a multi-key sequence or is
+        the final key that specifies an action.
+        
+        If it is part of a multi-key sequence and it's not the end of the
+        sequence, it will note that there are still key sequences remaining
+        before an action can be determined.
+        
+        If it is part of a key sequence and it uniquely identifies an action
+        (i.e.  it's the last key of the sequence), the action is called.
+        
+        If it's neither of those things, it returns False to let the caller
+        know to continue processing.
+        
+        @param evt: KeyEvent
+        
+        @param keystroke: Keystroke converted from the event
+        
+        @return: True if the keystroke was acted upon, either as a valid or
+        invalid keystroke.  If the keystroke doesn't match any of the criteria
+        in this method (for instance if it is an unknown keystroke for this
+        level) it will return False.
+        """
         eid = keystroke.id
         self.displayCurrentKeystroke(keystroke)
         if eid in self.current_level.id_next_level:
@@ -960,8 +1005,6 @@ class AcceleratorManager(AcceleratorList):
                 self.OnChar(evt)
             elif eid in self.menu_id_to_action:
                 self.foundMenuAction(evt)
-            elif eid in self.current_level.id_to_keystroke:
-                self.foundKeyAction(evt)
             else:
                 dprint("in processEvent: evt=%s id=%s not found in this level" % (str(evt.__class__), eid))
                 self.reset()
@@ -988,11 +1031,16 @@ class AcceleratorManager(AcceleratorList):
             # middle of a multi-key keystroke.  We need to get the keystroke
             # equivalent of the menu item and process it as a multi-key action.
             keystroke = self.findKeystrokeFromMenuId(eid)
-#            if self.processMultiKey(evt, keystroke):
-#                return
-            dprint("Sending fake quoted event of %s" % keystroke)
-            evt = FakeQuotedCharEvent(self.current_target, keystroke, evt=evt)
-            self.OnKeyDown(evt)
+            
+            processed, keystroke = self.processEsc(evt, keystroke)
+            if processed:
+                return
+            
+            processed = self.processMultiKey(evt, keystroke)
+            if processed:
+                return
+            
+            self.reset("Unknown multi-key sequence")
             return
             
         action = self.menu_id_to_action[eid]
@@ -1015,51 +1063,6 @@ class AcceleratorManager(AcceleratorList):
             dprint("evt=%s id=%s repeat=%s FOUND MENU ACTION NONE" % (str(evt.__class__), eid, index, self.entry.repeat_value))
             self.frame.SetStatusText("None")
         self.resetMenuSuccess()
-    
-    def foundKeyAction(self, evt):
-        eid = evt.GetId()
-        keystroke = self.id_to_keystroke[eid]
-        
-        if eid == self.esc_keystroke.id:
-            if self.entry.meta_next:
-                keystroke = self.meta_esc_keystroke
-                eid = keystroke.id
-                self.entry.meta_next = False
-                self.entry.current_keystrokes.pop()
-                dprint("in processEvent: evt=%s id=%s FOUND M-ESC" % (str(evt.__class__), eid))
-            elif self.entry.current_keystrokes and self.entry.current_keystrokes[-1] == self.meta_esc_keystroke:
-                # M-ESC ESC is processed as a regular keystroke
-                dprint("in processEvent: evt=%s id=%s FOUND M-ESC ESC" % (str(evt.__class__), eid))
-                pass
-            else:
-                dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
-                self.entry.meta_next = True
-                #self.displayCurrentKeystroke(keystroke)
-                #return
-        elif eid in self.meta_digit_keystroke:
-            self.entry.processEscDigit(keystroke)
-            return
-        elif (self.entry.meta_next or self.entry.processing_esc_digit) and eid in self.plain_digit_keystroke:
-            self.entry.meta_next = False
-            self.entry.processing_esc_digit = True
-            self.entry.processEscDigit(keystroke)
-            return
-            
-        self.displayCurrentKeystroke(keystroke)
-        if eid in self.id_next_level:
-            dprint("in processEvent: evt=%s id=%s FOUND MULTI-KEYSTROKE" % (str(evt.__class__), eid))
-            self.setAcceleratorTable(self.id_next_level[eid])
-        else:
-            dprint("in processEvent: evt=%s id=%s FOUND ACTION %s repeat=%s" % (str(evt.__class__), eid, self.keystroke_id_to_action[eid], self.entry.repeat_value))
-            action = self.keystroke_id_to_action[eid]
-            if action is not None:
-                action.actionKeystroke(evt, multiplier=self.entry.repeat_value)
-            else:
-                self.frame.SetStatusText("%s: None" % KeyAccelerator.getEmacsAccelerator(self.entry.current_keystrokes))
-            
-            if not self.entry.quoted_next:
-                self.resetKeyboardSuccess()
-                self.setAcceleratorTable()
     
     def displayCurrentKeystroke(self, keystroke):
         """Add the keystroke to the list of keystrokes displayed in the status
