@@ -1328,19 +1328,6 @@ if __name__ == '__main__':
                 acc_text = KeyAccelerator.getAcceleratorText(acc)
                 label = "%s%s" % (ns, acc_text)
                 
-                # If the menu item has a single keystroke that will be placed
-                # in the menu item's text, we need to use the same id for the
-                # menu as is used for the keystroke.  If we don't do this, a
-                # multi key sequence that uses the character from this event
-                # as the 2nd or later character won't get the proper event.
-                # I.e.  if there's a menu item "Ctrl-Q" and a multi key "C-x
-                # C-q", the "C-x C-q" multi-key will never get called because
-                # the event for "Ctrl-Q" will get returned instead of the id
-                # for "C-q"
-                keystrokes = KeyAccelerator.split(acc)
-                if len(keystrokes) == 1:
-                    id = keystrokes[0].id
-                
                 self.root_accel.addKeyBinding(acc, fcn)
             else:
                 label = ns
