@@ -284,8 +284,6 @@ class KeyAccelerator(object):
     @classmethod
     def getAcceleratorText(cls, key_sequence, force_emacs=False):
         keystrokes = cls.split(key_sequence)
-        if wx.Platform == "__WXGTK__":
-            force_emacs = True
         if len(keystrokes) == 1 and not force_emacs:
             # if it has a stock id, always force it to use the our
             # accelerator because wxWidgets will put one there anyway and
@@ -1081,7 +1079,8 @@ if __name__ == '__main__':
         def setPrimaryMenu(self):
             self.root_accel.cleanup()
 
-            menuBar = wx.MenuBar()
+            self.removeOldMenus()
+            menuBar = self.GetMenuBar()
             gmap = wx.Menu()
             self.root_accel = AcceleratorList("^X", "Ctrl-S", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-S C-A", "C-c C-c")
             
@@ -1098,8 +1097,6 @@ if __name__ == '__main__':
             self.menuAdd(indexmap, "Item 1\tC-X 1", StatusUpdater, index=0)
             self.menuAdd(indexmap, "Item 2\tC-X 2", StatusUpdater, index=1)
             self.menuAdd(indexmap, "Item 3\tC-X 3", StatusUpdater, index=2)
-            self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
-            self.menuBar = menuBar
 
             self.root_accel.addCancelKeyBinding("C-g", StatusUpdater(self, "Cancel"))
             self.root_accel.addCancelKeyBinding("M-ESC ESC", StatusUpdater(self, "Cancel"))
@@ -1111,10 +1108,17 @@ if __name__ == '__main__':
             dprint(self.ctrl)
             self.root_accel.manageFrame(self, self.ctrl, self.text)
         
+        def removeOldMenus(self):
+            menubar = self.GetMenuBar()
+            while menubar.GetMenuCount() > 0:
+                old = menubar.Remove(0)
+                old.Destroy()
+
         def setAlternateMenu(self):
             self.root_accel.cleanup()
             
-            menuBar = wx.MenuBar()
+            self.removeOldMenus()
+            menuBar = self.GetMenuBar()
             gmap = wx.Menu()
             self.root_accel = AcceleratorList("^X", "Ctrl-TAB", "Ctrl-X Ctrl-S", "C-x C-c")
             
@@ -1124,8 +1128,6 @@ if __name__ == '__main__':
             self.menuAdd(gmap, "Save\tC-S", StatusUpdater)
             self.menuAdd(gmap, "Primary Menu\tC-B", PrimaryMenu(self))
             self.menuAdd(gmap, "Exit\tC-Q", sys.exit)
-            self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
-            self.menuBar = menuBar
             
             self.root_accel.addCancelKeyBinding("ESC", StatusUpdater(self, "Cancel"))
             self.root_accel.addQuotedCharKeyBinding("M-q")
