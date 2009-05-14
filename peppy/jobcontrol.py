@@ -12,6 +12,7 @@ from wx.lib.pubsub import Publisher
 import peppy.vfs as vfs
 from peppy.stcbase import *
 from peppy.debug import *
+from peppy.sidebar import *
 from peppy.context_menu import ContextMenuMixin
 
 from peppy.lib.userparams import *
