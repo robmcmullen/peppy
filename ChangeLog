@@ -1,3 +1,13 @@
+2009-05-14  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.9.86 "Spring Cleaning"
+	* fixed issues with sidebars not working in springtab popups
+	* fixed script start issues
+	* fixed reverse interactive search that wasn't checking for invalid string
+	* fixed text extent problem on Mac OS X
+	* added "ignore reoccurrences" option in crash dialog
+	* added WholeWordSearch option from karbas.livejournal.com
+
 2009-04-20  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.9.27 "Spring Cleaning"
