@@ -159,8 +159,8 @@ class ErrorLogSidebar(LoggingSTC, Sidebar):
         BoolParam('always_scroll', False),
         )
     
-    def __init__(self, parent):
-        LoggingSTC.__init__(self, parent)
+    def __init__(self, *args, **kwargs):
+        LoggingSTC.__init__(self, *args, **kwargs)
         Sidebar.__init__(self, *args, **kwargs)
 
         Publisher().subscribe(self.showError, self.message)
