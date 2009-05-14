@@ -127,7 +127,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
         dprint("url = %s" % url)
 
 
-class ErrorLogSidebar(Sidebar, LoggingSTC):
+class ErrorLogSidebar(LoggingSTC, Sidebar):
     """An error log using message passing.
 
     This is a global plugin that displays any messages it receives
@@ -161,7 +161,7 @@ class ErrorLogSidebar(Sidebar, LoggingSTC):
     
     def __init__(self, parent):
         LoggingSTC.__init__(self, parent)
-        self.frame = parent
+        Sidebar.__init__(self, *args, **kwargs)
 
         Publisher().subscribe(self.showError, self.message)
         Publisher().sendMessage(self.ready_message)

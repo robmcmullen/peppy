@@ -191,7 +191,7 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
 
 
 class SpringTabItem(GenToggleButton):
-    def __init__(self, parent, id=-1, label='', **kwargs):
+    def __init__(self, parent, id=-1, label='', window_cb=None, **kwargs):
         self.border = 2
         self.hover = False
         
@@ -199,7 +199,7 @@ class SpringTabItem(GenToggleButton):
         self.Bind(wx.EVT_ENTER_WINDOW, self.OnEnter)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
         
-        self.window_cb = kwargs['window_cb']
+        self.window_cb = window_cb
         self.kwargs = kwargs
         self.popup = None
     
@@ -253,8 +253,11 @@ class SpringTabItem(GenToggleButton):
             self.popup.Bind(wx.EVT_ACTIVATE, self.OnActivate)
             
             # Create the window using the popup as the parent
-            self.window_cb(self.popup, springtabitem=self, **self.kwargs)
-        child = self.popup.GetChildren()[0]
+            self.window_cb(self.popup, **self.kwargs)
+        windowlist = self.popup.GetChildren()
+        if len(windowlist) == 0:
+            raise RuntimeError("Popup window creation failed!")
+        child = windowlist[0]
 #        child.Bind(wx.EVT_SET_FOCUS, self.OnChildFocus)
 #        child.Bind(wx.EVT_KILL_FOCUS, self.OnLoseChildFocus)
         return self.popup, child
