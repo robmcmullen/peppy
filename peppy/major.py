@@ -991,6 +991,8 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
 
     def setMinibuffer(self, minibuffer=None):
         """Proxy the minibuffer requests up to the wrapper"""
+        self.wrapper.spring.clearRadio()
+        self.frame.spring.clearRadio()
         self.wrapper.setMinibuffer(minibuffer)
 
     def removeMinibuffer(self, specific=None, detach_only=False):
