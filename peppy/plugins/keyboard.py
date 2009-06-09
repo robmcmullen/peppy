@@ -223,6 +223,12 @@ class KeybindingSTC(UndoMixin, NonResidentSTC):
         if callback:
             callback(None)
     
+    def revertEncoding(self, buffer, url=None, message=None, encoding=None, allow_undo=False):
+        self.remapped_actions = {}
+        # For the moment, reset the undo buffer so that this action isn't
+        # undoable regardless of what allow_undo says.
+        self.EmptyUndoBuffer()
+
     def openFileForWriting(self, url):
         if url.scheme == 'about':
             return None
@@ -280,6 +286,9 @@ class KeybindingMode(ListMode):
     def Redo(self):
         self.buffer.stc.Redo()
         self.buffer.stc.fireChangeEvent()
+        self.resetList()
+
+    def revertPostHook(self):
         self.resetList()
 
     def createInfoHeader(self, sizer):

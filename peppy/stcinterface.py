@@ -105,12 +105,21 @@ class STCInterface(object):
         """
         pass
 
-    def revertEncoding(self, buffer, message=None, encoding=None):
+    def revertEncoding(self, buffer, url=None, message=None, encoding=None, allow_undo=False):
         """Revert the file to the last saved state.
         
         @param buffer: buffer object used to read the file
+        
+        @param url: optional alternate URL, which if present means that the
+        file should be reverted from the this URL instead of the original one.
+        
         @param message: optional message used to update a progress bar
+        
         @param encoding: optional encoding to attempt to convert from
+        
+        @param allow_undo: optional argument that if True and the STC is capable
+        of it, allows the revert operation to be undoable.  If False or the
+        STC isn't capable of undoing a revert, this parameter is ignored.
         """
         pass
 
