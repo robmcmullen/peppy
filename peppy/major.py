@@ -975,7 +975,8 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         This method clears and rebuilds the status bar, usually
         because something requests an icon change.
         """
-        self.status_info.reset()
+        self.status_info.resetProgress()
+        self.status_info.resetIcons()
         self.createStatusIcons()
     
     def setStatusText(self, text, field=0):

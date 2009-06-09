@@ -112,9 +112,9 @@ class ModularStatusBarInfo(object):
         self.show_cancel = False
         self.cancelled = False
 
-        self.reset()
+        self.resetProgress()
 
-    def reset(self):
+    def resetProgress(self):
         """Reset the parent's state based on the info contained in this object
         
         Because this class is a Flyweight, the parent's controls are updated
@@ -130,8 +130,13 @@ class ModularStatusBarInfo(object):
             text = self.gauge_text
             self.gauge_text = None
             self.setProgressPosition(self.gauge_value, text)
+    
+    def resetIcons(self):
+        """Reset the status bar so no icons are visible"""
+        self.active_controls = []
 
     def addIcon(self, bmp, tooltip=None):
+        """Append an icon to the right side of the status bar"""
         b = self.parent.getIcon(bmp, tooltip)
         self.active_controls.append(b)
         if self.parent.info == self:
@@ -321,7 +326,7 @@ class ModularStatusBar(wx.StatusBar):
             self.info = info
         else:
             self.info = self.default_info
-        self.info.reset()
+        self.info.resetProgress()
 
     def setWidths(self):
         self.widths = [i for i in self.info.widths]

@@ -372,7 +372,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         # Check to see if the eol mode has changed.
         if self.maybe_undo_eolmode is not None:
             if self.maybe_undo_eolmode['likely']:
-                self.detectLineEndings()
+                self.detectLineEndings(self.GetText())
                 Publisher().sendMessage('resetStatusBar')
             self.maybe_undo_eolmode = None
         
