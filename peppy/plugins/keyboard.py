@@ -78,8 +78,8 @@ class EditKeybindings(SelectAction):
 
 class KeybindingActionMixin(ListModeActionMixin):
     @classmethod
-    def workWithMajorMode(cls, mode):
-        return hasattr(mode, 'startKeystrokeRecording')
+    def worksWithMajorMode(cls, mode):
+        return mode.stc_class == KeybindingSTC
     
     def isEnabled(self):
         return self.mode.list.GetSelectedItemCount() > 0
