@@ -358,11 +358,13 @@ class SelectAction(debugmixin):
         if self.widget is not None:
             if self.debuglevel > 1:
                 assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.getName(), self.global_id, state))
-            self.widget.Enable(state)
+            if self.widget.IsEnabled() != state:
+                self.widget.Enable(state)
         if self.tool is not None:
             if self.debuglevel > 1:
                 assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.getName(), self.global_id, state, self.tool))
-            self.tool.EnableTool(self.global_id, state)
+            if self.tool.GetToolEnabled(self.global_id) != state:
+                self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
         """Override this to provide the enable/disable state of the item.
@@ -405,10 +407,12 @@ class ToggleAction(SelectAction):
     def showCheck(self):
         state = self.isChecked()
         if self.widget is not None:
-            self.widget.Check(state)
+            if self.widget.IsChecked() != state:
+                self.widget.Check(state)
         if self.tool is not None:
             #dprint("%s, %s, %s" % (self.tool, self.global_id, state))
-            self.tool.ToggleTool(self.global_id, state)
+            if self.tool.GetToolState(self.global_id) != state:
+                self.tool.ToggleTool(self.global_id, state)
 
 
 class ListAction(SelectAction):
@@ -763,13 +767,13 @@ class SliderAction(SelectAction):
         values and initial value.
         """
         self.tool=toolbar
-        val, minval, maxval = self.getSliderValues()
-        if minval == maxval:
-            maxval += 1
+        self._last_tool_val, self._last_tool_minval, self._last_tool_maxval = self.getSliderValues()
+        if self._last_tool_minval == self._last_tool_maxval:
+            self._last_tool_maxval += 1
             enable = False
         else:
             enable = True
-        self.slider = wx.Slider(toolbar, -1, val, minval, maxval, size=(self.slider_width, -1))
+        self.slider = wx.Slider(toolbar, -1, self._last_tool_val, self._last_tool_minval, self._last_tool_maxval, size=(self.slider_width, -1))
         self.slider.Enable(enable)
         #dprint(self.slider)
         toolbar.AddControl(self.slider)
@@ -780,7 +784,8 @@ class SliderAction(SelectAction):
         
     def showEnable(self):
         state = self.isEnabled()
-        self.slider.Enable(state)
+        if self.slider.IsEnabled() != state:
+            self.slider.Enable(state)
     
     def OnSliderMove(self, evt):
         """Hook method responding to EVT_SCROLL_THUMBTRACK event.
@@ -804,11 +809,16 @@ class SliderAction(SelectAction):
         """
         val, minval, maxval = self.getSliderValues()
         #dprint("val=%d min=%d max=%d" % (val, minval, maxval))
-        if minval == maxval:
-            maxval += 1
-            self.slider.Enable(False)
-        self.slider.SetRange(minval, maxval)
-        self.slider.SetValue(val)
+        if self._last_tool_minval != minval or self._last_tool_maxval != maxval:
+            if minval == maxval:
+                maxval += 1
+                self.slider.Enable(False)
+            self.slider.SetRange(minval, maxval)
+            self._last_tool_minval = minval
+            self._last_tool_maxval = maxval
+        if self._last_tool_val != val:
+            self.slider.SetValue(val)
+            self._last_tool_val = val
 
 
 class OnDemandActionMixin(object):
@@ -879,12 +889,16 @@ class OnDemandActionNameMixin(object):
         if self.tool:
             icon = self.getToolbarIconName()
             if icon:
-                icon = getIconBitmap(icon)
-                self.tool.SetToolNormalBitmap(self.global_id, icon)
-                name = self.getMenuItemName()
-                self.tool.SetToolShortHelp(self.global_id, name)
-                help = self.getMenuItemHelp(name)
-                self.tool.SetToolLongHelp(self.global_id, help)
+                if not hasattr(self, "_tool_last_icon") or self._tool_last_icon != icon:
+                    dprint("Updating icon to %s" % icon)
+                    self._tool_last_icon = icon
+                    
+                    icon = getIconBitmap(icon)
+                    self.tool.SetToolNormalBitmap(self.global_id, icon)
+                    name = self.getMenuItemName()
+                    self.tool.SetToolShortHelp(self.global_id, name)
+                    help = self.getMenuItemHelp(name)
+                    self.tool.SetToolLongHelp(self.global_id, help)
                 
     def getMenuItemName(self):
         """Override in subclass to provide the menu item name."""
