@@ -15,8 +15,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: batch.py 53369 2008-04-26 05:35:41Z CJP $"
-__revision__ = "$Revision: 53369 $"
+__svnid__ = "$Id: batch.py 60707 2009-05-21 17:45:19Z CJP $"
+__revision__ = "$Revision: 60707 $"
 
 #-----------------------------------------------------------------------------#
 import synglob
@@ -134,7 +134,8 @@ def CommentPattern(lang_id=0):
 
     """
     if lang_id == synglob.ID_LANG_BATCH:
-        return [u'rem']
+        # NOTE: trailing space is significant.
+        return [u'rem ']
     else:
         return list()
 

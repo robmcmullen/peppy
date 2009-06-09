@@ -192,6 +192,12 @@ class BasicAutoindent(debugmixin):
         stc.GotoPos(pos)
         stc.EndUndoAction()
     
+    def getElectricChars(self):
+        """Return a unicode string containing all of the possible electric chars
+        except for return, backspace and delete which are treated separately.
+        """
+        return u""
+    
     def electricChar(self, stc, uchar):
         """Autoindent in response to a special character
 
@@ -621,6 +627,9 @@ class CStyleAutoindent(FoldingAutoindent):
 
         return (fold * indent) + partial
     
+    def getElectricChars(self):
+        return u";:{}"
+
     def electricChar(self, stc, uchar):
         """Reindent the line and insert a newline when special chars are typed.
         
@@ -1015,6 +1024,10 @@ class NullAutoindent(debugmixin):
     def processTab(self, stc):
         """Don't reindent but insert the equivalent of a tab character"""
         stc.AddText(stc.GetIndentString(stc.GetIndent()))
+    
+    def getElectricChars(self):
+        """No electric chars in Null autoindenter"""
+        return u""
     
     def electricChar(self, stc, uchar):
         """No electric chars in Null autoindenter."""

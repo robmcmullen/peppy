@@ -65,7 +65,7 @@ class PeppyPluginManager(VersionedPluginManager, debugmixin):
     
     def getActivePluginObjects(self, interface=IPeppyPlugin):
         """
-        Return the list of all plugins.
+        Return the list of all plugin objects.
         """
         active = []
         all = self.getAllPlugins()

@@ -28,7 +28,7 @@ classes and mixins.
 import wx
 
 from peppy.debug import *
-from peppy.lib.wxemacskeybindings import KeyAccelerator
+from peppy.lib.multikey import KeyAccelerator
 from peppy.lib.iconstorage import *
 
 
@@ -92,7 +92,7 @@ class SelectAction(debugmixin):
     key_bindings = None
     
     #: True if the action should be focused to process a keystroke.  Finer-grained control can be obtained by checking some condition within the action method and raising the L{ActionNeedsFocusException}
-    key_needs_focus = False
+    needs_keyboard_focus = False
     
     #: Current keybinding of the action.  This is set by the keyboard configuration loader and shouldn't be modified directly.  Subclasses should leave this set to None.
     keyboard = None
@@ -118,14 +118,14 @@ class SelectAction(debugmixin):
     _accelerator_text = None # This is not set by the user
 
     @classmethod
-    def worksWithMajorMode(cls, mode):
+    def worksWithMajorMode(cls, modecls):
         """Hook to restrict the action to only be displayed with a specific
         major mode
         
         This hook is called by the menu creation code to determine if the
         action should be displayed when showing the major mode's user interface.
         
-        @param mode: the major mode instance
+        @param mode: the major mode class (Note: not the instance)
         
         @returns: True if the action is allowed to be associated with the major
         mode
@@ -133,7 +133,7 @@ class SelectAction(debugmixin):
         return True
     
     @classmethod
-    def worksWithOSXMinimalMenu(cls, mode):
+    def worksWithOSXMinimalMenu(cls, modecls):
         """Hook that allows the action to appear on the OSX default menu when
         no editing frames are open
         """
@@ -145,7 +145,7 @@ class SelectAction(debugmixin):
         help = u"\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
         return help
     
-    def __init__(self, frame, menu=None, toolbar=None, popup_options=None, mode=None):
+    def __init__(self, frame, popup_options=None, mode=None):
         self.widget=None
         self.tool=None
         if self.global_id is None:
@@ -163,7 +163,9 @@ class SelectAction(debugmixin):
             self.mode = mode
         
         # If the action is associated with a popup, some options may be passed
-        # into it
+        # into it.  This is also an indicator that the action appears in a
+        # popup: if popup_options is None, it's not a popup.  If popup_options
+        # is a dict (empty or not), it is in a popup.
         self.popup_options = popup_options
         
         # Flag to indicate whether the keystroke should be displayed in the
@@ -172,11 +174,6 @@ class SelectAction(debugmixin):
         self.keystroke_valid = True
 
         self.initPreHook()
-        
-        if menu is not None:
-            self.insertIntoMenu(menu)
-        if toolbar is not None:
-            self.insertIntoToolbar(toolbar)
 
         self.initPostHook()
     
@@ -184,7 +181,7 @@ class SelectAction(debugmixin):
         return "%s id=%s mode=%s frame=%s" % (self.__class__.__name__, hex(id(self)), self.mode, self.frame)
 
 #    def __del__(self):
-#        self.dprint("DELETING action %s" % self.name)
+#        self.dprint("DELETING action %s" % self.getName())
 
     def initPreHook(self):
         pass
@@ -197,12 +194,37 @@ class SelectAction(debugmixin):
 
     @classmethod
     def setAcceleratorText(cls, force_emacs=False):
-        if cls.keyboard:
+        """Sets the accelerator text for this class
+        
+        The accelerator text is set for the entire class rather than the action
+        to save time.  Accelerator text doesn't change for each instance, and
+        in addition only changes when the user changes the language of the
+        user interface.
+        
+        The keyboard plugin is used to change the accelerator text, because
+        the user may have changed the keyboard definition through the
+        configuration files.
+        """
+        # If keyboard is the string 'default', that means that the action is
+        # the default keyboard command for the major mode and there shouldn't
+        # be an accelerator for it.  The default command shouldn't appear
+        # in the menu at any rate, and I could instead check for a value in
+        # default_menu.  However, this not be the right thing to do if at
+        # some point in the future I get around to writing customizable menu
+        # ordering functionality.
+        if cls.keyboard and cls.keyboard != 'default':
             if isinstance(cls.keyboard, list):
                 key_sequence = cls.keyboard[0]
             else:
                 key_sequence = cls.keyboard
             keystrokes = KeyAccelerator.split(key_sequence)
+            
+            if wx.Platform == '__WXMAC__' and len(keystrokes) == 1:
+                if keystrokes[0].flags & wx.ACCEL_CTRL:
+                    # Don't attempt to put any accelerator that contains the
+                    # Ctrl key in the menubar on a mac.  Rather, force it to
+                    # be placed in the menubar as an emacs style keybinding.
+                    force_emacs = True
             
             # Special handling if we are using a stock wx id -- wx automatically
             # places a stock icon and a default accelerator in the menu item.
@@ -231,36 +253,56 @@ class SelectAction(debugmixin):
             cls._accelerator_text = ""
         return 0
     
+    def addKeyBindingToAcceleratorList(self, accel_list):
+        if self.keyboard == 'default':
+            window = self.mode.getKeyboardCapableControls()[0]
+            self.dprint("******** Setting default action to %s for %s" % (self, window))
+            accel_list.addDefaultKeyAction(self, window)
+        elif self.keyboard is not None:
+            accel_list.addKeyBinding(self.keyboard, self)
+    
+    @classmethod
+    def getName(cls):
+        if cls.name:
+            return unicode(cls.name)
+        return unicode(cls.__name__)
+    
     def getDefaultMenuItemName(self):
-        if self._use_accelerators and self.__class__.keyboard and self.keystroke_valid:
-            return u"%s%s" % (_(self.name), self._accelerator_text)
-        elif self.name:
-            return _(self.name)
-        return _(self.__class__.__name__)
+        if self._use_accelerators and self.__class__.keyboard and self.keystroke_valid and self.popup_options is None:
+            return u"%s%s" % (_(self.getName()), self._accelerator_text)
+        return self.getName()
 
-    def getDefaultTooltip(self, id=None, name=None):
-        if id is None:
-            id = self.global_id
-        if name is None:
-            name = self.name
-        if self.tooltip is None:
-            if self.__doc__ is not None:
-                lines = self.__doc__.splitlines()
-                self.__class__.tooltip = unicode(lines[0])
-        return u"%s ('%s', id=%d)" % (_(self.tooltip), _(name), id)
+    @classmethod
+    def getDefaultTooltip(cls, id=None, name=None):
+        if cls.tooltip is None:
+            if cls.__doc__ is not None:
+                lines = cls.__doc__.splitlines()
+                cls.tooltip = unicode(lines[0])
+            else:
+                cls.tooltip = u""
+        text = unicode(cls.tooltip)
+        if cls.debuglevel > 0:
+            if id is None:
+                id = cls.global_id
+            if name is None:
+                name = cls.getName()
+            text += u"('%s', id=%d)" % (_(name), id)
+        return text
 
-    def insertIntoMenu(self, menu):
+    def insertIntoMenu(self, menu, accel):
         self.widget = wx.MenuItem(menu, self.global_id, self.getDefaultMenuItemName(), self.getDefaultTooltip())
         #storeWeakref('menuitem', self.widget)
         if self.icon:
             bitmap = getIconBitmap(self.icon)
             self.widget.SetBitmap(bitmap)
         menu.AppendItem(self.widget)
+        accel.addMenuItem(self.global_id, self)
 
-    def insertIntoToolbar(self, toolbar):
+    def insertIntoToolbar(self, toolbar, accel):
         self.tool=toolbar
-        help = _(self.name).replace('&','')
-        toolbar.AddLabelTool(self.global_id, self.name, getIconBitmap(self.icon), shortHelp=help, longHelp=self.getDefaultTooltip())
+        help = _(self.getName()).replace('&','')
+        toolbar.AddLabelTool(self.global_id, self.getName(), getIconBitmap(self.icon), shortHelp=help, longHelp=self.getDefaultTooltip())
+        accel.addMenuItem(self.global_id, self)
 
     def action(self, index=-1, multiplier=1):
         """Override this to provide the functionality of the action.
@@ -279,26 +321,35 @@ class SelectAction(debugmixin):
         """
         pass
     
+    # Trick to force subclasses to declare this method in a subclass while still
+    # keeping around the definition of action for documentation purposes.
+    action = None
+    
     def actionOSXMinimalMenu(self, index=-1, multiplier=1):
         self.action(index, multiplier)
 
-    def __call__(self, evt, number=1, printable=False):
-        assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, number))
+    def actionWorksWithCurrentFocus(self):
+        if self.needs_keyboard_focus and self.mode.FindFocus() != self.mode:
+            return False
+        return True
+
+    def actionKeystroke(self, evt, multiplier=1, printable=False):
+        assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, multiplier))
         # Make sure that the action is enabled before allowing it to be called
         # using the keybinding
         focus = self.mode.FindFocus()
         if focus != self.mode:
             is_text = isinstance(focus, wx.TextCtrl)
             self.dprint("focus = %s text = %s printable=%s" % (focus, is_text, printable))
-            if self.key_needs_focus or (is_text and printable):
+            if self.needs_keyboard_focus or (is_text and printable):
                 evt.Skip()
                 return
         if self.isEnabled():
             try:
                 if self.frame.isOSXMinimalMenuFrame():
-                    self.actionOSXMinimalMenu(0, number)
+                    self.actionOSXMinimalMenu(0, multiplier)
                 else:
-                    self.action(0, number)
+                    self.action(0, multiplier)
             except ActionNeedsFocusException:
                 evt.Skip()
 
@@ -306,11 +357,11 @@ class SelectAction(debugmixin):
         state = self.isEnabled()
         if self.widget is not None:
             if self.debuglevel > 1:
-                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.name, self.global_id, state))
+                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.getName(), self.global_id, state))
             self.widget.Enable(state)
         if self.tool is not None:
             if self.debuglevel > 1:
-                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.name, self.global_id, state, self.tool))
+                assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.getName(), self.global_id, state, self.tool))
             self.tool.EnableTool(self.global_id, state)
 
     def isEnabled(self):
@@ -334,13 +385,15 @@ class ToggleAction(SelectAction):
     indicating whether or not to display a checkmark (for a menu item) or to
     display the button as toggled-on (for a toolbar).
     """
-    def insertIntoMenu(self,menu):
+    def insertIntoMenu(self, menu, accel):
         self.widget=menu.AppendCheckItem(self.global_id, self.getDefaultMenuItemName(), self.getDefaultTooltip())
         #storeWeakref('menuitem', self.widget)
+        accel.addMenuItem(self.global_id, self)
 
-    def insertIntoToolbar(self,toolbar):
+    def insertIntoToolbar(self, toolbar, accel):
         self.tool=toolbar
-        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=_(self.name), longHelp=self.getDefaultTooltip())
+        toolbar.AddCheckTool(self.global_id, getIconBitmap(self.icon), wx.NullBitmap, shortHelp=_(self.getName()), longHelp=self.getDefaultTooltip())
+        accel.addMenuItem(self.global_id, self)
         
     def showEnable(self):
         SelectAction.showEnable(self)
@@ -404,15 +457,6 @@ class ListAction(SelectAction):
             return id
 
     def __init__(self, *args, **kwargs):
-        # a record of all menu entries at the main level of the menu
-        self.toplevel=[]
-
-        # mapping of menu id to position in menu
-        self.id2index={}
-
-        # save the top menu
-        self.menu=None
-
         SelectAction.__init__(self, *args, **kwargs)
         self.cache = self.IdCache(self.global_id)
     
@@ -431,7 +475,13 @@ class ListAction(SelectAction):
         """
         return self.getDefaultMenuItemName()
     
-    def insertIntoMenu(self,menu,pos=None):
+    def insertIntoMenu(self, menu, accel, pos=None):
+        # a record of all menu entries at the main level of the menu
+        self.toplevel=[]
+
+        # mapping of menu id to position in menu
+        self.id2index={}
+        
         self.cache.resetIndex()
         self.menu=menu
 
@@ -457,18 +507,18 @@ class ListAction(SelectAction):
         else:
             self.topindex=pos
         
-        self._insertItems(menu,pos,is_toplevel)
+        self._insertItems(menu, accel, pos, is_toplevel)
 
-    def _insertItems(self,menu,pos,is_toplevel=False):
+    def _insertItems(self, menu, accel, pos, is_toplevel=False):
         items = self.getItems()
         self.count=0
         if items and (isinstance(items[0], tuple) or isinstance(items[0], list)):
-            self._insertGroupedItems(items, menu, pos, is_toplevel)
+            self._insertGroupedItems(items, menu, accel, pos, is_toplevel)
         else:
-            self._insertTextItems(items, menu, pos, is_toplevel)
+            self._insertTextItems(items, menu, accel, pos, is_toplevel)
         self.savehash=self.getHash()
     
-    def _insertTextItems(self, items, menu, pos, is_toplevel):
+    def _insertTextItems(self, items, menu, accel, pos, is_toplevel):
         if self.menumax>0 and len(items)>self.menumax:
             for group in range(0,len(items),self.menumax):
                 last=min(group+self.menumax,len(items))
@@ -478,16 +528,16 @@ class ListAction(SelectAction):
                 child=wx.Menu()
                 i=0
                 for name in items[group:last]:
-                    self._insert(child,i,name)
+                    self._insert(child, accel, i, name)
                     i+=1
-                self._insertMenu(menu,pos,child,groupname,is_toplevel)
+                self._insertMenu(menu, pos, child, groupname, is_toplevel)
                 pos+=1
         else:
             for name in items:
-                self._insert(menu,pos,name,is_toplevel=is_toplevel)
+                self._insert(menu, accel, pos, name, is_toplevel=is_toplevel)
                 pos+=1
 
-    def _insertGroupedItems(self, items, menu, pos, is_toplevel=False):
+    def _insertGroupedItems(self, items, menu, accel, pos, is_toplevel=False):
         """Insert a list of grouped items into the menu
 
         If each item is a tuple in the form (text of the item, group name) the
@@ -502,7 +552,7 @@ class ListAction(SelectAction):
                 order.append(group)
                 found[group] = (wx.Menu(), 0)
             child, i = found[group]
-            self._insert(child, i, name)
+            self._insert(child, accel, i, name)
             i += 1
             found[group] = (child, i)
         for group in order:
@@ -510,12 +560,13 @@ class ListAction(SelectAction):
             self._insertMenu(menu, pos, child, group, is_toplevel)
             pos += 1
 
-    def _insert(self,menu,pos,name,is_toplevel=False):
+    def _insert(self, menu, accel, pos, name, is_toplevel=False):
         id = self.cache.getNewId()
         try:
             if self.localize_items:
                 name = _(name)
             widget=menu.Insert(pos, id, name, self.getDefaultTooltip(id, name))
+            accel.addMenuItem(id, self, self.count)
         except:
             dprint(u"BAD MENU ITEM!!! pos=%d id=%d name='%s'" % (pos, id, name))
             raise
@@ -537,7 +588,7 @@ class ListAction(SelectAction):
     def getHash(self):
         return self.count
     
-    def dynamic(self):
+    def dynamic(self, accel):
         # dynamic menu will be shown if getHash returned None
         if self.savehash != None and self.savehash == self.getHash():
             if self.debuglevel > 1:
@@ -559,15 +610,9 @@ class ListAction(SelectAction):
             if self.debuglevel > 1:
                 self.dprint("deleting widget %d" % id)
             self.menu.Delete(id)
-        self.toplevel=[]
-        self.id2index={}
         if self.debuglevel > 1:
             self.dprint("inserting new widgets at %d" % pos)
-        self.insertIntoMenu(self.menu,pos)
-        # FIXME: it seems that on app exit, frame.menumap can be None, so check
-        # for that here
-        if self.frame.menumap:
-            self.frame.menumap.reconnectEvents()
+        self.insertIntoMenu(self.menu, accel, pos)
 
     def getItems(self):
         raise NotImplementedError
@@ -603,24 +648,21 @@ class RadioAction(ListAction):
     menumax=-1
     inline=False
 
-    def __init__(self, *args, **kwargs):
+    def insertIntoMenu(self, menu, accel, pos=None):
         # mapping of index (that is, position in menu starting from
         # zero) to the wx widget id
         self.index2id={}
-        
-        ListAction.__init__(self, *args, **kwargs)
-
-    def insertIntoMenu(self,menu,pos=None):
-        ListAction.insertIntoMenu(self,menu,pos)
+        ListAction.insertIntoMenu(self, menu, accel, pos)
         for id,index in self.id2index.iteritems():
             self.index2id[index]=id
         self.showCheck()
 
-    def _insert(self,menu,pos,name,is_toplevel=False):
+    def _insert(self,menu, accel, pos, name, is_toplevel=False):
         id = self.cache.getNewId()
         if self.localize_items:
             name = _(name)
         widget=menu.InsertRadioItem(pos, id, name, self.getDefaultTooltip(id, name))
+        accel.addMenuItem(id, self, self.count)
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
@@ -657,15 +699,15 @@ class ToggleListAction(ListAction):
     L{OnDemandActionMixin} and override the L{getHash} method to indicate when
     the user interface should redraw the menu.
     """
-    def __init__(self, *args, **kwargs):
+    def insertIntoMenu(self, menu, accel, pos=None):
         # list of all toggles so we can switch 'em on and off
         self.toggles=[]
-        
-        ListAction.__init__(self, *args, **kwargs)
+        ListAction.insertIntoMenu(self, menu, accel, pos)
 
-    def _insert(self,menu,pos,name,is_toplevel=False):
+    def _insert(self, menu, accel, pos, name, is_toplevel=False):
         id = self.cache.getNewId()
         widget=menu.InsertCheckItem(pos,id,name, self.getDefaultTooltip())
+        accel.addMenuItem(id, self, self.count)
         #storeWeakref('menuitem', widget)
         self.id2index[id]=self.count
         if is_toplevel:
@@ -707,7 +749,7 @@ class SliderAction(SelectAction):
     
     slider_width = 100
     
-    def insertIntoMenu(self,menu):
+    def insertIntoMenu(self, menu, accel):
         """Sliders are not allowed in the menu bar, so nothing will be added to
         the menu."""
         pass
@@ -716,7 +758,7 @@ class SliderAction(SelectAction):
         """Return the current, min, and max value for the slider"""
         return 0, 50, 100
 
-    def insertIntoToolbar(self,toolbar):
+    def insertIntoToolbar(self, toolbar, accel):
         """Insert the slider control into the toolbar and set the min/max
         values and initial value.
         """
@@ -734,7 +776,7 @@ class SliderAction(SelectAction):
         
         self.slider.Bind(wx.EVT_SCROLL_THUMBTRACK, self.OnSliderMove)
         self.slider.Bind(wx.EVT_SCROLL_CHANGED, self.OnSliderRelease)
-        self.slider.SetToolTip(wx.ToolTip(_(self.name)))
+        self.slider.SetToolTip(wx.ToolTip(_(self.getName())))
         
     def showEnable(self):
         state = self.isEnabled()
@@ -777,7 +819,7 @@ class OnDemandActionMixin(object):
     is opened.
     """
     
-    def updateOnDemand(self):
+    def updateOnDemand(self, accel):
         """Hook called before the menu is displayed.
         
         This method allows the subclass to catch the menu opening event before
@@ -802,7 +844,7 @@ class OnDemandActionNameMixin(object):
     the update is forced manually, the toolbar will remain in its old state.
     """
     
-    def updateOnDemand(self):
+    def updateOnDemand(self, accel):
         """Updates the menu item name.
         
         Because menu items are normally hidden, the EVT_MENU_OPEN event
@@ -932,5 +974,5 @@ class OnDemandGlobalListAction(OnDemandActionMixin, ListAction):
             raise TypeError("The 'storage' class attribute of OnDemandGlobalActionList must be of type 'list' when using the default implementation of getItems")
         return [unicode(item) for item in self.storage]
 
-    def updateOnDemand(self):
-        self.dynamic()
+    def updateOnDemand(self, accel):
+        self.dynamic(accel)

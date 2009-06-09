@@ -29,8 +29,8 @@ class OpenHexEditor(SelectAction):
 
 class WorksWithHexEdit(object):
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return mode.keyword == 'HexEdit'
+    def worksWithMajorMode(cls, modecls):
+        return modecls.keyword == 'HexEdit'
 
 class GotoOffset(WorksWithHexEdit, MinibufferAction):
     """Goto an offset.

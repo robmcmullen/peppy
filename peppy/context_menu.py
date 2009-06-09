@@ -10,7 +10,7 @@ import os
 import wx
 
 from peppy.debug import *
-
+from peppy.menu import PopupMenu
 
 class ContextMenuActions(list):
     """Helper class to provide options to the list of actions.
@@ -88,7 +88,7 @@ class ContextMenuMixin(object):
         options = self.getOptionsForPopupActions()
         if action_classes:
             frame = self.getFrame()
-            frame.menumap.popupActions(parent, action_classes, options)
+            PopupMenu(frame, parent, self, action_classes, options)
     
     def getOptionsForPopupActions(self):
         """Override this to provide options to the popup actions.

@@ -105,7 +105,10 @@ class HSIMode(BitmapScroller, MajorMode):
             pix = self.cube.getPixel(line, sample, band)
             if self.show_value_at_cursor:
                 pos = (self.cube.locationToFlat(line, sample, band) * self.cube.itemsize) + self.cube.data_offset
-                self.setStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
+                if self.cube.cube_io.isInvalid(pos):
+                    self.setStatusText("invalid data")
+                else:
+                    self.setStatusText("value=%s hex=%s location=%d" % (pix, hex(pix), pos), 0)
         
         self.setStatusText(self.cubeview.getBandName(band), 2)
     
@@ -133,6 +136,7 @@ class HSIMode(BitmapScroller, MajorMode):
             Cube.mmap_size_limit = 1
 
     def update(self, refresh=True):
+        self.dprint("refresh=%s" % refresh)
         self.setStatusText(self.cubeview.getWorkingMessage())
         self.cubeview.swapEndian(self.swap_endian)
         self.cubeview.setFilterOrder([self.filter])
@@ -160,7 +164,9 @@ class HSIMode(BitmapScroller, MajorMode):
             extra = " (%s)" % extra
         else:
             extra = ""
-        return "%dx%dx%d %s %s %s image using %s loader%s" % (self.cube.samples, self.cube.lines, self.cube.bands, self.cube.interleave.upper(), self.cube.data_type.__name__, endian, self.dataset.getHandler().format_id, extra)
+        msg = "%dx%dx%d %s %s %s image using %s loader%s" % (self.cube.samples, self.cube.lines, self.cube.bands, self.cube.interleave.upper(), self.cube.data_type.__name__, endian, self.dataset.getHandler().format_id, extra)
+        self.dprint(msg)
+        return msg
 
     def setCube(self, index=0):
         self.dataset_index = index
@@ -212,6 +218,7 @@ class HSIMode(BitmapScroller, MajorMode):
         self.setViewer(viewer)
         self.dprint("loading bands...")
         self.cubeview.loadBands()
+        self.dprint("loaded bands")
         self.update()
     
     def revertPostHook(self):

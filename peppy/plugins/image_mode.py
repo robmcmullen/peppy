@@ -41,8 +41,8 @@ class OpenImageViewer(SelectAction):
 
 class ImageActionMixin(object):
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return isinstance(mode, BitmapScroller)
+    def worksWithMajorMode(cls, modecls):
+        return issubclass(modecls, BitmapScroller)
 
 class ZoomIn(ImageActionMixin, SelectAction):
     name = "Zoom In"

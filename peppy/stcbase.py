@@ -17,11 +17,14 @@ from peppy.lib.textutil import *
 
 # Mimic the primary selection middle mouse paste on non-X11 platforms, but
 # unfortunately the primary selection will only be application local
-version = wx.version().split('.')
-version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
-if wx.Platform == "__WXGTK__" and version > 287:
-    use_x11_primary_selection = True
-else:
+try:
+    version = wx.version().split('.')
+    version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
+    if wx.Platform == "__WXGTK__" and version > 287:
+        use_x11_primary_selection = True
+    else:
+        use_x11_primary_selection = False
+except:
     use_x11_primary_selection = False
 non_x11_primary_selection = None
 #print "version=%d use=%s" % (version, use_x11_primary_selection)
@@ -204,11 +207,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             if length/chunk > 100:
                 chunk *= 4
             self.readFrom(fh, chunk=chunk, length=length, message=message)
+            buffer.setInitialStateIsUnmodified()
         else:
-            # FIXME: if we're creating the file, we should allow for a
-            # template.  The template will be major-mode dependent, so there
-            # will have to be some callback to the major mode
-            pass
+            # if the file doesn't exist, the user has asked to create a new
+            # file.  Peppy needs to reflect that it hasn't been saved by
+            # setting its initial state to be 'modified'
+            buffer.setInitialStateIsModified()
     
     def openSuccess(self, buffer, headersize=1024, encoding=None):
         bytes = self.tempstore.getvalue()
@@ -325,6 +329,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         except:
             self.refstc.encoded = None
             raise
+    
+    def openFileForWriting(self, url):
+        return vfs.open_write(url)
 
     def writeTo(self, fh, url):
         """Writes a copy of the document to the provided file-like object.
@@ -343,6 +350,9 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             # clean up temporary encoded version of the text
             self.refstc.encoded = None
 
+    def closeFileAfterWriting(self, fh):
+        fh.close()
+        
     def getAutosaveTemporaryFilename(self, buffer):
         """Hook to allow STC to override autosave filename"""
         return wx.GetApp().autosave.getFilename(buffer.url)
@@ -636,7 +646,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 ##        for i in range(len(line)):
 ##            dprint("  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) ))
 
-    def showLine(self, line):
+    def showLine(self, line, offset_from_top = 0):
         # expand folding if any
         self.EnsureVisible(line)
         
@@ -645,6 +655,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         # of the document and then back does seem to put the line at the top
         # of the screen
         self.GotoLine(self.GetLineCount())
+        
+        # If there is an offset from the top of the screen, some extra lines
+        # are displayed between the top of the screen and the line with the
+        # cursor.
+        if offset_from_top > 0:
+            self.GotoLine(max(0, line - offset_from_top))
         self.GotoLine(line)
 #        dprint("After first GotoLine(%d): FirstVisibleLine = %d" % (line, self.GetFirstVisibleLine()))
 #        self.ScrollToLine(line + self.LinesOnScreen() - 3)
@@ -745,10 +761,12 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 
     def GetIndentString(self, ind):
         if self.GetUseTabs():
-            return (ind*' ').replace(self.GetTabWidth()*' ', '\t')
+            text = (ind*' ').replace(self.GetTabWidth()*' ', '\t')
         else:
-            return ind*' '
-            
+            text = ind*' '
+        #dprint("requested: %d, text=%s" % (ind, repr(text)))
+        return text
+    
     ##### Utility methods for modifying the contents of the STC
     def addLinePrefixAndSuffix(self, start, end, prefix='', suffix=''):
         """Add a prefix and/or suffix to the line specified by start and end.

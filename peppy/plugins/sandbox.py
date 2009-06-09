@@ -58,8 +58,8 @@ class ShowStyles(SelectAction):
     key_bindings = {'default': 'M-S',}
 
     @classmethod
-    def worksWithMajorMode(self, mode):
-        return hasattr(mode, 'showStyle')
+    def worksWithMajorMode(self, modecls):
+        return hasattr(modecls, 'showStyle')
     
     def action(self, index=-1, multiplier=1):
         self.mode.showStyle()

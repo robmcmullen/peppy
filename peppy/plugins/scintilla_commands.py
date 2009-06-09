@@ -57,7 +57,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
         name = "Shift &Left"
         default_menu = ("Transform", -500)
         icon = 'icons/text_indent_remove_rob.png'
-        key_bindings = {'default': 'M-[',}
+        key_bindings = {'default': 'M-[', 'emacs': ['M-[', 'C-c C-S-,'],}
         cmd = wx.stc.STC_CMD_BACKTAB
 
     #    {SCK_ESCAPE,        SCI_NORM,       SCI_CANCEL},
@@ -366,7 +366,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
         name = "Shift &Right"
         default_menu = ("Transform", 501)
         icon = 'icons/text_indent_rob.png'
-        key_bindings = {'default': 'M-]',}
+        key_bindings = {'default': 'M-]', 'emacs': ['M-]', 'C-c C-S-.'],}
         cmd = wx.stc.STC_CMD_TAB
 
     #    {SCK_BACK,          SCI_ALT,        SCI_UNDO},

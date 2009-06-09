@@ -299,7 +299,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
-    standard_plugin_dirs = ['plugins', 'hsi']
+    standard_plugin_dirs = ['plugins', 'hsi', 'project']
     preferences_plugin_dir = "plugins"
     server_port_filename = ".server.port"
 
@@ -329,8 +329,9 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         BoolParam('requests_in_new_frame', True, 'File open requests will appear in a new frame if True, or as a new tab in an existing frame if False'),
         IntParam('binary_percentage', 10, 'Percentage of non-displayable characters that results in peppy guessing that the file is binary'),
         IntParam('magic_size', 1024, 'Size of initial buffer used to guess the type of the file.'),
+        FloatParam('minimum_idle_delay', 0.5, 'Minimum delay (in seconds) between idle event updates to prevent a slowdown by propagating too many idle events in a short time period.'),
         BoolParam('load_threaded', True, 'Load files in a separate thread?'),
-        BoolParam('show_splash', True, 'Show the splash screen on start?'),
+        BoolParam('show_splash', False, 'Show the splash screen on start?'),
         StrParam('default_text_encoding', 'latin1', 'Default file encoding if otherwise not specified in the file'),
         )
     mouse = Mouse()
@@ -342,6 +343,29 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     
     config = None
     yielding = False
+    
+    def checkVersion(self):
+        """Check to see that the installed wxPython is new enough
+        
+        """
+        version_string = wx.version().split()[0]
+        version = version_string.split(".")
+        number = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
+        if number < 287:
+            dlg = wx.MessageDialog(self.GetTopWindow(), "You have wxPython %s installed.\nThis is very old and some features may be unavailable or disabled.\n\nwxPython 2.8.8.0 is the recommended minimum version." % version_string, "Old wxPython Version", wx.OK | wx.ICON_EXCLAMATION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+            
+            self.attemptOldWxPythonVersionFixup()
+    
+    def attemptOldWxPythonVersionFixup(self):
+        """If an old version of wxPython is detected, attempt to fix what we
+        can to allow peppy to run as smoothly as possible.
+        
+        """
+        # 2.8.4.2 doesn't have SetItemLabel; only SetText
+        if 'SetItemLabel' not in dir(wx.MenuItem):
+            wx.MenuItem.SetItemLabel = wx.MenuItem.SetText
     
     def OnInit(self):
         """Main application initialization.
@@ -360,6 +384,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.toolbar_actions=[]
         self.keyboard_actions=[]
         self.bufferhandlers=[]
+        self.last_idle_update = 0
         
         GlobalPrefs.setDefaults(self.minimal_config)
         self.loadConfig()
@@ -439,13 +464,11 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         This method makes sure that keystroke events are processed by calling
         the active frame's OnKeyDown function.
         """
-        ctrl = evt.GetEventObject()
-        frame = ctrl
-        while frame:
-            frame = frame.GetParent()
-            if isinstance(frame, BufferFrame):
-                frame.OnKeyDown(evt)
-                break
+        frame = self.GetTopWindow()
+        if hasattr(frame, 'root_accel'):
+            #dprint(evt)
+            frame.root_accel.OnKeyDown(evt)
+        evt.Skip()
 
     def OnIdle(self, evt):
         """Process EVT_IDLE events on the currently active window.
@@ -457,10 +480,16 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         idle events were processed on all frames, there would be a noticeable
         delay after only a few frames were open.
         """
+        if time.time() < self.last_idle_update + self.classprefs.minimum_idle_delay:
+            # don't do idle events too often
+            #dprint("Skipping idle event because it happened too quickly")
+            return
+        
         top = self.getTopFrame()
         if top:
             #dprint("Processing idle event on %s" % top)
             top.processIdleEvent()
+        self.last_idle_update = time.time()
 
     def bootstrapCommandLineOptions(self):
         """Process a small number of configuration options before
@@ -567,7 +596,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if self.options.thanks:
             fh = vfs.open("about:thanks")
             print fh.read()
-            sys.exit()
+            self.Exit()
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -608,7 +637,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             assert self.dprint("%s: %d (%s)" % (kls.__name__,kls.debuglevel,kls))
             if menu:
                 menu.append(kls)
-        #sys.exit()
 
     def findRunningServer(self):
         """Determine if a single instance server is running.
@@ -793,6 +821,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         import peppy.dired
         import peppy.dired_menu
         
+        import peppy.list_menu
+        
         import peppy.mainmenu
         
         # py2exe imports go here.
@@ -955,12 +985,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if doit:
             frame = self.getTopFrame()
             frame.closeAllWindows()
-            wx.GetApp().ExitMainLoop()
+            wx.GetApp().Exit()
             
             # FIXME: something is holding the application open; there must be
             # a reference to something that isn't being cleaned up.  This
             # explicit call to sys.exit shouldn't be necessary.
-            sys.exit()
+            #sys.exit()
         return False
 
     def quitHook(self):
@@ -1048,7 +1078,7 @@ def run():
                     filename = os.path.abspath(filename)
                 peppy.sendToOtherInstance(filename)
             peppy.sendToOtherInstance(None)
-        sys.exit()
+        return
 
     Buffer.loadPermanent('about:blank')
     Buffer.loadPermanent('about:peppy')
@@ -1061,6 +1091,7 @@ def run():
 
     peppy.stopSplash()
     Publisher().sendMessage('peppy.starting.mainloop')
+    wx.CallAfter(peppy.checkVersion)
     wx.CallAfter(Publisher().sendMessage, 'peppy.in.mainloop')
     peppy.MainLoop()
 
@@ -1073,8 +1104,8 @@ def main():
 
     try:
         index = sys.argv.index("-p")
-        import profile
-        profile.run('peppy.main.run()','profile.out')
+        import cProfile
+        cProfile.run('peppy.main.run()','profile.out')
     except ValueError:
         run()
 

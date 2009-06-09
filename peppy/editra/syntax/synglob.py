@@ -18,8 +18,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synglob.py 57169 2008-12-07 16:25:44Z CJP $"
-__revision__ = "$Revision: 57169 $"
+__svnid__ = "$Id: synglob.py 60800 2009-05-30 01:29:53Z CJP $"
+__revision__ = "$Revision: 60800 $"
 
 #-----------------------------------------------------------------------------#
 # Dependencies
@@ -43,6 +43,7 @@ LANG_MAP = {LANG_4GL    : (ID_LANG_4GL,    stc.STC_LEX_SQL,      'progress'),
             LANG_BOO    : (ID_LANG_BOO,    stc.STC_LEX_PYTHON,   'boo'),
             LANG_C      : (ID_LANG_C,      stc.STC_LEX_CPP,      'cpp'),
             LANG_CAML   : (ID_LANG_CAML,   stc.STC_LEX_CAML,     'caml'),
+            LANG_COBRA  : (ID_LANG_COBRA,  stc.STC_LEX_PYTHON,   'cobra'),
             LANG_COLDFUSION : (ID_LANG_COLDFUSION, stc.STC_LEX_HTML, 'html'),
             LANG_CPP    : (ID_LANG_CPP,    stc.STC_LEX_CPP,      'cpp'),
             LANG_CSH    : (ID_LANG_CSH,    stc.STC_LEX_BASH,     'sh'),
@@ -108,7 +109,9 @@ LANG_MAP = {LANG_4GL    : (ID_LANG_4GL,    stc.STC_LEX_SQL,      'progress'),
             LANG_VERILOG: (ID_LANG_VERILOG, stc.STC_LEX_VERILOG, 'verilog'),
             LANG_VHDL   : (ID_LANG_VHDL,   stc.STC_LEX_VHDL,     'vhdl'),
             LANG_XML    : (ID_LANG_XML,    stc.STC_LEX_XML,      'xml'),
-            LANG_YAML   : (ID_LANG_YAML,   stc.STC_LEX_YAML,     'yaml')
+            LANG_YAML   : (ID_LANG_YAML,   stc.STC_LEX_YAML,     'yaml'),
+            LANG_GROOVY : (ID_LANG_GROOVY,   stc.STC_LEX_CPP,    'groovy'),
+            LANG_XTEXT  : (ID_LANG_XTEXT,   stc.STC_LEX_CONTAINER,'xtext')
             }
 
 # Dynamically finds the language description string that matches the given

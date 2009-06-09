@@ -107,8 +107,8 @@ class DiffPlugin(IPeppyPlugin):
         yield DiffEditMode
     
     # Only the actions that appear in getActions will be available
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, DiffEditMode):
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, DiffEditMode):
             return [NextDiff, PrevDiff,
                    ]
 

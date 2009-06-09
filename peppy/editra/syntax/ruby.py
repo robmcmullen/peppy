@@ -15,8 +15,8 @@ AUTHOR: Cody Precord
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: ruby.py 55179 2008-08-22 17:06:44Z CJP $"
-__revision__ = "$Revision: 55179 $"
+__svnid__ = "$Id: ruby.py 60049 2009-04-07 04:28:52Z CJP $"
+__revision__ = "$Revision: 60049 $"
 
 #-----------------------------------------------------------------------------#
 # Imports
@@ -122,8 +122,9 @@ def CommentPattern(lang_id=0):
 #---- End Required Module Functions ----#
 
 def AutoIndenter(stc, pos, ichar):
-    """Auto indent cpp code. uses \n the text buffer will
-    handle any eol character formatting.
+    """Auto indent cpp code. uses \n the text buffer will handle any
+    eol character formatting.
+
     @param stc: EditraStyledTextCtrl
     @param pos: current carat position
     @param ichar: Indentation character

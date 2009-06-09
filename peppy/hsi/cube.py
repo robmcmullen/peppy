@@ -107,6 +107,15 @@ class CubeReader(debugmixin):
     def __init__(self):
         self.user_counts_from = 1
     
+    def isInvalid(self, pos):
+        return False
+    
+    def setInvalidAfter(self, pos):
+        pass
+    
+    def hasInvalid(self):
+        return False
+    
     def getSizeFromCube(self, cube):
         self.lines = cube.lines
         self.samples = cube.samples
@@ -260,6 +269,20 @@ class FileCubeReader(CubeReader):
             self.swap = True
         else:
             self.swap = False
+        
+        self.invalid_after = -1
+    
+    def isInvalid(self, pos):
+        if self.invalid_after >= 0:
+            return pos >= self.invalid_after
+        return False
+    
+    def setInvalidAfter(self, pos):
+        if self.invalid_after == -1 or pos < self.invalid_after:
+            self.invalid_after = pos
+    
+    def hasInvalid(self):
+        return self.invalid_after != -1
     
     def getNumpyArrayFromFilePiecewise(self, fh, count):
         """Convenience function to replace call to numpy.fromfile, but using
@@ -292,6 +315,9 @@ class FileCubeReader(CubeReader):
         pos = fh.tell()
         try:
             bytes = fh.read(count * self.itemsize)
+            if len(bytes) != count * self.itemsize:
+                self.setInvalidAfter(pos + len(bytes))
+                bytes += '\xff' * ((count * self.itemsize) - len(bytes))
             s = numpy.fromstring(bytes, dtype=self.data_type, count=count)
             return s
         except IOError:

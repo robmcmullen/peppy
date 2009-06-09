@@ -353,12 +353,12 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         """
         return None
     
-    def getCompatibleActions(self, major):
-        """Return list of actions compatible with the major mode.
+    def getCompatibleActions(self, majorcls):
+        """Return list of actions compatible with the major mode class.
         
         Return an iterator containing the list of actions provided by this
-        plugin that are compatible with the given major mode.  Actions are
-        defined as subclasses of the SelectAction class in menu.py.  They
+        plugin that are compatible with the given major mode class.  Actions
+        are defined as subclasses of the SelectAction class in menu.py.  They
         define the menubar, toolbar, and keyboard control commands.
         
         You may also return None to indicate an empty list.

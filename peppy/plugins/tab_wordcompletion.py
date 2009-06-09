@@ -54,8 +54,8 @@ class Complete_or_indent(SelectAction):
     c = CompleteWordHelper()
     
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'AddText')
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, 'AddText')
     
     def isEnabled(self):
         return not self.mode.buffer.busy

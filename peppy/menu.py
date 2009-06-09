@@ -14,10 +14,9 @@ import wx
 import weakref
 
 from peppy.debug import *
-from peppy.major import MajorMode
 
 from peppy.lib.iconstorage import *
-from peppy.lib.wxemacskeybindings import *
+from peppy.lib.multikey import *
 
 from peppy.yapsy.plugins import *
 
@@ -43,7 +42,7 @@ class UserActionClassList(debugmixin):
         if not cls.default_menu_weights:
             cls.default_menu_weights.update(weights)
     
-    def __init__(self, mode):
+    def __init__(self, modecls, frame):
         """Initialize the mapping with the new set of actions.
         
         The ordering of the menu items is set here, but nothing is actually
@@ -57,14 +56,22 @@ class UserActionClassList(debugmixin):
         """
         self.action_classes = []
         self.menus = {'root':[]}
-        self.getActiveActions(mode)
+        self.getActiveActionsOfFrame(modecls, frame)
         self.sortActions()
     
-    def getActiveActions(self, mode):
+    def getActiveActionsOfFrame(self, modecls, frame):
+        osx_menu = frame.isOSXMinimalMenuFrame()
+        
+        self.action_classes = self.getActiveActions(modecls, osx_menu)
+    
+    @classmethod
+    def getActiveActions(self, modecls, osx_menu=False):
+        """Get the active actions given the major mode class
+        
+        Note that actions may be added or removed if plugins change.
+        """
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         #assert self.dprint(plugins)
-        
-        osx_menu = mode.frame.isOSXMinimalMenuFrame()
 
         actions = []
         for plugin in plugins:
@@ -72,17 +79,17 @@ class UserActionClassList(debugmixin):
             
             # old-style way of checking each action for compatibility
             for action in plugin.getActions():
-                if action.worksWithMajorMode(mode):
-                    if not osx_menu or (osx_menu and action.worksWithOSXMinimalMenu(mode)):
+                if action.worksWithMajorMode(modecls):
+                    if not osx_menu or (osx_menu and action.worksWithOSXMinimalMenu(modecls)):
                         # Only if the action works with the major mode do we
                         # want it to be an action that fires events
                         actions.append(action)
 
             # new-style way of having the plugin check for compatibility
-            compatible = plugin.getCompatibleActions(mode)
+            compatible = plugin.getCompatibleActions(modecls)
             if compatible is not None:
                 actions.extend(compatible)
-        self.action_classes = actions
+        return actions
 
     def getInfo(self, action):
         """Get menu ordering info from the action
@@ -197,17 +204,16 @@ class UserActionClassList(debugmixin):
             sorted[title] = items
         self.menus = sorted
         self.dprint(self.menus.keys())
-    
 
-class UserActionMap(debugmixin):
+
+class UserAccelerators(AcceleratorManager, debugmixin):
     """Creates a mapping of actions for a frame.
     
     This class creates the ordering of the menubar, and maps actions to menu
     items.  Note that the order of the menu titles is required here and can't
     be added to later.
     """
-    #: mapping of major mode class to list of actions
-    mode_actions = {}
+    debuglevel = 0
     
     def __init__(self, frame, mode):
         """Initialize the mapping with the new set of actions.
@@ -221,48 +227,48 @@ class UserActionMap(debugmixin):
         classes, but the classes themselves.  They will be instantiated when
         they are mapped to a menubar or toolbar.
         """
+        AcceleratorManager.__init__(self)
         self.frame = frame
-        self.actions = {}
-        self.popup_actions = {}
-        self.index_actions = {}
-        self.popup_index_actions = {}
+        self.mode = mode
         
         self.title_to_menu = {}
         self.title_to_toolbar = {}
-        self.class_list = self.createActions(mode)
-        self.class_to_action = {}
+        self.createActions()
+        
+        self.toolbar_actions = []
+        self.toolbar_ondemand_actions = []
     
-#    def __del__(self):
-#        dprint("DELETING MENUMAP!")
-
-    def createActions(self, mode):
+        Publisher().subscribe(self.clearCache, 'peppy.plugins.changed')
+        Publisher().subscribe(self.clearCache, 'keybindings.changed')
+    
+    def __del__(self):
+        Publisher().unsubscribe(self.clearCache)
+    
+    def clearCache(self, msg):
+        self.mode.removeFromClassCache('UserAccelerators.class_list')
+        
+    def createActions(self):
         """Create the list of actions corresponding to this major mode.
         
         The action list includes all commands regardless of how they are
         initiated: menubar, toolbar, or keyboard commands.  If a new minor
         mode or sidebar is activated, this list will have to be regenerated.
         """
-        if not mode.__class__ in self.mode_actions:
-            action_classes = UserActionClassList(mode)
-            self.mode_actions[mode.__class__] = action_classes
-        return self.mode_actions[mode.__class__]
-
-    def updateMinMax(self, min, max):
-        """Update the min and max menu ids
+        cache = self.mode.getClassCache()
+        if 'UserAccelerators.class_list' not in cache:
+            self.dprint("Creating new UserActionClassList for %s" % self.mode.__class__.__name__)
+            action_classes = UserActionClassList(self.mode.__class__, self.frame)
+            cache['UserAccelerators.class_list'] = action_classes
+        self.class_list = cache['UserAccelerators.class_list']
         
-        The range of menu Ids are used in the menu event handlers so that
-        you don't have to bind events individually.
-        """
-        if self.min_id is None:
-            self.min_id = min
-        elif min < self.min_id:
-            self.min_id = min
-            
-        if self.max_id is None:
-            self.max_id = max
-        elif max > self.max_id:
-            self.max_id = max
-    
+        # There used to be a call to self.mode.getInstanceCache here, used to
+        # remember the actions to avoid the creation process.  But, it caused
+        # PyDeadObject errors with the toolbar if the toolbar was removed.
+        # Profiling said that this was not any large factor (the bulk of the
+        # time being in the widget creation routines in the C++ code.)
+        self.actions = {}
+        self.class_to_action = {}
+
     def getAction(self, actioncls):
         """Return an existing action if already instantiated, or create it"""
         if actioncls in self.class_to_action:
@@ -272,7 +278,78 @@ class UserActionMap(debugmixin):
         self.actions[action.global_id] = action
         return action
     
-    def updateMenuActions(self, menubar):
+    def cleanupPrevious(self, auimgr):
+        for tb in self.title_to_toolbar.values():
+            auimgr.DetachPane(tb)
+            tb.Destroy()
+        self.title_to_toolbar = {}
+        self.toolbar_actions = []
+        self.toolbar_ondemand_actions = []
+    
+    def cleanupAndDelete(self):
+        self.cleanupPrevious(self.frame._mgr)
+        self.cleanup()
+        self.frame.Unbind(wx.EVT_MENU_OPEN)
+        
+    def updateActions(self, toolbar=True):
+        self.updateKeyboardAccelerators()
+        
+        if wx.Platform == "__WXMAC__":
+            # Must use a new menu bar on the mac -- you can't dynamically add
+            # to the Help menu apparently due to a limitation in the toolkit.
+            # Additionally, using a fresh menu bar fixes the double Help
+            # menu problem
+            menubar = wx.MenuBar()
+        else:
+            menubar = self.frame.GetMenuBar()
+        self.updateMenuAccelerators(menubar)
+        wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
+        self.frame.SetMenuBar(menubar)
+        
+        if toolbar:
+            self.updateToolbarActions(self.frame._mgr)
+        
+        ctrls = self.mode.getKeyboardCapableControls()
+        self.manageFrame(self.frame, *ctrls)
+        
+        minibuffer = self.mode.getMinibuffer()
+        if minibuffer:
+            minibuffer.addRootKeyboardBindings()
+            
+        self.frame.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
+        
+        # Cache the list of actions
+        cache = self.mode.getInstanceCache()
+        cache['UserAccelerators.actions'] = self.actions
+        cache['UserAccelerators.class_to_action'] = self.class_to_action
+
+    def OnMenuOpen(self, evt):
+        """Callback when a menubar menu is about to be opened.
+        
+        Note that on Windows, this also happens when submenus are opened, but
+        gtk only happens when the top level menu gets opened.
+        
+        By trial and error, it seems to be safe to update dynamic menus here.
+        """
+        # FIXME: On MAC and GTK, the event occurs on the menu object that
+        # is actually opened, so it would be possible to optimize this call
+        # to only set the enable state of the items in this menu.  On MSW,
+        # however, the event object appears to be the frame regardless of
+        # which menu bar title is actually pulled down.
+        self.dprint("menu=%s" % evt.GetEventObject())
+        for action in self.actions.values():
+            #dprint("menumap=%s toolbar=%s action=%s" % (id(self), id(action.tool), action.__class__.__name__))
+            action.showEnable()
+            if hasattr(action, 'updateOnDemand'):
+                action.updateOnDemand(self)
+
+    def updateKeyboardAccelerators(self):
+        action_to_last_id = {}
+        for actioncls in self.class_list.action_classes:
+            action = self.getAction(actioncls)
+            action.addKeyBindingToAcceleratorList(self)
+    
+    def updateMenuAccelerators(self, menubar):
         """Populates the frame's menubar with the current actions.
         
         This replaces the current menubar in the frame with the menus
@@ -311,13 +388,7 @@ class UserActionMap(debugmixin):
                     action = self.getAction(actioncls)
                     if separator and menu.GetMenuItemCount() > 0:
                         menu.AppendSeparator()
-                    action.insertIntoMenu(menu)
-                    self.updateMinMax(action.global_id, action.global_id)
-                    subids = action.getSubIds()
-                    if subids:
-                        self.updateMinMax(subids[0], subids[-1])
-                        for id in subids:
-                            self.index_actions[id] = action
+                    action.insertIntoMenu(menu, self)
         
         pos = 0
         for weight, title, separator in self.class_list.menus['root']:
@@ -331,7 +402,7 @@ class UserActionMap(debugmixin):
         while (pos < menubar.GetMenuCount()):
             old = menubar.Remove(pos)
             old.Destroy()
-        
+    
     def updateToolbarActions(self, auimgr):
         needed = {}
         for title, items in self.class_list.menus.iteritems():
@@ -362,7 +433,14 @@ class UserActionMap(debugmixin):
                     toolbar = self.title_to_toolbar[title]
                     if separator and toolbar.GetToolsCount() > 0:
                         toolbar.AddSeparator()
-                    action.insertIntoToolbar(toolbar)
+                    action.insertIntoToolbar(toolbar, self)
+                    action.showEnable()
+                    
+                    if hasattr(action, 'updateToolOnDemand'):
+                        self.toolbar_ondemand_actions.append(action)
+                        action.updateToolOnDemand()
+                    else:
+                        self.toolbar_actions.append(action)
         
         order = []
         # Use order of the menubar to determine order of the toolbar
@@ -384,79 +462,40 @@ class UserActionMap(debugmixin):
                                   Name(title).Caption(title).
                                   ToolbarPane().Top().
                                   LeftDockable(False).RightDockable(False))
-
-    def getKeyboardActions(self):
-        keymap = KeyMap()
-        keymap.raiseDuplicateExceptions()
-        #keymap.debug = True
-        for actioncls in self.class_list.action_classes:
-            action = self.getAction(actioncls)
-            if action.keyboard is None:
-                continue
-            try:
-                keymap.createKeybinding(action.keyboard, action)
-            except DuplicateKeyError:
-                dups = keymap.find(action.keyboard)
-                #dprint(dups)
-                names = [d.__class__.__name__ for d in dups]
-                if action.user_keyboard:
-                    # The current action is the one that's been set by the
-                    # user, so override other actions with the same keystroke
-                    dprint("User defined action %s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
-                    # The user defined this keystroke, so it should take
-                    # precedence
-                    for existing_action in dups:
-                        if existing_action.user_keyboard:
-                            dprint("Removing keystroke %s from other user defined action %s" % (action.keyboard, existing_action.__class__.__name__))
-                        existing_action.keystroke_valid = False
-                    action.keystroke_valid = True
-                else:
-                    # The current action isn't user defined, so it will only
-                    # be used as a keystroke command if nothing else is user
-                    # defined
-                    dprint("%s uses same keystroke %s as: %s" % (action.__class__.__name__, action.keyboard, str(names)))
-                    found = False
-                    for existing_action in dups:
-                        if existing_action.user_keyboard and not found:
-                            dprint("%s is the user defined action for %s" % (existing_action.__class__.__name__, action.keyboard))
-                            existing_action.keystroke_valid = True
-                            found = True
-                        else:
-                            dprint("Removed duplicate keystroke %s from %s" % (action.keyboard, existing_action.__class__.__name__))
-                            existing_action.keystroke_valid = False
-                    if found:
-                        action.keystroke_valid = False
-                    else:
-                        action.keystroke_valid = True
-                if action.keystroke_valid:
-                    keymap.createKeybinding(action.keyboard, action, replace=True)
-        return keymap
-            
-    def updateActions(self, toolbar=True):
-        self.actions = {}
-        self.class_to_action = {}
-        
-        keymap = self.getKeyboardActions()
-        
-        if wx.Platform == "__WXMAC__":
-            # Must use a new menu bar on the mac -- you can't dynamically add
-            # to the Help menu apparently due to a limitation in the toolkit.
-            # Additionally, using a fresh menu bar fixes the double Help
-            # menu problem
-            menubar = wx.MenuBar()
-        else:
-            menubar = self.frame.GetMenuBar()
-        self.updateMenuActions(menubar)
-        wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
-        self.frame.SetMenuBar(menubar)
-        
-        if toolbar:
-            self.updateToolbarActions(self.frame._mgr)
-        
-        self.connectEvents()
-        return keymap
     
-    def popupActions(self, parent, action_classes=[], options=None):
+    def forceToolbarUpdate(self):
+        """Convenience function to force the on-demand items in the toolbar to
+        be updated outside of an EVT_MENU_OPEN event.
+        
+        This is used in place of an EVT_UPDATE_UI event callback which is
+        called waaaay too often.  Instead, this method is called from the idle
+        timer in the frame.
+        
+        This method is also useful when you need to change a toolbar icon as
+        the result of another action and you'd like the change in the menu
+        system to be reflected immediately rather than waiting for the next
+        EVT_MENU_OPEN when the user pulls down a menu.
+        """
+        for action in self.toolbar_actions:
+            action.showEnable()
+        for action in self.toolbar_ondemand_actions:
+            action.showEnable()
+            action.updateToolOnDemand()
+
+
+class PopupMenu(AcceleratorManager, debugmixin):
+    """Creates a mapping of actions for a frame.
+    
+    This class creates the ordering of the menubar, and maps actions to menu
+    items.  Note that the order of the menu titles is required here and can't
+    be added to later.
+    """
+    debuglevel = 0
+    
+    #: mapping of major mode class to list of actions
+    mode_actions = {}
+    
+    def __init__(self, frame, parent, mode, action_classes=[], options=None):
         """Create a popup menu from the list of action classes.
         
         @param parent: window on which to create the popup menu
@@ -470,9 +509,11 @@ class UserActionMap(debugmixin):
         
         @param options: optional dict of name/value pairs to pass to the action
         """
+        AcceleratorManager.__init__(self)
+        self.frame = frame
+    
         menu = wx.Menu()
         
-        self.disconnectEvents()
         sorted = []
         for item in action_classes:
             if isinstance(item, tuple):
@@ -482,120 +523,45 @@ class UserActionMap(debugmixin):
                 position = 500
         sorted.sort(key=lambda a:a[0])
         
-        if isinstance(parent, MajorMode):
-            mode = parent
-        else:
+        if mode is None:
             mode = self.frame.getActiveMajorMode()
         
         if options is None:
             options = {}
         if hasattr(action_classes, 'getOptions'):
             options.update(action_classes.getOptions())
-        dprint(options)
         
         first = True
         for pos, actioncls, sep in sorted:
             action = actioncls(self.frame, popup_options=options, mode=mode)
-            self.popup_actions[action.global_id] = action
             if sep and not first:
                 menu.AppendSeparator()
-            action.insertIntoMenu(menu)
+            action.insertIntoMenu(menu, self)
             action.showEnable()
-            self.updateMinMax(action.global_id, action.global_id)
-            subids = action.getSubIds()
-            if subids:
-                self.updateMinMax(subids[0], subids[-1])
-                for id in subids:
-                    self.popup_index_actions[id] = action
             
             first = False
         
-        # register the new ids and allow the event processing to handle the
-        # popup
-        self.connectEvents()
+        # Override the frame's current EVT_MENU binding
+        self.frame.root_accel.addPopupCallback(self.OnMenu)
+        
         parent.PopupMenu(menu)
         
-        # clean up after the popup events
-        self.popup_actions = {}
-        self.popup_index_actions = {}
-        self.reconnectEvents()
-    
-    def cleanupPrevious(self, auimgr):
-        self.disconnectEvents()
-        for tb in self.title_to_toolbar.values():
-            auimgr.DetachPane(tb)
-            tb.Destroy()
-        self.title_to_toolbar = {}
-    
-    def cleanupAndDelete(self):
-        self.cleanupPrevious(self.frame._mgr)
-        #printWeakrefs('menuitem', detail=False)
-        #printWeakrefs('menu', detail=False)
+        # Reset the EVT_MENU binding back to the frame's root_accel default
+        # EVT_MENU binding
+        self.frame.root_accel.removePopupCallback()
 
-    def reconnectEvents(self):
-        """Update event handlers if the menu has been dynamically updated
-        
-        Sub-ids may have changed after a dynamic menu change, so update the
-        min-max list, and update the event handlers.
-        """
-        self.disconnectEvents()
-        self.index_actions = {}
-        if self.actions:
-            for action in self.actions.values():
-                # Global ids can't have changed dynamically, so ignore them.
-                # We're only interested in the sub-ids
-                subids = action.getSubIds()
-                if subids:
-                    self.updateMinMax(subids[0], subids[-1])
-                    for id in subids:
-                        self.index_actions[id] = action
-            self.connectEvents()
-
-    def disconnectEvents(self):
-        """Remove the event handlers for the range of menu ids"""
-        self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_COMMAND_MENU_SELECTED)
-        self.frame.Disconnect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI)
-        self.frame.Unbind(wx.EVT_MENU_OPEN)
-    
-    def connectEvents(self):
-        """Add event handlers for the range of menu ids"""
-        self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_COMMAND_MENU_SELECTED,
-                           self.OnMenuSelected)
-        self.frame.Connect(self.min_id, self.max_id, wx.wxEVT_UPDATE_UI,
-                           self.OnUpdateUI)
-        self.frame.Bind(wx.EVT_MENU_OPEN, self.OnMenuOpen)
-    
-    def OnMenuSelected(self, evt):
+    def OnMenu(self, evt):
         """Process a menu selection event"""
         self.dprint(evt)
-        id = evt.GetId()
+        eid = evt.GetId()
         
-        action = None
-        index = None
-        
-        # FIXME: Check for index actions first, because the global id for
-        # a list is used as the first item in a list and also shows up in
-        # self.actions.  Should the global id be used in lists???
-        if id in self.popup_index_actions:
-            # Some actions are associated with more than one id, like list
-            # actions.  These are dispatched here.
-            action = self.popup_index_actions[id]
-            index = action.getIndexOfId(id)
-            self.dprint("popup index %d of %s" % (index, action))
-        elif id in self.index_actions:
-            # Some actions are associated with more than one id, like list
-            # actions.  These are dispatched here.
-            action = self.index_actions[id]
-            index = action.getIndexOfId(id)
-            self.dprint("index %d of %s" % (index, action))
-        elif id in self.popup_actions:
-            # The id is in the list of single-event actions
-            action = self.popup_actions[id]
-            self.dprint("popup: %s" % (action))
-        elif id in self.actions:
-            # The id is in the list of single-event actions
-            action = self.actions[id]
-            self.dprint(action)
+        action = self.getMenuAction(eid)
+        if action is not None:
+            try:
+                index = self.menu_id_to_index[eid]
+            except KeyError:
+                index = None
+        self.dprint("popup index %s of %s" % (index, action))
         
         # Handle the special case when the action is called from the OS X menu
         if index is not None:
@@ -608,50 +574,3 @@ class UserActionMap(debugmixin):
                 wx.CallAfter(action.actionOSXMinimalMenu)
             else:
                 wx.CallAfter(action.action)
-    
-    def OnUpdateUI(self, evt):
-        """Update the state of the toolbar items.
-        
-        This event only gets fired for toolbars? I had thought it was fired
-        just before wx shows the menu, giving us a chance to update the status
-        before the user sees it.
-        """
-        if self.debuglevel > 1: self.dprint(evt)
-        id = evt.GetId()
-        if id in self.actions:
-            # We're only interested in one id per Action, because list
-            # actions will set the state for all their sub-ids given a
-            # single id
-            action = self.actions[id]
-            if self.debuglevel > 1 or action.debuglevel: self.dprint(action)
-            action.showEnable()
-    
-    def OnMenuOpen(self, evt):
-        """Callback when a menubar menu is about to be opened.
-        
-        Note that on Windows, this also happens when submenus are opened, but
-        gtk only happens when the top level menu gets opened.
-        
-        By trial and error, it seems to be safe to update dynamic menus here.
-        """
-        #dprint(evt)
-        for action in self.actions.values():
-            #dprint(action)
-            action.showEnable()
-            if hasattr(action, 'updateOnDemand'):
-                action.updateOnDemand()
-    
-    def forceToolbarUpdate(self):
-        """Convenience function to force the on-demand items in the toolbar to
-        be updated outside of an EVT_MENU_OPEN event.
-        
-        This is useful when you need to change a toolbar icon as the result
-        of another action and you'd like the change in the menu system to be
-        reflected immediately rather than waiting for the next EVT_MENU_OPEN
-        when the user pulls down a menu.
-        """
-        for action in self.actions.values():
-            if hasattr(action, 'updateToolOnDemand'):
-                #dprint(action)
-                action.showEnable()
-                action.updateToolOnDemand()

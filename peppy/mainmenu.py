@@ -144,6 +144,8 @@ class OpenFileNewWindowGUI(OpenFileGUIMixin, SelectAction):
 
 
 class LocalFileMinibuffer(CompletionMinibuffer):
+    allow_tab_complete_key_processing = True
+    
     def setDynamicChoices(self):
         text = self.text.GetValue()
         
@@ -268,6 +270,8 @@ class SaveAs(SelectAction):
 
 
 class URLMinibuffer(CompletionMinibuffer):
+    allow_tab_complete_key_processing = True
+    
     def setDynamicChoices(self):
         text = self.text.GetValue()
         
@@ -601,8 +605,8 @@ class RunFilter(RunMixin, SelectAction):
     default_menu = ("Tools", 3)
 
     def action(self, index=-1, multiplier=1):
-        if self.name in self.mode.class_storage:
-            last = self.mode.class_storage[self.name]
+        if self.name in self.mode.major_mode_class_cache:
+            last = self.mode.major_mode_class_cache[self.name]
         else:
             last = ''
         minibuffer = TextMinibuffer(self.mode, self, label="Command line:",
@@ -611,7 +615,7 @@ class RunFilter(RunMixin, SelectAction):
         self.mode.setStatusText("Enter command line, %s will be replaced by full path to file")
 
     def processMinibuffer(self, minibuffer, mode, text):
-        self.mode.class_storage[self.name] = text
+        self.mode.major_mode_class_cache[self.name] = text
         self.mode.startCommandLine(text, expand=True)
 
 class StopScript(RunMixin, SelectAction):
@@ -633,7 +637,7 @@ class StopScript(RunMixin, SelectAction):
         self.mode.stopInterpreter()
 
 
-class Undo(STCModificationAction):
+class Undo(BufferBusyActionMixin, SelectAction):
     """Undo the last undoable action
     
     Note that not all actions are undoable.
@@ -644,6 +648,10 @@ class Undo(STCModificationAction):
     default_menu = ("Edit", 0)
     key_bindings = {'default': "C-z", 'emacs': ["C-/", "C-S--",]}
     
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'CanUndo')
+    
     def isActionAvailable(self):
         return self.mode.CanUndo()
 
@@ -652,7 +660,7 @@ class Undo(STCModificationAction):
         return self.mode.Undo()
 
 
-class Redo(STCModificationAction):
+class Redo(BufferBusyActionMixin, SelectAction):
     """Redo the last action that was undone
     
     Applies the last action that was unapplied from the most recent L{Undo}.
@@ -663,6 +671,10 @@ class Redo(STCModificationAction):
     default_menu = ("Edit", 1)
     key_bindings = {'win': "C-y", 'emacs': "C-S-/", 'mac': "C-S-z"}
     
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'CanRedo')
+
     def isActionAvailable(self):
         return self.mode.CanRedo()
 
@@ -699,7 +711,7 @@ class Copy(BufferBusyActionMixin, SelectAction):
     icon = "icons/page_copy.png"
     default_menu = ("Edit", 101)
     key_bindings = {'win': "C-c", 'mac': "C-c", 'emacs': "M-w"}
-    key_needs_focus = True
+    needs_keyboard_focus = True
     
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -742,7 +754,8 @@ class PasteAtColumn(STCModificationAction):
     This is not rectangular paste, however, and any existing text in the lines
     will be shifted over only the number of characters in the respective line
     inserted from the clipboard.  The clipboard text is not converted into a
-    rectangular block of text with spaces added to the right margins of lines.    """
+    rectangular block of text with spaces added to the right margins of lines.
+    """
     alias = "paste-at-column"
     name = "Paste at Column"
     icon = "icons/paste_plain.png"
@@ -987,8 +1000,8 @@ class ExecuteActionByName(ActionNameMinibufferMixin, SelectAction):
         to the list of possible completions.
         """
         frame = self.frame
-        self.dprint(frame.menumap.actions)
-        actions = frame.menumap.actions.itervalues()
+        self.dprint(frame.root_accel.actions)
+        actions = frame.root_accel.actions.itervalues()
         return actions
     
     def processMinibuffer(self, minibuffer, mode, text):
@@ -1026,8 +1039,8 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
         to the list of possible completions.
         """
         frame = self.frame
-        self.dprint(frame.menumap.actions)
-        actions = frame.menumap.actions.itervalues()
+        self.dprint(frame.root_accel.actions)
+        actions = frame.root_accel.actions.itervalues()
         return actions
 
     def processMinibuffer(self, minibuffer, mode, text):
@@ -1054,7 +1067,7 @@ class DescribeKey(SelectAction):
     key_bindings = {'emacs': "C-h k", }
 
     def action(self, index=-1, multiplier=1):
-        self.frame.keys.setReportNext(self.displayAction)
+        self.frame.root_accel.setReportNext(self.displayAction)
 
     def displayAction(self, action):
         if action:
@@ -1066,7 +1079,7 @@ class DescribeKey(SelectAction):
 
 
 class CancelMinibuffer(SelectAction):
-    """Cancel any currently active minibuffer
+    """Cancel any currently active minibuffer or sidebar
     
     This is a special key sequence that will remove the minibuffer regardless
     of the state of the minibuffer.
@@ -1074,10 +1087,16 @@ class CancelMinibuffer(SelectAction):
     alias = "cancel-minibuffer"
     name = "Cancel Minibuffer"
     icon = 'icons/control_stop.png'
-    key_bindings = {'default': "ESC", 'emacs': "M-ESC ESC", }
+    key_bindings = {'default': "ESC", 'emacs': ["C-g", "M-ESC ESC",], }
     
+    def addKeyBindingToAcceleratorList(self, accel_list):
+        if self.keyboard is not None:
+            accel_list.addCancelKeyBinding(self.keyboard, self)
+        
     def action(self, index=-1, multiplier=1):
         self.mode.removeMinibuffer()
+        self.mode.wrapper.clearPopups()
+        self.frame.spring.clearRadio()
 
 
 class HelpMinibuffer(SelectAction):

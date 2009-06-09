@@ -1,0 +1,9 @@
+[Core]
+Name = Project Plugin
+Module = project_plugin
+
+[Documentation]
+Author = Rob McMullen, Kevin D. Smith, Cody Precord
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Support for projects and interfaces to source code control

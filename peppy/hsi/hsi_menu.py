@@ -124,10 +124,10 @@ class SelectBand(HSIActionMixin, OnDemandActionMixin, RadioAction):
     def getNonInlineName(self):
         return _("View %s") % self.cubeview.imageDirectionLabel
     
-    def updateOnDemand(self):
+    def updateOnDemand(self, accel):
         self.cubeview = self.mode.cubeview
         self.dprint()
-        self.dynamic()
+        self.dynamic(accel)
     
     def getHash(self):
         hash = (self.cubeview, self.cubeview.imageDirectionLabel)

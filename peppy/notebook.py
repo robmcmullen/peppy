@@ -13,6 +13,7 @@ from wx.lib.pubsub import Publisher
 from peppy.debug import *
 from peppy.major import *
 from peppy.buffers import Buffer, BufferList
+from peppy.menu import PopupMenu
 
 
 class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
@@ -79,7 +80,7 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
             'mode': wrapper.editwin,
             }
         if action_classes:
-            self.frame.menumap.popupActions(self, action_classes, options)
+            PopupMenu(self.frame, self, None, action_classes, options)
         #evt.Skip()
 
     def closeAllTabs(self):
@@ -223,6 +224,7 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
         mode.showInitialPosition(user_url, options)
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
+        mode.setReadyForIdleEvents()
 
     def newMode(self, buffer, modecls=None, mode_to_replace=None, wrapper=None):
         assert self.dprint("mode=%s replace=%s" % (buffer, mode_to_replace))

@@ -34,8 +34,8 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
     )
 
     @classmethod
-    def worksWithMajorMode(self, mode):
-        return hasattr(mode, 'getFoldHierarchy')
+    def worksWithMajorMode(self, modecls):
+        return hasattr(modecls, 'getFoldHierarchy')
 
     def __init__(self, parent, **kwargs):
         if wx.Platform == '__WXGTK__':
@@ -52,7 +52,6 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnExpand)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnCollapse)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
-        self.Bind(wx.EVT_TREE_KEY_DOWN, self.update)
     
     def activateSpringTab(self):
         """Callback function from the SpringTab handler requesting that we
@@ -68,16 +67,38 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
             self.DeleteChildren(self.root)
+            self.current_line = self.mode.GetCurrentLine()
+            self.item_before = None
             self.appendChildren(self.root,self.hierarchy)
             if self.has_root:
                 self.Expand(self.root)
+        else:
+            self.UnselectAll()
+            self.current_line = self.mode.GetCurrentLine()
+            self.item_before = None
+            self.highlightCurrentItem(self.root)
         if evt:
             evt.Skip()
     
     def appendChildren(self, wxParent, nodeParent):
+        """Recursive capable function to add items from the fold explorer
+        hierarchy to the tree, as well as highlighting the initial item.
+        
+        For the initial item highlighing, uses the current_line instance
+        attribute to determine the line number.
+        """
         for nodeItem in nodeParent.children:
             if nodeItem.show:
                 wxItem = self.AppendItem(wxParent, nodeItem.text.strip())
+                if self.current_line is not None:
+                    # Handle the determination of the current entry to be
+                    # highlighted.
+                    if nodeItem.start <= self.current_line:
+                        self.item_before = wxItem
+                    elif self.item_before is not None:
+                        self.SelectItem(self.item_before)
+                        self.current_line = None
+                        self.item_before = None
                 self.SetPyData(wxItem, nodeItem)
                 self.appendChildren(wxItem, nodeItem)
                 if nodeItem.expanded:
@@ -87,6 +108,30 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             else:
                 # Append children of a hidden node to the parent
                 self.appendChildren(wxParent, nodeItem)
+    
+    def highlightCurrentItem(self, parent):
+        """Recursive capable function used to find the item that should be
+        highlighted.
+        
+        Uses the current_line instance attribute to determine the line number,
+        or if it is set to None, is used as the exit condition.
+        """
+        if self.current_line is not None:
+            child, cookie = self.GetFirstChild(parent)
+            while child:
+                node = self.GetPyData(child)
+                if node.start <= self.current_line:
+                    self.item_before = child
+                elif self.item_before is not None:
+                    self.SelectItem(self.item_before)
+                    self.current_line = None
+                    self.item_before = None
+                    break
+                if self.ItemHasChildren(child):
+                    self.highlightCurrentItem(child)
+                if self.current_line is None:
+                    break
+                child, cookie = self.GetNextChild(parent, cookie)
             
     def OnActivate(self, evt):
         node = self.GetPyData(evt.GetItem())

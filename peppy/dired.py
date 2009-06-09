@@ -8,14 +8,11 @@ Major mode for displaying a list of files in a directory
 import os, datetime
 
 import wx
-from wx.lib.mixins.listctrl import ColumnSorterMixin
 
 import peppy.vfs as vfs
 
-from peppy.lib.column_autosize import *
-
 from peppy.yapsy.plugins import *
-from peppy.major import *
+from peppy.list_mode import *
 from peppy.buffers import *
 from peppy.stcinterface import *
 from peppy.context_menu import *
@@ -178,7 +175,7 @@ class DiredSTC(NonResidentSTC):
     pass
 
 
-class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
+class DiredMode(ListMode):
     """Directory viewing mode
 
     Dired is a directory viewing mode that works like an extremely bare-bones
@@ -203,68 +200,37 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         return False
 
     def __init__(self, parent, wrapper, buffer, frame):
-        MajorMode.__init__(self, parent, wrapper, buffer, frame)
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT, pos=(9000,9000))
-        ColumnAutoSizeMixin.__init__(self)
-
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-
-        self.createColumns()
+        self.url = buffer.url
         
         # Need to maintain two maps; the original order based on the index
-        # number when the entries were inserted into the list, and
+        # number when the entries were inserted into the list, and the
+        # standard itemDataMap list.  itemDataMap maintains the current order
+        # that is used by the ColumnSorterMixin to reorder the list when one
+        # of the column headings is clicked.
         self.origDataMap = {}
-        # the current order that is used by the ColumnSorterMixin to reorder
-        # the list when one of the column headings is clicked.
-        self.itemDataMap = {}
         
-        ColumnSorterMixin.__init__(self, self.GetColumnCount())
-        
-        self.updating = False
-        self.url = self.buffer.url
-        
-        # Assign icons for up and down arrows for column sorter
-        getIconStorage().assignList(self)
+        ListMode.__init__(self, parent, wrapper, buffer, frame)
     
     def setViewPositionData(self, options=None):
-        self.reset()
+        self.resetList()
         self.setSelectedIndexes([0])
         
         # default to sort by filename
         initial_sort = self.classprefs.sort_filenames_if_scheme.split(',')
         if self.url.scheme in initial_sort:
-            self.SortListItems(1)
+            self.list.SortListItems(1)
     
-    # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
-    def GetListCtrl(self):
-        return self
-    
-    def GetSortImages(self):
-        down = getIconStorage("icons/bullet_arrow_down.png")
-        up = getIconStorage("icons/bullet_arrow_up.png")
-        return (down, up)
-    
-    def GetSecondarySortValues(self, col, key1, key2):
-        return (self.itemDataMap[key1].getBasename(),
-                self.itemDataMap[key2].getBasename())
+    def GetSecondarySortValues(self, col, key1, key2, itemDataMap):
+        return (itemDataMap[key1].getBasename(), itemDataMap[key2].getBasename())
 
-    def createListenersPostHook(self):
-#        Publisher().subscribe(self.reset, 'buffer.opened')
-#        Publisher().subscribe(self.reset, 'buffer.closed')
-#        Publisher().subscribe(self.reset, 'buffer.modified')
-        pass
-
-    def removeListenersPostHook(self):
-        Publisher().unsubscribe(self.reset)
-
-    def createColumns(self):
-        self.InsertSizedColumn(0, "Flags", min=30, max=30, greedy=True)
-        self.InsertSizedColumn(1, "Filename", min=100)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
-        self.InsertSizedColumn(3, "Date")
-        self.InsertSizedColumn(4, "Mode")
-        self.InsertSizedColumn(5, "Description", min=100, greedy=True)
-        self.InsertSizedColumn(6, "URL", ok_offscreen=True)
+    def createColumns(self, list):
+        list.InsertSizedColumn(0, "Flags", min=30, max=30, greedy=True)
+        list.InsertSizedColumn(1, "Filename", min=100)
+        list.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+        list.InsertSizedColumn(3, "Date")
+        list.InsertSizedColumn(4, "Mode")
+        list.InsertSizedColumn(5, "Description", min=100, greedy=True)
+        list.InsertSizedColumn(6, "URL", ok_offscreen=True)
 
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
@@ -273,58 +239,14 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         self.dprint("clicked on %d: path=%s" % (index, path))
         self.frame.open(path)
 
-    def setSelectedIndexes(self, indexes):
-        """Highlight the rows contained in the indexes array"""
-        
-        list_count = self.GetItemCount()
-        for index in range(list_count):
-            if index in indexes:
-                self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-            else:
-                self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-
-    def getSelectedIndexes(self):
-        """Return an array of indexes that are currently selected."""
-        
-        indexes = []
-        index = self.GetFirstSelected()
-        while index != -1:
-            assert self.dprint("index %d" % (index, ))
-            indexes.append(index)
-            index = self.GetNextSelected(index)
-        return indexes
-    
     def getFirstSelectedKey(self):
         """Get the Buffer object of the first selected item in the list."""
-        index = self.GetFirstSelected()
+        index = self.list.GetFirstSelected()
         if index == -1:
             return None
-        key = self.GetItem(index, 6).GetText()
+        key = self.list.GetItem(index, 6).GetText()
         return key
 
-    def moveSelected(self, dir):
-        """Move the selection up or down.
-        
-        If dir < 0, move the selection to the item before the first currently
-        selected item, and if dir > 0 move the selection to after the last
-        item that is currently selected.
-        """
-        indexes = self.getSelectedIndexes()
-        if not indexes:
-            return
-        index = None
-        if dir < 0:
-            index = indexes[0] - 1
-            if index < 0:
-                index = 0
-        elif dir > 0:
-            index = indexes[-1] + 1
-            if index >= self.GetItemCount():
-                index = self.GetItemCount() - 1
-        if index is not None:
-            self.setSelectedIndexes([index])
-            self.EnsureVisible(index)
-    
     def setFlag(self, flag):
         """Set the specified flag for all the selected items.
         
@@ -344,7 +266,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
                 tmp.sort()
                 flags = "".join(tmp)
                 entry.setFlags(flags)
-                self.SetStringItem(index, 0, flags)
+                self.list.SetStringItem(index, 0, flags)
 
     def clearFlags(self):
         """Clear all flags for the selected items."""
@@ -353,14 +275,14 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
             entry = self.getEntryFromIndex(index)
             flags = ""
             entry.setFlags(flags)
-            self.SetStringItem(index, 0, flags)
+            self.list.SetStringItem(index, 0, flags)
     
     def execute(self):
         """Operate on all the flags for each of the buffers.
         
         For each buffer item, process the flags to perform the requested action.
         """
-        list_count = self.GetItemCount()
+        list_count = self.list.GetItemCount()
         for index in range(list_count):
             entry = self.getEntryFromIndex(index)
             url = entry.getURL()
@@ -374,7 +296,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
                 self.frame.open(url)
             flags = ""
             entry.setFlags(flags)
-            self.SetStringItem(index, 0, flags)
+            self.list.SetStringItem(index, 0, flags)
     
     def getEntryFromIndex(self, index):
         """Return the DiredEntry from the list index.
@@ -385,7 +307,7 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
         abstraction is needed: the ItemData field of the list points to the
         real entry.
         """
-        orig_index = self.GetItemData(index)
+        orig_index = self.list.GetItemData(index)
         entry = self.origDataMap[orig_index]
         return entry
 
@@ -402,65 +324,40 @@ class DiredMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
             entries.append(entry)
         return entries
     
-    def reset(self, msg=None, sort=False):
-        """Reset the list.
-        
-        No optimization here, just rebuild the entire list.
+    def resetList(self, msg=None, sort=False):
+        """Wrapper around ListMode.resetList because we need to do a few more
+        things.
         """
         if self.updating:
             # don't process if we're currently updating the list
             dprint("skipping an update while we're in the middle of an execute")
             return
-        
-        # FIXME: Freeze doesn't seem to work -- on windows, this list is built
-        # so slowly that you can see columns being resized.
-        self.Freeze()
-        list_count = self.GetItemCount()
-        index = 0
-        cumulative = 0
-        cache = []
-        show = -1
-        self.itemDataMap = {}
         self.origDataMap = {}
-        for name in vfs.get_names(self.url):
-            # FIXME: should get_names always return unicode? Until then, create
-            # a unicode version of the name
-            entry = DiredEntry(index, self.url, name)
-            
-            if index >= list_count:
-                self.InsertStringItem(sys.maxint, entry.getFlags())
-            else:
-                self.SetStringItem(index, 0, entry.getFlags())
-            self.SetStringItem(index, 1, entry.getBasename())
-            self.SetStringItem(index, 2, str(entry.getSize()))
-            self.SetStringItem(index, 3, entry.getCompactDate())
-            self.SetStringItem(index, 4, entry.getMode())
-            self.SetStringItem(index, 5, entry.getDescription())
-            self.SetStringItem(index, 6, entry.getURL())
-            self.SetItemData(index, index)
-            self.origDataMap[index] = entry
-            self.itemDataMap[index] = entry
-
-            index += 1
         
-        if index < list_count:
-            for i in range(index, list_count):
-                # always delete the first item because the list gets
-                # shorter by one each time.
-                self.DeleteItem(index)
-        if show >= 0:
-            self.EnsureVisible(show)
-
-        self.ResizeColumns()
+        self.Freeze()
+        ListMode.resetList(self, msg)
         
         if sort:
             self.SortListItems()
         self.Thaw()
-        
+    
+    def getListItems(self):
+        return vfs.get_names(self.url)
+    
+    def getItemRawValues(self, index, name):
+        entry = DiredEntry(index, self.url, name)
+        self.origDataMap[index] = entry
+        return entry
+    
+    def convertRawValuesToStrings(self, entry):
+        return (entry.getFlags(), entry.getBasename(), str(entry.getSize()),
+                entry.getCompactDate(), entry.getMode(), entry.getDescription(),
+                entry.getURL())
+    
     def getPopupActions(self, evt, x, y):
         # id will be -1 if the point is not on any list item; otherwise it is
         # the index of the item.
-        id, flags = self.HitTest(wx.Point(x, y))
+        id, flags = self.list.HitTest(wx.Point(x, y))
         dprint("id=%d flags=%d" % (id, flags))
         entries = self.getSelectedEntries()
         action_classes = DiredPopupActions(self, entries)

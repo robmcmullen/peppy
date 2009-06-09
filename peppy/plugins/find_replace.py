@@ -1,9 +1,9 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-"""Some simple text transformation actions.
+"""Find and replace minibuffer
 
-This plugin is a collection of some simple text transformation actions that
-should be applicable to more than one major mode.
+This plugin includes the minibuffers for both the find and the find/replace
+commands in peppy.
 """
 
 import os, glob, re
@@ -102,11 +102,15 @@ class FindService(debugmixin):
         
     
     def getFlags(self, user_flags=0):
+        needs_reset = False
         if self.settings.match_case != self.stc.locals.case_sensitive_search:
             self.settings.match_case = self.stc.locals.case_sensitive_search
+            needs_reset = True
         if self.settings.whole_word != self.stc.locals.whole_word_search:
             self.settings.whole_word = self.stc.locals.whole_word_search
-        self.setFlags()
+            needs_reset = True
+        if needs_reset:
+            self.setFlags()
         
         return self.flags | user_flags
         
@@ -799,10 +803,8 @@ class FindBar(wx.Panel, debugmixin):
         sizer.Add(self.find, 1, wx.EXPAND)
         self.SetSizer(sizer)
         
-        self.find.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
-        self.find.Bind(wx.EVT_TEXT, self.OnChar)
-        self.find.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
-    
+        self.find.Bind(wx.EVT_TEXT, self.OnChanged)
+        
     def setDirection(self, dir=1):
         if dir > 0:
             self._lastcall = self.OnFindN
@@ -812,18 +814,8 @@ class FindBar(wx.Panel, debugmixin):
             text = self.service.backward
         self.label.SetLabel(_(text) + u":")
         self.Layout()
-
-    def OnCommandKeyDown(self, evt):
-        key = evt.GetKeyCode()
-        mods = evt.GetModifiers()
-        
-        #dprint("key=%s mods=%s" % (key, mods))
-        if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
-            self.moveFocusToText()
-        else:
-            evt.Skip()
-
-    def OnChar(self, evt):
+    
+    def OnChanged(self, evt):
         #handle updating the background color
         self.resetColor()
 
@@ -834,9 +826,6 @@ class FindBar(wx.Panel, debugmixin):
         self._lastcall(evt, incremental=True)
         
         evt.Skip()
-
-    def OnEnter(self, evt):
-        return self._lastcall(evt)
     
     def OnNotFound(self, msg=None):
         self.find.SetForegroundColour(wx.RED)
@@ -887,12 +876,6 @@ class FindBar(wx.Panel, debugmixin):
         self.stc.GotoPos(pos)
         self.stc.EnsureCaretVisible()
     
-    def moveFocusToText(self):
-        """Move the focus to the main editing window so the user can begin
-        typing at the selection.
-        """
-        self.stc.focus()
-    
     def OnFindN(self, evt, allow_wrap=True, help='', interactive=True, incremental=False):
         self._lastcall = self.OnFindN
         
@@ -942,7 +925,7 @@ class FindBar(wx.Panel, debugmixin):
             self.showLine(posn, help)
             self.loop = 0
             if posn == first:
-                self.OnFinished()            
+                self.OnFinished()
             return
         
         if allow_wrap and st != self.stc.GetTextLength():
@@ -952,7 +935,7 @@ class FindBar(wx.Panel, debugmixin):
         if posn != -1:
             self.showLine(posn, "Reached start of document, continued from end.")
             if posn == first:
-                self.OnFinished()            
+                self.OnFinished()
             return
         
         self.OnNotFound()
@@ -1002,14 +985,49 @@ class FindBar(wx.Panel, debugmixin):
         self.service.serialize(self.storage)
 
 
-class FindMinibuffer(Minibuffer):
-    """
-    Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
+
+
+
+
+
+
+
+class MinibufferFindMixin(object):
+    @classmethod
+    def worksWithSpecificMinibuffer(self, minibuffer):
+        return isinstance(minibuffer, FindMinibuffer)
+
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, FindMinibuffer) and isinstance(ctrl, wx.TextCtrl)
+
+
+class FindBarMoveFocusToText(MinibufferFindMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': 'TAB',}
+    
+    def actionKeystroke(self, evt, multiplier=1):
+        self.minibuffer.mode.focus()
+
+
+class FindBarFindNext(MinibufferFindMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': 'RET',}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, FindMinibuffer) and isinstance(ctrl, wx.TextCtrl)
+
+    def actionKeystroke(self, evt, multiplier=1):
+        msg = ""
+        for i in range(multiplier):
+            self.minibuffer.win._lastcall(evt)
+
+
+
+
+class FindReplaceMinibufferMixin(object):
+    """Mixin class for both find and replace minibuffers
     """
     search_storage = {}
-    
-    def createWindow(self, parent, **kwargs):
-        self.win = FindBar(parent, self.mode.frame, self.mode, self.search_storage, direction=self.action.find_direction, service=self.action.find_service)
     
     def getHelp(self):
         return self.win.service.help
@@ -1020,13 +1038,21 @@ class FindMinibuffer(Minibuffer):
         self.win.repeat(action.find_direction, action.find_service, last_focus)
 
     def focus(self):
-        # When the focus is asked for by the minibuffer driver, set it
-        # to the text ctrl or combo box of the pype findbar.
+        dprint("focus to %s" % self.win.find)
         self.win.find.SetFocus()
     
     def closePreHook(self):
         self.win.saveState()
         self.dprint(self.search_storage)
+
+
+class FindMinibuffer(FindReplaceMinibufferMixin, Minibuffer):
+    """Minibuffer for the incremental search function
+    """
+    search_storage = {}
+    
+    def createWindow(self, parent, **kwargs):
+        self.win = FindBar(parent, self.mode.frame, self.mode, self.search_storage, direction=self.action.find_direction, service=self.action.find_service)
 
 
 class FindText(MinibufferRepeatAction):
@@ -1135,14 +1161,10 @@ class ReplaceBar(FindBar):
         grid.AddGrowableCol(1)
         self.SetSizer(grid)
         
-        self.find.Bind(wx.EVT_TEXT_ENTER, self.OnTabToReplace)
         self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
-        self.replace.Bind(wx.EVT_TEXT_ENTER, self.OnTabToCommand)
         self.replace.Bind(wx.EVT_KILL_FOCUS, self.OnReplaceLoseFocus)
         self.replace.Bind(wx.EVT_SET_FOCUS, self.OnReplaceSetFocus)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
-        self.command.Bind(wx.EVT_KEY_DOWN, self.OnCommandKeyDown)
-        self.command.Bind(wx.EVT_CHAR, self.OnCommandChar)
         self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
     
     def OnReplaceError(self, msg=None):
@@ -1164,11 +1186,13 @@ class ReplaceBar(FindBar):
         self.dprint(evt.GetWindow())
         self.cancel()
         self.frame.SetStatusText("Enter search text and press Return")
+        evt.Skip()
     
     def OnReplaceSetFocus(self, evt):
         self.dprint(evt.GetWindow())
         self.frame.SetStatusText("Enter replacement text and press Return")
         self.focus_tracker = True
+        evt.Skip()
     
     def OnReplaceLoseFocus(self, evt):
         self.dprint(evt.GetWindow())
@@ -1176,6 +1200,7 @@ class ReplaceBar(FindBar):
         # self.replace causes the text to appear white on a white background.
         # Force the selection to disappear when tabbing off of self.replace
         self.replace.SetInsertionPointEnd()
+        evt.Skip()
     
     def OnTabToFind(self, evt):
         self.find.SetFocus()
@@ -1191,9 +1216,11 @@ class ReplaceBar(FindBar):
         self.command.SetFocus()
     
     def OnSearchStart(self, evt):
+        #dprint(self.focus_tracker)
         if self.focus_tracker:
             self.service.setFindString(self.find.GetValue())
             self.service.setReplaceString(self.replace.GetValue())
+            #dprint("find=%s replace=%s" % (self.service.settings.find, self.service.settings.replace))
             self.OnFindN(evt, help=self.help_status)
             self.focus_tracker = False
     
@@ -1266,39 +1293,12 @@ class ReplaceBar(FindBar):
         else:
             evt.Skip()
     
-    def OnCommandChar(self, evt):
-        uchar = unichr(evt.GetKeyCode())
-        #dprint("uchar = %s" % uchar)
-        if uchar in u'nN':
-            self.OnFindN(None, help=self.help_status)
-        elif uchar in u'yY ':
-            self.OnReplace(None)
-        elif uchar in u'pP^':
-            self.OnFindP(None, help=self.help_status)
-        elif uchar in u'qQ':
-            self.OnExit()
-        elif uchar in u'.':
-            self.OnReplace(None, find_next=False)
-            self.OnExit()
-        elif uchar in u',':
-            self.OnReplace(None, find_next=False)
-        elif uchar in u'!':
-            self.OnReplaceAll(None)
-        elif uchar in u'fF':
-            self.OnTabToFind(None)
-        elif uchar in u'rR':
-            self.OnTabToReplace(None)
-        elif uchar in u'?':
-            Publisher().sendMessage('peppy.log.info', (self.frame, self.__doc__))
-        else:
-            evt.Skip()
-    
     def OnExit(self, msg=''):
         self.cancel(pos_at_end=True)
         if msg:
             self.frame.SetStatusText(msg)
         if self.on_exit:
-            self.on_exit()
+            wx.CallAfter(self.on_exit)
 
     def repeatLastUserInput(self):
         """Load the user interface with the last saved user input
@@ -1323,7 +1323,7 @@ class ReplaceBar(FindBar):
         return False
 
 
-class ReplaceMinibuffer(FindMinibuffer):
+class ReplaceMinibuffer(FindReplaceMinibufferMixin, Minibuffer):
     """
     Adapter for PyPE findbar.  Maps findbar callbacks to our stuff.
     """
@@ -1335,6 +1335,92 @@ class ReplaceMinibuffer(FindMinibuffer):
                               direction=self.action.find_direction,
                               service=self.action.find_service)
 
+
+
+class MinibufferReplaceMixin(object):
+    @classmethod
+    def worksWithSpecificMinibuffer(self, minibuffer):
+        return isinstance(minibuffer, ReplaceMinibuffer)
+
+
+class ReplaceBarCommand(MinibufferReplaceMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': 'default',}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, ReplaceMinibuffer) and isinstance(ctrl, FakeButton)
+
+    def actionKeystroke(self, evt, multiplier=1):
+        uchar = unichr(evt.GetKeyCode())
+        for i in range(multiplier):
+            if uchar in u'nN':
+                self.minibuffer.win.OnFindN(None, help=self.minibuffer.win.help_status)
+            elif uchar in u'yY ':
+                self.minibuffer.win.OnReplace(None)
+            elif uchar in u'pP^':
+                self.minibuffer.win.OnFindP(None, help=self.minibuffer.win.help_status)
+            elif uchar in u'qQ':
+                self.minibuffer.win.OnExit()
+            elif uchar in u'.':
+                self.minibuffer.win.OnReplace(None, find_next=False)
+                self.minibuffer.win.OnExit()
+            elif uchar in u',':
+                self.minibuffer.win.OnReplace(None, find_next=False)
+            elif uchar in u'!':
+                self.minibuffer.win.OnReplaceAll(None)
+            elif uchar in u'fF':
+                self.minibuffer.win.OnTabToFind(None)
+            elif uchar in u'rR':
+                self.minibuffer.win.OnTabToReplace(None)
+            elif uchar in u'?':
+                Publisher().sendMessage('peppy.log.info', (self.minibuffer.frame, self.minibuffer.win.__doc__))
+                break
+
+
+class ReplaceBarMoveFocus(MinibufferReplaceMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': 'TAB',}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, ReplaceMinibuffer)
+
+    def actionKeystroke(self, evt, multiplier=1):
+        focus = self.minibuffer.win.FindFocus()
+        if focus == self.minibuffer.win.find:
+            self.minibuffer.win.OnTabToReplace(None)
+        elif focus == self.minibuffer.win.replace:
+            self.minibuffer.win.OnTabToCommand(None)
+        elif focus == self.minibuffer.win.command:
+            self.minibuffer.win.OnTabToFind(None)
+        else:
+            dprint("Unknown focus!!!")
+
+
+class ReplaceBarMoveFocusRet(MinibufferReplaceMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': 'RET',}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, ReplaceMinibuffer) and isinstance(ctrl, wx.TextCtrl)
+
+    def actionKeystroke(self, evt, multiplier=1):
+        focus = self.minibuffer.win.FindFocus()
+        if focus == self.minibuffer.win.find:
+            self.minibuffer.win.OnTabToReplace(None)
+        elif focus == self.minibuffer.win.replace:
+            self.minibuffer.win.OnTabToCommand(None)
+
+
+class ReplaceBarFindNext(MinibufferReplaceMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': ['RET', 'DELETE',],}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, ReplaceMinibuffer) and ctrl == minibuffer.win.command
+
+    def actionKeystroke(self, evt, multiplier=1):
+        self.minibuffer.win.OnFindN(None, help=self.minibuffer.win.help_status)
+    
 
 
 class Replace(MinibufferRepeatAction):
@@ -1395,8 +1481,8 @@ class FindReplacePlugin(IPeppyPlugin):
     actions.
     """
 
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, FundamentalMode):
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, FundamentalMode):
             return [FindText, FindRegex, FindWildcard, FindPrevText,
                     Replace, ReplaceRegex, ReplaceWildcard,
                     

@@ -1110,21 +1110,28 @@ class BitmapScroller(wx.ScrolledWindow):
         if self.img:
             inside = self.isEventInClientArea(ev)
             
-            # First, process the event itself or start it up if it has
-            # been triggered.
-            if self.selector:
-                if not self.selector.processEvent(ev):
-                    self.endActiveSelector()
-            elif inside and self.use_selector.trigger(ev):
-                self.startSelector(ev)
+            try:
+                # First, process the event itself or start it up if it has
+                # been triggered.
+                if self.selector:
+                    if not self.selector.processEvent(ev):
+                        self.endActiveSelector()
+                elif inside and self.use_selector.trigger(ev):
+                    self.startSelector(ev)
 
-            # Next, if we have a selector, process some user interface
-            # side effects
-            if self.selector:
-                if self.selector.want_autoscroll and not inside:
-                    self.autoScroll(ev)
-                if self.selector.want_blank_cursor:
-                    self.blankCursor(ev)
+                # Next, if we have a selector, process some user interface
+                # side effects
+                if self.selector:
+                    if self.selector.want_autoscroll and not inside:
+                        self.autoScroll(ev)
+                    if self.selector.want_blank_cursor:
+                        self.blankCursor(ev)
+            except:
+                # If something bad happens, make sure we return control of the
+                # mouse pointer to the user
+                if self.HasCapture():
+                    self.ReleaseMouse()
+                raise
         ev.Skip()
 
     def OnPaint(self, evt):

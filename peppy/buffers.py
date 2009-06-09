@@ -116,14 +116,14 @@ class BufferList(OnDemandGlobalListAction):
     def needsSort(cls):
         cls.needs_sort = True
     
-    def dynamic(self):
+    def dynamic(self, accel):
         """Check to see if the list needs sorting before processing a dynamic
         menu update.
         """
         if self.__class__.needs_sort:
             self.sort()
             self.__class__.needs_sort = False
-        OnDemandGlobalListAction.dynamic(self)
+        OnDemandGlobalListAction.dynamic(self, accel)
 
 
 class BufferListSort(OnDemandActionMixin, RadioAction):
@@ -159,7 +159,7 @@ class BufferListSort(OnDemandActionMixin, RadioAction):
         BufferListSort.sort_index = index
         BufferList.needsSort()
     
-    def updateOnDemand(self):
+    def updateOnDemand(self, accel):
         pass
 
 
@@ -364,7 +364,7 @@ class Buffer(BufferVFSMixin):
         self.viewer=None
         self.viewers=[]
 
-        self.modified=False
+        self.setInitialStateIsUnmodified()
         self.permanent = False
         
         self.backup_saved = False
@@ -482,8 +482,6 @@ class Buffer(BufferVFSMixin):
         
         self.setName()
 
-        self.modified = False
-        
         # If it doesn't exist, that means we are creating the file, so it
         # should be writable.
         self.readonly = not (vfs.can_write(self.url) or not vfs.exists(self.url))
@@ -522,9 +520,9 @@ class Buffer(BufferVFSMixin):
             else:
                 saveas = vfs.normalize(url)
             self.stc.prepareEncoding()
-            fh = vfs.open_write(saveas)
+            fh = self.stc.openFileForWriting(saveas)
             self.stc.writeTo(fh, saveas)
-            fh.close()
+            self.stc.closeFileAfterWriting(fh)
             self.stc.SetSavePoint()
             self.removeAutosaveIfExists()
             if saveas != self.url:
@@ -537,9 +535,9 @@ class Buffer(BufferVFSMixin):
                     pass
                 self.setURL(saveas)
                 self.setName()
+                self.readonly = not vfs.can_write(saveas)
                 Publisher().sendMessage('buffer.opened', self)
-            self.modified = False
-            self.readonly = not vfs.can_write(saveas)
+            self.setInitialStateIsUnmodified()
             self.showModifiedAll()
             self.saveTimestamp()
         except IOError, e:
@@ -562,6 +560,32 @@ class Buffer(BufferVFSMixin):
         self.change_count = 0
         self.stc.addDocumentChangeEvent(self.OnChanged)
 
+    def setInitialStateIsUnmodified(self):
+        """Set the initial state of the file as unmodified.
+        
+        The normal initial state of a file that has been loaded but not
+        yet edited is 'unmodified', meaning that no changes have been made
+        and peppy shows it is being saved.  No asterix appears next to the
+        filename until a change has been made by the user.  If the user then
+        undoes all the changes, the file returns to the initial unmodified.
+        """
+        self.modified = False
+        self.initial_modified_state = False
+        
+    def setInitialStateIsModified(self):
+        """Set the initial state of the file as modified.
+        
+        In certain cases, as in a when a template is loaded for a new file,
+        the initial state should be shows as modified (i.e.  unsaved).  The
+        purpose of this is to show that the file is still modified even if the
+        user undoes all the changes, and to make sure that the user can't undo
+        the initial template.
+        """
+        self.stc.EmptyUndoBuffer()
+        self.stc.SetSavePoint()
+        self.modified = True
+        self.initial_modified_state = True
+        
     def OnChanged(self, evt):
         #dprint("stc = %s" % self.stc)
         if self.stc.GetModify():
@@ -574,7 +598,7 @@ class Buffer(BufferVFSMixin):
                 wx.CallAfter(self.backupCallback)
         else:
             #self.dprint("clean!")
-            changed=False
+            changed = self.initial_modified_state
             self.change_count = 0
             self.removeAutosaveIfExists()
         if changed!=self.modified:
@@ -630,6 +654,13 @@ class Buffer(BufferVFSMixin):
         # This is only called once, the first time the document is modified,
         # regardless of the outcome of this method.
         self.backup_saved = True
+        
+        if not vfs.exists(self.url):
+            # The url may point to a nonexistent file because the user has
+            # created a new file.  New files aren't saved in the vfs until the
+            # user explicitly saves it, so because it doesn't exist in the vfs
+            # it won't need to be backed up.
+            return
         
         try:
             temp_url = self.stc.getBackupTemporaryFilename(self)

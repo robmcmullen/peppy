@@ -154,6 +154,10 @@ class STCInterface(object):
         
         """
         pass
+    
+    def openFileForWriting(self, url):
+        """Return a file handle that has been opened for writing"""
+        return None
 
     def writeTo(self, fh, url):
         """Write to filehandle, converting as necessary
@@ -161,6 +165,10 @@ class STCInterface(object):
         @param fh: file-like object to which the data should be saved
         @param url: the url that was used to open the file-like object
         """
+        pass
+    
+    def closeFileAfterWriting(self, fh):
+        """Close the opened file handle and perform any other cleanup"""
         pass
     
     def getProperties(self):
@@ -297,4 +305,85 @@ class NonResidentSTC(STCInterface):
     
     def Destroy(self):
         pass
+
+
+class UndoableItem(object):
+    def undo(self, stc):
+        """Override this in subclass to perform an undo operation
+        
+        The information needed to perform the undo must have been
+        self- contained in the object that was saved by the call to
+        L{UndoMixin.undoMixinSaveUndoableItem}
+        """
+        raise NotImplementedError
     
+    def redo(self, stc):
+        """Override this in subclass to perform a redo operation
+        
+        The information needed to perform the redo must have been
+        self- contained in the object that was saved by the call to
+        L{UndoMixin.undoMixinSaveUndoableItem}
+        """
+        raise NotImplementedError
+
+class UndoMixin(object):
+    """Mixin class to support undo operations in an STC that doesn't natively
+    support them.
+    
+    """
+    def __init__(self):
+        self.EmptyUndoBuffer()
+        
+    def EmptyUndoBuffer(self):
+        self._undo_list = []
+        self._undo_save_point = 0
+        self._undo_index = 0
+
+    def CanUndo(self):
+        return self._undo_index > 0
+
+    def Undo(self):
+        if self._undo_index > 0:
+            self._undo_index -= 1
+            obj = self._undo_list[self._undo_index]
+            obj.undo(self)
+
+    def CanRedo(self):
+        return self._undo_index < len(self._undo_list)
+
+    def Redo(self):
+        if self._undo_index < len(self._undo_list):
+            obj = self._undo_list[self._undo_index]
+            obj.redo(self)
+            self._undo_index += 1
+
+    def SetSavePoint(self):
+        self._undo_save_point = self._undo_index
+
+    def GetModify(self):
+        return self._undo_save_point != self._undo_index
+    
+    def undoMixinSaveUndoableItem(self, obj):
+        """Save an item in the undo history.
+        
+        This method is used to save an item in the undo history.  When the user
+        makes and edit and it is appropriate to have this edit added to the
+        undo history, this method puts that edit in the undo history.
+        
+        The edit needs to be encapsulated by an object that is subclassed from
+        L{UndoableItem}.  It must maintain enough details inside that object
+        to be able to reverse the edit if the user chooses to undo the edit,
+        and also needs to be able to reapply the edit should the user chose to
+        redo it.
+        
+        The object itself is opaque to the L{UndoMixin}; the mixin just
+        stores a list of objects in its undo history.  The object's
+        L{undo} and L{redo} methods are passed the STC as a parameter.
+        """
+        # Truncate everything after the current index if we are not at the end
+        # of the undo list
+        if len(self._undo_list) > self._undo_index:
+            self._undo_list = self._undo_list[:self._undo_index]
+        
+        self._undo_list.append(obj)
+        self._undo_index += 1

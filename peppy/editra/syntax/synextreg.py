@@ -19,8 +19,8 @@ LANGUAGE: Python
 """
 
 __author__ = "Cody Precord <cprecord@editra.org>"
-__svnid__ = "$Id: synextreg.py 58860 2009-02-12 23:57:42Z CJP $"
-__revision__ = "$Revision: 58860 $"
+__svnid__ = "$Id: synextreg.py 60800 2009-05-30 01:29:53Z CJP $"
+__revision__ = "$Revision: 60800 $"
 
 #-----------------------------------------------------------------------------#
 import os
@@ -201,6 +201,8 @@ ID_LANG_BOO = _NewId()
 LANG_BOO = u'Boo'
 ID_LANG_PYTHON = _NewId()
 LANG_PYTHON = u'Python'
+ID_LANG_COBRA = _NewId()
+LANG_COBRA = u'Cobra'
 
 # Use LEX_MATLAB
 ID_LANG_MATLAB = _NewId()
@@ -280,6 +282,13 @@ LANG_R = u'R'
 ID_LANG_S = _NewId()
 LANG_S = u'S'
 
+ID_LANG_GROOVY = _NewId()
+LANG_GROOVY = u'Groovy'
+
+ID_LANG_XTEXT = _NewId()
+LANG_XTEXT = u'Xtext'
+
+
 #---- End Language Identifier Keys ----#
 
 # Default extensions to file type mapping
@@ -294,6 +303,7 @@ EXT_MAP = {
            'boo'                : LANG_BOO,
            'c h'                : LANG_C,
            'ml mli'             : LANG_CAML,
+           'cobra'              : LANG_COBRA,
            'cfm cfc cfml dbm'   : LANG_COLDFUSION,
            'cc c++ cpp cxx hh h++ hpp hxx' : LANG_CPP,
            'csh'                : LANG_CSH,
@@ -360,6 +370,8 @@ EXT_MAP = {
            'vh vhdl'            : LANG_VHDL,
            'axl dtd plist rdf svg xml xrc xsd xsl xslt xul' : LANG_XML,
            'yaml yml'           : LANG_YAML,
+           'groovy'             : LANG_GROOVY,
+           'xtext'               : LANG_XTEXT,
           }
 
 

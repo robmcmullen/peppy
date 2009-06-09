@@ -10,6 +10,9 @@ import os,sys
 import __builtin__
 __builtin__._ = unicode
 
-import peppy.main
+try:
+    import peppy.main
+except AttributeError:
+    raise RuntimeError("Peppy needs wxPython version 2.8.7.1 or later to function.  Minimum recommended version is 2.8.8.0")
 
 peppy.main.main()

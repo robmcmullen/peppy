@@ -8,12 +8,11 @@ Major mode for displaying a list of buffers and operating on them.
 import os
 
 import wx
-from wx.lib.mixins.listctrl import ColumnSorterMixin
-
-from peppy.lib.column_autosize import *
 
 from peppy.yapsy.plugins import *
-from peppy.major import *
+from peppy.actions import *
+from peppy.list_mode import ListModeActionMixin
+from peppy.list_mode import *
 from peppy.buffers import *
 from peppy.stcinterface import *
 from peppy.debug import *
@@ -38,38 +37,23 @@ class BufferListSTC(NonResidentSTC):
         return "Document List"
 
 
-class FlagMixin(object):
+class FlagMixin(ListModeActionMixin):
     """Mixin to set a flag and move to the next item in the list"""
     flag = None
+    direction = 1
+    
+    @classmethod
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, 'setFlag')
     
     def action(self, index=-1, multiplier=1):
         if self.flag:
             self.mode.setFlag(self.flag)
-        self.mode.moveSelected(multiplier)
+        self.mode.moveSelected(multiplier * self.direction)
 
-class FlagBackwardsMixin(object):
+class FlagBackwardsMixin(FlagMixin):
     """Mixin to set a flag and move to the previous item in the list."""
-    flag = None
-    
-    def action(self, index=-1, multiplier=1):
-        if self.flag:
-            self.mode.setFlag(self.flag)
-        self.mode.moveSelected(-1)
-
-
-class BufferListNext(FlagMixin, SelectAction):
-    alias = "buffer-list-next"
-    name = "Move to Next Item"
-    tooltip = "Move the selection to the next item in the list."
-    default_menu = ("Actions", 100)
-    key_bindings = {'default': "n", }
-
-class BufferListPrevious(FlagBackwardsMixin, SelectAction):
-    alias = "buffer-list-previous"
-    name = "Move to Previous Item"
-    tooltip = "Move the selection to the previous item in the list."
-    default_menu = ("Actions", 101)
-    key_bindings = {'default': "p", }
+    direction = -1
 
 
 class BufferListDelete(FlagMixin, SelectAction):
@@ -123,7 +107,7 @@ class BufferListMarkBackwards(FlagBackwardsMixin, SelectAction):
     flag = 'M'
 
 
-class BufferListClearFlags(SelectAction):
+class BufferListClearFlags(ListModeActionMixin, SelectAction):
     alias = "buffer-list-clear-flags"
     name = "Clear Flags"
     tooltip = "Clear all flags from the selected item(s)."
@@ -136,7 +120,7 @@ class BufferListClearFlags(SelectAction):
         self.mode.moveSelected(multiplier)
 
 
-class BufferListExecute(SelectAction):
+class BufferListExecute(ListModeActionMixin, SelectAction):
     alias = "buffer-list-execute"
     name = "Save or Delete Marked Buffers"
     tooltip = "Act on the marked buffers according to their flags."
@@ -147,7 +131,7 @@ class BufferListExecute(SelectAction):
         self.mode.execute()
 
 
-class BufferListShow(SelectAction):
+class BufferListShow(ListModeActionMixin, SelectAction):
     alias = "buffer-list-show"
     name = "Show Buffer"
     tooltip = "Show the buffer in a new tab."
@@ -159,7 +143,7 @@ class BufferListShow(SelectAction):
         if buffer:
             self.frame.newBuffer(buffer)
 
-class BufferListReplace(SelectAction):
+class BufferListReplace(ListModeActionMixin, SelectAction):
     alias = "buffer-list-replace"
     name = "Replace Buffer"
     tooltip = "Show the buffer in place of this tab."
@@ -172,7 +156,7 @@ class BufferListReplace(SelectAction):
             self.frame.setBuffer(buffer)
 
 
-class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorMode):
+class BufferListMode(ListMode):
     """View the list of currently opened buffers
     """
     keyword = "BufferList"
@@ -191,108 +175,37 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
         return False
 
     def __init__(self, parent, wrapper, buffer, frame):
-        MajorMode.__init__(self, parent, wrapper, buffer, frame)
-        wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT)
-        ColumnAutoSizeMixin.__init__(self)
-
-        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-
         self.flags = {}
-
-        self.createColumns()
-        self.itemDataMap = {}
-        ColumnSorterMixin.__init__(self, self.GetColumnCount())
-        # Assign icons for up and down arrows for column sorter
-        getIconStorage().assignList(self)
-
-        self.updating = False
-        self.reset()
+        ListMode.__init__(self, parent, wrapper, buffer, frame)
         self.setSelectedIndexes([0])
     
-    # Used by the ColumnSorterMixin, see wx/lib/mixins/listctrl.py
-    def GetListCtrl(self):
-        return self
-    
-    def GetSortImages(self):
-        down = getIconStorage("icons/bullet_arrow_down.png")
-        up = getIconStorage("icons/bullet_arrow_up.png")
-        return (down, up)
-
-    def GetSecondarySortValues(self, col, key1, key2):
-        return (self.itemDataMap[key1][1], self.itemDataMap[key2][1])
-
+    def GetSecondarySortValues(self, col, key1, key2, itemDataMap):
+        return (itemDataMap[key1][1], itemDataMap[key2][1])
 
     def createListenersPostHook(self):
-        Publisher().subscribe(self.reset, 'buffer.opened')
-        Publisher().subscribe(self.reset, 'buffer.closed')
-        Publisher().subscribe(self.reset, 'buffer.modified')
+        Publisher().subscribe(self.resetList, 'buffer.opened')
+        Publisher().subscribe(self.resetList, 'buffer.closed')
+        Publisher().subscribe(self.resetList, 'buffer.modified')
 
     def removeListenersPostHook(self):
-        Publisher().unsubscribe(self.reset)
+        Publisher().unsubscribe(self.resetList)
 
-    def createColumns(self):
-        self.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", greedy=True)
-        self.InsertSizedColumn(1, "Buffer", min=100, greedy=False)
-        self.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
-        self.InsertSizedColumn(3, "Mode")
-        self.InsertSizedColumn(4, "URL", ok_offscreen=True)
+    def createColumns(self, list):
+        list.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", greedy=True)
+        list.InsertSizedColumn(1, "Buffer", min=100, greedy=False)
+        list.InsertSizedColumn(2, "Size", wx.LIST_FORMAT_RIGHT, min=30, greedy=True)
+        list.InsertSizedColumn(3, "Mode")
+        list.InsertSizedColumn(4, "URL", ok_offscreen=True)
 
-    def OnItemActivated(self, evt):
-        index = evt.GetIndex()
-        dprint("clicked on %d" % index)
-
-    def setSelectedIndexes(self, indexes):
-        """Highlight the rows contained in the indexes array"""
-        
-        list_count = self.GetItemCount()
-        for index in range(list_count):
-            if index in indexes:
-                self.SetItemState(index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED)
-            else:
-                self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-
-    def getSelectedIndexes(self):
-        """Return an array of indexes that are currently selected."""
-        
-        indexes = []
-        index = self.GetFirstSelected()
-        while index != -1:
-            assert self.dprint("index %d" % (index, ))
-            indexes.append(index)
-            index = self.GetNextSelected(index)
-        return indexes
-    
     def getFirstSelectedBuffer(self):
         """Get the Buffer object of the first selected item in the list."""
-        index = self.GetFirstSelected()
+        index = self.list.GetFirstSelected()
         if index == -1:
             return None
-        key = self.GetItem(index, 4).GetText()
+        key = self.list.GetItem(index, 4).GetText()
         buffer = BufferList.findBufferByURL(key)
         return buffer
 
-    def moveSelected(self, dir):
-        """Move the selection up or down.
-        
-        If dir < 0, move the selection to the item before the first currently
-        selected item, and if dir > 0 move the selection to after the last
-        item that is currently selected.
-        """
-        indexes = self.getSelectedIndexes()
-        if not indexes:
-            return
-        index = None
-        if dir < 0:
-            index = indexes[0] - 1
-            if index < 0:
-                index = 0
-        elif dir > 0:
-            index = indexes[-1] + 1
-            if index >= self.GetItemCount():
-                index = self.GetItemCount() - 1
-        if index is not None:
-            self.setSelectedIndexes([index])
-    
     def getFlags(self, key):
         """Get the flags for the given key.
         
@@ -310,7 +223,7 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
         """
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 4).GetText()
+            key = self.list.GetItem(index, 4).GetText()
             dprint("index=%d key=%s" % (index, key))
             flags = self.getFlags(key)
             if flag not in flags:
@@ -322,17 +235,17 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
                 tmp.sort()
                 flags = "".join(tmp)
                 self.flags[key] = flags
-                self.SetStringItem(index, 0, flags)
-                self.itemDataMap[index][0] = flags
+                self.list.SetStringItem(index, 0, flags)
+                self.list.itemDataMap[index][0] = flags
     
     def clearFlags(self):
         """Clear all flags for the selected items."""
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.GetItem(index, 4).GetText()
+            key = self.list.GetItem(index, 4).GetText()
             self.flags[key] = ""
-            self.SetStringItem(index, 0, self.flags[key])
-            self.itemDataMap[index][0] = self.flags[key]
+            self.list.SetStringItem(index, 0, self.flags[key])
+            self.list.itemDataMap[index][0] = self.flags[key]
  
     def execute(self):
         """Operate on all the flags for each of the buffers.
@@ -341,9 +254,9 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
         """
         delete_self = None
         try:
-            list_count = self.GetItemCount()
+            list_count = self.list.GetItemCount()
             for index in range(list_count):
-                key = self.GetItem(index, 4).GetText()
+                key = self.list.GetItem(index, 4).GetText()
                 flags = self.flags[key]
                 dprint("flags %s for %s" % (flags, key))
                 if not flags:
@@ -372,65 +285,21 @@ class BufferListMode(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin, MajorM
         finally:
             if delete_self is not None:
                 dprint("OK, now deleting myself")
-                self.deletePreHook()
                 # delete the buffer using call after to allow any pending
                 # events to the list to be cleaned up
                 wx.CallAfter(delete_self.removeAllViewsAndDelete)
             elif self.updating:
                 self.updating = False
-                self.reset()
-
-    def reset(self, msg=None):
-        """Reset the list.
-        
-        No optimization here, just rebuild the entire list.
-        """
-        if self.updating:
-            # don't process if we're currently updating the list
-            dprint("skipping an update while we're in the middle of an execute")
-            return
-        
-        # FIXME: Freeze doesn't seem to work -- on windows, this list is built
-        # so slowly that you can see columns being resized.
-        self.Freeze()
-        list_count = self.GetItemCount()
-        index = 0
-        cumulative = 0
-        cache = []
-        show = -1
-        self.itemDataMap = {}
-        for buf in BufferList.getBuffers():
-            if buf.permanent:
-                # how to differentiate buffers that can't be deleted?
-                pass
-            
-            key = unicode(buf.url)
-            flags = self.getFlags(key)
-            if index >= list_count:
-                self.InsertStringItem(sys.maxint, flags)
-            else:
-                self.SetStringItem(index, 0, flags)
-            self.SetStringItem(index, 1, buf.getTabName())
-            self.SetStringItem(index, 2, str(buf.stc.GetLength()))
-            self.SetStringItem(index, 3, buf.defaultmode.keyword)
-            self.SetStringItem(index, 4, key)
-            self.SetItemData(index, index)
-            self.itemDataMap[index] = [flags, buf.getTabName(),
-                                       buf.stc.GetLength(),
-                                       buf.defaultmode.keyword, key]
-
-            index += 1
-        
-        if index < list_count:
-            for i in range(index, list_count):
-                # always delete the first item because the list gets
-                # shorter by one each time.
-                self.DeleteItem(index)
-        if show >= 0:
-            self.EnsureVisible(show)
-
-        self.ResizeColumns()
-        self.Thaw()
+                self.resetList()
+    
+    def getListItems(self):
+        return BufferList.getBuffers()
+    
+    def getItemRawValues(self, index, buf):
+        key = unicode(buf.url)
+        flags = self.getFlags(key)
+        # Must return a list instead of a tuple because flags gets changed
+        return [flags, buf.getTabName(), buf.stc.GetLength(), buf.defaultmode.keyword, key]
 
 
 class BufferListModePlugin(IPeppyPlugin):
@@ -442,10 +311,9 @@ class BufferListModePlugin(IPeppyPlugin):
     def getActions(self):
         return [ListAllDocuments]
 
-    def getCompatibleActions(self, mode):
-        if mode.__class__ == BufferListMode:
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, BufferListMode):
             return [
-                BufferListNext, BufferListPrevious,
                 BufferListSave, BufferListSaveBackwards,
                 BufferListDelete, BufferListDeleteBackwards,
                 BufferListMark, BufferListMarkBackwards,

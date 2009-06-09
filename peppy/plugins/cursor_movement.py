@@ -46,16 +46,34 @@ class GotoLine(MinibufferAction):
         mode.showLine(line - 1)
 
 
+class RecenterScreen(SelectAction):
+    """Center the current line on the screen"""
+    name = "Recenter Screen"
+    default_menu = ("Tools", 255)
+    key_bindings = {'emacs': 'C-l'}
+    
+    @classmethod
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, 'LinesOnScreen')
+    
+    def action(self, index=-1, multiplier=1):
+        line = self.mode.GetCurrentLine()
+        offset = self.mode.LinesOnScreen() / 2
+        pos = self.mode.GetCurrentPos()
+        self.mode.showLine(line, offset)
+        self.mode.GotoPos(pos)
+
+
 class MarkerAction(SelectAction):
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'MarkerAdd')
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, 'MarkerAdd')
 
 class SetBookmark(MarkerAction):
     """Set a bookmark on the current line in the buffer."""
     alias = "set-bookmark"
     name = "Set Bookmark"
-    default_menu = (("Tools/Bookmarks", 251), 100)
+    default_menu = (("Tools/Bookmarks", 260), 100)
     key_bindings = {'emacs': 'C-c C-b C-s'}
 
     def action(self, index=-1, multiplier=1):
@@ -66,7 +84,7 @@ class ToggleBookmark(MarkerAction):
     """Toggle a bookmark on the current line in the buffer."""
     alias = "toggle-bookmark"
     name = "Toggle Bookmark"
-    default_menu = (("Tools/Bookmarks", 251), 110)
+    default_menu = (("Tools/Bookmarks", 260), 110)
     key_bindings = {'default': 'M-b', 'emacs': 'C-c C-b C-b'}
 
     def action(self, index=-1, multiplier=1):
@@ -82,7 +100,7 @@ class DelBookmark(MarkerAction):
     """Remove a bookmark on the current line in the buffer."""
     alias = "del-bookmark"
     name = "Delete Bookmark"
-    default_menu = (("Tools/Bookmarks", 251), 120)
+    default_menu = (("Tools/Bookmarks", 260), 120)
     key_bindings = {'emacs': 'C-c C-b C-d'}
 
     def action(self, index=-1, multiplier=1):
@@ -132,7 +150,7 @@ class CursorMovementPlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [GotoLine,
+        return [GotoLine, RecenterScreen,
                 
                 SetBookmark, ToggleBookmark, DelBookmark,
                 NextBookmark, PrevBookmark,

@@ -443,9 +443,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
 
-    # Generic storage for all instances of this class
-    class_storage = {}
-
     def __init__(self, parent, wrapper, buffer, frame):
         # set up the view-local versions of classprefs
         self.classprefsCopyToLocals()
@@ -456,6 +453,14 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.popup = None
         self.status_info = None
         
+        self.ready_for_idle_events = False
+        
+        # Cache for anything that should be attached to this instance of the
+        # major mode
+        self.major_mode_instance_cache = {}
+        
+        self.createClassCache()
+        
         # Create a window here!
         pass
     
@@ -464,9 +469,62 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     
     def __del__(self):
         #dprint("deleting %s: buffer=%s %s" % (self.__class__.__name__, self.buffer, self.getTabName()))
+        self.major_mode_instance_cache = None
         self.removeListeners()
         self.removeListenersPostHook()
         self.deleteWindowPostHook()
+    
+    def isReadyForIdleEvents(self):
+        """Return whether or not the mode is ready for idle event processing.
+        
+        """
+        return self.ready_for_idle_events
+    
+    def setReadyForIdleEvents(self):
+        """Set the idle event processing flag
+        
+        Currently there's no automatic way to determine when the mode is
+        fully initialized, so this must be called by hand in BufferFrame or
+        FrameNotebook when it's known that the mode is ready to process events.
+        """
+        self.ready_for_idle_events = True
+    
+    @classmethod
+    def getClassCache(cls):
+        """Return the dict that is used for this class's class cache
+        
+        This always checks for the existence of the class cache, so it's safe
+        to use this before an instance of the major mode has been created.
+        """
+        if not hasattr(cls, 'major_mode_class_cache'):
+            dprint("Creating class cache for %s" % cls)
+            cls.major_mode_class_cache = {}
+        return cls.major_mode_class_cache
+    
+    @classmethod
+    def createClassCache(cls):
+        """Create a cache for this particular major mode class.
+        
+        Note that the class cache can't be a simple class attribute of
+        MajorMode because that means that all subclasses of this will see the
+        same cache, and that's not at all what we intend.  Each class type
+        should have its own cache.
+        """
+        cls.getClassCache()
+    
+    @classmethod
+    def removeFromClassCache(cls, *names):
+        for name in names:
+            if name in cls.major_mode_class_cache:
+                del cls.major_mode_class_cache[name]
+    
+    def getInstanceCache(self):
+        return self.major_mode_instance_cache
+    
+    def removeFromInstanceCache(self, *names):
+        for name in names:
+            if name in self.major_mode_instance_cache:
+                del self.major_mode_instance_cache[name]
 
     @classmethod
     def verifyProtocol(cls, url):
@@ -761,11 +819,23 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         if hasattr(self, 'addUpdateUIEvent'):
             self.addUpdateUIEvent(self.OnUpdateUI)
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
-        self.Bind(wx.EVT_KEY_DOWN, self.frame.OnKeyDown)
         self.createContextMenuEventBindings()
 
     def createEventBindingsPostHook(self):
         pass
+    
+    def getKeyboardCapableControls(self):
+        """Return a list of all controls in the major mode that take keyboard
+        focus.
+        
+        This is used by L{UserAccelerators} in its call to L{manageFrame}.
+        
+        Typically the return value is a one element list containing the
+        major mode itself, but in some cases the major mode may be a panel
+        containing other controls.  In that case, the controls that actually
+        take keyboard focus should be returned instead of the major mode.
+        """
+        return [self]
 
     def createListeners(self):
         """Required wx.lib.pubsub listeners are created here.
@@ -972,7 +1042,9 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         # still in the active tab before setting focus.  Otherwise we might
         # change tabs unexpectedly.
         if self and self.frame.getActiveMajorMode() == self:
-            self.SetFocus()
+            # Set focus to the first keyboard capable control
+            capable = self.getKeyboardCapableControls()
+            capable[0].SetFocus()
             self.focusPostHook()
             self.dprint("Set focus to %s (sanity check: FindFocus = %s, should be same)" % (self, self.FindFocus()))
 

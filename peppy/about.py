@@ -61,7 +61,8 @@ don't hesitate to file a bug report using the <b>Help</b> ->
 <p>Additional thanks to:</p>
 <ul>
 %(thanks)s
-</ul>"""
+</ul>""",
+    'plugins': "<h1>plugins go here</h1>",
     }
 substitutes['copyright'] = 'Copyright (c) %(yearrange)s %(author)s (%(author_email)s)' % substitutes
 
@@ -150,6 +151,20 @@ def findAboutNames():
         names.extend(files)
     return names
 
+def updateDynamicSubstitutes():
+    plugins = wx.GetApp().plugin_manager.getAllPlugins()
+    entries = []
+    for plugin in plugins:
+        #dprint("checking plugin %s" % plugin)
+        if plugin.plugin_object.is_activated:
+            active = "Active"
+        else:
+            active = "Disabled"
+        entries.append((plugin.name, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % (plugin.name, plugin.author, plugin.version, active)))
+    entries.sort()
+    plugin_summary = "<h3>Plugins:</h3>\n<table><tr><th>Name</th><th>Author</th><th>Version</th><th>Active</th></tr>%s</table>" % "\n".join([e[1] for e in entries])
+    substitutes['plugins'] = plugin_summary
+
 
 class AboutFS(vfs.BaseFS):
     mtime = time.time()
@@ -226,6 +241,7 @@ class AboutFS(vfs.BaseFS):
         recurse_count = 100
         mimetype = findMime(path)
         if mimetype.startswith("text") and text.find("%(") >= 0:
+            updateDynamicSubstitutes()
             while text.find("%(") >= 0 and recurse_count>0:
                 text = text % substitutes
                 recurse_count -= 1
@@ -277,6 +293,8 @@ SetAbout('peppy',"""\
 <p>%(warning)s</p>
 
 <p>%(contributors)s</p>
+
+<p>%(plugins)s</p>
 """)
 SetAbout('0x00-0xff', "".join([chr(i) for i in range(256)]), "application/octet-stream")
 SetAbout('red.png',

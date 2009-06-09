@@ -24,10 +24,8 @@ import peppy.lib.plotter as plotter
 
 class HSIMinorModeMixin(MinorMode):
     @classmethod
-    def worksWithMajorMode(self, mode):
-        if mode.keyword == "HSI":
-            return True
-        return False
+    def worksWithMajorMode(self, modecls):
+        return modecls.keyword == "HSI"
     
     def setCubeView(self, cubeview):
         pass

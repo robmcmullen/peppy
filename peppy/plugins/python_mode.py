@@ -82,7 +82,7 @@ class PythonAutoindent(BasicAutoindent):
         @return: integer indicating number of columns to indent.
         """
         indentwidth = stc.GetIndent()
-        tabwidth = 87
+        tabwidth = stc.GetTabWidth()
         indent = stc.GetLineIndentation(linenum)
         y = PyParse.Parser(indentwidth, tabwidth)
         # FIXME: context line hack straight from IDLE
@@ -199,6 +199,9 @@ class PythonAutoindent(BasicAutoindent):
                 # caused a dedent, dedent it
                 indent -= indentwidth
         return indent
+
+    def getElectricChars(self):
+        return u":"
 
     def electricChar(self, stc, uchar):
         """Reindent the line and insert a newline when special chars are typed.

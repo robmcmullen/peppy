@@ -6,6 +6,15 @@ default_style {
 
 }
 
+margin_style {
+		fore:#FFFFFF;
+		back:#000000;
+}
+
+caret_line {
+		back:#D8F8FF;
+}
+
 number2_style {
 		fore:#A020F0 bold;
 }
@@ -18,6 +27,10 @@ stringeol_style {
 comment_style {
 		fore:#FF0000;
 		size:%(size)d bold;
+}
+
+foldmargin_style {
+		back:#D1D1D1;
 }
 
 keyword_style {

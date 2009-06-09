@@ -39,20 +39,13 @@ class InsertQuotedChar(SelectAction):
     """Quoted insert: insert the next keystroke as a raw character"""
     name = "Insert Raw Char"
     alias = "quoted-insert"
-    if wx.Platform != '__WXMAC__':
-        # Default keybinding on Mac can't be C-q because that is always
-        # reserved for quitting the application
-        key_bindings = {'emacs': "C-q", }
+    key_bindings = {'mac': "^Q", 'emacs': "C-q", }
     default_menu = ("Tools", 201)
 
     def action(self, index=-1, multiplier=1):
-        self.frame.keys.getNextKeystroke(self.quotedInsert)
-        wx.CallAfter(self.frame.SetStatusText, "Quote Next Character:")
+        dprint("Repeating next %d quoted characters" % multiplier)
+        self.frame.root_accel.setQuotedNext(multiplier)
 
-    def quotedInsert(self, key):
-        #dprint("Quoted character: %s" % repr(key))
-        self.mode.AddText(key)
-        self.frame.SetStatusText("")
 
 class InsertRepr(SelectAction):
     """Enter a Python repr() of the string"""
@@ -70,8 +63,8 @@ class InsertRepr(SelectAction):
 class InsertTextPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text insertion actions.
     """
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, FundamentalMode):
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, FundamentalMode):
             return [
                 InsertCodePoint,
                 InsertQuotedChar,

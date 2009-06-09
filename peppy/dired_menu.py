@@ -8,12 +8,12 @@ Menu items associated with DiredMode
 import os
 
 from peppy.dired import DiredMode
-
+from peppy.list_mode import ListModeActionMixin
 from peppy.actions import *
 from peppy.actions.minibuffer import *
 
 
-class DiredRefresh(SelectAction):
+class DiredRefresh(ListModeActionMixin, SelectAction):
     """Refresh the current list"""
     alias = "dired-refresh"
     name = "Refresh"
@@ -22,44 +22,23 @@ class DiredRefresh(SelectAction):
     key_bindings = {'default': "F5", }
 
     def action(self, index=-1, multiplier=1):
-        self.mode.reset(sort=True)
+        self.mode.resetList(sort=True)
 
 
-class FlagMixin(object):
+class FlagMixin(ListModeActionMixin):
     """Mixin to set a flag and move to the next item in the list"""
     flag = None
+    direction = 1
     
     def action(self, index=-1, multiplier=1):
         if self.flag:
             self.mode.setFlag(self.flag)
-        dprint(self.popup_options)
         if self.popup_options is None:
-            self.mode.moveSelected(multiplier)
+            self.mode.moveSelected(multiplier * self.direction)
 
-class FlagBackwardsMixin(object):
+class FlagBackwardsMixin(FlagMixin):
     """Mixin to set a flag and move to the previous item in the list."""
-    flag = None
-    
-    def action(self, index=-1, multiplier=1):
-        if self.flag:
-            self.mode.setFlag(self.flag)
-        if self.popup_options is None:
-            self.mode.moveSelected(-1)
-
-
-class DiredNext(FlagMixin, SelectAction):
-    alias = "dired-next"
-    name = "Move to Next Item"
-    tooltip = "Move the selection to the next item in the list."
-    default_menu = ("Actions", 100)
-    key_bindings = {'default': "n", }
-
-class DiredPrevious(FlagBackwardsMixin, SelectAction):
-    alias = "dired-previous"
-    name = "Move to Previous Item"
-    tooltip = "Move the selection to the previous item in the list."
-    default_menu = ("Actions", 101)
-    key_bindings = {'default': "p", }
+    direction = -1
 
 
 class DeleteMixin(object):
@@ -103,7 +82,7 @@ class DiredMarkBackwards(FlagBackwardsMixin, SelectAction):
     flag = 'M'
 
 
-class DiredClearFlags(SelectAction):
+class DiredClearFlags(ListModeActionMixin, SelectAction):
     alias = "dired-clear-flags"
     name = "Clear Flags"
     tooltip = "Clear all flags from the selected item(s)."
@@ -117,7 +96,7 @@ class DiredClearFlags(SelectAction):
             self.mode.moveSelected(multiplier)
 
 
-class DiredExecute(SelectAction):
+class DiredExecute(ListModeActionMixin, SelectAction):
     alias = "dired-execute"
     name = "Perform Marked Actions"
     tooltip = "Act on the marked buffers according to their flags."
@@ -128,7 +107,7 @@ class DiredExecute(SelectAction):
         self.mode.execute()
 
 
-class DiredShow(SelectAction):
+class DiredShow(ListModeActionMixin, SelectAction):
     alias = "dired-show"
     name = "Show Buffer"
     tooltip = "Show the buffer in a new tab."
@@ -140,7 +119,7 @@ class DiredShow(SelectAction):
         if url:
             self.frame.open(url)
 
-class DiredReplace(SelectAction):
+class DiredReplace(ListModeActionMixin, SelectAction):
     alias = "dired-replace"
     name = "Replace Buffer"
     tooltip = "Show the buffer in place of this tab."
@@ -170,11 +149,10 @@ class DiredMenu(IPeppyPlugin):
     def getMajorModes(self):
         yield DiredMode
 
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, DiredMode):
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, DiredMode):
             return [
                 DiredRefresh,
-                DiredNext, DiredPrevious,
                 DiredDelete, DiredDeleteBackwards,
                 DiredMark, DiredMarkBackwards,
                 DiredClearFlags,

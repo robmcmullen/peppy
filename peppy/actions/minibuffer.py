@@ -42,7 +42,7 @@ class MinibufferMixin(object):
 
 
 class MinibufferAction(MinibufferMixin, TextModificationAction):
-    key_needs_focus = False
+    needs_keyboard_focus = False
     
     def action(self, index=-1, multiplier=1):
         self.showMinibuffer(self.mode)
@@ -62,6 +62,63 @@ class MinibufferRepeatAction(MinibufferAction):
         else:
             self.dprint("Not using the same type of minibuffer.  Creating a new one.")
             MinibufferAction.action(self, index, multiplier)
+
+
+
+class MinibufferKeyboardAction(object):
+    #: Map of platform to default keybinding.  This is used to assign the class attribute keyboard, which is the current keybinding.  Currently, the defined platforms are named "win", "mac", and "emacs".  A platform named 'default' may also be included that will be the default key unless overridden by a specific platform
+    key_bindings = None
+    
+    #: Current keybinding of the action.  This is set by the keyboard configuration loader and shouldn't be modified directly.  Subclasses should leave this set to None.
+    keyboard = None
+    
+    #: List of all keyboard actions known to the application.  This is set in the minibuffer_actions plugin on response to the peppy.plugins.changed message
+    all_actions = []
+
+    def __init__(self, minibuffer, ctrl):
+        self.minibuffer = minibuffer
+        self.ctrl = ctrl
+    
+    @classmethod
+    def getHelp(cls):
+        #dprint(dir(cls))
+        help = u"\n\n'%s' is an action for minibuffers from module %s\nBound to keystrokes: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
+        return help
+    
+    @classmethod
+    def worksWithSpecificMinibuffer(self, minibuffer):
+        """Higher priority override to allow a specific type of minibuffer to
+        be associated with this action while overriding the same keybinding
+        discovered from L{worksWithMinibuffer}
+        
+        Note that L{worksWithMinibuffer} must also return True for this to have
+        an effect.
+        """
+        return False
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        """Whether or not the specified combination of minibuffer and control
+        will work with the action.
+        
+        Note that actions here are not prioritized so they are added in
+        indeterminate order if multiple actions are associated with the same
+        keystroke.
+        """
+        return False
+    
+    def addKeyBindingToAcceleratorList(self, accel_list):
+        if self.keyboard == 'default':
+            accel_list.addDefaultKeyAction(self, self.ctrl)
+        elif self.keyboard is not None:
+            accel_list.addKeyBinding(self.keyboard, self, self.ctrl)
+    
+    def actionWorksWithCurrentFocus(self):
+        return self.ctrl.FindFocus() == self.ctrl
+    
+    def actionKeystroke(self, evt, multiplier=1):
+        raise NotImplementedError
+
 
 
 class Minibuffer(debugmixin):
@@ -100,6 +157,9 @@ class Minibuffer(debugmixin):
             sizer.Add(close, 0, wx.EXPAND)
             self.panel.SetSizer(sizer)
         
+        self.keyboard_bindings = []
+        self.addRootKeyboardBindings()
+        
     def createWindow(self, parent, **kwargs):
         """
         Create a window that represents the minibuffer, and set
@@ -108,6 +168,38 @@ class Minibuffer(debugmixin):
         @param parent: parent window of minibuffer
         """
         raise NotImplementedError
+    
+    def addRootKeyboardBindings(self):
+        self.addKeyboardBindings(self.panel)
+        self.mode.frame.root_accel.rebuildAllKeyBindings()
+    
+    def addKeyboardBindings(self, parent):
+        for child in parent.GetChildren():
+            self.dprint("window %s" % child)
+            self.addKeyboardBindings(child)
+        self.addActions(parent, self.mode.frame.root_accel)
+    
+    def addActions(self, ctrl, accel):
+        accel.addEventBinding(ctrl)
+        self.keyboard_bindings.append(ctrl)
+        action_classes = MinibufferKeyboardAction.all_actions
+        specific = []
+        for actioncls in action_classes:
+            if actioncls.worksWithMinibuffer(self, ctrl):
+                if actioncls.worksWithSpecificMinibuffer(self):
+                    specific.append(actioncls)
+                else:
+                    action = actioncls(self, ctrl)
+                    self.dprint("Adding generic action %s to %s" % (action, ctrl))
+                    action.addKeyBindingToAcceleratorList(accel)
+        
+        # Now add the specific minibuffer classes to override the generic ones
+        # found earlier.
+        for actioncls in specific:
+            action = actioncls(self, ctrl)
+            self.dprint("Adding overriding action %s to %s" % (action, ctrl))
+            action.addKeyBindingToAcceleratorList(accel)
+            
 
     def bindEvents(self, next=None):
         """Set up all required event handlers.
@@ -172,6 +264,11 @@ class Minibuffer(debugmixin):
         self.closePreHook()
         self.panel.Destroy()
         self.panel = None
+        self.removeKeyboardBindings()
+    
+    def removeKeyboardBindings(self):
+        self.mode.frame.root_accel.removeAndRebuildBindings(self.keyboard_bindings)
+        self.keyboard_bindings = None
 
     def removeFromParent(self, call_after=False):
         """
@@ -213,8 +310,6 @@ class TextMinibuffer(Minibuffer):
         sizer.Add(self.text, 1, wx.EXPAND)
         self.win.SetSizer(sizer)
 
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
-
         if self.initial:
             self.text.ChangeValue(self.initial)
             self.text.SetInsertionPointEnd() 
@@ -223,8 +318,14 @@ class TextMinibuffer(Minibuffer):
     def convert(self, text):
         return text
     
+    def getRawTextValue(self):
+        """Hook for subclasses to be able to modify the text control's value
+        before being processed by getResult
+        """
+        return self.text.GetValue()
+    
     def getResult(self, show_error=True):
-        text = self.text.GetValue()
+        text = self.getRawTextValue()
         error = None
         assert self.dprint("text=%s" % text)
         try:
@@ -235,25 +336,6 @@ class TextMinibuffer(Minibuffer):
                 self.mode.frame.SetStatusText(error)
             text = None
         return text, error
-    
-    def OnEnter(self, evt):
-        text, error = self.getResult()
-
-        if self.next_focus:
-            self.next_focus.focus()
-        elif self.finish_callback:
-            self.finish_callback()
-        else:
-            # Remove the minibuffer and perform the action in CallAfters so
-            # the tab focus doesn't get confused.  If you try to perform these
-            # actions directly, the focus will return to the original tab if
-            # the action causes a new tab to be created.  Moving everything
-            # to CallAfters prevents this.  Also, MSW can crash if performing
-            # these directly, so it's worth the extra milliseconds to use
-            # CallAfter
-            wx.CallAfter(self.removeFromParent)
-            if text is not None:
-                wx.CallAfter(self.performAction, text)
 
 
 class IntMinibuffer(TextMinibuffer):
@@ -333,7 +415,6 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         sizer.Add(self.text, 1, wx.EXPAND)
         self.win.SetSizer(sizer)
 
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.text.Bind(wx.EVT_TEXT, self.OnText)
         self.text.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
@@ -344,13 +425,13 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         self.win.SetFocus = self.SetFocus
         
     def SetFocus(self):
-        dprint(self)
+        self.dprint(self)
         self.win.saveSetFocus()
         self.text.SetInsertionPointEnd()
 
     def OnText(self, evt):
         text = evt.GetString()
-        dprint(text)
+        self.dprint(text)
         evt.Skip()
 
     def complete(self, text):
@@ -361,21 +442,13 @@ class InPlaceCompletionMinibuffer(TextMinibuffer):
         """
         raise NotImplementedError
 
-    def processCompletion(self, text):
+    def processCompletion(self):
+        text = self.text.GetValue()
         guesses = self.complete(text)
         if guesses:
             self.text.SetValue(guesses[0])
             self.text.SetSelection(len(text), -1)
 
-    def OnKeyDown(self, evt):
-        key = evt.GetKeyCode()
-        #dprint(key)
-        if key == wx.WXK_TAB:
-            self.processCompletion(self.text.GetValue())
-            # don't call Skip() here.  That way wx knows not to
-            # continue on to the EVT_TEXT callback
-            return
-        evt.Skip()
 
 class CompletionMinibuffer(TextMinibuffer):
     """Base class for a minibuffer based on the TextCtrlAutoComplete
@@ -400,7 +473,6 @@ class CompletionMinibuffer(TextMinibuffer):
         sizer.Add(self.text, 1, wx.EXPAND)
         self.win.SetSizer(sizer)
 
-        self.text.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
         self.win.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
 
         if 'highlight_initial' in kwargs:
@@ -444,6 +516,14 @@ class CompletionMinibuffer(TextMinibuffer):
         self.dprint(choices)
         if choices != current_choices:
             ctrl.SetChoices(choices)
+    
+    def getRawTextValue(self):
+        """Get either the value from the dropdown list if it is selected, or the
+        value from the text control.
+        """
+        self.text._setValueFromSelected()
+        return self.text.GetValue()
+
 
 class StaticListCompletionMinibuffer(CompletionMinibuffer):
     """Completion minibuffer where the list of possibilities doesn't change.
@@ -452,6 +532,9 @@ class StaticListCompletionMinibuffer(CompletionMinibuffer):
     handle cases like searching through the filesystem where a new
     list of matches is generated when you hit a new directory.
     """
+    
+    allow_tab_complete_key_processing = True
+    
     def __init__(self, *args, **kwargs):
         if 'list' in kwargs:
             self.sorted = kwargs['list']

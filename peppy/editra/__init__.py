@@ -14,6 +14,7 @@ def PeppyDefaultStyleDictionaryCopy():
         {'brace_good' : StyleItem("#000000", "#75FFA3,bold"),
          'brace_bad'  : StyleItem(back="#FF0090,bold"),
          'calltip'    : StyleItem("#404040", "#FFFFB8"),
+         'caret_line' : StyleItem(back="#D8F8FF"),
          'ctrl_char'  : StyleItem("#000000"),
          'line_num'   : StyleItem(back="#C0C0C0", face="%(secondary)s", \
                                   size="%(size3)d"),
@@ -29,6 +30,7 @@ def PeppyDefaultStyleDictionaryCopy():
          'directive_style' : StyleItem("#0000FF,bold", face="%(secondary)s"),
          'dockey_style' : StyleItem("#0000FF"),
          'error_style' : StyleItem("#DD0101,bold", face="%(secondary)s"),
+         'foldmargin_style' : StyleItem(back="#D1D1D1"),
          'funct_style' : StyleItem("#008B8B,italic"),
          'global_style' : StyleItem("#007F7F,bold", face="%(secondary)s"),
          'guide_style' : StyleItem("#838383"),

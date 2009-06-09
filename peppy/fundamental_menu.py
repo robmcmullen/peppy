@@ -7,17 +7,70 @@ import wx.stc
 from wx.lib.pubsub import Publisher
 
 from peppy.actions import *
+from peppy.actions.base import *
 from peppy.actions.minibuffer import *
 from peppy.fundamental import *
 from peppy.lib.userparams import *
 from peppy.lib.textutil import *
 
+class SelfInsertCommand(TextModificationAction):
+    """Default action to insert the character that was typed"""
+    name = "Self Insert Command"
+    key_bindings = {'default': 'default',}
+    
+    def actionKeystroke(self, evt, multiplier=1, **kwargs):
+        mode = self.mode
+        uchar = unichr(evt.GetUnicodeKey())
+        if mode.spell and mode.classprefs.spell_check and uchar in mode.word_end_chars:
+            # We are catching the event before the character is added to the
+            # text, so we know the cursor is at the end of the word.
+            mode.spell.checkWord(atend=True)
+        #dprint("char=%s, unichar=%s, multiplier=%s, text=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), multiplier, uchar))
+        
+        # To make the undo coalescing work correctly, first have to replace
+        # the selection with an empty string and then add the text.  Multiple
+        # ReplaceSelections don't coalesce with each other, meaning that
+        # it takes an undo for each character inserted rather than a single
+        # undo for all the text that has been typed without repositioning
+        # the cursor.  I don't know how to force ReplaceSelection calls to
+        # coalesce using the python interface to scintilla.
+        if mode.GetSelectionStart() != mode.GetSelectionEnd():
+            mode.ReplaceSelection("")
+        
+        # Can't just use AddText to insert the characters, because apparently
+        # some internal scintilla cursor command isn't updated unless
+        # evt.Skip is called -- the Scintilla cursor movement commands like
+        # STC_CMD_LINEDOWN think that the cursor is still on the position
+        # where the cursor began the undo action.  So, unless the special
+        # case of inserting a quoted character is found, we use a hack of
+        # adding a string of one less than the characters typed and letting
+        # the evt.Skip add the last one, thereby allowing the internal cursor
+        # position to be updated.
+        if hasattr(evt, 'is_quoted'):
+            text = uchar * multiplier
+            mode.AddText(text)
+            mode.EnsureCaretVisible()
+            # This hack to move the cursor left then right causes the internal
+            # cursor position to be updated so that subsequent cursor up or
+            # down commands works correctly.
+            mode.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFT)
+            mode.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHT)
+        else:
+            if multiplier > 1:
+                text = uchar * (multiplier - 1)
+                mode.AddText(text)
+                mode.EnsureCaretVisible()
+            evt.Skip()
 
 class SpellingSuggestionAction(ListAction):
+    """Spelling suggestions for the current word
+    
+    Used in popup menus to provide a list of alternate spellings of the word
+    under the cursor
+    """
     name = "Spelling..."
     inline = True
     menumax = 5
-    tooltip = "Spelling suggestions for the current word"
 
     def getItems(self):
         # Because this is a popup action, we can save stuff to this object.
@@ -46,7 +99,10 @@ class ClassprefsTooltipMixin(object):
             self.__class__.tooltip = unicode(_(param.help))
         return self.tooltip
 
-class FundamentalSettingToggle(ClassprefsTooltipMixin, ToggleAction):
+class FundamentalSettingToggleMixin(ClassprefsTooltipMixin):
+    """Abstract class used to implement a toggle button for a setting of
+    FundamentalMode.
+    """
     local_setting = None
 
     def isChecked(self):
@@ -57,9 +113,11 @@ class FundamentalSettingToggle(ClassprefsTooltipMixin, ToggleAction):
         setattr(self.mode.locals, self.local_setting, not value)
         self.mode.applyDefaultSettings()
 
-class FundamentalRadioToggle(ClassprefsTooltipMixin, RadioAction):
+class FundamentalRadioMixin(ClassprefsTooltipMixin):
+    """Abstract class used to implement a set of radio buttons for a setting of
+    FundamentalMode.
+    """
     local_setting = None
-
     text_list = None
     value_list = None
 
@@ -92,7 +150,7 @@ class FundamentalRadioToggle(ClassprefsTooltipMixin, RadioAction):
         setattr(self.mode.locals, self.local_setting, value)
         self.mode.applyDefaultSettings()
 
-class FundamentalBooleanRadioToggle(ClassprefsTooltipMixin, RadioAction):
+class FundamentalBooleanRadioMixin(ClassprefsTooltipMixin):
     local_setting = None
     local_true = None
     local_false = None
@@ -112,7 +170,7 @@ class FundamentalBooleanRadioToggle(ClassprefsTooltipMixin, RadioAction):
         self.mode.applyDefaultSettings()
 
 
-class FundamentalIntRadioToggle(ClassprefsTooltipMixin, RadioAction, MinibufferMixin):
+class FundamentalIntRadioMixin(ClassprefsTooltipMixin, MinibufferMixin):
     local_setting = None
     local_values = None
     allow_other = True
@@ -148,19 +206,37 @@ class FundamentalIntRadioToggle(ClassprefsTooltipMixin, RadioAction, MinibufferM
         self.mode.applyDefaultSettings()
 
 
-class LineNumbers(FundamentalSettingToggle):
+class LineNumbers(FundamentalSettingToggleMixin, ToggleAction):
+    """Toggle the display of line numbers in the left margin
+    
+    """
     local_setting = 'line_numbers'
     alias = "line-numbers"
     name = "&Line Numbers"
     default_menu = ("View", -300)
 
-class Wrapping(FundamentalSettingToggle):
+class Wrapping(FundamentalSettingToggleMixin, ToggleAction):
+    """Toggle line wrapping and the horizontal scrollbar
+    
+    When this is set, lines will be wrapped at the edge column (defined in the
+    preferences dialog; defaults to 80 characters) and no horizontal scrollbar
+    will be used.  When it is not set, the horizontal scrollbar will appear.
+    
+    Note that unless L{WordWrap} is turned on, the lines will be wrapped at the
+    column without regard for word boundaries.
+    """
     local_setting = 'wrapping'
     alias = "wrapping"
     name = "&Line Wrapping"
     default_menu = ("View", 301)
 
-class WordWrap(FundamentalSettingToggle):
+class WordWrap(FundamentalSettingToggleMixin, ToggleAction):
+    """Toggle word wrop when line wrapping is on
+    
+    If line wrapping is on (see L{Wrapping}}, setting this forces the lines to
+    be broken at whitespace or word boundaries.  If this is not set, the lines
+    are broken at character boundaries.
+    """
     local_setting = 'word_wrap'
     alias = "word-wrap"
     name = "&Wrap Words"
@@ -169,35 +245,74 @@ class WordWrap(FundamentalSettingToggle):
     def isEnabled(self):
         return self.mode.locals.wrapping
 
-class Folding(FundamentalSettingToggle):
+class Folding(FundamentalSettingToggleMixin, ToggleAction):
+    """Toggle the code folding margin
+    
+    Code folding provides the ability to hide logical units of the text.  These
+    logical units are typically broken up by either indentation level or by
+    matching sets of braces, depending on the major mode.
+    """
     local_setting = 'folding'
     alias = "code-folding"
     name = "&Folding"
     default_menu = ("View", 304)
 
-class ViewEOL(FundamentalSettingToggle):
+class ViewEOL(FundamentalSettingToggleMixin, ToggleAction):
+    """Show end-of-line characters
+    
+    Usually, end-of-line characters are not displayed, even when
+    L{ViewWhitespace} is turned on.  Setting this option forces the end-of-
+    line characters to be visible, and is useful for detecting mixed CR/LF
+    characters.
+    """
     local_setting = 'view_eol'
     alias = "view-eol"
     name = "EOL Characters"
     default_menu = ("View", 305)
 
-class ViewWhitespace(FundamentalRadioToggle):
+class ViewWhitespace(FundamentalRadioMixin, RadioAction):
+    """Show whitespace characters
+    
+    With this option set, spaces appear a small faint dots and tab characters
+    appear as horizontal arrows.  Otherwise, whitespace characters are not
+    visible at all.
+    """
     local_setting = 'view_whitespace'
     name = "Show Whitespace"
     default_menu = ("View", 305.5)
 
-class LongLineIndicator(FundamentalRadioToggle):
+class LongLineIndicator(FundamentalRadioMixin, RadioAction):
+    """Show the long line indicator
+    
+    Long lines can be ignored by choosing 'none', or an indicator can be used.
+    If the 'line' setting is chosen, a vertical line at the edge column is
+    displayed.  If 'background' is chosen, the background of the text after
+    the edge column is changed.
+    
+    The edge column is set in the preferences dialog.
+    """
     local_setting = 'edge_indicator'
     name = "Show Long Lines"
     default_menu = ("View", 305.7)
 
-class IndentationGuides(FundamentalSettingToggle):
+class IndentationGuides(FundamentalSettingToggleMixin, ToggleAction):
+    """Show the indentation guides
+    
+    Indentation guides are faint vertical lines displayed at each tab stop.
+    """
     local_setting = 'indentation_guides'
     name = "Indentation Guides"
     default_menu = ("View", 306)
 
-class IndentSize(FundamentalIntRadioToggle):
-    """Number of spaces per logical indent"""
+class IndentSize(FundamentalIntRadioMixin, RadioAction):
+    """Set the number of spaces per logical indent
+    
+    This defines the number of spaces that make up a unit of indentation, or
+    equivalently in old typewriter terms: the number of spaces per tab stop.
+    This is independent of the number of spaces per tab character controlled
+    by L{SpacesPerTab}.  For instance you can have tab characters equivalent
+    to 8 spaces by setting L{SpacesPerTab} to 8, but IndentSize could be 4.
+    """
     local_setting = 'indent_size'
     local_values = [2, 4, 8]
     allow_other = True
@@ -205,15 +320,26 @@ class IndentSize(FundamentalIntRadioToggle):
     minibuffer_label = "Number of spaces per indent:"
     default_menu = ("View", 306.5)
 
-class IndentWithTabsOrSpaces(FundamentalBooleanRadioToggle):
+class IndentWithTabsOrSpaces(FundamentalBooleanRadioMixin, RadioAction):
+    """Select whether to use tabs or spaces as the indent character
+    
+    Peppy will attempt to indent the text using all spaces or all tab
+    characters.  Only if it is not possible to perform the indent using all
+    tabs will peppy pad the end of the indentation with spaces.
+    """
     local_setting = 'use_tab_characters'
     local_true = 'tab characters'
     local_false = 'spaces'
     name = "Indent Character"
     default_menu = ("View", 307)
 
-class SpacesPerTab(FundamentalIntRadioToggle):
-    """Number of spaces per tab character"""
+class SpacesPerTab(FundamentalIntRadioMixin, RadioAction):
+    """Set the number of spaces per tab character
+    
+    This setting controls the horizontal size of a single tab character.  When
+    a tab character is displayed on the screen, it is expanded to the same
+    width as the number of spaces set here.
+    """
     local_setting = 'tab_size'
     local_values = [2, 4, 8]
     allow_other = True
@@ -222,7 +348,14 @@ class SpacesPerTab(FundamentalIntRadioToggle):
     default_menu = ("View", 306.7)
 
 class GuessIndentSize(SelectAction):
-    """Guess the tab size of the current document or selection and set the view parameters"""
+    """Guess the tab size of the current document or selection and set the
+    view parameters
+    
+    Scans the selected region (or the whole document if there is no selection)
+    and tries to guess the size of the indentation and what style of
+    indentation is used.  If it can determine the indentation, it sets the
+    view parameters to match.
+    """
     name = "Guess Indent Size"
     default_menu = ("View", 309)
 
@@ -245,17 +378,32 @@ class GuessIndentSize(SelectAction):
             self.frame.SetStatusText("Can't determine indent size from document")
         s.setTabStyle()
 
-class TabHighlight(FundamentalRadioToggle):
+class TabHighlight(FundamentalRadioMixin, RadioAction):
+    """Set the indentation highlight style
+    
+    The leading whitespace can be highlighted to show differences in the
+    types of whitespace.  While it is not recommended practice to mix tabs
+    and spaces when indenting, you will encounter some files that have this
+    characteristic.  Some languages, like Python, are very sensitive to
+    whitespace and as such is recommended to use only one style of whitespace
+    character.  This option can help identify problem intentation.
+    """
     local_setting = 'tab_highlight_style'
     name = "Show Indentation"
     default_menu = ("View", 305.7)
 
-class CaretWidth(FundamentalRadioToggle):
+class CaretWidth(FundamentalRadioMixin, RadioAction):
+    """Set the pixel width of the caret
+    
+    """
     local_setting = 'caret_width'
     name = "Caret Width"
     default_menu = ("View", 310)
 
-class CaretLineHighlight(FundamentalSettingToggle):
+class CaretLineHighlight(FundamentalSettingToggleMixin, ToggleAction):
+    """Highlight the line containing the caret using a different background
+    
+    """
     local_setting = 'caret_line_highlight'
     name = "Highlight Caret Line"
     default_menu = ("View", 311)
@@ -282,8 +430,10 @@ class FontZoom(ClassprefsTooltipMixin, MinibufferAction):
         mode.SetZoom(zoom)
 
 class FontZoomIncrease(SelectAction):
+    """Increase the size of the font in the current view
+    
+    """
     name = "Increase Size"
-    tooltip = "Increase the size of the font in the current view"
     default_menu = ("View/Font Size", 100)
     icon = "icons/zoom_in.png"
     key_bindings = {'emacs': 'C-NUMPAD_ADD',}
@@ -293,8 +443,10 @@ class FontZoomIncrease(SelectAction):
         self.mode.SetZoom(self.mode.locals.font_zoom)
 
 class FontZoomDecrease(SelectAction):
+    """Decrease the size of the font in the current view
+    
+    """
     name = "Decrease Size"
-    tooltip = "Decrease the size of the font in the current view"
     default_menu = ("View/Font Size", 101)
     icon = "icons/zoom_out.png"
     key_bindings = {'emacs': 'C-NUMPAD_SUBTRACT',}
@@ -305,9 +457,14 @@ class FontZoomDecrease(SelectAction):
 
 
 class SelectBraces(TextModificationAction):
+    """Select all text between braces
+    
+    Creates a selection by finding the nearest matching set of brace-like
+    characters (i.e.  parethesis, square brackets or curly brackets) around
+    the current cursor position.
+    """
     alias = "select-braces"
     name = "Select Braces"
-    tooltip = "Select all text between the braces"
     icon = None
     default_menu = ("Edit", 126)
     default_toolbar = False
@@ -319,10 +476,14 @@ class SelectBraces(TextModificationAction):
 
 
 class EOLModeSelect(BufferBusyActionMixin, RadioAction):
+    """Switch line endings
+    
+    Converts all line endings to the specified line ending.  This can be used
+    if there are multiple styles of line endings in the file.
+    """
     name = "Line Endings"
     inline = False
     localize_items = True
-    tooltip = "Switch line endings"
     default_menu = ("Transform", -999)
 
     items = ['Unix (LF)', 'DOS/Windows (CRLF)', 'Old-style Apple (CR)']
@@ -341,8 +502,12 @@ class EOLModeSelect(BufferBusyActionMixin, RadioAction):
 
 
 class WordCount(SelectAction):
+    """Word count in regoin or document
+    
+    Counts the characters, words, and lines in the current document (or
+    selected region if there is a selection.
+    """
     name = "&Word Count"
-    tooltip = "Word count in region or document"
     default_menu = ("Tools", -500)
     key_bindings = {'default': "M-=", }
 
@@ -360,9 +525,14 @@ class WordCount(SelectAction):
 
 
 class RevertEncoding(SelectAction):
+    """Revert the file using a different encoding
+    
+    This prompts for a new encoding and reloads the file using that encoding.
+    This may be necessary if the encoding is not specified in the first few
+    lines of the text, or specified incorrectly.
+    """
     alias = "revert-encoding"
     name = "Revert With Encoding"
-    tooltip = "Revert with a different encoding"
     default_menu = ("File", 901)
     default_toolbar = False
     
@@ -384,13 +554,52 @@ class RevertEncoding(SelectAction):
             self.mode.setStatusText("Unknown encoding %s" % text)
 
 
+class ElectricChar(SelectAction):
+    """Special trigger function for 'electric' characters that change the
+    text in addition to inserting themselves.
+    
+    Used in the autoindent code.
+    """
+    name = "ElectricChar"
+    needs_keyboard_focus = True
+    
+    def addKeyBindingToAcceleratorList(self, accel_list):
+        for char in self.mode.autoindent.getElectricChars():
+            self.dprint("Registering %s as electric character" % char)
+            accel_list.registerElectricChar(char, self, self.mode)
+            
+    def actionKeystroke(self, evt, multiplier=1, **kwargs):
+        mode = self.mode
+        uchar = unichr(evt.GetUnicodeKey())
+        for i in range(multiplier):
+            if mode.autoindent.electricChar(mode, uchar):
+                # If the autoindenter handles the char, it will insert the char.
+                pass
+            else:
+                # If the autoindenter doesn't handle the character for some
+                # reason, we are then left to insert it.
+                mode.AddText(uchar)
+
+
 class ElectricReturn(TextModificationAction):
+    """Indent the next line following a return
+    
+    Using the autoindenter for the current major mode, indent the next line
+    after the return to the appropriate level.  For example, in Python mode
+    the next line would be indented if you press return after an if statement,
+    and the next line indent would be reduced by one intentation level if you
+    press return after a C{raise} or C{return} statement.
+    
+    By default, this is bound to both RET and S-RET because I found it was very
+    easy to hit S-RET by mistake when the last character in the line was a
+    shifted character like ')' or ':'.  Without this S-RET binding, Scintilla
+    would insert a raw CR in the text instead of autoindenting.
+    """
     alias = "electric-return"
     name = "Electric Return"
-    tooltip = "Indent the next line following a return"
     icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': 'RET',}
-    key_needs_focus = True
+    key_bindings = {'default': ['RET', 'S-RET'],}
+    needs_keyboard_focus = True
 
     def action(self, index=-1, multiplier=1):
         if self.mode.spell and self.mode.classprefs.spell_check:
@@ -400,12 +609,12 @@ class ElectricReturn(TextModificationAction):
 
 
 class ElectricDelete(TextModificationAction):
-    """Delete all whitespace from cursor forwart to the next non-blank character
+    """Delete all whitespace from cursor forward to the next non-blank character
     """
     alias = "electric-delete"
     name = "Electric Delete"
     key_bindings = {'default': 'DELETE',}
-    key_needs_focus = True
+    needs_keyboard_focus = True
 
     def action(self, index=-1, multiplier=1):
         self.mode.autoindent.electricDelete(self.mode)
@@ -417,7 +626,7 @@ class ElectricBackspace(TextModificationAction):
     alias = "electric-backspace"
     name = "Electric Backspace"
     key_bindings = {'default': 'BACK',}
-    key_needs_focus = True
+    needs_keyboard_focus = True
 
     def action(self, index=-1, multiplier=1):
         self.mode.autoindent.electricBackspace(self.mode)
@@ -498,9 +707,11 @@ class FundamentalMenu(IPeppyPlugin):
     def getMajorModes(self):
         yield FundamentalMode
 
-    def getCompatibleActions(self, mode):
-        if issubclass(mode.__class__, FundamentalMode):
-            return [WordCount, Wrapping, WordWrap, LineNumbers, Folding,
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, FundamentalMode):
+            return [SelfInsertCommand,
+                    
+                    WordCount, Wrapping, WordWrap, LineNumbers, Folding,
                     ViewEOL,
                     
                     IndentationGuides, IndentSize, IndentWithTabsOrSpaces,
@@ -513,7 +724,8 @@ class FundamentalMenu(IPeppyPlugin):
                     
                     EOLModeSelect, SelectBraces,
                     
-                    ElectricReturn, ElectricDelete, ElectricBackspace,
+                    ElectricChar, ElectricReturn, ElectricDelete,
+                    ElectricBackspace,
                     
                     ApplySettingsSameMode, ApplySettingsAll, ApplySettingsKate,
                     ]

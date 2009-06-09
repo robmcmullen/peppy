@@ -244,9 +244,7 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         JobOutputMixin, so only works when it can find the
         stdoutCallback method in the major mode
         """
-        if hasattr(mode, 'stdoutCallback'):
-            return True
-        return False
+        return hasattr(mode, 'stdoutCallback')
     
     def __init__(self, parent, **kwargs):
         MinorMode.__init__(self, parent, **kwargs)

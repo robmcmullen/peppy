@@ -65,9 +65,9 @@ class HSIPlugin(IPeppyPlugin):
                 pass
         raise StopIteration
     
-    def getCompatibleActions(self, mode):
-        assert self.dprint("Checking for HSI mode %s" % mode)
-        if mode.keyword == "HSI":
+    def getCompatibleActions(self, modecls):
+        assert self.dprint("Checking for HSI mode %s" % modecls)
+        if modecls.keyword == "HSI":
             try:
                 import peppy.hsi.hsi_menu
                 import peppy.hsi.filter_menu

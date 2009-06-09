@@ -45,11 +45,11 @@ class STCModificationAction(BufferBusyActionMixin, SelectAction):
     change the buffer when the buffer is in the process of being modified by a
     long-running process.
     """
-    key_needs_focus = True
+    needs_keyboard_focus = True
     
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return hasattr(mode, 'CanUndo')
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, 'BeginUndoAction')
 
 class TextModificationAction(BufferBusyActionMixin, SelectAction):
     """Base class for any action that changes the bytes in the buffer.
@@ -58,11 +58,11 @@ class TextModificationAction(BufferBusyActionMixin, SelectAction):
     would change the buffer when the buffer is in the process of being
     modified by a long-running process.
     """
-    key_needs_focus = True
+    needs_keyboard_focus = True
     
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return isinstance(mode, FundamentalMode)
+    def worksWithMajorMode(cls, modecls):
+        return issubclass(modecls, FundamentalMode)
 
 class ScintillaCmdKeyExecute(TextModificationAction):
     """Base class for an action that uses one of the scintilla key commands.
@@ -77,7 +77,8 @@ class ScintillaCmdKeyExecute(TextModificationAction):
     
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
-        self.mode.CmdKeyExecute(self.cmd)
+        for i in range(multiplier):
+            self.mode.CmdKeyExecute(self.cmd)
 
 class RegionMutateAction(TextModificationAction):
     """Mixin class to operate only on a selected region.

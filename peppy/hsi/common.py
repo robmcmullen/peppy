@@ -5,8 +5,8 @@ from loader import *
 
 class HSIActionMixin(object):
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return mode.keyword == "HSI"
+    def worksWithMajorMode(cls, modecls):
+        return modecls.keyword == "HSI"
     
     def getDatasetPath(self, name):
         """Convenience method to get a full pathname to the dataset filesystem

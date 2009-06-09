@@ -15,10 +15,11 @@ from peppy.notebook import FrameNotebook
 
 from peppy.actions import *
 from peppy.menu import *
-from peppy.lib.wxemacskeybindings import *
+from peppy.lib.multikey import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 from peppy.lib.userparams import *
+from peppy.lib.null import Null
 
 from peppy.configprefs import *
 from peppy.stcbase import *
@@ -65,7 +66,7 @@ class WindowList(OnDemandGlobalListAction):
         elif len(WindowList.storage) == 1:
             # If attempting to close the last window when not on OS X, check to
             # make sure that the user didn't cancel the quit
-            close = wx.GetApp().quit()
+            return wx.GetApp().quit()
         return True
 
     def getItems(self):
@@ -259,13 +260,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             wx.GetApp().SetMacHelpMenuTitleName(_("&Help"))
         self.SetMenuBar(menubar)
         
-        self.menumap=None
         self.show_toolbar = self.classprefs.show_toolbar
+        self.root_accel = Null()
 
     def initEventBindings(self):
-        self.keys=KeyProcessor(self)
-        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-
         self.dropTarget=FrameDropTarget(self)
         self.SetDropTarget(self.dropTarget)        
         
@@ -338,8 +336,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def processIdleEvent(self):
         mode = self.getActiveMajorMode()
-        if mode:
+        if mode and mode.isReadyForIdleEvents():
+            #dprint("Idle for mode %s" % mode)
             mode.idleHandler()
+            
+            # Refs #665: this call to forceToolbarUpdate causes the yield to
+            # freeze until tabs get switched.  Now this only happens when the
+            # mode is ready for idle event processing
+            self.root_accel.forceToolbarUpdate()
             
             # Timestamp checks are performed here for two reasons: 1) windows
             # reports activate events whenever a dialog is popped up, so
@@ -351,7 +355,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.currently_processing_timestamp = True
                 wx.CallAfter(self.isModeChangedOnDisk)
                 self.pending_timestamp_check = False
-
+        #else:
+        #    dprint("mode %s not ready for idle events" % mode)
 
     # Overrides of wx methods
     def OnRaise(self, evt):
@@ -394,13 +399,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if WindowList.canCloseWindow(self):
             self.closeWindow()
 
-    def OnKeyDown(self, evt):
-        self.keys.process(evt)
-##        if function:
-##            print "num=%d function=%s" % (num,function)
-##        else:
-##            print "unprocessed by KeyProcessor"
-
     def Raise(self):
         wx.Frame.Raise(self)
         major=self.getActiveMajorMode()
@@ -429,29 +427,19 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         retval = dlg.ShowModal()
         return retval
     
-    def setKeys(self,majormodes=[],minormodes=[]):
-##        keymap=UserInterfaceLoader.loadKeys(self,majormodes,minormodes)
-##        self.keys.setGlobalKeyMap(keymap)
-##        self.keys.clearMinorKeyMaps()
-        pass
-    
     def clearMenumap(self):
-        if self.menumap is not None:
-            self.menumap.cleanupAndDelete()
-            self.menumap = None
-            #printWeakrefs('menumap')
+        self.root_accel.cleanupAndDelete()
 
     def setMenumap(self, mode):
         self.clearMenumap()
-        self.menumap = UserActionMap(self, mode)
+        self.root_accel = UserAccelerators(self, mode)
         #storeWeakref('menumap', self.menumap)
         
-        keymap = self.menumap.updateActions(self.show_toolbar)
-        self.keys.setGlobalKeyMap(keymap)
+        self.root_accel.updateActions(self.show_toolbar)
         self._mgr.Update()
     
     def updateMenumap(self):
-        self.menumap.forceToolbarUpdate()
+        self.root_accel.forceToolbarUpdate()
 
     def getActiveMajorMode(self):
         wrapper = self.tabs.getCurrent()
@@ -550,6 +538,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint("set buffer to new view %s" % mode)
         if not mode.isErrorMode():
             mode.showInitialPosition(buffer.raw_url, options)
+        mode.setReadyForIdleEvents()
 
     def newBuffer(self, buffer):
         # proxy it up to tabs
@@ -566,6 +555,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         newmode = self.tabs.newMode(mode.buffer, requested, mode)
         if not newmode.isErrorMode():
             newmode.setViewPositionData(cursor_data)
+        newmode.setReadyForIdleEvents()
 
     def makeTabActive(self, url):
         """Make the tab current that corresponds to the url.
@@ -641,6 +631,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         of which mode is in the top frame (see bug #492).  When using this
         method in a loop, set_focus should be false.
         """
+        start = time.time()
+        self.dprint("starting switchMode at 0.00000s")
         last=self.tabs.getPrevious()
         if last:
             last.clearPopups()
@@ -655,15 +647,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return
 
         assert self.dprint("Switching from mode %s to mode %s" % (last,mode))
+        self.dprint("found active mode at %0.5fs" % (time.time() - start))
 
         self.spring.clearRadio()
+        self.dprint("springtabs cleared at %0.5fs" % (time.time() - start))
 
         if set_focus:
             mode.focus()
         self.setTitle()
+        self.dprint("title set at %0.5fs" % (time.time() - start))
         #self.setKeys(majors)
         self.setMenumap(mode)
+        self.dprint("menu created at %0.5fs" % (time.time() - start))
         self.GetStatusBar().changeInfo(mode.status_info)
+        self.dprint("status bar updated at %0.5fs" % (time.time() - start))
 
 ##        if mode.buffer.filename in BufferFrame.perspectives:
 ##            self._mgr.LoadPerspective(BufferFrame.perspectives[mode.buffer.filename])
@@ -683,6 +680,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         
         # "commit" all changes made to FrameManager   
         self._mgr.Update()
+        self.dprint("switchMode completed at %0.5fs" % (time.time() - start))
         
         # NOTE: using wx.CallAfter(self.isModeChangedOnDisk) here seems to do
         # something bad to the mouse pointer, because after calling this no

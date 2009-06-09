@@ -10,6 +10,8 @@ import peppy.editra.util as util
 from peppy.debug import *
 
 from profiler import Profile_Get as _PGET
+from peppy.editra.eclib.eclutil import HexToRGB
+
 
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
     _synmgr = syntax.SyntaxMgr()
@@ -383,10 +385,61 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                           self.GetStyleByName('brace_good'))
         self.StyleSetSpec(wx.stc.STC_STYLE_BRACEBAD, \
                           self.GetStyleByName('brace_bad'))
+        self.StyleSetSpec(wx.stc.STC_STYLE_INDENTGUIDE, \
+                          self.GetStyleByName('guide_style'))
+
+        # wx.stc.STC_STYLE_CALLTIP doesnt seem to do anything
         calltip = self.GetItemByName('calltip')
         self.CallTipSetBackground(calltip.GetBack())
         self.CallTipSetForeground(calltip.GetFore())
+
+        sback = self.GetItemByName('select_style')
+        if not sback.IsNull():
+            sback = sback.GetBack()
+        else:
+            sback = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+        self.SetSelBackground(True, sback)
+
+        # Setting the whitespace background color overrides the selection
+        # color, which looks weird.  I'm only allowing the whitespace
+        # foreground to be set by the user; the background will remain the
+        # default background.
+        wspace = self.GetItemByName('whitespace_style')
+        if not wspace.IsNull():
+            self.SetWhitespaceForeground(True, wspace.GetFore())
+
+        style = self.GetItemByName('foldmargin_style')
+        # The foreground/background settings for the marker column seem to
+        # backwards from what the parameters take so use our Fore color for
+        # the stcs back and visa versa for our Back color.
+        back = style.GetFore()
+        rgb = HexToRGB(back[1:])
+        back = wx.Colour(red=rgb[0], green=rgb[1], blue=rgb[2])
+
+        fore = style.GetBack()
+        rgb = HexToRGB(fore[1:])
+        fore = wx.Colour(red=rgb[0], green=rgb[1], blue=rgb[2])
+
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,
+                          wx.stc.STC_MARK_BOXMINUS, fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,
+                          wx.stc.STC_MARK_BOXPLUS,  fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,
+                          wx.stc.STC_MARK_VLINE, fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,
+                          wx.stc.STC_MARK_LCORNER, fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,
+                          wx.stc.STC_MARK_BOXPLUSCONNECTED, fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID,
+                          wx.stc.STC_MARK_BOXMINUSCONNECTED, fore, back)
+        self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL,
+                          wx.stc.STC_MARK_TCORNER, fore, back)
+        self.MarkerDefine(0, wx.stc.STC_MARK_SHORTARROW, fore, back)
+        self.SetFoldMarginHiColour(True, fore)
+        self.SetFoldMarginColour(True, fore)
+
         self.SetCaretForeground(self.GetDefaultForeColour())
+        self.SetCaretLineBack(self.GetItemByName('caret_line').GetBack())
         self.DefineMarkers()
         self.Colourise(0, -1)
     

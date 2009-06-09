@@ -25,8 +25,8 @@ class AddChangeLogEntry(STCModificationAction):
     key_bindings = {'emacs': "C-c C-n",}
     
     @classmethod
-    def worksWithMajorMode(cls, mode):
-        return isinstance(mode, ChangeLogMode)
+    def worksWithMajorMode(cls, modecls):
+        return issubclass(modecls, ChangeLogMode)
     
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))

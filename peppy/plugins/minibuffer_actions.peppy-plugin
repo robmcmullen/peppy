@@ -1,0 +1,9 @@
+[Core]
+Name = Minibuffer Keyboard Actions
+Module = minibuffer_actions
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Editing commands used in the minibuffer

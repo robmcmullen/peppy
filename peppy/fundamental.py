@@ -224,33 +224,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             return MajorMode.verifyMimetype(mimetype)
     
     def createEventBindingsPostHook(self):
-        self.Bind(wx.EVT_CHAR, self.OnChar)
         self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
 
-    def OnChar(self, evt):
-        """Handle all events that result from typing characters in the stc.
-        
-        Automatic spell checking is handled here.
-        """
-        if self.frame.keys.processQuotedChar(evt):
-            return
-        
-        # Make sure that we have the focus before processing chars.
-        if self.FindFocus() != self:
-            return
-
-        uchar = unichr(evt.GetKeyCode())
-        if self.autoindent.electricChar(self, uchar):
-            # If the autoindenter handles the char, it will insert the char.
-            # So, we don't call Skip in this case and the processing ends
-            # here.
-            return
-        if self.spell and self.classprefs.spell_check and uchar in self.word_end_chars:
-            # We are catching the event before the character is added to the
-            # text, so we know the cursor is at the end of the word.
-            self.spell.checkWord(atend=True)
-        evt.Skip()
-    
     def createStatusIcons(self):
         linesep = self.getLinesep()
         if linesep == '\r\n':
@@ -262,14 +237,27 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         if self.spell and self.spell.hasDictionary():
             self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spell.getLanguage())
     
-    def getTemplateCallback(self):
-        """If a template is desired, this function will return a functor that
-        applies the template for this major mode.
+    def isTemplateNeeded(self):
+        """Return True if a template file should be loaded.
         
+        If a new file is being created, a template containing boilerplate text
+        can be loaded in its place.  This method determines if a template is
+        needed or not, and is called by the project plugin.
         """
-        if self.GetLength() == 0:
-            return self.resetText
-        return None
+        if self.GetLength() == 0 and not vfs.exists(self.buffer.url):
+            # Only if we are creating a new file should the template used
+            return True
+        return False
+    
+    def setTextFromTemplate(self, template_text):
+        """The companion method to L{isTemplateNeeded} that is used to set the
+        text in the editor to the template text.
+        
+        This also marks the file as modified so the user knows that it hasn't
+        yet been saved.
+        """
+        self.resetText(template_text)
+        self.buffer.setInitialStateIsModified()
 
     def applySettings(self):
         start = time.time()
@@ -377,14 +365,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.SetMarginMask(2, wx.stc.STC_MASK_FOLDERS)
             self.SetMarginSensitive(2, True)
             self.SetMarginWidth(2, self.locals.folding_margin_width)
-            # Marker definitions from PyPE
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEREND,     wx.stc.STC_MARK_BOXPLUSCONNECTED,  "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPENMID, wx.stc.STC_MARK_BOXMINUSCONNECTED, "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERMIDTAIL, wx.stc.STC_MARK_TCORNER,  "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERTAIL,    wx.stc.STC_MARK_LCORNER,  "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDERSUB,     wx.stc.STC_MARK_VLINE,    "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDER,        wx.stc.STC_MARK_BOXPLUS,  "white", "black")
-            self.MarkerDefine(wx.stc.STC_MARKNUM_FOLDEROPEN,    wx.stc.STC_MARK_BOXMINUS, "white", "black")
             #self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         else:
             self.SetMarginWidth(2, 0)
@@ -515,7 +495,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         if 'pos' in data:
             pos = min(data['pos'], self.GetLength() - 1)
             self.GotoPos(pos)
-    
+            
+            # Hack to fix #505.  For some reason, the internal scintilla cursor
+            # column isn't correct after setting a cursor position manually.
+            # Moving the cursor left and then back seems to fix it.
+            if pos > 0:
+                self.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFT)
+                self.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHT)
+
     
     ##### Styling code
     
