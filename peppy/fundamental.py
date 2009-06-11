@@ -258,6 +258,11 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         """
         self.resetText(template_text)
         self.buffer.setInitialStateIsModified()
+    
+    def getProperties(self):
+        # Use the MajorMode's getProperties instead of the stub from
+        # STCInterface
+        return MajorMode.getProperties(self)
 
     def applySettings(self):
         start = time.time()
