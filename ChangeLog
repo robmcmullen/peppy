@@ -1,3 +1,18 @@
+2009-06-11  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.10 "Free Repeater"
+	* new keyboard processing allowing quoted and repeated characters in
+	minibuffer as well as main text
+	* Control key can now be used as modifier key on OS X
+	* emacs keybinding mode on OS X now combines OS X and emacs keybindings
+	* added project/SCM support with basic integration with CVS, SVN, GIT,
+	BZR, and HG configuration control systems
+	* added templates to supply boilerplate text for new files in projects
+	* added CTAGS support for projects
+	* added user interface to change keybindings
+	* removed splash screen by default as it slowed down init by 2x
+	* added list of plugins to about:peppy page
+
 2009-05-14  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.9.86 "Spring Cleaning"
