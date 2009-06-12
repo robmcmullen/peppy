@@ -128,6 +128,12 @@ class MinibufferEndOfLine(MinibufferTextCtrlMixin, MinibufferKeyboardAction):
         self.ctrl.SetInsertionPoint(self.ctrl.GetLastPosition())
 
 
+class MinibufferSelectAll(MinibufferTextCtrlMixin, MinibufferKeyboardAction):
+    key_bindings = {'win': "C-a", 'mac': "C-a", 'emacs': "C-x h"}
+    
+    def actionKeystroke(self, evt, multiplier=1):
+        self.ctrl.SetSelection(0, self.ctrl.GetLastPosition())
+
 
 
 
