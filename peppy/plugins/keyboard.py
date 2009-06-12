@@ -433,6 +433,14 @@ class KeybindingMode(ListMode):
         actionwrapper = self.list.itemDataMap[index][0]
         return actionwrapper.action
 
+    def getPopupActions(self, evt, x, y):
+        return [
+            RebindKeyAction,
+            RebindSingleKeyAction,
+            RebindTwoKeyAction,
+            RebindThreeKeyAction,
+            ]
+
 
 class Keyboard(ClassPrefs):
     """Global keyboard configuration.
