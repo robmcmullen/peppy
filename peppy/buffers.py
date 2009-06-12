@@ -414,11 +414,23 @@ class Buffer(BufferVFSMixin):
         # so unless you make a copy the for statement is operating on
         # a changing list.
         viewers=self.viewers[:]
+        
+        # keep track of notebook tabs that get modified
+        pending_updates = {}
+        
         for viewer in viewers:
             assert self.dprint("count=%d" % len(self.viewers))
             assert self.dprint("removing view %s of %s" % (viewer,self))
+            tab = viewer.frame.tabs
+            pending_updates[tab] = True
+            tab.holdChanges()
             viewer.frame.tabs.closeWrapper(viewer)
         assert self.dprint("final count=%d" % len(self.viewers))
+        
+        # Now, process the changes in the notebook tabs so we don't needlessly
+        # create menubars for each tab that is removed.
+        for tab in pending_updates.keys():
+            tab.processChanges()
 
         if not self.permanent:
             basename=self.stc.getShortDisplayName(self.raw_url)

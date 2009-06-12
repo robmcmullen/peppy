@@ -30,6 +30,28 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
             # This event was only added as of wx 2.8.7.1, so ignore it on
             # earlier releases
             self.Bind(wx.aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
+        
+        self.allow_changes = True
+
+    def holdChanges(self):
+        """Defer updates to menu system until processChanges is called.
+        
+        This short-circuits the automatic call to BufferFrame.switchMode
+        in OnTabChanged until a call to processChanges.  This prevents the
+        creation of intermediate menubars when multiple tabs are added or
+        deleted.
+        """
+        self.allow_changes = False
+
+    def processChanges(self):
+        """Restore the normal operation of OnTabChanged and force the
+        recreation of the menubar.
+        
+        Returns OnTabChanged to its normal state where it recreates the menubar
+        every time it is called.
+        """
+        self.frame.switchMode()
+        self.allow_changes = True
 
     def OnTabChanged(self, evt):
         newpage = evt.GetSelection()
@@ -39,9 +61,10 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
             self.lastActivePage=self.GetPage(oldpage)
         else:
             self.lastActivePage=None
-        page=self.GetPage(newpage)
-        #wx.CallAfter(self.frame.switchMode)
-        self.frame.switchMode()
+        if self.allow_changes:
+            self.frame.switchMode()
+        else:
+            self.dprint("Pending tab change; will be updated after all changes completed.")
         evt.Skip()
 
     def removeWrapper(self, index, in_callback=False):
@@ -84,6 +107,7 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
         #evt.Skip()
 
     def closeAllTabs(self):
+        self.holdChanges()
         for index in range(0, self.GetPageCount()):
             self.removeWrapper(0)
     
