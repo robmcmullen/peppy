@@ -298,11 +298,16 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def loadList(self, urls):
         if urls:
-            for url in urls:
-                #dprint("Opening %s" % url)
-                wx.CallAfter(self.open, url, force_new_tab=True)
+            wx.CallAfter(self.openList, urls)
         else:
             wx.CallAfter(self.titleBuffer)
+    
+    def openList(self, urls):
+        self.tabs.holdChanges()
+        for url in urls:
+            #dprint("Opening %s" % url)
+            self.open(url, force_new_tab=True)
+        self.tabs.processChanges()
         
     def addPane(self, win, paneinfo):
         self._mgr.AddPane(win, paneinfo)

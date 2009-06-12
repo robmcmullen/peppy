@@ -186,7 +186,10 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
             self.SetPageText(index, wrapper.getTabName())
             self.SetPageBitmap(index, wrapper.getTabBitmap())
             if wrapper == self.getCurrent():
-                self.frame.switchMode()
+                if self.allow_changes:
+                    self.frame.switchMode()
+                else:
+                    self.dprint("Pending tab change; will be updated after all changes completed.")
             else:
                 self.SetSelection(index)
             wrapper.editwin.tabActivatedHook()
