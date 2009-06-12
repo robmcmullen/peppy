@@ -184,7 +184,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         Defaults to only being able to process file:// URLs
         """
         if self.buffer.url.scheme != "file":
-            msg = "%s\n\nis not a regular file on your hard disk.\nThe URL must start with file:// to be run\nby this interpreter." % str(self.buffer.url)
+            msg = u"%s\n\nis not a regular file on your hard disk.\nThe URL must start with file:// to be run\nby this interpreter." % unicode(self.buffer.url)
             self.frame.showErrorDialog(msg, "URL Scheme Error!")
             return False
         return True

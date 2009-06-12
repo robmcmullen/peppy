@@ -175,7 +175,7 @@ class ProjectPlugin(IPeppyPlugin):
         cls.dprint(mode)
         if mode.project_info:
             url = mode.project_info.getSettingsRelativeURL(subdir)
-            cls.dprint(url)
+            cls.dprint(unicode(url))
             if vfs.is_folder(url):
                 fh = cls.getConfigFileHandle(url, mode, mode.buffer.url)
                 return fh
@@ -216,7 +216,7 @@ class ProjectPlugin(IPeppyPlugin):
             url = mode.project_info.getSettingsRelativeURL(subdir)
             if subdir:
                 url = url.resolve2(mode.keyword)
-            cls.dprint(url)
+            cls.dprint(unicode(url))
             return url
         return None
 
@@ -281,13 +281,13 @@ class ProjectPlugin(IPeppyPlugin):
                 info = cls.url_to_project_mapping[url]
             cls.dprint("found project %s" % info)
         elif mode:
-            cls.dprint("no project for %s" % str(mode.buffer.url))
+            cls.dprint(u"no project for %s" % mode.buffer.url)
             info = None
         
         if cls.debuglevel > 0:
             cls.dprint("Registered projects:")
             for url, project_info in cls.url_to_project_mapping.iteritems():
-                cls.dprint("%s\t%s" % (project_info.getProjectName(), str(url)))
+                cls.dprint(u"%s\t%s" % (project_info.getProjectName(), url))
         
         if mode:
             mode.project_info = info
@@ -318,13 +318,13 @@ class ProjectPlugin(IPeppyPlugin):
         for buffer in buffers:
             if buffer.url.scheme != "file":
                 continue
-            cls.dprint("prefix=%s topdir=%s" % (buffer.url.path.get_prefix(url.path), url.path))
+            cls.dprint(u"prefix=%s topdir=%s" % (buffer.url.path.get_prefix(url.path), url.path))
             if buffer.url.path.get_prefix(url.path) == url.path:
-                cls.dprint("belongs in project! %s" % buffer.url.path)
+                cls.dprint(u"belongs in project! %s" % buffer.url.path)
                 for mode in buffer.iterViewers():
                     mode.project_info = info
             else:
-                cls.dprint("not in project: %s" % buffer.url.path)
+                cls.dprint(u"not in project: %s" % buffer.url.path)
         return info
 
     @classmethod

@@ -490,7 +490,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
                 if retval==wx.ID_YES:
                     if buffer.numViewers() > 1:
-                        dlg = wx.MessageDialog(self, "Multiple views of:\n\n%s\n\nexist.  Really remove buffer?" % str(buffer.url), "Remove All Views?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
+                        dlg = wx.MessageDialog(self, u"Multiple views of:\n\n%s\n\nexist.  Really remove buffer?" % buffer.url, "Remove All Views?", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION )
                         retval=dlg.ShowModal()
                         dlg.Destroy()
                     else:
@@ -522,7 +522,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             return False
         mode = self.getActiveMajorMode()
         url = vfs.normalize(wx.GetApp().classprefs.title_page)
-        dprint(u"%s == %s => %s" % (unicode(url), unicode(mode.buffer.url), mode.buffer.url == url))
+        dprint(u"%s == %s => %s" % (url, mode.buffer.url, mode.buffer.url == url))
         if mode.buffer.url == url:
             return True
         return False

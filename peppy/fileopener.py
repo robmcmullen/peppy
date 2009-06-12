@@ -89,22 +89,22 @@ class FileOpener(debugmixin):
         self.dprint(self)
     
     def __str__(self):
-        return "Opening %s in %s; mode=%s; replacing %s; options=%s" % (str(self.url), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
+        return "Opening %s in %s; mode=%s; replacing %s; options=%s" % (unicode(self.url).encode('utf-8'), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
         
     def open(self):
         """Open a tab in the current frame to edit the given URL.
         """
         if self.findBufferIfAlreadyLoaded():
-            self.dprint("Found %s in current buffer list" % self.url)
+            self.dprint(u"Found %s in current buffer list" % self.url)
             self.findMajorModeClassFromString()
             self.frame.tabs.newBuffer(self.url, self.buffer, self.modecls, self.mode_to_replace, self.force_new_tab, self.options)
         else:
-            self.dprint("Didn't found %s in current buffer list; loading..." % self.url)
+            self.dprint(u"Didn't found %s in current buffer list; loading..." % self.url)
             self.openNewBuffer()
     
     def findBufferIfAlreadyLoaded(self):
         if self.canonicalize:
-            self.dprint("Looking for %s in current buffer list" % self.url)
+            self.dprint(u"Looking for %s in current buffer list" % self.url)
             try:
                 self.buffer = BufferList.findBufferByURL(self.url)
             except NotImplementedError:
@@ -130,7 +130,7 @@ class FileOpener(debugmixin):
             except NotImplementedError:
                 pass
         if not found:
-            self.finalizeAfterFailedLoad("Unknown URI scheme for %s" % self.url)
+            self.finalizeAfterFailedLoad(u"Unknown URI scheme for %s" % self.url)
     
     def openNewBuffer(self):
         """Open a URL that hasn't previously been loaded
@@ -139,12 +139,12 @@ class FileOpener(debugmixin):
         self.getLoadingBuffer()
         self.determineMajorMode()
         if self.useThreadedLoading():
-            self.dprint("Using threaded loader for %s" % str(self.url))
+            self.dprint(u"Using threaded loader for %s" % self.url)
             self.frame.tabs.newBuffer(self.url, self.buffer, mode_to_replace=self.mode_to_replace, new_tab=self.force_new_tab)
             self.mode_to_replace = self.frame.getActiveMajorMode()
             wx.CallAfter(self.startThreadedLoad)
         else:
-            self.dprint("Using non-threaded loader for %s" % str(self.url))
+            self.dprint(u"Using non-threaded loader for %s" % self.url)
             self.startNonThreadedLoad()
     
     def getLoadingBuffer(self):
@@ -201,7 +201,7 @@ class FileOpener(debugmixin):
         #traceon()
         wx.SetCursor(wx.StockCursor(wx.CURSOR_WATCH))
         try:
-            self.dprint("Loading data for %s into buffer" % str(self.url))
+            self.dprint(u"Loading data for %s into buffer" % self.url)
             self.buffer = self.buffer.clone()
             self.buffer.openGUIThreadStart()
             self.buffer.openBackgroundThread()
@@ -227,7 +227,7 @@ class FileOpener(debugmixin):
 
     def finalizeAfterSuccessfulLoad(self):
         try:
-            self.dprint("Successful load of %s" % str(self.url))
+            self.dprint(u"Successful load of %s" % self.url)
             self.buffer.openGUIThreadSuccess()
             assert self.dprint("buffer=%s" % self.buffer)
         except:
@@ -255,7 +255,7 @@ class FileOpener(debugmixin):
 
     def finalizeAfterFailedLoad(self, error):
         #traceoff()
-        msg = "Failed opening %s.\n" % unicode(self.url)
+        msg = u"Failed opening %s.\n" % self.url
         buffer = Buffer.createErrorBuffer(self.url, error)
         mode = self.frame.tabs.newMode(buffer, mode_to_replace=self.mode_to_replace)
         assert self.dprint("major mode=%s" % mode)
@@ -346,11 +346,11 @@ class BufferLoadThread(threading.Thread, debugmixin):
         self.opener = opener
 
     def run(self):
-        self.dprint(u"starting to load %s" % unicode(self.opener.buffer.url))
+        self.dprint(u"starting to load %s" % self.opener.buffer.url)
         try:
             self.opener.buffer.openBackgroundThread(self.opener.progress.message)
             wx.CallAfter(self.opener.finalizeAfterSuccessfulLoad)
-            self.dprint(u"successfully loaded %s" % unicode(self.opener.buffer.url))
+            self.dprint(u"successfully loaded %s" % self.opener.buffer.url)
         except Exception, e:
             import traceback
             traceback.print_exc()

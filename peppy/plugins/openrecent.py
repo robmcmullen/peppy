@@ -193,7 +193,7 @@ class RecentProjectFiles(RecentFiles):
     
     def action(self, index=-1, multiplier=1):
         url, project_name = self.storage[index]
-        assert self.dprint("opening file %s" % (url))
+        assert self.dprint(u"opening file %s" % (url))
         self.frame.open(url)
 
 

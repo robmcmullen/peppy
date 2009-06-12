@@ -124,7 +124,7 @@ class LoggingSTC(PeppySTC, ClassPrefs, debugmixin):
                 self.open("%s#%s" % (filename, line))
     
     def open(self, url):
-        dprint("url = %s" % url)
+        dprint(u"url = %s" % url)
 
 
 class ErrorLogSidebar(LoggingSTC, Sidebar):

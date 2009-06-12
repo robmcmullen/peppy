@@ -731,15 +731,15 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """Check if the buffer has been modified by an external program"""
         try:
             changed = self.buffer.isTimestampChanged()
-            self.dprint("%s has been modified: %s" % (str(self.buffer.url), changed))
+            self.dprint(u"%s has been modified: %s" % (self.buffer.url, changed))
             if changed:
-                retval = self.frame.showQuestionDialog("%s\n\nhas changed on disk.  Reload?" % self.buffer.url.path, "File Changed on Disk")
+                retval = self.frame.showQuestionDialog(u"%s\n\nhas changed on disk.  Reload?" % self.buffer.url.path, "File Changed on Disk")
                 if retval == wx.ID_YES:
                     self.buffer.revert()
                 self.buffer.saveTimestamp()
         except OSError:
-            self.dprint("%s has been deleted" % str(self.buffer.url))
-            self.frame.showWarningDialog("%s\n\nhas been deleted on disk.  Your changes\nwill be lost unless you save the file." % self.buffer.url.path, "File Deleted on Disk")
+            self.dprint(u"%s has been deleted" % self.buffer.url)
+            self.frame.showWarningDialog(u"%s\n\nhas been deleted on disk.  Your changes\nwill be lost unless you save the file." % self.buffer.url.path, "File Deleted on Disk")
             self.buffer.saveTimestamp()
 
     # If there is no title, return the keyword
@@ -762,14 +762,14 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         @return: list of (name, value) pairs
         """
         lines = []
-        lines.append(("URL", str(self.buffer.url)))
+        lines.append(("URL", unicode(self.buffer.url)))
         lines.append(("File Size", vfs.get_size(self.buffer.url)))
         lines.append(("Read-only", self.buffer.readonly))
         lines.extend(self.buffer.stc.getProperties())
         lines.append(("Major Mode", self.keyword))
         if self.buffer.defaultmode != self.__class__:
             lines.append(("Default Major Mode", self.buffer.defaultmode.keyword))
-        self.setStatusText(str(self.buffer.url))
+        self.setStatusText(unicode(self.buffer.url))
         return lines
     
     def createWindowPostHook(self):
@@ -916,9 +916,9 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         evt.Skip()
 
     def idleHandler(self):
-        #dprint("Idle starting for %s at %f" % (self.buffer.url, time.time()))
+        #dprint(u"Idle starting for %s at %f" % (self.buffer.url, time.time()))
         self.idlePostHook()
-        #dprint("Idle finished for %s at %f" % (self.buffer.url, time.time()))
+        #dprint(u"Idle finished for %s at %f" % (self.buffer.url, time.time()))
 
     def idlePostHook(self):
         """Hook for subclasses to process during idle time.

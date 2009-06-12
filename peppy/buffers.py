@@ -92,7 +92,7 @@ class BufferList(OnDemandGlobalListAction):
                 buf.removeAutosaveIfExists()
         
     def getItems(self):
-        return ["%s  (%s)" % (buf.displayname, unicode(buf.url)) for buf in self.storage]
+        return [u"%s  (%s)" % (buf.displayname, buf.url) for buf in self.storage]
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("top window to %d: %s" % (index,BufferList.storage[index]))
@@ -283,7 +283,7 @@ class BufferVFSMixin(debugmixin):
         return path
 
     def getBufferedReader(self, size=1024):
-        assert self.dprint("opening %s as %s" % (unicode(self.url), self.defaultmode))
+        assert self.dprint(u"opening %s as %s" % (self.url, self.defaultmode))
         if self.bfh is None:
             if vfs.exists(self.url):
                 fh = vfs.open(self.url)
@@ -336,7 +336,7 @@ class Buffer(BufferVFSMixin):
         cls.error_buffer_count += 1
         errurl = "mem:error-%d.txt" % cls.error_buffer_count
         fh = vfs.make_file(errurl)
-        fh.write("Failed opening %s.\n\nDetailed error message follows:\n\n" % unicode(url))
+        fh.write(u"Failed opening %s.\n\nDetailed error message follows:\n\n" % url)
         fh.write(error)
         fh.close()
         buffer = Buffer(errurl)
@@ -372,7 +372,7 @@ class Buffer(BufferVFSMixin):
         self.stc=None
 
     def __del__(self):
-        dprint(u"cleaning up buffer %s" % unicode(self.url))
+        dprint(u"cleaning up buffer %s" % self.url)
 
     def addViewer(self, mode):
         self.viewers.append(mode) # keep track of views
@@ -428,7 +428,7 @@ class Buffer(BufferVFSMixin):
             # collected
             self.stc.Destroy()
             Publisher().sendMessage('buffer.closed', self.url)
-            dprint(u"removed buffer %s" % unicode(self.url))
+            dprint(u"removed buffer %s" % self.url)
             
             # If we don't have any more buffers with this basename, reset the
             # counter
@@ -447,7 +447,7 @@ class Buffer(BufferVFSMixin):
         else:
             self.filenames[basename]=1
             self.displayname=basename
-        self.name=u"Buffer #%d: %s" % (self.count,unicode(self.url))
+        self.name=u"Buffer #%d: %s" % (self.count, self.url)
 
         # Update UI because the filename associated with this buffer
         # may have changed and that needs to be reflected in the menu.
@@ -459,7 +459,7 @@ class Buffer(BufferVFSMixin):
         return self.displayname
 
     def openGUIThreadStart(self):
-        self.dprint(u"url: %s" % unicode(self.url))
+        self.dprint(u"url: %s" % self.url)
         if self.defaultmode is None:
             self.defaultmode = MajorModeMatcherDriver.match(self)
         if self.defaultstc is None:
@@ -513,7 +513,7 @@ class Buffer(BufferVFSMixin):
         self.showModifiedAll()
     
     def save(self, url=None):
-        assert self.dprint(u"Buffer: saving buffer %s as %s" % (unicode(self.url), url))
+        assert self.dprint(u"Buffer: saving buffer %s as %s" % (self.url, url))
         try:
             if url is None:
                 saveas = self.url
@@ -541,7 +541,7 @@ class Buffer(BufferVFSMixin):
             self.showModifiedAll()
             self.saveTimestamp()
         except IOError, e:
-            eprint(u"Failed writing to %s: %s" % (unicode(self.url), e))
+            eprint(u"Failed writing to %s: %s" % (self.url, e))
             raise
 
     def showModifiedAll(self):
@@ -621,31 +621,31 @@ class Buffer(BufferVFSMixin):
             self.saveTemporaryCopy(temp_url)
 
     def saveTemporaryCopy(self, temp_url):
-        self.dprint("Saving backup copy to %s" % temp_url)
+        self.dprint(u"Saving backup copy to %s" % temp_url)
         try:
             self.stc.prepareEncoding()
             fh = vfs.open_write(temp_url)
             self.stc.writeTo(fh, temp_url)
             fh.close()
         except Exception, e:
-            self.dprint("Failed autosaving to %s with %s" % (temp_url, e))
+            self.dprint(u"Failed autosaving to %s with %s" % (temp_url, e))
     
     def removeAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
             vfs.remove(temp_url)
-            self.dprint("Removed autosave file %s" % temp_url)
+            self.dprint(u"Removed autosave file %s" % temp_url)
 
     def restoreFromAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
             if vfs.get_mtime(temp_url) >= vfs.get_mtime(self.url) and vfs.get_size(temp_url) > 0:
                 # backup file is newer than saved file.
-                dlg = CustomOkDialog(wx.GetApp().GetTopWindow(), "Autosave file for %s\nis newer than last saved version.\n\nRestore from autosave file?" % self.url, "Restore from Autosave", "Ignore Autosave")
+                dlg = CustomOkDialog(wx.GetApp().GetTopWindow(), u"Autosave file for %s\nis newer than last saved version.\n\nRestore from autosave file?" % self.url, "Restore from Autosave", "Ignore Autosave")
                 retval=dlg.ShowModal()
                 dlg.Destroy()
                 if retval==wx.ID_OK:
-                    self.dprint("Recovering from autosave file %s" % temp_url)
+                    self.dprint(u"Recovering from autosave file %s" % temp_url)
                     self.revert(temp_url, allow_undo=True)
             else:
                 vfs.remove(temp_url)

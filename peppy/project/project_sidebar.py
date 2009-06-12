@@ -50,7 +50,7 @@ class ProjectSidebar(ProjectTree, Sidebar):
                 self.addProject(path, options={'name': project_info.getProjectName()})
 
         mode = self.frame.getActiveMajorMode()
-        self.ensurePathVisible(str(mode.buffer.url.path))
+        self.ensurePathVisible(unicode(mode.buffer.url.path))
         self.StartBusy("Scanning Project Directories for File Changes")
         wx.GetApp().Yield(True)
         self.updateTreeIfNewEntriesFound()
