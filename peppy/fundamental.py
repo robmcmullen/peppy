@@ -223,6 +223,35 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         else:
             return MajorMode.verifyMimetype(mimetype)
     
+    def save(self, url=None):
+        """Wrapper around L{MajorMode.save} to change the major mode after
+        saving an FundamentalMode file.
+        
+        L{savePostHook} is not used because that is supposed to be for user's
+        subclasses and not system utilities.
+        """
+        success = MajorMode.save(self, url)
+        if success and self.__class__ == FundamentalMode:
+            newmodecls = self.rescanForMajorModeChange()
+            if newmodecls != FundamentalMode:
+                self.dprint("Changing to %s" % newmodecls)
+                self.frame.changeMajorMode(newmodecls)
+            else:
+                self.dprint("No major mode match found; attempting to set Editra styling")
+                self.applySettings()
+        return success
+    
+    def rescanForMajorModeChange(self):
+        """Call the MajorModeMatcherDriver to determine the major mode
+        
+        This uses the current text of the major mode as the header text, rather
+        than having the MajorModeMatcherDriver load bytes from the URL.
+        """
+        # header must be in bytes, not unicode
+        header = self.GetText().encode('utf-8')
+        newcls = MajorModeMatcherDriver.match(self.buffer, header=header)
+        return newcls
+    
     def createEventBindingsPostHook(self):
         self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
 

@@ -101,7 +101,7 @@ class MajorModeMatcherDriver(debugmixin):
         return None
 
     @classmethod
-    def match(cls, buffer, magic_size=None, url=None):
+    def match(cls, buffer, magic_size=None, url=None, header=None):
         app = wx.GetApp()
         if magic_size is None:
             magic_size = app.classprefs.magic_size
@@ -130,16 +130,17 @@ class MajorModeMatcherDriver(debugmixin):
         modes, binary_modes = cls.scanURL(url, metadata)
         cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
 
-        # get a buffered file handle to examine some bytes in the file
-        fh = buffer.getBufferedReader(magic_size)
-        if not fh:
-            # ok, the file doesn't exist, meaning that we're creating a new
-            # file.  Return the best guess we have based on filename only.
-            if modes:
-                return modes[0]
-            else:
-                return cls.findModeByMimetype("text/plain")
-        header = fh.read(magic_size)
+        if header is None:
+            # get a buffered file handle to examine some bytes in the file
+            fh = buffer.getBufferedReader(magic_size)
+            if not fh:
+                # ok, the file doesn't exist, meaning that we're creating a new
+                # file.  Return the best guess we have based on filename only.
+                if modes:
+                    return modes[0]
+                else:
+                    return cls.findModeByMimetype("text/plain")
+            header = fh.read(magic_size)
 
         url_match = None
         if modes:
