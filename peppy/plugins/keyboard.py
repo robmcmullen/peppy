@@ -583,6 +583,8 @@ class KeyboardConf(IPeppyPlugin):
         return actions
     
     def loadBindings(self, message=None):
+        AcceleratorManager.setMetaEscapeAllowed(self.keyboard.platform == 'emacs')
+        
         actions = getAllSubclassesOf(SelectAction)
         self.setKeybindingsOfActions(actions)
         self.setAcceleratorTextOfActions(actions)

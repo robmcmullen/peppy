@@ -756,6 +756,17 @@ class AcceleratorManager(AcceleratorList):
     If the user selects a menu item, any in-progress multi-key sequence is
     cancelled.
     """
+    use_meta_escape = True
+    
+    @classmethod
+    def setMetaEscapeAllowed(cls, state=True):
+        #dprint("allowing meta escape: %s" % state)
+        cls.use_meta_escape = state
+    
+    @classmethod
+    def isMetaEscapeAllowed(cls):
+        return cls.use_meta_escape
+    
     # Blank level used in quoted character processing
     def __init__(self, *args, **kwargs):
         AcceleratorList.__init__(self)
@@ -823,7 +834,8 @@ class AcceleratorManager(AcceleratorList):
         # Add default and dummy actions
         for i in range(10):
             self.addKeyBinding("M-%d" % i)
-            self.addKeyBinding("ESC %d" % i)
+            if self.use_meta_escape:
+                self.addKeyBinding("ESC %d" % i)
             self.addKeyBinding("C-%d" % i)
             self.addKeyBinding("M-%d" % i)
             self.addKeyBinding("S-C-%d" % i)
@@ -1146,7 +1158,7 @@ class AcceleratorManager(AcceleratorList):
                 # M-ESC ESC is processed as a regular keystroke
                 if self.debug: dprint("in processEvent: evt=%s id=%s FOUND M-ESC ESC" % (str(evt.__class__), eid))
                 pass
-            else:
+            elif self.use_meta_escape:
                 if self.debug: dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                 self.entry.meta_next = True
                 self.updateCurrentKeystroke(keystroke)
