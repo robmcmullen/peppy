@@ -32,7 +32,9 @@ from peppy.autosave import Autosave, BackupFiles
 # Debug method to display when CallAfters are being made.
 #OrigCallAfter = wx.CallAfter
 #def NewCallAfter(*args, **kwargs):
+#    import traceback
 #    dprint("CallAfter: args=%s kwargs=%s" % (str(args), str(kwargs)))
+#    #traceback.print_stack()
 #    OrigCallAfter(*args, **kwargs)
 #    #wx.GetApp().cooperativeYield()
 #wx.CallAfter = NewCallAfter
