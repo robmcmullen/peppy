@@ -116,8 +116,7 @@ distdir: peppy/_peppy_version.py
 	python setup.py sdist -k
 	chmod 644 $(distdir)/tests/*.py
 	
-	mkdir -p $(distdir)/plugins
-	cp ./plugins/build/*.egg $(distdir)/plugins
+	cp ./plugins/build/*.egg $(distdir)/peppy/plugins/eggs
 	
 	./make-doc.py -m peppy -o $(distdir)/py2exe/win-installer.nsi $(distdir)/py2exe/win-installer.nsi.in
 

@@ -51,9 +51,15 @@ def get_plugin_dirs(search_path):
     # as an app or when running from the file system) is automatically included
     if main_is_frozen():
         top = os.path.dirname(sys.argv[0])
+        dirs = []
     else:
-        top = os.path.dirname(os.path.dirname(__file__))
-    dirs = [os.path.join(top, "plugins")]
+        top = os.path.dirname(__file__)
+        dirs = [os.path.join(top, "plugins/eggs")]
+        if 'site-packages' not in top:
+            # running from the local installation, so check for the googlecode
+            # plugins at one higher level, checked out in the plugins directory
+            top = os.path.dirname(top)
+    dirs.append(os.path.join(top, "plugins"))
     
     # Because setuptools can only load plugins from the local filesystem (not
     # from the vfs) we can check for the existence of the directory here
@@ -907,6 +913,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if not hasattr(self, 'no_setuptools'):
             import peppy.lib.setuptools_utils
             dirs = get_plugin_dirs(self.classprefs.plugin_search_path)
+            self.dprint("Setuptools search path: %s" % dirs)
             return peppy.lib.setuptools_utils.count_plugins(entry_point, dirs)
         return 0
 
