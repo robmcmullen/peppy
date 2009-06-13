@@ -548,17 +548,22 @@ class KeyboardConf(IPeppyPlugin):
                 keyboard = bindings['default']
             
             if add_mac_emacs:
-                # Merge the emacs bindings in with the mac defaults.
-                emacs = bindings.get('emacs', [])
-                if emacs:
-                    if not isinstance(emacs, list):
-                        emacs = [emacs]
-                    if keyboard is None:
-                        keyboard = []
-                    elif not isinstance(keyboard, list):
-                        keyboard = [keyboard]
-                    emacs = self.convertEmacsToMac(emacs)
-                    keyboard.extend(emacs)
+                if 'mac+emacs' in bindings:
+                    # Override the combination of individual bindings with a
+                    # specific set of bindings
+                    keyboard = bindings['mac+emacs']
+                else:
+                    # Merge the emacs bindings in with the mac defaults.
+                    emacs = bindings.get('emacs', [])
+                    if emacs:
+                        if not isinstance(emacs, list):
+                            emacs = [emacs]
+                        if keyboard is None:
+                            keyboard = []
+                        elif not isinstance(keyboard, list):
+                            keyboard = [keyboard]
+                        emacs = self.convertEmacsToMac(emacs)
+                        keyboard.extend(emacs)
         return keyboard
     
     def convertEmacsToMac(self, bindings):

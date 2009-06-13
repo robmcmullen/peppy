@@ -1087,7 +1087,7 @@ class CancelMinibuffer(SelectAction):
     alias = "cancel-minibuffer"
     name = "Cancel Minibuffer"
     icon = 'icons/control_stop.png'
-    key_bindings = {'default': "ESC", 'emacs': ["C-g", "M-ESC ESC",], }
+    key_bindings = {'default': "ESC", 'emacs': ["C-g", "M-ESC ESC",], 'mac+emacs': ["C-g", "M-ESC ESC",], }
     
     def addKeyBindingToAcceleratorList(self, accel_list):
         if self.keyboard is not None:
