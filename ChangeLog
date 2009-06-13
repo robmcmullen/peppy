@@ -12,6 +12,8 @@
 	* added user interface to change keybindings
 	* removed splash screen by default as it slowed down init by 2x
 	* added list of plugins to about:peppy page
+	* now automatically determines major mode when saving blank file
+	* fixed delay in opening/closing windows with multiple tabs
 
 2009-05-14  Rob McMullen  <robm@users.sourceforge.net>
 
