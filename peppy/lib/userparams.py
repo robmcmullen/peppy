@@ -722,6 +722,12 @@ class DirParam(Param):
         """
         ctrl.ctrl_list = ctrl_list
         ctrl.changeCallback = self.OnCallback
+    
+    def setValueWithoutCallback(self, ctrl, value):
+        # use ChangeValue which explicitly doesn't fire the change callback.
+        # The user_initiated_callback trick doesn't work with the
+        # FileBrowseButton
+        ctrl.textControl.ChangeValue(value)
 
 class PathParam(DirParam):
     """Directory parameter that displays a FileBrowseButton as its
