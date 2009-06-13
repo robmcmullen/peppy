@@ -263,6 +263,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
       packages = packages,
       package_data = {
           'peppy.plugins': ['*.peppy-plugin' ],
+          'peppy.project': ['*.peppy-plugin' ],
           'peppy.hsi': ['*.peppy-plugin' ],
           'peppy.editra': ['styles/*.ess', 'tests/*'],
           },
