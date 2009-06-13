@@ -497,7 +497,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         to use this before an instance of the major mode has been created.
         """
         if not hasattr(cls, 'major_mode_class_cache'):
-            dprint("Creating class cache for %s" % cls)
+            cls.dprint("Creating class cache for %s" % cls)
             cls.major_mode_class_cache = {}
         return cls.major_mode_class_cache
     

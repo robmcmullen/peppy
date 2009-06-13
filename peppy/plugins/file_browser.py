@@ -49,9 +49,7 @@ class FileBrowser(wx.GenericDirCtrl, Sidebar):
         
         """
         mode = self.frame.getActiveMajorMode()
-        dprint(mode)
         path = mode.buffer.cwd()
-        dprint(path)
         self.ExpandPath(path)
 
     def OnActivate(self, evt):

@@ -65,7 +65,7 @@ class FakePopupWindow(wx.MiniFrame):
         @param evt: event that called this handler
 
         """
-        dprint("OnFocus: set focus to %s" % str(self.GetParent()))
+        #dprint("OnFocus: set focus to %s" % str(self.GetParent()))
         self.ActivateParent()
         evt.Skip()
 
@@ -263,7 +263,7 @@ class SpringTabItem(GenToggleButton):
         return self.popup, child
 
     def OnActivate(self, evt):
-        dprint("Activating %s: %s, shown=%s" % (self.GetLabel(), evt.GetActive(), self.popup.IsShown()))
+        #dprint("Activating %s: %s, shown=%s" % (self.GetLabel(), evt.GetActive(), self.popup.IsShown()))
         if self.popup.IsShown():
             evt.Skip()
     
@@ -282,10 +282,10 @@ class SpringTabItem(GenToggleButton):
         """Callback for use within wx.CallAfter to prevent focus being set
         after the control has been removed.
         """
-        dprint()
+        #dprint()
         popup, child = self.getPopup()
         if popup.IsShown():
-            dprint("setting focus to %s" % self.GetLabel())
+            #dprint("setting focus to %s" % self.GetLabel())
             child.SetFocus()
 
     # FIXME: This attempt, using OnChildFocus, setPopupsLoseFocusCallback, and
@@ -364,7 +364,7 @@ class SpringTabs(wx.Panel):
     
     def popupItem(self, item):
         self._radio = item
-        dprint("Popping up %s" % item.GetLabel())
+        #dprint("Popping up %s" % item.GetLabel())
         self._tab_renderer.showPopup(self, item)
     
     def clearRadio(self, data=None):
@@ -372,7 +372,7 @@ class SpringTabs(wx.Panel):
         #import traceback
         #dprint("".join(traceback.format_stack()))
         if self._radio is not None:
-            dprint("Removing popup %s" % self._radio.GetLabel())
+            #dprint("Removing popup %s" % self._radio.GetLabel())
             self._tab_renderer.showPopup(self, self._radio, False)
             self._radio.SetToggle(False, check_popup=False)
         self._radio = None

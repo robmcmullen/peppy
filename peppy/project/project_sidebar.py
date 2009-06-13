@@ -46,7 +46,6 @@ class ProjectSidebar(ProjectTree, Sidebar):
         for url, project_info in known.iteritems():
             path = os.path.normpath(str(url.path))
             if path not in paths:
-                dprint(path)
                 self.addProject(path, options={'name': project_info.getProjectName()})
 
         mode = self.frame.getActiveMajorMode()
@@ -70,7 +69,7 @@ class ProjectSidebar(ProjectTree, Sidebar):
         for node in nodes:
             if self.tree.ItemHasChildren(node) and self.tree.IsExpanded(node):
                 path = self.tree.GetPyData(node)['path']
-                dprint("adding %s to watch list" % path)
+                self.dprint("adding %s to watch list" % path)
                 self.addDirectoryWatcher(node)
                 #self.watchDirectory(path, flag=True, data=node, delay=0)
                 self.updateTreeIfNewEntriesFound(node)

@@ -330,7 +330,6 @@ class ProjectTree(wx.Panel):
         il = wx.ImageList(isz[0], isz[1])
 
         folder = wx.ArtProvider_GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, isz)
-        print folder
         folderopen = wx.ArtProvider_GetBitmap(wx.ART_FOLDER_OPEN, wx.ART_OTHER, isz)
         self.icons['folder'] = il.Add(folder)
         self.icons['folder-open'] = il.Add(folderopen)
@@ -380,8 +379,6 @@ class ProjectTree(wx.Panel):
         self.icons['project-add'] = il.Add(FileIcons.getProjectAddBitmap())
         self.icons['project-delete'] = il.Add(FileIcons.getProjectDeleteBitmap())
 
-        print self.icons
-        print il
         self.tree.SetImageList(il)
         self.il = il # Save reference to the image list
 
