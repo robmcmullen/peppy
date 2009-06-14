@@ -85,6 +85,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
         return self.recording
     
     def playback(self, frame, mode, multiplier=1):
+        mode.BeginUndoAction()
         state = MacroPlaybackState(frame, mode)
         dprint(state)
         SelectAction.debuglevel = 1
@@ -93,6 +94,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
                 recorded_action.performAction(state)
             multiplier -= 1
         SelectAction.debuglevel = 0
+        mode.EndUndoAction()
 
 
 class StartRecordingMacro(SelectAction):
