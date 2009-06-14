@@ -18,35 +18,6 @@ from peppy.lib.multikey import *
 from peppy.debug import *
 
 
-class PlaybackState(object):
-    def __init__(self, frame, mode):
-        self.frame = frame
-        self.mode = mode
-
-
-class RecordedAction(debugmixin):
-    def __init__(self, action, multiplier):
-        self.actioncls = action.__class__
-        self.multiplier = multiplier
-    
-    def canCoalesce(self, next_action):
-        """If the current action can coelesce with the next action, return
-        the new action that combines the two.
-        """
-        if hasattr('canCoalesce', self.actioncls):
-            return self.action.canCoalesce(next_action)
-        return False
-    
-    def coalesce(self, next_action):
-        """If the current action can coelesce with the next action, return
-        the new action that combines the two.
-        """
-        action = self.action.coalesce(self, next_action)
-    
-    def performAction(self, system_state):
-        raise NotImplementedError
-
-
 class RecordedKeyboardAction(RecordedAction):
     def __init__(self, action, evt, multiplier):
         RecordedAction.__init__(self, action, multiplier)
@@ -93,20 +64,28 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
     def recordKeystroke(self, action, evt, multiplier):
         if action.isRecordable():
             record = RecordedKeyboardAction(action, evt, multiplier)
-            dprint(record)
-            self.recording.append(record)
+            self.appendRecord(record)
     
     def recordMenu(self, action, index, multiplier):
         if action.isRecordable():
             record = RecordedMenuAction(action, index, multiplier)
-            dprint(record)
-            self.recording.append(record)
+            self.appendRecord(record)
+    
+    def appendRecord(self, record):
+        dprint("adding %s" % record)
+        if self.recording:
+            last = self.recording[-1]
+            if last.canCoalesceActions(record):
+                self.recording.pop()
+                record = last.coalesceActions(record)
+                dprint("coalesced into %s" % record)
+        self.recording.append(record)
     
     def getRecordedActions(self):
         return self.recording
     
     def playback(self, frame, mode, multiplier=1):
-        state = PlaybackState(frame, mode)
+        state = MacroPlaybackState(frame, mode)
         dprint(state)
         SelectAction.debuglevel = 1
         while multiplier > 0:

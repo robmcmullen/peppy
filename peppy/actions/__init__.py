@@ -47,6 +47,97 @@ class ActionNeedsFocusException(Exception):
     pass
 
 
+class MacroPlaybackState(object):
+    """Persistent object through the lifetime of the macro playback that can
+    be used to store information needed by multiple actions in the macro list.
+    
+    The state will include at least the frame instance and major mode instance
+    that the L{RecordedAction} can use to instantiate an action object.
+    """
+    def __init__(self, frame, mode):
+        self.frame = frame
+        self.mode = mode
+
+
+class RecordedAction(debugmixin):
+    """Base class for a recorded action
+    
+    Actions are recorded for later playback by storing the class of the action
+    and any metadata needed by the action to reproduce the effects of the
+    action.  The instance of the action is not stored because it includes
+    transient information like the current frame and major mode instances that
+    would not be serializable.
+    """
+    def __init__(self, action, multiplier):
+        self.actioncls = action.__class__
+        self.multiplier = multiplier
+    
+    def canCoalesceActions(self, next_record):
+        """If the current action can coelesce with the next action, return
+        the new action that combines the two.
+        """
+        if hasattr(self.actioncls, 'canCoalesce'):
+            return self.actioncls.canCoalesce(next_record.actioncls)
+        return False
+    
+    def coalesceActions(self, next_record):
+        """If the current action can coelesce with the next action, return
+        the new action that combines the two.
+        """
+        return self.actioncls.coalesce(self, next_record)
+    
+    def performAction(self, playback_state):
+        """Perform the action by instantiating the action class using the
+        specified system state.
+        
+        
+        """
+        raise NotImplementedError
+
+
+class MacroAction(debugmixin):
+    """Action used in SelectAction playback, but not directly performed by the
+    user.
+    
+    """
+    def __init__(self, frame, popup_options=None, mode=None):
+        self.frame = frame
+        if mode is None:
+            self.mode = frame.getActiveMajorMode()
+        else:
+            self.mode = mode
+        self.popup_options = popup_options
+
+    def action(self, index=-1, multiplier=1):
+        """See L{SelectAction.action}
+        """
+        pass
+    
+    def actionKeystroke(self, evt, multiplier=1, printable=False):
+        """See L{SelectAction.actionKeystroke}
+        """
+        pass
+
+    @classmethod
+    def canCoalesce(cls, other_action):
+        """Returns whether or not the recorded action can be coalesced with
+        another action
+        
+        @param other_action: class of the other action
+        
+        @returns: if the current action can be merged with the other action
+        forming a new action.
+        """
+        return False
+    
+    @classmethod
+    def coalesce(cls, first, second):
+        """Combines two actions to form a single new action.
+        
+        """
+        raise NotImplementedError
+
+
 class SelectAction(debugmixin):
     """Display a normal menu item, toolbar button, or simple keystroke command.
     
@@ -414,9 +505,8 @@ class SelectAction(debugmixin):
         return False
     
     @classmethod
-    def coalesce(cls, other_action, evt, multiplier):
-        """Combines the current action with the next one to form a single
-        new action.
+    def coalesce(cls, first, second):
+        """Combines two actions to form a single new action.
         
         """
         raise NotImplementedError

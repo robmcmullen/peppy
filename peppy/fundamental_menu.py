@@ -13,7 +13,75 @@ from peppy.fundamental import *
 from peppy.lib.userparams import *
 from peppy.lib.textutil import *
 
-class SelfInsertCommand(TextModificationAction):
+
+class RecordedTextAction(RecordedAction):
+    def __init__(self, actioncls, text):
+        self.actioncls = actioncls
+        self.text = text
+    
+    def __str__(self):
+        return "%s: %s" % (self.actioncls.__name__, self.text)
+    
+    def performAction(self, system_state):
+        action = self.actioncls(system_state.frame, mode=system_state.mode)
+        dprint(action.__class__.__name__)
+        action.actionString(self.text)
+
+
+class CoalesceTextMacroMixin(object):
+    @classmethod
+    def canCoalesce(cls, actioncls):
+        return hasattr(actioncls, 'getRecordableText')
+    
+    @classmethod
+    def coalesce(self, first, second):
+        first_text = first.actioncls.getRecordableText(first)
+        second_text = second.actioncls.getRecordableText(second)
+        text = first_text + second_text
+        record = RecordedTextAction(SelfInsertString, text)
+        return record
+    
+    @classmethod
+    def getRecordableText(cls, recorded_action):
+        """Used by action coalescing to return the text that would have been
+        inserted.
+        
+        If this method is present, the action will be able to be coalesced with
+        any text insertions from SelfInsertCommand.
+        """
+        raise NotImplementedError
+
+
+class SelfInsertString(CoalesceTextMacroMixin, MacroAction):
+    """Macro action used to coalesce multiple L{SelfInsertCommand} actions
+    into a single action.
+    
+    The use of this coalescing action saves space and time in the replay and
+    serialization of the actions.
+    """
+    def actionString(self, text):
+        # See hacks described in SelfInsertCommand.actionKeystroke
+        mode = self.mode
+        if mode.GetSelectionStart() != mode.GetSelectionEnd():
+            mode.ReplaceSelection("")
+        mode.AddText(text)
+        mode.EnsureCaretVisible()
+        mode.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFT)
+        mode.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHT)
+    
+    @classmethod
+    def getRecordableText(cls, recorded_action):
+        """Used by action coalescing to return the text that would have been
+        inserted.
+        
+        If this method is present, the action will be able to be coalesced with
+        any text insertions from SelfInsertCommand.
+        """
+        # The text for the SelfInsertString is stored 
+        return recorded_action.text
+
+
+class SelfInsertCommand(CoalesceTextMacroMixin, TextModificationAction):
     """Default action to insert the character that was typed"""
     name = "Self Insert Command"
     key_bindings = {'default': 'default',}
@@ -61,6 +129,16 @@ class SelfInsertCommand(TextModificationAction):
                 mode.AddText(text)
                 mode.EnsureCaretVisible()
             evt.Skip()
+    
+    @classmethod
+    def getRecordableText(cls, recorded_action):
+        evt = recorded_action.evt
+        uchar = unichr(evt.GetUnicodeKey())
+        text = uchar * recorded_action.multiplier
+        return text
+
+
+
 
 class SpellingSuggestionAction(ListAction):
     """Spelling suggestions for the current word
