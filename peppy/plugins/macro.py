@@ -116,9 +116,10 @@ class StopRecordingMacro(SelectAction):
         return False
     
     def action(self, index=-1, multiplier=1):
-        recorder = self.frame.root_accel.stopRecordingActions()
-        dprint(recorder)
-        ReplayLastMacro.setLastMacro(recorder)
+        if self.frame.root_accel.isRecordingActions():
+            recorder = self.frame.root_accel.stopRecordingActions()
+            dprint(recorder)
+            ReplayLastMacro.setLastMacro(recorder)
 
 
 class ReplayLastMacro(SelectAction):
@@ -133,10 +134,18 @@ class ReplayLastMacro(SelectAction):
         return bool(self.last_recording)
     
     @classmethod
+    def isRecordable(cls):
+        return False
+    
+    @classmethod
     def setLastMacro(cls, recording):
         cls.last_recording = recording
     
     def action(self, index=-1, multiplier=1):
+        if self.frame.root_accel.isRecordingActions():
+            recorder = self.frame.root_accel.stopRecordingActions()
+            dprint(recorder)
+            self.setLastMacro(recorder)
         dprint("Playing back %s" % self.last_recording)
         if self.last_recording:
             wx.CallAfter(self.last_recording.playback, self.frame, self.mode, multiplier)

@@ -1105,6 +1105,11 @@ class AcceleratorManager(AcceleratorList):
         self.recorder = None
         return recorder
     
+    def isRecordingActions(self):
+        """Check to see if currently recording actions.
+        """
+        return bool(self.recorder)
+    
     def doKeystroke(self, action, evt):
         """Calls the actionKeystroke method of an action, possibly recording
         the action
