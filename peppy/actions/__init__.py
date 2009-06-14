@@ -376,6 +376,36 @@ class SelectAction(debugmixin):
         Default is to always enable the item.
         """
         return True
+    
+    
+    # Some actions are recordable and can be played back as macro commands.
+    @classmethod
+    def isRecordable(cls):
+        """Returns whether or not the action is recordable
+        
+        """
+        return True
+    
+    @classmethod
+    def canCoalesce(cls, other_action):
+        """Returns whether or not the recorded action can be coalesced with
+        another action
+        
+        @param other_action: class of the other action
+        
+        @returns: if the current action can be merged with the other action
+        forming a new action.
+        """
+        return False
+    
+    @classmethod
+    def coalesce(cls, other_action, evt, multiplier):
+        """Combines the current action with the next one to form a single
+        new action.
+        
+        """
+        raise NotImplementedError
+    
 
 class ToggleAction(SelectAction):
     """Display a toggle button or toolbar item.
