@@ -1119,6 +1119,19 @@ class AcceleratorManager(AcceleratorList):
         if self.debug: dprint("Calling action %s" % action)
         action.actionKeystroke(evt, multiplier=multiplier)
     
+    def doMenu(self, action, index):
+        """Calls the menu activation method of an action, possibly recording it
+        
+        Driver function for all calls to the menu activation method of an
+        action.  Handles recording the action in the recorded actions list if
+        recording is turned on.
+        """
+        multiplier = self.entry.repeat_value
+        if self.recorder:
+            self.recorder.recordMenu(action, index, multiplier)
+        if self.debug: dprint("Calling action %s" % action)
+        wx.CallAfter(action.action, index, multiplier)
+    
     def setReportNext(self, callback):
         """Set the report action callback
         
@@ -1456,7 +1469,7 @@ class AcceleratorManager(AcceleratorList):
                 except KeyError:
                     index = -1
                 if self.debug: dprint("evt=%s id=%s index=%d repeat=%s FOUND MENU ACTION %s" % (str(evt.__class__), eid, index, self.entry.repeat_value, self.menu_id_to_action[eid]))
-                wx.CallAfter(action.action, index, self.entry.repeat_value)
+                self.doMenu(action, index)
             else:
                 action, evt = self.findKeystrokeActionFromMenuAction(action)
                 if action:

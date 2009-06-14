@@ -571,6 +571,13 @@ class ElectricChar(SelectAction):
     def actionKeystroke(self, evt, multiplier=1, **kwargs):
         mode = self.mode
         uchar = unichr(evt.GetUnicodeKey())
+        
+        # FIXME: Because the autoindenter depends on the styling information,
+        # need to make sure the document is up to date.  But, is this call to
+        # style the entire document fast enough in practice, or will it have
+        # to be optimized?
+        mode.Colourise(0, mode.GetTextLength())
+        
         for i in range(multiplier):
             if mode.autoindent.electricChar(mode, uchar):
                 # If the autoindenter handles the char, it will insert the char.
