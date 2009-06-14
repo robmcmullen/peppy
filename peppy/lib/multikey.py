@@ -361,16 +361,13 @@ class KeyAccelerator(object):
 
 
 
-class FakeQuotedCharEvent(object):
-    def __init__(self, event_object, keystroke, id=None, evt=None):
-        self.evt = evt
-        if id is None:
-            self.id = -1
-        else:
-            self.id = keystroke.id
-        self.modifiers = keystroke.flags
-        self.keycode = keystroke.keycode
-        self.event_object = event_object
+class FakeCharEvent(object):
+    def __init__(self, evt):
+        self.event_object = evt.GetEventObject()
+        self.id = evt.GetId()
+        self.modifiers = evt.GetModifiers()
+        self.keycode = evt.GetKeyCode()
+        self.unicode = evt.GetUnicodeKey()
     
     def GetEventObject(self):
         return self.event_object
@@ -380,6 +377,27 @@ class FakeQuotedCharEvent(object):
     
     def GetModifiers(self):
         return self.modifiers
+    
+    def GetUnicodeKey(self):
+        return self.unicode
+    
+    def GetKeyCode(self):
+        return self.keycode
+    
+    def Skip(self):
+        pass
+
+
+class FakeQuotedCharEvent(FakeCharEvent):
+    def __init__(self, event_object, keystroke, id=None, evt=None):
+        self.evt = evt
+        if id is None:
+            self.id = -1
+        else:
+            self.id = keystroke.id
+        self.modifiers = keystroke.flags
+        self.keycode = keystroke.keycode
+        self.event_object = event_object
     
     def GetUnicodeKey(self):
         keycode = self.keycode
@@ -392,9 +410,6 @@ class FakeQuotedCharEvent(object):
             elif self.modifiers == wx.ACCEL_SHIFT:
                 keycode += 32
         return keycode
-    
-    def GetKeyCode(self):
-        return self.keycode
     
     def Skip(self):
         if self.evt:
@@ -746,6 +761,16 @@ class CurrentKeystrokes(object):
         if AcceleratorList.debug: dprint("in processEscDigit: FOUND REPEAT %d" % self.repeat_value)
 
 
+class AbstractActionRecorder(object):
+    def recordKeystroke(self, action, evt, multiplier):
+        pass
+    
+    def recordMenu(self, action, index):
+        pass
+    
+    def getRecordedAction(self):
+        return []
+
 
 class AcceleratorManager(AcceleratorList):
     """Driver class for multi-keystroke processing of CommandEvents.
@@ -823,6 +848,10 @@ class AcceleratorManager(AcceleratorList):
         
         # Callback processing for popups' EVT_MENU actions
         self.popup_callback = None
+        
+        # Macro recording flag that if points to a L{AbstractActionRecorder}
+        # instance will record every keystroke or menu selection
+        self.recorder = None
 
         # Always have an ESC keybinding for emacs-style ESC-as-sticky-meta
         # processing
@@ -1050,11 +1079,45 @@ class AcceleratorManager(AcceleratorList):
                 return self.processReportNext(action)
             if self.entry.quoted_next:
                 evt.is_quoted = True
-            if self.debug: dprint("Calling action %s" % action)
-            action.actionKeystroke(evt, multiplier=self.entry.repeat_value)
+            self.doKeystroke(action, evt)
         else:
             if self.debug: dprint("No action available for window %s" % self.current_target)
         self.reset()
+    
+    def startRecordingActions(self, recorder):
+        """Start recording actions
+        
+        Actions (either from keystrokes or from menu selections) are recorded
+        in a list for later playback.
+        
+        @param recorder: instance of the L{ActionRecorder} class
+        """
+        self.recorder = recorder
+    
+    def stopRecordingActions(self):
+        """Stop the action recording.
+        
+        The recorded action list is finalized here, and after this call the
+        list of actions will be available through a call to the returned
+        object's L{getRecordedActions}
+        """
+        recorder = self.recorder
+        self.recorder = None
+        return recorder
+    
+    def doKeystroke(self, action, evt):
+        """Calls the actionKeystroke method of an action, possibly recording
+        the action
+        
+        Driver function for all calls to the actionKeystroke method of an
+        action.  Handles recording the action in the recorded actions list if
+        recording is turned on.
+        """
+        multiplier = self.entry.repeat_value
+        if self.recorder:
+            self.recorder.recordKeystroke(action, evt, multiplier)
+        if self.debug: dprint("Calling action %s" % action)
+        action.actionKeystroke(evt, multiplier=multiplier)
     
     def setReportNext(self, callback):
         """Set the report action callback
@@ -1227,7 +1290,7 @@ class AcceleratorManager(AcceleratorList):
             if action is not None:
                 if action.actionWorksWithCurrentFocus():
                     self.updateCurrentKeystroke(keystroke)
-                    action.actionKeystroke(evt, multiplier=self.entry.repeat_value)
+                    self.doKeystroke(action, evt)
                 else:
                     # Found action but it doesn't work with the current focus.
                     # It should passed up though the OnChar processing.
@@ -1398,7 +1461,7 @@ class AcceleratorManager(AcceleratorList):
                 action, evt = self.findKeystrokeActionFromMenuAction(action)
                 if action:
                     if self.debug: dprint("id=%s menu action %s USED AS KEYSTROKE ACTION" % (eid, self.menu_id_to_action[eid]))
-                    action.actionKeystroke(evt, multiplier=self.entry.repeat_value)
+                    self.doKeystroke(action, evt)
                 else:
                     if self.debug: dprint("id=%s menu action %s NOT VALID ON CURRENT FOCUS" % (eid, self.menu_id_to_action[eid]))
         elif self.entry.meta_next and eid in self.plain_digit_keystroke:
