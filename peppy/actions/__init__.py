@@ -272,6 +272,12 @@ class SelectAction(debugmixin):
             return u"%s%s" % (_(self.getName()), self._accelerator_text)
         return self.getName()
 
+    def getMenuItemNameWithoutAccelerator(self):
+        if self._use_accelerators and self.__class__.keyboard and self.keystroke_valid and self.popup_options is None:
+            acc = self._accelerator_text.strip()
+            return u"%s (%s)" % (_(self.getName()), acc)
+        return _(self.getName())
+
     @classmethod
     def getDefaultTooltip(cls, id=None, name=None):
         if cls.tooltip is None:
@@ -360,6 +366,15 @@ class SelectAction(debugmixin):
                 assert self.dprint(u"menu item %s (widget id=%d) enabled=%s" % (self.getName(), self.global_id, state))
             if self.widget.IsEnabled() != state:
                 self.widget.Enable(state)
+                
+                # If the item is disabled, force the use of the label without
+                # an accelerator.  Placing the accelerator in a disabled menu
+                # item short circuits that character from working in a multi-
+                # key combo or as a quoted character
+                if state:
+                    self.widget.SetItemLabel(self.getDefaultMenuItemName())
+                else:
+                    self.widget.SetItemLabel(self.getMenuItemNameWithoutAccelerator())
         if self.tool is not None:
             if self.debuglevel > 1:
                 assert self.dprint(u"menu item %s (widget id=%d) enabled=%s tool=%s" % (self.getName(), self.global_id, state, self.tool))

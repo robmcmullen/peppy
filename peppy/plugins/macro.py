@@ -150,6 +150,9 @@ class ReplayLastMacro(SelectAction):
     
     last_recording = None
     
+    def isEnabled(self):
+        return bool(self.last_recording)
+    
     @classmethod
     def setLastMacro(cls, recording):
         cls.last_recording = recording
