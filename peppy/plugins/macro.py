@@ -56,6 +56,19 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
         self.recording = []
     
     def __str__(self):
+        summary = ''
+        count = 0
+        for recorded_item in self.recording:
+            if hasattr(recorded_item, 'text'):
+                summary += recorded_item.text + " "
+                if len(summary) > 50:
+                    summary = summary[0:50] + "..."
+            count += 1
+        if len(summary) == 0:
+            summary = "%d actions" % count
+        return summary
+        
+    def details(self):
         lines = []
         for recorded_item in self.recording:
             lines.append(str(recorded_item))
@@ -142,6 +155,7 @@ class ReplayLastMacro(SelectAction):
     @classmethod
     def setLastMacro(cls, recording):
         cls.last_recording = recording
+        RecentMacros.append(recording)
     
     def action(self, index=-1, multiplier=1):
         if self.frame.root_accel.isRecordingActions():
@@ -156,8 +170,30 @@ class ReplayLastMacro(SelectAction):
         
 
 
+class RecentMacros(OnDemandGlobalListAction):
+    """Play a macro from the list of recently created macros
+    
+    Maintains a list of the recent macros and runs the selected macro if chosen
+    out of the submenu.
+    """
+    name = "Recent Macros"
+    default_menu = ("Tools/Macros", -200)
+    inline = False
+    
+    storage = []
+    
+    def action(self, index=-1, multiplier=1):
+        macro = self.storage[index]
+        assert self.dprint("replaying macro %s" % macro)
+        wx.CallAfter(macro.playback, self.frame, self.mode, 1)
+
+
 class MacroPlugin(IPeppyPlugin):
     """Plugin providing the macro recording capability
     """
     def getActions(self):
-        return [StartRecordingMacro, StopRecordingMacro, ReplayLastMacro]
+        return [
+            StartRecordingMacro, StopRecordingMacro, ReplayLastMacro,
+            
+            RecentMacros,
+            ]
