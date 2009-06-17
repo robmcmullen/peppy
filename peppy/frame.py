@@ -340,6 +340,9 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.sidebar_panes.sort(key=lambda s:s.caption)
 
     def processIdleEvent(self):
+        if not self.IsActive():
+            self.dprint("Top window %s not active.  No idle events." % self)
+            return
         mode = self.getActiveMajorMode()
         if mode and mode.isReadyForIdleEvents():
             #dprint("Idle for mode %s" % mode)

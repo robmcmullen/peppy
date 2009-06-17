@@ -313,7 +313,7 @@ class ProcessList(wx.ListCtrl, debugmixin):
         wx.ListCtrl.__init__(self, parent, style=wx.LC_REPORT, **kwargs)
         self.createColumns()
 
-        self.Bind(wx.EVT_IDLE, self.OnIdle)
+        #self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
         Publisher().subscribe(self.msgStarted, 'peppy.processmanager.started')
         Publisher().subscribe(self.msgFinished, 'peppy.processmanager.finished')
