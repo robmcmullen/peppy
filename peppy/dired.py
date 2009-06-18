@@ -334,12 +334,12 @@ class DiredMode(ListMode):
             return
         self.origDataMap = {}
         
-        self.Freeze()
+        self.list.Freeze()
         ListMode.resetList(self, msg)
         
         if sort:
-            self.SortListItems()
-        self.Thaw()
+            self.list.SortListItems()
+        self.list.Thaw()
     
     def getListItems(self):
         return vfs.get_names(self.url)
