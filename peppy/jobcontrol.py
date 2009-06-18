@@ -159,7 +159,14 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             self.frame.setStatusText("Already running a process.")
         elif self.saveScript():
             cmd = self.getCommandLine(bangpath)
-            self.startCommandLine(cmd)
+            self.prepareOutputHook()
+            wx.CallAfter(self.startCommandLine, cmd)
+    
+    def prepareOutputHook(self):
+        """Hook for subclass to do something to initialize the output log
+        
+        """
+        pass
     
     def saveScript(self):
         """Save the file before executing the script.
