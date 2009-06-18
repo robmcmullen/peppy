@@ -252,13 +252,10 @@ class OutputLogMinorMode(MinorMode, LoggingSTC):
         
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
-
+    
     def showMessage(self, text):
         """Display a message and raise the output log if it is hidden."""
-        paneinfo = self.mode.wrapper._mgr.GetPane(self)
-        if not paneinfo.IsShown():
-            paneinfo.Show(True)
-            self.mode.wrapper._mgr.Update()
+        self.ensureVisible()
         self.addMessage(text)
 
     def showPubsubMessage(self, message=None):

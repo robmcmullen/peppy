@@ -178,6 +178,16 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         does anything with it.
         """
         pass
+    
+    def ensureVisible(self):
+        """Utility method to make the minor mode visible if it isn't already.
+        
+        """
+        paneinfo = self.mode.wrapper._mgr.GetPane(self)
+        if not paneinfo.IsShown():
+            paneinfo.Show(True)
+            self.mode.wrapper._mgr.Update()
+
 
 class MinorModeEntry(object):
     """Simple wrapper to hold a class and an instance"""
