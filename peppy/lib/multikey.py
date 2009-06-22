@@ -762,13 +762,36 @@ class CurrentKeystrokes(object):
 
 
 class AbstractActionRecorder(object):
+    """Abstract class that must be implemented by some recording mechanism
+    in order to provide macro functionality.
+    
+    The calls to L{recordKeystroke} and L{recordMenu} provide all the
+    information necessary to reproduce the action.  Subclasses should save
+    this information in some manner and provide a means to store and/or play
+    back the action.
+    
+    Not all actions are capable of being recorded.  The action's
+    L{isRecordable} classmethod will return a boolean that indicates whether
+    or not the action should be included in the list of saved actions.  It
+    is not recommended that the recording process be allowed to continue if a
+    non-recordable action is found.
+    """
     def recordKeystroke(self, action, evt, multiplier):
+        """The L{AcceleratorManager} calls this method whenever a keystroke
+        action is performed.
+        """
         pass
     
     def recordMenu(self, action, index):
+        """The L{AcceleratorManager} calls this method whenever a keystroke
+        action is performed.
+        """
         pass
     
-    def getRecordedAction(self):
+    def getRecordedActions(self):
+        """Returns the list of L{RecordedAction}s instances.
+        
+        """
         return []
 
 

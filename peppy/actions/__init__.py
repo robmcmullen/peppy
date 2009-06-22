@@ -30,6 +30,7 @@ import wx
 from peppy.debug import *
 from peppy.lib.multikey import KeyAccelerator
 from peppy.lib.iconstorage import *
+from peppy.lib.userparams import getAllSubclassesOf
 
 
 class ActionNeedsFocusException(Exception):
@@ -90,6 +91,12 @@ class RecordedAction(debugmixin):
         """Perform the action by instantiating the action class using the
         specified system state.
         
+        """
+        raise NotImplementedError
+    
+    def getScripted(self):
+        """Convert the action into a text string capable of being C{exec}ed to
+        reproduce the effect of the recorded action
         
         """
         raise NotImplementedError
@@ -100,6 +107,19 @@ class MacroAction(debugmixin):
     user.
     
     """
+    
+    @classmethod
+    def getAllKnownActions(cls, subclass=None):
+        """Get a list of all known actions
+        
+        By specifying the subclass, the returned list will be limited to those
+        actions that are of the specified subclass.
+        """
+        if subclass is None:
+            subclass = cls
+        actions = getAllSubclassesOf(subclass)
+        return actions
+
     def __init__(self, frame, popup_options=None, mode=None):
         self.frame = frame
         if mode is None:
@@ -236,7 +256,23 @@ class SelectAction(debugmixin):
         help = u"\n\n'%s' is an action from module %s\nBound to keystrokes: %s\nAlias: %s\nDocumentation: %s" % (cls.__name__, cls.__module__, cls.keyboard, cls.alias, cls.__doc__)
         return help
     
-    def __init__(self, frame, popup_options=None, mode=None):
+    
+    ignore_other_baseclasses = ['MinibufferAction', 'MinibufferRepeatAction']
+    
+    @classmethod
+    def getAllKnownActions(cls, subclass=None):
+        """Get a list of all known actions
+        
+        By specifying the subclass, the returned list will be limited to those
+        actions that are of the specified subclass.
+        """
+        if subclass is None:
+            subclass = cls
+        actions = getAllSubclassesOf(subclass)
+        actions = [a for a in actions if a.__name__ not in cls.ignore_other_baseclasses]
+        return actions
+    
+    def __init__(self, frame, mode=None, popup_options=None):
         self.widget=None
         self.tool=None
         if self.global_id is None:

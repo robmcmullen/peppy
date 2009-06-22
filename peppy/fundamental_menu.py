@@ -26,6 +26,9 @@ class RecordedTextAction(RecordedAction):
         action = self.actioncls(system_state.frame, mode=system_state.mode)
         dprint(action.__class__.__name__)
         action.actionString(self.text)
+    
+    def getScripted(self):
+        return "%s(frame, mode=mode).actionString(%s)" % (self.actioncls.__name__, repr(self.text))
 
 
 class CoalesceTextMacroMixin(object):
