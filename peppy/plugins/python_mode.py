@@ -274,6 +274,7 @@ class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     keyword='Python'
     icon='icons/py.png'
     regex="\.(py|pyx)$"
+    mimetype = "text/x-python"
     
     fold_function_match = ["def ", "class "]
 

@@ -206,22 +206,18 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         return "generic"
     
     @classmethod
-    def verifyMimetype(cls, mimetype):
+    def verifyMimetypeHook(cls, mimetype):
         """Verify that the mimetype is text/plain.
         
         The class attribute mimetype is not used so that subclasses that extend
         Fundamental but forget to declare a MIME type won't also get added to
         the list of modes that handle text/plain.
-        
-        This default implementation will call L{MajorMode.verifyMimetype} if not
-        overridden by the subclass.
         """
         # check for the class here so that subclasses don't automatically also
         # get associated with text/plain
         if cls == FundamentalMode:
             return mimetype == 'text/plain'
-        else:
-            return MajorMode.verifyMimetype(mimetype)
+        return False
     
     def save(self, url=None):
         """Wrapper around L{MajorMode.save} to change the major mode after

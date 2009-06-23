@@ -57,7 +57,7 @@ class MajorModeMatcherDriver(debugmixin):
     def findActiveModes(cls, plugins):
         cls.current_modes = []
         for plugin in plugins:
-            cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
+            if cls.debuglevel > 1: cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
             cls.current_modes.extend(plugin.getMajorModes())
         cls.dprint("Currently active major modes: %s" % str(cls.current_modes))
         cls.skipped_modes = set()
@@ -121,12 +121,16 @@ class MajorModeMatcherDriver(debugmixin):
         # generate a list of possible modes
         try:
             metadata = vfs.get_metadata(url)
-        except:
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
             metadata = {'mimetype': None,
                         'mtime': None,
                         'size': 0,
                         'description': None,
                         }
+        cls.dprint("%s: metadata=%s" % (str(url), str(metadata)))
+        
         modes, binary_modes = cls.scanURL(url, metadata)
         cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
 

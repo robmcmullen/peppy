@@ -103,7 +103,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
             count += 1
         if len(summary) == 0:
             summary = "untitled"
-        return summary.strip()
+        return MacroFS.escapeFileName(summary)
         
     def details(self):
         """Get a list of actions that have been recorded.
@@ -218,7 +218,7 @@ class PythonScriptableMacro(MemFile):
         lines = []
         for recorded_action in recorder.getRecordedActions():
             lines.append(recorded_action.getScripted())
-        script += "\n".join(lines)
+        script += "\n".join(lines) + "\n"
         return script
     
     def playback(self, frame, mode, multiplier=1):
@@ -440,6 +440,11 @@ class MacroFS(MemFS):
     temp_file_class = TempMacro
     
     @classmethod
+    def escapeFileName(cls, name):
+        name = name.replace("/", " ")
+        return name.strip()
+    
+    @classmethod
     def addMacro(cls, macro):
         existing = macro
         basename = macro.name
@@ -463,6 +468,16 @@ class MacroFS(MemFS):
         parent, macro, name = cls._find(name)
         dprint(macro)
         return macro
+
+    @classmethod
+    def get_mimetype(cls, reference):
+        path = str(reference.path)
+        parent, existing, name = cls._find(path)
+        if existing:
+            if existing.is_file:
+                return "text/x-python"
+            return "application/x-not-regular-file"
+        raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
 
 class MacroPlugin(IPeppyPlugin):

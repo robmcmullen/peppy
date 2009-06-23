@@ -567,9 +567,11 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """Hook to allow the major mode to determine compatibility by mimetype.
 
         mimetype: a string indicating the MIME type of the file
-
+        
         return: True if the mode supports the MIME type
         """
+        if cls.verifyMimetypeHook(mimetype):
+            return True
         if cls.mimetype:
             if isinstance(cls.mimetype, str) and mimetype == cls.mimetype:
                 return True
@@ -577,6 +579,16 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
                 if mimetype == mime:
                     return True
         return False
+
+    @classmethod
+    def verifyMimetypeHook(cls, mimetype):
+        """Additional hook method for mimetype verification.
+        
+        Override this method to provide additional capability while still
+        keeping the basic functionality of L{verifyMimetype}; override
+        L{verifyMimetype} to replace all mimetype verification functionality.
+        """
+        pass
 
     @classmethod
     def verifyMetadata(cls, metadata):
