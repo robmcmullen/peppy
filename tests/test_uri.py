@@ -396,6 +396,16 @@ class ParseTestCase(TestCase):
         self.assertEqual('file', uri.scheme)
 
 
+    def test_empty(self):
+        ref = ''
+        ref = GenericDataType.decode(ref)
+        self.assertEqual(bool(ref.scheme), False)
+        self.assertEqual(bool(ref.authority), False)
+        self.assertEqual(len(ref.path), 0)
+        self.assertEqual(ref.query, None)
+        self.assertEqual(str(ref), '')
+
+
 
 class SpecialTestCase(TestCase):
     """Test special cases."""

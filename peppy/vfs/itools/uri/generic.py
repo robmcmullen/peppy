@@ -473,6 +473,11 @@ def encode_query(query):
     The value expected is a dictonary like {'a': 1, 'b': 2}.
     The value returned is a byte string like "a=1&b=2".
     """
+    # Special case: the empty reference sets query to None, so this case must
+    # be considered
+    if not query:
+        return ""
+    
     line = []
     for key, value in query.items():
         key = urllib.quote_plus(key)
