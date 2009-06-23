@@ -9,13 +9,12 @@ import os
 
 import wx
 
-from peppy.fundamental import FundamentalMode
 from peppy.yapsy.plugins import *
 
-from peppy.actions.base import *
 from peppy.actions import *
 from peppy.lib.multikey import *
 from peppy.debug import *
+import peppy.vfs as vfs
 
 
 class CharEvent(FakeCharEvent):
@@ -104,12 +103,8 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
                     summary = summary[0:50] + "..."
             count += 1
         if len(summary) == 0:
-            if count == 1:
-                text = _("action")
-            else:
-                text = _("actions")
-            summary = "%d %s" % (count, text)
-        return summary
+            summary = "untitled"
+        return summary.strip()
         
     def details(self):
         """Get a list of actions that have been recorded.
@@ -165,7 +160,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
         mode.EndUndoAction()
 
 
-class PythonScriptableMacro(debugmixin):
+class PythonScriptableMacro(object):
     """A list of serialized SelectAction commands used in playing back macros.
     
     This object contains python code in the form of text strings that
@@ -186,15 +181,25 @@ class PythonScriptableMacro(debugmixin):
     constructed local namespace that includes C{frame} and C{mode} representing
     the current L{BufferFrame} and L{MajorMode} instance, respectively.
     """
-    def __init__(self, recorder):
+    def __init__(self, recorder=None):
         """Converts the list of recorded actions into python string form.
         
         """
-        self.name = str(recorder)
-        self.script = self.getScriptFromRecorder(recorder)
+        if recorder:
+            self.name = str(recorder)
+            self.script = self.getScriptFromRecorder(recorder)
+        else:
+            self.name = "untitled"
+            self.script = ""
     
     def __str__(self):
         return self.name
+    
+    def setName(self, name):
+        """Changes the name of the macro to the supplied string.
+        
+        """
+        self.name = name
     
     def getScriptFromRecorder(self, recorder):
         """Converts the list of recorded actions into a python script that can
@@ -222,7 +227,7 @@ class PythonScriptableMacro(debugmixin):
                  'frame': frame,
                  }
         self.addActionsToLocal(local)
-        dprint(local)
+        #dprint(local)
         dprint(self.script)
         while multiplier > 0:
             exec self.script in globals(), local
@@ -240,9 +245,6 @@ class PythonScriptableMacro(debugmixin):
         actions = SelectAction.getAllKnownActions()
         for action in actions:
             local[action.__name__] = action
-        names = local.keys()
-        names.sort()
-        dprint(names)
 
 
 
@@ -277,7 +279,7 @@ class ReplayLastMacro(SelectAction):
     """Play back last macro that was recorded"""
     name = "Play Last Macro"
     key_bindings = {'default': "C-3", }
-    default_menu = ("Tools/Macros", 110)
+    default_menu = ("Tools/Macros", 120)
     
     def isEnabled(self):
         return RecentMacros.isEnabled()
@@ -290,7 +292,7 @@ class ReplayLastMacro(SelectAction):
         if self.frame.root_accel.isRecordingActions():
             recorder = self.frame.root_accel.stopRecordingActions()
             dprint(recorder)
-            RecentMacros.appendRecording(recording)
+            RecentMacros.appendRecording(recorder)
         macro = RecentMacros.getLastMacro()
         if macro:
             dprint("Playing back %s" % macro)
@@ -306,7 +308,8 @@ class RecentMacros(OnDemandGlobalListAction):
     Maintains a list of the recent macros and runs the selected macro if chosen
     out of the submenu.
     
-    Macros are stored as a list of L{PythonScriptableMacro}s
+    Macros are stored as a list of L{PythonScriptableMacro}s in most-recent to
+    least recent order.
     """
     name = "Recent Macros"
     default_menu = ("Tools/Macros", -200)
@@ -325,7 +328,16 @@ class RecentMacros(OnDemandGlobalListAction):
         
         """
         macro = PythonScriptableMacro(recorder)
-        cls.append(macro)
+        MacroFS.addMacro(macro)
+        cls.storage[0:0] = (macro.name, )
+        cls.trimStorage(MacroPlugin.classprefs.list_length)
+        cls.calcHash()
+    
+    @classmethod
+    def setStorage(cls, array):
+        cls.storage = array
+        cls.trimStorage(MacroPlugin.classprefs.list_length)
+        cls.calcHash()
         
     @classmethod
     def getLastMacro(cls):
@@ -335,18 +347,184 @@ class RecentMacros(OnDemandGlobalListAction):
         been added.
         """
         if cls.storage:
-            return cls.storage[-1]
+            name = cls.storage[0]
+            return MacroFS.getMacro(name)
         return None
     
     def action(self, index=-1, multiplier=1):
-        macro = self.storage[index]
+        name = self.storage[index]
+        macro = MacroFS.getMacro(name)
         assert self.dprint("replaying macro %s" % macro)
         wx.CallAfter(macro.playback, self.frame, self.mode, 1)
+
+
+class MacroSaveData(object):
+    """Data transfer object to serialize the state of the macro system"""
+    
+    version = 1
+    
+    def __init__(self):
+        self.macros = MacroFS.macros
+        self.recent = RecentMacros.storage
+    
+    @classmethod
+    def load(cls, url):
+        import cPickle as pickle
+        
+        # Note: because plugins are loaded using the execfile command, pickle
+        # can't find classes that are in the global namespace.  Have to supply
+        # PythonScriptableMacro into the builtin namespace to get around this.
+        import __builtin__
+        __builtin__.PythonScriptableMacro = PythonScriptableMacro
+        
+        if not vfs.exists(url):
+            return
+        
+        fh = vfs.open(url)
+        bytes = fh.read()
+        fh.close()
+        if bytes:
+            version, data = pickle.loads(bytes)
+            if version == 1:
+                cls.unpackVersion1(data)
+            else:
+                raise RuntimeError("Unknown version of MacroSaveData in %s" % url)
+    
+    @classmethod
+    def unpackVersion1(self, data):
+        macros, recent = data
+        MacroFS.macros.update(macros)
+        dprint(MacroFS.macros)
+        RecentMacros.setStorage(recent)
+    
+    @classmethod
+    def save(cls, url):
+        import cPickle as pickle
+        
+        # See above for the note about the builtin namespace
+        import __builtin__
+        __builtin__.PythonScriptableMacro = PythonScriptableMacro
+        
+        data = cls.packVersion1()
+        pickled = pickle.dumps(data)
+        fh = vfs.open_write(url)
+        fh.write(pickled)
+        fh.close()
+    
+    @classmethod
+    def packVersion1(cls):
+        data = (cls.version, (MacroFS.macros, RecentMacros.storage))
+        dprint(data)
+        return data
+
+
+class MacroFS(vfs.BaseFS):
+    """Filesystem to recognize "macro:macro_name" URLs
+    
+    This simple filesystem allows URLs in the form of "macro:macro_name", and
+    provides the mapping from the macro name to the L{PythonScriptableMacro}
+    instance.
+    
+    On disk, this is serialized as a pickle object of the macro class attribute.
+    """
+    macros = {}
+    
+    @classmethod
+    def addMacro(cls, macro):
+        name = cls.getUniqueName(macro)
+        macro.setName(name)
+        cls.macros[name] = macro
+    
+    @classmethod
+    def getUniqueName(cls, macro):
+        basename = macro.name
+        name = basename
+        count = 0
+        while name in cls.macros:
+            count += 1
+            name = basename + "<%d>" % count
+        return name
+    
+    @classmethod
+    def getMacro(cls, name):
+        return cls.macros[name]
+    
+    @classmethod
+    def _get(cls, reference):
+        name = str(reference.path)
+        if name in cls.macros:
+            return cls.macros[name]
+        return ""
+    
+    @classmethod
+    def exists(cls, reference):
+        return bool(cls._get(reference))
+
+    @classmethod
+    def is_file(cls, reference):
+        return bool(cls._get(reference))
+
+    @classmethod
+    def is_folder(cls, reference):
+        return False
+
+    @classmethod
+    def can_read(cls, reference):
+        return bool(cls._get(reference))
+
+    @classmethod
+    def can_write(cls, reference):
+        return False
+
+    @classmethod
+    def get_size(cls, reference):
+        return len(cls._get(reference))
+
+    @classmethod
+    def open(cls, reference, mode=None):
+        text = cls._get(reference)
+        if text:
+            fh = StringIO(text)
+            #dprint(fh.getvalue())
+            return fh
+        return None
 
 
 class MacroPlugin(IPeppyPlugin):
     """Plugin providing the macro recording capability
     """
+    default_classprefs = (
+        StrParam('macro_file', 'macros.dat', 'File name in main peppy configuration directory used to store macro definitions'),
+        IntParam('list_length', 3, 'Number of macros to save in the Recent Macros list'),
+        )
+
+    def activateHook(self):
+        vfs.register_file_system('macro', MacroFS)
+
+    def initialActivation(self):
+        pathname = wx.GetApp().getConfigFilePath(self.classprefs.macro_file)
+        macro_url = vfs.normalize(pathname)
+        try:
+            MacroSaveData.load(macro_url)
+        except:
+            dprint("Failed loading macro data to %s" % macro_url)
+            import traceback
+            traceback.print_exc()
+
+    def requestedShutdown(self):
+        pathname = wx.GetApp().getConfigFilePath(self.classprefs.macro_file)
+        macro_url = vfs.normalize(pathname)
+        try:
+            MacroSaveData.save(macro_url)
+        except:
+            dprint("Failed saving macro data to %s" % macro_url)
+            import traceback
+            traceback.print_exc()
+            pass
+
+    def deactivateHook(self):
+        vfs.deregister_file_system('macro')
+        
     def getActions(self):
         return [
             StartRecordingMacro, StopRecordingMacro, ReplayLastMacro,
