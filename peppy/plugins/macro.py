@@ -15,6 +15,7 @@ from peppy.actions import *
 from peppy.lib.multikey import *
 from peppy.debug import *
 import peppy.vfs as vfs
+from peppy.vfs.itools.vfs.memfs import MemFS, MemFile, MemDir, TempFile
 
 
 class CharEvent(FakeCharEvent):
@@ -158,7 +159,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
         mode.EndUndoAction()
 
 
-class PythonScriptableMacro(object):
+class PythonScriptableMacro(MemFile):
     """A list of serialized SelectAction commands used in playing back macros.
     
     This object contains python code in the form of text strings that
@@ -179,16 +180,21 @@ class PythonScriptableMacro(object):
     constructed local namespace that includes C{frame} and C{mode} representing
     the current L{BufferFrame} and L{MajorMode} instance, respectively.
     """
-    def __init__(self, recorder=None):
+    def __init__(self, recorder=None, name=None):
         """Converts the list of recorded actions into python string form.
         
         """
-        if recorder:
-            self.name = str(recorder)
-            self.script = self.getScriptFromRecorder(recorder)
+        if isinstance(recorder, str):
+            data = recorder
+        elif recorder:
+            name = str(recorder)
+            data = self.getScriptFromRecorder(recorder)
         else:
-            self.name = "untitled"
-            self.script = ""
+            data = ""
+        
+        if name is None:
+            name = "untitled"
+        MemFile.__init__(self, data, name)
     
     def __str__(self):
         return self.name
@@ -228,7 +234,7 @@ class PythonScriptableMacro(object):
         #dprint(local)
         #dprint(self.script)
         while multiplier > 0:
-            exec self.script in globals(), local
+            exec self.data in globals(), local
             multiplier -= 1
     
     def addActionsToLocal(self, local):
@@ -390,8 +396,8 @@ class MacroSaveData(object):
     
     @classmethod
     def unpackVersion1(self, data):
-        macros, recent = data
-        MacroFS.macros.update(macros)
+        root, recent = data
+        MacroFS.root = root
         #dprint(MacroFS.macros)
         RecentMacros.setStorage(recent)
     
@@ -411,12 +417,16 @@ class MacroSaveData(object):
     
     @classmethod
     def packVersion1(cls):
-        data = (cls.version, (MacroFS.macros, RecentMacros.storage))
+        data = (cls.version, (MacroFS.root, RecentMacros.storage))
         #dprint(data)
         return data
 
 
-class MacroFS(vfs.BaseFS):
+class TempMacro(TempFile):
+    file_class = PythonScriptableMacro
+
+
+class MacroFS(MemFS):
     """Filesystem to recognize "macro:macro_name" URLs
     
     This simple filesystem allows URLs in the form of "macro:macro_name", and
@@ -425,67 +435,34 @@ class MacroFS(vfs.BaseFS):
     
     On disk, this is serialized as a pickle object of the macro class attribute.
     """
-    macros = {}
+    root = MemDir()
+    
+    temp_file_class = TempMacro
     
     @classmethod
     def addMacro(cls, macro):
-        name = cls.getUniqueName(macro)
-        macro.setName(name)
-        cls.macros[name] = macro
-    
-    @classmethod
-    def getUniqueName(cls, macro):
+        existing = macro
         basename = macro.name
         name = basename
         count = 0
-        while name in cls.macros:
-            count += 1
-            name = basename + "<%d>" % count
-        return name
+        parent = None
+        while existing:
+            parent, existing, name = cls._find(name)
+            if existing:
+                count += 1
+                name = basename + "<%d>" % count
+            else:
+                macro.setName(name)
+        
+        if parent is None:
+            parent = cls.root
+        parent[name] = macro
     
     @classmethod
     def getMacro(cls, name):
-        return cls.macros[name]
-    
-    @classmethod
-    def _get(cls, reference):
-        name = str(reference.path)
-        if name in cls.macros:
-            return cls.macros[name]
-        return ""
-    
-    @classmethod
-    def exists(cls, reference):
-        return bool(cls._get(reference))
-
-    @classmethod
-    def is_file(cls, reference):
-        return bool(cls._get(reference))
-
-    @classmethod
-    def is_folder(cls, reference):
-        return False
-
-    @classmethod
-    def can_read(cls, reference):
-        return bool(cls._get(reference))
-
-    @classmethod
-    def can_write(cls, reference):
-        return False
-
-    @classmethod
-    def get_size(cls, reference):
-        return len(cls._get(reference))
-
-    @classmethod
-    def open(cls, reference, mode=None):
-        text = cls._get(reference)
-        if text:
-            fh = StringIO(text)
-            #dprint(fh.getvalue())
-            return fh
-        return None
+        parent, macro, name = cls._find(name)
+        dprint(macro)
+        return macro
 
 
 class MacroPlugin(IPeppyPlugin):

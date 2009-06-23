@@ -66,8 +66,9 @@ class MemFile(object):
     """
     is_file = True
 
-    def __init__(self, data):
+    def __init__(self, data, name=""):
         self.data = data
+        self.name = name
         self.mtime = datetime.now()
 
     def get_mtime(self):
@@ -86,12 +87,20 @@ class TempFile(StringIO):
     data when reading/writing to an existing file, and automatically updates
     the data storage when it is closed.
     """
+    file_class = MemFile
+    
     def __init__(self, folder, file_name, initial="", read_only=False):
         StringIO.__init__(self, initial)
         self.folder = folder
         self.file_name = file_name
         self._is_closed = False
         self._read_only = read_only
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        pass
 
     def close(self):
         self._close()
@@ -103,7 +112,7 @@ class TempFile(StringIO):
             data = self.getvalue()
             if isinstance(data, unicode):
                 data = data.encode('utf8')
-            self.folder[self.file_name] = MemFile(data)
+            self.folder[self.file_name] = self.file_class(data, self.file_name)
 
     def __del__(self):
         if not self._is_closed:
@@ -120,9 +129,11 @@ class MemFS(BaseFS):
 
     # The rood of the filesystem.  Only one of these per application.
     root = MemDir()
+    
+    temp_file_class = TempFile
 
-    @staticmethod
-    def _normalize_path(path):
+    @classmethod
+    def _normalize_path(cls, path):
         """Normalize the path to conform to the nested dict structure."""
         # FIXME: no interface in itools to set current working
         # directory?  Set '.' to '/'
@@ -136,8 +147,8 @@ class MemFS(BaseFS):
             path = path[:-1]
         return path
 
-    @staticmethod
-    def _find(path):
+    @classmethod
+    def _find(cls, path):
         """Find the item in the filesystem pointed to by the path
 
         path: string representing the pathname within the mem: filesystem
@@ -149,9 +160,9 @@ class MemFS(BaseFS):
         parent_dict.
         """
         parent = None
-        fs = MemFS.root
+        fs = cls.root
 
-        path = MemFS._normalize_path(path)
+        path = cls._normalize_path(path)
         if not path:
             return parent, fs, path
         components = path.split('/')
@@ -169,8 +180,8 @@ class MemFS(BaseFS):
                 return parent, None, comp
         return parent, fs, comp
 
-    @staticmethod
-    def _makedirs(path):
+    @classmethod
+    def _makedirs(cls, path):
         """Create nested dicts representing path.
 
         Create the hierarchy of nested dicts such that the entire path
@@ -178,10 +189,10 @@ class MemFS(BaseFS):
 
         path: string representing the pathname
         """
-        path = MemFS._normalize_path(path)
+        path = cls._normalize_path(path)
         if not path:
             return
-        fs = MemFS.root
+        fs = cls.root
         components = path.split('/')
         for comp in components:
             if fs.is_file:
@@ -194,35 +205,35 @@ class MemFS(BaseFS):
         if fs.is_file:
             raise OSError("[Errno 20] Not a directory: '%s'" % path)
 
-    @staticmethod
-    def exists(reference):
+    @classmethod
+    def exists(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         return item is not None
 
-    @staticmethod
-    def is_file(reference):
+    @classmethod
+    def is_file(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item is not None:
             return item.is_file
         return False
 
-    @staticmethod
-    def is_folder(reference):
+    @classmethod
+    def is_folder(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item is not None:
             return not item.is_file
         return False
 
-    @staticmethod
-    def can_read(reference):
-        return MemFS.is_file(reference)
+    @classmethod
+    def can_read(cls, reference):
+        return cls.is_file(reference)
 
-    @staticmethod
-    def can_write(reference):
-        return MemFS.is_file(reference)
+    @classmethod
+    def can_write(cls, reference):
+        return cls.is_file(reference)
 
     @classmethod
     def get_permissions(cls, reference):
@@ -237,54 +248,54 @@ class MemFS(BaseFS):
     def set_permissions(cls, reference, permissions):
         pass
 
-    @staticmethod
-    def get_size(reference):
+    @classmethod
+    def get_size(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item:
             return item.get_size()
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
-    @staticmethod
-    def get_mtime(reference):
+    @classmethod
+    def get_mtime(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item:
             return item.get_mtime()
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
 
-    @staticmethod
-    def make_file(reference):
+    @classmethod
+    def make_file(cls, reference):
         folder_path = str(reference.path[:-1])
         file_path = str(reference.path)
 
-        parent, item, dummy = MemFS._find(file_path)
+        parent, item, dummy = cls._find(file_path)
         if parent is not None:
             if parent.is_file:
                 raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
             if item is not None:
                 raise OSError("[Errno 17] File exists: '%s'" % reference)
         else:
-            MemFS._makedirs(folder_path)
+            cls._makedirs(folder_path)
 
         file_name = reference.path.get_name()
-        parent, folder, folder_name = MemFS._find(folder_path)
+        parent, folder, folder_name = cls._find(folder_path)
         if parent and parent.is_file:
             raise OSError("[Errno 20] Not a directory: '%s'" % folder_path)
-        fh = TempFile(folder, file_name)
+        fh = cls.temp_file_class(folder, file_name)
         return fh
 
-    @staticmethod
-    def make_folder(reference):
+    @classmethod
+    def make_folder(cls, reference):
         path = str(reference.path)
-        MemFS._makedirs(path)
+        cls._makedirs(path)
 
-    @staticmethod
-    def remove(reference):
+    @classmethod
+    def remove(cls, reference):
         path = str(reference.path)
 
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item is None:
             raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
         if item.is_file:
@@ -292,13 +303,13 @@ class MemFS(BaseFS):
         else:
             # we need to go up a level and remove the entire dict.
             folder_path = str(reference.path[:-1])
-            grandparent, parent, grandparent_name = MemFS._find(folder_path)
+            grandparent, parent, grandparent_name = cls._find(folder_path)
             del parent[name]
 
-    @staticmethod
-    def open(reference, mode=None):
+    @classmethod
+    def open(cls, reference, mode=None):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if not parent:
             raise IOError("[Errno 20] Not a directory: '%s'" % reference)
         if not item:
@@ -308,22 +319,22 @@ class MemFS(BaseFS):
 
         if mode == WRITE:
             # write truncates
-            fh = TempFile(parent, file_name, "")
+            fh = cls.temp_file_class(parent, file_name, "")
         elif mode == APPEND:
-            fh = TempFile(parent, file_name, item.data)
+            fh = cls.temp_file_class(parent, file_name, item.data)
             fh.seek(item.get_size())
         elif mode == READ_WRITE:
             # Open for read/write but don't position at end of file, i.e. "r+b"
-            fh = TempFile(parent, file_name, item.data)
+            fh = cls.temp_file_class(parent, file_name, item.data)
         else:
-            fh = TempFile(parent, file_name, item.data, True)
+            fh = cls.temp_file_class(parent, file_name, item.data, True)
         return fh
 
-    @staticmethod
-    def move(source, target):
+    @classmethod
+    def move(cls, source, target):
         # Fail if target exists and is a file
         tgtpath = str(target.path)
-        parent, item, tgtname = MemFS._find(tgtpath)
+        parent, item, tgtname = cls._find(tgtpath)
         if item:
             if item.is_file:
                 raise OSError("[Errno 20] Not a directory: '%s'" % target)
@@ -333,11 +344,11 @@ class MemFS(BaseFS):
             # the new item.
             tgtname = target.path[-1]
             folder_path = str(target.path[:-1])
-            MemFS._makedirs(folder_path)
-            parent, dest, dummy = MemFS._find(folder_path)
+            cls._makedirs(folder_path)
+            parent, dest, dummy = cls._find(folder_path)
 
         srcpath = str(source.path)
-        srcdir, src, origname = MemFS._find(srcpath)
+        srcdir, src, origname = cls._find(srcpath)
         if src:
             dest[tgtname] = src
             del srcdir[origname]
@@ -346,10 +357,10 @@ class MemFS(BaseFS):
 
     ######################################################################
     # Folders only
-    @staticmethod
-    def get_names(reference):
+    @classmethod
+    def get_names(cls, reference):
         path = str(reference.path)
-        parent, item, name = MemFS._find(path)
+        parent, item, name = cls._find(path)
         if item.is_file:
             raise OSError("[Errno 20] Not a directory '%s'" % reference)
         return item.keys()
