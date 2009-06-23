@@ -58,7 +58,6 @@ class RecordedKeyboardAction(RecordedAction):
     
     def performAction(self, system_state):
         action = self.actioncls(system_state.frame, mode=system_state.mode)
-        dprint(action.__class__.__name__)
         action.actionKeystroke(self.evt, self.multiplier)
     
     def getScripted(self):
@@ -78,7 +77,6 @@ class RecordedMenuAction(RecordedAction):
     
     def performAction(self, system_state):
         action = self.actioncls(system_state.frame, mode=system_state.mode)
-        dprint(action.__class__.__name__)
         action.action(self.index, self.multiplier)
     
     def getScripted(self):
@@ -135,13 +133,13 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
         
         @param record: L{RecordedAction} instance
         """
-        dprint("adding %s" % record)
+        self.dprint("adding %s" % record)
         if self.recording:
             last = self.recording[-1]
             if last.canCoalesceActions(record):
                 self.recording.pop()
                 record = last.coalesceActions(record)
-                dprint("coalesced into %s" % record)
+                self.dprint("coalesced into %s" % record)
         self.recording.append(record)
     
     def getRecordedActions(self):
@@ -150,7 +148,7 @@ class ActionRecorder(AbstractActionRecorder, debugmixin):
     def playback(self, frame, mode, multiplier=1):
         mode.BeginUndoAction()
         state = MacroPlaybackState(frame, mode)
-        dprint(state)
+        self.dprint(state)
         SelectAction.debuglevel = 1
         while multiplier > 0:
             for recorded_action in self.getRecordedActions():
@@ -228,7 +226,7 @@ class PythonScriptableMacro(object):
                  }
         self.addActionsToLocal(local)
         #dprint(local)
-        dprint(self.script)
+        #dprint(self.script)
         while multiplier > 0:
             exec self.script in globals(), local
             multiplier -= 1
@@ -271,7 +269,7 @@ class StopRecordingMacro(SelectAction):
     def action(self, index=-1, multiplier=1):
         if self.frame.root_accel.isRecordingActions():
             recorder = self.frame.root_accel.stopRecordingActions()
-            dprint(recorder)
+            self.dprint(recorder)
             RecentMacros.appendRecording(recorder)
 
 
@@ -291,14 +289,14 @@ class ReplayLastMacro(SelectAction):
     def action(self, index=-1, multiplier=1):
         if self.frame.root_accel.isRecordingActions():
             recorder = self.frame.root_accel.stopRecordingActions()
-            dprint(recorder)
+            self.dprint(recorder)
             RecentMacros.appendRecording(recorder)
         macro = RecentMacros.getLastMacro()
         if macro:
-            dprint("Playing back %s" % macro)
+            self.dprint("Playing back %s" % macro)
             wx.CallAfter(macro.playback, self.frame, self.mode, multiplier)
         else:
-            dprint("No recorded macro.")
+            self.dprint("No recorded macro.")
         
 
 
@@ -394,7 +392,7 @@ class MacroSaveData(object):
     def unpackVersion1(self, data):
         macros, recent = data
         MacroFS.macros.update(macros)
-        dprint(MacroFS.macros)
+        #dprint(MacroFS.macros)
         RecentMacros.setStorage(recent)
     
     @classmethod
@@ -414,7 +412,7 @@ class MacroSaveData(object):
     @classmethod
     def packVersion1(cls):
         data = (cls.version, (MacroFS.macros, RecentMacros.storage))
-        dprint(data)
+        #dprint(data)
         return data
 
 
