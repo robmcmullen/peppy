@@ -133,7 +133,7 @@ class MacroAction(debugmixin):
         """
         pass
     
-    def actionKeystroke(self, evt, multiplier=1, printable=False):
+    def actionKeystroke(self, evt, multiplier=1):
         """See L{SelectAction.actionKeystroke}
         """
         pass
@@ -462,21 +462,31 @@ class SelectAction(debugmixin):
         self.action(index, multiplier)
 
     def actionWorksWithCurrentFocus(self):
-        if self.needs_keyboard_focus and self.mode.FindFocus() != self.mode:
+        """Utility function to determine whether the action is allowed based
+        on the keyboard focus.
+        
+        Not all actions are allowable when the keyboard doesn't have focus on
+        the major mode.  For example, when the focus is on a minibuffer and
+        there is a key bound to a major mode action, pressing that key while
+        in the minibuffer shouldn't perform that action in the major mode.
+        
+        In the case of macro processing, however, the focus may not be on the
+        major mode (for example, the focus may be on the MacroList springtab)
+        but the action should still be allowed to take place.  So, only when
+        macro processing is *not* happening will the current focus check take
+        place.  When macro processing is happening, all actions are allowed.
+        """
+        if self.needs_keyboard_focus and not self.mode.isProcessingMacro() and self.mode.FindFocus() != self.mode:
             return False
         return True
 
-    def actionKeystroke(self, evt, multiplier=1, printable=False):
+    def actionKeystroke(self, evt, multiplier=1):
         assert self.dprint("%s called by keybindings -- multiplier=%s" % (self, multiplier))
         # Make sure that the action is enabled before allowing it to be called
         # using the keybinding
-        focus = self.mode.FindFocus()
-        if focus != self.mode:
-            is_text = isinstance(focus, wx.TextCtrl)
-            self.dprint("focus = %s text = %s printable=%s" % (focus, is_text, printable))
-            if self.needs_keyboard_focus or (is_text and printable):
-                evt.Skip()
-                return
+        if not self.actionWorksWithCurrentFocus():
+            evt.Skip()
+            return
         if self.isEnabled():
             try:
                 if self.frame.isOSXMinimalMenuFrame():

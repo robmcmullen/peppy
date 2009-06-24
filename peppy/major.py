@@ -1123,6 +1123,34 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             self.setViewPositionData(self._revert_data)
         else:
             self.setViewPositionData()
+    
+    
+    ### Macro processing flag
+    
+    def beginProcessingMacro(self):
+        """Set a flag indicating that macro processing is taking place
+        
+        This is needed by the action processing to force the action to take
+        place even if the focus is not on the major mode.
+        
+        This call should be used before playing back any macros.
+        """
+        self.processing_macro = True
+    
+    def endProcessingMacro(self):
+        """Unset the macro processing flag.
+        
+        """
+        del self.processing_macro
+    
+    def isProcessingMacro(self):
+        """Convenience method used by the action processing to check if a macro
+        is being played back.
+        
+        Macro processing turns off the checks for keyboard focus being on the
+        major mode.
+        """
+        return hasattr(self, 'processing_macro')
 
 
 class EmptyMode(MajorMode, wx.Window):

@@ -233,12 +233,9 @@ class PythonScriptableMacro(MemFile):
                  'frame': frame,
                  }
         self.addActionsToLocal(local)
-        #dprint(local)
-        dprint(frame)
-        dprint(mode)
-        dprint(self.data)
         if hasattr(mode, 'BeginUndoAction'):
             mode.BeginUndoAction()
+        mode.beginProcessingMacro()
         try:
             while multiplier > 0:
                 exec self.data in globals(), local
@@ -247,8 +244,10 @@ class PythonScriptableMacro(MemFile):
             import traceback
             error = "Error in macro %s:\n%s\n\n" % (self.name, traceback.format_exc())
             Publisher().sendMessage('peppy.log.info', (frame, error))
-        if hasattr(mode, 'BeginUndoAction'):
-            mode.EndUndoAction()
+        finally:
+            mode.endProcessingMacro()
+            if hasattr(mode, 'BeginUndoAction'):
+                mode.EndUndoAction()
     
     def addActionsToLocal(self, local):
         """Sets up the local environment for the exec call
@@ -579,19 +578,6 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         dprint(name)
         macro = MacroFS.getMacro(name)
         dprint(macro)
-        
-        # FIXME: need some way around the check for focus.  On Windows, the
-        # call to SetFocus never works and the popup is not cleared on time.
-        # Need some way to override the focus check so that the action will
-        # be performed on the mode.
-        self.mode.wrapper.clearPopups()
-        self.mode.SetFocus()
-        wx.CallAfter(self.callMacro1, macro)
-    
-    def callMacro1(self, macro):
-        wx.CallAfter(self.callMacro2, macro)
-    
-    def callMacro2(self, macro):
         wx.CallAfter(macro.playback, self.getFrame(), self.mode)
     
     def OnCollapsing(self, evt):
