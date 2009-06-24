@@ -361,6 +361,8 @@ class MemFS(BaseFS):
     def get_names(cls, reference):
         path = str(reference.path)
         parent, item, name = cls._find(path)
+        if item is None:
+            raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
         if item.is_file:
             raise OSError("[Errno 20] Not a directory '%s'" % reference)
         return item.keys()

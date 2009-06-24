@@ -175,7 +175,10 @@ class MemTestCase(TestCase):
 
 
     def test30_get_names(self):
-        self.assertEqual('blah.txt' in vfs.get_names('mem:tmp'), True)
+        assert 'blah.txt' in vfs.get_names('mem:tmp')
+        assert 'wxyz' not in vfs.get_names('mem:tmp')
+        assert 'wxyz' not in vfs.get_names('mem:')
+        self.assertRaises(OSError, vfs.get_names, 'mem:zzzzz')
 
     def test31_traverse(self):
         for x in vfs.traverse('mem:'):
