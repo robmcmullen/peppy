@@ -500,7 +500,7 @@ class MacroFS(MemFS):
 class MacroListMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display list of macros available for this major mode
     """
-    keyword="Macros FIXME WINDOWS OVERLAYS MACROS AND CODE EXPLORER"
+    keyword="Macros"
     
     default_classprefs = (
         IntParam('best_width', 300),

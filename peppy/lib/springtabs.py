@@ -401,7 +401,7 @@ class SpringTabs(wx.Panel):
         tab = SpringTabItem(self, label=title, window_cb=window_create_callback, **kwargs)
         self.GetSizer().Add(tab, 0, wx.EXPAND)
         self._tabs.append(tab)
-        
+        self.Layout()
         self.Refresh()
     
     def hasTabs(self):
@@ -461,10 +461,10 @@ if __name__ == "__main__":
             if wx.Platform == "__WXMAC__": self.Refresh()
 
     
-    def ButtonCB(parent, item):
-        button = GenToggleButton(parent, -1, "Whatevar!!! %s" % item.GetLabel())
+    def ButtonCB(parent, **kwargs):
+        button = GenToggleButton(parent, -1, "Whatevar!!!")
     
-    def CalendarCB(parent, item):
+    def CalendarCB(parent, **kwargs):
         wx.calendar.CalendarCtrl(parent, -1, wx.DateTime_Now())
         
     app = wx.PySimpleApp()
