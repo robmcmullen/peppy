@@ -8,6 +8,7 @@ This plugin provides macro recording
 import os
 
 import wx
+from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
 
@@ -233,9 +234,18 @@ class PythonScriptableMacro(MemFile):
         self.addActionsToLocal(local)
         #dprint(local)
         #dprint(self.script)
-        while multiplier > 0:
-            exec self.data in globals(), local
-            multiplier -= 1
+        if hasattr(mode, 'BeginUndoAction'):
+            mode.BeginUndoAction()
+        try:
+            while multiplier > 0:
+                exec self.data in globals(), local
+                multiplier -= 1
+        except Exception, e:
+            import traceback
+            error = "Error in macro %s:\n%s\n\n" % (self.name, traceback.format_exc())
+            Publisher().sendMessage('peppy.log.info', (frame, error))
+        if hasattr(mode, 'BeginUndoAction'):
+            mode.EndUndoAction()
     
     def addActionsToLocal(self, local):
         """Sets up the local environment for the exec call
