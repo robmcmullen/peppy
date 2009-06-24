@@ -405,7 +405,7 @@ class MacroSaveData(object):
                 raise RuntimeError("Unknown version of MacroSaveData in %s" % url)
     
     @classmethod
-    def unpackVersion1(self, data):
+    def unpackVersion1(cls, data):
         root, recent = data
         MacroFS.root = root
         #dprint(MacroFS.macros)
@@ -413,23 +413,23 @@ class MacroSaveData(object):
     
     @classmethod
     def save(cls, url):
-        import cPickle as pickle
-        
-        # See above for the note about the builtin namespace
-        import __builtin__
-        __builtin__.PythonScriptableMacro = PythonScriptableMacro
-        
-        data = cls.packVersion1()
-        pickled = pickle.dumps(data)
+        bytes = cls.packVersion1()
         fh = vfs.open_write(url)
         fh.write(pickled)
         fh.close()
     
     @classmethod
     def packVersion1(cls):
+        import cPickle as pickle
+        
+        # See above for the note about the builtin namespace
+        import __builtin__
+        __builtin__.PythonScriptableMacro = PythonScriptableMacro
+        
         data = (cls.version, (MacroFS.root, RecentMacros.storage))
         #dprint(data)
-        return data
+        pickled = pickle.dumps(data)
+        return pickled
 
 
 class TempMacro(TempFile):
