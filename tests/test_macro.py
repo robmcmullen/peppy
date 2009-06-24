@@ -54,4 +54,8 @@ class TestMacroFS(object):
         assert "name<1>" in names
         assert "different name" in names
         assert "different name<1>" not in names
-
+    
+    def testNotFound(self):
+        names = vfs.get_names("macro:")
+        assert "wxyz" not in names
+        assert_raises(OSError, vfs.get_names, "macro:sir not appearing in this film")

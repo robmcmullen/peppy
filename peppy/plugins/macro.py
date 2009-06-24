@@ -13,6 +13,7 @@ from wx.lib.pubsub import Publisher
 from peppy.yapsy.plugins import *
 
 from peppy.actions import *
+from peppy.minor import *
 from peppy.lib.multikey import *
 from peppy.debug import *
 import peppy.vfs as vfs
@@ -233,7 +234,9 @@ class PythonScriptableMacro(MemFile):
                  }
         self.addActionsToLocal(local)
         #dprint(local)
-        #dprint(self.script)
+        dprint(frame)
+        dprint(mode)
+        dprint(self.data)
         if hasattr(mode, 'BeginUndoAction'):
             mode.BeginUndoAction()
         try:
@@ -415,7 +418,7 @@ class MacroSaveData(object):
     def save(cls, url):
         bytes = cls.packVersion1()
         fh = vfs.open_write(url)
-        fh.write(pickled)
+        fh.write(bytes)
         fh.close()
     
     @classmethod
@@ -490,6 +493,120 @@ class MacroFS(MemFS):
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
 
+
+
+
+
+
+class MacroListMinorMode(MinorMode, wx.TreeCtrl):
+    """Tree control to display list of macros available for this major mode
+    """
+    keyword="Macros FIXME WINDOWS OVERLAYS MACROS AND CODE EXPLORER"
+    
+    default_classprefs = (
+        IntParam('best_width', 300),
+        IntParam('best_height', 500),
+        BoolParam('springtab', True),
+    )
+    
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return True
+
+    def __init__(self, parent, **kwargs):
+        if wx.Platform == '__WXGTK__':
+            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
+            self.has_root = False
+        else:
+            style = wx.TR_HAS_BUTTONS
+            self.has_root = True
+        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
+        MinorMode.__init__(self, parent, **kwargs)
+        self.root = self.AddRoot(self.mode.keyword)
+        self.hierarchy = None
+        self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
+        self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
+    
+    def activateSpringTab(self):
+        """Callback function from the SpringTab handler requesting that we
+        initialize ourselves.
+        
+        """
+        self.update()
+        
+    def update(self, evt=None):
+        """Update tree with the source code of the editor"""
+        self.DeleteChildren(self.root)
+        
+        # Getting the names under the generic macro filesystem always works
+        item = self.AppendItem(self.root, _("Generic"))
+        generic = vfs.get_names("macro:")
+        generic.sort()
+        dprint(generic)
+        self.appendItems(item, "", generic)
+        self.Expand(item)
+        
+        # Getting the names of macros for a specific major mode may fail if no
+        # macros exist
+        item = self.AppendItem(self.root, _(self.mode.keyword))
+        try:
+            specific = vfs.get_names("macro:%s" % self.mode.keyword)
+            specific.sort()
+            dprint(specific)
+            self.appendItems(item, self.mode.keyword, specific)
+        except OSError:
+            pass
+        self.Expand(item)
+        if self.has_root:
+            self.Expand(self.root)
+        if evt:
+            evt.Skip()
+    
+    def appendItems(self, wxParent, path, names):
+        """Append the macro names to the specified item
+        
+        For the initial item highlighing, uses the current_line instance
+        attribute to determine the line number.
+        """
+        for name in names:
+            wxItem = self.AppendItem(wxParent, name)
+            if path:
+                name = path + "/" + name
+            self.SetPyData(wxItem, name)
+            
+    def OnActivate(self, evt):
+        name = self.GetPyData(evt.GetItem())
+        dprint(name)
+        macro = MacroFS.getMacro(name)
+        dprint(macro)
+        
+        # FIXME: need some way around the check for focus.  On Windows, the
+        # call to SetFocus never works and the popup is not cleared on time.
+        # Need some way to override the focus check so that the action will
+        # be performed on the mode.
+        self.mode.wrapper.clearPopups()
+        self.mode.SetFocus()
+        wx.CallAfter(self.callMacro1, macro)
+    
+    def callMacro1(self, macro):
+        wx.CallAfter(self.callMacro2, macro)
+    
+    def callMacro2(self, macro):
+        wx.CallAfter(macro.playback, self.getFrame(), self.mode)
+    
+    def OnCollapsing(self, evt):
+        item = evt.GetItem()
+        if item == self.root:
+            # Don't allow the root item to be collapsed
+            evt.Veto()
+        evt.Skip()
+
+
+
+
+
+
+
 class MacroPlugin(IPeppyPlugin):
     """Plugin providing the macro recording capability
     """
@@ -524,6 +641,9 @@ class MacroPlugin(IPeppyPlugin):
 
     def deactivateHook(self):
         vfs.deregister_file_system('macro')
+        
+    def getMinorModes(self):
+        yield MacroListMinorMode
         
     def getActions(self):
         return [
