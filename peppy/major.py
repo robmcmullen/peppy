@@ -1143,6 +1143,11 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     
     
     ### Macro processing flag
+    def isMacroProcessingAvailable(self):
+        """Flag to indicate whether or not macro processing is available given
+        the current state of the major mode
+        """
+        return False
     
     def beginProcessingMacro(self):
         """Set a flag indicating that macro processing is taking place

@@ -576,6 +576,11 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
     def worksWithMajorMode(cls, modecls):
         return True
 
+    @classmethod
+    def showWithMajorModeInstance(cls, mode=None, **kwargs):
+        # It only makes sense to allow macros on modes that you can save
+        return mode.isMacroProcessingAvailable()
+
     def __init__(self, parent, **kwargs):
         if wx.Platform == '__WXMSW__':
             style = wx.TR_HAS_BUTTONS

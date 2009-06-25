@@ -191,7 +191,31 @@ class SpringTabItemVerticalRenderer(SpringTabItemRenderer):
 
 
 class SpringTabItem(GenToggleButton):
-    def __init__(self, parent, id=-1, label='', window_cb=None, **kwargs):
+    def __init__(self, parent, id=-1, label='', window_cb=None, available_cb=None, **kwargs):
+        """Creates a springtab button
+        
+        This button on the springtab is linked to a callback function that
+        creates a window on demand when the button is clicked.
+        
+        @param parent: parent window: a L{SpringTab} instance
+        
+        @param id: optional id of the new button
+        
+        @param label: label of the springtab button
+        
+        @param window_cb: callback to create the contents of the popup.  This
+        functor will be passed two arguments: the first is the popup window
+        determined from L{SpringTab.getNewPopup} to be used as the parent
+        window for the popup contents.  The second argument is the kwargs dict.
+        
+        @param available_cb: callback to see if the button should be displayed
+        in the L{SpringTab}.  This callback takes a single argument; the
+        kwargs dict and should return a boolean indicating whether or not the
+        button will be visible.
+        
+        @param kwargs: dict containing any keyword arguments necessary to
+        create the popup contents or check for button availability.
+        """
         self.border = 2
         self.hover = False
         
@@ -200,6 +224,9 @@ class SpringTabItem(GenToggleButton):
         self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeave)
         
         self.window_cb = window_cb
+        self.available_cb = available_cb
+        if self.available_cb:
+            self.Show(self.available_cb(**kwargs))
         self.kwargs = kwargs
         self.popup = None
     
@@ -397,8 +424,8 @@ class SpringTabs(wx.Panel):
         self.Refresh()
         evt.Skip()
 
-    def addTab(self, title, window_create_callback, **kwargs):
-        tab = SpringTabItem(self, label=title, window_cb=window_create_callback, **kwargs)
+    def addTab(self, title, window_create_callback, window_available_callback=None, **kwargs):
+        tab = SpringTabItem(self, label=title, window_cb=window_create_callback,available_cb=window_available_callback, **kwargs)
         self.GetSizer().Add(tab, 0, wx.EXPAND)
         self._tabs.append(tab)
         self.Layout()

@@ -165,6 +165,9 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         if url.scheme == "file":
             return False
         return True
+    
+    def isMacroProcessingAvailable(self):
+        return True
 
 
     def createWindowPostHook(self):

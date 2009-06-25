@@ -76,8 +76,37 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         return valid
 
     @classmethod
-    def worksWithMajorMode(self, mode):
+    def worksWithMajorMode(self, modecls):
+        """Hook to restrict the minor mode to be displayed only with a specific
+        major mode
+        
+        @param mode: the major mode class (Note: not the instance)
+        
+        @returns: True if the action is allowed to be associated with the major
+        mode
+        """
         raise NotImplementedError("Must override this each minor mode subclass to determine if it can work with specified major mode")
+    
+    @classmethod
+    def showWithMajorModeInstance(cls, mode=None, **kwargs):
+        """Check to see if the minor mode should be shown given the state of
+        the particular instance of major mode.
+        
+        This is different from L{worksWithMajorMode} because it is possible
+        that the minor mode could functionally work with a major mode but it
+        may not make sense to display it with the current state of the major
+        mode.  This method is so far only called from L{SpringTab}s to see if
+        the springtab button should be displayed given the state of the mode.
+        
+        @param mode: the major mode instance (Note: not the class)
+        
+        @param kwargs: any additional keyword arguments.  Note that keyword
+        arguments are so far only used in the springtab creation process.
+        
+        @returns: True if the minor mode should be visible given the current
+        state of the major mode
+        """
+        return True
     
     def __init__(self, parent, mode=None, **kwargs):
         """Classes using this mixin should call this method, or at
@@ -211,7 +240,7 @@ class MinorModeList(debugmixin):
             assert self.dprint("major = %s, minors = %s" % (mode, minors))
             for minorcls in minors:
                 if minorcls.classprefs.springtab:
-                    self.mode.wrapper.spring.addTab(minorcls.keyword, minorcls, mode=self.mode)
+                    self.mode.wrapper.spring.addTab(minorcls.keyword, minorcls, minorcls.showWithMajorModeInstance, mode=self.mode)
                 else:
                     self.map[minorcls.keyword] = MinorModeEntry(minorcls)
                     self.order.append(minorcls.keyword)
