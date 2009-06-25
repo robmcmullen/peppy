@@ -577,12 +577,12 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         return True
 
     def __init__(self, parent, **kwargs):
-        if wx.Platform == '__WXGTK__':
-            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
-            self.has_root = False
-        else:
+        if wx.Platform == '__WXMSW__':
             style = wx.TR_HAS_BUTTONS
             self.has_root = True
+        else:
+            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
+            self.has_root = False
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         MinorMode.__init__(self, parent, **kwargs)
         self.root = self.AddRoot(_("Macros Compatible with %s") % self.mode.keyword)
