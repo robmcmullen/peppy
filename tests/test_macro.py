@@ -1,5 +1,7 @@
 import os,sys,re
 import cPickle as pickle
+import __builtin__
+__builtin__._ = unicode
 
 from peppy.plugins.macro import *
 
@@ -38,6 +40,7 @@ class TestMacro(object):
 
 class TestMacroFS(object):
     def setup(self):
+        MacroFS.root = MemDir()
         macro = PythonScriptableMacro("actions", "name")
         MacroFS.addMacro(macro)
         macro = PythonScriptableMacro("other actions", "name")
@@ -59,3 +62,30 @@ class TestMacroFS(object):
         names = vfs.get_names("macro:")
         assert "wxyz" not in names
         assert_raises(OSError, vfs.get_names, "macro:sir not appearing in this film")
+    
+    def testMacroSubdir(self):
+        macro = PythonScriptableMacro("actions", "python1")
+        MacroFS.addMacro(macro, "Python")
+        names = vfs.get_names("macro:")
+        assert "python1" not in names
+        names = vfs.get_names("macro:Python")
+        assert "python1" in names
+    
+    def testMacroSubdirAndRename(self):
+        """Checking to see that a macro will get renamed if a directory is
+        attempted to be created with the same name.
+        
+        Note that the MacroFS behaves like a normal filesystem when accessed
+        using the regular filesystem commands.  Only when adding macros using
+        the addMacro method will this happen.
+        """
+        macro = PythonScriptableMacro("actions", "Python")
+        MacroFS.addMacro(macro)
+        names = vfs.get_names("macro:")
+        assert "Python" in names
+        macro = PythonScriptableMacro("actions", "python1")
+        MacroFS.addMacro(macro, "Python")
+        names = vfs.get_names("macro:")
+        assert "Python<1>" in names
+        names = vfs.get_names("macro:Python")
+        assert "python1" in names

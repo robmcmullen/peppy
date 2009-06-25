@@ -518,6 +518,23 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             if name in cls.major_mode_class_cache:
                 del cls.major_mode_class_cache[name]
     
+    @classmethod
+    def getSubclassHierarchy(cls):
+        """Return the hierarchy of MajorMode subclasses
+        
+        Returns a list containing only subclasses of MajorMode without any
+        mixins or other classes in the inheritance tree.
+        
+        For example, L{PythonMode} is subclassed from L{FundamentalMode} which
+        is in turn subclassed from L{MajorMode}, meaning the following list
+        would be returned: C{[PythonMode, FundamentalMode, MajorMode]}
+        """
+        hierarchy = []
+        for subclass in cls.__mro__:
+            if issubclass(subclass, MajorMode):
+                hierarchy.append(subclass)
+        return hierarchy
+
     def getInstanceCache(self):
         return self.major_mode_instance_cache
     

@@ -13,6 +13,7 @@ from wx.lib.pubsub import Publisher
 from peppy.yapsy.plugins import *
 
 from peppy.actions import *
+from peppy.major import MajorMode
 from peppy.minor import *
 from peppy.lib.multikey import *
 from peppy.debug import *
@@ -288,7 +289,8 @@ class StopRecordingMacro(SelectAction):
         if self.frame.root_accel.isRecordingActions():
             recorder = self.frame.root_accel.stopRecordingActions()
             self.dprint(recorder)
-            RecentMacros.appendRecording(recorder)
+            macro = MacroFS.addMacroFromRecording(recorder, self.mode)
+            RecentMacros.append(macro)
 
 
 class ReplayLastMacro(SelectAction):
@@ -308,7 +310,8 @@ class ReplayLastMacro(SelectAction):
         if self.frame.root_accel.isRecordingActions():
             recorder = self.frame.root_accel.stopRecordingActions()
             self.dprint(recorder)
-            RecentMacros.appendRecording(recorder)
+            macro = MacroFS.addMacroFromRecording(recorder, self.mode)
+            RecentMacros.append(macro)
         macro = RecentMacros.getLastMacro()
         if macro:
             self.dprint("Playing back %s" % macro)
@@ -338,13 +341,10 @@ class RecentMacros(OnDemandGlobalListAction):
         return bool(cls.storage)
     
     @classmethod
-    def appendRecording(cls, recorder):
-        """Convert the recording from a L{ActionRecorder} into a
-        L{PythonScriptableMacro} and add it to the list of recent macros.
+    def append(cls, macro):
+        """Adds the macro to the list of recent macros.
         
         """
-        macro = PythonScriptableMacro(recorder)
-        MacroFS.addMacro(macro)
         cls.storage[0:0] = (macro.name, )
         cls.trimStorage(MacroPlugin.classprefs.list_length)
         cls.calcHash()
@@ -457,29 +457,93 @@ class MacroFS(MemFS):
         return name.strip()
     
     @classmethod
-    def addMacro(cls, macro):
-        existing = macro
-        basename = macro.name
-        name = basename
+    def findAlternateName(cls, dirname, basename):
+        """Find alternate name if the requested name already exists
+        
+        If basename already exists in the directory, appends the emacs-style
+        counter <1>, <2>, etc. until an unused filename is found.
+        
+        @returns: new filename guaranteed to be unique
+        """
+        if dirname:
+            if not dirname.endswith("/"):
+                dirname += "/"
+        else:
+            dirname = ""
+        orig_basename = basename
+        fullpath = dirname + basename
         count = 0
-        parent = None
+        existing = True
         while existing:
-            parent, existing, name = cls._find(name)
+            parent, existing, name = cls._find(fullpath)
             if existing:
                 count += 1
-                name = basename + "<%d>" % count
-            else:
-                macro.setName(name)
-        
-        if parent is None:
-            parent = cls.root
-        parent[name] = macro
+                basename = orig_basename + "<%d>" % count
+                fullpath = dirname + basename
+        return fullpath, basename
     
+    @classmethod
+    def addMacro(cls, macro, dirname=None):
+        if dirname:
+            if not dirname.endswith("/"):
+                dirname += "/"
+            
+            # Make sure the directory exists
+            url = vfs.normalize("macro:%s" % dirname)
+            needs_mkdir = False
+            if vfs.exists(url):
+                if vfs.is_file(url):
+                    # we have a macro that is the same name as the directory
+                    # name.  Rename the file and create the directory.
+                    components = dirname.strip('/').split('/')
+                    filename = components.pop()
+                    parent_dirname = "/".join(components)
+                    dum, new_filename = cls.findAlternateName(parent_dirname, filename)
+                    #dprint("parent=%s filename=%s: New filename: %s" % (parent_dirname, filename, new_filename))
+                    parent, existing, name = cls._find(parent_dirname)
+                    #dprint("existing=%s" % existing)
+                    existing[new_filename] = existing[filename]
+                    del existing[filename]
+                    #dprint("existing after=%s" % existing)
+                    needs_mkdir = True
+            else:
+                needs_mkdir = True
+            if needs_mkdir:
+                #dprint("Making folder %s" % url)
+                vfs.make_folder(url)
+        else:
+            dirname = ""
+        fullpath, basename = cls.findAlternateName(dirname, macro.name)
+        
+        parent, existing, name = cls._find(dirname)
+        #dprint("name=%s: parent=%s, existing=%s" % (basename, parent, existing))
+        macro.setName(fullpath)
+        existing[basename] = macro
+    
+    @classmethod
+    def addMacroFromRecording(cls, recorder, mode):
+        """Add a macro to the macro: filesystem.
+        
+        The macro: filesystem is organized by major mode name.  Any macro that
+        is defined on the Fundamental mode appears is valid for text modes;
+        otherwise, the macros are organized into directories based on mode
+        name.
+        """
+        macro = PythonScriptableMacro(recorder)
+        path = mode.keyword
+        cls.addMacro(macro, path)
+        return macro
+
     @classmethod
     def getMacro(cls, name):
         parent, macro, name = cls._find(name)
-        dprint(macro)
+        #dprint(macro)
         return macro
+
+    @classmethod
+    def isMacro(cls, name):
+        parent, macro, name = cls._find(name)
+        return bool(macro)
 
     @classmethod
     def get_mimetype(cls, reference):
@@ -509,7 +573,7 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
     )
     
     @classmethod
-    def worksWithMajorMode(cls, mode):
+    def worksWithMajorMode(cls, modecls):
         return True
 
     def __init__(self, parent, **kwargs):
@@ -521,7 +585,7 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
             self.has_root = True
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         MinorMode.__init__(self, parent, **kwargs)
-        self.root = self.AddRoot(self.mode.keyword)
+        self.root = self.AddRoot(_("Macros Compatible with %s") % self.mode.keyword)
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
@@ -537,48 +601,69 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         """Update tree with the source code of the editor"""
         self.DeleteChildren(self.root)
         
-        # Getting the names under the generic macro filesystem always works
-        item = self.AppendItem(self.root, _("Generic"))
-        generic = vfs.get_names("macro:")
-        generic.sort()
-        dprint(generic)
-        self.appendItems(item, "", generic)
-        self.Expand(item)
+        keywords = self.findKeywordHierarchy(self.mode.__class__)
         
         # Getting the names of macros for a specific major mode may fail if no
         # macros exist
-        item = self.AppendItem(self.root, _(self.mode.keyword))
-        try:
-            specific = vfs.get_names("macro:%s" % self.mode.keyword)
-            specific.sort()
-            dprint(specific)
-            self.appendItems(item, self.mode.keyword, specific)
-        except OSError:
-            pass
-        self.Expand(item)
+        for keyword in keywords:
+            self.appendAllFromMajorMode(keyword)
+            
         if self.has_root:
             self.Expand(self.root)
         if evt:
             evt.Skip()
     
+    def findKeywordHierarchy(self, modecls):
+        """Return a list of keywords representing the major mode subclassing
+        hierarchy of the current major mode.
+        """
+        keywords = []
+        hierarchy = modecls.getSubclassHierarchy()
+        hierarchy.reverse()
+        for cls in hierarchy:
+            keywords.append(cls.keyword)
+        return keywords
+        
+    def appendAllFromMajorMode(self, keyword):
+        """Append all macros for a given major mode
+        
+        """
+        if keyword == "Abstract_Major_Mode":
+            keyword = "Universal Macros"
+            path = ""
+        else:
+            path = keyword
+        item = self.AppendItem(self.root, _(keyword))
+        try:
+            names = vfs.get_names("macro:%s" % keyword)
+            self.appendItems(item, path, names)
+        except OSError:
+            pass
+        self.Expand(item)
+
     def appendItems(self, wxParent, path, names):
         """Append the macro names to the specified item
         
         For the initial item highlighing, uses the current_line instance
         attribute to determine the line number.
         """
+        names.sort()
         for name in names:
-            wxItem = self.AppendItem(wxParent, name)
             if path:
-                name = path + "/" + name
-            self.SetPyData(wxItem, name)
+                fullpath = path + "/" + name
+            else:
+                fullpath = name
+            url = "macro:" + fullpath
+            if vfs.is_file(url):
+                wxItem = self.AppendItem(wxParent, name)
+                self.SetPyData(wxItem, fullpath)
             
     def OnActivate(self, evt):
         name = self.GetPyData(evt.GetItem())
-        dprint(name)
-        macro = MacroFS.getMacro(name)
-        dprint(macro)
-        wx.CallAfter(macro.playback, self.getFrame(), self.mode)
+        self.dprint("Activating macro %s" % name)
+        if name is not None:
+            macro = MacroFS.getMacro(name)
+            wx.CallAfter(macro.playback, self.getFrame(), self.mode)
     
     def OnCollapsing(self, evt):
         item = evt.GetItem()
