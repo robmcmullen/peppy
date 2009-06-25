@@ -212,7 +212,22 @@ class PythonAutoindent(BasicAutoindent):
         if uchar == u':':
             pos = stc.GetCurrentPos()
             s = stc.GetStyleAt(pos)
-            if not stc.isStyleComment(s) and not stc.isStyleString(s):
+            if stc.isStyleComment(s) or stc.isStyleString(s):
+                # These will report true if the cursor is before the first
+                # character of a comment or string, meaning that:
+                #
+                #    else#blah
+                #
+                # where the cursor is between the 'e' and the '#' will fail.
+                # So, we have to check for this as a special case and allow it
+                if pos > 0:
+                    s = stc.GetStyleAt(pos-1)
+                    allow = not stc.isStyleComment(s) and not stc.isStyleString(s)
+                else:
+                    allow = False
+            else:
+                allow = True
+            if allow:
                 stc.BeginUndoAction()
                 start, end = stc.GetSelection()
                 if start == end:
