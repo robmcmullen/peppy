@@ -268,7 +268,7 @@ class PythonScriptableMacro(MemFile):
 class StartRecordingMacro(SelectAction):
     """Begin recording actions"""
     name = "Start Recording"
-    key_bindings = {'default': "C-1", }
+    key_bindings = {'default': "S-C-1", 'mac': "^S-1", }
     default_menu = (("Tools/Macros", -800), 100)
     
     def action(self, index=-1, multiplier=1):
@@ -278,7 +278,7 @@ class StartRecordingMacro(SelectAction):
 class StopRecordingMacro(SelectAction):
     """Stop recording actions"""
     name = "Stop Recording"
-    key_bindings = {'default': "C-2", }
+    key_bindings = {'default': "S-C-2", 'mac': "^S-2", }
     default_menu = ("Tools/Macros", 110)
     
     @classmethod
@@ -296,7 +296,7 @@ class StopRecordingMacro(SelectAction):
 class ReplayLastMacro(SelectAction):
     """Play back last macro that was recorded"""
     name = "Play Last Macro"
-    key_bindings = {'default': "C-3", }
+    key_bindings = {'default': "S-C-3", 'mac': "^S-3", }
     default_menu = ("Tools/Macros", 120)
     
     def isEnabled(self):
