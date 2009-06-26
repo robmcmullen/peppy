@@ -78,7 +78,7 @@ class StyleEditor(wx.Dialog):
         self.LOG = wx.GetApp().GetLog()
 #        self.preview = ed_stc.EditraStc(self, wx.ID_ANY, size=(-1, 200),
 #                                        style=wx.SUNKEN_BORDER, use_dt=False)
-        self.preview = FundamentalSTC(self, None, size=(-1, 200))
+        self.preview = FundamentalSTC(self, None, size=(-1, 200), cmd_key_clear_all=False)
         #print("default style set = %s" % self.preview.style_set)
         self.styles_orig = self.preview.GetStyleSet()
         print(sorted(self.styles_orig.keys()))

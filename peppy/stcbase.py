@@ -116,6 +116,17 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                }
     
     def __init__(self, parent, refstc=None, copy=None, **kwargs):
+        """Initialize the styled text control with peppy extensions.
+        
+        @param parent: wx.Control used as the parent control
+        
+        @keyword refstc: (default None) the parent STC, if any, to which
+        this document object is linked.  Edits in one document are reflected
+        transparently in all the linked documents.
+        
+        @keyword copy: (default None) STC from which to copy the text into the
+        body of this STC
+        """
         wx.stc.StyledTextCtrl.__init__(self, parent, -1, pos=(9000,9000), **kwargs)
         self.ClearAll()
         
@@ -970,6 +981,29 @@ class PeppySTC(PeppyBaseSTC):
     """
     
     def __init__(self, parent, refstc=None, copy=None, **kwargs):
+        """Initialize the styled text control with peppy extensions.
+        
+        @param parent: wx.Control used as the parent control
+        
+        @keyword refstc: (default None) the parent STC, if any, to which
+        this document object is linked.  Edits in one document are reflected
+        transparently in all the linked documents.
+        
+        @keyword copy: (default None) STC from which to copy the text into the
+        body of this STC
+        
+        @keyword cmd_key_clear_all: (default True) boolean value to prevent
+        the normal call to CmdKeyClearAll.  Normally CmdKeyClearAll is called
+        which removes all the default scintilla control keys because the peppy
+        actions are used in place.  In rare cases, for example the Editra
+        L{StyleEditor}, the scintilla actions are left in place because I've
+        not bothered to convert the style editor to use peppy actions.
+        """
+        if 'cmd_key_clear_all' in kwargs:
+            cmd_key_clear_all = kwargs['cmd_key_clear_all']
+            del kwargs['cmd_key_clear_all']
+        else:
+            cmd_key_clear_all = True
         PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy, **kwargs)
 
         self.Bind(wx.stc.EVT_STC_DO_DROP, self.OnDoDrop)
@@ -986,7 +1020,8 @@ class PeppySTC(PeppyBaseSTC):
         
         # Remove all default scintilla keybindings so they will be replaced by
         # peppy actions.
-        self.CmdKeyClearAll()
+        if cmd_key_clear_all:
+            self.CmdKeyClearAll()
 
         self.debug_dnd=False
 
