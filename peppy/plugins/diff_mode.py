@@ -36,8 +36,7 @@ class NextDiff(SelectAction):
                 break
             if stc.GetColumn(pos) == 0 and pos != start:
                 line = stc.LineFromPosition(pos)
-                stc.EnsureVisible(line)
-                stc.GotoLine(line)
+                stc.showLine(line)
                 break
             start = pos + 1
 
@@ -59,8 +58,7 @@ class PrevDiff(SelectAction):
                 break
             if stc.GetColumn(pos) == 0 and pos != start:
                 line = stc.LineFromPosition(pos)
-                stc.EnsureVisible(line)
-                stc.GotoLine(line)
+                stc.showLine(line)
                 break
             start = pos - 1
 

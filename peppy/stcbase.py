@@ -658,6 +658,15 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
 ##            dprint("  pos=%d char=%s style=%d" % (linestart+i, repr(line[i]), self.GetStyleAt(linestart+i) ))
 
     def showLine(self, line, offset_from_top = 0):
+        """Move the cursor to the specified line and show that line at the top
+        of the screen.
+        
+        @param line: line number to display
+        
+        @keyword offset_from_top: (default 0) optional offset from the top of
+        the screen.  The cursor will still be placed at the specified line, but
+        the line will be offset C{offset_from_top} number of lines from the top.
+        """
         # expand folding if any
         self.EnsureVisible(line)
         
