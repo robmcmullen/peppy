@@ -350,6 +350,19 @@ class RecentMacros(OnDemandGlobalListAction):
         cls.calcHash()
     
     @classmethod
+    def validateAll(cls):
+        """Update the list to contain only valid macros.
+        
+        This is used after rearranging the macro file system.
+        """
+        valid_macros = []
+        for name in cls.storage:
+            macro = MacroFS.getMacro(name)
+            if macro:
+                valid_macros.append(name)
+        cls.setStorage(valid_macros)
+    
+    @classmethod
     def setStorage(cls, array):
         cls.storage = array
         cls.trimStorage(MacroPlugin.classprefs.list_length)
@@ -588,12 +601,14 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         else:
             style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
             self.has_root = False
-        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
+        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style | wx.TR_EDIT_LABELS | wx.TR_MULTIPLE)
         MinorMode.__init__(self, parent, **kwargs)
         self.root = self.AddRoot(_("Macros Compatible with %s") % self.mode.keyword)
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
+        self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit)
+        self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit)
     
     def activateSpringTab(self):
         """Callback function from the SpringTab handler requesting that we
@@ -676,10 +691,105 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
             # Don't allow the root item to be collapsed
             evt.Veto()
         evt.Skip()
+    
+    def OnBeginEdit(self, evt):
+        item = evt.GetItem()
+        name = self.GetPyData(item)
+        if name == None:
+            # Only actual macros are allowed to be edited.  Other items in the
+            # tree are not macros, so we veto edit requests
+            evt.Veto()
+    
+    def OnEndEdit(self, evt):
+        if evt.IsEditCancelled():
+            return
+
+        item = evt.GetItem()
+        old_path = self.GetPyData(item)
+        new_name = evt.GetLabel()
+        components = old_path.split('/')
+        components.pop()
+        dirname = '/'.join(components)
+        new_path = dirname + '/' + new_name
+        dprint("old=%s new=%s" % (old_path, new_path))
+        exists = MacroFS.getMacro(new_name)
+        if exists:
+            evt.Veto()
+            wx.CallAfter(self.frame.showErrorDialog, "Cannot rename %s\%s already exists.")
+        else:
+            vfs.move("macro:%s" % old_path, "macro:%s" % new_path)
+            RecentMacros.validateAll()
+
+    def getSelectedMacros(self):
+        """Return a list of all the selected macros
+        
+        @returns: a list containing the full path to the macro (note: it is not
+        the url; it doesn't include the leading 'macro:')
+        """
+        paths = []
+        for item in self.GetSelections():
+            path = self.GetPyData(item)
+            if path is not None:
+                paths.append(path)
+        return paths
+
+    def getOptionsForPopupActions(self):
+        options = {
+            'minor_mode': self,
+            'macros': self.getSelectedMacros(),
+            }
+        return options
+    
+    def getPopupActions(self, evt, x, y):
+        return [EditMacro, RenameMacro, (-900, DeleteMacro)]
 
 
+class EditMacro(SelectAction):
+    """Edit the macro in a new tab.
+    
+    """
+    name = "Edit Macro"
+
+    def action(self, index=-1, multiplier=1):
+        dprint(self.popup_options)
+        for path in self.popup_options['macros']:
+            url = "macro:%s" % path
+            self.frame.open(url)
 
 
+class RenameMacro(SelectAction):
+    """Rename the selected macros.
+    
+    """
+    name = "Rename Macro"
+
+    def action(self, index=-1, multiplier=1):
+        tree = self.popup_options['minor_mode']
+        items = tree.GetSelections()
+        if items:
+            tree.EditLabel(items[0])
+
+
+class DeleteMacro(SelectAction):
+    """Delete the selected macros.
+    
+    """
+    name = "Delete Macro"
+
+    def action(self, index=-1, multiplier=1):
+        dprint(self.popup_options)
+        wx.CallAfter(self.processDelete)
+    
+    def processDelete(self):
+        tree = self.popup_options['minor_mode']
+        macros = tree.getSelectedMacros()
+        retval = self.frame.showQuestionDialog("Are you sure you want to delete:\n\n%s" % "\n".join(macros))
+        if retval == wx.ID_YES:
+            for macro in macros:
+                dprint("removing %s" % macro)
+                vfs.remove("macro:%s" % macro)
+            tree.update()
+            RecentMacros.validateAll()
 
 
 
