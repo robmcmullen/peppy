@@ -339,15 +339,20 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.sidebar_panes.append(sidebar)
         self.sidebar_panes.sort(key=lambda s:s.caption)
 
-    def processIdleEvent(self):
+    def processNormalIdleEvent(self):
+        """Event processing for low priority idle functions.
+        
+        This event processor is called from the main application's idle event
+        handler L{Peppy.OnIdle} with a minimum time between calls to this
+        method.  This is for expensive idle event functions or functions that
+        don't need to be called that often to still provide good feedback to
+        the user.
+        """
         if not self.IsActive():
             self.dprint("Top window %s not active.  No idle events." % self)
             return
         mode = self.getActiveMajorMode()
         if mode and mode.isReadyForIdleEvents():
-            #dprint("Idle for mode %s" % mode)
-            mode.idleHandler()
-            
             # Refs #665: this call to forceToolbarUpdate causes the yield to
             # freeze until tabs get switched.  Now this only happens when the
             # mode is ready for idle event processing
@@ -365,6 +370,26 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.pending_timestamp_check = False
         #else:
         #    dprint("mode %s not ready for idle events" % mode)
+
+    def processPriorityIdleEvent(self):
+        """Event processing that happens at every idle event
+        
+        This event processor is for high priority idle events that should be
+        called as often as possible.  Like L{processNormalIdleEvent}, this
+        method is called from L{Peppy.OnIdle} but instead is called at every
+        idle event.
+        
+        Compared to the calls in L{processNormalIdleEvent}, the functions
+        called by this method should strive not to use much processing time
+        because delays here will be much more noticeable to the user.
+        """
+        if not self.IsActive():
+            self.dprint("Top window %s not active.  No idle events." % self)
+            return
+        mode = self.getActiveMajorMode()
+        if mode and mode.isReadyForIdleEvents():
+            #dprint("Idle for mode %s" % mode)
+            mode.idleHandler()
 
     # Overrides of wx methods
     def OnRaise(self, evt):

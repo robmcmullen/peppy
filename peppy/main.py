@@ -488,19 +488,23 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         idle events were processed on all frames, there would be a noticeable
         delay after only a few frames were open.
         """
+        top = self.getTopFrame()
+        if top:
+            #dprint("Processing priority idle event on %s" % top)
+            top.processPriorityIdleEvent()
+            
         if time.time() < self.last_idle_update + self.classprefs.minimum_idle_delay:
             # don't do idle events too often
-            #dprint("Skipping idle event because it happened too quickly")
+            #dprint("Skipping normal idle event because it happened too quickly")
             return
         
         # Move the process manager idle call here to the application level
         # rather than in each list's idle time.
         ProcessManager().idle()
         
-        top = self.getTopFrame()
         if top:
-            #dprint("Processing idle event on %s" % top)
-            top.processIdleEvent()
+            #dprint("Processing normal idle event on %s" % top)
+            top.processNormalIdleEvent()
         self.last_idle_update = time.time()
 
     def bootstrapCommandLineOptions(self):
