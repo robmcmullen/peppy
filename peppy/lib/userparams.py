@@ -183,6 +183,13 @@ class FileBrowseButton2(FileBrowseButton):
         if dlg.ShowModal() == wx.ID_OK:
             self.SetValue(dlg.GetPath())
         dlg.Destroy()
+
+    def SetValue (self, value, callBack=1):
+        """set current value of text control"""
+        if callBack:
+            self.textControl.SetValue(value)
+        else:
+            self.textControl.ChangeValue(value)
     
 class DirBrowseButton2(FileBrowseButton2):
     """Update to dir browse button to browse to the currently set
@@ -694,7 +701,11 @@ class DirParam(Param):
         return c
 
     def setValue(self, ctrl, value):
-        ctrl.SetValue(os.path.normpath(value))
+        if value:
+            # only try to use normpath when the value exists.  Allow a value of
+            # "" to be displayed in the text control.
+            value = os.path.normpath(value)
+        ctrl.SetValue(value)
 
     def OnCallback(self, evt):
         """Specific implementation for DirParam.
