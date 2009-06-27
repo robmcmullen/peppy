@@ -39,14 +39,14 @@ AddCopyright("Editra Plugins", "http://code.google.com/p/editra-plugins/wiki/Pro
 
 class ProjectPlugin(IPeppyPlugin):
     default_classprefs = (
-        StrParam('project_directory', '.peppy-project', 'Directory used within projects to store peppy specific information'),
-        StrParam('project_file', 'project.cfg', 'File within project directory used to store per-project information'),
-        StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes'),
-        StrParam('settings_directory', 'settings', 'Directory used to store files used to save project-specific settings for major modes'),
-        StrParam('default_settings_file_name', 'default-settings', 'File name used to store default view settings for all major modes in this project'),
-        StrParam('known_projects_file', 'known_projects.txt', 'File name in main peppy configuration directory used to store the list of known projects'),
+        StrParam('project_directory', '.peppy-project', 'Directory used within projects to store peppy specific information', fullwidth=True),
+        StrParam('project_file', 'project.cfg', 'File within project directory used to store per-project information', fullwidth=True),
+        StrParam('template_directory', 'templates', 'Directory used to store template files for given major modes', fullwidth=True),
+        StrParam('settings_directory', 'settings', 'Directory used to store files used to save project-specific settings for major modes', fullwidth=True),
+        StrParam('default_settings_file_name', 'default-settings', 'File name used to store default view settings for all major modes in this project', fullwidth=True),
+        StrParam('known_projects_file', 'known_projects.txt', 'File name in main peppy configuration directory used to store the list of known projects', fullwidth=True),
         PathParam('ctags_command', 'ctags', 'Path to ctags command', fullwidth=True),
-        PathParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
+        StrParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
         StrParam('ctags_args', '-R -n', 'extra arguments for the ctags command', fullwidth=True),
         )
     
