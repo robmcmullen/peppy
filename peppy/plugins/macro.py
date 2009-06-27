@@ -273,6 +273,7 @@ class StartRecordingMacro(SelectAction):
     
     def action(self, index=-1, multiplier=1):
         self.frame.root_accel.startRecordingActions(ActionRecorder())
+        self.mode.setStatusText("Recording macro...")
 
 
 class StopRecordingMacro(SelectAction):
@@ -291,6 +292,7 @@ class StopRecordingMacro(SelectAction):
             self.dprint(recorder)
             macro = MacroFS.addMacroFromRecording(recorder, self.mode)
             RecentMacros.append(macro)
+            self.mode.setStatusText("Stopped recording macro.")
 
 
 class ReplayLastMacro(SelectAction):
