@@ -213,6 +213,10 @@ class ProjectInfo(CTAGS):
     def getProjectName(self):
         return self.project_name
     
+    def setProjectName(self, name):
+        self.project_name = name
+        self.savePrefs()
+    
     def getTopURL(self):
         return self.project_top_dir
     

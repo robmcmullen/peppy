@@ -300,10 +300,21 @@ class ShowProjectSettings(ProjectActionMixin, ProjectPreferencesMixin, SelectAct
     """Edit project settings"""
     name = "Project Settings..."
     default_menu = ("Project", -990)
+    
+    def isEnabled(self):
+        if self.popup_options:
+            return bool(self.popup_options['sidebar'].getFirstSelectedProjectItem())
+        else:
+            return super(ShowProjectSettings, self).isEnabled()
 
     def action(self, index=-1, multiplier=1):
-        if self.mode.project_info:
+        if self.popup_options:
+            sidebar = self.popup_options['sidebar']
+            info = sidebar.loadProjectInfoFromFirstSelectedProject()
+        elif self.mode.project_info:
             info = self.mode.project_info
+        
+        if info:
             self.showProjectPreferences(info)
 
 

@@ -97,18 +97,37 @@ class ProjectPlugin(IPeppyPlugin):
         for url, project_info in cls.unloaded_but_known_projects.iteritems():
             projects[url] = project_info
         return projects
+    
+    @classmethod
+    def isLoadedProject(cls, project_info):
+        """Returns True if project info has been loaded.
+        """
+        project_info = project_info.getKnownProject()
+        url = project_info.getTopURL()
+        return url in cls.url_to_project_mapping
+    
+    @classmethod
+    def removeKnownProject(cls, project_info):
+        """Get a list of known projects, either projects already loaded or
+        those that we know about but haven't loaded ProjectInfo objects for.
+        """
+        project_info = project_info.getKnownProject()
+        url = project_info.getTopURL()
+        if url in cls.unloaded_but_known_projects:
+            del cls.unloaded_but_known_projects[url]
 
     def requestedShutdown(self):
         self.saveKnownProjectNames()
 
-    def saveKnownProjectNames(self):
-        pathname = wx.GetApp().getConfigFilePath(self.classprefs.known_projects_file)
+    @classmethod
+    def saveKnownProjectNames(cls):
+        pathname = wx.GetApp().getConfigFilePath(cls.classprefs.known_projects_file)
         try:
             import pickle
             
             fh = open(pathname, 'wb')
-            known = self.getKnownProjects()
-            self.dprint(known)
+            known = cls.getKnownProjects()
+            cls.dprint(known)
             pickle.dump(known, fh)
         except Exception, e:
             dprint("Failed saving known project list to %s because %s" % (pathname, e))
@@ -246,8 +265,11 @@ class ProjectPlugin(IPeppyPlugin):
                 return path
             del cls.buffer_url_to_project_dir[url]
         
-        # Look for a new project path
-        last = vfs.normalize(vfs.get_dirname(url))
+        # Look for a new project path starting from the specified URL.
+        if vfs.is_folder(url):
+            last = vfs.normalize(url)
+        else:
+            last = vfs.normalize(vfs.get_dirname(url))
         cls.dprint(str(last.path))
         while not last.path.is_relative() and True:
             path = last.resolve2("%s" % (cls.classprefs.project_directory))
@@ -261,6 +283,41 @@ class ProjectPlugin(IPeppyPlugin):
                 break
             last = path
         return None
+    
+    @classmethod
+    def loadProjectByProjectConfigDir(cls, url):
+        """Given the URL of a project config directory, load the ProjectInfo
+        object if not already loaded.
+        
+        @return L{ProjectInfo} instance
+        """
+        if url not in cls.url_to_project_mapping:
+            info = ProjectInfo(url)
+            cls.url_to_project_mapping[url] = info
+            cls.removeKnownProject(info)
+        else:
+            info = cls.url_to_project_mapping[url]
+        cls.dprint("found project %s" % info)
+        return info
+    
+    @classmethod
+    def loadProjectInfoFromKnownProject(cls, known):
+        """Given an KnownProject or a ProjectInfo, load the ProjectInfo
+        object if necessary.
+        
+        It's possible that the info object points to a KnownProject instead
+        of a ProjectInfo, so if it does, load the project and get the real
+        ProjectInfo
+        
+        @return L{ProjectInfo} instance
+        """
+        dprint(known)
+        url = known.getTopURL()
+        url = url.resolve2("%s" % (cls.classprefs.project_directory))
+        dprint(url)
+        info = cls.loadProjectByProjectConfigDir(url)
+        dprint(info)
+        return info
 
     @classmethod
     def registerProject(cls, mode, url=None):
@@ -274,12 +331,7 @@ class ProjectPlugin(IPeppyPlugin):
         if url is None:
             url = cls.findProjectURL(mode.buffer.url)
         if url:
-            if url not in cls.url_to_project_mapping:
-                info = ProjectInfo(url)
-                cls.url_to_project_mapping[url] = info
-            else:
-                info = cls.url_to_project_mapping[url]
-            cls.dprint("found project %s" % info)
+            info = cls.loadProjectByProjectConfigDir(url)
         elif mode:
             cls.dprint(u"no project for %s" % mode.buffer.url)
             info = None
