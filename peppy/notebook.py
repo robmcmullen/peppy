@@ -54,11 +54,21 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
         self.allow_changes = True
 
     def OnTabChanged(self, evt):
+        """Callback for wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED
+        
+        Keeps a record of the last active tab (if there was one) and activates
+        the new active tab in the frame by calling L{BufferFrame.switchMode}.
+        """
         newpage = evt.GetSelection()
         oldpage = evt.GetOldSelection()
         assert self.dprint("changing from tab %s to %s" % (oldpage, newpage))
-        if oldpage>0:
+        if oldpage >= 0:
             self.lastActivePage=self.GetPage(oldpage)
+            # There are some cases where springtabs aren't popped down when
+            # activating a popup menu that calls for the switch to a new mode.
+            # So, make the explicit call to clearPopups here to force any
+            # springtabs tied to the old major mode to be cleared.
+            self.lastActivePage.clearPopups()
         else:
             self.lastActivePage=None
         if self.allow_changes:
