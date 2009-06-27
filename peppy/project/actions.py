@@ -86,10 +86,13 @@ class LookupCtag(ProjectActionMixin, SelectAction):
         Publisher().sendMessage('peppy.log.info', text)
 
 
-class RebuildCtags(ProjectActionMixin, SelectAction):
+class RebuildCtags(SelectAction):
     """Rebuild tag file"""
     name = "Rebuild Tag File"
     default_menu = ("Project", 499)
+    
+    def isEnabled(self):
+        return bool(self.mode.project_info) and ProjectPlugin.hasValidCtagsCommand()
 
     def action(self, index=-1, multiplier=1):
         if self.mode.project_info:
@@ -247,6 +250,8 @@ class ProjectSettings(wx.Dialog):
     def applyPreferences(self):
         self.local.update()
         self.plugin.update()
+        
+        ProjectPlugin.verifyCtagsWithDialog()
 
 
 

@@ -440,6 +440,52 @@ class ProjectPlugin(IPeppyPlugin):
             #mode.applyFileLocalComments(settings)
             mode.classprefsUpdateLocals(settings)
             mode.applyDefaultSettings()
+    
+    @classmethod
+    def verifyCtagsCommand(cls):
+        """Attempt to call the specified CTAGS program to verify that it is
+        Exuberant CTAGS.
+        
+        @returns: boolean to report if successfully verified
+        """
+        import subprocess
+        try:
+            proc = subprocess.Popen([cls.classprefs.ctags_command, "--help"], stdout=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            for line in stdout.splitlines():
+                if 'Exuberant' in line:
+                    return True
+        except OSError:
+            dprint("Failed starting %s" % cls.classprefs.ctags_command)
+        return False
+    
+    @classmethod
+    def verifyCtagsWithDialog(cls):
+        """Verifies the CTAGS program and shows error dialog if not correct
+        version.
+        
+        Uses L{verifyCtagsCommand} to check if the CTAGS program specified in
+        the global project configuration is valid, and if not it displays an
+        error dialog.
+        
+        The classpref containing the ctags command is cleared if it is not
+        valid.
+        """
+        if not cls.verifyCtagsCommand():
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), "%s\n\ndoesn't appear to be Exuberant CTAGS.  Install from\nhttp://ctags.sourceforge.net/ for your platform and change\nthe setting in the Global Project Settings tab of the\nProject Settings dialog." % cls.classprefs.ctags_command, "Invalid CTAGS Program", wx.OK | wx.ICON_ERROR)
+            retval = dlg.ShowModal()
+            
+            cls.classprefs.ctags_command = ""
+    
+    @classmethod
+    def hasValidCtagsCommand(cls):
+        """Convenience function for checking if the CTAGS command is valid.
+        
+        @returns: boolean if the CTAGS command has been previously verified by
+        a call to L{verifyCtagsCommand}.  Note that it may have been verified
+        in a previous invocation of peppy.
+        """
+        return bool(cls.classprefs.ctags_command)
 
     def getCompatibleActions(self, modecls):
         actions = []

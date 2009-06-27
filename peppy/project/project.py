@@ -70,6 +70,12 @@ class CTAGS(InstancePrefs):
         self.dprint(self.project_top_dir)
         if self.project_top_dir.scheme != "file":
             raise TypeError("Can only process ctags on local filesystem")
+        
+        ctags = ProjectPlugin.classprefs.ctags_command
+        if not ctags:
+            Publisher().sendMessage('peppy.log.error', "CTAGS program not set in project settings.")
+            return
+        
         cwd = str(self.project_top_dir.path)
         ctags_file = str(self.getTagFileURL().path)
         wildcards = self.ctags_exclude.split()
