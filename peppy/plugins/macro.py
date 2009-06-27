@@ -276,7 +276,16 @@ class StartRecordingMacro(SelectAction):
         self.mode.setStatusText("Recording macro...")
 
 
-class StopRecordingMacro(SelectAction):
+class StopRecordingMixin(object):
+    def stopRecording(self):
+        if self.frame.root_accel.isRecordingActions():
+            recorder = self.frame.root_accel.stopRecordingActions()
+            self.dprint(recorder)
+            macro = MacroFS.addMacroFromRecording(recorder, self.mode)
+            RecentMacros.append(macro)
+            self.mode.setStatusText("Stopped recording macro.")
+
+class StopRecordingMacro(StopRecordingMixin, SelectAction):
     """Stop recording actions"""
     name = "Stop Recording"
     key_bindings = {'default': "S-C-2", 'mac': "^S-2", }
@@ -287,15 +296,10 @@ class StopRecordingMacro(SelectAction):
         return False
     
     def action(self, index=-1, multiplier=1):
-        if self.frame.root_accel.isRecordingActions():
-            recorder = self.frame.root_accel.stopRecordingActions()
-            self.dprint(recorder)
-            macro = MacroFS.addMacroFromRecording(recorder, self.mode)
-            RecentMacros.append(macro)
-            self.mode.setStatusText("Stopped recording macro.")
+        self.stopRecording()
 
 
-class ReplayLastMacro(SelectAction):
+class ReplayLastMacro(StopRecordingMixin, SelectAction):
     """Play back last macro that was recorded"""
     name = "Play Last Macro"
     key_bindings = {'default': "S-C-3", 'mac': "^S-3", }
@@ -309,11 +313,7 @@ class ReplayLastMacro(SelectAction):
         return False
     
     def action(self, index=-1, multiplier=1):
-        if self.frame.root_accel.isRecordingActions():
-            recorder = self.frame.root_accel.stopRecordingActions()
-            self.dprint(recorder)
-            macro = MacroFS.addMacroFromRecording(recorder, self.mode)
-            RecentMacros.append(macro)
+        self.stopRecording()
         macro = RecentMacros.getLastMacro()
         if macro:
             self.dprint("Playing back %s" % macro)
