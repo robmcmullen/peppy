@@ -85,24 +85,26 @@ class KeybindingActionMixin(ListModeActionMixin):
         return self.mode.list.GetSelectedItemCount() > 0
 
 class TriggeredRebindingActionMixin(KeybindingActionMixin):
+    append_instead_of_replace = False
     def action(self, index=-1, multiplier=1):
-        KeystrokeRecording(self.mode, self.keyboard)
+        KeystrokeRecording(self.mode, self.keyboard, append=self.append_instead_of_replace)
 
 class RebindKeyAction(TriggeredRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new keystroke"""
     alias = "rebind-action"
-    name = "New Multi-Key Binding"
+    name = "Replace with Multi-Key Binding"
     default_menu = ("Actions", -200)
     key_bindings = {'default': "RET", }
 
 class CountedRebindingActionMixin(KeybindingActionMixin):
+    append_instead_of_replace = False
     def action(self, index=-1, multiplier=1):
-        KeystrokeRecording(self.mode, count=self.keystroke_count)
+        KeystrokeRecording(self.mode, count=self.keystroke_count, append=self.append_instead_of_replace)
 
 class RebindSingleKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new single keystroke"""
     alias = "rebind-action-single-key"
-    name = "New Single Key Accelerator"
+    name = "Replace with Single Key Binding"
     default_menu = ("Actions", 210)
     key_bindings = {'default': ["1", "SPACE"], }
     keystroke_count = 1
@@ -110,7 +112,7 @@ class RebindSingleKeyAction(CountedRebindingActionMixin, SelectAction):
 class RebindTwoKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected key to a new two keystroke combination"""
     alias = "rebind-action-two-key"
-    name = "New Two Key Accelerator"
+    name = "Replace with Two Key Binding"
     default_menu = ("Actions", 220)
     key_bindings = {'default': "2", }
     keystroke_count = 2
@@ -118,14 +120,75 @@ class RebindTwoKeyAction(CountedRebindingActionMixin, SelectAction):
 class RebindThreeKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected key to a new three keystroke combination"""
     alias = "rebind-action-three-key"
-    name = "New Three Key Accelerator"
+    name = "Replace with Three Key Binding"
     default_menu = ("Actions", 230)
     key_bindings = {'default': "3", }
     keystroke_count = 3
 
 
+class AppendKeyAction(TriggeredRebindingActionMixin, SelectAction):
+    """Add a keystroke to the list of keystrokes for an action
+    
+    """
+    name = "Add a Multi-Key Binding"
+    default_menu = ("Actions", -300)
+    key_bindings = {'default': "C-RET", }
+    append_instead_of_replace = True
+
+class AppendSingleKeyAction(CountedRebindingActionMixin, SelectAction):
+    """Add a new single keystroke to the current keybinding list
+    
+    """
+    name = "Add a Single Key Binding"
+    default_menu = ("Actions", 310)
+    key_bindings = {'default': ["C-1", "SPACE"], }
+    append_instead_of_replace = True
+    keystroke_count = 1
+
+class AppendTwoKeyAction(CountedRebindingActionMixin, SelectAction):
+    """Add a new two keystroke combination binding to the current keybinding
+    list
+    
+    """
+    name = "Add a Two Key Binding"
+    default_menu = ("Actions", 320)
+    key_bindings = {'default': "C-2", }
+    append_instead_of_replace = True
+    keystroke_count = 2
+
+class AppendThreeKeyAction(CountedRebindingActionMixin, SelectAction):
+    """Add a new two keystroke combination binding to the current keybinding
+    list.
+    
+    """
+    name = "Add a Three Key Binding"
+    default_menu = ("Actions", 330)
+    key_bindings = {'default': "C-3", }
+    append_instead_of_replace = True
+    keystroke_count = 3
+
+
 class KeystrokeRecording(object):
-    def __init__(self, mode, trigger=None, count=-1):
+    """Keystroke recorder used to create new keybindings.
+    
+    This class triggers L{AcceleratorManager.setQuotedRaw} to start capturing
+    raw keystrokes.  At the completion of the key sequence, it calls
+    L{KeybindingSTC.setRemappedAccelerator} to update the key sequence for the
+    specified action.
+    """
+    def __init__(self, mode, trigger=None, count=-1, append=False):
+        """Constructor that starts the quoted keystroke capturing
+        
+        @param mode: major mode instance
+        
+        @keyword trigger: (optional) trigger keystroke string that will be used
+        to end a variable length key sequence
+        
+        @keyword count: (optional) exact number of keystrokes to capture
+        
+        @keyword append: True will append the key sequence to the
+        action's list of key bindings, False (the default) will replace it.
+        """
         self.mode = mode
         if trigger:
             keystrokes = KeyAccelerator.split(trigger)
@@ -142,11 +205,29 @@ class KeystrokeRecording(object):
             self.emacs = True
         else:
             self.emacs = False
+        self.append = append
         
-        self.status_text = "Enter new key binding for %s:" % self.action.__name__
+        if append:
+            text = "Additional key binding for %s:"
+        else:
+            text = "New key binding for %s:"
+        if trigger:
+            text += " (end with %s)" % self.getAccelerator(self.trigger)
+        elif count > 1:
+            text += " (%d keystrokes)" % self.count
+        elif count > 0:
+            text += " (%d keystroke)" % self.count
+        
+        self.status_text = text % self.action.__name__
         self.mode.setStatusText(self.status_text)
     
     def getAccelerator(self, keystroke):
+        """Convenience function to return the accelerator text of a keystroke
+        
+        Uses the L{KeystrokeRecording.emacs} instance attribute to determine if
+        the accelerator should be displayed in emacs form or native platform
+        form.
+        """
         if self.emacs:
             acc = keystroke.getEmacsAccelerator()
         else:
@@ -154,6 +235,11 @@ class KeystrokeRecording(object):
         return acc
         
     def addKeystroke(self, keystroke):
+        """Callback method for L{AcceleratorManager.setQuotedRaw}
+        
+        Used to add a keystroke to the key sequence list, and if the end of
+        the key sequence is reached, calls L{finishRecording}.
+        """
         dprint("keystroke = %s" % keystroke)
         if keystroke == self.trigger:
             self.finishRecording()
@@ -169,12 +255,17 @@ class KeystrokeRecording(object):
                 wx.CallAfter(self.mode.frame.root_accel.setQuotedRaw, self.addKeystroke)
     
     def finishRecording(self):
+        """Cleanup method to save the new key sequence.
+        
+        Saves the new key sequence as an accelerator for the action.  This is
+        called from L{addKeystroke} when the key sequence has been completed.
+        """
         dprint("Recording %s" % (self.recording))
         acc = " ".join(self.recording)
         self.status_text = "New key binding for %s: %s" % (self.action.__name__, acc)
         self.mode.setStatusText(self.status_text)
         dprint(self.status_text)
-        self.mode.buffer.stc.setRemappedAccelerator(self.action, acc)
+        self.mode.buffer.stc.setRemappedAccelerator(self.action, acc, self.append)
         wx.CallAfter(self.mode.resetList)
 
 
@@ -209,10 +300,43 @@ class KeybindingSTC(UndoMixin, NonResidentSTC):
     def getRemappedAccelerator(self, action):
         return self.remapped_actions[action]
     
-    def setRemappedAccelerator(self, action, accelerator):
-        undo_obj = UndoableKeybindingChange(action, accelerator, self.remapped_actions.get(action, None))
+    def setRemappedAccelerator(self, action, accelerator, append):
+        """Change the action to use the new keybinding.
+        
+        Note that the effects of the keybinding don't take place till the mode
+        is saved.
+        
+        @param action: action class to change the keybinding
+        
+        @param accelerator: new keybinding
+        
+        @param append: if True, appends the definition to the existing list of
+        key bindings.  Otherwise, replaces the definition with the single
+        keybinding specified.
+        """
+        old_remapped_binding = self.remapped_actions.get(action, None)
+        if append:
+            # Find the previous binding.  Use the remapped binding if one
+            # exists, otherwise pull it the current definition of the
+            # keybinding from the action.
+            if old_remapped_binding is None:
+                binding = action.keyboard
+            else:
+                binding = old_remapped_binding
+            
+            # Turn the binding into a list if required
+            if binding is None:
+                new_binding = accelerator
+            elif isinstance(binding, list):
+                new_binding = binding[:]
+                new_binding.append(accelerator)
+            else:
+                new_binding = [binding, accelerator]
+        else:
+            new_binding = accelerator
+        undo_obj = UndoableKeybindingChange(action, new_binding, old_remapped_binding)
         self.undoMixinSaveUndoableItem(undo_obj)
-        self.remapped_actions[action] = accelerator
+        self.remapped_actions[action] = new_binding
         self.fireChangeEvent()
     
     def addDocumentChangeEvent(self, callback):
@@ -603,21 +727,67 @@ class KeyboardConf(IPeppyPlugin):
         #dprint(actions)
         for action in actions:
             # Use the action key binding from the configuration, if it exists
-            found = False
-            if hasattr(self.classprefs, action.__name__):
-                acc = self.classprefs._get(action.__name__)
-                if acc.lower() != 'default':
-                    if acc.lower() == "none":
-                        # if the text is None, don't bind it to anything.
-                        action.keyboard = None
-                    else:
-                        action.keyboard = acc
-                        action.user_keyboard = True
-                    found = True
+            found = self.setKeyboardActionFromPreferences(action)
+                
             if not found:
                 action.keyboard = self.getKey(action)
                 action.user_keyboard = None
             #dprint("%s: %s" % (action.__name__, action.keyboard))
+    
+    def setKeyboardActionFromPreferences(self, action):
+        """Sets the user keyboard action from the value specified in the
+        preferences.
+        
+        If no user specified rebinding exists, returns false.
+        
+        @returns boolean indicating whether or not the action was set from the
+        user preferences.
+        """
+        found = False
+        if hasattr(self.classprefs, action.__name__):
+            acc = self.classprefs._get(action.__name__)
+            if isinstance(acc, basestring):
+                # Multiple accelerators can be defined by describing them
+                # like a python list.
+                if acc.startswith("[") or acc.startswith("("):
+                    try:
+                        # safely eval by restringing the domain of the eval
+                        # to no locals or globals
+                        acc = eval(acc, {}, {})
+                    except:
+                        dprint("\nFailed converting %s to multiple accelerators for %s.\nMultiple accelerators should be described like a python list:\n\n%s = ['Ctrl-A', 'Ctrl-B']\n\ndefines two accelerators in the config file" % (acc, action.__name__, action.__name__))
+                        acc = None
+                    if isinstance(acc, list) or isinstance(acc, tuple):
+                        for item in acc:
+                            if not isinstance(item, basestring):
+                                dprint("\nFailed converting %s in list %s to multiple accelerators for %s.\n%s is not a string." % (item, acc, action.__name__, item))
+                                acc = None
+                                break
+                    else:
+                        dprint("\nFailed converting %s to multiple accelerators for %s.\n%s is not specified in the form of a python list." % (acc, action.__name__, acc))
+                        acc = None
+                else:
+                    acc = acc.lower()
+                    if acc != 'default':
+                        if acc == "none":
+                            # if the text is None, don't bind it to anything.
+                            action.keyboard = None
+                        else:
+                            action.keyboard = acc
+                            action.user_keyboard = True
+                        found = True
+            
+            # It's possible that the preference was already in the form of a
+            # list if the preference was set by the L{KeybindingMode}.  If
+            # that were the case, the above if statement wouldn't have been
+            # processed, which is why there is this separate if statement here
+            # that sets the keyboard values, rather than setting them above
+            # when the string is converted to a list.
+            if isinstance(acc, list):
+                action.keyboard = acc
+                action.user_keyboard = True
+                found = True
+        return found
     
     def setAcceleratorTextOfActions(self, actions):
         # Note that it's never allowed to have only emacs style accelerators on
@@ -668,7 +838,13 @@ class KeyboardConf(IPeppyPlugin):
         yield ShowModeKeys
         yield DebugKeypress
         yield EditKeybindings
-        yield RebindKeyAction
-        yield RebindSingleKeyAction
-        yield RebindTwoKeyAction
-        yield RebindThreeKeyAction
+        
+    def getCompatibleActions(self, modecls):
+        if modecls == KeybindingMode:
+            return [
+                RebindKeyAction, RebindSingleKeyAction,
+                RebindTwoKeyAction, RebindThreeKeyAction,
+                
+                AppendKeyAction, AppendSingleKeyAction,
+                AppendTwoKeyAction, AppendThreeKeyAction,
+                ]
