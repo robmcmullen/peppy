@@ -13,6 +13,7 @@ from wx.lib.pubsub import Publisher
 from peppy.yapsy.plugins import *
 
 from peppy.actions import *
+from peppy.actions.minibuffer import *
 from peppy.major import MajorMode
 from peppy.minor import *
 from peppy.lib.multikey import *
@@ -268,7 +269,7 @@ class PythonScriptableMacro(MemFile):
 class StartRecordingMacro(SelectAction):
     """Begin recording actions"""
     name = "Start Recording"
-    key_bindings = {'default': "S-C-1", 'mac': "^S-1", }
+    key_bindings = {'default': "S-C-9", 'mac': "^S-9", 'emacs': ["C-x S-9", "S-C-9"]}
     default_menu = (("Tools/Macros", -800), 100)
     
     def action(self, index=-1, multiplier=1):
@@ -288,7 +289,7 @@ class StopRecordingMixin(object):
 class StopRecordingMacro(StopRecordingMixin, SelectAction):
     """Stop recording actions"""
     name = "Stop Recording"
-    key_bindings = {'default': "S-C-2", 'mac': "^S-2", }
+    key_bindings = {'default': "S-C-0", 'mac': "^S-0", 'emacs': ["C-x S-0", "S-C-0"]}
     default_menu = ("Tools/Macros", 110)
     
     @classmethod
@@ -302,7 +303,7 @@ class StopRecordingMacro(StopRecordingMixin, SelectAction):
 class ReplayLastMacro(StopRecordingMixin, SelectAction):
     """Play back last macro that was recorded"""
     name = "Play Last Macro"
-    key_bindings = {'default': "S-C-3", 'mac': "^S-3", }
+    key_bindings = {'default': "S-C-8", 'mac': "^S-8", 'emacs': ["C-x e", "S-C-8"]}
     default_menu = ("Tools/Macros", 120)
     
     def isEnabled(self):
@@ -320,7 +321,90 @@ class ReplayLastMacro(StopRecordingMixin, SelectAction):
             wx.CallAfter(macro.playback, self.frame, self.mode, multiplier)
         else:
             self.dprint("No recorded macro.")
+
+
+class MacroNameMinibufferMixin(object):
+    def getMacroPathMap(self):
+        """Generate list of possible names to complete.
+
+        For all the currently active actions, find all the names and
+        aliases under which the action could be called, and add them
+        to the list of possible completions.
         
+        @returns: tuple containing a list and a dict.  The list contains the
+        precedence of paths which is used to determine which duplicates are
+        marked as auxiliary names.  The dict contains a mapping of the path to
+        the macros in that path.
+        """
+        raise NotImplementedError
+        
+    def createList(self):
+        """Generate list of possible macro names to complete.
+
+        Uses L{getMacroPathMap} to get the set of macro names on which to
+        complete.  Completes on macro names, not path names, so duplicate
+        macro names would be possible.  Gets around any possible duplication
+        by using the macro path order to get the hierarchy of paths, and any
+        duplicates are marked with the path name.
+        
+        So, if we are in Python mode and there are macros "macro:Python/test"
+        and "macro:Fundamental/test", the Python mode macro would be marked
+        as simply "test", while the fundamental mode macro would be marked as
+        "test (Fundamental)" to mark the distinction.
+        """
+        self.map = {}
+        path_order, macros = self.getMacroPathMap()
+        for path in path_order:
+            for name in macros[path]:
+                #dprint("name = %s" % name)
+                macro_path = "%s/%s" % (path, name)
+                if name in self.map:
+                    name = "%s (%s)" % (name, path)
+                self.map[name] = macro_path
+        self.sorted = self.map.keys()
+        self.sorted.sort()
+        self.dprint(self.sorted)
+
+    def action(self, index=-1, multiplier=1):
+        # FIXME: ignoring number right now
+        self.createList()
+        minibuffer = StaticListCompletionMinibuffer(self.mode, self,
+                                                    label = "Execute Macro",
+                                                    list = self.sorted,
+                                                    initial = "")
+        self.mode.setMinibuffer(minibuffer)
+
+class ExecuteMacroByName(MacroNameMinibufferMixin, SelectAction):
+    """Execute a macro by name
+    
+    Using the tab completion minibuffer, execute an action by its name.  The
+    actions shown in the minibuffer will be limited to the actions relevant to
+    the current major mode.
+    """
+    name = "&Execute Macro"
+    key_bindings = {'default': "S-C-7", 'emacs': "C-c e", }
+    default_menu = ("Tools/Macros", 130)
+    
+    def getMacroPathMap(self):
+        hierarchy = self.mode.getSubclassHierarchy()
+        #dprint(hierarchy)
+        path_map = {}
+        path_order = []
+        for modecls in hierarchy:
+            path, names = MacroFS.getMacroNamesFromMajorModeClass(modecls)
+            path_map[path] = names
+            path_order.append(path)
+        return path_order, path_map
+    
+    def processMinibuffer(self, minibuffer, mode, text):
+        if text in self.map:
+            macro_path = self.map[text]
+            macro = MacroFS.getMacro(macro_path)
+            if macro:
+                wx.CallAfter(macro.playback, self.frame, self.mode)
+        else:
+            self.frame.SetStatusText("%s not a known macro" % text)
+
 
 
 class RecentMacros(OnDemandGlobalListAction):
@@ -561,6 +645,39 @@ class MacroFS(MemFS):
         return bool(macro)
 
     @classmethod
+    def getMacroNamesFromMajorModeClass(cls, modecls):
+        """Get the list of macro names available for the specified major mode
+        class.
+        
+        This is roughly equivalent to using C{vfs.get_names("macro:%s" %
+        mode.keyword)} except that it also handles the case of universal
+        macros linked to the abstract L{MajorMode} that are in the macro
+        directory "".
+        
+        @param modecls: major mode class
+        
+        @returns: tuple containing the path in the macro: filesystem and the
+        list of all macros in that path
+        """
+        keyword = modecls.keyword
+        if keyword == "Abstract_Major_Mode":
+            path = ""
+        else:
+            path = keyword
+        try:
+            all_names = vfs.get_names("macro:%s" % path)
+        except OSError:
+            all_names = []
+        
+        # Check to see that all the names are macro names and not directories
+        macro_names = []
+        for name in all_names:
+            url = "macro:" + path + "/" + name
+            if vfs.is_file(url):
+                macro_names.append(name)
+        return path, macro_names
+
+    @classmethod
     def get_mimetype(cls, reference):
         path = str(reference.path)
         parent, existing, name = cls._find(path)
@@ -657,7 +774,7 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
             path = keyword
         item = self.AppendItem(self.root, _(keyword))
         try:
-            names = vfs.get_names("macro:%s" % keyword)
+            names = vfs.get_names("macro:%s" % path)
             self.appendItems(item, path, names)
         except OSError:
             pass
@@ -837,5 +954,5 @@ class MacroPlugin(IPeppyPlugin):
         return [
             StartRecordingMacro, StopRecordingMacro, ReplayLastMacro,
             
-            RecentMacros,
+            RecentMacros, ExecuteMacroByName,
             ]
