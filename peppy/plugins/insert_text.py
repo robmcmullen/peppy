@@ -60,6 +60,21 @@ class InsertRepr(SelectAction):
         self.mode.AddText(repr(text))
 
 
+class OpenLine(SelectAction):
+    """Enter a newline but leave the cursor where it is"""
+    name = "Open Line"
+    key_bindings = {'emacs': 'C-o',}
+    
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        cursor = s.GetCurrentPos()
+        if multiplier > 0:
+            lines = s.getLinesep() * multiplier
+            s.AddText(lines)
+            s.SetAnchor(cursor)
+            s.SetCurrentPos(cursor)
+
+
 class InsertTextPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text insertion actions.
     """
@@ -69,4 +84,5 @@ class InsertTextPlugin(IPeppyPlugin):
                 InsertCodePoint,
                 InsertQuotedChar,
                 InsertRepr,
+                OpenLine,
                 ]
