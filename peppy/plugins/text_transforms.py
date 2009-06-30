@@ -316,7 +316,7 @@ def RemoveExtraSpace(text, pos):
        
 
 class JustOneSpace(TextModificationAction):
-    """Remove extra whitespace
+    """Replace whitespace around the cursor with a single space
 
     Replaces any amount of whitespace surrounding the cursor with one space
     except at the begining and ends of lines, where it removes all white space.
@@ -359,6 +359,52 @@ class JustOneSpace(TextModificationAction):
             s.EndUndoAction()
 
 
+class JustOneLine(TextModificationAction):
+    """Replace blank lines with a single blank line
+
+    If the cursor is on a blank line (i.e.  contains only whitespace), removes
+    all consecutive blank lines above and below it such that only the blank
+    line containing the cursor remains.
+    """
+    name = "Just One Line"
+    default_menu = ("Transform", 603)
+    key_bindings = {'emacs': 'C-x C-o',}
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        cursor = s.GetCurrentPos()
+        line = s.LineFromPosition(cursor)
+        current = s.GetLine(line)
+        if len(current.strip()) == 0:
+            # Current line is blank.  Start the process...
+            begin = line - 1
+            while begin >= 0:
+                text = s.GetLine(begin)
+                if len(text.strip()) == 0:
+                    begin -= 1
+                else:
+                    break
+            begin += 1
+            
+            end = line + 1
+            while end < s.GetLineCount():
+                text = s.GetLine(end)
+                if len(text.strip()) == 0:
+                    end += 1
+                else:
+                    break
+            
+            start = s.PositionFromLine(begin)
+            end = s.PositionFromLine(end)
+            s.BeginUndoAction()
+            s.SetTargetStart(start)
+            s.SetTargetEnd(end)
+            s.ReplaceTarget(current)
+            s.SetAnchor(start)
+            s.SetCurrentPos(start)
+            s.EndUndoAction()
+
+
 class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     """Word-wrap the current paragraph or region.
     
@@ -368,7 +414,7 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     """
     alias = "fill-paragraph-or-region"
     name = "Fill Paragraph"
-    default_menu = ("Transform", 603)
+    default_menu = ("Transform", 608)
     key_bindings = {'default': 'M-q',}
 
     def mutateParagraph(self, info):
@@ -662,5 +708,5 @@ class TextTransformPlugin(IPeppyPlugin):
                 SortLines, SortLinesByField, ReverseLines, ShuffleLines,
                 TransposeChars, TransposeLineDown,
                 
-                JustOneSpace,
+                JustOneSpace, JustOneLine,
                 ]
