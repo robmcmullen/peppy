@@ -752,8 +752,9 @@ class KeyboardConf(IPeppyPlugin):
                 if acc.startswith("[") or acc.startswith("("):
                     try:
                         # safely eval by restringing the domain of the eval
-                        # to no locals or globals
-                        acc = eval(acc, {}, {})
+                        # to no locals or globals.  Replace by call to
+                        # ast.literal_eval when transitioning to python 2.6
+                        acc = eval(acc, {'__builtins__':{}}, {})
                     except:
                         dprint("\nFailed converting %s to multiple accelerators for %s.\nMultiple accelerators should be described like a python list:\n\n%s = ['Ctrl-A', 'Ctrl-B']\n\ndefines two accelerators in the config file" % (acc, action.__name__, action.__name__))
                         acc = None
