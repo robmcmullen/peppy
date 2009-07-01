@@ -55,10 +55,55 @@ class MajorModeMatcherDriver(debugmixin):
 
     @classmethod
     def findActiveModes(cls, plugins):
-        cls.current_modes = []
+        """Returns the list of currently active major modes in most specific
+        mode to most general mode order.
+        
+        Major modes have a hierarchy based on their subclass order.  For
+        example, L{FundamentalMode} is more general than L{PythonMode}
+        because PythonMode is subclassed from FundamentalMode.  It makes
+        sense, then, to start the subclass searching from the more specific
+        PythonMode because PythonMode should return a positive match before
+        FundamentalMode.
+        """
+        subclasses_of = {}
         for plugin in plugins:
             if cls.debuglevel > 1: cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
-            cls.current_modes.extend(plugin.getMajorModes())
+            modes = plugin.getMajorModes()
+            for mode in modes:
+                mro = mode.getSubclassHierarchy()
+                # The method resolution order returns the class as mro[0], so
+                # we really want the parent class at mro[1].  This will always
+                # work because MajorMode is guaranteed to be a subclass of
+                # the mode, so there will always be at least two entries in
+                # this list.
+                first_parent_class = mro[1]
+                if first_parent_class not in subclasses_of:
+                    subclasses_of[first_parent_class] = [mode]
+                else:
+                    subclasses_of[first_parent_class].append(mode)
+        
+        subclass_order = subclasses_of.keys()
+        # subclass_order might also have modes that are subclasses of other
+        # modes, so we need to sort this so that the subclasses come before
+        # their parents.  For example, FundamentalMode will appear as a key in
+        # subclass_order.  If PythonMode had a subclass, say PythonExtraMode,
+        # then PythonMode would also appear in subclass_order.  In this case,
+        # we need to make sure that PythonMode's subclasses appear before
+        # FundamentalMode's subclasses so that PythonExtraMode has a chance to
+        # match before PythonMode.
+        def sort_subclasses(a, b):
+            if a == b:
+                return 0
+            elif issubclass(a, b):
+                return -1
+            return 1
+        subclass_order.sort(cmp = sort_subclasses)
+        
+        cls.current_modes = []
+        for parent in subclass_order:
+            cls.current_modes.extend(subclasses_of[parent])
+            cls.current_modes.append(parent)
+        
         cls.dprint("Currently active major modes: %s" % str(cls.current_modes))
         cls.skipped_modes = set()
     
