@@ -54,7 +54,7 @@ class MajorModeMatcherDriver(debugmixin):
         return modes
 
     @classmethod
-    def findActiveModes(cls, plugins):
+    def findActiveModes(cls, plugins=None):
         """Returns the list of currently active major modes in most specific
         mode to most general mode order.
         
@@ -65,6 +65,9 @@ class MajorModeMatcherDriver(debugmixin):
         PythonMode because PythonMode should return a positive match before
         FundamentalMode.
         """
+        if plugins is None:
+            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+            
         subclasses_of = {}
         for plugin in plugins:
             if cls.debuglevel > 1: cls.dprint("checking plugin %s" % str(plugin.__class__.__mro__))
@@ -99,11 +102,25 @@ class MajorModeMatcherDriver(debugmixin):
             return 1
         subclass_order.sort(cmp = sort_subclasses)
         
-        cls.current_modes = []
+        active_modes = []
+        found = {}
         for parent in subclass_order:
-            cls.current_modes.extend(subclasses_of[parent])
-            cls.current_modes.append(parent)
+            for mode in subclasses_of[parent]:
+                if mode not in found:
+                    active_modes.append(mode)
+                    found[mode] = True
+            if parent not in found:
+                active_modes.append(parent)
+                found[parent] = True
         
+        return active_modes
+    
+    @classmethod
+    def findAndCacheActiveModes(cls, plugins):
+        """Uses L{findActiveModes} to cache the list of currently active major
+        modes
+        """
+        cls.current_modes = cls.findActiveModes(plugins)
         cls.dprint("Currently active major modes: %s" % str(cls.current_modes))
         cls.skipped_modes = set()
     
@@ -130,7 +147,7 @@ class MajorModeMatcherDriver(debugmixin):
         """
         app = wx.GetApp()
         plugins = app.plugin_manager.getActivePluginObjects()
-        cls.findActiveModes(plugins)
+        cls.findAndCacheActiveModes(plugins)
         for mode in cls.iterActiveModes():
             if mode.verifyKeyword(keyword):
                 return mode
@@ -154,7 +171,7 @@ class MajorModeMatcherDriver(debugmixin):
             url = buffer.raw_url
 
         plugins = app.plugin_manager.getActivePluginObjects()
-        cls.findActiveModes(plugins)
+        cls.findAndCacheActiveModes(plugins)
         
         # Try to match a specific protocol
         modes = cls.scanProtocol(url)
