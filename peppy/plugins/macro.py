@@ -16,6 +16,7 @@ from peppy.actions import *
 from peppy.actions.minibuffer import *
 from peppy.major import MajorMode
 from peppy.minor import *
+from peppy.sidebar import *
 from peppy.lib.multikey import *
 from peppy.debug import *
 import peppy.vfs as vfs
@@ -690,30 +691,14 @@ class MacroFS(MemFS):
 
 
 
-
-
-
-class MacroListMinorMode(MinorMode, wx.TreeCtrl):
-    """Tree control to display list of macros available for this major mode
+class MacroTreeCtrl(wx.TreeCtrl):
+    """Abstract TreeCtrl specialized to show macros
+    
+    Must be subclassed and the L{addMacrosToTree} method must be defined that
+    populates the tree with all the macros to be displayed.
     """
-    keyword="Macros"
-    
-    default_classprefs = (
-        IntParam('best_width', 300),
-        IntParam('best_height', 500),
-        BoolParam('springtab', True),
-    )
-    
-    @classmethod
-    def worksWithMajorMode(cls, modecls):
-        return True
-
-    @classmethod
-    def showWithMajorModeInstance(cls, mode=None, **kwargs):
-        # It only makes sense to allow macros on modes that you can save
-        return mode.isMacroProcessingAvailable()
-
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, allow_activation=True):
+        self.allow_activation = allow_activation
         if wx.Platform == '__WXMSW__':
             style = wx.TR_HAS_BUTTONS
             self.has_root = True
@@ -721,8 +706,7 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
             style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
             self.has_root = False
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style | wx.TR_EDIT_LABELS | wx.TR_MULTIPLE)
-        MinorMode.__init__(self, parent, **kwargs)
-        self.root = self.AddRoot(_("Macros Compatible with %s") % self.mode.keyword)
+        self.root = self.AddRoot("root item")
         self.hierarchy = None
         self.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnActivate)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
@@ -737,31 +721,43 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         self.update()
         
     def update(self, evt=None):
-        """Update tree with the source code of the editor"""
+        """Rebuild the entire tree
+        
+        Calls the L{addMacrosToTree} to rebuild the tree after all the items
+        below the root item have been deleted.
+        """
         self.DeleteChildren(self.root)
         
-        keywords = self.findKeywordHierarchy(self.mode.__class__)
-        
-        # Getting the names of macros for a specific major mode may fail if no
-        # macros exist
-        for keyword in keywords:
-            self.appendAllFromMajorMode(keyword)
+        self.addMacrosToTree()
             
         if self.has_root:
             self.Expand(self.root)
         if evt:
             evt.Skip()
     
-    def findKeywordHierarchy(self, modecls):
-        """Return a list of keywords representing the major mode subclassing
-        hierarchy of the current major mode.
+    def addMacrosToTree(self):
+        """Repopulate the macros into the tree
+        
+        Upon entering this method, the tree will have been previously cleared
+        of everything but the root object.  Any hierarchy expansion is left to
+        the individual implementation; it may hide or show levels as desired.
+        The root item will be expanded upon this method's return.
         """
-        keywords = []
-        hierarchy = modecls.getSubclassHierarchy()
-        hierarchy.reverse()
-        for cls in hierarchy:
-            keywords.append(cls.keyword)
-        return keywords
+        keywords = self.findKeywordHierarchy()
+        
+        # Getting the names of macros for a specific major mode may fail if no
+        # macros exist
+        for keyword in keywords:
+            self.appendAllFromMajorMode(keyword)
+    
+    def findKeywordHierarchy(self):
+        """Return a list of keywords representing the major mode subclassing
+        hierarchy of the major modes of interest.
+        
+        This method must be overridden in a subclass to provide the list of
+        keywords to display
+        """
+        raise NotImplementedError
         
     def appendAllFromMajorMode(self, keyword):
         """Append all macros for a given major mode
@@ -779,7 +775,7 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
         except OSError:
             pass
         self.Expand(item)
-
+    
     def appendItems(self, wxParent, path, names):
         """Append the macro names to the specified item
         
@@ -798,11 +794,12 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
                 self.SetPyData(wxItem, fullpath)
             
     def OnActivate(self, evt):
-        name = self.GetPyData(evt.GetItem())
-        self.dprint("Activating macro %s" % name)
-        if name is not None:
-            macro = MacroFS.getMacro(name)
-            wx.CallAfter(macro.playback, self.getFrame(), self.mode)
+        if self.allow_activation:
+            name = self.GetPyData(evt.GetItem())
+            self.dprint("Activating macro %s" % name)
+            if name is not None:
+                macro = MacroFS.getMacro(name)
+                wx.CallAfter(macro.playback, self.getFrame(), self.mode)
     
     def OnCollapsing(self, evt):
         item = evt.GetItem()
@@ -861,6 +858,80 @@ class MacroListMinorMode(MinorMode, wx.TreeCtrl):
     
     def getPopupActions(self, evt, x, y):
         return [EditMacro, RenameMacro, (-900, DeleteMacro)]
+
+
+class MacroListMinorMode(MacroTreeCtrl, MinorMode):
+    """Tree control to display list of macros available for this major mode
+    """
+    keyword="Macros"
+    
+    default_classprefs = (
+        IntParam('best_width', 300),
+        IntParam('best_height', 500),
+        BoolParam('springtab', True),
+    )
+    
+    @classmethod
+    def worksWithMajorMode(cls, modecls):
+        return True
+
+    @classmethod
+    def showWithMajorModeInstance(cls, mode=None, **kwargs):
+        # It only makes sense to allow macros on modes that you can save
+        return mode.isMacroProcessingAvailable()
+
+    def __init__(self, parent, **kwargs):
+        MacroTreeCtrl.__init__(self, parent, allow_activation=True)
+        MinorMode.__init__(self, parent, **kwargs)
+        self.SetItemText(self.root, (_("Macros Compatible with %s") % self.mode.keyword))
+
+    def findKeywordHierarchy(self):
+        """Return a list of keywords representing the major mode subclassing
+        hierarchy of the current major mode.
+        """
+        modecls = self.mode.__class__
+        keywords = []
+        hierarchy = modecls.getSubclassHierarchy()
+        hierarchy.reverse()
+        for cls in hierarchy:
+            keywords.append(cls.keyword)
+        return keywords
+
+
+class MacroListSidebar(MacroTreeCtrl, Sidebar):
+    """Tree control to display list of macros available for this major mode
+    """
+    keyword = "All Macros"
+    caption = "All Macros"
+    
+    default_classprefs = (
+        IntParam('best_width', 300),
+        IntParam('best_height', 500),
+        BoolParam('springtab', True),
+    )
+    
+    def __init__(self, parent, **kwargs):
+        MacroTreeCtrl.__init__(self, parent, allow_activation=False)
+        Sidebar.__init__(self, parent, **kwargs)
+        self.SetItemText(self.root, _("All Macros"))
+
+    def findKeywordHierarchy(self):
+        """Return a list of keywords representing the major mode subclassing
+        hierarchy of the current major mode.
+        """
+        mode_classes = MajorModeMatcherDriver.findActiveModes()
+        mode_classes.reverse()
+        keywords = []
+        
+        # Put the major mode first
+        keywords.append(mode_classes.pop(0).keyword)
+        
+        mode_classes.sort(cmp=lambda a,b: cmp(a.keyword, b.keyword))
+        for cls in mode_classes:
+            keywords.append(cls.keyword)
+        return keywords
+
+
 
 
 class EditMacro(SelectAction):
@@ -949,6 +1020,9 @@ class MacroPlugin(IPeppyPlugin):
         
     def getMinorModes(self):
         yield MacroListMinorMode
+        
+    def getSidebars(self):
+        yield MacroListSidebar
         
     def getActions(self):
         return [
