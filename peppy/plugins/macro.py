@@ -200,9 +200,44 @@ class PythonScriptableMacro(MemFile):
         if name is None:
             name = "untitled"
         MemFile.__init__(self, data, name)
+        self.parseMacroForMetadata()
     
     def __str__(self):
         return self.name
+    
+    def get_key_binding(self):
+        try:
+            return self._key_binding
+        except AttributeError:
+            self._key_binding = None
+            return None
+    
+    def set_key_binding(self, binding):
+        self._key_binding = binding
+    
+    key_binding = property(get_key_binding, set_key_binding)
+    
+    def parseMacroForMetadata(self):
+        """Parses the macro comments for any metadata that might be present
+        
+        Included in macro metadata are key bindings, authorship, etc.  They are
+        comment lines in the format C{#@param value} where 'param' is one of
+        'key', 'author', 'name', 'created'
+        """
+        for line in self.data.splitlines():
+            if line.startswith("#@"):
+                self.parseMacroComment(line[2:])
+    
+    def parseMacroComment(self, line):
+        """Parse a single macro comment
+        
+        The comment should have already been stripped of its leading delimiter.
+        """
+        key, value = line.split(" ", 1)
+        value = value.strip()
+        if key == 'key':
+            self.key_binding = value
+            dprint("found key %s" % self.key_binding)
     
     def setName(self, name):
         """Changes the name of the macro to the supplied string.
@@ -324,7 +359,11 @@ class ReplayLastMacro(StopRecordingMixin, SelectAction):
             self.dprint("No recorded macro.")
 
 
-class MacroNameMinibufferMixin(object):
+class MacroNameMixin(object):
+    """Abstract mixin that provides a mapping of macro names to macro paths
+    
+    This mixin is used to provide macro names to a completion minibuffer.
+    """
     def getMacroPathMap(self):
         """Generate list of possible names to complete.
 
@@ -355,6 +394,7 @@ class MacroNameMinibufferMixin(object):
         """
         self.map = {}
         path_order, macros = self.getMacroPathMap()
+        self.macro_path_hierarchy = []
         for path in path_order:
             for name in macros[path]:
                 #dprint("name = %s" % name)
@@ -362,30 +402,15 @@ class MacroNameMinibufferMixin(object):
                 if name in self.map:
                     name = "%s (%s)" % (name, path)
                 self.map[name] = macro_path
+                self.macro_path_hierarchy.append(macro_path)
         self.sorted = self.map.keys()
         self.sorted.sort()
         self.dprint(self.sorted)
 
-    def action(self, index=-1, multiplier=1):
-        # FIXME: ignoring number right now
-        self.createList()
-        minibuffer = StaticListCompletionMinibuffer(self.mode, self,
-                                                    label = "Execute Macro",
-                                                    list = self.sorted,
-                                                    initial = "")
-        self.mode.setMinibuffer(minibuffer)
-
-class ExecuteMacroByName(MacroNameMinibufferMixin, SelectAction):
-    """Execute a macro by name
-    
-    Using the tab completion minibuffer, execute an action by its name.  The
-    actions shown in the minibuffer will be limited to the actions relevant to
-    the current major mode.
+class ModeMacroNameMixin(MacroNameMixin):
+    """Concrete mixin for MacroNameMixin supplying names for macros that only
+    work with the action's major mode.
     """
-    name = "&Execute Macro"
-    key_bindings = {'default': "S-C-7", 'emacs': "C-c e", }
-    default_menu = ("Tools/Macros", 130)
-    
     def getMacroPathMap(self):
         hierarchy = self.mode.getSubclassHierarchy()
         #dprint(hierarchy)
@@ -396,6 +421,27 @@ class ExecuteMacroByName(MacroNameMinibufferMixin, SelectAction):
             path_map[path] = names
             path_order.append(path)
         return path_order, path_map
+
+
+class ExecuteMacroByName(ModeMacroNameMixin, SelectAction):
+    """Execute a macro by name
+    
+    Using the tab completion minibuffer, execute an action by its name.  The
+    actions shown in the minibuffer will be limited to the actions relevant to
+    the current major mode.
+    """
+    name = "&Execute Macro"
+    key_bindings = {'default': "S-C-7", 'emacs': "C-c e", }
+    default_menu = ("Tools/Macros", 130)
+    
+    def action(self, index=-1, multiplier=1):
+        # FIXME: ignoring number right now
+        self.createList()
+        minibuffer = StaticListCompletionMinibuffer(self.mode, self,
+                                                    label = "Execute Macro",
+                                                    list = self.sorted,
+                                                    initial = "")
+        self.mode.setMinibuffer(minibuffer)
     
     def processMinibuffer(self, minibuffer, mode, text):
         if text in self.map:
@@ -405,6 +451,43 @@ class ExecuteMacroByName(MacroNameMinibufferMixin, SelectAction):
                 wx.CallAfter(macro.playback, self.frame, self.mode)
         else:
             self.frame.SetStatusText("%s not a known macro" % text)
+
+
+
+class ExecuteMacroByKeystroke(ModeMacroNameMixin, SelectAction):
+    """Map keystrokes to macros
+    
+    Uses hooks in the keyboard processing to map keystrokes to macros on a
+    per-major-mode basis.
+    
+    Normally, actions provide the same keystrokes regardless of the class of
+    major mode.  If the action is available to that major mode, it has one and
+    only one definition for the keystroke.
+    
+    This needs to change for macros, because some macros won't be
+    available to certain major modes.  A hook is provided for this in the
+    L{SelectAction.addKeyBindingToAcceleratorList} method, which is an
+    instance method of L{SelectAction}
+    """
+    name = "Execute Macro By Keystroke"
+    
+    def addKeyBindingToAcceleratorList(self, accel_list):
+        self.createList()
+        
+        # Use the macros in reverse order so that more specific major modes get
+        # bound first, then superclasses.  I.e.  PythonMode macros should get
+        # bound before FundamentalMode, etc.
+        order = self.macro_path_hierarchy[:]
+        order.reverse()
+        for path in order:
+            macro = MacroFS.getMacro(path)
+            dprint(macro)
+            if macro.key_binding:
+                dprint(macro.key_binding)
+                accel_list.addKeyBinding(macro.key_binding, self)
+    
+    def actionKeystroke(self, evt, multiplier=1):
+        dprint(evt)
 
 
 
@@ -1028,5 +1111,5 @@ class MacroPlugin(IPeppyPlugin):
         return [
             StartRecordingMacro, StopRecordingMacro, ReplayLastMacro,
             
-            RecentMacros, ExecuteMacroByName,
+            RecentMacros, ExecuteMacroByName, ExecuteMacroByKeystroke,
             ]
