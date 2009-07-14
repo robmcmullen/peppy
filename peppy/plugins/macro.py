@@ -922,14 +922,13 @@ class MacroTreeCtrl(wx.TreeCtrl):
     def getSelectedMacros(self):
         """Return a list of all the selected macros
         
-        @returns: a list containing the full path to the macro (note: it is not
-        the url; it doesn't include the leading 'macro:')
+        @returns: a list containing the URL of the macro
         """
         paths = []
         for item in self.GetSelections():
             path = self.GetPyData(item)
             if path is not None:
-                paths.append(path)
+                paths.append(vfs.normalize("macro:%s" % path))
         return paths
 
     def getOptionsForPopupActions(self):
@@ -1016,17 +1015,24 @@ class MacroListSidebar(MacroTreeCtrl, Sidebar):
 
 
 
-
 class EditMacro(SelectAction):
     """Edit the macro in a new tab.
     
     """
     name = "Edit Macro"
 
+    def isEnabled(self):
+        # As long as at least one item in the list is a macro, this can be
+        # enabled.
+        macros = self.popup_options['macros']
+        for path in self.popup_options['macros']:
+            if vfs.is_file(path):
+                return True
+        return False
+
     def action(self, index=-1, multiplier=1):
         dprint(self.popup_options)
-        for path in self.popup_options['macros']:
-            url = "macro:%s" % path
+        for url in self.popup_options['macros']:
             self.frame.open(url)
 
 
@@ -1035,6 +1041,10 @@ class RenameMacro(SelectAction):
     
     """
     name = "Rename Macro"
+
+    def isEnabled(self):
+        macros = self.popup_options['macros']
+        return len(macros) == 1 and vfs.is_file(macros[0])
 
     def action(self, index=-1, multiplier=1):
         tree = self.popup_options['minor_mode']
@@ -1049,6 +1059,13 @@ class DeleteMacro(SelectAction):
     """
     name = "Delete Macro"
 
+    def isEnabled(self):
+        macros = self.popup_options['macros']
+        for path in self.popup_options['macros']:
+            if vfs.is_file(path):
+                return True
+        return False
+
     def action(self, index=-1, multiplier=1):
         dprint(self.popup_options)
         wx.CallAfter(self.processDelete)
@@ -1059,8 +1076,7 @@ class DeleteMacro(SelectAction):
         retval = self.frame.showQuestionDialog("Are you sure you want to delete:\n\n%s" % "\n".join(macros))
         if retval == wx.ID_YES:
             for macro in macros:
-                dprint("removing %s" % macro)
-                vfs.remove("macro:%s" % macro)
+                vfs.remove(macro)
             tree.update()
             RecentMacros.validateAll()
 
