@@ -1,0 +1,9 @@
+[Core]
+Name = Electric Key Actions
+Module = electric_actions
+
+[Documentation]
+Author = Rob McMullen
+Version = 0.1
+Website = http://www.flipturn.org/peppy
+Description = Collection of electric actions -- actions for keystrokes that change the text in addition to inserting themselves

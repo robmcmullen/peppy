@@ -15,6 +15,7 @@ from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.actions.minibuffer import *
 from peppy.major import MajorMode
+from peppy.majormodematcher import MajorModeMatcherDriver
 from peppy.minor import *
 from peppy.sidebar import *
 from peppy.lib.multikey import *

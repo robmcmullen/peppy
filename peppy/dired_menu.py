@@ -11,6 +11,7 @@ from peppy.dired import DiredMode
 from peppy.list_mode import ListModeActionMixin
 from peppy.actions import *
 from peppy.actions.minibuffer import *
+from peppy.yapsy.plugins import *
 
 
 class DiredRefresh(ListModeActionMixin, SelectAction):

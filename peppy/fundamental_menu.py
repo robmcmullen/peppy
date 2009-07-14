@@ -635,91 +635,6 @@ class RevertEncoding(SelectAction):
             self.mode.setStatusText("Unknown encoding %s" % text)
 
 
-class ElectricChar(SelectAction):
-    """Special trigger function for 'electric' characters that change the
-    text in addition to inserting themselves.
-    
-    Used in the autoindent code.
-    """
-    name = "ElectricChar"
-    needs_keyboard_focus = True
-    
-    def addKeyBindingToAcceleratorList(self, accel_list):
-        for char in self.mode.autoindent.getElectricChars():
-            self.dprint("Registering %s as electric character" % char)
-            accel_list.registerElectricChar(char, self, self.mode)
-            
-    def actionKeystroke(self, evt, multiplier=1, **kwargs):
-        mode = self.mode
-        uchar = unichr(evt.GetUnicodeKey())
-        
-        # FIXME: Because the autoindenter depends on the styling information,
-        # need to make sure the document is up to date.  But, is this call to
-        # style the entire document fast enough in practice, or will it have
-        # to be optimized?
-        mode.Colourise(0, mode.GetTextLength())
-        
-        for i in range(multiplier):
-            if mode.autoindent.electricChar(mode, uchar):
-                # If the autoindenter handles the char, it will insert the char.
-                pass
-            else:
-                # If the autoindenter doesn't handle the character for some
-                # reason, we are then left to insert it.
-                mode.AddText(uchar)
-
-
-class ElectricReturn(TextModificationAction):
-    """Indent the next line following a return
-    
-    Using the autoindenter for the current major mode, indent the next line
-    after the return to the appropriate level.  For example, in Python mode
-    the next line would be indented if you press return after an if statement,
-    and the next line indent would be reduced by one intentation level if you
-    press return after a C{raise} or C{return} statement.
-    
-    By default, this is bound to both RET and S-RET because I found it was very
-    easy to hit S-RET by mistake when the last character in the line was a
-    shifted character like ')' or ':'.  Without this S-RET binding, Scintilla
-    would insert a raw CR in the text instead of autoindenting.
-    """
-    alias = "electric-return"
-    name = "Electric Return"
-    icon = 'icons/text_indent_rob.png'
-    key_bindings = {'default': ['RET', 'S-RET'],}
-    needs_keyboard_focus = True
-
-    def action(self, index=-1, multiplier=1):
-        if self.mode.spell and self.mode.classprefs.spell_check:
-            pos = self.mode.GetCurrentPos()
-            self.mode.spell.checkWord(pos)
-        self.mode.autoindent.processReturn(self.mode)
-
-
-class ElectricDelete(TextModificationAction):
-    """Delete all whitespace from cursor forward to the next non-blank character
-    """
-    alias = "electric-delete"
-    name = "Electric Delete"
-    key_bindings = {'default': 'DELETE',}
-    needs_keyboard_focus = True
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.autoindent.electricDelete(self.mode)
-
-
-class ElectricBackspace(TextModificationAction):
-    """Delete all whitespace from cursor back to the last non-blank character
-    """
-    alias = "electric-backspace"
-    name = "Electric Backspace"
-    key_bindings = {'default': 'BACK',}
-    needs_keyboard_focus = True
-
-    def action(self, index=-1, multiplier=1):
-        self.mode.autoindent.electricBackspace(self.mode)
-
-
 class ApplySettingsSameMode(OnDemandActionNameMixin, SelectAction):
     """Apply view settings to all tabs"""
     name = "As Defaults for %s Mode"
@@ -811,9 +726,6 @@ class FundamentalMenu(IPeppyPlugin):
                     FontZoom, FontZoomIncrease, FontZoomDecrease,
                     
                     EOLModeSelect, SelectBraces,
-                    
-                    ElectricChar, ElectricReturn, ElectricDelete,
-                    ElectricBackspace,
                     
                     ApplySettingsSameMode, ApplySettingsAll, ApplySettingsKate,
                     ]

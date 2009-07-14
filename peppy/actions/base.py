@@ -14,7 +14,7 @@ import wx
 import wx.stc
 
 from peppy.actions import *
-from peppy.fundamental import *
+from peppy.stcbase import *
 
 class BufferBusyActionMixin(object):
     """Mixin to disable an action when the buffer is being modified.
@@ -62,7 +62,7 @@ class TextModificationAction(BufferBusyActionMixin, SelectAction):
     
     @classmethod
     def worksWithMajorMode(cls, modecls):
-        return issubclass(modecls, FundamentalMode)
+        return issubclass(modecls, PeppySTC)
 
 class ScintillaCmdKeyExecute(TextModificationAction):
     """Base class for an action that uses one of the scintilla key commands.
@@ -74,6 +74,10 @@ class ScintillaCmdKeyExecute(TextModificationAction):
     @see: http://www.yellowbrain.com/stc/keymap.html#exec
     """
     cmd = 0
+    
+    @classmethod
+    def worksWithMajorMode(cls, modecls):
+        return issubclass(modecls, wx.stc.StyledTextCtrl)
     
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))

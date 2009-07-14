@@ -250,43 +250,6 @@ class UnBackslashify(LineOrRegionMutateAction):
         return out
 
 
-class Reindent(TextModificationAction):
-    """Reindent a line or region.
-    
-    Recalculates the indentation for the selected region, using the current
-    major mode's algorithm for indentation.
-    """
-    alias = "reindent-region"
-    name = "Reindent"
-    default_menu = ("Transform", 602)
-    key_bindings = {'default': 'TAB',}
-
-    def action(self, index=-1, multiplier=1):
-        s = self.mode
-        
-        # FIXME: Because the autoindenter depends on the styling information,
-        # need to make sure the document is up to date.  But, is this call to
-        # style the entire document fast enough in practice, or will it have
-        # to be optimized?
-        s.Colourise(0, s.GetTextLength())
-
-        start, end = s.GetSelection2()
-        if start == end:
-            dprint("no selection; cursor at %s" % start)
-            s.autoindent.processTab(s)
-        else:
-            dprint("selection: %s - %s" % (start, end))
-            line = s.LineFromPosition(start)
-            end = s.LineFromPosition(end)
-            s.autoindent.debuglevel = True
-            s.BeginUndoAction()
-            while line <= end:
-                pos = s.autoindent.reindentLine(s, linenum=line)
-                line += 1
-            s.SetSelection(start, pos)
-            s.GetLineRegion()
-            s.EndUndoAction()
-
 def RemoveExtraSpace(text, pos):
     """Remove any amount of whitespace at pos, replacing it with a single space.
     
@@ -698,7 +661,7 @@ class TextTransformPlugin(IPeppyPlugin):
     def getActions(self):
         return [CapitalizeWord, UpcaseWord, DowncaseWord, SwapcaseWord,
 
-                Reindent, CommentRegion, UncommentRegion,
+                CommentRegion, UncommentRegion,
                 FillParagraphOrRegion, Backslashify, UnBackslashify,
 
                 Tabify, Untabify, RemoveTrailingWhitespace, JoinLines,
