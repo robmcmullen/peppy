@@ -446,11 +446,10 @@ class ExportAsImage(SelectAction):
                 self.frame.showErrorDialog("Unrecognized file format %s\n\nThe filename extension determines the\nimage format.  Use a filename extension of\n.png or .jpg" % ext)
 
 
-class ExportAsENVI(SelectAction):
-    """Export the current datacube in ENVI BIL format
+class ENVIExportMixin(object):
+    """Mixin to support ENVI exporting using various endian states
     """
-    name = "as ENVI"
-    default_menu = ("File/Export", -100)
+    endian = None
 
     def action(self, index=-1, multiplier=1):
         filename = self.frame.showSaveAs("Save Image as ENVI",
@@ -465,7 +464,9 @@ class ExportAsENVI(SelectAction):
                         self.mode.showBusy(True)
                         self.mode.status_info.startProgress("Exporting to %s" % filename)
                         wx.GetApp().cooperativeYield()
-                        handler.export(filename, self.mode.cube, progress=self.updateProgress)
+                        if self.endian:
+                            options = {'byte_order': self.endian}
+                        handler.export(filename, self.mode.cube, options=options, progress=self.updateProgress)
                         self.mode.status_info.stopProgress("Saved %s" % filename)
                         wx.GetApp().cooperativeYield()
                     finally:
@@ -478,3 +479,23 @@ class ExportAsENVI(SelectAction):
     def updateProgress(self, value):
         self.mode.status_info.updateProgress(value)
         wx.GetApp().cooperativeYield()
+
+class ExportAsENVI(ENVIExportMixin, SelectAction):
+    """Export the current datacube in ENVI format using the default byte order
+    """
+    name = "as ENVI"
+    default_menu = ("File/Export", -100)
+
+class ExportAsENVIBigEndian(ENVIExportMixin, SelectAction):
+    """Export the current datacube in ENVI format using big endian byte order
+    """
+    name = "as ENVI (big endian)"
+    default_menu = ("File/Export", 101)
+    endian = BigEndian
+
+class ExportAsENVILittleEndian(ENVIExportMixin, SelectAction):
+    """Export the current datacube in ENVI format using little endian byte order
+    """
+    name = "as ENVI (little endian)"
+    default_menu = ("File/Export", 102)
+    endian = LittleEndian

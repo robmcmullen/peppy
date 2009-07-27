@@ -94,6 +94,8 @@ class HSIPlugin(IPeppyPlugin):
                         peppy.hsi.hsi_menu.ReduceImageDimensions,
                         
                         peppy.hsi.hsi_menu.ExportAsENVI,
+                        peppy.hsi.hsi_menu.ExportAsENVIBigEndian,
+                        peppy.hsi.hsi_menu.ExportAsENVILittleEndian,
                         peppy.hsi.hsi_menu.ExportAsImage,
                         ]
             except Exception, e:
