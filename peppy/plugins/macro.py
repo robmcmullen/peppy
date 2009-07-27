@@ -596,9 +596,12 @@ class MacroSaveData(object):
     @classmethod
     def unpackVersion1(cls, data):
         root, recent = data
-        MacroFS.root = root
-        #dprint(MacroFS.macros)
-        RecentMacros.setStorage(recent)
+        if isinstance(root, MemDir):
+            MacroFS.root = root
+            #dprint(MacroFS.macros)
+            RecentMacros.setStorage(recent)
+        else:
+            dprint("Found prerelease version of macro filesystem; not loading")
     
     @classmethod
     def save(cls, url):
