@@ -1144,6 +1144,7 @@ class AcceleratorManager(AcceleratorList):
         multiplier = self.entry.repeat_value
         if self.recorder:
             self.recorder.recordKeystroke(action, evt, multiplier)
+        self.last_keystroke = self.entry
         if self.debug: dprint("Calling action %s" % action)
         action.actionKeystroke(evt, multiplier=multiplier)
     
@@ -1157,8 +1158,16 @@ class AcceleratorManager(AcceleratorList):
         multiplier = self.entry.repeat_value
         if self.recorder:
             self.recorder.recordMenu(action, index, multiplier)
+        self.last_keystroke = self.entry
         if self.debug: dprint("Calling action %s" % action)
         wx.CallAfter(action.action, index, multiplier)
+    
+    def getLastKeystroke(self):
+        """Returns the keystroke used for the last processed action.
+        
+        Also usable during an event handler's action or actionKeystroke callback
+        """
+        return self.last_keystroke
     
     def setReportNext(self, callback):
         """Set the report action callback

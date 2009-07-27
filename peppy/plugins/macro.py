@@ -489,6 +489,9 @@ class ExecuteMacroByKeystroke(ModeMacroNameMixin, SelectAction):
     
     def actionKeystroke(self, evt, multiplier=1):
         dprint(evt)
+        accel_list = self.frame.root_accel
+        keystroke = accel_list.getLastKeystroke()
+        dprint(keystroke)
 
 
 
