@@ -2,32 +2,27 @@
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Base module for major mode implementations.
 
-Implementing a new major mode means to extend from the L{MajorMode}
-base class and at least implement the createEditWindow method.
-Several attributes must be set: C{icon} that points to the filename of
-the icon to be used, and C{keyword} which is a text string that
-uniquely identifies the major mode from other major modes.  [FIXME:
-more documentation here.]
+Implementing a new major mode means to extend from a wx Control and the
+L{MajorMode} base mixin class.  Several attributes must be set: C{icon} that
+points to the filename of the icon to be used, and C{keyword} which is a
+text string that uniquely identifies the major mode from other major modes.
+[FIXME: more documentation here.]
 
 Once the major mode subclass has been created, it must be announced to
-peppy.  This is done by creating another class that extends from
-L{MajorModeMatcherBase} and implements the L{IMajorModeMatcher}
-interface.  This interface is used by the file loader to determine
-which major mode gets the default view of a file when it is opened.
+peppy.  This is done by returning the class from the peppy plugin method
+L{IPeppyPlugin.getMajorModes} from an L{IPeppyPlugin} instance.  Plugins are
+automatically loaded if they include a C{.peppy-plugin} companion file in
+either the peppy/plugins directory of the source code or the plugins directory
+in the user's peppy configuration directory.  Alternatively, plugins can be
+installed directly in the python's site-packages directory using setuptools.
+See more information in the L{IPeppyPlugin} documentation.
 
-Because MajorModeMatcherBase is a trac component, all you have to do
-is list your new module in the plugin path specified in your
-configuration directory, and it will get picked up the next time peppy
-starts.  You can also place them in your python's [FIXME: some
-directory to be added like site-packages/peppy/autoload] directory
-which is always scanned by peppy as it starts.
+To provide menu items or toolbar items related to a major mode, you can
+add actions using the L{SelectAction} class as a baseclass.
 
-To provide user interface objects, you can add the
-L{IMenuItemProvider} and L{IToolBarItemProvider} interfaces to your
-subclass of L{IMajorModeMatcher} and implement the methods that those
-require to add menu items or toolbar items.  Note that the first
-element of the tuple returned by getMenuItems or getToolBarItems will
-be the C{keyword} attribute of your major mode.
+To provide context menu (i.e.  popup menus on a right mouse click) actions, use
+the L{ContextMenu} interface to return L{SelectAction} classes in response to
+the L{SelectAction.getPopupActions} method.
 """
 
 import os, stat, sys, re, time
@@ -100,6 +95,23 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         # FIXME: remove stuff here?
 
     def createMajorMode(self, frame, buffer, requested=None):
+        """Creates the editing window in the major mode wrapper
+        
+        This convenience method is the main driver for creating the
+        L{MajorMode} instance and its associated event bindings, controls and
+        minor modes.  It also adds the editing window to the AUI manager for
+        the wrapper and calls the major mode's post-create hooks.
+        
+        @param frame: L{BufferFrame} instance that this major mode will be added
+        
+        @param buffer: L{Buffer} instance representing the STC that the major
+        mode will be viewing
+        
+        @kwarg requested: optional L{MajorMode} class to be used to view
+        the buffer.  If this argument is not specified, the default mode as
+        determined by the file opening process (see L{MajorModeMatcherDriver}
+        will be used.
+        """
         # Remove the old mode if it exists
         self.deleteMajorMode()
         
@@ -149,6 +161,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         return self.editwin
     
     def deleteMajorMode(self):
+        """Remove the major mode from the wrapper
+        
+        Performs cleanup actions to remove the major mode references from this
+        wrapper instance.
+        """
         if self.editwin:
             self.dprint("deleting major mode %s" % self.editwin)
             self.deleteMinorModes()
@@ -165,11 +182,19 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             self.editwin = None
     
     def getTabName(self):
+        """Returns the name to be used in the notebook tab
+        
+        @return: string containing a short string identifying the tab contents
+        """
         if self.editwin:
             return self.editwin.getTabName()
         return "Empty"
     
     def getTabBitmap(self):
+        """Returns icon to be used in the notebook tab
+        
+        @return: wxBitmap instance
+        """
         if self.editwin:
             icon = self.editwin.icon
         else:
@@ -222,6 +247,12 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         return []
 
     def setMinibuffer(self, minibuffer=None):
+        """Convenience method to display the minibuffer.
+        
+        Only one minibuffer can be active at any one time, and this method will
+        remove any existing minibuffer before replacing it with the specified
+        minibuffer.
+        """
         self.removeMinibuffer()
         if minibuffer is not None:
             self.minibuffer = minibuffer
@@ -230,6 +261,23 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             self.minibuffer.show()
 
     def removeMinibuffer(self, specific=None, detach_only=False):
+        """Convenience method to remove the mode's minibuffer
+        
+        Removes the currently active minibuffer (if it exists).  Due to some
+        wx issues and the required use of CallAfter on some platforms, some
+        care is taken to only remove the requested minibuffer.  If a specific
+        minibuffer is passed in as an argument, only that minibuffer will be
+        removed; otherwise the active minibuffer will be removed.
+        
+        @kwarg specific: instance of minibuffer to remove.  In some cases,
+        for example where a minibuffer calls another minibuffer, the
+        previous minibuffer will have been removed by the newer minibuffer's
+        initialization process.
+        
+        @kwarg detach_only: optional, defaults to False.  If True, the
+        minibuffer is only removed from the AUI manager and not destroyed.
+        This is only used in rare cases.
+        """
         self.dprint(self.minibuffer)
         if self.minibuffer is not None:
             if specific is not None and specific != self.minibuffer:
@@ -465,6 +513,9 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         pass
     
     def getFrame(self):
+        """Convenience method needed by L{ContextMenuMixin} to return the
+        L{BufferFrame} instance of this major mode.
+        """
         return self.frame
     
     def __del__(self):
@@ -514,6 +565,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     
     @classmethod
     def removeFromClassCache(cls, *names):
+        """Remove the named values from the class cache"""
         for name in names:
             if name in cls.major_mode_class_cache:
                 del cls.major_mode_class_cache[name]
@@ -536,9 +588,21 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         return hierarchy
 
     def getInstanceCache(self):
+        """Returns the dict used as the instance's cache of information.
+        
+        Rather than promoting the idea of polluting the namespace of the
+        major mode with arbitrary keywords, this dict is used to store
+        information without regard to conflicting with any of the major mode's
+        class attributes.  Because the major mode may have a large subclass
+        hierarchy, it's fairly common to accidentally use an attribute in a
+        subclass that alters meaning of the attribute in a superclass.  This
+        can lead to difficult to debug problems, and sometimes in spectacular
+        failures not limited to application crashes and core dumps.
+        """
         return self.major_mode_instance_cache
     
     def removeFromInstanceCache(self, *names):
+        """Remove the named keywords from the instance cache"""
         for name in names:
             if name in self.major_mode_instance_cache:
                 del self.major_mode_instance_cache[name]
@@ -773,15 +837,41 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
 
     # If there is no title, return the keyword
     def getTitle(self):
+        """Return title of the major mode.
+        
+        This is used as a long title of the major mode itself, not the name of
+        the contents of the major mode.
+        """
         return self.keyword
 
     def getTabName(self):
+        """Returns the name to be used as the notebook tab.
+        
+        @return: a concise string to be used as the text of the notebook tab.
+        This namem should reflect the contents of the major mode, not the
+        name of the type of major mode.  For instance if editing the python
+        file "main.py", this method must return "main.py" rather than "Python"
+        """
         return self.buffer.getTabName()
 
     def getIcon(self):
+        """Returns the icon to be used as the notebook icon.
+        
+        @return: a wxBitmap typically representing the type of major mode, but
+        may be modified to also show some specificity to the particular file
+        being edited.
+        """
         return getIconStorage(self.icon)
 
     def getWelcomeMessage(self):
+        """Returns a descriptive text string to be used in the status bar
+        
+        Once the major mode has been initialized and is ready for user
+        interaction, a status bar message is displayed indicating that it is
+        ready to be edited.  This method returns that message.  It should be an
+        informative string that conveys some meaning regarding the particular
+        major mode and any statistics that would be valuable to the user.
+        """
         return "%s major mode" % self.keyword
     
     def getProperties(self):
@@ -845,12 +935,23 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         pass
 
     def createEventBindings(self):
+        """Main driver method to create event bindings
+        
+        Sets event bindings needed by various subsystems.  Typically, this
+        method should not be overriden by subclasses; rather, the method
+        L{createEventBindingsPostHook} is provided for subclass use.
+        """
         if hasattr(self, 'addUpdateUIEvent'):
             self.addUpdateUIEvent(self.OnUpdateUI)
         self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
         self.createContextMenuEventBindings()
 
     def createEventBindingsPostHook(self):
+        """Hook provided for subclasses to add event bindings
+        
+        Rather than overridding L{createEventBindings}, subclasses should
+        override this to add their own event bindings.
+        """
         pass
     
     def getKeyboardCapableControls(self):
@@ -940,26 +1041,34 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         pass
 
     def OnFocus(self, evt):
+        """Callback used to pop down any springtabs.
+        
+        When the major mode loses keyboard focus, the springtabs should be
+        cleared to allow the new focus receiver to display itself.  This fails
+        when the major mode never takes keyboard focus at all, in which case a
+        focus-lost event is never generated and this method never gets called.
+        """
         self.wrapper.spring.clearRadio()
         self.frame.spring.clearRadio()
         evt.Skip()
 
     def idleHandler(self):
+        """Driver for major mode specific idle handling code.
+        
+        Typically this method should not be overridden; rather, the sublass
+        should override L{idlePostHook} to provide specific idle handling code
+        for the major mode instance.
+        """
         #dprint(u"Idle starting for %s at %f" % (self.buffer.url, time.time()))
         self.idlePostHook()
         #dprint(u"Idle finished for %s at %f" % (self.buffer.url, time.time()))
 
     def idlePostHook(self):
         """Hook for subclasses to process during idle time.
+        
+        Subclasses should typically override this rather than L{idleHandler}.
         """
         pass
-
-    def createEditWindow(self,parent):
-        win=wx.Window(parent, -1, pos=(9000,9000))
-        win.SetBackgroundColour(wx.ColorRGB(0xabcdef))
-        text=self.buffer.stc.GetText()
-        wx.StaticText(win, -1, text, (10,10))
-        return win
 
     def createPostHook(self):
         """Hook called when everything has been created.
@@ -1009,6 +1118,15 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.createStatusIcons()
     
     def setStatusText(self, text, field=0):
+        """Convenience function to set the status bar text.
+        
+        The status bar has at least two text fields, a primary (field=0) and
+        a secondardy, smaller field (field=1).  Field 0 is also used for
+        menu/toolbar updates and therefore will change when the user moves the
+        mouse to the menubar or toolbar.  Field 1 is used for line updates in
+        classes like L{FundamentalMode} and keystroke updates by the keyboard
+        procassing system.
+        """
         self.status_info.setText(text, field)
     
     ##### Proxy services for the wrapper
@@ -1064,12 +1182,28 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             self.dprint("%s not found in %s" % (self.__class__, str(locals)))
 
     def settingsChanged(self, message=None):
+        """Driver to update the major mode when settings are changed by the user.
+        
+        When the user makes settings changes (typically through the Preferences
+        dialog), this method must be called to allow the mode to update itself
+        to the new preference settigs.
+        
+        Rather than being called directly, however, this is done using the
+        peppy.preferences.changed message of the pubsub system.
+        """
         self.dprint("changing settings for mode %s" % self.__class__.__name__)
         self.applyLocals(message.data)
         self.applySettings()
         self.resetStatusBar()
 
     def focus(self):
+        """Convenience method to set focus to the appropciate control used by
+        the major mode.
+        
+        In most major modes, this is equivalent to calling SetFocus on the
+        primary window, although some additional housekeeping duties are also
+        performed.
+        """
         # The active tab may have changed, so make sure that this mode is
         # still in the active tab before setting focus.  Otherwise we might
         # change tabs unexpectedly.
@@ -1081,6 +1215,12 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             self.dprint("Set focus to %s (sanity check: FindFocus = %s, should be same)" % (self, self.FindFocus()))
 
     def focusPostHook(self):
+        """Hook called after L{focus}
+        
+        Hook provided for L{focus} to allow major mode subclass to add
+        functionality to pass the focus hook without overriding L{focus} and
+        providing the necessary housekeeping
+        """
         pass
 
     def tabActivatedHook(self):
@@ -1090,9 +1230,20 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         pass
 
     def showModified(self,modified):
+        """Convenience function to update the frame's {showModified} method."""
         self.frame.showModified(self)
 
     def showBusy(self, busy):
+        """Convenience method to enable or disable user action to the major mode.
+        
+        This method is normally used to show that the mode is involved in a
+        long-running process.  When busy, it cuts off user interaction to the
+        major mode and displays a busy cursor.
+        
+        @param busy: True if the major mode is busy and should not accept user
+        input, or false when the long-running action is complete to restore
+        the ability for the user to interact.
+        """
         self.Enable(not busy)
         if busy:
             cursor = wx.StockCursor(wx.CURSOR_WATCH)
