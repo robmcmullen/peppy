@@ -638,6 +638,11 @@ class MMapCubeReader(CubeReader):
     
     Note: this can fail with MemoryError (or WindowsError on MSW) when
     attempting to first mmap a file that is larger than physical memory.
+    
+    Update: it can also fail with OverflowError on 32 bit systems if the offset
+    to the data is greater than 2^31 bytes away from the start of the file.
+    The call to numpy.memmap returns "cannot fit 'long' into and index-sized
+    integer" in the call to mmap.mmap in numpy/core/memmap.py
     """
     def __init__(self, cube, url=None, array=None):
         CubeReader.__init__(self)
@@ -980,6 +985,10 @@ class Cube(debugmixin):
                 continue
             try:
                 return reader(self, self.url)
+            except OverflowError, e:
+                # Caught a 32-bit offset error
+                self.dprint(e)
+                continue
             except OSError, e:
                 # Caught what is most likely an out of memory error
                 self.dprint(e)
