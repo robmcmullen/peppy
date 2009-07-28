@@ -14,11 +14,11 @@ from peppy.yapsy.plugins import *
 from peppy.debug import *
 from peppy.actions import *
 from peppy.major import *
-from peppy.about import authors, credits, copyrights, substitutes, gpl_text
+from peppy.about import authors, credits, copyrights, substitutes
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
-from peppy import __url__
+from peppy import __url__, __bug_report_url__
 
 _user_manual = """<!-- -*- HTMLView -*- -->
 <h2>User Manual for %(prog)s %(version)s</h2>
@@ -62,7 +62,7 @@ class HelpAbout(SelectAction):
         info.Developers = devs
         #dprint(info.Developers)
 
-        info.License = wordwrap(gpl_text, 500, wx.ClientDC(self.frame))
+        info.License = wordwrap(substitutes['license_text'], 500, wx.ClientDC(self.frame))
 
         # Then we call wx.AboutBox giving it that info object
         wx.AboutBox(info)
@@ -105,7 +105,7 @@ class ProjectHome(SelectAction):
     def action(self, index=-1, multiplier=1):
         from peppy import __url__
         import webbrowser
-        webbrowser.open(__url__)
+        webbrowser.open(__url__, 2)
 
 
 class LocateConfigDirectory(SelectAction):
@@ -135,7 +135,7 @@ class BugReport(SelectAction):
     
     def action(self, index=-1, multiplier=1):
         import webbrowser
-        webbrowser.open("http://trac.flipturn.org/newticket")
+        webbrowser.open(__bug_report_url__, 2)
         
 
 class HelpPlugin(IPeppyPlugin):
