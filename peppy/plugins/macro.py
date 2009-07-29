@@ -234,7 +234,7 @@ class PythonScriptableMacro(MemFile):
         
         The comment should have already been stripped of its leading delimiter.
         """
-        key, value = line.split(" ", 1)
+        key, value = line.strip().split(" ", 1)
         value = value.strip()
         if key == 'key':
             self.key_binding = value
@@ -475,23 +475,50 @@ class ExecuteMacroByKeystroke(ModeMacroNameMixin, SelectAction):
     def addKeyBindingToAcceleratorList(self, accel_list):
         self.createList()
         
-        # Use the macros in reverse order so that more specific major modes get
-        # bound first, then superclasses.  I.e.  PythonMode macros should get
-        # bound before FundamentalMode, etc.
+        for macro in self.iterModeMacros():
+            if macro.key_binding:
+                self.dprint(macro.key_binding)
+                accel_list.addKeyBinding(macro.key_binding, self)
+    
+    def iterModeMacros(self):
+        """Iterate through macros available to this major mode
+
+        The macros from more specific major modes are returned first, then
+        up through the superclasses to the most general major mode in
+        the class hierarchy.  I.e.  PythonMode macros are returned before
+        FundamentalMode, etc.
+        """
         order = self.macro_path_hierarchy[:]
         order.reverse()
         for path in order:
             macro = MacroFS.getMacro(path)
-            dprint(macro)
-            if macro.key_binding:
-                dprint(macro.key_binding)
-                accel_list.addKeyBinding(macro.key_binding, self)
+            self.dprint(macro)
+            yield macro
     
     def actionKeystroke(self, evt, multiplier=1):
-        dprint(evt)
+        """Match the last keystroke with an active macro and play it back if
+        a mach found
+        
+        All macros are matched within this action; macros don't have individual
+        actions (currently), which means that they can't be bound in menus
+        or toolbars.  This may change in a future release.
+        """
         accel_list = self.frame.root_accel
-        keystroke = accel_list.getLastKeystroke()
-        dprint(keystroke)
+        last = accel_list.getLastKeystroke()
+        
+        # Precompute the current Keystrokes so it can be directly compared
+        # with the result of the KeyAccelerator.split method call -- that call
+        # returns a tuple and a tuple can't be equal to a list
+        last_keystrokes = tuple(last.current_keystrokes)
+        
+        for macro in self.iterModeMacros():
+            if macro.key_binding:
+                keystrokes = KeyAccelerator.split(macro.key_binding)
+                self.dprint("checking %s, %s" % (macro, keystrokes))
+                if keystrokes == last_keystrokes:
+                    self.dprint("playback macro %s" % macro)
+                    wx.CallAfter(macro.playback, self.frame, self.mode)
+                    break
 
 
 
