@@ -980,9 +980,6 @@ class MacroTreeCtrl(wx.TreeCtrl):
             'macros': self.getSelectedMacros(),
             }
         return options
-    
-    def getPopupActions(self, evt, x, y):
-        return [EditMacro, RenameMacro, (-900, DeleteMacro)]
 
 
 class MacroListMinorMode(MacroTreeCtrl, MinorMode):
@@ -1028,6 +1025,10 @@ class MacroListMinorMode(MacroTreeCtrl, MinorMode):
             return "%s (%s)" % (name, macro.key_binding)
         else:
             return name
+    
+    def getPopupActions(self, evt, x, y):
+        return [EditMacro, RenameMacro, (-800, RebindMacro), (-900, DeleteMacro)]
+
 
 class MacroListSidebar(MacroTreeCtrl, Sidebar):
     """Tree control to display list of macros available for this major mode
@@ -1061,6 +1062,9 @@ class MacroListSidebar(MacroTreeCtrl, Sidebar):
         for cls in mode_classes:
             keywords.append(cls.keyword)
         return keywords
+    
+    def getPopupActions(self, evt, x, y):
+        return [EditMacro, RenameMacro, (-900, DeleteMacro)]
 
 
 
@@ -1128,6 +1132,24 @@ class DeleteMacro(SelectAction):
                 vfs.remove(macro)
             tree.update()
             RecentMacros.validateAll()
+
+
+class RebindMacro(SelectAction):
+    """Change the key binding of the selected macro
+    
+    """
+    name = "New Key Binding"
+
+    def isEnabled(self):
+        macros = self.popup_options['macros']
+        return len(macros) == 1 and vfs.is_file(macros[0])
+
+    def action(self, index=-1, multiplier=1):
+        tree = self.popup_options['minor_mode']
+        items = tree.GetSelections()
+        if items:
+            macro = items[0]
+            dprint(macro)
 
 
 
