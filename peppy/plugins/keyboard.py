@@ -87,7 +87,7 @@ class KeybindingActionMixin(ListModeActionMixin):
 class TriggeredRebindingActionMixin(KeybindingActionMixin):
     append_instead_of_replace = False
     def action(self, index=-1, multiplier=1):
-        KeystrokeRecording(self.mode, self.keyboard, append=self.append_instead_of_replace)
+        KeybindingModeKeystrokeRecorder(self.mode, self.keyboard, append=self.append_instead_of_replace)
 
 class RebindKeyAction(TriggeredRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new keystroke"""
@@ -99,7 +99,7 @@ class RebindKeyAction(TriggeredRebindingActionMixin, SelectAction):
 class CountedRebindingActionMixin(KeybindingActionMixin):
     append_instead_of_replace = False
     def action(self, index=-1, multiplier=1):
-        KeystrokeRecording(self.mode, count=self.keystroke_count, append=self.append_instead_of_replace)
+        KeybindingModeKeystrokeRecorder(self.mode, count=self.keystroke_count, append=self.append_instead_of_replace)
 
 class RebindSingleKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new single keystroke"""
@@ -168,8 +168,8 @@ class AppendThreeKeyAction(CountedRebindingActionMixin, SelectAction):
     keystroke_count = 3
 
 
-class KeystrokeRecording(object):
-    """Keystroke recorder used to create new keybindings.
+class KeybindingModeKeystrokeRecorder(KeystrokeRecorder):
+    """Custom subclass of KeystrokeRecorder to Keystroke recorder used to create new keybindings.
     
     This class triggers L{AcceleratorManager.setQuotedRaw} to start capturing
     raw keystrokes.  At the completion of the key sequence, it calls
@@ -190,82 +190,17 @@ class KeystrokeRecording(object):
         action's list of key bindings, False (the default) will replace it.
         """
         self.mode = mode
-        if trigger:
-            keystrokes = KeyAccelerator.split(trigger)
-            self.trigger = keystrokes[0]
-            self.count = -1
-        elif count > 0:
-            self.trigger = None
-            self.count = count
-        self.recording = []
         self.action = mode.getFirstSelectedAction()
-        self.mode.frame.root_accel.setQuotedRaw(self.addKeystroke)
-        self.platform = KeyboardConf.keyboard.platform
-        if self.count > 1 or self.platform == 'emacs':
-            self.emacs = True
-        else:
-            self.emacs = False
-        self.append = append
-        
-        if append:
-            text = "Additional key binding for %s:"
-        else:
-            text = "New key binding for %s:"
-        if trigger:
-            text += " (end with %s)" % self.getAccelerator(self.trigger)
-        elif count > 1:
-            text += " (%d keystrokes)" % self.count
-        elif count > 0:
-            text += " (%d keystroke)" % self.count
-        
-        self.status_text = text % self.action.__name__
-        self.mode.setStatusText(self.status_text)
+        KeystrokeRecorder.__init__(self, self.mode.frame.root_accel, trigger,
+                                   count, append,
+                                   platform=KeyboardConf.keyboard.platform,
+                                   action_name=self.action.__name__)
     
-    def getAccelerator(self, keystroke):
-        """Convenience function to return the accelerator text of a keystroke
-        
-        Uses the L{KeystrokeRecording.emacs} instance attribute to determine if
-        the accelerator should be displayed in emacs form or native platform
-        form.
-        """
-        if self.emacs:
-            acc = keystroke.getEmacsAccelerator()
-        else:
-            acc = keystroke.getMenuAccelerator()
-        return acc
-        
-    def addKeystroke(self, keystroke):
-        """Callback method for L{AcceleratorManager.setQuotedRaw}
-        
-        Used to add a keystroke to the key sequence list, and if the end of
-        the key sequence is reached, calls L{finishRecording}.
-        """
-        dprint("keystroke = %s" % keystroke)
-        if keystroke == self.trigger:
-            self.finishRecording()
-        else:
-            accelerator = self.getAccelerator(keystroke)
-            dprint("keystroke = %s" % accelerator)
-            self.recording.append(accelerator)
-            if len(self.recording) == self.count:
-                self.finishRecording()
-            else:
-                self.status_text += " " + accelerator
-                self.mode.setStatusText(self.status_text)
-                wx.CallAfter(self.mode.frame.root_accel.setQuotedRaw, self.addKeystroke)
+    def statusUpdateHook(self, status_text):
+        self.mode.setStatusText(status_text)
     
-    def finishRecording(self):
-        """Cleanup method to save the new key sequence.
-        
-        Saves the new key sequence as an accelerator for the action.  This is
-        called from L{addKeystroke} when the key sequence has been completed.
-        """
-        dprint("Recording %s" % (self.recording))
-        acc = " ".join(self.recording)
-        self.status_text = "New key binding for %s: %s" % (self.action.__name__, acc)
-        self.mode.setStatusText(self.status_text)
-        dprint(self.status_text)
-        self.mode.buffer.stc.setRemappedAccelerator(self.action, acc, self.append)
+    def finishRecordingHook(self, accelerator_text):
+        self.mode.buffer.stc.setRemappedAccelerator(self.action, accelerator_text, self.append)
         wx.CallAfter(self.mode.resetList)
 
 

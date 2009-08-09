@@ -361,6 +361,132 @@ class KeyAccelerator(object):
 
 
 
+class KeystrokeRecorder(object):
+    """Keystroke recorder used to create new keybindings.
+    
+    This class triggers L{AcceleratorManager.setQuotedRaw} to start capturing
+    raw keystrokes.  At the completion of the key sequence, it calls
+    L{KeybindingSTC.setRemappedAccelerator} to update the key sequence for the
+    specified action.
+    """
+    def __init__(self, accel_mgr, trigger=None, count=-1, append=False, platform="win", action_name="action"):
+        """Constructor that starts the quoted keystroke capturing
+        
+        @param accel_mgr: AcceleratorManager object
+        
+        @keyword trigger: (optional) trigger keystroke string that will be used
+        to end a variable length key sequence
+        
+        @keyword count: (optional) exact number of keystrokes to capture
+        
+        @keyword append: True will append the key sequence to the
+        action's list of key bindings, False (the default) will replace it.
+        
+        @keyword platform: Platform name used to set the style of the displayed
+        keystrokes
+        
+        @keyword action_name: Name of the action to be rebound
+        """
+        if trigger:
+            keystrokes = KeyAccelerator.split(trigger)
+            self.trigger = keystrokes[0]
+            self.count = -1
+        elif count > 0:
+            self.trigger = None
+            self.count = count
+        self.recording = []
+        self.accel_mgr = accel_mgr
+        self.accel_mgr.setQuotedRaw(self.addKeystroke)
+        self.platform = platform
+        if self.count > 1 or self.platform == 'emacs':
+            self.emacs = True
+        else:
+            self.emacs = False
+        self.append = append
+        
+        if append:
+            text = "Additional key binding for %s:"
+        else:
+            text = "New key binding for %s:"
+        if trigger:
+            text += " (end with %s)" % self.getAccelerator(self.trigger)
+        elif count > 1:
+            text += " (%d keystrokes)" % self.count
+        elif count > 0:
+            text += " (%d keystroke)" % self.count
+        
+        self.status_text = text % action_name
+        self.statusUpdateHook(self.status_text)
+    
+    def statusUpdateHook(self, status_text):
+        """Hook for subclasses to provide a display method as each keystroke
+        is entered.
+        
+        """
+        print(status_text)
+    
+    def getAccelerator(self, keystroke):
+        """Convenience function to return the accelerator text of a keystroke
+        
+        Uses the L{KeystrokeRecording.emacs} instance attribute to determine if
+        the accelerator should be displayed in emacs form or native platform
+        form.
+        """
+        if self.emacs:
+            acc = keystroke.getEmacsAccelerator()
+        else:
+            acc = keystroke.getMenuAccelerator()
+        return acc
+        
+    def addKeystroke(self, keystroke):
+        """Callback method for L{AcceleratorManager.setQuotedRaw}
+        
+        Used to add a keystroke to the key sequence list, and if the end of
+        the key sequence is reached, calls L{finishRecording}.
+        """
+        dprint("keystroke = %s" % keystroke)
+        if keystroke == self.trigger:
+            self.finishRecording()
+        else:
+            accelerator = self.getAccelerator(keystroke)
+            dprint("keystroke = %s" % accelerator)
+            self.recording.append(accelerator)
+            if len(self.recording) == self.count:
+                self.finishRecording()
+            else:
+                self.status_text += " " + accelerator
+                self.statusUpdateHook(self.status_text)
+                self.addKeystrokeHook()
+                wx.CallAfter(self.accel_mgr.setQuotedRaw, self.addKeystroke)
+    
+    def addKeystrokeHook(self):
+        """Hook for subclasses to perform some action after each keystroke
+        has been entered.
+        
+        """
+        pass
+    
+    def finishRecording(self):
+        """Cleanup method to save the new key sequence.
+        
+        Saves the new key sequence as an accelerator for the action.  This is
+        called from L{addKeystroke} when the key sequence has been completed.
+        """
+        dprint("Recording %s" % (self.recording))
+        acc = " ".join(self.recording)
+        self.status_text = "New key binding for %s: %s" % (self.action.__name__, acc)
+        self.statusUpdateHook(self.status_text)
+        self.finishRecordingHook(acc)
+    
+    def finishRecordingHook(self, accelerator_text):
+        """Hook for subclasses to perform some action after the final keystroke
+        has been added.
+        
+        @param accelerator_text: text string containing the accelerator key(s)
+        """
+        pass
+
+
 class FakeCharEvent(object):
     def __init__(self, evt):
         self.event_object = evt.GetEventObject()
