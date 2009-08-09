@@ -162,10 +162,20 @@ class MyTreeCtrl(wx.TreeCtrl):
 
     def OnCompareItems(self, item1, item2):
         """Compare the text of two tree items"""
-        tup1 = (int(not(os.path.isdir(self.GetPyData(item1)['path']))),
-              self.GetItemText(item1).lower())
-        tup2 = (int(not(os.path.isdir(self.GetPyData(item2)['path']))),
-              self.GetItemText(item2).lower())
+        data = self.GetPyData(item1)
+        if data is not None:
+            path1 = int(not os.path.isdir(data['path']))
+        else:
+            path1 = 0
+        tup1 = (path1, self.GetItemText(item1).lower())
+
+        data2 = self.GetPyData(item2)
+        if data2 is not None:
+            path2 = int(not os.path.isdir(data2['path']))
+        else:
+            path2 = 0
+        tup2 = (path2, self.GetItemText(item2).lower())
+
         #self.log.WriteText('compare: ' + t1 + ' <> ' + t2 + '\n')
         if tup1 < tup2:
             return -1
@@ -721,11 +731,16 @@ class ProjectTree(wx.Panel):
             return
 
         # Delete dummy node from self.addFolder
-        self.tree.Delete(self.tree.GetFirstChild(parent)[0])
-        self.tree.SortChildren(parent)
-        
-        self.addDirectoryWatcher(parent)
-        self.scStatus([parent])
+        if self.tree.GetChildrenCount(parent):
+            self.tree.Delete(self.tree.GetFirstChild(parent)[0])
+            self.tree.SortChildren(parent)
+            self.addDirectoryWatcher(parent)
+            self.scStatus([parent])
+        else:
+            # Is empty folder so clear has children flag and veto
+            # event as it causes the tree ctrl to become emptied on msw.
+#            self.tree.SetItemHasChildren(parent, False)
+            event.Veto()
 
     def scAdd(self, nodes):
         """ Send an add to repository command to current control system """
