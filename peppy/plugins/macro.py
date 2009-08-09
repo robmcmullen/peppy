@@ -907,9 +907,18 @@ class MacroTreeCtrl(wx.TreeCtrl):
                 fullpath = name
             url = "macro:" + fullpath
             if vfs.is_file(url):
-                wxItem = self.AppendItem(wxParent, name)
+                text = self.getTextForMacroName(fullpath, name)
+                wxItem = self.AppendItem(wxParent, text)
                 self.SetPyData(wxItem, fullpath)
-            
+    
+    def getTextForMacroName(self, path, name):
+        """Given the macro name, return the text to display in the list
+        
+        This can be overridden in subclasses to provide the keystroke to which
+        the macro is bound, if the macro is active in the current major mode
+        """
+        return name
+    
     def OnActivate(self, evt):
         if self.allow_activation:
             name = self.GetPyData(evt.GetItem())
@@ -1013,6 +1022,12 @@ class MacroListMinorMode(MacroTreeCtrl, MinorMode):
             keywords.append(cls.keyword)
         return keywords
 
+    def getTextForMacroName(self, path, name):
+        macro = MacroFS.getMacro(path)
+        if macro.key_binding:
+            return "%s (%s)" % (name, macro.key_binding)
+        else:
+            return name
 
 class MacroListSidebar(MacroTreeCtrl, Sidebar):
     """Tree control to display list of macros available for this major mode
