@@ -403,6 +403,7 @@ class KeystrokeRecorder(object):
         else:
             self.emacs = False
         self.append = append
+        self.action_name = action_name
         
         if append:
             text = "Additional key binding for %s:"
@@ -415,7 +416,7 @@ class KeystrokeRecorder(object):
         elif count > 0:
             text += " (%d keystroke)" % self.count
         
-        self.status_text = text % action_name
+        self.status_text = text % self.action_name
         self.statusUpdateHook(self.status_text)
     
     def statusUpdateHook(self, status_text):
@@ -474,7 +475,7 @@ class KeystrokeRecorder(object):
         """
         dprint("Recording %s" % (self.recording))
         acc = " ".join(self.recording)
-        self.status_text = "New key binding for %s: %s" % (self.action.__name__, acc)
+        self.status_text = "New key binding for %s: %s" % (self.action_name, acc)
         self.statusUpdateHook(self.status_text)
         self.finishRecordingHook(acc)
     

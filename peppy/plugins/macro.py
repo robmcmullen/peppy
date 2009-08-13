@@ -186,6 +186,10 @@ class PythonScriptableMacro(MemFile):
     constructed local namespace that includes C{frame} and C{mode} representing
     the current L{BufferFrame} and L{MajorMode} instance, respectively.
     """
+    keyword_mapping = {
+        'key': 'key_binding',
+        }
+    
     def __init__(self, recorder=None, name=None):
         """Converts the list of recorded actions into python string form.
         
@@ -218,6 +222,52 @@ class PythonScriptableMacro(MemFile):
     
     key_binding = property(get_key_binding, set_key_binding)
     
+    def save(self, url):
+        """Save this macro to the specified macro: url
+        
+        """
+        dprint("Saving to %s" % url)
+        self.rebuildMacroAndMetadata()
+        fh = vfs.open_write(url)
+        fh.write(self.data)
+        fh.close()
+    
+    def rebuildMacroAndMetadata(self):
+        """Reconstructs text of macro taking into account any changes in
+        the keybindings or other metadata
+        
+        """
+        lines = []
+        comments = []
+        found = {}
+        in_opening_comments = True
+        for line in self.data.splitlines():
+            dprint(line)
+            if line.startswith("#@") and in_opening_comments:
+                key, value = self.splitMacroComment(line)
+                if key in self.keyword_mapping:
+                    attribute = self.keyword_mapping[key]
+                    value = getattr(self, attribute)
+                    if value is not None:
+                        dprint("found new %s = %s" % (key ,value))
+                        line = "#@ %s %s" % (key, value)
+                        found[key] = value
+                    else:
+                        found[key] = None
+                comments.append(line)
+            else:
+                in_opening_comments = False
+                lines.append(line)
+        
+        for key, attribute in self.keyword_mapping.iteritems():
+            if key not in found:
+                value = getattr(self, attribute)
+                if value is not None:
+                    dprint("adding new %s = %s" % (key ,value))
+                    line = "#@ %s %s" % (key, value)
+                    comments.append(line)
+        self.data = "\n".join(comments) + "\n" + "\n".join(lines) + "\n"
+    
     def parseMacroForMetadata(self):
         """Parses the macro comments for any metadata that might be present
         
@@ -229,16 +279,31 @@ class PythonScriptableMacro(MemFile):
             if line.startswith("#@"):
                 self.parseMacroComment(line[2:])
     
+    def splitMacroComment(self, line):
+        """Split a macro comment into a key, value pair
+        
+        Macro comments are lines that begin with #@ as the first two
+        characters.  After that two character indicator, the remainder of the
+        line is a keyword and a value separated by whitespace.  The keyword
+        can't contain any whitespace, so everything after the first block of
+        whitespace is considered the value.
+        """
+        if line.startswith("#@"):
+            line = line[2:]
+        key, value = line.strip().split(" ", 1)
+        value = value.strip()
+        return key, value
+    
     def parseMacroComment(self, line):
         """Parse a single macro comment
         
         The comment should have already been stripped of its leading delimiter.
         """
-        key, value = line.strip().split(" ", 1)
-        value = value.strip()
-        if key == 'key':
-            self.key_binding = value
-            dprint("found key %s" % self.key_binding)
+        key, value = self.splitMacroComment(line)
+        if key in self.keyword_mapping:
+            attribute = self.keyword_mapping[key]
+            setattr(self, attribute, value)
+            dprint("found %s = %s" % (key ,value))
     
     def setName(self, name):
         """Changes the name of the macro to the supplied string.
@@ -753,12 +818,24 @@ class MacroFS(MemFS):
 
     @classmethod
     def getMacro(cls, name):
+        """Get the L{PythonScriptableMacro} given the pathname of the macro
+        
+        @param name: string or URL of macro
+        """
+        try:
+            name = unicode(name.path)
+        except:
+            name = unicode(name)
         parent, macro, name = cls._find(name)
         #dprint(macro)
         return macro
 
     @classmethod
     def isMacro(cls, name):
+        try:
+            name = unicode(name.path)
+        except:
+            name = unicode(name)
         parent, macro, name = cls._find(name)
         return bool(macro)
 
@@ -829,6 +906,19 @@ class MacroTreeCtrl(wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
         self.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.OnBeginEdit)
         self.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.OnEndEdit)
+        self.allow_char_events = True
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+    
+    def OnChar(self, evt):
+        dprint(evt)
+        if self.allow_char_events:
+            evt.Skip()
+    
+    def enableKeystrokeProcessing(self):
+        self.allow_char_events = True
+    
+    def disableKeystrokeProcessing(self):
+        self.allow_char_events = False
     
     def activateSpringTab(self):
         """Callback function from the SpringTab handler requesting that we
@@ -1134,6 +1224,54 @@ class DeleteMacro(SelectAction):
             RecentMacros.validateAll()
 
 
+
+
+class MacroKeystrokeRecorder(KeystrokeRecorder):
+    """Custom subclass of KeystrokeRecorder used for new macro keybindings.
+    """
+    def __init__(self, tree, mode, macro_url, trigger="RET", count=-1):
+        """Constructor that starts the quoted keystroke capturing
+        
+        @param tree: MacroTreeCtrl instance
+        
+        @param mode: major mode instance
+        
+        @keyword trigger: (optional) trigger keystroke string that will be used
+        to end a variable length key sequence
+        
+        @keyword count: (optional) exact number of keystrokes to capture
+        
+        @keyword append: True will append the key sequence to the
+        action's list of key bindings, False (the default) will replace it.
+        """
+        self.tree = tree
+        self.mode = mode
+        self.url = macro_url
+        self.macro = MacroFS.getMacro(self.url)
+        self.tree.disableKeystrokeProcessing()
+        KeystrokeRecorder.__init__(self, self.mode.frame.root_accel, trigger,
+                                   count, append=False,
+                                   platform="emacs",
+                                   action_name=self.macro.name)
+    
+    def statusUpdateHook(self, status_text):
+        self.mode.setStatusText(status_text)
+    
+    def finishRecordingHook(self, accelerator_text):
+        dprint(self.macro)
+        self.macro.key_binding = accelerator_text
+        self.macro.save(self.url)
+        
+        # Update the tree display to show the new keystroke
+        self.tree.update()
+        
+        # Have to turn on keystroke processing in a CallAfter otherwise the RET
+        # char trigger gets processed as an action in the tree.
+        wx.CallAfter(self.tree.enableKeystrokeProcessing)
+        
+        self.mode.regenerateKeyBindings()
+
+
 class RebindMacro(SelectAction):
     """Change the key binding of the selected macro
     
@@ -1146,10 +1284,11 @@ class RebindMacro(SelectAction):
 
     def action(self, index=-1, multiplier=1):
         tree = self.popup_options['minor_mode']
-        items = tree.GetSelections()
+        items = tree.getSelectedMacros()
         if items:
-            macro = items[0]
-            dprint(macro)
+            macro_url = items[0]
+            dprint(macro_url)
+            MacroKeystrokeRecorder(tree, tree.mode, macro_url)
 
 
 

@@ -1195,6 +1195,12 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.applyLocals(message.data)
         self.applySettings()
         self.resetStatusBar()
+    
+    def regenerateKeyBindings(self):
+        """Reconstruct the keybindings for the major mode and all dependencies.
+        
+        """
+        self.frame.setMenumap(self)
 
     def focus(self):
         """Convenience method to set focus to the appropciate control used by
