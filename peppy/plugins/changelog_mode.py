@@ -16,6 +16,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
 from peppy.actions.base import *
+from peppy.lib.autoindent import *
 
 class AddChangeLogEntry(STCModificationAction):
     alias = "add-change-log-entry"
