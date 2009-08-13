@@ -1,3 +1,12 @@
+2009-08-13  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.11 "Macro Processor"
+	* added macros including automatic recording of keystrokes and actions
+	* macros can be bound to keystrokes
+	* automatically save macros when quitting session
+	* added macro list that shows macros available for current mode
+	* added macro list sidebar that shows all macros
+
 2009-06-11  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.10 "Free Repeater"
