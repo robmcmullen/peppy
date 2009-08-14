@@ -5,13 +5,13 @@ VERSION=`python make-changelog.py  --version`
 echo $VERSION
 
 # Make the source distribution of peppy
-PEPPYSRC=archive/peppy-$VERSION.tar.bz2
-if [ -f $PEPPYSRC ]
+PEPPYSRC=peppy-$VERSION.tar.bz2
+if [ -f archive/$PEPPYSRC ]
 then
     echo FOUND $PEPPYSRC
 else
     make dist
-    mv peppy-$VERSION.tar.bz2 archive
+    mv $PEPPYSRC archive
 fi
 
 
@@ -39,8 +39,8 @@ case $RUNNING in
     ;;
 esac
 
-PEPPYWIN=archive/peppy-$VERSION-win32.exe
-if [ -f $PEPPYWIN ]
+PEPPYWIN=peppy-$VERSION-win32.exe
+if [ -f archive/$PEPPYWIN ]
 then
     echo FOUND $PEPPYWIN
 else
