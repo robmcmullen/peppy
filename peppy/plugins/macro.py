@@ -572,9 +572,8 @@ class ExecuteMacroByKeystroke(ModeMacroNameMixin, SelectAction):
         last = accel_list.getLastKeystroke()
         
         # Precompute the current Keystrokes so it can be directly compared
-        # with the result of the KeyAccelerator.split method call -- that call
-        # returns a tuple and a tuple can't be equal to a list
-        last_keystrokes = tuple(last.current_keystrokes)
+        # with the result of the KeyAccelerator.split method call
+        last_keystrokes = last.getKeystrokeTuple()
         
         for macro in self.iterModeMacros():
             if macro.key_binding:
@@ -582,7 +581,7 @@ class ExecuteMacroByKeystroke(ModeMacroNameMixin, SelectAction):
                 self.dprint("checking %s, %s" % (macro, keystrokes))
                 if keystrokes == last_keystrokes:
                     self.dprint("playback macro %s" % macro)
-                    wx.CallAfter(macro.playback, self.frame, self.mode)
+                    wx.CallAfter(macro.playback, self.frame, self.mode, multiplier)
                     break
 
 

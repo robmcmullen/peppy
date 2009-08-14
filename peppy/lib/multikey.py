@@ -863,6 +863,9 @@ class CurrentKeystrokes(object):
         # Repeat values
         self.repeat_initialized = False
         self.repeat_value = 1
+        
+        # Number of characters in prefix
+        self.prefix_count = 0
 
     def processChar(self, evt, manager):
         if AcceleratorList.debug: dprint("char=%s, unichar=%s, multiplier=%d, id=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), self.repeat_value, evt.GetId()))
@@ -885,8 +888,22 @@ class CurrentKeystrokes(object):
             self.repeat_initialized = True
         else:
             self.repeat_value = 10 * self.repeat_value + AcceleratorList.digit_value[keystroke.id]
+        self.prefix_count += 1
         if AcceleratorList.debug: dprint("in processEscDigit: FOUND REPEAT %d" % self.repeat_value)
 
+    def getKeystrokeTuple(self, include_prefix=False):
+        """Get the keystrokes in the form of a tuple
+        
+        @return: a tuple containing the keystrokes that triggered this action.
+        It returns a tuple instead of a list so that can be directly compared
+        with the result of the KeyAccelerator.split
+        """
+        if include_prefix:
+            start = 0
+        else:
+            start = self.prefix_count
+        keystrokes = tuple(self.current_keystrokes[start:])
+        return keystrokes
 
 class AbstractActionRecorder(object):
     """Abstract class that must be implemented by some recording mechanism
@@ -1401,6 +1418,7 @@ class AcceleratorManager(AcceleratorList):
             elif self.use_meta_escape:
                 if self.debug: dprint("in processEvent: evt=%s id=%s FOUND ESC" % (str(evt.__class__), eid))
                 self.entry.meta_next = True
+                self.entry.prefix_count += 1
                 self.updateCurrentKeystroke(keystroke)
                 return True, keystroke
         elif eid in self.meta_digit_keystroke:
