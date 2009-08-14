@@ -1,17 +1,18 @@
 2009-08-13  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.11 "The Wire"
+	* Released peppy-0.11 "Macroeconomics"
 	* added macros including automatic recording of keystrokes and actions
-	* macros can be bound to keystrokes
-	* automatically save macros when quitting session
-	* added recent macro list (bug #701)
 	* added macro list that shows macros available for current mode
 	* added macro list sidebar that shows all macros (bug #735)
+	* automatically save macros when quitting session
+	* added recent macro list (bug #701)
+	* added keystroke binding for most recent macro (bug #745)
 	* added minibuffer to execute macro by name (bug #730)
+	* fixed bug when repeating macros using prefix argument keystrokes (bug #746)
 	* fixed crash in project viewer on windows (bug #740)
 	* added multiple keybinding assignments in keybinding editor (bug #728)
 	* can now remove/rename projects in project sidebar (bug #587)
-	* fixed python mode reindent bug comment chars appeared after colon (bug #717)
+	* fixed python mode reindent bug when comment chars appeared after colon (bug #717)
 	* fixed bug in Insert Raw Character (bug #706)
 	* fixed refresh bug in dired mode (bug #711)
 	* fixed hyperspectral image load for files > 2GB (bug #737)
