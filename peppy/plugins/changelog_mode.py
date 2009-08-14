@@ -17,6 +17,7 @@ from peppy.major import *
 from peppy.fundamental import FundamentalMode
 from peppy.actions.base import *
 from peppy.lib.autoindent import *
+from peppy.lib.foldexplorer import *
 
 class AddChangeLogEntry(STCModificationAction):
     alias = "add-change-log-entry"
@@ -94,6 +95,35 @@ class ChangeLogMode(FundamentalMode):
                                                         self.classprefs.indent,
                                                         self.classprefs.unindent,
                                                         '')
+
+    def iterFoldEntries(self, line, last_line=-1):
+        """Iterator returning items to be included in code explorer.
+        
+        Have to override the FoldExplorerMixin version because that version
+        relies on the internal Scintilla fold level processing and I don't
+        yet do that for text modes.  This version simply processes every line
+        as a root level fold item if the L{getFoldEntryFunctionName} returns
+        a value.
+        """
+        if last_line < 0:
+            last_line = self.GetLineCount()
+        # NOTE: level 0 is the root node, so have to start at 1 otherwise
+        # the fold explorer code thinks that this is another root node.
+        level = 1
+        while line < last_line:
+            text = self.getFoldEntryFunctionName(line)
+            if text:
+                node = FoldExplorerNode(level=level, start=line, end=last_line, text=text)
+                node.show = True
+                yield node
+            line += 1
+
+    def getFoldEntryFunctionName(self, line):
+        text = self.GetLine(line)
+        #dprint(text)
+        if text[0:4].isdigit():
+            return text
+        return ""
 
 
 # This is the plugin definition for ChangeLogMode.  This is the only way
