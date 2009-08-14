@@ -55,7 +55,7 @@ INSTALL: INSTALL.pre.in ChangeLog
 
 doc: README INSTALL
 
-html: $(HTML) $(PRE) README.html doc
+html: $(HTML) $(PRE) README.html README doc
 	cp README.html web/
 	(cd manual; make html)
 	mkdir -p web/manual
