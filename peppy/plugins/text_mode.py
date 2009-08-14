@@ -14,6 +14,7 @@ from peppy.major import *
 from peppy.yapsy.plugins import IPeppyPlugin
 from peppy.fundamental import FundamentalMode
 from peppy.lib.autoindent import BasicAutoindent
+from peppy.lib.foldexplorer import *
 
 _sample_file="""\
 Life is what happens while you're busy making other plans.
@@ -42,12 +43,12 @@ Always use the bathroom when you can, because you never know when you'll get ano
 """
 
 
-class TextMode(FundamentalMode):
+class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """Major mode for editing text files.
     """
     keyword='Text'
     icon='icons/page_white_text.png'
-    regex="(\.txt|[Rr][Ee][Aa][Dd][Mm][Ee]*)$"
+    regex="(\.txt|\.rst|[Rr][Ee][Aa][Dd][Mm][Ee]*)$"
 
     default_classprefs = (
         StrParam('minor_modes', ''),
@@ -56,6 +57,30 @@ class TextMode(FundamentalMode):
     
     autoindent = BasicAutoindent()
     
+    def checkFoldEntryFunctionName(self, line, last_line):
+        header = self.GetLine(line).rstrip()
+        if header and header[0] in "=-`:'\"~^_*+#<>":
+            # Make sure the entire line consists of only that character.
+            other_chars = header.strip(header[0])
+            if len(other_chars) == 0:
+                # Determine whether there is an overline and underline, or if
+                # it's only an underline.  Overline and underline must match
+                # in both character type and length, or it's an error.
+                if line + 2 < last_line:
+                    underline = self.GetLine(line + 2).rstrip()
+                    if underline == header:
+                        # Found section header
+                        title = self.GetLine(line + 1).strip()
+                        return title, line, 3
+                
+                # If there isn't a complementary overline/underline pair, the
+                # header that was found originally is an underline.
+                if line > 1:
+                    title = self.GetLine(line - 1).strip()
+                    return title, line - 1, 1
+                
+        return "", -1, 1
+
 
 class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.

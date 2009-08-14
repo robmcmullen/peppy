@@ -254,3 +254,47 @@ class SimpleCLikeFoldFunctionMatchMixin(object):
             else:
                 self.dprint("regular expression didn't match")
         return ""
+
+
+class NonFoldCapableCodeExplorerMixin(object):
+    """Code explorer mixin for modes that aren't capable of using the built-in
+    Scintilla fold engine.
+    
+    This mixin provides an alternate L{iterFoldEntries} method that scans
+    every line, rather than only the lines that are marked as expanded in the
+    fold margin.  Modes that aren't automatically parsed by Scintilla won't
+    otherwise be capable of using the code explorer, so those modes should
+    extend from this mixin and provide a L{getFoldEntryFunctionName} method.
+    """
+    def iterFoldEntries(self, line, last_line=-1):
+        """Iterator returning items to be included in code explorer.
+        
+        Have to override the FoldExplorerMixin version because that version
+        relies on the internal Scintilla fold level processing and I don't
+        yet do that for text modes.  This version simply processes every line
+        as a root level fold item if the L{getFoldEntryFunctionName} returns
+        a value.
+        """
+        if last_line < 0:
+            last_line = self.GetLineCount()
+        # NOTE: level 0 is the root node, so have to start at 1 otherwise
+        # the fold explorer code thinks that this is another root node.
+        level = 1
+        while line < last_line:
+            text, start_line, skip = self.checkFoldEntryFunctionName(line, last_line)
+            if text:
+                node = FoldExplorerNode(level=level, start=start_line, end=last_line, text=text)
+                node.show = True
+                yield node
+            line += skip
+    
+    def checkFoldEntryFunctionName(self, line, last_line):
+        """Check the specified line to determine if it should be used in the
+        code explorer.
+        
+        @return: 3-tuple containing text, line number, and a number indicating
+        the number of lines processed.  If the line should appear in the code
+        explorer, the text should be a non-empty string.  An empty string
+        means the line should not appear in the code explorer.
+        """
+        return "", -1, 1
