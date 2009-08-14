@@ -17,6 +17,8 @@
 	* fixed hyperspectral image load for files > 2GB (bug #737)
 	* added check for valid CTAGS executable in project settings (bug #727)
 	* fixed regression in spell checking speed (bug #725)
+	* added reStructuredText support for TextMode code explorer (bug #741)
+	* added some more emacs compatibility commands (bug #733)
 
 2009-06-11  Rob McMullen  <robm@users.sourceforge.net>
 
