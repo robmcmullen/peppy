@@ -13,10 +13,27 @@ generally placed in Fundamental mode.  If you're familiar with object oriented
 programming concepts, Fundamental mode is the *superclass* of the other text
 editing modes.
 
+.. _hierarchies:
 
 Hierarchies of Major Modes
 --------------------------
 
+There are different hierarchies of major modes in peppy, but the primary
+hierarchical tree starts from Fundamental mode.  Major modes that are used
+to edit text files descend from Fundamental mode, and therefore are part of
+this hierarchy.
+
+Hierarchies are important because many of the commands available in Peppy are
+based on the major mode of the current file.  Actions are only presented to
+you in the menubar and toolbar if they're appropriate to the major mode.  For
+instance, when editing text files, it doesn't make sense to include actions
+used to edit images.
+
+The major mode hierarchy starting with Fundamental mode includes Python
+mode, C++ mode, Bash mode, and all the other modes used to edit source code.
+Fundamental mode is the more general major mode, so all actions available for
+Fundamental mode are available to Python mode, for instance.  However, Python
+mode actions are not available to Fundamental mode.
 
 
 

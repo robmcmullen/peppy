@@ -2,7 +2,7 @@
 Projects
 ********
 
-.. _fundamental:
+.. _projects:
 
 Peppy's Concept of Projects
 ===========================

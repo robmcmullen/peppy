@@ -15,11 +15,12 @@ Contents:
    running
    preferences
    fundamental
+   macros
    python
    project
    hsi
 
-\* not written yet
+\* documentation in progress
 
 Indices and tables
 ==================
