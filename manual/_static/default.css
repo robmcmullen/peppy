@@ -40,11 +40,11 @@ div.body {
     padding: 0 20px 30px 20px;
 }
 
-div.sidebarwrapper {
+div.sphinxsidebarwrapper {
     padding: 10px 5px 0 10px;
 }
 
-div.sidebar {
+div.sphinxsidebar {
     float: left;
     width: 230px;
     margin-left: -100%;
