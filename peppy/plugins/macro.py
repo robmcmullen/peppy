@@ -635,14 +635,24 @@ class RecentMacros(OnDemandGlobalListAction):
         cls.calcHash()
         
     @classmethod
+    def getLastMacroName(cls):
+        """Return the pathname of the most recently added macro
+        
+        @returns pathname within the macro: filesystem
+        """
+        if cls.storage:
+            return cls.storage[0]
+        return None
+        
+    @classmethod
     def getLastMacro(cls):
         """Return the most recently added macro
         
         @returns L{PythonScriptableMacro} instance, or None if no macro has yet
         been added.
         """
-        if cls.storage:
-            name = cls.storage[0]
+        name = cls.getLastMacroName()
+        if name:
             return MacroFS.getMacro(name)
         return None
     
@@ -1229,7 +1239,7 @@ class DeleteMacro(SelectAction):
 class MacroKeystrokeRecorder(KeystrokeRecorder):
     """Custom subclass of KeystrokeRecorder used for new macro keybindings.
     """
-    def __init__(self, tree, mode, macro_url, trigger="RET", count=-1):
+    def __init__(self, mode, macro_url, tree=None, trigger="RET", count=-1):
         """Constructor that starts the quoted keystroke capturing
         
         @param tree: MacroTreeCtrl instance
@@ -1248,7 +1258,8 @@ class MacroKeystrokeRecorder(KeystrokeRecorder):
         self.mode = mode
         self.url = macro_url
         self.macro = MacroFS.getMacro(self.url)
-        self.tree.disableKeystrokeProcessing()
+        if self.tree:
+            self.tree.disableKeystrokeProcessing()
         KeystrokeRecorder.__init__(self, self.mode.frame.root_accel, trigger,
                                    count, append=False,
                                    platform="emacs",
@@ -1262,12 +1273,13 @@ class MacroKeystrokeRecorder(KeystrokeRecorder):
         self.macro.key_binding = accelerator_text
         self.macro.save(self.url)
         
-        # Update the tree display to show the new keystroke
-        self.tree.update()
-        
-        # Have to turn on keystroke processing in a CallAfter otherwise the RET
-        # char trigger gets processed as an action in the tree.
-        wx.CallAfter(self.tree.enableKeystrokeProcessing)
+        if self.tree:
+            # Update the tree display to show the new keystroke
+            self.tree.update()
+            
+            # Have to turn on keystroke processing in a CallAfter otherwise the
+            # RET char trigger gets processed as an action in the tree.
+            wx.CallAfter(self.tree.enableKeystrokeProcessing)
         
         self.mode.regenerateKeyBindings()
 
@@ -1288,7 +1300,29 @@ class RebindMacro(SelectAction):
         if items:
             macro_url = items[0]
             dprint(macro_url)
-            MacroKeystrokeRecorder(tree, tree.mode, macro_url)
+            MacroKeystrokeRecorder(tree.mode, macro_url, tree=tree)
+
+
+class RebindLastMacro(StopRecordingMixin, SelectAction):
+    """Add keyboard binding for last macro that was recorded"""
+    name = "Add Keybinding For Last Macro"
+    key_bindings = {'default': "S-C-6", 'mac': "^S-6", 'emacs': ["C-x C-k", "S-C-6"]}
+    default_menu = ("Tools/Macros", 130)
+    
+    def isEnabled(self):
+        return RecentMacros.isEnabled()
+    
+    @classmethod
+    def isRecordable(cls):
+        return False
+    
+    def action(self, index=-1, multiplier=1):
+        self.stopRecording()
+        name = RecentMacros.getLastMacroName()
+        if name:
+            MacroKeystrokeRecorder(self.mode, name)
+        else:
+            self.dprint("No recorded macro.")
 
 
 
@@ -1335,7 +1369,9 @@ class MacroPlugin(IPeppyPlugin):
         
     def getActions(self):
         return [
-            StartRecordingMacro, StopRecordingMacro, ReplayLastMacro,
+            StartRecordingMacro, StopRecordingMacro,
+            
+            ReplayLastMacro, RebindLastMacro,
             
             RecentMacros, ExecuteMacroByName, ExecuteMacroByKeystroke,
             ]
