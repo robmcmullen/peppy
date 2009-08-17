@@ -2,12 +2,12 @@
 #This is generated code - do not edit
 encoding = 'utf-8'
 dict = {
-'&About...': '&Over...',
-'&Close Buffer': '&Sluit Buffer',
-'&Comment Region': '&Maak commentaar',
-'&Delete Window': '&Verwijder venster',
-'&Describe Action': '&Beschrijf Actie',
-'&Execute Action': '&Voer Actie Uit',
+'&About...': '&Info...',
+'&Close Buffer': '&Buffer sluiten',
+'&Comment Region': '&Commentaar toevoegen',
+'&Delete Window': '&Venster verwijderen',
+'&Describe Action': 'Actie beschrijven',
+'&Execute Action': 'Actie uitvoeren',
 '&Folding': '&Samenvouwen',
 '&Line Numbers': '&Regelnummers',
 '&Line Wrapping': '&Regelafbraak',

@@ -2,7 +2,6 @@
 #This is generated code - do not edit
 encoding = 'utf-8'
 dict = {
-'&About...': 'Hakk\xc4\xb1nda...',
 '&Comment Region': 'Yorum B\xc3\xb6l\xc3\xbcm\xc3\xbc',
 '&Delete Window': 'Pencereyi Sil',
 '&Describe Action': 'Olay\xc4\xb1 Tan\xc4\xb1mla',
@@ -33,7 +32,7 @@ dict = {
 'Add new ChangeLog entry to the top of the ChangeLog': '"ChangeLog"a yeni bir girdi ekle',
 'Apr': 'Nis',
 'Attributes': '\xc3\x96znitelikler',
-'Aug': 'Au\xc4\x9f',
+'Aug': 'A\xc4\x9fu',
 'Background': 'Arkaplan',
 'Bad input.': 'Hatal\xc4\xb1 giri\xc5\x9f',
 'Base new theme of existing one': 'Olan bir tema \xc3\xbczerinde yap\xc4\xb1land\xc4\xb1r',
@@ -73,4 +72,13 @@ dict = {
 'Execute an action by name': '\xc4\xb0sme g\xc3\xb6re bir olay \xc3\xa7al\xc4\xb1\xc5\x9ft\xc4\xb1r',
 'Export': 'D\xc4\xb1\xc5\x9fa aktar',
 'Feb': '\xc5\x9eub',
+'File': 'Dosya',
+'Font': 'Yaz\xc4\xb1 Tipi',
+'Games': 'Oyunlar',
+'New': 'Yeni',
+'Ok': 'Tamam',
+'Open': 'A\xc3\xa7',
+'Open File...': 'Dosya A\xc3\xa7...',
+'Refresh': 'Yenile',
+'Window': 'Pencere',
 }
