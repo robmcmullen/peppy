@@ -146,8 +146,15 @@ class LangListCombo(wx.combo.BitmapComboBox):
     
     def getCatalog(self):
         #print self.GetValue()
-        #print description_map[self.GetValue()]
-        return description_map[self.GetValue()]
+        text = self.GetValue()
+        
+        # SUSE linux localized in German seems to prefix the langauge with
+        # "Default:"
+        if text.startswith("Default:"):
+            text = text[8:].strip()
+        
+        #print description_map[text]
+        return description_map[text]
 
 if __name__ == '__main__':
     class MyFrame(wx.Frame):
