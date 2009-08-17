@@ -1,3 +1,12 @@
+2009-08-16  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.11.7
+	* updated i18n from LaunchPad translations
+	* fixed i18n language selection on SUSE linux (bug #749)
+	* fixed automated build problem (bug #748)
+	* fixed style sheets for Sphinx docs
+	* added initial website documentation for macros
+
 2009-08-13  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.11 "Macroeconomics"
