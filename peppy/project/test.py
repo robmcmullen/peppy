@@ -4,13 +4,14 @@ import sys
 import wx
 
 
-app = wx.PySimpleApp()
+if __name__ == "__main__":
+    app = wx.PySimpleApp()
 
-from projecttree import *
+    from projecttree import *
 
-frame = wx.Frame(None, -1, "Hello from wxPython")
-proj = ProjectTree(frame, None)
-proj.addProject("/opt/python/editra-projects-plugin-svn")
-frame.Show(True)
+    frame = wx.Frame(None, -1, "Hello from wxPython")
+    proj = ProjectTree(frame, None)
+    proj.addProject("/opt/python/editra-projects-plugin-svn")
+    frame.Show(True)
 
-app.MainLoop()
+    app.MainLoop()
