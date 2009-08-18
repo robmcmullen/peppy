@@ -43,6 +43,14 @@ except:
         print txt
 
 
+# Make sure internationalization support is available, or fake it if not
+try:
+    _("")
+except NameError:
+    import __builtin__
+    __builtin__._ = unicode
+
+
 class DuplicateKeyError(RuntimeError):
     pass
 
@@ -1104,7 +1112,7 @@ class AcceleratorManager(AcceleratorList):
         """
         self.entry.quoted_next = QuotedData(multiplier)
         if self.debug: dprint("Next character will be quoted raw...")
-        self.message("Quoting:")
+        self.showMessage(_("Quoting:"))
     
     def setQuotedRaw(self, callback):
         """Set the quoted character raw callback
@@ -1118,7 +1126,7 @@ class AcceleratorManager(AcceleratorList):
         self.entry.quoted_next = QuotedData(1) # just used as a flag
         self.quoted_raw_callback = callback
         if self.debug: dprint("Next character will be quoted raw to %s..." % callback)
-        self.message("Quoting:")
+        self.showMessage(_("Quoting:"))
     
     def addCancelKeyBinding(self, key_binding, action=None):
         """Add a cancel key binding.
@@ -1321,7 +1329,7 @@ class AcceleratorManager(AcceleratorList):
         documentation purposes to display the docstring of the action.
         """
         self.report_next = callback
-        self.message("Describe key:")
+        self.showMessage(_("Describe key:"))
     
     def processReportNext(self, action):
         wx.CallAfter(self.report_next, action)
@@ -1713,7 +1721,7 @@ class AcceleratorManager(AcceleratorList):
     
     def cancelMultiKey(self):
         if self.current_level != self:
-            self.reset("Cancelled multi-key keystroke")
+            self.reset(_("Cancelled multi-key keystroke"))
             
     def reset(self, message=""):
         self.entry = CurrentKeystrokes()
@@ -1733,7 +1741,7 @@ class AcceleratorManager(AcceleratorList):
     def resetMenuSuccess(self):
         self.reset()
             
-    def message(self, message=""):
+    def showMessage(self, message=""):
         self.frame.SetStatusText(message, self.status_column)
     
     def skipNext(self):

@@ -146,7 +146,7 @@ class ErrorLogSidebar(LoggingSTC, Sidebar):
     keyword = "error_log"
     caption = "Error Log"
 
-    message = 'peppy.log.error'
+    responds_to_message = 'peppy.log.error'
     ready_message = 'peppy.ready.error'
 
     default_classprefs = (
@@ -163,7 +163,7 @@ class ErrorLogSidebar(LoggingSTC, Sidebar):
         LoggingSTC.__init__(self, *args, **kwargs)
         Sidebar.__init__(self, *args, **kwargs)
 
-        Publisher().subscribe(self.showError, self.message)
+        Publisher().subscribe(self.showError, self.responds_to_message)
         Publisher().sendMessage(self.ready_message)
         
     def paneInfoHook(self, paneinfo):
@@ -196,7 +196,7 @@ class DebugLogSidebar(ErrorLogSidebar):
     keyword = "debug_log"
     caption = "Debug Log"
 
-    message = 'peppy.log.debug'
+    responds_to_message = 'peppy.log.debug'
     ready_message = 'peppy.ready.debug'
     
     default_classprefs = (
@@ -207,7 +207,7 @@ class InfoLogSidebar(ErrorLogSidebar):
     keyword = "info_log"
     caption = "Information"
 
-    message = 'peppy.log.info'
+    responds_to_message = 'peppy.log.info'
     ready_message = 'peppy.ready.info'
 
     default_classprefs = (
