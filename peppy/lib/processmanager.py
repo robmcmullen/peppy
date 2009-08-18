@@ -39,6 +39,10 @@ except:
                 dprint(txt)
             return True
 
+if __name__ == "__main__":
+    import __builtin__
+    __builtin__._ = str
+
 
 _GlobalProcessManager = None
 
@@ -410,6 +414,10 @@ if __name__ == '__main__':
             sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnStart)
             
+            b = wx.Button(self, -1, "Start Sample Python Loop: CR, no LF")
+            sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
+            b.Bind(wx.EVT_BUTTON, self.OnStartCRnoLF)
+            
             b = wx.Button(self, -1, "Kill")
             sizer.Add(b, 0, wx.EXPAND|wx.ALL, 2)
             b.Bind(wx.EVT_BUTTON, self.OnKill)
@@ -450,6 +458,16 @@ import time
 
 for x in range(10):
     print 'loop #%d' % x
+    time.sleep(1)
+""")
+            dprint("OnStart: pid=%d" % p.pid)
+            
+        def OnStartCRnoLF(self, evt):
+            p = ProcessManager().run("python -u", os.getcwd(), self, """\
+import time
+
+for x in range(10):
+    print 'loop #%d\\r' % x,
     time.sleep(1)
 """)
             dprint("OnStart: pid=%d" % p.pid)
