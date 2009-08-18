@@ -18,12 +18,6 @@ from peppy.stcinterface import *
 from peppy.context_menu import *
 from peppy.debug import *
 
-# Can't reliably use strftime, because it returns the month encoded in some
-# coding that apparently is unable to be discovered in a cross-platform manner.
-months = [None,
-          _("Jan"), _("Feb"), _("Mar"), _("Apr"), _("May"), _("Jun"),
-          _("Jul"), _("Aug"), _("Sep"), _("Oct"), _("Nov"), _("Dec")]
-
 def getCompactDate(mtime, recent_months=6):
     """Get a printable representation of a date in a compact format
     
@@ -34,10 +28,14 @@ def getCompactDate(mtime, recent_months=6):
     the specified number of months will be displayed "Apr 20 1999"
     """
     recent_seconds = datetime.datetime.now() - datetime.timedelta(recent_months * 30)
+    
+    # Switched to wx.DateTime.GetMonthName instead of static array of month
+    # names because I just now discovered this function! It takes into account
+    # the locale when generating the month names.
     if mtime < recent_seconds:
-        s = u"%s %02d  %s" % (months[mtime.month], mtime.day, mtime.year)
+        s = u"%s %02d  %s" % (wx.DateTime.GetMonthName(mtime.month - 1, flags=wx.DateTime.Name_Abbr), mtime.day, mtime.year)
     else:
-        s = u"%s %02d %02d:%02d" % (months[mtime.month], mtime.day, mtime.hour, mtime.minute)
+        s = u"%s %02d %02d:%02d" % (wx.DateTime.GetMonthName(mtime.month - 1, flags=wx.DateTime.Name_Abbr), mtime.day, mtime.hour, mtime.minute)
     return s
 
 
