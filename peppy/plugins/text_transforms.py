@@ -410,6 +410,49 @@ class JoinLines(LineOrRegionMutateAction):
             out.append(line.strip())
         line = " ".join(out) + self.mode.getLinesep()
         return [line]
+    
+    def joinCurrentLine(self, s):
+        """Special case to joint the current line with the next line.
+        
+        The normal L{mutateLines} method isn't effective in this case because
+        L{LineOrRegionMutateAction} only provides L{mutateLines} with a list
+        of full lines in the selection region, or a single line if there's
+        no selection.  This routine works around that by providing a separate
+        method of joining the current line with the next one.
+        """
+        linenum = s.GetCurrentLine()
+        start = s.PositionFromLine(linenum)
+        linenum += 1
+        if linenum < s.GetLineCount():
+            end = s.GetLineEndPosition(linenum)
+            # Check to see if the line is blank -- when scintilla highlights
+            # full lines it places the cursor at the beginning of the next
+            # line and mutateSelection compensates for that.  But that means
+            # we must re-compensate for that here by adjusting the end point
+            # if the 2nd line to be joined is blank.
+            if s.PositionFromLine(linenum) == end:
+                nextline = linenum + 1
+                if nextline < s.GetLineCount():
+                    end = s.PositionFromLine(nextline)
+            s.BeginUndoAction()
+            s.SetSelection(start, end)
+            self.mutateSelection(s)
+            (pos, end) = s.GetSelection()
+            linenum = s.LineFromPosition(end)
+            if linenum > s.LineFromPosition(start):
+                linenum -= 1
+            end = s.GetLineEndPosition(linenum)
+            #dprint("pos=%d end=%d linenum=%d" % (pos, end, linenum))
+            s.SetSelection(end, end)
+            s.EndUndoAction()
+
+    def action(self, index=-1, multiplier=1):
+        s = self.mode
+        (pos, end) = s.GetSelection()
+        if pos == end:
+            self.joinCurrentLine(s)
+        else:
+            self.mutateSelection(s)
 
 
 class SortLines(LineOrRegionMutateAction):
