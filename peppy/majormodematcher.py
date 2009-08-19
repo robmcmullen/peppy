@@ -191,7 +191,7 @@ class MajorModeMatcherDriver(debugmixin):
                         'size': 0,
                         'description': None,
                         }
-        cls.dprint("%s: metadata=%s" % (str(url), str(metadata)))
+        cls.dprint("%s: metadata=%s" % (unicode(url), unicode(metadata)))
         
         modes, binary_modes = cls.scanURL(url, metadata)
         cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
