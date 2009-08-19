@@ -703,9 +703,9 @@ class KeyboardConf(IPeppyPlugin):
                         dprint("\nFailed converting %s to multiple accelerators for %s.\n%s is not specified in the form of a python list." % (acc, action.__name__, acc))
                         acc = None
                 else:
-                    acc = acc.lower()
-                    if acc != 'default':
-                        if acc == "none":
+                    check = acc.lower()
+                    if check != 'default':
+                        if check == "none":
                             # if the text is None, don't bind it to anything.
                             action.keyboard = None
                         else:

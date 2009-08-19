@@ -311,7 +311,12 @@ class KeyAccelerator(object):
         try:
             return modifier_alias[modifier]
         except:
-            return 0
+            # Strengthen this by checking for the user having entered the
+            # modifier in the incorrect case
+            try:
+                return modifier_alias[modifier.title()]
+            except:
+                return 0
     
     @classmethod
     def getNameOfKey(cls, text):
