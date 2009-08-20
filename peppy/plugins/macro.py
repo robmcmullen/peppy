@@ -87,7 +87,7 @@ class RecordedMenuAction(RecordedAction):
         action.action(self.index, self.multiplier)
     
     def getScripted(self):
-        return "%s(frame, mode).action(%d, %d)" % (self.index, self.multiplier)
+        return "%s(frame, mode).action(%d, %d)" % (self.actioncls.__name__, self.index, self.multiplier)
 
 
 class ActionRecorder(AbstractActionRecorder, debugmixin):
