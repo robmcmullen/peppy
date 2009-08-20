@@ -1059,6 +1059,7 @@ class MacroTreeCtrl(wx.TreeCtrl):
             wx.CallAfter(self.frame.showErrorDialog, "Cannot rename %s\%s already exists.")
         else:
             vfs.move("macro:%s" % old_path, "macro:%s" % new_path)
+            self.SetPyData(item, new_path)
             RecentMacros.validateAll()
 
     def getSelectedMacros(self):
