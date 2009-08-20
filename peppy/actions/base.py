@@ -63,6 +63,14 @@ class TextModificationAction(BufferBusyActionMixin, SelectAction):
     @classmethod
     def worksWithMajorMode(cls, modecls):
         return issubclass(modecls, PeppySTC)
+    
+    def isModified(self, origtext, newtext):
+        """Check to see if any changes have been made in the replacement text
+        
+        @return: True if changes found, False if not.  If no differences are
+        found, the calling method should leave the file unmodified.
+        """
+        return origtext != newtext
 
 class ScintillaCmdKeyExecute(TextModificationAction):
     """Base class for an action that uses one of the scintilla key commands.
@@ -121,11 +129,13 @@ class RegionMutateAction(TextModificationAction):
         if pos==end:
             return
         s.BeginUndoAction()
-        word = s.GetTextRange(pos, end)
+        orig = s.GetTextRange(pos, end)
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
-        s.ReplaceTarget(self.mutate(word))
-        s.updateRegion(pos, end)
+        newtext = self.mutate(orig)
+        if self.isModified(newtext, orig):
+            s.ReplaceTarget(newtext)
+            s.updateRegion(pos, end)
         s.GotoPos(end)
         s.EndUndoAction()
 
@@ -170,11 +180,13 @@ class WordOrRegionMutateAction(TextModificationAction):
         if pos==end:
             s.CmdKeyExecute(wx.stc.STC_CMD_WORDRIGHT)
             end = s.GetCurrentPos()
-        word = s.GetTextRange(pos, end)
+        orig = s.GetTextRange(pos, end)
         s.SetTargetStart(pos)
         s.SetTargetEnd(end)
-        s.ReplaceTarget(self.mutate(word))
-        s.updateRegion(pos, end)
+        newtext = self.mutate(orig)
+        if self.isModified(orig, newtext):
+            s.ReplaceTarget(newtext)
+            s.updateRegion(pos, end)
         s.GotoPos(end)
         s.EndUndoAction()
 
@@ -246,11 +258,12 @@ class LineOrRegionMutateAction(TextModificationAction):
         lines = text.splitlines(True) # keep line endings on
         #dprint(lines)
         newlines = self.mutateLines(lines)
-        #dprint(newlines)
-        text = "".join(newlines)
-        s.ReplaceTarget(text)
-        end = pos + len(text)
-        s.updateRegion(pos, end)
+        if self.isModified(lines, newlines):
+            #dprint(newlines)
+            text = "".join(newlines)
+            s.ReplaceTarget(text)
+            end = pos + len(text)
+            s.updateRegion(pos, end)
         s.GotoPos(end)
         s.SetSelection(pos, end)
         s.EndUndoAction()
