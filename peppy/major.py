@@ -491,6 +491,17 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     # of a superclass.  This is a dict based on the class name.
     localkeymaps = {}
 
+    # Cache kept for saving items that apply to each major mode class.  The
+    # cache is indexed by the major mode class attribute 'keyword', because
+    # other ways to attempt to create a unique value per class don't work well.
+    # Major modes have complex method resolution orders (i.e.  complicated
+    # inheritance paths), and testing for the presence of a class attribute
+    # doesn't do what is needed.  For instance, if a FundamentalMode has been
+    # instantiated, all future subclass modes will detect the presence of a
+    # class attribute.  Indexing by major mode keyword prevents this problem.
+    major_mode_class_cache = {}
+
+
     def __init__(self, parent, wrapper, buffer, frame):
         # set up the view-local versions of classprefs
         self.classprefsCopyToLocals()
@@ -547,10 +558,10 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         This always checks for the existence of the class cache, so it's safe
         to use this before an instance of the major mode has been created.
         """
-        if not hasattr(cls, 'major_mode_class_cache'):
+        if not cls.keyword in cls.major_mode_class_cache:
             cls.dprint("Creating class cache for %s" % cls)
-            cls.major_mode_class_cache = {}
-        return cls.major_mode_class_cache
+            cls.major_mode_class_cache[cls.keyword] = {}
+        return cls.major_mode_class_cache[cls.keyword]
     
     @classmethod
     def createClassCache(cls):
@@ -566,9 +577,10 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     @classmethod
     def removeFromClassCache(cls, *names):
         """Remove the named values from the class cache"""
+        cache = cls.major_mode_class_cache[cls.keyword]
         for name in names:
-            if name in cls.major_mode_class_cache:
-                del cls.major_mode_class_cache[name]
+            if name in cache:
+                del cache[name]
     
     @classmethod
     def getSubclassHierarchy(cls):

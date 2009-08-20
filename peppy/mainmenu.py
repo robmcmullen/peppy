@@ -605,8 +605,9 @@ class RunFilter(RunMixin, SelectAction):
     default_menu = ("Tools", 3)
 
     def action(self, index=-1, multiplier=1):
-        if self.name in self.mode.major_mode_class_cache:
-            last = self.mode.major_mode_class_cache[self.name]
+        cache = self.mode.getClassCache()
+        if self.name in cache:
+            last = cache[self.name]
         else:
             last = ''
         minibuffer = TextMinibuffer(self.mode, self, label="Command line:",
@@ -615,7 +616,8 @@ class RunFilter(RunMixin, SelectAction):
         self.mode.setStatusText("Enter command line, %s will be replaced by full path to file")
 
     def processMinibuffer(self, minibuffer, mode, text):
-        self.mode.major_mode_class_cache[self.name] = text
+        cache = self.mode.getClassCache()
+        cache[self.name] = text
         self.mode.startCommandLine(text, expand=True)
 
 class StopScript(RunMixin, SelectAction):
