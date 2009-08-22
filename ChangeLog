@@ -1,3 +1,9 @@
+2009-08-22  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.11.23
+	* fixed crash when loading corrupted preference files (bug #759)
+	* fixed incorrect error reporting when mode creation failed (bug #760)
+
 2009-08-20  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.11.18
