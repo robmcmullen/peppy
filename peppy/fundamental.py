@@ -299,9 +299,35 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         Publisher().sendMessage('fundamental.default_settings_applied', self)
         self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
-        # Try to find the editra style corresponding to the major mode.  If
-        # there is no mode corresponding to the major mode name, let the
-        # Editra styling system choose the style based on the filename
+        self.applyFontStyling()
+        self.determineEditraLanguage()
+        try:
+            self.applyEditraStyling()
+        except:
+            self.dprint("Failed loading Editra style sheet '%s'.  Using default style sheet." % self.style_set)
+            self.editra_lang = "Plain Text"
+            self.style_set = ""
+            self.LoadStyleSheet(self.style_set)
+            self.applyEditraStyling()
+        self.dprint("applyEditraStyling done in %0.5fs" % (time.time() - start))
+        self.has_stc_styling = True
+        self.applyFileLocalComments()
+        self.setSpelling()
+        self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
+    
+    def applyFontStyling(self):
+        """Apply the default fonts to the Editra styling system
+        
+        """
+        self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
+        self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
+    
+    def determineEditraLanguage(self):
+        """Try to find the editra style corresponding to the major mode.
+        
+        If there is no mode corresponding to the major mode name, let the
+        Editra styling system choose the style based on the filename.
+        """
         if self.editra_synonym is not None:
             file_type = self.editra_synonym
         else:
@@ -314,22 +340,15 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.dprint("ext=%s file_type=%s" % (ext, file_type))
             
         self.editra_lang = file_type
-        self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
-        self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
-        self.dprint("font styling done in %0.5fs" % (time.time() - start))
 
+    def applyEditraStyling(self):
         # Here's the global hack to fix the problem the first time styles are
         # modified by the style dialog.
         if self.global_style_set and self.global_style_set != self.style_set:
             self.style_set = self.global_style_set
             self.dprint("Changing style to global style %s" % self.style_set)
         self.ConfigureLexer(self.editra_lang)
-        self.dprint("ConfigureLexer done in %0.5fs" % (time.time() - start))
-        self.has_stc_styling = True
-        self.applyFileLocalComments()
-        self.setSpelling()
-        self.dprint("applySettings returning in %0.5fs" % (time.time() - start))
-    
+
     def applyDefaultSettings(self):
         # We use our own right click popup menu, so disable the builtin
         self.UsePopUp(0)
