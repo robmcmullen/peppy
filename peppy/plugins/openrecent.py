@@ -72,7 +72,9 @@ class RecentFiles(OnDemandGlobalListAction):
         """Unserialize items from the file into a list"""
         storage = []
         for line in fh:
-            storage.append(line.decode('utf8').rstrip())
+            trimmed = line.decode('utf8').rstrip()
+            if trimmed.strip():
+                storage.append(trimmed)
         return storage
     
     @classmethod
