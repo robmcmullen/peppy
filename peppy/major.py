@@ -122,7 +122,37 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         buffer.addViewer(self.editwin)
         self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
                           CenterPane())
+        
+        try:
+            self.createMajorModeDetails()
+        except:
+            # Failure creating something during the major mode initialization
+            # process; remove the partially created mode from the tabbed pane
+            buffer.removeViewer(self.editwin)
+            self._mgr.DetachPane(self.editwin)
+            self.editwin.Hide()
+            self.editwin = None
+            raise
+        
+        self._mgr.Update()
+        
+        buffer.startChangeDetection()
 
+        if not requested:
+            # If the major mode creation was successful, change the default
+            # major mode if the old default is the most general major mode.
+            if buffer.defaultmode.verifyMimetype('text/plain'):
+                self.dprint("Changing default mode of %s to %s" % (buffer, requested))
+                buffer.defaultmode = requested
+        return self.editwin
+
+    def createMajorModeDetails(self):
+        """Driver to create all the hooks, event listeners, and minor modes
+        of the new major mode.
+        
+        If any of the methods called within this driver raise an exception, the
+        major mode will be removed and an error mode will replace it.
+        """
         start = time.time()
         self.dprint("starting __init__ at 0.00000s")
         Publisher().sendMessage('mode.preinit', self.editwin)
@@ -147,18 +177,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
         Publisher().sendMessage('mode.postinit', self.editwin)
         self.dprint("mode.postinit message done in %0.5fs" % (time.time() - start))
-        
-        self._mgr.Update()
-        
-        buffer.startChangeDetection()
-
-        if not requested:
-            # If the major mode creation was successful, change the default
-            # major mode if the old default is the most general major mode.
-            if buffer.defaultmode.verifyMimetype('text/plain'):
-                self.dprint("Changing default mode of %s to %s" % (buffer, requested))
-                buffer.defaultmode = requested
-        return self.editwin
     
     def deleteMajorMode(self):
         """Remove the major mode from the wrapper
