@@ -151,6 +151,7 @@ class Mouse(ClassPrefs):
 
     def __init__(self):
         Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
+        Publisher().subscribe(self.settingsChanged, 'initialize.preferences')
     
     def settingsChanged(self, msg=None):
         self.setPrimarySelection()
@@ -225,6 +226,7 @@ class Language(ClassPrefs):
         self.lang = None
         self.fun = None
         Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
+        Publisher().subscribe(self.settingsChanged, 'initialize.preferences')
 
     def translateLeet(self, msgid):
         if u"%" in msgid:
@@ -1113,8 +1115,7 @@ def run():
     Buffer.loadPermanent('about:scratch')
     
     # Special case initialization routines for some global settings
-    peppy.language.setLanguage()
-    peppy.mouse.setPrimarySelection()
+    Publisher().sendMessage('initialize.preferences')
     
     Publisher().sendMessage('peppy.before_initial_frame_creation')
     frame=BufferFrame(peppy.args)
