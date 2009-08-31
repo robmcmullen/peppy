@@ -21,15 +21,22 @@ from peppy.lib.textutil import *
 
 # Global boolean use_x11_primary_selection describes whether or not the
 # platform supports true X11 style primary selection.
-try:
-    version = wx.version().split('.')
-    version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
-    if wx.Platform == "__WXGTK__" and version > 287:
-        use_x11_primary_selection = True
-    else:
+use_x11_primary_selection = False
+
+def setAllowX11PrimarySelection(default=True):
+    global use_x11_primary_selection
+    try:
+        version = wx.version().split('.')
+        version = int(version[0]) * 100 + int(version[1]) * 10 + int(version[2])
+        if wx.Platform == "__WXGTK__" and version > 287:
+            use_x11_primary_selection = default
+        else:
+            use_x11_primary_selection = False
+    except:
         use_x11_primary_selection = False
-except:
-    use_x11_primary_selection = False
+
+# Initialize the value for use_x11_primary_selection
+setAllowX11PrimarySelection()
 
 # Global storage non_x11_primary_selection is only used on a non-x11 platform,
 # and simulates the primary selection capability of the X11 platform.

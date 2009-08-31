@@ -146,7 +146,18 @@ class Mouse(ClassPrefs):
     default_classprefs = (
         ChoiceParam('mouse_wheel_scroll_style', ['lines', 'half', 'page'], 'lines', help='Mouse wheel scroll style: lines, half a page, or entire page'),
         IntParam('mouse_wheel_scroll_lines', 5, 'Number of lines to scroll when mouse wheel is in line scrolling mode'),
+        BoolParam('middle_mouse_x11_primary_selection', False, 'Only usable on X11 systems: when a region is selected, should the selection be copied to the primary selection?  Note: due to a bug in wxPython, using this option will erase the value in the standard cut/copy/paste clipboard when a selection is made.'),
     )
+
+    def __init__(self):
+        Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
+    
+    def settingsChanged(self, msg=None):
+        self.setPrimarySelection()
+    
+    def setPrimarySelection(self):
+        import peppy.stcbase as stcbase
+        stcbase.setAllowX11PrimarySelection(self.classprefs.middle_mouse_x11_primary_selection)
 
 
 class Tabs(ClassPrefs):
@@ -1101,7 +1112,9 @@ def run():
     Buffer.loadPermanent('about:peppy')
     Buffer.loadPermanent('about:scratch')
     
+    # Special case initialization routines for some global settings
     peppy.language.setLanguage()
+    peppy.mouse.setPrimarySelection()
     
     Publisher().sendMessage('peppy.before_initial_frame_creation')
     frame=BufferFrame(peppy.args)
