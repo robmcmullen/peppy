@@ -115,7 +115,7 @@ class Header(dict,MetadataMixin):
 
         self.strings=['description']
         self.lists=['wavelength','fwhm','sigma','band names','default bands',
-                    'bbl', 'map info']
+                    'bbl', 'map info', 'spectra names']
         self.outputorder=['description','samples','lines','bands','byte order','interleave']
 
         # To convert from python dict to object attributes, here's a
@@ -128,7 +128,7 @@ class Header(dict,MetadataMixin):
             (normalizeUnits, ['wavelength units']),
             (lambda s:enviDataType[int(s)], ['data type']),
             (lambda s:s, ['description','default bands']),
-            (lambda s:s.strip(), ['band names']),
+            (lambda s:s.strip(), ['band names', 'spectra names']),
             )
 
         # convert from the object attributes to the ENVI text format
@@ -382,6 +382,30 @@ class Header(dict,MetadataMixin):
             self.setCubeMapInfo(cube)
         if 'data gain values' in self:
             self.setScaleFactors(cube)
+        
+        if 'file type' in self:
+            if self['file type'] == "ENVI Spectral Library":
+                self.setCubeSpectralLibraryAttributes(cube)
+
+    def setCubeSpectralLibraryAttributes(self, cube):
+        """Correct the cube's values due to the quirks of the ENVI spectal
+        library format.
+        
+        Spectral Libraries are stored as single band files with the spectral
+        information in the sample direction with one spectra definition per
+        line.
+        
+        Cubes are stored with spectral information in the band direction and
+        each spectra definition in a new sample.  There is one line in a peppy
+        spectral library.
+        """
+        # Permute the dimensions
+        (cube.lines, cube.samples, cube.bands) = (1, cube.lines, cube.samples)
+        if self['interleave'] == 'bsq':
+            cube.interleave = 'bip'
+        else:
+            raise RuntimeError("Unimplemented interleave %s in spectral library" % cube.interleave)
+
     
     def setCubeMapInfo(self, cube):
         if self.debug: dprint("found map info: %s" % self['map info'])

@@ -881,6 +881,7 @@ class Cube(debugmixin):
         self.bbl=[]
         self.fwhm=[]
         self.band_names=[]
+        self.spectra_names=[]
 
         # wavelength units: 'nm' for nanometers, 'um' for micrometers,
         # None for unknown
