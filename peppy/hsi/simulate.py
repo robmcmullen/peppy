@@ -16,18 +16,21 @@ import numpy
 class SimulatedCube(debugmixin):
     def __init__(self, lines, samples, bands, datatype=numpy.float32):
         self.cube = HSI.createCube('bip', lines, samples, bands, datatype)
+        self.output_interleave = 'bil'
         self.spectra = {}
     
-    def save(self, pathname):
-        dprint("Saving to %s" % pathname)
-        self.cube.save(pathname)
+    def save(self, url):
+        dprint("Saving to %s" % url)
+        fh = vfs.open_write(url)
+        self.cube.writeRawData(fh, options={'interleave': self.output_interleave})
         enviheader = ENVI.Header()
         enviheader.getCubeAttributes(self.cube)
-        pathname += ".hdr"
+        enviheader['interleave'] = self.output_interleave
+        pathname = str(url) + ".hdr"
         enviheader.save(pathname)
     
-    def addSpectralLibrary(self, filename):
-        sli = Spectra.loadSpectraFromSpectralLibrary(filename)
+    def addSpectralLibrary(self, url):
+        sli = Spectra.loadSpectraFromSpectralLibrary(url)
         for spectra in sli:
             if spectra.name in self.spectra:
                 wprint("%d already exists in spectra list" % spectra.name)

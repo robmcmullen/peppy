@@ -58,8 +58,8 @@ class Spectra(debugmixin):
         return spectras
     
     @classmethod
-    def loadSpectraFromSpectralLibrary(cls, filename):
-        header = HSI.HyperspectralFileFormat.load(filename)
+    def loadSpectraFromSpectralLibrary(cls, url):
+        header = HSI.HyperspectralFileFormat.load(url)
         cls.dprint(header)
         cube = header.getCube()
         return cls.getSpectraFromSpectralLibrary(cube)
