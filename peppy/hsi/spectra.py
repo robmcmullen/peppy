@@ -28,6 +28,7 @@ class Spectra(debugmixin):
         self.bbl = []
         self.fwhm = []
         self.values = []
+        self.scale = 1000
     
     def __str__(self):
         return "Spectra %s: %d entries, %d wavelengths" % (self.name, len(self.values), len(self.wavelengths))
@@ -43,7 +44,7 @@ class Spectra(debugmixin):
         return s
     
     @classmethod
-    def getSpectraFromSpectralLibrary(cls, cube):
+    def getSpectraFromSpectralLibrary(cls, cube, scale=1000):
         spectras = []
         names = cube.spectra_names
         for i in range(cube.samples):
@@ -56,13 +57,14 @@ class Spectra(debugmixin):
             s.values = cube.getSpectra(0, i)
             s.fwhm = cube.fwhm[:]
             s.bbl = cube.bbl[:]
+            s.scale = scale
             spectras.append(s)
         return spectras
     
     @classmethod
-    def loadSpectraFromSpectralLibrary(cls, url):
+    def loadSpectraFromSpectralLibrary(cls, url, scale=1000):
         header = HSI.HyperspectralFileFormat.load(url)
         cls.dprint(header)
         cube = header.getCube()
-        return cls.getSpectraFromSpectralLibrary(cube)
+        return cls.getSpectraFromSpectralLibrary(cube, scale)
 

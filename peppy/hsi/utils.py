@@ -58,8 +58,6 @@ def getRangeIntersection(x1, x2, bbl1=None):
     """
     i1start = 0
     i1end = len(x1)
-    print(x1)
-    print(x2)
     while i1start < i1end and x1[i1start] < x2[0]:
         i1start += 1
     while i1start < i1end and x1[i1end-1] > x2[-1]:

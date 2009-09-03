@@ -14,9 +14,10 @@ from peppy.hsi.spectra import *
 import numpy
 
 class SimulatedCube(debugmixin):
-    def __init__(self, lines, samples, bands, datatype=numpy.float32):
+    def __init__(self, lines, samples, bands, datatype=numpy.float32, scale=1000):
         self.cube = HSI.createCube('bip', lines, samples, bands, datatype)
         self.output_interleave = 'bil'
+        self.scale = scale
         self.spectra = {}
     
     def save(self, url):
@@ -29,14 +30,21 @@ class SimulatedCube(debugmixin):
         pathname = str(url) + ".hdr"
         enviheader.save(pathname)
     
-    def addSpectralLibrary(self, url):
-        sli = Spectra.loadSpectraFromSpectralLibrary(url)
+    def addSpectralLibrary(self, url, scale=1000):
+        sli = Spectra.loadSpectraFromSpectralLibrary(url, scale)
         for spectra in sli:
             if spectra.name in self.spectra:
                 wprint("%d already exists in spectra list" % spectra.name)
             else:
                 self.spectra[spectra.name] = spectra
         #dprint([str(s) for s in self.spectra.values()])
+    
+    def setSpectralLibraryScale(self, scale=1000):
+        """Set the scale factor for all spectra
+        
+        """
+        for spectra in self.spectra.values():
+            spectra.scale = scale
     
     def clearSpectralLibrary(self):
         self.spectra = {}
@@ -61,8 +69,27 @@ class SimulatedCube(debugmixin):
         #dprint("Number of values: %d" % len(values))
         s = Spectra()
         s.wavelengths = self.cube.wavelengths[:]
+        s.fwhm = self.cube.fwhm[:]
         s.values = values
+        s.scale = spectra.scale
         return s
+    
+    def getScaledValues(self, spectra):
+        """Return the spectral values properly scaled for the output cube
+        
+        The output values depends on the scale factor used to define 100%
+        reflectance in the spectral definition, and the scale factor used to
+        define 100% reflectance in the output cube.
+        
+        @return: list of values in a float32 array
+        """
+        values = numpy.array(spectra.values, dtype=numpy.float32)
+        #dprint("raw: %s" % str(values))
+        values /= spectra.scale
+        #dprint("reflectance: %s" % str(values))
+        values *= self.scale
+        #dprint("scaled to output: %s" % str(values))
+        return values
     
     def setWavelengthsFromSpectra(self, spectra):
         """Set the wavelength parameters based on the given spectra
@@ -79,7 +106,7 @@ class SimulatedCube(debugmixin):
                 self.setWavelengthsFromSpectra(spectra)
                 
             data = self.cube.getNumpyArray()
-            values = numpy.array(spectra.values)
+            values = self.getScaledValues(spectra)
             #dprint(values)
             #dprint(data.shape)
             #dprint(values.shape)
@@ -104,7 +131,7 @@ class SimulatedCube(debugmixin):
         spectra = self.getSpectra(name)
         if spectra:
             data = self.cube.getNumpyArray()
-            values = numpy.array(spectra.values)
+            values = self.getScaledValues(spectra)
             half = size / 2
             s1 = max(sample - half, 0)
             s2 = min(sample + half, self.cube.samples - 1) + 1
