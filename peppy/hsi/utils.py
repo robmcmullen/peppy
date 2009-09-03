@@ -58,14 +58,16 @@ def getRangeIntersection(x1, x2, bbl1=None):
     """
     i1start = 0
     i1end = len(x1)
-    while x1[i1start] < x2[0] and i1start < i1end:
+    print(x1)
+    print(x2)
+    while i1start < i1end and x1[i1start] < x2[0]:
         i1start += 1
-    while x1[i1end-1] > x2[-1] and i1start < i1end:
+    while i1start < i1end and x1[i1end-1] > x2[-1]:
         i1end -= 1
     if bbl1 is not None:
-        while bbl1[i1start] == 0 and i1start < i1end:
+        while i1start < i1end and bbl1[i1start] == 0:
             i1start += 1
-        while bbl1[i1end-1] == 0 and i1start < i1end:
+        while i1start < i1end and bbl1[i1end-1] == 0:
             i1end -= 1
     return (i1start, i1end)
 
@@ -103,6 +105,40 @@ def resample(x1, y1, x2, y2, bbl1=None):
         y1out.append(y1[i])
         y2out.append(yinterp)
     return (xout, y1out, y2out)
+        
+def resampleSingle(x1, x2, y2, bbl1=None):
+    """Resample using linear interpolation.
+
+    Given a set of x, y values and a new set of x values, resample the y values
+    onto the new domain.
+
+    @returns new y values
+    """
+    y1 = []
+
+    # only operate on the intersection of the ranges
+    i1start, i1end = getRangeIntersection(x1, x2, bbl1)
+
+    # find first value of 2nd set less than intersection
+    i2 = 0
+    while i2<len(x2)-1 and x2[i2+1] < x1[i1start]:
+        i2 += 1
+
+    x2left = x2[i2]
+    x2right = x2[i2+1]
+    for i in range(0, i1start):
+        y1.append(y2[i2])
+    for i in range(i1start, i1end):
+        xinterp = x1[i]
+        while xinterp > x2right:
+            x2left = x2right
+            i2 += 1
+            x2right = x2[i2+1]
+        yinterp = (xinterp - x2left)/(x2right - x2left)*(y2[i2+1] - y2[i2]) + y2[i2]
+        y1.append(yinterp)
+    for i in range(i1end, len(x1)):
+        y2.append(y2[i2])
+    return y1
         
 def spectralAngle(lam1, spectra1, lam2, spectra2, bbl=None):
     """Determine spectral angle between two vectors.

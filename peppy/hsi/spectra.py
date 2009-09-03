@@ -30,15 +30,16 @@ class Spectra(debugmixin):
         self.values = []
     
     def __str__(self):
-        return "Spectra %s: %d wavelength entries" % (self.name, len(self.values))
+        return "Spectra %s: %d entries, %d wavelengths" % (self.name, len(self.values), len(self.wavelengths))
     
     @classmethod
     def getSpectraFromCube(cls, cube, line, sample):
         s = cls()
         s.name = "%s@%d,%d" % (str(cube.url), line, sample)
         s.wavelengths = cube.wavelengths[:]
-        s.fwhm = cube.fwhm[:]
         s.values = cube.getSpectra(line, sample)
+        s.fwhm = cube.fwhm[:]
+        s.bbl = cube.bbl[:]
         return s
     
     @classmethod
@@ -52,8 +53,9 @@ class Spectra(debugmixin):
             except:
                 s.name = "spectra#%d" % (i + 1)
             s.wavelengths = cube.wavelengths[:]
-            s.fwhm = cube.fwhm[:]
             s.values = cube.getSpectra(0, i)
+            s.fwhm = cube.fwhm[:]
+            s.bbl = cube.bbl[:]
             spectras.append(s)
         return spectras
     

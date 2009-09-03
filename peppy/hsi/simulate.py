@@ -47,13 +47,37 @@ class SimulatedCube(debugmixin):
         except:
             eprint("Unknown spectra name %s" % name)
             return None
-        if self.cube.bands != len(spectra.wavelengths):
-            eprint("Mismatched wavelengths.  Data cube has %d while spectra has %d" % (self.cube.bands, len(spectra.wavelengths)))
+        if self.cube.wavelengths and (self.cube.bands != len(spectra.wavelengths) or self.cube.wavelengths != spectra.wavelengths):
+            wprint("Resampling %d spectra wavelengths to match data cube's %d wavelengths" % (len(spectra.wavelengths), self.cube.bands))
+            spectra = self.resampleSpectra(spectra)
         return spectra
+    
+    def resampleSpectra(self, spectra):
+        #dprint(spectra.wavelengths)
+        #dprint(self.cube.wavelengths)
+        values = HSI.resampleSingle(self.cube.wavelengths,
+                                    spectra.wavelengths, spectra.values, self.cube.bbl)
+        #dprint(values)
+        #dprint("Number of values: %d" % len(values))
+        s = Spectra()
+        s.wavelengths = self.cube.wavelengths[:]
+        s.values = values
+        return s
+    
+    def setWavelengthsFromSpectra(self, spectra):
+        """Set the wavelength parameters based on the given spectra
+        
+        """
+        self.cube.wavelengths = spectra.wavelengths[:]
+        self.cube.bbl = spectra.bbl[:]
+        self.cube.fwhm = spectra.fwhm[:]
     
     def setBackground(self, name):
         spectra = self.getSpectra(name)
         if spectra:
+            if not self.cube.wavelengths:
+                self.setWavelengthsFromSpectra(spectra)
+                
             data = self.cube.getNumpyArray()
             values = numpy.array(spectra.values)
             #dprint(values)
