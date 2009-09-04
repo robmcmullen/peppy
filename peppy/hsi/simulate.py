@@ -90,6 +90,12 @@ class SimulatedCube(debugmixin):
         #dprint("reflectance: %s" % str(values))
         values *= self.scale
         #dprint("scaled to output: %s" % str(values))
+        
+        data = self.cube.getNumpyArray()
+        if data.dtype.kind == "i":
+            # If the destination type is an integer, round the values to the
+            # nearest integer.
+            values = values.round()
         return values
     
     def setWavelengthsFromSpectra(self, spectra):
