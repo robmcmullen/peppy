@@ -23,6 +23,7 @@ class SimulatedCube(debugmixin):
     def save(self, url):
         dprint("Saving to %s" % url)
         fh = vfs.open_write(url)
+        self.cube.scale_factor = self.scale
         self.cube.writeRawData(fh, options={'interleave': self.output_interleave})
         enviheader = ENVI.Header()
         enviheader.getCubeAttributes(self.cube)
