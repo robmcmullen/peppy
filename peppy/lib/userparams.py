@@ -1115,15 +1115,23 @@ class UserListParamStart(Param):
     """
     callback_event = EVT_EDITABLE_CHOICE
     
+    class ListState(object):
+        def __init__(self, name):
+            self.name = name
+            self.dependent_values = {}
+        
+        @classmethod
+        def getArray(cls, choices):
+            return [cls(c) for c in choices]
+    
     def __init__(self, keyword, dependent_keywords, title='', help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
         self.dependent_keywords = dependent_keywords
-        self.choices = ["default"]
+        self.choices = [UserListParamStart.ListState("default")]
         self.orig_keyword_subs = []
         self.current_selection = 0
         self.default_getter = None
         self.dependent_params = []
-        self.dependent_values = {}
         self.title = title
     
     def getStaticBoxTitle(self):
@@ -1134,13 +1142,17 @@ class UserListParamStart(Param):
     
     def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
         if default_getter is not None:
+            for keyword in self.dependent_keywords:
+                dependent_param = self.findParamFromKeyword(keyword, ctrls)
+                dependent_param.setInitialDefaults(ctrls[dependent_param], ctrls, default_getter, orig)
+            
             self.default_getter = default_getter
             self.current_selection = 0
             try:
                 # Find the subscripts using one of dependent keyword as the
                 # example
-                choices, default = default_getter._getAllSubscripts(self.dependent_keywords[0])
-                dprint(choices)
+                choices, default = default_getter._getAllSubscripts(self.dependent_keywords[0], self.keyword)
+                dprint("%s; default=%d" % (choices, default))
                 self.current_selection = default
             except AttributeError:
                 val = default_getter(self.keyword)
@@ -1150,8 +1162,8 @@ class UserListParamStart(Param):
                 ctrl.Clear()
                 for choice in choices:
                     ctrl.Append(choice)
-                self.choices = choices
-                self.setValue(ctrl, choices[self.current_selection])
+                self.choices = UserListParamStart.ListState.getArray(choices)
+                self.setValue(ctrl, self.current_selection)
                 orig[self.keyword] = choices[self.current_selection]
             else:
                 orig[self.keyword] = None
@@ -1161,23 +1173,19 @@ class UserListParamStart(Param):
             # Initialize the dependent keywords.  NOTE: this depends on the
             # initial default being delayed until all the dependent controls
             # have been instantiated.
-            self.changeDependentKeywords(self.choices[self.current_selection], ctrls)
+            self.changeDependentKeywords(ctrls)
 
     def getCtrl(self, parent, initial=None):
-        ctrl = EditableChoice(parent , -1, choices = self.choices)
+        ctrl = EditableChoice(parent , -1, choices = [c.name for c in self.choices])
         return ctrl
 
-    def setValue(self, ctrl, value):
+    def setValue(self, ctrl, index):
         #dprint("%s in %s" % (value, self.choices))
-        try:
-            index = self.choices.index(value)
-        except ValueError:
-            index = 0
         ctrl.SetSelection(index)
 
     def getValue(self, ctrl):
         index = ctrl.GetSelection()
-        return self.choices[index]
+        return index
     
     def processCallback(self, evt, ctrl, ctrl_list):
         new_selection = evt.GetSelection()
@@ -1185,33 +1193,33 @@ class UserListParamStart(Param):
             choice = evt.GetValue()
             if evt.IsRenamed():
                 index = self.current_selection
-                current = self.choices[index]
-                dprint("New name for %s: %s" % (current, choice))
-                self.choices[index] = choice
+                current = self.choices[index].name
+                dprint("New name for index %d: %s: %s" % (index, current, choice))
+                self.choices[index].name = choice
                 ctrl.SetString(index, choice)
             elif evt.IsNew():
                 ctrl.Append(choice)
-                self.choices.append(choice)
+                self.choices.append(UserListParamStart.ListState(choice))
                 self.current_selection = len(self.choices) - 1
+                state = self.choices[self.current_selection]
                 ctrl.SetSelection(self.current_selection)
                 for keyword in self.dependent_keywords:
-                    keyword_sub = "%s[%s]" % (keyword, choice)
                     dependent_param = self.findParamFromKeyword(keyword, ctrl_list)
-                    self.dependent_values[keyword_sub] = dependent_param.default
-                self.changeDependentKeywords(choice, ctrl_list)
+                    state.dependent_values[keyword] = dependent_param.default
+                self.changeDependentKeywords(ctrl_list)
             elif evt.IsDelete():
                 ctrl.Delete(self.current_selection)
                 self.choices[self.current_selection:self.current_selection+1] = []
                 self.current_selection = min(self.current_selection, len(self.choices) - 1)
                 ctrl.SetSelection(self.current_selection)
                 choice = self.choices[self.current_selection]
-                self.changeDependentKeywords(choice, ctrl_list)
+                self.changeDependentKeywords(ctrl_list)
         elif new_selection != self.current_selection:
             choice = self.choices[new_selection]
-            dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice))
+            dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice.name))
             self.saveDependentKeywords(ctrl_list)
-            self.changeDependentKeywords(choice, ctrl_list)
             self.current_selection = new_selection
+            self.changeDependentKeywords(ctrl_list)
     
     def saveOriginalParams(self, ctrls, orig, default_getter):
         """Save all the original dependent info so it can be compared with any
@@ -1221,7 +1229,7 @@ class UserListParamStart(Param):
         for keyword in self.dependent_keywords:
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
             for choice in self.choices:
-                keyword_sub = "%s[%s]" % (keyword, choice)
+                keyword_sub = "%s[%s]" % (keyword, choice.name)
                 try:
                     val = default_getter(keyword_sub)
                     dprint("orig[%s] = %s" % (keyword_sub, val))
@@ -1231,33 +1239,33 @@ class UserListParamStart(Param):
                     
                 orig[keyword_sub] = val
                 self.orig_keyword_subs.append(keyword_sub)
-                self.dependent_values[keyword_sub] = val
+                choice.dependent_values[keyword] = val
     
-    def saveDependentKeywords(self, ctrls, choice=None):
+    def saveDependentKeywords(self, ctrls):
         """Change the values of the dependent controls when a new item is
         selected.
         
         """
-        if choice is None:
-            choice = self.choices[self.current_selection]
+        selection = self.current_selection
+        choice = self.choices[selection]
         for keyword in self.dependent_keywords:
-            keyword_sub = "%s[%s]" % (keyword, choice)
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
             ctrl = ctrls[dependent_param]
             val = dependent_param.getValue(ctrl)
-            dprint("keyword %s: val = %s(%s)" % (keyword_sub, val, type(val)))
-            self.dependent_values[keyword_sub] = val
+            dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
+            choice.dependent_values[keyword] = val
     
-    def changeDependentKeywords(self, choice, ctrls):
+    def changeDependentKeywords(self, ctrls):
         """Change the values of the dependent controls when a new item is
         selected.
         
         """
+        selection = self.current_selection
+        choice = self.choices[selection]
         for keyword in self.dependent_keywords:
-            keyword_sub = "%s[%s]" % (keyword, choice)
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
-            val = self.dependent_values[keyword_sub]
-            dprint("keyword %s: val = %s(%s)" % (keyword_sub, val, type(val)))
+            val = choice.dependent_values[keyword]
+            dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
             ctrl = ctrls[dependent_param]
             dependent_param.setValue(ctrl, val)
 
@@ -1285,8 +1293,8 @@ class UserListParamStart(Param):
         for choice in self.choices:
             changed[choice] = False
             for keyword in self.dependent_keywords:
-                keyword_sub = "%s[%s]" % (keyword, choice)
-                val = self.dependent_values[keyword_sub]
+                keyword_sub = "%s[%s]" % (keyword, choice.name)
+                val = choice.dependent_values[keyword]
                 if keyword_sub not in orig or val != orig[keyword_sub]:
                     changed[choice] = True
                     break
@@ -1296,11 +1304,11 @@ class UserListParamStart(Param):
         valid_keyword_subs = {}
         for choice in self.choices:
             for keyword in self.dependent_keywords:
-                keyword_sub = "%s[%s]" % (keyword, choice)
+                keyword_sub = "%s[%s]" % (keyword, choice.name)
                 valid_keyword_subs[keyword_sub] = True
                 if not changed[choice]:
                     continue
-                val = self.dependent_values[keyword_sub]
+                val = choice.dependent_values[keyword]
                 self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig.get(keyword_sub, None), type(orig.get(keyword_sub, None)), val, type(val)))
                 setter(keyword_sub, val)
                 if locals and param.local:
@@ -1313,7 +1321,7 @@ class UserListParamStart(Param):
                 setter(keyword_sub, None)
         
         # and finally make the changes to the list keyword
-        val = self.choices[self.current_selection]
+        val = self.choices[self.current_selection].name
         if val != orig[self.keyword]:
             self.dprint("%s has changed from %s(%s) to %s(%s)" % (self.keyword, orig[self.keyword], type(orig[self.keyword]), val, type(val)))
             setter(self.keyword, val)
@@ -1797,7 +1805,7 @@ class PrefsProxy(debugmixin):
         d = self._findNameInHierarchy(name, user, default)
         return d[name]
     
-    def _getAllSubscripts(self, name, user=True, default=True):
+    def _getAllSubscripts(self, name, default_key=None, user=True, default=True):
         """Get all subscripts of a given classpref
         
         Arrays are allowed in config files; they are specified like:
@@ -1806,27 +1814,38 @@ class PrefsProxy(debugmixin):
           entry = 1
           entry[one] = 1
           entry[two] = 2
+          entry_index = one
         
         This method, given the name 'entry' will return an array containing
         ['one', 'two'].  Note that the default is specified by the name
         without a subscript.
         
         This relies on the fact that the default entry is present.  If the
-        default entry is not found, this method will not work.
+        default entry is not found, or if more than one entry has the same
+        value, this method will not work.  The other way to specify the keyword
+        used in the UserListParamStart parameter.  This parameter always
+        stores the keyword that it then used as the default index.
         
         If no subscripts are present, a fake subscript named 'default' will be
         created and returned.
         
         @param name: keyword to look for subscripts
         
+        @param default_key: keyword to be used to lookup default subscript
+        
         @returns: tuple where the first element is the array containing all
         subscripts of that keyword found and the second element is the index
         of the default subscript
         """
         dprint(name)
-        d = self._findNameInHierarchy(name, user, default)
-        default_value = d[name]
-        default_subscript = ""
+        if default_key is not None:
+            d = self._findNameInHierarchy(default_key, user, default)
+            default_subscript = d[default_key]
+            default_value = None
+        else:
+            d = self._findNameInHierarchy(name, user, default)
+            default_value = d[name]
+            default_subscript = ""
         match = name + "["
         count = len(match)
         subscripts = []
@@ -1835,9 +1854,10 @@ class PrefsProxy(debugmixin):
             if key.startswith(match) and key[-1] == ']':
                 subscript = key[count:-1]
                 subscripts.append(subscript)
-                if d[key] == default_value:
+                if default_value is not None and d[key] == default_value:
                     default_subscript = subscript
         if subscripts:
+            subscripts.sort()
             try:
                 default_index = subscripts.index(default_subscript)
             except ValueError:
@@ -1879,7 +1899,8 @@ class PrefsProxy(debugmixin):
         """
         index = self.__dict__['_startSearch']
         if value is None and '[' in name and ']' in name:
-            del GlobalPrefs.user[index][name]
+            if name in GlobalPrefs.user[index]:
+                del GlobalPrefs.user[index][name]
             # FIXME: pretty sure this isn't needed
 #            if name in GlobalPrefs.default[index]:
 #                #dprint("Deleting default value of %s" % name)
@@ -2321,6 +2342,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         grid = PrefPanel.gridstate()
         items = []
         needs_init = []
+        processing_dependent_keywords = False
         for param in params:
             dprint(param)
             if param.isDependentKeywordStart():
@@ -2328,9 +2350,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     items.append(grid)
                 grid = PrefPanel.gridstate()
                 grid.name = param.getStaticBoxTitle()
+                processing_dependent_keywords = True
+                needs_init.append(param)
             elif param.isDependentKeywordEnd():
                 items.append(grid)
                 grid = PrefPanel.gridstate()
+                processing_dependent_keywords = False
                 continue
             width = 1
             title = param.getLabel(parent)
@@ -2362,7 +2387,10 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     grid.grid.Add(ctrl, (grid.row,grid.col), (1,width), flag=wx.EXPAND)
                 grid.col += width
                 
-                needs_init.append(param)
+                if not processing_dependent_keywords:
+                    # Dependent keywords will be initialized when the
+                    # UserListParamStart param is initialized.
+                    needs_init.append(param)
                 
             if not param.next_on_same_line:
                 grid.row += 1
