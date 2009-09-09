@@ -383,6 +383,14 @@ class Param(debugmixin):
     def isVisible(self):
         """True if this item is to be displayed."""
         return not self.hidden
+    
+    def isSuperseded(self):
+        """True if this param should remove the parameter of the same keyword
+        from the superclass's user interface.
+        
+        This is used in L{SupersededParam} to 
+        """
+        return False
 
     def isDependentKeywordStart(self):
         """True if this param starts a list of dependent keywords
@@ -624,6 +632,31 @@ class ReadOnlyParam(debugmixin):
 
     def isSettable(self):
         return False
+
+    def isSectionHeader(self):
+        return False
+    
+    def isSuperseded(self):
+        return False
+
+class SupersededParam(ReadOnlyParam):
+    """Parameter used to hide a parameter in the superclass's user interface.
+    
+    """
+    callback_event = None
+    
+    def __init__(self, keyword, default=None, help=''):
+        self.keyword = keyword
+        self.default = default
+        self.help = ''
+        self.hidden = True
+        self.local = False
+
+    def isVisible(self):
+        return False
+    
+    def isSuperseded(self):
+        return True
 
 class ParamSection(ReadOnlyParam):
     def isVisible(self):
@@ -1571,8 +1604,9 @@ class GlobalPrefs(debugmixin):
                 if hasattr(klass,'default_classprefs'):
                     cls.seen[klass.__name__] = True
                     for p in klass.default_classprefs:
-                        defs[p.keyword] = p.default
-                        params[p.keyword] = p
+                        if not p.isSuperseded():
+                            defs[p.keyword] = p.default
+                            params[p.keyword] = p
                 cls.default[klass.__name__]=defs
                 cls.params[klass.__name__] = params
             else:
@@ -1587,10 +1621,11 @@ class GlobalPrefs(debugmixin):
                     gd = cls.default[klass.__name__]
                     gp = cls.params[klass.__name__]
                     for p in klass.default_classprefs:
-                        if p.keyword not in gd:
-                            gd[p.keyword] = p.default
-                        if p.keyword not in gp:
-                            gp[p.keyword] = p
+                        if not p.isSuperseded():
+                            if p.keyword not in gd:
+                                gd[p.keyword] = p.default
+                            if p.keyword not in gp:
+                                gp[p.keyword] = p
                     
             if klass.__name__ not in cls.user:
                 cls.user[klass.__name__]={}
@@ -2276,7 +2311,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
             self.name = ""
     
     @staticmethod
-    def populateGrid(parent, sizer, name, params, ctrls, orig, default_getter=None):
+    def populateGrid(parent, sizer, name, params, existing_keywords, ctrls, orig, default_getter=None):
         """Static method to populate some sizer with classprefs.
         
         This is a static method because it can be used by outside functions
@@ -2287,13 +2322,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
         parent: parent of all the controls to be generated
         sizer: sizer in which to add all the grid sizer
         name: name of the StaticBox that wraps the grid sizer
+        params: list of Params to create user interface elements
+        existing_keywords: dict containing keywords whose elements have been created by a previous call to populateGrid and therefore won't be created during this invocation
         ctrls: dict keyed on param to add the created controls
         orig: dict keyed on param to store the original values
         default_getter: optional functor to return a default value for the keyword
         """
-        existing_keywords = {}
-        for param in ctrls:
-            existing_keywords[param.keyword] = True
         sections = PrefPanel.getSections(params, name)
         for name, section_params in sections:
             for item in PrefPanel.getSectionItems(parent, name, section_params, existing_keywords, ctrls, orig, default_getter):
@@ -2315,7 +2349,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
             section_items.append(bsizer)
         
         if global_params:
-            items = PrefPanel.getGridItems(parent, global_params, ctrls, orig, default_getter)
+            items = PrefPanel.getGridItems(parent, global_params, existing_keywords, ctrls, orig, default_getter)
             for item in items:
                 #dprint(item.name)
                 if item.name:
@@ -2327,7 +2361,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     bsizer.Add(item.grid, 0, wx.EXPAND)
             
         if local_params:
-            items = PrefPanel.getGridItems(parent, local_params, ctrls, orig, default_getter)
+            items = PrefPanel.getGridItems(parent, local_params, existing_keywords, ctrls, orig, default_getter)
             label = GenStaticText(parent, -1, "\n" + _("Local settings (each view can have different values for these settings)"))
             label.SetToolTip(wx.ToolTip("Each view maintains its own value for each of the settings below.  Changes made here will be used as default values for these settings the next time the applications starts and when opening new views.  Additionally, the settings can be applied to existing views when finished with the Preferences dialog."))
             bsizer.Add(label, 0, wx.EXPAND)
@@ -2372,6 +2406,11 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 # Don't put another control if it exists in a superclass
                 continue
             
+            if param.isSuperseded():
+                # Force the keyword to be skipped in the UI for a superclass
+                existing_keywords[param.keyword] = True
+                continue
+            
             if not param.isVisible():
                 # Don't use control if it is a hidden parameter
                 continue
@@ -2384,13 +2423,14 @@ class PrefPanel(ScrolledPanel, debugmixin):
         return local_params, global_params
 
     @staticmethod
-    def getGridItems(parent, params, ctrls, orig, default_getter=None):
+    def getGridItems(parent, params, existing_keywords, ctrls, orig, default_getter=None):
         grid = PrefPanel.gridstate()
         items = []
         needs_init = []
         processing_dependent_keywords = False
         for param in params:
             #dprint(param)
+            existing_keywords[param.keyword] = True
             if param.isDependentKeywordStart():
                 if len(grid.grid.GetChildren()) > 0:
                     items.append(grid)
@@ -2460,6 +2500,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         hier = [c for c in self.obj.classprefs._getMRO() if 'default_classprefs' in dir(c)]
         self.dprint(hier)
         first = True
+        existing_keywords = {}
         for cls in hier:
             if first:
                 name = cls.__name__
@@ -2467,7 +2508,8 @@ class PrefPanel(ScrolledPanel, debugmixin):
             else:
                 name = "Inherited from %s" % cls.__name__
             self.populateGrid(self, self.sizer, name, cls.default_classprefs,
-                              self.ctrls, self.orig, self.obj.classprefs)
+                              existing_keywords, self.ctrls, self.orig,
+                              self.obj.classprefs)
         
     def update(self):
         """Update the class with the changed preferences.
@@ -2518,6 +2560,7 @@ class InstancePanel(PrefPanel):
         hier = [c for c in self.obj.__class__.__mro__ if 'default_prefs' in dir(c)]
         self.dprint(hier)
         first = True
+        existing_keywords = {}
         for cls in hier:
             if first:
                 name = cls.__name__
@@ -2525,7 +2568,8 @@ class InstancePanel(PrefPanel):
             else:
                 name = "Inherited from %s" % cls.__name__
             self.populateGrid(self, self.sizer, name, cls.default_prefs,
-                              self.ctrls, self.orig, self.getValue)
+                              existing_keywords, self.ctrls, self.orig,
+                              self.getValue)
     
     def setValue(self, keyword, value):
         setattr(self.obj, keyword, val)
