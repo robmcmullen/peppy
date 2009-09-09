@@ -1042,8 +1042,13 @@ class UserListParamStart(Param):
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
             for choice in self.choices:
                 keyword_sub = "%s[%s]" % (keyword, choice)
-                val = default_getter(keyword_sub)
-                dprint("orig[%s] = %s" % (keyword_sub, val))
+                try:
+                    val = default_getter(keyword_sub)
+                    dprint("orig[%s] = %s" % (keyword_sub, val))
+                except (AttributeError, KeyError):
+                    val = default_getter(keyword)
+                    dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
+                    
                 orig[keyword_sub] = val
                 self.dependent_values[keyword_sub] = val
     
@@ -1086,24 +1091,45 @@ class UserListParamStart(Param):
         @param setter: functor that takes two arguments: the keyword and the
         value to set the value in the user's classpref.
         """
+        # The user may have made changes to the dependent keywords, but
+        # ordinarily changes are only saved when the choice control is
+        # modified.  We need to force this save so the final changes the user
+        # may have made before pressing the OK button on the dialog are saved.
         self.saveDependentKeywords(ctrls)
-        for keyword in self.dependent_keywords:
-            dependent_param = self.findParamFromKeyword(keyword, ctrls)
-            for choice in self.choices:
+        
+        # check to see if any value of any subscript has changed.  If even a
+        # single entry in a subscript has changed, save all the data for the
+        # subscript.
+        changed = {}
+        for choice in self.choices:
+            changed[choice] = False
+            for keyword in self.dependent_keywords:
                 keyword_sub = "%s[%s]" % (keyword, choice)
                 val = self.dependent_values[keyword_sub]
                 if keyword_sub not in orig or val != orig[keyword_sub]:
-                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig[keyword_sub], type(orig[keyword_sub]), val, type(val)))
-                    setter(keyword_sub, val)
-                    if locals and param.local:
-                        locals[keyword_sub] = val
+                    changed[choice] = True
+                    break
+        dprint(changed)
+        
+        # Now make the changes to the dependent keywords
+        for choice in self.choices:
+            if not changed[choice]:
+                continue
+            for keyword in self.dependent_keywords:
+                keyword_sub = "%s[%s]" % (keyword, choice)
+                val = self.dependent_values[keyword_sub]
+                self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig[keyword_sub], type(orig[keyword_sub]), val, type(val)))
+                setter(keyword_sub, val)
+                if locals and param.local:
+                    locals[keyword_sub] = val
+        
+        # and finally make the changes to the list keyword
         val = self.choices[self.current_selection]
         if val != orig[self.keyword]:
             self.dprint("%s has changed from %s(%s) to %s(%s)" % (self.keyword, orig[self.keyword], type(orig[self.keyword]), val, type(val)))
             setter(self.keyword, val)
             if locals and param.local:
                 locals[self.keyword] = val
-        
 
 
 class UserListParamEnd(BoolParam):
@@ -1603,6 +1629,9 @@ class PrefsProxy(debugmixin):
         This relies on the fact that the default entry is present.  If the
         default entry is not found, this method will not work.
         
+        If no subscripts are present, a fake subscript named 'default' will be
+        created and returned.
+        
         @param name: keyword to look for subscripts
         
         @returns: tuple where the first element is the array containing all
@@ -1623,9 +1652,13 @@ class PrefsProxy(debugmixin):
                 subscripts.append(subscript)
                 if d[key] == default_value:
                     default_subscript = subscript
-        try:
-            default_index = subscripts.index(default_subscript)
-        except ValueError:
+        if subscripts:
+            try:
+                default_index = subscripts.index(default_subscript)
+            except ValueError:
+                default_index = 0
+        else:
+            subscripts = ['default']
             default_index = 0
         return subscripts, default_index
     
@@ -2459,6 +2492,10 @@ if __name__ == "__main__":
             PathParam('path1', '', fullwidth=True),
             StrParam('string1', '', fullwidth=True),
             UserListParamEnd('userlist'),
+            UserListParamStart('list2', ['path2', 'string2']),
+            PathParam('path2', '', fullwidth=True),
+            StrParam('string2', '', fullwidth=True),
+            UserListParamEnd('list2'),
             )
     
     class Test1(ClassPrefs):
@@ -2510,6 +2547,8 @@ path1[two] = blah2
 string1 = stuff
 string1[one] = stuff
 string1[two] = stuff2
+path2 = vvvv
+string2 = zzzz
     """
     fh = StringIO(sample)
     GlobalPrefs.readConfig(fh)
