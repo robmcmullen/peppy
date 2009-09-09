@@ -852,6 +852,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         
         import peppy.list_menu
         
+        import peppy.jobcontrol_menu
+        
         import peppy.mainmenu
         
         # py2exe imports go here.
