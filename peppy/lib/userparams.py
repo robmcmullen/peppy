@@ -384,6 +384,31 @@ class Param(debugmixin):
         """True if this item is to be displayed."""
         return not self.hidden
 
+    def isDependentKeywordStart(self):
+        """True if this param starts a list of dependent keywords
+        
+        Dependent keywords are those between L{UserListParamStart} and
+        L{UserListParamEnd}: the value of the UserListParamStart is used as a
+        key into a list to change the value of the dependent keywords.
+        """
+        return False
+
+    def isDependentKeywordEnd(self):
+        """True if this param is the end of the dependent list.
+        """
+        return False
+
+    def isSectionHeader(self):
+        """True if a static box should be started with this param
+        """
+        return False
+
+    def getStaticBoxTitle(self):
+        """Return the text to be used as the name of the static box displayed
+        around the controls.
+        """
+        return ""
+
     def getLabel(self, parent):
         if self.alt_label == False:
             return None
@@ -603,7 +628,13 @@ class ReadOnlyParam(debugmixin):
 class ParamSection(ReadOnlyParam):
     def isVisible(self):
         return False
+
+    def isSectionHeader(self):
+        return True
     
+    def getStaticBoxTitle(self):
+        return self.keyword
+
 class BoolParam(Param):
     """Boolean parameter that displays a checkbox as its user interface.
 
@@ -972,18 +1003,22 @@ class UserListParamStart(Param):
     """
     callback_event = wx.EVT_CHOICE
     
-    def __init__(self, keyword, dependent_keywords, default=None, help='', **kwargs):
+    def __init__(self, keyword, dependent_keywords, title='', help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
         self.dependent_keywords = dependent_keywords
-        if default is not None:
-            self.choices = default.split(',')
-        else:
-            self.choices = ["default"]
+        self.choices = ["default"]
         self.current_selection = 0
         self.default_getter = None
         self.dependent_params = []
         self.dependent_values = {}
+        self.title = title
+    
+    def getStaticBoxTitle(self):
+        return self.title
 
+    def isDependentKeywordStart(self):
+        return True
+    
     def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
         if default_getter is not None:
             self.default_getter = default_getter
@@ -1007,6 +1042,13 @@ class UserListParamStart(Param):
                 orig[self.keyword] = choices[self.current_selection]
             else:
                 orig[self.keyword] = None
+            
+            self.saveOriginalParams(ctrls, orig, default_getter)
+            
+            # Initialize the dependent keywords.  NOTE: this depends on the
+            # initial default being delayed until all the dependent controls
+            # have been instantiated.
+            self.changeDependentKeywords(self.choices[self.current_selection], ctrls)
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
@@ -1146,6 +1188,9 @@ class UserListParamEnd(BoolParam):
         keyword += "_end_"
         Param.__init__(self, keyword, help=help, **kwargs)
 
+    def isDependentKeywordEnd(self):
+        return True
+    
     def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
         if default_getter is not None:
             start_param = self.findParamFromKeyword(self.start_keyword, ctrls)
@@ -2002,6 +2047,16 @@ class PrefPanel(ScrolledPanel, debugmixin):
         self.SetupScrolling()
         self.Scroll(0,0)
     
+    class gridstate(object):
+        """Private class used to keep track of a GridBagSizer as items are being
+        added to it.
+        """
+        def __init__(self):
+            self.row = 0
+            self.col = 0
+            self.grid = wx.GridBagSizer(2,5)
+            self.name = ""
+    
     @staticmethod
     def populateGrid(parent, sizer, name, params, ctrls, orig, default_getter=None):
         """Static method to populate some sizer with classprefs.
@@ -2018,43 +2073,114 @@ class PrefPanel(ScrolledPanel, debugmixin):
         orig: dict keyed on param to store the original values
         default_getter: optional functor to return a default value for the keyword
         """
-        class gridstate(object):
-            def __init__(self):
-                self.row = 0
-                self.col = 0
-                self.grid = wx.GridBagSizer(2,5)
-        
-        bsizer = None
-        loc = gridstate()
-        app = gridstate()
         existing_keywords = {}
         for param in ctrls:
             existing_keywords[param.keyword] = True
+        sections = PrefPanel.getSections(params, name)
+        for name, section_params in sections:
+            for item in PrefPanel.getSectionItems(parent, name, section_params, existing_keywords, ctrls, orig, default_getter):
+                sizer.Add(item, 0, wx.EXPAND)
+    
+    @staticmethod
+    def getSectionItems(parent, name, params, existing_keywords, ctrls, orig, default_getter):
+        """Get items to be added to the panel
+        
+        Items are usually StaticBoxSizers, each of which contains a grid of
+        controls representing the classprefs for the class.
+        """
+        local_params, global_params = PrefPanel.getLocalAndGlobalParams(params, existing_keywords)
+        
+        section_items = []
+        if global_params or local_params:
+            box = wx.StaticBox(parent, -1, name)
+            bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+            section_items.append(bsizer)
+        
+        if global_params:
+            items = PrefPanel.getGridItems(parent, global_params, ctrls, orig, default_getter)
+            for item in items:
+                dprint(item.name)
+                if item.name:
+                    box2 = wx.StaticBox(parent, -1, item.name)
+                    bsizer2 = wx.StaticBoxSizer(box2, wx.VERTICAL)
+                    bsizer2.Add(item.grid, 0, wx.EXPAND)
+                    bsizer.Add(bsizer2, 0, wx.EXPAND)
+                else:
+                    bsizer.Add(item.grid, 0, wx.EXPAND)
+            
+        if local_params:
+            items = PrefPanel.getGridItems(parent, local_params, ctrls, orig, default_getter)
+            label = GenStaticText(parent, -1, "\n" + _("Local settings (each view can have different values for these settings)"))
+            label.SetToolTip(wx.ToolTip("Each view maintains its own value for each of the settings below.  Changes made here will be used as default values for these settings the next time the applications starts and when opening new views.  Additionally, the settings can be applied to existing views when finished with the Preferences dialog."))
+            bsizer.Add(label, 0, wx.EXPAND)
+            for item in items:
+                bsizer.Add(item.grid, 0, wx.EXPAND)
+        
+        return section_items
+
+    @staticmethod
+    def getSections(params, default_name):
+        """Split list of params into sections delimited by ParamSection
+        instances.
+        
+        @returns: list of tuples, where the first element is the name of the
+        section and the second is the list of params in that section.
+        
+        """
+        sections = []
+        current_name = default_name
+        current_params = []
+        for param in params:
+            if param.isSectionHeader():
+                sections.append((current_name, current_params))
+                current_name = param.getStaticBoxTitle()
+                current_params = []
+            else:
+                current_params.append(param)
+        sections.append((current_name, current_params))
+        dprint(sections)
+        return sections
+
+    @staticmethod
+    def getLocalAndGlobalParams(params, existing_keywords):
+        """Split list of params into two lists, one with the classwide
+        classprefs, and one with the instanceprefs.
+        
+        """
+        local_params = []
+        global_params = []
         for param in params:
             if param.keyword in existing_keywords:
                 # Don't put another control if it exists in a superclass
                 continue
-
-            if isinstance(param, ParamSection):
-                name = param.keyword
-                
-            if name:
-                # First time through, create the grid and sizers
-                box = wx.StaticBox(parent, -1, name)
-                bsizer = wx.StaticBoxSizer(box, wx.VERTICAL)
-                sizer.Add(bsizer, 0, wx.EXPAND)
-                
-                # reset so it acts as a flag
-                name = None
             
             if not param.isVisible():
+                # Don't use control if it is a hidden parameter
                 continue
-            
+
             if param.local:
-                grid = loc
+                local_params.append(param)
             else:
-                grid = app
-            
+                global_params.append(param)
+        
+        return local_params, global_params
+
+    @staticmethod
+    def getGridItems(parent, params, ctrls, orig, default_getter=None):
+        grid = PrefPanel.gridstate()
+        items = []
+        needs_init = []
+        for param in params:
+            dprint(param)
+            if param.isDependentKeywordStart():
+                if len(grid.grid.GetChildren()) > 0:
+                    items.append(grid)
+                grid = PrefPanel.gridstate()
+                grid.name = param.getStaticBoxTitle()
+            elif param.isDependentKeywordEnd():
+                items.append(grid)
+                grid = PrefPanel.gridstate()
+                continue
             width = 1
             title = param.getLabel(parent)
             if title is not None:
@@ -2085,23 +2211,18 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     grid.grid.Add(ctrl, (grid.row,grid.col), (1,width), flag=wx.EXPAND)
                 grid.col += width
                 
-                param.setInitialDefaults(ctrl, ctrls, default_getter, orig)
+                needs_init.append(param)
                 
             if not param.next_on_same_line:
                 grid.row += 1
                 grid.col = 0
         
-        if not bsizer:
-            return
+        for param in needs_init:
+            param.setInitialDefaults(ctrls[param], ctrls, default_getter, orig)
         
-        if app.grid and len(app.grid.GetChildren()) > 0:
-            bsizer.Add(app.grid, 0, wx.EXPAND)
-        if loc.grid and len(loc.grid.GetChildren()) > 0:
-            label = GenStaticText(parent, -1, "\n" + _("Local settings (each view can have different values for these settings)"))
-            label.SetToolTip(wx.ToolTip("Each view maintains its own value for each of the settings below.  Changes made here will be used as default values for these settings the next time the applications starts and when opening new views.  Additionally, the settings can be applied to existing views when finished with the Preferences dialog."))
-            bsizer.Add(label, 0, wx.EXPAND)
-            bsizer.Add(loc.grid, 0, wx.EXPAND)
-
+        if len(grid.grid.GetChildren()) > 0:
+            items.append(grid)
+        return items
 
     def create(self):
         """Create the list of classprefs, organized by MRO.
@@ -2488,11 +2609,12 @@ if __name__ == "__main__":
     class Test0(ClassPrefs):
         default_classprefs = (
             IntParam("test0", 5),
-            UserListParamStart('userlist', ['path1', 'string1'], 'one'),
+            UserListParamStart('userlist', ['path1', 'string1'], 'Test of userlist'),
             PathParam('path1', '', fullwidth=True),
             StrParam('string1', '', fullwidth=True),
             UserListParamEnd('userlist'),
-            UserListParamStart('list2', ['path2', 'string2']),
+            BoolParam('stuff'),
+            UserListParamStart('list2', ['path2', 'string2'], "Second test of userlist"),
             PathParam('path2', '', fullwidth=True),
             StrParam('string2', '', fullwidth=True),
             UserListParamEnd('list2'),
