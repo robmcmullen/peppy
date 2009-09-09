@@ -33,8 +33,10 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     full_path_required = False
     
     default_classprefs = (
+        UserListParamStart('interpreter', ['interpreter_exe', 'interpreter_args'], 'Current interpreter profile', 'Profile name for an interpreter for this major mode.  Multiple profiles may be created that can call different interpreter programs or the same interepreter with different arguments.'),
         PathParam('interpreter_exe', '', 'Program that can interpret this text and return results on standard output', fullwidth=True),
         StrParam('interpreter_args', '', 'Standard arguments to be used with the interpreter', fullwidth=True),
+        UserListParamEnd('interpreter'),
         BoolParam('autosave_before_run', True, 'Automatically save without prompting before running script'),
         IndexChoiceParam('output_log',
                          ['use minor mode', 'use sidebar'],
