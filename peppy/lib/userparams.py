@@ -994,6 +994,75 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
         return self.keys[index]
 
 
+myEVT_EDITABLE_CHOICE = wx.NewEventType()
+EVT_EDITABLE_CHOICE = wx.PyEventBinder(myEVT_EDITABLE_CHOICE, 1)
+
+class EditableChoiceEvent(wx.PyCommandEvent):
+    """Combination event used with L{EditableChoice} to indicate the combobox
+    has either changed selection or been renamed.
+    
+    """
+    def __init__(self, obj, selected=-1, renamed=None):
+        wx.PyCommandEvent.__init__(self, myEVT_EDITABLE_CHOICE, id=-1)
+        self.selected = selected
+        self.renamed = renamed
+        self.SetEventObject(obj)
+    
+    def GetSelection(self):
+        return self.selected
+    
+    def IsRenamed(self):
+        return self.renamed is not None
+    
+    def GetValue(self):
+        return self.renamed
+    
+class EditableChoice(wx.Panel):
+    """Multi-control panel including a combobox to select or rename items,
+    and buttons to add or delete items.
+    
+    Used as the user interface element of the L{UserListParamStart} param.
+    """
+    def __init__(self, parent, id, *args, **kwargs):
+        choices = kwargs['choices']
+        del kwargs['choices']
+        wx.Panel.__init__(self, parent, id, *args, **kwargs)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.SetSizer(sizer)
+        self.choice = wx.ComboBox(self , -1, choices=choices)
+        sizer.Add(self.choice, 0, wx.EXPAND)
+        
+        self.choice.Bind(wx.EVT_COMBOBOX, self.OnChoice)
+        self.choice.Bind(wx.EVT_TEXT, self.OnText)
+    
+    def OnChoice(self, evt):
+        e = EditableChoiceEvent(self, evt.GetSelection())
+        wx.CallAfter(self.launcheEvent, e)
+    
+    def OnText(self, evt):
+        dprint(self.choice.GetSelection())
+        e = EditableChoiceEvent(self, self.choice.GetSelection(), evt.GetString())
+        wx.CallAfter(self.launcheEvent, e)
+    
+    def launcheEvent(self, evt):
+        self.GetEventHandler().ProcessEvent(evt)
+    
+    def SetSelection(self, index):
+        self.choice.SetSelection(index)
+    
+    def GetSelection(self):
+        return self.choice.GetSelection()
+    
+    def Clear(self):
+        self.choice.Clear()
+    
+    def Append(self, entry):
+        self.choice.Append(entry)
+    
+    def SetString(self, index, text):
+        self.choice.SetString(index, text)
+
+
 class UserListParamStart(Param):
     """User customizable list that controls several other parameters and also
     allows the user to enter new versions of the parameters.
@@ -1001,12 +1070,13 @@ class UserListParamStart(Param):
     A Choice control is its user interface, but changing that control changes
     the other dependent controls.
     """
-    callback_event = wx.EVT_CHOICE
+    callback_event = EVT_EDITABLE_CHOICE
     
     def __init__(self, keyword, dependent_keywords, title='', help='', **kwargs):
         Param.__init__(self, keyword, help=help, **kwargs)
         self.dependent_keywords = dependent_keywords
         self.choices = ["default"]
+        self.orig_keyword_subs = []
         self.current_selection = 0
         self.default_getter = None
         self.dependent_params = []
@@ -1051,7 +1121,7 @@ class UserListParamStart(Param):
             self.changeDependentKeywords(self.choices[self.current_selection], ctrls)
 
     def getCtrl(self, parent, initial=None):
-        ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        ctrl = EditableChoice(parent , -1, choices = self.choices)
         return ctrl
 
     def setValue(self, ctrl, value):
@@ -1068,9 +1138,16 @@ class UserListParamStart(Param):
     
     def processCallback(self, evt, ctrl, ctrl_list):
         new_selection = evt.GetSelection()
-        choice = self.choices[new_selection]
-        dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice))
-        if new_selection != self.current_selection:
+        if new_selection == -1 and evt.IsRenamed():
+            renamed = evt.GetValue()
+            index = self.current_selection
+            current = self.choices[index]
+            dprint("New name for %s: %s" % (current, renamed))
+            self.choices[index] = renamed
+            ctrl.SetString(index, renamed)
+        elif new_selection != self.current_selection:
+            choice = self.choices[new_selection]
+            dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice))
             self.saveDependentKeywords(ctrl_list)
             self.changeDependentKeywords(choice, ctrl_list)
             self.current_selection = new_selection
@@ -1092,6 +1169,7 @@ class UserListParamStart(Param):
                     dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
                     
                 orig[keyword_sub] = val
+                self.orig_keyword_subs.append(keyword_sub)
                 self.dependent_values[keyword_sub] = val
     
     def saveDependentKeywords(self, ctrls, choice=None):
@@ -1154,16 +1232,24 @@ class UserListParamStart(Param):
         dprint(changed)
         
         # Now make the changes to the dependent keywords
+        valid_keyword_subs = {}
         for choice in self.choices:
-            if not changed[choice]:
-                continue
             for keyword in self.dependent_keywords:
                 keyword_sub = "%s[%s]" % (keyword, choice)
+                valid_keyword_subs[keyword_sub] = True
+                if not changed[choice]:
+                    continue
                 val = self.dependent_values[keyword_sub]
-                self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig[keyword_sub], type(orig[keyword_sub]), val, type(val)))
+                self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig.get(keyword_sub, None), type(orig.get(keyword_sub, None)), val, type(val)))
                 setter(keyword_sub, val)
                 if locals and param.local:
                     locals[keyword_sub] = val
+        
+        # Remove any deleted items
+        for keyword_sub in self.orig_keyword_subs:
+            if keyword_sub not in valid_keyword_subs:
+                dprint("Deleting %s" % keyword_sub)
+                setter(keyword_sub, None)
         
         # and finally make the changes to the list keyword
         val = self.choices[self.current_selection]
@@ -1190,13 +1276,6 @@ class UserListParamEnd(BoolParam):
 
     def isDependentKeywordEnd(self):
         return True
-    
-    def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
-        if default_getter is not None:
-            start_param = self.findParamFromKeyword(self.start_keyword, ctrls)
-            start_param.saveOriginalParams(ctrls, orig, default_getter)
-            selected = start_param.getValue(ctrls[start_param])
-            start_param.changeDependentKeywords(selected, ctrls)
     
     def updateIfModified(self, ctrls, orig, setter, locals=None):
         pass
@@ -1734,7 +1813,18 @@ class PrefsProxy(debugmixin):
         raise AttributeError("%s not found in %s.classprefs" % (name, self.__dict__['_startSearch']))
 
     def __setattr__(self,name,value):
-        GlobalPrefs.user[self.__dict__['_startSearch']][name]=value
+        """Set function including special case to remove a list item if the
+        value is C{None}.
+        """
+        index = self.__dict__['_startSearch']
+        if value is None and '[' in name and ']' in name:
+            del GlobalPrefs.user[index][name]
+            # FIXME: pretty sure this isn't needed
+#            if name in GlobalPrefs.default[index]:
+#                #dprint("Deleting default value of %s" % name)
+#                del GlobalPrefs.default[index][name]
+        else:
+            GlobalPrefs.user[index][name]=value
 
     _set = __setattr__
 
