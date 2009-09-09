@@ -42,6 +42,25 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                          ['use minor mode', 'use sidebar'],
                          1, 'Does the output stay in the tab (minor mode) or visible to all tabs in the frame (major mode)'),
         )
+    
+    def getInterpreterProfiles(self):
+        """Return the list of interpreter profile names currently available
+        
+        @returns: tuple containing the list of items and the integer index
+        pointing to the default item.
+        """
+        return self.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+    
+    def setDefaultInterpreterProfile(self, index):
+        """Set the default interpreter profile to the specified index
+        
+        @param index: integer index into the list of profiles that sets the new
+        default profile.
+        """
+        items, default = self.getInterpreterProfiles()
+        #dprint(items[index])
+        self.classprefs.interpreter = items[index]
+        self.classprefs._updateDependentKeywords("interpreter")
 
     def getInterpreterArgs(self):
         """Hook to pass arguments to the command interpreter"""

@@ -38,25 +38,22 @@ class RunProfile(RunMixin, OnDemandActionMixin, RadioAction):
         self.dynamic(accel)
     
     def getHash(self):
-        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        items, default = self.mode.getInterpreterProfiles()
         h = hash("".join(items))
         #dprint(h)
         return h
 
     def getIndex(self):
-        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        items, default = self.mode.getInterpreterProfiles()
         return default
     
     def getItems(self):
-        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        items, default = self.mode.getInterpreterProfiles()
         #dprint(items)
         return items
 
     def action(self, index=-1, multiplier=1):
-        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
-        #dprint(items[index])
-        self.mode.classprefs.interpreter = items[index]
-        self.mode.classprefs._updateDependentKeywords("interpreter")
+        self.mode.setDefaultInterpreterProfile(index)
 
 
 class RunScript(RunMixin, SelectAction):
