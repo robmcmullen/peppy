@@ -26,6 +26,39 @@ class RunMixin(object):
     def isEnabled(self):
         return hasattr(self.mode, 'startInterpreter') and not hasattr(self.mode, 'process')
 
+
+class RunProfile(RunMixin, OnDemandActionMixin, RadioAction):
+    """Select the interpreter profile to process the current mode.
+    
+    """
+    name = "Run Profile"
+    default_menu = ("Tools", 1)
+
+    def updateOnDemand(self, accel):
+        self.dynamic(accel)
+    
+    def getHash(self):
+        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        h = hash("".join(items))
+        #dprint(h)
+        return h
+
+    def getIndex(self):
+        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        return default
+    
+    def getItems(self):
+        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        #dprint(items)
+        return items
+
+    def action(self, index=-1, multiplier=1):
+        items, default = self.mode.classprefs._getAllSubscripts("interpreter_exe", "interpreter")
+        #dprint(items[index])
+        self.mode.classprefs.interpreter = items[index]
+        self.mode.classprefs._updateDependentKeywords("interpreter")
+
+
 class RunScript(RunMixin, SelectAction):
     """Run this script through the interpreter
     
@@ -37,7 +70,7 @@ class RunScript(RunMixin, SelectAction):
     alias = "run-script"
     name = "Run"
     icon = 'icons/script_go.png'
-    default_menu = ("Tools", 1)
+    default_menu = ("Tools", 10)
     key_bindings = {'default': "F5"}
 
     def action(self, index=-1, multiplier=1):
@@ -52,7 +85,7 @@ class RunScriptWithArgs(RunMixin, SelectAction):
     alias = "run-script-with-args"
     name = "Run with Args"
     icon = "icons/script_edit.png"
-    default_menu = ("Tools", 2)
+    default_menu = ("Tools", 12)
     key_bindings = {'default': "C-F5"}
 
     def action(self, index=-1, multiplier=1):
@@ -71,7 +104,7 @@ class RunFilter(RunMixin, SelectAction):
     """
     alias = "run-filter"
     name = "Run Filter"
-    default_menu = ("Tools", 3)
+    default_menu = ("Tools", 13)
 
     def action(self, index=-1, multiplier=1):
         cache = self.mode.getClassCache()
@@ -98,7 +131,7 @@ class StopScript(RunMixin, SelectAction):
     alias = "stop-script"
     name = "Stop"
     icon = 'icons/stop.png'
-    default_menu = ("Tools", 9)
+    default_menu = ("Tools", 19)
     key_bindings = {'win': "C-CANCEL", 'emacs': "C-CANCEL", 'mac': 'C-.'}
     
     def isEnabled(self):
@@ -112,5 +145,5 @@ class JobControlMenu(IPeppyPlugin):
     """Plugin that provides the menu items for job control
     """
     def getActions(self):
-        return [RunScript, RunScriptWithArgs, RunFilter, StopScript,
+        return [RunProfile, RunScript, RunScriptWithArgs, RunFilter, StopScript,
                 ]

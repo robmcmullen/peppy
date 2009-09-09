@@ -353,7 +353,7 @@ class Param(debugmixin):
         """
         if getter is not None:
             val = getter(self.keyword)
-            dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
+            #dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
             self.setValue(ctrl, val)
             orig[self.keyword] = val
 
@@ -1054,19 +1054,19 @@ class EditableChoice(wx.Panel):
         wx.CallAfter(self.launcheEvent, e)
     
     def OnText(self, evt):
-        dprint(self.choice.GetSelection())
+        #dprint(self.choice.GetSelection())
         e = EditableChoiceEvent(self, self.choice.GetSelection(), evt.GetString(), action='rename')
         wx.CallAfter(self.launcheEvent, e)
     
     def OnNew(self, evt):
         text = self.findNewItem()
-        dprint("adding new item %s" % text)
+        #dprint("adding new item %s" % text)
         e = EditableChoiceEvent(self, -1, text, action='new')
         wx.CallAfter(self.launcheEvent, e)
     
     def OnDelete(self, evt):
         text = self.choice.GetValue()
-        dprint("Deleting item %s" % text)
+        #dprint("Deleting item %s" % text)
         e = EditableChoiceEvent(self, -1, text, action='delete')
         wx.CallAfter(self.launcheEvent, e)
     
@@ -1152,11 +1152,11 @@ class UserListParamStart(Param):
                 # Find the subscripts using one of dependent keyword as the
                 # example
                 choices, default = default_getter._getAllSubscripts(self.dependent_keywords[0], self.keyword)
-                dprint("%s; default=%d" % (choices, default))
+                #dprint("%s; default=%d" % (choices, default))
                 self.current_selection = default
             except AttributeError:
                 val = default_getter(self.keyword)
-                dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
+                #dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
                 choices = val.split(',')
             if choices:
                 ctrl.Clear()
@@ -1194,7 +1194,7 @@ class UserListParamStart(Param):
             if evt.IsRenamed():
                 index = self.current_selection
                 current = self.choices[index].name
-                dprint("New name for index %d: %s: %s" % (index, current, choice))
+                #dprint("New name for index %d: %s: %s" % (index, current, choice))
                 self.choices[index].name = choice
                 ctrl.SetString(index, choice)
             elif evt.IsNew():
@@ -1216,7 +1216,7 @@ class UserListParamStart(Param):
                 self.changeDependentKeywords(ctrl_list)
         elif new_selection != self.current_selection:
             choice = self.choices[new_selection]
-            dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice.name))
+            #dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice.name))
             self.saveDependentKeywords(ctrl_list)
             self.current_selection = new_selection
             self.changeDependentKeywords(ctrl_list)
@@ -1232,10 +1232,10 @@ class UserListParamStart(Param):
                 keyword_sub = "%s[%s]" % (keyword, choice.name)
                 try:
                     val = default_getter(keyword_sub)
-                    dprint("orig[%s] = %s" % (keyword_sub, val))
+                    #dprint("orig[%s] = %s" % (keyword_sub, val))
                 except (AttributeError, KeyError):
                     val = default_getter(keyword)
-                    dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
+                    #dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
                     
                 orig[keyword_sub] = val
                 self.orig_keyword_subs.append(keyword_sub)
@@ -1252,7 +1252,7 @@ class UserListParamStart(Param):
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
             ctrl = ctrls[dependent_param]
             val = dependent_param.getValue(ctrl)
-            dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
+            #dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
             choice.dependent_values[keyword] = val
     
     def changeDependentKeywords(self, ctrls):
@@ -1265,7 +1265,7 @@ class UserListParamStart(Param):
         for keyword in self.dependent_keywords:
             dependent_param = self.findParamFromKeyword(keyword, ctrls)
             val = choice.dependent_values[keyword]
-            dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
+            #dprint("keyword %s[%s]: val = %s(%s)" % (keyword, choice.name, val, type(val)))
             ctrl = ctrls[dependent_param]
             dependent_param.setValue(ctrl, val)
 
@@ -1298,7 +1298,7 @@ class UserListParamStart(Param):
                 if keyword_sub not in orig or val != orig[keyword_sub]:
                     changed[choice] = True
                     break
-        dprint(changed)
+        #dprint(changed)
         
         # Now make the changes to the dependent keywords
         valid_keyword_subs = {}
@@ -1317,7 +1317,7 @@ class UserListParamStart(Param):
         # Remove any deleted items
         for keyword_sub in self.orig_keyword_subs:
             if keyword_sub not in valid_keyword_subs:
-                dprint("Deleting %s" % keyword_sub)
+                #dprint("Deleting %s" % keyword_sub)
                 setter(keyword_sub, None)
         
         # and finally make the changes to the list keyword
@@ -1837,7 +1837,7 @@ class PrefsProxy(debugmixin):
         subscripts of that keyword found and the second element is the index
         of the default subscript
         """
-        dprint(name)
+        #dprint(name)
         if default_key is not None:
             d = self._findNameInHierarchy(default_key, user, default)
             default_subscript = d[default_key]
@@ -1850,7 +1850,7 @@ class PrefsProxy(debugmixin):
         count = len(match)
         subscripts = []
         for key in d.keys():
-            dprint(key)
+            #dprint(key)
             if key.startswith(match) and key[-1] == ']':
                 subscript = key[count:-1]
                 subscripts.append(subscript)
@@ -1937,7 +1937,7 @@ class PrefsProxy(debugmixin):
             keyword_sub = "%s[%s]" % (keyword, index)
             val = self._get(keyword_sub)
             self._set(keyword, val)
-            dprint("Set %s = %s" % (keyword_sub, self._get(keyword)))
+            #dprint("Set %s = %s" % (keyword_sub, self._get(keyword)))
 
     def __setattr__(self,name,value):
         """Set function including special case to remove a list item if the
@@ -2317,7 +2317,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         if global_params:
             items = PrefPanel.getGridItems(parent, global_params, ctrls, orig, default_getter)
             for item in items:
-                dprint(item.name)
+                #dprint(item.name)
                 if item.name:
                     box2 = wx.StaticBox(parent, -1, item.name)
                     bsizer2 = wx.StaticBoxSizer(box2, wx.VERTICAL)
@@ -2356,7 +2356,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
             else:
                 current_params.append(param)
         sections.append((current_name, current_params))
-        dprint(sections)
+        #dprint(sections)
         return sections
 
     @staticmethod
@@ -2390,7 +2390,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         needs_init = []
         processing_dependent_keywords = False
         for param in params:
-            dprint(param)
+            #dprint(param)
             if param.isDependentKeywordStart():
                 if len(grid.grid.GetChildren()) > 0:
                     items.append(grid)
