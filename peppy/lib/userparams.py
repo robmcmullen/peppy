@@ -1002,20 +1002,27 @@ class EditableChoiceEvent(wx.PyCommandEvent):
     has either changed selection or been renamed.
     
     """
-    def __init__(self, obj, selected=-1, renamed=None):
+    def __init__(self, obj, selected=-1, text=None, action=None):
         wx.PyCommandEvent.__init__(self, myEVT_EDITABLE_CHOICE, id=-1)
         self.selected = selected
-        self.renamed = renamed
+        self.text = text
+        self.action = action
         self.SetEventObject(obj)
     
     def GetSelection(self):
         return self.selected
     
     def IsRenamed(self):
-        return self.renamed is not None
+        return self.action == 'rename'
+    
+    def IsNew(self):
+        return self.action == 'new'
+    
+    def IsDelete(self):
+        return self.action == 'delete'
     
     def GetValue(self):
-        return self.renamed
+        return self.text
     
 class EditableChoice(wx.Panel):
     """Multi-control panel including a combobox to select or rename items,
@@ -1031,9 +1038,16 @@ class EditableChoice(wx.Panel):
         self.SetSizer(sizer)
         self.choice = wx.ComboBox(self , -1, choices=choices)
         sizer.Add(self.choice, 0, wx.EXPAND)
+        self.add = wx.Button(self, -1, _("New Item"))
+        sizer.Add(self.add, 0, wx.EXPAND)
+        self.delete = wx.Button(self, -1, _("Delete"))
+        sizer.Add(self.delete, 0, wx.EXPAND)
         
         self.choice.Bind(wx.EVT_COMBOBOX, self.OnChoice)
         self.choice.Bind(wx.EVT_TEXT, self.OnText)
+        self.add.Bind(wx.EVT_BUTTON, self.OnNew)
+        self.delete.Bind(wx.EVT_BUTTON, self.OnDelete)
+        self.delete.Enable(self.choice.GetCount() > 1)
     
     def OnChoice(self, evt):
         e = EditableChoiceEvent(self, evt.GetSelection())
@@ -1041,11 +1055,34 @@ class EditableChoice(wx.Panel):
     
     def OnText(self, evt):
         dprint(self.choice.GetSelection())
-        e = EditableChoiceEvent(self, self.choice.GetSelection(), evt.GetString())
+        e = EditableChoiceEvent(self, self.choice.GetSelection(), evt.GetString(), action='rename')
+        wx.CallAfter(self.launcheEvent, e)
+    
+    def OnNew(self, evt):
+        text = self.findNewItem()
+        dprint("adding new item %s" % text)
+        e = EditableChoiceEvent(self, -1, text, action='new')
+        wx.CallAfter(self.launcheEvent, e)
+    
+    def OnDelete(self, evt):
+        text = self.choice.GetValue()
+        dprint("Deleting item %s" % text)
+        e = EditableChoiceEvent(self, -1, text, action='delete')
         wx.CallAfter(self.launcheEvent, e)
     
     def launcheEvent(self, evt):
         self.GetEventHandler().ProcessEvent(evt)
+    
+    def findNewItem(self, name="New Item"):
+        """Find a name for a new item that is guaranteed not to appear in the
+        current list.
+        """
+        text = _(name)
+        count = 0
+        while self.choice.FindString(text) >= 0:
+            count += 1
+            text = "%s<%d>" % (_(name), count)
+        return text
     
     def SetSelection(self, index):
         self.choice.SetSelection(index)
@@ -1055,9 +1092,15 @@ class EditableChoice(wx.Panel):
     
     def Clear(self):
         self.choice.Clear()
+        self.delete.Enable(False)
     
     def Append(self, entry):
         self.choice.Append(entry)
+        self.delete.Enable(self.choice.GetCount() > 1)
+    
+    def Delete(self, entry):
+        self.choice.Delete(entry)
+        self.delete.Enable(self.choice.GetCount() > 1)
     
     def SetString(self, index, text):
         self.choice.SetString(index, text)
@@ -1138,13 +1181,31 @@ class UserListParamStart(Param):
     
     def processCallback(self, evt, ctrl, ctrl_list):
         new_selection = evt.GetSelection()
-        if new_selection == -1 and evt.IsRenamed():
-            renamed = evt.GetValue()
-            index = self.current_selection
-            current = self.choices[index]
-            dprint("New name for %s: %s" % (current, renamed))
-            self.choices[index] = renamed
-            ctrl.SetString(index, renamed)
+        if new_selection == -1:
+            choice = evt.GetValue()
+            if evt.IsRenamed():
+                index = self.current_selection
+                current = self.choices[index]
+                dprint("New name for %s: %s" % (current, choice))
+                self.choices[index] = choice
+                ctrl.SetString(index, choice)
+            elif evt.IsNew():
+                ctrl.Append(choice)
+                self.choices.append(choice)
+                self.current_selection = len(self.choices) - 1
+                ctrl.SetSelection(self.current_selection)
+                for keyword in self.dependent_keywords:
+                    keyword_sub = "%s[%s]" % (keyword, choice)
+                    dependent_param = self.findParamFromKeyword(keyword, ctrl_list)
+                    self.dependent_values[keyword_sub] = dependent_param.default
+                self.changeDependentKeywords(choice, ctrl_list)
+            elif evt.IsDelete():
+                ctrl.Delete(self.current_selection)
+                self.choices[self.current_selection:self.current_selection+1] = []
+                self.current_selection = min(self.current_selection, len(self.choices) - 1)
+                ctrl.SetSelection(self.current_selection)
+                choice = self.choices[self.current_selection]
+                self.changeDependentKeywords(choice, ctrl_list)
         elif new_selection != self.current_selection:
             choice = self.choices[new_selection]
             dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice))
