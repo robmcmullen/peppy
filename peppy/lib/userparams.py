@@ -335,6 +335,46 @@ class Param(debugmixin):
     def __str__(self):
         return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
         self.default, self.next_on_same_line, self.alt_label, self.help)
+    
+    def setInitialDefaults(self, ctrl, ctrls, getter, orig):
+        """Set the initial state of the control and perform any other one-time
+        setup.
+        
+        @param ctrl: the wxControl
+        
+        @param ctrls: dict of ctrls keyed on param
+        
+        @param getter: the functor keyed on the param name that returns the
+        default value for the item
+        
+        @param orig: dict keyed on param object that stores the original value
+        of the item.  This is used to check to see if the user has made any
+        changes to the params.
+        """
+        if getter is not None:
+            val = getter(self.keyword)
+            dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
+            self.setValue(ctrl, val)
+            orig[self.keyword] = val
+
+    def updateIfModified(self, ctrls, orig, setter, locals=None):
+        """Update values if the user has changed any items
+        
+        @param ctrls: dict of ctrls keyed on param
+        
+        @param orig: dict keyed on param object that contains the original
+        value of the item.
+        
+        @param setter: functor that takes two arguments: the keyword and the
+        value to set the value in the user's classpref.
+        """
+        ctrl = ctrls[self]
+        val = self.getValue(ctrl)
+        if val != orig[self.keyword]:
+            self.dprint("%s has changed from %s(%s) to %s(%s)" % (self.keyword, orig[self.keyword], type(orig[self.keyword]), val, type(val)))
+            setter(self.keyword, val)
+            if locals and param.local:
+                locals[self.keyword] = val
 
     def isSettable(self):
         """True if the user can set this parameter"""
@@ -510,6 +550,18 @@ class Param(debugmixin):
         """
         # The default string edit control simply returns the string.
         return str(ctrl.GetValue())
+    
+    def findParamFromKeyword(self, name, ctrls):
+        """Utility function to find the param instance from the ctrl_list dict
+        
+        @param name: keyword of the classpref
+        
+        @param ctrls: dict of ctrls keyed on param
+        """
+        for param in ctrls.keys():
+            if param.keyword == name:
+                return param
+        return None
 
 class DeprecatedParam(Param):
     """Parameter that is only around for compatibility purposes and should be
@@ -909,6 +961,175 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
     def getValue(self, ctrl):
         index = ctrl.GetSelection()
         return self.keys[index]
+
+
+class UserListParamStart(Param):
+    """User customizable list that controls several other parameters and also
+    allows the user to enter new versions of the parameters.
+
+    A Choice control is its user interface, but changing that control changes
+    the other dependent controls.
+    """
+    callback_event = wx.EVT_CHOICE
+    
+    def __init__(self, keyword, dependent_keywords, default=None, help='', **kwargs):
+        Param.__init__(self, keyword, help=help, **kwargs)
+        self.dependent_keywords = dependent_keywords
+        if default is not None:
+            self.choices = default.split(',')
+        else:
+            self.choices = ["default"]
+        self.current_selection = 0
+        self.default_getter = None
+        self.dependent_params = []
+        self.dependent_values = {}
+
+    def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
+        if default_getter is not None:
+            self.default_getter = default_getter
+            self.current_selection = 0
+            try:
+                # Find the subscripts using one of dependent keyword as the
+                # example
+                choices, default = default_getter._getAllSubscripts(self.dependent_keywords[0])
+                dprint(choices)
+                self.current_selection = default
+            except AttributeError:
+                val = default_getter(self.keyword)
+                dprint("keyword %s: val = %s(%s)" % (self.keyword, val, type(val)))
+                choices = val.split(',')
+            if choices:
+                ctrl.Clear()
+                for choice in choices:
+                    ctrl.Append(choice)
+                self.choices = choices
+                self.setValue(ctrl, choices[self.current_selection])
+                orig[self.keyword] = choices[self.current_selection]
+            else:
+                orig[self.keyword] = None
+
+    def getCtrl(self, parent, initial=None):
+        ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
+        return ctrl
+
+    def setValue(self, ctrl, value):
+        #dprint("%s in %s" % (value, self.choices))
+        try:
+            index = self.choices.index(value)
+        except ValueError:
+            index = 0
+        ctrl.SetSelection(index)
+
+    def getValue(self, ctrl):
+        index = ctrl.GetSelection()
+        return self.choices[index]
+    
+    def processCallback(self, evt, ctrl, ctrl_list):
+        new_selection = evt.GetSelection()
+        choice = self.choices[new_selection]
+        dprint("old=%s new=%s new choice=%s" % (self.current_selection, new_selection, choice))
+        if new_selection != self.current_selection:
+            self.saveDependentKeywords(ctrl_list)
+            self.changeDependentKeywords(choice, ctrl_list)
+            self.current_selection = new_selection
+    
+    def saveOriginalParams(self, ctrls, orig, default_getter):
+        """Save all the original dependent info so it can be compared with any
+        user edits later.
+        
+        """
+        for keyword in self.dependent_keywords:
+            dependent_param = self.findParamFromKeyword(keyword, ctrls)
+            for choice in self.choices:
+                keyword_sub = "%s[%s]" % (keyword, choice)
+                val = default_getter(keyword_sub)
+                dprint("orig[%s] = %s" % (keyword_sub, val))
+                orig[keyword_sub] = val
+                self.dependent_values[keyword_sub] = val
+    
+    def saveDependentKeywords(self, ctrls, choice=None):
+        """Change the values of the dependent controls when a new item is
+        selected.
+        
+        """
+        if choice is None:
+            choice = self.choices[self.current_selection]
+        for keyword in self.dependent_keywords:
+            keyword_sub = "%s[%s]" % (keyword, choice)
+            dependent_param = self.findParamFromKeyword(keyword, ctrls)
+            ctrl = ctrls[dependent_param]
+            val = dependent_param.getValue(ctrl)
+            dprint("keyword %s: val = %s(%s)" % (keyword_sub, val, type(val)))
+            self.dependent_values[keyword_sub] = val
+    
+    def changeDependentKeywords(self, choice, ctrls):
+        """Change the values of the dependent controls when a new item is
+        selected.
+        
+        """
+        for keyword in self.dependent_keywords:
+            keyword_sub = "%s[%s]" % (keyword, choice)
+            dependent_param = self.findParamFromKeyword(keyword, ctrls)
+            val = self.dependent_values[keyword_sub]
+            dprint("keyword %s: val = %s(%s)" % (keyword_sub, val, type(val)))
+            ctrl = ctrls[dependent_param]
+            dependent_param.setValue(ctrl, val)
+
+    def updateIfModified(self, ctrls, orig, setter, locals=None):
+        """Update values if the user has changed any items
+        
+        @param ctrls: dict of ctrls keyed on param
+        
+        @param orig: dict keyed on param object that contains the original
+        value of the item.
+        
+        @param setter: functor that takes two arguments: the keyword and the
+        value to set the value in the user's classpref.
+        """
+        self.saveDependentKeywords(ctrls)
+        for keyword in self.dependent_keywords:
+            dependent_param = self.findParamFromKeyword(keyword, ctrls)
+            for choice in self.choices:
+                keyword_sub = "%s[%s]" % (keyword, choice)
+                val = self.dependent_values[keyword_sub]
+                if keyword_sub not in orig or val != orig[keyword_sub]:
+                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (keyword_sub, orig[keyword_sub], type(orig[keyword_sub]), val, type(val)))
+                    setter(keyword_sub, val)
+                    if locals and param.local:
+                        locals[keyword_sub] = val
+        val = self.choices[self.current_selection]
+        if val != orig[self.keyword]:
+            self.dprint("%s has changed from %s(%s) to %s(%s)" % (self.keyword, orig[self.keyword], type(orig[self.keyword]), val, type(val)))
+            setter(self.keyword, val)
+            if locals and param.local:
+                locals[self.keyword] = val
+        
+
+
+class UserListParamEnd(BoolParam):
+    """User customizable list that controls several other parameters and also
+    allows the user to enter new versions of the parameters.
+
+    A Choice control is its user interface, but changing that control changes
+    the other dependent controls.
+    """
+    callback_event = wx.EVT_CHOICE
+    
+    def __init__(self, keyword, help='', **kwargs):
+        self.start_keyword = keyword
+        keyword += "_end_"
+        Param.__init__(self, keyword, help=help, **kwargs)
+
+    def setInitialDefaults(self, ctrl, ctrls, default_getter, orig):
+        if default_getter is not None:
+            start_param = self.findParamFromKeyword(self.start_keyword, ctrls)
+            start_param.saveOriginalParams(ctrls, orig, default_getter)
+            selected = start_param.getValue(ctrls[start_param])
+            start_param.changeDependentKeywords(selected, ctrls)
+    
+    def updateIfModified(self, ctrls, orig, setter, locals=None):
+        pass
+
 
 class FontParam(Param):
     """Font parameter that pops up a font dialog.
@@ -1362,6 +1583,53 @@ class PrefsProxy(debugmixin):
         return GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]
 
     def _get(self, name, user=True, default=True):
+        d = self._findNameInHierarchy(name, user, default)
+        return d[name]
+    
+    def _getAllSubscripts(self, name, user=True, default=True):
+        """Get all subscripts of a given classpref
+        
+        Arrays are allowed in config files; they are specified like:
+        
+          [Test0]
+          entry = 1
+          entry[one] = 1
+          entry[two] = 2
+        
+        This method, given the name 'entry' will return an array containing
+        ['one', 'two'].  Note that the default is specified by the name
+        without a subscript.
+        
+        This relies on the fact that the default entry is present.  If the
+        default entry is not found, this method will not work.
+        
+        @param name: keyword to look for subscripts
+        
+        @returns: tuple where the first element is the array containing all
+        subscripts of that keyword found and the second element is the index
+        of the default subscript
+        """
+        dprint(name)
+        d = self._findNameInHierarchy(name, user, default)
+        default_value = d[name]
+        default_subscript = ""
+        match = name + "["
+        count = len(match)
+        subscripts = []
+        for key in d.keys():
+            dprint(key)
+            if key.startswith(match) and key[-1] == ']':
+                subscript = key[count:-1]
+                subscripts.append(subscript)
+                if d[key] == default_value:
+                    default_subscript = subscript
+        try:
+            default_index = subscripts.index(default_subscript)
+        except ValueError:
+            default_index = 0
+        return subscripts, default_index
+    
+    def _findNameInHierarchy(self, name, user=True, default=True):
         klasses=GlobalPrefs.name_hierarchy[self.__dict__['_startSearch']]
         if user:
             d=GlobalPrefs.user
@@ -1372,19 +1640,19 @@ class PrefsProxy(debugmixin):
                         self.dprint("warning: GlobalPrefs[%s] not converted yet." % klass)
                         GlobalPrefs.convertSection(klass)
                         d = GlobalPrefs.user
-                    return d[klass][name]
+                    return d[klass]
         if default:
             d=GlobalPrefs.default
             for klass in klasses:
                 #assert self.dprint("checking %s for %s in default dict %s" % (klass, name, d[klass]))
                 if klass in d and name in d[klass]:
-                    return d[klass][name]
+                    return d[klass]
 
         klasses=GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]
         for klass in klasses:
             #assert self.dprint("checking %s for %s in default_classprefs" % (klass,name))
             if hasattr(klass,'default_classprefs') and name in klass.default_classprefs:
-                return klass.default_classprefs[name]
+                return klass.default_classprefs
         raise AttributeError("%s not found in %s.classprefs" % (name, self.__dict__['_startSearch']))
 
     def __setattr__(self,name,value):
@@ -1784,11 +2052,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                     grid.grid.Add(ctrl, (grid.row,grid.col), (1,width), flag=wx.EXPAND)
                 grid.col += width
                 
-                if default_getter is not None:
-                    val = default_getter(param.keyword)
-                    #dprint("keyword %s: val = %s(%s)" % (param.keyword, val, type(val)))
-                    param.setValue(ctrl, val)
-                    orig[param] = val
+                param.setInitialDefaults(ctrl, ctrls, default_getter, orig)
                 
             if not param.next_on_same_line:
                 grid.row += 1
@@ -1832,6 +2096,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
         @return: dict of local settings that have been modified.
         """
         hier = self.obj.classprefs._getMRO()
+        setter = self.obj.classprefs._set
         self.dprint(hier)
         updated = {}
         locals = {}
@@ -1851,13 +2116,7 @@ class PrefPanel(ScrolledPanel, debugmixin):
                 # the subclass, not any superclasses.  In addition, only deal
                 # with those controls that are settable
                 if param in self.ctrls and param.isSettable():
-                    ctrl = self.ctrls[param]
-                    val = param.getValue(ctrl)
-                    if val != self.orig[param]:
-                        self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
-                        self.obj.classprefs._set(param.keyword, val)
-                        if param.local:
-                            locals[param.keyword] = val
+                    param.updateIfModified(self.ctrls, self.orig, setter, locals)
                     updated[param] = True
         return locals
 
@@ -1888,6 +2147,9 @@ class InstancePanel(PrefPanel):
                 name = "Inherited from %s" % cls.__name__
             self.populateGrid(self, self.sizer, name, cls.default_prefs,
                               self.ctrls, self.orig, self.getValue)
+    
+    def setValue(self, keyword, value):
+        setattr(self.obj, keyword, val)
         
     def update(self):
         """Update the class with the changed preferences.
@@ -1897,11 +2159,7 @@ class InstancePanel(PrefPanel):
         updated = {}
         for param in self.obj.iterPrefs():
             if param in self.ctrls and param.isSettable():
-                ctrl = self.ctrls[param]
-                val = param.getValue(ctrl)
-                if val != self.orig[param]:
-                    self.dprint("%s has changed from %s(%s) to %s(%s)" % (param.keyword, self.orig[param], type(self.orig[param]), val, type(val)))
-                    setattr(self.obj, param.keyword, val)
+                param.updateIfModified(self.ctrls, self.orig, self.setValue)
                 updated[param] = True
         return updated
 
@@ -2192,6 +2450,17 @@ class PrefDialog(wx.Dialog):
         return locals
 
 if __name__ == "__main__":
+    _ = str
+    
+    class Test0(ClassPrefs):
+        default_classprefs = (
+            IntParam("test0", 5),
+            UserListParamStart('userlist', ['path1', 'string1'], 'one'),
+            PathParam('path1', '', fullwidth=True),
+            StrParam('string1', '', fullwidth=True),
+            UserListParamEnd('userlist'),
+            )
+    
     class Test1(ClassPrefs):
         default_classprefs = (
             IntParam("test1", 5, local=True),
@@ -2199,6 +2468,10 @@ if __name__ == "__main__":
             IntParam("testbase1", 1, local=True),
             IntParam("testbase2", 2),
             IntParam("testbase3", 3),
+            UserListParamStart('userlist', ['path1', 'string1']),
+            PathParam('path1', '', fullwidth=True),
+            StrParam('string1', '', fullwidth=True),
+            UserListParamEnd('userlist'),
             )
         
         def __init__(self):
@@ -2227,7 +2500,21 @@ if __name__ == "__main__":
 
     class TestC(TestA):
         pass
-   
+    
+    sample = """\
+[Test0]
+test0 = 1111
+path1 = blah
+path1[one] = blah
+path1[two] = blah2
+string1 = stuff
+string1[one] = stuff
+string1[two] = stuff2
+    """
+    fh = StringIO(sample)
+    GlobalPrefs.readConfig(fh)
+    
+    t0 = Test0()
     t1 = Test1()
     t2 = Test2()
 
@@ -2276,12 +2563,18 @@ if __name__ == "__main__":
 
     app = wx.PySimpleApp()
 
-    dlg = PrefDialog(None, t1)
+    dlg = PrefDialog(None, t0)
     dlg.Show(True)
 
     # Close down the dialog on a button press
+    def applyPrefs(evt):
+        dlg.applyPreferences()
+        text = GlobalPrefs.configToText()
+        dprint(text)
+        sys.exit()
+        
     import sys
-    dlg.Bind(wx.EVT_BUTTON, lambda e: sys.exit())
+    dlg.Bind(wx.EVT_BUTTON, applyPrefs)
 
     app.MainLoop()
     
