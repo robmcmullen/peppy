@@ -1892,6 +1892,52 @@ class PrefsProxy(debugmixin):
             if hasattr(klass,'default_classprefs') and name in klass.default_classprefs:
                 return klass.default_classprefs
         raise AttributeError("%s not found in %s.classprefs" % (name, self.__dict__['_startSearch']))
+    
+    def _getDependentKeywords(self, index_keyword):
+        """Get the dependent keywords given the keyword of a UserListStartParam
+        
+        The dependent keywords are list items that are indexed by the given
+        keyword.  For example, the indexing keyword below is "entry_index" and
+        the dependent keyword is "entry"
+        
+          [Test0]
+          entry = 1
+          entry[one] = 1
+          entry[two] = 2
+          entry_index = one
+        """
+        klasses=GlobalPrefs.class_hierarchy[self.__dict__['_startSearch']]
+        for klass in klasses:
+            #dprint("checking %s for %s in default_classprefs" % (klass,name))
+            if hasattr(klass,'default_classprefs'):
+                for param in klass.default_classprefs:
+                    if param.keyword == index_keyword:
+                        #dprint(param.dependent_keywords)
+                        return param.dependent_keywords
+        return []
+    
+    def _updateDependentKeywords(self, index_keyword):
+        """Updates the default values in the dependent keywords.
+        
+        In a UserListStartParam list, default values are placed in keywords
+        without a subscript, so for example below:
+        
+          [Test0]
+          entry = 1
+          entry[one] = 1
+          entry[two] = 2
+          entry_index = one
+        
+        calling this method with the index keyword of "entry_index" will cause
+        the value of "entry[one]" to be placed in "entry".
+        """
+        dependent_keywords = self._getDependentKeywords(index_keyword)
+        index = self._get(index_keyword)
+        for keyword in dependent_keywords:
+            keyword_sub = "%s[%s]" % (keyword, index)
+            val = self._get(keyword_sub)
+            self._set(keyword, val)
+            dprint("Set %s = %s" % (keyword_sub, self._get(keyword)))
 
     def __setattr__(self,name,value):
         """Set function including special case to remove a list item if the
