@@ -124,7 +124,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
                 script = script.replace(' ', '\ ')
                 cmd = "%s %s %s" % (bangpath, script, self.getScriptArgs())
         else:
-            interpreter = self.classprefs.interpreter_exe
+            interpreter = self.getInterpreterExe()
             if wx.Platform == '__WXMSW__':
                 interpreter = '"%s"' % interpreter
                 script = '"%s"' % script
@@ -146,6 +146,12 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         stripped off, so only the pathname and arguments will exist.
         """
         return path
+    
+    def getInterpreterExe(self):
+        """Provided for subclasses to modify the interpreter executable as
+        given in the classprefs.
+        """
+        return self.classprefs.interpreter_exe
         
     def startInterpreter(self, argstring=None):
         """Interface used by actions to start the interpreter.
@@ -163,7 +169,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
             bangpath = self.bangpathModificationHook(first[2:].rstrip())
             
         msg = None
-        path = self.classprefs.interpreter_exe
+        path = self.getInterpreterExe()
         if bangpath is None:
             if not path:
                 msg = "No interpreter executable set.\n\nMust set the executable name in preferences or\ninclude a #! specifier as the first line in the file."
