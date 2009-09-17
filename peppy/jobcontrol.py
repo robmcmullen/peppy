@@ -172,23 +172,40 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         path = self.getInterpreterExe()
         if bangpath is None:
             if not path:
-                msg = "No interpreter executable set.\n\nMust set the executable name in preferences or\ninclude a #! specifier as the first line in the file."
+                self.interpreterNotSpecifiedError()
+                return
             elif self.full_path_required:
                 if os.path.exists(path):
-                    if os.path.isdir(path):
-                        msg = "Interpreter executable:\n\n%s\n\nis not a valid file.  Locate the\ncorrect executable in the preferences." % path
+                    if not os.path.isfile(path):
+                        self.interpreterNotExecutableError(path)
+                        return
                 else:
-                    msg = "Interpreter executable not found:\n\n%s\n\nLocate the correct path to the executable\nin the preferences." % path
+                    self.interpreterNotFoundError(path)
+                    return
 
-        if msg:
-            self.frame.showErrorDialog(msg, "Problem with interpreter executable")
-        elif hasattr(self, 'process'):
+        if hasattr(self, 'process'):
             self.frame.setStatusText("Already running a process.")
         elif self.saveScript():
             cmd = self.getCommandLine(bangpath)
             self.prepareOutputHook()
             wx.CallAfter(self.startCommandLine, cmd)
     
+    def interpreterNotSpecifiedError(self):
+        msg = "No interpreter executable set.\n\nMust set the executable name in preferences or\ninclude a #! specifier as the first line in the file."
+        self.interpreterShowError(msg, "Interpreter executable not defined")
+    
+    def interpreterNotExecutableError(self, path):
+        msg = "Interpreter executable:\n\n%s\n\nis not a valid file.  Locate the\ncorrect executable in the preferences." % path
+        self.interpreterShowError(msg, "Invalid interpreter executable")
+
+    def interpreterNotFoundError(self, path):
+        msg = "Interpreter executable not found:\n\n%s\n\nLocate the correct path to the executable\nin the preferences." % path
+        self.interpreterShowError(msg, "Interpreter executable not found")
+    
+    def interpreterShowError(self, msg, title):
+        self.frame.showErrorDialog(msg, title)
+        Publisher().sendMessage('peppy.preferences.show')
+
     def prepareOutputHook(self):
         """Hook for subclass to do something to initialize the output log
         
