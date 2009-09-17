@@ -1634,7 +1634,27 @@ class GlobalPrefs(debugmixin):
 
     @classmethod
     def findParam(cls, section, option):
+        """Search up the class hierarchy for a parameter matching a
+        configuration option.
+        
+        @param section: Section name of the config file; must match the class
+        name of a class.
+        
+        @param option: option name in the config file; same as the keyword of a
+        L{Param} instance as defined in the default_classprefs class attribute.
+        """
         params = cls.params
+        param = None
+        
+        # Check for the presence of UserList options.  These options will be in
+        # the form of an array, like:
+        #
+        # option1[index1] = value1
+        # option1[index2] = value2
+        index = option.find("[")
+        if index > 0:
+            option = option[:index]
+            
         if section in params and option in params[section]:
             param = params[section][option]
         elif section in cls.name_hierarchy:
@@ -1642,22 +1662,30 @@ class GlobalPrefs(debugmixin):
             # Param
             klasses=cls.name_hierarchy[section]
             #dprint(klasses)
-            param = None
             for name in klasses[1:]:
                 if name in params and option in params[name]:
                     param = params[name][option]
                     break
-        else:
-            dprint("Unknown configuration %s[%s]" % (section, option))
+        if param is None:
+            if cls.debuglevel > 0: dprint("Unknown configuration for %s: %s" % (section, option))
             return None
         if cls.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
 
     @classmethod
     def readConfig(cls, fh):
+        """Load a configuration file.
+        
+        This method loads an INI-style config file and places the unconverted
+        text into a dict based on the section name.
+        """
         cfg=ConfigParser()
         cfg.optionxform=str
         cfg.readfp(fh)
+        
+        # Force conversion of all sections
+        cls.convert_already_seen = {}
+        
         for section in cfg.sections():
             cls.needs_conversion[section] = True
             d={}
@@ -1691,17 +1719,44 @@ class GlobalPrefs(debugmixin):
         if section in cls.needs_conversion:
             options = cls.user[section]
             d = {}
+            
+            # Keep track of any userlist params so the dependent parameters can
+            # be updated
+            userlist_params = set()
             for option, text in options.iteritems():
                 param = cls.findParam(section, option)
                 try:
                     if param is not None:
                         val = param.textToValue(text)
                         if cls.debuglevel > 0: dprint("Converted %s to %s(%s) for %s[%s]" % (text, val, type(val), section, option))
+                        if param.isDependentKeywordStart():
+                            userlist_params.add(param)
                     else:
+                        if cls.debuglevel > 0: dprint("Didn't find param for %s" % option)
                         val = text
                     d[option] = val
                 except Exception, e:
                     eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
+            
+            # Wait to update the depdendent keywords until after everything in
+            # the section has been converted.
+            if userlist_params:
+                for param in userlist_params:
+                    index = d[param.keyword]
+                    for option in param.dependent_keywords:
+                        dep_option = "%s[%s]" % (option, index)
+                        try:
+                            dep_val = d[dep_option]
+                            d[option] = dep_val
+                            if cls.debuglevel > 0: dprint("Set userlist dependency %s = %s = %s" % (option, dep_option, dep_val))
+                        except KeyError:
+                            # If the ini file is malformed and doesn't have an
+                            # entry for this index, use the default value.
+                            dependent_param = cls.findParam(section, option)
+                            dep_val = dependent_param.default
+                            if cls.debuglevel > 0: dprint("Set userlist dependency to default: %s = %s = %s" % (option, dep_option, dep_val))
+                            d[option] = dep_val
+                
             cls.user[section] = d
     
     @classmethod
@@ -2935,11 +2990,27 @@ test0 = 1111
 path1 = blah
 path1[one] = blah
 path1[two] = blah2
+userlist = two
 string1 = stuff
 string1[one] = stuff
 string1[two] = stuff2
 path2 = vvvv
 string2 = zzzz
+    """
+    sample = """\
+[Test0]
+path1 = ""
+path1[New Item] = 
+path1[one] = blah
+path1[two] = blah2
+path2 = "vvvv"
+string1 = ""
+string1[New Item] = 
+string1[one] = stuff
+string1[two] = stuff2
+string2 = "zzzz"
+test0 = 1111
+userlist = "New Item"
     """
     fh = StringIO(sample)
     GlobalPrefs.readConfig(fh)

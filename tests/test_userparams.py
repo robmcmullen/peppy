@@ -43,23 +43,32 @@ class EighteenWheeler(TrailerMixin, Truck):
         StrParam('hitch', '5th wheel'),
         )
 
+class UserList(ClassPrefs):
+    default_classprefs = (
+        UserListParamStart('userlist', ['count', 'string'], 'Test of userlist'),
+        IntParam('count', -1, fullwidth=True),
+        StrParam('string', 'default', fullwidth=True),
+        UserListParamEnd('userlist'),
+        )
+    
 def_save = copy.deepcopy(GlobalPrefs.default)
-print def_save
+#print def_save
 
 user_save = copy.deepcopy(GlobalPrefs.user)
-print user_save
+#print user_save
 
 class testClassHierarchy(object):
     def setup(self):
         GlobalPrefs.default = copy.deepcopy(def_save)
         GlobalPrefs.user = copy.deepcopy(user_save)
+        self.debug = False
 
     def testHierarchy(self):
         vehicle=ShortBedPickupTruck()
         eq_([ShortBedPickupTruck, Truck, Vehicle],
-            getHierarchy(vehicle, debug=True))
+            getHierarchy(vehicle, debug=self.debug))
         eq_(['ShortBedPickupTruck', 'Truck', 'Vehicle'],
-            getNameHierarchy(vehicle, debug=True))
+            getNameHierarchy(vehicle, debug=self.debug))
         assert vehicle.classprefs.wheels
         assert not hasattr(vehicle.classprefs, 'mudflaps')
         vehicle.classprefs.mudflaps=True
@@ -109,9 +118,9 @@ class testClassHierarchy(object):
 
     def testMixin(self):
         vehicle = EighteenWheeler()
-        print getClassHierarchy(vehicle.__class__, 1)
+        #print getClassHierarchy(vehicle.__class__, self.debug)
         eq_(['EighteenWheeler', 'TrailerMixin', 'Truck', 'Vehicle'],
-            getNameHierarchy(vehicle, debug=True))
+            getNameHierarchy(vehicle, debug=self.debug))
         assert hasattr(vehicle.classprefs, 'wheels')
         assert hasattr(vehicle.classprefs, 'hitch')
         assert hasattr(vehicle.classprefs, 'brakes')
@@ -130,9 +139,99 @@ wheels = 1800
         
         vehicle = Vehicle()
         assert vehicle.classprefs.wheels
-        eq_('99', vehicle.classprefs.wheels)
+        eq_(99, vehicle.classprefs.wheels)
         eq_('no wings on this puppy', vehicle.classprefs.wings)
 
         truck = Truck()
-        eq_('1800', truck.classprefs.wheels)
+        eq_(1800, truck.classprefs.wheels)
+
+
+class testUserList(object):
+    def setup(self):
+        GlobalPrefs.default = copy.deepcopy(def_save)
+        GlobalPrefs.user = copy.deepcopy(user_save)
+
+        sample = """\
+[UserList]
+count = 4
+count[New Item] = 4
+count[one] = 1
+count[two] = 2
+string = ""
+string[New Item] = 
+string[one] = stuff
+string[two] = stuff2
+userlist = New Item
+"""
+        fh = StringIO(sample)
+        GlobalPrefs.readConfig(fh)
+
+    def testLoad(self):
+        userlist = UserList()
+        eq_("New Item", userlist.classprefs.userlist)
+        eq_(4, userlist.classprefs.count)
+        eq_("", userlist.classprefs.string)
         
+    def testChangeDependentKeywords(self):
+        userlist = UserList()
+        userlist.classprefs.userlist = "one"
+        userlist.classprefs._updateDependentKeywords("userlist")
+        eq_("one", userlist.classprefs.userlist)
+        eq_(1, userlist.classprefs.count)
+        eq_("stuff", userlist.classprefs.string)
+
+class testInconsistentUserList(object):
+    def setup(self):
+        GlobalPrefs.default = copy.deepcopy(def_save)
+        GlobalPrefs.user = copy.deepcopy(user_save)
+
+    def setupConfig(self, text):
+        fh = StringIO(text)
+        GlobalPrefs.readConfig(fh)
+
+    def testInconsistentIndex(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+count[New Item] = 4
+count[one] = 1
+count[two] = 2
+string = "whatever"
+string[New Item] = 
+string[one] = stuff
+string[two] = stuff2
+userlist = New Item
+""")
+        userlist = UserList()
+        eq_("New Item", userlist.classprefs.userlist)
+        eq_(4, userlist.classprefs.count)
+        eq_("", userlist.classprefs.string)
+
+    def testMissingDependentKeywords(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+count[New Item] = 4
+count[one] = 1
+count[two] = 2
+string = "whatever"
+userlist = New Item
+""")
+        userlist = UserList()
+        eq_("New Item", userlist.classprefs.userlist)
+        eq_(4, userlist.classprefs.count)
+        eq_("default", userlist.classprefs.string)
+
+    def testMissingDependentParam(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+count[New Item] = 4
+count[one] = 1
+count[two] = 2
+userlist = New Item
+""")
+        userlist = UserList()
+        eq_("New Item", userlist.classprefs.userlist)
+        eq_(4, userlist.classprefs.count)
+        eq_("default", userlist.classprefs.string)
