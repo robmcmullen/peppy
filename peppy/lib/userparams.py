@@ -1070,7 +1070,7 @@ class EditableChoice(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.SetSizer(sizer)
         self.choice = wx.ComboBox(self , -1, choices=choices)
-        sizer.Add(self.choice, 0, wx.EXPAND)
+        sizer.Add(self.choice, 1, wx.EXPAND)
         self.add = wx.Button(self, -1, _("New Item"))
         sizer.Add(self.add, 0, wx.EXPAND)
         self.delete = wx.Button(self, -1, _("Delete"))
@@ -1158,6 +1158,8 @@ class UserListParamStart(Param):
             return [cls(c) for c in choices]
     
     def __init__(self, keyword, dependent_keywords, title='', help='', **kwargs):
+        if 'fullwidth' not in kwargs:
+            kwargs['fullwidth'] = True
         Param.__init__(self, keyword, help=help, **kwargs)
         self.dependent_keywords = dependent_keywords
         self.choices = [UserListParamStart.ListState("default")]
