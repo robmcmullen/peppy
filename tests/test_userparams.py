@@ -180,6 +180,7 @@ userlist = New Item
         eq_(1, userlist.classprefs.count)
         eq_("stuff", userlist.classprefs.string)
 
+
 class testInconsistentUserList(object):
     def setup(self):
         GlobalPrefs.default = copy.deepcopy(def_save)
@@ -235,3 +236,14 @@ userlist = New Item
         eq_("New Item", userlist.classprefs.userlist)
         eq_(4, userlist.classprefs.count)
         eq_("default", userlist.classprefs.string)
+
+    def testNoIndexes(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+string = "whatever"
+""")
+        userlist = UserList()
+        eq_(None, userlist.classprefs.userlist)
+        eq_(6, userlist.classprefs.count)
+        eq_("whatever", userlist.classprefs.string)
