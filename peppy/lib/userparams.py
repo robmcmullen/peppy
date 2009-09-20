@@ -1165,7 +1165,6 @@ class UserListParamStart(Param):
         self.choices = [UserListParamStart.ListState("default")]
         self.orig_keyword_subs = []
         self.current_selection = 0
-        self.default_getter = None
         self.dependent_params = []
         self.title = title
     
@@ -1181,7 +1180,6 @@ class UserListParamStart(Param):
                 dependent_param = self.findParamFromKeyword(keyword, ctrls)
                 dependent_param.setInitialDefaults(ctrls[dependent_param], ctrls, default_getter, orig)
             
-            self.default_getter = default_getter
             self.current_selection = 0
             try:
                 # Find the subscripts using one of dependent keyword as the
@@ -1268,11 +1266,14 @@ class UserListParamStart(Param):
                 try:
                     val = default_getter(keyword_sub)
                     #dprint("orig[%s] = %s" % (keyword_sub, val))
+                    orig[keyword_sub] = val
                 except (AttributeError, KeyError):
                     val = default_getter(keyword)
-                    #dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
+                    self.dprint("using default value for orig[%s]: orig[%s] = %s" % (keyword_sub, keyword, val))
+                    # Force the default values to be written to the preferences
+                    # file by flagging their original values as None
+                    orig[keyword_sub] = None
                     
-                orig[keyword_sub] = val
                 self.orig_keyword_subs.append(keyword_sub)
                 choice.dependent_values[keyword] = val
     
