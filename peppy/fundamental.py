@@ -253,6 +253,9 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     
     def createEventBindingsPostHook(self):
         self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
+        
+    def createListenersPostHook(self):
+        self.buffer.stc.addModifyCallback(self.spellCheckUpdate)
 
     def createStatusIcons(self):
         linesep = self.getLinesep()
@@ -827,6 +830,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             if self.classprefs.spell_check:
                 self.spell.startIdleProcessing()
 
+    def spellCheckUpdate(self, evt):
+        if self.spell:
+            mod = evt.GetModificationType()
+            if mod & wx.stc.STC_MOD_INSERTTEXT or mod & wx.stc.STC_MOD_DELETETEXT:
+                pos = evt.GetPosition()
+                last = pos + evt.GetLength()
+                self.spell.addDirtyRange(pos, last, evt.GetLinesAdded(), mod & wx.stc.STC_MOD_DELETETEXT)
+    
     def getPopupActions(self, evt, x, y):
         pos = self.PositionFromPoint(wx.Point(x, y))
         # Save the word that should be spell-checked so that the spell checking

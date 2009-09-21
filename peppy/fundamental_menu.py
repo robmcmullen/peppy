@@ -92,11 +92,6 @@ class SelfInsertCommand(CoalesceTextMacroMixin, TextModificationAction):
     def actionKeystroke(self, evt, multiplier=1, **kwargs):
         mode = self.mode
         uchar = unichr(evt.GetUnicodeKey())
-        if mode.spell and mode.classprefs.spell_check and uchar in mode.word_end_chars:
-            # We are catching the event before the character is added to the
-            # text, so we know the cursor is at the end of the word.
-            mode.spell.checkWord(atend=True)
-        #dprint("char=%s, unichar=%s, multiplier=%s, text=%s" % (evt.GetKeyCode(), evt.GetUnicodeKey(), multiplier, uchar))
         
         # To make the undo coalescing work correctly, first have to replace
         # the selection with an empty string and then add the text.  Multiple

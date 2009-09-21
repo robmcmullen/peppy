@@ -121,6 +121,8 @@ class STCSpellCheck(object):
             self._spell_check_region = lambda s: True
         self._spelling_debug = False
         self._spelling_last_idle_line = -1
+        self.dirty_range_count_per_idle = 5
+        self.clearDirtyRanges()
 
     def setIndicator(self, indicator=None, color=None, style=None):
         """Set the indicator styling for misspelled words.
@@ -285,11 +287,13 @@ class STCSpellCheck(object):
                         # find the length of the word in raw bytes
                         raw_count = len(text[start_index:end_index].encode('utf-8'))
                         
-                        if self._spelling_debug:
-                            print("styling position corresponding to text[%d:%d] = (%d,%d)" % (start_index, end_index, last_pos, last_pos + raw_count))
                         if self._spell_check_region(last_pos):
+                            if self._spelling_debug:
+                                print("styling text[%d:%d] = (%d,%d) to %d" % (start_index, end_index, last_pos, last_pos + raw_count, mask))
                             self.stc.StartStyling(last_pos, mask)
                             self.stc.SetStyling(raw_count, mask)
+                        elif self._spelling_debug:
+                            print("not in valid spell check region.  styling position corresponding to text[%d:%d] = (%d,%d)" % (start_index, end_index, last_pos, last_pos + raw_count))
                         last_pos += raw_count
                         last_index = end_index
                 unicode_index = end_index
@@ -378,6 +382,7 @@ class STCSpellCheck(object):
         L{startIdleProcessing} will cause the idle processing to start
         checking from the beginning of the document.
         """
+        self.processDirtyRanges()
         if self._spelling_last_idle_line < 0:
             return
         if self._spelling_debug:
@@ -423,6 +428,118 @@ class STCSpellCheck(object):
         if self._spelling_debug:
             print("%d-%d: %s" % (start, end, self.stc.GetTextRange(start, end)))
         self.checkRange(start, end)
+    
+    def addDirtyRange(self, start, end, lines_added=0, deleted=False):
+        """Add a range of characters to a list of dirty regions that need to be
+        updated when some idle time is available.
+        
+        """
+        count = end - start
+        if deleted:
+            count = -count
+        if start == self.current_dirty_end:
+            self.current_dirty_end = end
+        elif start >= self.current_dirty_start and start < self.current_dirty_end:
+            self.current_dirty_end += count
+        else:
+            ranges = []
+            if self.current_dirty_start >= 0:
+                ranges.append((self.current_dirty_start, self.current_dirty_end))
+            for range_start, range_end in self.dirty_ranges:
+                if start < range_start:
+                    range_start += count
+                    range_end += count
+                ranges.append((range_start, range_end))
+            self.dirty_ranges = ranges
+                
+            self.current_dirty_start = start
+            self.current_dirty_end = end
+        
+        # If there has been a change before the word that used to be under the
+        # cursor, move the pointer so it matches the text
+        if start < self.current_word_start:
+            self.current_word_start += count
+            self.current_word_end += count
+        elif start <= self.current_word_end:
+            self.current_word_end += count
+            
+        if lines_added > 0:
+            start = self.current_dirty_start
+            line = self.stc.LineFromPosition(start)
+            while True:
+                line_end = self.stc.GetLineEndPosition(line)
+                if line_end >= end:
+                    #self.dirty_ranges.append((start, line_end))
+                    if end > start:
+                        self.current_dirty_start = start
+                        self.current_dirty_end = end
+                    else:
+                        self.current_dirty_start = self.current_dirty_end = -1
+                    break
+                self.dirty_ranges.append((start, line_end))
+                line += 1
+                start = self.stc.PositionFromLine(line)
+            
+        if self._spelling_debug:
+            print("event: %d-%d, current dirty range: %d-%d, older=%s" % (start, end, self.current_dirty_start, self.current_dirty_end, self.dirty_ranges))
+    
+    def clearDirtyRanges(self, ranges=None):
+        """Throw away all dirty ranges
+        
+        """
+        self.current_dirty_start = self.current_dirty_end = -1
+        self.current_word_start = self.current_word_end = -1
+        if ranges is not None:
+            self.dirty_ranges = ranges
+        else:
+            self.dirty_ranges = []
+    
+    def processDirtyRanges(self):
+        cursor = self.stc.GetCurrentPos()
+        
+        # Check that the cursor has moved off the current word and if so check
+        # its spelling
+        if self.current_word_start > 0:
+            if cursor < self.current_word_start or cursor > self.current_word_end:
+                self.checkRange(self.current_word_start, self.current_word_end)
+                self.current_word_start = -1
+        
+        # Check spelling around the region currently being typed
+        if self.current_dirty_start >= 0:
+            range_start, range_end = self.processDirtyRange(self.current_dirty_start, self.current_dirty_end)
+            
+            # If the cursor is in the middle of a word, remove the spelling
+            # markers
+            if cursor >= range_start and cursor <= range_end:
+                word_start = self.stc.WordStartPosition(cursor, True)
+                word_end = self.stc.WordEndPosition(cursor, True)
+                mask = self._spelling_indicator_mask
+                self.stc.StartStyling(word_start, mask)
+                self.stc.SetStyling(word_end - word_start, 0)
+                
+                if word_start != word_end:
+                    self.current_word_start = word_start
+                    self.current_word_end = word_end
+                else:
+                    self.current_word_start = -1
+            self.current_dirty_start = self.current_dirty_end = -1
+        
+        # Process a chunk of dirty ranges
+        needed = min(len(self.dirty_ranges), self.dirty_range_count_per_idle)
+        ranges = self.dirty_ranges[0:needed]
+        self.dirty_ranges = self.dirty_ranges[needed:]
+        for start, end in ranges:
+            if self._spelling_debug:
+                print("processing %d-%d" % (start, end))
+            self.processDirtyRange(start, end)
+    
+    def processDirtyRange(self, start, end):
+        range_start = self.stc.WordStartPosition(start, True)
+        range_end = self.stc.WordEndPosition(end, True)
+        if self._spelling_debug:
+            print("processing dirty range %d-%d (modified from %d-%d): %s" % (range_start, range_end, start, end, repr(self.stc.GetTextRange(range_start, range_end))))
+        self.checkRange(range_start, range_end)
+        return range_start, range_end
 
 
 if __name__ == "__main__":
@@ -439,19 +556,57 @@ if __name__ == "__main__":
             self.spell = STCSpellCheck(self, language="en_US")
             self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
             self.SetMarginWidth(0, 32)
-            self.word_end_chars = ' .!?\'\"'
-            self.Bind(wx.EVT_CHAR, self.OnChar)
+            self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
+            self.Bind(wx.EVT_IDLE, self.OnIdle)
+            self.modified_count = 0
+            self.idle_count = 0
 
-        def OnChar(self, evt):
-            """Handle all events that result from typing characters in the stc.
-            
-            Automatic spell checking is handled here.
-            """
-            uchar = unichr(evt.GetKeyCode())
-            if uchar in self.word_end_chars:
-                self.spell.checkWord()
+        def OnModified(self, evt):
+            # NOTE: on really big insertions, evt.GetText can cause a
+            # MemoryError on MSW, so I've commented this dprint out.
+            mod = evt.GetModificationType()
+            if mod & wx.stc.STC_MOD_INSERTTEXT or mod & wx.stc.STC_MOD_DELETETEXT:
+                #print("(%s) at %d: text=%s len=%d" % (self.transModType(evt.GetModificationType()),evt.GetPosition(), repr(evt.GetText()), evt.GetLength()))
+                pos = evt.GetPosition()
+                last = pos + evt.GetLength()
+                self.spell.addDirtyRange(pos, last, evt.GetLinesAdded(), mod & wx.stc.STC_MOD_DELETETEXT)
+                #self.modified_count += 1
+                #if self.modified_count > 10:
+                #    wx.CallAfter(self.spell.processDirtyRanges)
+                #    self.modified_count = 0
             evt.Skip()
-    
+        
+        def OnIdle(self, evt):
+            #print("Idle")
+            self.idle_count += 1
+            if self.idle_count > 10:
+                self.spell.processIdleBlock()
+                self.idle_count = 0
+            
+        def transModType(self, modType):
+            st = ""
+            table = [(wx.stc.STC_MOD_INSERTTEXT, "InsertText"),
+                     (wx.stc.STC_MOD_DELETETEXT, "DeleteText"),
+                     (wx.stc.STC_MOD_CHANGESTYLE, "ChangeStyle"),
+                     (wx.stc.STC_MOD_CHANGEFOLD, "ChangeFold"),
+                     (wx.stc.STC_PERFORMED_USER, "UserFlag"),
+                     (wx.stc.STC_PERFORMED_UNDO, "Undo"),
+                     (wx.stc.STC_PERFORMED_REDO, "Redo"),
+                     (wx.stc.STC_LASTSTEPINUNDOREDO, "Last-Undo/Redo"),
+                     (wx.stc.STC_MOD_CHANGEMARKER, "ChangeMarker"),
+                     (wx.stc.STC_MOD_BEFOREINSERT, "B4-Insert"),
+                     (wx.stc.STC_MOD_BEFOREDELETE, "B4-Delete")
+                     ]
+
+            for flag,text in table:
+                if flag & modType:
+                    st = st + text + " "
+
+            if not st:
+                st = 'UNKNOWN'
+
+            return st
+
     class Frame(wx.Frame):
         def __init__(self, *args, **kwargs):
             super(self.__class__, self).__init__(*args, **kwargs)
@@ -485,6 +640,7 @@ if __name__ == "__main__":
         def loadFile(self, filename):
             fh = open(filename)
             self.stc.SetText(fh.read())
+            self.stc.spell.clearDirtyRanges()
             self.stc.spell.checkCurrentPage()
         
         def loadSample(self, paragraphs=10):
@@ -509,6 +665,7 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
                 self.stc.AppendText(lorem_ipsum)
             # Call the spell check after the text has had a chance to be
             # displayed and the window resized to the correct size.
+            self.stc.spell.clearDirtyRanges()
             wx.CallAfter(self.stc.spell.checkCurrentPage)
 
         def menuAdd(self, menu, name, desc, fcn, id=-1, kind=wx.ITEM_NORMAL):
@@ -557,10 +714,15 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             self.stc.spell.checkCurrentPage()
 
     app = wx.App(False)
-    frame = Frame(None)
+    frame = Frame(None, size=(600, -1))
+    need_sample = True
     if len(sys.argv) > 1:
-        frame.loadFile(sys.argv[-1])
-    else:
+        if not sys.argv[-1].startswith("-"):
+            frame.loadFile(sys.argv[-1])
+            need_sample = False
+    if need_sample:
         frame.loadSample()
+    if '-d' in sys.argv:
+        frame.stc.spell._spelling_debug = True
     frame.Show()
     app.MainLoop()
