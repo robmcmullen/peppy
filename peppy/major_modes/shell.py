@@ -166,7 +166,6 @@ class ShellMode(FundamentalMode):
     """
     keyword='Shell'
     icon='icons/application_xp_terminal.png'
-    regex = None
     
     stc_class = ShellSTC
     

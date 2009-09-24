@@ -85,9 +85,9 @@ class CMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword='C'
     icon='icons/page_white_c.png'
-    regex="(\.c|\.h)$"
     
     default_classprefs = (
+        StrParam('extensions', 'c h', fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

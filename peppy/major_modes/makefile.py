@@ -131,7 +131,8 @@ class MakefileMode(FundamentalMode):
     regex="(\.mak|[Mm]akefile$|[Mm]akefile\..*)$"
 
     default_classprefs = (
-        # Overrides from FundamentalMode classprefs
+        StrParam('filename_regex', '(GNU)?([Mm]akefile$|[Mm]akefile\..*)$"', fullwidth=True),
+        StrParam('extensions', 'mak', fullwidth=True),
         BoolParam('use_tab_characters', True),
         IntParam('tab_size', 8),
         BoolParam('word_wrap', True),

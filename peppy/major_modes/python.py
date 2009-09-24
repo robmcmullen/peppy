@@ -293,7 +293,7 @@ class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     fold_function_match = ["def ", "class "]
 
     default_classprefs = (
-        StrParam('extensions', 'py pyx pyw', 'List of filename extensions to match to this major mode.  This is matched after the regular expression, and a successful match indicates the mode is compatible with the filename', fullwidth=True),
+        StrParam('extensions', 'py pyx pyw', fullwidth=True),
         )
 
     autoindent = PythonAutoindent()

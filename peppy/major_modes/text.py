@@ -48,9 +48,10 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """
     keyword='Text'
     icon='icons/page_white_text.png'
-    regex="(\.txt|\.rst|[Rr][Ee][Aa][Dd][Mm][Ee]*)$"
 
     default_classprefs = (
+        StrParam('filename_regex', '[Rr][Ee][Aa][Dd][Mm][Ee].*', fullwidth=True),
+        StrParam('extensions', 'txt rst', fullwidth=True),
         StrParam('minor_modes', ''),
         BoolParam('word_wrap', True),
         )

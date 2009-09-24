@@ -22,9 +22,9 @@ class JavaMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     keyword = 'Java'
     
     icon = 'icons/page_white_cup.png'
-    regex = "(\.java)$"
     
     default_classprefs = (
+        StrParam('extensions', 'java', fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

@@ -49,11 +49,11 @@ class GraphvizMode(FundamentalMode):
     """
     keyword='Graphviz'
     icon='icons/graphviz.png'
-    regex="\.dot$"
 
     start_line_comment = "// "
 
     default_classprefs = (
+        StrParam('extensions', 'dot', fullwidth=True),
         StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
         StrParam('minor_modes', 'GraphvizView'),

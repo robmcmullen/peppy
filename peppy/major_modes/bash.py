@@ -23,11 +23,11 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     editra_synonym = 'Bash Shell Script'
     
     icon = 'icons/page_white_shell.png'
-    regex = "\.sh$"
     
     fold_function_match = ["function "]
 
     default_classprefs = (
+        StrParam('extensions', 'sh bsh bash configure', fullwidth=True),
         Param('indent_after', r'(\{(?![^\}]*\})|\b(then|elif|else)\b(?!.+fi)|\bdo\b(?!.+done)|\bcase\s+.+\s+in\b(?!.*esac)|\[\[)', fullwidth=True),
         Param('indent', r'\$\{.*\}', fullwidth=True),
         Param('unindent', r'([}]\s*$|\b(fi|elif|else)\b|\bdone\b|\besac\b|\]\])', fullwidth=True),

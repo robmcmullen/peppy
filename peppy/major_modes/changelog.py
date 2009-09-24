@@ -71,12 +71,8 @@ class ChangeLogMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     # of any file using the ChangeLog mode
     icon='icons/text_list_bullets.png'
     
-    # Any files matching this regex will be candidates for this major
-    # mode
-    regex="([Cc]hange[Ll]og(:?(\..*|$)))"
-
     default_classprefs = (
-        # Overrides from FundamentalMode classprefs
+        StrParam('filename_regex', '([Cc]hange[Ll]og(:?(\..*|$)))', fullwidth=True),
         BoolParam('use_tab_characters', True),
         IntParam('tab_size', 8),
         IntParam('indent_size', 8),

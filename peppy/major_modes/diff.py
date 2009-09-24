@@ -74,14 +74,10 @@ class DiffEditMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     # of any file using the Diff mode
     icon='icons/diff.png'
     
-    # Any files matching this regex will be candidates for this major
-    # mode
-    regex="(\.diff|\.patch)$"
-    
     fold_function_match = ["diff "]
     
     default_classprefs = (
-        # Overrides from FundamentalMode classprefs
+        StrParam('extensions', 'diff patch', fullwidth=True),
         BoolParam('use_tab_characters', False),
         BoolParam('word_wrap', False),
         )

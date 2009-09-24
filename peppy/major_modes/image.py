@@ -92,7 +92,10 @@ class ImageViewMode(BitmapScroller, STCInterface, MajorMode):
     """
     keyword="ImageView"
     icon='icons/picture.png'
-    regex="\.(jpg|jpeg|gif|bmp|png|ico)"
+
+    default_classprefs = (
+        StrParam('extensions', 'jpg jpeg gif bmp png ico', fullwidth=True),
+        )
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)

@@ -22,12 +22,12 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     editra_synonym = 'Fortran 77'
     
     icon = 'icons/page_white_f77.png'
-    regex = "(\.f|\.for|\.f77|\.f90|\.f95)$"
     
     fold_function_match = ["SUBROUTINE ", "FUNCTION ","subroutine ", "function ",
                            "BLOCK DATA ", "block data "]
 
     default_classprefs = (
+        StrParam('extensions', 'f for f77', fullwidth=True),
         IntParam('edge_column', 72),
         BoolParam('indentation_guides', False),
        )

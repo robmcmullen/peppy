@@ -23,9 +23,9 @@ class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     editra_synonym = 'CPP'
     
     icon = 'icons/page_white_cplusplus.png'
-    regex = "(\.cc|\.cpp|\.cxx|\.CC|\.hh|\.hpp|\.hxx|\.HH)$"
     
     default_classprefs = (
+        StrParam('extensions', 'cc c++ cpp cxx CC hh h++ hpp hxx HH', fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

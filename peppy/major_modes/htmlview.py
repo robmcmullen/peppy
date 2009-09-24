@@ -31,7 +31,6 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
     """
     keyword='HTMLView'
     icon='icons/world.png'
-    regex=""
     mimetype = "text/html"
 
     def __init__(self, parent, wrapper, buffer, frame):
