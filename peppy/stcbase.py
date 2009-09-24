@@ -1062,16 +1062,13 @@ class PeppySTC(PeppyBaseSTC):
         else:
             cmd_key_clear_all = True
         PeppyBaseSTC.__init__(self, parent, refstc=refstc, copy=copy, **kwargs)
-
-        self.Bind(wx.stc.EVT_STC_DO_DROP, self.OnDoDrop)
-        self.Bind(wx.stc.EVT_STC_DRAG_OVER, self.OnDragOver)
-        self.Bind(wx.stc.EVT_STC_START_DRAG, self.OnStartDrag)
-        self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
-        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
-        self.Bind(wx.EVT_MIDDLE_UP, self.OnMousePaste)
-        self.Bind(wx.EVT_LEFT_UP, self.OnSelectionEnd)
-
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        
+        # Only bind events on STCs used as user interface elements.  The
+        # reference STC that is not shown doesn't have any way for the user to
+        # generate events on it, so event bindings aren't needed.  Plus, this
+        # can lead to multiple events and problems deleting the view (bug #770)
+        if refstc is not None:
+            self.addSTCEventBindings()
         
         self.modified_callbacks = []
         
@@ -1081,6 +1078,16 @@ class PeppySTC(PeppyBaseSTC):
             self.CmdKeyClearAll()
 
         self.debug_dnd=False
+    
+    def addSTCEventBindings(self):
+        self.Bind(wx.stc.EVT_STC_DO_DROP, self.OnDoDrop)
+        self.Bind(wx.stc.EVT_STC_DRAG_OVER, self.OnDragOver)
+        self.Bind(wx.stc.EVT_STC_START_DRAG, self.OnStartDrag)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseWheel)
+        self.Bind(wx.EVT_MIDDLE_UP, self.OnMousePaste)
+        self.Bind(wx.EVT_LEFT_UP, self.OnSelectionEnd)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.OnDestroy)
+        self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
 
     def sendEvents(self,evt):
         """
