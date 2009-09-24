@@ -680,7 +680,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         if cls.classprefs.extensions:
             exts = cls.classprefs.extensions.split()
             filename, ext = os.path.splitext(filename)
-            dprint("Attempting to match %s in %s" % (ext, exts))
             return ext[1:] in exts
         return False
 
