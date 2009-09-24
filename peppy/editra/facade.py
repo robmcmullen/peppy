@@ -14,6 +14,16 @@ class EditraFacade(object):
     singleton_instance = None
     first = True
     
+    # Some editra names have historical peppy names that I'm continuing to use
+    editra_to_peppy_modenames = {
+        'Bash Shell Script': 'Bash',
+        'DOT': 'Graphviz',
+        'C-Shell Script': 'Csh',
+        'Diff File': 'Diff',
+        'Korn Shell Script': 'Ksh',
+        'Plain Text': 'Text',
+        }
+
     def __init__(self, config=None):
         """Initialize a syntax manager. If the optional
         value config is set the mapping of extensions to
@@ -113,3 +123,22 @@ class EditraFacade(object):
         self._extreg.Associate(lang, ext)
         self.rebuild()
     
+    def getPeppyModeKeyword(self, lang):
+        try:
+            return self.editra_to_peppy_modenames[lang]
+        except KeyError:
+            return lang
+    
+    def getPeppyClassName(self, lang):
+        lang = self.getPeppyModeKeyword(lang)
+        lang = lang.replace("_", "").replace(" ", "").replace("/", "")
+        return lang
+    
+    def getPeppyPythonName(self, lang):
+        lang = self.getPeppyModeKeyword(lang)
+        lang = lang.replace("-", "_").replace(" ", "_").replace("/", "_").replace("#", "sharp")
+        return lang
+    
+    def getPeppyFileName(self, lang):
+        lang = self.getPeppyPythonName(lang).lower()
+        return lang

@@ -41,4 +41,28 @@ class testEditraLanguages(object):
         assert "xul" in exts
         assert "abcxml" in exts
 
+    def testPeppyKeywords(self):
+        mapping = {
+            "Bash Shell Script": "Bash",
+            "C#": "C#",
+            "DOT": "Graphviz",
+            "Makefile": "Makefile",
+            "Objective C": "Objective C",
+            "Tcl/Tk": "Tcl/Tk",
+            }
+        for editra, peppy in mapping.iteritems():
+            eq_(peppy, self.facade.getPeppyModeKeyword(editra))
+
+    def testPeppyFileNames(self):
+        mapping = {
+            "Bash Shell Script": "bash",
+            "C#": "csharp",
+            "DOT": "graphviz",
+            "Makefile": "makefile",
+            "Objective C": "objective_c",
+            "Tcl/Tk": "tcl_tk",
+            }
+        for editra, peppy in mapping.iteritems():
+            eq_(peppy, self.facade.getPeppyFileName(editra))
+ 
  
