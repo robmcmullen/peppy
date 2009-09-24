@@ -1599,6 +1599,7 @@ class GlobalPrefs(debugmixin):
 
     @classmethod
     def setupHierarchyDefaults(cls, klasshier):
+        helptext = {}
         for klass in klasshier:
             if klass.__name__ not in cls.default:
                 #dprint("%s not seen before" % klass)
@@ -1610,6 +1611,8 @@ class GlobalPrefs(debugmixin):
                         if not p.isSuperseded():
                             defs[p.keyword] = p.default
                             params[p.keyword] = p
+                        if p.help:
+                            helptext[p.keyword] = p.help
                 cls.default[klass.__name__]=defs
                 cls.params[klass.__name__] = params
             else:
@@ -1629,11 +1632,30 @@ class GlobalPrefs(debugmixin):
                                 gd[p.keyword] = p.default
                             if p.keyword not in gp:
                                 gp[p.keyword] = p
+                        if p.help:
+                            helptext[p.keyword] = p.help
                     
             if klass.__name__ not in cls.user:
                 cls.user[klass.__name__]={}
         if cls.debuglevel > 1: dprint("default: %s" % cls.default)
         if cls.debuglevel > 1: dprint("user: %s" % cls.user)
+        
+        cls.setMissingParamData(klasshier, helptext)
+    
+    @classmethod
+    def setMissingParamData(cls, klasshier, helptext):
+        """Update any missing param data using info from superclasses
+        
+        If a L{Param} has missing help text, look up the class hierarchy for
+        the help text of the param that it's shadowing and use its help text
+        """
+        r = klasshier[:]
+        r.reverse()
+        for klass in r:
+            if hasattr(klass,'default_classprefs'):
+                for p in klass.default_classprefs:
+                    if not p.help and p.keyword in helptext:
+                        p.help = helptext[p.keyword]
 
     @classmethod
     def findParam(cls, section, option):
