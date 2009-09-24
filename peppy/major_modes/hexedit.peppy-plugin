@@ -1,6 +1,6 @@
 [Core]
 Name = HexEdit Mode
-Module = hexedit_mode
+Module = hexedit
 
 [Documentation]
 Author = Rob McMullen

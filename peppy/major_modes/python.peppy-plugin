@@ -1,9 +1,9 @@
 [Core]
-Name = Java Mode
-Module = java_mode
+Name = Python Mode
+Module = python
 
 [Documentation]
 Author = Rob McMullen
 Version = 0.1
 Website = http://www.flipturn.org/peppy
-Description = Major mode for editing Java files
+Description = Major mode for editing Python source files

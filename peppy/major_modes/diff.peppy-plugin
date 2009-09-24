@@ -1,9 +1,9 @@
 [Core]
-Name = Image Mode
-Module = image_mode
+Name = Diff Mode
+Module = diff
 
 [Documentation]
 Author = Rob McMullen
 Version = 0.1
 Website = http://www.flipturn.org/peppy
-Description = Major mode for viewing bitmapped images
+Description = Major mode for editing diffs and patch files

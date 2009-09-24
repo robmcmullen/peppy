@@ -1,6 +1,6 @@
 [Core]
 Name = GraphViz Preview Mode
-Module = graphviz_mode
+Module = graphviz
 
 [Documentation]
 Author = Rob McMullen

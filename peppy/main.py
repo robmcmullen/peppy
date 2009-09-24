@@ -320,7 +320,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
 
     base_preferences = "preferences.cfg"
     override_preferences = "peppy.cfg"
-    standard_plugin_dirs = ['plugins', 'hsi', 'project']
+    standard_plugin_dirs = ['plugins', 'hsi', 'project', 'major_modes']
     preferences_plugin_dir = "plugins"
     server_port_filename = ".server.port"
 

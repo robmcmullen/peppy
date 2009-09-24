@@ -1,9 +1,9 @@
 [Core]
-Name = Makefile Mode
-Module = makefile_mode
+Name = C++ Mode
+Module = cpp
 
 [Documentation]
 Author = Rob McMullen
 Version = 0.1
 Website = http://www.flipturn.org/peppy
-Description = Major mode for editing Makefiles
+Description = Major mode for editing C++ files

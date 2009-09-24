@@ -1,6 +1,6 @@
 [Core]
 Name = C/C++ Mode
-Module = c_mode
+Module = c
 
 [Documentation]
 Author = Julian Back

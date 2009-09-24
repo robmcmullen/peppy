@@ -1,9 +1,9 @@
 [Core]
-Name = Text Mode
-Module = text_mode
+Name = Fortran Mode
+Module = fortran_77
 
 [Documentation]
 Author = Rob McMullen
 Version = 0.1
 Website = http://www.flipturn.org/peppy
-Description = Major mode for editing generic text files
+Description = Major mode for editing Fortran files

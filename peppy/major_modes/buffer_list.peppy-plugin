@@ -1,6 +1,6 @@
 [Core]
 Name = Buffer List Mode
-Module = buffer_list_mode
+Module = buffer_list
 
 [Documentation]
 Author = Rob McMullen
