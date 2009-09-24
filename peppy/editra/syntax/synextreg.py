@@ -467,7 +467,7 @@ class ExtensionRegister(dict):
         else:
             assoc = list(set(exts))
         assoc.sort()
-        self.__setitem__(ftype, assoc)
+        dict.__setitem__(self, ftype, assoc)
 
     def Disassociate(self, ftype, ext):
         """Disassociate a file type with a given extension or space
