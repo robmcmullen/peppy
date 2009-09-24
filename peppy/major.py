@@ -499,6 +499,8 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     stc_class = PeppySTC
 
     default_classprefs = (
+        StrParam('filename_regex', '', 'Regular expression used to match against the filename part of the URL.  Successful match indicates the major mode is compatible with the filename', fullwidth=True),
+        StrParam('extensions', '', 'List of filename extensions to match to this major mode.  This is matched after the regular expression, and a successful match indicates the mode is compatible with the filename', fullwidth=True),
         StrParam('minor_modes', '', 'List of minor mode keywords that should be displayed when starting this major mode', fullwidth=True),
         IntParam('line_number_offset', 1, 'Number to add to the line number reported by the mode\'s stc in order to display'),
         IntParam('column_number_offset', 1, 'Number to add to the column number reported by the mode\'s stc in order to display'),
@@ -667,10 +669,19 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
 
         @returns: True if the filename matches
         """
-        if cls.regex:
+        if hasattr(cls, 'regex') and cls.regex:
             match=re.search(cls.regex, filename)
             if match:
                 return True
+        if cls.classprefs.filename_regex:
+            match=re.search(cls.classprefs.filename_regex, filename)
+            if match:
+                return True
+        if cls.classprefs.extensions:
+            exts = cls.classprefs.extensions.split()
+            filename, ext = os.path.splitext(filename)
+            dprint("Attempting to match %s in %s" % (ext, exts))
+            return ext[1:] in exts
         return False
 
     @classmethod
