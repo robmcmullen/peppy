@@ -1,3 +1,14 @@
+2009-09-21  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.11.53
+	* improved spell checking to correct words on cursor move (bug #767)
+	* added profiles for running scripts with different interpreter versions
+	(bug #765)
+	* added array storage for parameters in INI file
+	* added support for ENVI spectral libraries in hyperspectral mode
+	* added preference to support X11 middle mouse paste (but due to bugs
+	in the wxWidgets C++ code, won't be correctly resolved until wx 3.0)
+
 2009-08-22  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.11.23
