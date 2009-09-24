@@ -131,12 +131,16 @@ class EditraFacade(object):
     
     def getPeppyClassName(self, lang):
         lang = self.getPeppyModeKeyword(lang)
-        lang = lang.replace("_", "").replace(" ", "").replace("/", "")
+        lang = lang.replace("_", "").replace(" ", "").replace("/", "").replace("#", "sharp")
+        if lang[0].isdigit():
+            lang = "_" + lang
         return lang
     
     def getPeppyPythonName(self, lang):
         lang = self.getPeppyModeKeyword(lang)
         lang = lang.replace("-", "_").replace(" ", "_").replace("/", "_").replace("#", "sharp")
+        if lang[0].isdigit():
+            lang = "_" + lang
         return lang
     
     def getPeppyFileName(self, lang):

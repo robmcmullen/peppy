@@ -43,6 +43,7 @@ class testEditraLanguages(object):
 
     def testPeppyKeywords(self):
         mapping = {
+            "68k Assembly": "68k Assembly",
             "Bash Shell Script": "Bash",
             "C#": "C#",
             "DOT": "Graphviz",
@@ -55,6 +56,7 @@ class testEditraLanguages(object):
 
     def testPeppyFileNames(self):
         mapping = {
+            "68k Assembly": "_68k_assembly",
             "Bash Shell Script": "bash",
             "C#": "csharp",
             "DOT": "graphviz",
