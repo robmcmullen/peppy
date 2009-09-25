@@ -146,3 +146,22 @@ class EditraFacade(object):
     def getPeppyFileName(self, lang):
         lang = self.getPeppyPythonName(lang).lower()
         return lang
+    
+    def getEditraLanguageSampleText(self, lang):
+        """Get the sample text Editra uses in the style dialog
+        
+        The sample text for each of the Editra languages is stored in the
+        editra/tests directory.
+        """
+        # The editra filename used for sample text is not quite the same as
+        # the peppy filename.
+        fname = lang.replace(u" ", u"_").replace(u"/", u"_").lower()
+        fname = fname.replace('#', 'sharp')
+        try:
+            import glob
+            fname = glob.glob(os.path.join(os.path.dirname(__file__), 'tests',  fname) + ".*")[0]
+            fh = open(fname)
+            text = fh.read()
+        except IndexError:
+            text = ""
+        return text

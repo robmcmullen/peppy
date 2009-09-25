@@ -23,6 +23,25 @@ from peppy.about import AddCopyright
 AddCopyright("Editra", "http://www.editra.org", "Cody Precord", "2005-2009", "The styling dialog and syntax definitions from")
 
 
+class PeppyStyleEditor(style_editor.StyleEditor):
+    def OpenPreviewFile(self, lang):
+        """Overriding the Editra language lookup to scan through major modes
+        for the sample text
+        """
+        from peppy.editra.sample_text import sample_text
+        
+        self.preview.ClearAll()
+        if lang in sample_text:
+            sample = sample_text[lang]
+        else:
+            lang = "Plain Text"
+            sample = "Preview text not available..."
+        self.preview.SetText(sample)
+        self.preview.FindLexer(lang)
+        self.preview.EmptyUndoBuffer()
+
+
+
 class EditraStyles(SelectAction):
     name = "Text Styles..."
     tooltip = "Open the STC Style Editor to edit the current mode's text display."
@@ -30,16 +49,19 @@ class EditraStyles(SelectAction):
     export_count = 0
     osx_minimal_menu = True
     
-    def action(self, index=-1, multiplier=1):
-        stylesheet = wx.GetApp().fonts.getStyleFile()
-        dlg = style_editor.StyleEditor(self.frame, -1)
+    def setSampleText(self, dlg):
         if hasattr(self.mode, 'editra_lang'):
             lang = self.mode.editra_lang
         else:
-            lang = "Python"
+            lang = "Plain Text"
         dlg.OpenPreviewFile(lang)
         lexer_lst = dlg.FindWindowById(style_editor.ed_glob.ID_LEXER)
         lexer_lst.SetStringSelection(lang)
+    
+    def action(self, index=-1, multiplier=1):
+        stylesheet = wx.GetApp().fonts.getStyleFile()
+        dlg = PeppyStyleEditor(self.frame, -1)
+        self.setSampleText(dlg)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             # Find style name from controls within the dialog
