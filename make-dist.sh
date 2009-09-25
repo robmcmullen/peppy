@@ -21,7 +21,7 @@ ls -1 $distdir/peppy/plugins/eggs/*py2.5.egg | while read EGG; do
 done
 
 # add the platform independent eggs to the py2exe include list
-./make-py2exe-plugin-list.py -i $distdir -d peppy/plugins -e eggs
+./make-py2exe-plugin-list.py -i $distdir -d peppy/major_modes -d peppy/plugins -e eggs
 
 # Handle eggs with compiled objects.  They don't seem to do well when placed in
 # the eggs directory -- they need to be in the top level directory

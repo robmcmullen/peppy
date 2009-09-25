@@ -75,8 +75,8 @@ if __name__ == "__main__":
     parser=OptionParser(usage=usage)
     parser.add_option("-i", action="store", dest="input",
                       default="", help="base input directory")
-    parser.add_option("-d", action="store", dest="importdir",
-                      default="builtins", help="import directory within base directory")
+    parser.add_option("-d", action="append", dest="importdir",
+                      default=[], help="import directory within base directory")
     parser.add_option("-o", action="store", dest="output",
                       default="peppy/py2exe_plugins.py", help="output filename")
     parser.add_option("-e", action="store", dest="eggs",
@@ -94,11 +94,11 @@ if __name__ == "__main__":
 
     os.chdir(options.input)
     savepath = os.getcwd()
-    destdir = os.path.join(savepath, options.importdir)
-    print destdir
 
-    if options.importdir:
-        process(options.importdir, out)
+    for importdir in options.importdir:
+        destdir = os.path.join(savepath, importdir)
+        print destdir
+        process(importdir, out)
     # Need to fake the importing of all the library modules and the editra style
     # definition files so py2exe will include them
     process('peppy/lib', out, fake=True)
