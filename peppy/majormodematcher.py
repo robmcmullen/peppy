@@ -40,7 +40,26 @@ class MajorModeMatcherDriver(debugmixin):
             cls.global_major_modes.append(mode)
     
     @classmethod
-    def getCompatibleMajorModes(cls, stc_class):
+    def getMajorModesCompatibleWithMode(cls, mode):
+        """Get a list of major mode classes that are compatible with the given
+        major mode.
+        
+        Compatible means that they can successfully be viewed by that major
+        mode.  Currently, this means that they share a common STC class,
+        but this is not necessarily going to remain this way.  It might be
+        possible in the future to change STCs when changing modes.
+        """
+        buffer = mode.buffer
+        stc_class = buffer.stc.__class__
+        assert cls.dprint("stc_class=%s" % stc_class)
+        modes = cls.getMajorModesCompatibleWithSTCClass(stc_class)
+
+        modes.sort(key=lambda s:s.keyword)
+        assert cls.dprint(modes)
+        return modes
+    
+    @classmethod
+    def getMajorModesCompatibleWithSTCClass(cls, stc_class):
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         modes = [m for m in cls.global_major_modes if m.verifyCompatibleSTC(stc_class)]
         for plugin in plugins:

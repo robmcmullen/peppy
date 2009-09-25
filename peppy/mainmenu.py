@@ -704,29 +704,7 @@ class SelectAll(STCModificationAction):
         self.mode.SelectAll()
 
 
-class MajorModeSelect(BufferBusyActionMixin, RadioAction):
-    """Switch major mode
-    
-    Switch the major mode (i.e.  the view of the document) to a compatible
-    major mode.  Some modes will not be available because they can not display
-    the data in the document, and these incompatible modes will not be listed.
-    """
-    name="Major Mode"
-    inline=False
-    default_menu = ("View", 0)
-
-    def initPreHook(self):
-        buffer = self.mode.buffer
-        stc_class = buffer.stc.__class__
-        assert self.dprint("stc_class=%s" % stc_class)
-        modes = MajorModeMatcherDriver.getCompatibleMajorModes(stc_class)
-
-        modes.sort(key=lambda s:s.keyword)
-        assert self.dprint(modes)
-        self.modes = modes
-        names = [m.keyword for m in modes]
-        self.items = names
-
+class ModeSelectMixin(object):
     def getIndex(self):
         modecls = self.mode.__class__
         assert self.dprint("searching for %s in %s" % (modecls, self.modes))
@@ -739,6 +717,72 @@ class MajorModeSelect(BufferBusyActionMixin, RadioAction):
 
     def action(self, index=-1, multiplier=1):
         self.frame.changeMajorMode(self.modes[index])
+
+
+class CommonlyUsedMajorModes(BufferBusyActionMixin, ModeSelectMixin, RadioAction, ClassPrefs):
+    """Switch major mode to one of the commonly used major modes.
+    
+    Switch the major mode (i.e.  the view of the document) to a compatible
+    major mode.  Some modes will not be available because they can not display
+    the data in the document, and these incompatible modes will not be listed.
+    """
+    name="Major Mode"
+    inline = True
+    default_menu = (("View/Major Mode", 0), 0)
+    
+    default_classprefs = (
+        CommaSeparatedStringSetParam('keywords', set(["C", "C++", "Fundamental", "HexEdit", "Python", "Text"]), 'Most used major modes', fullwidth=True),
+    )
+
+    def initPreHook(self):
+        compatible_modes = MajorModeMatcherDriver.getMajorModesCompatibleWithMode(self.mode)
+        self.modes = self.getCommonlyUsedModes(compatible_modes, self.mode.__class__)
+        names = [m.keyword for m in self.modes]
+        self.items = names
+    
+    @classmethod
+    def getCommonlyUsedModes(cls, modes, current_modecls):
+        keywords = []
+        assert cls.dprint("most used by the user: %s" % cls.classprefs.keywords)
+        if current_modecls.keyword not in cls.classprefs.keywords:
+            cls.classprefs.keywords.add(current_modecls.keyword)
+        for mode in modes:
+            if mode.keyword in cls.classprefs.keywords:
+                assert cls.dprint("Found %s" % mode.keyword)
+                keywords.append(mode)
+        assert cls.dprint("most used mode classes: %s" % keywords)
+        return keywords
+    
+    @classmethod
+    def getInfrequentlyUsedModes(cls, modes, current_modecls):
+        infrequent = []
+        assert cls.dprint("most used by the user: %s" % cls.classprefs.keywords)
+        if current_modecls.keyword not in cls.classprefs.keywords:
+            cls.classprefs.keywords.add(current_modecls.keyword)
+        for mode in modes:
+            if mode.keyword not in cls.classprefs.keywords:
+                assert cls.dprint("Found infrequent mode %s" % mode.keyword)
+                infrequent.append(mode)
+        assert cls.dprint("infrequently used mode classes: %s" % infrequent)
+        return infrequent
+
+
+class InfrequentlyUsedMajorModes(BufferBusyActionMixin, ModeSelectMixin, ListAction):
+    """Switch major mode to one of the infrequently used major modes.
+    
+    Switch the major mode (i.e.  the view of the document) to a compatible
+    major mode.  Some modes will not be available because they can not display
+    the data in the document, and these incompatible modes will not be listed.
+    """
+    name="Other Major Modes"
+    inline = False
+    default_menu = (("View/Major Mode", 0), -100)
+    
+    def initPreHook(self):
+        compatible_modes = MajorModeMatcherDriver.getMajorModesCompatibleWithMode(self.mode)
+        self.modes = CommonlyUsedMajorModes.getInfrequentlyUsedModes(compatible_modes, self.mode.__class__)
+        names = [m.keyword for m in self.modes]
+        self.items = names
 
 
 class MinorModeShow(ToggleListAction):
@@ -1067,7 +1111,7 @@ class MainMenu(IPeppyPlugin):
 
                 Undo, Redo, Cut, Copy, Paste, PasteAtColumn, SelectAll,
 
-                MajorModeSelect, MinorModeShow,
+                CommonlyUsedMajorModes, InfrequentlyUsedMajorModes, MinorModeShow,
                 
                 SidebarShow, HideSidebars, HideMinorModes, HideAll,
                 
