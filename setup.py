@@ -187,6 +187,10 @@ if USE_PY2EXE:
             data_files.extend(enchant.utils.win32_data_files())
         except ImportError:
             pass
+    
+    # py2exe ignores package_data, so the editra files loaded on demand by the
+    # style editor need to be included in the data_files entry
+    data_files.append(("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")))
 
     # py2exe can't scan inside zipped eggs to find dependencies.  All plugins
     # must be unpacked into a directory in order for py2exe to find any
@@ -266,7 +270,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
           'peppy.plugins.eggs': ['*.egg' ],
           'peppy.project': ['*.peppy-plugin' ],
           'peppy.hsi': ['*.peppy-plugin' ],
-          'peppy.editra': ['styles/*.ess', 'tests/*'],
+          'peppy.editra': ['styles/*.ess'],
           },
       ext_modules = ext_modules,
 
