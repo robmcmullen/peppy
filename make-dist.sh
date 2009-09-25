@@ -6,8 +6,8 @@ make distdir
 
 distdir=`make print-distdir|cut -c11-`
 echo $distdir
-mv $distdir/peppy/hsi/hsi_major_mode_proxy.py $distdir/peppy/plugins
-mv $distdir/peppy/hsi/hsi_major_mode.peppy-plugin $distdir/peppy/plugins
+mv $distdir/peppy/hsi/hsi_plugin.py $distdir/peppy/plugins
+mv $distdir/peppy/hsi/hsi_plugin.peppy-plugin $distdir/peppy/plugins
 mv $distdir/peppy/project/project_plugin.py $distdir/peppy/plugins
 mv $distdir/peppy/project/project_plugin.peppy-plugin $distdir/peppy/plugins
 
