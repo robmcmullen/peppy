@@ -336,6 +336,20 @@ class Param(debugmixin):
         return "keyword=%s, default=%s, next=%s, show=%s, help=%s" % (self.keyword,
         self.default, self.next_on_same_line, self.alt_label, self.help)
     
+    def isIterableDataType(self):
+        """Returns whether the value used by this classpref is a list, set,
+        hash or other datatype that can be updated internally without changing
+        the reference to it.
+        
+        For lists, sets, and hashes, the value of the contents of the
+        classpref can change without updating the classpref itself.  It's the
+        different between appending to a list where the list pointer doesn't
+        change to assigning a new value to the classpref which updates the
+        GlobalPrefs.user dict.  So, we force the update here so that the value
+        is always checked when writing the config file.
+        """
+        return False
+    
     def setInitialDefaults(self, ctrl, ctrls, getter, orig):
         """Set the initial state of the control and perform any other one-time
         setup.
@@ -630,6 +644,9 @@ class ReadOnlyParam(debugmixin):
             self.default = default
         self.help = ''
 
+    def isIterableDataType(self):
+        return False
+    
     def isSettable(self):
         return False
 
@@ -759,6 +776,74 @@ class UnquotedStrParam(StrParam):
     """String parameter that doesn't enclose the string in quotes"""
     def valueToText(self, value):
         return value
+
+
+class CommaSeparatedListParam(StrParam):
+    """Parameter that is a list of comma separated strings.
+
+    The user interface presents a simple text box that takes a comma separated
+    list of strings.  Unlike the L{CommaSeparatedStringSetParam} which sorts
+    the values, this param keeps the strings in the order entered by the user.
+    
+    The data value is a python list(), so the classpref's value can be adjusted
+    using the standard list methods.
+    """
+    def isIterableDataType(self):
+        return True
+    
+    def valueToText(self, value):
+        text = ", ".join([str(v) for v in value])
+        return text
+    
+    def getListValues(self, text):
+        text = text.strip()
+        if ',' in text:
+            raw = text.split(',')
+        else:
+            raw = [text]
+        values = []
+        for v in raw:
+            values.append(v.strip())
+        return values
+    
+    def textToValue(self, text):
+        return self.getListValues(text)
+
+    def setValue(self, ctrl, value):
+        text = self.valueToText(value)
+        ctrl.SetValue(text)
+
+    def getValue(self, ctrl):
+        text = ctrl.GetValue()
+        return self.getListValues(text)
+
+class CommaSeparatedStringSetParam(CommaSeparatedListParam):
+    """Parameter that is a set of comma separated strings.
+
+    The user interface presents a simple text box that takes a comma separated
+    list of strings.  The list of strings is unordered, and will appear
+    lexicographically sorted in the config file.
+    
+    The data value is a python set(), so the classpref's value can be adjusted
+    using the standard set methods.
+    """
+    def valueToText(self, value):
+        values = [str(v) for v in value]
+        values.sort()
+        text = ", ".join(values)
+        return text
+    
+    def getListValues(self, text):
+        text = text.strip()
+        if ',' in text:
+            raw = text.split(',')
+        else:
+            raw = [text]
+        values = set()
+        for v in raw:
+            values.add(v.strip())
+        return values
+
 
 class DateParam(Param):
     """Date parameter that displays a DatePickerCtrl as its user
@@ -1601,6 +1686,13 @@ class GlobalPrefs(debugmixin):
     def setupHierarchyDefaults(cls, klasshier):
         helptext = {}
         for klass in klasshier:
+#            if klass.__name__ == "CommonlyUsedMajorModes":
+#                cls.debuglevel = 1
+#            else:
+#                cls.debuglevel = 0
+            if klass.__name__ not in cls.user:
+                cls.user[klass.__name__]={}
+            
             if klass.__name__ not in cls.default:
                 #dprint("%s not seen before" % klass)
                 defs={}
@@ -1613,6 +1705,20 @@ class GlobalPrefs(debugmixin):
                             params[p.keyword] = p
                         if p.help:
                             helptext[p.keyword] = p.help
+                        if p.isIterableDataType():
+                            # For lists, sets, and hashes, the value of the
+                            # contents of the classpref can change without
+                            # updating the classpref itself.  It's the
+                            # different between appending to a list where
+                            # the list pointer doesn't change to assigning
+                            # a new value to the classpref which updates the
+                            # GlobalPrefs.user dict.  So, we force the update
+                            # here so that the value is always checked when
+                            # writing the config file.
+                            if p.keyword not in cls.user[klass.__name__]:
+                                cls.user[klass.__name__][p.keyword] = p.valueToText(p.default)
+                                if cls.debuglevel > 0: dprint("no value from config file; setting default for iterable data type %s[%s] = %s" % (klass.__name__, p.keyword, cls.user[klass.__name__][p.keyword]))
+                            cls.needs_conversion[klass.__name__] = True
                 cls.default[klass.__name__]=defs
                 cls.params[klass.__name__] = params
             else:
@@ -1634,9 +1740,6 @@ class GlobalPrefs(debugmixin):
                                 gp[p.keyword] = p
                         if p.help:
                             helptext[p.keyword] = p.help
-                    
-            if klass.__name__ not in cls.user:
-                cls.user[klass.__name__]={}
         if cls.debuglevel > 1: dprint("default: %s" % cls.default)
         if cls.debuglevel > 1: dprint("user: %s" % cls.user)
         
@@ -1712,6 +1815,10 @@ class GlobalPrefs(debugmixin):
         cls.convert_already_seen = {}
         
         for section in cfg.sections():
+#            if section == "CommonlyUsedMajorModes":
+#                cls.debuglevel = 1
+#            else:
+#                cls.debuglevel = 0
             cls.needs_conversion[section] = True
             d={}
             for option, text in cfg.items(section):
@@ -1719,6 +1826,7 @@ class GlobalPrefs(debugmixin):
                 # plugins are loaded and we know what type each
                 # parameter is supposed to be
                 d[option]=text
+            if cls.debuglevel > 0: dprint(d)
             if section in cls.user:
                 cls.user[section].update(d)
             else:
@@ -1726,6 +1834,10 @@ class GlobalPrefs(debugmixin):
     
     @classmethod
     def convertSection(cls, section):
+#        if section == "CommonlyUsedMajorModes":
+#            cls.debuglevel = 1
+#        else:
+#            cls.debuglevel = 0
         if section not in cls.params or section in cls.convert_already_seen or section not in cls.seen:
             # Don't process values before the param definition for
             # the class is loaded.  Copy the existing text values

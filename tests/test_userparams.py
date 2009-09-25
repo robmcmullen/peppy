@@ -51,6 +51,17 @@ class UserList(ClassPrefs):
         UserListParamEnd('userlist'),
         )
     
+class CommonlyUsedMajorModes(ClassPrefs):
+    default_classprefs = (
+        CommaSeparatedStringSetParam('keywords', set(["C", "C++", "Fundamental", "HexEdit", "Python", "Text"]), 'Most used major modes', fullwidth=True),
+        StrParam('string', 'C, C++, Fundamental, HexEdit, Python, Text', 'Most used major modes', fullwidth=True),
+    )
+
+class CommaSeparatedListTest(ClassPrefs):
+    default_classprefs = (
+        CommaSeparatedListParam('counting', ["one", "two", "three"]),
+    )
+
 def_save = copy.deepcopy(GlobalPrefs.default)
 #print def_save
 
@@ -247,3 +258,70 @@ string = "whatever"
         eq_(None, userlist.classprefs.userlist)
         eq_(6, userlist.classprefs.count)
         eq_("whatever", userlist.classprefs.string)
+
+
+class testCommaSeparatedListParams(object):
+    def setup(self):
+        GlobalPrefs.default = copy.deepcopy(def_save)
+        GlobalPrefs.user = copy.deepcopy(user_save)
+        GlobalPrefs.convert_already_seen = {}
+
+    def setupConfig(self, text=None):
+        if text:
+            fh = StringIO(text)
+            GlobalPrefs.readConfig(fh)
+        GlobalPrefs.convertConfig()
+
+    def testSaveCSV(self):
+        self.setupConfig()
+        csv = CommaSeparatedListTest()
+        csv.classprefs.counting.append("ten")
+        assert GlobalPrefs.isUserConfigChanged()
+
+    def testSaveCSVWithInitialValue(self):
+        self.setupConfig("""\
+[CommaSeparatedListTest]
+counting = one, two
+""")
+        csv = CommaSeparatedListTest()
+        assert not GlobalPrefs.isUserConfigChanged()
+        csv.classprefs.counting.append("five")
+        assert GlobalPrefs.isUserConfigChanged()
+
+
+class testCommaSeparatedSetParams(object):
+    def setup(self):
+        GlobalPrefs.default = copy.deepcopy(def_save)
+        GlobalPrefs.user = copy.deepcopy(user_save)
+        GlobalPrefs.convert_already_seen = {}
+
+    def setupConfig(self, text=None):
+        if text:
+            fh = StringIO(text)
+            GlobalPrefs.readConfig(fh)
+        GlobalPrefs.convertConfig()
+
+    def testSaveCSV(self):
+        self.setupConfig()
+        csv = CommonlyUsedMajorModes()
+        csv.classprefs.keywords.add("HTML")
+        assert GlobalPrefs.isUserConfigChanged()
+
+    def testSaveCSVWithInitialValue(self):
+        self.setupConfig("""\
+[CommonlyUsedMajorModes]
+keywords = Python, C++
+""")
+        csv = CommonlyUsedMajorModes()
+        assert "Python" in csv.classprefs.keywords
+        assert "C++" in csv.classprefs.keywords
+        assert "Fundamental" not in csv.classprefs.keywords
+        assert not GlobalPrefs.isUserConfigChanged()
+        csv.classprefs.keywords.add("HTML")
+        assert GlobalPrefs.isUserConfigChanged()
+
+    def testSaveString(self):
+        self.setupConfig()
+        csv = CommonlyUsedMajorModes()
+        csv.classprefs.string = "blah"
+        assert GlobalPrefs.isUserConfigChanged()
