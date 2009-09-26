@@ -47,10 +47,13 @@ class GraphvizMode(FundamentalMode):
     Uses the C++ mode of the STC to highlight the files, since
     graphviz .dot files are similar in structure to C++ files.
     """
-    keyword='Graphviz'
+    keyword = 'Graphviz'
+    editra_synonym = 'DOT'
+    stc_lexer_id = 3
+    start_line_comment = u'//'
+    end_line_comment = ''
     icon='icons/graphviz.png'
 
-    start_line_comment = "// "
 
     default_classprefs = (
         StrParam('extensions', 'dot', fullwidth=True),

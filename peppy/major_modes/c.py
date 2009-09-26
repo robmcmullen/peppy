@@ -83,7 +83,11 @@ class CCommentParagraph(ParagraphInfo):
 class CMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing C files.
     """
-    keyword='C'
+    keyword = 'C'
+    editra_synonym = 'C'
+    stc_lexer_id = 3
+    start_line_comment = u'/*'
+    end_line_comment = u'*/'
     icon='icons/page_white_c.png'
     
     default_classprefs = (

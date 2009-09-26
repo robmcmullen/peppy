@@ -120,7 +120,11 @@ class MakefileMode(FundamentalMode):
     """
     # keyword is required: it's a one-word name that must be unique
     # compared to all other major modes
-    keyword='Makefile'
+    keyword = 'Makefile'
+    editra_synonym = 'Makefile'
+    stc_lexer_id = 11
+    start_line_comment = u'#'
+    end_line_comment = ''
     
     # Specifying an icon here will cause it to be displayed in the tab
     # of any file using the Makefile mode
@@ -131,8 +135,8 @@ class MakefileMode(FundamentalMode):
     regex="(\.mak|[Mm]akefile$|[Mm]akefile\..*)$"
 
     default_classprefs = (
+        StrParam('extensions', 'mak makefile', fullwidth=True),
         StrParam('filename_regex', '(GNU)?([Mm]akefile$|[Mm]akefile\..*)$"', fullwidth=True),
-        StrParam('extensions', 'mak', fullwidth=True),
         BoolParam('use_tab_characters', True),
         IntParam('tab_size', 8),
         BoolParam('word_wrap', True),

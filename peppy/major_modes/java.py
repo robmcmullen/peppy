@@ -20,6 +20,10 @@ class JavaMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing Java files.
     """
     keyword = 'Java'
+    editra_synonym = 'Java'
+    stc_lexer_id = 3
+    start_line_comment = u'//'
+    end_line_comment = ''
     
     icon = 'icons/page_white_cup.png'
     

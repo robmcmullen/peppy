@@ -286,14 +286,18 @@ class PythonParagraph(ParagraphInfo):
 
 
 class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
-    keyword='Python'
+    keyword = 'Python'
+    editra_synonym = 'Python'
+    stc_lexer_id = 2
+    start_line_comment = u'#'
+    end_line_comment = ''
     icon='icons/py.png'
     mimetype = "text/x-python"
     
     fold_function_match = ["def ", "class "]
 
     default_classprefs = (
-        StrParam('extensions', 'py pyx pyw', fullwidth=True),
+        StrParam('extensions', 'py python pyw', fullwidth=True),
         )
 
     autoindent = PythonAutoindent()

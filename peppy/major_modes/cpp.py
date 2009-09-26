@@ -21,11 +21,14 @@ class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'C++'
     editra_synonym = 'CPP'
+    stc_lexer_id = 3
+    start_line_comment = u'//'
+    end_line_comment = ''
     
     icon = 'icons/page_white_cplusplus.png'
     
     default_classprefs = (
-        StrParam('extensions', 'cc c++ cpp cxx CC hh h++ hpp hxx HH', fullwidth=True),
+        StrParam('extensions', 'c++ cc cpp cxx h++ hh hpp hxx', fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

@@ -21,13 +21,16 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'Bash'
     editra_synonym = 'Bash Shell Script'
+    stc_lexer_id = 62
+    start_line_comment = u'#'
+    end_line_comment = ''
     
     icon = 'icons/page_white_shell.png'
     
     fold_function_match = ["function "]
 
     default_classprefs = (
-        StrParam('extensions', 'sh bsh bash configure', fullwidth=True),
+        StrParam('extensions', 'bsh configure sh', fullwidth=True),
         Param('indent_after', r'(\{(?![^\}]*\})|\b(then|elif|else)\b(?!.+fi)|\bdo\b(?!.+done)|\bcase\s+.+\s+in\b(?!.*esac)|\[\[)', fullwidth=True),
         Param('indent', r'\$\{.*\}', fullwidth=True),
         Param('unindent', r'([}]\s*$|\b(fi|elif|else)\b|\bdone\b|\besac\b|\]\])', fullwidth=True),

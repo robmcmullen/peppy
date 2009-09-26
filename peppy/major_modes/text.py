@@ -46,12 +46,16 @@ Always use the bathroom when you can, because you never know when you'll get ano
 class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """Major mode for editing text files.
     """
-    keyword='Text'
+    keyword = 'Text'
+    editra_synonym = 'Plain Text'
+    stc_lexer_id = 1
+    start_line_comment = ''
+    end_line_comment = ''
     icon='icons/page_white_text.png'
 
     default_classprefs = (
+        StrParam('extensions', 'txt', fullwidth=True),
         StrParam('filename_regex', '[Rr][Ee][Aa][Dd][Mm][Ee].*', fullwidth=True),
-        StrParam('extensions', 'txt rst', fullwidth=True),
         StrParam('minor_modes', ''),
         BoolParam('word_wrap', True),
         )

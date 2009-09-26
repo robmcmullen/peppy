@@ -18,8 +18,11 @@ from peppy.fundamental import FundamentalMode
 class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing Fortran 77 (fixed format) files.
     """
-    keyword = 'Fortran77'
+    keyword = 'Fortran 77'
     editra_synonym = 'Fortran 77'
+    stc_lexer_id = 37
+    start_line_comment = '*'
+    end_line_comment = ''
     
     icon = 'icons/page_white_f77.png'
     
@@ -27,7 +30,7 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
                            "BLOCK DATA ", "block data "]
 
     default_classprefs = (
-        StrParam('extensions', 'f for f77', fullwidth=True),
+        StrParam('extensions', 'f for', fullwidth=True),
         IntParam('edge_column', 72),
         BoolParam('indentation_guides', False),
        )

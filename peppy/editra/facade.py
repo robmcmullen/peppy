@@ -8,6 +8,7 @@ import wx.stc
 from peppy.editra import *
 import peppy.editra.util as util
 from peppy.debug import *
+from peppy.editra.syntax.syntax import KEYWORDS, LEXER, SYNSPEC, PROPERTIES, LANGUAGE, COMMENT, CLEXER, INDENTER
 
 
 class EditraFacade(object):
@@ -15,11 +16,12 @@ class EditraFacade(object):
     first = True
     
     # Some editra names have historical peppy names that I'm continuing to use
-    editra_to_peppy_modenames = {
+    editra_to_peppy_keywords = {
         'Bash Shell Script': 'Bash',
         'DOT': 'Graphviz',
         'C-Shell Script': 'Csh',
-        'Diff File': 'Diff',
+        'CPP': 'C++',
+        'Diff File': 'DiffEdit',
         'Korn Shell Script': 'Ksh',
         'Plain Text': 'Text',
         }
@@ -92,7 +94,7 @@ class EditraFacade(object):
         """
         ext = self.getEditraExtFromLang(lang)
         #dprint("after: %s" % ext)
-        syn_data = self.SyntaxData(ext)
+        syn_data = self._synmgr.SyntaxData(ext)
         return syn_data
 
     def getEditraSyntaxProperties(self, lang):
@@ -111,12 +113,12 @@ class EditraFacade(object):
     
     def getAllEditraLanguages(self):
         exts = self.canonical_langs
-        dprint(exts)
+        #dprint(exts)
         return exts
     
     def getExtensionsForLanguage(self, lang):
         exts = self._extreg[lang]
-        dprint(exts)
+        #dprint(exts)
         return exts
     
     def addExtensionForLanguage(self, lang, ext):
@@ -125,20 +127,20 @@ class EditraFacade(object):
     
     def getPeppyModeKeyword(self, lang):
         try:
-            return self.editra_to_peppy_modenames[lang]
+            return self.editra_to_peppy_keywords[lang]
         except KeyError:
             return lang
     
     def getPeppyClassName(self, lang):
         lang = self.getPeppyModeKeyword(lang)
-        lang = lang.replace("_", "").replace(" ", "").replace("/", "").replace("#", "sharp")
+        lang = lang.replace("_", "").replace(" ", "").replace("/", "").replace("#", "sharp").replace("++", "PlusPlus")
         if lang[0].isdigit():
             lang = "_" + lang
         return lang
     
     def getPeppyPythonName(self, lang):
         lang = self.getPeppyModeKeyword(lang)
-        lang = lang.replace("-", "_").replace(" ", "_").replace("/", "_").replace("#", "sharp")
+        lang = lang.replace("-", "_").replace(" ", "_").replace("/", "_").replace("#", "sharp").replace("++", "pp")
         if lang[0].isdigit():
             lang = "_" + lang
         return lang
@@ -165,3 +167,46 @@ class EditraFacade(object):
         except IndexError:
             text = ""
         return text
+
+    def getEditraCommentChars(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        if COMMENT in syn_data:
+            chars = syn_data[COMMENT]
+        else:
+            chars = []
+        # make sure default chars exist
+        chars.extend(["", ""])
+        return chars[0], chars[1]
+
+    def getEditraSTCLexer(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        return syn_data[LEXER]
+
+    def getEditraExtraProperties(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        if PROPERTIES in syn_data:
+            return syn_data[PROPERTIES]
+        return None
+
+    def getEditraSyntaxSpecs(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        converted = []
+        try:
+            specs = syn_data[SYNSPEC]
+            for syn in specs:
+                # precompute the style number
+                #dprint("%s: %s, %s" % (lang, syn[0], syn[1]))
+                if isinstance(syn[0], basestring):
+                    style_number = getattr(wx.stc, syn[0])
+                else:
+                    style_number = syn[0]
+                converted.append((style_number, syn[1]))
+        except KeyError:
+            pass
+        return converted
+
+    def getEditraLanguageKeywords(self, lang):
+        syn_data = self.getEditraSyntaxData(lang)
+        if KEYWORDS in syn_data:
+            return syn_data[KEYWORDS]
+        return []

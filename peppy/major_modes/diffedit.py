@@ -68,7 +68,11 @@ class DiffEditMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """
     # keyword is required: it's a one-word name that must be unique
     # compared to all other major modes
-    keyword='DiffEdit'
+    keyword = 'DiffEdit'
+    editra_synonym = 'Diff File'
+    stc_lexer_id = 16
+    start_line_comment = '--- '
+    end_line_comment = ''
     
     # Specifying an icon here will cause it to be displayed in the tab
     # of any file using the Diff mode
