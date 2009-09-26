@@ -14,17 +14,6 @@ from peppy.editra.eclib.eclutil import HexToRGB
 
 
 class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
-    _synmgr = syntax.SyntaxMgr()
-    # _synmgr._extreg is an ExtensionRegister instance that is a dictionary
-    # from the Editra pretty name to the extension list supported by that
-    # name.  Editra doesn't provide a direct mapping from the pretty name to
-    # the primary extension, however, so this is created here.
-    _editra_lang_to_ext = {}
-    for lang, exts in _synmgr._extreg.iteritems():
-        #dprint("%s: %s" % (lang, exts))
-        _editra_lang_to_ext[lang] = exts[0]
-        _editra_lang_to_ext[lang.replace(' ', '_')] = exts[0]
-    
     # When the style sheet doesn't exist the instance var style_set gets set
     # to 'default'.  But, after changes are made and the styles.ess file gets
     # saved to the user's conf directory, any currently loaded buffers don't
@@ -87,20 +76,16 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         """
         return style in self._keyword_styles
 
-    def FindLexer(self, set_ext=u''):
+    def FindLexer(self, keyword):
         """Sets Text Controls Lexer Based on File Extension
         @param set_ext: explicit extension to use in search
         @postcondition: lexer is configured for file
 
         """
-        if set_ext != u'':
-            ext = set_ext.lower()
-        else:
-            ext = util.GetExtension(self.filename).lower()
         self.ClearDocumentStyle()
 
         # Configure Lexer from File Extension
-        self.ConfigureLexer(ext)
+        self.ConfigureLexer(keyword)
 
         # If syntax auto detection fails from file extension try to
         # see if there is an interpreter line that can be parsed.
@@ -127,75 +112,33 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.ConfigureAutoComp()
         return 0
     
-    def getEditraExtFromLang(self, lang):
-        """Get the Editra extension given the keyword of the major mode
-        
-        Editra uses the filename extension as the basis for most of its
-        lookups, but also has a pretty-printing name.  For instance, 'Python'
-        is the pretty name of python mode, but Editra uses "py" as its main
-        designator for the mode internally.
-        """
-        return self._editra_lang_to_ext.get(lang, lang)
-
-    def getEditraSyntaxData(self, lang):
-        """Get the Editra syntax data given the keyword of the major mode
-        
-        This method gets the syntax data based on the peppy keyword, which is
-        designed to be the same as the Editra pretty-printing mode in most
-        cases.
-        """
-        ext = self.getEditraExtFromLang(lang)
-        #dprint("after: %s" % ext)
-        syn_data = self._synmgr.SyntaxData(ext)
-        return syn_data
-
-    def getEditraSyntaxProperties(self, lang):
-        syn_data = self.getEditraSyntaxData(lang)
-        try:
-            props = syn_data[syntax.PROPERTIES]
-        except KeyError:
-            #self.LOG("[stc] [exception] No Extra Properties to Set")
-            props = []
-        return props
-    
-    def isEditraLanguage(self, lang):
-        syn_data = self.getEditraSyntaxData(lang)
-        lexer = syn_data[syntax.LEXER]
-        return lexer != wx.stc.STC_LEX_NULL
-    
     def NullLexer(self):
         self.SetStyleBits(5)
         self.SetIndentationGuides(False)
         self.SetLexer(wx.stc.STC_LEX_NULL)
         self.ClearDocumentStyle()
         self.UpdateBaseStyles()
-        self.SetComments()
         
         # Make all styles appear as strings for spelling purposes
         self.isStyleString = self._alwaysStyleString
         
         self.LOG("NULL!!!!")
 
-    def ConfigureLexer(self, lang):
-        """Sets Lexer and Lexer Keywords for the specifed file extension
-        @param file_ext: a file extension to configure the lexer from
-
+    def ConfigureLexer(self, keyword):
+        """Sets Lexer and Lexer Keywords for the specifed keyword
+        
+        @param keyword: a peppy major mode keyword
         """
-        syn_data = self.getEditraSyntaxData(lang)
-        self.LOG(lang)
-        self.LOG(syn_data)
+        import peppy.editra.style_specs as style_specs
 
-        # Set the ID of the selected lexer
-        try:
-            self.lang_id = syn_data[syntax.LANGUAGE]
-        except KeyError:
-            self.LOG("[stc][err] Failed to get Lang Id from Syntax package")
-            self.lang_id = 0
-            self.NullLexer()
-            return
-
-        lexer = syn_data[syntax.LEXER]
-        self.LOG("lexer = %s" % lexer)
+        if hasattr(self, 'stc_lexer_id'):
+            lexer = self.stc_lexer_id
+        elif keyword in style_specs.stc_lexer_id:
+            lexer = style_specs.stc_lexer_id[keyword]
+        else:
+            dprint("keyword not found: %s" % keyword)
+            lexer = wx.stc.STC_LEX_NULL
+        
         # Check for special cases
         if lexer in [ wx.stc.STC_LEX_HTML, wx.stc.STC_LEX_XML]:
             self.SetStyleBits(7)
@@ -206,28 +149,22 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             self.SetStyleBits(5)
 
         try:
-            keywords = syn_data[syntax.KEYWORDS]
+            keywords = style_specs.keywords[keyword]
         except KeyError:
-            self.LOG("[stc][err] No Keywords Data Found")
+            dprint("No keywords found for %s" % keyword)
             keywords = []
         
         try:
-            synspec = syn_data[syntax.SYNSPEC]
+            synspec = style_specs.syntax_style_specs[keyword]
         except KeyError:
-            self.LOG("[stc] [exception] Failed to get Syntax Specifications")
+            dprint("No style specs found for %s" % keyword)
             synspec = []
 
         try:
-            props = syn_data[syntax.PROPERTIES]
+            props = style_specs.extra_properties[keyword]
         except KeyError:
-            self.LOG("[stc] [exception] No Extra Properties to Set")
+            dprint("No extra properties found for %s" % keyword)
             props = []
-
-        try:
-            comment = syn_data[syntax.COMMENT]
-        except KeyError:
-            self.LOG("[stc] [exception] No Comment Pattern to set")
-            comment = []
 
         # Set Lexer
         self.SetLexer(lexer)
@@ -237,19 +174,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.SetSyntax(synspec)
         # Set Extra Properties
         self.SetProperties(props)
-        # Set Comment Pattern
-        self.SetComments(comment)
-        self.LOG("GetLexer = %d" % self.GetLexer())
+        self.dprint("GetLexer = %d" % self.GetLexer())
         return True
     
-    def SetComments(self, comment=[]):
-        try:
-            # Set Comment Pattern
-            self.setCommentDelimiters(*comment)
-        except AttributeError:
-            # the target STC doesn't understand setCommentDelimiters, so skip it
-            pass
-
     def SetKeyWords(self, kw_lst, orig_interface_keywords=None):
         """Sets the keywords from a list of keyword sets
         @param kw_lst: [ (KWLVL, "KEWORDS"), (KWLVL2, "KEYWORDS2"), ect...]
@@ -301,26 +228,15 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                 self.LOG("[ed_stc][warn] Error setting syntax spec")
                 continue
             else:
-                if not isinstance(syn[0], basestring) or \
-                   not hasattr(wx.stc, syn[0]):
-                    self.LOG("[ed_stc][warn] Unknown syntax region: %s" % \
-                             str(syn[0]))
-                    continue
-                elif not isinstance(syn[1], basestring):
-                    self.LOG("[ed_stc][warn] Poorly formated styletag: %s" % \
-                             str(syn[1]))
-                    continue
-                else:
-                    self.LOG("setting %s to %s" % (syn[0], self.GetStyleByName(syn[1])))
-                    self.StyleSetSpec(getattr(wx.stc, syn[0]), \
-                                      self.GetStyleByName(syn[1]))
-                    valid_settings.append(syn)
-                    if syn[1] in ['string_style', 'char_style', 'stringeol_style']:
-                        self._string_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] in ['comment_style', 'dockey_style', 'error_style']:
-                        self._comment_styles.append(getattr(wx.stc, syn[0]))
-                    elif syn[1] in ['keyword_style']:
-                        self._keyword_styles.append(getattr(wx.stc, syn[0]))
+                self.LOG("setting %s to %s" % (syn[0], self.GetStyleByName(syn[1])))
+                self.StyleSetSpec(syn[0], self.GetStyleByName(syn[1]))
+                valid_settings.append(syn)
+                if syn[1] in ['string_style', 'char_style', 'stringeol_style']:
+                    self._string_styles.append(syn[0])
+                elif syn[1] in ['comment_style', 'dockey_style', 'error_style']:
+                    self._comment_styles.append(syn[0])
+                elif syn[1] in ['keyword_style']:
+                    self._keyword_styles.append(syn[0])
         self.syntax_set = valid_settings
         return True
 
@@ -490,7 +406,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
 
         """
         for data in self.syntax_set:
-            if style_id == getattr(wx.stc, data[0]):
+            if style_id == data[0]:
                 return data[1]
         return 'default_style'
     

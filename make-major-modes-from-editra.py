@@ -264,20 +264,24 @@ def processStyleSpecs(filename):
     extra_properties = {}
     syntax_style_specs = {}
     keywords = {}
+    stc_lexer_id = {}
     for lang in langs:
         keyword = facade.getPeppyModeKeyword(lang)
         #dprint(keyword)
         extra_properties[keyword] = facade.getEditraExtraProperties(lang)
         syntax_style_specs[keyword] = facade.getEditraSyntaxSpecs(lang)
         keywords[keyword] = facade.getEditraLanguageKeywords(lang)
+        stc_lexer_id[keyword] = facade.getEditraSTCLexer(lang)
     
     unique_keywords, common_keywords = findCommonKeywords(keywords)
     
     import pprint
     pp = pprint.PrettyPrinter()
     fh = open(filename, "w")
-    fh.write("# Generated file containing the sample text for Editra modes\n")
-    fh.write("syntax_style_specs=")
+    fh.write("# Generated file containing Editra style defaults for those major modes based\n# on Editra style files\n")
+    fh.write("\nstc_lexer_id=")
+    fh.write(pp.pformat(stc_lexer_id))
+    fh.write("\nsyntax_style_specs=")
     fh.write(pp.pformat(syntax_style_specs))
     fh.write("\nextra_properties=")
     fh.write(pp.pformat(extra_properties))

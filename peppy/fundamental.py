@@ -81,6 +81,9 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     
     #: If the editra file_type (defined as the LANG_* keywords in the editra source file peppy/editra/synglob.py) doesn't match the class attribute 'keyword', specify the editra file type here.  In other words, None here means that the editra file_type *does* match the keyword
     editra_synonym = None
+    
+    #: STC Lexer ID is an integer value that controls which lexer is used
+    stc_lexer_id = wx.stc.STC_LEX_NULL
 
     #: Default comment characters in case the Editra styling database doesn't have any information about the mode
     start_line_comment = ''
@@ -154,6 +157,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.dprint("PeppySTC done in %0.5fs" % (time.time() - start))
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())
         self.dprint("EditraSTCMixin done in %0.5fs" % (time.time() - start))
+        
+        self.createCommentRegex()
         
         self.spell = None
 
@@ -303,15 +308,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.dprint("applyDefaultSettings done in %0.5fs" % (time.time() - start))
         
         self.applyFontStyling()
-        self.determineEditraLanguage()
-        try:
-            self.applyEditraStyling()
-        except:
-            self.dprint("Failed loading Editra style sheet '%s'.  Using default style sheet." % self.style_set)
-            self.editra_lang = "Plain Text"
-            self.style_set = ""
-            self.LoadStyleSheet(self.style_set)
-            self.applyEditraStyling()
+        self.applyEditraStyling()
         self.dprint("applyEditraStyling done in %0.5fs" % (time.time() - start))
         self.has_stc_styling = True
         self.applyFileLocalComments()
@@ -325,32 +322,13 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.SetStyleFont(wx.GetApp().fonts.classprefs.primary_editing_font)
         self.SetStyleFont(wx.GetApp().fonts.classprefs.secondary_editing_font, False)
     
-    def determineEditraLanguage(self):
-        """Try to find the editra style corresponding to the major mode.
-        
-        If there is no mode corresponding to the major mode name, let the
-        Editra styling system choose the style based on the filename.
-        """
-        if self.editra_synonym is not None:
-            file_type = self.editra_synonym
-        else:
-            file_type = self.keyword
-        if not self.isEditraLanguage(file_type):
-            ext, file_type = MajorModeMatcherDriver.getEditraType(self.buffer.url)
-            self.dprint("ext=%s file_type=%s" % (ext, file_type))
-            if file_type == 'generic' or file_type is None:
-                file_type = 'Plain Text'
-            self.dprint("ext=%s file_type=%s" % (ext, file_type))
-            
-        self.editra_lang = file_type
-
     def applyEditraStyling(self):
         # Here's the global hack to fix the problem the first time styles are
         # modified by the style dialog.
         if self.global_style_set and self.global_style_set != self.style_set:
             self.style_set = self.global_style_set
             self.dprint("Changing style to global style %s" % self.style_set)
-        self.ConfigureLexer(self.editra_lang)
+        self.ConfigureLexer(self.keyword)
 
     def applyDefaultSettings(self):
         # We use our own right click popup menu, so disable the builtin
@@ -643,12 +621,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             self.setViewPositionData(options)
 
     ##### Comment handling
-    def setCommentDelimiters(self, start='', end=''):
-        """Set instance-specific comment characters and comment regex
-        
-        If the instance uses different comment characters that the class
-        attributes, set the instance attributes here which will override
-        the class attributes.
+    def createCommentRegex(self):
+        """Set class-specific comment regex
         
         A regex is created that will match a line with the comment characters.
         The regex returns a 3-tuple of whitespace followed by the opening
@@ -656,25 +630,27 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         including any trailing whitespace.  If the language doesn't have a
         closing comment character, the final tuple element will always be
         an empty string.
-        
-        This is typically called by the Editra stc mixin to set the
-        comment characters encoded by the Editra style manager.
         """
-        self.start_line_comment = start
-        self.end_line_comment = end
-        if start:
-            if end:
-                regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
-                self.dprint(regex)
-                self.comment_regex = re.compile(regex)
+        cache = self.getClassCache()
+        try:
+            self.comment_regex = cache['comment_regex']
+        except KeyError:
+            start = self.start_line_comment
+            end = self.end_line_comment
+            if start:
+                if end:
+                    regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
+                    self.dprint(regex)
+                    self.comment_regex = re.compile(regex)
+                else:
+                    regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
+                    self.dprint(regex)
+                    self.comment_regex = re.compile(regex)
             else:
-                regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
+                regex = r"^(\s*)(.*)($)"
                 self.dprint(regex)
                 self.comment_regex = re.compile(regex)
-        else:
-            regex = r"^(\s*)(.*)($)"
-            self.dprint(regex)
-            self.comment_regex = re.compile(regex)
+            cache['comment_regex'] = self.comment_regex
         
     def commentRegion(self, add=True):
         """Default implementation of block commenting and uncommenting
