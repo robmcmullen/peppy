@@ -255,7 +255,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.Bind(wx.stc.EVT_STC_MARGINCLICK, self.OnMarginClick)
         
     def createListenersPostHook(self):
-        self.buffer.stc.addModifyCallback(self.spellCheckUpdate)
+        self.addModifyCallback(self.spellCheckUpdate)
 
     def createStatusIcons(self):
         linesep = self.getLinesep()
