@@ -50,13 +50,9 @@ class EditraStyles(SelectAction):
     osx_minimal_menu = True
     
     def setSampleText(self, dlg):
-        if hasattr(self.mode, 'editra_lang'):
-            lang = self.mode.editra_lang
-        else:
-            lang = "Plain Text"
-        dlg.OpenPreviewFile(lang)
+        dlg.OpenPreviewFile(self.mode.keyword)
         lexer_lst = dlg.FindWindowById(style_editor.ed_glob.ID_LEXER)
-        lexer_lst.SetStringSelection(lang)
+        lexer_lst.SetStringSelection(self.mode.keyword)
     
     def action(self, index=-1, multiplier=1):
         stylesheet = wx.GetApp().fonts.getStyleFile()

@@ -248,7 +248,8 @@ def processSampleText(filename):
     langs = facade.getAllEditraLanguages()
     sample_text = {}
     for lang in langs:
-        sample_text[lang] = facade.getEditraLanguageSampleText(lang)
+        keyword = facade.getPeppyModeKeyword(lang)
+        sample_text[keyword] = facade.getEditraLanguageSampleText(lang)
     
     import pprint
     pp = pprint.PrettyPrinter()

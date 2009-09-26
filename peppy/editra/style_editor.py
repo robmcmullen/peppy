@@ -38,7 +38,7 @@ from profiler import Profile_Get, Profile_Set
 #import ed_stc
 from ed_style import StyleItem
 import util
-import syntax.syntax as syntax
+#import syntax.syntax as syntax
 import eclib.colorsetter as colorsetter
 
 # Function Aliases
@@ -186,13 +186,19 @@ class StyleEditor(wx.Dialog):
         lexer_lbl = wx.StaticText(self.ctrl_pane, wx.ID_ANY,
                                   _("Syntax Files") + u": ")
         lexer_lst = wx.Choice(self.ctrl_pane, ed_glob.ID_LEXER,
-                              choices=syntax.GetLexerList())
+                              choices=self.getLexerList())
         lexer_lst.SetToolTip(wx.ToolTip(_("Set the preview file type")))
-        lexer_lst.SetStringSelection(u"CPP")
+        lexer_lst.SetStringSelection(u"Python")
         lex_sizer.AddMany([((10, 10)), (lexer_lbl, 0, wx.ALIGN_CENTER_VERTICAL),
                            ((5, 0)), (lexer_lst, 1, wx.ALIGN_CENTER_VERTICAL),
                            ((10, 10))])
         return lex_sizer
+    
+    def getLexerList(self):
+        import peppy.editra.sample_text
+        langs = peppy.editra.sample_text.sample_text.keys()
+        langs.sort()
+        return langs
 
     def __StyleSheets(self):
         """Returns a sizer item that contains a choice control with
