@@ -9,7 +9,7 @@ from optparse import OptionParser
 __builtin__._ = str
 
 from peppy.debug import *
-from peppy.editra.facade import *
+from facade import *
 
 
 facade = EditraFacade()
@@ -318,11 +318,11 @@ if __name__ == "__main__":
     usage="usage: %prog [-s dir] [-o file]"
     parser=OptionParser(usage=usage)
     parser.add_option("-o", action="store", dest="outputdir",
-                      default="peppy/major_modes", help="output directory")
+                      default="../peppy/major_modes", help="output directory")
     parser.add_option("--sample-text", action="store", dest="sample_text_file",
-                      default="peppy/editra/sample_text.py", help="dict containing sample text for each editra language")
+                      default="../peppy/editra/sample_text.py", help="dict containing sample text for each editra language")
     parser.add_option("--style-spec", action="store", dest="style_spec_file",
-                      default="peppy/editra/style_specs.py", help="dict containing sample text for each editra language")
+                      default="../peppy/editra/style_specs.py", help="dict containing sample text for each editra language")
     (options, args) = parser.parse_args()
 
     process(options.outputdir)

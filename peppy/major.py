@@ -728,23 +728,6 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         return False
 
     @classmethod
-    def verifyEditraType(cls, ext, file_type):
-        """Hook to verify the mode can handle the specified Editra type.
-
-        @param ext: filename extension without the '.', or an empty string
-        @param file_type: Editra file type string as given in the file
-        peppy/editra/synglob.py, or None if not recognized by Editra
-
-        @returns: either the boolean False, indicating Editra doesn't support
-        this mode, or a string.  The string can either be the same as the
-        input value ext if it matches a specific type supported by this mode
-        or 'generic' if Editra supports the mode but if the mode doesn't
-        provide any additional functionality (this usually only happens in
-        Fundamental mode).
-        """
-        return False
-
-    @classmethod
     def verifyMagic(cls, header):
         """Hook to verify the file is acceptable to this mode.
 

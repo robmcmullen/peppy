@@ -5,10 +5,9 @@ import os, shutil, time
 import wx
 import wx.stc
 
-from peppy.editra import *
-import peppy.editra.util as util
 from peppy.debug import *
-from peppy.editra.syntax.syntax import KEYWORDS, LEXER, SYNSPEC, PROPERTIES, LANGUAGE, COMMENT, CLEXER, INDENTER
+from syntax.synextreg import *
+from syntax.syntax import *
 
 
 class EditraFacade(object):
@@ -36,8 +35,8 @@ class EditraFacade(object):
         if EditraFacade.first:
             object.__init__(self)
             EditraFacade.first = False
-            self._synmgr = syntax.SyntaxMgr()
-            self._extreg = synextreg.ExtensionRegister()
+            self._synmgr = SyntaxMgr()
+            self._extreg = ExtensionRegister()
             self.LOG = dprint
             self.rebuild()
 

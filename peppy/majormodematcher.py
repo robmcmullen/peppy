@@ -323,22 +323,6 @@ class MajorModeMatcherDriver(debugmixin):
         return modes
     
     @classmethod
-    def getEditraType(cls, url):
-        filename = url.path.get_name()
-        # Also scan Editra extensions
-        name, ext = os.path.splitext(filename)
-        if ext.startswith('.'):
-            ext = ext[1:]
-            cls.dprint("ext = %s, filename = %s" % (ext, filename))
-            extreg = syntax.ExtensionRegister()
-            cls.dprint(extreg.GetAllExtensions())
-            if ext in extreg.GetAllExtensions():
-                editra_type = extreg.FileTypeFromExt(ext)
-                cls.dprint(editra_type)
-                return ext, editra_type
-        return ext, None
-
-    @classmethod
     def scanURL(cls, url, metadata):
         """Scan for url filename match.
         
@@ -359,7 +343,6 @@ class MajorModeMatcherDriver(debugmixin):
         binary_generics = []
         
         mimetype = metadata['mimetype']
-        ext, editra_type = cls.getEditraType(url)
         for mode in cls.iterActiveModes():
             try:
                 if mode.verifyMimetype(mimetype):
@@ -373,15 +356,8 @@ class MajorModeMatcherDriver(debugmixin):
                     modes.append(mode)
                 elif mode.verifyMimetype("application/octet-stream"):
                     binary_generics.append(mode)
-                
-                # check if the mode is recognized by Editra.  It could also be
-                # a generic mode or not recognized at all (in which case it
-                # is ignored).
-                editra = mode.verifyEditraType(ext, editra_type)
-                if editra == 'generic':
+                elif mode.verifyMimetype("text/plain"):
                     generics.append(mode)
-                elif isinstance(editra, str):
-                    modes.append(mode)
             except IgnoreMajorMode:
                 cls.ignoreMode(mode)
         modes.extend(generics)

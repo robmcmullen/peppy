@@ -182,38 +182,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.dprint("applySettings done in %0.5fs" % (time.time() - start))
 
     @classmethod
-    def verifyEditraType(cls, ext, file_type):
-        cls.dprint("ext=%s file_type=%s" % (ext, file_type))
-        if file_type is None:
-            # Not recognized at all by Editra.
-            return False
-        
-        # file_type is a human readable string given in peppy.editra.synglob.py
-        # If file_type is the same as the major mode keyword or an alias,
-        # mark this as a specific match.
-        if file_type == cls.keyword or file_type == cls.editra_synonym:
-            cls.dprint("Specific match of %s" % file_type)
-            return ext
-        
-        # If the editra filetype exists but doesn't match the editra synonym,
-        # then we know the mode won't work.
-        if cls.editra_synonym and file_type != cls.editra_synonym:
-            return False
-        
-        # Same with the mode keyword: if there's no editra synonym the keyword
-        # is used to match against the editra filetype.  If the editra type
-        # doesn't match the keyword, the mode won't work.  However, if the
-        # mode is specifically labeled as a generic mode (matches text/plain),
-        # we *do* want to allow this mode to match.
-        if not cls.editra_synonym and not cls.verifyMimetype('text/plain') and file_type != cls.keyword:
-            return False
-        
-        # Otherwise, if the file type is recognized but not specific to this
-        # mode, mark it as generic.
-        cls.dprint("generic match of %s" % file_type)
-        return "generic"
-    
-    @classmethod
     def verifyMimetypeHook(cls, mimetype):
         """Verify that the mimetype is text/plain.
         
