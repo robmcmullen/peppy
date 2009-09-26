@@ -1,3 +1,15 @@
+2009-09-26  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.11.78
+	* added new major modes to correspond with editra languages (bug #776)
+	* customizable major mode filename extensions now available in
+	preferences (bug #766)
+	* fixed bug in spell checker that causes freezes when deleting large
+	blocks of text (bug #775)
+	* fixed style editor in py2exe (bug #774)
+	* restructured Major Mode menu to prefer display of common major modes
+	rather than all major modes (bug #771)
+
 2009-09-21  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.11.53
