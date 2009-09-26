@@ -30,6 +30,15 @@ def findChangeLogVersion(options):
         release_date = date.today().strftime("%d %B %Y")
     return version, release_date, codename
 
+def getCurrentSvnRevision(options):
+    info = subprocess.Popen(["git", "svn", "info"], stdout=subprocess.PIPE).communicate()[0]
+    rev = "rHEAD"
+    for line in info.splitlines():
+        tags = line.split(":")
+        if tags[0] == "Revision":
+            rev = "r%s" % tags[1].strip()
+    return rev
+    
 def findLatestInGit(options):
     version = StrictVersion("0.0")
     tags = subprocess.Popen(["git", "tag", "-l"], stdout=subprocess.PIPE).communicate()[0]
@@ -114,6 +123,7 @@ if __name__=='__main__':
 
     changelog_version, dum, codename = findChangeLogVersion(options)
     last_tag, version = getCurrentGitPatchlevel(options)
+    svn_revision = getCurrentSvnRevision(options)
     if options.version:
         print version
         sys.exit()
@@ -139,7 +149,8 @@ if __name__=='__main__':
     if options.outputfile:
         print options.outputfile
         text = os.linesep.join(["version = '%s'" % version,
-                                "codename = '%s'" % codename])
+                                "codename = '%s'" % codename,
+                                "revision = '%s'" % svn_revision])
         fh = open(options.outputfile,"wb")
         fh.write(text)
         fh.close()

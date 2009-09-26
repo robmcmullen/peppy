@@ -25,12 +25,13 @@ from StringIO import StringIO
 
 # if you import from peppy instead of main here, the ExtensionPoints
 # in peppy will get loaded twice.
-from peppy import __version__, __codename__, __description__, __author__, __author_email__, __url__
+from peppy import __version__, __codename__, __revision__, __description__, __author__, __author_email__, __url__
 substitutes = {
     'prog': 'peppy',
     'yearrange': '2006-2008',
     'version': __version__,
     'codename': __codename__,
+    'revision': __revision__,
     'description': __description__,
     'author': __author__,
     'author_email': __author_email__,
@@ -280,7 +281,7 @@ SetAbout('thanks', """\
 %(contributors)s
 """)
 SetAbout('peppy',"""\
-<h2>%(prog)s %(version)s \"%(codename)s\"</h2>
+<h2>%(prog)s %(version)s %(revision)s \"%(codename)s\"</h2>
 
 <h3>%(description)s</h3>
 

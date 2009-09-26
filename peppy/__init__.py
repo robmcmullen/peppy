@@ -98,6 +98,8 @@ try:
     import _peppy_version
     __version__ = _peppy_version.version
     __codename__ = _peppy_version.codename
+    __revision__ = _peppy_version.revision
 except ImportError:
     __version__ = "svn-devel"
     __codename__ = "svn-codename"
+    __revision__ = "rHEAD"
