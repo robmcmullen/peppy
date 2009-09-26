@@ -9,9 +9,24 @@ $url
 INSTALLATION
 ============
 
-NOTE! Since peppy is an application and not a library, it is not installed in
-the site-packages directory.  I recommend you just unpack the source and run
+You do not need to install the program in any system directories in order to
+use it.  For testing purposes, I recommend you just unpack the source and run
 it from there.  See the README for more instructions.
+
+If you do want to install in system directories, I recommend using setuptools,
+the de-facto package management system in Python.  Setuptools provides a
+program called easy_install that manages dependencies among packages.
+
+You'll have to install wxPython separately, and if you don't have setuptools
+you can bootstrap it using:
+
+http://peak.telecommunity.com/dist/ez_setup.py
+
+Once setuptools is installed, you are ready to install with:
+
+$ tar xfv peppy-$version.tar.bz2
+$ cd peppy-$version
+$ easy_install -UZ .
 
 If you're looking for more info on how to install optional packages, read on...
 

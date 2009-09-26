@@ -113,7 +113,7 @@ out of the directory in which the software was unpacked.
 
 $ tar xfv peppy-$version.tar.bz2
 $ cd peppy-$version
-$ python peppy.py
+$ python run.py
 
 
 
