@@ -28,7 +28,7 @@ from StringIO import StringIO
 from peppy import __version__, __codename__, __revision__, __description__, __author__, __author_email__, __url__
 substitutes = {
     'prog': 'peppy',
-    'yearrange': '2006-2008',
+    'yearrange': '2006-2009',
     'version': __version__,
     'codename': __codename__,
     'revision': __revision__,
