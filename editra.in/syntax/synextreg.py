@@ -288,17 +288,6 @@ LANG_GROOVY = u'Groovy'
 ID_LANG_XTEXT = _NewId()
 LANG_XTEXT = u'Xtext'
 
-
-
-# Since unfortunately there doesn't seem to be a way to add lexers dynamically,
-# the peppy custom lexers must be added in the source code directly.
-ID_LANG_SIMCUBE = _NewId()
-LANG_SIMCUBE = u'SimCube'
-
-
-
-
-
 #---- End Language Identifier Keys ----#
 
 # Default extensions to file type mapping
@@ -382,7 +371,6 @@ EXT_MAP = {
            'yaml yml'           : LANG_YAML,
            'groovy'             : LANG_GROOVY,
            'xtext'               : LANG_XTEXT,
-           'simcube'            : LANG_SIMCUBE,
           }
 
 

@@ -148,23 +148,32 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         else:
             self.SetStyleBits(5)
 
-        try:
-            keywords = style_specs.keywords[keyword]
-        except KeyError:
-            dprint("No keywords found for %s" % keyword)
-            keywords = []
+        if self.stc_keywords is not None:
+            keywords = self.stc_keywords
+        else:
+            try:
+                keywords = style_specs.keywords[keyword]
+            except KeyError:
+                dprint("No keywords found for %s" % keyword)
+                keywords = []
         
-        try:
-            synspec = style_specs.syntax_style_specs[keyword]
-        except KeyError:
-            dprint("No style specs found for %s" % keyword)
-            synspec = []
+        if self.stc_syntax_style_specs is not None:
+            synspec = self.stc_syntax_style_specs
+        else:
+            try:
+                synspec = style_specs.syntax_style_specs[keyword]
+            except KeyError:
+                dprint("No style specs found for %s" % keyword)
+                synspec = []
 
-        try:
-            props = style_specs.extra_properties[keyword]
-        except KeyError:
-            dprint("No extra properties found for %s" % keyword)
-            props = []
+        if self.stc_extra_properties is not None:
+            props = self.stc_extra_properties
+        else:
+            try:
+                props = style_specs.extra_properties[keyword]
+            except KeyError:
+                dprint("No extra properties found for %s" % keyword)
+                props = []
 
         # Set Lexer
         self.SetLexer(lexer)
