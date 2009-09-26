@@ -3,7 +3,6 @@ recursive-include docs *
 recursive-include tests *
 recursive-include manual *
 recursive-include peppy/editra/styles *
-recursive-include peppy/editra/syntax *
 global-include *.peppy-plugin
 recursive-include peppy/icons *
 recursive-include py2exe *
