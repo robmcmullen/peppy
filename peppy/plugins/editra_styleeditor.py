@@ -31,11 +31,9 @@ class PeppyStyleEditor(style_editor.StyleEditor):
         from peppy.editra.sample_text import sample_text
         
         self.preview.ClearAll()
-        if lang in sample_text:
-            sample = sample_text[lang]
-        else:
-            lang = "Plain Text"
-            sample = "Preview text not available..."
+        if lang not in sample_text:
+            lang = "Python"
+        sample = sample_text[lang]
         self.preview.SetText(sample)
         self.preview.FindLexer(lang)
         self.preview.EmptyUndoBuffer()

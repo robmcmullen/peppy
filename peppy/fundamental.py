@@ -28,6 +28,12 @@ class FundamentalSTC(EditraSTCMixin, PeppySTC):
     Needed for the Editra styling dialog.  FIXME: perhaps move the editra stuff
     right into PeppySTC?
     """
+    # Need these defined as None here for the style editor
+    stc_lexer_id = None
+    stc_syntax_style_specs = None
+    stc_extra_properties = None
+    stc_keywords = None
+    
     def __init__(self, parent, *args, **kwargs):
         PeppySTC.__init__(self, parent, *args, **kwargs)
         EditraSTCMixin.__init__(self, wx.GetApp().fonts.getStyleFile())

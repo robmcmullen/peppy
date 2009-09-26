@@ -130,8 +130,8 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @param keyword: a peppy major mode keyword
         """
         import peppy.editra.style_specs as style_specs
-
-        if hasattr(self, 'stc_lexer_id'):
+        
+        if hasattr(self, 'stc_lexer_id') and self.stc_lexer_id is not None:
             lexer = self.stc_lexer_id
         elif keyword in style_specs.stc_lexer_id:
             lexer = style_specs.stc_lexer_id[keyword]
