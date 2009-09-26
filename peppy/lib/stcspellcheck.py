@@ -258,8 +258,13 @@ class STCSpellCheck(object):
         
         # Remove any old spelling indicators
         mask = self._spelling_indicator_mask
+        count = end - start
+        if count <= 0:
+            if self._spelling_debug:
+                print("No need to check range: start=%d end=%d count=%d" % (start, end, count))
+            return
         self.stc.StartStyling(start, mask)
-        self.stc.SetStyling(end - start, 0)
+        self.stc.SetStyling(count, 0)
         
         text = self.stc.GetTextRange(start, end) # note: returns unicode
         unicode_index = 0
@@ -462,6 +467,10 @@ class STCSpellCheck(object):
             self.current_word_end += count
         elif start <= self.current_word_end:
             self.current_word_end += count
+            # Prevent nonsensical word end if lots of text have been deleted
+            if self.current_word_end < self.current_word_start:
+                #print("word start = %d, word end = %d" % (self.current_word_start, self.current_word_end))
+                self.current_word_end = self.current_word_start
             
         if lines_added > 0:
             start = self.current_dirty_start
