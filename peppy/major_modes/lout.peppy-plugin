@@ -1,0 +1,10 @@
+[Core]
+name = Lout Mode
+module = lout
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Lout files
+author = Rob McMullen
+

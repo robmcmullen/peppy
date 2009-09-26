@@ -1,0 +1,10 @@
+[Core]
+name = Erlang Mode
+module = erlang
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Erlang files
+author = Rob McMullen
+

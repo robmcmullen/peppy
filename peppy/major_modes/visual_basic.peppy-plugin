@@ -1,0 +1,10 @@
+[Core]
+name = Visual Basic Mode
+module = visual_basic
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Visual Basic files
+author = Rob McMullen
+

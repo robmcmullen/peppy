@@ -1,0 +1,10 @@
+[Core]
+name = IssueList Mode
+module = issuelist
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing IssueList files
+author = Rob McMullen
+

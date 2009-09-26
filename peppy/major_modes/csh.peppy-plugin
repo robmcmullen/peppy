@@ -1,0 +1,10 @@
+[Core]
+name = Csh Mode
+module = csh
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Csh files
+author = Rob McMullen
+

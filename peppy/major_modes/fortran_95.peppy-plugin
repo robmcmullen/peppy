@@ -1,0 +1,10 @@
+[Core]
+name = Fortran 95 Mode
+module = fortran_95
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Fortran 95 files
+author = Rob McMullen
+

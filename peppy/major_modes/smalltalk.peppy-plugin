@@ -1,0 +1,10 @@
+[Core]
+name = Smalltalk Mode
+module = smalltalk
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Smalltalk files
+author = Rob McMullen
+

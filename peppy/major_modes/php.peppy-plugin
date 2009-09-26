@@ -1,0 +1,10 @@
+[Core]
+name = PHP Mode
+module = php
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing PHP files
+author = Rob McMullen
+

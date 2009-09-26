@@ -1,0 +1,10 @@
+[Core]
+name = VBScript Mode
+module = vbscript
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing VBScript files
+author = Rob McMullen
+

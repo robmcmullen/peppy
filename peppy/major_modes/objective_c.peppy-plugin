@@ -1,0 +1,10 @@
+[Core]
+name = Objective C Mode
+module = objective_c
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Objective C files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = D Mode
+module = d
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing D files
+author = Rob McMullen
+

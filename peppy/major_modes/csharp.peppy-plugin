@@ -1,0 +1,10 @@
+[Core]
+name = C# Mode
+module = csharp
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing C# files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Cascading Style Sheet Mode
+module = cascading_style_sheet
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Cascading Style Sheet files
+author = Rob McMullen
+

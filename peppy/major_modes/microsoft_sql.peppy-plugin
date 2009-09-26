@@ -1,0 +1,10 @@
+[Core]
+name = Microsoft SQL Mode
+module = microsoft_sql
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Microsoft SQL files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = DOS Batch Script Mode
+module = dos_batch_script
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing DOS Batch Script files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Scheme Mode
+module = scheme
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Scheme files
+author = Rob McMullen
+

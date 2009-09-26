@@ -1,0 +1,10 @@
+[Core]
+name = YAML Mode
+module = yaml
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing YAML files
+author = Rob McMullen
+

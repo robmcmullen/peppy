@@ -1,0 +1,10 @@
+[Core]
+name = Edje Mode
+module = edje
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Edje files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Xtext Mode
+module = xtext
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Xtext files
+author = Rob McMullen
+

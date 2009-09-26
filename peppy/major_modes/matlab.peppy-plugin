@@ -1,0 +1,10 @@
+[Core]
+name = Matlab Mode
+module = matlab
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Matlab files
+author = Rob McMullen
+

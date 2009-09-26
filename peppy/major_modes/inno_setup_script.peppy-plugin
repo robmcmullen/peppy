@@ -1,0 +1,10 @@
+[Core]
+name = Inno Setup Script Mode
+module = inno_setup_script
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Inno Setup Script files
+author = Rob McMullen
+

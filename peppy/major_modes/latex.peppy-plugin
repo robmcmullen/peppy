@@ -1,0 +1,10 @@
+[Core]
+name = LaTeX Mode
+module = latex
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing LaTeX files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = HTML Mode
+module = html
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing HTML files
+author = Rob McMullen
+

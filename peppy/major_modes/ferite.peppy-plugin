@@ -1,0 +1,10 @@
+[Core]
+name = Ferite Mode
+module = ferite
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Ferite files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Nullsoft Installer Script Mode
+module = nullsoft_installer_script
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Nullsoft Installer Script files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Ruby Mode
+module = ruby
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Ruby files
+author = Rob McMullen
+

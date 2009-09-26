@@ -1,0 +1,10 @@
+[Core]
+name = Lisp Mode
+module = lisp
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Lisp files
+author = Rob McMullen
+

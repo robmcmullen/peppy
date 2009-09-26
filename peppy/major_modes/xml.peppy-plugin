@@ -1,0 +1,10 @@
+[Core]
+name = XML Mode
+module = xml
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing XML files
+author = Rob McMullen
+

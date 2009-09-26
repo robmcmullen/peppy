@@ -1,0 +1,10 @@
+[Core]
+name = Pascal Mode
+module = pascal
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Pascal files
+author = Rob McMullen
+

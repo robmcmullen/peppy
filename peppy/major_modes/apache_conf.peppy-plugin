@@ -1,0 +1,10 @@
+[Core]
+name = Apache Conf Mode
+module = apache_conf
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Apache Conf files
+author = Rob McMullen
+

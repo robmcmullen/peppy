@@ -1,0 +1,10 @@
+[Core]
+name = 68k Assembly Mode
+module = _68k_assembly
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing 68k Assembly files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Progress 4GL Mode
+module = progress_4gl
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Progress 4GL files
+author = Rob McMullen
+

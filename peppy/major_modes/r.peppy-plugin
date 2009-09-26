@@ -1,0 +1,10 @@
+[Core]
+name = R Mode
+module = r
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing R files
+author = Rob McMullen
+

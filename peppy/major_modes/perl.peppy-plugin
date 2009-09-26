@@ -1,0 +1,10 @@
+[Core]
+name = Perl Mode
+module = perl
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Perl files
+author = Rob McMullen
+

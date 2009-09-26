@@ -1,0 +1,10 @@
+[Core]
+name = Octave Mode
+module = octave
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Octave files
+author = Rob McMullen
+

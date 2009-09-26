@@ -1,0 +1,10 @@
+[Core]
+name = Ksh Mode
+module = ksh
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Ksh files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Verilog Mode
+module = verilog
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Verilog files
+author = Rob McMullen
+

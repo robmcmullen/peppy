@@ -1,0 +1,10 @@
+[Core]
+name = Squirrel Mode
+module = squirrel
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Squirrel files
+author = Rob McMullen
+

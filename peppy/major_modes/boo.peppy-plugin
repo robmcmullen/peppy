@@ -1,0 +1,10 @@
+[Core]
+name = Boo Mode
+module = boo
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Boo files
+author = Rob McMullen
+

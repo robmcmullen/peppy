@@ -1,0 +1,10 @@
+[Core]
+name = Vala Mode
+module = vala
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Vala files
+author = Rob McMullen
+

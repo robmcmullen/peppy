@@ -1,0 +1,10 @@
+[Core]
+name = Groovy Mode
+module = groovy
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Groovy files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Caml Mode
+module = caml
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Caml files
+author = Rob McMullen
+

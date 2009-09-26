@@ -1,0 +1,10 @@
+[Core]
+name = ColdFusion Mode
+module = coldfusion
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing ColdFusion files
+author = Rob McMullen
+

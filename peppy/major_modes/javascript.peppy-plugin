@@ -1,0 +1,10 @@
+[Core]
+name = JavaScript Mode
+module = javascript
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing JavaScript files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = Editra Style Sheet Mode
+module = editra_style_sheet
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing Editra Style Sheet files
+author = Rob McMullen
+

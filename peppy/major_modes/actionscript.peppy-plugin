@@ -1,0 +1,10 @@
+[Core]
+name = ActionScript Mode
+module = actionscript
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing ActionScript files
+author = Rob McMullen
+

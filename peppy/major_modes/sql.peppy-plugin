@@ -1,0 +1,10 @@
+[Core]
+name = SQL Mode
+module = sql
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing SQL files
+author = Rob McMullen
+

@@ -1,0 +1,10 @@
+[Core]
+name = newLISP Mode
+module = newlisp
+
+[Documentation]
+website = http://www.flipturn.org/peppy
+version = 0.1
+description = Major mode for editing newLISP files
+author = Rob McMullen
+
