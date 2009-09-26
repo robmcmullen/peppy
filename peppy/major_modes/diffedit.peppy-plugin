@@ -1,6 +1,6 @@
 [Core]
-Name = Diff Mode
-Module = diff
+Name = Diff Edit Mode
+Module = diffedit
 
 [Documentation]
 Author = Rob McMullen
