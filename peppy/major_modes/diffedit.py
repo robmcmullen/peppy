@@ -88,6 +88,24 @@ class DiffEditMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     
     autoindent = NullAutoindent()
     
+    @classmethod
+    def verifyMagic(cls, header):
+        # Diff files always use pairs of lines like this:
+        #
+        # --- /path/to/one/file
+        # +++ /path/to/another/file
+        #
+        # to indicate the start of a diff block.  If that pattern exists, assume
+        # that it is a diff file.
+        lines = header.splitlines()
+        found_minuses = False
+        for line in lines:
+            if found_minuses:
+                return line.startswith("+++ ")
+            if line.startswith("--- "):
+                found_minuses = True
+        return False
+    
     def getFoldEntryPrettyName(self, start, text):
         text = text[len(start):]
         if text[0] == '-':
