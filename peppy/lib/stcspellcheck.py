@@ -127,8 +127,13 @@ class STCSpellCheck(object):
         else:
             self._spell_check_region = lambda s: True
         self._spelling_debug = False
+        
         self._spelling_last_idle_line = -1
         self.dirty_range_count_per_idle = 5
+        
+        self._no_update = False
+        self._last_block = -1
+        
         self.clearDirtyRanges()
 
     def setIndicator(self, indicator=None, color=None, style=None):
@@ -421,7 +426,7 @@ class STCSpellCheck(object):
         """Process a block of lines during idle time.
         
         This method is designed to be called during idle processing and will
-        spell checks a small number of lines.  The next idle processing event
+        spell check a small number of lines.  The next idle processing event
         will continue from where the previous call left off, and in this way
         over some number of idle events will spell check the entire document.
         
@@ -440,6 +445,28 @@ class STCSpellCheck(object):
         if self._spelling_last_idle_line > self.stc.GetLineCount():
             self._spelling_last_idle_line = -1
             return False
+        return True
+
+    def processCurrentlyVisibleBlock(self):
+        """Alternate method to check lines during idle time.
+        
+        This method is designed to be called during idle processing and will
+        spell check the currently visible block of lines.  Once the visible
+        block has been checked, repeatedly calling this method will have
+        no effect until the line position changes (or in the less frequent
+        occurrence when the number of lines on screen changes by resizing
+        the window).
+        """
+        self.processDirtyRanges()
+
+        self._spelling_last_idle_line = self.stc.GetFirstVisibleLine()
+        curr_block = self._spelling_last_idle_line + self.stc.LinesOnScreen()
+        if self._no_update or curr_block == self._last_block:
+            return
+
+        self.checkLines(self._spelling_last_idle_line)
+        self._spelling_last_idle_line += self.stc.LinesOnScreen()
+        self._last_block = self._spelling_last_idle_line
         return True
 
     def getSuggestions(self, word):
