@@ -1353,6 +1353,20 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         major mode.
         """
         return hasattr(self, 'processing_macro')
+    
+    ## Printing
+    def isPrintingSupported(self):
+        """Returns True if possible to print the current view of the major
+        mode.
+        """
+        return False
+    
+    def getPrintout(self):
+        """Returns a wx.Printout object that the printer management driver
+        can use to generate a print preview or a paper copy.
+        
+        """
+        return None
 
 
 class EmptyMode(MajorMode, wx.Window):

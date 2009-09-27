@@ -825,3 +825,19 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.Colourise(start, end)
         if self.spell:
             self.spell.checkRange(start, end)
+
+
+    ## Printing
+    def isPrintingSupported(self):
+        """Returns True if possible to print the current view of the major
+        mode.
+        """
+        return True
+    
+    def getPrintout(self):
+        """Returns a wx.Printout object that the printer management driver
+        can use to generate a print preview or a paper copy.
+        
+        """
+        import peppy.lib.stcprint
+        return peppy.lib.stcprint.STCPrintout(self)
