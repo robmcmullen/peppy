@@ -3,6 +3,8 @@
 """Printer support
 
 This plugin provides the Page Setup, Print Preview, and Print actions
+
+Some of this code was modified from Editra's ed_print.py.
 """
 
 import os
@@ -90,7 +92,6 @@ class Print(PrintingSupportedMixin, SelectAction):
                             "Check that your printer is properly connected."),
                           _("Printer Error"),
                           style=wx.ICON_ERROR|wx.OK)
-            
         printout.Destroy()
 
 

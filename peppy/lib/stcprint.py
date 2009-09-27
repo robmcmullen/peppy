@@ -7,10 +7,16 @@
 # Created:     2009
 # RCS-ID:      $Id: $
 # Copyright:   (c) 2009 Rob McMullen
+#              (c) 2007 Cody Precord <staff@editra.org>
 # License:     wxWidgets
 #-----------------------------------------------------------------------------
 """Printing support for the wx.StyledTextCtrl
 
+Concrete implementation of the wx.Printout class to generate a print preview
+and paper copies of the contents of a wx.StyledTextCtrl.
+
+The bulk of this code came from U{Editra<http://www.editra.org>}; I've modified
+it to remove dependencies on Editra's framework.
 """
 
 import os
