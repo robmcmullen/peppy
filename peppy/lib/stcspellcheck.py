@@ -54,9 +54,16 @@ Changelog::
         - First public release
 """
 
+import os
 import locale
 import wx
 import wx.stc
+
+# Assume MacPorts install of Enchant
+if wx.Platform == '__WXMAC__':
+    if 'PYENCHANT_LIBRARY_PATH' not in os.environ:
+        os.environ['PYENCHANT_LIBRARY_PATH'] = '/opt/local/lib/libenchant.dylib'
+
 try:
     import enchant
 except ImportError:
@@ -191,7 +198,15 @@ class STCSpellCheck(object):
             # can't catch the enchant.DictNotFound error.
             d = None
         return d
-    
+
+    def setCheckRegion(self, func):
+        """Set region checker callable
+        @param func: def func(pos): return bool
+
+        """
+        self.clearAll()
+        self._spell_check_region = func
+
     @classmethod
     def setDefaultLanguage(cls, lang):
         """Set the default language for spelling check.
@@ -222,7 +237,35 @@ class STCSpellCheck(object):
         language.
         """
         return self._spelling_dict is not None
-    
+
+    @classmethod
+    def isEnchantOk(cls):
+        """Returns True if enchant is available"""
+        return 'enchant' in globals()
+
+    @classmethod
+    def reloadEnchant(cls, libpath=u''):
+        """Try (re)loading the enchant module. Use to dynamically try to
+        import enchant incase it could be loaded at the time of the import of
+        this module.
+        @keyword libpath: optionally specify path to libenchant
+        @return: bool
+
+        """
+        try:
+            if libpath and os.path.exists(libpath):
+                os.environ['PYENCHANT_LIBRARY_PATH'] = libpath
+
+            if cls.isEnchantOk():
+                reload(enchant)
+            else:
+                mod = __import__('enchant', globals(), locals())
+                globals()['enchant'] = mod
+        except ImportError:
+            return False
+        else:
+            return True
+
     def getLanguage(self):
         """Returns True if a dictionary is available to spell check the current
         language.
