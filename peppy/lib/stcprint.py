@@ -50,10 +50,41 @@ class STCPrintout(wx.Printout):
 
         self.margin = 0.05 #margins # TODO repect margins from setup dlg
         self.lines_pp = 69
-        self.page_count, remainder = divmod(self.stc.GetLineCount(), \
-                                            self.lines_pp)
-        if remainder:
-            self.page_count += 1
+        
+        self.calculatePageCount()
+    
+    def calculatePageCount(self):
+        page_offsets = []
+        page_line_start = 0
+        lines_on_page = 0
+        num_lines = self.stc.GetLineCount()
+        
+        line = 0
+        while line < num_lines:
+            wrap_count = self.stc.WrapCount(line)
+            if wrap_count > 1:
+                print("found wrapped line %d: %d" % (line, wrap_count))
+            if lines_on_page + wrap_count > self.lines_pp:
+                start_pos = self.stc.PositionFromLine(page_line_start)
+                end_pos = self.stc.GetLineEndPosition(page_line_start + lines_on_page)
+                page_offsets.append((start_pos, end_pos))
+                page_line_start = line
+                lines_on_page = 0
+            lines_on_page += wrap_count
+            line += 1
+        
+        if lines_on_page > 0:
+            start_pos = self.stc.PositionFromLine(page_line_start)
+            end_pos = self.stc.GetLineEndPosition(page_line_start + lines_on_page)
+            page_offsets.append((start_pos, end_pos))
+        
+        self.page_count = len(page_offsets)
+        self.page_offsets = page_offsets
+
+    def getPositionsOfPage(self, page):
+        page -= 1
+        start_pos, end_pos = self.page_offsets[page]
+        return start_pos, end_pos
 
     def GetPageInfo(self):
         """Get the page range information
@@ -105,12 +136,7 @@ class STCPrintout(wx.Printout):
                     int((text_area_h + margin_h) / scale + pg_lbl_h * 2))
 
         # Render the STC window into a DC for printing
-        if self._start == 0:
-            start_pos = self.stc.PositionFromLine((page - 1) * self.lines_pp)
-        else:
-            start_pos = self._start
-        line = self.stc.LineFromPosition(start_pos)
-        end_pos = self.stc.GetLineEndPosition(line + self.lines_pp - 1)
+        start_pos, end_pos = self.getPositionsOfPage(page)
         max_w = (dw / scale) - margin_w
 
         self.stc.SetPrintColourMode(self.print_mode)
@@ -129,4 +155,3 @@ class STCPrintout(wx.Printout):
         self._start = end_point
 
         return True
-
