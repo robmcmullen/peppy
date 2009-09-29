@@ -1361,10 +1361,12 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """
         return False
     
-    def getPrintout(self):
+    def getPrintout(self, page_setup_data=None):
         """Returns a wx.Printout object that the printer management driver
         can use to generate a print preview or a paper copy.
         
+        @xwarg page_setup_data: an optional instance of a
+        wx.PageSetupDialogData that provides the margins
         """
         return None
 

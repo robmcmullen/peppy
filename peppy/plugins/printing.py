@@ -11,35 +11,55 @@ import os
 
 import wx
 
+from peppy.lib.userparams import *
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.debug import *
 
 
-class PageSetup(SelectAction):
+class PageSetup(SelectAction, ClassPrefs):
     """Set up printing preferences"""
     name = "Page Setup..."
     default_menu = ("File", -995)
     
-    print_data = wx.PrintData()
-    top_left_margin = wx.Point(15,15)
-    bottom_right_margin = wx.Point(15,15)
+    print_data = None
+    
+    default_classprefs = (
+        IntParam('top_margin', 15, 'Top margin in mm'),
+        IntParam('left_margin', 15, 'Left margin in mm'),
+        IntParam('bottom_margin', 15, 'Bottom margin in mm'),
+        IntParam('right_margin', 15, 'Left margin in mm'),
+        IntParam('paper_id', wx.PAPER_LETTER, 'Identifier for default paper size')
+        )
+
+    @classmethod
+    def getPrintData(cls):
+        if cls.print_data is None:
+            p = wx.PrintData()
+            p.SetPaperId(cls.classprefs.paper_id)
+            cls.print_data = p
+        return cls.print_data
+    
+    @classmethod
+    def getPageSetupData(cls):
+        print_data = cls.getPrintData()
+        data = wx.PageSetupDialogData(print_data)
+        data.SetMarginTopLeft(wx.Point(cls.classprefs.top_margin, cls.classprefs.left_margin))
+        data.SetMarginBottomRight(wx.Point(cls.classprefs.bottom_margin, cls.classprefs.right_margin))
+        return data
 
     def action(self, index=-1, multiplier=1):
-        cls = self.__class__
-        data = wx.PageSetupDialogData(cls.print_data)
-        data.SetPrintData(cls.print_data)
-    
-        data.SetDefaultMinMargins(True)
-        data.SetMarginTopLeft(cls.top_left_margin)
-        data.SetMarginBottomRight(cls.bottom_right_margin)
-
-        print_dlg = wx.PageSetupDialog(self.mode.frame, data)
+        print_dlg = wx.PageSetupDialog(self.mode.frame, self.getPageSetupData())
         if print_dlg.ShowModal() == wx.ID_OK:
-            cls.print_data = wx.PrintData(data.GetPrintData())
-            cls.print_data.SetPaperId(data.GetPaperId())
-            cls.top_left_margin = data.GetMarginTopLeft()
-            cls.bottom_right_margin = data.GetMarginBottomRight()
+            data = print_dlg.GetPageSetupData()
+            self.__class__.print_data = wx.PrintData(data.GetPrintData())
+            self.classprefs.paper_id = data.GetPaperId()
+            tl = data.GetMarginTopLeft()
+            self.classprefs.top_margin = tl.x
+            self.classprefs.left_margin = tl.y
+            br = data.GetMarginBottomRight()
+            self.classprefs.bottom_margin = br.x
+            self.classprefs.right_margin = br.y
         print_dlg.Destroy()
 
 
@@ -54,10 +74,11 @@ class PrintPreview(PrintingSupportedMixin, SelectAction):
     default_menu = ("File", 996)
     
     def action(self, index=-1, multiplier=1):
-        printout = self.mode.getPrintout()
-        printout2 = self.mode.getPrintout()
-        preview = wx.PrintPreview(printout, printout2, PageSetup.print_data)
-        preview.SetZoom(150)
+        data = PageSetup.getPageSetupData()
+        printout = self.mode.getPrintout(data)
+        printout2 = self.mode.getPrintout(data)
+        preview = wx.PrintPreview(printout, printout2, PageSetup.getPrintData())
+        preview.SetZoom(100)
         if preview.IsOk():
             pre_frame = wx.PreviewFrame(preview, self.mode.frame,
                                              _("Print Preview"))
@@ -80,9 +101,10 @@ class Print(PrintingSupportedMixin, SelectAction):
     default_menu = ("File", 997)
     
     def action(self, index=-1, multiplier=1):
-        pdd = wx.PrintDialogData(PageSetup.print_data)
+        pdd = wx.PrintDialogData(PageSetup.getPrintData())
         printer = wx.Printer(pdd)
-        printout = self.mode.getPrintout()
+        data = PageSetup.getPageSetupData()
+        printout = self.mode.getPrintout(data)
         result = printer.Print(self.mode, printout)
         if result:
             data = printer.GetPrintDialogData()

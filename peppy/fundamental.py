@@ -834,10 +834,10 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         """
         return True
     
-    def getPrintout(self):
+    def getPrintout(self, data):
         """Returns a wx.Printout object that the printer management driver
         can use to generate a print preview or a paper copy.
         
         """
         import peppy.lib.stcprint
-        return peppy.lib.stcprint.STCPrintout(self)
+        return peppy.lib.stcprint.STCPrintout(self, page_setup_data=data, title=str(self.buffer.url))

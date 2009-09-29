@@ -46,16 +46,13 @@ class STCPrintout(wx.Printout):
     """
     debuglevel = 0
     
-    def __init__(self, stc, top_left_margin=None, bottom_right_margin=None, print_mode=None, title=None, border=False, output_point_size=None):
+    def __init__(self, stc, page_setup_data=None, print_mode=None, title=None, border=False, output_point_size=None):
         """Constructor.
         
         @param stc: wx.StyledTextCtrl to print
         
-        @kwarg top_left_margin: wx.Point containing the offset of the top left
-        margin in mm
-        
-        @kwarg bottom_right_margin: wx.Point containing the offset of the
-        bottom margin in mm
+        @kwarg page_setup_data: optional wx.PageSetupDialogData instance that
+        is used to determine the margins of the page.
         
         @kwarg print_mode: one of the wx.stc.STC_PRINT_* flags
         indicating how to render color text.  Defaults to
@@ -82,14 +79,12 @@ class STCPrintout(wx.Printout):
             self.title = title
         else:
             self.title = ""
-        if top_left_margin is None:
+        if page_setup_data is None:
             self.top_left_margin = wx.Point(15,15)
-        else:
-            self.top_left_margin = top_left_margin
-        if bottom_right_margin is None:
             self.bottom_right_margin = wx.Point(15,15)
         else:
-            self.bottom_right_margin = bottom_right_margin
+            self.top_left_margin = page_setup_data.GetMarginTopLeft()
+            self.bottom_right_margin = page_setup_data.GetMarginBottomRight()
         
         self.output_point_size = output_point_size
         
