@@ -13,12 +13,16 @@
 """Printing support for the wx.StyledTextCtrl
 
 Concrete implementation of the wx.Printout class to generate a print preview
-and paper copies of the contents of a wx.StyledTextCtrl.
+and paper copies of the contents of a wx.StyledTextCtrl.  This was written
+for U{Peppy<http://peppy.flipturn.org>} but has been designed as a standalone
+class with no dependencies on peppy.  It can be used for general purpose
+printing or print preview of a wx.StyledTextCtrl.  See the demo application at
+the end of this file for more information.
 
-The bulk of this code came from U{Editra<http://www.editra.org>}; I've modified
-it to remove dependencies on Editra's framework.  Other pointers came from
-the wxPython mailing list, and lots was just pure ol' trial and error because I
-couldn't find many docs on the FormatRange method of the STC.
+I used code from U{Editra<http://www.editra.org>} as a starting point; other
+pointers came from the wxPython mailing list, and lots was just pure ol'
+trial and error because I couldn't find much specific documentation on the
+FormatRange method of the STC.
 """
 
 import os
@@ -31,7 +35,14 @@ class STCPrintout(wx.Printout):
     """Specific printing support of the wx.StyledTextCtrl for the wxPython
     framework
     
+    This class can be used for both printing to a printer and for print preview
+    functions.
     
+    Note that line wrapping in the source STC is currently ignored and lines
+    will be truncated at the right margin instead of wrapping.  The STC doesn't
+    provide a convenient method for determining where line breaks occur within
+    a wrapped line, so it may be a difficult task to ever implement printing
+    with line wrapping using the wx.StyledTextCtrl.FormatRange method.
     """
     debuglevel = 0
     
@@ -57,8 +68,9 @@ class STCPrintout(wx.Printout):
         around the text on each page
         
         @kwarg output_point_size: integer that will force the output text to be
-        drawn in the specified point size.  If not specified, the point size
-        of the text in the STC will be used
+        drawn in the specified point size.  (Note that there are 72 points per
+        inch.) If not specified, the point size of the text in the STC will
+        be used.
         """
         wx.Printout.__init__(self)
         self.stc = stc
@@ -161,8 +173,6 @@ class STCPrintout(wx.Printout):
         page_height_mm = page_height_inch * 25.4
         margin_mm = self.top_left_margin[1] + self.bottom_right_margin[1]
         usable_page_height_mm = page_height_mm - margin_mm
-        if self.debuglevel > 0:
-            print("Usable page height: %f in" % (usable_page_height_mm / 25.4))
         
         # Lines per page is then the number of lines (based on the point size
         # reported by wx) that will fit into the usable page height
@@ -172,29 +182,27 @@ class STCPrintout(wx.Printout):
         # pixels inside the margins to the number of pixels that it takes to
         # represent the number of lines
         dc_margin_pixels = float(dc_pixels_per_inch_y) * margin_mm / 25.4
-        page_to_dc = float(dh - dc_margin_pixels) / (dc_pixels_per_line * self.lines_pp)
-        
+        dc_usable_pixels = dh - dc_margin_pixels
+        page_to_dc = float(dc_usable_pixels) / (dc_pixels_per_line * self.lines_pp)
+
         dc.SetUserScale(page_to_dc, page_to_dc)
 
-        mm_to_dc = float(dc_ppi_y) / 25.4 / page_to_dc
         if self.debuglevel > 0:
+            print("Usable page height: %f in" % (usable_page_height_mm / 25.4))
+            print("Usable page pixels: %d" % dc_usable_pixels)
+            print("lines per page: %d" % self.lines_pp)
             print("page_to_dc: %f" % page_to_dc)
-            print("mm_to_dc: %f" % mm_to_dc)
 
-        self.x1 = self.top_left_margin[0] * mm_to_dc
-        self.y1 = self.top_left_margin[1] * mm_to_dc
-        self.x2 = dc.DeviceToLogicalXRel(dw) - \
-                  self.bottom_right_margin[0] * mm_to_dc
-        self.y2 = dc.DeviceToLogicalYRel(dh) - \
-                  self.bottom_right_margin[1] * mm_to_dc
+        self.x1 = dc.DeviceToLogicalXRel(float(self.top_left_margin[0]) / 25.4 * dc_pixels_per_inch_x)
+        self.y1 = dc.DeviceToLogicalXRel(float(self.top_left_margin[1]) / 25.4 * dc_pixels_per_inch_y)
+        self.x2 = dc.DeviceToLogicalXRel(dw) - dc.DeviceToLogicalXRel(float(self.bottom_right_margin[0]) / 25.4 * dc_pixels_per_inch_x)
+        self.y2 = dc.DeviceToLogicalYRel(dh) - dc.DeviceToLogicalXRel(float(self.bottom_right_margin[1]) / 25.4 * dc_pixels_per_inch_y)
         page_height = self.y2 - self.y1
 
         #self.lines_pp = int(page_height / dc_pixels_per_line)
         
         if self.debuglevel > 0:
-            print("page size: %d,%d -> %d,%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2)))
-            print("page height: %d" % page_height)
-            print("lines per page: %d" % self.lines_pp)
+            print("page size: %d,%d -> %d,%d, height=%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2), page_height))
 
     def calculatePageCount(self, attempt_wrap=False):
         """Calculates offsets into the STC for each page
@@ -423,13 +431,12 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             wx.CallAfter(self.showPrintPreview)
         
         def showPrintPreview(self):
-            printout = STCPrintout(self.stc, title="Testing!!!")
-            printout2 = STCPrintout(self.stc, title="Testing!!!")
+            printout = STCPrintout(self.stc, title="Testing!!!", border=True)
+            printout2 = STCPrintout(self.stc, title="Testing!!!", border=True)
             preview = wx.PrintPreview(printout, printout2, self.getPrintData())
-            preview.SetZoom(150)
+            preview.SetZoom(100)
             if preview.IsOk():
-                pre_frame = wx.PreviewFrame(preview, self,
-                                                 _("Print Preview"))
+                pre_frame = wx.PreviewFrame(preview, self, _("Print Preview"))
                 dsize = wx.GetDisplaySize()
                 pre_frame.SetInitialSize((self.GetSize()[0],
                                           dsize.GetHeight() - 100))
