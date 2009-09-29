@@ -22,6 +22,7 @@ it to remove dependencies on Editra's framework.
 import os
 
 import wx
+import wx.stc
 
 
 class STCPrintout(wx.Printout):
@@ -30,6 +31,8 @@ class STCPrintout(wx.Printout):
     
     
     """
+    debuglevel = 0
+    
     def __init__(self, stc, print_mode=None, title=None):
         """Initializes the printout object
         @param title: title of document
@@ -50,7 +53,8 @@ class STCPrintout(wx.Printout):
 
         self.margin = 0.05 #margins # TODO repect margins from setup dlg
         self.lines_pp = 69
-        
+    
+    def OnPreparePrinting(self):
         self.calculatePageCount()
     
     def calculatePageCount(self):
@@ -121,7 +125,7 @@ class STCPrintout(wx.Printout):
         dc.SetUserScale(scale, scale)
 
         # Render the title and page numbers
-        font = self.stc.GetDefaultFont()
+        font = self.stc.GetFont()
         dc.SetFont(font)
 
         if self.title:
@@ -155,3 +159,133 @@ class STCPrintout(wx.Printout):
         self._start = end_point
 
         return True
+
+
+if __name__ == "__main__":
+    import sys
+    import __builtin__
+    __builtin__._ = unicode
+    
+    # Set up sample print data
+    top_left_margin = wx.Point(15,15)
+    bottom_right_margin = wx.Point(15,15)
+    print_data = wx.PrintData()
+
+    class TestSTC(wx.stc.StyledTextCtrl):
+        def __init__(self, *args, **kwargs):
+            wx.stc.StyledTextCtrl.__init__(self, *args, **kwargs)
+            self.SetMarginType(0, wx.stc.STC_MARGIN_NUMBER)
+            self.SetMarginWidth(0, 32)
+
+    class Frame(wx.Frame):
+        def __init__(self, *args, **kwargs):
+            super(self.__class__, self).__init__(*args, **kwargs)
+
+            self.stc = TestSTC(self, -1)
+
+            self.CreateStatusBar()
+            menubar = wx.MenuBar()
+            self.SetMenuBar(menubar)  # Adding the MenuBar to the Frame content.
+            menu = wx.Menu()
+            menubar.Append(menu, "File")
+            self.menuAdd(menu, "Open", "Open File", self.OnOpenFile)
+            menu.AppendSeparator()
+            self.menuAdd(menu, "Print Preview", "Display print preview", self.OnPrintPreview)
+            self.menuAdd(menu, "Print", "Print to printer or file", self.OnPrint)
+            menu.AppendSeparator()
+            self.menuAdd(menu, "Quit", "Exit the pragram", self.OnQuit)
+
+
+        def loadFile(self, filename):
+            fh = open(filename)
+            self.stc.SetText(fh.read())
+        
+        def loadSample(self, paragraphs=10):
+            lorem_ipsum = u"""\
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Vivamus mattis
+commodo sem.  Phasellus scelerisque tellus id lorem.  Nulla facilisi.
+Suspendisse potenti.  Fusce velit odio, scelerisque vel, consequat nec,
+dapibus sit amet, tortor.
+
+Vivamus eu turpis.  Nam eget dolor.  Integer at elit.  Praesent mauris.  Nullam non nulla at nulla tincidunt malesuada. Phasellus id ante.  Sed mauris.  Integer volutpat nisi non diam.
+
+Etiam elementum.  Pellentesque interdum justo eu risus.  Cum sociis natoque
+penatibus et magnis dis parturient montes, nascetur ridiculus mus.  Nunc
+semper.
+
+In semper enim ut odio.  Nulla varius leo commodo elit.  Quisque condimentum, nisl eget elementum laoreet, mauris turpis elementum felis, ut accumsan nisl velit et mi.
+
+And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u0438\u0439 \u044f\u0437\u044b\u043a \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f!
+
+"""
+            self.stc.ClearAll()
+            for i in range(paragraphs):
+                self.stc.AppendText(lorem_ipsum)
+
+        def menuAdd(self, menu, name, desc, fcn, id=-1, kind=wx.ITEM_NORMAL):
+            if id == -1:
+                id = wx.NewId()
+            a = wx.MenuItem(menu, id, name, desc, kind)
+            menu.AppendItem(a)
+            wx.EVT_MENU(self, id, fcn)
+            menu.SetHelpString(id, desc)
+        
+        def OnOpenFile(self, evt):
+            dlg = wx.FileDialog(self, "Choose a text file",
+                               defaultDir = "",
+                               defaultFile = "",
+                               wildcard = "*")
+            if dlg.ShowModal() == wx.ID_OK:
+                print("Opening %s" % dlg.GetPath())
+                self.loadFile(dlg.GetPath())
+            dlg.Destroy()
+        
+        def OnQuit(self, evt):
+            self.Close(True)
+        
+        def OnPrintPreview(self, evt):
+            printout = STCPrintout(self.stc)
+            printout2 = STCPrintout(self.stc)
+            preview = wx.PrintPreview(printout, printout2, print_data)
+            preview.SetZoom(150)
+            if preview.IsOk():
+                pre_frame = wx.PreviewFrame(preview, self,
+                                                 _("Print Preview"))
+                dsize = wx.GetDisplaySize()
+                pre_frame.SetInitialSize((self.GetSize()[0],
+                                          dsize.GetHeight() - 100))
+                pre_frame.Initialize()
+                pre_frame.Show()
+            else:
+                wx.MessageBox(_("Failed to create print preview"),
+                              _("Print Error"),
+                              style=wx.ICON_ERROR|wx.OK)
+        
+        def OnPrint(self, evt):
+            pdd = wx.PrintDialogData(print_data)
+            printer = wx.Printer(pdd)
+            printout = STCPrintout(self.stc)
+            result = printer.Print(self, printout)
+            if result:
+                data = printer.GetPrintDialogData()
+                PageSetup.print_data = wx.PrintData(data.GetPrintData())
+            elif printer.GetLastError() == wx.PRINTER_ERROR:
+                wx.MessageBox(_("There was an error when printing.\n"
+                                "Check that your printer is properly connected."),
+                              _("Printer Error"),
+                              style=wx.ICON_ERROR|wx.OK)
+            printout.Destroy()
+
+    app = wx.App(False)
+    frame = Frame(None, size=(800, -1))
+    need_sample = True
+    if len(sys.argv) > 1:
+        if not sys.argv[-1].startswith("-"):
+            frame.loadFile(sys.argv[-1])
+            need_sample = False
+    if need_sample:
+        frame.loadSample()
+    if '-d' in sys.argv:
+        STCPrintout.debuglevel = 1
+    frame.Show()
+    app.MainLoop()
