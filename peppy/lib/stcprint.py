@@ -35,10 +35,30 @@ class STCPrintout(wx.Printout):
     """
     debuglevel = 0
     
-    def __init__(self, stc, top_left_margin=None, bottom_right_margin=None, print_mode=None, title=None, border=False):
-        """Initializes the printout object
-        @param title: title of document
-
+    def __init__(self, stc, top_left_margin=None, bottom_right_margin=None, print_mode=None, title=None, border=False, output_point_size=None):
+        """Constructor.
+        
+        @param stc: wx.StyledTextCtrl to print
+        
+        @kwarg top_left_margin: wx.Point containing the offset of the top left
+        margin in mm
+        
+        @kwarg bottom_right_margin: wx.Point containing the offset of the
+        bottom margin in mm
+        
+        @kwarg print_mode: one of the wx.stc.STC_PRINT_* flags
+        indicating how to render color text.  Defaults to
+        wx.stc.STC_PRINT_COLOURONWHITEDEFAULTBG
+        
+        @kwarg title: text string to use as the title which will be centered
+        above the first line of text on each page
+        
+        @kwarg border: flag indicating whether or not to draw a black border
+        around the text on each page
+        
+        @kwarg output_point_size: integer that will force the output text to be
+        drawn in the specified point size.  If not specified, the point size
+        of the text in the STC will be used
         """
         wx.Printout.__init__(self)
         self.stc = stc
@@ -59,48 +79,129 @@ class STCPrintout(wx.Printout):
         else:
             self.bottom_right_margin = bottom_right_margin
         
+        self.output_point_size = output_point_size
+        
         self.border_around_text = border
     
     def OnPreparePrinting(self):
+        """Called once before a print job is started to set up any defaults.
+        
+        """
         dc = self.GetDC()
         self.calculateScale(dc)
         self.calculatePageCount()
     
     def calculateScale(self, dc):
-        page_ppi_x, page_ppi_y = self.GetPPIPrinter()
-        screen_ppi_x,  screen_ppi_y = self.GetPPIScreen()
-        screen_to_page = 1.0 * page_ppi_y / screen_ppi_y
-
-        pw, ph = self.GetPageSizePixels()
-        dw, dh = dc.GetSize()
-        self.scale = screen_to_page * dh / ph
-        dc.SetUserScale(self.scale, self.scale)
-        self.mm_to_page = 1.0 * page_ppi_y / screen_to_page / 25.4
+        """Scale the DC
+        
+        This routine scales the DC based on the font size, determines the
+        number of lines on a page, and saves some useful pixel locations like
+        the top left corner and the width and height of the drawing area in
+        logical coordinates.
+        """
         if self.debuglevel > 0:
-            print "scale: %f" % self.scale
-            print "device pixels: %dx%d" % (dw, dh)
-            print "page pixels: %dx%d" % (pw, ph)
-            print "mm_to_page: %f" % self.mm_to_page
-
-        self.x1 = self.top_left_margin[0] * self.mm_to_page
-        self.y1 = self.top_left_margin[1] * self.mm_to_page
-        self.x2 = dc.DeviceToLogicalXRel(dw) - \
-                  self.bottom_right_margin[0] * self.mm_to_page
-        self.y2 = dc.DeviceToLogicalYRel(dh) - \
-                  self.bottom_right_margin[1] * self.mm_to_page
-        self.page_height = self.y2 - self.y1 - 2 * self.mm_to_page
-
+            print
+        
         dc.SetFont(self.stc.GetFont())
-        self.line_height = dc.GetCharHeight()
-        self.lines_pp = int(self.page_height / self.line_height)
+        font = dc.GetFont()
+        if self.output_point_size is not None:
+            point_per_line = self.output_point_size
+        else:
+            points_per_line = font.GetPointSize()
+        
+        # desired lines per mm based on point size.  Note: printer points are
+        # defined as 72 points per inch
+        lines_per_inch = 72.0 / float(points_per_line)
+        
+        # actual line height in pixels according to the DC
+        dc_pixels_per_line = dc.GetCharHeight()
+        
+        # actual line height in pixels according to the STC.  This can be
+        # different from dc_pixels_per_line even though it is the same font.
+        # Don't know why this is the case; maybe because the STC takes into
+        # account additional spacing?
+        stc_pixels_per_line = self.stc.TextHeight(0)
+        if self.debuglevel > 0:
+            print("font: point size per line=%d" % points_per_line)
+            print("font: lines per inch=%f" % lines_per_inch)
+            print("font: dc pixels per line=%d" % dc_pixels_per_line)
+            print("font: stc pixels per line=%d" % stc_pixels_per_line)
+        
+        # Calculate pixels per inch of the various devices.  The dc_ppi will be
+        # equivalent to the page or screen PPI if the target is the printer or
+        # a print preview, respectively.
+        page_ppi_x, page_ppi_y = self.GetPPIPrinter()
+        screen_ppi_x, screen_ppi_y = self.GetPPIScreen()
+        dc_ppi_x, dc_ppi_y = dc.GetPPI()
+        if self.debuglevel > 0:
+            print("printer ppi: %dx%d" % (page_ppi_x, page_ppi_y))
+            print("screen ppi: %dx%d" % (screen_ppi_x, screen_ppi_y))
+            print("dc ppi: %dx%d" % (dc_ppi_x, dc_ppi_y))
+        
+        # Calculate paper size.  Note that this is the size in pixels of the
+        # entire paper, which may be larger than the printable range of the
+        # printer.  We need to use the entire paper size because we calculate
+        # margins ourselves.  Note that GetPageSizePixels returns the
+        # dimensions of the printable area.
+        px, py, pw, ph = self.GetPaperRectPixels()
+        page_width_inch = float(pw) / page_ppi_x
+        page_height_inch = float(ph) / page_ppi_y
+        if self.debuglevel > 0:
+            print("page pixels: %dx%d" % (pw, ph))
+            print("page size: %fx%f in" % (page_width_inch, page_height_inch))
+        
+        dw, dh = dc.GetSizeTuple()
+        dc_pixels_per_inch_x = float(dw) / page_width_inch
+        dc_pixels_per_inch_y = float(dh) / page_height_inch
+        if self.debuglevel > 0:
+            print("device pixels: %dx%d" % (dw, dh))
+            print("device pixels per inch: %fx%f" % (dc_pixels_per_inch_x, dc_pixels_per_inch_y))
+        
+        # Calculate usable page size
+        page_height_mm = page_height_inch * 25.4
+        margin_mm = self.top_left_margin[1] + self.bottom_right_margin[1]
+        usable_page_height_mm = page_height_mm - margin_mm
+        if self.debuglevel > 0:
+            print("Usable page height: %f in" % (usable_page_height_mm / 25.4))
+        
+        # Lines per page is then the number of lines (based on the point size
+        # reported by wx) that will fit into the usable page height
+        self.lines_pp = float(usable_page_height_mm) / 25.4 * lines_per_inch
+        
+        # The final DC scale factor is then the ratio of the total height in
+        # pixels inside the margins to the number of pixels that it takes to
+        # represent the number of lines
+        dc_margin_pixels = float(dc_pixels_per_inch_y) * margin_mm / 25.4
+        page_to_dc = float(dh - dc_margin_pixels) / (dc_pixels_per_line * self.lines_pp)
+        
+        dc.SetUserScale(page_to_dc, page_to_dc)
+
+        mm_to_dc = float(dc_ppi_y) / 25.4 / page_to_dc
+        if self.debuglevel > 0:
+            print("page_to_dc: %f" % page_to_dc)
+            print("mm_to_dc: %f" % mm_to_dc)
+
+        self.x1 = self.top_left_margin[0] * mm_to_dc
+        self.y1 = self.top_left_margin[1] * mm_to_dc
+        self.x2 = dc.DeviceToLogicalXRel(dw) - \
+                  self.bottom_right_margin[0] * mm_to_dc
+        self.y2 = dc.DeviceToLogicalYRel(dh) - \
+                  self.bottom_right_margin[1] * mm_to_dc
+        page_height = self.y2 - self.y1
+
+        #self.lines_pp = int(page_height / dc_pixels_per_line)
         
         if self.debuglevel > 0:
-            print "page size: %d,%d -> %d,%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2))
-            print "line height: ", self.line_height
-            print "page height: ", int(self.page_height)
-            print "lines per page: ", self.lines_pp
-    
+            print("page size: %d,%d -> %d,%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2)))
+            print("page height: %d" % page_height)
+            print("lines per page: %d" % self.lines_pp)
+
     def calculatePageCount(self, attempt_wrap=False):
+        """Calculates offsets into the STC for each page
+        
+        This pre-calculates the page offsets for each page to support print
+        preview being able to seek backwards and forwards.
+        """
         page_offsets = []
         page_line_start = 0
         lines_on_page = 0
@@ -139,34 +240,53 @@ class STCPrintout(wx.Printout):
             print("page offsets: %s" % self.page_offsets)
 
     def getPositionsOfPage(self, page):
+        """Get the starting and ending positions of a page
+        
+        @param page: page number
+        
+        @returns: tuple containing the start and end positions that can be
+        passed to FormatRange to render a page
+        """
         page -= 1
         start_pos, end_pos = self.page_offsets[page]
         return start_pos, end_pos
-    
 
     def GetPageInfo(self):
-        """Get the page range information
-        @return: tuple
-
+        """Return the valid page ranges.
+        
+        Note that pages are numbered starting from one.
         """
         return (1, self.page_count, 1, self.page_count)
 
     def HasPage(self, page):
-        """Is a page within range
-        @param page: page number
-        @return: wheter page is in range of document or not
-
+        """Returns True if the specified page is within the page range
+        
         """
         return page <= self.page_count
 
     def OnPrintPage(self, page):
-        """Scales and Renders the page to a DC and prints it
-        @param page: page number to print
+        """Draws the specified page to the DC
 
         """
         dc = self.GetDC()
         self.calculateScale(dc)
 
+        # Render the STC window into a DC for printing.  Force the right margin
+        # of the rendered window to be huge so the STC won't attempt word
+        # wrapping.
+        start_pos, end_pos = self.getPositionsOfPage(page)
+        render_rect = wx.Rect(self.x1, self.y1, 32000, self.y2)
+        page_rect = wx.Rect(self.x1, self.y1, self.x2, self.y2)
+
+        self.stc.SetPrintColourMode(self.print_mode)
+        edge_mode = self.stc.GetEdgeMode()
+        self.stc.SetEdgeMode(wx.stc.STC_EDGE_NONE)
+        end_point = self.stc.FormatRange(True, start_pos, end_pos, dc, dc,
+                                        render_rect, page_rect)
+        self.stc.SetEdgeMode(edge_mode)
+        
+        # Print decorations
+        
         # Set font for title/page number rendering
         dc.SetFont( wx.FFont( 10, wx.SWISS ) )
         dc.SetTextForeground ("black")
@@ -181,27 +301,10 @@ class STCPrintout(wx.Printout):
         dc.DrawText(page_lbl, (self.x2 + self.x1)/2 - (pg_lbl_w/2),
                     self.y2)
 
-        # Set the font back to the regular STC font
-        dc.SetFont(self.stc.GetFont())
-        
-        # Render the STC window into a DC for printing.  Force the right margin
-        # of the rendered window to be huge so the STC won't attempt word
-        # wrapping.
-        start_pos, end_pos = self.getPositionsOfPage(page)
-        render_rect = wx.Rect(self.x1, self.y1, 32000, self.y2)
-        page_rect = wx.Rect(self.x1, self.y1, self.x2, self.y2)
-
-        self.stc.SetPrintColourMode(self.print_mode)
-        edge_mode = self.stc.GetEdgeMode()
-        self.stc.SetEdgeMode(wx.stc.STC_EDGE_NONE)
-        end_point = self.stc.FormatRange(True, start_pos, end_pos, dc, dc,
-                                        render_rect, page_rect)
-        
         if self.border_around_text:
             dc.SetPen(wx.BLACK_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             dc.DrawRectangle(self.x1, self.y1, self.x2 - self.x1 + 1, self.y2 - self.y1 + 1)
-        self.stc.SetEdgeMode(edge_mode)
 
         return True
 
@@ -257,6 +360,7 @@ if __name__ == "__main__":
             self.menuAdd(menu, "Quit", "Exit the pragram", self.OnQuit)
             
             self.print_data = wx.PrintData()
+            self.print_data.SetPaperId(wx.PAPER_LETTER)
 
 
         def loadFile(self, filename, word_wrap=False):
@@ -346,7 +450,7 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             result = printer.Print(self.stc, printout)
             if result:
                 data = printer.GetPrintDialogData()
-                PageSetup.print_data = wx.PrintData(data.GetPrintData())
+                self.print_data = wx.PrintData(data.GetPrintData())
             elif printer.GetLastError() == wx.PRINTER_ERROR:
                 wx.MessageBox(_("There was an error when printing.\n"
                                 "Check that your printer is properly connected."),
