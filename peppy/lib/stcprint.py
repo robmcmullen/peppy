@@ -347,13 +347,27 @@ class STCPrintout(wx.Printout):
     def OnPrintPage(self, page):
         """Draws the specified page to the DC
 
+        @param page: page number to render
         """
         dc = self.GetDC()
         self.calculateScale(dc)
 
-        # Render the STC window into a DC for printing.  Force the right margin
-        # of the rendered window to be huge so the STC won't attempt word
-        # wrapping.
+        self.drawPageContents(dc, page)
+        self.drawPageHeader(dc, page)
+        self.drawPageBorder(dc)
+
+        return True
+    
+    def drawPageContents(self, dc, page):
+        """Render the STC window into a DC for printing.
+        
+        Force the right margin of the rendered window to be huge so the STC
+        won't attempt word wrapping.
+        
+        @param dc: the device context representing the page
+        
+        @param page: page number
+        """
         start_pos, end_pos = self.getPositionsOfPage(page)
         render_rect = wx.Rect(self.x1, self.y1, 32000, self.y2)
         page_rect = wx.Rect(self.x1, self.y1, self.x2, self.y2)
@@ -364,29 +378,37 @@ class STCPrintout(wx.Printout):
         end_point = self.stc.FormatRange(True, start_pos, end_pos, dc, dc,
                                         render_rect, page_rect)
         self.stc.SetEdgeMode(edge_mode)
+    
+    def drawPageHeader(self, dc, page):
+        """Draw the page header into the DC for printing
         
-        # Print decorations
+        @param dc: the device context representing the page
         
+        @param page: page number
+        """
         # Set font for title/page number rendering
         dc.SetFont( wx.FFont( 10, wx.SWISS ) )
         dc.SetTextForeground ("black")
+        dum, yoffset = dc.GetTextExtent(".")
+        yoffset /= 2
         if self.title:
             title_w, title_h = dc.GetTextExtent(self.title)
-            dc.DrawText(self.title, (self.x2 + self.x1)/2 - (title_w/2),
-                        self.y1 - title_h)
+            dc.DrawText(self.title, self.x1, self.y1 - title_h - yoffset)
 
         # Page Number
         page_lbl = _("Page: %d") % page
         pg_lbl_w, pg_lbl_h = dc.GetTextExtent(page_lbl)
-        dc.DrawText(page_lbl, (self.x2 + self.x1)/2 - (pg_lbl_w/2),
-                    self.y2)
+        dc.DrawText(page_lbl, self.x2 - pg_lbl_w, self.y1 - pg_lbl_h - yoffset)
 
+    def drawPageBorder(self, dc):
+        """Draw the page border into the DC for printing
+        
+        @param dc: the device context representing the page
+        """
         if self.border_around_text:
             dc.SetPen(wx.BLACK_PEN)
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             dc.DrawRectangle(self.x1, self.y1, self.x2 - self.x1 + 1, self.y2 - self.y1 + 1)
-
-        return True
 
 
 if __name__ == "__main__":
