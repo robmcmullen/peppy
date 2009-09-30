@@ -23,6 +23,14 @@ I used code from U{Editra<http://www.editra.org>} as a starting point; other
 pointers came from the wxPython mailing list, and lots was just pure ol'
 trial and error because I couldn't find much specific documentation on the
 FormatRange method of the STC.
+
+NOTE: there are issues with certain scale factors when using print preview on
+MSW.  Some scale factors seem to work correctly, like 150%, but other smaller
+scale factors cause the preview font size to fluctuate.  Some zoom levels will
+use very small fonts and render all the lines in the top half of the page,
+while other zoom levels use an incorrectly large font and render lines off the
+bottom of the page.  The printed output is unaffected, however, and renders
+the correct number of lines.
 """
 
 import os
@@ -36,7 +44,12 @@ class STCPrintout(wx.Printout):
     framework
     
     This class can be used for both printing to a printer and for print preview
-    functions.
+    functions.  Unless otherwise specified, the print is scaled based on the
+    size of the current font used in the STC so that specifying a larger font
+    produces a larger font in the printed output (and correspondingly fewer
+    lines per page).  Alternatively, you can eihdec specify the number of
+    lines per page, or you can specify the print font size in points which
+    produces a constant number of lines per inch regardless of the paper size.
     
     Note that line wrapping in the source STC is currently ignored and lines
     will be truncated at the right margin instead of wrapping.  The STC doesn't
@@ -46,7 +59,7 @@ class STCPrintout(wx.Printout):
     """
     debuglevel = 0
     
-    def __init__(self, stc, page_setup_data=None, print_mode=None, title=None, border=False, output_point_size=None):
+    def __init__(self, stc, page_setup_data=None, print_mode=None, title=None, border=False, lines_per_page=None, output_point_size=None):
         """Constructor.
         
         @param stc: wx.StyledTextCtrl to print
@@ -54,20 +67,27 @@ class STCPrintout(wx.Printout):
         @kwarg page_setup_data: optional wx.PageSetupDialogData instance that
         is used to determine the margins of the page.
         
-        @kwarg print_mode: one of the wx.stc.STC_PRINT_* flags
-        indicating how to render color text.  Defaults to
+        @kwarg print_mode: optional; of the wx.stc.STC_PRINT_*
+        flags indicating how to render color text.  Defaults to
         wx.stc.STC_PRINT_COLOURONWHITEDEFAULTBG
         
-        @kwarg title: text string to use as the title which will be centered
-        above the first line of text on each page
+        @kwarg title: optional text string to use as the title which will be
+        centered above the first line of text on each page
         
-        @kwarg border: flag indicating whether or not to draw a black border
-        around the text on each page
+        @kwarg border: optional flag indicating whether or not to draw a black
+        border around the text on each page
         
-        @kwarg output_point_size: integer that will force the output text to be
-        drawn in the specified point size.  (Note that there are 72 points per
-        inch.) If not specified, the point size of the text in the STC will
-        be used.
+        @kwarg lines_per_page: optional integer that will force the page to
+        contain the specified number of lines.  Either of C{output_point_size}
+        and C{lines_per_page} fully specifies the page, so if both are
+        specified, C{lines_per_page} will be used.
+        
+        @kwarg output_point_size: optional integer that will force the output
+        text to be drawn in the specified point size.  (Note that there are
+        72 points per inch.) If not specified, the point size of the text in
+        the STC will be used unless C{lines_per_page} is specified.  Either of
+        C{output_point_size} and C{lines_per_page} fully specifies the page,
+        so if both are specified, C{lines_per_page} will be used.
         """
         wx.Printout.__init__(self)
         self.stc = stc
@@ -86,7 +106,19 @@ class STCPrintout(wx.Printout):
             self.top_left_margin = page_setup_data.GetMarginTopLeft()
             self.bottom_right_margin = page_setup_data.GetMarginBottomRight()
         
-        self.output_point_size = output_point_size
+        try:
+            value = float(output_point_size)
+            if value > 0.0:
+                self.output_point_size = value
+        except (TypeError, ValueError):
+            self.output_point_size = None
+        
+        try:
+            value = int(lines_per_page)
+            if value > 0:
+                self.user_lines_per_page = value
+        except (TypeError, ValueError):
+            self.user_lines_per_page = None
         
         self.border_around_text = border
     
@@ -110,29 +142,6 @@ class STCPrintout(wx.Printout):
             print
         
         dc.SetFont(self.stc.GetFont())
-        font = dc.GetFont()
-        if self.output_point_size is not None:
-            point_per_line = self.output_point_size
-        else:
-            points_per_line = font.GetPointSize()
-        
-        # desired lines per mm based on point size.  Note: printer points are
-        # defined as 72 points per inch
-        lines_per_inch = 72.0 / float(points_per_line)
-        
-        # actual line height in pixels according to the DC
-        dc_pixels_per_line = dc.GetCharHeight()
-        
-        # actual line height in pixels according to the STC.  This can be
-        # different from dc_pixels_per_line even though it is the same font.
-        # Don't know why this is the case; maybe because the STC takes into
-        # account additional spacing?
-        stc_pixels_per_line = self.stc.TextHeight(0)
-        if self.debuglevel > 0:
-            print("font: point size per line=%d" % points_per_line)
-            print("font: lines per inch=%f" % lines_per_inch)
-            print("font: dc pixels per line=%d" % dc_pixels_per_line)
-            print("font: stc pixels per line=%d" % stc_pixels_per_line)
         
         # Calculate pixels per inch of the various devices.  The dc_ppi will be
         # equivalent to the page or screen PPI if the target is the printer or
@@ -171,14 +180,14 @@ class STCPrintout(wx.Printout):
         
         # Lines per page is then the number of lines (based on the point size
         # reported by wx) that will fit into the usable page height
-        self.lines_pp = float(usable_page_height_mm) / 25.4 * lines_per_inch
+        self.lines_pp = self.calculateLinesPerPage(dc, usable_page_height_mm)
         
         # The final DC scale factor is then the ratio of the total height in
         # pixels inside the margins to the number of pixels that it takes to
         # represent the number of lines
         dc_margin_pixels = float(dc_pixels_per_inch_y) * margin_mm / 25.4
         dc_usable_pixels = dh - dc_margin_pixels
-        page_to_dc = float(dc_usable_pixels) / (dc_pixels_per_line * self.lines_pp)
+        page_to_dc = self.calculateScaleFactor(dc, dc_usable_pixels, self.lines_pp)
 
         dc.SetUserScale(page_to_dc, page_to_dc)
 
@@ -198,6 +207,74 @@ class STCPrintout(wx.Printout):
         
         if self.debuglevel > 0:
             print("page size: %d,%d -> %d,%d, height=%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2), page_height))
+    
+    def calculateLinesPerPage(self, dc, usable_page_height_mm):
+        """Calculate the number of lines that will fit on the page.
+        
+        @param dc: the Device Context
+        
+        @param usable_page_height_mm: height in mm of the printable part of the
+        page (i.e.  with the border height removed)
+        
+        @returns: the number of lines on the page
+        """
+        if self.user_lines_per_page is not None:
+            return self.user_lines_per_page
+        
+        font = dc.GetFont()
+        if self.output_point_size is not None:
+            points_per_line = self.output_point_size
+        else:
+            points_per_line = font.GetPointSize()
+        
+        # desired lines per mm based on point size.  Note: printer points are
+        # defined as 72 points per inch
+        lines_per_inch = 72.0 / float(points_per_line)
+        
+        if self.debuglevel > 0:
+            print("font: point size per line=%d" % points_per_line)
+            print("font: lines per inch=%f" % lines_per_inch)
+            
+        # Lines per page is then the number of lines (based on the point size
+        # reported by wx) that will fit into the usable page height
+        return float(usable_page_height_mm) / 25.4 * lines_per_inch
+
+    def calculateScaleFactor(self, dc, dc_usable_pixels, lines_pp):
+        """Calculate the scale factor for the DC to fit the number of lines
+        onto the printable area
+        
+        @param dc: the Device Context
+        
+        @param dc_usable_pixels: the number of pixels that defines usable
+        height of the printable area
+        
+        @param lines_pp: the number of lines to fit into the printable area
+        
+        @returns: the scale facter to be used in wx.DC.SetUserScale
+        """
+        # actual line height in pixels according to the DC
+        dc_pixels_per_line = dc.GetCharHeight()
+        
+        # actual line height in pixels according to the STC.  This can be
+        # different from dc_pixels_per_line even though it is the same font.
+        # Don't know why this is the case; maybe because the STC takes into
+        # account additional spacing?
+        stc_pixels_per_line = self.stc.TextHeight(0)
+        if self.debuglevel > 0:
+            print("font: dc pixels per line=%d" % dc_pixels_per_line)
+            print("font: stc pixels per line=%d" % stc_pixels_per_line)
+        
+        # Platform dependency alert: I don't know why this works, but through
+        # experimentation it seems like the scaling factor depends on
+        # different font heights depending on the platform.
+        if wx.Platform == "__WXMSW__":
+            # On windows, the important font height seems to be the number of
+            # pixels reported by the STC
+            page_to_dc = float(dc_usable_pixels) / (stc_pixels_per_line * lines_pp)
+        else:
+            # Linux and Mac: the DC font height seems to be the correct height
+            page_to_dc = float(dc_usable_pixels) / (dc_pixels_per_line * lines_pp)
+        return page_to_dc
 
     def calculatePageCount(self, attempt_wrap=False):
         """Calculates offsets into the STC for each page
@@ -426,8 +503,8 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
             wx.CallAfter(self.showPrintPreview)
         
         def showPrintPreview(self):
-            printout = STCPrintout(self.stc, title="Testing!!!", border=True)
-            printout2 = STCPrintout(self.stc, title="Testing!!!", border=True)
+            printout = STCPrintout(self.stc, title="Testing!!!", border=True, output_point_size=10)
+            printout2 = STCPrintout(self.stc, title="Testing!!!", border=True, output_point_size=10)
             preview = wx.PrintPreview(printout, printout2, self.getPrintData())
             preview.SetZoom(100)
             if preview.IsOk():
