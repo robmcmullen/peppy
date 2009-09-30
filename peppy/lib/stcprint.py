@@ -121,6 +121,8 @@ class STCPrintout(wx.Printout):
             self.user_lines_per_page = None
         
         self.border_around_text = border
+        
+        self.setHeaderFont()
     
     def OnPreparePrinting(self):
         """Called once before a print job is started to set up any defaults.
@@ -387,7 +389,7 @@ class STCPrintout(wx.Printout):
         @param page: page number
         """
         # Set font for title/page number rendering
-        dc.SetFont( wx.FFont( 10, wx.SWISS ) )
+        dc.SetFont(self.getHeaderFont())
         dc.SetTextForeground ("black")
         dum, yoffset = dc.GetTextExtent(".")
         yoffset /= 2
@@ -399,6 +401,36 @@ class STCPrintout(wx.Printout):
         page_lbl = _("Page: %d") % page
         pg_lbl_w, pg_lbl_h = dc.GetTextExtent(page_lbl)
         dc.DrawText(page_lbl, self.x2 - pg_lbl_w, self.y1 - pg_lbl_h - yoffset)
+    
+    def setHeaderFont(self, point_size=10, family=wx.FONTFAMILY_SWISS,
+                      style=wx.FONTSTYLE_NORMAL, weight=wx.FONTWEIGHT_NORMAL):
+        """Set the font to be used as the header font
+        
+        @param point_size: point size of the font
+        
+        @param family: one of the wx.FONTFAMILY_* values, e.g.
+        wx.FONTFAMILY_SWISS, wx.FONTFAMILY_ROMAN, etc.
+        
+        @param style: one of the wx.FONTSTYLE_* values, e.g.
+        wxFONTSTYLE_NORMAL, wxFONTSTYLE_ITALIC, etc.
+        
+        @param weight: one of the wx.FONTWEIGHT_* values, e.g.
+        wx.FONTWEIGHT_NORMAL, wx.FONTWEIGHT_LIGHT, etc.
+        """
+        self.header_font_point_size = point_size
+        self.header_font_family = family
+        self.header_font_style = style
+        self.header_font_weight = weight
+    
+    def getHeaderFont(self):
+        """Returns the font to be used to draw the page header text
+        
+        @returns: wx.Font instance
+        """
+        point_size = self.header_font_point_size
+        font = wx.Font(point_size, self.header_font_family,
+                       self.header_font_style, self.header_font_weight)
+        return font
 
     def drawPageBorder(self, dc):
         """Draw the page border into the DC for printing
