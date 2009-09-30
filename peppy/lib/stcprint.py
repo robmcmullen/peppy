@@ -6,7 +6,7 @@
 #
 # Created:     2009
 # RCS-ID:      $Id: $
-# Copyright:   (c) 2009 Rob McMullen
+# Copyright:   (c) 2009 Rob McMullen <robm@users.sourceforge.net>
 #              (c) 2007 Cody Precord <staff@editra.org>
 # License:     wxWidgets
 #-----------------------------------------------------------------------------
@@ -129,10 +129,10 @@ class STCPrintout(wx.Printout):
         
         """
         dc = self.GetDC()
-        self.calculateScale(dc)
-        self.calculatePageCount()
+        self._calculateScale(dc)
+        self._calculatePageCount()
     
-    def calculateScale(self, dc):
+    def _calculateScale(self, dc):
         """Scale the DC
         
         This routine scales the DC based on the font size, determines the
@@ -182,14 +182,14 @@ class STCPrintout(wx.Printout):
         
         # Lines per page is then the number of lines (based on the point size
         # reported by wx) that will fit into the usable page height
-        self.lines_pp = self.calculateLinesPerPage(dc, usable_page_height_mm)
+        self.lines_pp = self._calculateLinesPerPage(dc, usable_page_height_mm)
         
         # The final DC scale factor is then the ratio of the total height in
         # pixels inside the margins to the number of pixels that it takes to
         # represent the number of lines
         dc_margin_pixels = float(dc_pixels_per_inch_y) * margin_mm / 25.4
         dc_usable_pixels = dh - dc_margin_pixels
-        page_to_dc = self.calculateScaleFactor(dc, dc_usable_pixels, self.lines_pp)
+        page_to_dc = self._calculateScaleFactor(dc, dc_usable_pixels, self.lines_pp)
 
         dc.SetUserScale(page_to_dc, page_to_dc)
 
@@ -210,7 +210,7 @@ class STCPrintout(wx.Printout):
         if self.debuglevel > 0:
             print("page size: %d,%d -> %d,%d, height=%d" % (int(self.x1), int(self.y1), int(self.x2), int(self.y2), page_height))
     
-    def calculateLinesPerPage(self, dc, usable_page_height_mm):
+    def _calculateLinesPerPage(self, dc, usable_page_height_mm):
         """Calculate the number of lines that will fit on the page.
         
         @param dc: the Device Context
@@ -241,7 +241,7 @@ class STCPrintout(wx.Printout):
         # reported by wx) that will fit into the usable page height
         return float(usable_page_height_mm) / 25.4 * lines_per_inch
 
-    def calculateScaleFactor(self, dc, dc_usable_pixels, lines_pp):
+    def _calculateScaleFactor(self, dc, dc_usable_pixels, lines_pp):
         """Calculate the scale factor for the DC to fit the number of lines
         onto the printable area
         
@@ -278,7 +278,7 @@ class STCPrintout(wx.Printout):
             page_to_dc = float(dc_usable_pixels) / (dc_pixels_per_line * lines_pp)
         return page_to_dc
 
-    def calculatePageCount(self, attempt_wrap=False):
+    def _calculatePageCount(self, attempt_wrap=False):
         """Calculates offsets into the STC for each page
         
         This pre-calculates the page offsets for each page to support print
@@ -321,7 +321,7 @@ class STCPrintout(wx.Printout):
         if self.debuglevel > 0:
             print("page offsets: %s" % self.page_offsets)
 
-    def getPositionsOfPage(self, page):
+    def _getPositionsOfPage(self, page):
         """Get the starting and ending positions of a page
         
         @param page: page number
@@ -352,15 +352,15 @@ class STCPrintout(wx.Printout):
         @param page: page number to render
         """
         dc = self.GetDC()
-        self.calculateScale(dc)
+        self._calculateScale(dc)
 
-        self.drawPageContents(dc, page)
-        self.drawPageHeader(dc, page)
-        self.drawPageBorder(dc)
+        self._drawPageContents(dc, page)
+        self._drawPageHeader(dc, page)
+        self._drawPageBorder(dc)
 
         return True
     
-    def drawPageContents(self, dc, page):
+    def _drawPageContents(self, dc, page):
         """Render the STC window into a DC for printing.
         
         Force the right margin of the rendered window to be huge so the STC
@@ -370,7 +370,7 @@ class STCPrintout(wx.Printout):
         
         @param page: page number
         """
-        start_pos, end_pos = self.getPositionsOfPage(page)
+        start_pos, end_pos = self._getPositionsOfPage(page)
         render_rect = wx.Rect(self.x1, self.y1, 32000, self.y2)
         page_rect = wx.Rect(self.x1, self.y1, self.x2, self.y2)
 
@@ -381,7 +381,7 @@ class STCPrintout(wx.Printout):
                                         render_rect, page_rect)
         self.stc.SetEdgeMode(edge_mode)
     
-    def drawPageHeader(self, dc, page):
+    def _drawPageHeader(self, dc, page):
         """Draw the page header into the DC for printing
         
         @param dc: the device context representing the page
@@ -432,7 +432,7 @@ class STCPrintout(wx.Printout):
                        self.header_font_style, self.header_font_weight)
         return font
 
-    def drawPageBorder(self, dc):
+    def _drawPageBorder(self, dc):
         """Draw the page border into the DC for printing
         
         @param dc: the device context representing the page
