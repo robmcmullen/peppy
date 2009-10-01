@@ -170,13 +170,25 @@ else:
 # Any files to be installed outsite site-packages are declared here
 data_files = []
 
-# Support for bundling the application with py2exe
-try:
-    import py2exe
-    USE_PY2EXE = True
-except:
-    USE_PY2EXE = False
-    
+
+# When building a py2exe version of the code, there are some extra files that
+# must be included in the distribution list.  This should ONLY be used when
+# building py2exe binaries, and not when running a "python setup.py install"
+# because this py2exe build process has to put some extra files in special
+# places that would end up in invalid locations in C:/Python25/
+USE_PY2EXE = False
+
+# FIXME: What's the correct way to tell which build command is being called?
+for arg in sys.argv:
+    if arg == "py2exe":
+        # Support for bundling the application with py2exe
+        try:
+            import py2exe
+            USE_PY2EXE = True
+        except:
+            pass
+        break
+
 if USE_PY2EXE:
     if os.path.exists('peppy/lib/stcspellcheck.py'):
         # Add pyenchant dictionaries to data files if we find the STCSpellCheck
