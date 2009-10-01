@@ -1,3 +1,9 @@
+2009-10-01  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.12.19
+	* added printing and print preview support
+	* fixed install problems on windows (bug #782)
+
 2009-09-26  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.12.0 "Mars Ice"
