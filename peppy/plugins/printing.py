@@ -10,6 +10,7 @@ Some of this code was modified from Editra's ed_print.py.
 import os
 
 import wx
+import wx.html
 
 from peppy.lib.userparams import *
 from peppy.yapsy.plugins import *
@@ -22,7 +23,7 @@ class PageSetup(SelectAction, ClassPrefs):
     name = "Page Setup..."
     default_menu = ("File", -995)
     
-    print_data = None
+    easy_print = None
     
     default_classprefs = (
         IntParam('top_margin', 15, 'Top margin in mm'),
@@ -33,34 +34,41 @@ class PageSetup(SelectAction, ClassPrefs):
         )
 
     @classmethod
+    def getEasyPrint(cls, parent=None):
+        if cls.easy_print is None:
+            cls.easy_print = wx.html.HtmlEasyPrinting()
+        cls.easy_print.SetParentWindow(parent)
+        data = cls.easy_print.GetPageSetupData()
+        data.SetMarginTopLeft(wx.Point(cls.classprefs.top_margin, cls.classprefs.left_margin))
+        data.SetMarginBottomRight(wx.Point(cls.classprefs.bottom_margin, cls.classprefs.right_margin))
+        data.SetPaperId(cls.classprefs.paper_id)
+        p = cls.easy_print.GetPrintData()
+        p.SetPaperId(cls.classprefs.paper_id)
+        return cls.easy_print
+
+    @classmethod
     def getPrintData(cls):
-        if cls.print_data is None:
-            p = wx.PrintData()
-            p.SetPaperId(cls.classprefs.paper_id)
-            cls.print_data = p
-        return cls.print_data
+        # Using the print data from the EasyPrint singleton
+        easy_print = cls.getEasyPrint()
+        return easy_print.GetPrintData()
     
     @classmethod
     def getPageSetupData(cls):
-        print_data = cls.getPrintData()
-        data = wx.PageSetupDialogData(print_data)
-        data.SetMarginTopLeft(wx.Point(cls.classprefs.top_margin, cls.classprefs.left_margin))
-        data.SetMarginBottomRight(wx.Point(cls.classprefs.bottom_margin, cls.classprefs.right_margin))
-        return data
+        # Using the page setup data from the EasyPrint singleton
+        easy_print = cls.getEasyPrint()
+        return easy_print.GetPageSetupData()
 
     def action(self, index=-1, multiplier=1):
-        print_dlg = wx.PageSetupDialog(self.mode.frame, self.getPageSetupData())
-        if print_dlg.ShowModal() == wx.ID_OK:
-            data = print_dlg.GetPageSetupData()
-            self.__class__.print_data = wx.PrintData(data.GetPrintData())
-            self.classprefs.paper_id = data.GetPaperId()
-            tl = data.GetMarginTopLeft()
-            self.classprefs.top_margin = tl.x
-            self.classprefs.left_margin = tl.y
-            br = data.GetMarginBottomRight()
-            self.classprefs.bottom_margin = br.x
-            self.classprefs.right_margin = br.y
-        print_dlg.Destroy()
+        easy_print = PageSetup.getEasyPrint(self.mode.frame)
+        retval = easy_print.PageSetup()
+        data = easy_print.GetPageSetupData()
+        self.classprefs.paper_id = data.GetPaperId()
+        tl = data.GetMarginTopLeft()
+        self.classprefs.top_margin = tl.x
+        self.classprefs.left_margin = tl.y
+        br = data.GetMarginBottomRight()
+        self.classprefs.bottom_margin = br.x
+        self.classprefs.right_margin = br.y
 
 
 class PrintingSupportedMixin(object):
@@ -74,6 +82,17 @@ class PrintPreview(PrintingSupportedMixin, SelectAction):
     default_menu = ("File", 996)
     
     def action(self, index=-1, multiplier=1):
+        html = self.mode.getHtmlForPrinting()
+        if html:
+            self.previewHtml(html)
+        else:
+            self.previewPrintout()
+    
+    def previewHtml(self, html):
+        easy_print = PageSetup.getEasyPrint(self.mode.frame)
+        easy_print.PreviewText(html)
+    
+    def previewPrintout(self):
         data = PageSetup.getPageSetupData()
         printout = self.mode.getPrintout(data)
         printout2 = self.mode.getPrintout(data)
@@ -101,6 +120,17 @@ class Print(PrintingSupportedMixin, SelectAction):
     default_menu = ("File", 997)
     
     def action(self, index=-1, multiplier=1):
+        html = self.mode.getHtmlForPrinting()
+        if html:
+            self.printHtml(html)
+        else:
+            self.printPrintout()
+    
+    def printHtml(self, html):
+        easy_print = PageSetup.getEasyPrint(self.mode.frame)
+        easy_print.PrintText(html)
+    
+    def printPrintout(self):
         pdd = wx.PrintDialogData(PageSetup.getPrintData())
         printer = wx.Printer(pdd)
         data = PageSetup.getPageSetupData()

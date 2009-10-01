@@ -1358,8 +1358,24 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     def isPrintingSupported(self):
         """Returns True if possible to print the current view of the major
         mode.
+        
+        The L{getHtmlForPrintout} method is checked first, and if that method
+        returns None, the L{getPrintout} method is checked.
         """
         return False
+    
+    def getHtmlForPrinting(self):
+        """If the major mode is capable of producing an HTML representation of
+        its data, return that HTML here.
+        
+        The easiest way to implement printing of a major mode is to convert it
+        to HTML and let the HTLMEasyPrinting class handle the details.  If it
+        is possible to produce are representation of the major mode in HTML,
+        that HTML should be returned here.
+        
+        If this method returns None, the L{getPrintout} method will be used.
+        """
+        return None
     
     def getPrintout(self, page_setup_data=None):
         """Returns a wx.Printout object that the printer management driver

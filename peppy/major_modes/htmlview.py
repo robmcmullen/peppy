@@ -105,6 +105,12 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
         txt = self.SelectionToText()
         SetClipboardText(txt)
         dprint(txt)
+    
+    def isPrintingSupported(self):
+        return True
+    
+    def getHtmlForPrinting(self):
+        return self.buffer.stc.GetText()
 
 
 class HTMLViewPlugin(IPeppyPlugin):
