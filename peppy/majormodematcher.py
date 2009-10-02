@@ -212,8 +212,8 @@ class MajorModeMatcherDriver(debugmixin):
                         }
         cls.dprint("%s: metadata=%s" % (unicode(url), unicode(metadata)))
         
-        modes, binary_modes = cls.scanURL(url, metadata)
-        cls.dprint("scanURL matches %s (binary: %s) using metadata %s" % (modes, binary_modes, metadata))
+        modes, text_modes, binary_modes = cls.scanURL(url, metadata)
+        cls.dprint("scanURL matches %s (text: %s) (binary: %s) using metadata %s" % (modes, text_modes, binary_modes, metadata))
 
         if header is None:
             # get a buffered file handle to examine some bytes in the file
@@ -290,7 +290,11 @@ class MajorModeMatcherDriver(debugmixin):
                 # FIXME: needs to be a better way to select which mode to use
                 # if there are multiple application/octet-stream viewers
                 return binary_modes[0]
-        return cls.findModeByMimetype("text/plain")
+        
+        if text_modes:
+            return text_modes[0]
+        
+        raise RuntimeError("No mode matches mimetype text/plain!  This is bad, because the editor is not functional if it can't edit text!")
 
     @classmethod
     def findModeByMimetype(cls, mimetype):
@@ -331,7 +335,10 @@ class MajorModeMatcherDriver(debugmixin):
 
         @param url: vfs.Reference object to scan
         
-        @returns: list of matching L{MajorMode} subclasses
+        @returns: 3-tuple containing a list of major modes that are designed
+        to edit the data pointed to by the URL, a list of modes compatible
+        with text/plain that can edit it, and a list of modes compatibly with
+        application/octet-stream that can edit it.
         """
         
         modes = []
@@ -360,9 +367,8 @@ class MajorModeMatcherDriver(debugmixin):
                     generics.append(mode)
             except IgnoreMajorMode:
                 cls.ignoreMode(mode)
-        modes.extend(generics)
         binary.extend(binary_generics)
-        return modes, binary
+        return modes, generics, binary
 
     @classmethod
     def scanMagic(cls, header):
