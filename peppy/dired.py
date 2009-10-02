@@ -361,3 +361,8 @@ class DiredMode(ListMode):
         action_classes = DiredPopupActions(self, entries)
         Publisher().sendMessage('dired.context_menu', action_classes)
         return action_classes
+    
+    def getValidColumnsForPrinting(self):
+        # The flags and URL columns are left off the printed version
+        total = range(self.list.GetColumnCount())
+        return total[1:-1]

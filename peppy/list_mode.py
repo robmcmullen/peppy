@@ -243,3 +243,38 @@ class ListMode(wx.Panel, MajorMode):
         Doing nothing causes the default unicode string conversion to be used.
         """
         return [unicode(r) for r in raw_values]
+    
+    def isPrintingSupported(self):
+        return True
+    
+    def getHtmlForPrinting(self):
+        list_count = self.list.GetItemCount()
+        html = u"<P>%s\n" % unicode(self.buffer.url)
+        html += u"<P><table>\n" + self.getHtmlHeaderColumn()
+        column_order = self.getValidColumnsForPrinting()
+        for index in range(list_count):
+            entry = self.getEntryFromIndex(index)
+            columns = self.convertRawValuesToStrings(entry)
+            items = []
+            for i in column_order:
+                items.append(columns[i])
+            line = u"</td><td>".join(items)
+            html += u"<tr><td>" + line + u"</td></tr>\n"
+        html += u"</table>"
+        return html
+    
+    def getValidColumnsForPrinting(self):
+        """Returns a list of columns that should be included in the printout
+        
+        """
+        return range(self.list.GetColumnCount())
+    
+    def getHtmlHeaderColumn(self):
+        """Returns an HTML table header that contains column headers for each
+        of the columns
+        """
+        items = []
+        for i in self.getValidColumnsForPrinting():
+            col = self.list.GetColumn(i)
+            items.append(col.GetText())
+        return u"<tr><th>" + u"</th><th>".join(items) + u"</th></tr>\n"
