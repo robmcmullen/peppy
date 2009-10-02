@@ -170,6 +170,8 @@ else:
 # Any files to be installed outsite site-packages are declared here
 data_files = []
 
+# Any extra platform-specific setup arguments go here
+platform_kwargs = {}
 
 # When building a py2exe version of the code, there are some extra files that
 # must be included in the distribution list.  This should ONLY be used when
@@ -178,16 +180,13 @@ data_files = []
 # places that would end up in invalid locations in C:/Python25/
 USE_PY2EXE = False
 
-# FIXME: What's the correct way to tell which build command is being called?
-for arg in sys.argv:
-    if arg == "py2exe":
-        # Support for bundling the application with py2exe
-        try:
-            import py2exe
-            USE_PY2EXE = True
-        except:
-            pass
-        break
+if "py2exe" in sys.argv:
+    # Support for bundling the application with py2exe
+    try:
+        import py2exe
+        USE_PY2EXE = True
+    except:
+        pass
 
 if USE_PY2EXE:
     if os.path.exists('peppy/lib/stcspellcheck.py'):
@@ -210,18 +209,8 @@ if USE_PY2EXE:
     # application
     packages.extend(findPackages('eggs'))
     
-    try:
-        import peppy.py2exe_plugins_count
-        packages.extend(peppy.py2exe_plugins_count.setuptools_packages)
-    except ImportError:
-        # skip it if it can't find import the file
-        pass
-    except AttributeError:
-        # skip it if there are no setuptools packages listed in the file
-        pass
-
-# Manifest file to allow py2exe to use the winxp look and feel
-manifest = """
+    # Manifest file to allow py2exe to use the winxp look and feel
+    manifest = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
@@ -254,6 +243,24 @@ manifest = """
 </trustInfo>
 </assembly>
 """
+    
+    platform_kwargs['windows'] = [
+        {"script": "py2exe/peppy.py",
+         "other_resources": [(24,1,manifest)],
+         "icon_resources": [(2, "../graphics/peppy48.ico")],
+         }
+        ]
+    
+    try:
+        import peppy.py2exe_plugins_count
+        packages.extend(peppy.py2exe_plugins_count.setuptools_packages)
+    except ImportError:
+        # skip it if it can't find import the file
+        pass
+    except AttributeError:
+        # skip it if there are no setuptools packages listed in the file
+        pass
+
 
 # Define any extensions in setup_extensions.py
 try:
@@ -295,11 +302,6 @@ setup(cmdclass={'build_py': build_extra_peppy,},
                             'excludes': ['Tkinter', 'Tkconstants', 'tcl', '_tkinter', 'numpy.f2py', 'matplotlib', 'doctest'],
                             }
                  },
-      windows = [{"script": "py2exe/peppy.py",
-                  "other_resources": [(24,1,manifest)],
-                  "icon_resources": [(2, "../graphics/peppy48.ico")],
-                  }
-                 ],
       data_files = data_files,
       classifiers=['Development Status :: 3 - Alpha',
                    'Environment :: MacOS X',
@@ -315,5 +317,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
                    'Programming Language :: Python',
                    'Topic :: Software Development :: Documentation',
                    'Topic :: Text Editors',
-                   ]
+                   ],
+      
+      **platform_kwargs
       )
