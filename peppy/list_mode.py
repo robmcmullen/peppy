@@ -86,6 +86,8 @@ class ListMode(wx.Panel, MajorMode):
         self.Layout()
         
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnItemDeselected)
         
         self.updating = False
         self.resetList()
@@ -115,7 +117,15 @@ class ListMode(wx.Panel, MajorMode):
     
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
-        dprint("clicked on %d" % index)
+        self.dprint("clicked on %d" % index)
+
+    def OnItemSelected(self, evt):
+        index = evt.GetIndex()
+        self.dprint("selected %d" % index)
+
+    def OnItemDeselected(self, evt):
+        index = evt.GetIndex()
+        self.dprint("deselected %d" % index)
 
     def GetSecondarySortValues(self, col, key1, key2, itemDataMap):
         return (itemDataMap[key1][1], itemDataMap[key2][1])
