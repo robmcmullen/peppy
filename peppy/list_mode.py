@@ -66,6 +66,9 @@ class ListMode(wx.Panel, MajorMode):
     allow_threaded_loading = False
     
     stc_class = None
+    
+    odd_background_color = wx.SystemSettings_GetColour(wx.SYS_COLOUR_LISTBOX)
+    even_background_color = wx.SystemSettings_GetColour(wx.SYS_COLOUR_3DLIGHT)
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
@@ -220,6 +223,8 @@ class ListMode(wx.Panel, MajorMode):
                 self.list.DeleteItem(index)
         if show >= 0:
             self.list.EnsureVisible(show)
+        
+        self.setListItemBackgroundColors()
 
         self.list.ResizeColumns()
         self.list.Thaw()
@@ -253,6 +258,30 @@ class ListMode(wx.Panel, MajorMode):
         Doing nothing causes the default unicode string conversion to be used.
         """
         return [unicode(r) for r in raw_values]
+    
+    def setListItemBackgroundColors(self, start_index=0):
+        """Sets the background colors of items in the list
+        
+        @kwarg start_index: index number to start highlighting (the implication
+        being that the indexes above this index already have the correct
+        highlighting)
+        """
+        list_count = self.list.GetItemCount()
+        for index in range(start_index, list_count):
+            color = self.getListItemBackgroundColor(index)
+            self.list.SetItemBackgroundColour(index, color)
+    
+    def getListItemBackgroundColor(self, index):
+        """Determine the background color for an item
+        
+        This is provided as an override for subclasses to change the behavior.
+        The default implementation is to alternate background colors.
+        """
+        if index % 2:
+            color = self.odd_background_color
+        else:
+            color = self.even_background_color
+        return color
     
     def isPrintingSupported(self):
         return True
