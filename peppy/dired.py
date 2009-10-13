@@ -182,6 +182,7 @@ class DiredMode(ListMode):
     keyword = "Dired"
     icon='icons/folder_explore.png'
     allow_threaded_loading = False
+    mimetype = "inode/directory"
     
     stc_class = DiredSTC
 
@@ -190,12 +191,8 @@ class DiredMode(ListMode):
         )
     
     @classmethod
-    def verifyProtocol(cls, url):
-        # Use the verifyProtocol to hijack the loading process and
-        # immediately return the match is a folder
-        if vfs.is_folder(url):
-            return True
-        return False
+    def verifyMimetype(cls, mimetype):
+        return mimetype == 'inode/directory' or mimetype == 'x-directory/normal'
 
     def __init__(self, parent, wrapper, buffer, frame):
         self.url = buffer.url

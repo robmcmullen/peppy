@@ -660,6 +660,25 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         return False
 
     @classmethod
+    def verifyOpenWithRewrittenURL(cls, url):
+        """Check to see if the URL could be opened if it were rewritten in some
+        manner.
+        
+        This is provided in case a file in the filesystem can also be
+        opened as a folder, for example a zip file that could be opened in
+        binary mode or as a folder containing other files.  If the url were
+        specified as file://path/to/file.zip and the protocol were rewritten
+        as zip://path/to/file.zip then DiredMode could display the files
+        contained within the zip.
+
+        @param url: the original URL
+        
+        @return: False if the mode doesn't support a rewritten url, or a new
+        url that the mode does support.
+        """
+        return False
+
+    @classmethod
     def verifyFilename(cls, filename):
         """Hook to verify filename matches the default regular
         expression for this mode.

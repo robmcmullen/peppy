@@ -183,12 +183,61 @@ class MajorModeMatcherDriver(debugmixin):
 
     @classmethod
     def match(cls, buffer, magic_size=None, url=None, header=None):
-        app = wx.GetApp()
-        if magic_size is None:
-            magic_size = app.classprefs.magic_size
         if url is None:
             url = buffer.raw_url
 
+        if vfs.is_folder(url):
+            mode = cls.matchFolder(buffer, url)
+        else:
+            mode = cls.matchFile(buffer, magic_size, url, header)
+        
+        return mode
+    
+    @classmethod
+    def matchFolder(cls, buffer, url=None):
+        app = wx.GetApp()
+        plugins = app.plugin_manager.getActivePluginObjects()
+        cls.findAndCacheActiveModes(plugins)
+        
+        # Try to match a specific protocol
+        modes = cls.scanProtocol(url)
+        cls.dprint("scanProtocol matches %s" % modes)
+        if modes:
+            return modes[0]
+        
+        # ok, it's not a specific protocol.  Try to match a url pattern and
+        # generate a list of possible modes
+        metadata = cls.getFailsafeMetadata(url)
+        modes, generic_modes = cls.scanFolderURL(url, metadata)
+        cls.dprint("scanFolderURL matches %s (generic: %s) using metadata %s" % (modes, generic_modes, metadata))
+        if modes:
+            return modes[0]
+        
+        # Try the special case where a mode could be opened using a rewritten
+        # URL
+        mode, rewritten = cls.scanOpenWithRewrittenURL(url)
+        if mode:
+            buffer.raw_url = rewritten
+            return mode
+        
+        # As a last resort to open a specific mode, attempt to open it
+        # with any third-party openers that have been registered
+        mode = cls.attemptOpen(plugins, buffer, url)
+        cls.dprint("attemptOpen matches %s" % mode)
+        if mode:
+            return mode
+        
+        if generic_modes:
+            return generic_modes[0]
+        
+        raise RuntimeError("No mode matches mimetype inode/directory!  Directory viewing will not be possible!")
+
+    @classmethod
+    def matchFile(cls, buffer, magic_size=None, url=None, header=None):
+        app = wx.GetApp()
+        if magic_size is None:
+            magic_size = app.classprefs.magic_size
+        
         plugins = app.plugin_manager.getActivePluginObjects()
         cls.findAndCacheActiveModes(plugins)
         
@@ -200,20 +249,9 @@ class MajorModeMatcherDriver(debugmixin):
 
         # ok, it's not a specific protocol.  Try to match a url pattern and
         # generate a list of possible modes
-        try:
-            metadata = vfs.get_metadata(url)
-        except Exception, e:
-            import traceback
-            traceback.print_exc()
-            metadata = {'mimetype': None,
-                        'mtime': None,
-                        'size': 0,
-                        'description': None,
-                        }
-        cls.dprint("%s: metadata=%s" % (unicode(url), unicode(metadata)))
-        
-        modes, text_modes, binary_modes = cls.scanURL(url, metadata)
-        cls.dprint("scanURL matches %s (text: %s) (binary: %s) using metadata %s" % (modes, text_modes, binary_modes, metadata))
+        metadata = cls.getFailsafeMetadata(url)
+        modes, text_modes, binary_modes = cls.scanFileURL(url, metadata)
+        cls.dprint("scanFileURL matches %s (text: %s) (binary: %s) using metadata %s" % (modes, text_modes, binary_modes, metadata))
 
         if header is None:
             # get a buffered file handle to examine some bytes in the file
@@ -277,6 +315,13 @@ class MajorModeMatcherDriver(debugmixin):
         if url_match:
             return url_match
 
+        # Try the special case where a mode could be opened using a rewritten
+        # URL
+        mode, rewritten = cls.scanOpenWithRewrittenURL(url)
+        if mode:
+            buffer.raw_url = rewritten
+            return mode
+
         # As a last resort to open a specific mode, attempt to open it
         # with any third-party openers that have been registered
         mode = cls.attemptOpen(plugins, buffer, url)
@@ -295,6 +340,21 @@ class MajorModeMatcherDriver(debugmixin):
             return text_modes[0]
         
         raise RuntimeError("No mode matches mimetype text/plain!  This is bad, because the editor is not functional if it can't edit text!")
+    
+    @classmethod
+    def getFailsafeMetadata(cls, url):
+        try:
+            metadata = vfs.get_metadata(url)
+        except Exception, e:
+            import traceback
+            traceback.print_exc()
+            metadata = {'mimetype': None,
+                        'mtime': None,
+                        'size': 0,
+                        'description': None,
+                        }
+        cls.dprint("%s: metadata=%s" % (unicode(url), unicode(metadata)))
+        return metadata
 
     @classmethod
     def findModeByMimetype(cls, mimetype):
@@ -325,9 +385,64 @@ class MajorModeMatcherDriver(debugmixin):
             except IgnoreMajorMode:
                 cls.ignoreMode(mode)
         return modes
-    
+
     @classmethod
-    def scanURL(cls, url, metadata):
+    def scanOpenWithRewrittenURL(cls, url):
+        """Scan for a major mode that can open the url by rewriting it
+        
+        These are for very rare matches where a file could also be opened
+        another way if the url scheme was changed.  This can be used, for
+        instance, if a file could also be a virtual directory as a zip or
+        tar file.
+
+        @param url: vfs.Reference object to scan
+        
+        @returns: 2-tuple containing the major mode and the rewritten URL.  If
+        no modes match, returns (None, None)
+        """
+        for mode in cls.iterActiveModes():
+            try:
+                rewritten = mode.verifyOpenWithRewrittenURL(url)
+                if rewritten:
+                    return mode, rewritten
+            except IgnoreMajorMode:
+                pass
+        return None, None
+
+    @classmethod
+    def scanFolderURL(cls, url, metadata):
+        """Scan for url folder match.
+        
+        Determine if the pathname matches some pattern that can
+        identify the corresponding major mode.
+
+        @param url: vfs.Reference object to scan
+        
+        @returns: 2-tuple containing a list of major modes that are designed
+        to edit the data pointed to by the URL, and a list of modes compatible
+        with inode/directory or x-directory/normal that can edit it.
+        """
+        modes = []
+        generics = []
+        
+        mimetype = metadata['mimetype']
+        for mode in cls.iterActiveModes():
+            try:
+                if mode.verifyMimetype(mimetype):
+                    if mimetype == 'inode/directory' or mimetype == 'x-directory/normal':
+                        generics.append(mode)
+                    else:
+                        modes.append(mode)
+                elif mode.verifyMetadata(metadata):
+                    modes.append(mode)
+                elif mode.verifyMimetype("inode/directory") or mode.verifyMimetype("x-directory/normal"):
+                    generics.append(mode)
+            except IgnoreMajorMode:
+                cls.ignoreMode(mode)
+        return modes, generics
+
+    @classmethod
+    def scanFileURL(cls, url, metadata):
         """Scan for url filename match.
         
         Determine if the pathname matches some pattern that can

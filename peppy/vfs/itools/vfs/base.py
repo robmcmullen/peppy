@@ -96,7 +96,9 @@ class BaseFS(object):
 
         XXX Use magic numbers too (like file -i).
         """
-        if not cls.is_file(reference):
+        if cls.is_folder(reference):
+            return 'inode/directory'
+        elif not cls.is_file(reference):
             return 'application/x-not-regular-file'
 
         # Find out the filename extension
