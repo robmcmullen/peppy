@@ -53,6 +53,9 @@ class SortableListCtrl(wx.ListCtrl, ColumnAutoSizeMixin, ColumnSorterMixin):
 
     def GetSecondarySortValues(self, col, key1, key2):
         return self.mode.GetSecondarySortValues(col, key1, key2, self.itemDataMap)
+    
+    def OnSortOrderChanged(self):
+        self.mode.setListItemBackgroundColors()
 
 
 class ListMode(wx.Panel, MajorMode):
@@ -93,7 +96,11 @@ class ListMode(wx.Panel, MajorMode):
         self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnItemDeselected)
         
         self.updating = False
+    
+    def setViewPositionData(self, options=None):
         self.resetList()
+        self.setSelectedIndexes([0])
+        self.list.OnSortOrderChanged()
     
     def createColumns(self, list):
         """Columns must be created by the subclass"""
@@ -223,8 +230,6 @@ class ListMode(wx.Panel, MajorMode):
                 self.list.DeleteItem(index)
         if show >= 0:
             self.list.EnsureVisible(show)
-        
-        self.setListItemBackgroundColors()
 
         self.list.ResizeColumns()
         self.list.Thaw()

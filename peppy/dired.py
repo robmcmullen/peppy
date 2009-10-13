@@ -214,6 +214,7 @@ class DiredMode(ListMode):
         initial_sort = self.classprefs.sort_filenames_if_scheme.split(',')
         if self.url.scheme in initial_sort:
             self.list.SortListItems(1)
+        self.list.OnSortOrderChanged()
     
     def GetSecondarySortValues(self, col, key1, key2, itemDataMap):
         return (itemDataMap[key1].getBasename(), itemDataMap[key2].getBasename())
