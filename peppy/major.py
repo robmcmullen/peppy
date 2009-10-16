@@ -1281,7 +1281,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """Convenience function to update the frame's {showModified} method."""
         self.frame.showModified(self)
 
-    def showBusy(self, busy):
+    def showBusy(self, busy, change_cursors=False):
         """Convenience method to enable or disable user action to the major mode.
         
         This method is normally used to show that the mode is involved in a
@@ -1291,13 +1291,52 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         @param busy: True if the major mode is busy and should not accept user
         input, or false when the long-running action is complete to restore
         the ability for the user to interact.
+        
+        @kwarg change_cursors: (experimental) If True will attempt to
+        recursively change the cursors of all children to the busy cursor.
+        Only works on Linux, and then only changing to the busy cursor.
+        Restoring the cursors to the saved cursor seems to put everything
+        back to the default arrow regardless of the saved state.
         """
-        self.Enable(not busy)
         if busy:
-            cursor = wx.StockCursor(wx.CURSOR_WATCH)
+            cursor = wx.StockCursor(wx.CURSOR_ARROWWAIT)
+            self.SetCursor(cursor)
+            self._save_cursors = {}
+            if change_cursors:
+                def saveCursors(parent):
+                    try:
+                        old = parent.GetCursor()
+                        self._save_cursors[id(parent)] = old
+                    except:
+                        dprint("Couldn't get cursor for %s" % parent)
+                    for child in parent.GetChildren():
+                        saveCursors(child)
+                saveCursors(self)
+            def disableChildren(parent):
+                #dprint("disabling %s, %d" % (parent, id(parent)))
+                parent.Enable(False)
+                if change_cursors:
+                    try:
+                        parent.SetCursor(cursor)
+                    except:
+                        dprint("Couldn't set cursor for %s" % parent)
+                        if id(parent) in self._save_cursors:
+                            del self._save_cursors[id(parent)]
+                for child in parent.GetChildren():
+                    disableChildren(child)
+            disableChildren(self)
         else:
+            def enableChildren(parent):
+                #dprint("enabling %s, %d" % (parent, id(parent)))
+                parent.Enable(True)
+                if id(parent) in self._save_cursors:
+                    parent.SetCursor(self._save_cursors[id(parent)])
+                for child in parent.GetChildren():
+                    enableChildren(child)
+            enableChildren(self)
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
-        self.SetCursor(cursor)
+            self.SetCursor(cursor)
+            del self._save_cursors
 
     def showInitialPosition(self, url, options=None):
         """Hook to scroll to a non-default initial position if desired.

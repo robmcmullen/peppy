@@ -21,6 +21,22 @@ from peppy.actions.minibuffer import *
 from peppy.major import *
 
 
+class BusyTest(SelectAction):
+    """Toggle the busy state of the mode
+    
+    """
+    name = "Toggle Busy"
+    default_menu = "Tools/Debug"
+
+    def action(self, index=-1, multiplier=1):
+        wx.CallAfter(self.busyTest)
+
+    def busyTest(self):
+        mode = self.frame.getActiveMajorMode()
+        if mode is not None:
+            state = mode.IsEnabled()
+            mode.buffer.setBusy(state)
+
 class ProgressBarTestMixin(object):
     def action(self, index=-1, multiplier=1):
         wx.CallAfter(self.statusbarTest)
@@ -83,5 +99,5 @@ class SandboxPlugin(IPeppyPlugin):
     """
 
     def getActions(self):
-        return [SlowProgressBarTest, FastProgressBarTest, ShowStyles,
+        return [BusyTest, SlowProgressBarTest, FastProgressBarTest, ShowStyles,
                 MultiMinibufferTest]
