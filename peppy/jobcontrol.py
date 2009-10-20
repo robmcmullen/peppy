@@ -243,8 +243,8 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     def expandCommandLine(self, cmd):
         """Expand the command line to include the filename of the buffer"""
         filename = self.buffer.url.path.get_name()
-        if '%' in cmd:
-            cmd = cmd % filename
+        if '%s' in cmd:
+            cmd = cmd.replace("%s", filename)
         else:
             cmd = "%s %s" % (cmd, filename)
         return cmd
