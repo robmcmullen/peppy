@@ -46,6 +46,22 @@ def main_is_frozen():
            hasattr(sys, "importers") # old py2exe
            or imp.is_frozen("__main__")) # tools/freeze
 
+def get_package_data_dir(relative_path):
+    """Gets the package data directory.
+    
+    @param relative_path: the path starting from the root data directory,
+    not from within the peppy directory.  For example, the path should be
+    "peppy/help" rather than just "help".
+    """
+    if main_is_frozen():
+        top = os.path.dirname(sys.argv[0])
+    else:
+        top = os.path.dirname(os.path.dirname(__file__))
+    #eprint(top)
+    path = os.path.join(top, relative_path)
+    #eprint(path)
+    return path
+
 def get_plugin_dirs(search_path):
     # 'plugins' directory at root of current installation (either when bundled
     # as an app or when running from the file system) is automatically included
@@ -1083,6 +1099,24 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         if self.debuglevel > 0:
             dprint("Yield returned.")
         self.yielding = False
+    
+    
+    def showHelp(self, section=None):
+        from wx.html import HtmlHelpController
+        if not hasattr(self, 'helpframe') or self.helpframe is None:
+            self.helpframe = HtmlHelpController()
+        filename = get_package_data_dir("peppy/help/peppydoc.hhp")
+        if os.path.exists(filename):
+            self.helpframe.AddBook(filename)
+            if section:
+                self.helpframe.Display(section)
+            else:
+                self.helpframe.DisplayContents()
+        else:
+            dlg = wx.MessageDialog(self.GetTopWindow(), "Unable to locate help files; installation error?\nThe files should be located here:\n\n%s\n\nbut were not found." % os.path.dirname(filename), "Help Files Not Found", wx.OK | wx.ICON_EXCLAMATION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+
 
 def run():
     """Start an instance of the application.

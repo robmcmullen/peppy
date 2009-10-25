@@ -20,12 +20,6 @@ from peppy.about import authors, credits, copyrights, substitutes
 # in peppy will get loaded twice.
 from peppy import __url__, __bug_report_url__
 
-_user_manual = """<!-- -*- HTMLView -*- -->
-<h2>User Manual for %(prog)s %(version)s</h2>
-<p>Copyright (c) %(yearrange)s %(author)s (%(author_email)s)</p>
-
-<p>Well, not so much a user's manual as a placeholder for one.
-"""
 
 class HelpAbout(SelectAction):
     name = "&About..."
@@ -90,8 +84,20 @@ class UserManual(SelectAction):
                     }
     
     def action(self, index=-1, multiplier=1):
-        self.frame.open("about:User Manual")
-        
+        wx.GetApp().showHelp()
+
+
+class MajorModeHelp(SelectAction):
+    """Display the manual for the current major mode
+    
+    """
+    name = "Help on Current Major Mode"
+    default_menu = ("&Help", 101)
+    osx_minimal_menu = False
+    
+    def action(self, index=-1, multiplier=1):
+        wx.GetApp().showHelp(self.mode.keyword)
+
 
 class ProjectHome(SelectAction):
     """Go to the project homepage.
@@ -141,10 +147,11 @@ class BugReport(SelectAction):
         
 
 class HelpPlugin(IPeppyPlugin):
-    def aboutFiles(self):
-        return {'User Manual': _user_manual}
-
     def getActions(self):
-        return [HelpAbout, UserManual, ProjectHome, BugReport,
+        return [HelpAbout,
+                
+                UserManual, MajorModeHelp,
+                
+                ProjectHome, BugReport,
                 
                 LocateConfigDirectory]

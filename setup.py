@@ -199,9 +199,13 @@ if USE_PY2EXE:
         except ImportError:
             pass
     
-    # py2exe ignores package_data, so the editra files loaded on demand by the
-    # style editor need to be included in the data_files entry
+    # py2exe ignores package_data, so the editra files loaded on demand by
+    # the style editor and all help HTML files need to be included in the
+    # data_files entry
     data_files.append(("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")))
+    data_files.append(("peppy/help", glob.glob("peppy/help/*.*")))
+    data_files.append(("peppy/help/_images", glob.glob("peppy/help/_images/*")))
+    data_files.append(("peppy/help/_static", glob.glob("peppy/help/_static/*")))
 
     # py2exe can't scan inside zipped eggs to find dependencies.  All plugins
     # must be unpacked into a directory in order for py2exe to find any
@@ -291,6 +295,9 @@ setup(cmdclass={'build_py': build_extra_peppy,},
           'peppy.hsi': ['*.peppy-plugin' ],
           'peppy.major_modes': ['*.peppy-plugin' ],
           'peppy.editra': ['styles/*.ess'],
+          'peppy.help': ['*.*'],
+          'peppy.help._images': ['*'],
+          'peppy.help._static': ['*'],
           },
       ext_modules = ext_modules,
 

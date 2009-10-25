@@ -44,6 +44,9 @@ web: pickle
 htmlhelp:
 	mkdir -p _build/htmlhelp _build/doctrees
 	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) _build/htmlhelp
+	python wxpython-htmlhelp-convert.py _build/htmlhelp
+	mkdir -p ../peppy/help
+	cp -r _build/htmlhelp/* ../peppy/help
 	@echo
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      ".hhp project file in _build/htmlhelp."

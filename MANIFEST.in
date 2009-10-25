@@ -5,6 +5,7 @@ recursive-include manual *
 recursive-include peppy/editra/styles *
 global-include *.peppy-plugin
 recursive-include peppy/icons *
+recursive-include peppy/help *
 recursive-include py2exe *
 include scripts/peppy
 include scripts/peppy.bat
