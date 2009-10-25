@@ -220,7 +220,7 @@ class FileOpener(debugmixin):
         self.dprint("Replaced LoadingBuffer with %s" % self.buffer)
         self.buffer.openGUIThreadStart()
         self.progress = self.mode_to_replace.status_info
-        self.progress.startProgress(u"Loading %s" % self.url, message=str(self.mode_to_replace))
+        self.progress.startProgress(u"Loading %s" % self.url, message="loading.%s" % self.mode_to_replace.__class__.__name__)
         thread = BufferLoadThread(self)
         wx.GetApp().cooperativeYield()
         thread.start()
