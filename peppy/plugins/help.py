@@ -67,9 +67,11 @@ class HelpAbout(SelectAction):
         # Then we call wx.AboutBox giving it that info object
         wx.AboutBox(info)
 
-class HelpManual(SelectAction):
-    name = "&Help..."
-    tooltip = "User manual"
+class UserManual(SelectAction):
+    """Display the user manual
+    
+    """
+    name = "User Manual"
     stock_id = wx.ID_HELP
     default_menu = ("&Help", -100)
     osx_minimal_menu = True
@@ -97,7 +99,7 @@ class ProjectHome(SelectAction):
     Load the project homepage in the default webbrowser.
     """
     name = "Project Homepage"
-    default_menu = ("&Help", 101)
+    default_menu = ("&Help", -150)
     icon = "icons/peppy.png"
     default_toolbar = False
     osx_minimal_menu = True
@@ -130,7 +132,7 @@ class BugReport(SelectAction):
     Report a bug using the web-based bug tracking system.
     """
     name = "Report a bug"
-    default_menu = ("&Help", 102)
+    default_menu = ("&Help", 151)
     osx_minimal_menu = True
     
     def action(self, index=-1, multiplier=1):
@@ -143,6 +145,6 @@ class HelpPlugin(IPeppyPlugin):
         return {'User Manual': _user_manual}
 
     def getActions(self):
-        return [HelpAbout, HelpManual, ProjectHome, BugReport,
+        return [HelpAbout, UserManual, ProjectHome, BugReport,
                 
                 LocateConfigDirectory]
