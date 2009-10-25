@@ -141,6 +141,20 @@ def findMime(path):
                 return details[1]
     return None
 
+def getAboutUTF8(path):
+    text = findAbout(path)
+    if text is not None:
+        recurse_count = 100
+        mimetype = findMime(path)
+        if mimetype.startswith("text") and text.find("%(") >= 0:
+            updateDynamicSubstitutes()
+            while text.find("%(") >= 0 and recurse_count>0:
+                text = text % substitutes
+                recurse_count -= 1
+        text = text.encode('utf-8')
+        # FIXME: display error when recurse count is triggered???
+    return text
+
 def findAboutNames():
     names = aboutfiles.keys()
     plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
@@ -206,7 +220,7 @@ class AboutFS(vfs.BaseFS):
     @staticmethod
     def get_size(reference):
         path = str(reference.path)
-        text = findAbout(path)
+        text = getAboutUTF8(path)
         if text is not None:
             return len(text)
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
@@ -222,30 +236,18 @@ class AboutFS(vfs.BaseFS):
     @staticmethod
     def get_mimetype(reference):
         path = str(reference.path)
-        text = findAbout(path)
-        if text is not None:
-            # mimetype is now always stored in aboutmimetype, so don't have to
-            # check for the existence of it any more.
-            return aboutmimetype[path]
+        mimetype = findMime(path)
+        if mimetype is not None:
+            return mimetype
         raise OSError("[Errno 2] No such file or directory: '%s'" % reference)
 
     @staticmethod
     def open(reference, mode=None):
         path = str(reference.path)
         #dprint(str(reference))
-        
-        text = findAbout(path)
+        text = getAboutUTF8(path)
         if text is None:
             raise IOError("[Errno 2] No such file or directory: '%s'" % reference)
-        recurse_count = 100
-        mimetype = findMime(path)
-        if mimetype.startswith("text") and text.find("%(") >= 0:
-            updateDynamicSubstitutes()
-            while text.find("%(") >= 0 and recurse_count>0:
-                text = text % substitutes
-                recurse_count -= 1
-            text = text.encode('utf-8')
-        # FIXME: display error when recurse count is triggered???
         fh=StringIO()
         fh.write(text)
         fh.seek(0)
