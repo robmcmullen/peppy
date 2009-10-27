@@ -12,6 +12,7 @@ from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
+from peppy.py2exe_utils import *
 from peppy.buffers import *
 from peppy.frame import BufferFrame
 from peppy.configprefs import *
@@ -39,28 +40,6 @@ from peppy.autosave import Autosave, BackupFiles
 #    #wx.GetApp().cooperativeYield()
 #wx.CallAfter = NewCallAfter
 
-#### py2exe support
-
-def main_is_frozen():
-    return (hasattr(sys, "frozen") or # new py2exe
-           hasattr(sys, "importers") # old py2exe
-           or imp.is_frozen("__main__")) # tools/freeze
-
-def get_package_data_dir(relative_path):
-    """Gets the package data directory.
-    
-    @param relative_path: the path starting from the root data directory,
-    not from within the peppy directory.  For example, the path should be
-    "peppy/help" rather than just "help".
-    """
-    if main_is_frozen():
-        top = os.path.dirname(sys.argv[0])
-    else:
-        top = os.path.dirname(os.path.dirname(__file__))
-    #eprint(top)
-    path = os.path.join(top, relative_path)
-    #eprint(path)
-    return path
 
 def get_plugin_dirs(search_path):
     # 'plugins' directory at root of current installation (either when bundled
@@ -1108,6 +1087,10 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         filename = get_package_data_dir("peppy/help/peppydoc.hhp")
         if os.path.exists(filename):
             self.helpframe.AddBook(filename)
+            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+            for plugin in plugins:
+                for book in plugin.getHelpBooks():
+                    self.helpframe.AddBook(book)
             if section:
                 self.helpframe.Display(section)
             else:

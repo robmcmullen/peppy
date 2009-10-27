@@ -258,6 +258,21 @@ class IPeppyPlugin(IPlugin, ClassPrefs, debugmixin):
         """
         return {}
 
+    def getHelpBooks(self):
+        """Return list of books that should be added to the HtmlHelpController.
+
+        If this plugin provides any documentation in the form of HtmlHelp
+        books, return a list of absolute paths to the .hhp files.  See the
+        setup.py file in the main peppy source for examples on how to include
+        the htmlhelp files with both a regular python install and a py2exe
+        install.  Note that for py2exe, the absolute path must be calculated
+        using a method similar to L{get_package_data_dir}.
+        
+        The documentation generator U{Sphinx<http://sphinx.pocoo.org>} produces
+        HtmlHelp files using the C{make htmlhelp} makefile target.
+        """
+        return []
+
     def getMajorModes(self):
         """Return list of major modes provided by the plugin.
 
