@@ -152,6 +152,20 @@ def findPackages(name):
 packages = findPackages(prog)
 
 
+def findHelpBooks():
+    files = []
+    for root in ["", "*/", "*/*/"]:
+        print root
+        if "_build" in root:
+            # Make sure we don't pick up the source directory, only the
+            # directory that contains the copies that have been modified
+            # by wxpython-htmlhelp-convert.py
+            continue
+        for hhpfile in glob.glob("%s*.hhp" % root):
+            files.append(hhpfile)
+    return files
+
+
 # Create the list of scripts to be installed in /usr/bin
 if sys.platform.startswith('win'):
     scripts = ['scripts/peppy.bat']
@@ -166,6 +180,27 @@ else:
         shutil.copy('run.py', 'scripts/peppy')
     scripts = ['scripts/peppy']
 
+
+# Any non-python files to be included in the python site-packages directory
+# must be included here.
+package_data = {
+    'peppy.plugins': ['*.peppy-plugin' ],
+    'peppy.plugins.eggs': ['*.egg' ],
+    'peppy.project': ['*.peppy-plugin' ],
+    'peppy.hsi': ['*.peppy-plugin' ],
+    'peppy.major_modes': ['*.peppy-plugin' ],
+    'peppy.editra': ['styles/*.ess'],
+    }
+
+# Add all help files to package data
+hhpfiles = findHelpBooks()
+for hhpfile in hhpfiles:
+    dirname = os.path.dirname(hhpfile)
+    pyname = dirname.replace("/", ".").replace("\\", ".")
+    print(pyname)
+    package_data[pyname] = ['*.*']
+    package_data["%s._images" % pyname] = ['*']
+    package_data["%s._static" % pyname] = ['*']
 
 # Any files to be installed outsite site-packages are declared here
 data_files = []
@@ -199,13 +234,18 @@ if USE_PY2EXE:
         except ImportError:
             pass
     
-    # py2exe ignores package_data, so the editra files loaded on demand by
-    # the style editor and all help HTML files need to be included in the
-    # data_files entry
+    # py2exe ignores package_data, so the editra files loaded on demand by the
+    # style editor need to be included in the data_files entry
     data_files.append(("peppy/editra/styles", glob.glob("peppy/editra/styles/*.ess")))
-    data_files.append(("peppy/help", glob.glob("peppy/help/*.*")))
-    data_files.append(("peppy/help/_images", glob.glob("peppy/help/_images/*")))
-    data_files.append(("peppy/help/_static", glob.glob("peppy/help/_static/*")))
+    
+    # Again, because py2exe ignores package_data, add all help files to
+    # data_files
+    hhpfiles = findHelpBooks()
+    for hhpfile in hhpfiles:
+        dirname = os.path.dirname(hhpfile)
+        data_files.append((dirname, glob.glob("%s/*.*" % dirname)))
+        data_files.append(("%s/_images" % dirname, glob.glob("%s/_images/*" % dirname)))
+        data_files.append(("%s/_static" % dirname, glob.glob("%s/_static/*" % dirname)))
 
     # py2exe can't scan inside zipped eggs to find dependencies.  All plugins
     # must be unpacked into a directory in order for py2exe to find any
@@ -288,17 +328,7 @@ setup(cmdclass={'build_py': build_extra_peppy,},
       platforms = 'any',
       scripts = scripts,
       packages = packages,
-      package_data = {
-          'peppy.plugins': ['*.peppy-plugin' ],
-          'peppy.plugins.eggs': ['*.egg' ],
-          'peppy.project': ['*.peppy-plugin' ],
-          'peppy.hsi': ['*.peppy-plugin' ],
-          'peppy.major_modes': ['*.peppy-plugin' ],
-          'peppy.editra': ['styles/*.ess'],
-          'peppy.help': ['*.*'],
-          'peppy.help._images': ['*'],
-          'peppy.help._static': ['*'],
-          },
+      package_data = package_data,
       ext_modules = ext_modules,
 
       # FIXME: the excludes option still doesn't work.  py2exe still
