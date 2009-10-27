@@ -114,6 +114,7 @@ distdir: peppy/_peppy_version.py
 	# Force setup to use MANIFEST.in
 	-rm -f MANIFEST
 	python setup.py sdist -k
+	(cd $(distdir)/manual; make htmlhelp)
 	chmod 644 $(distdir)/tests/*.py
 	
 	cp ./plugins/build/*.egg $(distdir)/peppy/plugins/eggs
