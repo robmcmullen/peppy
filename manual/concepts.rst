@@ -10,6 +10,7 @@ User Interface
 ==============
 
 .. image:: peppy-python-mode.png
+   :align: center
 
 Top Level Windows
 -----------------
@@ -32,6 +33,7 @@ typing, and scroll bars for moving back and forward in the document.
 Other major modes like HexEdit:
 
 .. image:: peppy-hexedit-mode.png
+   :align: center
 
 provide a different type of user interface.  Some types of major modes are
 specific to a type of file and some are more general and can be used to edit
