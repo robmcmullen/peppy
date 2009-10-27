@@ -1083,6 +1083,12 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def showHelp(self, section=None):
         from wx.html import HtmlHelpController
         if not hasattr(self, 'helpframe') or self.helpframe is None:
+            filename = self.getConfigFilePath("htmlhelp.cfg")
+            cfg = wx.FileConfig(localFilename=filename, style=wx.CONFIG_USE_LOCAL_FILE)
+            # NOTE: using a FileConfig directly in the HtmlHelpController by
+            # self.helpframe.UseConfig(cfg) crashes when closing the help
+            # window
+            wx.ConfigBase.Set(cfg)
             self.helpframe = HtmlHelpController()
         filename = get_package_data_dir("peppy/help/peppydoc.hhp")
         if os.path.exists(filename):
