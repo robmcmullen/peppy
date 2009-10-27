@@ -49,7 +49,10 @@ class HTMLViewMode(MajorMode, STCInterface, wx.html.HtmlWindow):
     def OnLinkClicked(self, linkinfo):
         assert self.dprint('OnLinkClicked: %s\n' % linkinfo.GetHref())
         url = linkinfo.GetHref()
-        wx.CallAfter(self.frame.open, url)
+        if url.startswith("htmlhelp:"):
+            wx.GetApp().showHelp(url[9:])
+        else:
+            wx.CallAfter(self.frame.open, url)
 
     def OnCellMouseHover(self, cell, x, y):
         assert self.dprint('OnCellMouseHover: %s\n' % cell)
