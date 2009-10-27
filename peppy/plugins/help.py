@@ -102,7 +102,7 @@ class MajorModeHelp(SelectAction, OnDemandActionNameMixin):
         return name
     
     def action(self, index=-1, multiplier=1):
-        wx.GetApp().showHelp(self.mode.keyword)
+        wx.GetApp().showHelp("%s.html" % self.mode.keyword)
 
 
 class ProjectHome(SelectAction):
