@@ -579,6 +579,34 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 return start, newend
         return start, end
         
+    def GetOneLineTarget(self):
+        """Create a target encompassing the current line
+        
+        The STC seems to make entire line selections by placing the cursor
+        on the left margin of the next line, rather than the end of the
+        last highlighted line.
+        """
+        start, end = self.GetSelection()
+        if start == end:
+            line = self.LineFromPosition(start)
+            start = self.PositionFromLine(line)
+            end = self.GetLineEndPosition(line)
+        else:
+            start_line = self.mode.LineFromPosition(start)
+            end_line = self.mode.LineFromPosition(end)
+            # NOTE: The STC seems to make entire line selections by placing the
+            # cursor on the left margin of the next line, rather than the end
+            # of the last highlighted line.
+            if end_line == start_line + 1 and self.GetColumn(end) == 0:
+                start = self.PositionFromLine(start_line)
+                end = self.GetLineEndPosition(end_line)
+            else:
+                # There is a selection, and it's more than one line
+                return False
+        self.SetTargetStart(start)
+        self.SetTargetEnd(end)
+        return True
+        
     def GetLineRegion(self):
         """Get current region, extending to current line if no region
         selected.

@@ -322,3 +322,75 @@ class ParagraphOrRegionMutateAction(TextModificationAction):
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
         self.mutateSelection(self.mode)
+
+
+class OneLineModificationAction(TextModificationAction):
+    """Mixin class to operate a single line.
+    
+    The line may be selected or it will operate on the line containing the
+    cursor
+    """
+
+    def isActionAvailable(self):
+        """The action is only available if a region is selected."""
+        s = self.mode
+        (start, end) = s.GetSelection()
+        if start == end:
+            return True
+        start_line = s.LineFromPosition(start)
+        end_line = s.LineFromPosition(end)
+        if start_line == end_line:
+            return True
+        elif end_line == start_line + 1 and s.GetColumn(end) == 0:
+            return True
+        return False
+
+    def mutate(self, txt):
+        """Operate on specified text and return new text.
+
+        Method designed to be overridden by subclasses to provide the
+        text operation desired by the subclass.
+
+        @param txt: input text
+        @returns: text resulting from the desired processing
+        """
+        return txt
+    
+    def adjustTarget(self):
+        """Adjust the target to encompass more or less text, if necessary
+        
+        The target will be described by the STC's GetTargetStart and
+        GetTargetEnd methods, and will specify a single line.
+        """
+        return False
+
+    def mutateLine(self, s):
+        """Change the highlighted region.
+
+        Perform some text operation on the region.  If a region is not
+        active in the STC, the action will not be performed.
+
+        The operation is performed by the C{mutate} method, which
+        subclasses will override to provide the functionality.
+
+        Side effect: moves the cursor to the end of the region.
+        
+        @param s: styled text control
+        """
+        if not s.GetOneLineTarget():
+            return False
+        self.adjustTarget()
+        pos = s.GetTargetStart()
+        end = s.GetTargetEnd()
+        orig = s.GetTextRange(pos, end)
+        newtext = self.mutate(orig)
+        if self.isModified(newtext, orig):
+            s.BeginUndoAction()
+            s.ReplaceTarget(newtext)
+            s.updateRegion(pos, end)
+            s.GotoPos(end)
+            s.EndUndoAction()
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
+        self.mutateLine(self.mode)
