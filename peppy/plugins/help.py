@@ -87,13 +87,19 @@ class UserManual(SelectAction):
         wx.GetApp().showHelp()
 
 
-class MajorModeHelp(SelectAction):
+class MajorModeHelp(SelectAction, OnDemandActionNameMixin):
     """Display the manual for the current major mode
     
     """
     name = "Help on Current Major Mode"
     default_menu = ("&Help", 101)
     osx_minimal_menu = False
+    
+    def getMenuItemName(self):
+        name = "Help on %s" % self.mode.keyword
+        if not name.endswith("Mode"):
+            name += " Mode"
+        return name
     
     def action(self, index=-1, multiplier=1):
         wx.GetApp().showHelp(self.mode.keyword)
