@@ -16,8 +16,21 @@ Contents:
    preferences
    fundamental
    macros
-   python
    project
+
+Text Editing Major Modes:
+
+.. toctree::
+   :maxdepth: 3
+
+   python
+
+Specialized Major Modes:
+
+.. toctree::
+   :maxdepth: 3
+
+   hexedit
    hsi
 
 \* documentation in progress
