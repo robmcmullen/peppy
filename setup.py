@@ -5,7 +5,7 @@
 # packaged module itself, so this file shouldn't have to be changed
 # much.
 
-import os, sys, distutils, glob, zlib
+import os, sys, distutils, glob, zlib, filecmp
 from cStringIO import StringIO
 from distutils.core import setup, Extension, Command
 from distutils.command.build_py import build_py as _build_py
@@ -153,17 +153,27 @@ packages = findPackages(prog)
 
 
 def findHelpBooks():
-    files = []
-    for root in ["", "*/", "*/*/"]:
-        print root
-        if "_build" in root:
-            # Make sure we don't pick up the source directory, only the
-            # directory that contains the copies that have been modified
-            # by wxpython-htmlhelp-convert.py
-            continue
+    files = {}
+    for root in ["", "*/", "*/*/", "*/*/*/", "*/*/*/*"]:
         for hhpfile in glob.glob("%s*.hhp" % root):
-            files.append(hhpfile)
-    return files
+            docname = os.path.basename(hhpfile)
+            # It's possible that the htmlhelp build directory and the source
+            # directory are different, so make sure we don't pick up a
+            # duplicate copy
+            if docname in files:
+                duplicate = False
+                for existing in files[docname]:
+                    if filecmp.cmp(existing, hhpfile):
+                        duplicate = True
+                        break
+                if not duplicate:
+                    files[docname].append(hhpfile)
+            else:
+                files[docname] = [hhpfile]
+    hhpfiles = []
+    for found in files.values():
+        hhpfiles.extend(found)
+    return hhpfiles
 
 
 # Create the list of scripts to be installed in /usr/bin
