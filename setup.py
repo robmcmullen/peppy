@@ -254,6 +254,7 @@ if USE_PY2EXE:
          "icon_resources": [(2, "../graphics/peppy48.ico")],
          }
         ]
+    platform_kwargs['zip_safe'] = False
     
     try:
         import peppy.py2exe_plugins_count
@@ -285,7 +286,6 @@ setup(cmdclass={'build_py': build_extra_peppy,},
       url = module.__url__,
       download_url = module.__download_url__,
       platforms = 'any',
-      zip_safe = False,
       scripts = scripts,
       packages = packages,
       package_data = {
