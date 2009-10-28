@@ -386,7 +386,8 @@ class OneLineModificationAction(TextModificationAction):
         newtext = self.mutate(orig)
         if self.isModified(newtext, orig):
             s.BeginUndoAction()
-            s.ReplaceTarget(newtext)
+            count = s.ReplaceTarget(newtext)
+            end = pos + count
             s.updateRegion(pos, end)
             s.GotoPos(end)
             s.EndUndoAction()
