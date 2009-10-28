@@ -109,10 +109,10 @@ class RSTMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         dprint(lines)
         if len(lines) == 2:
             adornment = lines[1][0] * len(lines[0])
-            txt = lines[0] + s.getLinesep() + adornment
+            txt = lines[0] + self.getLinesep() + adornment
         elif len(lines) == 3:
             adornment = lines[2][0] * len(lines[1])
-            txt = adornment + s.getLinesep() + lines[1] + s.getLinesep() + adornment
+            txt = adornment + self.getLinesep() + lines[1] + self.getLinesep() + adornment
         
         return txt
 
