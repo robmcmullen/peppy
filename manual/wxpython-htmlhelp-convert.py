@@ -22,7 +22,7 @@ def convert(filename, destdir):
     else:
         outfile = filename
     fh = open(outfile, "w")
-    fh.write(soup.prettify())
+    fh.write(str(soup))
     fh.close()
 
 def addAnchors(soup):
