@@ -319,7 +319,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.CallTipSetForeground(calltip.GetFore())
 
         sback = self.GetItemByName('select_style')
-        if not sback.IsNull():
+        # Make sure that the user has specified a valid background color,
+        # otherwise the system highlight color will be used.
+        if not sback.IsNull() and sback.GetBack():
             sback = sback.GetBack()
         else:
             sback = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
