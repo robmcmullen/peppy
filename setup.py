@@ -318,11 +318,14 @@ if USE_PY2EXE:
 
 
 # Define any extensions in setup_extensions.py
+save_path = sys.path
 try:
+    sys.path = ["."]
     from setup_extensions import *
 except:
     ext_modules = None
-
+finally:
+    sys.path = save_path
 
 setup(cmdclass={'build_py': build_extra_peppy,},
       name = prog,
