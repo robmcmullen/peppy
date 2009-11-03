@@ -24,18 +24,30 @@ import generic
 from generic import Path, Reference
 import registry
 
+from peppy.vfs.itools.core.cache import LRUCache
+
+cache = LRUCache(200)
 
 
 def get_reference(reference):
     """
     Returns a URI reference of the good type from the given string.
     """
+    # Hit
+    if reference in cache:
+        return cache[reference]
+
+    # Miss
     if ':' in reference:
         scheme_name, scheme_specifics = reference.split(':', 1)
         scheme = registry.get_scheme(scheme_name)
     else:
         scheme = generic.GenericDataType
-    return scheme.decode(reference)
+    parsed_reference = scheme.decode(reference)
+
+    # Ok
+    cache[reference] = parsed_reference
+    return parsed_reference
 
 
 
