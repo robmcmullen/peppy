@@ -592,8 +592,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             start = self.PositionFromLine(line)
             end = self.GetLineEndPosition(line)
         else:
-            start_line = self.mode.LineFromPosition(start)
-            end_line = self.mode.LineFromPosition(end)
+            start_line = self.LineFromPosition(start)
+            end_line = self.LineFromPosition(end)
             # NOTE: The STC seems to make entire line selections by placing the
             # cursor on the left margin of the next line, rather than the end
             # of the last highlighted line.
