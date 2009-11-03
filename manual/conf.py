@@ -35,7 +35,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
-project = 'peppy'
+project = 'Peppy'
 copyright = '2008, Rob McMullen'
 
 import peppy
@@ -85,7 +85,7 @@ html_style = 'default.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = "%s %s User Manual" % (project, version)
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.
@@ -141,7 +141,7 @@ htmlhelp_basename = 'peppydoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'peppy.tex', 'peppy Documentation', 'Rob McMullen', 'manual'),
+  ('index', 'peppy.tex', html_title, 'Rob McMullen', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
