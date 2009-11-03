@@ -566,5 +566,29 @@ class MailtoTestCase(unittest.TestCase):
 
 
 
+class UsernamePasswordCase(unittest.TestCase):
+    def test_username(self):
+        """username specified before host."""
+        ref = get_reference('http://username@example.org')
+        self.assertEqual(ref.scheme, 'http')
+        self.assertEqual(ref.authority.userinfo, 'username')
+        self.assertEqual(ref.authority.host, 'example.org')
+
+    def test_username(self):
+        """username and password specified before host."""
+        ref = get_reference('http://username:passwd@example.org')
+        self.assertEqual(ref.scheme, 'http')
+        self.assertEqual(ref.authority.userinfo, 'username:passwd')
+        self.assertEqual(ref.authority.host, 'example.org')
+
+    def test_username(self):
+        """username and password specified before host."""
+        ref = get_reference('http://username:passwd@example.org:8888/test.html')
+        self.assertEqual(ref.scheme, 'http')
+        self.assertEqual(ref.authority.userinfo, 'username:passwd')
+        self.assertEqual(ref.authority.host, 'example.org')
+
+
+
 if __name__ == '__main__':
     unittest.main()
