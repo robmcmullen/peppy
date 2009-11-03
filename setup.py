@@ -211,6 +211,9 @@ for hhpfile in hhpfiles:
     package_data[pyname] = ['*.*']
     package_data["%s._images" % pyname] = ['*']
     package_data["%s._static" % pyname] = ['*']
+    # Also have to include dummy packages, or otherwise the package_data isn't
+    # included
+    packages.extend([pyname, "%s._images" % pyname, "%s._static" % pyname])
 
 # Any files to be installed outsite site-packages are declared here
 data_files = []
