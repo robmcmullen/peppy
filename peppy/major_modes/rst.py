@@ -32,24 +32,59 @@ class AdjustSectionAdornment(OneLineModificationAction):
 
     def mutate(self, txt):
         return self.mode.adjustAdornment(txt)
+    
+    def getNextLine(self, line):
+        next_line = line + 1
+        if next_line < self.mode.GetLineCount():
+            return self.mode.GetLine(next_line).rstrip()
+        return None
+    
+    def getPrevLine(self, line):
+        prev_line = line - 1
+        if prev_line >= 0:
+            return self.mode.GetLine(prev_line).rstrip()
+        return None
+    
+    def isAdornment(self, text):
+        if text is not None and len(text) > 0 and text[0] in RSTMode.adornment_chars:
+            text = text.rstrip()
+            return text.count(text[0]) == len(text)
+        return False
 
     def adjustTarget(self):
         s = self.mode
-        dprint("Orig target: %d - %d" % (s.GetTargetStart(), s.GetTargetEnd()))
-        line = s.LineFromPosition(s.GetTargetStart())
-        next_line = line + 1
-        if next_line < s.GetLineCount():
-            text = s.GetLine(next_line)
-            if len(text) > 0 and text[0] in RSTMode.adornment_chars:
-                s.SetTargetEnd(s.GetLineEndPosition(next_line))
-                
-                # Only if there is an underline will an overline be detected
-                if line > 0:
-                    prev_line = line - 1
-                    text = s.GetLine(prev_line)
-                    if len(text) > 0 and text[0] in RSTMode.adornment_chars:
-                        s.SetTargetStart(s.PositionFromLine(prev_line))
-        dprint("New target: %d - %d" % (s.GetTargetStart(), s.GetTargetEnd()))
+        #dprint("Orig target: %d - %d" % (s.GetTargetStart(), s.GetTargetEnd()))
+        new_start_line = new_end_line = line = s.LineFromPosition(s.GetTargetStart())
+        
+        # Check to see if the cursor is on the underline adornment
+        overline = False
+        text = s.GetLine(line)
+        if self.isAdornment(text):
+            prev = self.getPrevLine(line)
+            if prev is None or len(prev) == 0 or self.isAdornment(prev):
+                # A non-existent or blank previous line, or two adornment lines
+                # back to back means that the cursor is either on an overline
+                # or nothing.
+                overline = True
+            
+                next = self.getNextLine(line + 1)
+                #dprint(next)
+                if self.isAdornment(next) and next[0] == text[0]:
+                    new_end_line = line + 2
+            else:
+                new_start_line = line = line - 1
+        
+        if not overline:
+            next = self.getNextLine(line)
+            if self.isAdornment(next):
+                new_end_line = line + 1
+                prev = self.getPrevLine(line)
+                if self.isAdornment(prev):
+                    new_start_line = line - 1
+        
+        s.SetTargetStart(s.PositionFromLine(new_start_line))
+        s.SetTargetEnd(s.GetLineEndPosition(new_end_line))
+        #dprint("New target: %d - %d" % (s.GetTargetStart(), s.GetTargetEnd()))
 
 
 
@@ -106,7 +141,7 @@ class RSTMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         different characters, the overline is modified to match the underline.
         """
         lines = txt.splitlines()
-        dprint(lines)
+        self.dprint(lines)
         if len(lines) == 2:
             adornment = lines[1][0] * len(lines[0])
             txt = lines[0] + self.getLinesep() + adornment
