@@ -4,7 +4,7 @@
 Main menu and actions.
 """
 
-import os, glob
+import os
 
 import wx
 from wx.lib.pubsub import Publisher
