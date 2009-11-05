@@ -296,8 +296,6 @@ class WebDavFS(BaseFS):
         @raises KeyError if response not found
         """
         newref = str(cls._copy_reference_without_username(ref))
-        #dprint(newref)
-        #dprint(pp.pformat(responses))
         
         # Try the full reference
         if newref in responses:
@@ -311,7 +309,6 @@ class WebDavFS(BaseFS):
         
         # Try the path without the hostname
         newref = str(ref.path)
-        dprint(newref)
         if newref in responses:
             return responses[newref]
         
@@ -324,8 +321,6 @@ class WebDavFS(BaseFS):
     @classmethod
     def exists(cls, ref):
         ref, status, responses = cls._propfind(ref)
-        #dprint(status)
-        #dprint(pp.pformat(responses))
         return status < 400 or status >= 500
 
     @classmethod
@@ -344,9 +339,7 @@ class WebDavFS(BaseFS):
 
     @classmethod
     def is_folder(cls, ref):
-        dprint("ref=%s, type=%s" % (ref, ref.__class__))
         if cls.exists(ref):
-            dprint(ref)
             mime = cls._get_metadata(ref, 'getcontenttype')
             return mime == "httpd/unix-directory"
         return False
@@ -368,9 +361,7 @@ class WebDavFS(BaseFS):
     @classmethod
     def make_file(cls, ref):
         folder_path = utils.get_dirname(ref)
-        #dprint(folder_path)
         file_path = utils.get_filename(ref)
-        #dprint(file_path)
 
         dest_exists = cls.exists(folder_path)
         if dest_exists:
@@ -389,14 +380,10 @@ class WebDavFS(BaseFS):
     def _save_file(cls, ref, data):
         ref, client = cls._get_client(ref)
         path = str(ref.path)
-        dprint(path)
         try:
             responses = client.put(path, data)
         except:
-            dprint(client.response)
             raise
-        dprint(repr(data))
-        print client.response.status
         cls._purge_cache(ref)
 
     @classmethod
@@ -412,7 +399,6 @@ class WebDavFS(BaseFS):
         path = str(ref.path)
         dprint(path)
         responses = client.mkcol(path)
-        print client.response.status
 
     @classmethod
     def remove(cls, ref):
@@ -421,9 +407,8 @@ class WebDavFS(BaseFS):
 
         newref, client = cls._get_client(ref)
         path = str(newref.path)
-        dprint(path)
         responses = client.delete(path)
-        print client.response.status
+        dprint(client.response.status)
         cls._purge_cache(ref, newref)
     
     @classmethod
@@ -451,7 +436,7 @@ class WebDavFS(BaseFS):
 
         ref, client = cls._get_client(source)
         responses = client.move(source, target)
-        print client.response.status
+        dprint(client.response.status)
         cls._purge_cache(source, target)
 
 
