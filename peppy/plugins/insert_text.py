@@ -15,6 +15,7 @@ from peppy.actions.minibuffer import *
 
 from peppy.actions.base import *
 from peppy.actions import *
+from peppy.filereader import FileReader
 from peppy.debug import *
 
 
@@ -75,6 +76,39 @@ class OpenLine(SelectAction):
             s.SetCurrentPos(cursor)
 
 
+class InsertFile(SelectAction):
+    """Insert a file at the current cursor position"""
+    name = "Insert File..."
+    default_menu = ("Tools", 205)
+    key_bindings = {'emacs': "C-x i", }
+    
+    def action(self, index=-1, multiplier=1):
+        cwd = str(self.frame.cwd(use_vfs=True))
+        self.dprint(cwd)
+        minibuffer = URLMinibuffer(self.mode, self, label="Insert File from URL:",
+                                   initial = cwd)
+        self.mode.setMinibuffer(minibuffer)
+
+    def processMinibuffer(self, minibuffer, mode, text):
+        self.dprint("Inserting %s" % text)
+        url = vfs.get_reference(text)
+        try:
+            fh = vfs.open(url)
+            reader = FileReader(fh, url)
+            mode.BeginUndoAction()
+            pos = mode.GetCurrentPos()
+            mode.GotoPos(pos)
+            if reader.isUnicode():
+                text = reader.getUnicode()
+                mode.InsertText(pos, text)
+            else:
+                text = reader.getBytes()
+                mode.InsertText(pos, text)
+            mode.EndUndoAction()
+        except LookupError:
+            mode.setStatusText("Failed loading %s" % text)
+
+
 class InsertTextPlugin(IPeppyPlugin):
     """Plugin containing of a bunch of text insertion actions.
     """
@@ -85,4 +119,5 @@ class InsertTextPlugin(IPeppyPlugin):
                 InsertQuotedChar,
                 InsertRepr,
                 OpenLine,
+                InsertFile,
                 ]
