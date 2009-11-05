@@ -264,10 +264,8 @@ class WebDavFS(BaseFS):
                 if newref in responses:
                     return responses[newref][metadata]
         except KeyError:
-            # Didn't match anything.  If there's a default value return it,
-            # otherwise raise an error.
-            if key_error_return:
-                return key_error_return
+            # Didn't match anything.  Return default value
+            return key_error_return
         raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
 
     @classmethod
