@@ -651,7 +651,9 @@ class Buffer(BufferVFSMixin):
     def restoreFromAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
-            if vfs.get_mtime(temp_url) >= vfs.get_mtime(self.url) and vfs.get_size(temp_url) > 0:
+            # If the original URL no longer exists, the autosave file will be
+            # removed without prompting.
+            if vfs.exists(self.url) and vfs.get_mtime(temp_url) >= vfs.get_mtime(self.url) and vfs.get_size(temp_url) > 0:
                 # backup file is newer than saved file.
                 dlg = CustomOkDialog(wx.GetApp().GetTopWindow(), u"Autosave file for %s\nis newer than last saved version.\n\nRestore from autosave file?" % self.url, "Restore from Autosave", "Ignore Autosave")
                 retval=dlg.ShowModal()
