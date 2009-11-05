@@ -1,11 +1,49 @@
 #!/usr/bin/env python
+#-----------------------------------------------------------------------------
+# Name:        wxpython-htmlhelp-convert.py
+# Purpose:     Convert sphinx htmlhelp to format optimized for wxHtmlHelp
+#
+# Author:      Rob McMullen
+#
+# Created:     2009
+# RCS-ID:      $Id: $
+# Copyright:   (c) 2009 Rob McMullen
+# License:     wxWidgets
+#-----------------------------------------------------------------------------
+"""Convert sphinx-generated htmlhelp files into versions optimized for reading
+using the wxHtmlHelp browser
+
+Sphinx generates HTML that uses more advanced syntax than the wxHtmlHelp
+system can render.  For an example of one of the problems corrected with this
+script: sphinx uses CSS for the header and footer navigation links (previous,
+next, etc.), which isn't rendered properly in wxHtmlHelp.  This script turns
+those links into a table which is rendered correctly with wxHtmlHelp.
+
+This tool is designed to be called as a post-processing step to the 'make
+htmlhelp' command used in sphinx processing.  A convenient way to use this
+script is to integrate it in to the makefile by adding this command to the
+htmlhelp target:
+
+    python wxpython-htmlhelp-convert.py _build/htmlhelp
+
+or because _build/htmlhelp is the default source directory, simply:
+
+    python wxpython-htmlhelp-convert.py
+
+The script is also capable of operating on individual files for testing
+purposes.
+"""
 
 import os, sys, glob, shutil
 from BeautifulSoup import BeautifulSoup, Tag, NavigableString
 
 import conf
 
-def convert(filename, destdir):
+def convert(filename, options):
+    """Convert a single HTML file from the htmlhelp format of sphinx to a
+    version optimized for reading using the wxHtmlHelp browser
+    
+    """
     fh = open(filename)
     text = fh.read()
     fh.close()
@@ -13,12 +51,13 @@ def convert(filename, destdir):
     soup = BeautifulSoup(text)
     addAnchors(soup)
     convertNavigation(soup)
-    convertPre(soup)
+    removeUnnecessaryDivs(soup)
+    fixAlignCenter(soup)
     
-    if destdir:
-        if not os.path.exists(destdir):
-            os.mkdir(destdir)
-        outfile = os.path.join(destdir, os.path.basename(filename))
+    if options.destdir:
+        if not os.path.exists(options.destdir):
+            os.mkdir(options.destdir)
+        outfile = os.path.join(options.destdir, os.path.basename(filename))
     else:
         outfile = filename
     fh = open(outfile, "w")
@@ -26,6 +65,13 @@ def convert(filename, destdir):
     fh.close()
 
 def addAnchors(soup):
+    """Add href anchors for sections
+    
+    The wxHtmlHelp system doesn't recognize the divs or spans used by sphinx to
+    indicate sections, so clicking on section links in unmodified htmlhelp pops
+    up error dialogs.  To conform to wxHtmlHelp's more limited html, <a name>
+    tags are inserted after each section heading and named span tag.
+    """
     results = soup.findAll("div", "section")
     for result in results:
         #print result.name
@@ -97,51 +143,96 @@ def convertNavigation(soup):
         td.append(right)
         
         nav.replaceWith(table)
-        #print newlist.prettify()
-        #print newlist
 
-def convertPre(soup):
-    """The pre blocks need converting because they use <span> tags which
-    confuse the parser.
+def removeUnnecessaryDivs(soup):
+    """The div document wrappers add unnecessary whitespace
     
-    Somehow need to strip out the span tags from within the <pre> tags.
+    The three <div> elements that make up the body of the document only serve
+    to add blank lines before the first section heading when viewed in the
+    wxHtmlHelp browser:
+    
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+    
+    This method loops over the contents of <div class="body"> and replaces <div
+    class="document"> with these contents, effectively removing those three
+    levels of divs.
     """
-    pass
+    nav_lists = soup.findAll("div", "document")
+    for nav in nav_lists:
+        body = nav.find("div", "body")
+        items = []
+        for content in body.contents:
+            if hasattr(content, 'contents'):
+                #print "\n\nitem: %s" % content
+                items.append(content)
+        
+        first_section = None
+        for item in items:
+            if not first_section:
+                first_section = item
+                nav.replaceWith(item)
+            else:
+                first_section.append(item)
+
+def fixAlignCenter(soup):
+    """The <div align=center> used to center images doesn't place a blank line
+    before the image.
+    
+    This routine inserts an empty <p> tag before the <img> tag to create the
+    space between the preceding text and the image.
+    """
+    nav_lists = soup.findAll("div", "align-center")
+    for nav in nav_lists:
+        #print("Found align-center: %s" % nav)
+        blank_line = Tag(soup, "p")
+        nav.insert(0, blank_line)
 
 
-def convertAll(dirname, func, destdir):
+def convertAll(dirname, func, options):
+    """Convert all HTML files in the source directory
+    
+    """
     files = glob.glob("%s/*.html" % dirname)
     for file in files:
-        print(file)
-        func(file, destdir)
+        if options.verbose:
+            print("converting %s" % file)
+        func(file, options)
     
-    if destdir:
-        copyStatic(dirname, destdir)
+    if options.destdir:
+        copyStatic(dirname, options)
 
-def copyStatic(dirname, destdir):
+def copyStatic(dirname, options):
     """Copy the static files to the destination directory"""
     for subdir in glob.glob("%s/_*" % dirname):
         if os.path.isdir(subdir):
-            destsubdir = os.path.join(destdir, os.path.basename(subdir))
+            destsubdir = os.path.join(options.destdir, os.path.basename(subdir))
             if not os.path.exists(destsubdir):
                 os.mkdir(destsubdir)
             for src in glob.glob("%s/*" % subdir):
-                print "cp %s %s" % (src, os.path.join(destsubdir, os.path.basename(src)))
+                if options.verbose:
+                    print "cp %s %s" % (src, os.path.join(destsubdir, os.path.basename(src)))
                 shutil.copy(src, os.path.join(destsubdir, os.path.basename(src)))
     for src in glob.glob("%s/%s.*" % (dirname, conf.htmlhelp_basename)):
-        print "cp %s %s" % (src, os.path.join(destdir, os.path.basename(src)))
-        shutil.copy(src, os.path.join(destdir, os.path.basename(src)))
+        if options.verbose:
+            print "cp %s %s" % (src, os.path.join(options.destdir, os.path.basename(src)))
+        shutil.copy(src, os.path.join(options.destdir, os.path.basename(src)))
     
 
 if __name__ == "__main__":
     from optparse import OptionParser
-    usage="usage: %prog [options] file [files...]"
-    parser=OptionParser(usage=usage)
-    parser.add_option("-o", action="store", dest="outdir", default="", help="Specify the directory for output files")
+    usage = "usage: %prog [options] [<directory> <dir>... | <file> <file>...]\n\n" + __doc__
+    parser = OptionParser(usage=usage)
+    parser.add_option("-v", action="store_true", dest="verbose", default=False, help="Be verbose when operating")
+    parser.add_option("-o", action="store", dest="destdir", default="", help="Specify an alternate directory for output files rather than overwriting the source htmlhelp files")
     (options, args) = parser.parse_args()
+    
+    if len(args) == 0:
+        args = ["_build/htmlhelp"]
     
     for arg in args:
         if os.path.isdir(arg):
-            convertAll(arg, convert, options.outdir)
+            convertAll(arg, convert, options)
         else:
-            convert(arg, options.outdir)
+            convert(arg, options)
