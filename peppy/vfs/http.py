@@ -25,9 +25,12 @@ from itools.vfs import BaseFS, register_file_system
 from itools.datatypes import DataType
 from itools.vfs.vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from itools.uri import get_reference, Reference
+from itools.uri.generic import Authority
 from itools.core.cache import LRUCache
 
 from davclient import DAVClient
+
+from peppy.lib.dictutils import TimeExpiringDict
 
 from peppy.debug import dprint
 import pprint
@@ -187,36 +190,75 @@ class WebDavFS(BaseFS):
     
     remap301 = LRUCache(200)
     
+    response_cache = TimeExpiringDict(10)
+    
     @classmethod
     def _purge_cache(cls, *refs):
-        for ref in refs:
+        folders = []
+        for orig_ref in refs:
+            ref = cls._copy_reference_without_username(orig_ref)
+            dprint("Removing cache for %s" % ref)
             if ref in cls.remap301:
                 del cls.remap301[ref]
+            if ref in cls.response_cache:
+                status, responses = cls.response_cache[ref]
+                response = cls._get_response_from_ref(ref, responses)
+                try:
+                    if response['getcontenttype'] == "httpd/unix-directory":
+                        dprint("Found folder %s" % ref)
+                        folders.append(ref)
+                except KeyError:
+                    pass
+                del cls.response_cache[ref]
+        
+        # Remove all the cached data for anything contained in any folders that
+        # have been removed.
+        for folder in folders:
+            dprint("Checking folder %s" % folder)
+            folder_url = unicode(folder)
+            keys = cls.response_cache.keys()
+            for ref in keys:
+                dprint("Checking cache %s" % str(ref))
+                ref_url = unicode(ref)
+                if ref_url.startswith(folder_url):
+                    dprint("Removing cache hit %s for deleted folder: %s" % (ref_url, folder_url))
+                    del cls.response_cache[ref]
     
     @classmethod
     def _get_client(cls, ref):
         if ref in cls.remap301:
             ref = cls.remap301[ref]
         client = DAVClient(ref)
-        return ref, client
+        newref = cls._copy_reference_without_username(ref)
+        return newref, client
         
     @classmethod
     def _propfind(cls, ref):
         ref, client = cls._get_client(ref)
-        path = str(ref.path)
-        dprint("url=%s, path=%s" % (ref, path))
-        responses = client.propfind(path, depth=1)
-        if client.response.status == 301:
-            dprint(client.response.status)
-            dprint(pp.pformat(responses))
-            dprint(client.response.body)
-            match = cls.re301.search(client.response.body)
-            if match:
-                newpath = match.group(1)
-                responses = client.propfind(newpath, depth=1)
-                cls.remap301[ref] = get_reference(newpath)
+        if ref in cls.response_cache:
+            status, responses = cls.response_cache[ref]
+            dprint("response_cache hit: %s" % str(ref))
+        else:
+            dprint("response_cache miss: %s" % str(ref))
+            path = str(ref.path)
+            responses = client.propfind(path, depth=1)
+            if client.response.status == 301:
+                #dprint(client.response.status)
+                #dprint(pp.pformat(responses))
+                #dprint(client.response.body)
+                match = cls.re301.search(client.response.body)
+                if match:
+                    newpath = match.group(1)
+                    responses = client.propfind(newpath, depth=1)
+                    cls.remap301[ref] = get_reference(newpath)
+            status = client.response.status
+            dprint("response_cache miss: storing status=%s, response=%s" % (status, responses))
+        if responses is not None:
+            dprint(ref)
+            newref = cls._copy_reference_without_username(ref)
+            cls.response_cache[newref] = (status, responses)
         
-        return ref, client.response.status, responses
+        return ref, status, responses
     
     @classmethod
     def _copy_reference_without_username(cls, ref):
@@ -226,7 +268,7 @@ class WebDavFS(BaseFS):
         scheme = ref.scheme
         if scheme.startswith("webdav"):
             scheme = "http" + scheme [6:]
-        newref = Reference(scheme, newauth, ref.path, ref.query, ref.fragment)
+        newref = Reference(scheme, Authority(newauth), ref.path, ref.query, ref.fragment)
         return newref
     
     @classmethod
@@ -237,42 +279,53 @@ class WebDavFS(BaseFS):
         ref, status, responses = cls._propfind(ref)
         if not responses:
             raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
-        newref = str(cls._copy_reference_without_username(ref))
-        dprint(newref)
-        dprint(pp.pformat(responses))
-        
         try:
-            # Try the full reference
-            if newref in responses:
-                return responses[newref][metadata]
+            response = cls._get_response_from_ref(ref, responses)
             
-            # If it's a directory, try it without the trailing slash
-            if newref.endswith("/"):
-                newref = newref[:-1]
-                if newref in responses:
-                    return responses[newref][metadata]
-            
-            # Try the path without the hostname
-            newref = str(ref.path)
-            dprint(newref)
-            if newref in responses:
-                return responses[newref][metadata]
-            
-            # If it's a directory, try it without the trailing slash
-            if newref.endswith("/"):
-                newref = newref[:-1]
-                if newref in responses:
-                    return responses[newref][metadata]
-        except KeyError:
-            # Didn't match anything.  Return default value
+            if metadata in response:
+                return response[metadata]
             return key_error_return
-        raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
+        except KeyError:
+            raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
+
+    @classmethod
+    def _get_response_from_ref(cls, ref, responses):
+        """From the list of responses, return the response that matches the
+        requested URL.
+        
+        @raises KeyError if response not found
+        """
+        newref = str(cls._copy_reference_without_username(ref))
+        #dprint(newref)
+        #dprint(pp.pformat(responses))
+        
+        # Try the full reference
+        if newref in responses:
+            return responses[newref]
+        
+        # If it's a directory, try it without the trailing slash
+        if newref.endswith("/"):
+            newref = newref[:-1]
+            if newref in responses:
+                return responses[newref]
+        
+        # Try the path without the hostname
+        newref = str(ref.path)
+        dprint(newref)
+        if newref in responses:
+            return responses[newref]
+        
+        # If it's a directory, try it without the trailing slash
+        if newref.endswith("/"):
+            newref = newref[:-1]
+            if newref in responses:
+                return responses[newref]
 
     @classmethod
     def exists(cls, ref):
         ref, status, responses = cls._propfind(ref)
-        dprint(status)
-        dprint(pp.pformat(responses))
+        #dprint(status)
+        #dprint(pp.pformat(responses))
         return status < 400 or status >= 500
 
     @classmethod
@@ -291,7 +344,7 @@ class WebDavFS(BaseFS):
 
     @classmethod
     def is_folder(cls, ref):
-        dprint(ref)
+        dprint("ref=%s, type=%s" % (ref, ref.__class__))
         if cls.exists(ref):
             dprint(ref)
             mime = cls._get_metadata(ref, 'getcontenttype')
@@ -315,9 +368,9 @@ class WebDavFS(BaseFS):
     @classmethod
     def make_file(cls, ref):
         folder_path = utils.get_dirname(ref)
-        dprint(folder_path)
+        #dprint(folder_path)
         file_path = utils.get_filename(ref)
-        dprint(file_path)
+        #dprint(file_path)
 
         dest_exists = cls.exists(folder_path)
         if dest_exists:
@@ -344,6 +397,7 @@ class WebDavFS(BaseFS):
             raise
         dprint(repr(data))
         print client.response.status
+        cls._purge_cache(ref)
 
     @classmethod
     def make_folder(cls, ref):
@@ -398,6 +452,7 @@ class WebDavFS(BaseFS):
         ref, client = cls._get_client(source)
         responses = client.move(source, target)
         print client.response.status
+        cls._purge_cache(source, target)
 
 
 register_file_system('http', HTTPReadOnlyFS)

@@ -301,6 +301,28 @@ class WebdavFSTestCase(FileSystemTestCases, TestCase):
     root = 'webdav://test:passwd@localhost:8008/'
 
 
+class SimpleFileSystemTestCases(object):
+    """Test the whole API for the filesystem layer using the specified root
+    
+    """
+    root = None
+    
+    def test_simple(self):
+        vfs.make_folder(self.root + 'tmp')
+        file = vfs.make_file(self.root + 'tmp/blah.txt')
+        file.write("BLAH!!!")
+        file.close()
+        file = vfs.open(self.root + 'tmp/blah.txt')
+        self.assertEqual(file.read(), 'BLAH!!!')
+        assert vfs.exists(self.root + 'tmp')
+        vfs.remove(self.root + 'tmp')
+        assert not vfs.exists(self.root + 'tmp')
+        assert not vfs.exists(self.root + 'tmp/blah.txt')
+
+class SimpleWebdavFSTestCase(SimpleFileSystemTestCases, TestCase):
+    root = 'webdav://test:passwd@localhost:8008/'
+
+
 #class NonLocalWebdavFSTestCase(FileSystemTestCases, TestCase):
 #    root = 'webdav://test:passwd@www.flipturn.org/davtest/'
 
