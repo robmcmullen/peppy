@@ -715,6 +715,14 @@ class Reference(object):
                          self.fragment)
 
 
+    def copy(self):
+        """Make a new object containing the same information as the current
+        reference.
+        """
+        return Reference(self.scheme, self.authority, self.path, self.query,
+                         self.fragment)
+
+
 
 class EmptyReference(Reference):
 

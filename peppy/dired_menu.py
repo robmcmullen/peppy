@@ -165,7 +165,7 @@ class DiredMenu(IPeppyPlugin):
     def attemptOpen(self, buffer, url):
         # use a copy of the url because don't want to change the buffer's url
         # unless it turns out that we want to change the scheme
-        refcopy = vfs.get_reference(unicode(url))
+        refcopy = vfs.get_reference(unicode(url)).copy()
         #print "url = %s" % str(refcopy)
         if refcopy.scheme == "file" and vfs.exists(refcopy) and vfs.get_size(refcopy) > 0:
             # change scheme and see if tar can open it
