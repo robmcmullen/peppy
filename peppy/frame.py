@@ -619,6 +619,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             opener.open()
         except FileOpenerExceptionHandled:
             pass
+        except vfs.AuthenticationCancelled:
+            pass
 
     def save(self):        
         mode=self.getActiveMajorMode()

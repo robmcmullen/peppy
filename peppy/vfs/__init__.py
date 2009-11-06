@@ -26,6 +26,12 @@ __all__ = [
     'deregister_file_system',
     'get_file_system',
     'get_file_system_schemes',
+    
+    # Authentication
+    'register_authentication_callback',
+    'get_authentication_callback',
+    'AuthenticationCancelled',
+    
     # Functions
     'exists',
     'is_file',

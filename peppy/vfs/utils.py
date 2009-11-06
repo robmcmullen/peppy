@@ -175,3 +175,22 @@ def get_metadata(ref):
         'mtime': fs.get_mtime(ref),
         'size': fs.get_size(ref),
         }
+
+# Register a callback that the vfs can use to prompt the user for a
+# username/password combination.  The callback function should take four
+# arguments and return a username, password pair if successful or (None, None)
+# if canceled by the user.  E.g.:
+#
+# def sample_authentication_callback(url, scheme, realm, username):
+#     return "username", "password"
+auth_callback = None
+def register_authentication_callback(callback):
+    global auth_callback
+    auth_callback = callback
+
+def get_authentication_callback():
+    global auth_callback
+    return auth_callback
+
+class AuthenticationCancelled(RuntimeError):
+    pass

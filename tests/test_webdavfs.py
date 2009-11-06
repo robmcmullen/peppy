@@ -337,7 +337,7 @@ class SimpleWebdavFSTestCase(SimpleFileSystemTestCases, TestCase):
 
 
 #class NonLocalWebdavFSTestCase(FileSystemTestCases, TestCase):
-#    root = 'webdav://test:passwd@www.flipturn.org/davtest/'
+#    root = 'webdav://share.flipturn.org/davtest/'
 
 
 

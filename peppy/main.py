@@ -27,6 +27,7 @@ from peppy.lib.loadfileserver import LoadFileProxy
 from peppy.lib.userparams import *
 from peppy.lib.processmanager import *
 from peppy.lib.textutil import piglatin
+from peppy.lib.controls import CredentialsDialog
 
 from peppy.autosave import Autosave, BackupFiles
 
@@ -401,6 +402,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         self.keyboard_actions=[]
         self.bufferhandlers=[]
         self.last_idle_update = 0
+        
+        vfs.register_authentication_callback(self.showCredentialsDialog)
         
         GlobalPrefs.setDefaults(self.minimal_config)
         self.loadConfig()
@@ -1105,6 +1108,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             dlg = wx.MessageDialog(self.GetTopWindow(), "Unable to locate help files; installation error?\nThe files should be located here:\n\n%s\n\nbut were not found." % os.path.dirname(filename), "Help Files Not Found", wx.OK | wx.ICON_EXCLAMATION )
             retval=dlg.ShowModal()
             dlg.Destroy()
+    
+    def showCredentialsDialog(self, url, scheme, realm, username):
+        dlg = CredentialsDialog(self.GetTopWindow(), url=url, realm=realm, username=username)
+        retval = dlg.ShowModal()
+        if retval == wx.ID_OK:
+            return dlg.getUsername(), dlg.getPassword()
+        else:
+            raise vfs.AuthenticationCancelled
+        return None, None
 
 
 def run():

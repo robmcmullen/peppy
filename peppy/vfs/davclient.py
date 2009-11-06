@@ -12,9 +12,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import httplib, copy, base64, StringIO
+import httplib, copy, base64, StringIO, re
 import urllib
 
+from peppy.vfs.utils import get_authentication_callback
 from itools.uri import Path, Reference
 from peppy.debug import dprint
 
@@ -84,6 +85,8 @@ class DAVClient(object):
         elif self._url in self.credentials:
             username, passwd = self.credentials[self._url]
             self._set_basic_auth(username, passwd)
+        else:
+            self._username = self._password = None
     
     scheme_map = {
         'http': httplib.HTTPConnection,
@@ -94,39 +97,45 @@ class DAVClient(object):
     
     def _request(self, method, path='', body=None, headers=None):
         """Internal request method"""
-        self.response = None
-        
-        if headers is None:
-            headers = copy.copy(self.headers)
-        else:
-            new_headers = copy.copy(self.headers)
-            new_headers.update(headers)
-            headers = new_headers
-        
-        try:
-            self._connection = self.scheme_map[self._ref.scheme](self._url, strict=0)
-        except KeyError:
-            raise Exception, 'Unsupported scheme'
-        
-#        dprint(method)
-#        dprint(path)
-#        dprint(body)
-#        dprint(headers)
-        self._connection.request(method, path, body, headers)
+        retry = True
+        while retry:
+            self.response = None
             
-        self.response = self._connection.getresponse()
-        
-        self.response.body = self.response.read()
-        
-        # Try to parse and get an etree
-        try:
-            self._get_response_tree()
-            #dprint(self.response.tree)
-        except:
-            #dprint("Failed converting to etree")
-            #dprint(self.response.body)
-            #raise
-            pass
+            connection_headers = copy.copy(self.headers)
+            if headers:
+                connection_headers.update(headers)
+            
+            try:
+                self._connection = self.scheme_map[self._ref.scheme](self._url, strict=0)
+            except KeyError:
+                raise Exception, 'Unsupported scheme'
+            
+#            dprint(method)
+#            dprint(path)
+#            dprint(body)
+#            dprint(connection_headers)
+            self._connection.request(method, path, body, connection_headers)
+            
+            self.response = self._connection.getresponse()
+            if self.response.status == 401:
+                scheme, realm = self.get_realm_from_response(self.response)
+                if realm:
+                    retry = self.request_auth_from_user(scheme, realm)
+                else:
+                    retry = False
+            else:
+                self.response.body = self.response.read()
+                
+                # Try to parse and get an etree
+                try:
+                    self._get_response_tree()
+                    #dprint(self.response.tree)
+                except:
+                    #dprint("Failed converting to etree")
+                    #dprint(self.response.body)
+                    #raise
+                    pass
+                return
             
     def _get_response_tree(self):
         """Parse the response body into an elementree object"""
@@ -144,6 +153,28 @@ class DAVClient(object):
         """Public method to cache basic authentication"""
         self._set_basic_auth(username, password)
         self.credentials[self._url] = (username, password)
+    
+    def get_realm_from_response(self, response):
+#        dprint(response.getheaders())
+        header = response.getheader('www-authenticate')
+        if header:
+            matches = re.findall('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', header)
+            for scheme, realm in matches:
+#                print("scheme=%s, realm=%s" % (scheme, realm))
+                if scheme == "Basic":
+                    return scheme, realm
+        return None, None
+    
+    def request_auth_from_user(self, scheme, realm):
+#        dprint("Requesting auth from user for realm %s" % realm)
+        callback = get_authentication_callback()
+        
+        username, passwd = callback(self._url, scheme, realm, self._username)
+#        dprint("username=%s password=%s" % (username, passwd))
+        if username is not None:
+            self.set_basic_auth(username, passwd)
+            return True
+        return False
         
     ## HTTP DAV methods ##
         

@@ -715,16 +715,19 @@ class URLMinibuffer(CompletionMinibuffer):
             pattern = path
             
         self.dprint('dir=%s pattern=%s' % (uridir, pattern))
-        for name in vfs.get_names(uridir):
-            if not name.startswith(pattern):
-                self.dprint("skipping %s because it doesn't start with %s" % (name, pattern))
-                continue
-            uri = uridir.resolve2(name)
-            path = str(uri)
-            if vfs.is_folder(uri) and not path.endswith('/'):
-                path += '/'
-            self.dprint(path)
-            paths.append(path)
+        try:
+            for name in vfs.get_names(uridir):
+                if not name.startswith(pattern):
+                    self.dprint("skipping %s because it doesn't start with %s" % (name, pattern))
+                    continue
+                uri = uridir.resolve2(name)
+                path = str(uri)
+                if vfs.is_folder(uri) and not path.endswith('/'):
+                    path += '/'
+                self.dprint(path)
+                paths.append(path)
+        except vfs.AuthenticationCancelled:
+            pass
         return paths
     
     def completeScheme(self, text, uri, path):
