@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Import from the Standard Library
-import re, time, calendar
+import re, time, datetime, calendar
 from httplib import HTTPConnection
 from urllib import urlopen
 from StringIO import StringIO
@@ -79,8 +79,8 @@ class HTTPDate(DataType):
         else:
             raise ValueError, 'date "%s" is not an HTTP-Date' % data
 
-        return calendar.timegm(tm)
-
+        return datetime.datetime.utcfromtimestamp(calendar.timegm(tm))
+    
     @staticmethod
     def encode(mtime):
         tm = time.gmtime(mtime)
@@ -193,6 +193,8 @@ class WebDavFS(BaseFS):
     
     response_cache = TimeExpiringDict(10)
     
+    non_existent_time = datetime.datetime.utcfromtimestamp(0)
+
     @classmethod
     def _purge_cache(cls, *refs):
         folders = []
@@ -278,7 +280,9 @@ class WebDavFS(BaseFS):
         
         """
         ref, status, responses = cls._propfind(ref)
-        if not responses:
+        if status == 403:
+            return key_error_return
+        elif not responses:
             raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
         try:
             path_found, response = cls._get_response_from_ref(ref, responses)
@@ -345,7 +349,7 @@ class WebDavFS(BaseFS):
     def can_write(cls, ref):
         if cls.exists(ref):
             lock = cls._get_metadata(ref, 'lockdiscovery')
-            return lock is not None
+            return lock is None
         return False
 
     @classmethod
@@ -364,7 +368,9 @@ class WebDavFS(BaseFS):
     @classmethod
     def get_mtime(cls, ref):
         mtime = cls._get_metadata(ref, 'getlastmodified')
-        return HTTPDate.decode(mtime)
+        if mtime is not None:
+            return HTTPDate.decode(mtime)
+        return cls.non_existent_time
 
     @classmethod
     def get_mimetype(cls, ref):
@@ -372,7 +378,7 @@ class WebDavFS(BaseFS):
 
     @classmethod
     def get_size(cls, ref):
-        size = cls._get_metadata(ref, 'getcontentlength')
+        size = cls._get_metadata(ref, 'getcontentlength', 0)
         return int(size)
 
     @classmethod
