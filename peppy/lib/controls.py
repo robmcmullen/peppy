@@ -493,6 +493,69 @@ class FontBrowseButton(wx.Panel):
         self.UpdateUI()
 
 
+class CredentialsDialog(wx.Dialog):
+    def __init__(self, parent, title="Authentication Required", url=None, realm=None, username=None):
+        wx.Dialog.__init__(self, parent, -1, title,
+                           size=wx.DefaultSize, pos=wx.DefaultPosition, 
+                           style=wx.DEFAULT_DIALOG_STYLE)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        message = ""
+        if url is not None:
+            message += "A username and password are being requested by %s\n" % url
+        if realm is not None:
+            message += "The site says: \"%s\"" % realm
+        label = wx.StaticText(self, -1, message)
+        sizer.Add(label, 0, flag=wx.ALIGN_CENTRE|wx.ALL)
+        
+        bag = wx.GridBagSizer(5, 5)
+        bag.AddGrowableCol(1)
+        
+        label = wx.StaticText(self, label=_("Username") + u":")
+        bag.Add(label, (1, 0), flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTRE_VERTICAL|wx.ALL)
+        self.username = wx.TextCtrl(self, -1)
+        bag.Add(self.username, (1, 1), flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
+        
+        label = wx.StaticText(self, label=_("Password") + u":")
+        bag.Add(label, (2, 0), flag=wx.ALIGN_RIGHT|wx.ALIGN_CENTRE_VERTICAL|wx.ALL)
+        self.password = wx.TextCtrl(self, -1, style=wx.TE_PASSWORD)
+        bag.Add(self.password, (2, 1), flag=wx.ALIGN_LEFT|wx.ALL|wx.EXPAND)
+        
+        sizer.Add(bag, 1, wx.EXPAND)
+        
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+
+        self.Layout()
+        
+        if username is not None:
+            self.username.SetValue(username)
+            self.password.SetFocus()
+        else:
+            self.username.SetFocus()
+    
+    def getUsername(self):
+        return self.username.GetValue()
+    
+    def getPassword(self):
+        return self.password.GetValue()
+
+
+
+
 if __name__ == "__main__":
     class TestFrame(wx.Frame):
         def __init__(self, parent):
@@ -543,6 +606,10 @@ if __name__ == "__main__":
             self.Bind(wx.EVT_TIMER, self.OnTimer)
             self.timer.Start(1000/10)
 
+            login = wx.Button(self, -1, "Show Login")
+            login.Bind(wx.EVT_BUTTON, self.showLogin)
+            sizer.Add(login, 0, wx.EXPAND)
+
             self.SetAutoLayout(1)
             self.SetSizer(sizer)
             self.Show(1)
@@ -576,6 +643,16 @@ if __name__ == "__main__":
             print("status 4")
             self.statusbar.changeInfo(self.status_info4)
             evt.Skip()
+
+        def showLogin(self, evt):
+            wx.CallAfter(self.showLoginCallback)
+        
+        def showLoginCallback(self):
+            dlg = CredentialsDialog(self, url="http://some.web.site", realm="Files and Stuff")
+            ret = dlg.ShowModal()
+            if ret == wx.ID_OK:
+                dprint("username=%s, password=%s" % (dlg.getUsername(), dlg.getPassword()))
+            dlg.Destroy()
 
     app   = wx.PySimpleApp()
     frame = TestFrame(None)
