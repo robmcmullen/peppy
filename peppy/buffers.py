@@ -296,6 +296,13 @@ class BufferVFSMixin(debugmixin):
         if self.bfh:
             self.bfh.close()
             self.bfh = None
+    
+    def copyBufferedReaderFrom(self, other):
+        """Copy the reference of a buffered reader from another buffer
+        
+        """
+        if other.bfh:
+            self.bfh = other.bfh
 
 
 class Buffer(BufferVFSMixin):

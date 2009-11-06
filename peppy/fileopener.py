@@ -315,8 +315,10 @@ class LoadingBuffer(BufferVFSMixin, debugmixin):
     
     def clone(self):
         """Get a real Buffer instance from this temporary buffer"""
-        return Buffer(self.raw_url, self.opener.modecls, self.created_from_url,
+        newbuf = Buffer(self.raw_url, self.opener.modecls, self.created_from_url,
                       self.opener.stccls)
+        newbuf.copyBufferedReaderFrom(self)
+        return newbuf
 
     def addViewer(self, mode):
         pass
