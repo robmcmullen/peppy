@@ -343,6 +343,9 @@ class WebDavFS(BaseFS):
 
     @classmethod
     def can_write(cls, ref):
+        if cls.exists(ref):
+            lock = cls._get_metadata(ref, 'lockdiscovery')
+            return lock is not None
         return False
 
     @classmethod

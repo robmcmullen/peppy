@@ -332,11 +332,15 @@ class DAVClient(object):
         self._request('PROPPATCH', path, body=unicode('<?xml version="1.0" encoding="utf-8" ?>\n'+body, 'utf-8'), headers=headers)
         
         
-    def set_lock(self, path, owner, locktype='exclusive', lockscope='write', depth=None, headers=None):
+    def set_lock(self, path, owner, locktype='write', lockscope='exclusive', depth=None, headers=None):
         """Set a lock on a dav resource"""
-        root = ElementTree.Element('{DAV:}lockinfo')
-        object_to_etree(root, {'locktype':locktype, 'lockscope':lockscope, 'owner':{'href':owner}}, namespace='DAV:')
-        tree = ElementTree.ElementTree(root)
+        body = """<D:lockinfo xmlns:D='DAV:'>
+     <D:lockscope><D:%s/></D:lockscope>
+     <D:locktype><D:%s/></D:locktype>
+     <D:owner>
+          <D:href>%s</D:href>
+     </D:owner>
+   </D:lockinfo>""" % (lockscope, locktype, owner)
         
         # Add proper headers
         if headers is None:
@@ -348,7 +352,7 @@ class DAVClient(object):
         
         self._request('LOCK', path, body=unicode('<?xml version="1.0" encoding="utf-8" ?>\n'+body, 'utf-8'), headers=headers)
         
-        locks = self.response.etree.finall('.//{DAV:}locktoken')
+        locks = self.response.tree.findall('.//{DAV:}locktoken')
         lock_list = []
         for lock in locks:
             lock_list.append(lock.getchildren()[0].text.strip().strip('\n'))
