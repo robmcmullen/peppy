@@ -25,6 +25,12 @@ from wx.lib.pubsub import Publisher
 import wx.gizmos
 
 from peppy.lib.iconstorage import *
+try:
+    from peppy.debug import *
+except:
+    def dprint(txt=""):
+        #print txt
+        pass
 
 if not '_' in dir():
     _ = unicode
@@ -111,6 +117,8 @@ class ModularStatusBarInfo(object):
         
         self.show_cancel = False
         self.cancelled = False
+        
+        self.debug_progress = False
 
         self.resetProgress()
 
@@ -130,6 +138,7 @@ class ModularStatusBarInfo(object):
             text = self.gauge_text
             self.gauge_text = None
             self.setProgressPosition(self.gauge_value, text)
+            if self.debug_progress: dprint("Reset progress: %s" % text)
     
     def resetIcons(self):
         """Reset the status bar so no icons are visible"""
@@ -174,6 +183,7 @@ class ModularStatusBarInfo(object):
         This can be used if the length of the operation is unknown but want
         to avoid the progress bar if it turns out to be quick.
         """
+        if self.debug_progress: dprint("Start progress: %s, msg=%s max=%d" % (text, message, max))
         self.in_progress = True
         self.gauge_max = max
         self.cancelled = False
@@ -226,6 +236,9 @@ class ModularStatusBarInfo(object):
                 if max is not None:
                     self.gauge_max = max
                     self.parent.gauge.SetRange(self.gauge_max)
+                if self.debug_progress: dprint("update position: %s, msg=%s val=%d, max=%d" % (text, self.message, value, self.gauge_max))
+                if value > self.gauge_max:
+                    value = self.gauge_max
                 self.parent.gauge.SetValue(value)
             self.gauge_value = value
             if text is not None:
