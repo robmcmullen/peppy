@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Import from the Standard Library
-import re
+import re, time, calendar
 from httplib import HTTPConnection
 from urllib import urlopen
 from StringIO import StringIO
@@ -77,13 +77,12 @@ class HTTPDate(DataType):
         else:
             raise ValueError, 'date "%s" is not an HTTP-Date' % data
 
-        year, mon, mday, hour, min, sec, wday, yday, isdst = tm
-        return datetime(year, mon, mday, hour, min, sec)
-
+        return calendar.timegm(tm)
 
     @staticmethod
-    def encode(value):
-        return value.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    def encode(mtime):
+        tm = time.gmtime(mtime)
+        return time.strftime('%a, %d %b %Y %H:%M:%S GMT', tm)
 
 
 class HTTPReadOnlyFS(BaseFS):

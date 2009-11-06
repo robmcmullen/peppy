@@ -297,8 +297,8 @@ class FileSystemTestCases(object):
 
 
 
-class WebdavFSTestCase(FileSystemTestCases, TestCase):
-    root = 'webdav://test:passwd@localhost:8008/'
+#class WebdavFSTestCase(FileSystemTestCases, TestCase):
+#    root = 'webdav://test:passwd@localhost:8008/'
 
 
 class SimpleFileSystemTestCases(object):
@@ -312,6 +312,13 @@ class SimpleFileSystemTestCases(object):
         file = vfs.make_file(self.root + 'tmp/blah.txt')
         file.write("BLAH!!!")
         file.close()
+        
+        # Probably too loose of a test, but the modification time has a 10
+        # second window for correctness
+        mtime = vfs.get_mtime(self.root + 'tmp/blah.txt')
+        current = time.time()
+        assert abs(mtime - current) < 10
+        
         file = vfs.open(self.root + 'tmp/blah.txt')
         self.assertEqual(file.read(), 'BLAH!!!')
         assert vfs.exists(self.root + 'tmp')
