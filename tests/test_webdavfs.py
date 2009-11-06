@@ -322,6 +322,12 @@ class SimpleFileSystemTestCases(object):
         file = vfs.open(self.root + 'tmp/blah.txt')
         self.assertEqual(file.read(), 'BLAH!!!')
         assert vfs.exists(self.root + 'tmp')
+        
+        names = vfs.get_names(self.root)
+        assert "tmp" in names
+        names = vfs.get_names(self.root + 'tmp')
+        assert "blah.txt" in names
+        
         vfs.remove(self.root + 'tmp')
         assert not vfs.exists(self.root + 'tmp')
         assert not vfs.exists(self.root + 'tmp/blah.txt')

@@ -721,10 +721,8 @@ class URLMinibuffer(CompletionMinibuffer):
                 continue
             uri = uridir.resolve2(name)
             path = str(uri)
-            if vfs.is_folder(uri):
-                path = str(uri) + '/'
-            else:
-                path = str(uri)
+            if vfs.is_folder(uri) and not path.endswith('/'):
+                path += '/'
             self.dprint(path)
             paths.append(path)
         return paths

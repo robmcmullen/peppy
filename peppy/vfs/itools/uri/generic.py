@@ -793,7 +793,11 @@ class GenericDataType(object):
         if path:
             path = urllib.unquote(path)
         elif authority:
-            path = '/'
+            # Force path to be empty instead of "/" because we need to
+            # recognize the difference between http://www.example.com and
+            # http://www.example.com/.  Note that an empty Path object gets
+            # converted to "." when printed.
+            path = ""
         # The authority
         authority = urllib.unquote(authority)
         authority = Authority(authority)

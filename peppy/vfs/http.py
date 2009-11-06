@@ -203,7 +203,7 @@ class WebDavFS(BaseFS):
                 del cls.remap301[ref]
             if ref in cls.response_cache:
                 status, responses = cls.response_cache[ref]
-                response = cls._get_response_from_ref(ref, responses)
+                path_found, response = cls._get_response_from_ref(ref, responses)
                 try:
                     if response['getcontenttype'] == "httpd/unix-directory":
                         dprint("Found folder %s" % ref)
@@ -281,7 +281,7 @@ class WebDavFS(BaseFS):
         if not responses:
             raise OSError("[Errno 2] No such file or directory: '%s'" % ref)
         try:
-            response = cls._get_response_from_ref(ref, responses)
+            path_found, response = cls._get_response_from_ref(ref, responses)
             
             if metadata in response:
                 return response[metadata]
@@ -294,30 +294,43 @@ class WebDavFS(BaseFS):
         """From the list of responses, return the response that matches the
         requested URL.
         
+        @returns: tuple containing the key/value pair of the matching response.
+        Note that the key will be the string version of the ref found in the
+        responses, and obviously the value is the response corresponding to
+        the key.
+        
         @raises KeyError if response not found
         """
         newref = str(cls._copy_reference_without_username(ref))
         
         # Try the full reference
         if newref in responses:
-            return responses[newref]
+            return newref, responses[newref]
         
-        # If it's a directory, try it without the trailing slash
+        # Maybe it's a directory, so try it without or with the trailing slash
         if newref.endswith("/"):
             newref = newref[:-1]
             if newref in responses:
-                return responses[newref]
+                return newref, responses[newref]
+        else:
+            dirref = newref + "/"
+            if dirref in responses:
+                return dirref, responses[dirref]
         
         # Try the path without the hostname
         newref = str(ref.path)
         if newref in responses:
-            return responses[newref]
+            return newref, responses[newref]
         
-        # If it's a directory, try it without the trailing slash
+        # Maybe it's a directory, so try it without or with the trailing slash
         if newref.endswith("/"):
             newref = newref[:-1]
             if newref in responses:
-                return responses[newref]
+                return newref, responses[newref]
+        else:
+            dirref = newref + "/"
+            if dirref in responses:
+                return dirref, responses[dirref]
 
     @classmethod
     def exists(cls, ref):
@@ -400,6 +413,10 @@ class WebDavFS(BaseFS):
         path = str(ref.path)
         dprint(path)
         responses = client.mkcol(path)
+        # It's also possible (but not required) the parent could be cached, so
+        # clean out its cache as well
+        dprint(parent)
+        cls._purge_cache(parent)
 
     @classmethod
     def remove(cls, ref):
@@ -445,6 +462,36 @@ class WebDavFS(BaseFS):
         dprint(client.response.status)
         cls._purge_cache(source, target)
 
+    @classmethod
+    def get_names(cls, ref):
+        # Need to return immediately if there's an incomplete address, only
+        # attempting pathname completions when there is a real path.  Otherwise,
+        # it can block waiting for a response from a non-existent server.
+        if not str(ref.path).startswith("/"):
+            return []
+        if not cls.is_folder(ref):
+            raise OSError("[Errno 20] Not a directory: '%s'" % ref)
+
+        ref, status, responses = cls._propfind(ref)
+#        dprint(status)
+#        dprint(pp.pformat(responses))
+#        dprint(ref)
+        prefix, response = cls._get_response_from_ref(ref, responses)
+#        dprint(prefix)
+#        dprint(response)
+        prefix_count = len(prefix)
+        filenames = []
+        for path, response in responses.iteritems():
+            if path.startswith(prefix): # Can this ever not happen?
+                filename = path[prefix_count:]
+                if filename.startswith("/"):
+                    filename = filename[1:]
+                if filename:
+                    filenames.append(filename)
+                    # FIXME: since we have the metadata, it makes sense to
+                    # store it in the cache
+#        dprint(filenames)
+        return filenames
 
 register_file_system('http', HTTPReadOnlyFS)
 
