@@ -29,6 +29,8 @@ from itools.uri.generic import Authority
 from itools.core.cache import LRUCache
 
 from davclient import DAVClient
+import BaseHTTPServer
+BaseHTTPServer.BaseHTTPRequestHandler.responses[424] = ('Failed Dependency', 'Failed Dependency')
 
 from peppy.lib.dictutils import TimeExpiringDict
 
@@ -414,19 +416,24 @@ class WebDavFS(BaseFS):
     def open(cls, ref, mode=None):
         ref, client = cls._get_client(ref)
         body = client.get(str(ref.path))
-        
-        if mode == WRITE:
-            # write truncates
-            fh = cls.temp_file_class(ref, cls._save_file, "")
-        elif mode == APPEND:
-            fh = cls.temp_file_class(ref, cls._save_file, body)
-            fh.seek(len(body))
-        elif mode == READ_WRITE:
-            # Open for read/write but don't position at end of file, i.e. "r+b"
-            fh = cls.temp_file_class(ref, cls._save_file, body)
+        if client.response.status == 200:
+            dprint("%s: %s" % (str(ref), body))
+            
+            if mode == WRITE:
+                # write truncates
+                fh = cls.temp_file_class(ref, cls._save_file, "")
+            elif mode == APPEND:
+                fh = cls.temp_file_class(ref, cls._save_file, body)
+                fh.seek(len(body))
+            elif mode == READ_WRITE:
+                # Open for read/write but don't position at end of file, i.e. "r+b"
+                fh = cls.temp_file_class(ref, cls._save_file, body)
+            else:
+                fh = cls.temp_file_class(ref, None, body)
+            return fh
         else:
-            fh = cls.temp_file_class(ref, None, body)
-        return fh
+            dprint("%s: %s" % (str(ref), client.response.status))
+            raise OSError("[Errno %d] %s: '%s'" % (client.response.status, BaseHTTPServer.BaseHTTPRequestHandler.responses[client.response.status][0], ref))
 
     @classmethod
     def move(cls, source, target):
