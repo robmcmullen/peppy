@@ -64,11 +64,12 @@ class HyperspectralFileFormat(debugmixin):
         
         cls.dprint("handlers: %s" % cls.handlers)
         matches = []
-        for format in cls.handlers:
-            cls.dprint("checking %s for %s format" % (url, format.format_name))
-            if format.identify(url):
-                cls.dprint("Possible match for %s format" % format.format_name)
-                matches.append(format)
+        if vfs.is_file(url):
+            for format in cls.handlers:
+                cls.dprint("checking %s for %s format" % (url, format.format_name))
+                if format.identify(url):
+                    cls.dprint("Possible match for %s format" % format.format_name)
+                    matches.append(format)
         order = []
         for match in matches:
             # It is possible that the file can be loaded as more than
