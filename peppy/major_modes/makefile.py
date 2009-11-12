@@ -93,7 +93,7 @@ class MakefileAutoindent(BasicAutoindent):
             start = stc.PositionFromLine(linenum)
             style = stc.GetStyleAt(start)
             self.dprint("line=%d start=%d style=%d" % (linenum, start, style))
-            if style == 5:
+            if style == 5 or style == 3:
                 # OK, it's a possible command.
                 end = stc.GetLineEndPosition(linenum)
                 cmd = stc.GetTextRange(start, end)
