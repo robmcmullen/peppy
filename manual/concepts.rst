@@ -57,21 +57,19 @@ you don't like a tool bar or if you want a little extra vertical space for the
 major mode.
 
 
-Files and URLs
-==============
+Files as URLs
+=============
 
 All files in peppy are treated as being referenced by a URL, even local files.
 This abstraction makes it easy to add support for new URL schemes to load
 files, and for the most part, it makes no difference what scheme has been
-used to load a file.  Currently, thanks to the `itools virtual file system
-<http://www.ikaaro.org/itools/>`_, support for loading files over http is
-provided.  Other file system support, like sftp (secure FTP) and fish (files
-over ssh protocol) is planned.
+used to load a file.
 
-There are also some built-in schemes, like **about:** that used for read only
-documentation, **mem:** used for an in-memory temporary file system, **tar:**
-used for read only access to files contained within tar files, and more
-esoteric schemes like **aptus:** which is used in the fractal renderer.
+Local files can be specified as simple pathnames, like **/Users/rob/file.txt**,
+or as full URLs like **file:///Users/rob/file.txt**.  Note that URLs
+always use forward slashes even on windows.  A windows path **C:\Program
+Files\peppy\peppy.exe** is equivalent to the URL **file://C:/Program
+Files/peppy/peppy.exe**
 
 
 Automatic Recognition of File Type
@@ -91,8 +89,66 @@ determine the major mode to use even if the file is incorrectly labeled, or in
 cases where the same file extension is used for different types of data.
 
 
-Documents
-=========
+Network File Systems
+====================
+
+Peppy uses the virtual file system from `itools
+<http://www.ikaaro.org/itools/>`_ to provide the framework to support
+networked file loading.  It provides the means to load files based on the
+*protocol* (also called the *scheme*) of the URL.  For example, the protocol
+of the URL **http://peppy.flipturn.org** is *http*, and the protocol of
+**file://C:/Program Files/peppy/peppy.exe** is *file*.
+
+HTTP
+----
+
+Read-only support is provided for files using the http protocol, so any file
+that is visible to a normal web browser can be loaded by peppy.  Obviously,
+due to the read-only nature of normal http servers, you will have to save the
+file using some other protocol.
+
+WebDAV
+------
+
+The 0.13.0 release added experimental support for the `WebDAV protocol
+<http://www.webdav.org/specs/rfc2518.html>`_, which is a distributed
+filesystem based on web servers.
+
+This is an *experimental* addition to peppy, and a work in progress.  I have
+tested it quite a bit, but this is the first networked filesystem that peppy
+supports for both reading and writing, and there may still be issues to
+resolve.
+
+Also note that the current implementation of WebDAV will lock the GUI until
+the operation completes, so if a WebDAV server freezes in the middle of a
+transfer, you're stuck.  Multithreaded operation of the networked file systems
+is planned, the goal being to provide an opportunity to cancel an operation if
+it is taking too long.
+
+WebDAV files and directories are accessed using URLs like
+**webdav://www.webdavserver.com/path/to/file**, where peppy will prompt
+you for authentication information and remember the authentication for the
+duration of your editing session.  Optionally, a less secure method is also
+supported where you embed the authentication information directly into the URL
+itself, like: **webdav://user:pass@www.webdavserver.com/path/to/file**
+
+Other Network File Systems
+--------------------------
+
+Support for loading files over scp and sftp (secure FTP) is planned.
+
+
+Special File Systems
+--------------------
+
+There are also some built-in schemes, like **about:** that used for read only
+documentation, **mem:** used for an in-memory temporary file system, **tar:**
+used for read only access to files contained within tar files, and more
+esoteric schemes like **aptus:** which is used in the fractal renderer.
+
+
+Documents and Views
+===================
 
 A URL uniquely identifies a file on some file system, and peppy uses the URL
 as the identifier of a loaded document.  Only one copy of a document exists in
