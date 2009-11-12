@@ -206,14 +206,20 @@ package_data = {
 hhpfiles = findHelpBooks()
 for hhpfile in hhpfiles:
     dirname = os.path.dirname(hhpfile)
-    pyname = dirname.replace("/", ".").replace("\\", ".")
-    print(pyname)
-    package_data[pyname] = ['*.*']
-    package_data["%s._images" % pyname] = ['*']
-    package_data["%s._static" % pyname] = ['*']
-    # Also have to include dummy packages, or otherwise the package_data isn't
-    # included
-    packages.extend([pyname, "%s._images" % pyname, "%s._static" % pyname])
+    if "." not in dirname:
+        pyname = dirname.replace("/", ".").replace("\\", ".")
+        print("Found HtmlHelp: %s" % pyname)
+        package_data[pyname] = ['*.*']
+        package_data["%s._static" % pyname] = ['*']
+        # Also have to include dummy packages, or otherwise the package_data
+        # isn't included
+        packages.extend([pyname, "%s._static" % pyname])
+        
+        if os.path.exists(os.path.join(dirname, "_images")):
+            package_data["%s._images" % pyname] = ['*']
+            packages.append("%s._images" % pyname)
+    else:
+        print("Skipping HtmlHelp that isn't a python package: %s" % dirname)
 
 # Any files to be installed outsite site-packages are declared here
 data_files = []
