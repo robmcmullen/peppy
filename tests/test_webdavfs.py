@@ -18,7 +18,7 @@
 from __future__ import with_statement
 
 # Import from the Standard Library
-from datetime import datetime
+from datetime import datetime, timedelta
 import unittest
 from unittest import TestCase
 
@@ -316,8 +316,8 @@ class SimpleFileSystemTestCases(object):
         # Probably too loose of a test, but the modification time has a 10
         # second window for correctness
         mtime = vfs.get_mtime(self.root + 'tmp/blah.txt')
-        current = time.time()
-        assert abs(mtime - current) < 10
+        current = datetime.now()
+        assert abs(mtime - current) < timedelta(10)
         
         file = vfs.open(self.root + 'tmp/blah.txt')
         self.assertEqual(file.read(), 'BLAH!!!')

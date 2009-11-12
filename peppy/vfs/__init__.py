@@ -9,6 +9,7 @@ from peppy.vfs.itools.vfs.base import BaseFS
 from peppy.vfs.utils import *
 
 import peppy.vfs.http
+import peppy.vfs.webdav
 import peppy.vfs.tar
 
 

@@ -46,9 +46,7 @@ class DataType(object):
         """
         return True
 
-import decimal
-import mimetypes
-import re
+import re, time, datetime, calendar, decimal, mimetypes
 from copy import deepcopy
 
 # Import from itools
@@ -238,6 +236,47 @@ class FileName(DataType):
         if language is not None:
             name = name + '.' + language
         return name
+
+
+
+class HTTPDate(DataType):
+    # XXX As specified by RFC 1945 (HTTP 1.0), should check HTTP 1.1
+    # XXX The '%a', '%A' and '%b' format variables depend on the locale
+    # (that's what the Python docs say), so what happens if the locale
+    # in the server is not in English?
+
+    @staticmethod
+    def decode(data):
+        formats = [
+            # RFC-1123 (updates RFC-822, which uses two-digits years)
+            '%a, %d %b %Y %H:%M:%S GMT',
+            # RFC-850
+            '%A, %d-%b-%y %H:%M:%S GMT',
+            # ANSI C's asctime() format
+            '%a %b  %d %H:%M:%S %Y',
+            # Non-Standard formats, sent by some clients
+            # Variation of RFC-1123, uses full day name (sent by Netscape 4)
+            '%A, %d %b %Y %H:%M:%S GMT',
+            # Variation of RFC-850, uses full month name and full year
+            # (unkown sender)
+            '%A, %d-%B-%Y %H:%M:%S GMT',
+            ]
+        for format in formats:
+            try:
+                tm = time.strptime(data, format)
+            except ValueError:
+                pass
+            else:
+                break
+        else:
+            raise ValueError, 'date "%s" is not an HTTP-Date' % data
+
+        return datetime.datetime.utcfromtimestamp(calendar.timegm(tm))
+    
+    @staticmethod
+    def encode(mtime):
+        tm = time.gmtime(mtime)
+        return time.strftime('%a, %d %b %Y %H:%M:%S GMT', tm)
 
 
 
