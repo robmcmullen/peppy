@@ -1,4 +1,4 @@
-2009-11-06  Rob McMullen  <robm@users.sourceforge.net>
+2009-11-11  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.13.0 "Odyssey and Aquarius"
 	* added experimental webdav support for network file access (bug #230)
@@ -9,6 +9,9 @@
 	* changed list mode to use alternating background colors
 	* added printing support for list mode and dired mode
 	* fixed bug where files were getting opened twice during load (bug #792)
+	* fixed GTK keystroke for undo/redo actions (bug #764)
+	* fixed reindent bug in Makefile mode (bug #784)
+	* fixed bug in project settings dialog (bug #794)
 
 2009-10-01  Rob McMullen  <robm@users.sourceforge.net>
 
