@@ -398,7 +398,7 @@ class Undo(BufferBusyActionMixin, SelectAction):
     name = "Undo"
     icon = "icons/undo.png"
     default_menu = ("Edit", 0)
-    key_bindings = {'default': "C-z", 'emacs': ["C-/", "C-S--",]}
+    key_bindings = {'default': "C-z", 'emacs': ["C-z", "C-/", "C-S--"]}
     
     @classmethod
     def worksWithMajorMode(cls, mode):
@@ -421,7 +421,7 @@ class Redo(BufferBusyActionMixin, SelectAction):
     name = "Redo"
     icon = "icons/redo.png"
     default_menu = ("Edit", 1)
-    key_bindings = {'win': "C-y", 'emacs': "C-S-/", 'mac': "C-S-z"}
+    key_bindings = {'win': "C-y", 'emacs': ["C-S-z", "C-S-/"], 'mac': "C-S-z"}
     
     @classmethod
     def worksWithMajorMode(cls, mode):
