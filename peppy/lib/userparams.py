@@ -2764,7 +2764,7 @@ class InstancePanel(PrefPanel):
                               self.getValue)
     
     def setValue(self, keyword, value):
-        setattr(self.obj, keyword, val)
+        setattr(self.obj, keyword, value)
         
     def update(self):
         """Update the class with the changed preferences.
