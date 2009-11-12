@@ -72,7 +72,7 @@ class Complete_or_indent(SelectAction):
                     searchtext = searchtext + i.stc.GetText() + "\n"
         else:
             searchtext = self.mode.GetText()
-        allmatches = re.findall("\\b" + word + "\\w+", searchtext )
+        allmatches = re.findall("\\b" + re.escape(word) + "\\w+", searchtext )
         allmatches.append(self.word(range))
         allmatches = set(allmatches)
         allmatches = list(allmatches)
