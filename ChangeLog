@@ -1,3 +1,14 @@
+2009-11-06  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.13.0 "Odyssey and Aquarius"
+	* added experimental webdav support for network file access
+	* added insert file action
+	* added copy of user manual to peppy, readable with HtmlHelp control
+	* added reStructuredText mode
+	* fixed bug in STC highlight color logic
+	* changed list mode to use alternating background colors
+	* added printing support for list mode and dired mode
+
 2009-10-01  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.12.19
