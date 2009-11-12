@@ -16,6 +16,8 @@ from peppy.actions import *
 from peppy.lib.userparams import *
 from peppy.lib.dropscroller import ListReorderDialog
 
+import peppy.vfs as vfs
+
 class RecentFiles(OnDemandGlobalListAction):
     """Open a file from the list of recently opened files.
     
@@ -117,8 +119,12 @@ class RecentFiles(OnDemandGlobalListAction):
             cls.calcHash()
         
     def action(self, index=-1, multiplier=1):
-        assert self.dprint("opening file %s" % (self.storage[index]))
-        self.frame.open(self.storage[index])
+        url = self.storage[index]
+        assert self.dprint("opening file %s" % url)
+        if vfs.exists(url):
+            self.frame.open(url)
+        else:
+            self.frame.SetStatusText("File not found: %s" % url)
 
 
 class RecentProjectFiles(RecentFiles):
