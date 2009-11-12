@@ -378,4 +378,8 @@ def AddCopyright(project, website, author, date, reason=""):
                        'date': unicodify(date),
                        'reason': unicodify(reason),
                        })
+
+# Can't include copyrights for itools stuff in the vfs because about has a
+# dependency on vfs, leading to a circular dependency if imported from vfs
 AddCopyright("itools", "http://www.ikaaro.org/itools", u"Juan David Ibáñez Palomar et al.", "2002-2007", "Virtual filesystem implementation from")
+AddCopyright("Chandler Project", "http://chandlerproject.org/Projects/Davclient", "Open Source Applications Foundation", "2006-2007", "WebDAV implementation from")
