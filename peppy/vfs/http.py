@@ -173,7 +173,7 @@ class TempFile(StringIO):
     def _close(self):
         if self.callback is not None and not self._is_closed:
             data = self.getvalue()
-            dprint(repr(data))
+            if cls.debug: dprint(repr(data))
             if isinstance(data, unicode):
                 data = data.encode('utf8')
             self.callback(self.ref, data)
@@ -194,13 +194,15 @@ class WebDavFS(BaseFS):
     response_cache = TimeExpiringDict(10)
     
     non_existent_time = datetime.datetime.utcfromtimestamp(0)
+    
+    debug = False
 
     @classmethod
     def _purge_cache(cls, *refs):
         folders = []
         for orig_ref in refs:
             ref = cls._copy_reference_without_username(orig_ref)
-            dprint("Removing cache for %s" % ref)
+            if cls.debug: dprint("Removing cache for %s" % ref)
             if ref in cls.remap301:
                 del cls.remap301[ref]
             if ref in cls.response_cache:
@@ -208,7 +210,7 @@ class WebDavFS(BaseFS):
                 path_found, response = cls._get_response_from_ref(ref, responses)
                 try:
                     if response['getcontenttype'] == "httpd/unix-directory":
-                        dprint("Found folder %s" % ref)
+                        if cls.debug: dprint("Found folder %s" % ref)
                         folders.append(ref)
                 except KeyError:
                     pass
@@ -217,14 +219,14 @@ class WebDavFS(BaseFS):
         # Remove all the cached data for anything contained in any folders that
         # have been removed.
         for folder in folders:
-            dprint("Checking folder %s" % folder)
+            if cls.debug: dprint("Checking folder %s" % folder)
             folder_url = unicode(folder)
             keys = cls.response_cache.keys()
             for ref in keys:
-                dprint("Checking cache %s" % str(ref))
+                if cls.debug: dprint("Checking cache %s" % str(ref))
                 ref_url = unicode(ref)
                 if ref_url.startswith(folder_url):
-                    dprint("Removing cache hit %s for deleted folder: %s" % (ref_url, folder_url))
+                    if cls.debug: dprint("Removing cache hit %s for deleted folder: %s" % (ref_url, folder_url))
                     del cls.response_cache[ref]
     
     @classmethod
@@ -240,24 +242,24 @@ class WebDavFS(BaseFS):
         ref, client = cls._get_client(ref)
         if ref in cls.response_cache:
             status, responses = cls.response_cache[ref]
-            dprint("response_cache hit: %s" % str(ref))
+            if cls.debug: dprint("response_cache hit: %s" % str(ref))
         else:
-            dprint("response_cache miss: %s" % str(ref))
+            if cls.debug: dprint("response_cache miss: %s" % str(ref))
             path = str(ref.path)
             responses = client.propfind(path, depth=1)
             if client.response.status == 301:
-                #dprint(client.response.status)
-                #dprint(pp.pformat(responses))
-                #dprint(client.response.body)
+                #if cls.debug: dprint(client.response.status)
+                #if cls.debug: dprint(pp.pformat(responses))
+                #if cls.debug: dprint(client.response.body)
                 match = cls.re301.search(client.response.body)
                 if match:
                     newpath = match.group(1)
                     responses = client.propfind(newpath, depth=1)
                     cls.remap301[ref] = get_reference(newpath)
             status = client.response.status
-            dprint("response_cache miss: storing status=%s, response=%s" % (status, responses))
+            if cls.debug: dprint("response_cache miss: storing status=%s, response=%s" % (status, responses))
         if responses is not None:
-            dprint(ref)
+            if cls.debug: dprint(ref)
             newref = cls._copy_reference_without_username(ref)
             cls.response_cache[newref] = (status, responses)
         
@@ -420,11 +422,11 @@ class WebDavFS(BaseFS):
             raise OSError("[Errno 20] Not a directory: '%s'" % parent)
         ref, client = cls._get_client(ref)
         path = str(ref.path)
-        dprint(path)
+        if cls.debug: dprint(path)
         responses = client.mkcol(path)
         # It's also possible (but not required) the parent could be cached, so
         # clean out its cache as well
-        dprint(parent)
+        if cls.debug: dprint(parent)
         cls._purge_cache(parent)
 
     @classmethod
@@ -435,7 +437,7 @@ class WebDavFS(BaseFS):
         newref, client = cls._get_client(ref)
         path = str(newref.path)
         responses = client.delete(path)
-        dprint(client.response.status)
+        if cls.debug: dprint(client.response.status)
         cls._purge_cache(ref, newref)
     
     @classmethod
@@ -443,7 +445,7 @@ class WebDavFS(BaseFS):
         ref, client = cls._get_client(ref)
         body = client.get(str(ref.path))
         if client.response.status == 200:
-            dprint("%s: %s" % (str(ref), body))
+            if cls.debug: dprint("%s: %s" % (str(ref), body))
             
             if mode == WRITE:
                 # write truncates
@@ -458,7 +460,7 @@ class WebDavFS(BaseFS):
                 fh = cls.temp_file_class(ref, None, body)
             return fh
         else:
-            dprint("%s: %s" % (str(ref), client.response.status))
+            if cls.debug: dprint("%s: %s" % (str(ref), client.response.status))
             raise OSError("[Errno %d] %s: '%s'" % (client.response.status, BaseHTTPServer.BaseHTTPRequestHandler.responses[client.response.status][0], ref))
 
     @classmethod
@@ -468,7 +470,7 @@ class WebDavFS(BaseFS):
 
         ref, client = cls._get_client(source)
         responses = client.move(source, target)
-        dprint(client.response.status)
+        if cls.debug: dprint(client.response.status)
         cls._purge_cache(source, target)
 
     @classmethod
@@ -482,12 +484,12 @@ class WebDavFS(BaseFS):
             raise OSError("[Errno 20] Not a directory: '%s'" % ref)
 
         ref, status, responses = cls._propfind(ref)
-#        dprint(status)
-#        dprint(pp.pformat(responses))
-#        dprint(ref)
+#        if cls.debug: dprint(status)
+#        if cls.debug: dprint(pp.pformat(responses))
+#        if cls.debug: dprint(ref)
         prefix, response = cls._get_response_from_ref(ref, responses)
-#        dprint(prefix)
-#        dprint(response)
+#        if cls.debug: dprint(prefix)
+#        if cls.debug: dprint(response)
         prefix_count = len(prefix)
         filenames = []
         for path, response in responses.iteritems():
@@ -499,7 +501,7 @@ class WebDavFS(BaseFS):
                     filenames.append(filename)
                     # FIXME: since we have the metadata, it makes sense to
                     # store it in the cache
-#        dprint(filenames)
+#        if cls.debug: dprint(filenames)
         return filenames
 
 register_file_system('http', HTTPReadOnlyFS)
