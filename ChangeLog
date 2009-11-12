@@ -1,6 +1,7 @@
 2009-11-11  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.13.0 "Odyssey and Aquarius"
+	* added help viewer and included htmlhelp version of user manual
 	* added experimental webdav support for network file access (bug #230)
 	* added insert file action (bug #430)
 	* added copy of user manual to peppy (bug #787)
