@@ -310,7 +310,7 @@ if USE_PY2EXE:
     platform_kwargs['windows'] = [
         {"script": "py2exe/peppy.py",
          "other_resources": [(24,1,manifest)],
-         "icon_resources": [(2, "../graphics/peppy48.ico")],
+         "icon_resources": [(2, "py2exe/peppy48.ico")],
          }
         ]
     platform_kwargs['zip_safe'] = False

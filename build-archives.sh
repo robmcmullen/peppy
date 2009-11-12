@@ -44,7 +44,7 @@ if [ -f archive/$PEPPYWIN ]
 then
     echo FOUND $PEPPYWIN
 else
-    rsync -av -e 'ssh -p 2222' --exclude="archive" --exclude="api" --exclude="dist" --exclude="peppy-*" ~/src/peppy rob@localhost:/home/Rob/
-    ssh -p 2222 localhost bash peppy/build-peppy-for-windows-over-ssh.sh
-    scp -P 2222 localhost:peppy/peppy-$VERSION/py2exe/$PEPPYWIN archive
+    scp -P 2222 archive/$PEPPYSRC py2exe/build-over-ssh.sh localhost:
+    ssh -p 2222 localhost bash build-over-ssh.sh peppy-$VERSION
+    scp -P 2222 localhost:peppy-$VERSION/py2exe/$PEPPYWIN archive
 fi

@@ -16,8 +16,8 @@ SetCompressor lzma
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON "..\..\graphics\peppy48.ico"
-!define MUI_UNICON "..\..\graphics\peppy48.ico"
+!define MUI_ICON "peppy48.ico"
+!define MUI_UNICON "peppy48.ico"
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
