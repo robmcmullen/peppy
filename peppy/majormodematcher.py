@@ -54,7 +54,7 @@ class MajorModeMatcherDriver(debugmixin):
         assert cls.dprint("stc_class=%s" % stc_class)
         modes = cls.getMajorModesCompatibleWithSTCClass(stc_class)
 
-        modes.sort(key=lambda s:s.keyword)
+        modes.sort(key=lambda s:s.keyword.lower())
         assert cls.dprint(modes)
         return modes
     
