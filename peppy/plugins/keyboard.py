@@ -560,6 +560,8 @@ class KeyboardConf(IPeppyPlugin):
                           dest="key_bindings", default='')
         parser.add_option("--show-key-bindings", action="store_true",
                           dest="show_key_bindings")
+        parser.add_option("--debug-keypress", action="count", default=0,
+                          dest="debug_keypress")
 
     def processCommandLineOptions(self, options):
         #dprint(options.key_bindings)
@@ -578,6 +580,8 @@ class KeyboardConf(IPeppyPlugin):
         self.loadBindings()
         if options.show_key_bindings:
             self.configDefault()
+        if options.debug_keypress:
+            AcceleratorList.debug = options.debug_keypress
     
     def requestedShutdown(self):
         # FIXME: configuration file should be saved here
