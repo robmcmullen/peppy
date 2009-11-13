@@ -14,24 +14,25 @@ Contents:
    concepts
    running
    preferences
-   fundamental
+   Fundamental
    macros
    project
+   work-in-progress
 
 Text Editing Major Modes:
 
 .. toctree::
    :maxdepth: 3
 
-   python
+   Python
 
 Specialized Major Modes:
 
 .. toctree::
    :maxdepth: 3
 
-   hexedit
-   hsi
+   HexEdit
+   HSI
 
 \* documentation in progress
 

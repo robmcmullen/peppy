@@ -1102,6 +1102,13 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
                     self.helpframe.AddBook(book)
             if section:
                 self.helpframe.Display(section)
+                
+                # Make sure it actually displayed something, otherwise show
+                # the work-in-progress page
+                data = self.helpframe.GetHelpWindow().GetData()
+                filename = data.FindPageByName(section)
+                if not filename:
+                    self.helpframe.Display("work-in-progress.html")
             else:
                 self.helpframe.DisplayContents()
         else:
