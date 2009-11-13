@@ -30,6 +30,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self._string_styles = []
         self._comment_styles = []
         self._keyword_styles = []
+        self._on_style_needed_event_bound = False
     
     def isStyleString(self, style):
         """Is the style a string?
@@ -123,31 +124,63 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.isStyleString = self._alwaysStyleString
         
         self.LOG("NULL!!!!")
+    
+    def SetLexer(self, lexer):
+        """Override StyledTextCtrl.SetLexer to handle custom lexers using
+        STC_LEX_CONTAINER.
+        
+        Custom lexers can use EVT_STC_STYLENEEDED to style text on demand.
+        """
+        if lexer == wx.stc.STC_LEX_CONTAINER:
+            # Only set this event if not already bound
+            if not self._on_style_needed_event_bound:
+                self.Bind(wx.stc.EVT_STC_STYLENEEDED, self.OnStyleNeeded)
+                self._on_style_needed_event_bound = True
+        else:
+            if self._on_style_needed_event_bound:
+                self.Unbind(wx.stc.EVT_STC_STYLENEEDED)
+                self._on_style_needed_event_bound = False
+        wx.stc.StyledTextCtrl.SetLexer(self, lexer)
+    
+    def OnStyleNeeded(self, evt):
+        """Event handler for custom lexer
+        
+        """
+        self.stc_lexer_id.styleText(self, self.GetEndStyled(), evt.GetPosition())
 
     def ConfigureLexer(self, keyword):
-        """Sets Lexer and Lexer Keywords for the specifed keyword
+        """Sets Lexer and Lexer Keywords for the specified keyword
         
         @param keyword: a peppy major mode keyword
         """
         import peppy.editra.style_specs as style_specs
         
+        custom = None
         if hasattr(self, 'stc_lexer_id') and self.stc_lexer_id is not None:
             lexer = self.stc_lexer_id
+            if hasattr(lexer, 'styleText'):
+                # Custom lexers use the STC_LEX_CONTAINER lexer type
+                custom = self.stc_lexer_id
+                lexer = wx.stc.STC_LEX_CONTAINER
         elif keyword in style_specs.stc_lexer_id:
             lexer = style_specs.stc_lexer_id[keyword]
         else:
             dprint("keyword not found: %s" % keyword)
             lexer = wx.stc.STC_LEX_NULL
         
-        # Check for special cases
+        # Check for special cases for style bits
         if lexer in [ wx.stc.STC_LEX_HTML, wx.stc.STC_LEX_XML]:
             self.SetStyleBits(7)
         elif lexer == wx.stc.STC_LEX_NULL:
             self.NullLexer()
             return True
+        elif custom:
+            self.SetStyleBits(custom.getStyleBits())
         else:
             self.SetStyleBits(5)
+        self.SetLexer(lexer)
 
+        # Set or clear keywords used for extra highlighting
         if self.stc_keywords is not None:
             keywords = self.stc_keywords
         else:
@@ -156,16 +189,22 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             except KeyError:
                 dprint("No keywords found for %s" % keyword)
                 keywords = []
+        self.SetKeyWords(keywords)
         
+        # Set or clear Editra style sheet info
         if self.stc_syntax_style_specs is not None:
             synspec = self.stc_syntax_style_specs
+        elif custom:
+            synspec = custom.getEditraStyleSpecs()
         else:
             try:
                 synspec = style_specs.syntax_style_specs[keyword]
             except KeyError:
                 dprint("No style specs found for %s" % keyword)
                 synspec = []
+        self.SetSyntax(synspec)
 
+        # Set or clear extra properties
         if self.stc_extra_properties is not None:
             props = self.stc_extra_properties
         else:
@@ -174,15 +213,8 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             except KeyError:
                 dprint("No extra properties found for %s" % keyword)
                 props = []
-
-        # Set Lexer
-        self.SetLexer(lexer)
-        # Set Keywords
-        self.SetKeyWords(keywords)
-        # Set Lexer/Syntax Specifications
-        self.SetSyntax(synspec)
-        # Set Extra Properties
         self.SetProperties(props)
+
         self.dprint("GetLexer = %d" % self.GetLexer())
         return True
     
