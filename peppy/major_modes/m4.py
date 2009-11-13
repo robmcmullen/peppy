@@ -22,7 +22,7 @@ from peppy.debug import *
 
 class M4Lexer(BaseLexer):
     keywords = [
-        (0, "changecom changequote decr define defn divert divnum dnl dumpdef "
+        (0, "changecom changequote decr define defn divert divnum dumpdef "
          "errprint eval ifdef ifelse include incr index len m4exit m4wrap "
          "maketemp popdef pushdef shift sinclude substr syscmd sysval "
          "traceon traceoff translit undefine undivert"),
@@ -49,7 +49,7 @@ class M4Lexer(BaseLexer):
         lines = text.splitlines(True)
         for line in lines:
             count = len(line)
-            if line.startswith("dnl "):
+            if line.strip(). startswith("dnl "):
                 yield start, count, 1
             else:
                 yield start, count, 0
