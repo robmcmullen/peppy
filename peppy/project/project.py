@@ -137,6 +137,9 @@ class CTAGS(InstancePrefs):
         'filename:line number:' followed by descriptive text about each tag.
         """
         tags = self.getTag(tag)
+        if tags is None:
+            text = _("unknown tag: %s") % tag
+            return text + os.linesep
         refs = []
         for t in tags:
             info = "%s:%s: %s  " % (t[0], t[1], tag)
