@@ -30,7 +30,7 @@ except:
 
 USE_SETUPTOOLS = False
 try:
-    import peppy.lib.pkg_resources as pkg_resources
+    import pkg_resources
     if hasattr(pkg_resources, 'iter_entry_points'):
         USE_SETUPTOOLS = True
     else:

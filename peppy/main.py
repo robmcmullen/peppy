@@ -1130,6 +1130,14 @@ def run():
         sys.argv = [arg[1:] if arg.startswith("//") else arg for arg in sys.argv]
         #dprint(sys.argv)
     
+    if not main_is_frozen():
+        # Insert the third_party directory at the beginning of the python search
+        # path so items will be picked up there before trying the user's search
+        # path
+        path = os.path.join(os.path.dirname(__file__), "third_party")
+        sys.path[0:0] = [path]
+        
+    
     peppy = Peppy(redirect=False)
     
     if peppy.otherInstanceRunning():
