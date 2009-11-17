@@ -30,6 +30,7 @@ class FindSettings(debugmixin):
         self.replace = ''
         self.replace_user = ''
         self.first_found = -1
+        self.wrapped = False
     
     def serialize(self, storage):
         storage['last_search'] = self.find_user
@@ -91,7 +92,6 @@ class FindService(debugmixin):
         
         if self.settings.whole_word:
             self.flags |= wx.stc.STC_FIND_WHOLEWORD
-        
     
     def getFlags(self, user_flags=0):
         needs_reset = False
@@ -136,12 +136,20 @@ class FindService(debugmixin):
     def setReplaceString(self, text):
         self.settings.replace_user = text
         self.settings.replace = self.expandReplaceText(text)
-
+    
     def resetFirstFound(self):
         self.settings.first_found = -1
+        self.settings.wrapped = False
+    
+    def setWrapped(self, state=True):
+        self.settings.wrapped = state
         
     def getFirstFound(self):
         return self.settings.first_found
+    
+    def isEntireDocumentChecked(self, pos, direction=1):
+        #dprint("first=%d, current=%d, wrapped=%s" % (self.settings.first_found, pos, self.settings.wrapped))
+        return self.settings.wrapped and pos == self.settings.first_found
         
     def getReplacement(self, replacing):
         """Return the string that will be substituted in the text
@@ -315,11 +323,27 @@ class FindService(debugmixin):
         """
         sel = self.stc.GetSelection()
         replacing = self.stc.GetTextRange(sel[0], sel[1])
+        start = min(sel)
+        end = max(sel)
 
         replacement = self.getReplacement(replacing)
         
         self.stc.ReplaceSelection(replacement)
-        self.stc.SetSelection(min(sel), min(sel) + len(replacement.encode('utf-8')))
+        self.updateSelection(start, end, start, start + len(replacement.encode('utf-8')))
+    
+    def updateSelection(self, orig_start, orig_end, start, end):
+        """Update the selection after replacement and adjust the starting
+        point for the initial search
+        
+        @param orig_start: originally matched text starting position
+        @param orig_end: originally matched text ending position
+        @param start: replacement text starting position
+        @param end: replacement text ending position
+        """
+        self.stc.SetSelection(start, end)
+        if start < self.settings.first_found:
+            self.settings.first_found += (end - start) - (orig_end - orig_start)
+        
 
 
 class FindBasicRegexService(FindService):
@@ -374,13 +398,15 @@ $ 	This matches the end of a line.
         Replace the current selection in the stc with the replacement text
         """
         sel = self.stc.GetSelection()
-        self.stc.SetTargetStart(sel[0])
-        self.stc.SetTargetEnd(sel[1])
+        start = min(sel)
+        end = max(sel)
+        self.stc.SetTargetStart(start)
+        self.stc.SetTargetEnd(end)
         self.stc.SetSearchFlags(self.flags)
         #dprint("target = %d - %d" % (sel[0], sel[1]))
         count = self.stc.ReplaceTargetRE(self.settings.replace)
 
-        self.stc.SetSelection(min(sel), min(sel) + count)
+        self.updateSelection(start, end, start, start + count)
 
 
 class FindWildcardService(FindService):
@@ -752,10 +778,11 @@ class FindRegexService(FindService):
         
         self.stc.SetTargetStart(self.stc_equiv_start)
         self.stc.SetTargetEnd(self.stc_equiv_pos)
+        orig_start, orig_end = self.stc_equiv_start, self.stc_equiv_pos
         
         # The stc equivalent position must be adjusted for the difference in
         # numbers of bytes, not numbers of characters.
         self.stc_equiv_pos += len(replacement.encode('utf-8')) - len(replacing.encode('utf-8'))
         self.stc.ReplaceTarget(replacement)
-        self.stc.SetSelection(self.stc_equiv_start, self.stc_equiv_pos)
+        self.updateReplacementSelection(orig_start, orig_end, self.stc_equiv_start, self.stc_equiv_pos)
 

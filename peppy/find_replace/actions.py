@@ -134,7 +134,6 @@ class FindBar(wx.Panel, debugmixin):
     def OnFindN(self, evt, allow_wrap=True, help='', interactive=True, incremental=False):
         self._lastcall = self.OnFindN
         
-        first = self.service.getFirstFound()
         posn, st = self.service.doFindNext(incremental=incremental)
         self.dprint("start=%s pos=%s" % (st, posn))
         if posn is None:
@@ -146,20 +145,19 @@ class FindBar(wx.Panel, debugmixin):
             self.dprint("interactive=%s" % interactive)
             if interactive:
                 self.showLine(posn, help)
-            self.loop = 0
-            if posn == first:
+            if self.service.isEntireDocumentChecked(posn, 1):
                 self.OnFinished()
             return
         
         if allow_wrap and st != 0:
             posn, st = self.service.doFindNext(0)
             self.dprint("wrapped: start=%d pos=%d" % (st, posn))
-        self.loop = 1
+        self.service.setWrapped()
         
         if posn != -1:
             if interactive:
                 self.showLine(posn, "Reached end of document, continued from start.")
-            if posn == first:
+            if self.service.isEntireDocumentChecked(posn, 1):
                 self.OnFinished()
             return
         
@@ -169,7 +167,6 @@ class FindBar(wx.Panel, debugmixin):
     def OnFindP(self, evt, allow_wrap=True, help='', incremental=False):
         self._lastcall = self.OnFindP
         
-        first = self.service.getFirstFound()        
         posn, st = self.service.doFindPrev(incremental=incremental)
         if posn is None:
             self.cancel()
@@ -178,18 +175,17 @@ class FindBar(wx.Panel, debugmixin):
             return self.OnNotFound(posn)
         elif posn != -1:
             self.showLine(posn, help)
-            self.loop = 0
-            if posn == first:
+            if self.service.isEntireDocumentChecked(posn, -1):
                 self.OnFinished()
             return
         
         if allow_wrap and st != self.stc.GetTextLength():
             posn, st = self.service.doFindPrev(self.stc.GetTextLength())
-        self.loop = 1
+        self.service.setWrapped()
         
         if posn != -1:
             self.showLine(posn, "Reached start of document, continued from end.")
-            if posn == first:
+            if self.service.isEntireDocumentChecked(posn, -1):
                 self.OnFinished()
             return
         
@@ -506,8 +502,8 @@ class ReplaceBar(FindBar):
     
     def OnReplaceAll(self, evt):
         self.count = 0
-        self.loop = 0
         self.last_cursor = 0
+        self.service.setWrapped(False)
         
         # FIXME: this takes more time than it should, probably because there's
         # a lot of redundant stuff going on in OnReplace.  This should be
@@ -518,7 +514,7 @@ class ReplaceBar(FindBar):
         self.stc.BeginUndoAction()
         valid = True
         try:
-            while self.loop == 0 and valid:
+            while not self.service.isWrapped() and valid:
                 valid = self.OnReplace(None, interactive=False)
             self.stc.GotoPos(self.last_cursor)
         finally:
