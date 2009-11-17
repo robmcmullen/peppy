@@ -9,7 +9,32 @@ from distutils.version import StrictVersion
 
 module=None
 
-def findChangeLogVersion(options):
+def findLatestChangeLogVersion(options):
+    fh = open("ChangeLog")
+    release_date = None
+    version = None
+    codename = None
+    for line in fh:
+        if release_date is None:
+            match = re.match('(\d+-\d+-\d+).*',line)
+            if match:
+                if options.verbose: print 'found date %s' % match.group(1)
+                release_date = date.fromtimestamp(time.mktime(time.strptime(match.group(1),'%Y-%m-%d'))).strftime('%d %B %Y')
+        else:
+            match = re.match('\s+\*\s*[Rr]eleased peppy-([0-9]+\.[0-9]+(?:\.[0-9]+)?)( \"(.+)\")?\s*',line)
+            if match:
+                if version is None:
+                    if options.verbose: print 'found version %s' % match.group(1)
+                    version = match.group(1)
+                if codename is None and match.group(2):
+                    codename = match.group(3)
+                    if options.verbose: print 'found codename %s' % codename
+                    break
+    if release_date is None:
+        release_date = date.today().strftime("%d %B %Y")
+    return version, release_date, codename
+
+def findChangeLogVersionForGit(options):
     fh = open("ChangeLog")
     release_date = date.today().strftime("%d %B %Y")
     version = "0.0.0"
@@ -89,12 +114,12 @@ def getGitChangeLogSuggestions(tag, options):
         text = subprocess.Popen(["git", "log", "--pretty=format:%s", "%s..%s" % (version, top)], stdout=subprocess.PIPE).communicate()[0]
         lines = text.splitlines()
         print lines
-        pat = re.compile("Fixed (\#[0-9]+:\s+)?(.+)")
+        pat = re.compile("Fixed (\#[0-9]+):\s+?(.+)")
         for line in lines:
             found = pat.match(line)
             if found:
                 if found.group(1):
-                    suggestions.append("* %s" % found.group(2))
+                    suggestions.append("* %s (bug %s)" % (found.group(2), found.group(1)))
                 else:
                     suggestions.append("* fixed %s" % found.group(2))
             else:
@@ -121,14 +146,14 @@ if __name__=='__main__':
                       dest="fixed", help="display list of bugs fixed since last major release")
     (options, args) = parser.parse_args()
 
-    changelog_version, dum, codename = findChangeLogVersion(options)
-    last_tag, version = getCurrentGitPatchlevel(options)
+    version, dum, codename = findLatestChangeLogVersion(options)
+    last_tag, git_version = getCurrentGitPatchlevel(options)
     svn_revision = getCurrentSvnRevision(options)
     if options.version:
         print version
         sys.exit()
     
-    if version.startswith(changelog_version):
+    if version.startswith(version):
         if options.codename and options.codename != codename:
             print "Codename mismatch!"
             print "ChangeLog has '%s'" % codename
