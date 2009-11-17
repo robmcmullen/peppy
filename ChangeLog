@@ -1,3 +1,14 @@
+2009-11-16  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.13.1
+	* fixed replace to stop after wrapping around to start (bug #471)
+	* fixed bug when searching for non-existent CTAG (bug #753)
+	* fixed bug in help browser when doc doesn't exist (bug #797)
+	* added m4 major mode
+	* fixed bug in bash-style completion (bug #796)
+	* changed version numbering scheme to incremental minor numbers rather
+	than git-based minor numbers
+
 2009-11-11  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.13.0 "Odyssey and Aquarius"
