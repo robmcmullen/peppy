@@ -132,16 +132,62 @@ htmlhelp_basename = 'peppydoc'
 # Options for LaTeX output
 # ------------------------
 
-# The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
+latex_elements = {
+    'fncychap': '\\usepackage[Bjarne]{fncychap}',
+    'fontpkg': '\\usepackage{times}',
+    'papersize': 'letter',
+    'pointsize': '10pt',
+    'preamble': '',
+    'maketitle': r"""\begin{titlepage}
+ 
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+%% Title
+\HRule \\[0.5cm]
 
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
+\begin{minipage}{0.25\textwidth}
+\begin{flushleft}
+\includegraphics[width=1.0\textwidth]{../../_static/peppy256.png}\\[1cm]
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.75\textwidth}
+\begin{flushright}
+
+{ \Huge \CTV Peppy User Manual}\\[0.4cm]
+
+\CTV{\Large Version %s}\\[0.5cm]
+\end{flushright}
+\end{minipage}
+
+\vfill
+
+\begin{flushright}
+\CTV
+
+\Large
+Rob McMullen \\
+\large
+robm@users.sourceforge.net
+
+\vfill
+
+\end{flushright}
+
+\begin{center}
+\CTV
+%% Bottom of the page
+\vspace{1.0cm}
+{\large \today}
+ 
+\end{center}
+\end{titlepage}
+""" % version
+    }
 
 # Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, document class [howto/manual]).
+# (source start file, target name, title, author, documentclass [howto/manual],
+# toctree_only).
 latex_documents = [
-  ('index', 'peppy.tex', html_title, 'Rob McMullen', 'manual'),
+  ('index', 'UserManual.tex', 'Peppy User Manual', 'Rob McMullen', 'manual', True),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -150,7 +196,7 @@ latex_documents = [
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-#latex_use_parts = False
+latex_use_parts = False
 
 # Additional stuff for the LaTeX preamble.
 #latex_preamble = ''
@@ -159,4 +205,4 @@ latex_documents = [
 #latex_appendices = []
 
 # If false, no module index is generated.
-#latex_use_modindex = True
+latex_use_modindex = True
