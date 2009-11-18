@@ -624,7 +624,7 @@ class ReplaceBarCommand(MinibufferReplaceMixin, MinibufferKeyboardAction):
             elif uchar in u'rR':
                 self.minibuffer.win.OnTabToReplace(None)
             elif uchar in u'?':
-                Publisher().sendMessage('peppy.log.info', (self.minibuffer.frame, self.minibuffer.win.__doc__))
+                Publisher().sendMessage('peppy.log.info', (self.minibuffer.mode.frame, self.minibuffer.win.__doc__))
                 break
 
 
