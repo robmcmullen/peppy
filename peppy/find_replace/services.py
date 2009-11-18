@@ -784,5 +784,5 @@ class FindRegexService(FindService):
         # numbers of bytes, not numbers of characters.
         self.stc_equiv_pos += len(replacement.encode('utf-8')) - len(replacing.encode('utf-8'))
         self.stc.ReplaceTarget(replacement)
-        self.updateReplacementSelection(orig_start, orig_end, self.stc_equiv_start, self.stc_equiv_pos)
+        self.updateSelection(orig_start, orig_end, self.stc_equiv_start, self.stc_equiv_pos)
 
