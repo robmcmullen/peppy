@@ -1031,16 +1031,20 @@ class IndexChoiceParam(Param):
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
-        ctrl.SetSelection(self.default)
+        ctrl.SetSelection(self.value_to_index[self.default])
         return ctrl
+
+    def convertStringValueToCorrectType(self, value):
+        tmp = locale.atof(value)
+        value = int(tmp)
+        if value not in self.value_to_index:
+            value = self.default
+        return value
 
     def textToValue(self, text):
         try:
-            text = Param.textToValue(self, text)
-            tmp = locale.atof(text)
-            val = int(tmp)
-            if val not in self.value_to_index:
-                val = self.default
+            value = Param.textToValue(self, text)
+            val = self.convertStringValueToCorrectType(value)
         except:
             val = self.default
         return val
@@ -1054,6 +1058,16 @@ class IndexChoiceParam(Param):
     def getValue(self, ctrl):
         index = ctrl.GetSelection()
         return self.index_to_value[index]
+
+class StringIndexChoiceParam(IndexChoiceParam):
+    """Same as IndexChoiceParem, but using strings as the keys instead of
+    integers.
+    
+    """
+    def convertStringValueToCorrectType(self, value):
+        if value not in self.value_to_index:
+            value = self.default
+        return value
 
 class KeyedIndexChoiceParam(IndexChoiceParam):
     """Parameter that is restricted to a string from a list of
@@ -1083,7 +1097,7 @@ class KeyedIndexChoiceParam(IndexChoiceParam):
         if default is not None and default in self.choices:
             self.default = self.keys[self.choices.index(default)]
         else:
-            self.default = self.keys(0)
+            self.default = self.keys[0]
 
     def getCtrl(self, parent, initial=None):
         ctrl = wx.Choice(parent , -1, (100, 50), choices = self.choices)
