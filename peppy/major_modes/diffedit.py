@@ -70,7 +70,7 @@ class DiffEditMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     # compared to all other major modes
     keyword = 'DiffEdit'
     editra_synonym = 'Diff File'
-    stc_lexer_id = 16
+    stc_lexer_id = wx.stc.STC_LEX_DIFF
     start_line_comment = '--- '
     end_line_comment = ''
     

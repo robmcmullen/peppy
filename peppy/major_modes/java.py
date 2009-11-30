@@ -21,7 +21,7 @@ class JavaMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'Java'
     editra_synonym = 'Java'
-    stc_lexer_id = 3
+    stc_lexer_id = wx.stc.STC_LEX_CPP
     start_line_comment = u'//'
     end_line_comment = ''
     

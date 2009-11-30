@@ -29,7 +29,7 @@ class CascadingStyleSheetMode(FundamentalMode):
     """
     keyword = 'Cascading Style Sheet'
     editra_synonym = 'Cascading Style Sheet'
-    stc_lexer_id = 38
+    stc_lexer_id = wx.stc.STC_LEX_CSS
     start_line_comment = u'/*'
     end_line_comment = u'*/'
     

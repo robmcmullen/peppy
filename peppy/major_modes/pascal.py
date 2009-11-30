@@ -29,7 +29,7 @@ class PascalMode(FundamentalMode):
     """
     keyword = 'Pascal'
     editra_synonym = 'Pascal'
-    stc_lexer_id = 18
+    stc_lexer_id = wx.stc.STC_LEX_PASCAL
     start_line_comment = u'{'
     end_line_comment = u'}'
     

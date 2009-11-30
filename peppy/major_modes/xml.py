@@ -29,7 +29,7 @@ class XMLMode(FundamentalMode):
     """
     keyword = 'XML'
     editra_synonym = 'XML'
-    stc_lexer_id = 5
+    stc_lexer_id = wx.stc.STC_LEX_XML
     start_line_comment = u'<!--'
     end_line_comment = u'-->'
     

@@ -29,7 +29,7 @@ class NetwideAssemblerMode(FundamentalMode):
     """
     keyword = 'Netwide Assembler'
     editra_synonym = 'Netwide Assembler'
-    stc_lexer_id = 34
+    stc_lexer_id = wx.stc.STC_LEX_ASM
     start_line_comment = u';'
     end_line_comment = ''
     

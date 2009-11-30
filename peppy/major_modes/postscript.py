@@ -29,7 +29,7 @@ class PostscriptMode(FundamentalMode):
     """
     keyword = 'Postscript'
     editra_synonym = 'Postscript'
-    stc_lexer_id = 42
+    stc_lexer_id = wx.stc.STC_LEX_PS
     start_line_comment = u'%'
     end_line_comment = ''
     

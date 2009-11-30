@@ -29,7 +29,7 @@ class BooMode(FundamentalMode):
     """
     keyword = 'Boo'
     editra_synonym = 'Boo'
-    stc_lexer_id = 2
+    stc_lexer_id = wx.stc.STC_LEX_PYTHON
     start_line_comment = u'#'
     end_line_comment = ''
     

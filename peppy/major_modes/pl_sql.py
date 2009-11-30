@@ -29,7 +29,7 @@ class PLSQLMode(FundamentalMode):
     """
     keyword = 'PL/SQL'
     editra_synonym = 'PL/SQL'
-    stc_lexer_id = 7
+    stc_lexer_id = wx.stc.STC_LEX_SQL
     start_line_comment = u'--'
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class LuaMode(FundamentalMode):
     """
     keyword = 'Lua'
     editra_synonym = 'Lua'
-    stc_lexer_id = 15
+    stc_lexer_id = wx.stc.STC_LEX_LUA
     start_line_comment = u'--'
     end_line_comment = ''
     

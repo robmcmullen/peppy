@@ -29,7 +29,7 @@ class EiffelMode(FundamentalMode):
     """
     keyword = 'Eiffel'
     editra_synonym = 'Eiffel'
-    stc_lexer_id = 23
+    stc_lexer_id = wx.stc.STC_LEX_EIFFEL
     start_line_comment = u'--'
     end_line_comment = ''
     

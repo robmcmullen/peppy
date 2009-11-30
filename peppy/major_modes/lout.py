@@ -29,7 +29,7 @@ class LoutMode(FundamentalMode):
     """
     keyword = 'Lout'
     editra_synonym = 'Lout'
-    stc_lexer_id = 40
+    stc_lexer_id = wx.stc.STC_LEX_LOUT
     start_line_comment = u'#'
     end_line_comment = ''
     

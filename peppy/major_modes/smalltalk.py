@@ -29,7 +29,7 @@ class SmalltalkMode(FundamentalMode):
     """
     keyword = 'Smalltalk'
     editra_synonym = 'Smalltalk'
-    stc_lexer_id = 72
+    stc_lexer_id = wx.stc.STC_LEX_SMALLTALK
     start_line_comment = u'"'
     end_line_comment = u'"'
     

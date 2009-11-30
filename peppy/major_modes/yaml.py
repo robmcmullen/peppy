@@ -29,7 +29,7 @@ class YAMLMode(FundamentalMode):
     """
     keyword = 'YAML'
     editra_synonym = 'YAML'
-    stc_lexer_id = 48
+    stc_lexer_id = wx.stc.STC_LEX_YAML
     start_line_comment = u'#'
     end_line_comment = ''
     

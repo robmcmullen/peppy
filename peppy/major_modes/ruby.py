@@ -29,7 +29,7 @@ class RubyMode(FundamentalMode):
     """
     keyword = 'Ruby'
     editra_synonym = 'Ruby'
-    stc_lexer_id = 22
+    stc_lexer_id = wx.stc.STC_LEX_RUBY
     start_line_comment = u'#'
     end_line_comment = ''
     

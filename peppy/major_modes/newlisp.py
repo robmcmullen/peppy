@@ -29,7 +29,7 @@ class newLISPMode(FundamentalMode):
     """
     keyword = 'newLISP'
     editra_synonym = 'newLISP'
-    stc_lexer_id = 21
+    stc_lexer_id = wx.stc.STC_LEX_LISP
     start_line_comment = u';'
     end_line_comment = ''
     

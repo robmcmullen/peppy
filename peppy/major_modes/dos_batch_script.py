@@ -29,7 +29,7 @@ class DOSBatchScriptMode(FundamentalMode):
     """
     keyword = 'DOS Batch Script'
     editra_synonym = 'DOS Batch Script'
-    stc_lexer_id = 12
+    stc_lexer_id = wx.stc.STC_LEX_BATCH
     start_line_comment = u'rem '
     end_line_comment = ''
     

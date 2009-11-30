@@ -29,7 +29,7 @@ class MicrosoftSQLMode(FundamentalMode):
     """
     keyword = 'Microsoft SQL'
     editra_synonym = 'Microsoft SQL'
-    stc_lexer_id = 55
+    stc_lexer_id = wx.stc.STC_LEX_MSSQL
     start_line_comment = u'--'
     end_line_comment = ''
     

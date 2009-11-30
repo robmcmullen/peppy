@@ -6,6 +6,8 @@ import ConfigParser
 from cStringIO import StringIO
 from optparse import OptionParser
 
+import wx.stc
+
 __builtin__._ = str
 
 sys.path.append("..")
@@ -17,7 +19,7 @@ facade = EditraFacade()
 
 class_attr_template = '''    keyword = '%(keyword)s'
     editra_synonym = '%(lang)s'
-    stc_lexer_id = %(lexer)d
+    stc_lexer_id = %(lexer)s
     start_line_comment = %(start_comment)s
     end_line_comment = %(end_comment)s'''
 
@@ -105,7 +107,7 @@ def getEditraInfo(lang):
         'class_name': facade.getPeppyClassName(lang),
         'module_name': module_name,
         'extensions': " ".join(facade.getExtensionsForLanguage(lang)),
-        'lexer': facade.getEditraSTCLexer(lang),
+        'lexer': facade.getEditraSTCLexerName(lang),
         'start_comment': repr(facade.getEditraCommentChars(lang)[0]),
         'end_comment': repr(facade.getEditraCommentChars(lang)[1]),
         }

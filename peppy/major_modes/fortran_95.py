@@ -29,7 +29,7 @@ class Fortran95Mode(FundamentalMode):
     """
     keyword = 'Fortran 95'
     editra_synonym = 'Fortran 95'
-    stc_lexer_id = 36
+    stc_lexer_id = wx.stc.STC_LEX_FORTRAN
     start_line_comment = '!'
     end_line_comment = ''
     

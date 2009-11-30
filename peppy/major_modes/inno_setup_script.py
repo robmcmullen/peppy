@@ -29,7 +29,7 @@ class InnoSetupScriptMode(FundamentalMode):
     """
     keyword = 'Inno Setup Script'
     editra_synonym = 'Inno Setup Script'
-    stc_lexer_id = 76
+    stc_lexer_id = wx.stc.STC_LEX_INNOSETUP
     start_line_comment = u';'
     end_line_comment = ''
     

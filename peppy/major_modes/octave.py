@@ -29,7 +29,7 @@ class OctaveMode(FundamentalMode):
     """
     keyword = 'Octave'
     editra_synonym = 'Octave'
-    stc_lexer_id = 54
+    stc_lexer_id = wx.stc.STC_LEX_OCTAVE
     start_line_comment = u'#'
     end_line_comment = ''
     

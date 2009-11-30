@@ -21,7 +21,7 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'Bash'
     editra_synonym = 'Bash Shell Script'
-    stc_lexer_id = 62
+    stc_lexer_id = wx.stc.STC_LEX_BASH
     start_line_comment = u'#'
     end_line_comment = ''
     

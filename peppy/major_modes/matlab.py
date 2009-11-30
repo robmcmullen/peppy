@@ -29,7 +29,7 @@ class MatlabMode(FundamentalMode):
     """
     keyword = 'Matlab'
     editra_synonym = 'Matlab'
-    stc_lexer_id = 32
+    stc_lexer_id = wx.stc.STC_LEX_MATLAB
     start_line_comment = u'%'
     end_line_comment = ''
     

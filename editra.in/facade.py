@@ -24,6 +24,12 @@ class EditraFacade(object):
         'Korn Shell Script': 'Ksh',
         'Plain Text': 'Text',
         }
+    
+    stc_lexer_name = {}
+    for name in [name for name in dir(wx.stc) if name.startswith("STC_LEX")]:
+        lexer = getattr(wx.stc, name)
+        stc_lexer_name[lexer] = name
+
 
     def __init__(self, config=None):
         """Initialize a syntax manager. If the optional
@@ -180,6 +186,10 @@ class EditraFacade(object):
     def getEditraSTCLexer(self, lang):
         syn_data = self.getEditraSyntaxData(lang)
         return syn_data[LEXER]
+
+    def getEditraSTCLexerName(self, lang):
+        lexer = self.getEditraSTCLexer(lang)
+        return "wx.stc.%s" % self.stc_lexer_name[lexer]
 
     def getEditraExtraProperties(self, lang):
         syn_data = self.getEditraSyntaxData(lang)

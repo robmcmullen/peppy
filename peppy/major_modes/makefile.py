@@ -122,7 +122,7 @@ class MakefileMode(FundamentalMode):
     # compared to all other major modes
     keyword = 'Makefile'
     editra_synonym = 'Makefile'
-    stc_lexer_id = 11
+    stc_lexer_id = wx.stc.STC_LEX_MAKEFILE
     start_line_comment = u'#'
     end_line_comment = ''
     

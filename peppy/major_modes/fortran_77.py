@@ -20,7 +20,7 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'Fortran 77'
     editra_synonym = 'Fortran 77'
-    stc_lexer_id = 37
+    stc_lexer_id = wx.stc.STC_LEX_F77
     start_line_comment = '*'
     end_line_comment = ''
     

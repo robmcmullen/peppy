@@ -29,7 +29,7 @@ class CamlMode(FundamentalMode):
     """
     keyword = 'Caml'
     editra_synonym = 'Caml'
-    stc_lexer_id = 65
+    stc_lexer_id = wx.stc.STC_LEX_CAML
     start_line_comment = u'(*'
     end_line_comment = u'*)'
     

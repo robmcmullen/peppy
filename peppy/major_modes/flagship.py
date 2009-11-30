@@ -29,7 +29,7 @@ class FlagShipMode(FundamentalMode):
     """
     keyword = 'FlagShip'
     editra_synonym = 'FlagShip'
-    stc_lexer_id = 73
+    stc_lexer_id = wx.stc.STC_LEX_FLAGSHIP
     start_line_comment = u'//'
     end_line_comment = ''
     

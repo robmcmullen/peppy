@@ -29,7 +29,7 @@ class VBScriptMode(FundamentalMode):
     """
     keyword = 'VBScript'
     editra_synonym = 'VBScript'
-    stc_lexer_id = 28
+    stc_lexer_id = wx.stc.STC_LEX_VBSCRIPT
     start_line_comment = u"'"
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class HTMLMode(FundamentalMode):
     """
     keyword = 'HTML'
     editra_synonym = 'HTML'
-    stc_lexer_id = 4
+    stc_lexer_id = wx.stc.STC_LEX_HTML
     start_line_comment = u'<!--'
     end_line_comment = u'-->'
     

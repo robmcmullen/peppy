@@ -29,7 +29,7 @@ class LaTeXMode(FundamentalMode):
     """
     keyword = 'LaTeX'
     editra_synonym = 'LaTeX'
-    stc_lexer_id = 14
+    stc_lexer_id = wx.stc.STC_LEX_LATEX
     start_line_comment = u'%'
     end_line_comment = ''
     

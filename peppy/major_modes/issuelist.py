@@ -29,7 +29,7 @@ class IssueListMode(FundamentalMode):
     """
     keyword = 'IssueList'
     editra_synonym = 'IssueList'
-    stc_lexer_id = 0
+    stc_lexer_id = wx.stc.STC_LEX_CONTAINER
     start_line_comment = ''
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class VisualBasicMode(FundamentalMode):
     """
     keyword = 'Visual Basic'
     editra_synonym = 'Visual Basic'
-    stc_lexer_id = 8
+    stc_lexer_id = wx.stc.STC_LEX_VB
     start_line_comment = u"'"
     end_line_comment = ''
     

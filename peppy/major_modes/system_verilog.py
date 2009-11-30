@@ -29,7 +29,7 @@ class SystemVerilogMode(FundamentalMode):
     """
     keyword = 'System Verilog'
     editra_synonym = 'System Verilog'
-    stc_lexer_id = 56
+    stc_lexer_id = wx.stc.STC_LEX_VERILOG
     start_line_comment = u'//'
     end_line_comment = ''
     

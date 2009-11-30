@@ -29,7 +29,7 @@ class AdaMode(FundamentalMode):
     """
     keyword = 'Ada'
     editra_synonym = 'Ada'
-    stc_lexer_id = 20
+    stc_lexer_id = wx.stc.STC_LEX_ADA
     start_line_comment = u'--'
     end_line_comment = ''
     

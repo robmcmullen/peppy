@@ -21,7 +21,7 @@ class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     """
     keyword = 'C++'
     editra_synonym = 'CPP'
-    stc_lexer_id = 3
+    stc_lexer_id = wx.stc.STC_LEX_CPP
     start_line_comment = u'//'
     end_line_comment = ''
     

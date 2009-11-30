@@ -29,7 +29,7 @@ class ApacheConfMode(FundamentalMode):
     """
     keyword = 'Apache Conf'
     editra_synonym = 'Apache Conf'
-    stc_lexer_id = 17
+    stc_lexer_id = wx.stc.STC_LEX_CONF
     start_line_comment = u'#'
     end_line_comment = ''
     

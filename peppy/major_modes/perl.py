@@ -29,7 +29,7 @@ class PerlMode(FundamentalMode):
     """
     keyword = 'Perl'
     editra_synonym = 'Perl'
-    stc_lexer_id = 6
+    stc_lexer_id = wx.stc.STC_LEX_PERL
     start_line_comment = u'#'
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class HaskellMode(FundamentalMode):
     """
     keyword = 'Haskell'
     editra_synonym = 'Haskell'
-    stc_lexer_id = 68
+    stc_lexer_id = wx.stc.STC_LEX_HASKELL
     start_line_comment = u'--'
     end_line_comment = ''
     

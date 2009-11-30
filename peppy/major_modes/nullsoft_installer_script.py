@@ -29,7 +29,7 @@ class NullsoftInstallerScriptMode(FundamentalMode):
     """
     keyword = 'Nullsoft Installer Script'
     editra_synonym = 'Nullsoft Installer Script'
-    stc_lexer_id = 43
+    stc_lexer_id = wx.stc.STC_LEX_NSIS
     start_line_comment = u';'
     end_line_comment = ''
     

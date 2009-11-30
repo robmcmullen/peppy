@@ -29,7 +29,7 @@ class TclTkMode(FundamentalMode):
     """
     keyword = 'Tcl/Tk'
     editra_synonym = 'Tcl/Tk'
-    stc_lexer_id = 25
+    stc_lexer_id = wx.stc.STC_LEX_TCL
     start_line_comment = u'#'
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class ErlangMode(FundamentalMode):
     """
     keyword = 'Erlang'
     editra_synonym = 'Erlang'
-    stc_lexer_id = 53
+    stc_lexer_id = wx.stc.STC_LEX_ERLANG
     start_line_comment = u'%%'
     end_line_comment = ''
     

@@ -29,7 +29,7 @@ class _68kAssemblyMode(FundamentalMode):
     """
     keyword = '68k Assembly'
     editra_synonym = '68k Assembly'
-    stc_lexer_id = 34
+    stc_lexer_id = wx.stc.STC_LEX_ASM
     start_line_comment = u';'
     end_line_comment = ''
     

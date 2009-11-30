@@ -48,7 +48,7 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """
     keyword = 'Text'
     editra_synonym = 'Plain Text'
-    stc_lexer_id = 1
+    stc_lexer_id = wx.stc.STC_LEX_NULL
     start_line_comment = ''
     end_line_comment = ''
     icon='icons/page_white_text.png'

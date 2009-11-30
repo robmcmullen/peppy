@@ -29,7 +29,7 @@ class MakoMode(FundamentalMode):
     """
     keyword = 'Mako'
     editra_synonym = 'Mako'
-    stc_lexer_id = 0
+    stc_lexer_id = wx.stc.STC_LEX_CONTAINER
     start_line_comment = u'#'
     end_line_comment = ''
     

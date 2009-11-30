@@ -29,7 +29,7 @@ class Progress4GLMode(FundamentalMode):
     """
     keyword = 'Progress 4GL'
     editra_synonym = 'Progress 4GL'
-    stc_lexer_id = 7
+    stc_lexer_id = wx.stc.STC_LEX_SQL
     start_line_comment = u'/*'
     end_line_comment = u'*/'
     

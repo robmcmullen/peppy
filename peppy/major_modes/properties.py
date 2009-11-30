@@ -29,7 +29,7 @@ class PropertiesMode(FundamentalMode):
     """
     keyword = 'Properties'
     editra_synonym = 'Properties'
-    stc_lexer_id = 9
+    stc_lexer_id = wx.stc.STC_LEX_PROPERTIES
     start_line_comment = u'#'
     end_line_comment = ''
     

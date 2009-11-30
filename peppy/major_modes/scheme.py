@@ -29,7 +29,7 @@ class SchemeMode(FundamentalMode):
     """
     keyword = 'Scheme'
     editra_synonym = 'Scheme'
-    stc_lexer_id = 21
+    stc_lexer_id = wx.stc.STC_LEX_LISP
     start_line_comment = u';'
     end_line_comment = ''
     

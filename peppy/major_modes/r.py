@@ -29,7 +29,7 @@ class RMode(FundamentalMode):
     """
     keyword = 'R'
     editra_synonym = 'R'
-    stc_lexer_id = 0
+    stc_lexer_id = wx.stc.STC_LEX_CONTAINER
     start_line_comment = u'#'
     end_line_comment = ''
     

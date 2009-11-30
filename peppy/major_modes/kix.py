@@ -29,7 +29,7 @@ class KixMode(FundamentalMode):
     """
     keyword = 'Kix'
     editra_synonym = 'Kix'
-    stc_lexer_id = 57
+    stc_lexer_id = wx.stc.STC_LEX_KIX
     start_line_comment = u';'
     end_line_comment = ''
     
