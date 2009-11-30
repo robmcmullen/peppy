@@ -185,11 +185,11 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
             keywords = self.stc_keywords
         else:
             try:
-                keywords = style_specs.keywords[keyword]
+                keywords = style_specs.keywords_mapping[keyword]
             except KeyError:
                 dprint("No keywords found for %s" % keyword)
                 keywords = []
-        self.SetKeyWords(keywords)
+        self.SetKeyWordsFromDict(keywords)
         
         # Set or clear Editra style sheet info
         if self.stc_syntax_style_specs is not None:
@@ -218,32 +218,23 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.dprint("GetLexer = %d" % self.GetLexer())
         return True
     
-    def SetKeyWords(self, kw_lst, orig_interface_keywords=None):
-        """Sets the keywords from a list of keyword sets
-        @param kw_lst: [ (KWLVL, "KEWORDS"), (KWLVL2, "KEYWORDS2"), ect...]
-        @todo: look into if the uniquifying of the list has a more optimal
-               solution.
-
+    def SetKeyWordsFromDict(self, kw_dict):
+        """Sets the keywords from a dict of keyword sets
+        @param kw_dict: {KWSET1: "KEWORDS", KWSET2: "KEYWORDS2", etc...]
         """
-        if orig_interface_keywords is not None:
-            # If we get a 2nd argument, assume the keyword list conforms
-            # to the standard stc SetKeyWords interface
-            wx.stc.StyledTextCtrl.SetKeyWords(self, kw_lst, orig_interface_keywords)
-            return
-        
         # Parse Keyword Settings List simply ignoring bad values and badly
         # formed lists
+        import peppy.editra.style_specs as style_specs
+
         self.keywords = ""
-        for keyw in kw_lst:
-            if len(keyw) != 2:
-                continue
-            else:
-                if not isinstance(keyw[0], int) or \
-                   not isinstance(keyw[1], basestring):
-                    continue
-                else:
-                    self.keywords += keyw[1]
-                    wx.stc.StyledTextCtrl.SetKeyWords(self, keyw[0], keyw[1])
+        for keyword_set, keywords in kw_dict.iteritems():
+            # If the keyword is an integer, assume that it references the
+            # list of unique keywords specified in the preprocessed editra
+            # style_specs
+            if isinstance(keywords, int):
+                keywords = style_specs.unique_keywords[keywords]
+            self.keywords += keywords
+            self.SetKeyWords(keyword_set, keywords)
 
         kwlist = self.keywords.split()      # Split into a list of words
         kwlist = list(set(kwlist))          # Uniqueify the list

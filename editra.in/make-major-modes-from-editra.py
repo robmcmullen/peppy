@@ -8,6 +8,7 @@ from optparse import OptionParser
 
 __builtin__._ = str
 
+sys.path.append("..")
 from peppy.debug import *
 from facade import *
 
@@ -86,18 +87,18 @@ def getDefinedModes(destdir):
         module_name = facade.getPeppyFileName(lang)
         module_path = os.path.join(destdir, module_name + ".py")
         if os.path.exists(module_path):
-            dprint("found %s -> %s -> %s" % (lang, module_name, module_path))
+            #dprint("found %s -> %s -> %s" % (lang, module_name, module_path))
             existing.append(lang)
         else:
-            dprint("CREATING %s -> %s -> %s" % (lang, module_name, module_path))
+            #dprint("CREATING %s -> %s -> %s" % (lang, module_name, module_path))
             missing.append(lang)
     return missing, existing
 
 def getEditraInfo(lang):
     module_name = facade.getPeppyFileName(lang)
     syn = facade.getEditraSyntaxData(lang)
-    if lang == "XML":
-        dprint(syn)
+#    if lang == "XML":
+#        dprint(syn)
     vals = {
         'lang': lang,
         'keyword': facade.getPeppyModeKeyword(lang),
@@ -244,7 +245,7 @@ def generatePluginFile(destdir, lang):
     conf.write(fh)
 
 def processSampleText(filename):
-    dprint("Processing sample text")
+    #dprint("Processing sample text")
     langs = facade.getAllEditraLanguages()
     sample_text = {}
     for lang in langs:
@@ -260,7 +261,7 @@ def processSampleText(filename):
     fh.close()
 
 def processStyleSpecs(filename):
-    dprint("Processing style specs")
+    #dprint("Processing style specs")
     langs = facade.getAllEditraLanguages()
     extra_properties = {}
     syntax_style_specs = {}
@@ -274,7 +275,13 @@ def processStyleSpecs(filename):
         keywords[keyword] = facade.getEditraLanguageKeywords(lang)
         stc_lexer_id[keyword] = facade.getEditraSTCLexer(lang)
     
-    unique_keywords, common_keywords = findCommonKeywords(keywords)
+#    for lang in langs:
+#        keyword = facade.getPeppyModeKeyword(lang)
+#        dprint(keyword)
+#        dprint(keywords[keyword])
+#    sys.exit()
+            
+    unique_keywords, keywords_mapping = findCommonKeywords(keywords)
     
     import pprint
     pp = pprint.PrettyPrinter()
@@ -286,31 +293,43 @@ def processStyleSpecs(filename):
     fh.write(pp.pformat(syntax_style_specs))
     fh.write("\nextra_properties=")
     fh.write(pp.pformat(extra_properties))
-    if common_keywords:
-        fh.write("\ncommon_keywords=")
-        fh.write(pp.pformat(unique_keywords))
-    fh.write("\nkeywords=")
+    if keywords_mapping:
+        fh.write("\nkeywords_mapping=")
+        fh.write(pp.pformat(keywords_mapping))
+    fh.write("\nunique_keywords=")
     fh.write(pp.pformat(unique_keywords))
+    fh.write("\n")
     fh.close()
 
 def findCommonKeywords(keywords):
-    all_keywords = {}
-    common = []
-    for lang, keyword_spec_list in keywords.iteritems():
+    unique_keywords = []
+    unique_id = 0
+    keywords_text = {}
+    keywords_mapping = {}
+    for lang, keyword_dict in keywords.iteritems():
+        if lang not in keywords_mapping:
+            dprint("adding %s" % lang)
+            keywords_mapping[lang] = {}
         try:
-            for keyword_spec in keyword_spec_list:
+            for id, text in keyword_dict.iteritems():
                 # keyword_spec is a tuple of int and string
-                id, text = keyword_spec
-                if keyword_spec in all_keywords:
-                    common.append((lang, id, all_keywords[keyword_spec]))
+                if text in keywords_text:
+                    dprint("found common for %s, %d: %s" % (lang, id, keywords_text[text]))
+                    keywords_mapping[lang][id] = keywords_text[text]
                 else:
-                    all_keywords[keyword_spec] = (lang, id)
+                    keywords_text[text] = unique_id
+                    unique_keywords.append(text)
+                    keywords_mapping[lang][id] = unique_id
+                    unique_id += 1
         except (ValueError, TypeError):
             dprint(lang)
             dprint(keyword_spec_list)
             raise
-    dprint(common)
-    return keywords, {}
+        except KeyError:
+            dprint(keywords_mapping.keys())
+            raise
+    dprint(keywords_mapping)
+    return unique_keywords, keywords_mapping
     
 
 

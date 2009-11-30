@@ -205,7 +205,15 @@ class EditraFacade(object):
         return converted
 
     def getEditraLanguageKeywords(self, lang):
+        """Change the Editra list-of-tuples keyword description into a dict
+        
+        The return dict is keyed on the keyword set number.
+        """
         syn_data = self.getEditraSyntaxData(lang)
         if KEYWORDS in syn_data:
-            return syn_data[KEYWORDS]
-        return []
+            keyword_dict = {}
+            keywords_list = syn_data[KEYWORDS]
+            for keywordset, keywords in keywords_list:
+                keyword_dict[keywordset] = keywords
+            return keyword_dict
+        return {}
