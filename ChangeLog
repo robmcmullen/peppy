@@ -1,3 +1,10 @@
+2009-11-30  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.13.2
+	* added ability to modify language keywords in preferences (bug #801)
+	* fixed breakage in regex replace (bug #799)
+	* fixed bug when trying to display help for replacebar (bug #800)
+
 2009-11-16  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.13.1
