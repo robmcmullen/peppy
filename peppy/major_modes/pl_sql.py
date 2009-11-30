@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class PLSQLMode(FundamentalMode):
@@ -37,6 +38,14 @@ class PLSQLMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'plsql', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[91], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[92], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[93], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[116], hidden=False, fullwidth=True),
+        StrParam('keyword_set_4', unique_keywords[95], hidden=False, fullwidth=True),
+        StrParam('keyword_set_5', unique_keywords[96], hidden=False, fullwidth=True),
+        StrParam('keyword_set_6', unique_keywords[117], hidden=False, fullwidth=True),
+        StrParam('keyword_set_7', unique_keywords[97], hidden=False, fullwidth=True),
        )
 
 

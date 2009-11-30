@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class VisualBasicMode(FundamentalMode):
@@ -37,6 +38,10 @@ class VisualBasicMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'bas cls ctl frm vb', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[146], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[147], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[148], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[149], hidden=False, fullwidth=True),
        )
 
 

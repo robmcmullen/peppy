@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class PHPMode(FundamentalMode):
@@ -37,6 +38,10 @@ class PHPMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'php php3 phtm phtml', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[60], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[61], hidden=False, fullwidth=True),
+        StrParam('keyword_set_4', unique_keywords[150], hidden=False, fullwidth=True),
+        StrParam('keyword_set_5', unique_keywords[62], hidden=False, fullwidth=True),
        )
 
 

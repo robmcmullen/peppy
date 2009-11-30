@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class LoutMode(FundamentalMode):
@@ -37,6 +38,9 @@ class LoutMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'lt', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[98], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[99], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[100], hidden=False, fullwidth=True),
        )
 
 

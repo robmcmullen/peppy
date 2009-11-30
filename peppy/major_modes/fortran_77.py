@@ -13,6 +13,7 @@ import wx.stc
 from peppy.lib.foldexplorer import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
@@ -31,6 +32,9 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
 
     default_classprefs = (
         StrParam('extensions', 'f for', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[38], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[39], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[40], hidden=False, fullwidth=True),
         IntParam('edge_column', 72),
         BoolParam('indentation_guides', False),
        )

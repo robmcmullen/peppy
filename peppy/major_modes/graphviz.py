@@ -22,6 +22,7 @@ from peppy.lib.bitmapscroller import *
 from peppy.lib.processmanager import ProcessManager, JobOutputMixin
 from peppy.actions import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 _sample_file = """// Sample graphviz source file
@@ -57,6 +58,8 @@ class GraphvizMode(FundamentalMode):
 
     default_classprefs = (
         StrParam('extensions', 'dot', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[126], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[127], hidden=False, fullwidth=True),
         StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
         StrParam('minor_modes', 'GraphvizView'),

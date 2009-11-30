@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class newLISPMode(FundamentalMode):
@@ -37,6 +38,8 @@ class newLISPMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'lsp', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[75], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[76], hidden=False, fullwidth=True),
        )
 
 

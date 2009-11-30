@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class BooMode(FundamentalMode):
@@ -37,6 +38,7 @@ class BooMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'boo', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[15], hidden=False, fullwidth=True),
        )
 
 

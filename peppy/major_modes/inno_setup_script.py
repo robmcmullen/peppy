@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class InnoSetupScriptMode(FundamentalMode):
@@ -37,6 +38,11 @@ class InnoSetupScriptMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'iss', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[139], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[140], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[141], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[142], hidden=False, fullwidth=True),
+        StrParam('keyword_set_4', unique_keywords[143], hidden=False, fullwidth=True),
        )
 
 

@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class LuaMode(FundamentalMode):
@@ -37,6 +38,10 @@ class LuaMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'lua', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[19], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[20], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[21], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[22], hidden=False, fullwidth=True),
        )
 
 

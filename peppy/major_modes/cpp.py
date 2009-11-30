@@ -14,6 +14,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import CStyleAutoindent
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
@@ -29,6 +30,9 @@ class CPlusPlusMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'c++ cc cpp cxx h++ hh hpp hxx', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[105], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[106], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[14], hidden=False, fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

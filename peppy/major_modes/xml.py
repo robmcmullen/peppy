@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class XMLMode(FundamentalMode):
@@ -37,6 +38,7 @@ class XMLMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'axl dtd plist rdf svg xml xrc xsd xsl xslt xul', fullwidth=True),
+        StrParam('keyword_set_5', unique_keywords[57], hidden=False, fullwidth=True),
        )
 
 

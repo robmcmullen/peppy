@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class MASMMode(FundamentalMode):
@@ -37,6 +38,12 @@ class MASMMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'asm masm', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[50], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[51], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[52], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[53], hidden=False, fullwidth=True),
+        StrParam('keyword_set_4', unique_keywords[54], hidden=False, fullwidth=True),
+        StrParam('keyword_set_5', unique_keywords[55], hidden=False, fullwidth=True),
        )
 
 

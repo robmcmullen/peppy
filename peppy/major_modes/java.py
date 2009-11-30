@@ -14,6 +14,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import CStyleAutoindent
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class JavaMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
@@ -29,6 +30,9 @@ class JavaMode(SimpleCLikeFoldFunctionMatchMixin, FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'java', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[3], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[4], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[5], hidden=False, fullwidth=True),
        )
     
     autoindent = CStyleAutoindent()

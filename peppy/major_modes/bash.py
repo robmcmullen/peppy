@@ -14,6 +14,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
@@ -31,6 +32,7 @@ class BashMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
 
     default_classprefs = (
         StrParam('extensions', 'bsh configure sh', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[74], hidden=False, fullwidth=True),
         Param('indent_after', r'(\{(?![^\}]*\})|\b(then|elif|else)\b(?!.+fi)|\bdo\b(?!.+done)|\bcase\s+.+\s+in\b(?!.*esac)|\[\[)', fullwidth=True),
         Param('indent', r'\$\{.*\}', fullwidth=True),
         Param('unindent', r'([}]\s*$|\b(fi|elif|else)\b|\bdone\b|\besac\b|\]\])', fullwidth=True),

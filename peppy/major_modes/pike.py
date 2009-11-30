@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class PikeMode(FundamentalMode):
@@ -37,6 +38,9 @@ class PikeMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'pike', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[12], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[13], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[14], hidden=False, fullwidth=True),
        )
 
 

@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class Gui4CliMode(FundamentalMode):
@@ -37,6 +38,11 @@ class Gui4CliMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'gc gui', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[66], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[67], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[68], hidden=False, fullwidth=True),
+        StrParam('keyword_set_3', unique_keywords[69], hidden=False, fullwidth=True),
+        StrParam('keyword_set_4', unique_keywords[70], hidden=False, fullwidth=True),
        )
 
 

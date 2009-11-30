@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class VerilogMode(FundamentalMode):
@@ -37,6 +38,9 @@ class VerilogMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'v', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[35], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[36], hidden=False, fullwidth=True),
+        StrParam('keyword_set_2', unique_keywords[37], hidden=False, fullwidth=True),
        )
 
 

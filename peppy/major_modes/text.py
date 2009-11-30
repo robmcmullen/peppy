@@ -12,6 +12,7 @@ import wx.stc
 
 from peppy.major import *
 from peppy.yapsy.plugins import IPeppyPlugin
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 from peppy.lib.autoindent import BasicAutoindent
 from peppy.lib.foldexplorer import *

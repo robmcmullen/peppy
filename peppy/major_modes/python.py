@@ -13,6 +13,7 @@ import wx.stc
 from peppy.yapsy.plugins import *
 from peppy.actions import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import *
 from peppy.actions.base import *
 from peppy.paragraph import *
@@ -298,6 +299,8 @@ class PythonMode(SimpleFoldFunctionMatchMixin, FundamentalMode):
 
     default_classprefs = (
         StrParam('extensions', 'py python pyw', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[58], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[59], hidden=False, fullwidth=True),
         )
 
     autoindent = PythonAutoindent()

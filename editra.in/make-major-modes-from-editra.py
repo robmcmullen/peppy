@@ -25,6 +25,7 @@ class_attr_template = '''    keyword = '%(keyword)s'
 
 
 classprefs_template = '''        StrParam('extensions', '%(extensions)s', fullwidth=True),'''
+keyword_set_template = '''        StrParam('keyword_set_%d', unique_keywords[%d], hidden=False, fullwidth=True),'''
 
 
 template = '''# peppy Copyright (c) 2006-2009 Rob McMullen
@@ -49,6 +50,7 @@ from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.fundamental import FundamentalMode
+from peppy.editra.style_specs import unique_keywords
 
 class %(class_name)sMode(FundamentalMode):
     """Stub major mode for editing %(keyword)s files.
@@ -73,6 +75,55 @@ class %(class_name)sModePlugin(IPeppyPlugin):
         yield %(class_name)sMode
 '''
 
+# Global lists and dicts using my multiple processes
+langs = facade.getAllEditraLanguages()
+extra_properties = {}
+syntax_style_specs = {}
+keywords = {}
+stc_lexer_id = {}
+for lang in langs:
+    keyword = facade.getPeppyModeKeyword(lang)
+    #dprint(keyword)
+    extra_properties[keyword] = facade.getEditraExtraProperties(lang)
+    syntax_style_specs[keyword] = facade.getEditraSyntaxSpecs(lang)
+    keywords[keyword] = facade.getEditraLanguageKeywords(lang)
+    stc_lexer_id[keyword] = facade.getEditraSTCLexer(lang)
+
+def findCommonKeywords(keywords):
+    unique_keywords = []
+    unique_id = 0
+    keywords_text = {}
+    keywords_mapping = {}
+    for lang, keyword_dict in keywords.iteritems():
+        if lang not in keywords_mapping:
+            dprint("adding %s" % lang)
+            keywords_mapping[lang] = {}
+        try:
+            for id, text in keyword_dict.iteritems():
+                # keyword_spec is a tuple of int and string
+                if text in keywords_text:
+                    dprint("found common for %s, %d: %s" % (lang, id, keywords_text[text]))
+                    keywords_mapping[lang][id] = keywords_text[text]
+                else:
+                    keywords_text[text] = unique_id
+                    unique_keywords.append(text)
+                    keywords_mapping[lang][id] = unique_id
+                    unique_id += 1
+        except (ValueError, TypeError):
+            dprint(lang)
+            dprint(keyword_spec_list)
+            raise
+        except KeyError:
+            dprint(keywords_mapping.keys())
+            raise
+    dprint(keywords_mapping)
+    return unique_keywords, keywords_mapping
+
+unique_keywords, keywords_mapping = findCommonKeywords(keywords)
+
+
+
+# Processing routines
 
 def process(destdir):
     missing, existing = getDefinedModes(destdir)
@@ -99,11 +150,10 @@ def getDefinedModes(destdir):
 def getEditraInfo(lang):
     module_name = facade.getPeppyFileName(lang)
     syn = facade.getEditraSyntaxData(lang)
-#    if lang == "XML":
-#        dprint(syn)
+    keyword = facade.getPeppyModeKeyword(lang)
     vals = {
         'lang': lang,
-        'keyword': facade.getPeppyModeKeyword(lang),
+        'keyword': keyword,
         'class_name': facade.getPeppyClassName(lang),
         'module_name': module_name,
         'extensions': " ".join(facade.getExtensionsForLanguage(lang)),
@@ -112,7 +162,12 @@ def getEditraInfo(lang):
         'end_comment': repr(facade.getEditraCommentChars(lang)[1]),
         }
     vals['class_attrs'] = class_attr_template % vals
-    vals['classprefs'] = classprefs_template % vals
+    classprefs = classprefs_template % vals
+    order = sorted(keywords_mapping[keyword].iteritems())
+    for keyword_set_id, unique_id in order:
+        classprefs += "\n" + keyword_set_template % (keyword_set_id, unique_id)
+    
+    vals['classprefs'] = classprefs
     return module_name, vals
 
 def convertEditraMode(destdir, lang):
@@ -186,8 +241,26 @@ class ClassText(object):
         """Replace any class attributes or classprefs with the new values
         
         """
+        self.replaceImports()
         self.replaceClassAttrs(vals)
         self.replaceClassprefs(vals)
+    
+    def replaceImports(self):
+        """Special case to add the unique_keywords dict to the list of imports
+        
+        In versions prior to r2412, the import statement for unique_keywords
+        from peppy.editra.style_specs didn't exist.  Now that keywords can be
+        modified by the user, the import statement must be included because
+        the StrParams reference the unique_keywords dict to supply defaults
+        for the preferences.
+        """
+        extra = "from peppy.editra.style_specs import unique_keywords"
+        try:
+            self.header.index(extra)
+        except ValueError:
+            dprint("Replacing imports for %s" % self.lang)
+            index = self.header.index("from peppy.fundamental import")
+            self.header = self.header[0:index] + extra + "\n" + self.header[index:]
     
     def replaceClassAttrs(self, vals):
         newattrs = vals['class_attrs']
@@ -264,27 +337,6 @@ def processSampleText(filename):
 
 def processStyleSpecs(filename):
     #dprint("Processing style specs")
-    langs = facade.getAllEditraLanguages()
-    extra_properties = {}
-    syntax_style_specs = {}
-    keywords = {}
-    stc_lexer_id = {}
-    for lang in langs:
-        keyword = facade.getPeppyModeKeyword(lang)
-        #dprint(keyword)
-        extra_properties[keyword] = facade.getEditraExtraProperties(lang)
-        syntax_style_specs[keyword] = facade.getEditraSyntaxSpecs(lang)
-        keywords[keyword] = facade.getEditraLanguageKeywords(lang)
-        stc_lexer_id[keyword] = facade.getEditraSTCLexer(lang)
-    
-#    for lang in langs:
-#        keyword = facade.getPeppyModeKeyword(lang)
-#        dprint(keyword)
-#        dprint(keywords[keyword])
-#    sys.exit()
-            
-    unique_keywords, keywords_mapping = findCommonKeywords(keywords)
-    
     import pprint
     pp = pprint.PrettyPrinter()
     fh = open(filename, "w")
@@ -303,36 +355,6 @@ def processStyleSpecs(filename):
     fh.write("\n")
     fh.close()
 
-def findCommonKeywords(keywords):
-    unique_keywords = []
-    unique_id = 0
-    keywords_text = {}
-    keywords_mapping = {}
-    for lang, keyword_dict in keywords.iteritems():
-        if lang not in keywords_mapping:
-            dprint("adding %s" % lang)
-            keywords_mapping[lang] = {}
-        try:
-            for id, text in keyword_dict.iteritems():
-                # keyword_spec is a tuple of int and string
-                if text in keywords_text:
-                    dprint("found common for %s, %d: %s" % (lang, id, keywords_text[text]))
-                    keywords_mapping[lang][id] = keywords_text[text]
-                else:
-                    keywords_text[text] = unique_id
-                    unique_keywords.append(text)
-                    keywords_mapping[lang][id] = unique_id
-                    unique_id += 1
-        except (ValueError, TypeError):
-            dprint(lang)
-            dprint(keyword_spec_list)
-            raise
-        except KeyError:
-            dprint(keywords_mapping.keys())
-            raise
-    dprint(keywords_mapping)
-    return unique_keywords, keywords_mapping
-    
 
 
 if __name__ == "__main__":

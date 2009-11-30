@@ -19,6 +19,7 @@ from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
+from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 
 class GroovyMode(FundamentalMode):
@@ -37,6 +38,8 @@ class GroovyMode(FundamentalMode):
     
     default_classprefs = (
         StrParam('extensions', 'groovy', fullwidth=True),
+        StrParam('keyword_set_0', unique_keywords[77], hidden=False, fullwidth=True),
+        StrParam('keyword_set_1', unique_keywords[78], hidden=False, fullwidth=True),
        )
 
 

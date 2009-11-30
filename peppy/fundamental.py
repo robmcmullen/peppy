@@ -158,6 +158,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         BoolParam('case_sensitive_search', False, 'Case of search string must match exactly if True; otherwise mixed case requires exact match and lower case matches all', local=True),
         BoolParam('whole_word_search', False, 'Whole word between common separators must match if True; Otherwise matches every substring', local=True),
         BoolParam('case_matching_replace', True, 'Case will be modified to match if True; otherwise case will be left as was found', local=True),
+        StrParam('keyword_set_0', "", 'Space separated list of keywords used for scintilla keyword set 0', hidden=True),
+        StrParam('keyword_set_1', "", 'Space separated list of keywords used for scintilla keyword set 1', hidden=True),
+        StrParam('keyword_set_2', "", 'Space separated list of keywords used for scintilla keyword set 2', hidden=True),
+        StrParam('keyword_set_3', "", 'Space separated list of keywords used for scintilla keyword set 3', hidden=True),
+        StrParam('keyword_set_4', "", 'Space separated list of keywords used for scintilla keyword set 4', hidden=True),
+        StrParam('keyword_set_5', "", 'Space separated list of keywords used for scintilla keyword set 5', hidden=True),
+        StrParam('keyword_set_6', "", 'Space separated list of keywords used for scintilla keyword set 6', hidden=True),
+        StrParam('keyword_set_7', "", 'Space separated list of keywords used for scintilla keyword set 7', hidden=True),
         )
     
     autoindent = NullAutoindent()

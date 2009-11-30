@@ -181,15 +181,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.SetLexer(lexer)
 
         # Set or clear keywords used for extra highlighting
-        if self.stc_keywords is not None:
-            keywords = self.stc_keywords
-        else:
-            try:
-                keywords = style_specs.keywords_mapping[keyword]
-            except KeyError:
-                dprint("No keywords found for %s" % keyword)
-                keywords = []
-        self.SetKeyWordsFromDict(keywords)
+        self.SetKeyWordsFromClassprefs()
         
         # Set or clear Editra style sheet info
         if self.stc_syntax_style_specs is not None:
@@ -218,23 +210,18 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.dprint("GetLexer = %d" % self.GetLexer())
         return True
     
-    def SetKeyWordsFromDict(self, kw_dict):
-        """Sets the keywords from a dict of keyword sets
-        @param kw_dict: {KWSET1: "KEWORDS", KWSET2: "KEYWORDS2", etc...]
+    def SetKeyWordsFromClassprefs(self):
+        """Sets the keywords from the classprefs
         """
-        # Parse Keyword Settings List simply ignoring bad values and badly
-        # formed lists
-        import peppy.editra.style_specs as style_specs
-
         self.keywords = ""
-        for keyword_set, keywords in kw_dict.iteritems():
-            # If the keyword is an integer, assume that it references the
-            # list of unique keywords specified in the preprocessed editra
-            # style_specs
-            if isinstance(keywords, int):
-                keywords = style_specs.unique_keywords[keywords]
-            self.keywords += keywords
-            self.SetKeyWords(keyword_set, keywords)
+        prefname_template = "keyword_set_%d"
+        for set_num in range(8):
+            prefname = prefname_template % set_num
+            keywords = self.classprefs._get(prefname)
+            dprint("set number: %d  keywords=%s" % (set_num, keywords))
+            if keywords:
+                self.keywords += keywords
+                self.SetKeyWords(set_num, keywords)
 
         kwlist = self.keywords.split()      # Split into a list of words
         kwlist = list(set(kwlist))          # Uniqueify the list
