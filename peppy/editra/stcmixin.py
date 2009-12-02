@@ -181,7 +181,16 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.SetLexer(lexer)
 
         # Set or clear keywords used for extra highlighting
-        self.SetKeyWordsFromClassprefs()
+        try:
+            self.SetKeyWordsFromClassprefs()
+        except AttributeError:
+            # doesn't have a classpref; must be a FundamentalSTC used in the
+            # style editor, so fall back to the keywords_mapping dict
+            try:
+                keywords = style_specs.keywords_mapping[keyword]
+                self.SetKeyWordsFromDict(keywords)
+            except KeyError:
+                dprint("No keywords found for %s" % keyword)
         
         # Set or clear Editra style sheet info
         if self.stc_syntax_style_specs is not None:
@@ -229,6 +238,30 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         self.keywords = " ".join(kwlist)    # Put back into a string
         return True
  
+    def SetKeyWordsFromDict(self, kw_dict):
+        """Sets the keywords from a dict of keyword sets
+        @param kw_dict: {KWSET1: "KEWORDS", KWSET2: "KEYWORDS2", etc...]
+         """
+        # Parse Keyword Settings List simply ignoring bad values and badly
+        # formed lists
+        import peppy.editra.style_specs as style_specs
+
+        self.keywords = ""
+        for keyword_set, keywords in kw_dict.iteritems():
+            # If the keyword is an integer, assume that it references the
+            # list of unique keywords specified in the preprocessed editra
+            # style_specs
+            if isinstance(keywords, int):
+                keywords = style_specs.unique_keywords[keywords]
+            self.keywords += keywords
+            self.SetKeyWords(keyword_set, keywords)
+
+        kwlist = self.keywords.split()      # Split into a list of words
+        kwlist = list(set(kwlist))          # Uniqueify the list
+        kwlist.sort()                       # Sort into alphbetical order
+        self.keywords = " ".join(kwlist)    # Put back into a string
+        return True
+
     def SetSyntax(self, syn_lst):
         """Sets the Syntax Style Specs from a list of specifications
         @param syn_lst: [(STYLE_ID, "STYLE_TYPE"), (STYLE_ID2, "STYLE_TYPE2")]
