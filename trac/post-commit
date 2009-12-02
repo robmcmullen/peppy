@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# script used by subversion after successful commit
+
 FILE=/tmp/post-commit-hook-ran
 FILE=/dev/null
 
