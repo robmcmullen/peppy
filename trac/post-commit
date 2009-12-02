@@ -2,6 +2,7 @@
 
 # script used by subversion after successful commit
 
+# NOTE: fails when called by svn if FILE is not writable by the apache user
 FILE=/tmp/post-commit-hook-ran
 FILE=/dev/null
 
