@@ -5,6 +5,7 @@ FILE=/dev/null
 
 touch $FILE
 echo "started" >> $FILE
+date >> $FILE
 
 REPOS="$1"
 REV="$2"
