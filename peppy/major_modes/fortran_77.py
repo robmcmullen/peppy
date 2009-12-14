@@ -11,6 +11,7 @@ import wx
 import wx.stc
 
 from peppy.lib.foldexplorer import *
+from peppy.lib.autoindent import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
@@ -37,7 +38,19 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
         StrParam('keyword_set_2', unique_keywords[40], hidden=False, fullwidth=True),
         IntParam('edge_column', 72),
         BoolParam('indentation_guides', False),
+        
+        Param('indent_after', r'(\b(IF)\b(?=.+THEN)|\b(ELSEIF|ELSE|DO))', fullwidth=True),
+        Param('indent', r'', fullwidth=True),
+        Param('unindent', r'(\b(ELSEIF|ELSE|ENDIF|ENDDO|CONTINUE))', fullwidth=True),
        )
+    
+    autoindent = None
+    
+    def createPostHook(self):
+        if not self.autoindent:
+            self.__class__.autoindent = RegexAutoindent(
+                self.classprefs.indent_after, self.classprefs.indent,
+                self.classprefs.unindent, '')
 
 
 class FortranModePlugin(IPeppyPlugin):
