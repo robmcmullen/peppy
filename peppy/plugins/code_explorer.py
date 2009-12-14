@@ -60,6 +60,13 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         """
         self.update()
         
+    def activateMinorMode(self):
+        """Callback function from the minor mode construction requesting that
+        we initialize ourselves.
+        
+        """
+        self.update()
+        
     def update(self, evt=None):
         """Update tree with the source code of the editor"""
         hierarchy = self.mode.getFoldHierarchy()

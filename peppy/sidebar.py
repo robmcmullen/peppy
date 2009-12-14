@@ -87,6 +87,15 @@ class Sidebar(ContextMenuMixin, ClassPrefs, debugmixin):
         self.createEventBindings()
         self.createListeners()
     
+    def activateSidebar(self):
+        """Called by frame construction to signify that the sidebar window is
+        ready to be drawn.
+        
+        Should be overridden by the subclass if some special initialization
+        needs to be performed.
+        """
+        pass
+    
     def getOptionsForPopupActions(self):
         options = {'sidebar': self}
         return options

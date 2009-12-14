@@ -129,6 +129,15 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.createEventBindings()
         self.createListeners()
     
+    def activateMinorMode(self):
+        """Called by minor mode initialization to signify that the minor mode
+        window is ready to be drawn.
+        
+        Should be overridden by the subclass if some special initialization
+        needs to be performed.
+        """
+        pass
+    
     def getOptionsForPopupActions(self):
         options = {'minor_mode': self}
         return options
@@ -319,6 +328,7 @@ class MinorModeList(debugmixin):
         """
         entry = self.map[keyword]
         entry.win = entry.minorcls(self.parent, mode=self.mode)
+        entry.win.activateMinorMode()
         paneinfo = entry.win.getPaneInfo()
         paneinfo.Show(True)
         try:

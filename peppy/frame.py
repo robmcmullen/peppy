@@ -329,6 +329,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         paneinfo = sidebar.getPaneInfo()
         self._mgr.AddPane(sidebar, paneinfo)
         sidebar.paneinfo = self._mgr.GetPane(sidebar)
+        sidebar.activateSidebar()
 
     def createSidebarList(self):
         self.sidebar_panes = []
