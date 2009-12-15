@@ -306,7 +306,7 @@ class RecentFilesPlugin(IPeppyPlugin):
 
     def getTabMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend([AddToFileCabinet])
+        action_classes.extend([(-600, AddToFileCabinet)])
 
     def getActions(self):
         return [RecentFiles, RecentProjectFiles, FileCabinet, AddToFileCabinet, ReorderFileCabinet]

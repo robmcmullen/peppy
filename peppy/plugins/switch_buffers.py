@@ -99,7 +99,7 @@ class SwitchBuffersPlugin(IPeppyPlugin):
     
     def getTabMenu(self, msg):
         action_classes = msg.data
-        action_classes.extend([BufferPopupList])
+        action_classes.extend([(-800, BufferPopupList)])
         #dprint(action_classes)
 
     def getActions(self):
