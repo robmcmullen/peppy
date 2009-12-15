@@ -4,7 +4,6 @@ import os, re, threading
 from cStringIO import StringIO
 
 import wx
-import wx.aui
 import wx.stc
 from wx.lib.pubsub import Publisher
 

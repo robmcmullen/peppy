@@ -5,7 +5,6 @@
 import os, sys, platform, traceback, time, codecs, locale, webbrowser
 
 import wx
-import wx.aui
 import wx.stc
 from wx.lib.pubsub import Publisher
 

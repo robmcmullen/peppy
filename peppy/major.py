@@ -28,6 +28,7 @@ the L{SelectAction.getPopupActions} method.
 import os, stat, sys, re, time
 
 import wx
+import peppy.third_party.aui as aui
 import wx.stc
 from wx.lib.pubsub import Publisher
 
@@ -77,11 +78,11 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             hsplit.Add(self.splitter, 1, wx.EXPAND)
             hsplit.Add(self.spring, 0, wx.EXPAND)
             box.Add(hsplit, 1, wx.EXPAND)
-        self._mgr = wx.aui.AuiManager()
+        self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
         
         if self.spring_aui:
-            self._mgr.AddPane(self.spring, wx.aui.AuiPaneInfo().
+            self._mgr.AddPane(self.spring, aui.AuiPaneInfo().
                               Name("MinorSpringTabs").Caption("MinorSpringTabs").
                               Right().Layer(10).Hide().DockFixed().
                               CloseButton(False).CaptionVisible(False).
@@ -120,7 +121,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("creating major mode %s" % requested)
         self.editwin = requested(self.splitter, self, buffer, frame)
         buffer.addViewer(self.editwin)
-        self._mgr.AddPane(self.editwin, wx.aui.AuiPaneInfo().Name("main").
+        self._mgr.AddPane(self.editwin, aui.AuiPaneInfo().Name("main").
                           CenterPane())
         
         try:

@@ -7,7 +7,7 @@
 import os
 
 import wx
-import wx.aui
+import peppy.third_party.aui as aui
 from wx.lib.pubsub import Publisher
 
 from peppy.debug import *
@@ -16,20 +16,20 @@ from peppy.buffers import Buffer, BufferList
 from peppy.menu import PopupMenu
 
 
-class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
+class FrameNotebook(aui.AuiNotebook, debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
-        wx.aui.AuiNotebook.__init__(self, parent, size=size, style=wx.aui.AUI_NB_WINDOWLIST_BUTTON|wx.aui.AUI_NB_TAB_MOVE|wx.aui.AUI_NB_TAB_SPLIT|wx.aui.AUI_NB_CLOSE_BUTTON|wx.aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
+        aui.AuiNotebook.__init__(self, parent, size=size, style=aui.AUI_NB_WINDOWLIST_BUTTON|aui.AUI_NB_TAB_MOVE|aui.AUI_NB_TAB_SPLIT|aui.AUI_NB_CLOSE_BUTTON|aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
         
         self.frame = parent
         self.lastActivePage=None
         self.context_tab = -1 # which tab is currently displaying a context menu?
         
-        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
-        self.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
-        if 'EVT_AUINOTEBOOK_TAB_RIGHT_DOWN' in dir(wx.aui):
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
+        self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
+        if 'EVT_AUINOTEBOOK_TAB_RIGHT_DOWN' in dir(aui):
             # This event was only added as of wx 2.8.7.1, so ignore it on
             # earlier releases
-            self.Bind(wx.aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
+            self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
         
         self.allow_changes = True
 
@@ -54,7 +54,7 @@ class FrameNotebook(wx.aui.AuiNotebook, debugmixin):
         self.allow_changes = True
 
     def OnTabChanged(self, evt):
-        """Callback for wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED
+        """Callback for aui.EVT_AUINOTEBOOK_PAGE_CHANGED
         
         Keeps a record of the last active tab (if there was one) and activates
         the new active tab in the frame by calling L{BufferFrame.switchMode}.

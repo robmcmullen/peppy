@@ -16,6 +16,7 @@ getSidebars method.
 import os,re
 
 import wx
+import peppy.third_party.aui as aui
 
 from peppy.actions import *
 from peppy.debug import *
@@ -122,10 +123,10 @@ class Sidebar(ContextMenuMixin, ClassPrefs, debugmixin):
         """Factory method to return pane info.
 
         Most sidebars won't need to override this, but it is available
-        in the case that it is necessary.  A wx.aui.AuiPaneInfo object
+        in the case that it is necessary.  A aui.AuiPaneInfo object
         should be returned.
         """
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(self.caption)
+        paneinfo = aui.AuiPaneInfo().Name(self.keyword).Caption(self.caption)
         paneinfo.BestSize(wx.Size(self.classprefs.best_width,
                                   self.classprefs.best_height))
         paneinfo.MinSize(wx.Size(self.classprefs.min_width,

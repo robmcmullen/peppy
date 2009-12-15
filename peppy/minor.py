@@ -20,6 +20,7 @@ the getMinorModes method.
 import os,re
 
 import wx
+import peppy.third_party.aui as aui
 
 from peppy.yapsy.plugins import *
 from peppy.actions import *
@@ -192,7 +193,7 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """
         if caption is None:
             caption = self.keyword
-        paneinfo=wx.aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
+        paneinfo = aui.AuiPaneInfo().Name(self.keyword).Caption(caption)
         try:
             # Turn the string 'top', 'right', 'bottom' or 'left' into the
             # function that will place the pane on that side of the main

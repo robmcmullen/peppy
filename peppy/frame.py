@@ -4,7 +4,7 @@ import os, re, threading
 from cStringIO import StringIO
 
 import wx
-import wx.aui
+import peppy.third_party.aui as aui
 import wx.stc
 from wx.lib.pubsub import Publisher
 
@@ -222,17 +222,17 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.spring = SpringTabs(self)
 
         # tell FrameManager to manage this frame        
-        self._mgr = wx.aui.AuiManager()
+        self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self)
 
         self.tabs = FrameNotebook(self)
-        self._mgr.AddPane(self.tabs, wx.aui.AuiPaneInfo().Name("notebook").
+        self._mgr.AddPane(self.tabs, aui.AuiPaneInfo().Name("notebook").
                           CenterPane())
         self.sidebar_panes = []
         
         # paneinfo can use the C++ style notation for setting flags because
         # each method of AuiPaneInfo returns itself
-        paneinfo = wx.aui.AuiPaneInfo().Name("SpringTabs").Caption("SpringTabs").Left().Layer(10).CloseButton(False).CaptionVisible(False).LeftDockable(False).RightDockable(False)
+        paneinfo = aui.AuiPaneInfo().Name("SpringTabs").Caption("SpringTabs").Left().Layer(10).CloseButton(False).CaptionVisible(False).LeftDockable(False).RightDockable(False)
         
         # Stock wxPython distributed with OS X 10.5 is version 2.8.4.0, which
         # apparently doesn't have the DockFixed method.  So, I check for that

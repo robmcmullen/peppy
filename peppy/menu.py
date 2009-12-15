@@ -10,6 +10,7 @@ those actions that are applicable to the current state of the frame.
 
 import os,sys,time
 import wx
+import peppy.third_party.aui as aui
 
 import weakref
 
@@ -458,7 +459,7 @@ class UserAccelerators(AcceleratorManager, debugmixin):
             tb = self.title_to_toolbar[title]
             tb.Realize()
             self.dprint("Realized %s: %s" % (title, tb))
-            auimgr.AddPane(tb, wx.aui.AuiPaneInfo().
+            auimgr.AddPane(tb, aui.AuiPaneInfo().
                                   Name(title).Caption(title).
                                   ToolbarPane().Top().
                                   LeftDockable(False).RightDockable(False))
