@@ -98,20 +98,41 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
                 wx.CallAfter(self.frame.open, "about:blank")
 
     def OnTabContextMenu(self, evt):
-        dprint("Context menu over tab %d" % evt.GetSelection())
+        """Handle context menu on a tab button.
+        
+        Unlike a traditional notebook control that has a single row of tabs at
+        the top of the control, an AUI notebook may have multiple rows of tab
+        buttons if the control is split.  The index number of any particular
+        tab is dependent on which row of tab buttons the event happens.
+        
+        However, there is another index that is invariant and based on the
+        order in which the page was added to the notebook itself.  This is the
+        index used by the AuiNotebook.GetPage method.
+        
+        Only this context menu driver is concerned about multiple rows of tab
+        buttons; the index produced by this method and passed to the popup
+        menu as the C{context_tab} key is the invariant index.
+        """
+        # The event will be reported on one of the potentially multiple
+        # AuiTabCtrl controls
+        tabctrl = evt.GetEventObject()
+        tab = evt.GetSelection()
+        aui_notebook_page = tabctrl.GetPage(tab)
+        wrapper = aui_notebook_page.window
+        
+        # This index is the invariant index
+        index = self._tabs.GetIdxFromWindow(wrapper)
+        #dprint("Context menu over tab %d: %s" % (tab, aui_notebook_page.caption))
         action_classes = []
         Publisher().sendMessage('tabs.context_menu', action_classes)
-        dprint(action_classes)
-        tab = evt.GetSelection()
-        wrapper = self.GetPage(tab)
+        #dprint(action_classes)
         options = {
-            'context_tab': tab,
+            'context_tab': index,
             'wrapper': wrapper,
             'mode': wrapper.editwin,
             }
         if action_classes:
             PopupMenu(self.frame, self, None, action_classes, options)
-        #evt.Skip()
 
     def closeAllTabs(self):
         self.holdChanges()
