@@ -26,10 +26,7 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
         
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
-        if 'EVT_AUINOTEBOOK_TAB_RIGHT_DOWN' in dir(aui):
-            # This event was only added as of wx 2.8.7.1, so ignore it on
-            # earlier releases
-            self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
+        self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
         
         self.allow_changes = True
 
