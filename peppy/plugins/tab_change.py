@@ -24,7 +24,7 @@ class TabLeft(SelectAction):
     key_bindings = {'default': "M-LEFT", 'mac': "C-{",}
 
     def action(self, index=-1, multiplier=1):
-        self.frame.tabs.moveSelectionLeft()
+        self.frame.tabs.AdvanceSelection(False)
 
 
 class TabRight(SelectAction):
@@ -35,7 +35,7 @@ class TabRight(SelectAction):
     key_bindings = {'default': "M-RIGHT", 'mac': "C-}",}
 
     def action(self, index=-1, multiplier=1):
-        self.frame.tabs.moveSelectionRight()
+        self.frame.tabs.AdvanceSelection(True)
 
 
 class TabChangePlugin(IPeppyPlugin):
