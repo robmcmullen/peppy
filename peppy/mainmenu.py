@@ -20,6 +20,8 @@ from peppy.buffers import *
 from peppy.frame import *
 from peppy.debug import *
 
+from peppy.lib.clipboard import *
+
 
 class NewTab(SelectAction):
     """Open a new tab
@@ -544,6 +546,8 @@ class SelectAll(STCModificationAction):
 
     def action(self, index=-1, multiplier=1):
         self.mode.SelectAll()
+        text = self.mode.GetSelectedText()
+        SetClipboardText(text, True)
 
 
 class ModeSelectMixin(object):

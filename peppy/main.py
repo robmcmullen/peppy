@@ -153,8 +153,8 @@ class Mouse(ClassPrefs):
         self.setPrimarySelection()
     
     def setPrimarySelection(self):
-        import peppy.stcbase as stcbase
-        stcbase.setAllowX11PrimarySelection(self.classprefs.middle_mouse_x11_primary_selection)
+        import peppy.lib.clipboard as clipboard
+        clipboard.setAllowX11PrimarySelection(self.classprefs.middle_mouse_x11_primary_selection)
 
 
 class Tabs(ClassPrefs):
