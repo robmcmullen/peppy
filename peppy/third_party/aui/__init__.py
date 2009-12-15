@@ -269,15 +269,23 @@ Version 1.1.
 
 """
 
-__author__ = "Andrea Gavana <andrea.gavana@gmail.com>"
-__date__ = "31 March 2009"
+import wx
+if wx.Platform == "__WXMAC__":
+    # Problems with control refreshing on OS X, so default to regular AUI
+    from wx.aui import *
+    toolbar_reverse_order = True
+else:
+    __author__ = "Andrea Gavana <andrea.gavana@gmail.com>"
+    __date__ = "31 March 2009"
 
 
-from aui_constants import *
-from aui_utilities import *
-from auibar import *
-from auibook import *
-from tabart import *
-from dockart import *
-from framemanager import *
-from tabmdi import *
+    from aui_constants import *
+    from aui_utilities import *
+    from auibar import *
+    from auibook import *
+    from tabart import *
+    from dockart import *
+    from framemanager import *
+    from tabmdi import *
+    
+    toolbar_reverse_order = False
