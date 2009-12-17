@@ -16,13 +16,16 @@ import os
 
 import wx
 
+from peppy.third_party.pubsub import pub
+import peppy.third_party.customtreectrl as ct
+
 from peppy.debug import *
 from peppy.yapsy.plugins import *
 from peppy.minor import *
 from peppy.actions import *
 
 
-class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
+class CodeExplorerMinorMode(MinorMode, ct.CustomTreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
     keyword="Code Explorer"
@@ -42,9 +45,9 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             style = wx.TR_HAS_BUTTONS
             self.has_root = True
         else:
-            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
+            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS|ct.TR_NO_LINES
             self.has_root = False
-        wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
+        ct.CustomTreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         MinorMode.__init__(self, parent, **kwargs)
         self.root = self.AddRoot(self.mode.getTabName())
         self.hierarchy = None
@@ -52,6 +55,15 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         self.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.OnExpand)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnCollapse)
         self.Bind(wx.EVT_TREE_ITEM_COLLAPSING, self.OnCollapsing)
+        pub.subscribe(self.foldChanged, 'fold_changed')
+    
+    def foldChanged(self, mode):
+        if mode == self.mode:
+            #dprint("fold changed in correct mode!")
+            self.update()
+        else:
+            #dprint("Fold changed for some other major mode.  Ignoring")
+            pass
     
     def activateSpringTab(self):
         """Callback function from the SpringTab handler requesting that we
@@ -73,12 +85,17 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         #dprint(hierarchy)
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
+            
+            # native TreeCtrl doesn't Freeze on GTK, which prompted the move to
+            # the CustomTreeCtrl
+            self.Freeze()
             self.DeleteChildren(self.root)
             self.current_line = self.mode.GetCurrentLine()
             self.item_before = None
             self.appendChildren(self.root,self.hierarchy)
             if self.has_root:
                 self.Expand(self.root)
+            self.Thaw()
         else:
             self.UnselectAll()
             self.current_line = self.mode.GetCurrentLine()

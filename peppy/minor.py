@@ -251,7 +251,8 @@ class MinorModeList(debugmixin):
             for minorcls in minors:
                 if minorcls.classprefs.springtab:
                     self.mode.wrapper.spring.addTab(minorcls.keyword, minorcls, minorcls.showWithMajorModeInstance, mode=self.mode)
-                else:
+#                else:
+                if True:
                     self.map[minorcls.keyword] = MinorModeEntry(minorcls)
                     self.order.append(minorcls.keyword)
                     if minorcls.__name__ in initial or minorcls.keyword in initial:
