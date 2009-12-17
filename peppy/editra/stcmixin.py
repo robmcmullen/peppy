@@ -227,7 +227,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         for set_num in range(8):
             prefname = prefname_template % set_num
             keywords = self.classprefs._get(prefname)
-            dprint("set number: %d  keywords=%s" % (set_num, keywords))
+            #dprint("set number: %d  keywords=%s" % (set_num, keywords))
             if keywords:
                 self.keywords += keywords
                 self.SetKeyWords(set_num, keywords)
