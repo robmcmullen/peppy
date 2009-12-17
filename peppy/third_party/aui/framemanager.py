@@ -2163,8 +2163,14 @@ class AuiSingleDockingGuide(AuiDockingGuide):
 
         self._direction = direction
 
-        AuiDockingGuide.__init__(self, parent, style=wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP |
-                                 wx.FRAME_NO_TASKBAR | wx.NO_BORDER | wx.FRAME_SHAPED, name="auiSingleDockTarget")
+        style = wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP | \
+                wx.FRAME_NO_TASKBAR | wx.NO_BORDER
+        # Use of FRAME_SHAPED on wxMac causes the frame to be visible
+        # breaking the docking hints.
+        if wx.Platform != '__WXMAC__':
+            style |= wx.FRAME_SHAPED
+
+        AuiDockingGuide.__init__(self, parent, style=style, name="auiSingleDockTarget")
         
         self.Hide()
 
@@ -2251,6 +2257,25 @@ class AuiSingleDockingGuide(AuiDockingGuide):
             # Skip the event on wxGTK
             event.Skip()
             wx.CallAfter(wx.SafeYield, self, True)
+
+
+    def SetShape(self, region):
+        """
+        If the platform supports it, sets the shape of the window to that depicted by `region`.
+        The system will not display or respond to any mouse event for the pixels that lie
+        outside of the region. To reset the window to the normal rectangular shape simply call
+        L{SetShape} again with an empty region. 
+
+        :param `region`: the shape of the frame.
+
+        :note: Overridden for wxMac.        
+        """
+        
+        if wx.Platform == '__WXMAC__':
+            # HACK so we don't crash when SetShape is called
+            return
+        else:
+            super(AuiSingleDockingGuide, self).SetShape(region)
 
 
     def SetValid(self, valid):
@@ -8118,9 +8143,6 @@ class AuiManager(wx.EvtHandler):
 
         dc = event.GetDC()
         
-        if wx.Platform == "__WXMAC__":
-            dc.Clear()
-
         for part in self._uiparts:
         
             # don't draw hidden pane items or items that aren't windows
@@ -8286,10 +8308,9 @@ class AuiManager(wx.EvtHandler):
         :note: This is intentionally empty (excluding wxMAC) to reduce
          flickering while drawing.
         """
-        
-        if wx.Platform == "__WXMAC__":
-            event.Skip()        
 
+        if wx.Platform == "__WXMAC__":
+            event.Skip()
 
     def OnSize(self, event):
         """
