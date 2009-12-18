@@ -31,6 +31,7 @@ import wx
 import peppy.third_party.aui as aui
 import wx.stc
 from wx.lib.pubsub import Publisher
+from peppy.third_party.pubsub import pub
 
 import peppy.vfs as vfs
 from peppy.stcbase import *
@@ -533,6 +534,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.popup = None
         self.status_info = None
         
+        self.pending_idle_messages = {}
         self.ready_for_idle_events = False
         
         # Cache for anything that should be attached to this instance of the
@@ -1103,8 +1105,31 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         for the major mode instance.
         """
         #dprint(u"Idle starting for %s at %f" % (self.buffer.url, time.time()))
+        if self.pending_idle_messages:
+            self.processPendingIdleMessages()
         self.idlePostHook()
         #dprint(u"Idle finished for %s at %f" % (self.buffer.url, time.time()))
+    
+    def sendMessageWhenIdle(self, topic, **kwargs):
+        """Defers a pubsub3 message until idle processing
+        
+        @param topic: message topic
+        @kwargs kwargs: keyword arguments for pubsub3 message
+        """
+        if topic not in self.pending_idle_messages:
+            dprint("deferring till idle: %s, %s" % (topic, kwargs))
+            self.pending_idle_messages[topic] = kwargs
+    
+    def processPendingIdleMessages(self):
+        """Idle message handler for messages deferred by L{sendMessageWhenIdle}
+        
+        Called internally by L{idleHandler} and shouldn't be called directly.
+        """
+        messages = self.pending_idle_messages
+        self.pending_idle_messages = {}
+        for topic, kwargs in messages.iteritems():
+            dprint("Sending: %s, %s" % (topic, kwargs))
+            pub.sendMessage(topic, **kwargs)
 
     def idlePostHook(self):
         """Hook for subclasses to process during idle time.

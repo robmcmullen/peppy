@@ -730,7 +730,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         if 'fold_hierarchy' in stc_class_info:
             #dprint("changed fold at line=%d, pos=%d" % (evt.Line, evt.Position))
             stc_class_info['fold_changed'].append(evt.Line)
-            pub.sendMessage('fold_changed', mode=self)
+            self.sendMessageWhenIdle('fold_changed', mode=self)
     
     def getFoldHierarchy(self):
         """Get the current fold hierarchy, returning the existing copy if there
