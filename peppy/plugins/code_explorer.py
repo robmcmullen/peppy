@@ -41,12 +41,8 @@ class CodeExplorerMinorMode(MinorMode, ct.CustomTreeCtrl):
         return hasattr(modecls, 'getFoldHierarchy')
 
     def __init__(self, parent, **kwargs):
-        if wx.Platform == '__WXMSW__':
-            style = wx.TR_HAS_BUTTONS
-            self.has_root = True
-        else:
-            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS|ct.TR_NO_LINES
-            self.has_root = False
+        style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS|ct.TR_NO_LINES
+        self.has_root = False
         ct.CustomTreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         MinorMode.__init__(self, parent, **kwargs)
         self.root = self.AddRoot(self.mode.getTabName())
