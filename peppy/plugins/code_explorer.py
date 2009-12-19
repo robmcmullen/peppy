@@ -17,7 +17,6 @@ import os
 import wx
 
 from peppy.third_party.pubsub import pub
-import peppy.third_party.customtreectrl as ct
 
 from peppy.debug import *
 from peppy.yapsy.plugins import *
@@ -25,7 +24,6 @@ from peppy.minor import *
 from peppy.actions import *
 
 
-#class CodeExplorerMinorMode(ct.CustomTreeCtrl, MinorMode):
 class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
     """Tree control to display Stani's fold explorer.
     """
@@ -42,13 +40,11 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         return hasattr(modecls, 'getFoldHierarchy')
 
     def __init__(self, parent, **kwargs):
-#        style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS|ct.TR_NO_LINES
-#        ct.CustomTreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         if wx.Platform == '__WXMSW__':
             style = wx.TR_HAS_BUTTONS
             self.has_root = True
         else:
-            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS|ct.TR_NO_LINES
+            style = wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS
             self.has_root = False
         wx.TreeCtrl.__init__(self, parent, -1, size=(self.classprefs.best_width, self.classprefs.best_height), style=style)
         MinorMode.__init__(self, parent, **kwargs)
@@ -89,15 +85,17 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
         if hierarchy != self.hierarchy:
             self.hierarchy = hierarchy
             
-            # native TreeCtrl doesn't Freeze on GTK, which prompted the move to
-            # the CustomTreeCtrl
             self.Freeze()
-            self.DeleteChildren(self.root)
             self.current_line = self.mode.GetCurrentLine()
             self.item_before = None
-            self.appendChildren(self.root,self.hierarchy)
-            if self.has_root:
+            top_item = self.GetFirstVisibleItem()
+            #print("Top: %s" % self.GetItemText(top_item))
+            self.replaceChildren(self.root,self.hierarchy)
+            self.highlightCurrentItem(self.root)
+            if self.has_root and not self.IsExpanded(self.root):
                 self.Expand(self.root)
+            #top_item = self.GetFirstVisibleItem()
+            #print("Top: %s" % self.GetItemText(top_item))
             self.Thaw()
         else:
             self.UnselectAll()
@@ -109,23 +107,11 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
     
     def appendChildren(self, wxParent, nodeParent):
         """Recursive capable function to add items from the fold explorer
-        hierarchy to the tree, as well as highlighting the initial item.
-        
-        For the initial item highlighing, uses the current_line instance
-        attribute to determine the line number.
+        hierarchy to the tree
         """
         for nodeItem in nodeParent.children:
             if nodeItem.show:
                 wxItem = self.AppendItem(wxParent, nodeItem.text.strip())
-                if self.current_line is not None:
-                    # Handle the determination of the current entry to be
-                    # highlighted.
-                    if nodeItem.start <= self.current_line:
-                        self.item_before = wxItem
-                    elif self.item_before is not None:
-                        self.SelectItem(self.item_before)
-                        self.current_line = None
-                        self.item_before = None
                 self.SetPyData(wxItem, nodeItem)
                 self.appendChildren(wxItem, nodeItem)
                 if nodeItem.expanded:
@@ -135,6 +121,69 @@ class CodeExplorerMinorMode(MinorMode, wx.TreeCtrl):
             else:
                 # Append children of a hidden node to the parent
                 self.appendChildren(wxParent, nodeItem)
+    
+    def replaceChildren(self, wxParent, nodeParent):
+        """Recursive capable function to add items from the fold explorer
+        hierarchy to the tree.
+        
+        This method replaces
+        """
+        wxItem, cookie = self.GetFirstChild(wxParent)
+        new_items = nodeParent.children
+        index = 0
+        while wxItem and index < len(new_items):
+            nodeItem = new_items[index]
+            if nodeItem.show:
+                old_text = self.GetItemText(wxItem)
+                new_text = nodeItem.text.strip()
+                if old_text != new_text:
+                    #print("Replacing text: %s -> %s" % (old_text, new_text))
+                    self.SetItemText(wxItem, nodeItem.text.strip())
+                # always replace the pydata because the line numbers may have
+                # shifted above this node
+                self.SetPyData(wxItem, nodeItem)
+                self.replaceChildren(wxItem, nodeItem)
+                if nodeItem.expanded:
+                    self.Expand(wxItem)
+                else:
+                    self.Collapse(wxItem)
+            else:
+                # Append children of a hidden node to the parent
+                self.replaceChildren(wxParent, nodeItem)
+            wxItem, cookie = self.GetNextChild(wxParent, cookie)
+            index += 1
+        if wxItem:
+            # Have more items in current tree, but no items left to add.  Need
+            # to remove the remaining items in this level of the tree (as well
+            # as any children of the items).
+            to_delete = []
+            while wxItem:
+                to_delete.append(wxItem)
+                wxItem, cookie = self.GetNextChild(wxParent, cookie)
+            #print("deleting %d items" % len(to_delete))
+            for item in to_delete:
+                if self.ItemHasChildren(item):
+                    self.DeleteChildren(item)
+                self.Delete(item)
+        else:
+            # have more items in the new list, so have to add them after the
+            # last existing item
+#            if len(new_items) - index > 0:
+#                print("adding %d items" % (len(new_items) - index))
+            while index < len(new_items):
+                nodeItem = new_items[index]
+                if nodeItem.show:
+                    wxItem = self.AppendItem(wxParent, nodeItem.text.strip())
+                    self.SetPyData(wxItem, nodeItem)
+                    self.appendChildren(wxItem, nodeItem)
+                    if nodeItem.expanded:
+                        self.Expand(wxItem)
+                    else:
+                        self.Collapse(wxItem)
+                else:
+                    # Append children of a hidden node to the parent
+                    self.appendChildren(wxParent, nodeItem)
+                index += 1
     
     def highlightCurrentItem(self, parent):
         """Recursive capable function used to find the item that should be
