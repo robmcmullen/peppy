@@ -45,6 +45,102 @@ from peppy.lib.userparams import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
 from peppy.lib.springtabs import SpringTabs
+from peppy.lib.serializer import PickleSerializerMixin
+
+
+class MajorModeLayout(ClassPrefs, debugmixin):
+    """Class to manage the AuiManager perspectives for major modes
+    
+    Implements a set of classmethods to restore and save the AuiManager layout
+    (perspectives in Aui terms) so that given the major mode and a URL, the
+    layout of all the minor modes is restored to the same as when the user
+    last edited the mode.
+    
+    Note that it is dependent on the major mode AND the URL; so the
+    layout for file://some/path.txt in HexEdit mode is independent of
+    file://some/path.txt in TextMode.
+    """
+    default_classprefs = (
+        StrParam('layout_file', 'layout.dat', 'filename within config directory to use to store major/minor mode layout information'),
+        )
+    
+    # a multi-level dict keyed first on major mode keyword, then the stringified
+    # version of the URL.  I.e.  layout['Python']['file://some/path.txt']
+    # returns the layout object.  (Note: the layout object is opaque as far as
+    # this class is concerned.)
+    layout = None
+
+    class Serializer(PickleSerializerMixin):
+        """Serializer to restore the layout dict to a pickle file.
+        
+        """
+        def getSerializedFilename(self):
+            filename = wx.GetApp().getConfigFilePath(MajorModeLayout.classprefs.layout_file)
+            return filename
+        
+        def unpackVersion1(self, data):
+            MajorModeLayout.layout = data
+        
+        def createVersion1(self):
+            MajorModeLayout.layout = {}
+        
+        def packVersion1(self):
+            return MajorModeLayout.layout
+    
+    @classmethod
+    def loadLayout(cls):
+        loader = cls.Serializer()
+        loader.loadStateFromFile()
+    
+    @classmethod
+    def getLayoutFirstTime(cls, major_mode_keyword, url):
+        #dprint("getLayoutFirstTime")
+        cls.loadLayout()
+        cls.getLayout = cls.getLayoutSubsequent
+        return cls.getLayoutSubsequent(major_mode_keyword, url)
+    
+    @classmethod
+    def getLayoutSubsequent(cls, major_mode_keyword, url):
+        #dprint("getLayoutSubsequent")
+        try:
+            #dprint(cls.layout[major_mode_keyword])
+            return cls.layout[major_mode_keyword][str(url)]
+        except KeyError:
+            return {}
+    
+    # First time through, call the loader
+    getLayout = getLayoutFirstTime
+    
+    @classmethod
+    def saveLayout(cls):
+        saver = cls.Serializer()
+        saver.saveStateToFile()
+    
+    @classmethod
+    def updateLayoutFirstTime(cls, major_mode_keyword, url, perspective):
+        #dprint("updateLayoutFirstTime")
+        if cls.layout is None:
+            cls.loadLayout()
+        cls.updateLayout = cls.updateLayoutSubsequent
+        cls.updateLayoutSubsequent(major_mode_keyword, url, perspective)
+    
+    @classmethod
+    def updateLayoutSubsequent(cls, major_mode_keyword, url, perspective):
+        #dprint("updateLayoutSubsequent")
+        if major_mode_keyword not in cls.layout:
+            cls.layout[major_mode_keyword] = {}
+        
+        cls.layout[major_mode_keyword][str(url)] = perspective
+    
+    # First time through, make sure the layout has been loaded
+    updateLayout = updateLayoutFirstTime
+    
+    @classmethod
+    def psQuit(cls):
+        #dprint("quitting....")
+        cls.saveLayout()
+    
+pub.subscribe(MajorModeLayout.psQuit, 'application.quit')
 
 
 class MajorModeWrapper(wx.Panel, debugmixin):
@@ -57,6 +153,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.editwin=None # user interface window
         self.minibuffer=None
         self.sidebar=None
+        self.minors = None
         
         wx.Panel.__init__(self, parent, -1, style=wx.NO_BORDER, pos=(9000,9000))
         box=wx.BoxSizer(wx.VERTICAL)
@@ -81,6 +178,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             box.Add(hsplit, 1, wx.EXPAND)
         self._mgr = aui.AuiManager()
         self._mgr.SetManagedWindow(self.splitter)
+        self.Bind(aui.EVT_AUI_PERSPECTIVE_CHANGED, self.perspectiveChanged)
         
         if self.spring_aui:
             self._mgr.AddPane(self.spring, aui.AuiPaneInfo().
@@ -89,8 +187,6 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                               CloseButton(False).CaptionVisible(False).
                               LeftDockable(False).RightDockable(False))
         self._mgr.Update()
-        
-        self.minors = None
 
     def __del__(self):
         self.dprint("deleting %s: editwin=%s %s" % (self.__class__.__name__, self.editwin, self.getTabName()))
@@ -122,11 +218,15 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("creating major mode %s" % requested)
         self.editwin = requested(self.splitter, self, buffer, frame)
         buffer.addViewer(self.editwin)
-        self._mgr.AddPane(self.editwin, aui.AuiPaneInfo().Name("main").
-                          CenterPane())
+        paneinfo = aui.AuiPaneInfo().Name("main").CenterPane()
+        layout = MajorModeLayout.getLayout(self.editwin.keyword,
+                                           self.editwin.buffer.url)
+        if "main" in layout:
+            self._mgr.LoadPaneInfo(layout["main"], paneinfo)
+        self._mgr.AddPane(self.editwin, paneinfo)
         
         try:
-            self.createMajorModeDetails()
+            self.createMajorModeDetails(layout)
         except:
             # Failure creating something during the major mode initialization
             # process; remove the partially created mode from the tabbed pane
@@ -148,7 +248,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
                 buffer.defaultmode = requested
         return self.editwin
 
-    def createMajorModeDetails(self):
+    def createMajorModeDetails(self, layout):
         """Driver to create all the hooks, event listeners, and minor modes
         of the new major mode.
         
@@ -173,7 +273,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         self.dprint("createListenersPostHook done in %0.5fs" % (time.time() - start))
         self.editwin.createPostHook()
         self.dprint("Created major mode in %0.5fs" % (time.time() - start))
-        self.loadMinorModes()
+        self.loadMinorModes(layout)
         self.dprint("loadMinorModes done in %0.5fs" % (time.time() - start))
         self.editwin.loadMinorModesPostHook()
         self.dprint("loadMinorModesPostHook done in %0.5fs" % (time.time() - start))
@@ -221,8 +321,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
             icon = self.icon
         return getIconBitmap(icon)
     
-
-    def loadMinorModes(self):
+    def loadMinorModes(self, layout):
         """Find the listof minor modes to load and create them."""
         
         # get list of minor modes that should be displayed at startup
@@ -236,7 +335,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         # if the class name or the keyword of the minor mode shows up
         # in the list, turn it on.
         self.minors = MinorModeList(self.splitter, self._mgr, self.editwin,
-                                    minor_names)
+                                    initial=minor_names, perspectives=layout)
 
     def deleteMinorModes(self):
         """Remove the minor modes from the AUI Manager and delete them."""
@@ -258,6 +357,7 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         
         entry = self.minors.create(name)
         self._mgr.Update()
+        self.updateLayout()
         return entry.win
 
     def getActiveMinorModes(self, ignore_hidden=False):
@@ -265,6 +365,37 @@ class MajorModeWrapper(wx.Panel, debugmixin):
         if self.minors:
             return self.minors.getActive(ignore_hidden)
         return []
+    
+    def getPerspective(self):
+        layout = {}
+        paneinfo = self._mgr.GetPane(self.editwin)
+        perspective = self._mgr.SavePaneInfo(paneinfo)
+        layout[paneinfo.name] = perspective
+        for minor in self.getActiveMinorModes():
+            paneinfo = self._mgr.GetPane(minor)
+            if paneinfo.IsShown():
+                # Force the current size of the minor mode to be the best size,
+                # otherwise on restart the AuiManager will restore the default
+                # saved best size instead of the last size set by the user
+                size = minor.GetSize()
+                paneinfo.BestSize(size)
+                perspective = self._mgr.SavePaneInfo(paneinfo)
+                layout[paneinfo.name] = perspective
+        #dprint(layout)
+        return layout
+    
+    def getPerspectiveByName(self, name):
+        layout = self.getPerspective()
+        return layout[name]
+    
+    def perspectiveChanged(self, evt):
+        #dprint("Changed!!!!")
+        self.updateLayout()
+    
+    def updateLayout(self):
+        if self.editwin is not None:
+            layout = self.getPerspective()
+            MajorModeLayout.updateLayout(self.editwin.keyword, self.editwin.buffer.url, layout)
 
     def setMinibuffer(self, minibuffer=None):
         """Convenience method to display the minibuffer.

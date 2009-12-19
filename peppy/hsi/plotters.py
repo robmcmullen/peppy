@@ -71,9 +71,9 @@ class HSIPlotMinorMode(HSIMinorModeMixin, plotter.MultiPlotter,
     
     def setCubeView(self, cubeview):
         if self.isPlottableView(cubeview):
-            self.paneinfo.Show(True)
+            self.getPaneInfo().Show(True)
         else:
-            self.paneinfo.Show(False)
+            self.getPaneInfo().Show(False)
         self.mode.updateAui()
         self.setupTitle()
         self.setupAxes(cubeview)

@@ -9,6 +9,7 @@ import __builtin__
 
 import wx
 from wx.lib.pubsub import Publisher
+from peppy.third_party.pubsub import pub
 
 import peppy.vfs as vfs
 
@@ -1013,6 +1014,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
     def quit(self):
         doit=self.quitHook()
         if doit:
+            pub.sendMessage('application.quit')
             frame = self.getTopFrame()
             frame.closeAllWindows()
             wx.GetApp().Exit()

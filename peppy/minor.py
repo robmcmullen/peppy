@@ -115,7 +115,6 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.parent = parent
         self.mode = mode
         self.window = None
-        self.paneinfo = None
         
         wx.CallAfter(self.initPostCallback)
     
@@ -173,6 +172,15 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         pass
 
     def getPaneInfo(self):
+        """Return the AuiPaneInfo object for this mode.
+        
+        Note: can't keep a reference to this in the minor mode because the AUI
+        manager may recreate the object at will.
+        """
+        paneinfo = self.mode.wrapper._mgr.GetPane(self)
+        return paneinfo
+
+    def createPaneInfo(self):
         """Create the AuiPaneInfo object for this minor mode.
         """
         paneinfo = self.getDefaultPaneInfo()
@@ -222,7 +230,7 @@ class MinorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         """Utility method to make the minor mode visible if it isn't already.
         
         """
-        paneinfo = self.mode.wrapper._mgr.GetPane(self)
+        paneinfo = self.getPaneInfo()
         if not paneinfo.IsShown():
             paneinfo.Show(True)
             self.mode.wrapper._mgr.Update()
@@ -238,7 +246,7 @@ class MinorModeList(debugmixin):
     """Container holding a list of minor modes attached to a parent major mode
     
     """
-    def __init__(self, parent, mgr, mode=None, initial=[]):
+    def __init__(self, parent, mgr, mode=None, initial=[], perspectives={}):
         self.mode = mode
         self.map = {}
         self.order = []
@@ -255,7 +263,12 @@ class MinorModeList(debugmixin):
                 if True:
                     self.map[minorcls.keyword] = MinorModeEntry(minorcls)
                     self.order.append(minorcls.keyword)
-                    if minorcls.__name__ in initial or minorcls.keyword in initial:
+                    # A minor mode will be shown either if it's been saved the
+                    # last time the user edited this file, or if it exists in
+                    # the minor mode startup list
+                    if minorcls.keyword in perspectives:
+                        self.create(minorcls.keyword, perspectives[minorcls.keyword])
+                    elif minorcls.__name__ in initial or minorcls.keyword in initial:
                         self.create(minorcls.keyword)
             if self.mode.wrapper.spring_aui:
                 spring_paneinfo = self.mgr.GetPane(self.mode.wrapper.spring)
@@ -292,8 +305,8 @@ class MinorModeList(debugmixin):
         """
         entry = self._getEntry(index)
         if entry.win:
-            assert self.dprint("index=%d shown=%s" % (index, entry.win.paneinfo.IsShown()))
-            return entry.win.paneinfo.IsShown()
+            assert self.dprint("index=%d shown=%s" % (index, entry.win.getPaneInfo().IsShown()))
+            return entry.win.getPaneInfo().IsShown()
         assert self.dprint("index=%d shown=%s" % (index, False))
         return False
     
@@ -306,7 +319,8 @@ class MinorModeList(debugmixin):
         """
         entry = self._getEntry(index)
         if entry.win:
-            entry.win.paneinfo.Show(not entry.win.paneinfo.IsShown())
+            paneinfo = entry.win.getPaneInfo()
+            paneinfo.Show(not paneinfo.IsShown())
         else:
             self.create(self.order[index])
         self.mgr.Update()
@@ -320,10 +334,10 @@ class MinorModeList(debugmixin):
         """
         for entry in self.map.itervalues():
             if entry.win:
-                entry.win.paneinfo.Show(False)
+                entry.win.getPaneInfo().Show(False)
         self.mgr.Update()
 
-    def create(self, keyword):
+    def create(self, keyword, perspective=None):
         """Create the minor mode.
         
         Create the minor mode given its keyword.  It is shown automatically.
@@ -331,11 +345,12 @@ class MinorModeList(debugmixin):
         entry = self.map[keyword]
         entry.win = entry.minorcls(self.parent, mode=self.mode)
         entry.win.activateMinorMode()
-        paneinfo = entry.win.getPaneInfo()
+        paneinfo = entry.win.createPaneInfo()
+        if perspective:
+            self.mgr.LoadPaneInfo(perspective, paneinfo)
         paneinfo.Show(True)
         try:
             self.mgr.AddPane(entry.win, paneinfo)
-            entry.win.paneinfo = self.mgr.GetPane(entry.win)
         except Exception, e:
             assert self.dprint("Failed adding minor mode %s: error: %s" % (keyword, str(e)))
         assert self.dprint("Created minor mode %s: %s" % (keyword, entry))
@@ -349,7 +364,7 @@ class MinorModeList(debugmixin):
         """
         for entry in self.map.itervalues():
             if entry.win:
-                if ignore_hidden and not entry.win.paneinfo.IsShown():
+                if ignore_hidden and not entry.win.getPaneInfo().IsShown():
                     continue
                 yield entry.win
 
