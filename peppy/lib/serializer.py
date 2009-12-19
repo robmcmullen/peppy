@@ -11,13 +11,16 @@ class PickleSerializerMixin(object):
     """Utility class to serialize an object's interesting data
     
     This mixin class implements the framework to save and restore data
-    to a file.  It requires at least two methods to be defined in
-    the subclassing object: C{unpackVersion[version_identifier]} and
+    to a file.  It requires at least three methods to be defined in
+    the subclassing object:
+    
+    C{unpackVersion[version_identifier]}
+    C{createVersion[version_identifier]}
     C{packVersion[version_identifier]}
     
     The version identifier can be an integer or string value with no other
-    syntactic restrictions.  A simple example would be C{unpackVersion1} and
-    C{packVersion1}.
+    syntactic restrictions.  A simple example would be C{unpackVersion1},
+    C{packVersion1}, and C{createVersion1}.
     """
     def __init__(self, default_version=1):
         self._ps_default_version = default_version
@@ -39,6 +42,12 @@ class PickleSerializerMixin(object):
         that contains the pickled data, load the raw data, and calls the
         appropriate unpackVersion* method to restore the instance state.
         
+        The createVersion* methods provide a hook for the subclass to define
+        default values when the pickled data doesn't exist.  If C{filename}
+        isn't found, the method L{createVersion[default_version]} is called,
+        where the value used for C{default_version} is the default version
+        passed to the constructor.
+        
         @kwarg filename: alternate filename for pickled data
         
         @raises RuntimeError: if incorrect filename used or unknown packing
@@ -53,18 +62,23 @@ class PickleSerializerMixin(object):
         if filename is None:
             raise RuntimeError("Serialized filename must be specified")
         
-        fh = open(filename, "rb")
-        bytes = fh.read()
-        fh.close()
-        if bytes:
-            version, data = pickle.loads(bytes)
-            unpack_method = "unpackVersion%s" % version
-            if hasattr(self, unpack_method):
-                unpacker = getattr(self, unpack_method)
-                unpacker(data)
-            else:
-                raise RuntimeError("Unknown version %s found when trying to restore from %s" % (version, filename))
-            self._ps_restored = True
+        if os.path.exists(filename):
+            fh = open(filename, "rb")
+            bytes = fh.read()
+            fh.close()
+            if bytes:
+                version, data = pickle.loads(bytes)
+                unpack_method = "unpackVersion%s" % version
+                if hasattr(self, unpack_method):
+                    unpacker = getattr(self, unpack_method)
+                    unpacker(data)
+                else:
+                    raise RuntimeError("Unknown version %s found when trying to restore from %s" % (version, filename))
+                self._ps_restored = True
+        else:
+            create_method = "createVersion%s" % self._ps_default_version
+            create = getattr(self, create_method)
+            create()
     
     def saveStateToFile(self, filename=None, version=None):
         """Save the instance attributes in a pickle file
