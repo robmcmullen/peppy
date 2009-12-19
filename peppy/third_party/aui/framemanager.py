@@ -6155,7 +6155,8 @@ class AuiManager(wx.EvtHandler):
                     p.window.Show(p.IsShown())
 
             if p.frame and p.needsTransparency:
-                p.frame.SetTransparent(p.transparent)
+                if p.frame.IsShown():
+                    p.frame.SetTransparent(p.transparent)
                 p.needsTransparency = False
 
             # if "active panes" are no longer allowed, clear
