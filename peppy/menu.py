@@ -449,8 +449,6 @@ class UserAccelerators(AcceleratorManager, debugmixin):
             if title in needed:
                 order.append(title)
 
-        if aui.toolbar_reverse_order:
-            order.reverse()
         for title in order:
             tb = self.title_to_toolbar[title]
             tb.Realize()
