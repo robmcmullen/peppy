@@ -287,6 +287,12 @@ AUI_MGR_PREVIEW_MINIMIZED_PANES  = 1 << 11
 """ Slide in and out minimized panes to preview them. """
 AUI_MGR_WHIDBEY_DOCKING_GUIDES   = 1 << 12
 """ Use the new Whidbey-style bitmaps as docking guides. """
+AUI_MGR_SMOOTH_DOCKING           = 1 << 13
+""" Performs a "smooth" docking of panes (a la PyQT). """
+AUI_MGR_USE_NATIVE_MINIFRAMES    = 1 << 14
+""" Use miniframes with native caption bar as floating panes instead or custom
+drawn caption bars (forced on wxMac). """
+
 
 AUI_MGR_DEFAULT = AUI_MGR_ALLOW_FLOATING | AUI_MGR_TRANSPARENT_HINT | \
                   AUI_MGR_HINT_FADE | AUI_MGR_NO_VENETIAN_BLINDS_FADE

@@ -13,7 +13,7 @@
 # Python Code By:
 #
 # Andrea Gavana, @ 23 Dec 2005
-# Latest Revision: 23 Nov 2009, 11.00 GMT
+# Latest Revision: 18 Dec 2009, 09.00 GMT
 #
 # For All Kind Of Problems, Requests Of Enhancements And Bug Reports, Please
 # Write To Me At:
@@ -2165,6 +2165,7 @@ class AuiSingleDockingGuide(AuiDockingGuide):
 
         style = wx.FRAME_TOOL_WINDOW | wx.STAY_ON_TOP | \
                 wx.FRAME_NO_TASKBAR | wx.NO_BORDER
+
         # Use of FRAME_SHAPED on wxMac causes the frame to be visible
         # breaking the docking hints.
         if wx.Platform != '__WXMAC__':
@@ -2776,9 +2777,23 @@ class AuiFloatingFrame(wx.MiniFrame):
         :param `title`: the caption to be displayed on the frame's title bar.
         :param `style`: the window style.
         """
-
+            
         if pane and pane.IsResizeable():
             style += wx.RESIZE_BORDER
+        if pane:
+            self._is_toolbar = pane.IsToolbar()
+
+        self._useNativeMiniframes = False
+        if AuiManager_UseNativeMiniframes(owner_mgr):
+            # On wxMac we always use native miniframes
+            self._useNativeMiniframes = True
+            style += wx.CAPTION + wx.SYSTEM_MENU
+            if pane.HasCloseButton():
+                style += wx.CLOSE_BOX
+            if pane.HasMaximizeButton():
+                style += wx.MAXIMIZE_BOX
+            if pane.HasMinimizeButton():
+                style += wx.MINIMIZE_BOX
             
         wx.MiniFrame.__init__(self, parent, id, title, pos=pane.floating_pos,
                               size=pane.floating_size, style=style, name="auiFloatingFrame")
@@ -2789,16 +2804,31 @@ class AuiFloatingFrame(wx.MiniFrame):
         self.Bind(wx.EVT_CLOSE, self.OnClose)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
-        self.Bind(wx.EVT_MOVE, self.OnMove)
         self.Bind(wx.EVT_TIMER, self.OnCheckFlyTimer, self._check_fly_timer)
         self.Bind(wx.EVT_TIMER, self.OnFlyTimer, self._fly_timer)
         self.Bind(EVT_AUI_FIND_MANAGER, self.OnFindManager)
+
+        if self._useNativeMiniframes:
+            self.Bind(wx.EVT_MOVE, self.OnMoveEvent)
+            self.Bind(wx.EVT_MOVING, self.OnMoveEvent)
+            self.Bind(wx.EVT_IDLE, self.OnIdle)
+            self._useNativeMiniframes = True
+            self.SetExtraStyle(wx.WS_EX_PROCESS_IDLE)
+        else:
+            self.Bind(wx.EVT_MOVE, self.OnMove)
 
         self._fly = False
         self._send_size = True
         self._alpha_amount = 255
         
         self._owner_mgr = owner_mgr
+        self._moving = False
+        self._lastDirection = None
+
+        self._last_rect = wx.Rect()
+        self._last2_rect = wx.Rect()
+        self._last3_rect = wx.Rect()
+
         self._mgr = AuiManager()
         self._mgr.SetManagedWindow(self)
         self._mgr.SetArtProvider(owner_mgr.GetArtProvider())
@@ -2846,6 +2876,7 @@ class AuiFloatingFrame(wx.MiniFrame):
         :param `pane`: the L{AuiPaneInfo} to analyze.
         """
 
+        self._is_toolbar = pane.IsToolbar()
         self._pane_window = pane.window
 
         if isinstance(pane.window, auibar.AuiToolBar):
@@ -2860,7 +2891,7 @@ class AuiFloatingFrame(wx.MiniFrame):
                        PaneBorder(False). \
                        Layer(0).Row(0).Position(0)
 
-        if not contained_pane.HasGripper():
+        if not contained_pane.HasGripper() and not self._useNativeMiniframes:
             contained_pane.CaptionVisible(True)
 
         indx = self._owner_mgr._panes.index(pane)
@@ -2929,7 +2960,9 @@ class AuiFloatingFrame(wx.MiniFrame):
                 else:
                     size.x += self._owner_mgr._art.GetMetric(AUI_DOCKART_GRIPPER_SIZE)
 
-            size.y += self._owner_mgr._art.GetMetric(AUI_DOCKART_CAPTION_SIZE)
+            if not self._useNativeMiniframes:
+                size.y += self._owner_mgr._art.GetMetric(AUI_DOCKART_CAPTION_SIZE)
+                
             pane.floating_size = size
             
             self.SetClientSize(size)
@@ -2975,7 +3008,11 @@ class AuiFloatingFrame(wx.MiniFrame):
 
             if isinstance(self._pane_window, auibar.AuiToolBar):
                 pane.window.SetAuiManager(self._owner_mgr)
-            
+
+            # if we do not do this, then we can crash...
+            if self._owner_mgr and self._owner_mgr._action_window == self:
+                self._owner_mgr._action_window = None
+
             self.Destroy()
     
 
@@ -2995,11 +3032,144 @@ class AuiFloatingFrame(wx.MiniFrame):
         Handles the ``wx.EVT_MOVE`` event for L{AuiFloatingFrame}.
 
         :param `event`: a `wx.MoveEvent` to be processed.
+
+        :note: This event is not processed on wxMAC or if L{AuiManager} is not using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.
         """
 
         if self._owner_mgr:
             self._owner_mgr.OnFloatingPaneMoved(self._pane_window, event)
                 
+
+    def OnMoveEvent(self, event):
+        """
+        Handles the ``wx.EVT_MOVE`` and ``wx.EVT_MOVING`` events for L{AuiFloatingFrame}.
+
+        :param `event`: a `wx.MoveEvent` to be processed.
+
+        :note: This event is only processed on wxMAC or if L{AuiManager} is using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.
+        """
+
+        win_rect = self.GetRect()
+
+        if win_rect == self._last_rect:
+            return
+
+        # skip the first move event
+        if self._last_rect.IsEmpty():        
+            self._last_rect = wx.Rect(*win_rect)
+            return
+        
+        # skip if moving too fast to avoid massive redraws and
+        # jumping hint windows
+        if abs(win_rect.x - self._last_rect.x) > 3 or abs(win_rect.y - self._last_rect.y) > 3:
+            self._last3_rect = wx.Rect(*self._last2_rect)
+            self._last2_rect = wx.Rect(*self._last_rect)
+            self._last_rect = wx.Rect(*win_rect)
+            return
+
+        # prevent frame redocking during resize
+        if self._last_rect.GetSize() != win_rect.GetSize():
+            self._last3_rect = wx.Rect(*self._last2_rect)
+            self._last2_rect = wx.Rect(*self._last_rect)
+            self._last_rect = wx.Rect(*win_rect)
+            return
+
+        self._last3_rect = wx.Rect(*self._last2_rect)
+        self._last2_rect = wx.Rect(*self._last_rect)
+        self._last_rect = wx.Rect(*win_rect)
+
+        if not wx.GetMouseState().LeftDown():
+            return
+
+        if not self._moving:        
+            self.OnMoveStart(event)
+            self._moving = True
+
+        if self._last3_rect.IsEmpty():
+            return
+
+        self.OnMoving(event)
+
+
+    def OnIdle(self, event):
+        """
+        Handles the ``wx.EVT_IDLE`` event for L{AuiFloatingFrame}.
+
+        :param `event`: a `wx.IdleEvent` event to be processed.
+
+        :note: This event is only processed on wxMAC or if L{AuiManager} is using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.        
+        """
+
+        if self._moving:        
+            if not wx.GetMouseState().LeftDown():            
+                self._moving = False
+                self.OnMoveFinished()
+            else:            
+                event.RequestMore()
+
+        
+    def OnMoveStart(self, event):
+        """
+        The user has just started moving the floating pane.
+
+        :param `event`: an instance of `wx.MouseEvent`.
+    
+        :note: This method is used only on wxMAC or if L{AuiManager} is using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.
+        """
+
+        # notify the owner manager that the pane has started to move
+        if self._owner_mgr:
+            if self._owner_mgr._from_move:
+                return
+            self._owner_mgr._action_window = self._pane_window
+            point = wx.GetMousePosition()
+            action_offset = point - self.GetPosition()
+
+            if self._is_toolbar:
+                self._owner_mgr._toolbar_action_offset = action_offset
+                self._owner_mgr.OnMotion_DragToolbarPane(point)
+            else:
+                self._owner_mgr._action_offset = action_offset
+                self._owner_mgr.OnMotion_DragFloatingPane(point)
+
+    
+    def OnMoving(self, event):
+        """
+        The user is moving the floating pane.
+
+        :param `event`: an instance of `wx.MouseEvent`.
+        
+        :note: This method is used only on wxMAC or if L{AuiManager} is using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.
+        """
+
+        # notify the owner manager that the pane is moving
+        self.OnMoveStart(event)
+        
+
+    def OnMoveFinished(self):
+        """
+        The user has just finished moving the floating pane.
+
+        :note: This method is used only on wxMAC or if L{AuiManager} is using the
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style.
+        """
+
+        # notify the owner manager that the pane has finished moving
+        if self._owner_mgr:
+            self._owner_mgr._action_window = self._pane_window
+            point = wx.GetMousePosition()
+            if self._is_toolbar:
+                self._owner_mgr.OnLeftUp_DragToolbarPane(point)
+            else:
+                self._owner_mgr.OnLeftUp_DragFloatingPane(point)
+
+            self._owner_mgr.OnFloatingPaneMoved(self._pane_window, point)
+    
 
     def OnCheckFlyTimer(self, event):
         """
@@ -3657,6 +3827,27 @@ def AuiManager_HasLiveResize(manager):
         return (manager.GetFlags() & AUI_MGR_LIVE_RESIZE) == AUI_MGR_LIVE_RESIZE
 
 
+# Convenience function
+def AuiManager_UseNativeMiniframes(manager):
+    """
+    Static function which returns if the input `manager` should use native `wx.MiniFrame` as
+    floating panes.
+
+    :param `manager`: an instance of L{AuiManager}.
+
+    :note: Thie method always returns ``True`` on wxMac as this platform doesn't have
+     the ability to use custom drawn miniframes.
+    """
+
+    # With Core Graphics on Mac, it's not possible to show sash feedback,
+    # so we'll always use live update instead.
+    
+    if wx.Platform == "__WXMAC__":
+        return True
+    else:
+        return (manager.GetFlags() & AUI_MGR_USE_NATIVE_MINIFRAMES) == AUI_MGR_USE_NATIVE_MINIFRAMES
+
+
 def GetManager(window):
     """
     This function will return the aui manager for a given window.
@@ -3766,14 +3957,17 @@ class AuiManager(wx.EvtHandler):
          ``AUI_MGR_ANIMATE_FRAMES``           Fade-out floating panes when they are closed (all platforms which support frames transparency) and show a moving rectangle when they are docked (Windows < Vista and GTK only)
          ``AUI_MGR_AERO_DOCKING_GUIDES``      Use the new Aero-style bitmaps as docking guides
          ``AUI_MGR_PREVIEW_MINIMIZED_PANES``  Slide in and out minimized panes to preview them
-         ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``   Use the new Whidbey-style bitmaps as docking guides        
+         ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``   Use the new Whidbey-style bitmaps as docking guides
+         ``AUI_MGR_SMOOTH_DOCKING``           Performs a "smooth" docking of panes (a la PyQT)
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES``    Use miniframes with native caption bar as floating panes instead or custom drawn caption bars (forced on wxMac)
          ==================================== ==================================
 
          Default value for `flags` is:
-         ``AUI_MGR_DEFAULT`` = ``AUI_MGR_ALLOW_FLOATING`` |
-                               ``AUI_MGR_TRANSPARENT_HINT`` | 
-                               ``AUI_MGR_HINT_FADE`` | 
-                               ``AUI_MGR_NO_VENETIAN_BLINDS_FADE``
+         ``AUI_MGR_DEFAULT`` = ``AUI_MGR_ALLOW_FLOATING`` | ``AUI_MGR_TRANSPARENT_HINT`` | ``AUI_MGR_HINT_FADE`` | ``AUI_MGR_NO_VENETIAN_BLINDS_FADE``
+
+         :note: If using the ``AUI_MGR_USE_NATIVE_MINIFRAMES``, double-clicking on a
+          floating pane caption will not re-dock the pane, but simply maximize it (if
+          L{AuiPaneInfo.MaximizeButton} has been set to ``True``) or do nothing.
         """
 
         wx.EvtHandler.__init__(self)
@@ -3821,6 +4015,8 @@ class AuiManager(wx.EvtHandler):
             self._animation_step = 30.0
         else:
             self._animation_step = 5.0
+
+        self._hint_rect = wx.Rect()
 
         self._preview_timer = wx.Timer(self, wx.ID_ANY)
         self._sliding_frame = None
@@ -4045,7 +4241,13 @@ class AuiManager(wx.EvtHandler):
          ``AUI_MGR_AERO_DOCKING_GUIDES``      Use the new Aero-style bitmaps as docking guides
          ``AUI_MGR_PREVIEW_MINIMIZED_PANES``  Slide in and out minimized panes to preview them
          ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``   Use the new Whidbey-style bitmaps as docking guides        
+         ``AUI_MGR_SMOOTH_DOCKING``           Performs a "smooth" docking of panes (a la PyQT)
+         ``AUI_MGR_USE_NATIVE_MINIFRAMES``    Use miniframes with native caption bar as floating panes instead or custom drawn caption bars (forced on wxMac)
          ==================================== ==================================
+
+         :note: If using the ``AUI_MGR_USE_NATIVE_MINIFRAMES``, double-clicking on a
+          floating pane caption will not re-dock the pane, but simply maximize it (if
+          L{AuiPaneInfo.MaximizeButton} has been set to ``True``) or do nothing.
         
         """
         
@@ -5855,7 +6057,7 @@ class AuiManager(wx.EvtHandler):
             # a pane, we need to cancel that action here to prevent
             # a spurious crash.
             if self._action_window == p.frame:
-                if wx.Window.GetCapture() == self._frame:
+                if self._frame.HasCapture():
                     self._frame.ReleaseMouse()
                 self._action = actionNone
                 self._action_window = None
@@ -6843,6 +7045,8 @@ class AuiManager(wx.EvtHandler):
                 # set initial float position - may have to think about this
                 # offset a bit more later ...
                 self._action_offset = wx.Point(20, 10)
+                self._toolbar_action_offset = wx.Point(20, 10)
+                
                 paneInfo.floating_pos = mouse - self._action_offset
                 paneInfo.dock_pos = AUI_DOCK_NONE
                 paneInfo.notebook_id = -1
@@ -7773,6 +7977,7 @@ class AuiManager(wx.EvtHandler):
         panes.append(hint)
 
         sizer, panes, docks, uiparts = self.LayoutAll(panes, docks, [], True, False)
+        
         client_size = self._frame.GetClientSize()
         sizer.SetDimension(0, 0, client_size.x, client_size.y)
         sizer.Layout()
@@ -7829,8 +8034,10 @@ class AuiManager(wx.EvtHandler):
 
         if rect.IsEmpty():
             self.HideHint()
+            self._hint_rect = wx.Rect()
         else:
             self.ShowHint(rect)
+            self._hint_rect = wx.Rect(*rect)
 
 
     def GetPartSizerRect(self, uiparts):
@@ -7972,7 +8179,7 @@ class AuiManager(wx.EvtHandler):
             self.RefreshCaptions()
 
 
-    def OnFloatingPaneMoved(self, wnd, event):
+    def OnFloatingPaneMoved(self, wnd, eventOrPt):
         """
         Handles the move event of a floating pane.
 
@@ -7987,7 +8194,11 @@ class AuiManager(wx.EvtHandler):
         if not pane.IsSnappable():
             return
 
-        pane_pos = event.GetPosition()
+        if isinstance(eventOrPt, wx.Point):
+            pane_pos = wx.Point(*eventOrPt)
+        else:
+            pane_pos = eventOrPt.GetPosition()
+
         pane_size = pane.floating_size
 
         self.SnapPane(pane, pane_pos, pane_size, False)
@@ -8097,6 +8308,8 @@ class AuiManager(wx.EvtHandler):
         self._action_window = pane_window
         self._action_start = start
         self._action_offset = offset
+        self._toolbar_action_offset = wx.Point(*self._action_offset)
+        
         self._frame.CaptureMouse()
 
         if paneInfo.IsDocked():
@@ -8112,6 +8325,7 @@ class AuiManager(wx.EvtHandler):
                 windowPt = paneInfo.frame.GetRect().GetTopLeft()
                 originPt = paneInfo.frame.ClientToScreen(wx.Point())
                 self._action_offset += originPt - windowPt
+                self._toolbar_action_offset = wx.Point(*self._action_offset)
 
                 if self._flags & AUI_MGR_TRANSPARENT_DRAG:
                     paneInfo.frame.SetTransparent(150)
@@ -8260,7 +8474,7 @@ class AuiManager(wx.EvtHandler):
                     paneInfo = self.SwitchToolBarOrientation(paneInfo)
 
                 e = self.FireEvent(wxEVT_AUI_PANE_DOCKED, paneInfo, canVeto=False)
-                    
+
         else:
 
             e = self.FireEvent(wxEVT_AUI_PANE_FLOATING, paneInfo, canVeto=True)
@@ -8308,9 +8522,10 @@ class AuiManager(wx.EvtHandler):
         :note: This is intentionally empty (excluding wxMAC) to reduce
          flickering while drawing.
         """
-
+        
         if wx.Platform == "__WXMAC__":
             event.Skip()
+
 
     def OnSize(self, event):
         """
@@ -8672,7 +8887,7 @@ class AuiManager(wx.EvtHandler):
         else:
             event.Skip()        
 
-        if wx.Window.GetCapture() == self._frame:
+        if self._frame.HasCapture():
             self._frame.ReleaseMouse()
             
         self._action = actionNone
@@ -8863,6 +9078,11 @@ class AuiManager(wx.EvtHandler):
             # adjust action offset for window frame
             windowPt = self._action_pane.frame.GetRect().GetTopLeft()
             originPt = self._action_pane.frame.ClientToScreen(wx.Point())
+            self._toolbar_action_offset = originPt - windowPt
+            
+            if self._flags & AUI_MGR_USE_NATIVE_MINIFRAMES:
+                originPt = windowPt + wx.Point(3, 3)
+                
             self._action_offset += originPt - windowPt
 
             # action offset is used here to make it feel "natural" to the user
@@ -8895,8 +9115,10 @@ class AuiManager(wx.EvtHandler):
                 self._action_part = self._uiparts[self._currentDragItem]
             else:
                 self._currentDragItem = self._uiparts.index(self._action_part)
-                        
-            self._frame.ReleaseMouse()
+
+            if self._frame.HasCapture():
+                self._frame.ReleaseMouse()
+                
             self.DoEndResizeAction(event)
             self._frame.CaptureMouse()
             return
@@ -8948,7 +9170,9 @@ class AuiManager(wx.EvtHandler):
         if self._currentDragItem != -1 and AuiManager_HasLiveResize(self):
             self._action_part = self._uiparts[self._currentDragItem]
 
-            self._frame.ReleaseMouse()
+            if self._frame.HasCapture():
+                self._frame.ReleaseMouse()
+                
             self.DoEndResizeAction(event)
             self._currentDragItem = -1
             return
@@ -9013,15 +9237,22 @@ class AuiManager(wx.EvtHandler):
         return True        
         
 
-    def OnMotion_DragFloatingPane(self, event):
+    def OnMotion_DragFloatingPane(self, eventOrPt):
         """
         Sub-handler for the L{OnMotion} event.
 
         :param `event`: a `wx.MouseEvent` to be processed.
         """
+
+        isPoint = False
+        if isinstance(eventOrPt, wx.Point):
+            clientPt = self._frame.ScreenToClient(eventOrPt)
+            screenPt = wx.Point(*eventOrPt)
+            isPoint = True
+        else:
+            clientPt = eventOrPt.GetPosition()
+            screenPt = self._frame.ClientToScreen(clientPt)
         
-        clientPt = event.GetPosition()
-        screenPt = self._frame.ClientToScreen(clientPt)
         framePos = wx.Point()
         
         # try to find the pane
@@ -9042,7 +9273,10 @@ class AuiManager(wx.EvtHandler):
                 pane.frame.SetTransparent(254)
                         
             if not self._hint_window or not self._hint_window.IsShown():
-                pane.frame.Move(pane.floating_pos)
+                if (self._flags & AUI_MGR_USE_NATIVE_MINIFRAMES) == 0 or not isPoint:
+                    self._from_move = True
+                    pane.frame.Move(pane.floating_pos)
+                    self._from_move = False
 
             if self._flags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
@@ -9080,19 +9314,23 @@ class AuiManager(wx.EvtHandler):
                 self.UpdateDockingGuides(paneInfo)
                 ShowDockingGuides(self._guides, True)
                 break
-            
+
         self.DrawHintRect(pane.window, clientPt, action_offset)
 
 
-    def OnLeftUp_DragFloatingPane(self, event):
+    def OnLeftUp_DragFloatingPane(self, eventOrPt):
         """
         Sub-handler for the L{OnLeftUp} event.
 
         :param `event`: a `wx.MouseEvent` to be processed.
         """
-        
-        clientPt = event.GetPosition()
-        screenPt = self._frame.ClientToScreen(clientPt)
+
+        if isinstance(eventOrPt, wx.Point):
+            clientPt = self._frame.ScreenToClient(eventOrPt)
+            screenPt = wx.Point(*eventOrPt)
+        else:
+            clientPt = eventOrPt.GetPosition()
+            screenPt = self._frame.ClientToScreen(clientPt)
 
         # try to find the pane
         paneInfo = self.GetPane(self._action_window)
@@ -9120,7 +9358,10 @@ class AuiManager(wx.EvtHandler):
                         return
 
                     e = self.FireEvent(wxEVT_AUI_PANE_DOCKED, paneInfo, canVeto=False)
-                
+
+                    if self._flags & AUI_MGR_SMOOTH_DOCKING:
+                        self.SmoothDock(paneInfo)
+
                 self._panes[indx] = paneInfo
             
         # if the pane is still floating, update it's floating
@@ -9145,15 +9386,21 @@ class AuiManager(wx.EvtHandler):
         ShowDockingGuides(self._guides, False)
 
 
-    def OnMotion_DragToolbarPane(self, event):
+    def OnMotion_DragToolbarPane(self, eventOrPt):
         """
         Sub-handler for the L{OnMotion} event.
 
         :param `event`: a `wx.MouseEvent` to be processed.
         """
         
-        clientPt = event.GetPosition()
-        screenPt = self._frame.ClientToScreen(clientPt)
+        isPoint = False
+        if isinstance(eventOrPt, wx.Point):
+            clientPt = self._frame.ScreenToClient(eventOrPt)
+            screenPt = wx.Point(*eventOrPt)
+            isPoint = True
+        else:
+            clientPt = eventOrPt.GetPosition()
+            screenPt = self._frame.ClientToScreen(clientPt)
 
         pane = self.GetPane(self._action_window)
         if not pane.IsOk():
@@ -9162,6 +9409,7 @@ class AuiManager(wx.EvtHandler):
         pane.state |= AuiPaneInfo.actionPane
         indx = self._panes.index(pane)
 
+        ret = False
         # is the pane dockable?
         if self.CanDockPanel(pane):
             # do the drop calculation
@@ -9169,7 +9417,7 @@ class AuiManager(wx.EvtHandler):
         
         # update floating position
         if pane.IsFloating():
-            pane.floating_pos = screenPt - self._action_offset
+            pane.floating_pos = screenPt - self._toolbar_action_offset
 
         # move the pane window
         if pane.frame:
@@ -9177,20 +9425,23 @@ class AuiManager(wx.EvtHandler):
                 # return
                 # HACK: Terrible hack on wxMSW (!)
                 pane.frame.SetTransparent(254)
-                
-            pane.frame.Move(pane.floating_pos)
 
+            self._from_move = True
+            pane.frame.Move(pane.floating_pos)
+            self._from_move = False
+                
             if self._flags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
 
-        self._panes[indx] = pane        
-        self.Update()
+        self._panes[indx] = pane
+        if ret:
+            wx.CallAfter(self.Update)
 
         # when release the button out of the window.
         # TODO: a better fix is needed.
         if not wx.GetMouseState().LeftDown():
             self._action = actionNone
-            self.OnLeftUp_DragToolbarPane(event)
+            self.OnLeftUp_DragToolbarPane(eventOrPt)
 
 
     def OnMotion_Other(self, event):
@@ -9222,15 +9473,21 @@ class AuiManager(wx.EvtHandler):
             self._hover_button = None
         
         
-    def OnLeftUp_DragToolbarPane(self, event):
+    def OnLeftUp_DragToolbarPane(self, eventOrPt):
         """
         Sub-handler for the L{OnLeftUp} event.
 
         :param `event`: a `wx.MouseEvent` to be processed.
         """
         
-        clientPt = event.GetPosition()
-        screenPt = self._frame.ClientToScreen(clientPt)
+        isPoint = False
+        if isinstance(eventOrPt, wx.Point):
+            clientPt = self._frame.ScreenToClient(eventOrPt)
+            screenPt = wx.Point(*eventOrPt)
+            isPoint = True
+        else:
+            clientPt = eventOrPt.GetPosition()
+            screenPt = self._frame.ClientToScreen(clientPt)
 
         # try to find the pane
         pane = self.GetPane(self._action_window)
@@ -9517,7 +9774,8 @@ class AuiManager(wx.EvtHandler):
 
     def AnimateDocking(self, win_rect, pane_rect):
         """
-        Animates the minimization/docking of a pane a la Eclipse.
+        Animates the minimization/docking of a pane a la Eclipse, using a `wx.ScreenDC`
+        to draw a "moving docking rectangle" on the screen.
 
         :param `win_rect`: the original pane screen rectangle;
         :param `pane_rect`: the newly created toolbar/pane screen rectangle.
@@ -9555,6 +9813,44 @@ class AuiManager(wx.EvtHandler):
             dc.DrawRoundedRectangleRect(new_rect, 3)
             
 
+    def SmoothDock(self, paneInfo):
+        """
+        This method implements a smooth docking effect for floating panes, similar to
+        what the PyQT library does with its floating windows.
+
+        :param `paneInfo`: an instance of L{AuiPaneInfo}.
+
+        :note: The smooth docking effect can only be used if you set the ``AUI_MGR_SMOOTH_DOCKING``
+         style to L{AuiManager}.
+        """
+
+        if paneInfo.IsToolbar():
+            return
+
+        if not paneInfo.frame or self._hint_rect.IsEmpty():
+            return
+
+        hint_rect = self._hint_rect
+        win_rect = paneInfo.frame.GetScreenRect()
+
+        xstart, ystart = win_rect.x, win_rect.y
+        xend, yend = hint_rect.x, hint_rect.y
+
+        step = self.GetAnimationStep()/3
+
+        wstep = int((win_rect.width - hint_rect.width)/step)
+        hstep = int((win_rect.height - hint_rect.height)/step)
+        xstep = int((win_rect.x - hint_rect.x))/step
+        ystep = int((win_rect.y - hint_rect.y))/step
+
+        for i in xrange(int(step)):
+            width, height = win_rect.width - i*wstep, win_rect.height - i*hstep
+            x, y = xstart - i*xstep, ystart - i*ystep
+            new_rect = wx.Rect(x, y, width, height)
+            paneInfo.frame.SetRect(new_rect)
+            wx.MilliSleep(10)            
+        
+            
     def SetSnapLimits(self, x, y):
         """
         Modifies the snap limits used when snapping the `managed_window` to the screen

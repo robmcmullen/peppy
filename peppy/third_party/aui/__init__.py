@@ -168,8 +168,10 @@ Plus the following features:
   (s) New Aero-style docking guides: you can enable them by using the `AuiManager` style ``AUI_MGR_AERO_DOCKING_GUIDES``;
   (t) A slide-in/slide-out preview of minimized panes can be seen by enabling the `AuiManager` style
       ``AUI_MGR_PREVIEW_MINIMIZED_PANES`` and by hovering with the mouse on the minimized pane toolbar tool;
-  (s) New Whidbey-style docking guides: you can enable them by using the `AuiManager` style ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``.
-
+  (s) New Whidbey-style docking guides: you can enable them by using the `AuiManager` style ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``;
+  (t) Native of custom-drawn mini frames can be used as floating panes, depending on the ``AUI_MGR_USE_NATIVE_MINIFRAMES`` style;
+  (u) A "smooth docking effect" can be obtained by using the ``AUI_MGR_SMOOTH_DOCKING`` style (similar to PyQT docking style).
+  
 |
 
 - AuiNotebook:
@@ -263,7 +265,7 @@ License And Version
 
 AUI library is distributed under the wxPython license. 
 
-Latest revision: Andrea Gavana @ 23 Nov 2009, 11.00 GMT
+Latest revision: Andrea Gavana @ 18 Dec 2009, 09.00 GMT
 
 Version 1.1. 
 
@@ -281,6 +283,3 @@ from tabart import *
 from dockart import *
 from framemanager import *
 from tabmdi import *
-
-toolbar_reverse_order = False
-pure_python = True

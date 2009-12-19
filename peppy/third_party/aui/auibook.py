@@ -1854,7 +1854,7 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
         
-        if wx.Window.GetCapture() == self:
+        if self.HasCapture():
             self.ReleaseMouse()
 
         if self._is_dragging:
