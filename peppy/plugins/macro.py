@@ -1226,7 +1226,7 @@ class DeleteMacro(SelectAction):
     def processDelete(self):
         tree = self.popup_options['minor_mode']
         macros = tree.getSelectedMacros()
-        retval = self.frame.showQuestionDialog("Are you sure you want to delete:\n\n%s" % "\n".join(macros))
+        retval = self.frame.showQuestionDialog("Are you sure you want to delete:\n\n%s" % ("\n".join([str(m) for m in macros])))
         if retval == wx.ID_YES:
             for macro in macros:
                 vfs.remove(macro)
