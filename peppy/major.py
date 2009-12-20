@@ -1518,6 +1518,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
     def revertPreHook(self):
         """Hook to save any view parameters that should be restored after a revert"""
         self._revert_data = self.getViewPositionData()
+        self.buffer.stopChangeDetection()
     
     def setViewPositionData(self, options=None):
         """Attempt to restore the state of the view from the given data.
@@ -1535,6 +1536,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             self.setViewPositionData(self._revert_data)
         else:
             self.setViewPositionData()
+        self.buffer.startChangeDetection()
     
     
     ### Macro processing flag

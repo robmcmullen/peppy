@@ -1028,6 +1028,9 @@ class PeppySTC(PeppyBaseSTC):
     def addDocumentChangeEvent(self, callback):
         self.Bind(wx.stc.EVT_STC_CHANGE, callback)
         
+    def removeDocumentChangeEvent(self):
+        self.Unbind(wx.stc.EVT_STC_CHANGE)
+        
     def OnDestroy(self, evt):
         """
         Event handler for EVT_WINDOW_DESTROY. Preserve the clipboard

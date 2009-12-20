@@ -580,6 +580,9 @@ class Buffer(BufferVFSMixin):
         self.change_count = 0
         self.stc.addDocumentChangeEvent(self.OnChanged)
 
+    def stopChangeDetection(self):
+        self.stc.removeDocumentChangeEvent()
+
     def setInitialStateIsUnmodified(self):
         """Set the initial state of the file as unmodified.
         
@@ -620,8 +623,15 @@ class Buffer(BufferVFSMixin):
             #self.dprint("clean!")
             changed = self.initial_modified_state
             self.change_count = 0
-            self.removeAutosaveIfExists()
+            if changed != self.modified:
+                # Only need to do this the first time it is reported as clean.
+                # A huge number of OnChanged events may be generated (due to
+                # stuff like the folding being changed on a massive undo) and
+                # a potentially expensive call to remove files is only needed
+                # once.
+                self.removeAutosaveIfExists()
         if changed!=self.modified:
+            #self.dprint("different!")
             self.modified=changed
             wx.CallAfter(self.showModifiedAll)
     
@@ -676,6 +686,8 @@ class Buffer(BufferVFSMixin):
                 if retval==wx.ID_OK:
                     self.dprint(u"Recovering from autosave file %s" % temp_url)
                     self.revert(temp_url, allow_undo=True)
+                    self.modified = True
+                    wx.CallAfter(self.showModifiedAll)
             else:
                 vfs.remove(temp_url)
 

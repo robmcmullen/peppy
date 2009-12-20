@@ -251,6 +251,16 @@ class STCInterface(object):
         @param callback: event handler to execute on event
         """
         pass
+    
+    def removeDocumentChangeEvent(self):
+        """Remove the document change event.
+        
+        The complement of L{addDocumentChangeEvent}, this is needed for example
+        during revert processing so that all the intermediate changes don't
+        generate change events that could propagate to user-level callbacks
+        like the code explorer.
+        """
+        pass
 
 
 class STCBinaryMixin(object):
