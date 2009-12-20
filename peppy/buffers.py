@@ -374,6 +374,7 @@ class Buffer(BufferVFSMixin):
         self.setInitialStateIsUnmodified()
         self.permanent = False
         
+        self.autosave_valid = True
         self.backup_saved = False
 
         self.stc=None
@@ -631,6 +632,9 @@ class Buffer(BufferVFSMixin):
             self.change_count = 0
 
     def autosave(self):
+        if not self.autosave_valid:
+            return
+        
         # Update keystrokes in case user has changed the settings
         self.keystrokes_until_autosave = wx.GetApp().autosave.getKeystrokeInterval()
         if self.readonly:
@@ -652,8 +656,12 @@ class Buffer(BufferVFSMixin):
     def removeAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
         if temp_url and vfs.exists(temp_url):
-            vfs.remove(temp_url)
-            self.dprint(u"Removed autosave file %s" % temp_url)
+            try:
+                vfs.remove(temp_url)
+                self.dprint(u"Removed autosave file %s" % temp_url)
+            except OSError:
+                self.dprint("Can't remove autosave file %s" % temp_url)
+                self.autosave_valid = False
 
     def restoreFromAutosaveIfExists(self):
         temp_url = self.stc.getAutosaveTemporaryFilename(self)
