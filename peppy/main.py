@@ -633,6 +633,8 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             actions.extend(getAllSubclassesOf(MinibufferAction))
             tooltips = set()
             for action in actions:
+                if action.__doc__ is not None and "@skip_translation" in action.__doc__:
+                    continue
                 tooltip = action.getDefaultTooltip().encode("utf-8")
                 module = action.__module__
                 if tooltip:

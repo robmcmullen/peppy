@@ -14,6 +14,8 @@ class ElectricChar(SelectAction):
     text in addition to inserting themselves.
     
     Used in the autoindent code.
+    
+    @skip_translation
     """
     name = "ElectricChar"
     needs_keyboard_focus = True

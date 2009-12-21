@@ -51,7 +51,9 @@ class MinibufferAction(MinibufferMixin, TextModificationAction):
 
 
 class MinibufferRepeatAction(MinibufferAction):
-    """If an existing minibuffer is of the same type as the newly requested
+    """Repeat the last minibuffer action
+    
+    If an existing minibuffer is of the same type as the newly requested
     minibuffer, call L{Minibuffer.repeat} instead of creating a new instance
     of the minibuffer.
     """
