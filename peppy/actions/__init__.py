@@ -410,7 +410,12 @@ class SelectAction(debugmixin):
         if cls.tooltip is None:
             if cls.__doc__ is not None:
                 lines = cls.__doc__.splitlines()
-                cls.tooltip = unicode(lines[0])
+                index = 0
+                for line in lines:
+                    if len(line.strip()) == 0:
+                        break
+                    index += 1
+                cls.tooltip = unicode(u" ".join([line.strip() for line in lines[0:index]]))
             else:
                 cls.tooltip = u""
         text = unicode(cls.tooltip)

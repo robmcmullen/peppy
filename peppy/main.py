@@ -591,6 +591,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False, help="Disable setuptools plugin loading")
         parser.add_option("--no-splash", action="store_false", dest="splash", default=True, help="Disable splash screen")
         parser.add_option("--thanks", action="store_true", dest="thanks", default=False, help="Print thank-you notice")
+        parser.add_option("--i18n-action-tooltips", action="store_true", dest="i18n_action_tooltips", default=False, help="Print tooltip strings for all actions -- used by i18n translation programs")
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
@@ -625,6 +626,22 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             fh = vfs.open("about:thanks")
             print fh.read()
             self.Exit()
+
+        if self.options.i18n_action_tooltips:
+            from peppy.actions.minibuffer import MinibufferAction
+            actions = getAllSubclassesOf(SelectAction)
+            actions.extend(getAllSubclassesOf(MinibufferAction))
+            tooltips = set()
+            for action in actions:
+                tooltip = action.getDefaultTooltip().encode("utf-8")
+                module = action.__module__
+                if tooltip:
+                    tooltips.add((tooltip, module))
+            tooltips = sorted(tooltips)
+            for tooltip, module in tooltips:
+                print "# %s" % module
+                print "_(\"%s\")" % tooltip
+            sys.exit()
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
         for plugin in plugins:
