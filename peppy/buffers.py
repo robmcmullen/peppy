@@ -127,10 +127,13 @@ class BufferList(OnDemandGlobalListAction):
 
 
 class BufferListSort(OnDemandActionMixin, RadioAction):
+    """Sort the document list
+    
+    Choose the sort order for the list shown in the Documents menu.
+    """
     name = "Sort Order"
     inline = False
     localize_items = True
-    tooltip = "Sort document list"
     default_menu = ("Documents", -999)
 
     items = ['By Name', 'By Mode', 'Order Loaded']

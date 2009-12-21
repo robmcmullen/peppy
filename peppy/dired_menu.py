@@ -15,10 +15,10 @@ from peppy.yapsy.plugins import *
 
 
 class DiredRefresh(ListModeActionMixin, SelectAction):
-    """Refresh the current list"""
-    alias = "dired-refresh"
+    """Refresh the current view to show any changes.
+    
+    """
     name = "Refresh"
-    tooltip = "Refresh the current view to show any changes."
     default_menu = ("Actions", -1000)
     key_bindings = {'default': "F5", }
 
@@ -27,7 +27,9 @@ class DiredRefresh(ListModeActionMixin, SelectAction):
 
 
 class FlagMixin(ListModeActionMixin):
-    """Mixin to set a flag and move to the next item in the list"""
+    """Mixin to set a flag and move to the next item in the list
+    
+    """
     flag = None
     direction = 1
     
@@ -38,7 +40,9 @@ class FlagMixin(ListModeActionMixin):
             self.mode.moveSelected(multiplier * self.direction)
 
 class FlagBackwardsMixin(FlagMixin):
-    """Mixin to set a flag and move to the previous item in the list."""
+    """Mixin to set a flag and move to the previous item in the list.
+    
+    """
     direction = -1
 
 
@@ -49,44 +53,49 @@ class DeleteMixin(object):
 
 
 class DiredDelete(FlagMixin, DeleteMixin, SelectAction):
-    alias = "dired-delete"
+    """Mark the selected buffer for deletion.
+    
+    """
     name = "Mark for Deletion"
-    tooltip = "Mark the selected buffer for deletion."
     default_menu = ("Actions", 120)
     key_bindings = {'default': "d", }
     flag = 'D'
 
 
 class DiredDeleteBackwards(FlagBackwardsMixin, DeleteMixin, SelectAction):
-    alias = "dired-delete-backwards"
+    """Mark the selected buffer for deletion and move to the previous item.
+    
+    """
     name = "Mark for Deletion and Move Backwards"
-    tooltip = "Mark the selected buffer for deletion and move to the previous item."
     default_menu = ("Actions", 121)
     key_bindings = {'default': "C-d", }
     flag = 'D'
 
 
 class DiredMark(FlagMixin, SelectAction):
-    alias = "dired-mark"
+    """Mark the selected buffer to be displayed.
+    
+    """
     name = "Mark for Display"
-    tooltip = "Mark the selected buffer to be displayed."
     default_menu = ("Actions", 130)
     key_bindings = {'default': "m", }
     flag = 'M'
 
 class DiredMarkBackwards(FlagBackwardsMixin, SelectAction):
-    alias = "dired-mark-backwards"
+    """Mark the selected buffer to be displayed and move to the previous item.
+    
+    """
     name = "Mark for Display and Move Backwards"
-    tooltip = "Mark the selected buffer to be displayed and move to the previous item."
     default_menu = ("Actions", 130)
     key_bindings = {'default': "C-m", }
     flag = 'M'
 
 
 class DiredClearFlags(ListModeActionMixin, SelectAction):
-    alias = "dired-clear-flags"
+    """Clear all flags from the selected item(s).
+    
+    """
     name = "Clear Flags"
-    tooltip = "Clear all flags from the selected item(s)."
     default_menu = ("Actions", 199)
     key_bindings = {'default': "u", }
 
@@ -98,9 +107,10 @@ class DiredClearFlags(ListModeActionMixin, SelectAction):
 
 
 class DiredExecute(ListModeActionMixin, SelectAction):
-    alias = "dired-execute"
+    """Act on the marked buffers according to their flags.
+    
+    """
     name = "Perform Marked Actions"
-    tooltip = "Act on the marked buffers according to their flags."
     default_menu = ("Actions", -300)
     key_bindings = {'default': "x", }
 
@@ -109,9 +119,10 @@ class DiredExecute(ListModeActionMixin, SelectAction):
 
 
 class DiredShow(ListModeActionMixin, SelectAction):
-    alias = "dired-show"
+    """Show the buffer in a new tab.
+    
+    """
     name = "Show Buffer"
-    tooltip = "Show the buffer in a new tab."
     default_menu = ("Actions", -400)
     key_bindings = {'default': "o", }
 
@@ -121,9 +132,10 @@ class DiredShow(ListModeActionMixin, SelectAction):
             self.frame.open(url)
 
 class DiredReplace(ListModeActionMixin, SelectAction):
-    alias = "dired-replace"
+    """Show the buffer in place of this tab.
+    
+    """
     name = "Replace Buffer"
-    tooltip = "Show the buffer in place of this tab."
     default_menu = ("Actions", 401)
     key_bindings = {'default': "f", }
 

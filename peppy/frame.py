@@ -78,10 +78,11 @@ class WindowList(OnDemandGlobalListAction):
         wx.CallAfter(WindowList.storage[index].Raise)
 
 class DeleteWindow(SelectAction):
-    alias = "delete-window"
+    """Delete current window
+    
+    """
     name = "&Delete Window"
     default_menu = ("Window", 101)
-    tooltip = "Delete current window"
     
     def action(self, index=-1, multiplier=1):
         self.frame.closeWindow()
@@ -92,9 +93,10 @@ class DeleteWindow(SelectAction):
         return False
 
 class NewWindow(SelectAction):
-    alias = "new-window"
+    """Open a new window
+    
+    """
     name = "&New Window"
-    tooltip = "Open a new window"
     default_menu = ("Window", -100)
     key_bindings = {'emacs': "C-X 5 2",}
     osx_minimal_menu = True

@@ -157,8 +157,8 @@ class AppendTwoKeyAction(CountedRebindingActionMixin, SelectAction):
     keystroke_count = 2
 
 class AppendThreeKeyAction(CountedRebindingActionMixin, SelectAction):
-    """Add a new two keystroke combination binding to the current keybinding
-    list.
+    """Add a new three keystroke combination binding to the current keybinding
+    list
     
     """
     name = "Add a Three Key Binding"
