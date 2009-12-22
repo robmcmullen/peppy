@@ -416,6 +416,11 @@ class SelectAction(debugmixin):
                         break
                     index += 1
                 cls.tooltip = unicode(u" ".join([line.strip() for line in lines[0:index]]))
+                cls.tooltip = cls.tooltip.strip()
+                
+                # Remove a trailing period, but not a trailing ellipsis
+                if cls.tooltip.endswith(".") and not cls.tooltip.endswith("..."):
+                    cls.tooltip = cls.tooltip[:-1]
             else:
                 cls.tooltip = u""
         text = unicode(cls.tooltip)
