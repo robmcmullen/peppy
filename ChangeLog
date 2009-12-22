@@ -1,3 +1,16 @@
+2009-12-21  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.14.0 "Solstice"
+	* fixed code explorer refreshing in minor mode (IDE mode) (bug #761)
+	* changed AUI to Andrea Gavana's agw.aui rather than wxPython native AUI
+	* fixed notebook tab ordering problems (bug #669, #807)
+	* minor mode layouts are now saved allowing restoration of the editing
+	window layout when restarting the editor (bug #806)
+	* fixed autosave bug when file was locked by another process (bug #637)
+	* fixed bug preventing deletion of multiple macros
+	* added new i18n syncing with launchpad
+	* fixed SelectAll that failed copying to primary selection (bug #739)
+
 2009-12-02  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.13.3
