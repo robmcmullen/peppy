@@ -628,21 +628,30 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             self.Exit()
 
         if self.options.i18n_action_tooltips:
+            actions = []
+            plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
+            for plugin in plugins:
+                # Load any actions that are in plugins
+                actions.extend(plugin.getActions())
             from peppy.actions.minibuffer import MinibufferAction
-            actions = getAllSubclassesOf(SelectAction)
+            actions.extend(getAllSubclassesOf(SelectAction))
             actions.extend(getAllSubclassesOf(MinibufferAction))
-            tooltips = set()
-            for action in actions:
+            tooltips = {}
+            actions = [(action.__name__, action) for action in actions]
+            actions.sort()
+            for name, action in actions:
                 if action.__doc__ is not None and "@skip_translation" in action.__doc__:
                     continue
                 tooltip = action.getDefaultTooltip().encode("utf-8")
                 module = action.__module__
                 if tooltip:
-                    tooltips.add((tooltip, module))
-            tooltips = sorted(tooltips)
-            for tooltip, module in tooltips:
-                print "# %s" % module
-                print "_(\"%s\")" % tooltip
+                    if tooltip in tooltips:
+                        tooltips[tooltip].add(module)
+                    else:
+                        tooltips[tooltip] = set([module])
+                #print "# %s" % action.__name__
+            for tooltip in sorted(list(tooltips.keys())):
+                print "_(\"%s\") # %s" % (tooltip, ", ".join(sorted(list(tooltips[tooltip]))))
             sys.exit()
 
         plugins = wx.GetApp().plugin_manager.getActivePluginObjects()
