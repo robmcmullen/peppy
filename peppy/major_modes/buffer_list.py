@@ -19,9 +19,8 @@ from peppy.debug import *
 
 
 class ListAllDocuments(SelectAction):
-    alias = "list-all-buffers"
+    """Display a list of all buffers."""
     name = "List All Documents"
-    tooltip = "Display a list of all buffers."
     default_menu = ("Documents", 100)
     key_bindings = {'emacs': "C-x C-b", }
 
@@ -57,26 +56,23 @@ class FlagBackwardsMixin(FlagMixin):
 
 
 class BufferListDelete(FlagMixin, SelectAction):
-    alias = "buffer-list-delete"
+    """Mark the selected buffer for deletion."""
     name = "Mark for Deletion"
-    tooltip = "Mark the selected buffer for deletion."
     default_menu = ("Actions", 120)
     key_bindings = {'default': "d", }
     flag = 'D'
 
 class BufferListDeleteBackwards(FlagBackwardsMixin, SelectAction):
-    alias = "buffer-list-delete-backwards"
+    """Mark the selected buffer for deletion and move to the previous item."""
     name = "Mark for Deletion and Move Backwards"
-    tooltip = "Mark the selected buffer for deletion and move to the previous item."
     default_menu = ("Actions", 121)
     key_bindings = {'default': "C-d", }
     flag = 'D'
 
 
 class BufferListSave(FlagMixin, SelectAction):
-    alias = "buffer-list-save"
+    """Mark the selected buffer to be saved."""
     name = "Mark for Save"
-    tooltip = "Mark the selected buffer to be saved."
     default_menu = ("Actions", -110)
     key_bindings = {'default': "s", }
     flag = 'S'
@@ -84,33 +80,30 @@ class BufferListSave(FlagMixin, SelectAction):
 class BufferListSaveBackwards(FlagBackwardsMixin, SelectAction):
     alias = "buffer-list-save-backwards"
     name = "Mark for Save and Move Backwards"
-    tooltip = "Mark the selected buffer to be saved and move to the previous item."
+    """Mark the selected buffer to be saved and move to the previous item."""
     default_menu = ("Actions", 111)
     key_bindings = {'default': "C-s", }
     flag = 'S'
 
 
 class BufferListMark(FlagMixin, SelectAction):
-    alias = "buffer-list-mark"
+    """Mark the selected buffer to be displayed."""
     name = "Mark for Display"
-    tooltip = "Mark the selected buffer to be displayed."
     default_menu = ("Actions", 130)
     key_bindings = {'default': "m", }
     flag = 'M'
 
 class BufferListMarkBackwards(FlagBackwardsMixin, SelectAction):
-    alias = "buffer-list-mark-backwards"
+    """Mark the selected buffer to be displayed and move to the previous item."""
     name = "Mark for Display and Move Backwards"
-    tooltip = "Mark the selected buffer to be displayed and move to the previous item."
     default_menu = ("Actions", 130)
     key_bindings = {'default': "C-m", }
     flag = 'M'
 
 
 class BufferListClearFlags(ListModeActionMixin, SelectAction):
-    alias = "buffer-list-clear-flags"
+    """Clear all flags from the selected item(s)."""
     name = "Clear Flags"
-    tooltip = "Clear all flags from the selected item(s)."
     default_menu = ("Actions", 199)
     key_bindings = {'default': "u", }
 
@@ -121,9 +114,8 @@ class BufferListClearFlags(ListModeActionMixin, SelectAction):
 
 
 class BufferListExecute(ListModeActionMixin, SelectAction):
-    alias = "buffer-list-execute"
+    """Act on the marked buffers according to their flags."""
     name = "Save or Delete Marked Buffers"
-    tooltip = "Act on the marked buffers according to their flags."
     default_menu = ("Actions", -300)
     key_bindings = {'default': "x", }
 
@@ -132,9 +124,8 @@ class BufferListExecute(ListModeActionMixin, SelectAction):
 
 
 class BufferListShow(ListModeActionMixin, SelectAction):
-    alias = "buffer-list-show"
+    """Show the buffer in a new tab."""
     name = "Show Buffer"
-    tooltip = "Show the buffer in a new tab."
     default_menu = ("Actions", -400)
     key_bindings = {'default': "o", }
 
@@ -144,9 +135,8 @@ class BufferListShow(ListModeActionMixin, SelectAction):
             self.frame.newBuffer(buffer)
 
 class BufferListReplace(ListModeActionMixin, SelectAction):
-    alias = "buffer-list-replace"
+    """Show the buffer in place of this tab."""
     name = "Replace Buffer"
-    tooltip = "Show the buffer in place of this tab."
     default_menu = ("Actions", 401)
     key_bindings = {'default': "f", }
 

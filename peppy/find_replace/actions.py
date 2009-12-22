@@ -307,8 +307,8 @@ class FindMinibuffer(FindReplaceMinibufferMixin, Minibuffer):
 
 
 class FindText(MinibufferRepeatAction):
+    """Search for a string in the text."""
     name = "Find..."
-    tooltip = "Search for a string in the text."
     default_menu = ("Edit", -400)
     icon = "icons/find.png"
     key_bindings = {'default': "C-f", 'emacs': 'C-s', }
@@ -317,8 +317,8 @@ class FindText(MinibufferRepeatAction):
     find_direction = 1
 
 class FindRegex(MinibufferRepeatAction):
+    """Search for a python regular expression."""
     name = "Find Regex..."
-    tooltip = "Search for a python regular expression."
     default_menu = ("Edit", 401)
     key_bindings = {'emacs': 'C-M-s', }
     minibuffer = FindMinibuffer
@@ -326,8 +326,8 @@ class FindRegex(MinibufferRepeatAction):
     find_direction = 1
 
 class FindWildcard(MinibufferRepeatAction):
+    """Search using shell-style wildcards."""
     name = "Find Wildcard..."
-    tooltip = "Search using shell-style wildcards."
     default_menu = ("Edit", 402)
     key_bindings = {'emacs': 'C-S-M-s', }
     minibuffer = FindMinibuffer
@@ -335,8 +335,8 @@ class FindWildcard(MinibufferRepeatAction):
     find_direction = 1
 
 class FindPrevText(MinibufferRepeatAction):
+    """Search backwards for a string in the text."""
     name = "Find Previous..."
-    tooltip = "Search backwards for a string in the text."
     default_menu = ("Edit", 402)
     key_bindings = {'default': "C-S-f", 'emacs': 'C-r', }
     minibuffer = FindMinibuffer
@@ -675,8 +675,8 @@ class ReplaceBarFindNext(MinibufferReplaceMixin, MinibufferKeyboardAction):
 
 
 class Replace(MinibufferRepeatAction):
+    """Replace a string in the text."""
     name = "Replace..."
-    tooltip = "Replace a string in the text."
     default_menu = ("Edit", 410)
     icon = "icons/text_replace.png"
     key_bindings = {'win': 'C-h', 'emacs': 'F6', }
@@ -685,8 +685,8 @@ class Replace(MinibufferRepeatAction):
     find_direction = 1
 
 class ReplaceRegex(MinibufferRepeatAction):
+    """Replace using python regular expressions."""
     name = "Replace Regex..."
-    tooltip = "Replace using python regular expressions."
     default_menu = ("Edit", 411)
     key_bindings = {'emacs': 'S-F6', }
     minibuffer = ReplaceMinibuffer
@@ -694,8 +694,8 @@ class ReplaceRegex(MinibufferRepeatAction):
     find_direction = 1
 
 class ReplaceWildcard(MinibufferRepeatAction):
+    """Replace using shell-style wildcards."""
     name = "Replace Wildcard..."
-    tooltip = "Replace using shell-style wildcards."
     default_menu = ("Edit", 411)
     key_bindings = {'emacs': 'M-F6', }
     minibuffer = ReplaceMinibuffer

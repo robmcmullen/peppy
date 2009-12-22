@@ -22,9 +22,8 @@ if USE_DEBUG_LEAK:
     gc.set_debug(gc.DEBUG_LEAK)
 
 class DebugGarbage(SelectAction):
-    alias = "debug-gc"
+    """Show uncollectable objects"""
     name = "Garbage Objects"
-    tooltip = "Show uncollectable objects"
     default_menu = (("Tools/Debug", -1000), 500)
     key_bindings = {'emacs': "C-x C-d", }
 

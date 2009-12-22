@@ -31,6 +31,7 @@ import numpy
 
 
 class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
+    """Previous Band"""
     name = "Prev Band"
     default_menu = ("View", -200)
     icon = 'icons/hsi-band-prev.png'
@@ -60,8 +61,8 @@ class PrevBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
             mode.update(refresh=False)
 
 class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
+    """Next Band"""
     name = "Next Band"
-    tooltip = "Next Band"
     default_menu = ("View", 201)
     icon = 'icons/hsi-band-next.png'
     key_bindings = {'default': "C-n"}
@@ -90,6 +91,7 @@ class NextBand(HSIActionMixin, OnDemandActionNameMixin, SelectAction):
             mode.update(refresh=False)
 
 class GotoBand(HSIActionMixin, OnDemandActionNameMixin, MinibufferAction):
+    """Select band to view by number"""
     name = "Goto Band"
     default_menu = ("View", 202)
     

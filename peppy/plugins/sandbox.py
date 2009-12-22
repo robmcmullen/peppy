@@ -68,8 +68,8 @@ class FastProgressBarTest(ProgressBarTestMixin, SelectAction):
 
 
 class ShowStyles(SelectAction):
+    """Show the styling information of the current line"""
     name = "Show Line Style"
-    tooltip = "Show the styling information of the current line"
     default_menu = "Tools/Debug"
     key_bindings = {'default': 'M-S',}
 

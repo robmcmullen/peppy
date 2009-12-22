@@ -19,8 +19,8 @@ from peppy.lib.iconstorage import *
 from peppy.lib.pluginmanager import *
 
 class Preferences(SelectAction):
+    """Preferences, settings, and configurations..."""
     name = "&Preferences..."
-    tooltip = "Preferences, settings, and configurations..."
     default_menu = ("Edit", 1000.1)
     default_toolbar = False
     icon = "icons/wrench.png"

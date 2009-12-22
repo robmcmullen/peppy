@@ -16,8 +16,8 @@ from peppy.actions.minibuffer import *
 
 
 class OpenHexEditor(SelectAction):
+    """Open a Hex Editor"""
     name = "&Open Hex Editor..."
-    tooltip = "Open a Hex Editor"
     default_menu = "&Help/Samples"
 
 ##    def isEnabled(self, state=None):
@@ -40,7 +40,6 @@ class GotoOffset(WorksWithHexEdit, MinibufferAction):
     """
 
     name = "Goto Offset..."
-    tooltip = "Goto an offset."
     default_menu = ("Edit", 500)
     key_bindings = {'default': 'M-g',}
     minibuffer = IntMinibuffer

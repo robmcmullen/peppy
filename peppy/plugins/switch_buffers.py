@@ -35,9 +35,8 @@ class BufferPopupList(ListAction):
 
 
 class SwitchToBuffer(SelectAction):
+    """Change to a document by typing part of its name"""
     name = "Switch to Buffer"
-    alias = "switch-to-buffer"
-    tooltip = "Change to a document by typing part of its name"
     key_bindings = {'emacs': "C-x b", }
     default_menu = ("Tools", 610)
     

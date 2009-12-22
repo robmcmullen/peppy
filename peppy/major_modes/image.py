@@ -29,11 +29,11 @@ from peppy.stcinterface import *
 
 
 class OpenImageViewer(SelectAction):
-    """
+    """Open an Image Viewer
+    
     Test action to open a sample image file.
     """
     name = "&Open Image Viewer..."
-    tooltip = "Open an Image Viewer"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):
@@ -45,8 +45,8 @@ class ImageActionMixin(object):
         return issubclass(modecls, BitmapScroller)
 
 class ZoomIn(ImageActionMixin, SelectAction):
+    """Zoom in (magnify) image"""
     name = "Zoom In"
-    tooltip = "Zoom in (magnify) image"
     default_menu = ("View", -800)
     icon = 'icons/zoom_in.png'
     keyboard = "="
@@ -55,8 +55,8 @@ class ZoomIn(ImageActionMixin, SelectAction):
         self.mode.zoomIn()
 
 class ZoomOut(ImageActionMixin, SelectAction):
+    """Zoom out (demagnify) image"""
     name = "Zoom Out"
-    tooltip = "Zoom out (demagnify) image"
     default_menu = ("View", 801)
     icon = 'icons/zoom_out.png'
     keyboard = "-"
@@ -65,8 +65,8 @@ class ZoomOut(ImageActionMixin, SelectAction):
         self.mode.zoomOut()
 
 class RectangularSelect(ImageActionMixin, ToggleAction):
+    """Select rectangular region."""
     name = "Select Rect"
-    tooltip = "Select rectangular region."
     default_menu = ("Edit", -501)
     icon = 'icons/shape_square_rect_select.png'
     

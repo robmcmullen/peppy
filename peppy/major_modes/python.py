@@ -46,8 +46,8 @@ for x in range(num):
 '''
 
 class SamplePython(SelectAction):
+    """Open a sample Python file"""
     name = "&Open Sample Python"
-    tooltip = "Open a sample Python file"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):

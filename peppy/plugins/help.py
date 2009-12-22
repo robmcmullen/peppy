@@ -22,8 +22,8 @@ from peppy import __url__, __bug_report_url__
 
 
 class HelpAbout(SelectAction):
+    """About this program"""
     name = "&About..."
-    tooltip = "About this program"
     stock_id = wx.ID_ABOUT
     default_menu = ("&Help", 0)
     osx_minimal_menu = True

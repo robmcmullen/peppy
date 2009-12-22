@@ -44,6 +44,8 @@ class STCModificationAction(BufferBusyActionMixin, SelectAction):
     This uses the L{BufferBusyActionMixin} to disable any action that would
     change the buffer when the buffer is in the process of being modified by a
     long-running process.
+    
+    @skip_translation
     """
     needs_keyboard_focus = True
     
@@ -52,11 +54,13 @@ class STCModificationAction(BufferBusyActionMixin, SelectAction):
         return hasattr(modecls, 'BeginUndoAction')
 
 class TextModificationAction(BufferBusyActionMixin, SelectAction):
-    """Base class for any action that changes the bytes in the buffer.
+    """Base class for any action that changes the text in the STC.
 
     This uses the BufferBusyActionMixin to disable any action that
     would change the buffer when the buffer is in the process of being
     modified by a long-running process.
+    
+    @skip_translation
     """
     needs_keyboard_focus = True
     
@@ -80,6 +84,8 @@ class ScintillaCmdKeyExecute(TextModificationAction):
     around one of these scintilla messages.
     
     @see: http://www.yellowbrain.com/stc/keymap.html#exec
+    
+    @skip_translation
     """
     cmd = 0
     

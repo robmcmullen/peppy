@@ -55,7 +55,6 @@ class ShowModeKeys(SelectAction):
 class DebugKeypress(ToggleAction):
     """Print debugging information to the console for each keypress"""
     name = "Debug Keypress"
-    alias = "debug-keypress"
     default_menu = (("Tools/Debug", -1000), 100)
     
     def isChecked(self):
@@ -66,8 +65,8 @@ class DebugKeypress(ToggleAction):
 
 
 class EditKeybindings(SelectAction):
+    """Display and edit key bindings."""
     name = "Key Bindings..."
-    tooltip = "Display and edit key bindings."
     icon = 'icons/keyboard.png'
     default_toolbar = False
     default_menu = ("Edit", 1000.05)
@@ -91,7 +90,6 @@ class TriggeredRebindingActionMixin(KeybindingActionMixin):
 
 class RebindKeyAction(TriggeredRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new keystroke"""
-    alias = "rebind-action"
     name = "Replace with Multi-Key Binding"
     default_menu = ("Actions", -200)
     key_bindings = {'default': "RET", }
@@ -103,7 +101,6 @@ class CountedRebindingActionMixin(KeybindingActionMixin):
 
 class RebindSingleKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected action to a new single keystroke"""
-    alias = "rebind-action-single-key"
     name = "Replace with Single Key Binding"
     default_menu = ("Actions", 210)
     key_bindings = {'default': ["1", "SPACE"], }
@@ -111,7 +108,6 @@ class RebindSingleKeyAction(CountedRebindingActionMixin, SelectAction):
 
 class RebindTwoKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected key to a new two keystroke combination"""
-    alias = "rebind-action-two-key"
     name = "Replace with Two Key Binding"
     default_menu = ("Actions", 220)
     key_bindings = {'default': "2", }
@@ -119,7 +115,6 @@ class RebindTwoKeyAction(CountedRebindingActionMixin, SelectAction):
 
 class RebindThreeKeyAction(CountedRebindingActionMixin, SelectAction):
     """Rebind the selected key to a new three keystroke combination"""
-    alias = "rebind-action-three-key"
     name = "Replace with Three Key Binding"
     default_menu = ("Actions", 230)
     key_bindings = {'default': "3", }

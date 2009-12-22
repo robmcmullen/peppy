@@ -19,46 +19,6 @@ from peppy.fundamental import *
 from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
 
-# A sample makefile is provided
-_sample_file = """\
-VAR = something
-OTHER = $(VAR)
-OTHER1 = ${VAR}
-DIR = $(shell ls -1)
-
-.SUFFIXES: .o
-
-all: foo
-	echo stuff
-
-foo: bar.o baz.o
-
-clean:
-	rm -rf *~ *.o
-    
-.PHONY: print-% clean
-
-print-%: ; @ echo $* = $($*)
-"""
-
-# This action opens up the sample makefile, demonstrating just about the
-# minimum amount of code that you need to create an action
-class SampleMakefile(SelectAction):
-    # name is required, otherwise the action won't be created
-    name = "&Open Sample Makefile"
-    
-    # tooltip is optional, but if present will appear in the statusbar
-    # when hovering over the menu item or toolbar entry.
-    tooltip = "Open a sample Makefile"
-    
-    # default_menu is required in order to appear in the menu bar.
-    default_menu = "&Help/Samples"
-    
-    # action is called regardless of how the action was requested: the
-    # menubar, the toolbar, or the keyboard
-    def action(self, index=-1, multiplier=1):
-        self.frame.open("about:sample.mak")
-
 
 class MakefileAutoindent(BasicAutoindent):
     foldre = re.compile("^[^\s\"\']+:", flags=re.MULTILINE)
@@ -180,14 +140,6 @@ class MakefileMode(FundamentalMode):
 class MakefilePlugin(IPeppyPlugin):
     """Makefile plugin to register modes and user interface.
     """
-    # This registers the data in sample_file as the url "about:sample.mak"
-    def aboutFiles(self):
-        return {'sample.mak': _sample_file}
-    
     # This registers the makefile mode so that it can be used
     def getMajorModes(self):
         yield MakefileMode
-    
-    # Only the actions that appear in getActions will be available
-    def geActions(self):
-        return [SampleMakefile]

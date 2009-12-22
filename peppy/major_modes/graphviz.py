@@ -33,8 +33,8 @@ digraph G {
 """
 
 class SampleDot(SelectAction):
+    """Open a sample Graphviz file"""
     name = "&Open Sample Graphviz dot file"
-    tooltip = "Open a sample Graphviz file"
     default_menu = "&Help/Samples"
 
     def action(self, index=-1, multiplier=1):

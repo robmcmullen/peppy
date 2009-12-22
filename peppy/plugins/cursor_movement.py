@@ -19,14 +19,12 @@ from peppy.debug import *
 
 
 class GotoLine(MinibufferAction):
-    """Goto a line number.
+    """Goto a line in the text.
     
     Use minibuffer to request a line number, then go to that line in
     the stc.
     """
-    alias = "goto-line"
     name = "Goto Line..."
-    tooltip = "Goto a line in the text."
     default_menu = ("Tools", -250)
     key_bindings = {'default': 'C-g', 'emacs': 'M-g'}
     minibuffer = IntMinibuffer
@@ -71,7 +69,6 @@ class MarkerAction(SelectAction):
 
 class SetBookmark(MarkerAction):
     """Set a bookmark on the current line in the buffer."""
-    alias = "set-bookmark"
     name = "Set Bookmark"
     default_menu = (("Tools/Bookmarks", 260), 100)
     key_bindings = {'emacs': 'C-c C-b C-s'}
@@ -82,7 +79,6 @@ class SetBookmark(MarkerAction):
 
 class ToggleBookmark(MarkerAction):
     """Toggle a bookmark on the current line in the buffer."""
-    alias = "toggle-bookmark"
     name = "Toggle Bookmark"
     default_menu = (("Tools/Bookmarks", 260), 110)
     key_bindings = {'default': 'M-b', 'emacs': 'C-c C-b C-b'}
@@ -98,7 +94,6 @@ class ToggleBookmark(MarkerAction):
 
 class DelBookmark(MarkerAction):
     """Remove a bookmark on the current line in the buffer."""
-    alias = "del-bookmark"
     name = "Delete Bookmark"
     default_menu = (("Tools/Bookmarks", 260), 120)
     key_bindings = {'emacs': 'C-c C-b C-d'}
@@ -109,7 +104,6 @@ class DelBookmark(MarkerAction):
 
 class NextBookmark(MarkerAction):
     """Scroll to view the next bookmark."""
-    alias = "next-bookmark"
     name = "Next Bookmark"
     default_menu = ("Tools/Bookmarks", -200)
     key_bindings = {'default': 'M-n', 'emacs': 'C-c C-b C-n'}
@@ -127,7 +121,6 @@ class NextBookmark(MarkerAction):
 
 class PrevBookmark(MarkerAction):
     """Scroll to view the previous bookmark."""
-    alias = "prev-bookmark"
     name = "Prev Bookmark"
     default_menu = ("Tools/Bookmarks", 210)
     key_bindings = {'default': 'M-p', 'emacs': 'C-c C-b C-p'}

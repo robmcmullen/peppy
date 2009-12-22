@@ -46,9 +46,8 @@ class CompleteWordHelper:
     range            = Range()
 
 class Complete_or_indent(SelectAction):
-    alias = "complete_or_indent"
+    """complete word at the current cursor position"""
     name = "Complete word"
-    tooltip = "complete word at the current cursor position"
     icon = None
     key_bindings = {'win': "Ctrl-Tab", 'mac': "M-/", 'emacs': ["M-/", "C-TAB"]}
     c = CompleteWordHelper()

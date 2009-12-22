@@ -50,8 +50,8 @@ class ColormapAction(HSIActionMixin, RadioAction):
 
 
 class ContrastFilterAction(HSIActionMixin, RadioAction):
+    """Contrast adjustment method"""
     name = "Contrast"
-    tooltip = "Contrast adjustment method"
     default_menu = ("Filter", -300)
 
     items = ['No stretching', '1% Stretching', '2% Stretching', 'User-defined']
@@ -101,8 +101,8 @@ class ContrastFilterAction(HSIActionMixin, RadioAction):
 
 
 class MedianFilterAction(HSIActionMixin, RadioAction):
+    """Median filter"""
     name = "Median Filter"
-    tooltip = "Median filter"
     default_menu = ("Filter", 301)
 
     items = ['No median',
@@ -191,8 +191,8 @@ class GaussianFilterAction(HSIActionMixin, RadioAction):
 
 
 class ClippingFilterAction(HSIActionMixin, RadioAction):
+    """Clip pixel values to limits"""
     name = "Clipping Filter"
-    tooltip = "Clip pixel values to limits"
     default_menu = ("Filter", -400)
 
     items = ['No Clipping',
@@ -242,8 +242,8 @@ class ClippingFilterAction(HSIActionMixin, RadioAction):
 
 
 class SubtractBandAction(HSIActionMixin, MinibufferAction):
+    """Subtract a band from the rest of the bands"""
     name = "Band Subtraction Filter"
-    tooltip = "Subtract a band from the rest of the bands"
     default_menu = ("Filter", -500)
     
     key_bindings = None

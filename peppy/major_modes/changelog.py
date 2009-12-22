@@ -20,9 +20,8 @@ from peppy.lib.autoindent import *
 from peppy.lib.foldexplorer import *
 
 class AddChangeLogEntry(STCModificationAction):
-    alias = "add-change-log-entry"
+    """Add new ChangeLog entry to the top of the ChangeLog"""
     name = "Add ChangeLog Entry"
-    tooltip = "Add new ChangeLog entry to the top of the ChangeLog"
     default_menu = ("Tools", 500)
     key_bindings = {'emacs': "C-c C-n",}
     
