@@ -30,9 +30,7 @@ then
 fi
 
 # Move the third-party libraries to the top of the build directory
-rm peppy/third_party/__init__.*
-mv peppy/third_party/* .
-rmdir peppy/third_party
+mv peppy/third_party/pkg_resources* .
 
 # Move these plugins to the standard plugins directory
 mv peppy/hsi/hsi_plugin.py peppy/plugins
