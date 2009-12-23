@@ -139,25 +139,25 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
 
     #    {SCK_END,           SCI_CTRL,       SCI_DOCUMENTEND},
     class EndOfBuffer(ScintillaCmdKeyExecute):
-        """Move the cursor to end of the buffer"""
+        """Move the cursor to the end of the buffer"""
         key_bindings = {'default': 'C-END'}
         cmd = wx.stc.STC_CMD_DOCUMENTEND
 
     #    {SCK_END,           SCI_CSHIFT,     SCI_DOCUMENTENDEXTEND},
     class EndOfBufferExtend(ScintillaCmdKeyExecute):
-        """Move the cursor to end of the buffer and extend the selection"""
+        """Move the cursor to the end of the buffer and extend the selection"""
         key_bindings = {'default': 'C-S-END'}
         cmd = wx.stc.STC_CMD_DOCUMENTENDEXTEND
 
     #    {SCK_HOME,          SCI_CTRL,       SCI_DOCUMENTSTART},
     class BeginningOfBuffer(ScintillaCmdKeyExecute):
-        """Move the cursor to first character in the buffer"""
+        """Move the cursor to the start of the buffer"""
         key_bindings = {'default': 'C-HOME'}
         cmd = wx.stc.STC_CMD_DOCUMENTSTART
 
     #    {SCK_HOME,          SCI_CSHIFT,     SCI_DOCUMENTSTARTEXTEND},
     class BeginningOfBufferExtend(ScintillaCmdKeyExecute):
-        """Move the cursor to first character in the buffer and extend the
+        """Move the cursor to the start of the buffer and extend the
         selection
         """
         key_bindings = {'default': 'C-S-HOME'}
@@ -173,7 +173,7 @@ class ScintillaCommandsPlugin(IPeppyPlugin):
     # STC_CMD_HOME
     #    {SCK_HOME,          SCI_ALT,        SCI_HOMEDISPLAY},
     class BeginningOfLine(ScintillaCmdKeyExecute):
-        """Move the cursor to Start of Line"""
+        """Move the cursor to the start of the current line"""
         key_bindings = {'default': 'M-HOME', 'emacs': ['M-HOME', 'M-C-A'],}
         cmd = wx.stc.STC_CMD_HOMEDISPLAY
 
