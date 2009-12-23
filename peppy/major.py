@@ -1248,7 +1248,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         @kwargs kwargs: keyword arguments for pubsub3 message
         """
         if topic not in self.pending_idle_messages:
-            dprint("deferring till idle: %s, %s" % (topic, kwargs))
+            #dprint("deferring till idle: %s, %s" % (topic, kwargs))
             self.pending_idle_messages[topic] = kwargs
     
     def processPendingIdleMessages(self):
@@ -1259,7 +1259,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         messages = self.pending_idle_messages
         self.pending_idle_messages = {}
         for topic, kwargs in messages.iteritems():
-            dprint("Sending: %s, %s" % (topic, kwargs))
+            #dprint("Sending: %s, %s" % (topic, kwargs))
             pub.sendMessage(topic, **kwargs)
 
     def idlePostHook(self):
