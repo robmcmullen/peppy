@@ -4,7 +4,6 @@ encoding = 'utf-8'
 dict = {
 '&About...': '&N\xc3\xa9vjegy',
 '&Help': '&Seg\xc3\xadts\xc3\xa9g',
-'&Help...': '&Seg\xc3\xadts\xc3\xa9g...',
 '&New Window': '\xc3\x9aj &ablak',
 '&Revert': '&Alap\xc3\xa1llapot',
 '&Save...': 'M&ent\xc3\xa9s...',
