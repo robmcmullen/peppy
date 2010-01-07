@@ -177,7 +177,13 @@ class ErrorLogSidebar(LoggingSTC, Sidebar):
         else:
             frame = wx.GetApp().GetTopWindow()
             text = data
-        if self.frame == frame:
+        if not self.frame:
+            dprint("Frame has been deleted!!!  Message was:")
+            dprint(message)
+            dlg = wx.MessageDialog(wx.GetApp().GetTopWindow(), message, "Error message for deleted frame!!!", wx.OK | wx.ICON_EXCLAMATION )
+            retval=dlg.ShowModal()
+            dlg.Destroy()
+        elif self.frame == frame:
             paneinfo = frame._mgr.GetPane(self)
             if self.classprefs.unhide_on_message:
                 if not paneinfo.IsShown():
