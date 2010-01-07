@@ -655,6 +655,10 @@ class ReadOnlyParam(debugmixin):
     
     def isSuperseded(self):
         return False
+    
+    def isDependentKeywordStart(self):
+        return False
+
 
 class SupersededParam(ReadOnlyParam):
     """Parameter used to hide a parameter in the superclass's user interface.
@@ -1814,6 +1818,45 @@ class GlobalPrefs(debugmixin):
         if cls.debuglevel > 0: dprint("Found %s for %s in class %s" % (param.__class__.__name__, option, section))
         return param
 
+
+    @classmethod
+    def findUserListParamStartOf(cls, section, option):
+        """Search up the class hierarchy for the L{UserListParamStart}
+        parameter of the specified
+        
+        @param section: Section name of the config file; must match the class
+        name of a class.
+        
+        @param option: option name in the config file; same as the keyword of a
+        L{Param} instance as defined in the default_classprefs class attribute.
+        """
+        params = cls.params
+        
+        # Check for the presence of UserList options.  These options will be in
+        # the form of an array, like:
+        #
+        # option1[index1] = value1
+        # option1[index2] = value2
+        index = option.find("[")
+        if index > 0:
+            option = option[:index]
+        if cls.debuglevel > 0: dprint("Searching for %s" % option)
+        
+        start = None
+        # Need to march up the class hierarchy to find the correct
+        # Param
+        klasses=cls.class_hierarchy[section]
+        #dprint(klasses)
+        for klass in klasses:
+            if hasattr(klass, 'default_classprefs'):
+                for p in klass.default_classprefs:
+                    if cls.debuglevel > 0: dprint(p)
+                    if p.isDependentKeywordStart():
+                        start = p
+                    elif p.keyword == option:
+                        if cls.debuglevel > 0: dprint("Found %s for %s" % (start, option))
+                        return start
+
     @classmethod
     def readConfig(cls, fh):
         """Load a configuration file.
@@ -1829,7 +1872,7 @@ class GlobalPrefs(debugmixin):
         cls.convert_already_seen = {}
         
         for section in cfg.sections():
-#            if section == "CommonlyUsedMajorModes":
+#            if section == "UserList":
 #                cls.debuglevel = 1
 #            else:
 #                cls.debuglevel = 0
@@ -1848,7 +1891,7 @@ class GlobalPrefs(debugmixin):
     
     @classmethod
     def convertSection(cls, section):
-#        if section == "CommonlyUsedMajorModes":
+#        if section == "UserList":
 #            cls.debuglevel = 1
 #        else:
 #            cls.debuglevel = 0
@@ -1874,6 +1917,7 @@ class GlobalPrefs(debugmixin):
             # Keep track of any userlist params so the dependent parameters can
             # be updated
             userlist_params = set()
+            found_userlist_entries = False
             for option, text in options.iteritems():
                 param = cls.findParam(section, option)
                 try:
@@ -1886,29 +1930,65 @@ class GlobalPrefs(debugmixin):
                         if cls.debuglevel > 0: dprint("Didn't find param for %s" % option)
                         val = text
                     d[option] = val
+                    if not found_userlist_entries:
+                        index = option.find("[")
+                        if index > 0:
+                            found_userlist_entries = True
                 except Exception, e:
                     eprint("Error converting %s in section %s: %s" % (option, section, str(e)))
+            
+            if found_userlist_entries and not userlist_params:
+                # Found an entry like option[index1] but no dependent keyword
+                # indicating which index should be used.
+                if cls.debuglevel > 0: dprint("found userlist_params but no dependent index")
+                for option, text in options.iteritems():
+                    param = cls.findUserListParamStartOf(section, option)
+                    if param is not None:
+                        userlist_params.add(param)
             
             # Wait to update the depdendent keywords until after everything in
             # the section has been converted.
             if userlist_params:
+                if cls.debuglevel > 0: dprint("userlist_params: %s" % str(userlist_params))
                 for param in userlist_params:
-                    index = d[param.keyword]
-                    for option in param.dependent_keywords:
-                        dep_option = "%s[%s]" % (option, index)
-                        try:
-                            dep_val = d[dep_option]
-                            d[option] = dep_val
-                            if cls.debuglevel > 0: dprint("Set userlist dependency %s = %s = %s" % (option, dep_option, dep_val))
-                        except KeyError:
-                            # If the ini file is malformed and doesn't have an
-                            # entry for this index, use the default value.
-                            dependent_param = cls.findParam(section, option)
-                            dep_val = dependent_param.default
-                            if cls.debuglevel > 0: dprint("Set userlist dependency to default: %s = %s = %s" % (option, dep_option, dep_val))
-                            d[option] = dep_val
+                    if param.keyword in d:
+                        index = d[param.keyword]
+                    else:
+                        # the dependent keyword doesn't exist, probably because
+                        # a corrupted input file.  Need to make a guess at the
+                        # index based on what's defined.
+                        index = None
+                        for keyword in param.dependent_keywords:
+                            if cls.debuglevel > 0: dprint("Found %s: %s" % (keyword, d[keyword]))
+                            for option, value in d.iteritems():
+                                if option.startswith(keyword) and '[' in option:
+                                    if value == d[keyword]:
+                                        i = option.find('[')
+                                        index = option[i+1:len(option)-1]
+                                        break
+                            if index is not None:
+                                break
+                        if cls.debuglevel > 0: dprint("Index = %s" % index)
+                    cls.setDefaultsForUserList(section, option, param, index, d)
                 
             cls.user[section] = d
+    
+    @classmethod
+    def setDefaultsForUserList(cls, section, option, param, index, d):
+        for option in param.dependent_keywords:
+            dep_option = "%s[%s]" % (option, index)
+            try:
+                dep_val = d[dep_option]
+                d[option] = dep_val
+                if cls.debuglevel > 0: dprint("Set userlist dependency %s = %s = %s" % (option, dep_option, dep_val))
+            except KeyError:
+                # If the ini file is malformed and doesn't have an
+                # entry for this index, use the default value.
+                dependent_param = cls.findParam(section, option)
+                dep_val = dependent_param.default
+                if cls.debuglevel > 0: dprint("Set userlist dependency to default: %s = %s = %s" % (option, dep_option, dep_val))
+                d[option] = dep_val
+        
     
     @classmethod
     def convertConfig(cls):

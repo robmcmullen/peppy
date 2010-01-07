@@ -219,6 +219,39 @@ userlist = New Item
         eq_(4, userlist.classprefs.count)
         eq_("", userlist.classprefs.string)
 
+    def testInconsistentIndex2(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+count[default] = 4
+count[one] = 1
+count[two] = 2
+string = "whatever"
+string[default] = stuff
+string[one] = stuff1
+string[two] = stuff2
+userlist = default
+""")
+        userlist = UserList()
+        eq_(4, userlist.classprefs.count)
+        eq_("stuff", userlist.classprefs.string)
+
+    def testMissingIndexKeyword(self):
+        self.setupConfig("""\
+[UserList]
+count = 6
+count[default] = 4
+count[one] = 1
+count[two] = 2
+string = "whatever"
+string[default] = whatever
+string[one] = stuff1
+string[two] = stuff2
+""")
+        userlist = UserList()
+        eq_(4, userlist.classprefs.count)
+        eq_("whatever", userlist.classprefs.string)
+
     def testMissingDependentKeywords(self):
         self.setupConfig("""\
 [UserList]
