@@ -43,8 +43,12 @@ wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_DOWN = wx.NewEventType()
 wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_UP = wx.NewEventType()
 wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_DOWN = wx.NewEventType()
 wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_UP = wx.NewEventType()
-wxEVT_COMMAND_AUINOTEBOOK_BG_DCLICK = wx.NewEventType()
 wxEVT_COMMAND_AUINOTEBOOK_TAB_DCLICK = wx.NewEventType()
+wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_DOWN = wx.NewEventType()
+wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_UP = wx.NewEventType()
+wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_DOWN = wx.NewEventType()
+wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_UP = wx.NewEventType()
+wxEVT_COMMAND_AUINOTEBOOK_BG_DCLICK = wx.NewEventType()
 
 # Define a new event for a drag cancelled
 wxEVT_COMMAND_AUINOTEBOOK_CANCEL_DRAG = wx.NewEventType()
@@ -82,6 +86,14 @@ EVT_AUINOTEBOOK_TAB_RIGHT_DOWN = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_TAB_
 """ The user clicked with the right mouse button on a tab. """
 EVT_AUINOTEBOOK_TAB_RIGHT_UP = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_UP, 1)
 """ The user clicked with the right mouse button on a tab. """
+EVT_AUINOTEBOOK_BG_MIDDLE_DOWN = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_DOWN, 1)
+""" The user middle-clicked in the tab area but not over a tab or a button. """
+EVT_AUINOTEBOOK_BG_MIDDLE_UP = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_UP, 1)
+""" The user middle-clicked in the tab area but not over a tab or a button. """
+EVT_AUINOTEBOOK_BG_RIGHT_DOWN = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_DOWN, 1)
+""" The user right-clicked in the tab area but not over a tab or a button. """
+EVT_AUINOTEBOOK_BG_RIGHT_UP = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_UP, 1)
+""" The user right-clicked in the tab area but not over a tab or a button. """
 EVT_AUINOTEBOOK_BG_DCLICK = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_BG_DCLICK, 1)
 """ The user left-clicked on the tab area not occupied by `AuiNotebook` tabs. """
 EVT_AUINOTEBOOK_CANCEL_DRAG = wx.PyEventBinder(wxEVT_COMMAND_AUINOTEBOOK_CANCEL_DRAG, 1)
@@ -1911,15 +1923,18 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
 
-        wnd = self.TabHitTest(event.GetX(), event.GetY())
-        
-        if wnd is None:
-            return
-            
-        e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_UP, self.GetId())
-        e.SetEventObject(self)
-        e.SetSelection(self.GetIdxFromWindow(wnd))
-        self.GetEventHandler().ProcessEvent(e)
+        x, y = event.GetX(), event.GetY()
+        wnd = self.TabHitTest(x, y)
+
+        if wnd:
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_UP, self.GetId())
+            e.SetEventObject(self)
+            e.SetSelection(self.GetIdxFromWindow(wnd))
+            self.GetEventHandler().ProcessEvent(e)
+        elif not self.ButtonHitTest(x, y):
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_UP, self.GetId())
+            e.SetEventObject(self)
+            self.GetEventHandler().ProcessEvent(e)
 
 
     def OnMiddleDown(self, event):
@@ -1929,15 +1944,18 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
         
-        wnd = self.TabHitTest(event.GetX(), event.GetY())
-        
-        if wnd is None:
-            return
-            
-        e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_DOWN, self.GetId())
-        e.SetEventObject(self)
-        e.SetSelection(self.GetIdxFromWindow(wnd))
-        self.GetEventHandler().ProcessEvent(e)
+        x, y = event.GetX(), event.GetY()
+        wnd = self.TabHitTest(x, y)
+
+        if wnd:
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_MIDDLE_DOWN, self.GetId())
+            e.SetEventObject(self)
+            e.SetSelection(self.GetIdxFromWindow(wnd))
+            self.GetEventHandler().ProcessEvent(e)
+        elif not self.ButtonHitTest(x, y):
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_MIDDLE_DOWN, self.GetId())
+            e.SetEventObject(self)
+            self.GetEventHandler().ProcessEvent(e)
 
 
     def OnRightUp(self, event):
@@ -1947,15 +1965,18 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
 
-        wnd = self.TabHitTest(event.GetX(), event.GetY())
-        
-        if wnd is None:
-            return
-            
-        e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_UP, self.GetId())
-        e.SetEventObject(self)
-        e.SetSelection(self.GetIdxFromWindow(wnd))
-        self.GetEventHandler().ProcessEvent(e)
+        x, y = event.GetX(), event.GetY()
+        wnd = self.TabHitTest(x, y)
+
+        if wnd:
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_UP, self.GetId())
+            e.SetEventObject(self)
+            e.SetSelection(self.GetIdxFromWindow(wnd))
+            self.GetEventHandler().ProcessEvent(e)
+        elif not self.ButtonHitTest(x, y):
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_UP, self.GetId())
+            e.SetEventObject(self)
+            self.GetEventHandler().ProcessEvent(e)
 
 
     def OnRightDown(self, event):
@@ -1965,15 +1986,18 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
         
-        wnd = self.TabHitTest(event.GetX(), event.GetY())
-        
-        if wnd is None:
-            return
-            
-        e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_DOWN, self.GetId())
-        e.SetEventObject(self)
-        e.SetSelection(self.GetIdxFromWindow(wnd))
-        self.GetEventHandler().ProcessEvent(e)
+        x, y = event.GetX(), event.GetY()
+        wnd = self.TabHitTest(x, y)
+
+        if wnd:
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_RIGHT_DOWN, self.GetId())
+            e.SetEventObject(self)
+            e.SetSelection(self.GetIdxFromWindow(wnd))
+            self.GetEventHandler().ProcessEvent(e)
+        elif not self.ButtonHitTest(x, y):
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_RIGHT_DOWN, self.GetId())
+            e.SetEventObject(self)
+            self.GetEventHandler().ProcessEvent(e)
 
 
     def OnLeftDClick(self, event):
@@ -1985,17 +2009,15 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         
         x, y = event.GetX(), event.GetY()
         wnd = self.TabHitTest(x, y)
-        
-        if not wnd and not self.ButtonHitTest(x, y):
-    
-            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_DCLICK, self.GetId())
-            e.SetEventObject(self)
-            self.GetEventHandler().ProcessEvent(e)
 
         if wnd:
             e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_TAB_DCLICK, self.GetId())
             e.SetEventObject(self)
             e.SetSelection(self.GetIdxFromWindow(wnd))
+            self.GetEventHandler().ProcessEvent(e)
+        elif not self.ButtonHitTest(x, y):
+            e = AuiNotebookEvent(wxEVT_COMMAND_AUINOTEBOOK_BG_DCLICK, self.GetId())
+            e.SetEventObject(self)
             self.GetEventHandler().ProcessEvent(e)
 
     

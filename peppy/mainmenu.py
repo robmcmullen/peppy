@@ -8,6 +8,7 @@ import os
 
 import wx
 from wx.lib.pubsub import Publisher
+from peppy.third_party.pubsub import pub
 
 from peppy.yapsy.plugins import *
 from peppy.actions import *
@@ -927,6 +928,7 @@ class MainMenu(IPeppyPlugin):
     build upon.
     """
     def activateHook(self):
+        pub.subscribe(self.getTabBackgroundMenu, 'tab_background.context_menu')
         Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
         Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
     
@@ -934,6 +936,9 @@ class MainMenu(IPeppyPlugin):
         Publisher().unsubscribe(self.getTabMenu)
         Publisher().unsubscribe(self.getFundamentalMenu)
     
+    def getTabBackgroundMenu(self, action_classes=None):
+        action_classes.extend([NewTab])
+
     def getTabMenu(self, msg):
         action_classes = msg.data
         action_classes.extend([NewTab, CloseTab, MoveTabToNewWindow])

@@ -9,6 +9,7 @@ import os
 import wx
 import peppy.third_party.aui as aui
 from wx.lib.pubsub import Publisher
+from peppy.third_party.pubsub import pub
 
 from peppy.debug import *
 from peppy.major import *
@@ -27,6 +28,7 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnTabChanged)
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
+        self.Bind(aui.EVT_AUINOTEBOOK_BG_RIGHT_DOWN, self.OnTabBackgroundContextMenu)
         
         self.allow_changes = True
 
@@ -97,6 +99,17 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
             if self.GetPageCount() == 0:
                 wx.CallAfter(self.frame.open, "about:blank")
 
+    def OnTabBackgroundContextMenu(self, evt):
+        """Handle context menu on the tab area background.
+        
+        If a right click occurs on a tab, L{OnTabContextMenu} is called instead.
+        """
+        action_classes = []
+        pub.sendMessage('tab_background.context_menu', action_classes=action_classes)
+        #dprint(action_classes)
+        if action_classes:
+            PopupMenu(self.frame, self, None, action_classes)
+        
     def OnTabContextMenu(self, evt):
         """Handle context menu on a tab button.
         
