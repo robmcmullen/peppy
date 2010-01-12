@@ -323,6 +323,36 @@ class ShowProjectSettings(ProjectActionMixin, ProjectPreferencesMixin, SelectAct
             self.showProjectPreferences(info)
 
 
+class CurrentlyLoadedFilesInProject(ListAction):
+    """Display a list of documents belonging to the same project as the current
+    mode.
+    
+    """
+    name = "Same Project"
+    inline = False
+    
+    def getItems(self):
+        wrapper = self.popup_options['wrapper']
+        tab_mode = wrapper.editwin
+        
+        self.savelist = []
+        if self.mode.project_info:
+            known_url = self.mode.project_info.project_settings_dir
+            #dprint("known=%s" % (known_url))
+            for buf in BufferList.storage:
+                url = ProjectPlugin.findProjectURL(buf.url)
+                #dprint("buf.url=%s, project url=%s" % (buf.url, url))
+                if url == known_url:
+                    self.savelist.append(buf)
+        return [buf.displayname for buf in self.savelist]
+
+    def action(self, index=-1, multiplier=1):
+        assert self.dprint("top window to %d: %s" % (index, self.savelist[index]))
+        wrapper = self.popup_options['wrapper']
+        self.frame.setBuffer(self.savelist[index], wrapper)
+
+
+
 if __name__== "__main__":
     app = wx.PySimpleApp()
     ctags = ProjectInfo(vfs.normalize("/home/rob/src/peppy-git/.peppy-project"))

@@ -22,6 +22,7 @@ import os, re
 import cPickle as pickle
 
 from wx.lib.pubsub import Publisher
+from peppy.third_party.pubsub import pub
 
 import peppy.vfs as vfs
 
@@ -137,11 +138,13 @@ class ProjectPlugin(IPeppyPlugin):
         Publisher().subscribe(self.projectInfo, 'mode.preinit')
         Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
         Publisher().subscribe(self.applyProjectSettings, 'fundamental.default_settings_applied')
+        pub.subscribe(self.getTabMenu, 'tabs.context_menu')
 
     def deactivateHook(self):
         Publisher().unsubscribe(self.projectInfo)
         Publisher().unsubscribe(self.getFundamentalMenu)
         Publisher().unsubscribe(self.applyProjectSettings)
+        pub.unsubscribe(self.getTabMenu)
     
     @classmethod
     def getTemplateFilename(cls, template_name):
@@ -486,6 +489,9 @@ class ProjectPlugin(IPeppyPlugin):
         in a previous invocation of peppy.
         """
         return bool(cls.classprefs.ctags_command)
+    
+    def getTabMenu(self, action_classes=None):
+        action_classes.extend([(810, CurrentlyLoadedFilesInProject)])
 
     def getCompatibleActions(self, modecls):
         actions = []
