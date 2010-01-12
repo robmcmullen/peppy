@@ -31,6 +31,8 @@ class NewTab(SelectAction):
     """
     alias = "new-tab"
     name = "New Tab"
+    icon = "icons/tab_new.png"
+    default_toolbar = False
     default_menu = ("File/New", 1)
 
     def action(self, index=-1, multiplier=1):
@@ -41,6 +43,8 @@ class CloseTab(SelectAction):
     """Close the current tab"""
     alias = "close-tab"
     name = "Close Tab"
+    icon = "icons/tab_close.png"
+    default_toolbar = False
 
     def action(self, index=-1, multiplier=1):
         assert self.dprint("id=%x name=%s index=%s" % (id(self),self.name,str(index)))
@@ -937,7 +941,7 @@ class MainMenu(IPeppyPlugin):
         Publisher().unsubscribe(self.getFundamentalMenu)
     
     def getTabBackgroundMenu(self, action_classes=None):
-        action_classes.extend([NewTab])
+        action_classes.extend([(-50, NewTab), (-100, OpenFileGUI)])
 
     def getTabMenu(self, msg):
         action_classes = msg.data
