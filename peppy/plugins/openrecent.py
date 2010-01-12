@@ -9,6 +9,7 @@ into the configuration file load and save process.
 """
 import os
 
+from peppy.third_party.pubsub import pub
 from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
@@ -282,12 +283,12 @@ class RecentFilesPlugin(IPeppyPlugin):
     def activateHook(self):
         Publisher().subscribe(RecentFiles.append, 'buffer.opened')
         Publisher().subscribe(RecentProjectFiles.append, 'project.file.opened')
-        Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
+        pub.subscribe(self.getTabMenu, 'tabs.context_menu')
 
     def deactivateHook(self):
         Publisher().unsubscribe(RecentFiles.append)
         Publisher().unsubscribe(RecentProjectFiles.append)
-        Publisher().unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabMenu)
 
     @classmethod
     def getFile(cls, actioncls):
@@ -302,8 +303,7 @@ class RecentFilesPlugin(IPeppyPlugin):
         RecentProjectFiles.loadStorage()
         FileCabinet.loadStorage()
 
-    def getTabMenu(self, msg):
-        action_classes = msg.data
+    def getTabMenu(self, action_classes=None):
         action_classes.extend([(-600, AddToFileCabinet)])
 
     def getActions(self):

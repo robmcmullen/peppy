@@ -918,18 +918,18 @@ class MainMenu(IPeppyPlugin):
     """
     def activateHook(self):
         pub.subscribe(self.getTabBackgroundMenu, 'tab_background.context_menu')
-        Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
+        pub.subscribe(self.getTabMenu, 'tabs.context_menu')
         Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
     
     def deactivateHook(self):
-        Publisher().unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabBackgroundMenu)
+        pub.unsubscribe(self.getTabMenu)
         Publisher().unsubscribe(self.getFundamentalMenu)
     
     def getTabBackgroundMenu(self, action_classes=None):
         action_classes.extend([(-50, NewTab), (-100, OpenFileGUI)])
 
-    def getTabMenu(self, msg):
-        action_classes = msg.data
+    def getTabMenu(self, action_classes=None):
         action_classes.extend([NewTab, CloseTab, MoveTabToNewWindow])
         #dprint(action_classes)
 

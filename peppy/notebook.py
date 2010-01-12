@@ -8,7 +8,6 @@ import os
 
 import wx
 import peppy.third_party.aui as aui
-from wx.lib.pubsub import Publisher
 from peppy.third_party.pubsub import pub
 
 from peppy.debug import *
@@ -137,7 +136,7 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
         index = self._tabs.GetIdxFromWindow(wrapper)
         #dprint("Context menu over tab %d: %s" % (tab, aui_notebook_page.caption))
         action_classes = []
-        Publisher().sendMessage('tabs.context_menu', action_classes)
+        pub.sendMessage('tabs.context_menu', action_classes=action_classes)
         #dprint(action_classes)
         options = {
             'context_tab': index,

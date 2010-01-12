@@ -9,6 +9,7 @@ else, or to adjust the tabs themselves.
 import os
 
 import wx
+from peppy.third_party.pubsub import pub
 
 from peppy.yapsy.plugins import *
 from peppy.frame import *
@@ -91,13 +92,12 @@ class SwitchBuffersPlugin(IPeppyPlugin):
     """Yapsy plugin to register the tab change actions
     """
     def activateHook(self):
-        Publisher().subscribe(self.getTabMenu, 'tabs.context_menu')
+        pub.subscribe(self.getTabMenu, 'tabs.context_menu')
     
     def deactivateHook(self):
-        Publisher().unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabMenu)
     
-    def getTabMenu(self, msg):
-        action_classes = msg.data
+    def getTabMenu(self, action_classes=None):
         action_classes.extend([(-800, BufferPopupList)])
         #dprint(action_classes)
 
