@@ -1962,7 +1962,7 @@ class GlobalPrefs(debugmixin):
                             if cls.debuglevel > 0: dprint("Found %s: %s" % (keyword, d[keyword]))
                             for option, value in d.iteritems():
                                 if option.startswith(keyword) and '[' in option:
-                                    if value == d[keyword]:
+                                    if keyword in d and value == d[keyword]:
                                         i = option.find('[')
                                         index = option[i+1:len(option)-1]
                                         break
