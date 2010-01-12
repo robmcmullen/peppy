@@ -95,7 +95,7 @@ class SwitchBuffersPlugin(IPeppyPlugin):
         pub.subscribe(self.getTabMenu, 'tabs.context_menu')
     
     def deactivateHook(self):
-        pub.unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
     
     def getTabMenu(self, action_classes=None):
         action_classes.extend([(-800, BufferPopupList)])

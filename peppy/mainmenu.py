@@ -922,8 +922,8 @@ class MainMenu(IPeppyPlugin):
         Publisher().subscribe(self.getFundamentalMenu, 'fundamental.context_menu')
     
     def deactivateHook(self):
-        pub.unsubscribe(self.getTabBackgroundMenu)
-        pub.unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabBackgroundMenu, 'tab_background.context_menu')
+        pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
         Publisher().unsubscribe(self.getFundamentalMenu)
     
     def getTabBackgroundMenu(self, action_classes=None):

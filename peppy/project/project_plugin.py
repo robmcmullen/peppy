@@ -144,7 +144,7 @@ class ProjectPlugin(IPeppyPlugin):
         Publisher().unsubscribe(self.projectInfo)
         Publisher().unsubscribe(self.getFundamentalMenu)
         Publisher().unsubscribe(self.applyProjectSettings)
-        pub.unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
     
     @classmethod
     def getTemplateFilename(cls, template_name):

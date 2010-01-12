@@ -287,7 +287,7 @@ class RecentFilesPlugin(IPeppyPlugin):
     def deactivateHook(self):
         pub.unsubscribe(RecentFiles.append, 'buffer.opened')
         Publisher().unsubscribe(RecentProjectFiles.append)
-        pub.unsubscribe(self.getTabMenu)
+        pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
 
     @classmethod
     def getFile(cls, actioncls):
