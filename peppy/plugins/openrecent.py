@@ -239,7 +239,6 @@ class FileCabinet(RecentFiles):
 
 class AddToFileCabinet(SelectAction):
     """Add to the saved URL (i.e. file cabinet) list"""
-    alias = "add-file-cabinet"
     name = "Add To File Cabinet"
     default_menu = ("File/File Cabinet", -900)
     osx_minimal_menu = True
@@ -259,7 +258,6 @@ class AddToFileCabinet(SelectAction):
 
 class ReorderFileCabinet(SelectAction):
     """Reorder list of files in File Cabinet"""
-    alias = "reorder-file-cabinet"
     name = "Reorder File Cabinet"
     default_menu = ("File/File Cabinet", 910)
     osx_minimal_menu = True

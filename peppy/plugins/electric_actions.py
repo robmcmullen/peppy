@@ -59,7 +59,6 @@ class ElectricReturn(TextModificationAction):
     shifted character like ')' or ':'.  Without this S-RET binding, Scintilla
     would insert a raw CR in the text instead of autoindenting.
     """
-    alias = "electric-return"
     name = "Electric Return"
     icon = 'icons/text_indent_rob.png'
     key_bindings = {'default': ['RET', 'S-RET'],}
@@ -83,7 +82,6 @@ class ScintillaReturn(ScintillaCmdKeyExecute):
 class ElectricDelete(TextModificationAction):
     """Delete all whitespace from cursor forward to the next non-blank character
     """
-    alias = "electric-delete"
     name = "Electric Delete"
     key_bindings = {'default': 'DELETE',}
     needs_keyboard_focus = True
@@ -100,7 +98,6 @@ class ScintillaDelete(ScintillaCmdKeyExecute):
 class ElectricBackspace(TextModificationAction):
     """Delete all whitespace from cursor back to the last non-blank character
     """
-    alias = "electric-backspace"
     name = "Electric Backspace"
     key_bindings = {'default': 'BACK',}
     needs_keyboard_focus = True
@@ -120,7 +117,6 @@ class Reindent(TextModificationAction):
     Recalculates the indentation for the selected region, using the current
     major mode's algorithm for indentation.
     """
-    alias = "reindent-region"
     name = "Reindent"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'TAB',}

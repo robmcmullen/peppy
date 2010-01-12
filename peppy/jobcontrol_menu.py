@@ -64,7 +64,6 @@ class RunScript(RunMixin, SelectAction):
     Interpreter settings are controlled using the L{JobControlMixin} settings
     of the major mode in the Preferences dialog.
     """
-    alias = "run-script"
     name = "Run"
     icon = 'icons/script_go.png'
     default_menu = ("Tools", 10)
@@ -79,7 +78,6 @@ class RunScriptWithArgs(RunMixin, SelectAction):
     Like L{RunScript}, except provides the capability to specify optional
     arguments to the command line that runs the interpreter.
     """
-    alias = "run-script-with-args"
     name = "Run with Args"
     icon = "icons/script_edit.png"
     default_menu = ("Tools", 12)
@@ -99,7 +97,6 @@ class RunFilter(RunMixin, SelectAction):
     Similar to L{RunScript} except it provides the opportunity to specify the
     entire command line used to process the current file.
     """
-    alias = "run-filter"
     name = "Run Filter"
     default_menu = ("Tools", 13)
 
@@ -125,7 +122,6 @@ class StopScript(RunMixin, SelectAction):
     If an interpreter is processing the current document, it can be forcefully
     stopped using this command.
     """
-    alias = "stop-script"
     name = "Stop"
     icon = 'icons/stop.png'
     default_menu = ("Tools", 19)

@@ -394,6 +394,19 @@ class SelectAction(debugmixin):
             return unicode(cls.name)
         return unicode(cls.__name__)
     
+    @classmethod
+    def getAlias(cls):
+        if cls.alias is not None:
+            if not cls.alias:
+                cls.alias = cls.convertCamelCaseToAlias(cls.__name__)
+        return cls.alias
+    
+    @classmethod
+    def convertCamelCaseToAlias(cls, s):
+        # Found this regex at http://www.djangosnippets.org/snippets/585/
+        import re
+        return re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', '-\\1', s).lower().strip('-')
+    
     def getDefaultMenuItemName(self):
         if self._use_accelerators and self.__class__.keyboard and self.keystroke_valid and self.popup_options is None:
             return u"%s%s" % (_(self.getName()), self._accelerator_text)

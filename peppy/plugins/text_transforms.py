@@ -28,7 +28,6 @@ class CommentRegion(TextModificationAction):
     if there is an end comment delimiter, it will appear as the last
     character(s) before the end of line indicatior.
     """
-    alias = "comment-region"
     name = "&Comment Region"
     default_menu = ("Transform", -600)
     key_bindings = {'emacs': 'C-c C-c',
@@ -45,7 +44,6 @@ class UncommentRegion(TextModificationAction):
     lines in the region that have been commented out, and will remove
     the comment character(s) from the line.
     """
-    alias = "uncomment-region"
     name = "&Uncomment Region"
     default_menu = ("Transform", 601)
     key_bindings = {'emacs': 'C-u C-c C-c',
@@ -57,7 +55,6 @@ class UncommentRegion(TextModificationAction):
 
 class Tabify(LineOrRegionMutateAction):
     """Replace spaces with tabs at the start of lines."""
-    alias = "tabify"
     name = "&Tabify"
     default_menu = (("Transform/Whitespace", -800), 100)
 
@@ -75,7 +72,6 @@ class Tabify(LineOrRegionMutateAction):
 
 class Untabify(LineOrRegionMutateAction):
     """Replace tabs with spaces at the start of lines."""
-    alias = "untabify"
     name = "&Untabify"
     default_menu = ("Transform/Whitespace", 110)
 
@@ -95,7 +91,6 @@ class RemoveTrailingWhitespace(LineOrRegionMutateAction):
     Operates on the current line, or lines that make up the currently selected
     region.
     """
-    alias = "remove-trailing-whitespace"
     name = "Remove Trailing Whitespace"
     default_menu = ("Transform/Whitespace", 200)
 
@@ -197,7 +192,6 @@ class Backslashify(LineOrRegionMutateAction):
     instance, within C or C++ C{#define} blocks that contain multiple line
     macros.
     """
-    alias = "backslashify"
     name = "Backslashify"
     default_menu = ("Transform", 910)
 
@@ -284,7 +278,6 @@ class JustOneSpace(TextModificationAction):
     Replaces any amount of whitespace surrounding the cursor with one space
     except at the begining and ends of lines, where it removes all white space.
     """
-    alias = "just-one-space"
     name = "Just One Space"
     default_menu = ("Transform", 602)
     key_bindings = {'default': 'M-SPACE',}
@@ -375,7 +368,6 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
     boundaries.  The lines are at most C{edge_column} characters long, where
     edge_column is defined in the Preferences for the major mode.
     """
-    alias = "fill-paragraph-or-region"
     name = "Fill Paragraph"
     default_menu = ("Transform", 608)
     key_bindings = {'default': 'M-q',}
@@ -397,7 +389,6 @@ class FillParagraphOrRegion(ParagraphOrRegionMutateAction):
 
 class JoinLines(LineOrRegionMutateAction):
     """Join selected lines into a single line separated by spaces."""
-    alias = "join-lines"
     name = "Join Lines"
     default_menu = ("Transform", 610)
     key_bindings = {'default': 'M-j',}
@@ -463,7 +454,6 @@ class SortLines(LineOrRegionMutateAction):
     sort, so a line starting with " A quick brown fox" will be sorted before
     "A quick brown fox".
     """
-    alias = "sort-lines"
     name = "Sort Lines"
     default_menu = (("Transform/Reorder", 820), 100)
 
@@ -495,7 +485,6 @@ class SortLinesByField(MinibufferAction, LineOrRegionMutateAction):
     the method resolution order, its action method is the one that's used by
     the menu system (the MinibufferAction.action method is hidden).
     """
-    alias = "sort-lines-by-field"
     name = "Sort Lines by Field"
     default_menu = ("Transform/Reorder", 110)
 
@@ -545,7 +534,6 @@ class ReverseLines(LineOrRegionMutateAction):
     The region will be extended to include complete lines if the beginning or
     the end of the region starts in the middle of a line.
     """
-    alias = "reverse-lines"
     name = "Reverse Lines"
     default_menu = ("Transform/Reorder", -200)
 
@@ -568,7 +556,6 @@ class ShuffleLines(LineOrRegionMutateAction):
     The region will be extended to include complete lines if the beginning or
     the end of the region starts in the middle of a line.
     """
-    alias = "shuffle-lines"
     name = "Shuffle Lines"
     default_menu = ("Transform/Reorder", 210)
 
@@ -600,7 +587,6 @@ class TransposeChars(TextModificationAction):
     cursor.  Otherwise, it swaps the characters on either side of the cursor
     and advances the cursor one position.
     """
-    alias = "transpose-chars"
     name = "Transpose Characters"
     default_menu = ("Transform/Reorder", -300)
     key_bindings = {'emacs': 'C-t',}
@@ -668,7 +654,6 @@ class TransposeLineDown(TextModificationAction):
     Emacs compatibility command, transposing the current line with the one
     below it, moving the cursor down one line as a side effect.
     """
-    alias = "transpose-line-down"
     name = "Transpose Line Down"
     default_menu = ("Transform/Reorder", 301)
     key_bindings = {'emacs': 'C-S-t',}

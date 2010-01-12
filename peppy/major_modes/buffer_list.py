@@ -78,7 +78,6 @@ class BufferListSave(FlagMixin, SelectAction):
     flag = 'S'
 
 class BufferListSaveBackwards(FlagBackwardsMixin, SelectAction):
-    alias = "buffer-list-save-backwards"
     name = "Mark for Save and Move Backwards"
     """Mark the selected buffer to be saved and move to the previous item."""
     default_menu = ("Actions", 111)

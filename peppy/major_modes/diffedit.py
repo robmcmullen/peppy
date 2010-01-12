@@ -20,7 +20,6 @@ from peppy.fundamental import *
 
 class NextDiff(SelectAction):
     """Scroll to view the next diff."""
-    alias = "next-diff"
     name = "Next Diff"
     default_menu = ("Tools", 252)
     key_bindings = {'default': 'S-M-n'}
@@ -43,7 +42,6 @@ class NextDiff(SelectAction):
 
 class PrevDiff(SelectAction):
     """Scroll to view the previous diff."""
-    alias = "prev-diff"
     name = "Prev Diff"
     default_menu = ("Tools", 253)
     key_bindings = {'default': 'S-M-p'}

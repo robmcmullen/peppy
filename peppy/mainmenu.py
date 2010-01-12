@@ -29,7 +29,6 @@ class NewTab(SelectAction):
     
     Open a blank tab in the current frame.
     """
-    alias = "new-tab"
     name = "New Tab"
     icon = "icons/tab_new.png"
     default_toolbar = False
@@ -41,7 +40,6 @@ class NewTab(SelectAction):
 
 class CloseTab(SelectAction):
     """Close the current tab"""
-    alias = "close-tab"
     name = "Close Tab"
     icon = "icons/tab_close.png"
     default_toolbar = False
@@ -57,7 +55,6 @@ class MoveTabToNewWindow(SelectAction):
     Creates a new window and moves the current tab from the current window to
     the newly created window.
     """
-    alias = "move-tab-to-new-window"
     name = "Move Tab to New Window"
     default_menu = ("Window", 150)
 
@@ -79,7 +76,6 @@ class New(SelectAction):
     document will not be linked to any file on the computer, so it must be
     saved using the L{SaveAs} menu item.
     """
-    alias = "new-file"
     name = "Text file"
     icon = "icons/page_white_text_new.png"
     default_menu = (("File/New", 1), -99)
@@ -287,7 +283,6 @@ class Exit(SelectAction):
     Exits peppy, prompting to save any files that have been modified but not
     yet saved.
     """
-    alias = "exit-peppy-to-return-again-soon"
     name = "E&xit"
     if wx.Platform == '__WXMAC__':
         # Only add the stock ID where we must: on the mac.  It interferes
@@ -315,7 +310,6 @@ class CloseBuffer(SelectAction):
     Note for advanced users: there are other ways to delete a document from
     memory, including the L{ListAllDocuments} menu item.
     """
-    alias = "close-buffer"
     name = "&Close Document"
     icon = "icons/cross.png"
     default_menu = ("File", 890)
@@ -401,7 +395,6 @@ class Undo(BufferBusyActionMixin, SelectAction):
     
     Note that not all actions are undoable.
     """
-    alias = "undo"
     name = "Undo"
     icon = "icons/undo.png"
     default_menu = ("Edit", 0)
@@ -424,7 +417,6 @@ class Redo(BufferBusyActionMixin, SelectAction):
     
     Applies the last action that was unapplied from the most recent L{Undo}.
     """
-    alias = "redo"
     name = "Redo"
     icon = "icons/redo.png"
     default_menu = ("Edit", 1)
@@ -515,7 +507,6 @@ class PasteAtColumn(STCModificationAction):
     inserted from the clipboard.  The clipboard text is not converted into a
     rectangular block of text with spaces added to the right margins of lines.
     """
-    alias = "paste-at-column"
     name = "Paste at Column"
     icon = "icons/paste_plain.png"
     default_menu = ("Edit", 103)
@@ -537,7 +528,6 @@ class SelectAll(STCModificationAction):
     Selects all text in the document, but the cursor remains in the same
     position.
     """
-    alias = "select-all"
     name = "Select All"
     icon = None
     default_menu = ("Edit", -125)
@@ -730,7 +720,6 @@ class ToolbarShow(ToggleAction):
     
     Toggles the visibility of the toolbar for this window.
     """
-    alias = "show-toolbar"
     name = "&Show Toolbars"
     default_menu = ("View", -990)
 
@@ -762,7 +751,7 @@ class ActionNameMinibufferMixin(object):
         for action in actions:
             # look at the emacs alias, the class name, and the
             # possibility of the translated class namex
-            for name in [action.alias, action.__class__.__name__,
+            for name in [action.getAlias(), action.__class__.__name__,
                          _(action.__class__.__name__)]:
                 #dprint("name = %s" % name)
                 if name and name not in self.map:
@@ -828,12 +817,11 @@ class DescribeAction(ActionNameMinibufferMixin, SelectAction):
     Displays help text and keyboard bindings for any action in peppy.
     """
     name = "&Describe Action"
-    alias = "describe-action"
     default_menu = ("&Help", -200)
     key_bindings = {'emacs': "C-h a", }
 
     def __init__(self, *args, **kwargs):
-        ActionNameMinibufferMixin.__init__(self, self.alias)
+        ActionNameMinibufferMixin.__init__(self, self.getAlias())
         SelectAction.__init__(self, *args, **kwargs)
 
     def getActionList(self):
@@ -867,7 +855,6 @@ class DescribeKey(SelectAction):
     documentation are displayed.  If no match is found, an error is printed.
     """
     name = "&Describe Key"
-    alias = "describe-key"
     default_menu = ("&Help", 201)
     key_bindings = {'emacs': "C-h k", }
 
@@ -889,7 +876,6 @@ class CancelMinibuffer(SelectAction):
     This is a special key sequence that will remove the minibuffer regardless
     of the state of the minibuffer.
     """
-    alias = "cancel-minibuffer"
     name = "Cancel Minibuffer"
     icon = 'icons/control_stop.png'
     key_bindings = {'default': "ESC", 'emacs': ["C-g", "M-ESC ESC",], 'mac+emacs': ["C-g", "M-ESC ESC",], }
@@ -906,7 +892,6 @@ class CancelMinibuffer(SelectAction):
 
 class HelpMinibuffer(SelectAction):
     """Show help for the currently active minibuffer"""
-    alias = "help-minibuffer"
     name = "Help on Minibuffer"
     default_menu = ("&Help", 210)
     key_bindings = {'emacs': "C-h m", }

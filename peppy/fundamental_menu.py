@@ -287,7 +287,6 @@ class LineNumbers(FundamentalSettingToggleMixin, ToggleAction):
     
     """
     local_setting = 'line_numbers'
-    alias = "line-numbers"
     name = "&Line Numbers"
     default_menu = ("View", -300)
 
@@ -302,7 +301,6 @@ class Wrapping(FundamentalSettingToggleMixin, ToggleAction):
     column without regard for word boundaries.
     """
     local_setting = 'wrapping'
-    alias = "wrapping"
     name = "&Line Wrapping"
     default_menu = ("View", 301)
 
@@ -314,7 +312,6 @@ class WordWrap(FundamentalSettingToggleMixin, ToggleAction):
     are broken at character boundaries.
     """
     local_setting = 'word_wrap'
-    alias = "word-wrap"
     name = "&Wrap Words"
     default_menu = ("View", 302)
 
@@ -329,7 +326,6 @@ class Folding(FundamentalSettingToggleMixin, ToggleAction):
     matching sets of braces, depending on the major mode.
     """
     local_setting = 'folding'
-    alias = "code-folding"
     name = "&Folding"
     default_menu = ("View", 304)
 
@@ -342,7 +338,6 @@ class ViewEOL(FundamentalSettingToggleMixin, ToggleAction):
     characters.
     """
     local_setting = 'view_eol'
-    alias = "view-eol"
     name = "EOL Characters"
     default_menu = ("View", 305)
 
@@ -487,7 +482,6 @@ class CaretLineHighlight(FundamentalSettingToggleMixin, ToggleAction):
 class FontZoom(ClassprefsTooltipMixin, MinibufferAction):
     """Set the font size relative to the default font (-10 to 20)
     """
-    alias = "font-zoom"
     name = "Set Font Zoom..."
     default_menu = (("View/Font Size", 320), -900)
     minibuffer = IntMinibuffer
@@ -539,7 +533,6 @@ class SelectBraces(TextModificationAction):
     characters (i.e.  parethesis, square brackets or curly brackets) around
     the current cursor position.
     """
-    alias = "select-braces"
     name = "Select Braces"
     icon = None
     default_menu = ("Edit", 126)
@@ -607,7 +600,6 @@ class RevertEncoding(SelectAction):
     This may be necessary if the encoding is not specified in the first few
     lines of the text, or specified incorrectly.
     """
-    alias = "revert-encoding"
     name = "Revert With Encoding"
     default_menu = ("File", 901)
     default_toolbar = False

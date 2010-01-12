@@ -29,7 +29,6 @@ class ListItemNext(ListMoveMixin, SelectAction):
     """Move the selection to the next item in the list.
     
     """
-    alias = "list-item-next"
     name = "Move to Next Item"
     default_menu = ("Actions", 100)
     key_bindings = {'default': ["n", "DOWN"], }
@@ -38,7 +37,6 @@ class ListItemPrevious(ListMoveMixin, SelectAction):
     """Move the selection to the previous item in the list.
     
     """
-    alias = "list-item-previous"
     name = "Move to Previous Item"
     default_menu = ("Actions", 101)
     key_bindings = {'default': ["p", "UP"], }
@@ -60,14 +58,12 @@ class ListItemPageDown(ListPageMoveMixin, SelectAction):
     """Move the selection to the next item in the list.
     
     """
-    alias = "list-item-page-down"
     key_bindings = {'default': "PAGEDOWN", }
 
 class ListItemPageUp(ListPageMoveMixin, SelectAction):
     """Move the selection to the previous item in the list.
     
     """
-    alias = "list-item-page-up"
     key_bindings = {'default': "PAGEUP", }
     direction = -1
 
@@ -75,7 +71,6 @@ class ListItemHome(ListMoveMixin, SelectAction):
     """Move the selection to the first item in the list.
     
     """
-    alias = "list-item-home"
     key_bindings = {'default': "HOME", }
     direction = -99999
 
@@ -83,7 +78,6 @@ class ListItemEnd(ListMoveMixin, SelectAction):
     """Move the selection to the last item in the list.
     
     """
-    alias = "list-item-end"
     key_bindings = {'default': "END", }
     direction = 99999
 
