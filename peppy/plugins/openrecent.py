@@ -81,8 +81,7 @@ class RecentFiles(OnDemandGlobalListAction):
         return storage
     
     @classmethod
-    def append(cls, msg):
-        buffer = msg.data
+    def append(cls, buffer=None):
         url = buffer.url
         cls.appendURL(url)
     
@@ -281,12 +280,12 @@ class RecentFilesPlugin(IPeppyPlugin):
         )
 
     def activateHook(self):
-        Publisher().subscribe(RecentFiles.append, 'buffer.opened')
+        pub.subscribe(RecentFiles.append, 'buffer.opened')
         Publisher().subscribe(RecentProjectFiles.append, 'project.file.opened')
         pub.subscribe(self.getTabMenu, 'tabs.context_menu')
 
     def deactivateHook(self):
-        Publisher().unsubscribe(RecentFiles.append)
+        pub.unsubscribe(RecentFiles.append, 'buffer.opened')
         Publisher().unsubscribe(RecentProjectFiles.append)
         pub.unsubscribe(self.getTabMenu)
 

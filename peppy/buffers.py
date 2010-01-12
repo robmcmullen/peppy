@@ -5,6 +5,7 @@ from cStringIO import StringIO
 
 import wx
 import wx.stc
+from peppy.third_party.pubsub import pub
 
 import peppy.vfs as vfs
 
@@ -450,7 +451,7 @@ class Buffer(BufferVFSMixin):
             # Need to destroy the base STC or self will never get garbage
             # collected
             self.stc.Destroy()
-            Publisher().sendMessage('buffer.closed', self.url)
+            pub.sendMessage('buffer.closed', url=self.url)
             dprint(u"removed buffer %s" % self.url)
             
             # If we don't have any more buffers with this basename, reset the
@@ -517,7 +518,7 @@ class Buffer(BufferVFSMixin):
 
         # Send a message to any interested plugins that a new buffer
         # has been successfully opened.
-        Publisher().sendMessage('buffer.opened', self)
+        pub.sendMessage('buffer.opened', buffer=self)
         wx.CallAfter(self.showModifiedAll)
 
     def open(self):
@@ -559,7 +560,7 @@ class Buffer(BufferVFSMixin):
                 self.setURL(saveas)
                 self.setName()
                 self.readonly = not vfs.can_write(saveas)
-                Publisher().sendMessage('buffer.opened', self)
+                pub.sendMessage('buffer.opened', buffer=self)
             self.setInitialStateIsUnmodified()
             self.showModifiedAll()
             self.saveTimestamp()
@@ -571,7 +572,7 @@ class Buffer(BufferVFSMixin):
         for view in self.viewers:
             assert self.dprint("notifing: %s modified = %s" % (view, self.modified))
             view.showModified(self.modified)
-        Publisher().sendMessage('buffer.modified', self)
+        pub.sendMessage('buffer.modified', buffer=self)
 
     def setBusy(self, state):
         self.busy = state

@@ -8,6 +8,7 @@ Major mode for displaying a list of buffers and operating on them.
 import os
 
 import wx
+from peppy.third_party.pubsub import pub
 
 from peppy.yapsy.plugins import *
 from peppy.actions import *
@@ -172,12 +173,20 @@ class BufferListMode(ListMode):
         return (itemDataMap[key1][1], itemDataMap[key2][1])
 
     def createListenersPostHook(self):
-        Publisher().subscribe(self.resetList, 'buffer.opened')
-        Publisher().subscribe(self.resetList, 'buffer.closed')
-        Publisher().subscribe(self.resetList, 'buffer.modified')
+        pub.subscribe(self.psBufferChanged, 'buffer.opened')
+        pub.subscribe(self.psBufferChanged, 'buffer.modified')
+        pub.subscribe(self.psBufferClosed, 'buffer.closed')
 
     def removeListenersPostHook(self):
-        Publisher().unsubscribe(self.resetList)
+        pub.unsubscribe(self.psBufferChanged, 'buffer.opened')
+        pub.unsubscribe(self.psBufferChanged, 'buffer.modified')
+        pub.unsubscribe(self.psBufferClosed, 'buffer.closed')
+    
+    def psBufferChanged(self, buffer=None):
+        self.resetList()
+
+    def psBufferClosed(self, url=None):
+        self.resetList()
 
     def createColumns(self, list):
         list.InsertSizedColumn(0, "Flags", min="MMMM", max="MMMM", greedy=True)
