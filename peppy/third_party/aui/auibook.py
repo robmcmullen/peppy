@@ -2403,9 +2403,6 @@ class TabFrame(wx.PyWindow):
         if not self._tabs:
             return
 
-        if self._tabs.IsFrozen() or self._tabs.GetParent().IsFrozen():
-            return
-
         hideOnSingle = ((self._tabs.GetFlags() & AUI_NB_HIDE_ON_SINGLE_TAB) and \
                         self._tabs.GetPageCount() <= 1)
         
@@ -5425,16 +5422,3 @@ class AuiNotebook(wx.PyControl):
         self._textCtrl.SetFocus()
 
         return True
-
-    
-    def Thaw(self):
-        """
-        Thaw L{AuiNotebook}.
-
-        Reenables window updating after a previous call to `Freeze`. To really thaw the
-        control, it must be called exactly the same number of times as `Freeze`.
-        """
-
-        wx.PyControl.Thaw(self)
-        self.DoSizing()
-
