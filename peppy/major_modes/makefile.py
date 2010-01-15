@@ -98,8 +98,9 @@ class MakefileMode(FundamentalMode):
     default_classprefs = (
         StrParam('extensions', 'mak makefile', fullwidth=True),
         StrParam('filename_regex', '(GNU)?([Mm]akefile$|[Mm]akefile\..*)$"', fullwidth=True),
-        BoolParam('use_tab_characters', True),
-        IntParam('tab_size', 8),
+        BoolParam('use_tab_characters', True, override_superclass=True),
+        IntParam('tab_size', 8, override_superclass=True),
+        IntParam('indent_size', 8, override_superclass=True),
         BoolParam('word_wrap', True),
         )
 

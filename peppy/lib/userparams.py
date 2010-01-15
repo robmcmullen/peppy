@@ -319,6 +319,11 @@ class Param(debugmixin):
         else:
             self.local = False
         
+        if 'override_superclass' in kwargs:
+            self.override_superclass = kwargs['override_superclass']
+        else:
+            self.override_superclass = False
+        
         # User options are anything leftover in the kwargs dict.
         self.user_options = dict(kwargs)
         
@@ -405,6 +410,12 @@ class Param(debugmixin):
         This is used in L{SupersededParam} to 
         """
         return False
+
+    def isOverridingSuperclass(self):
+        """True if this param breaks inheritance so that superclasses don't
+        provide defaults for this class.
+        """
+        return self.override_superclass
 
     def isDependentKeywordStart(self):
         """True if this param starts a list of dependent keywords
@@ -560,7 +571,7 @@ class Param(debugmixin):
         # to the string.
         if isinstance(value, str):
             value = '"%s"' % value
-        return value
+        return str(value)
 
     def setValue(self, ctrl, value):
         """Populate the control given the user value.
@@ -654,6 +665,9 @@ class ReadOnlyParam(debugmixin):
         return False
     
     def isSuperseded(self):
+        return False
+    
+    def isOverridingSuperclass(self):
         return False
     
     def isDependentKeywordStart(self):
@@ -1721,6 +1735,17 @@ class GlobalPrefs(debugmixin):
                         if not p.isSuperseded():
                             defs[p.keyword] = p.default
                             params[p.keyword] = p
+                        if p.isOverridingSuperclass():
+                            # If the definition in the class should take
+                            # precidence over any superclasses params, force
+                            # the user value so that the searching will
+                            # stop with this value and won't proceed up the
+                            # hierarchy.
+                            if p.keyword not in cls.user[klass.__name__]:
+                                value = p.valueToText(p.default)
+                                cls.user[klass.__name__][p.keyword] = value
+                                #dprint("Overriding %s.%s with %s" % (klass.__name__, p.keyword, value))
+                                cls.needs_conversion[klass.__name__] = True
                         if p.help:
                             helptext[p.keyword] = p.help
                         if p.isIterableDataType():

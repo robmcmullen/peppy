@@ -72,9 +72,9 @@ class ChangeLogMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     
     default_classprefs = (
         StrParam('filename_regex', '([Cc]hange[Ll]og(:?(\..*|$)))', fullwidth=True),
-        BoolParam('use_tab_characters', True),
-        IntParam('tab_size', 8),
-        IntParam('indent_size', 8),
+        BoolParam('use_tab_characters', True, override_superclass=True),
+        IntParam('tab_size', 8, override_superclass=True),
+        IntParam('indent_size', 8, override_superclass=True),
         BoolParam('word_wrap', True),
         StrParam('date_format_str', "%Y-%m-%d", "Date format string, in strftime format"),
         Param('indent_after', r'(^[0-9])', fullwidth=True),
