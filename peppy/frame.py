@@ -444,7 +444,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def SetStatusText(self, text, index=0):
         mode = self.getActiveMajorMode()
         if mode is not None:
-            mode.status_info.setText(text, index)
+            mode.status_info.setText(_(text), index)
     
     # non-wx methods
     

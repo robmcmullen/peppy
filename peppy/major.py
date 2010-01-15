@@ -1326,7 +1326,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         classes like L{FundamentalMode} and keystroke updates by the keyboard
         procassing system.
         """
-        self.status_info.setText(text, field)
+        self.status_info.setText(_(text), field)
     
     ##### Proxy services for the wrapper
     def updateAui(self):

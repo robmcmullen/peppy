@@ -443,7 +443,7 @@ class SelectAction(debugmixin):
             if name is None:
                 name = cls.getName()
             text += u"('%s', id=%d)" % (_(name), id)
-        return text
+        return _(text)
 
     def insertIntoMenu(self, menu, accel):
         self.widget = wx.MenuItem(menu, self.global_id, self.getDefaultMenuItemName(), self.getDefaultTooltip())
