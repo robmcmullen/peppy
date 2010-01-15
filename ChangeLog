@@ -1,3 +1,11 @@
+2010-01-14  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.14.1
+	* fixed tab character problem in ChangeLog and Makefile modes (bug #812)
+	* fixed statusbar to show i18n messages instead of always english
+	* added context menu to notebook tab background area (bug #819)
+	* added context menu to open documents from same project (bug #818)
+
 2009-12-21  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.14.0 "Solstice"
