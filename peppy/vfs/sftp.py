@@ -1,11 +1,11 @@
 # peppy Copyright (c) 2006-2008 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-import re, time, datetime, calendar, stat
+import stat
+from datetime import datetime
 from StringIO import StringIO
 
 # Import from itools
 from itools.vfs import BaseFS, register_file_system
-from itools.datatypes import HTTPDate
 from itools.vfs.vfs import READ, WRITE, READ_WRITE, APPEND, copy
 from itools.uri import get_reference, Reference
 from itools.uri.generic import Authority
@@ -152,17 +152,14 @@ class SFTPFS(BaseFS):
     @classmethod
     def get_mtime(cls, ref):
         attrs = cls._stat(ref)
-        return attrs.st_mtime
-
-    @classmethod
-    def get_mtime(cls, ref):
-        attrs = cls._stat(ref)
-        return attrs.st_mtime
+        return datetime.fromtimestamp(attrs.st_mtime)
+    
+    get_ctime = get_mtime
 
     @classmethod
     def get_atime(cls, ref):
         attrs = cls._stat(ref)
-        return attrs.st_atime
+        return datetime.fromtimestamp(attrs.st_atime)
 
     @classmethod
     def get_size(cls, ref):
