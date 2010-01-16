@@ -754,9 +754,10 @@ class URLMinibuffer(CompletionMinibuffer):
             else:
                 paths = self.completeScheme(text, uri, path)
         except:
-            import traceback
-            error = traceback.format_exc()
-            dprint(error)
+            if self.debuglevel > 0:
+                import traceback
+                error = traceback.format_exc()
+                dprint(error)
             paths = []
 
         paths.sort()

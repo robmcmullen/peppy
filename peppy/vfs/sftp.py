@@ -54,19 +54,31 @@ class SFTPFS(BaseFS):
             # entering the authority part of the URL and it doesn't make sense
             # to prompt for a username/passwd if the hostname isn't complete.
             transport_key = (hostname, port)
-            if not passwd:
-                if transport_key in cls.credentials:
-                    username, passwd = cls.credentials[transport_key]
-                else:
-                    callback = utils.get_authentication_callback()
-                    username, passwd = callback(hostname, "sftp", None, username)
-            if username and passwd:
-                cls.credentials[transport_key] = (username, passwd)
-                
-                t = paramiko.Transport(transport_key)
-                t.connect(username=username, password=passwd, hostkey=None)
-                sftp = paramiko.SFTPClient.from_transport(t)
-                return sftp
+            while True:
+                if cls.debug: dprint("username=%s, passwd=%s" % (username, passwd))
+                if not passwd:
+                    if transport_key in cls.credentials:
+                        username, passwd = cls.credentials[transport_key]
+                        if cls.debug: dprint("Found cached credentials for %s" % str(transport_key))
+                    else:
+                        callback = utils.get_authentication_callback()
+                        username, passwd = callback(hostname, "sftp", None, username)
+                        if cls.debug: dprint("User entered credentials: username=%s, passwd=%s" % (username, passwd))
+                if username and passwd:
+                    try:
+                        t = paramiko.Transport(transport_key)
+                        t.connect(username=username, password=passwd, hostkey=None)
+                        if t.is_authenticated():
+                            if cls.debug: dprint("Authenticated for user %s" % username)
+                            cls.credentials[transport_key] = (username, passwd)
+                            sftp = paramiko.SFTPClient.from_transport(t)
+                            return sftp
+                    except paramiko.AuthenticationException:
+                        pass
+                    if cls.debug: dprint("Failed password for user %s" % username)
+                    if transport_key in cls.credentials:
+                        del cls.credentials[transport_key]
+                    passwd = ""
         
         raise OSError("[Errno 2] Incomplete URL: '%s'" % ref)
         
@@ -75,10 +87,10 @@ class SFTPFS(BaseFS):
         newref = cls._copy_root_reference_without_username(ref)
         if newref in cls.connection_cache:
             client = cls.connection_cache[newref]
-            dprint("Found cached sftp connection: %s" % client)
+            if cls.debug: dprint("Found cached sftp connection: %s" % client)
         else:
             client = cls._get_sftp(ref)
-            dprint("Creating sftp connection: %s" % client)
+            if cls.debug: dprint("Creating sftp connection: %s" % client)
             cls.connection_cache[newref] = client
         return client
         
@@ -86,9 +98,7 @@ class SFTPFS(BaseFS):
     def _stat(cls, ref):
         client = cls._get_client(ref)
         attrs = client.stat(str(ref.path))
-        dprint(dir(attrs))
-        dprint(repr(attrs))
-        dprint("%s: %s" % (ref, attrs))
+        if cls.debug: dprint("%s: %s" % (ref, repr(attrs)))
         return attrs
     
     @classmethod
@@ -288,7 +298,7 @@ class SFTPFS(BaseFS):
             raise OSError("[Errno 20] Not a directory: '%s'" % ref)
         client = cls._get_client(ref)
         filenames = client.listdir(str(ref.path))
-        dprint(filenames)
+        if cls.debug: dprint(filenames)
         return filenames
 
 try:
