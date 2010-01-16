@@ -11,6 +11,7 @@ from peppy.vfs.utils import *
 import peppy.vfs.http
 import peppy.vfs.webdav
 import peppy.vfs.tar
+import peppy.vfs.sftp
 
 
 __all__ = [
