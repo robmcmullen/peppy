@@ -48,14 +48,27 @@ class SFTPFS(BaseFS):
             username = ""
             passwd = ""
         
-        if not passwd:
-            callback = utils.get_authentication_callback()
-            username, passwd = callback(hostname, "sftp", str(ref.path), username)
-            
-        t = paramiko.Transport((hostname, port))
-        t.connect(username=username, password=passwd, hostkey=None)
-        sftp = paramiko.SFTPClient.from_transport(t)
-        return sftp
+        if hostname and str(ref.path).startswith("/"):
+            # The only time the SFTP client should be created is when a complete
+            # path exists.  Otherwise, the user may be in the middle of
+            # entering the authority part of the URL and it doesn't make sense
+            # to prompt for a username/passwd if the hostname isn't complete.
+            transport_key = (hostname, port)
+            if not passwd:
+                if transport_key in cls.credentials:
+                    username, passwd = cls.credentials[transport_key]
+                else:
+                    callback = utils.get_authentication_callback()
+                    username, passwd = callback(hostname, "sftp", None, username)
+            if username and passwd:
+                cls.credentials[transport_key] = (username, passwd)
+                
+                t = paramiko.Transport(transport_key)
+                t.connect(username=username, password=passwd, hostkey=None)
+                sftp = paramiko.SFTPClient.from_transport(t)
+                return sftp
+        
+        raise OSError("[Errno 2] Incomplete URL: '%s'" % ref)
         
     @classmethod
     def _get_client(cls, ref):

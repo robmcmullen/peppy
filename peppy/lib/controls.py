@@ -502,9 +502,9 @@ class CredentialsDialog(wx.Dialog):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         message = ""
-        if url is not None:
+        if url:
             message += "A username and password are being requested by %s\n" % url
-        if realm is not None:
+        if realm:
             message += "The site says: \"%s\"" % realm
         label = wx.StaticText(self, -1, message)
         sizer.Add(label, 0, flag=wx.ALIGN_CENTRE|wx.ALL)
@@ -541,7 +541,7 @@ class CredentialsDialog(wx.Dialog):
 
         self.Layout()
         
-        if username is not None:
+        if username:
             self.username.SetValue(username)
             self.password.SetFocus()
         else:
