@@ -33,63 +33,6 @@ def get_transport(transport_key):
     pub_key = t.get_remote_server_key()
     return t
 
-def private_key_auth(transport_key, username):
-    """Attempt to authenticate to the given transport using the private keys
-    available from the user's home directory
-    """
-    callback = utils.get_authentication_callback()
-    t = get_transport(transport_key)
-    if not username:
-        username = getpass.getuser()
-    if not t.is_authenticated():
-        agent = paramiko.Agent()
-        agent_keys = agent.get_keys()
-        if len(agent_keys) > 0:
-            for key in agent_keys:
-                dprint('Trying ssh-agent key %s' % hexlify(key.get_fingerprint()))
-                try:
-                    t.auth_publickey(username, key)
-                    dprint('... success!')
-                    break
-                except paramiko.SSHException:
-                    if not t.is_active():
-                        t = get_transport(transport_key)
-        
-    if not t.is_authenticated():
-        path = os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
-        if os.path.exists(path):
-            dprint("Trying RSA private key")
-            try:
-                key = paramiko.RSAKey.from_private_key_file(path)
-            except paramiko.PasswordRequiredException:
-                username, passwd = callback(hostname, "sftp", "RSA key pass phrase", username)
-                key = paramiko.RSAKey.from_private_key_file(path, passwd)
-            try:
-                t.auth_publickey(username, key)
-                dprint("RSA private key authorization successful.")
-            except paramiko.AuthenticationException:
-                dprint("RSA private key authorization failed.")
-                if not t.is_active():
-                    t = get_transport(transport_key)
-    
-    if not t.is_authenticated():
-        path = os.path.join(os.environ['HOME'], '.ssh', 'id_dsa')
-        if os.path.exists(path):
-            dprint("Trying DSS private key")
-            try:
-                key = paramiko.DSSKey.from_private_key_file(path)
-            except paramiko.PasswordRequiredException:
-                username, passwd = callback(hostname, "sftp", "DSS key pass phrase", username)
-                key = paramiko.DSSKey.from_private_key_file(path, password)
-            try:
-                t.auth_publickey(username, key)
-                dprint("DSS private key authorization successful.")
-            except paramiko.AuthenticationException:
-                dprint("DSS private key authorization failed.")
-                if not t.is_active():
-                    t = get_transport(transport_key)
-    
-    return t
 
 
 class SFTPFS(BaseFS):
@@ -98,7 +41,7 @@ class SFTPFS(BaseFS):
     credentials = {}
     connection_cache = TimeExpiringDict(10)
     
-    debug = True
+    debug = False
 
     @classmethod
     def _get_sftp(cls, ref):
@@ -123,39 +66,104 @@ class SFTPFS(BaseFS):
             # entering the authority part of the URL and it doesn't make sense
             # to prompt for a username/passwd if the hostname isn't complete.
             transport_key = (hostname, port)
-            t = private_key_auth(transport_key, username)
-            while not t.is_authenticated():
-                if cls.debug: dprint("username=%s, passwd=%s" % (username, passwd))
-                if not passwd:
-                    if transport_key in cls.credentials:
-                        username, passwd = cls.credentials[transport_key]
-                        if cls.debug: dprint("Found cached credentials for %s" % str(transport_key))
-                    else:
-                        callback = utils.get_authentication_callback()
-                        username, passwd = callback(hostname, "sftp", None, username)
-                        if cls.debug: dprint("User entered credentials: username=%s, passwd=%s" % (username, passwd))
-                if username and passwd:
-                    try:
-                        t = get_transport(transport_key)
-                        t.auth_password(username=username, password=passwd)
-                    except paramiko.AuthenticationException:
-                        import traceback
-                        error = traceback.format_exc()
-                        dprint(error)
-                        pass
-                    if not t.is_authenticated():
-                        if cls.debug: dprint("Failed password for user %s" % username)
-                        if transport_key in cls.credentials:
-                            del cls.credentials[transport_key]
-                        passwd = ""
+            t = cls._private_key_auth(transport_key, username)
+            if not t.is_authenticated():
+                t = cls._password_auth(transport_key, username, passwd)
+
             if t.is_authenticated():
-                if cls.debug: dprint("Authenticated for user %s" % username)
-                cls.credentials[transport_key] = (username, passwd)
                 sftp = paramiko.SFTPClient.from_transport(t)
                 return sftp
         
         raise OSError("[Errno 2] Incomplete URL: '%s'" % ref)
+    
+    @classmethod
+    def _private_key_auth(cls, transport_key, username):
+        """Attempt to authenticate to the given transport using the private keys
+        available from the user's home directory
+        """
+        callback = utils.get_authentication_callback()
+        t = get_transport(transport_key)
+        if not username:
+            username = getpass.getuser()
+        if not t.is_authenticated():
+            agent = paramiko.Agent()
+            agent_keys = agent.get_keys()
+            if len(agent_keys) > 0:
+                for key in agent_keys:
+                    if cls.debug: dprint('Trying ssh-agent key %s' % hexlify(key.get_fingerprint()))
+                    try:
+                        t.auth_publickey(username, key)
+                        if cls.debug: dprint('... success!')
+                        break
+                    except paramiko.SSHException:
+                        if not t.is_active():
+                            t = get_transport(transport_key)
+            
+        if not t.is_authenticated():
+            path = os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+            if os.path.exists(path):
+                if cls.debug: dprint("Trying RSA private key")
+                try:
+                    key = paramiko.RSAKey.from_private_key_file(path)
+                except paramiko.PasswordRequiredException:
+                    username, passwd = callback(transport_key[0], "sftp", "RSA key pass phrase", username)
+                    key = paramiko.RSAKey.from_private_key_file(path, passwd)
+                try:
+                    t.auth_publickey(username, key)
+                    if cls.debug: dprint("RSA private key authorization successful.")
+                except paramiko.AuthenticationException:
+                    dprint("RSA private key authorization failed.")
+                    if not t.is_active():
+                        t = get_transport(transport_key)
         
+        if not t.is_authenticated():
+            path = os.path.join(os.environ['HOME'], '.ssh', 'id_dsa')
+            if os.path.exists(path):
+                if cls.debug: dprint("Trying DSS private key")
+                try:
+                    key = paramiko.DSSKey.from_private_key_file(path)
+                except paramiko.PasswordRequiredException:
+                    username, passwd = callback(transport_key[0], "sftp", "DSS key pass phrase", username)
+                    key = paramiko.DSSKey.from_private_key_file(path, password)
+                try:
+                    t.auth_publickey(username, key)
+                    if cls.debug: dprint("DSS private key authorization successful.")
+                except paramiko.AuthenticationException:
+                    if cls.debug: dprint("DSS private key authorization failed.")
+                    if not t.is_active():
+                        t = get_transport(transport_key)
+        
+        return t
+    
+    @classmethod
+    def _password_auth(cls, transport_key, username, passwd):
+        while True:
+            if cls.debug: dprint("username=%s, passwd=%s" % (username, passwd))
+            if not passwd:
+                if transport_key in cls.credentials:
+                    username, passwd = cls.credentials[transport_key]
+                    if cls.debug: dprint("Found cached credentials for %s" % str(transport_key))
+                else:
+                    callback = utils.get_authentication_callback()
+                    username, passwd = callback(transport_key[0], "sftp", None, username)
+                    if cls.debug: dprint("User entered credentials: username=%s, passwd=%s" % (username, passwd))
+            if username and passwd:
+                try:
+                    t = get_transport(transport_key)
+                    t.auth_password(username=username, password=passwd)
+                    if cls.debug: dprint("Authenticated for user %s" % username)
+                    cls.credentials[transport_key] = (username, passwd)
+                    return t
+                except paramiko.AuthenticationException:
+                    import traceback
+                    error = traceback.format_exc()
+                    dprint(error)
+                    pass
+                if cls.debug: dprint("Failed password for user %s" % username)
+                if transport_key in cls.credentials:
+                    del cls.credentials[transport_key]
+                passwd = ""
+
     @classmethod
     def _get_client(cls, ref):
         newref = cls._copy_root_reference_without_username(ref)
