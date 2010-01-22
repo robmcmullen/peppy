@@ -132,10 +132,34 @@ duration of your editing session.  Optionally, a less secure method is also
 supported where you embed the authentication information directly into the URL
 itself, like: **webdav://user:pass@www.webdavserver.com/path/to/file**
 
+SFTP
+----
+
+The 0.14.1 release added experimental support for the `SSH File Transfer
+Protocol (SFTP) <http://en.wikipedia.org/wiki/SSH_file_transfer_protocol>`_,
+which is a method to access a remote filesystem using the SSH protocol to
+provide encryption and security.
+
+This is currently an *experimental* addition to peppy, but is expected to be a
+stable feature in the next major release of peppy.
+
+SFTP files and directories are accessed using URLs like
+**sftp://some.server.com/path/to/file**, where peppy will prompt you
+for authentication information and remember the authentication for the
+duration of your editing session.  A username may also be specified,
+like **sftp://username@some.server.com/path/to/file**, in which case
+peppy will prompt you for the password by popping up a dialog box.  Also
+supported, but not recommended, is to include the password in the URL like
+**sftp://username:passwd@some.server.com/path/to/file**, but this will result
+in the storage of the plain text password in history files and other places.
+Definitely not recommended.
+
 Other Network File Systems
 --------------------------
 
-Support for loading files over scp and sftp (secure FTP) is planned.
+Support for other network protocols may be added in the future.  Under
+consideration are the old insecure FTP protocol, as well as the Files
+transferred over Shell (FISH) protocol.
 
 
 Special File Systems
