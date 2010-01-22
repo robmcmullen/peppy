@@ -2,7 +2,9 @@
 #This is generated code - do not edit
 encoding = 'utf-8'
 dict = {
+' of ': ' el ',
 '&About...': '&Pri...',
+'&Close Document': '&Fermi dokumenton',
 '&Help': '&Helpo',
 '&New Window': '&Nova fenestro',
 '&Preferences...': '&Agordoj...',

@@ -21,6 +21,7 @@ dict = {
 'Add new ChangeLog entry to the top of the ChangeLog': 'Legg til ny ChangeLog inngang til toppen av ChangeLog',
 'Attributes': 'Attributter',
 'Background': 'Bakgrunn',
+'Bad input': 'D\xc3\xa5rlig inndata',
 'Cancel': 'Avbryt',
 'Cancel Minibuffer': 'Avbryt Minibuffer',
 'Capitalize': 'Store forbokstaver',
