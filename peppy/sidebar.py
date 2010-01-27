@@ -61,6 +61,9 @@ class Sidebar(ContextMenuMixin, ClassPrefs, debugmixin):
         self.frame = self.findFrameInWindowHierarchy(parent)
         wx.CallAfter(self.initPostCallback)
     
+    def __del__(self):
+        self.removeListeners()
+    
     def getFrame(self):
         return self.frame
     
@@ -102,18 +105,24 @@ class Sidebar(ContextMenuMixin, ClassPrefs, debugmixin):
         return options
 
     def createEventBindings(self):
-        """Hook to create any event bindings needed by the minor mode.
+        """Hook to create any event bindings needed by the sidebar.
         """
         pass
     
     def createListeners(self):
-        """Hook to register any publish/subscribe messages needed by the minor
-        mode.
+        """Hook to register any publish/subscribe messages needed by the
+        sidebar.
+        """
+        pass
+    
+    def removeListeners(self):
+        """Hook to remove any publish/subscribe listeners subscribed to in
+        L{createListeners}
         """
         pass
     
     def getPaneInfo(self):
-        """Create the AuiPaneInfo object for this minor mode.
+        """Create the AuiPaneInfo object for this sidebar.
         """
         paneinfo = self.getDefaultPaneInfo()
         self.paneInfoHook(paneinfo)

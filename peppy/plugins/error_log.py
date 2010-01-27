@@ -163,8 +163,12 @@ class ErrorLogSidebar(LoggingSTC, Sidebar):
         LoggingSTC.__init__(self, *args, **kwargs)
         Sidebar.__init__(self, *args, **kwargs)
 
+    def createListeners(self):
         Publisher().subscribe(self.showError, self.responds_to_message)
         Publisher().sendMessage(self.ready_message)
+    
+    def removeListeners(self):
+        Publisher().unsubscribe(self.showError)
         
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
