@@ -405,7 +405,7 @@ class ProjectPlugin(IPeppyPlugin):
         # If the file belongs to a project, send message to anyone interested
         # that we've found the project
         if mode.project_info:
-            Publisher().sendMessage('project.file.opened', mode)
+            pub.sendMessage('project.file.opened', mode=mode)
         
         # handle templates for empty files
         if hasattr(mode, "isTemplateNeeded"):

@@ -10,7 +10,6 @@ into the configuration file load and save process.
 import os
 
 from peppy.third_party.pubsub import pub
-from wx.lib.pubsub import Publisher
 
 from peppy.yapsy.plugins import *
 from peppy.actions import *
@@ -149,8 +148,7 @@ class RecentProjectFiles(RecentFiles):
     add_at_top = True
     
     @classmethod
-    def append(cls, msg):
-        mode = msg.data
+    def append(cls, mode=None):
         if hasattr(mode, 'project_info'):
             proj = mode.project_info
             if proj:
@@ -281,12 +279,12 @@ class RecentFilesPlugin(IPeppyPlugin):
 
     def activateHook(self):
         pub.subscribe(RecentFiles.append, 'buffer.opened')
-        Publisher().subscribe(RecentProjectFiles.append, 'project.file.opened')
+        pub.subscribe(RecentProjectFiles.append, 'project.file.opened')
         pub.subscribe(self.getTabMenu, 'tabs.context_menu')
 
     def deactivateHook(self):
         pub.unsubscribe(RecentFiles.append, 'buffer.opened')
-        Publisher().unsubscribe(RecentProjectFiles.append)
+        pub.unsubscribe(RecentProjectFiles.append, 'project.file.opened')
         pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
 
     @classmethod
