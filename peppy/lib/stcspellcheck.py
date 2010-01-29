@@ -195,6 +195,16 @@ class STCSpellCheck(object):
         return []
     
     @classmethod
+    def getLibraryInfo(cls):
+        """Return a text string indicating the underlying library version
+        
+        """
+        try:
+            return "Enchant version %s" % enchant.__version__
+        except NameError:
+            return "No spell checker loaded."
+    
+    @classmethod
     def _getDict(cls, lang):
         try:
             d = enchant.Dict(lang)

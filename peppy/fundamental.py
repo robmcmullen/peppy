@@ -824,7 +824,14 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
 
     def idlePostHook(self):
         if self.spell and self.classprefs.spell_check:
-            self.spell.processIdleBlock()
+            try:
+                self.spell.processIdleBlock()
+            except Exception, e:
+                import traceback
+                error = traceback.format_exc()
+                print(error)
+                print("Problem with %s.  Turning off spell checking." % self.spell.getLibraryInfo())
+                self.spell = None
     
     def isSpellCheckRegion(self, pos):
         if self.classprefs.spell_check_strings_only:
