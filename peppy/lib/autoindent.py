@@ -156,7 +156,7 @@ class BasicAutoindent(debugmixin):
         stc.SetTargetStart(pos)
         stc.SetTargetEnd(pos)
         if col <= ind:
-            newline = linesep + stc.GetIndentString(col)
+            newline = linesep + self.getNewLineIndentString(stc, col, ind)
         elif not pos:
             newline = linesep
         else:
@@ -184,6 +184,18 @@ class BasicAutoindent(debugmixin):
         stc.ReplaceTarget(newline)
         stc.GotoPos(pos + len(newline))
         stc.EndUndoAction()
+    
+    def getNewLineIndentString(self, stc, col, ind):
+        """Return the number of characters to be indented on a new line
+        
+        Needed by some subclasses when the default indentation level is not the
+        left margin (e.g.  Fortran 77)
+        
+        @param stc: stc of interest
+        @param col: column position of cursor on line
+        @param ind: indentation in characters of cursor on line
+        """
+        return stc.GetIndentString(col)
 
     def processTab(self, stc):
         stc.BeginUndoAction()
@@ -763,7 +775,7 @@ class RegexAutoindent(BasicAutoindent):
     section of KDE, not with the main Kate application.
     """
     
-    def __init__(self, reIndentAfter, reIndent, reUnindent, braces):
+    def __init__(self, reIndentAfter, reIndent, reUnindent, braces, reFlags=0):
         """Create a regex autoindenter.
         
         Creates an instance of the regex autoindenter.  Since this code is
@@ -785,15 +797,15 @@ class RegexAutoindent(BasicAutoindent):
         closing brace, and indentation level is added to the current line.
         """
         if reIndentAfter:
-            self.reIndentAfter = re.compile(reIndentAfter)
+            self.reIndentAfter = re.compile(reIndentAfter, reFlags)
         else:
             self.reIndentAfter = None
         if reIndent:
-            self.reIndent = re.compile(reIndent)
+            self.reIndent = re.compile(reIndent, reFlags)
         else:
             self.reIndent = None
         if reUnindent:
-            self.reUnindent = re.compile(reUnindent)
+            self.reUnindent = re.compile(reUnindent, reFlags)
         else:
             self.reUnindent = None
         
