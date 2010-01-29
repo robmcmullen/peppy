@@ -132,10 +132,10 @@ class Reindent(TextModificationAction):
 
         start, end = s.GetSelection2()
         if start == end:
-            dprint("no selection; cursor at %s" % start)
+            self.dprint("no selection; cursor at %s" % start)
             s.autoindent.processTab(s)
         else:
-            dprint("selection: %s - %s" % (start, end))
+            self.dprint("selection: %s - %s" % (start, end))
             line = s.LineFromPosition(start)
             end = s.LineFromPosition(end)
             s.autoindent.debuglevel = True
