@@ -645,6 +645,15 @@ class DeprecatedParam(Param):
         # The default string edit control doesn't need any conversion.
         ctrl.SetLabel(value)
 
+    def getValue(self, ctrl):
+        """Get the user value from the control.
+
+        If the control doesn't automatically return a value of the
+        correct type, convert it here.
+        """
+        # The default string edit control simply returns the string.
+        return str(ctrl.GetLabel())
+
 class ReadOnlyParam(debugmixin):
     """Read-only parameter for display only."""
     callback_event = None
