@@ -1,3 +1,13 @@
+2010-02-08  Rob McMullen  <robm@users.sourceforge.net>
+
+	* Released peppy-0.14.2
+	* full-fledged autoindenter for Fortran 77 (bug #805)
+	* changed sftp support to keep channel open (bug #826)
+	* added workarounds for enchant library problems (bug #822)
+	* fixed pubsub bugs resulting from not removing subscribers (bug #816)
+	* fixed bug with deprecated params in preferences (bug #824)
+	* updated i18n tranlations
+
 2010-01-18  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.14.1
