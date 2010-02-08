@@ -13,8 +13,6 @@ from itools.uri import get_reference, Reference
 from itools.uri.generic import Authority
 from itools.core.cache import LRUCache
 
-from peppy.lib.dictutils import TimeExpiringDict
-
 from peppy.debug import dprint
 import pprint
 pp = pprint.PrettyPrinter(indent=0)
@@ -39,7 +37,7 @@ class SFTPFS(BaseFS):
     temp_file_class = TempFile
     
     credentials = {}
-    connection_cache = TimeExpiringDict(10)
+    connection_cache = {}
     
     debug = False
 
@@ -166,11 +164,17 @@ class SFTPFS(BaseFS):
 
     @classmethod
     def _get_client(cls, ref):
+        client = None
         newref = cls._copy_root_reference_without_username(ref)
         if newref in cls.connection_cache:
             client = cls.connection_cache[newref]
             if cls.debug: dprint("Found cached sftp connection: %s" % client)
-        else:
+            transport = client.get_channel().get_transport()
+            if not transport.is_active():
+                dprint("Cached channel closed.  Opening new connection for %s" % ref)
+                client = None
+            
+        if client is None:
             client = cls._get_sftp(ref)
             if cls.debug: dprint("Creating sftp connection: %s" % client)
             cls.connection_cache[newref] = client
