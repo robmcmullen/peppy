@@ -201,8 +201,10 @@ class STCSpellCheck(object):
         """
         try:
             return "Enchant version %s" % enchant.__version__
-        except NameError:
+        except NameError, e:
             return "No spell checker loaded."
+        except Exception, e:
+            return "Error '%s' from enchant" % e
     
     @classmethod
     def _getDict(cls, lang):
