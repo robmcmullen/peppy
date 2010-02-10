@@ -45,7 +45,10 @@ class SFTPFS(BaseFS):
     def _get_sftp(cls, ref):
         hostname = ref.authority.host
         if ref.authority.port:
-            port = ref.authority.port
+            try:
+                port = int(ref.authority.port)
+            except:
+                raise OSError("[Errno 2] Invalid port specification: %s" % ref.authority.port)
         else:
             port = 22
         if ref.authority.userinfo:
