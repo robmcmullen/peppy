@@ -61,9 +61,9 @@ class FileOpener(debugmixin):
         on the local filesystem to be available if needed to save a copy.
         
         @param canonicalize: (optional) whether or not the URL should be
-        canonicalized before searching the existing buffer list.  This is used
-        in the rare case where a fragment or query string is significant to
-        locating the data on the file system.
+        canonicalized before searching the existing buffer list.  Set to False
+        if the fragment or query string is significant to locating the data on
+        the file system
         
         @param options: (optional) a dict of options to be passed to the major
         mode's showInitialPosition method
@@ -89,7 +89,7 @@ class FileOpener(debugmixin):
         self.dprint(self)
     
     def __str__(self):
-        return "Opening %s in %s; mode=%s; replacing %s; options=%s" % (unicode(self.url).encode('utf-8'), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
+        return "Opening %s (%s) in %s; mode=%s; replacing %s; options=%s" % (unicode(self.url).encode('utf-8'), unicode(self.url.path).encode('utf-8'), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
         
     def open(self):
         """Open a tab in the current frame to edit the given URL.
