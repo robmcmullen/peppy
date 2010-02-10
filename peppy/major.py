@@ -102,9 +102,18 @@ class MajorModeLayout(ClassPrefs, debugmixin):
     @classmethod
     def getLayoutSubsequent(cls, major_mode_keyword, url):
         #dprint("getLayoutSubsequent")
+        ukey = unicode(url)
         try:
-            #dprint(cls.layout[major_mode_keyword])
-            return cls.layout[major_mode_keyword][str(url)]
+            key = str(url)
+            # Convert old style string keyword to unicode keyword
+            if key in cls.layout[major_mode_keyword]:
+                cls.layout[major_mode_keyword][ukey] = cls.layout[major_mode_keyword][key]
+                del cls.layout[major_mode_keyword][key]
+        except UnicodeEncodeError:
+            pass
+        
+        try:
+            return cls.layout[major_mode_keyword][ukey]
         except KeyError:
             return {}
     
@@ -130,7 +139,7 @@ class MajorModeLayout(ClassPrefs, debugmixin):
         if major_mode_keyword not in cls.layout:
             cls.layout[major_mode_keyword] = {}
         
-        cls.layout[major_mode_keyword][str(url)] = perspective
+        cls.layout[major_mode_keyword][unicode(url)] = perspective
     
     # First time through, make sure the layout has been loaded
     updateLayout = updateLayoutFirstTime
