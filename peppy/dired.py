@@ -8,6 +8,7 @@ Major mode for displaying a list of files in a directory
 import os, datetime
 
 import wx
+from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
 
@@ -102,9 +103,14 @@ class DiredEntry(object):
         return self.getURL()
 
     def getKey(self, base_url, name):
-        if isinstance(name, str):
-            name = name.decode("utf-8")
+        if isinstance(name, unicode):
+            name = name.encode("utf-8")
+        
+        # Force the URL to remove any special meaning of the ? and # characters
+        import urllib
+        name = urllib.quote(name)
         url = base_url.resolve2(name)
+        
         mode = []
         if vfs.is_folder(url):
             url.path.endswith_slash = True
@@ -120,7 +126,6 @@ class DiredEntry(object):
             mode.append("w")
         else:
             mode.append("-")
-        url = unicode(url)
         return url, "".join(mode)
 
     def getBasename(self):
@@ -128,6 +133,9 @@ class DiredEntry(object):
     
     def getURL(self):
         return self.url
+    
+    def getUnicode(self):
+        return unicode(self.url)
     
     def getSize(self):
         return self.metadata['size']
@@ -231,17 +239,18 @@ class DiredMode(ListMode):
     def OnItemActivated(self, evt):
         index = evt.GetIndex()
         entry = self.getEntryFromIndex(index)
-        path = entry.getURL()
-        self.dprint("clicked on %d: path=%s" % (index, path))
-        self.frame.open(path)
+        url = entry.getURL()
+        self.dprint("clicked on %d: path=%s" % (index, unicode(url.path).encode('utf-8')))
+        self.frame.open(url)
 
     def getFirstSelectedKey(self):
-        """Get the Buffer object of the first selected item in the list."""
+        """Get the URL of the first selected item in the list."""
         index = self.list.GetFirstSelected()
         if index == -1:
             return None
-        key = self.list.GetItem(index, 6).GetText()
-        return key
+        entry = self.getEntryFromIndex(index)
+        url = entry.getURL()
+        return url
 
     def setFlag(self, flag):
         """Set the specified flag for all the selected items.
@@ -252,7 +261,7 @@ class DiredMode(ListMode):
         for index in indexes:
             entry = self.getEntryFromIndex(index)
             flags = entry.getFlags()
-            dprint("index=%d key=%s" % (index, entry.getURL()))
+            self.dprint("index=%d key=%s" % (index, entry.getBasename()))
             if flag not in flags:
                 # flags are stored as a sorted string, but there's no direct
                 # way to sort a string, so it has to be converted to a list,
@@ -348,13 +357,13 @@ class DiredMode(ListMode):
     def convertRawValuesToStrings(self, entry):
         return (entry.getFlags(), entry.getBasename(), str(entry.getSize()),
                 entry.getCompactDate(), entry.getMode(), entry.getDescription(),
-                entry.getURL())
+                entry.getUnicode())
     
     def getPopupActions(self, evt, x, y):
         # id will be -1 if the point is not on any list item; otherwise it is
         # the index of the item.
         id, flags = self.list.HitTest(wx.Point(x, y))
-        dprint("id=%d flags=%d" % (id, flags))
+        self.dprint("id=%d flags=%d" % (id, flags))
         entries = self.getSelectedEntries()
         action_classes = DiredPopupActions(self, entries)
         Publisher().sendMessage('dired.context_menu', action_classes)
@@ -364,3 +373,89 @@ class DiredMode(ListMode):
         # The flags and URL columns are left off the printed version
         total = range(self.list.GetColumnCount())
         return total[1:-1]
+    
+    ## File drop target
+    def handleFileDrop(self, x, y, filenames):
+        self.dprint("%d file(s) dropped at %d,%d:" % (len(filenames), x, y))
+        srcdir = None
+        tocopy = []
+        for src in filenames:
+            filename = os.path.basename(src)
+            if not srcdir:
+                srcdir = os.path.dirname(src)
+                srcdir += os.pathsep
+            if os.path.isdir(src):
+                self.dprint("dir: %s" % src)
+                for root, dirs, files in os.walk(src):
+                    for file in files:
+                        child = os.path.join(root, file)
+                        self.dprint("  file: %s" % child)
+                        tocopy.append(child)
+            elif os.path.isfile(src):
+                self.dprint("file: %s" % src)
+                tocopy.append(src)
+            else:
+                self.dprint("not file or dir: %s  NOT COPYING" % src)
+        
+        self.status_info.startProgress("Copying...", len(tocopy), delay=1.0)
+        count = 0
+        skipped = 0
+        errors = []
+        for src in tocopy:
+            try:
+                srcref = vfs.get_file_reference(src)
+                relsrc = src[len(srcdir):]
+                relref = vfs.get_file_reference(relsrc)
+                dest = self.url.resolve2(relref)
+                self.dprint("srcref=%s, relref=%s, dest=%s" % (srcref, relref, dest))
+                self.dprint("copying: '%s' -> '%s'" % (src, dest))
+                self.status_info.updateProgress(count, "Copying to %s" % str(dest))
+                destdir = vfs.get_dirname(dest)
+                if not vfs.exists(destdir):
+                    # Need to recursively make directories
+                    dirs = []
+                    parent = destdir
+                    maxdepth = len(parent.path)
+                    while not vfs.exists(parent) and maxdepth > 0:
+                        dirs.append(parent)
+                        parent = vfs.get_dirname(parent)
+                        maxdepth -= 1
+                    dirs.reverse()
+                    for dir in dirs:
+                        self.dprint("Creating dir: %s" % dir)
+                        vfs.make_folder(dir)
+                copy = True
+                self.dprint("src path: %s" % srcref.path)
+                self.dprint("dest path: %s" % dest.path)
+                if vfs.exists(dest):
+                    self.dprint("exists: %s" % str(dest))
+                    if vfs.is_folder(dest):
+                        errors.append("Not copying folder %s; shouldn't be specified from %s" % (dest, src))
+                        copy = False
+                    else:
+                        dlg = CustomOkDialog(self.frame, u"File exists!  Replace\n\n%s, %s, %s\n\nwith:\n\n%s, %s, %s" % (dest, vfs.get_mtime(dest), vfs.get_size(dest), src, os.path.getmtime(src), os.path.getsize(src)), "Replace", "Skip")
+                        retval=dlg.ShowModal()
+                        dlg.Destroy()
+                        copy = retval==wx.ID_OK
+                        if copy:
+                            self.dprint("Removing %s" % dest)
+                            vfs.remove(dest)
+                if copy:
+                    vfs.copy(srcref, dest)
+                else:
+                    skipped += 1
+            except Exception, e:
+                errors.append("%s: %s" % (src, e))
+            count += 1
+        message = _("files copied: %d") % (count - len(errors) - skipped)
+        if skipped:
+            message += ", " + _("%d skipped") % skipped
+        if errors:
+            message += ", " + _("%d failed to copy") % len(errors)
+            error = _("Failed copying:") + "\n" + "\n".join(errors)
+            Publisher().sendMessage('peppy.log.error', error)
+            self.dprint(message)
+        self.status_info.stopProgress(message)
+        
+        self.buffer.revert()
+        self.buffer.saveTimestamp()

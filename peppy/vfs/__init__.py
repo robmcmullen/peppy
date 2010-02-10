@@ -65,4 +65,5 @@ __all__ = [
     'canonical_reference',
     'get_dirname',
     'get_filename',
+    'get_file_reference',
     ]

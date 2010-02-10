@@ -4,7 +4,8 @@ import copy as pycopy
 from peppy.vfs.itools.datatypes import FileName
 from peppy.vfs.itools.vfs import *
 from peppy.vfs.itools.vfs.registry import get_file_system, deregister_file_system, _file_systems
-from peppy.vfs.itools.uri import get_reference, Reference
+from peppy.vfs.itools.uri import get_reference, Reference, Path
+from peppy.vfs.itools.uri.generic import Authority
 from peppy.vfs.itools.vfs.base import BaseFS
 
 from peppy.debug import *
@@ -66,9 +67,13 @@ def normalize(ref, base=None):
 def canonical_reference(ref):
     """Normalize a uri but remove any query string or fragments."""
     # get a copy of the reference
-    ref = normalize(unicode(ref))
-    ref.query = {}
-    ref.fragment = ''
+    if not isinstance(ref, Reference):
+        ref = normalize(unicode(ref))
+        ref.query = {}
+        ref.fragment = ''
+    else:
+        from copy import copy
+        ref = Reference(ref.scheme, copy(ref.authority), copy(ref.path), {}, '')
     
     # make sure that any path that points to a folder ends with a slash
     if is_folder(ref):
@@ -89,6 +94,17 @@ def get_dirname(ref):
 def get_filename(ref):
     """Convenience method to return the filename component of the URL"""
     return ref.path[-1]
+
+def get_file_reference(path):
+    """Get a relative filename reference based on the path, ignoring # or ?
+    characters special meaning in URLs.
+    
+    Because filesystem files aren't required to obey the URL character rules
+    about # or ?, force the passed in path into a URL L{Reference} object
+    without being interpreted as a query string or fragment.
+    """
+    import urllib
+    return get_reference(urllib.quote(path))
 
 
 # Simple cache of wrappers around local filesystem objects.
