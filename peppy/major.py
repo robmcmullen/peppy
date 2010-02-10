@@ -1602,6 +1602,21 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         wx.PageSetupDialogData that provides the margins
         """
         return None
+    
+    ## File drop target
+    def handleFileDrop(self, x, y, filenames):
+        """Handle filenames dropped onto major mode from the file manager or
+        windows explorer.
+        
+        Major mode subclasses can override this method to provide a different
+        means to handle files being dropped on the application.  The default
+        method is to simply open up the files dropped in new tabs, but this
+        can be changed by overriding this method.
+        """
+        dprint("%d file(s) dropped at %d,%d:" % (len(filenames), x, y))
+        for filename in filenames:
+            dprint("filename='%s'" % filename)
+            self.frame.open(filename)
 
 
 class EmptyMode(MajorMode, wx.Window):

@@ -135,12 +135,9 @@ class FrameDropTarget(wx.FileDropTarget, debugmixin):
         self.frame = frame
 
     def OnDropFiles(self, x, y, filenames):
-        assert self.dprint("%d file(s) dropped at %d,%d:" % (len(filenames),
-                                                             x, y))
-
-        for filename in filenames:
-            assert self.dprint("filename='%s'" % filename)
-            self.frame.open(filename)
+        mode = self.frame.getActiveMajorMode()
+        if mode:
+            mode.handleFileDrop(x, y, filenames)
 
 
 class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
