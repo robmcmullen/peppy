@@ -14,6 +14,21 @@ from peppy.actions.minibuffer import *
 from peppy.yapsy.plugins import *
 
 
+class ShowHiddenFiles(ListModeActionMixin, ToggleAction):
+    """Toggle the display of hidden files
+    
+    """
+    name = "Show Hidden Files"
+    default_menu = ("View", -500)
+
+    def isChecked(self):
+        return self.mode.classprefs.show_hidden
+    
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.show_hidden = not self.mode.classprefs.show_hidden
+        self.mode.resetList(sort=True)
+
+
 class DiredRefresh(ListModeActionMixin, SelectAction):
     """Refresh the current view to show any changes.
     
@@ -165,6 +180,7 @@ class DiredMenu(IPeppyPlugin):
     def getCompatibleActions(self, modecls):
         if issubclass(modecls, DiredMode):
             return [
+                ShowHiddenFiles,
                 DiredRefresh,
                 DiredDelete, DiredDeleteBackwards,
                 DiredMark, DiredMarkBackwards,

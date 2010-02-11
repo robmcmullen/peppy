@@ -196,6 +196,7 @@ class DiredMode(ListMode):
 
     default_classprefs = (
         StrParam('sort_filenames_if_scheme', 'file', help="Comma separated list of URI schemes that cause the initial display of files to be sorted by filename"),
+        BoolParam('show_hidden', False, 'Show hidden files'),
         )
     
     @classmethod
@@ -347,7 +348,10 @@ class DiredMode(ListMode):
         self.list.Thaw()
     
     def getListItems(self):
-        return vfs.get_names(self.url)
+        use_hidden = self.classprefs.show_hidden
+        for name in vfs.get_names(self.url):
+            if use_hidden or not name.startswith("."):
+                yield name
     
     def getItemRawValues(self, index, name):
         entry = DiredEntry(index, self.url, name)
