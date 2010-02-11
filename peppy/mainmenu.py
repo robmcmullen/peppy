@@ -138,7 +138,7 @@ class OpenFileNewWindowGUI(OpenFileGUIMixin, SelectAction):
     """
     alias = "gui-find-file-new-window"
     name = "Open File in New Window..."
-    default_menu = (("File/Open", 2), 2) 
+    default_menu = (("File/Open", 2), -5) 
 
     def openFiles(self, paths):
         BufferFrame(paths)
@@ -264,6 +264,13 @@ class OpenDialog(SelectAction):
     def processURL(self, url):
         assert self.dprint("open url %s:" % url)
         self.frame.open(url)
+
+class OpenURLDialog(OpenDialog):
+    name = "Open URL..."
+    tooltip = "Open a file using a URL"
+    default_menu = ("File/Open", 2)
+
+    dialog_message = "Open a file by URL.\n\nSpecify scheme://[user@]host[:port]/path/to/file"
 
 
 class Properties(SelectAction):
@@ -946,6 +953,8 @@ class MainMenu(IPeppyPlugin):
     def getActions(self):
         return [NewTab, New,
                 OpenFileGUI, OpenFileNewWindowGUI, OpenFile, OpenURL,
+                OpenURLDialog,
+                
                 Save, SaveAs, SaveAsGUI, SaveURL, CloseBuffer, Revert,
                 Properties, Exit,
 
