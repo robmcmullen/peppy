@@ -306,6 +306,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         for url in urls:
             #dprint("Opening %s" % url)
             self.open(url, force_new_tab=True)
+        # If no pages have been open (due to errors), make sure that a title
+        # buffer is displayed.
+        if self.tabs.GetPageCount() == 0:
+            self.titleBuffer()
         self.tabs.processChanges()
         
     def addPane(self, win, paneinfo):
