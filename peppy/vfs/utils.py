@@ -210,3 +210,6 @@ def get_authentication_callback():
 
 class AuthenticationCancelled(RuntimeError):
     pass
+
+class NetworkError(RuntimeError):
+    pass

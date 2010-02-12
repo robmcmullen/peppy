@@ -625,6 +625,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             pass
         except vfs.AuthenticationCancelled:
             pass
+        except vfs.NetworkError, e:
+            self.SetStatusText(e)
 
     def save(self):        
         mode=self.getActiveMajorMode()

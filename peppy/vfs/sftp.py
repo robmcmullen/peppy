@@ -24,10 +24,15 @@ from fs_utils import TempFile
 
 
 def get_transport(transport_key):
-    t = paramiko.Transport(transport_key)
+    try:
+        t = paramiko.Transport(transport_key)
+    except Exception, e:
+        import traceback
+        dprint("".join(traceback.format_exc()))
+        raise utils.NetworkError("Failed opening %s:%s -- %s" % (transport_key[0], transport_key[1], str(e)))
     t.start_client()
     if not t.is_active():
-        raise OSError("Failure to connect to: '%s'" % str(transport_key))
+        raise OSError("Failure to connect to: %s:%s" % (transport_key[0], transport_key[1]))
     pub_key = t.get_remote_server_key()
     return t
 
