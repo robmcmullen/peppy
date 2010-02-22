@@ -894,7 +894,6 @@ class AuiTabContainer(object):
          ``AUI_NB_CLOSE_ON_TAB_LEFT``         Draws the tab close button on the left instead of on the right (a la Camino browser)
          ``AUI_NB_TAB_FLOAT``                 Allows the floating of single tabs. Known limitation: when the notebook is more or less full screen, tabs cannot be dragged far enough outside of the notebook to become floating pages
          ``AUI_NB_DRAW_DND_TAB``              Draws an image representation of a tab while dragging (on by default)
-         ``AUI_NB_SASH_DCLICK_UNSPLIT``       Unsplit a splitted AuiNotebook when double-clicking on a sash.
          ==================================== ==================================
 
         :todo: Implementation of flags ``AUI_NB_RIGHT`` and ``AUI_NB_LEFT``.
@@ -1716,6 +1715,7 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         self._hover_button = None
         self._pressed_button = None
         self._drag_image = None
+        self._on_button = False
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
@@ -1833,6 +1833,7 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         if self._hover_button:
             self._pressed_button = self._hover_button
             self._pressed_button.cur_state = AUI_BUTTON_STATE_PRESSED
+            self._on_button = True
             self.Refresh()
             self.Update()
 
@@ -1846,6 +1847,7 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
         
         if self._is_dragging:
             self._is_dragging = False
+            self._on_button = False
 
             if self._drag_image:
                 self._drag_image.EndDrag()
@@ -1865,6 +1867,8 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
 
         :param `event`: a `wx.MouseEvent` event to be processed.        
         """
+
+        self._on_button = False
         
         if self.HasCapture():
             self.ReleaseMouse()
@@ -2041,6 +2045,9 @@ class AuiTabCtrl(wx.PyControl, AuiTabContainer):
                 self._hover_button = None
                 return
 
+        if self._on_button:
+            return
+        
         if button:
             
             if self._hover_button and button != self._hover_button:
@@ -2532,7 +2539,6 @@ class AuiNotebook(wx.PyControl):
          ``AUI_NB_CLOSE_ON_TAB_LEFT``         Draws the tab close button on the left instead of on the right (a la Camino browser)
          ``AUI_NB_TAB_FLOAT``                 Allows the floating of single tabs. Known limitation: when the notebook is more or less full screen, tabs cannot be dragged far enough outside of the notebook to become floating pages
          ``AUI_NB_DRAW_DND_TAB``              Draws an image representation of a tab while dragging (on by default)
-         ``AUI_NB_SASH_DCLICK_UNSPLIT``       Unsplit a splitted AuiNotebook when double-clicking on a sash.
          ==================================== ==================================
 
          Default value for `style` is:
@@ -2544,6 +2550,7 @@ class AuiNotebook(wx.PyControl):
         self._tab_id_counter = AuiBaseTabCtrlId
         self._dummy_wnd = None
         self._hide_tabs = False
+        self._sash_dclick_unsplit = False
         self._tab_ctrl_height = 20
         self._requested_bmp_size = wx.Size(-1, -1)
         self._requested_tabctrl_height = -1
@@ -3184,6 +3191,25 @@ class AuiNotebook(wx.PyControl):
 
         self._hide_tabs = hidden
 
+
+    def SetSashDClickUnsplit(self, unsplit=True):
+        """
+        Sets whether to unsplit a splitted L{AuiNotebook} when double-clicking on a sash.
+
+        :param `unsplit`: ``True`` to unsplit on sash double-clicking, ``False`` otherwise.
+        """
+
+        self._sash_dclick_unsplit = unsplit
+
+
+    def GetSashDClickUnsplit(self):
+        """
+        Returns whether a splitted L{AuiNotebook} can be unsplitted by double-clicking
+        on the splitter sash.
+        """
+
+        return self._sash_dclick_unsplit
+    
 
     def GetPageIndex(self, page_wnd):
         """
@@ -3955,7 +3981,7 @@ class AuiNotebook(wx.PyControl):
          returns the wrong window. See http://trac.wxwidgets.org/ticket/2942
         """
 
-        if not self._flags & AUI_NB_SASH_DCLICK_UNSPLIT:
+        if not self._sash_dclick_unsplit:
             # Unsplit not allowed
             return
 
@@ -4000,7 +4026,7 @@ class AuiNotebook(wx.PyControl):
         selection = -1
         page_count = dest_tabs.GetPageCount()
         
-        for page in xrange(src_tabs.GetPageCount()):
+        for page in xrange(src_tabs.GetPageCount()-1, -1, -1):
             # remove the page from the source tabs
             page_info = src_tabs.GetPage(page)
             if page_info.active:
@@ -4017,6 +4043,7 @@ class AuiNotebook(wx.PyControl):
         dest_tabs.DoShowHide()
         self.DoSizing()
         dest_tabs.Refresh()
+        self._mgr.Update()
         if selection > 0:
             wx.CallAfter(dest_tabs.MakeTabVisible, selection, self)
         
