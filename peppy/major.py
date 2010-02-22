@@ -102,21 +102,23 @@ class MajorModeLayout(ClassPrefs, debugmixin):
     @classmethod
     def getLayoutSubsequent(cls, major_mode_keyword, url):
         #dprint("getLayoutSubsequent")
-        ukey = unicode(url)
+        ukey = unicode(url).encode("utf-8")
         if major_mode_keyword in cls.layout:
             try:
                 key = str(url)
                 # Convert old style string keyword to unicode keyword
-                if key in cls.layout[major_mode_keyword]:
+                if ukey != key and key in cls.layout[major_mode_keyword]:
                     cls.layout[major_mode_keyword][ukey] = cls.layout[major_mode_keyword][key]
                     del cls.layout[major_mode_keyword][key]
             except UnicodeEncodeError:
                 pass
         
         try:
-            return cls.layout[major_mode_keyword][ukey]
+            layout = cls.layout[major_mode_keyword][ukey]
         except KeyError:
-            return {}
+            layout = {}
+        cls.dprint("%s: layout=%s" % (url, layout))
+        return layout
     
     # First time through, call the loader
     getLayout = getLayoutFirstTime
