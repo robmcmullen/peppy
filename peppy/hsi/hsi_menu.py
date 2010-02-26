@@ -462,12 +462,13 @@ class ENVIExportMixin(object):
             if ext in ['.bil', '.bip', '.bsq']:
                 handler = HyperspectralFileFormat.getHandlerByName("ENVI")
                 if handler:
+                    options = {}
                     try:
                         self.mode.showBusy(True)
                         self.mode.status_info.startProgress("Exporting to %s" % filename)
                         wx.GetApp().cooperativeYield()
                         if self.endian:
-                            options = {'byte_order': self.endian}
+                            options['byte_order'] = self.endian
                         handler.export(filename, self.mode.cube, options=options, progress=self.updateProgress)
                         self.mode.status_info.stopProgress("Saved %s" % filename)
                         wx.GetApp().cooperativeYield()
