@@ -117,7 +117,7 @@ class MajorModeLayout(ClassPrefs, debugmixin):
             layout = cls.layout[major_mode_keyword][ukey]
         except KeyError:
             layout = {}
-        cls.dprint("%s: layout=%s" % (url, layout))
+        cls.dprint("%s: layout=%s" % (unicode(url), unicode(layout)))
         return layout
     
     # First time through, call the loader
