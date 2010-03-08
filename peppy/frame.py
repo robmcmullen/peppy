@@ -542,7 +542,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def getTitle(self):
         major = self.getActiveMajorMode()
         if major:
-            return u"peppy: %s" % major.getTabName()
+            return u"peppy: %s (%s)" % (major.getTabName(), unicode(major.buffer.url))
         return self.name
     
     def showModified(self, major):
