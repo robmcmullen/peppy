@@ -108,6 +108,20 @@ class STCSpellCheck(object):
         C{indicator_color}, and {indicator_style}; for L{setLanguage},
         use C{language}; and for L{setMinimumWordSize}, use
         C{min_word_size}.  See the descriptions of those methods for more info.
+        
+        @kwarg language: default language string recognized by enchant (e.g.
+        "en_US", "kr_KR", etc.  If a default language isn't explicitly
+        here, the default language is taken from the class method
+        L{setDefaultLanguage}
+        
+        @kwarg check_region: optional function to specify if the region should
+        be spell checked.  Function should return True if the position should
+        be spell-checked; False if it doesn't make sense to spell check that
+        part of the document.  Function should be a bound method to the STC.
+        
+        @kwarg idle_count: number of idle events that have to occur before an
+        idle event is actually processed.  This reduces processor usage by
+        only processing one out of every idle_count events.
         """
         self.stc = stc
         self.setIndicator(kwargs.get('indicator', 2),
@@ -115,18 +129,17 @@ class STCSpellCheck(object):
                           kwargs.get('indicator_style', wx.stc.STC_INDIC_SQUIGGLE))
         self.setMinimumWordSize(kwargs.get('min_word_size', 3))
         if 'language' in kwargs:
-            # Don't set default language unless explicitly specified -- it
-            # might have already been set through the class method
             self.setDefaultLanguage(kwargs['language'])
         if 'check_region' in kwargs:
-            # optional function to specify if the region should be spell
-            # checked.  Function should return True if the position should
-            # be spell-checked; False if it doesn't make sense to spell check
-            # that part of the document
             self._spell_check_region = kwargs['check_region']
         else:
             self._spell_check_region = lambda s: True
-        self._spelling_debug = False
+        if 'idle_count' in kwargs:
+            self._num_idle_ticks = kwargs['idle_count']
+        else:
+            self._num_idle_ticks = 10
+        self._idle_ticks = 0
+        self._spelling_debug = True
         
         self._spelling_last_idle_line = -1
         self.dirty_range_count_per_idle = 5
@@ -433,6 +446,7 @@ class STCSpellCheck(object):
         time.
         """
         self._spelling_last_idle_line = 0
+        self._idle_ticks = 0
         
     def processIdleBlock(self):
         """Process a block of lines during idle time.
@@ -447,6 +461,11 @@ class STCSpellCheck(object):
         L{startIdleProcessing} will cause the idle processing to start
         checking from the beginning of the document.
         """
+        self._idle_ticks -= 1
+        if self._idle_ticks > 0:
+            return
+        self._idle_ticks = self._num_idle_ticks
+
         self.processDirtyRanges()
         if self._spelling_last_idle_line < 0:
             return
@@ -688,7 +707,6 @@ if __name__ == "__main__":
             self.Bind(wx.stc.EVT_STC_MODIFIED, self.OnModified)
             self.Bind(wx.EVT_IDLE, self.OnIdle)
             self.modified_count = 0
-            self.idle_count = 0
 
         def OnModified(self, evt):
             # NOTE: on really big insertions, evt.GetText can cause a
@@ -706,11 +724,7 @@ if __name__ == "__main__":
             evt.Skip()
         
         def OnIdle(self, evt):
-            #print("Idle")
-            self.idle_count += 1
-            if self.idle_count > 10:
-                self.spell.processIdleBlock()
-                self.idle_count = 0
+            self.spell.processIdleBlock()
             
         def transModType(self, modType):
             st = ""
