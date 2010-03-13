@@ -417,7 +417,7 @@ class STCSpellCheck(object):
         while index < length:
             if utext[index].isalpha():
                 end = index + 1
-                while end < length and utext[end].isalpha():
+                while end < length and (utext[end].isalpha() or utext[end] == "'"):
                     end += 1
                 return (index, end)
             index += 1
@@ -510,11 +510,45 @@ class STCSpellCheck(object):
         if atend:
             end = pos
         else:
-            end = self.stc.WordEndPosition(pos, True)
-        start = self.stc.WordStartPosition(pos, True)
+            end = self.getLikelyWordEnd(pos)
+        start = self.getLikelyWordStart(pos)
         if self._spelling_debug:
             print("%d-%d: %s" % (start, end, self.stc.GetTextRange(start, end)))
         self.checkRange(start, end)
+    
+    def getLikelyWordStart(self, pos):
+        """Find word start boundary based on whitespace only
+        
+        Replaces WordStartPosition, which doesn't handle apostrophes.
+        """
+        linenum = self.stc.LineFromPosition(pos)
+        linestart = self.stc.PositionFromLine(linenum)
+        start_of_line = self.stc.GetTextRange(linestart, pos)
+        if len(start_of_line) == 0 or start_of_line[-1].isspace():
+            return pos
+        try:
+            word = start_of_line.split()[-1]
+            start = pos - len(word.encode('utf-8'))
+            return start
+        except:
+            return pos
+    
+    def getLikelyWordEnd(self, pos):
+        """Find word end boundary based on whitespace only
+        
+        Replaces WordEndPosition, which doesn't handle apostrophes.
+        """
+        linenum = self.stc.LineFromPosition(pos)
+        lineend = self.stc.GetLineEndPosition(linenum)
+        rest_of_line = self.stc.GetTextRange(pos, lineend)
+        if len(rest_of_line) == 0 or rest_of_line[0].isspace():
+            return pos
+        try:
+            word = rest_of_line.split()[0]
+            end = pos + len(word.encode('utf-8'))
+            return end
+        except:
+            return pos
     
     def addDirtyRange(self, start, end, lines_added=0, deleted=False):
         """Add a range of characters to a list of dirty regions that need to be
@@ -597,13 +631,17 @@ class STCSpellCheck(object):
         
         # Check spelling around the region currently being typed
         if self.current_dirty_start >= 0:
+            if self._spelling_debug:
+                print("processing current dirty range %d-%d" % (self.current_dirty_start, self.current_dirty_end))
             range_start, range_end = self.processDirtyRange(self.current_dirty_start, self.current_dirty_end)
             
             # If the cursor is in the middle of a word, remove the spelling
             # markers
             if cursor >= range_start and cursor <= range_end:
-                word_start = self.stc.WordStartPosition(cursor, True)
-                word_end = self.stc.WordEndPosition(cursor, True)
+                word_start = self.getLikelyWordStart(cursor)
+                word_end = self.getLikelyWordEnd(cursor)
+                if self._spelling_debug:
+                    print("cursor in middle of word, removing styling %d-%d" % (word_start, word_end))
                 mask = self._spelling_indicator_mask
                 self.stc.StartStyling(word_start, mask)
                 self.stc.SetStyling(word_end - word_start, 0)
@@ -625,8 +663,8 @@ class STCSpellCheck(object):
             self.processDirtyRange(start, end)
     
     def processDirtyRange(self, start, end):
-        range_start = self.stc.WordStartPosition(start, True)
-        range_end = self.stc.WordEndPosition(end, True)
+        range_start = self.getLikelyWordStart(start)
+        range_end = self.getLikelyWordEnd(end)
         if self._spelling_debug:
             print("processing dirty range %d-%d (modified from %d-%d): %s" % (range_start, range_end, start, end, repr(self.stc.GetTextRange(range_start, range_end))))
         self.checkRange(range_start, range_end)
