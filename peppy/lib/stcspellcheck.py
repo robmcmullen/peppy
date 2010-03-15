@@ -42,9 +42,12 @@ Currently provides:
  - check the document in either idle time or in a background thread
 
 @author: Rob McMullen
-@version: 1.2
+@version: 1.3
 
 Changelog::
+    1.3:
+        - Fixed bugs that incorrectly marked English contractions as bad
+        - Changed idle time handler to reduce processor usage
     1.2:
         - Rewrote as a standalone class rather than a static mixin
     1.1:
@@ -432,6 +435,10 @@ class STCSpellCheck(object):
                 end = index + 1
                 while end < length and (utext[end].isalpha() or utext[end] == "'"):
                     end += 1
+                # Don't let the word end in an apostophe because it may be at
+                # the end of a single quoted string.
+                if end <= length and utext[end - 1] == "'":
+                    end -= 1
                 return (index, end)
             index += 1
         return (-1, -1)
