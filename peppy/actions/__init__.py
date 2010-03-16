@@ -639,8 +639,16 @@ class ListAction(SelectAction):
     L{OnDemandActionMixin} and override the L{getHash} method to indicate when
     the user interface should redraw the menu.
     """
+    #: Maximum number of entries before submenus are created to hold the overflow
     menumax = 30
+    
+    #: If after_menumax is not None, overflow based on menumax is altered as following: the first menumax items are placed in the menu as items, then the remaining items are placed in a submenu that is named with the contents of the after_menumax attribute
+    after_menumax = None
+    
+    #: When abbreviating to make submenus, the length of the text used to create the ellipsis is restricted to this number of characters
     abbrev_width = 16
+    
+    #: If True, the items in the list are placed inline in the current menu.  If false, the items are placed in a submenu of the current menu
     inline = False
     
     #: Should the items in the list be localized?  Dynamically generated lists in general won't be, because they represent filenames -- if a filename happened to be named "File" or "Edit" or "Cut" or a common string, they would be transformed to the localized version when they shouldn't be if that's the actual filename.
@@ -727,23 +735,42 @@ class ListAction(SelectAction):
         self.savehash=self.getHash()
     
     def _insertTextItems(self, items, menu, accel, pos, is_toplevel):
-        if self.menumax>0 and len(items)>self.menumax:
-            for group in range(0,len(items),self.menumax):
-                last=min(group+self.menumax,len(items))
-                str1 = items[group].strip()[0:self.abbrev_width]
-                str2 = items[last-1].strip()[0:self.abbrev_width]
-                groupname="%s ... %s" % (str1, str2)
-                child=wx.Menu()
-                i=0
-                for name in items[group:last]:
-                    self._insert(child, accel, i, name)
-                    i+=1
-                self._insertMenu(menu, pos, child, groupname, is_toplevel)
-                pos+=1
+        if self.menumax>0:
+            if is_toplevel and self.after_menumax is not None:
+                last=min(self.menumax,len(items))
+                for name in items[0:last]:
+                    self._insert(menu, accel, pos, name, is_toplevel=is_toplevel)
+                    pos+=1
+                if len(items) > last:
+                    child=wx.Menu()
+                    i=0
+                    for name in items[last:]:
+                        self._insert(child, accel, i, name)
+                        i+=1
+                    self._insertMenu(menu, pos, child, self.after_menumax, is_toplevel)
+                    pos+=1
+            elif len(items)>self.menumax:
+                for group in range(0,len(items),self.menumax):
+                    last=min(group+self.menumax,len(items))
+                    str1 = items[group].strip()[0:self.abbrev_width]
+                    str2 = items[last-1].strip()[0:self.abbrev_width]
+                    groupname="%s ... %s" % (str1, str2)
+                    child=wx.Menu()
+                    i=0
+                    for name in items[group:last]:
+                        self._insert(child, accel, i, name)
+                        i+=1
+                    self._insertMenu(menu, pos, child, groupname, is_toplevel)
+                    pos+=1
+            else:
+                self._insertRemainingTextItems(items, menu, accel, pos, is_toplevel)
         else:
-            for name in items:
-                self._insert(menu, accel, pos, name, is_toplevel=is_toplevel)
-                pos+=1
+            self._insertRemainingTextItems(items, menu, accel, pos, is_toplevel)
+    
+    def _insertRemainingTextItems(self, items, menu, accel, pos, is_toplevel, start=0):
+        for name in items[start:]:
+            self._insert(menu, accel, pos, name, is_toplevel=is_toplevel)
+            pos+=1
 
     def _insertGroupedItems(self, items, menu, accel, pos, is_toplevel=False):
         """Insert a list of grouped items into the menu

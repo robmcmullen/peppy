@@ -146,7 +146,8 @@ class SpellingSuggestionAction(ListAction):
     """
     name = "Spelling..."
     inline = True
-    menumax = 5
+    menumax = 4
+    after_menumax = "More Suggestions..."
 
     def getItems(self):
         # Because this is a popup action, we can save stuff to this object.
