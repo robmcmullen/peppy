@@ -60,17 +60,44 @@ def getMagicComments(bytes, headersize=1024):
     lines = header.splitlines()
     return lines[0:2]
 
+def detectBOM(bytes):
+    """Search for unicode Byte Order Marks (BOM)
+    """
+    boms = {
+        'utf-8': '\xef\xbb\xbf',
+        'utf-16-le': '\xff\xfe',
+        'utf-16-be': '\xfe\xff',
+        'utf-32-le': '\xff\xfe\x00\x00',
+        'utf-32-be': '\x00\x00\xfe\xff',
+        }
+    # FIXME: utf-32 is not available in python 2.5, only 2.6 and later.
+    
+    for encoding, bom in boms.iteritems():
+        if bytes.startswith(bom):
+            return encoding, bom
+    return None, None
+
 def detectEncoding(bytes):
     """Search for "magic comments" that specify the encoding
+    
+    @returns tuple containing (encoding name, BOM) where both may be None.  If
+    the Byte Order Mark is not None, the bytes should be stripped off before
+    decoding using the encoding name.
     """
+    if isinstance(bytes, str):
+        # Only check byte order marks when the input is a raw string.  If the
+        # input is unicode, it can't have a valid byte order mark.
+        encoding, bom = detectBOM(bytes)
+        if encoding:
+            return encoding, bom
     lines = getMagicComments(bytes)
     regex = re.compile("coding[:=]\s*([-\w.]+)")
     for txt in lines:
         match = regex.search(txt)
         if match:
             #print("Found encoding %s" % match.group(1))
-            return match.group(1)
-    return None
+            return match.group(1), None
+    return None, None
 
 def parseEmacs(header):
     """Determine if the header specifies a major mode.

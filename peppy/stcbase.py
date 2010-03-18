@@ -89,6 +89,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             self.SetDocPointer(self.docptr)
             self.SetCodePage(65001) # set for unicode character display
             self.encoding = None # we don't know the encoding yet
+            self.bom = None # we don't know if there is a Byte Order Mark
             assert self.dprint("creating new document %s" % self.docptr)
             self.subordinates = []
 
@@ -182,15 +183,15 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if headersize > numbytes:
             headersize = numbytes
         header = bytes[0:headersize]
-        self.detectLineEndings(header)
         
         if encoding:
             # Normalize the encoding name by running it through the codecs list
             self.refstc.encoding = codecs.lookup(encoding).name
         if not self.refstc.encoding:
-            self.refstc.encoding = detectEncoding(header)
+            self.refstc.encoding, self.refstc.bom = detectEncoding(header)
         self.decodeText(bytes)
         assert self.dprint("found encoding = %s" % self.refstc.encoding)
+        self.detectLineEndings()
     
     def readFrom(self, fh, amount=None, chunk=65536, length=0, message=None):
         """Read a chunk of the file from the file-like object.
@@ -236,7 +237,11 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         if self.refstc.encoding:
             try:
-                unicodestring = bytes.decode(self.refstc.encoding)
+                if self.refstc.bom:
+                    start = len(self.refstc.bom)
+                else:
+                    start = 0
+                unicodestring = bytes[start:].decode(self.refstc.encoding)
                 assert self.dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
                 self.SetText(unicodestring)
                 return
@@ -244,6 +249,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
                 assert self.dprint("bad encoding %s:" % self.refstc.encoding)
                 self.refstc.badencoding = self.refstc.encoding
                 self.refstc.encoding = None
+                self.refstc.bom = None
         
         # If there's no encoding or an error in the decoding, stuff the binary
         # bytes in the stc.  The only way to load binary data into scintilla
@@ -262,26 +268,30 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         exception, the file will never be opened for writing and therefore
         won't be truncated.
         """
+        bytes = ""
         try:
             txt = self.GetText()
-            encoding = detectEncoding(txt)
+            encoding, bom = detectEncoding(txt)
             if encoding:
                 assert self.dprint("found encoding %s" % encoding)
-                txt = txt.encode(encoding)
+                bytes = txt.encode(encoding)
                 if encoding != self.refstc.encoding:
                     # If the encoding has changed, update it here
                     self.refstc.encoding = encoding
-                    self.decodeText(txt)
+                    self.refstc.bom = bom
+                    self.decodeText(bytes)
             elif self.refstc.encoding:
+                if self.refstc.bom:
+                    bytes = self.refstc.bom
                 if self.refstc.encoding != 'utf-8':
-                    txt = txt.encode(self.refstc.encoding)
+                    bytes += txt.encode(self.refstc.encoding)
             else:
                 # Have to use GetStyledText because GetText will truncate the
                 # string at the first zero character.
                 numchars = self.GetTextLength()
-                txt = self.GetStyledText(0, numchars)[0:numchars*2:2]
+                bytes = self.GetStyledText(0, numchars)[0:numchars*2:2]
             
-            self.refstc.encoded = txt
+            self.refstc.encoded = bytes
         except:
             self.refstc.encoded = None
             raise
@@ -566,7 +576,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         finally:
             self.EndUndoAction()
 
-    def detectLineEndings(self, header):
+    def detectLineEndings(self, header=None):
         """Guess which type of line ending is used by the file."""
         def whichLinesep(text):
             # line ending counting function borrowed from PyPE
@@ -583,6 +593,8 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             else:# cr_ is mx:
                 return '\r'
         
+        if header is None:
+            header = self.GetText()
         linesep = whichLinesep(header)
         mode = self.eol2int[linesep]
         self.SetEOLMode(mode)
