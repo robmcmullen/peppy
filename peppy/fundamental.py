@@ -262,11 +262,17 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     def createStatusIcons(self):
         linesep = self.getLinesep()
         if linesep == '\r\n':
-            self.status_info.addIcon("icons/windows.png", "DOS/Windows line endings")
+            icon = "icons/windows.png"
+            tooltip = _("DOS/Windows line endings")
         elif linesep == '\r':
-            self.status_info.addIcon("icons/apple.png", "Old-style Apple line endings")
+            icon = "icons/apple.png"
+            tooltip = _("Old-style Apple line endings")
         else:
-            self.status_info.addIcon("icons/tux.png", "Unix line endings")
+            icon = "icons/tux.png"
+            tooltip = _("Unix line endings")
+        if self.refstc.encoding:
+            tooltip += "\nEncoding: %s" % self.refstc.encoding
+        self.status_info.addIcon(icon, tooltip)
         if self.spell and self.spell.hasDictionary():
             self.status_info.addIcon("icons/book_open.png", "Dictionary available for %s" % self.spell.getLanguage())
     
