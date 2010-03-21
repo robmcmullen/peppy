@@ -387,9 +387,6 @@ class ReplaceBar(FindBar):
         # Count of number of replacements
         self.count = 0
         
-        # Last cursor position, tracked during replace all
-        self.last_cursor = 0
-        
         # focus tracker to make sure that focus events come from us
         self.focus_tracker = None
     
@@ -502,7 +499,7 @@ class ReplaceBar(FindBar):
     
     def OnReplaceAll(self, evt):
         self.count = 0
-        self.last_cursor = 0
+        last_cursor = self.stc.GetCurrentPos()
         self.service.setWrapped(False)
         
         # FIXME: this takes more time than it should, probably because there's
@@ -516,7 +513,8 @@ class ReplaceBar(FindBar):
         try:
             while not self.service.isWrapped() and valid:
                 valid = self.OnReplace(None, interactive=False)
-            self.stc.GotoPos(self.last_cursor)
+                last_cursor = self.stc.GetSelectionEnd()
+            self.stc.GotoPos(last_cursor)
         finally:
             self.stc.EndUndoAction()
         

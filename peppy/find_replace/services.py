@@ -144,6 +144,9 @@ class FindService(debugmixin):
     def setWrapped(self, state=True):
         self.settings.wrapped = state
         
+    def isWrapped(self):
+        return self.settings.wrapped
+        
     def getFirstFound(self):
         return self.settings.first_found
     
