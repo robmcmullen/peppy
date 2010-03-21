@@ -142,7 +142,7 @@ class STCSpellCheck(object):
         else:
             self._num_idle_ticks = 10
         self._idle_ticks = 0
-        self._spelling_debug = True
+        self._spelling_debug = False
         
         self._spelling_last_idle_line = -1
         self.dirty_range_count_per_idle = 5
