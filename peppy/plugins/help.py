@@ -23,7 +23,10 @@ from peppy import __url__, __bug_report_url__
 
 class HelpAbout(SelectAction):
     """About this program"""
-    name = "&About..."
+    if wx.Platform == '__WXMAC__':
+        name = "About Peppy"
+    else:
+        name = "&About..."
     stock_id = wx.ID_ABOUT
     default_menu = ("&Help", 0)
     osx_minimal_menu = True
