@@ -29,7 +29,7 @@ dict = {
 'Documents': 'Dokumentoj',
 'E&xit': '&Finu',
 'Edit': 'Redaktu',
-'Export': 'Eksportu',
+'Export': 'Eksporti',
 'File': 'Dosiero',
 'Find...': 'Trovu...',
 'Floating Point': 'Glitkoma nombro',
