@@ -616,7 +616,7 @@ class RevertEncoding(SelectAction):
         try:
             'test'.encode(text)
             # if we get here, it's valid
-            self.mode.buffer.revert(text)
+            self.mode.buffer.revert(encoding=text)
             if text != self.mode.buffer.stc.encoding:
                 self.mode.setStatusText("Failed converting to %s; loaded as binary (probably not what you want)" % text)
         except LookupError:
