@@ -70,7 +70,7 @@ class Fortran77Autoindent(RegexAutoindent):
         @param col: column position of cursor on line
         @param ind: indentation in characters of cursor on line
         """
-        return stc.GetIndentString(7)
+        return stc.GetIndentString(6)
 
     def findIndent(self, stc, linenum):
         ln = linenum
