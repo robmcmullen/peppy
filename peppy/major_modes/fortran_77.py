@@ -94,6 +94,10 @@ class Fortran77Autoindent(RegexAutoindent):
             lc = stc.GetLineEndPosition(ln)
             text = stc.GetTextRange(fc, lc)
             if len(text) < 6:
+                # skip lines that have only labels
+                continue
+            if text[5] != ' ':
+                # skip continuation lines
                 continue
             above = text[6:]
             pos = 6
