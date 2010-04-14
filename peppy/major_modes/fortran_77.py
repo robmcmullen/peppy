@@ -12,10 +12,30 @@ import wx.stc
 
 from peppy.lib.foldexplorer import *
 from peppy.lib.autoindent import *
+from peppy.actions.base import *
 from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
+
+
+class F77ContinuationLine(LineOrRegionMutateAction):
+    """Mark the current line or region as a set of contination lines
+    
+    """
+    name = "Mark as Continuation Lines"
+    default_menu = ("Fortran", -100)
+    key_bindings = {'emacs': 'C-c C-7',
+                    }
+    def mutateLines(self, lines):
+        modified = []
+        for line in lines:
+            if len(line) > 6:
+                out = line[0:5] + "&" + line[6:]
+            else:
+                out = line
+            modified.append(out)
+        return modified
 
 
 class Fortran77Autoindent(RegexAutoindent):
@@ -252,5 +272,11 @@ class FortranModePlugin(IPeppyPlugin):
     """C plugin to register modes and user interface.
     """
    
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, Fortran77Mode):
+            return [
+                F77ContinuationLine,
+                ]
+        
     def getMajorModes(self):
         yield Fortran77Mode
