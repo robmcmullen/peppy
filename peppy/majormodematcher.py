@@ -347,7 +347,8 @@ class MajorModeMatcherDriver(debugmixin):
             metadata = vfs.get_metadata(url)
         except Exception, e:
             import traceback
-            traceback.print_exc()
+            error = traceback.format_exc()
+            dprint(error)
             metadata = {'mimetype': None,
                         'mtime': None,
                         'size': 0,
