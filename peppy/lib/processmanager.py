@@ -166,7 +166,11 @@ class Job(debugmixin):
             os.chdir(self.working_dir)
             self.process = wx.Process(self.handler)
             self.process.Redirect();
-            self.pid = wx.Execute(self.cmd, wx.EXEC_ASYNC, self.process)
+            if wx.Platform != '__WXMSW__':
+                flag = wx.EXEC_ASYNC
+            else:
+                flag = wx.EXEC_NOHIDE
+            self.pid = wx.Execute(self.cmd, flag, self.process)
         finally:
             os.chdir(savecwd)
         if self.pid==0:
