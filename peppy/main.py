@@ -510,10 +510,6 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             #dprint("Skipping normal idle event because it happened too quickly")
             return
         
-        # Move the process manager idle call here to the application level
-        # rather than in each list's idle time.
-        ProcessManager().idle()
-        
         if top:
             #dprint("Processing normal idle event on %s" % top)
             top.processNormalIdleEvent()
