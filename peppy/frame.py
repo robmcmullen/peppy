@@ -343,6 +343,18 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
                 self.sidebar_panes.append(sidebar)
         self.sidebar_panes.sort(key=lambda s:s.caption)
 
+    def closeSidebar(self):
+        self.dprint("closing springtabs")
+        self.spring.deleteTabs()
+        for sidebar in self.sidebar_panes:
+            self.dprint("closing sidebar %s" % sidebar.window)
+            self._mgr.DetachPane(sidebar.window)
+            sidebar.window.Destroy()
+            sidebar.window = None
+        sidebars = self._mgr.GetAllPanes()
+        self.dprint("sidebars remaining: %s" % sidebars)
+        self.sidebar_panes = None
+
     def processNormalIdleEvent(self):
         """Event processing for low priority idle functions.
         
@@ -479,10 +491,11 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.root_accel.forceToolbarUpdate()
 
     def getActiveMajorMode(self):
-        wrapper = self.tabs.getCurrent()
-        if wrapper:
-            major=self.tabs.getCurrent().editwin
-            return major
+        if self.tabs is not None:
+            wrapper = self.tabs.getCurrent()
+            if wrapper:
+                major=self.tabs.getCurrent().editwin
+                return major
         return None
 
     def getAllMajorModes(self):
@@ -500,9 +513,12 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
     def closeWindow(self):
         self.unbindEvents()
         self.clearMenumap()
+        self.closeSidebar()
         WindowList.remove(self)
         self.Hide()
         self.tabs.closeAllTabs()
+        self._mgr.DetachPane(self.tabs)
+        self.tabs = None
         self.Destroy()
 
     @classmethod

@@ -15,7 +15,7 @@ from peppy.yapsy.plugins import *
 from peppy.lib.processmanager import *
 from peppy.sidebar import *
 
-class ProcessSidebar(Sidebar, ProcessList, debugmixin):
+class ProcessSidebar(ProcessList, Sidebar, debugmixin):
     """A sidebar showing the running processes
 
     This is a global plugin that displays any subprocesses currently
@@ -35,7 +35,7 @@ class ProcessSidebar(Sidebar, ProcessList, debugmixin):
     
     def __init__(self, parent):
         ProcessList.__init__(self, parent, pos=(9000,9000))
-        self.frame = parent
+        Sidebar.__init__(self, parent)
         
     def paneInfoHook(self, paneinfo):
         paneinfo.Bottom()
