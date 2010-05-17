@@ -21,7 +21,7 @@ Converted to threads using wxWidgets licensed code from Editra:
 http://svn.wxwidgets.org/viewvc/wx/wxPython/3rdParty/Editra/src/eclib/outbuff.py?view=markup
 """
 
-import os, sys, types, errno, time, threading, signal, subprocess
+import os, sys, types, errno, time, threading, signal, subprocess, weakref
 # Platform specific modules needed for killing processes
 if subprocess.mswindows:
     import msvcrt
@@ -33,8 +33,6 @@ else:
 
 import wx
 import wx.stc
-from wx.lib.pubsub import Publisher
-from wx.lib.evtmgr import eventManager
 
 try:
     from peppy.debug import *
@@ -466,18 +464,49 @@ class _ProcessManager(debugmixin):
     
     jobs = []
     job_lookup = {}
-
+    
+    # Record of ProcessList instances that need to be updated
+    lists = []
+    
     def run(self, cmd, working_dir, job_output, stdin=None):
         job = Job(cmd, working_dir, job_output)
         job.run(stdin)
         return job
+    
+    def registerList(self, listctrl):
+        ref = weakref.ref(listctrl)
+        self.lists.append(ref)
+    
+    def updateLists(self, msg_callable, job):
+        current = self.lists[:]
+        alive = []
+        for listctrl_ref in current:
+            listctrl = listctrl_ref()
+            if listctrl is not None:
+                try:
+                    msg_callable(listctrl, job)
+                    alive.append(listctrl_ref)
+                except wx.PyDeadObjectError:
+                    self.dprint("Caught dead object.  Removing")
+            else:
+                if self.debuglevel > 0:
+                    self.dprint("Caught deleted object.  Removing")
+        self.lists = alive
     
     def jobStartedCallback(self, job):
         self.jobs.append(job)
         assert self.dprint("started job %s" % job)
         if job.isRunning():
             self.job_lookup[job.pid] = job
-            Publisher().sendMessage('peppy.processmanager.started', job)
+            self.updateLists(self.updateListStarted, job)
+            self.sendStartedMessage(job)
+    
+    def updateListStarted(self, listctrl, job):
+        listctrl.msgStarted(job)
+    
+    def sendStartedMessage(self, job):
+        from wx.lib.pubsub import Publisher
+        Publisher().sendMessage('processmanager.started', job)
 
     def jobFinishedCallback(self, job):
         assert self.dprint("process ended! pid=%d" % job.pid)
@@ -511,7 +540,8 @@ class _ProcessManager(debugmixin):
         assert self.dprint("in cleanup")
         if self.autoclean:
             self.removeJob(job)
-        self.finished(job)
+        self.updateLists(self.updateListFinished, job)
+        self.sendFinishedMessage(job)
 
     def removeJob(self, job):
         if job.pid in self.job_lookup:
@@ -519,10 +549,13 @@ class _ProcessManager(debugmixin):
             del self.job_lookup[job.pid]
             jobs = [j for j in self.jobs if j != job]
             self.jobs = jobs
+    
+    def updateListFinished(self, listctrl, job):
+        listctrl.msgFinished(job)
 
-    def finished(self, job):
-        assert self.dprint("sending peppy.processmanager.finished")
-        Publisher().sendMessage('peppy.processmanager.finished', job)
+    def sendFinishedMessage(self, job):
+        from wx.lib.pubsub import Publisher
+        Publisher().sendMessage('processmanager.finished', job)
         
 
 class ProcessList(wx.ListCtrl, debugmixin):
@@ -534,21 +567,13 @@ class ProcessList(wx.ListCtrl, debugmixin):
         self.createColumns()
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnItemActivated)
-        Publisher().subscribe(self.msgStarted, 'peppy.processmanager.started')
-        Publisher().subscribe(self.msgFinished, 'peppy.processmanager.finished')
-        self.reset()
-    
-    def __del__(self):
-        # FIXME! Broken on py26 with PyDeadObjectError when trying to unsubscribe
-        Publisher().unsubscribe(self.msgStarted)
-        Publisher().unsubscribe(self.msgFinished)
-
-    def msgStarted(self, msg):
-        job = msg.data
+        ProcessManager().registerList(self)
         self.reset()
 
-    def msgFinished(self, msg):
-        job = msg.data
+    def msgStarted(self, job):
+        self.reset()
+
+    def msgFinished(self, job):
         self.reset()
 
     def createColumns(self):
