@@ -259,7 +259,7 @@ class JobThread(threading.Thread):
         except UnicodeDecodeError:
             result = os.linesep
 
-        print(result)
+        print("sending %s to %s" % (result, callback))
         wx.CallAfter(callback, self._job, result)
 
     def _kill_process(self):
@@ -331,8 +331,11 @@ class JobThread(threading.Thread):
         if sys.platform.lower().startswith('win'):
             suinfo = subprocess.STARTUPINFO()
             suinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            command = "\"%s\"" % command
+            print("Windows command: %s" % command)
         else:
             suinfo = None
+            print("Unix command: %s" % command)
         
         err = None
         try:
@@ -340,7 +343,6 @@ class JobThread(threading.Thread):
                 stdin = subprocess.PIPE
             else:
                 stdin = None
-            print(self._env)
             self._proc = subprocess.Popen(command,
                                           stdin=stdin,
                                           stdout=subprocess.PIPE,
@@ -351,7 +353,7 @@ class JobThread(threading.Thread):
                                           startupinfo=suinfo)
             self._job.pid = self._proc.pid
             if self._stdin is not None:
-                print(self._stdin)
+                #print(self._stdin)
                 self._proc.stdin.write(self._stdin)
                 self._proc.stdin.close()
         except OSError, msg:
