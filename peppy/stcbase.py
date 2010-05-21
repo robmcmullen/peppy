@@ -598,6 +598,19 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         linesep = whichLinesep(header)
         mode = self.eol2int[linesep]
         self.SetEOLMode(mode)
+    
+    def getNativeEOLMode(self):
+        try:
+            return self.eol2int[os.linesep]
+        except KeyError:
+            raise RuntimeError("Unsupported native line separator")
+    
+    def isNativeEOLMode(self):
+        return self.GetEOLMode() == self.getNativeEOLMode()
+    
+    def forceNativeEOLMode(self):
+        mode = self.getNativeEOLMode()
+        self.ConvertEOLs(mode)
 
     def ConvertEOLs(self, mode):
         wx.stc.StyledTextCtrl.ConvertEOLs(self, mode)
