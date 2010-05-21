@@ -20,7 +20,16 @@ from peppy.actions import *
 from peppy.debug import *
 
 
-class CommentRegion(TextModificationAction):
+class CommentRegionAvailableAction(TextModificationAction):
+    """Mixin class to make sure the mode has the ability to include comment
+    lines
+    """
+    @classmethod
+    def worksWithMajorMode(cls, modecls):
+        return hasattr(modecls, "commentRegion")
+
+
+class CommentRegion(CommentRegionAvailableAction):
     """Comment a line or region.
     
     This will use the current mode's comment characters to comment out
@@ -37,7 +46,7 @@ class CommentRegion(TextModificationAction):
     def action(self, index=-1, multiplier=1):
         self.mode.commentRegion(multiplier != 4)
 
-class UncommentRegion(TextModificationAction):
+class UncommentRegion(CommentRegionAvailableAction):
     """Uncomment a line or region.
     
     This will use the current mode's comment characters to identify the
