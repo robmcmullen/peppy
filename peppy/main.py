@@ -569,6 +569,15 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
             del sys.argv[index:index + 1]
             self.no_splash = True
 
+        if "--plugin-path" in sys.argv:
+            index = sys.argv.index("--plugin-path")
+            if len(sys.argv) > index:
+                path = sys.argv[index + 1]
+                del sys.argv[index:index + 2]
+                if self.classprefs.plugin_search_path:
+                    dprint("Replacing plugin search path with %s" % path)
+                self.classprefs.plugin_search_path = path
+
         self.dprint("argv after: %s" % (sys.argv,))
     
     def getOptionParser(self):
@@ -585,6 +594,7 @@ class Peppy(wx.App, ClassPrefs, debugmixin):
         parser.add_option("--sample-config", action="store_true", dest="sample_config", default=False, help="Generate sample config file and exit")
         parser.add_option("--no-server", action="store_true", dest="no_server", default=False, help="Disable 'server' that listens for file open requents")
         parser.add_option("--no-setuptools", action="store_true", dest="no_setuptools", default=False, help="Disable setuptools plugin loading")
+        parser.add_option("--plugin-path", action="store", dest="user_plugin_path", default="", help="os.pathsep separated list of paths to search for additional setuptools plugins.  Overrides plugin_search_path preference setting.")
         parser.add_option("--no-splash", action="store_false", dest="splash", default=True, help="Disable splash screen")
         parser.add_option("--thanks", action="store_true", dest="thanks", default=False, help="Print thank-you notice")
         parser.add_option("--i18n-action-tooltips", action="store_true", dest="i18n_action_tooltips", default=False, help="Print tooltip strings for all actions -- used by i18n translation programs")
