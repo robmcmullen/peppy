@@ -37,7 +37,7 @@ class OctaveMode(FundamentalMode):
     icon = 'icons/page_white.png'
     
     default_classprefs = (
-        StrParam('extensions', 'oct octave', fullwidth=True),
+        StrParam('extensions', 'm oct octave', fullwidth=True),
         StrParam('keyword_set_0', unique_keywords[63], hidden=False, fullwidth=True),
        )
 

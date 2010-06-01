@@ -37,7 +37,7 @@ class MatlabMode(FundamentalMode):
     icon = 'icons/page_white.png'
     
     default_classprefs = (
-        StrParam('extensions', 'matlab', fullwidth=True),
+        StrParam('extensions', 'm matlab', fullwidth=True),
         StrParam('keyword_set_0', unique_keywords[23], hidden=False, fullwidth=True),
        )
 

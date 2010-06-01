@@ -268,7 +268,13 @@ class MajorModeMatcherDriver(debugmixin):
         url_match = None
         if modes:
             # OK, there is a match with the filenames.  Determine the
-            # capability of the mode to edit the file by verifying any
+            # capability of the mode to edit the file by attempting to match
+            # the language keywords in the file
+            likely = cls.scanLanguage(header, modes)
+            if likely:
+                return likely[0]
+
+            # If language keywords are inconclusive, try identification by
             # magic bytes in the file
             capable = [m.verifyMagic(header) for m in modes]
             cm = zip(capable, modes)
@@ -313,6 +319,7 @@ class MajorModeMatcherDriver(debugmixin):
         # match on a filename but nothing more specific, we can return
         # it because we've exhausted the other checks
         if url_match:
+            cls.dprint("url matches %s" % url_match)
             return url_match
 
         # Try the special case where a mode could be opened using a rewritten
@@ -506,6 +513,33 @@ class MajorModeMatcherDriver(debugmixin):
             except IgnoreMajorMode:
                 cls.ignoreMode(mode)
         return modes
+
+    @classmethod
+    def scanLanguage(cls, header, modes):
+        """Scan for a pattern match in the first bytes of the file.
+        
+        Determine if there is a 'magic' pattern in the first n bytes
+        of the file that can associate it with a major mode.
+
+        @param header: first n bytes of the file
+        
+        @returns: list of matching L{MajorMode} subclasses
+        """
+        
+        likely = []
+        for mode in modes:
+            if hasattr(mode, 'verifyLanguage'):
+                how_likely = mode.verifyLanguage(header)
+                cls.dprint("%s: %d" % (mode, how_likely))
+                if how_likely > 0:
+                    likely.append((how_likely, mode))
+        if likely:
+            cls.dprint("Found multiple likely modes: %s" % str(likely))
+            likely.sort()
+            likely.reverse()
+            likely = [entry[1] for entry in likely]
+        cls.dprint("modes: %s" % str(likely))
+        return likely
 
     @classmethod
     def scanEmacs(cls, header):

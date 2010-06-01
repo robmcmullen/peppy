@@ -226,6 +226,27 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             return mimetype == 'text/plain'
         return False
     
+    @classmethod
+    def verifyLanguage(cls, header):
+        lines = header.splitlines()
+        likely_comments = 0
+        non_comment_lines = ""
+        for line in lines:
+            if cls.start_line_comment:
+                if line.startswith(cls.start_line_comment):
+                    likely_comments += 1
+                else:
+                    non_comment_lines += line
+        for index in range(0, 8):
+            setname = "keyword_set_%d" % index
+            keywords = cls.classprefs._get(setname)
+            if keywords:
+                #dprint(keywords)
+                for keyword in keywords.split():
+                    if keyword in non_comment_lines:
+                        likely_comments += 1
+        return likely_comments
+    
     def save(self, url=None):
         """Wrapper around L{MajorMode.save} to change the major mode after
         saving an FundamentalMode file.
