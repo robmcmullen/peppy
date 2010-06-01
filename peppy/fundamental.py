@@ -190,6 +190,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.createCommentRegex()
         
         self.spell = None
+        self.calltip_driver = False
+        self.calltip_pos = -1
 
     @classmethod
     def preferThreadedLoading(cls, url):
@@ -838,6 +840,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
                 print(error)
                 print("Problem with %s.  Turning off spell checking." % self.spell.getLibraryInfo())
                 self.spell = None
+        if self.calltip_driver:
+            self.showCalltip()
     
     def isSpellCheckRegion(self, pos):
         if self.classprefs.spell_check_strings_only:
@@ -865,3 +869,42 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         """
         import peppy.lib.stcprint
         return peppy.lib.stcprint.STCPrintout(self, page_setup_data=data, title=str(self.buffer.url))
+    
+    ## STC Calltips
+    def showCalltip(self):
+        """Driver to show calltips using the STC's built-in calltips
+        
+        """
+        pos = self.GetCurrentPos()
+        show_pos = self.getCalltipPos(pos)
+        if show_pos != self.calltip_pos:
+            if self.calltip_pos >= 0 and self.CallTipActive():
+                self.CallTipCancel()
+            self.CallTipSetBackground("yellow")
+            dprint("New calltip at %d" % show_pos)
+            text = self.getCalltipText(pos)
+            if text:
+                self.CallTipShow(show_pos, text)
+                self.calltip_pos = show_pos
+            else:
+                self.calltip_pos = -1
+    
+    def getCalltipPos(self, pos):
+        """Routine to modify the calltip display pos if necessary.
+        
+        For example, you may want the calltip to display from the start of the
+        word, rather than the current cursor position within the word.
+        """
+        return pos
+    
+    def getCalltipText(self, pos):
+        """The text to be displayed in the calltip
+        
+        Note that the STC requires the calltip text to use LF (\n) line
+        endings only, not windows (\r\n) line endings, even when on windows
+        platforms
+        
+        @returns text to display in calltip, or empty string if no calltip
+        should be displayed.
+        """
+        return ""
