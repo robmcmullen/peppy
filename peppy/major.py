@@ -79,7 +79,12 @@ class MajorModeLayout(ClassPrefs, debugmixin):
             return filename
         
         def unpackVersion1(self, data):
-            MajorModeLayout.layout = data
+            # Sanity check the layout data.  If not a dict, prevent
+            # catastrophic errors by creating a blank layout.
+            if isinstance(data, dict):
+                MajorModeLayout.layout = data
+            else:
+                self.createVersion1()
         
         def createVersion1(self):
             MajorModeLayout.layout = {}
