@@ -228,15 +228,28 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     
     @classmethod
     def verifyLanguage(cls, header):
-        lines = header.splitlines()
-        likely_comments = 0
+        lines = header.splitlines(True)
+        likely_count = 0
         non_comment_lines = ""
         for line in lines:
+            line = line.strip()
             if cls.start_line_comment:
                 if line.startswith(cls.start_line_comment):
-                    likely_comments += 1
+                    likely_count += 1
                 else:
                     non_comment_lines += line
+        brace_count = 0
+        lines = non_comment_lines.splitlines(False)
+        for line in lines:
+            line = line.strip()
+            if line.endswith("{"):
+                brace_count += 1
+            elif line.endswith("}"):
+                brace_count += 1
+        if cls.stc_lexer_id == wx.stc.STC_LEX_CPP:
+            if brace_count == 0:
+                return 0
+            likely_count += brace_count
         for index in range(0, 8):
             setname = "keyword_set_%d" % index
             keywords = cls.classprefs._get(setname)
@@ -244,8 +257,8 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
                 #dprint(keywords)
                 for keyword in keywords.split():
                     if keyword in non_comment_lines:
-                        likely_comments += 1
-        return likely_comments
+                        likely_count += 1
+        return likely_count
     
     def save(self, url=None):
         """Wrapper around L{MajorMode.save} to change the major mode after
