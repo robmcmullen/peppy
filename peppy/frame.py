@@ -636,7 +636,6 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         """
         try:
             opener = FileOpener(self, *args, **kwargs)
-            opener.open()
         except FileOpenerExceptionHandled:
             pass
         except vfs.AuthenticationCancelled:

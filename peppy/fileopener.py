@@ -70,23 +70,25 @@ class FileOpener(debugmixin):
         """
         self.frame = frame
         self.buffer = None
-        self.url = vfs.normalize(url)
-        if 'mode' in self.url.query:
-            self.modecls = self.url.query['mode']
-        else:
-            self.modecls = modecls
-        if 'stc' in self.url.query:
-            self.stccls = self.url.query['stc']
-        else:
-            self.stccls = stccls
         self.mode_to_replace = mode_to_replace
         self.force_new_tab = force_new_tab
         self.created_from_url = created_from_url
         self.canonicalize = canonicalize
         self.options = options
-        
+        self.modecls = modecls
+        self.stccls = stccls
         self.progress = None
-        self.dprint(self)
+        try:
+            self.url = vfs.normalize(url)
+            if 'mode' in self.url.query:
+                self.modecls = self.url.query['mode']
+            if 'stc' in self.url.query:
+                self.stccls = self.url.query['stc']
+            self.dprint(self)
+        except Exception, error:
+            self.finalizeAfterFailedLoad(u"Failed decoding url %s" % unicode(url))
+            return
+        self.open()
     
     def __str__(self):
         return "Opening %s (%s) in %s; mode=%s; replacing %s; options=%s" % (unicode(self.url).encode('utf-8'), unicode(self.url.path).encode('utf-8'), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
