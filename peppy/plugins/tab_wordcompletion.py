@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# peppy Copyright (c) 2006-2008 Rob McMullen
+# peppy Copyright (c) 2006-2010 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 # WordCompletion Copyright (c) 2008 Frank Atle Rød  frankatle@gmail.com
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info

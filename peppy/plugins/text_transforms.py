@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2008 Rob McMullen
+# peppy Copyright (c) 2006-2010 Rob McMullen
 # Copyright (c) 2009 Christopher Barker
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Some simple text transformation actions.

@@ -1,4 +1,4 @@
-# peppy Copyright (c) 2006-2008 Rob McMullen
+# peppy Copyright (c) 2006-2010 Rob McMullen
 # This file is licenced under the same terms as Python itself
 """Utility functions for operating on text
 

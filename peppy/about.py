@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-# peppy Copyright (c) 2006-2008 Rob McMullen
+# peppy Copyright (c) 2006-2010 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
 """Definition and storage of the 'about:' protocol.
 
@@ -28,7 +28,7 @@ from StringIO import StringIO
 from peppy import __version__, __codename__, __revision__, __description__, __author__, __author_email__, __url__
 substitutes = {
     'prog': 'peppy',
-    'yearrange': '2006-2009',
+    'yearrange': '2006-2010',
     'version': __version__,
     'codename': __codename__,
     'revision': __revision__,
