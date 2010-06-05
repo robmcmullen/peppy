@@ -64,8 +64,8 @@ def ProcessManager():
 
 
 class JobOutputMixin(object):
-    def startupFailureCallback(self, p):
-        dprint("Couldn't run %s" % p.cmd)
+    def startupFailureCallback(self, job, text):
+        dprint("Couldn't run '%s':\n error: %s" % (job.cmd, text))
 
     def startupCallback(self, job):
         dprint("Started process %d" % job.pid)
@@ -107,7 +107,7 @@ class JobOutputSaver(object):
     def getErrorText(self):
         return os.linesep.join(self.stderr)
     
-    def startupFailureCallback(self, p):
+    def startupFailureCallback(self, p, text):
         self.callback(self)
 
     def startupCallback(self, p):
@@ -359,7 +359,7 @@ class JobThread(threading.Thread):
             #       OSError, so it will still get caught here.
             err = msg
             self._job.pid = -1
-            wx.CallAfter(self._job.jobout.startupFailureCallback, msg)
+            wx.CallAfter(self._job.jobout.startupFailureCallback, self._job, err)
             
         if err is None:
             wx.CallAfter(ProcessManager().jobStartedCallback, self._job)
