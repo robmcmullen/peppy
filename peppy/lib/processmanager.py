@@ -337,12 +337,12 @@ class JobThread(threading.Thread):
         
         err = None
         try:
-            if self._stdin is not None:
-                stdin = subprocess.PIPE
-            else:
-                stdin = None
+            # Note: for py2exe to work correctly, stdin, stdout, and stderr
+            # must all use subprocess.PIPE even if they are not intended to be
+            # used.  For example, stdin is closed immediately after starting
+            # the subprocess if no data is to be sent.
             self._proc = subprocess.Popen(command,
-                                          stdin=stdin,
+                                          stdin=subprocess.PIPE,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE,
                                           shell=self._use_shell,
@@ -353,7 +353,7 @@ class JobThread(threading.Thread):
             if self._stdin is not None:
                 #print(self._stdin)
                 self._proc.stdin.write(self._stdin)
-                self._proc.stdin.close()
+            self._proc.stdin.close()
         except OSError, msg:
             # NOTE: throws WindowsError on Windows which is a subclass of
             #       OSError, so it will still get caught here.
