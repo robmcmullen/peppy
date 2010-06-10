@@ -34,6 +34,7 @@ class IconStorage(debugmixin):
         self.il=wx.ImageList(16,16)
         self.map={}
         self.bitmap={}
+        self.orig_size_bitmap = {}
 
         # FIXME: shouldn't depend on icons directory being one level
         # up from this dir.
@@ -50,17 +51,22 @@ class IconStorage(debugmixin):
 
     def load(self, path):
         if path in icondict:
-            return self.loadLocal(path)
+            img = self.loadLocal(path)
         else:
-            return self.loadFile(path)
+            img = self.loadFile(path)
+        bitmap_orig = wx.BitmapFromImage(img)
+        if img.GetHeight() != 16 or img.GetWidth() != 16:
+            img.Rescale(16, 16)
+            bitmap = wx.BitmapFromImage(img)
+        else:
+            bitmap = bitmap_orig
+        return bitmap, bitmap_orig
 
     def loadLocal(self, path):
         data = icondict[path]
         stream = StringIO(data)
         img = wx.ImageFromStream(stream)
-        img.Rescale(16, 16)
-        bitmap=wx.BitmapFromImage(img)
-        return bitmap
+        return img
 
     def loadFile(self, path):
         if os.path.exists(path) and wx.Image.CanRead(path):
@@ -68,11 +74,7 @@ class IconStorage(debugmixin):
         else:
             # return placeholder icon if a real one isn't found
             img = wx.ImageFromBitmap(wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16)))
-                
-        img.Rescale(16,16)
-        assert self.dprint(img)
-        bitmap=wx.BitmapFromImage(img)
-        return bitmap
+        return img
 
     def get(self, filename, dir=None):
         if filename not in self.map:
@@ -88,15 +90,19 @@ class IconStorage(debugmixin):
                     path = os.path.join(self.basedir,filename)
             else:
                 path = filename
-            bitmap = self.load(path)
+            bitmap, bitmap_orig = self.load(path)
             self.set(filename, bitmap)
+            self.orig_size_bitmap[filename] = bitmap_orig
         else:
             assert self.dprint("ICON: found icon for %s = %d" % (filename,self.map[filename]))
         return self.map[filename]
 
-    def getBitmap(self,filename, dir=None):
+    def getBitmap(self,filename, dir=None, orig_size=False):
         self.get(filename, dir)
-        return self.bitmap[filename]
+        if orig_size:
+            return self.orig_size_bitmap[filename]
+        else:
+            return self.bitmap[filename]
 
     def assign(self, notebook):
         # Don't use AssignImageList because the notebook takes
@@ -119,10 +125,10 @@ def getIconStorage(icon=None, path=None):
     else:
         return _iconStorage
 
-def getIconBitmap(icon=None, path=None):
+def getIconBitmap(icon=None, path=None, orig_size=False):
     store = getIconStorage()
     if icon:
-        return store.getBitmap(icon, path)
+        return store.getBitmap(icon, path, orig_size)
     else:
         return wx.ArtProvider_GetBitmap(wx.ART_QUESTION, wx.ART_OTHER, wx.Size(16,16))
 
