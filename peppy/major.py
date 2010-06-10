@@ -1241,8 +1241,13 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         when the major mode never takes keyboard focus at all, in which case a
         focus-lost event is never generated and this method never gets called.
         """
-        self.wrapper.spring.clearRadio()
-        self.frame.spring.clearRadio()
+        # NOTE: must check for PyDeadObjectErrors because it appears that focus
+        # events can be propagated during object destruction
+        try:
+            self.wrapper.spring.clearRadio()
+            self.frame.spring.clearRadio()
+        except wx.PyDeadObjectError:
+            pass
         evt.Skip()
 
     def idleHandler(self):
