@@ -407,6 +407,11 @@ class ReplaceBar(FindBar):
         grid.Add(self.command, (1, 0), flag=wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_RIGHT)
         
         grid.AddGrowableCol(1)
+        
+        swap = wx.BitmapButton(self, -1, getIconBitmap("icons/arrow_swap_tall.png", orig_size=True))
+        swap.Bind(wx.EVT_BUTTON, self.OnSwap)
+        grid.Add(swap, (0, 2), (2,1), flag=wx.EXPAND)
+        
         self.SetSizer(grid)
         
         self.find.Bind(wx.EVT_SET_FOCUS, self.OnFindSetFocus)
@@ -430,6 +435,26 @@ class ReplaceBar(FindBar):
         self.label.SetLabel(_(self.service.forward) + u":")
         self.Layout()
 
+    def OnSwap(self, evt):
+        focus = self.FindFocus()
+        if focus == self.find:
+            new_focus = self.replace
+            new_cursor = self.find.GetInsertionPoint()
+        elif focus == self.replace:
+            new_focus = self.find
+            new_cursor = self.replace.GetInsertionPoint()
+        else:
+            new_focus = None
+        to_replace = self.find.GetValue()
+        to_find = self.replace.GetValue()
+        self.find.ChangeValue(to_find)
+        self.replace.ChangeValue(to_replace)
+        if new_focus:
+            new_focus.SetFocus()
+            new_focus.SetInsertionPoint(new_cursor)
+        if evt:
+            evt.Skip()
+    
     def OnFindSetFocus(self, evt):
         self.dprint(evt.GetWindow())
         self.cancel()
@@ -654,6 +679,18 @@ class ReplaceBarFindNext(MinibufferReplaceMixin, MinibufferKeyboardAction):
 
     def actionKeystroke(self, evt, multiplier=1):
         self.minibuffer.win.OnFindN(None, help=self.minibuffer.win.help_status)
+    
+
+
+class ReplaceBarSwap(MinibufferReplaceMixin, MinibufferKeyboardAction):
+    key_bindings = {'default': ['PAGEDOWN', 'PAGEUP',],}
+    
+    @classmethod
+    def worksWithMinibuffer(self, minibuffer, ctrl):
+        return isinstance(minibuffer, ReplaceMinibuffer) and isinstance(ctrl, wx.TextCtrl)
+
+    def actionKeystroke(self, evt, multiplier=1):
+        self.minibuffer.win.OnSwap(None)
     
 
 
