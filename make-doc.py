@@ -69,7 +69,7 @@ def setnamespace(mil=False):
         defaults={
             'prog':'__name__',
             'version': '__version__',
-            'codename': '__codename__',
+            'codename': "__codename__",
             'author':'__author__',
             'author_email':'__author_email__',
             'url':'__url__',

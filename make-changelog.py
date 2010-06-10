@@ -174,7 +174,7 @@ if __name__=='__main__':
     if options.outputfile:
         print options.outputfile
         text = os.linesep.join(["version = '%s'" % version,
-                                "codename = '%s'" % codename,
+                                "codename = \"%s\"" % codename,
                                 "revision = '%s'" % svn_revision])
         fh = open(options.outputfile,"wb")
         fh.write(text)
