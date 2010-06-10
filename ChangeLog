@@ -1,6 +1,6 @@
 2010-06-04  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.15.0 "28 Outs"
+	* Released peppy-0.15.0 "Hilbert's Hotel"
 	* added detection of bad layout.dat file (bug #847)
 	* correct major mode found when multiple extensions match (bug #844)
 	* changed process manager to use threads (bug #842)
@@ -10,6 +10,8 @@
 	* fixed bug in Replace All (bug #833)
 	* added detection of unicode byte order marks (bug #835)
 	* fixed spell checker to handle English contractions (bug #781)
+	* 'find' and 'replace with' fields can now be swapped (bug #845)
+	* fixed error on shutdown when minibuffer open (bug #850)
 
 2010-02-08  Rob McMullen  <robm@users.sourceforge.net>
 
