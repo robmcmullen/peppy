@@ -527,21 +527,6 @@ class ReplaceBar(FindBar):
                 occurrences = _("Replaced %d occurrences")
             self.OnExit(msg=_(occurrences) % self.count)
     
-    def OnCommandKeyDown(self, evt):
-        key = evt.GetKeyCode()
-        mods = evt.GetModifiers()
-        
-        # FIXME: windows doesn't receive the return character, so this code is
-        # never reached when the return key is pressed.
-        
-        #dprint("key=%s mods=%s" % (key, mods))
-        if key == wx.WXK_TAB and not mods & (wx.MOD_CMD|wx.MOD_SHIFT|wx.MOD_ALT):
-            self.find.SetFocus()
-        elif key == wx.WXK_RETURN or key == wx.WXK_DELETE:
-            self.OnFindN(None, help=self.help_status)
-        else:
-            evt.Skip()
-    
     def OnExit(self, msg=''):
         self.cancel(pos_at_end=True)
         if msg:
