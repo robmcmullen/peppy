@@ -419,6 +419,30 @@ class ReplaceBar(FindBar):
         self.replace.Bind(wx.EVT_SET_FOCUS, self.OnReplaceSetFocus)
         self.command.Bind(wx.EVT_BUTTON, self.OnReplace)
         self.command.Bind(wx.EVT_SET_FOCUS, self.OnSearchStart)
+        
+        # FIXME: tab traversal experiment doesn't work
+        #self.Bind(wx.EVT_NAVIGATION_KEY, self.OnTabTraversal)
+    
+    def OnTabTraversal(self, evt):
+        focus = evt.GetCurrentFocus()
+        print("tab: %s, focus = %s" % (evt.IsFromTab(), focus))
+        if evt.IsFromTab():
+            if focus == self.find:
+                new_focus = self.replace
+            elif focus == self.replace:
+                new_focus = self.command
+            elif focus == self.command:
+                new_focus = self.find
+            else:
+                print("Unknown focus!!!")
+                new_focus = None
+            if new_focus:
+                myevt = wx.NavigationKeyEvent()
+                #myevt.SetCurrentFocus(new_focus)
+                myevt.SetFromTab(False)
+                self.GetEventHandler().AddPendingEvent(myevt)
+        else:
+            evt.Skip()
     
     def OnReplaceError(self, msg=None):
         self.replace.SetForegroundColour(wx.RED)
