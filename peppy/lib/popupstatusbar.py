@@ -74,6 +74,9 @@ class PopupStatusBar(wx.PopupWindow):
         self.delay = delay
         self.Bind(wx.EVT_TIMER, self.OnTimer)
         
+        # Take over the frame's EVT_MENU_HIGHLIGHT
+        frame.Bind(wx.EVT_MENU_HIGHLIGHT, self.OnMenuHighlight)
+        
         # List of display times
         self.display_times = []
         self.last_is_status = False
@@ -173,6 +176,14 @@ class PopupStatusBar(wx.PopupWindow):
         else:
             self.last_is_status = False
             self.Hide()
+        
+    def OnMenuHighlight(self, evt):
+        menu_id = evt.GetMenuId()
+        if menu_id >= 0:
+            help_text = self.GetParent().GetMenuBar().GetHelpString(menu_id)
+            if help_text:
+                self.showStatusText(help_text)
+    
 
 
 if __name__ == "__main__":
