@@ -18,6 +18,7 @@ from peppy.menu import *
 from peppy.lib.multikey import *
 from peppy.lib.iconstorage import *
 from peppy.lib.controls import *
+from peppy.lib.popupstatusbar import PopupStatusBar
 from peppy.lib.userparams import *
 from peppy.lib.null import Null
 
@@ -213,6 +214,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def initLayout(self):
         ModularStatusBar(self)
+        self.popup_status = PopupStatusBar(self)
 
         hsplit = wx.BoxSizer(wx.HORIZONTAL)
         self.SetAutoLayout(True)
@@ -289,11 +291,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         self.Bind(wx.EVT_CLOSE,self.OnClose)
         self.Bind(wx.EVT_ACTIVATE, self.OnRaise)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MENU_HIGHLIGHT, self.OnMenuHighlight)
 
     def unbindEvents(self):
         self.Unbind(wx.EVT_CLOSE)
         self.Unbind(wx.EVT_ACTIVATE)
         self.Unbind(wx.EVT_SIZE)
+        self.Unbind(wx.EVT_MENU_HIGHLIGHT)
 
     def loadList(self, urls):
         if urls:
@@ -429,6 +433,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         else:
             self.rememberFrameSize()
             evt.Skip()
+    
+    def OnMenuHighlight(self, evt):
+        menu_id = evt.GetMenuId()
+        if menu_id >= 0:
+            help_text = self.GetMenuBar().GetHelpString(menu_id)
+            if help_text:
+                self.popup_status.showStatusText(help_text)
     
     def rememberFrameSize(self):
         if self.classprefs.resize_becomes_default:
