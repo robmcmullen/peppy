@@ -150,8 +150,21 @@ class PopupStatusBar(wx.PopupWindow):
             #print("Cropped! %s" % str(cropped_size))
             self.SetSize(cropped_size)
         self.Show(True)
+    
+    def clear(self):
+        """Remove all messages and hide the popup"""
+        while self.display_times:
+            expired_time, expired_text = self.display_times.pop(0)
+            self.stack.Remove(expired_text)
+            expired_text.Destroy()
+        self.Hide()
+        self.last_is_status = False
         
     def OnTimer(self, evt):
+        if not self.display_times:
+            # It is possible the timer could go off after the call to clear(),
+            # so if the list is empty, return without restarting the timer
+            return
         current = time.time() * 1000
         #print("Timer at %f" % current)
         remove = True
@@ -174,8 +187,7 @@ class PopupStatusBar(wx.PopupWindow):
             self.timer.Start(remaining, True)
             self.positionAndShow()
         else:
-            self.last_is_status = False
-            self.Hide()
+            self.clear()
         
     def OnMenuHighlight(self, evt):
         menu_id = evt.GetMenuId()

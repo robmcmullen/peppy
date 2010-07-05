@@ -416,6 +416,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             wx.GetApp().SetTopWindow(self)
             if not self.pending_timestamp_check and not self.currently_processing_timestamp:
                 self.pending_timestamp_check = True
+        else:
+            self.popup_status.clear()
         evt.Skip()
     
     def OnSize(self, evt):
