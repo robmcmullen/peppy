@@ -195,6 +195,8 @@ class PopupStatusBar(wx.PopupWindow):
             help_text = self.GetParent().GetMenuBar().GetHelpString(menu_id)
             if help_text:
                 self.showStatusText(help_text)
+            else:
+                print("unknown menu id: %d" % menu_id)
     
 
 
