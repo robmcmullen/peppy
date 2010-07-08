@@ -19,7 +19,52 @@ import time
 import wx
 import wx.stc
 
-class PopupStatusBar(wx.PopupWindow):
+class FakePopupWindow(wx.MiniFrame):
+    def __init__(self, parent, style=None):
+        super(FakePopupWindow, self).__init__(parent, style = wx.NO_BORDER |wx.FRAME_FLOAT_ON_PARENT | wx.FRAME_NO_TASKBAR)
+        #self.Bind(wx.EVT_KEY_DOWN , self.OnKeyDown)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+        self.Bind(wx.EVT_SET_FOCUS, self.OnFocus)
+
+    def OnChar(self, evt):
+        #print("OnChar: keycode=%s" % evt.GetKeyCode())
+        self.GetParent().GetEventHandler().ProcessEvent(evt)
+
+    def Position(self, position, size):
+        #print("pos=%s size=%s" % (position, size))
+        self.Move((position[0]+size[0], position[1]+size[1]))
+        
+    def SetPosition(self, position):
+        #print("pos=%s" % (position))
+        self.Move((position[0], position[1]))
+        
+    def ActivateParent(self):
+        """Activate the parent window
+        @postcondition: parent window is raised
+
+        """
+        parent = self.GetParent()
+        parent.Raise()
+        parent.SetFocus()
+
+    def OnFocus(self, evt):
+        """Raise and reset the focus to the parent window whenever
+        we get focus.
+        @param evt: event that called this handler
+
+        """
+        #dprint("OnFocus: set focus to %s" % str(self.GetParent()))
+        self.ActivateParent()
+        evt.Skip()
+
+
+if wx.Platform == "__WXMAC__":
+    PopupClass = FakePopupWindow
+else:
+    PopupClass = wx.PopupWindow
+
+
+class PopupStatusBar(PopupClass):
     """Transient status bar that displays status text in a popup
     
     Unlike a wx.StatusBar window that uses a constant amount of screen real-
@@ -64,7 +109,7 @@ class PopupStatusBar(wx.PopupWindow):
         @kwarg delay: (optional) delay in milliseconds before each message
         decays
         """
-        wx.PopupWindow.__init__(self, frame, style)
+        PopupClass.__init__(self, frame, style)
         self.SetBackgroundColour("#B6C1FF")
         
         self.stack = wx.BoxSizer(wx.VERTICAL)
@@ -180,9 +225,9 @@ class PopupStatusBar(wx.PopupWindow):
             expired_text.Destroy()
         if self.display_times:
             remaining = self.delay - (current - self.display_times[0][0])
-            #print("Next timer: %d" % remaining)
+            #print("Next timer: %f" % remaining)
             #print("\n".join("%f" % d[0] for d in self.display_times))
-            if remaining < 0:
+            if remaining < 1:
                 remaining = 1
             self.timer.Start(remaining, True)
             self.positionAndShow()
