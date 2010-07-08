@@ -307,6 +307,7 @@ class KeybindingSTC(UndoMixin, NonResidentSTC):
                 dprint("Setting action %s to keybinding %s" % (action.__name__, acc))
                 setattr(KeyboardConf.classprefs, action.__name__, acc)
             self.remapped_actions = {}
+            self.EmptyUndoBuffer()
         else:
             raise NotImplementedError
     
