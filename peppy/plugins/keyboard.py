@@ -163,6 +163,19 @@ class AppendThreeKeyAction(CountedRebindingActionMixin, SelectAction):
     keystroke_count = 3
 
 
+class DeleteKeyAction(KeybindingActionMixin, SelectAction):
+    """Remove all key bindings from the action
+    
+    """
+    name = "Delete Key Binding"
+    default_menu = ("Actions", -400)
+    key_bindings = {'default': "C-DELETE", }
+    def action(self, index=-1, multiplier=1):
+        action = self.mode.getFirstSelectedAction()
+        self.mode.buffer.stc.setRemappedAccelerator(action, None, False)
+        wx.CallAfter(self.mode.resetList)
+
+
 class KeybindingModeKeystrokeRecorder(KeystrokeRecorder):
     """Custom subclass of KeystrokeRecorder to Keystroke recorder used to create new keybindings.
     
@@ -472,10 +485,11 @@ class KeybindingMode(ListMode):
         try:
             keyboard = self.buffer.stc.getRemappedAccelerator(action)
         except KeyError:
-            if action.keyboard is None:
-                keyboard = ""
-            else:
-                keyboard = str(action.keyboard)
+            keyboard = action.keyboard
+        if keyboard is None:
+            keyboard = ""
+        else:
+            keyboard = str(keyboard)
         
         return (ActionSortWrapper(action), description, keyboard)
     
@@ -782,4 +796,6 @@ class KeyboardConf(IPeppyPlugin):
                 
                 AppendKeyAction, AppendSingleKeyAction,
                 AppendTwoKeyAction, AppendThreeKeyAction,
+                
+                DeleteKeyAction,
                 ]
