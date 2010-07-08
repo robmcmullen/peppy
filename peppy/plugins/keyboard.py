@@ -176,6 +176,19 @@ class DeleteKeyAction(KeybindingActionMixin, SelectAction):
         wx.CallAfter(self.mode.resetList)
 
 
+class RevertKeyAction(KeybindingActionMixin, SelectAction):
+    """Revert to default key binding for the action
+    
+    """
+    name = "Revert Key Binding"
+    default_menu = ("Actions", 410)
+    key_bindings = {'default': "C-HOME", }
+    def action(self, index=-1, multiplier=1):
+        action = self.mode.getFirstSelectedAction()
+        self.mode.buffer.stc.setRemappedAccelerator(action, action.keyboard, False)
+        wx.CallAfter(self.mode.resetList)
+
+
 class KeybindingModeKeystrokeRecorder(KeystrokeRecorder):
     """Custom subclass of KeystrokeRecorder to Keystroke recorder used to create new keybindings.
     
@@ -798,5 +811,5 @@ class KeyboardConf(IPeppyPlugin):
                 AppendKeyAction, AppendSingleKeyAction,
                 AppendTwoKeyAction, AppendThreeKeyAction,
                 
-                DeleteKeyAction,
+                DeleteKeyAction, RevertKeyAction,
                 ]
