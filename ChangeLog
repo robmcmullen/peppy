@@ -1,4 +1,4 @@
-2010-06-04  Rob McMullen  <robm@users.sourceforge.net>
+2010-07-??  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.15.0 "Hilbert's Hotel"
 	* added detection of bad layout.dat file (bug #847)
@@ -12,6 +12,7 @@
 	* fixed spell checker to handle English contractions (bug #781)
 	* 'find' and 'replace with' fields can now be swapped (bug #845)
 	* fixed error on shutdown when minibuffer open (bug #850)
+	* minor keybinding major mode fixes (bugs #731, #754, #852)
 
 2010-02-08  Rob McMullen  <robm@users.sourceforge.net>
 
