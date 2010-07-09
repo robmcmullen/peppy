@@ -221,8 +221,11 @@ class KeybindingModeKeystrokeRecorder(KeystrokeRecorder):
         self.mode.setStatusText(status_text)
     
     def finishRecordingHook(self, accelerator_text):
-        self.mode.buffer.stc.setRemappedAccelerator(self.action, accelerator_text, self.append)
-        wx.CallAfter(self.mode.resetList)
+        if accelerator_text:
+            self.mode.buffer.stc.setRemappedAccelerator(self.action, accelerator_text, self.append)
+            wx.CallAfter(self.mode.resetList)
+        else:
+            self.mode.setStatusText("No keystrokes recorded, so no key binding created.")
 
 
 class UndoableKeybindingChange(UndoableItem):
