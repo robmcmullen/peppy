@@ -168,6 +168,7 @@ class Tabs(ClassPrefs):
         IndexChoiceParam('documents_in_new_tab',
                          ['always use new tab', 'use new tab unless blank', 'always reuse current tab'],
                          1, 'When selecting a document from the documents menu, should it be displayed in a new tab or should the current tab be reused?'),
+        BoolParam('close_button_on_tab', False),
     )
     
     def useNewTab(self, mode, new_tab):
@@ -180,6 +181,9 @@ class Tabs(ClassPrefs):
 
     def useNewTabForDocument(self, mode):
         return self.useNewTab(mode, self.classprefs.documents_in_new_tab)
+    
+    def isCloseButtonOnTab(self):
+        return self.classprefs.close_button_on_tab
 
 
 class User(ClassPrefs):

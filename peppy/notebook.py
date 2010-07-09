@@ -7,6 +7,7 @@
 import os
 
 import wx
+from wx.lib.pubsub import Publisher
 import peppy.third_party.aui as aui
 from peppy.third_party.pubsub import pub
 
@@ -18,7 +19,8 @@ from peppy.menu import PopupMenu
 
 class FrameNotebook(aui.AuiNotebook, debugmixin):
     def __init__(self, parent, size=wx.DefaultSize):
-        aui.AuiNotebook.__init__(self, parent, size=size, style=aui.AUI_NB_WINDOWLIST_BUTTON|aui.AUI_NB_TAB_MOVE|aui.AUI_NB_TAB_SPLIT|aui.AUI_NB_CLOSE_BUTTON|aui.AUI_NB_SCROLL_BUTTONS, pos=(9000,9000))
+        style = self.getStyle()
+        aui.AuiNotebook.__init__(self, parent, size=size, agwStyle=style, pos=(9000,9000))
         
         self.frame = parent
         self.lastActivePage=None
@@ -28,8 +30,24 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
         self.Bind(aui.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabClosed)
         self.Bind(aui.EVT_AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnTabContextMenu)
         self.Bind(aui.EVT_AUINOTEBOOK_BG_RIGHT_DOWN, self.OnTabBackgroundContextMenu)
+        Publisher().subscribe(self.settingsChanged, 'peppy.preferences.changed')
         
         self.allow_changes = True
+
+    def settingsChanged(self, msg):
+        """Pubsub callback to handle settings change that might change the
+        appearance of the tabs.
+        """
+        style = self.getStyle()
+        self.SetAGWWindowStyleFlag(style)
+    
+    def getStyle(self):
+        style = aui.AUI_NB_WINDOWLIST_BUTTON|aui.AUI_NB_TAB_MOVE|aui.AUI_NB_TAB_SPLIT|aui.AUI_NB_SCROLL_BUTTONS
+        if wx.GetApp().tabs.isCloseButtonOnTab():
+            style |= aui.AUI_NB_CLOSE_ON_ACTIVE_TAB
+        else:
+            style |= aui.AUI_NB_CLOSE_BUTTON
+        return style
 
     def holdChanges(self):
         """Defer updates to menu system until processChanges is called.

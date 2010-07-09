@@ -13,7 +13,7 @@
 # Python Code By:
 #
 # Andrea Gavana, @ 23 Dec 2005
-# Latest Revision: 01 Feb 2010, 15.00 GMT
+# Latest Revision: 28 Apr 2010, 14.00 GMT
 #
 # For All Kind Of Problems, Requests Of Enhancements And Bug Reports, Please
 # Write To Me At:
@@ -102,6 +102,7 @@ import auibar
 import auibook
 import tabmdi
 import dockart
+import tabart
 
 from aui_utilities import Clip, PaneCreateStippleBitmap, GetDockingImage, GetSlidingPoints
 
@@ -1765,7 +1766,10 @@ class AuiPaneInfo(object):
             state &= ~flag
 
         self.state = state
-        
+
+        if flag in [self.buttonClose, self.buttonMaximize, self.buttonMinimize, self.buttonPin]:
+            self.ResetButtons()
+            
         return self
     
     
@@ -1778,6 +1782,32 @@ class AuiPaneInfo(object):
         
         return (self.state & flag and [True] or [False])[0]
 
+
+    def ResetButtons(self):
+        """
+        Resets all the buttons and recreates them from scratch depending on the
+        L{AuiPaneInfo} flags.
+        """
+
+        floating = self.HasFlag(self.optionFloating)
+        self.buttons = []
+
+        if not floating and self.HasMinimizeButton():
+            button = AuiPaneButton(AUI_BUTTON_MINIMIZE)
+            self.buttons.append(button)
+    
+        if not floating and self.HasMaximizeButton():
+            button = AuiPaneButton(AUI_BUTTON_MAXIMIZE_RESTORE)
+            self.buttons.append(button)
+
+        if not floating and self.HasPinButton():
+            button = AuiPaneButton(AUI_BUTTON_PIN)
+            self.buttons.append(button)
+
+        if self.HasCloseButton():
+            button = AuiPaneButton(AUI_BUTTON_CLOSE)
+            self.buttons.append(button)
+        
 
     def CountButtons(self):
         """ Returns the number of visible buttons in the docked pane. """
@@ -2179,8 +2209,8 @@ class AuiSingleDockingGuide(AuiDockingGuide):
         
         self.Hide()
 
-        useAero = GetManager(self.GetParent()).GetFlags() & AUI_MGR_AERO_DOCKING_GUIDES
-        useWhidbey = GetManager(self.GetParent()).GetFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES
+        useAero = GetManager(self.GetParent()).GetAGWFlags() & AUI_MGR_AERO_DOCKING_GUIDES
+        useWhidbey = GetManager(self.GetParent()).GetAGWFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES
         
         self._useAero = useAero or useWhidbey
         self._valid = True
@@ -2363,8 +2393,8 @@ class AuiCenterDockingGuide(AuiDockingGuide):
     def CreateShapesWithStyle(self):
         """ Creates the docking guide window shape based on which docking bitmaps are used. """
 
-        useAero = (GetManager(self.GetParent()).GetFlags() & AUI_MGR_AERO_DOCKING_GUIDES) != 0
-        useWhidbey = (GetManager(self.GetParent()).GetFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES) != 0
+        useAero = (GetManager(self.GetParent()).GetAGWFlags() & AUI_MGR_AERO_DOCKING_GUIDES) != 0
+        useWhidbey = (GetManager(self.GetParent()).GetAGWFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES) != 0
 
         self._useAero = 0
         if useAero:
@@ -2561,7 +2591,7 @@ class AuiCenterDockingGuide(AuiDockingGuide):
         if not self._useAero:
             return
 
-        useWhidbey = (GetManager(self.GetParent()).GetFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES) != 0
+        useWhidbey = (GetManager(self.GetParent()).GetAGWFlags() & AUI_MGR_WHIDBEY_DOCKING_GUIDES) != 0
 
         if useWhidbey:
             sizeX, sizeY = whidbeySizeX, whidbeySizeY            
@@ -2696,15 +2726,15 @@ class AuiDockingHintWindow(wx.Frame):
         self.SetShape(region)
 
 
-    def SetBlindMode(self, flags):
+    def SetBlindMode(self, agwFlags):
         """
         Sets whether venetian blinds or transparent hints will be shown as docking hint.
         This depends on the L{AuiManager} flags.
 
-        :param `flags`: the L{AuiManager} flags.
+        :param `agwFlags`: the L{AuiManager} flags.
         """
 
-        self._blindMode = (flags & AUI_MGR_VENETIAN_BLINDS_HINT) != 0
+        self._blindMode = (agwFlags & AUI_MGR_VENETIAN_BLINDS_HINT) != 0
 
         if self._blindMode or not self.CanSetTransparent():
             self.MakeVenetianBlinds()
@@ -2712,7 +2742,7 @@ class AuiDockingHintWindow(wx.Frame):
         
         else:
             self.SetShape(wx.Region())
-            if flags & AUI_MGR_HINT_FADE == 0:                
+            if agwFlags & AUI_MGR_HINT_FADE == 0:                
                 self.SetTransparent(80)
             else:
                 self.SetTransparent(0)
@@ -3821,7 +3851,7 @@ def AuiManager_HasLiveResize(manager):
 
     :param `manager`: an instance of L{AuiManager}.
 
-    :note: Thie method always returns ``True`` on wxMac as this platform doesn't have
+    :note: This method always returns ``True`` on wxMac as this platform doesn't have
      the ability to use `wx.ScreenDC` to draw sashes.
     """
 
@@ -3831,7 +3861,7 @@ def AuiManager_HasLiveResize(manager):
     if wx.Platform == "__WXMAC__":
         return True
     else:
-        return (manager.GetFlags() & AUI_MGR_LIVE_RESIZE) == AUI_MGR_LIVE_RESIZE
+        return (manager.GetAGWFlags() & AUI_MGR_LIVE_RESIZE) == AUI_MGR_LIVE_RESIZE
 
 
 # Convenience function
@@ -3842,7 +3872,7 @@ def AuiManager_UseNativeMiniframes(manager):
 
     :param `manager`: an instance of L{AuiManager}.
 
-    :note: Thie method always returns ``True`` on wxMac as this platform doesn't have
+    :note: This method always returns ``True`` on wxMac as this platform doesn't have
      the ability to use custom drawn miniframes.
     """
 
@@ -3852,7 +3882,7 @@ def AuiManager_UseNativeMiniframes(manager):
     if wx.Platform == "__WXMAC__":
         return True
     else:
-        return (manager.GetFlags() & AUI_MGR_USE_NATIVE_MINIFRAMES) == AUI_MGR_USE_NATIVE_MINIFRAMES
+        return (manager.GetAGWFlags() & AUI_MGR_USE_NATIVE_MINIFRAMES) == AUI_MGR_USE_NATIVE_MINIFRAMES
 
 
 def GetManager(window):
@@ -3941,13 +3971,13 @@ class AuiManager(wx.EvtHandler):
     is by running the AUI sample (`AUI.py`).
     """
 
-    def __init__(self, managed_window=None, flags=None):
+    def __init__(self, managed_window=None, agwFlags=None):
         """
         Default class constructor.
         
         :param `managed_window`: specifies the window which should be managed;
-        :param `flags`: specifies options which allow the frame management behavior to be
-         modified. `flags` can be a combination of the following style bits:
+        :param `agwFlags`: specifies options which allow the frame management behavior to be
+         modified. `agwFlags` can be a combination of the following style bits:
 
          ==================================== ==================================
          Flag name                            Description
@@ -3967,9 +3997,10 @@ class AuiManager(wx.EvtHandler):
          ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``   Use the new Whidbey-style bitmaps as docking guides
          ``AUI_MGR_SMOOTH_DOCKING``           Performs a "smooth" docking of panes (a la PyQT)
          ``AUI_MGR_USE_NATIVE_MINIFRAMES``    Use miniframes with native caption bar as floating panes instead or custom drawn caption bars (forced on wxMac)
+         ``AUI_MGR_AUTONB_NO_CAPTION``        Panes that merge into an automatic notebook will not have the pane caption visible
          ==================================== ==================================
 
-         Default value for `flags` is:
+         Default value for `agwFlags` is:
          ``AUI_MGR_DEFAULT`` = ``AUI_MGR_ALLOW_FLOATING`` | ``AUI_MGR_TRANSPARENT_HINT`` | ``AUI_MGR_HINT_FADE`` | ``AUI_MGR_NO_VENETIAN_BLINDS_FADE``
 
          :note: If using the ``AUI_MGR_USE_NATIVE_MINIFRAMES``, double-clicking on a
@@ -4011,10 +4042,10 @@ class AuiManager(wx.EvtHandler):
         self._from_move = False
         self._last_rect = wx.Rect()
         
-        if flags is None:
-            flags = AUI_MGR_DEFAULT
+        if agwFlags is None:
+            agwFlags = AUI_MGR_DEFAULT
             
-        self._flags = flags
+        self._agwFlags = agwFlags
         self._is_docked = (False, wx.RIGHT, wx.TOP, 0)
         self._snap_limits = (15, 15)
 
@@ -4027,7 +4058,12 @@ class AuiManager(wx.EvtHandler):
 
         self._preview_timer = wx.Timer(self, wx.ID_ANY)
         self._sliding_frame = None
-        
+
+        self._autoNBTabArt = tabart.AuiDefaultTabArt()
+        self._autoNBStyle = AUI_NB_DEFAULT_STYLE | AUI_NB_BOTTOM | \
+                            AUI_NB_SUB_NOTEBOOK | AUI_NB_TAB_EXTERNAL_MOVE
+        self._autoNBStyle -= AUI_NB_DRAW_DND_TAB
+
         if managed_window:
             self.SetManagedWindow(managed_window)
 
@@ -4052,6 +4088,7 @@ class AuiManager(wx.EvtHandler):
         self.Bind(EVT_AUI_RENDER, self.OnRender)
         self.Bind(EVT_AUI_FIND_MANAGER, self.OnFindManager)
         self.Bind(EVT_AUI_PANE_MIN_RESTORE, self.OnRestoreMinimizedPane)
+        self.Bind(EVT_AUI_PANE_DOCKED, self.OnPaneDocked)
 
         self.Bind(auibook.EVT_AUINOTEBOOK_BEGIN_DRAG, self.OnTabBeginDrag)
         self.Bind(auibook.EVT_AUINOTEBOOK_PAGE_CLOSE, self.OnTabPageClose)
@@ -4222,15 +4259,15 @@ class AuiManager(wx.EvtHandler):
         return NonePaneInfo
 
 
-    # SetFlags() and GetFlags() allow the owner to set various
+    # SetAGWFlags() and GetAGWFlags() allow the owner to set various
     # options which are global to AuiManager
 
-    def SetFlags(self, flags):
+    def SetAGWFlags(self, agwFlags):
         """
         This method is used to specify L{AuiManager}'s settings flags.
 
-        :param `flags`: specifies options which allow the frame management behavior
-         to be modified. `flags` can be one of the following style bits:
+        :param `agwFlags`: specifies options which allow the frame management behavior
+         to be modified. `agwFlags` can be one of the following style bits:
 
          ==================================== ==================================
          Flag name                            Description
@@ -4250,6 +4287,7 @@ class AuiManager(wx.EvtHandler):
          ``AUI_MGR_WHIDBEY_DOCKING_GUIDES``   Use the new Whidbey-style bitmaps as docking guides        
          ``AUI_MGR_SMOOTH_DOCKING``           Performs a "smooth" docking of panes (a la PyQT)
          ``AUI_MGR_USE_NATIVE_MINIFRAMES``    Use miniframes with native caption bar as floating panes instead or custom drawn caption bars (forced on wxMac)
+         ``AUI_MGR_AUTONB_NO_CAPTION``        Panes that merge into an automatic notebook will not have the pane caption visible
          ==================================== ==================================
 
          :note: If using the ``AUI_MGR_USE_NATIVE_MINIFRAMES``, double-clicking on a
@@ -4258,23 +4296,23 @@ class AuiManager(wx.EvtHandler):
         
         """
         
-        self._flags = flags
+        self._agwFlags = agwFlags
 
         if len(self._guides) > 0:
             self.CreateGuideWindows()
 
-        if self._hint_window and flags & AUI_MGR_RECTANGLE_HINT == 0:
+        if self._hint_window and agwFlags & AUI_MGR_RECTANGLE_HINT == 0:
             self.CreateHintWindow()
 
 
-    def GetFlags(self):
+    def GetAGWFlags(self):
         """
         Returns the current manager's flags.
 
-        :see: L{SetFlags} for a list of possible L{AuiManager} flags.
+        :see: L{SetAGWFlags} for a list of possible L{AuiManager} flags.
         """
         
-        return self._flags
+        return self._agwFlags
         
 
     def SetManagedWindow(self, managed_window):
@@ -4385,7 +4423,7 @@ class AuiManager(wx.EvtHandler):
         self.DestroyHintWindow()
 
         self._hint_window = AuiDockingHintWindow(self._frame)
-        self._hint_window.SetBlindMode(self._flags)
+        self._hint_window.SetBlindMode(self._agwFlags)
 
 
     def DestroyHintWindow(self):
@@ -4689,8 +4727,10 @@ class AuiManager(wx.EvtHandler):
         # Add new item to notebook
         target.NotebookPage(paneInfo.notebook_id)
 
-        # Update for position and _notebooks in case we have another target
-        self.Update()
+        # we also want to remove our captions sometimes
+        if not self.RemoveAutoNBCaption(target):
+            # Update for position and _notebooks in case we have another target
+            self.Update()
         
         return True
 
@@ -4824,7 +4864,7 @@ class AuiManager(wx.EvtHandler):
             self.RestorePane(pane_info)
 
         if pane_info.frame:
-            if self._flags & AUI_MGR_ANIMATE_FRAMES:
+            if self._agwFlags & AUI_MGR_ANIMATE_FRAMES:
                 pane_info.frame.FadeOut()
 
         # first, hide the window
@@ -4955,7 +4995,7 @@ class AuiManager(wx.EvtHandler):
         :param `window`: a `wx.Window` derived window.
         """
 
-        if self.GetFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
+        if self.GetAGWFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
             while window:
                 ret, self._panes = SetActivePane(self._panes, window)
                 if ret:
@@ -4972,16 +5012,88 @@ class AuiManager(wx.EvtHandler):
         top of another pane.
         """
 
-        style = AUI_NB_DEFAULT_STYLE | AUI_NB_BOTTOM | \
-                AUI_NB_SUB_NOTEBOOK | AUI_NB_TAB_EXTERNAL_MOVE
-        style -= AUI_NB_DRAW_DND_TAB
-        notebook = auibook.AuiNotebook(self._frame, -1, wx.Point(0, 0), wx.Size(0, 0), style=style)
+        notebook = auibook.AuiNotebook(self._frame, -1, wx.Point(0, 0), wx.Size(0, 0), agwStyle=self._autoNBStyle)
 
         # This is so we can get the tab-drag event.
         notebook.GetAuiManager().SetMasterManager(self)
+        notebook.SetArtProvider(self._autoNBTabArt.Clone())
         self._notebooks.append(notebook)
 
         return notebook
+
+
+    def SetAutoNotebookTabArt(self, art):
+        """
+        Sets the default tab art provider for automatic notebooks.
+
+        :param `art`: a tab art provider.
+        """
+
+        for nb in self._notebooks:
+            nb.SetArtProvider(art.Clone())
+            nb.Refresh()
+            nb.Update()
+
+        self._autoNBTabArt = art
+
+
+    def GetAutoNotebookTabArt(self):
+        """ Returns the default tab art provider for automatic notebooks. """
+
+        return self._autoNBTabArt        
+        
+
+    def SetAutoNotebookStyle(self, agwStyle):
+        """
+        Sets the default AGW-specific window style for automatic notebooks.
+
+        :param `agwStyle`: the underlying L{AuiNotebook} window style.
+         This can be a combination of the following bits:
+        
+         ==================================== ==================================
+         Flag name                            Description
+         ==================================== ==================================
+         ``AUI_NB_TOP``                       With this style, tabs are drawn along the top of the notebook
+         ``AUI_NB_LEFT``                      With this style, tabs are drawn along the left of the notebook. Not implemented yet.
+         ``AUI_NB_RIGHT``                     With this style, tabs are drawn along the right of the notebook. Not implemented yet.
+         ``AUI_NB_BOTTOM``                    With this style, tabs are drawn along the bottom of the notebook.
+         ``AUI_NB_TAB_SPLIT``                 Allows the tab control to be split by dragging a tab
+         ``AUI_NB_TAB_MOVE``                  Allows a tab to be moved horizontally by dragging
+         ``AUI_NB_TAB_EXTERNAL_MOVE``         Allows a tab to be moved to another tab control
+         ``AUI_NB_TAB_FIXED_WIDTH``           With this style, all tabs have the same width
+         ``AUI_NB_SCROLL_BUTTONS``            With this style, left and right scroll buttons are displayed
+         ``AUI_NB_WINDOWLIST_BUTTON``         With this style, a drop-down list of windows is available
+         ``AUI_NB_CLOSE_BUTTON``              With this style, a close button is available on the tab bar
+         ``AUI_NB_CLOSE_ON_ACTIVE_TAB``       With this style, a close button is available on the active tab
+         ``AUI_NB_CLOSE_ON_ALL_TABS``         With this style, a close button is available on all tabs
+         ``AUI_NB_MIDDLE_CLICK_CLOSE``        Allows to close AuiNotebook tabs by mouse middle button click
+         ``AUI_NB_SUB_NOTEBOOK``              This style is used by AuiManager to create automatic AuiNotebooks
+         ``AUI_NB_HIDE_ON_SINGLE_TAB``        Hides the tab window if only one tab is present
+         ``AUI_NB_SMART_TABS``                Use Smart Tabbing, like ``Alt`` + ``Tab`` on Windows
+         ``AUI_NB_USE_IMAGES_DROPDOWN``       Uses images on dropdown window list menu instead of check items
+         ``AUI_NB_CLOSE_ON_TAB_LEFT``         Draws the tab close button on the left instead of on the right (a la Camino browser)
+         ``AUI_NB_TAB_FLOAT``                 Allows the floating of single tabs. Known limitation: when the notebook is more or less full screen, tabs cannot be dragged far enough outside of the notebook to become floating pages
+         ``AUI_NB_DRAW_DND_TAB``              Draws an image representation of a tab while dragging (on by default)
+         ==================================== ==================================
+
+        """
+
+        for nb in self._notebooks:
+            nb.SetAGWWindowStyleFlag(agwStyle)
+            nb.Refresh()
+            nb.Update()
+
+        self._autoNBStyle = agwStyle
+
+
+    def GetAutoNotebookStyle(self):
+        """
+        Returns the default AGW-specific window style for automatic notebooks.
+
+        :see: L{SetAutoNotebookStyle} method for a list of possible styles.
+        """
+
+        return self._autoNBStyle
 
 
     def SavePaneInfo(self, pane):
@@ -6124,15 +6236,15 @@ class AuiManager(wx.EvtHandler):
                     # the dragging is happening right now, then the floating
                     # window should have this style by default
                     if self._action in [actionDragFloatingPane, actionDragToolbarPane] and \
-                       self._flags & AUI_MGR_TRANSPARENT_DRAG:
+                       self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                         frame.SetTransparent(150)
 
                     if p.IsToolbar():
                         bar = p.window
                         if isinstance(bar, auibar.AuiToolBar):
                             bar.SetGripperVisible(False)
-                            style = bar.GetWindowStyleFlag()
-                            bar.SetWindowStyleFlag(style & ~AUI_TB_VERTICAL)
+                            agwStyle = bar.GetAGWWindowStyleFlag()
+                            bar.SetAGWWindowStyleFlag(agwStyle & ~AUI_TB_VERTICAL)
                             bar.Realize()
 
                         s = p.window.GetMinSize()
@@ -6153,6 +6265,15 @@ class AuiManager(wx.EvtHandler):
                         pFrame.SetDimensions(p.floating_pos.x, p.floating_pos.y,
                                              p.floating_size.x, p.floating_size.y, wx.SIZE_USE_EXISTING)
 
+                    # update whether the pane is resizable or not
+                    style = p.frame.GetWindowStyleFlag()
+                    if p.IsFixed():
+                        style &= ~wx.RESIZE_BORDER
+                    else:
+                        style |= wx.RESIZE_BORDER
+
+                    p.frame.SetWindowStyleFlag(style)
+
                     if pFrame.IsShown() != p.IsShown():
                         p.needsTransparency = True
                         pFrame.Show(p.IsShown())
@@ -6169,8 +6290,6 @@ class AuiManager(wx.EvtHandler):
                     p.best_size = p.window.GetBestSize()
 
                 if p.window and not p.IsNotebookPage() and p.window.IsShown() != p.IsShown():
-                    # reduce flicker
-                    p.window.SetSize((0, 0))
                     p.window.Show(p.IsShown())
 
             if pFrame and p.needsTransparency:
@@ -6182,7 +6301,7 @@ class AuiManager(wx.EvtHandler):
 
             # if "active panes" are no longer allowed, clear
             # any optionActive values from the pane states
-            if self._flags & AUI_MGR_ALLOW_ACTIVE_PANE == 0:
+            if self._agwFlags & AUI_MGR_ALLOW_ACTIVE_PANE == 0:
                 p.state &= ~AuiPaneInfo.optionActive
 
             self._panes[ii] = p
@@ -7203,23 +7322,23 @@ class AuiManager(wx.EvtHandler):
         direction = pane.dock_direction
         vertical = direction in [AUI_DOCK_LEFT, AUI_DOCK_RIGHT]
 
-        style = toolBar.GetWindowStyleFlag()
-        new_style = style
+        agwStyle = toolBar.GetAGWWindowStyleFlag()
+        new_agwStyle = agwStyle
 
         if vertical:
-            new_style |= AUI_TB_VERTICAL
+            new_agwStyle |= AUI_TB_VERTICAL
         else:
-            new_style &= ~(AUI_TB_VERTICAL)
+            new_agwStyle &= ~(AUI_TB_VERTICAL)
 
-        if style != new_style:
-            toolBar.SetWindowStyleFlag(new_style)
+        if agwStyle != new_agwStyle:
+            toolBar.SetAGWWindowStyleFlag(new_agwStyle)
         if not toolBar.GetGripperVisible():
             toolBar.SetGripperVisible(True)
 
         s = pane.window.GetMinSize()
         pane.BestSize(s)
 
-        if new_style != style:
+        if new_agwStyle != agwStyle:
             toolBar.Realize()
         
         return pane
@@ -7299,7 +7418,7 @@ class AuiManager(wx.EvtHandler):
 
         # Check to see if the toolbar has been dragged out of the window
         if CheckOutOfWindow(self._frame, pt):
-            if self._flags & AUI_MGR_ALLOW_FLOATING and drop.IsFloatable():
+            if self._agwFlags & AUI_MGR_ALLOW_FLOATING and drop.IsFloatable():
                 drop.Float()
 
             return self.ProcessDockResult(target, drop)
@@ -7359,7 +7478,7 @@ class AuiManager(wx.EvtHandler):
         # should float if being dragged over center pane windows
         if not dock.fixed or dock.dock_direction == AUI_DOCK_CENTER:
         
-            if (self._flags & AUI_MGR_ALLOW_FLOATING and drop.IsFloatable()) or \
+            if (self._agwFlags & AUI_MGR_ALLOW_FLOATING and drop.IsFloatable()) or \
                dock.dock_direction not in [AUI_DOCK_CENTER, AUI_DOCK_NONE]:
                 if drop.IsFloatable():
                     drop.Float()
@@ -7781,7 +7900,7 @@ class AuiManager(wx.EvtHandler):
         if rect == self._last_hint:
             return
 
-        if self._flags & AUI_MGR_RECTANGLE_HINT and wx.Platform != "__WXMAC__":
+        if self._agwFlags & AUI_MGR_RECTANGLE_HINT and wx.Platform != "__WXMAC__":
 
             if self._last_hint != rect:
                 # remove the last hint rectangle
@@ -7832,7 +7951,7 @@ class AuiManager(wx.EvtHandler):
 
         self._hint_fadeamt = self._hint_fademax
 
-        if self._flags & AUI_MGR_HINT_FADE:
+        if self._agwFlags & AUI_MGR_HINT_FADE:
             self._hint_fadeamt = 0
             self._hint_window.SetTransparent(self._hint_fadeamt)
 
@@ -8175,7 +8294,7 @@ class AuiManager(wx.EvtHandler):
         if not pane.IsOk():
             raise Exception("Pane window not found")
 
-        if self.GetFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
+        if self.GetAGWFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
             ret, self._panes = SetActivePane(self._panes, wnd)
             self.RefreshCaptions()
 
@@ -8299,7 +8418,7 @@ class AuiManager(wx.EvtHandler):
         if not paneInfo.IsOk():
             raise Exception("Pane window not found")
 
-        if self.GetFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
+        if self.GetAGWFlags() & AUI_MGR_ALLOW_ACTIVE_PANE:
             # set the caption as active
             ret, self._panes = SetActivePane(self._panes, pane_window)
             self.RefreshCaptions()
@@ -8328,7 +8447,7 @@ class AuiManager(wx.EvtHandler):
                 self._action_offset += originPt - windowPt
                 self._toolbar_action_offset = wx.Point(*self._action_offset)
 
-                if self._flags & AUI_MGR_TRANSPARENT_DRAG:
+                if self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                     paneInfo.frame.SetTransparent(150)
             
             if paneInfo.IsToolbar():
@@ -8448,7 +8567,7 @@ class AuiManager(wx.EvtHandler):
             raise Exception("Pane window not found")
 
         if not paneInfo.IsFloatable() or not paneInfo.IsDockable() or \
-           self._flags & AUI_MGR_ALLOW_FLOATING == 0:
+           self._agwFlags & AUI_MGR_ALLOW_FLOATING == 0:
             return
 
         indx = self._panes.index(paneInfo)
@@ -8497,7 +8616,7 @@ class AuiManager(wx.EvtHandler):
         self._panes[indx] = paneInfo
         self.Update()
 
-        if win_rect and self._flags & AUI_MGR_ANIMATE_FRAMES:
+        if win_rect and self._agwFlags & AUI_MGR_ANIMATE_FRAMES:
             paneInfo = self.GetPane(pane_window)
             pane_rect = paneInfo.window.GetScreenRect()
             self.AnimateDocking(win_rect, pane_rect)
@@ -8878,7 +8997,9 @@ class AuiManager(wx.EvtHandler):
         """
 
         if self._action == actionResize:
+##            self._frame.Freeze()
             self.OnLeftUp_Resize(event)
+##            self._frame.Thaw()
         
         elif self._action == actionClickButton:
             self.OnLeftUp_ClickButton(event)
@@ -9054,7 +9175,7 @@ class AuiManager(wx.EvtHandler):
             self._action = actionDragToolbarPane
             self._action_window = self._action_pane.window
         
-        elif self._action_pane.IsFloatable() and self._flags & AUI_MGR_ALLOW_FLOATING:
+        elif self._action_pane.IsFloatable() and self._agwFlags & AUI_MGR_ALLOW_FLOATING:
 
             e = self.FireEvent(wxEVT_AUI_PANE_FLOATING, self._action_pane, canVeto=True)
             if e.GetVeto():
@@ -9086,7 +9207,7 @@ class AuiManager(wx.EvtHandler):
             originPt = self._action_pane.frame.ClientToScreen(wx.Point())
             self._toolbar_action_offset = originPt - windowPt
             
-            if self._flags & AUI_MGR_USE_NATIVE_MINIFRAMES:
+            if self._agwFlags & AUI_MGR_USE_NATIVE_MINIFRAMES:
                 originPt = windowPt + wx.Point(3, 3)
                 
             self._action_offset += originPt - windowPt
@@ -9277,7 +9398,7 @@ class AuiManager(wx.EvtHandler):
         if pane.frame:
 
             if diff.x != 0 or diff.y != 0:
-                if wx.Platform == "__WXMSW__" and (self._flags & AUI_MGR_TRANSPARENT_DRAG) == 0: # and not self.CheckPaneMove(pane):
+                if wx.Platform == "__WXMSW__" and (self._agwFlags & AUI_MGR_TRANSPARENT_DRAG) == 0: # and not self.CheckPaneMove(pane):
                     # return
                     # HACK: Terrible hack on wxMSW (!)
                     pane.frame.SetTransparent(254)
@@ -9286,7 +9407,7 @@ class AuiManager(wx.EvtHandler):
                 pane.frame.Move(pane.floating_pos)
                 self._from_move = False
 
-            if self._flags & AUI_MGR_TRANSPARENT_DRAG:
+            if self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
 
         # calculate the offset from the upper left-hand corner
@@ -9370,7 +9491,7 @@ class AuiManager(wx.EvtHandler):
 
                     e = self.FireEvent(wxEVT_AUI_PANE_DOCKED, paneInfo, canVeto=False)
 
-                    if self._flags & AUI_MGR_SMOOTH_DOCKING:
+                    if self._agwFlags & AUI_MGR_SMOOTH_DOCKING:
                         self.SmoothDock(paneInfo)
 
                 self._panes[indx] = paneInfo
@@ -9379,7 +9500,7 @@ class AuiManager(wx.EvtHandler):
         # position (that we store)
         if paneInfo.IsFloating():
             paneInfo.floating_pos = paneInfo.frame.GetPosition()
-            if paneInfo.frame._transparent != paneInfo.transparent or self._flags & AUI_MGR_TRANSPARENT_DRAG:
+            if paneInfo.frame._transparent != paneInfo.transparent or self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 paneInfo.frame.SetTransparent(paneInfo.transparent)
                 paneInfo.frame._transparent = paneInfo.transparent
         
@@ -9435,7 +9556,7 @@ class AuiManager(wx.EvtHandler):
 
         # move the pane window
         if pane.frame:
-            if wx.Platform == "__WXMSW__" and (self._flags & AUI_MGR_TRANSPARENT_DRAG) == 0: # and not self.CheckPaneMove(pane):
+            if wx.Platform == "__WXMSW__" and (self._agwFlags & AUI_MGR_TRANSPARENT_DRAG) == 0: # and not self.CheckPaneMove(pane):
                 # return
                 # HACK: Terrible hack on wxMSW (!)
                 pane.frame.SetTransparent(254)
@@ -9444,7 +9565,7 @@ class AuiManager(wx.EvtHandler):
             pane.frame.Move(pane.floating_pos)
             self._from_move = False
                 
-            if self._flags & AUI_MGR_TRANSPARENT_DRAG:
+            if self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(150)
 
         self._panes[indx] = pane
@@ -9510,7 +9631,7 @@ class AuiManager(wx.EvtHandler):
 
         if pane.IsFloating():
             pane.floating_pos = pane.frame.GetPosition()
-            if pane.frame._transparent != pane.transparent or self._flags & AUI_MGR_TRANSPARENT_DRAG:
+            if pane.frame._transparent != pane.transparent or self._agwFlags & AUI_MGR_TRANSPARENT_DRAG:
                 pane.frame.SetTransparent(pane.transparent)
                 pane.frame._transparent = pane.transparent
         
@@ -9606,7 +9727,7 @@ class AuiManager(wx.EvtHandler):
             
         elif event.button == AUI_BUTTON_PIN:
         
-            if self._flags & AUI_MGR_ALLOW_FLOATING and pane.IsFloatable():
+            if self._agwFlags & AUI_MGR_ALLOW_FLOATING and pane.IsFloatable():
                 e = self.FireEvent(wxEVT_AUI_PANE_FLOATING, pane, canVeto=True)
                 if e.GetVeto():
                     return
@@ -9687,7 +9808,7 @@ class AuiManager(wx.EvtHandler):
 
             win_rect = paneInfo.window.GetScreenRect()
             
-            minimize_toolbar = auibar.AuiToolBar(self.GetManagedWindow(), style=tbStyle)
+            minimize_toolbar = auibar.AuiToolBar(self.GetManagedWindow(), agwStyle=tbStyle)
             minimize_toolbar.Hide()
             minimize_toolbar.SetToolBitmapSize(wx.Size(16, 16))
 
@@ -9746,7 +9867,7 @@ class AuiManager(wx.EvtHandler):
 
             minimize_toolbar.Show()
             self.Update()
-            if self._flags & AUI_MGR_ANIMATE_FRAMES:
+            if self._agwFlags & AUI_MGR_ANIMATE_FRAMES:
                 self.AnimateDocking(win_rect, minimize_toolbar.GetScreenRect())
 
 
@@ -9760,6 +9881,41 @@ class AuiManager(wx.EvtHandler):
         self.RestoreMinimizedPane(event.pane)
 
 
+    def OnPaneDocked(self, event):
+        """
+        Handles the ``EVT_AUI_PANE_DOCKED`` event for L{AuiManager}.
+
+        :param `event`: an instance of L{AuiManagerEvent} to be processed.
+        """
+
+        event.Skip()
+        self.RemoveAutoNBCaption(event.GetPane())        
+    
+
+    def RemoveAutoNBCaption(self, pane):
+        """
+        Removes the caption on newly created automatic notebooks.
+
+        :param `pane`: an instance of L{AuiPaneInfo} (the target notebook).
+        """
+
+        if self._agwFlags & AUI_MGR_AUTONB_NO_CAPTION == 0:
+            return False
+
+        def RemoveCaption():
+            """ Sub-function used to remove the pane caption on automatic notebooks. """
+            
+            if pane.HasNotebook(): 
+                notebook = self._notebooks[pane.notebook_id] 
+                self.GetPane(notebook).CaptionVisible(False).PaneBorder(False)                
+                self.Update() 
+
+        # it seems the notebook isnt created by this stage, so remove 
+        # the caption a moment later 
+        wx.CallAfter(RemoveCaption)
+        return True
+        
+        
     def RestoreMinimizedPane(self, paneInfo):
         """
         Restores a previously minimized pane.
