@@ -510,12 +510,19 @@ class PopupMenu(AcceleratorManager, debugmixin):
         menu = wx.Menu()
         
         sorted = []
+        position = 500
+        needs_separator = False
         for item in action_classes:
             if isinstance(item, tuple):
-                sorted.append((abs(item[0]), item[1], item[0] < 0))
+                position = abs(item[0])
+                sorted.append((position, item[1], item[0] < 0))
+                needs_separator = False
+            elif item is None:
+                needs_separator = True
             else:
-                sorted.append((500, item, False))
-                position = 500
+                sorted.append((position, item, needs_separator))
+                needs_separator = False
+            position += .0001
         sorted.sort(key=lambda a:a[0])
         
         if mode is None:
