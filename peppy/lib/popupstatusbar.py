@@ -125,6 +125,7 @@ class PopupStatusBar(PopupClass):
         # List of display times
         self.display_times = []
         self.last_is_status = False
+        self.hold_status = False
         self.Hide()
     
     def showMessage(self, text):
@@ -141,8 +142,9 @@ class PopupStatusBar(PopupClass):
         @param text: message to display
         """
         self._addItemAtBottom(text, False)
+        self.hold_status = False
     
-    def showStatusText(self, text):
+    def showStatusText(self, text, hold=False):
         """Display a status text string in the status popup.
         
         This method is intended to display text in response to a large number
@@ -159,6 +161,7 @@ class PopupStatusBar(PopupClass):
         @param text: message to display
         """
         self._addItemAtBottom(text, True)
+        self.hold_status = hold
     
     def _addItemAtBottom(self, text, is_status):
         text = text.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
@@ -204,6 +207,7 @@ class PopupStatusBar(PopupClass):
             expired_text.Destroy()
         self.Hide()
         self.last_is_status = False
+        self.hold_status = False
         
     def OnTimer(self, evt):
         if not self.display_times:
@@ -217,7 +221,11 @@ class PopupStatusBar(PopupClass):
             last_time, last_text = self.display_times[0]
             expires = last_time + self.delay
             #print("expires at: %d current=%d" % (expires, current))
-            if last_time + self.delay > current:
+            if self.hold_status:
+                # recreate list to keep display current
+                self.display_times = [(time.time() * 1000, last_text)]
+                remove = False
+            elif last_time + self.delay > current:
                 remove = False
         if remove:
             expired_time, expired_text = self.display_times.pop(0)
