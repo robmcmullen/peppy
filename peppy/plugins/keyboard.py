@@ -212,13 +212,18 @@ class KeybindingModeKeystrokeRecorder(KeystrokeRecorder):
         """
         self.mode = mode
         self.action = mode.getFirstSelectedAction()
+        self.hold_status = True
         KeystrokeRecorder.__init__(self, self.mode.frame.root_accel, trigger,
                                    count, append,
                                    platform=KeyboardConf.keyboard.platform,
                                    action_name=self.action.__name__)
     
     def statusUpdateHook(self, status_text):
-        self.mode.setStatusText(status_text)
+        self.mode.setStatusText(status_text, hold=self.hold_status)
+    
+    def finishRecording(self):
+        self.hold_status = False
+        KeystrokeRecorder.finishRecording(self)
     
     def finishRecordingHook(self, accelerator_text):
         if accelerator_text:

@@ -1338,17 +1338,15 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
         self.status_info.resetIcons()
         self.createStatusIcons()
     
-    def setStatusText(self, text, field=0):
+    def setStatusText(self, text, field=0, hold=False):
         """Convenience function to set the status bar text.
         
-        The status bar has at least two text fields, a primary (field=0) and
-        a secondardy, smaller field (field=1).  Field 0 is also used for
-        menu/toolbar updates and therefore will change when the user moves the
-        mouse to the menubar or toolbar.  Field 1 is used for line updates in
-        classes like L{FundamentalMode} and keystroke updates by the keyboard
-        procassing system.
+        Simple proxy to the frame's SetStatusText method.
+        
+        @see L{BufferFrame.SetStatusText}
         """
-        self.status_info.setText(_(text), field)
+        if text:
+            self.frame.SetStatusText(text, field, hold)
     
     ##### Proxy services for the wrapper
     def updateAui(self):

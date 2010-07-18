@@ -458,10 +458,34 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         if major is not None:
             major.SetFocus()
         
-    def SetStatusText(self, text, index=0):
-        mode = self.getActiveMajorMode()
-        if mode is not None:
-            mode.status_info.setText(_(text), index)
+    def SetStatusText(self, text, index=0, hold=False):
+        """Overrides status bar with popup status.
+        
+        Instead of taking up screen real-estate with a status bar, the
+        popup status displays a message for a small amount of time before
+        disappearing.  Depending on the value of index, a message can either
+        remain on screen until the time expires, or can be overwritten by the
+        next call to SetStatusText.
+        
+        Depending on the value of hold, a message can either remain on screen
+        until the time expires, or can be overwritten by the next call to
+        SetStatusText.
+
+        @param text: the text (unicode) to display in the popup message
+        
+        @param index: 0 uses L{PopupStatusBar.showMessage} to display the text
+        in the popup and will remain on screen till it expires; anything else
+        uses L{PopupStatusBar.showStatusText} to display status info that gets
+        overwritten with the next call.
+        
+        @param hold: if True, ignores expiration time and displays the status
+        message until the next status message is displayed.
+        """
+        if text:
+            if index == 0 and not hold:
+                self.popup_status.showMessage(_(text))
+            else:
+                self.popup_status.showStatusText(_(text), hold)
     
     # non-wx methods
     
