@@ -642,10 +642,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         # Using a CallAfter works around this issue.  I wonder if it would
         # be better to put this in an idle event handler? More testing will
         # probably have to wait until after I get a mac.
-        if wx.Platform == '__WXMAC__':
-            wx.CallAfter(self.status_info.setText, status, 1)
-        else:
-            self.status_info.setText(status ,1)
+        wx.CallAfter(self.frame.SetStatusText, status, 1)
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
