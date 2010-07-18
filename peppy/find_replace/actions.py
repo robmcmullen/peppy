@@ -776,12 +776,17 @@ if __name__ == "__main__":
     import __builtin__
     __builtin__._ = str
     
+    class Locals(object):
+        case_sensitive_search = False
+        whole_word_search = False
+    
     class Frame(wx.Frame):
         def __init__(self, *args, **kwargs):
             super(self.__class__, self).__init__(*args, **kwargs)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             self.stc = wx.stc.StyledTextCtrl(self, -1)
+            self.stc.locals = Locals()
             sizer.Add(self.stc, 1, wx.EXPAND)
             
             self.search = FindBar(self, self, self.stc)
