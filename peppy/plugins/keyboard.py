@@ -524,6 +524,7 @@ class KeybindingMode(ListMode):
             RebindSingleKeyAction,
             RebindTwoKeyAction,
             RebindThreeKeyAction,
+            None,
             DeleteKeyAction,
             RevertKeyAction,
             ]
