@@ -160,6 +160,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         IntParam('height', 600, 'Height of the main frame in pixels'),
         BoolParam('show_toolbar', True, 'Show the toolbar on all frames?\nNote: this is a global setting for all frames.'),
         BoolParam('resize_becomes_default', True, 'Should the new size following a resize become the default size of all subsequently created frames?'),
+        BoolParam('show_popup_status', False, 'Use experimental popup status bar'),
         # FIXME: this attempt at fast resizing caused Freeze() mismatch
         # problems.  It's not worth that much, so I'm disabling it for
         # now.
@@ -214,7 +215,10 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
     def initLayout(self):
         ModularStatusBar(self)
-        self.popup_status = PopupStatusBar(self)
+        if self.classprefs.show_popup_status:
+            self.popup_status = PopupStatusBar(self)
+        else:
+            self.popup_status = None
 
         hsplit = wx.BoxSizer(wx.HORIZONTAL)
         self.SetAutoLayout(True)
@@ -417,7 +421,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             if not self.pending_timestamp_check and not self.currently_processing_timestamp:
                 self.pending_timestamp_check = True
         else:
-            self.popup_status.clear()
+            if self.popup_status:
+                self.popup_status.clear()
         evt.Skip()
     
     def OnSize(self, evt):
@@ -482,10 +487,13 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         message until the next status message is displayed.
         """
         if text:
-            if index == 0 and not hold:
-                self.popup_status.showMessage(_(text))
+            if self.popup_status:
+                if index == 0 and not hold:
+                    self.popup_status.showMessage(_(text))
+                else:
+                    self.popup_status.showStatusText(_(text), hold)
             else:
-                self.popup_status.showStatusText(_(text), hold)
+                self.GetStatusBar().SetStatusText(_(text), index)
     
     # non-wx methods
     
