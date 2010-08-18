@@ -18,9 +18,20 @@ class PickleSerializerMixin(object):
     C{createVersion[version_identifier]}
     C{packVersion[version_identifier]}
     
-    The version identifier can be an integer or string value with no other
-    syntactic restrictions.  A simple example would be C{unpackVersion1},
-    C{packVersion1}, and C{createVersion1}.
+    The version identifier must be an integer; for example a simple example
+    would be C{unpackVersion1}, C{packVersion1}, and C{createVersion1}.
+    
+    If multiple versions of the saved data format are used, then conversion
+    methods must also be specified.  Conversion methods are defined as:
+    
+    C{convertVersion[version_id1]ToVersion[version_id2]}
+    
+    Upon loading an old version the version number of the old version will be
+    compared to the default version.  If the default version is higher, the
+    conversion methods will be called to transform the data from the format
+    of the old version to the format of the new version.  Conversions may
+    be cascaded, so that moving to version 1 to version 3 would call, in
+    succession: convertVersion1ToVersion2 and convertVersion2ToVersion3
     """
     def __init__(self, default_version=1):
         self._ps_default_version = default_version
@@ -75,6 +86,16 @@ class PickleSerializerMixin(object):
                 else:
                     raise RuntimeError("Unknown version %s found when trying to restore from %s" % (version, filename))
                 self._ps_restored = True
+                
+                while version < self._ps_default_version:
+                    convert_method = "convertVersion%sToVersion%s" % (version, version+1)
+                    if hasattr(self, convert_method):
+                        convert = getattr(self, convert_method)
+                        convert()
+                        version += 1
+                    else:
+                        raise RuntimeError("Missing converter from version %s to version %s when trying to restore from %s" % (version, version+1, filename))
+                        
         else:
             create_method = "createVersion%s" % self._ps_default_version
             create = getattr(self, create_method)
