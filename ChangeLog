@@ -1,4 +1,4 @@
-2010-07-??  Rob McMullen  <robm@users.sourceforge.net>
+2010-08-18  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.15.0 "Hilbert's Hotel"
 	* added detection of bad layout.dat file (bug #847)
