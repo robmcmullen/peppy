@@ -85,6 +85,8 @@ def get_file_system_schemes():
     return _file_systems.keys()
 
 def get_dirname(ref):
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
     return Reference(ref.scheme,
                      pycopy.copy(ref.authority),
                      ref.path.resolve2('../'),
@@ -92,6 +94,8 @@ def get_dirname(ref):
                      ref.fragment)
 
 def get_filename(ref):
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
     """Convenience method to return the filename component of the URL"""
     return ref.path[-1]
 
