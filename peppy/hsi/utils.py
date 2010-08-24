@@ -658,8 +658,8 @@ class CubeCompare(debugmixin):
         
         Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
         """
-        self.heatmap = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
-        data = self.heatmap.getBandRaw(0)
+        self.euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        data = self.euclidean.getBandRaw(0)
         
         working = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         for i in range(self.bands):
