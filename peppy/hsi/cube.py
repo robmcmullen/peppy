@@ -1043,11 +1043,11 @@ class Cube(debugmixin):
                 self.data_offset=self.file_offset+self.header_offset
 
     def initializeSizes(self,datatype=None):
-        if datatype:
+        if datatype is not None:
             self.data_type=datatype
         
         # find out how many bytes per element in this datatype
-        if self.data_type:
+        if self.data_type is not None:
             self.itemsize=numpy.empty([1],dtype=self.data_type).itemsize
 
         # calculate the size of the raw data only if it isn't already known
