@@ -638,8 +638,8 @@ class CubeCompare(debugmixin):
         
         Fast for BIP and BIL, slow for BSQ.
         """
-        self.euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
-        data = self.euclidean.getBandRaw(0)
+        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        data = euclidean.getBandRaw(0)
         bblmask = self.getFocalPlaneBadBandMask()
 
         for i, plane1, plane2 in iter:
@@ -650,7 +650,7 @@ class CubeCompare(debugmixin):
             self.dprint("%s %s" % (line.shape, line))
             data[i,:] = line
         self.dprint(data)
-        return self.euclidean
+        return euclidean
     
     def getEuclideanDistanceByBand(self,nbins=500):
         """Calculate the euclidean distance for every pixel in two cubes using
@@ -658,8 +658,8 @@ class CubeCompare(debugmixin):
         
         Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
         """
-        self.euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
-        data = self.euclidean.getBandRaw(0)
+        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        data = euclidean.getBandRaw(0)
         
         working = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         for i in range(self.bands):
@@ -671,7 +671,7 @@ class CubeCompare(debugmixin):
         
         data = numpy.sqrt(working)
         self.dprint(data)
-        return self.euclidean
+        return euclidean
     
     def getEuclideanDistance(self):
         """Generate a cube containing the euclidean distance between the two cubes
@@ -681,9 +681,11 @@ class CubeCompare(debugmixin):
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
-            self.getEuclideanDistanceByFocalPlane(iter)
+            cube = self.getEuclideanDistanceByFocalPlane(iter)
         else:
-            self.getEuclideanDistanceByBand()
+            cube = self.getEuclideanDistanceByBand()
+        self.calcStatistics(cube)
+        self.euclidean = cube
         return self.euclidean
 
     def getSpectralAngleByFocalPlane(self, iter):
@@ -692,8 +694,8 @@ class CubeCompare(debugmixin):
         
         Fast for BIP and BIL, slow for BSQ.
         """
-        self.sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
-        data = self.sam.getBandRaw(0)
+        sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
+        data = sam.getBandRaw(0)
         bblmask = self.getFocalPlaneBadBandMask()
 
         for i, plane1, plane2 in iter:
@@ -713,7 +715,7 @@ class CubeCompare(debugmixin):
             self.dprint("%s %s" % (line.shape, line))
             data[i,:] = line
         self.dprint(data)
-        return self.sam
+        return sam
     
     def getSpectralAngleByBand(self,nbins=500):
         """Calculate the spectral angle between every pixel in two cubes using
@@ -721,8 +723,8 @@ class CubeCompare(debugmixin):
         
         Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
         """
-        self.sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
-        data = self.sam.getBandRaw(0)
+        sam = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
+        data = sam.getBandRaw(0)
         
         top = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         bot1 = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
@@ -739,7 +741,7 @@ class CubeCompare(debugmixin):
         tot = top/bot
         data[:,:] = numpy.nan_to_num(numpy.arccos(tot) * (180.0 / math.pi))
         self.dprint(data)
-        return self.sam
+        return sam
     
     def getSpectralAngle(self):
         """Generate a cube containing the spectral angle between the two cubes
@@ -749,10 +751,25 @@ class CubeCompare(debugmixin):
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
-            self.getSpectralAngleByFocalPlane(iter)
+            sam = self.getSpectralAngleByFocalPlane(iter)
         else:
-            self.getSpectralAngleByBand()
+            sam = self.getSpectralAngleByBand()
+        self.calcStatistics(sam)
+        self.sam = sam
         return self.sam
+    
+    def calcStatistics(self, cube):
+        """Calculate the min, max, mean, and std dev of the data cube
+        
+        """
+        data = cube.getBandRaw(0)
+
+        small = numpy.amin(data)
+        big = numpy.amax(data)
+        mean = numpy.mean(data)
+        stddev = numpy.std(data)
+        text = "min: %f\nmax: %f\nmean: %f\nstd dev: %f" % (small, big, mean, stddev)
+        cube.description = text
 
     def getExtrema(self):
         """Really just a test function to see how long it takes to
