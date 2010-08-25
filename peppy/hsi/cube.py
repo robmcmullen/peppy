@@ -690,7 +690,30 @@ class MMapCubeReader(CubeReader):
             self.mmap.flush()
             self.mmap.sync()
         else:
-            self.raw.tofile(str(url.path))
+            filename = unicode(url.path)
+            try:
+                self.raw.tofile(filename)
+            except ValueError:
+                # On windows, the call to tofile can fail with a message like
+                # "4455680 requested and 0 written"; I'm thinking this has
+                # to do with an out of memory condition as it only happens
+                # with really large dimensions.  The only time I've been able
+                # to duplicate it is using the HSI Cube comparison with two
+                # 600x3000x400 sized cubes and saving the resulting image.
+                #
+                # This alternate code works around the issue by writing small
+                # chunks of the data at a time.
+                fd = open(filename, "wb")
+                flat = self.raw.ravel()
+                size = flat.size
+                start = 0
+                while start < size:
+                    last = start + 10000
+                    if last > size:
+                        last = size
+                    fd.write(flat[start:last].tostring())
+                    start = last
+                
     
     def shape(self, cube):
         """Shape the memory mapped to the correct data type and offset within
