@@ -15,6 +15,7 @@ from peppy.debug import *
 from peppy.major import *
 from peppy.buffers import Buffer, BufferList
 from peppy.menu import PopupMenu
+from peppy.lib.throbber import Throbber
 
 
 class FrameNotebook(aui.AuiNotebook, debugmixin):
@@ -208,11 +209,15 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
         if wrapper:
             return wrapper.editwin
 
-    def getWrapper(self, mode):
+    def getWrapperIndex(self, mode):
         for index in range(0, self.GetPageCount()):
             if self.GetPage(index).editwin == mode:
-                return self.GetPage(index)
+                return index
         raise IndexError("No tab found for mode %s" % mode)
+    
+    def getWrapper(self, mode):
+        index = self.getWrapperIndex(mode)
+        return self.GetPage(index)
     
     def updateWrapper(self, wrapper):
         index=self.GetPageIndex(wrapper)
@@ -308,3 +313,27 @@ class FrameNotebook(aui.AuiNotebook, debugmixin):
                 dprint(error)
         self.updateWrapper(wrapper)
         return mode
+    
+    def showBusy(self, mode, state):
+        try:
+            index = self.getWrapperIndex(mode)
+        except IndexError:
+            return
+        page_info = self._tabs.GetPage(index)
+        current = isinstance(page_info.control, Throbber)
+        if current == state:
+            return
+        if state:
+            busy = Throbber(self.frame)
+            self.AddControlToPage(index, busy)
+            busy.Start()
+        else:
+            self.RemoveControlFromPage(index)
+    
+    def isBusy(self, mode):
+        try:
+            index = self.getWrapperIndex(mode)
+        except:
+            return False
+        page_info = self._tabs.GetPage(index)
+        return isinstance(page_info.control, Throbber)

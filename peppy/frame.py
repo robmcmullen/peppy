@@ -853,3 +853,8 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
 
         dlg.Destroy()
         return saveas
+    
+    def showTabBusy(self, mode=None, state=True):
+        if mode is None:
+            mode = self.getActiveMajorMode()
+        self.tabs.showBusy(mode, state)

@@ -254,6 +254,7 @@ class FileOpener(debugmixin):
         msg = mode.getWelcomeMessage()
         mode.status_info.setText(msg)
         mode.setReadyForIdleEvents()
+        mode.showBusy(False)
 
     def finalizeAfterFailedLoad(self, error):
         #traceoff()
@@ -266,6 +267,7 @@ class FileOpener(debugmixin):
         else:
             mode.status_info.setText(msg)
         mode.setReadyForIdleEvents()
+        mode.showBusy(False)
 
 
 class LoadingSTC(NonResidentSTC):

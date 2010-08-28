@@ -1502,6 +1502,7 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
                 for child in parent.GetChildren():
                     disableChildren(child)
             disableChildren(self)
+            self.frame.showTabBusy(self, True)
         else:
             def enableChildren(parent):
                 #dprint("enabling %s, %d" % (parent, id(parent)))
@@ -1510,10 +1511,12 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
                     parent.SetCursor(self._save_cursors[id(parent)])
                 for child in parent.GetChildren():
                     enableChildren(child)
-            enableChildren(self)
+            if hasattr(self, '_save_cursors'):
+                enableChildren(self)
+                del self._save_cursors
             cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
             self.SetCursor(cursor)
-            del self._save_cursors
+            self.frame.showTabBusy(self, False)
 
     def showInitialPosition(self, url, options=None):
         """Hook to scroll to a non-default initial position if desired.
