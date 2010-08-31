@@ -638,7 +638,7 @@ class CubeCompare(debugmixin):
         
         Fast for BIP and BIL, slow for BSQ.
         """
-        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
         data = euclidean.getBandRaw(0)
         bblmask = self.getFocalPlaneBadBandMask()
 
@@ -660,7 +660,7 @@ class CubeCompare(debugmixin):
         
         Fast for BSQ cubes, slow for BIL, and extremely slow for BIP.
         """
-        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, self.dtype)
+        euclidean = HSI.createCube('bsq', self.lines, self.samples, 1, numpy.float32)
         data = euclidean.getBandRaw(0)
         
         working = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
