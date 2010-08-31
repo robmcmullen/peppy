@@ -7,7 +7,7 @@ hyperspectral classes.  These functions shouldn't have external
 dependencies on any other classes in the hsi package.
 """
 
-import os, sys, math
+import os, sys, math, time, threading
 from cStringIO import StringIO
 
 from peppy.debug import *
@@ -632,7 +632,7 @@ class CubeCompare(debugmixin):
         self.difference.bbl = self.bbl[:]
         return self.difference
     
-    def getEuclideanDistanceByFocalPlane(self, iter):
+    def getEuclideanDistanceByFocalPlane(self, iter, updater=None):
         """Calculate the euclidean distance for every pixel in two cubes using
         focal planes
         
@@ -643,6 +643,8 @@ class CubeCompare(debugmixin):
         bblmask = self.getFocalPlaneBadBandMask()
 
         for i, plane1, plane2 in iter:
+            if updater:
+                updater.updateStatus(i, self.lines, "Calculating Euclidean Distance")
             p1 = plane1 * bblmask
             p2 = plane2 * bblmask
             plane = p1 - p2
@@ -652,7 +654,7 @@ class CubeCompare(debugmixin):
         self.dprint(data)
         return euclidean
     
-    def getEuclideanDistanceByBand(self,nbins=500):
+    def getEuclideanDistanceByBand(self, nbins=500, updater=None):
         """Calculate the euclidean distance for every pixel in two cubes using
         bands
         
@@ -663,6 +665,8 @@ class CubeCompare(debugmixin):
         
         working = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         for i in range(self.bands):
+            if updater:
+                updater.updateStatus(i, self.bands, "Calculating Euclidean Distance")
             if self.bbl[i]:
                 band1 = self.cube1.getBand(i)
                 band2 = self.cube2.getBand(i)
@@ -673,7 +677,7 @@ class CubeCompare(debugmixin):
         self.dprint(data)
         return euclidean
     
-    def getEuclideanDistance(self):
+    def getEuclideanDistance(self, updater=None):
         """Generate a cube containing the euclidean distance between the two cubes
         
         The driver method -- selects the fastest calculation method based
@@ -681,14 +685,14 @@ class CubeCompare(debugmixin):
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
-            cube = self.getEuclideanDistanceByFocalPlane(iter)
+            cube = self.getEuclideanDistanceByFocalPlane(iter, updater)
         else:
-            cube = self.getEuclideanDistanceByBand()
+            cube = self.getEuclideanDistanceByBand(updater)
         self.calcStatistics(cube)
         self.euclidean = cube
         return self.euclidean
 
-    def getSpectralAngleByFocalPlane(self, iter):
+    def getSpectralAngleByFocalPlane(self, iter, updater=None):
         """Calculate the spectral angle between every pixel in two cubes using
         focal planes
         
@@ -699,6 +703,8 @@ class CubeCompare(debugmixin):
         bblmask = self.getFocalPlaneBadBandMask()
 
         for i, plane1, plane2 in iter:
+            if updater:
+                updater.updateStatus(i, self.lines, "Calculating Spectral Angle")
             p1 = numpy.cast[numpy.float32](plane1 * bblmask)
             p2 = numpy.cast[numpy.float32](plane2 * bblmask)
             zerotest = numpy.add.reduce(plane1 - plane2)
@@ -717,7 +723,7 @@ class CubeCompare(debugmixin):
         self.dprint(data)
         return sam
     
-    def getSpectralAngleByBand(self,nbins=500):
+    def getSpectralAngleByBand(self, nbins=500, updater=None):
         """Calculate the spectral angle between every pixel in two cubes using
         bands
         
@@ -730,6 +736,8 @@ class CubeCompare(debugmixin):
         bot1 = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         bot2 = numpy.zeros((self.lines, self.samples), dtype=numpy.float32)
         for i in range(self.bands):
+            if updater:
+                updater.updateStatus(i, self.bands, "Calculating Spectral Angle")
             if self.bbl[i]:
                 band1 = self.cube1.getBand(i)
                 band2 = self.cube2.getBand(i)
@@ -743,7 +751,7 @@ class CubeCompare(debugmixin):
         self.dprint(data)
         return sam
     
-    def getSpectralAngle(self):
+    def getSpectralAngle(self, updater=None):
         """Generate a cube containing the spectral angle between the two cubes
         
         The driver method -- selects the fastest calculation method based
@@ -751,9 +759,9 @@ class CubeCompare(debugmixin):
         """
         if self.isBILBIP():
             iter = self.iterBILBIP()
-            sam = self.getSpectralAngleByFocalPlane(iter)
+            sam = self.getSpectralAngleByFocalPlane(iter, updater)
         else:
-            sam = self.getSpectralAngleByBand()
+            sam = self.getSpectralAngleByBand(updater)
         self.calcStatistics(sam)
         self.sam = sam
         return self.sam
@@ -813,3 +821,40 @@ class CubeCompare(debugmixin):
             self.dprint("band %d: local min/max=(%d,%d)  accumulated min/max=(%d,%d)" % (i1,mn,mx,minval,maxval))
             
         return (minval,maxval)
+
+class ThreadedCubeCompare(threading.Thread):
+    """Background file loading thread.
+    
+    Uses peppy.lib.threadutils.ThreadStatus to communicate with GUI thread
+    """
+    def __init__(self, cube1, cube2, updater):
+        threading.Thread.__init__(self)
+        self.comp = CubeCompare(cube1, cube2)
+        self.updater = updater
+        self.output = None
+    
+    def run(self):
+        try:
+            comp = self.comp
+            self.updater.setNumberOfWorkItems(2)
+            dist = comp.getEuclideanDistance(updater=self.updater)
+            self.updater.finishedWorkItem()
+            sam = comp.getSpectralAngle(updater=self.updater)
+            self.updater.finishedWorkItem()
+            dtype = numpy.find_common_type([dist.data_type, sam.data_type], [])
+            self.output = HSI.createCubeLike(dist, 'bsq', bands=2, datatype=dtype)
+            outputband = self.output.getBandRaw(0)
+            source = dist.getBandRaw(0)
+            outputband[:,:] = source[:,:]
+            outputband = self.output.getBandRaw(1)
+            source = sam.getBandRaw(0)
+            outputband[:,:] = source[:,:]
+            
+            self.output.band_names = ['Euclidean Distance', 'Spectral Angle']
+            self.output.description = "Euclidean Distance Statistics:\n%s\n\nSpectral Angle Statistics:\n%s\n" % (dist.description, sam.description)
+            self.updater.reportSuccess("Completed calculations", self.output)
+        except:
+            import traceback
+            error = traceback.format_exc()
+            self.updater.reportFailure(error)
+
