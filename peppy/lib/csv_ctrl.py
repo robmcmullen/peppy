@@ -657,7 +657,7 @@ if __name__ == '__main__':
     frame = wx.Frame(None, -1, title='Comma Separated List Test')
     frame.CreateStatusBar()
     
-    ctrl = CommaSeparatedListCtrl(frame, -1, initialValue=", ".join([str(i) for i in range(300)]))
+    ctrl = CSVCtrl(frame, -1, initialValue=", ".join([str(i) for i in range(300)]))
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(ctrl, 1, wx.EXPAND)
     
