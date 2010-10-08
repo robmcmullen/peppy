@@ -140,5 +140,12 @@ class PickleSerializerMixin(object):
         packable = (version, data)
         bytes = pickle.dumps(packable)
         fh = open(filename, "wb")
-        fh.write(bytes)
+        try:
+            fh.write(bytes)
+        except IOError: # can fail on win32 on network drive when write is large
+            fh.close()
+            fh = open(filename, "wb")
+            for start in range(0, len(bytes), 100000):
+                end = min(start + 100000, len(bytes))
+                fh.write(bytes[start:end])
         fh.close()
