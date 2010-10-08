@@ -33,7 +33,7 @@ class FileOpener(debugmixin):
     """
     debuglevel = 0
     
-    def __init__(self, frame, url, modecls=None, stccls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None):
+    def __init__(self, frame, url, modecls=None, stccls=None, mode_to_replace=None, force_new_tab=False, created_from_url=None, canonicalize=True, options=None, preload_only=False):
         """Create an opener for the specified url
         
         Transient class that loads a file and creates a new tab in the user
@@ -67,6 +67,12 @@ class FileOpener(debugmixin):
         
         @param options: (optional) a dict of options to be passed to the major
         mode's showInitialPosition method
+        
+        @param preload_only: (optional) if true, doesn't attempt to do anything
+        beyond setting up the initial attributes of the instance.  The caller
+        is responsible for continuing the loading process.  If false, the
+        normal operation takes place where the instance will open up a tab in
+        the frame and begin the loading process.
         """
         self.frame = frame
         self.buffer = None
@@ -88,7 +94,8 @@ class FileOpener(debugmixin):
         except Exception, error:
             self.finalizeAfterFailedLoad(u"Failed decoding url %s" % unicode(url))
             return
-        self.open()
+        if not preload_only:
+            self.open()
     
     def __str__(self):
         return "Opening %s (%s) in %s; mode=%s; replacing %s; options=%s" % (unicode(self.url).encode('utf-8'), unicode(self.url.path).encode('utf-8'), str(self.frame), str(self.modecls), str(self.mode_to_replace), str(self.options))
