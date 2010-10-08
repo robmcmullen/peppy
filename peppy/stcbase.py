@@ -237,11 +237,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         """
         if self.refstc.encoding:
             try:
-                if self.refstc.bom:
-                    start = len(self.refstc.bom)
-                else:
-                    start = 0
-                unicodestring = bytes[start:].decode(self.refstc.encoding)
+                unicodestring = encodedBytesToUnicode(bytes, self.refstc.encoding, self.refstc.bom)
                 assert self.dprint("unicodestring(%s) = %s bytes" % (type(unicodestring), len(unicodestring)))
                 self.SetText(unicodestring)
                 return

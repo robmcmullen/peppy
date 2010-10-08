@@ -99,6 +99,14 @@ def detectEncoding(bytes):
             return match.group(1), None
     return None, None
 
+def encodedBytesToUnicode(bytes, encoding, bom):
+    if bom:
+        start = len(bom)
+    else:
+        start = 0
+    unicodestring = bytes[start:].decode(encoding)
+    return unicodestring
+
 def parseEmacs(header):
     """Determine if the header specifies a major mode.
     

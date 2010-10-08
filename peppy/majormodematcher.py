@@ -527,6 +527,10 @@ class MajorModeMatcherDriver(debugmixin):
         """
         
         likely = []
+        encoding, bom = detectEncoding(header)
+        if encoding:
+            dprint(encoding)
+            header = encodedBytesToUnicode(header, encoding, bom)
         for mode in modes:
             if hasattr(mode, 'verifyLanguage'):
                 how_likely = mode.verifyLanguage(header)
