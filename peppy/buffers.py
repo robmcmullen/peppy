@@ -203,6 +203,7 @@ class BufferVFSMixin(debugmixin):
             url = vfs.normalize(url)
         self.url = url
         self.saveTimestamp()
+        self.pending_url = None
 
     def isURL(self, url):
         if self.canonicalize:
@@ -271,20 +272,32 @@ class BufferVFSMixin(debugmixin):
         overlays on the current filesystem and the cwd of those schemes with
         this sense of use_vfs will report the overlayed directory.
         """
+        if self.pending_url is not None:
+            url = self.pending_url
+        else:
+            url = self.url
         if use_vfs:
-            if vfs.is_folder(self.url):
-                path = vfs.normalize(self.url)
+            if vfs.is_folder(url):
+                path = vfs.normalize(url)
             else:
-                path = vfs.get_dirname(self.url)
+                path = vfs.get_dirname(url)
             return path
         else:
-            path = self._cwd(self.url)
+            path = self._cwd(url)
             if (not path or path == '/') and self.created_from_url:
                 path = self._cwd(self.created_from_url)
         
         if path == '/':
             path = wx.StandardPaths.Get().GetDocumentsDir()
         return path
+    
+    def setPendingSaveAsURL(self, url):
+        """Set the future Save As URL to the new value
+        
+        Future Save As requests will default to the specified URL rather than
+        the URL that was used to create the file
+        """
+        self.pending_url = vfs.normalize(url)
 
     def getBufferedReader(self, size=1024):
         assert self.dprint(u"opening %s as %s" % (self.url, self.defaultmode))
