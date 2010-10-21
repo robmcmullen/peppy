@@ -97,11 +97,10 @@ import wx.stc
 from wx.lib.pubsub import Publisher
 from wx.lib.evtmgr import eventManager
 from wx.lib.scrolledpanel import ScrolledPanel
-from wx.lib.filebrowsebutton import *
 from wx.lib.stattext import GenStaticText
 
 from peppy.lib.column_autosize import ColumnAutoSizeMixin
-from peppy.lib.controls import FontBrowseButton
+from peppy.lib.controls import FileBrowseButton2, DirBrowseButton2, FontBrowseButton
 
 try:
     from peppy.debug import *
@@ -116,117 +115,6 @@ except:
             if self.debuglevel > 0:
                 dprint(txt)
             return True
-
-class FileBrowseButton2(FileBrowseButton):
-    """Small enhancements to FileBrowseButton"""
-    def createDialog( self, parent, id, pos, size, style, *args, **kwargs):
-        """Setup the graphic representation of the dialog"""
-        wx.Panel.__init__ (self, parent, id, pos, size, style, *args, **kwargs)
-        self.SetMinSize(size) # play nice with sizers
-
-        box = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.label = self.createLabel( )
-        #box.Add( self.label, 0, wx.CENTER )
-
-        self.textControl = self.createTextControl()
-        box.Add( self.textControl, 1, wx.LEFT|wx.CENTER, 0)
-
-        self.browseButton = self.createBrowseButton()
-        box.Add( self.browseButton, 0, wx.LEFT|wx.CENTER, 5)
-
-        # add a border around the whole thing and resize the panel to fit
-        outsidebox = wx.BoxSizer(wx.VERTICAL)
-        outsidebox.Add(box, 1, wx.EXPAND|wx.ALL, 0)
-        outsidebox.Fit(self)
-
-        self.SetAutoLayout(True)
-        self.SetSizer( outsidebox )
-        self.Layout()
-        if type( size ) == types.TupleType:
-            size = apply( wx.Size, size)
-        self.SetDimensions(-1, -1, size.width, size.height, wx.SIZE_USE_EXISTING)
-        
-    def SetToolTipString(self, text):
-        #dprint(text)
-        self.textControl.SetToolTipString(text)
-        
-    def IsEnabled(self):
-        """Make IsEnabled work by returning the enabled state of the
-        text control
-        """
-        # FileBrowseButton never sets the enabled state of the panel
-        # itself, so it always returns True.  Make it return the state
-        # of the text control, which should indicate the real enabled state.
-        return self.textControl.IsEnabled()
-    
-    def OnBrowse(self, event=None):
-        """Replacing the default action because it doesn't check for bad
-        directories.
-        """
-        current = self.GetValue()
-        directory = os.path.split(current)
-        if os.path.isdir( current):
-            directory = current
-            current = ''
-        elif directory and os.path.isdir( directory[0] ):
-            current = directory[1]
-            directory = directory [0]
-        else:
-            current = ''
-            directory = self.startDirectory
-        dprint(current)
-        dprint(directory)
-        dlg = wx.FileDialog(self, self.dialogTitle, directory, current,
-                            self.fileMask, self.fileMode)
-
-        if dlg.ShowModal() == wx.ID_OK:
-            self.SetValue(dlg.GetPath())
-        dlg.Destroy()
-
-    def SetValue (self, value, callBack=1):
-        """set current value of text control"""
-        if callBack:
-            self.textControl.SetValue(value)
-        else:
-            self.textControl.ChangeValue(value)
-    
-class DirBrowseButton2(FileBrowseButton2):
-    """Update to dir browse button to browse to the currently set
-    directory instead of always using the initial directory.
-    """
-    def createDialog(self, *args, **kwargs):
-        """Automatically hide the label because it's not used here"""
-        FileBrowseButton2.createDialog(self, *args, **kwargs)
-        self.dialogClass = wx.DirDialog
-        self.newDirectory = False
-        
-    def OnBrowse(self, ev = None):
-        current = self.GetValue()
-        directory = os.path.split(current)
-        if os.path.isdir( current):
-            directory = current
-            current = ''
-        elif directory and os.path.isdir( directory[0] ):
-            current = directory[1]
-            directory = directory [0]
-        else:
-            directory = self.startDirectory
-
-        style=0
-
-        if not self.newDirectory:
-          style |= wx.DD_DIR_MUST_EXIST
-
-        dialog = self.dialogClass(self,
-                                  message = self.dialogTitle,
-                                  defaultPath = directory,
-                                  style = style)
-
-        if dialog.ShowModal() == wx.ID_OK:
-            self.SetValue(dialog.GetPath())
-        dialog.Destroy()
-    
 
 
 class Param(debugmixin):
