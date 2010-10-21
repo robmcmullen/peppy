@@ -558,12 +558,16 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     def getViewPositionData(self):
         return {'top': self.GetFirstVisibleLine(),
                 'pos': self.GetCurrentPos(),
+                'line': self.GetCurrentLine(),
                 }
     
     def setViewPositionData(self, data):
         if 'top' in data:
             line = min(data['top'], self.GetLineCount() - 1)
             self.ScrollToLine(line)
+        if 'line' in data:
+            line = min(data['line'], self.GetLineCount() - 1)
+            self.showLine(line)
         if 'pos' in data:
             pos = min(data['pos'], self.GetLength() - 1)
             self.GotoPos(pos)
