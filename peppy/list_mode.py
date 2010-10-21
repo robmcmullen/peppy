@@ -204,23 +204,7 @@ class ListMode(wx.Panel, MajorMode):
         show = -1
         self.list.itemDataMap = {}
         for item in self.getListItems():
-            values = self.getItemRawValues(index, item)
-            self.list.itemDataMap[index] = values
-            
-            if isinstance(values, list):
-                # Make a copy of the list so the user can change it in place
-                values = values[:]
-            values = self.convertRawValuesToStrings(values)
-                
-            if index >= list_count:
-                self.list.InsertStringItem(sys.maxint, values[0])
-            else:
-                self.list.SetStringItem(index, 0, values[0])
-            col = 1
-            for value in values[1:]:
-                self.list.SetStringItem(index, col, value)
-                col += 1
-            self.list.SetItemData(index, index)
+            self.insertListItem(item, index, list_count)
             index += 1
         
         if index < list_count:
@@ -236,6 +220,27 @@ class ListMode(wx.Panel, MajorMode):
         
         self.resetListPostHook()
     
+    def insertListItem(self, item, index, list_count=None):
+        if list_count is None:
+            list_count = self.list.GetItemCount()
+        values = self.getItemRawValues(index, item)
+        self.list.itemDataMap[index] = values
+        
+        if isinstance(values, list):
+            # Make a copy of the list so the user can change it in place
+            values = values[:]
+        values = self.convertRawValuesToStrings(values)
+            
+        if index >= list_count:
+            self.list.InsertStringItem(sys.maxint, values[0])
+        else:
+            self.list.SetStringItem(index, 0, values[0])
+        col = 1
+        for value in values[1:]:
+            self.list.SetStringItem(index, col, value)
+            col += 1
+        self.list.SetItemData(index, index)
+        
     def resetListPostHook(self):
         """Hook for processing after the list is reset
         """
