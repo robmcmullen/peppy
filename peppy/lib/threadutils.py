@@ -106,7 +106,7 @@ class ThreadStatus(ProgressUpdater):
         """
         print("Overall percent complete = %f  %s" % (perc, text))
     
-    def reportSuccess(self, text, data):
+    def reportSuccess(self, text, data=None):
         import wx
         wx.CallAfter(self.reportSuccessGUI, text, data)
     
