@@ -6,7 +6,7 @@ Major mode to search for pattern matches from files in a directory or in
 a project.
 """
 
-import os, time
+import os, time, fnmatch, heapq
 
 import wx
 from wx.lib.pubsub import Publisher
@@ -36,6 +36,27 @@ class AbstractSearchMethod(object):
     def __init__(self, mode):
         self.mode = mode
         self.ui = None
+    
+    def isValid(self):
+        return False
+    
+    def getErrorString(self):
+        raise NotImplementedError
+    
+    def iterFilesInDir(self, dirname, ignorer):
+        # Nice algorithm from http://pinard.progiciels-bpi.ca/notes/Away_from_os.path.walk.html
+        stack = [dirname]
+        while stack:
+            directory = heapq.heappop(stack)
+            for base in os.listdir(directory):
+                if not ignorer(base):
+                    name = os.path.join(directory, base)
+                    if os.path.isdir(name):
+                        if not os.path.islink(name):
+                            heapq.heappush(stack, name)
+                    else:
+                        yield name
+
 
     def threadedSearch(self, url, matcher):
         if isinstance(url, vfs.Reference):
@@ -43,7 +64,6 @@ class AbstractSearchMethod(object):
                 dprint("vfs not threadsafe; skipping %s" % unicode(url).encode("utf-8"))
                 return
             url = unicode(url.path).encode("utf-8")
-        dprint("Searching %s" % url)
         fh = open(url, "rb")
         bytes = fh.read()
         fh.close()
@@ -58,26 +78,33 @@ class AbstractSearchMethod(object):
 class DirectorySearchMethod(AbstractSearchMethod):
     def __init__(self, mode):
         AbstractSearchMethod.__init__(self, mode)
+        self.pathname = ""
     
-    def getName(cls):
+    def isValid(self):
+        return bool(self.pathname)
+    
+    def getErrorString(self):
+        if not self.isValid():
+            return "Invalid directory name"
+    
+    def getName(self):
         return "Directory"
     
     def getUI(self, parent):
-        self.ui = DirBrowseButton2(parent, -1)
+        self.ui = DirBrowseButton2(parent, -1, changeCallback=self.OnChanged)
         return self.ui
+    
+    def OnChanged(self, evt):
+        self.pathname = evt.GetString()
+        dprint(self.pathname)
     
     def setUIDefaults(self):
         if not self.ui.GetValue():
 #            self.ui.SetValue(self.mode.buffer.cwd())
             self.ui.SetValue("/work/bin")
     
-    def iterFiles(self):
-        wd = self.ui.GetValue()
-        for root, dirs, files in os.walk(wd):
-            for file in files:
-                child = os.path.join(root, file)
-                #dprint("  file: %s" % child)
-                yield child
+    def iterFiles(self, ignorer):
+        return self.iterFilesInDir(self.pathname, ignorer)
 
 
 class ProjectSearchMethod(AbstractSearchMethod):
@@ -86,8 +113,15 @@ class ProjectSearchMethod(AbstractSearchMethod):
         self.projects = []
         self.current_project = None
     
-    def getName(cls):
+    def getName(self):
         return "Project"
+    
+    def isValid(self):
+        return self.current_project is not None
+    
+    def getErrorString(self):
+        if self.current_project is None:
+            return "Project must be specified before searching"
     
     def getUI(self, parent):
         self.ui = wx.Choice(parent, -1, choices = [])
@@ -120,8 +154,10 @@ class ProjectSearchMethod(AbstractSearchMethod):
             index += 1
         self.current_project = None
     
-    def iterFiles(self):
-        return []
+    def iterFiles(self, ignorer):
+        url = self.current_project.getTopURL()
+        dir = unicode(url.path)
+        return self.iterFilesInDir(dir, ignorer)
 
 
 class OpenDocsSearchMethod(AbstractSearchMethod):
@@ -129,15 +165,20 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
         AbstractSearchMethod.__init__(self, mode)
         self.cwd = mode.buffer.cwd()
     
-    @classmethod
-    def getName(cls):
+    def getName(self):
         return "Open Documents"
+    
+    def isValid(self):
+        return True
+    
+    def getErrorString(self):
+        return None
     
     def getUI(self, parent):
         self.ui = wx.Panel(parent, -1)
         return self.ui
     
-    def iterFiles(self):
+    def iterFiles(self, ignorer):
         return []
 
 
@@ -150,6 +191,17 @@ class StringMatcher(object):
     
     def isValid(self):
         return bool(self.string)
+
+
+class WildcardListIgnorer(object):
+    def __init__(self, string):
+        self.patterns = string.split(";")
+    
+    def __call__(self, filename):
+        for pat in self.patterns:
+            if fnmatch.fnmatchcase(filename, pat):
+                return True
+        return False
 
 
 class SearchSTC(UndoMixin, NonResidentSTC):
@@ -249,10 +301,11 @@ class SearchStatus(ThreadStatus):
 
 
 class SearchThread(threading.Thread):
-    def __init__(self, stc, matcher, updater):
+    def __init__(self, stc, matcher, ignorer, updater):
         threading.Thread.__init__(self)
         self.stc = stc
         self.matcher = matcher
+        self.ignorer = ignorer
         self.updater = updater
         self.output = None
         self.interval = 0.5
@@ -261,7 +314,7 @@ class SearchThread(threading.Thread):
         try:
             method = self.stc.search_method
             sort_order = []
-            for url in method.iterFiles():
+            for url in method.iterFiles(self.ignorer):
                 sort_order.append(url)
             sort_order.sort()
             
@@ -351,8 +404,16 @@ class SearchMode(ListMode):
         hbox.Add(self.domain, 1, wx.EXPAND)
         self.domain_panel = WidgetStack(panel, -1)
         self.buffer.stc.addSearchMethodUI(self.domain_panel)
-        
         hbox.Add(self.domain_panel, 5, wx.EXPAND)
+        vbox.Add(hbox, 0, wx.EXPAND)
+        
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        label = wx.StaticText(panel, -1, "Ignore names:")
+        hbox.Add(label, 0, wx.ALIGN_CENTER)
+        self.ignore_filenames = wx.TextCtrl(panel, -1,)
+        self.ignore_filenames.SetValue(".git;.svn;.bzr;*.o;*.a;*.so;*.dll;*~;*.bak;*.exe;*.pyc")
+        hbox.Add(self.ignore_filenames, 5, wx.EXPAND)
+        
         self.search_start = wx.Button(panel, -1, "Start")
         self.Bind(wx.EVT_BUTTON, self.OnStart, self.search_start)
         hbox.Add(self.search_start, 0, wx.EXPAND)
@@ -393,16 +454,21 @@ class SearchMode(ListMode):
     
     def OnStart(self, evt):
         if not self.isThreadRunning():
-            status = SearchStatus(self)
-            matcher = self.getStringMatcher()
-            if matcher.isValid():
-                self.buffer.stc.clearSearchResults()
-                self.resetList()
-                self.status_info.startProgress("Searching...")
-                self.thread = SearchThread(self.buffer.stc, matcher, status)
-                self.thread.start()
+            method = self.buffer.stc.search_method
+            if method.isValid():
+                status = SearchStatus(self)
+                matcher = self.getStringMatcher()
+                ignorer = WildcardListIgnorer(self.ignore_filenames.GetValue())
+                if matcher.isValid():
+                    self.buffer.stc.clearSearchResults()
+                    self.resetList()
+                    self.status_info.startProgress("Searching...")
+                    self.thread = SearchThread(self.buffer.stc, matcher, ignorer, status)
+                    self.thread.start()
+                else:
+                    self.setStatusText("Invalid search string.")
             else:
-                self.setStatusText("Invalid search string.")
+                self.setStatusText(method.getErrorString())
     
     def isThreadRunning(self):
         return self.thread is not None and self.thread.isAlive()
