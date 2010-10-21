@@ -116,6 +116,27 @@ class RemoveTrailingWhitespace(LineOrRegionMutateAction):
         return out
 
 
+class RemoveBlankLines(LineOrRegionMutateAction):
+    """Remove all blank lines
+    
+    Operates on the current line, or lines that make up the currently selected
+    region.
+    """
+    name = "Remove Blank Lines"
+    default_menu = ("Transform/Whitespace", 300)
+
+    def mutateLines(self, lines):
+        regex = re.compile('^[\t ]*[\r\n]+?$')
+        out = []
+        for line in lines:
+            match = regex.match(line)
+            if match:
+                pass
+            else:
+                out.append(line)
+        return out
+
+
 class CapitalizeWord(WordOrRegionMutateAction):
     """Title-case the current word or words in the highlighted region.
     
@@ -702,6 +723,7 @@ class TextTransformPlugin(IPeppyPlugin):
                 FillParagraphOrRegion, Backslashify, UnBackslashify,
 
                 Tabify, Untabify, RemoveTrailingWhitespace, JoinLines,
+                RemoveBlankLines,
                 
                 Rot13,
                 
