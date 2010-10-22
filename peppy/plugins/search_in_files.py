@@ -43,6 +43,9 @@ class AbstractSearchMethod(object):
     def getErrorString(self):
         raise NotImplementedError
     
+    def getPrefix(self):
+        return ""
+    
     def iterFilesInDir(self, dirname, ignorer):
         # Nice algorithm from http://pinard.progiciels-bpi.ca/notes/Away_from_os.path.walk.html
         stack = [dirname]
@@ -103,6 +106,12 @@ class DirectorySearchMethod(AbstractSearchMethod):
 #            self.ui.SetValue(self.mode.buffer.cwd())
             self.ui.SetValue("/work/bin")
     
+    def getPrefix(self):
+        prefix = unicode(self.pathname)
+        if not prefix.endswith("/"):
+            prefix += "/"
+        return prefix
+    
     def iterFiles(self, ignorer):
         return self.iterFilesInDir(self.pathname, ignorer)
 
@@ -153,6 +162,13 @@ class ProjectSearchMethod(AbstractSearchMethod):
                 return
             index += 1
         self.current_project = None
+    
+    def getPrefix(self):
+        url = self.current_project.getTopURL()
+        prefix = unicode(url.path)
+        if not prefix.endswith("/"):
+            prefix += "/"
+        return prefix
     
     def iterFiles(self, ignorer):
         url = self.current_project.getTopURL()
@@ -216,6 +232,7 @@ class SearchSTC(UndoMixin, NonResidentSTC):
         self.search_domain = None
         self.widget_stack = None
         self.results = []
+        self.prefix = ""
     
     def loadSearchMethods(self, mode):
         self.search_methods = [DirectorySearchMethod(mode),
@@ -256,6 +273,10 @@ class SearchSTC(UndoMixin, NonResidentSTC):
     
     def clearSearchResults(self):
         self.results = []
+        self.prefix = ""
+    
+    def setPrefix(self, prefix):
+        self.prefix = prefix
     
     def getSearchResults(self):
         return self.results
@@ -267,14 +288,21 @@ class SearchSTC(UndoMixin, NonResidentSTC):
         current = mode.list.GetItemCount()
         future = len(self.results)
         if future > current:
+            for result in self.results[current:future]:
+                result.checkPrefix(self.prefix)
             mode.appendListItems(self.results[current:future])
 
 
 class SearchResult(object):
     def __init__(self, url, line, text):
+        self.short = url
         self.url = url
         self.line = line
         self.text = text
+    
+    def checkPrefix(self, prefix):
+        if self.url.startswith(prefix):
+            self.short = self.url[len(prefix):]
 
 
 class SearchStatus(ThreadStatus):
@@ -461,6 +489,7 @@ class SearchMode(ListMode):
                 ignorer = WildcardListIgnorer(self.ignore_filenames.GetValue())
                 if matcher.isValid():
                     self.buffer.stc.clearSearchResults()
+                    self.buffer.stc.setPrefix(method.getPrefix())
                     self.resetList()
                     self.status_info.startProgress("Searching...")
                     self.thread = SearchThread(self.buffer.stc, matcher, ignorer, status)
@@ -477,7 +506,7 @@ class SearchMode(ListMode):
         pass
         
     def createColumns(self, list):
-        list.InsertSizedColumn(0, "URL", min=100, greedy=False)
+        list.InsertSizedColumn(0, "File", min=100, greedy=False)
         list.InsertSizedColumn(1, "Line", min=10, greedy=False)
         list.InsertSizedColumn(2, "Match", min=300, greedy=True)
 
@@ -485,7 +514,7 @@ class SearchMode(ListMode):
         return self.buffer.stc.getSearchResults()
     
     def getItemRawValues(self, index, item):
-        return (unicode(item.url), item.line, unicode(item.text))
+        return (unicode(item.short), item.line, unicode(item.text), item.url)
     
     def appendListItems(self, items):
         self.list.Freeze()
@@ -500,7 +529,7 @@ class SearchMode(ListMode):
         orig_index = self.list.GetItemData(index)
         values = self.list.itemDataMap[orig_index]
         dprint(values)
-        self.frame.open(values[0], options={'line':values[1] - 1})
+        self.frame.open(values[3], options={'line':values[1] - 1})
 
 class SearchModePlugin(IPeppyPlugin):
     """Plugin to advertise the presence of the Search sidebar
