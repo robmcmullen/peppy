@@ -235,10 +235,8 @@ class ListMode(wx.Panel, MajorMode):
             self.list.InsertStringItem(sys.maxint, values[0])
         else:
             self.list.SetStringItem(index, 0, values[0])
-        col = 1
-        for value in values[1:]:
-            self.list.SetStringItem(index, col, value)
-            col += 1
+        for col in range(1, self.list.GetColumnCount()):
+            self.list.SetStringItem(index, col, values[col])
         self.list.SetItemData(index, index)
         
     def resetListPostHook(self):
@@ -256,8 +254,11 @@ class ListMode(wx.Panel, MajorMode):
         """For the specified item, return a list containing the raw object
         values that correspond to each column in the ListCtrl.
         
-        There should be the same number of entries in the returned list as are
-        columns in the ListCtrl.
+        The number of entries in the returned list must be greater than or
+        equal to the number of columns in the ListCtrl.  If there are a larger
+        number of entries than columns in the ListCtrl, those entries will
+        not be displayed in the ListCtrl but would be available for later
+        reference in itemDataMap.
         """
         raise NotImplementedError
     
