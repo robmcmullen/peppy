@@ -12,6 +12,7 @@ import wx
 from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
+from peppy.buffers import BufferList
 from peppy.list_mode import *
 from peppy.stcinterface import *
 from peppy.actions import *
@@ -226,8 +227,31 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
         self.ui = wx.Panel(parent, -1)
         return self.ui
     
+    def setUIDefaults(self):
+        pass
+    
+    def threadedSearch(self, item, matcher):
+        url, buf = item
+        stc = buf.stc
+        if hasattr(stc, "GetText"):
+            bytes = stc.GetText()
+            try:
+                for index, line in enumerate(bytes.split("\n")):
+                    if matcher(line):
+                        result = SearchResult(url, index + 1, line)
+                        yield result
+            except UnicodeDecodeError:
+                return
+
     def iterFiles(self, ignorer):
-        return []
+        """Iterate through open files, returning the sort item that will
+        later be used in the call to threadedSearch
+        
+        """
+        docs = BufferList.getBuffers()
+        for buf in docs:
+            if not buf.permanent:
+                yield (str(buf.url), buf)
 
 
 class StringMatcher(object):
@@ -377,8 +401,8 @@ class SearchThread(threading.Thread):
         try:
             method = self.stc.search_method
             sort_order = []
-            for url in method.iterFiles(self.ignorer):
-                sort_order.append(url)
+            for item in method.iterFiles(self.ignorer):
+                sort_order.append(item)
                 if self.stop_request:
                     self.updater.reportFailure("Aborted while determining file sort order")
                     return
@@ -386,9 +410,9 @@ class SearchThread(threading.Thread):
             
             num_urls = len(sort_order)
             start = time.time()
-            for url in sort_order:
+            for item in sort_order:
                 self.matches += 1
-                for result in method.threadedSearch(url, self.matcher):
+                for result in method.threadedSearch(item, self.matcher):
 #                dprint(result)
                     self.stc.addSearchResult(result)
 #                time.sleep(0.1)
