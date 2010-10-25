@@ -32,6 +32,38 @@ class SearchInFiles(SelectAction):
         self.frame.open("about:search")
 
 
+class SearchModeActionMixin(object):
+    @classmethod
+    def worksWithMajorMode(cls, mode):
+        return hasattr(mode, 'isSearchRunning')
+    
+
+class StartSearch(SearchModeActionMixin, SelectAction):
+    """Start a new search for a pattern in files."""
+    name = "Start Search"
+    icon = 'icons/search-start.png'
+    default_menu = ("Actions", 10)
+
+    def isEnabled(self):
+        return not self.mode.isSearchRunning()
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.OnStartSearch(None)
+
+
+class StopSearch(SearchModeActionMixin, SelectAction):
+    """Stop a currently running search."""
+    name = "Stop Search"
+    icon = 'icons/search-stop.png'
+    default_menu = ("Actions", 11)
+
+    def isEnabled(self):
+        return self.mode.isSearchRunning()
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.OnStopSearch(None)
+
+
 class AbstractSearchMethod(object):
     def __init__(self, mode):
         self.mode = mode
@@ -325,7 +357,7 @@ class SearchStatus(ThreadStatus):
         self.cleanup()
     
     def cleanup(self):
-        pass
+        self.mode.showSearchButton(False)
 
 
 class SearchThread(threading.Thread):
@@ -337,6 +369,9 @@ class SearchThread(threading.Thread):
         self.updater = updater
         self.output = None
         self.interval = 0.5
+        self.matches = 0
+        self.init_time = time.time()
+        self.stop_request = False
     
     def run(self):
         try:
@@ -344,26 +379,36 @@ class SearchThread(threading.Thread):
             sort_order = []
             for url in method.iterFiles(self.ignorer):
                 sort_order.append(url)
+                if self.stop_request:
+                    self.updater.reportFailure("Aborted while determining file sort order")
+                    return
             sort_order.sort()
             
             num_urls = len(sort_order)
-            count = 0
             start = time.time()
             for url in sort_order:
-                count += 1
+                self.matches += 1
                 for result in method.threadedSearch(url, self.matcher):
 #                dprint(result)
                     self.stc.addSearchResult(result)
 #                time.sleep(0.1)
+                if self.stop_request:
+                    break
                 now = time.time()
                 if now - start > self.interval:
-                    self.updater.updateStatus(count, num_urls)
+                    self.updater.updateStatus(self.matches, num_urls)
                     start = now
-            self.updater.reportSuccess("Finished searching %d files" % count)
+            self.showStats()
         except:
             import traceback
             error = traceback.format_exc()
             self.updater.reportFailure(error)
+    
+    def showStats(self):
+        self.updater.reportSuccess("Finished searching %d files in %.2f seconds" % (self.matches, time.time() - self.init_time))
+    
+    def stopSearch(self):
+        self.stop_request = True
 
 
 
@@ -442,9 +487,13 @@ class SearchMode(ListMode):
         self.ignore_filenames.SetValue(".git;.svn;.bzr;*.o;*.a;*.so;*.dll;*~;*.bak;*.exe;*.pyc")
         hbox.Add(self.ignore_filenames, 5, wx.EXPAND)
         
-        self.search_start = wx.Button(panel, -1, "Start")
-        self.Bind(wx.EVT_BUTTON, self.OnStart, self.search_start)
-        hbox.Add(self.search_start, 0, wx.EXPAND)
+        self.search_button_running = {
+            False: _("Start"),
+            True: _("Stop"),
+            }
+        self.search_button = wx.Button(panel, -1, self.search_button_running[False])
+        self.Bind(wx.EVT_BUTTON, self.OnToggleSearch, self.search_button)
+        hbox.Add(self.search_button, 0, wx.EXPAND)
         
         vbox.Add(hbox, 0, wx.EXPAND)
         
@@ -480,8 +529,16 @@ class SearchMode(ListMode):
     def getStringMatcher(self):
         return StringMatcher(self.search_text.GetValue())
     
-    def OnStart(self, evt):
-        if not self.isThreadRunning():
+    def OnToggleSearch(self, evt):
+        state = self.isSearchRunning()
+        if state:
+            self.OnStopSearch(evt)
+        else:
+            self.OnStartSearch(evt)
+    
+    def OnStartSearch(self, evt):
+        if not self.isSearchRunning():
+            self.showSearchButton(True)
             method = self.buffer.stc.search_method
             if method.isValid():
                 status = SearchStatus(self)
@@ -499,8 +556,18 @@ class SearchMode(ListMode):
             else:
                 self.setStatusText(method.getErrorString())
     
-    def isThreadRunning(self):
+    def OnStopSearch(self, evt):
+        if self.isSearchRunning():
+            self.thread.stopSearch()
+            self.showSearchButton(False)
+    
+    def isSearchRunning(self):
         return self.thread is not None and self.thread.isAlive()
+    
+    def showSearchButton(self, running=None):
+        if running is None:
+            running = self.isSearchRunning()
+        self.search_button.SetLabel(self.search_button_running[running])
     
     def idlePostHook(self):
         pass
@@ -538,4 +605,4 @@ class SearchModePlugin(IPeppyPlugin):
         yield SearchMode
 
     def getActions(self):
-        yield SearchInFiles
+        return [SearchInFiles, StartSearch, StopSearch]
