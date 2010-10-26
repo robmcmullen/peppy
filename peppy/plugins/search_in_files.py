@@ -276,6 +276,57 @@ class WildcardListIgnorer(object):
         return False
 
 
+class OptionStack(object):
+    """Abstract class to represent a group of options controlled by a pulldown
+    menu where each option has some GUI elements that are presented in a
+    L{WidgetStack} object.
+    
+    """
+    def __init__(self):
+        self.options = []
+        self.option = None
+        self.widget_stack = None
+        
+    def loadOptions(self, mode):
+        raise NotImplementedError
+    
+    def setOption(self, option):
+        self.option = option
+        self.showUI()
+    
+    def setIndex(self, index):
+        option = self.options[index]
+        self.setOption(option)
+    
+    def getNames(self):
+        names = [n.getName() for n in self.options]
+        print names
+        return names
+    
+    def addUI(self, stack):
+        for n in self.options:
+            n.getUI(stack)
+            stack.AddWidget(n.ui)
+        self.widget_stack = stack
+    
+    def showUI(self):
+        print(self.option)
+        self.widget_stack.RaiseWidget(self.option.ui)
+        self.option.setUIDefaults()
+    
+    def reset(self):
+        if self.option is None:
+            self.setIndex(0)
+        else:
+            self.showUI()
+
+class SearchMethodStack(OptionStack):
+    def loadOptions(self, mode):
+        self.options = [DirectorySearchMethod(mode),
+                        ProjectSearchMethod(mode),
+                        OpenDocsSearchMethod(mode)]
+
+
 class SearchSTC(UndoMixin, NonResidentSTC):
     """Dummy STC just to prevent other modes from being able to change their
     major mode to this one.
@@ -283,49 +334,19 @@ class SearchSTC(UndoMixin, NonResidentSTC):
     def __init__(self, parent=None, copy=None):
         NonResidentSTC.__init__(self, parent, copy)
         self.search_string = None
-        self.search_methods = []
-        self.search_method = None
+        self.search_method = SearchMethodStack()
         self.search_domain = None
-        self.widget_stack = None
         self.results = []
         self.prefix = ""
     
-    def loadSearchMethods(self, mode):
-        self.search_methods = [DirectorySearchMethod(mode),
-                               ProjectSearchMethod(mode),
-                               OpenDocsSearchMethod(mode)]
-    
-    def setSearchMethod(self, method):
-        self.search_method = method
-        self.showSearchMethodUI()
-    
-    def setSearchMethodIndex(self, index):
-        method = self.search_methods[index]
-        self.setSearchMethod(method)
-    
-    def getSearchMethodNames(self):
-        names = [n.getName() for n in self.search_methods]
-        print names
-        return names
-    
-    def addSearchMethodUI(self, stack):
-        for n in self.search_methods:
-            n.getUI(stack)
-            stack.AddWidget(n.ui)
-        self.widget_stack = stack
-    
-    def showSearchMethodUI(self):
-        print(self.search_method)
-        self.widget_stack.RaiseWidget(self.search_method.ui)
-        self.search_method.setUIDefaults()
+    def loadSearchOptions(self, mode):
+        self.search_method.loadOptions(mode)
     
     def getShortDisplayName(self, url):
         return "Search"
     
     def update(self, url):
-        if self.search_method is None:
-            self.setSearchMethod(self.search_methods[0])
-        self.search_method.setUIDefaults()
+        self.search_method.reset()
     
     def clearSearchResults(self):
         self.results = []
@@ -399,7 +420,7 @@ class SearchThread(threading.Thread):
     
     def run(self):
         try:
-            method = self.stc.search_method
+            method = self.stc.search_method.option
             sort_order = []
             for item in method.iterFiles(self.ignorer):
                 sort_order.append(item)
@@ -480,7 +501,7 @@ class SearchMode(ListMode):
         self.resetList()
 
     def createInfoHeader(self, sizer):
-        self.buffer.stc.loadSearchMethods(self)
+        self.buffer.stc.loadSearchOptions(self)
         
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -496,11 +517,11 @@ class SearchMode(ListMode):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         text = wx.StaticText(panel, -1, _("Search in:"))
         hbox.Add(text, 0, wx.ALIGN_CENTER)
-        self.domain = wx.Choice(panel, -1, choices = self.buffer.stc.getSearchMethodNames())
+        self.domain = wx.Choice(panel, -1, choices = self.buffer.stc.search_method.getNames())
         self.Bind(wx.EVT_CHOICE, self.OnDomain, self.domain)
         hbox.Add(self.domain, 1, wx.EXPAND)
         self.domain_panel = WidgetStack(panel, -1)
-        self.buffer.stc.addSearchMethodUI(self.domain_panel)
+        self.buffer.stc.search_method.addUI(self.domain_panel)
         hbox.Add(self.domain_panel, 5, wx.EXPAND)
         vbox.Add(hbox, 0, wx.EXPAND)
         
@@ -543,7 +564,7 @@ class SearchMode(ListMode):
     
     def OnDomain(self, evt):
         sel = evt.GetSelection()
-        self.buffer.stc.setSearchMethodIndex(sel)
+        self.buffer.stc.search_method.setIndex(sel)
         wx.CallAfter(self.resetList)
         
         # Make sure the focus is back on the list so that the keystroke
@@ -563,7 +584,7 @@ class SearchMode(ListMode):
     def OnStartSearch(self, evt):
         if not self.isSearchRunning():
             self.showSearchButton(True)
-            method = self.buffer.stc.search_method
+            method = self.buffer.stc.search_method.option
             if method.isValid():
                 status = SearchStatus(self)
                 matcher = self.getStringMatcher()
