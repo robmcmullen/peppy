@@ -6,7 +6,7 @@ Major mode to search for pattern matches from files in a directory or in
 a project.
 """
 
-import os, time, fnmatch, heapq
+import os, time, fnmatch, heapq, re
 
 import wx
 from wx.lib.pubsub import Publisher
@@ -254,7 +254,7 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
                 yield (str(buf.url), buf)
 
 
-class StringMatcher(object):
+class ExactStringMatcher(object):
     def __init__(self, string):
         self.string = string
     
@@ -264,6 +264,65 @@ class StringMatcher(object):
     def isValid(self):
         return bool(self.string)
 
+class IgnoreCaseStringMatcher(ExactStringMatcher):
+    def __init__(self, string):
+        self.string = string.lower()
+    
+    def __call__(self, line):
+        return self.string in line.lower()
+
+class RegexStringMatcher(object):
+    def __init__(self, string, match_case):
+        try:
+            if not match_case:
+                flags = re.IGNORECASE
+            else:
+                flags = 0
+            self.cre = re.compile(string, flags)
+        except re.error:
+            self.cre = None
+        self.last_match = None
+    
+    def __call__(self, line):
+        self.last_match = self.cre.search(line)
+        return self.last_match is not None
+    
+    def isValid(self):
+        return bool(self.cre)
+
+class AbstractSearchOption(object):
+    def __init__(self, mode):
+        self.mode = mode
+        self.ui = None
+    
+class TextSearchOption(AbstractSearchOption):
+    def __init__(self, mode):
+        AbstractSearchOption.__init__(self, mode)
+    
+    def getName(self):
+        return "Text Search"
+    
+    def getUI(self, parent):
+        self.ui = wx.Panel(parent, -1)
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        self.case = wx.CheckBox(self.ui, -1, _("Match Case"))
+        hbox.Add(self.case, 0, wx.EXPAND)
+        self.regex = wx.CheckBox(self.ui, -1, _("Regular Expression"))
+        hbox.Add(self.regex, 0, wx.EXPAND)
+        self.ui.SetSizer(hbox)
+        return self.ui
+    
+    def setUIDefaults(self):
+        pass
+
+    def getStringMatcher(self, search_text):
+        if self.regex.IsChecked():
+            return RegexStringMatcher(search_text, self.case.IsChecked())
+        else:
+            if self.case.IsChecked():
+                return ExactStringMatcher(search_text)
+            else:
+                return IgnoreCaseStringMatcher(search_text)
 
 class WildcardListIgnorer(object):
     def __init__(self, string):
@@ -326,6 +385,10 @@ class SearchMethodStack(OptionStack):
                         ProjectSearchMethod(mode),
                         OpenDocsSearchMethod(mode)]
 
+class SearchOptionStack(OptionStack):
+    def loadOptions(self, mode):
+        self.options = [TextSearchOption(mode)]
+
 
 class SearchSTC(UndoMixin, NonResidentSTC):
     """Dummy STC just to prevent other modes from being able to change their
@@ -335,18 +398,21 @@ class SearchSTC(UndoMixin, NonResidentSTC):
         NonResidentSTC.__init__(self, parent, copy)
         self.search_string = None
         self.search_method = SearchMethodStack()
+        self.search_option = SearchOptionStack()
         self.search_domain = None
         self.results = []
         self.prefix = ""
     
     def loadSearchOptions(self, mode):
         self.search_method.loadOptions(mode)
+        self.search_option.loadOptions(mode)
     
     def getShortDisplayName(self, url):
         return "Search"
     
     def update(self, url):
         self.search_method.reset()
+        self.search_option.reset()
     
     def clearSearchResults(self):
         self.results = []
@@ -515,6 +581,17 @@ class SearchMode(ListMode):
         vbox.Add(hbox, 0, wx.EXPAND)
         
         hbox = wx.BoxSizer(wx.HORIZONTAL)
+        text = wx.StaticText(panel, -1, _("Options:"))
+        hbox.Add(text, 0, wx.ALIGN_CENTER)
+        self.options = wx.Choice(panel, -1, choices = self.buffer.stc.search_option.getNames())
+        self.Bind(wx.EVT_CHOICE, self.OnOptions, self.options)
+        hbox.Add(self.options, 1, wx.EXPAND)
+        self.options_panel = WidgetStack(panel, -1)
+        self.buffer.stc.search_option.addUI(self.options_panel)
+        hbox.Add(self.options_panel, 5, wx.EXPAND)
+        vbox.Add(hbox, 0, wx.EXPAND)
+        
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
         text = wx.StaticText(panel, -1, _("Search in:"))
         hbox.Add(text, 0, wx.ALIGN_CENTER)
         self.domain = wx.Choice(panel, -1, choices = self.buffer.stc.search_method.getNames())
@@ -571,8 +648,14 @@ class SearchMode(ListMode):
         # commands work
         wx.CallAfter(self.list.SetFocus)
     
-    def getStringMatcher(self):
-        return StringMatcher(self.search_text.GetValue())
+    def OnOptions(self, evt):
+        sel = evt.GetSelection()
+        self.buffer.stc.search_option.setIndex(sel)
+        wx.CallAfter(self.resetList)
+        
+        # Make sure the focus is back on the list so that the keystroke
+        # commands work
+        wx.CallAfter(self.list.SetFocus)
     
     def OnToggleSearch(self, evt):
         state = self.isSearchRunning()
@@ -587,7 +670,7 @@ class SearchMode(ListMode):
             method = self.buffer.stc.search_method.option
             if method.isValid():
                 status = SearchStatus(self)
-                matcher = self.getStringMatcher()
+                matcher = self.buffer.stc.search_option.option.getStringMatcher(self.search_text.GetValue())
                 ignorer = WildcardListIgnorer(self.ignore_filenames.GetValue())
                 if matcher.isValid():
                     self.buffer.stc.clearSearchResults()
