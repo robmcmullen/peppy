@@ -646,7 +646,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
             newmode.setViewPositionData(cursor_data)
         newmode.setReadyForIdleEvents()
 
-    def makeTabActive(self, url):
+    def makeTabActive(self, url, options=None):
         """Make the tab current that corresponds to the url.
         
         If the url isn't found, nothing happens.
@@ -658,12 +658,14 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         mode = self.tabs.moveSelectionToURL(normalized)
         if mode:
             mode.showInitialPosition(normalized)
+            if options:
+                mode.setViewPositionData(options)
         return mode is not None
     
-    def findTabOrOpen(self, url):
+    def findTabOrOpen(self, url, options=None):
         """Find a tab that contains this URL, otherwise open a new tab"""
-        if not self.makeTabActive(url):
-            self.open(url)
+        if not self.makeTabActive(url, options=options):
+            self.open(url, options=options)
 
     def open(self, *args, **kwargs):
         """Open a new tab to edit the given URL.
