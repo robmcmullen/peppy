@@ -620,7 +620,7 @@ class SearchMode(ListMode):
         orig_index = self.list.GetItemData(index)
         values = self.list.itemDataMap[orig_index]
         dprint(values)
-        self.frame.open(values[3], options={'line':values[1] - 1})
+        self.frame.findTabOrOpen(values[3], options={'line':values[1] - 1})
 
 class SearchModePlugin(IPeppyPlugin):
     """Plugin to advertise the presence of the Search sidebar
