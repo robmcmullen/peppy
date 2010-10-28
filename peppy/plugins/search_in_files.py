@@ -382,10 +382,30 @@ class SearchMethodStack(OptionStack):
         self.options = [DirectorySearchMethod(mode),
                         ProjectSearchMethod(mode),
                         OpenDocsSearchMethod(mode)]
+        extra = []
+        Publisher().sendMessage('search_in_files.search_method.provider', extra)
+        if extra:
+            for cls in extra:
+                try:
+                    method = cls(mode)
+                    self.options.append(method)
+                except Exception, e:
+                    eprint("Search method %s failed to initiate.\n%s" % (cls, e))
 
 class SearchOptionStack(OptionStack):
     def loadOptions(self, mode):
         self.options = [TextSearchOption(mode)]
+        extra = []
+        Publisher().sendMessage('search_in_files.text_search_option.provider', extra)
+        if extra:
+            for cls in extra:
+                try:
+                    method = cls(mode)
+                    self.options.append(method)
+                except Exception, e:
+                    import traceback
+                    error = traceback.format_exc()
+                    eprint("Search method %s failed to initiate.\n%s" % (cls, error))
 
 
 class SearchSTC(UndoMixin, NonResidentSTC):
