@@ -599,6 +599,7 @@ class SearchMode(ListMode):
         text = wx.StaticText(panel, -1, _("Options:"))
         hbox.Add(text, 0, wx.ALIGN_CENTER)
         self.options = wx.Choice(panel, -1, choices = self.buffer.stc.search_option.getNames())
+        self.options.SetSelection(0) # prevent MSW indeterminate initial state
         self.Bind(wx.EVT_CHOICE, self.OnOptions, self.options)
         hbox.Add(self.options, 1, wx.EXPAND)
         self.options_panel = WidgetStack(panel, -1)
@@ -610,6 +611,7 @@ class SearchMode(ListMode):
         text = wx.StaticText(panel, -1, _("Search in:"))
         hbox.Add(text, 0, wx.ALIGN_CENTER)
         self.domain = wx.Choice(panel, -1, choices = self.buffer.stc.search_method.getNames())
+        self.domain.SetSelection(0) # prevent MSW indeterminate initial state
         self.Bind(wx.EVT_CHOICE, self.OnDomain, self.domain)
         hbox.Add(self.domain, 1, wx.EXPAND)
         self.domain_panel = WidgetStack(panel, -1)
