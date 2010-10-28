@@ -477,7 +477,6 @@ class SearchStatus(ThreadStatus):
         self.cleanup()
         
     def reportFailureGUI(self, text):
-        dprint(text)
         self.mode.status_info.stopProgress(text)
         self.cleanup()
     
@@ -526,10 +525,11 @@ class SearchThread(threading.Thread):
                     self.updater.updateStatus(self.matches, num_urls)
                     start = now
             self.showStats()
-        except:
+        except Exception, e:
             import traceback
             error = traceback.format_exc()
-            self.updater.reportFailure(error)
+            eprint(error)
+            self.updater.reportFailure(str(e))
     
     def showStats(self):
         self.updater.reportSuccess("Finished searching %d files in %.2f seconds" % (self.matches, time.time() - self.init_time))
