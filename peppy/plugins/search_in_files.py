@@ -132,8 +132,8 @@ class DirectorySearchMethod(AbstractSearchMethod):
     
     def getPrefix(self):
         prefix = unicode(self.pathname)
-        if not prefix.endswith("/"):
-            prefix += "/"
+        if not prefix.endswith(os.sep):
+            prefix += os.sep
         return prefix
     
     def iterFiles(self, ignorer):
