@@ -469,6 +469,7 @@ class SearchStatus(ThreadStatus):
     
     def cleanup(self):
         self.mode.showSearchButton(False)
+        self.mode.list.ResizeColumns()
 
 
 class SearchThread(threading.Thread):
@@ -701,9 +702,9 @@ class SearchMode(ListMode):
         pass
         
     def createColumns(self, list):
-        list.InsertSizedColumn(0, "File", min=100, greedy=False)
+        list.InsertSizedColumn(0, "File", min=100, max=250, greedy=False)
         list.InsertSizedColumn(1, "Line", min=10, greedy=False)
-        list.InsertSizedColumn(2, "Match", min=300, greedy=True)
+        list.InsertSizedColumn(2, "Match", min=300, greedy=True, ok_offscreen=True)
 
     def getListItems(self):
         return self.buffer.stc.getSearchResults()
