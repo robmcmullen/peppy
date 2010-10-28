@@ -93,8 +93,7 @@ class AbstractSearchMethod(object):
                     else:
                         yield name
 
-
-    def threadedSearch(self, url, matcher):
+    def getMatchGenerator(self, url, matcher):
         if isinstance(url, vfs.Reference):
             if url.scheme != "file":
                 dprint("vfs not threadsafe; skipping %s" % unicode(url).encode("utf-8"))
@@ -103,13 +102,7 @@ class AbstractSearchMethod(object):
         fh = open(url, "rb")
         bytes = fh.read()
         fh.close()
-        try:
-            for index, line in enumerate(bytes.split("\n")):
-                if matcher(line):
-                    result = SearchResult(url, index + 1, line)
-                    yield result
-        except UnicodeDecodeError:
-            return
+        return matcher.iterMatches(url, bytes)
 
 class DirectorySearchMethod(AbstractSearchMethod):
     def __init__(self, mode):
@@ -230,18 +223,14 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
     def setUIDefaults(self):
         pass
     
-    def threadedSearch(self, item, matcher):
+    def getMatchGenerator(self, item, matcher):
         url, buf = item
         stc = buf.stc
         if hasattr(stc, "GetText"):
             bytes = stc.GetText()
-            try:
-                for index, line in enumerate(bytes.split("\n")):
-                    if matcher(line):
-                        result = SearchResult(url, index + 1, line)
-                        yield result
-            except UnicodeDecodeError:
-                return
+            return matcher.iterMatches(url, bytes)
+        else:
+            return iter([])
 
     def iterFiles(self, ignorer):
         """Iterate through open files, returning the sort item that will
@@ -253,25 +242,34 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
             if not buf.permanent:
                 yield (str(buf.url), buf)
 
-
-class ExactStringMatcher(object):
+class AbstractStringMatcher(object):
     def __init__(self, string):
         self.string = string
     
-    def __call__(self, line):
-        return self.string in line
+    def iterMatches(self, url, bytes):
+        try:
+            for index, line in enumerate(bytes.split("\n")):
+                if self.match(line):
+                    result = SearchResult(url, index + 1, line)
+                    yield result
+        except UnicodeDecodeError:
+            raise StopIteration
     
     def isValid(self):
         return bool(self.string)
+
+class ExactStringMatcher(AbstractStringMatcher):
+    def match(self, line):
+        return self.string in line
 
 class IgnoreCaseStringMatcher(ExactStringMatcher):
     def __init__(self, string):
         self.string = string.lower()
     
-    def __call__(self, line):
+    def match(self, line):
         return self.string in line.lower()
 
-class RegexStringMatcher(object):
+class RegexStringMatcher(AbstractStringMatcher):
     def __init__(self, string, match_case):
         try:
             if not match_case:
@@ -283,7 +281,7 @@ class RegexStringMatcher(object):
             self.cre = None
         self.last_match = None
     
-    def __call__(self, line):
+    def match(self, line):
         self.last_match = self.cre.search(line)
         return self.last_match is not None
     
@@ -500,8 +498,9 @@ class SearchThread(threading.Thread):
             start = time.time()
             for item in sort_order:
                 self.matches += 1
-                for result in method.threadedSearch(item, self.matcher):
-#                dprint(result)
+                gen = method.getMatchGenerator(item, self.matcher)
+                for result in gen:
+#                    dprint(result)
                     self.stc.addSearchResult(result)
 #                time.sleep(0.1)
                 if self.stop_request:
