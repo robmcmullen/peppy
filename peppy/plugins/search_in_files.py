@@ -128,8 +128,7 @@ class DirectorySearchMethod(AbstractSearchMethod):
     
     def setUIDefaults(self):
         if not self.ui.GetValue():
-#            self.ui.SetValue(self.mode.buffer.cwd())
-            self.ui.SetValue("/work/bin")
+            self.ui.SetValue(self.mode.buffer.cwd())
     
     def getPrefix(self):
         prefix = unicode(self.pathname)
@@ -593,7 +592,6 @@ class SearchMode(ListMode):
         label = wx.StaticText(panel, -1, "Search for:")
         hbox.Add(label, 0, wx.ALIGN_CENTER)
         self.search_text = wx.TextCtrl(panel, -1,)
-        self.search_text.SetValue("python")
         hbox.Add(self.search_text, 5, wx.EXPAND)
         vbox.Add(hbox, 0, wx.EXPAND)
         
