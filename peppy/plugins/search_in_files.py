@@ -125,7 +125,6 @@ class DirectorySearchMethod(AbstractSearchMethod):
     
     def OnChanged(self, evt):
         self.pathname = evt.GetString()
-        dprint(self.pathname)
     
     def setUIDefaults(self):
         if not self.ui.GetValue():
@@ -357,7 +356,6 @@ class OptionStack(object):
     
     def getNames(self):
         names = [n.getName() for n in self.options]
-        print names
         return names
     
     def addUI(self, stack):
@@ -367,7 +365,6 @@ class OptionStack(object):
         self.widget_stack = stack
     
     def showUI(self):
-        print(self.option)
         self.widget_stack.RaiseWidget(self.option.ui)
         self.option.setUIDefaults()
     
@@ -639,21 +636,9 @@ class SearchMode(ListMode):
         
         vbox.Add(hbox, 0, wx.EXPAND)
         
-#        self.mode_list, names = self.getActiveModesAndNames()
-#        self.mode_choice = wx.Choice(panel, -1, choices = names)
-#        self.Bind(wx.EVT_CHOICE, self.OnModeChoice, self.mode_choice)
-#        hbox.Add(self.mode_choice, 0, wx.EXPAND)
-#        
-#        global_check = wx.CheckBox(panel, -1, "Show Global Actions")
-#        global_check.SetValue(True)
-#        self.Bind(wx.EVT_CHECKBOX, self.OnGlobal, global_check)
-#        hbox.Add(global_check, 0, wx.EXPAND)
-        
         panel.SetSizer(vbox)
 
         sizer.Add(panel, 0, wx.EXPAND)
-        
-        dprint(self.buffer)
     
     def showInitialPosition(self, url, options=None):
         self.buffer.stc.update(url)
