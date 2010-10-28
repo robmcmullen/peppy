@@ -712,7 +712,7 @@ class SearchMode(ListMode):
         return self.buffer.stc.getSearchResults()
     
     def getItemRawValues(self, index, item):
-        return (unicode(item.short), item.line, unicode(item.text), item.url)
+        return (unicode(item.short), item.line, unicode(item.text).replace("\r", ""), item.url)
     
     def appendListItems(self, items):
         self.list.Freeze()
