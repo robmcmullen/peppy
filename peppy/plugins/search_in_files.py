@@ -100,9 +100,7 @@ class AbstractSearchMethod(object):
                 return
             url = unicode(url.path).encode("utf-8")
         fh = open(url, "rb")
-        bytes = fh.read()
-        fh.close()
-        return matcher.iterMatches(url, bytes)
+        return matcher.iterMatches(url, fh)
 
 class DirectorySearchMethod(AbstractSearchMethod):
     def __init__(self, mode):
@@ -221,12 +219,34 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
     def setUIDefaults(self):
         pass
     
+    class STCFH(object):
+        """Mock file handler to wrap an existing STC instance to create an
+        iterator over each line
+        
+        """
+        def __init__(self, stc):
+            self.stc = stc
+            self.line = 0
+        
+        def __iter__(self):
+            return self
+        
+        def next(self):
+            if self.line < self.stc.GetLineCount():
+                line = self.stc.GetLine(self.line)
+                self.line += 1
+                return line
+            raise StopIteration
+        
+        def close(self):
+            pass
+    
     def getMatchGenerator(self, item, matcher):
         url, buf = item
         stc = buf.stc
-        if hasattr(stc, "GetText"):
-            bytes = stc.GetText()
-            return matcher.iterMatches(url, bytes)
+        if hasattr(stc, "GetLine") and hasattr(stc, "GetLineCount"):
+            fh = OpenDocsSearchMethod.STCFH(stc)
+            return matcher.iterMatches(url, fh)
         else:
             return iter([])
 
@@ -241,17 +261,31 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
                 yield (str(buf.url), buf)
 
 class AbstractStringMatcher(object):
+    """Base class for string matching.
+    
+    The L{match} method must be defined in subclasses to return True if
+    the line matches the criteria offered by the subclass.
+    """
     def __init__(self, string):
         self.string = string
     
-    def iterMatches(self, url, bytes):
+    def iterMatches(self, url, fh):
+        """Iterator for lines in a file, calling L{match} on each line and
+        yielding a L{SearchResult} if match is found.
+        
+        """
         try:
-            for index, line in enumerate(bytes.split("\n")):
+            index = 0
+            for line in fh:
+                line = line.rstrip("\r\n")
                 if self.match(line):
                     result = SearchResult(url, index + 1, line)
                     yield result
+                index += 1
         except UnicodeDecodeError:
-            raise StopIteration
+            pass
+        finally:
+            fh.close()
     
     def isValid(self):
         return bool(self.string)
