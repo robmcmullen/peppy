@@ -263,6 +263,8 @@ class AboutFS(vfs.BaseFS):
         return findAboutNames()
 
 
+import urlparse
+urlparse.uses_fragment.append('about')
 vfs.register_file_system('about', AboutFS)
 
 
