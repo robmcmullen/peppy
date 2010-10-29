@@ -320,14 +320,14 @@ class RegexStringMatcher(AbstractStringMatcher):
     def isValid(self):
         return bool(self.cre)
 
-class AbstractSearchOption(object):
+class AbstractSearchType(object):
     def __init__(self, mode):
         self.mode = mode
         self.ui = None
     
-class TextSearchOption(AbstractSearchOption):
+class TextSearchType(AbstractSearchType):
     def __init__(self, mode):
-        AbstractSearchOption.__init__(self, mode)
+        AbstractSearchType.__init__(self, mode)
     
     def getName(self):
         return "Text Search"
@@ -422,11 +422,11 @@ class SearchMethodStack(OptionStack):
                 except Exception, e:
                     eprint("Search method %s failed to initiate.\n%s" % (cls, e))
 
-class SearchOptionStack(OptionStack):
+class SearchTypeStack(OptionStack):
     def loadOptions(self, mode):
-        self.options = [TextSearchOption(mode)]
+        self.options = [TextSearchType(mode)]
         extra = []
-        Publisher().sendMessage('search_in_files.text_search_option.provider', extra)
+        Publisher().sendMessage('search_in_files.text_search_type.provider', extra)
         if extra:
             for cls in extra:
                 try:
@@ -446,21 +446,21 @@ class SearchSTC(UndoMixin, NonResidentSTC):
         NonResidentSTC.__init__(self, parent, copy)
         self.search_string = None
         self.search_method = SearchMethodStack()
-        self.search_option = SearchOptionStack()
+        self.search_type = SearchTypeStack()
         self.search_domain = None
         self.results = []
         self.prefix = ""
     
     def loadSearchOptions(self, mode):
         self.search_method.loadOptions(mode)
-        self.search_option.loadOptions(mode)
+        self.search_type.loadOptions(mode)
     
     def getShortDisplayName(self, url):
         return "Search"
     
     def update(self, url):
         self.search_method.reset()
-        self.search_option.reset()
+        self.search_type.reset()
     
     def clearSearchResults(self):
         self.results = []
@@ -630,14 +630,14 @@ class SearchMode(ListMode):
         vbox.Add(hbox, 0, wx.EXPAND)
         
         hbox = wx.BoxSizer(wx.HORIZONTAL)
-        text = wx.StaticText(panel, -1, _("Options:"))
+        text = wx.StaticText(panel, -1, _("Search type:"))
         hbox.Add(text, 0, wx.ALIGN_CENTER)
-        self.options = wx.Choice(panel, -1, choices = self.buffer.stc.search_option.getNames())
+        self.options = wx.Choice(panel, -1, choices = self.buffer.stc.search_type.getNames())
         self.options.SetSelection(0) # prevent MSW indeterminate initial state
         self.Bind(wx.EVT_CHOICE, self.OnOptions, self.options)
         hbox.Add(self.options, 1, wx.EXPAND)
         self.options_panel = WidgetStack(panel, -1)
-        self.buffer.stc.search_option.addUI(self.options_panel)
+        self.buffer.stc.search_type.addUI(self.options_panel)
         hbox.Add(self.options_panel, 5, wx.EXPAND)
         vbox.Add(hbox, 0, wx.EXPAND)
         
@@ -689,7 +689,7 @@ class SearchMode(ListMode):
     
     def OnOptions(self, evt):
         sel = evt.GetSelection()
-        self.buffer.stc.search_option.setIndex(sel)
+        self.buffer.stc.search_type.setIndex(sel)
         wx.CallAfter(self.resetList)
         
         # Make sure the focus is back on the list so that the keystroke
@@ -709,7 +709,7 @@ class SearchMode(ListMode):
             method = self.buffer.stc.search_method.option
             if method.isValid():
                 status = SearchStatus(self)
-                matcher = self.buffer.stc.search_option.option.getStringMatcher(self.search_text.GetValue())
+                matcher = self.buffer.stc.search_type.option.getStringMatcher(self.search_text.GetValue())
                 ignorer = WildcardListIgnorer(self.ignore_filenames.GetValue())
                 if matcher.isValid():
                     self.buffer.stc.clearSearchResults()
