@@ -575,6 +575,9 @@ class SearchThread(threading.Thread):
 
 class SearchMode(ListMode):
     """Search for text in files
+    
+    The about:search url can also take a fragment (e.g. about:search#/tmp)
+    that supplies the default search directory.
     """
     keyword = "Search"
     icon = 'icons/page_white_find.png'
@@ -675,6 +678,9 @@ class SearchMode(ListMode):
         sizer.Add(panel, 0, wx.EXPAND)
     
     def showInitialPosition(self, url, options=None):
+        if url.fragment:
+            newurl = vfs.normalize(url.fragment)
+            self.buffer.setPendingSaveAsURL(newurl)
         self.buffer.stc.update(url)
         wx.CallAfter(self.resetList)
     
