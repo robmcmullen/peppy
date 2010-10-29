@@ -553,31 +553,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         """Get a text version of the file local comments"""
         text = kate.serializeKateVariables(self)
         return text
-    
-    ##### Revert hooks
-    def getViewPositionData(self):
-        return {'top': self.GetFirstVisibleLine(),
-                'pos': self.GetCurrentPos(),
-                'line': self.GetCurrentLine(),
-                }
-    
-    def setViewPositionData(self, data):
-        if 'top' in data:
-            line = min(data['top'], self.GetLineCount() - 1)
-            self.ScrollToLine(line)
-        if 'line' in data:
-            line = min(data['line'], self.GetLineCount() - 1)
-            self.showLine(line)
-        if 'pos' in data:
-            pos = min(data['pos'], self.GetLength() - 1)
-            self.GotoPos(pos)
-            
-            # Hack to fix #505.  For some reason, the internal scintilla cursor
-            # column isn't correct after setting a cursor position manually.
-            # Moving the cursor left and then back seems to fix it.
-            if pos > 0:
-                self.CmdKeyExecute(wx.stc.STC_CMD_CHARLEFT)
-                self.CmdKeyExecute(wx.stc.STC_CMD_CHARRIGHT)
 
     
     ##### Styling code
@@ -650,15 +625,6 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         self.OnUpdateUIHook(evt)
         if evt is not None:
             evt.Skip()
-
-    def showInitialPosition(self, url, options=None):
-        self.dprint(u"url=%s scheme=%s auth=%s path=%s query=%s fragment=%s" % (url, url.scheme, url.authority, url.path, url.query, url.fragment))
-        if url.fragment:
-            line = int(url.fragment)
-            line -= self.classprefs.line_number_offset
-            self.showLine(line)
-        if options:
-            self.setViewPositionData(options)
 
     ##### Comment handling
     def createCommentRegex(self):
