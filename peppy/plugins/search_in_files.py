@@ -694,6 +694,14 @@ class SearchMode(ListMode):
         if url.fragment:
             newurl = vfs.normalize(url.fragment)
             self.buffer.setPendingSaveAsURL(newurl)
+        if url.query:
+            for name, value in url.query.iteritems():
+                if name == "search":
+                    self.search_text.SetValue(value)
+                elif name == "type":
+                    self.options.SetStringSelection(value)
+                    sel = self.options.GetSelection()
+                    self.buffer.stc.search_type.setIndex(sel)
         self.buffer.stc.update(url)
         wx.CallAfter(self.resetList)
     
