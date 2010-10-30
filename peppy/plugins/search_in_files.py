@@ -289,6 +289,11 @@ class AbstractStringMatcher(object):
     
     def isValid(self):
         return bool(self.string)
+    
+    def getErrorString(self):
+        if len(self.string) == 0:
+            return "Search error: search string is blank"
+        return "Search error: invalid search string"
 
 class ExactStringMatcher(AbstractStringMatcher):
     def match(self, line):
@@ -303,14 +308,17 @@ class IgnoreCaseStringMatcher(ExactStringMatcher):
 
 class RegexStringMatcher(AbstractStringMatcher):
     def __init__(self, string, match_case):
+        self.string = string
         try:
             if not match_case:
                 flags = re.IGNORECASE
             else:
                 flags = 0
             self.cre = re.compile(string, flags)
-        except re.error:
+            self.error = ""
+        except re.error, errmsg:
             self.cre = None
+            self.error = errmsg
         self.last_match = None
     
     def match(self, line):
@@ -318,7 +326,12 @@ class RegexStringMatcher(AbstractStringMatcher):
         return self.last_match is not None
     
     def isValid(self):
-        return bool(self.cre)
+        return bool(self.string) and bool(self.cre)
+    
+    def getErrorString(self):
+        if len(self.string) == 0:
+            return "Search error: search string is blank"
+        return "Regular expression error: %s" % self.error
 
 class AbstractSearchType(object):
     def __init__(self, mode):
@@ -725,7 +738,12 @@ class SearchMode(ListMode):
                     self.thread = SearchThread(self.buffer.stc, matcher, ignorer, status)
                     self.thread.start()
                 else:
-                    self.setStatusText("Invalid search string.")
+                    if hasattr(matcher, "getErrorString"):
+                        error = matcher.getErrorString()
+                    else:
+                        error = "Invalid search string."
+                    self.setStatusText(error)
+                    self.showSearchButton(False)
             else:
                 self.setStatusText(method.getErrorString())
     
