@@ -265,6 +265,7 @@ class AboutFS(vfs.BaseFS):
 
 import urlparse
 urlparse.uses_fragment.append('about')
+urlparse.uses_query.append('about')
 vfs.register_file_system('about', AboutFS)
 
 
