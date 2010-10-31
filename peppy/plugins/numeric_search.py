@@ -15,7 +15,7 @@ from peppy.lib.searchutils import *
 
 
 class AbstractNumericMatcher(AbstractStringMatcher):
-    cre = re.compile("([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")
+    cre = None
     
     def __init__(self, limit, func):
         self.limit, self.error = self.stringToNumber(limit)
@@ -23,17 +23,20 @@ class AbstractNumericMatcher(AbstractStringMatcher):
     
     def stringToNumber(self, text):
         try:
-            number = float(text)
+            number = self.convertFunc(text)
             error = ""
         except ValueError, e:
             number = None
-            error = e
+            error = str(e)
         return number, error
     
+    def convertFunc(self, text):
+        raise NotImplementedError
+        
     def iterLine(self, line):
         values = self.cre.findall(line)
         for value in values:
-            v = float(value)
+            v = self.convertFunc(value)
             if self.compareValue(v, self.limit):
                 yield -1, -1, value
     
@@ -45,8 +48,23 @@ class AbstractNumericMatcher(AbstractStringMatcher):
             return "Search error: %s" % self.error
         return "Search error: invalid search string"
 
-class SingleParamMatcher(AbstractNumericMatcher):
+class FloatSingleParamMatcher(AbstractNumericMatcher):
     """Matches numbers less than the limit value"""
+    cre = re.compile("([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)")
+    
+    def convertFunc(self, text):
+        return float(text)
+    
+    def compareValue(self, value, limit):
+        return self.func(value, limit)
+
+class HexSingleParamMatcher(AbstractNumericMatcher):
+    """Matches numbers less than the limit value"""
+    cre = re.compile("(0[xX][0-9a-fA-F]+)")
+    
+    def convertFunc(self, text):
+        return int(text, 16)
+    
     def compareValue(self, value, limit):
         return self.func(value, limit)
 
@@ -77,14 +95,18 @@ class NumericSearchType(object):
 
     def getStringMatcher(self, search_text):
         search_text = search_text.strip()
+        if self.hex.IsChecked():
+            matcher_cls = HexSingleParamMatcher
+        else:
+            matcher_cls = FloatSingleParamMatcher
         if search_text.startswith("<="):
-            return SingleParamMatcher(search_text[2:], lambda val, limit: val <= limit)
+            return matcher_cls(search_text[2:], lambda val, limit: val <= limit)
         elif search_text.startswith("<"):
-            return SingleParamMatcher(search_text[1:], lambda val, limit: val < limit)
+            return matcher_cls(search_text[1:], lambda val, limit: val < limit)
         elif search_text.startswith(">="):
-            return SingleParamMatcher(search_text[2:], lambda val, limit: val >= limit)
+            return matcher_cls(search_text[2:], lambda val, limit: val >= limit)
         elif search_text.startswith(">"):
-            return SingleParamMatcher(search_text[1:], lambda val, limit: val > limit)
+            return matcher_cls(search_text[1:], lambda val, limit: val > limit)
 
 
 class NumericSearchPlugin(IPeppyPlugin):
