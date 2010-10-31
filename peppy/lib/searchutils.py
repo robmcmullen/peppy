@@ -6,7 +6,7 @@
 import os, time, fnmatch, heapq, re
 
 import peppy.vfs as vfs
-
+from peppy.debug import *
 
 class AbstractSearchMethod(object):
     def __init__(self, mode):
@@ -45,8 +45,12 @@ class AbstractSearchMethod(object):
                 dprint("vfs not threadsafe; skipping %s" % unicode(url).encode("utf-8"))
                 return
             url = unicode(url.path).encode("utf-8")
-        fh = open(url, "rb")
-        return matcher.iterMatches(url, fh)
+        try:
+            fh = open(url, "rb")
+            return matcher.iterMatches(url, fh)
+        except:
+            dprint("Failed opening %s" % url)
+        return iter([])
     
     def getUI(self, parent):
         raise NotImplementedError
