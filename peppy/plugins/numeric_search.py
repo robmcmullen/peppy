@@ -107,6 +107,10 @@ class NumericSearchType(object):
             return matcher_cls(search_text[2:], lambda val, limit: val >= limit)
         elif search_text.startswith(">"):
             return matcher_cls(search_text[1:], lambda val, limit: val > limit)
+        elif search_text.startswith("="):
+            return matcher_cls(search_text[1:], lambda val, limit: val == limit)
+        else:
+            return matcher_cls(search_text, lambda val, limit: val == limit)
 
 
 class NumericSearchPlugin(IPeppyPlugin):
