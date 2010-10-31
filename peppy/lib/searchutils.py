@@ -73,14 +73,21 @@ class AbstractStringMatcher(object):
             index = 0
             for line in fh:
                 line = line.rstrip("\r\n")
-                if self.match(line):
+                for start, end, chunk in self.iterLine(line):
                     result = SearchResult(url, index + 1, line)
                     yield result
+                    # FIXME: until the UI can display multiple matches per
+                    # line, only the first hit on the line is returned
+                    break
                 index += 1
         except UnicodeDecodeError:
             pass
         finally:
             fh.close()
+    
+    def iterLine(self, line):
+        if self.match(line):
+            yield 0, len(line), line
     
     def isValid(self):
         return bool(self.string)
