@@ -12,6 +12,7 @@ import wx
 from wx.lib.pubsub import Publisher
 
 import peppy.vfs as vfs
+from peppy.lib.searchutils import *
 from peppy.buffers import BufferList
 from peppy.list_mode import *
 from peppy.stcinterface import *
@@ -64,43 +65,6 @@ class StopSearch(SearchModeActionMixin, SelectAction):
     def action(self, index=-1, multiplier=1):
         self.mode.OnStopSearch(None)
 
-
-class AbstractSearchMethod(object):
-    def __init__(self, mode):
-        self.mode = mode
-        self.ui = None
-    
-    def isValid(self):
-        return False
-    
-    def getErrorString(self):
-        raise NotImplementedError
-    
-    def getPrefix(self):
-        return ""
-    
-    def iterFilesInDir(self, dirname, ignorer):
-        # Nice algorithm from http://pinard.progiciels-bpi.ca/notes/Away_from_os.path.walk.html
-        stack = [dirname]
-        while stack:
-            directory = heapq.heappop(stack)
-            for base in os.listdir(directory):
-                if not ignorer(base):
-                    name = os.path.join(directory, base)
-                    if os.path.isdir(name):
-                        if not os.path.islink(name):
-                            heapq.heappush(stack, name)
-                    else:
-                        yield name
-
-    def getMatchGenerator(self, url, matcher):
-        if isinstance(url, vfs.Reference):
-            if url.scheme != "file":
-                dprint("vfs not threadsafe; skipping %s" % unicode(url).encode("utf-8"))
-                return
-            url = unicode(url.path).encode("utf-8")
-        fh = open(url, "rb")
-        return matcher.iterMatches(url, fh)
 
 class DirectorySearchMethod(AbstractSearchMethod):
     def __init__(self, mode):
@@ -260,83 +224,6 @@ class OpenDocsSearchMethod(AbstractSearchMethod):
             if not buf.permanent:
                 yield (str(buf.url), buf)
 
-class AbstractStringMatcher(object):
-    """Base class for string matching.
-    
-    The L{match} method must be defined in subclasses to return True if
-    the line matches the criteria offered by the subclass.
-    """
-    def __init__(self, string):
-        self.string = string
-    
-    def iterMatches(self, url, fh):
-        """Iterator for lines in a file, calling L{match} on each line and
-        yielding a L{SearchResult} if match is found.
-        
-        """
-        try:
-            index = 0
-            for line in fh:
-                line = line.rstrip("\r\n")
-                if self.match(line):
-                    result = SearchResult(url, index + 1, line)
-                    yield result
-                index += 1
-        except UnicodeDecodeError:
-            pass
-        finally:
-            fh.close()
-    
-    def isValid(self):
-        return bool(self.string)
-    
-    def getErrorString(self):
-        if len(self.string) == 0:
-            return "Search error: search string is blank"
-        return "Search error: invalid search string"
-
-class ExactStringMatcher(AbstractStringMatcher):
-    def match(self, line):
-        return self.string in line
-
-class IgnoreCaseStringMatcher(ExactStringMatcher):
-    def __init__(self, string):
-        self.string = string.lower()
-    
-    def match(self, line):
-        return self.string in line.lower()
-
-class RegexStringMatcher(AbstractStringMatcher):
-    def __init__(self, string, match_case):
-        self.string = string
-        try:
-            if not match_case:
-                flags = re.IGNORECASE
-            else:
-                flags = 0
-            self.cre = re.compile(string, flags)
-            self.error = ""
-        except re.error, errmsg:
-            self.cre = None
-            self.error = errmsg
-        self.last_match = None
-    
-    def match(self, line):
-        self.last_match = self.cre.search(line)
-        return self.last_match is not None
-    
-    def isValid(self):
-        return bool(self.string) and bool(self.cre)
-    
-    def getErrorString(self):
-        if len(self.string) == 0:
-            return "Search error: search string is blank"
-        return "Regular expression error: %s" % self.error
-
-class AbstractSearchType(object):
-    def __init__(self, mode):
-        self.mode = mode
-        self.ui = None
     
 class TextSearchType(AbstractSearchType):
     def __init__(self, mode):
@@ -366,16 +253,6 @@ class TextSearchType(AbstractSearchType):
                 return ExactStringMatcher(search_text)
             else:
                 return IgnoreCaseStringMatcher(search_text)
-
-class WildcardListIgnorer(object):
-    def __init__(self, string):
-        self.patterns = string.split(";")
-    
-    def __call__(self, filename):
-        for pat in self.patterns:
-            if fnmatch.fnmatchcase(filename, pat):
-                return True
-        return False
 
 
 class OptionStack(object):
@@ -495,18 +372,6 @@ class SearchSTC(UndoMixin, NonResidentSTC):
             for result in self.results[current:future]:
                 result.checkPrefix(self.prefix)
             mode.appendListItems(self.results[current:future])
-
-
-class SearchResult(object):
-    def __init__(self, url, line, text):
-        self.short = url
-        self.url = url
-        self.line = line
-        self.text = text
-    
-    def checkPrefix(self, prefix):
-        if self.url.startswith(prefix):
-            self.short = self.url[len(prefix):]
 
 
 class SearchStatus(ThreadStatus):
@@ -780,7 +645,7 @@ class SearchMode(ListMode):
         return self.buffer.stc.getSearchResults()
     
     def getItemRawValues(self, index, item):
-        return (unicode(item.short), item.line, unicode(item.text).replace("\r", ""), item.url)
+        return (item.short, item.line, item.text, item.url)
     
     def appendListItems(self, items):
         self.list.Freeze()
