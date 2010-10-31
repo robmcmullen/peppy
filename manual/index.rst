@@ -17,6 +17,7 @@ Contents:
    Fundamental
    macros
    project
+   Search
    work-in-progress
 
 Text Editing Major Modes:
