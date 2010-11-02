@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+import os, shutil, sys, glob, imp
+import __builtin__
+from cStringIO import StringIO
+from optparse import OptionParser
+
+__builtin__._ = str
+
+plugin_count = 0
+
+lastfake = False
+
+def entry(filename, out=None, copythese=None, fake=False, pyc=False, remove_prefix=None):
+    print "Processing filename %s" % filename
+    if filename.endswith(".py") and 'EGG-INFO' not in filename:
+        if copythese is not None and not fake:
+            copythese.append(filename)
+        if not filename.endswith("__init__.py"):
+            if remove_prefix and filename.startswith(remove_prefix):
+                filename = filename[len(remove_prefix):]
+            module = filename[:-3].replace('/', '.').replace('\\', '.')
+            if out:
+                if fake:
+                    global lastfake
+                    if not lastfake:
+                        out.write("if False: # fake the import so py2exe will include the file\n")
+                        lastfake = True
+                    out.write("    import %s\n" % (module))
+                else:
+                    global lastfake
+                    lastfake = False
+                    global plugin_count
+                    name = module.split('.')[-1]
+                    
+                    # Don't print any __init__ modules in the splash screen
+                    if name != "__init__":
+                        plugin_count += 1
+                        out.write("app.gaugeCallback('%s')\n" % name)
+                    print "importing %s" % module
+                    out.write("try:\n    import %s\nexcept:\n    pass\n" % (module))
+
+def process(path, out=None, copythese=None, fake=False, pyc=False, remove_prefix=None):
+    files = glob.glob('%s/*' % path)
+    for path in files:
+        if os.path.isdir(path):
+            process(path, out, fake=fake, pyc=pyc, remove_prefix=remove_prefix)
+        else:
+            entry(path, out, copythese, fake, pyc, remove_prefix=remove_prefix)
+
+def process_modules(module_name, out=None):
+    file, pathname, desc = imp.find_module(module_name)
+    print(pathname)
+    if pathname.endswith(module_name):
+        prefix = pathname[:-len(module_name)]
+        print(prefix)
+    else:
+        prefix = None
+    print(desc)
+    files = glob.glob('%s/*' % pathname)
+    for path in files:
+        if os.path.isdir(path):
+            process(path, out, remove_prefix=prefix)
+        else:
+            entry(path, out, remove_prefix=prefix)
+
+if __name__ == "__main__":
+    usage="usage: %prog [-s dir] [-o file]"
+    parser=OptionParser(usage=usage)
+    parser.add_option("-i", action="store", dest="input",
+                      default="", help="base input directory")
+    parser.add_option("-d", action="store", dest="importdir",
+                      default="builtins", help="import directory within base directory")
+    parser.add_option("-o", action="store", dest="output",
+                      default="peppy/py2exe_plugins.py", help="output filename")
+    parser.add_option("-e", action="store", dest="eggs",
+                      default="", help="process unpacked eggs")
+    parser.add_option("-m", action="append", dest="modules",
+                      default=[], help="process global modules")
+    (options, args) = parser.parse_args()
+
+    out = StringIO()
+    out.write("# Automatically generated, and only used when creating a py2exe distribution\n")
+
+    os.chdir(options.input)
+    savepath = os.getcwd()
+    destdir = os.path.join(savepath, options.importdir)
+    print destdir
+
+    if options.importdir:
+        process(options.importdir, out)
+    # Need to fake the importing of all the library modules and the editra style
+    # definition files so py2exe will include them
+    process('peppy/lib', out, fake=True)
+    process('peppy/editra/syntax', out, fake=True)
+    
+    if options.eggs:
+        process(options.eggs, out, pyc=True)
+    
+    if options.modules:
+        for module in options.modules:
+            process_modules(module, out)
+
+    filename = os.path.join(savepath, options.output)
+    fh = open(filename, 'w')
+    fh.write("import wx\napp = wx.GetApp()\n")
+    fh.write(out.getvalue())
+    fh.close()
+    
+    countname = filename.replace(".py", "_count.py")
+    fh = open(countname, 'w')
+    fh.write("count = %d\n" % plugin_count)
+    fh.close()
