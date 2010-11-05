@@ -56,7 +56,10 @@ def findChangeLogVersionForGit(options):
     return version, release_date, codename
 
 def getCurrentSvnRevision(options):
-    info = subprocess.Popen(["git", "svn", "info"], stdout=subprocess.PIPE).communicate()[0]
+    if os.path.exists(".git/index"):
+        info = subprocess.Popen(["git", "svn", "info"], stdout=subprocess.PIPE).communicate()[0]
+    else:
+        info = subprocess.Popen(["svn", "info"], stdout=subprocess.PIPE).communicate()[0]
     rev = "rHEAD"
     for line in info.splitlines():
         tags = line.split(":")
@@ -147,7 +150,6 @@ if __name__=='__main__':
     (options, args) = parser.parse_args()
 
     version, dum, codename = findLatestChangeLogVersion(options)
-    last_tag, git_version = getCurrentGitPatchlevel(options)
     svn_revision = getCurrentSvnRevision(options)
     if options.version:
         print version
@@ -181,6 +183,7 @@ if __name__=='__main__':
         fh.close()
     
     if options.fixed:
+        last_tag, git_version = getCurrentGitPatchlevel(options)
         suggestions = getGitChangeLogSuggestions(last_tag, options)
         for line in suggestions:
             print line

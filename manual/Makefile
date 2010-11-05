@@ -33,4 +33,4 @@ latex:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 
 pdf: latex
-	(cd $(BUILDDIR)/latex; make)
+	-(cd $(BUILDDIR)/latex; make)

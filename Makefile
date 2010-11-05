@@ -61,7 +61,7 @@ html: $(HTML) $(PRE) README.html README doc
 	mkdir -p web/manual
 	rsync -avuz manual/_build/html/ web/manual/
 
-peppy/_peppy_version.py: .git/index
+peppy/_peppy_version.py:
 	./make-changelog.py -m peppy
 
 web/thanks.html.in:
@@ -115,11 +115,11 @@ distdir: peppy/_peppy_version.py
 	-rm -f MANIFEST
 	python setup.py sdist -k
 	(cd $(distdir)/manual; make)
-	cp $(distdir)/manual/_build/latex/*.pdf $(distdir)
+	-cp $(distdir)/manual/_build/latex/*.pdf $(distdir)
 	rm -rf $(distdir)/manual
 	chmod 644 $(distdir)/tests/*.py
 	
-	cp ./plugins/build/*.egg $(distdir)/peppy/plugins/eggs
+	-cp ./plugins/build/*.egg $(distdir)/peppy/plugins/eggs
 	
 	./make-doc.py -m peppy -o $(distdir)/py2exe/win-installer.nsi $(distdir)/py2exe/win-installer.nsi.in
 
