@@ -60,9 +60,11 @@ class FloatSingleParamMatcher(AbstractNumericMatcher):
 
 class HexSingleParamMatcher(AbstractNumericMatcher):
     """Matches numbers less than the limit value"""
-    cre = re.compile("(0[xX][0-9a-fA-F]+)")
+    cre = re.compile("(0[xX][0-9a-fA-F]+|[0-9a-fA-F]+[hH])")
     
     def convertFunc(self, text):
+        if text.endswith("h") or text.endswith("H"):
+            text = text[:-1]
         return int(text, 16)
     
     def compareValue(self, value, limit):
