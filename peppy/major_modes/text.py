@@ -11,11 +11,13 @@ import wx
 import wx.stc
 
 from peppy.major import *
+from peppy.actions import *
 from peppy.yapsy.plugins import IPeppyPlugin
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 from peppy.lib.autoindent import BasicAutoindent
 from peppy.lib.foldexplorer import *
+from peppy.lib.textutil import *
 
 _sample_file="""\
 Life is what happens while you're busy making other plans.
@@ -44,6 +46,14 @@ Always use the bathroom when you can, because you never know when you'll get ano
 """
 
 
+html_converters = [
+    (text2HtmlFixed, 'each line in fixed width font'),
+    (text2HtmlPlain, 'each line in proportional font'),
+    (text2HtmlParagraph, 'consecutive non-blank lines to paragraph'),
+    ]
+html_converter_descriptions = [item[1] for item in html_converters]
+
+
 class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """Major mode for editing text files.
     """
@@ -59,6 +69,8 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         StrParam('filename_regex', '[Rr][Ee][Aa][Dd][Mm][Ee].*', fullwidth=True),
         StrParam('minor_modes', ''),
         BoolParam('word_wrap', True),
+        IndexChoiceParam('print_style', html_converter_descriptions,
+                         0, 'How lines are displayed when printed'),
         )
     
     autoindent = BasicAutoindent()
@@ -87,12 +99,48 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
                 
         return "", -1, 1
 
+    def getHtmlForPrinting(self):
+        """Produces an HTML representation of its data.
+        
+        Uses one of the HTML conversion utilities from textutil.py
+        """
+        converter = html_converters[self.classprefs.print_style][0]
+        html = converter(self.buffer.stc.GetText())
+        return html
+
+
+class PrintStyleSelect(RadioAction):
+    """Select printing style
+    
+    Instead of going through the preferences dialog, this action allows
+    selecting of the print style on the menu.
+    """
+    name = "Paragraph Style"
+    inline = False
+    localize_items = True
+    default_menu = (("File/Print Options", 995.5), 100)
+
+    def getIndex(self):
+        return self.mode.classprefs.print_style
+                                           
+    def getItems(self):
+        return html_converter_descriptions
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.print_style = index
+
 
 class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.
     """
     def aboutFiles(self):
         return {'sample.txt': _sample_file}
+        
+    def getCompatibleActions(self, modecls):
+        actions = []
+        if issubclass(modecls, TextMode):
+            actions.append(PrintStyleSelect)
+        return actions
     
     def getMajorModes(self):
         yield TextMode

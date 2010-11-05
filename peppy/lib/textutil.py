@@ -1,4 +1,5 @@
 # peppy Copyright (c) 2006-2010 Rob McMullen
+# HTML conversion subroutines Copyright (c) 2010 Christopher Barker
 # This file is licenced under the same terms as Python itself
 """Utility functions for operating on text
 
@@ -206,6 +207,57 @@ def guessSpacesPerIndent(text):
     
     return index
 
+# HTML converters from Chris Barker:
+#
+# This is an alternative to using <pre> -- I want it to wrap, but otherwise
+# preserve newlines, etc.  Perhaps is would make sense to use some of
+# the stuff ion webhelpers, instead of writting this all from scratch:
+# http://webhelpers.groovie.org/
+
+def text2HtmlPlain(text):
+    """
+    Takes raw text, and returns html with newlines converted, etc.
+    
+    Used the default font, with no extra whitespace games.
+    """
+    # double returns are a new paragraph
+    text = text.split("\n\n")
+    text = [p.strip().replace("\n","<br>") for p in text]
+    text = ("<html>\n<body>\n<p>\n" +
+            "\n</p>\n<p>\n".join(text) +
+            "\n</p>\n</body>\n</html> "
+            )
+    return text
+
+def text2HtmlFixed(text):
+    """
+    Takes raw text, and returns html with newlines converted, etc., using a fixed width font.
+    It should also preserve text lined up with spaces.
+    """
+    text = text.replace("\n","<br>")
+    # this preserves multiple spaces: it does mess up breaking on a two space gap
+    text = text.replace("  ","&nbsp;&nbsp;")
+    text = ("<html>\n<body>\n<tt><p>\n" +
+            text +
+            "\n</p>\n</tt></body>\n</html> "
+            )
+    return text
+
+def text2HtmlParagraph(text):
+    """
+    Takes raw text, and returns html with consecutive non-blank lines
+    converted to paragraphs.
+    
+    Used the default font, with no extra whitespace games.
+    """
+    # double returns are a new paragraph
+    text = text.split("\n\n")
+    text = [p.strip().replace("\n","") for p in text]
+    text = ("<html>\n<body>\n<p>\n" +
+            "\n</p>\n<p>\n".join(text) +
+            "\n</p>\n</body>\n</html> "
+            )
+    return text
 
 if __name__ == "__main__":
     import sys
