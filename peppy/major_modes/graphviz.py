@@ -17,6 +17,8 @@ from cStringIO import StringIO
 import wx
 import wx.stc
 
+import peppy.vfs as vfs
+
 from peppy.yapsy.plugins import *
 from peppy.lib.bitmapscroller import *
 from peppy.lib.processmanager import ProcessManager, JobOutputMixin
@@ -41,6 +43,47 @@ class SampleDot(SelectAction):
         self.frame.open("about:sample.dot")
 
 
+class GraphvizLayout(RadioAction):
+    """Dot layout engine""" 
+    name = "Layout Engine"
+    default_menu = ("Graphviz", 500)
+
+    items = ['dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp']
+
+    def getIndex(self):
+        filt = self.mode.classprefs.layout
+        try:
+            return self.items.index(filt)
+        except:
+            return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.layout = self.items[index]
+
+
+class GraphvizOutputFormat(RadioAction):
+    """File format to save output image""" 
+    name = "Image Format"
+    default_menu = ("Graphviz", 500)
+
+    items = ['eps', 'gif', 'jpg' ,'pdf', 'png', 'ps', 'svg']
+
+    def getIndex(self):
+        format = self.mode.classprefs.layout
+        try:
+            return self.items.index(format)
+        except:
+            return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.graphic_format = self.items[index]
+
 
 class GraphvizMode(FundamentalMode):
     """Major mode for editing Graphviz .dot files.
@@ -62,125 +105,46 @@ class GraphvizMode(FundamentalMode):
         StrParam('keyword_set_1', unique_keywords[127], hidden=False, fullwidth=True),
         StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
-        StrParam('minor_modes', 'GraphvizView'),
+        StrParam('graphic_format', 'png'),
+        StrParam('layout', 'dot'),
+        SupersededParam('output_log')
         )
+
+    def getInterpreterArgs(self):
+        self.dot_output = vfs.reference_with_new_extension(self.buffer.url, self.classprefs.graphic_format)
+        # FIXME: if the stdoutCallback worked, the -o flag would not be
+        # necessary.
+        args = "%s -v -T%s -K%s -o%s" % (self.classprefs.interpreter_args, self.classprefs.graphic_format, self.classprefs.layout, str(self.dot_output.path))
+        return args
+
+    def getJobOutput(self):
+        return self
     
-
-
-class GraphvizViewMinorMode(MinorMode, JobOutputMixin, wx.Panel, debugmixin):
-    """Display the graphical view of the DOT file.
-
-    This displays the graphic image that is represented by the .dot
-    file.  It calls the external graphviz program and displays a
-    bitmap version of the graph.
-    """
-    keyword="GraphvizView"
-    default_classprefs = (
-        IntParam('best_width', 300),
-        IntParam('best_height', 300),
-        IntParam('min_width', 300),
-        IntParam('min_height', 300),
-        )
-
-    dotprogs = ['dot', 'neato', 'twopi', 'circo', 'fdp']
-
-    @classmethod
-    def worksWithMajorMode(self, mode):
-        if mode.__class__ == GraphvizMode:
-            return True
-        return False
-
-    def __init__(self, parent, **kwargs):
-        MinorMode.__init__(self, parent, **kwargs)
-        wx.Panel.__init__(self, parent)
-
-        self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(self.sizer)
-
-        buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.prog = wx.Choice(self, -1, (100, 50), choices = self.dotprogs)
-        self.prog.SetSelection(0)
-        buttons.Add(self.prog, 1, wx.EXPAND)
-        
-        self.regen = wx.Button(self, -1, "Regenerate")
-        self.regen.Bind(wx.EVT_BUTTON, self.OnRegenerate)
-        buttons.Add(self.regen, 1, wx.EXPAND)
-
-        self.sizer.Add(buttons)
-
-        self.preview = None
-        self.drawing = BitmapScroller(self)
-        self.sizer.Add(self.drawing, 1, wx.EXPAND)
-
-        self.process = None
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-
-        self.Layout()
-
-    def deletePreHook(self):
-        if self.process is not None:
-            self.process.kill()
-
-    def busy(self, busy):
-        if busy:
-            cursor = wx.StockCursor(wx.CURSOR_WATCH)
-        else:
-            cursor = wx.StockCursor(wx.CURSOR_DEFAULT)
-        self.SetCursor(cursor)
-        self.drawing.SetCursor(cursor)
-        self.regen.SetCursor(cursor)
-        self.regen.Enable(not busy)
-        self.prog.SetCursor(cursor)
-        self.prog.Enable(not busy)
-
-    def OnRegenerate(self, event):
-        prog = os.path.normpath(os.path.join(self.mode.classprefs.path,self.prog.GetStringSelection()))
-        assert self.dprint("using %s to run graphviz" % repr(prog))
-
-        cmd = "%s -Tpng" % prog
-
-        ProcessManager().run(cmd, self.mode.buffer.cwd(), self,
-            self.mode.buffer.stc.GetText())
-
     def startupCallback(self, job):
         self.process = job
-        self.busy(True)
         self.preview = StringIO()
 
     def stdoutCallback(self, job, text):
+        dprint("got stdout: %d bytes" % len(text))
         self.preview.write(text)
 
+    def stderrCallback(self, job, text):
+        dprint("got stderr: %d bytes" % len(text))
+        dprint(text)
+
     def finishedCallback(self, job):
+        """Callback from the JobOutputMixin when the job terminates."""
         assert self.dprint()
-        self.process = None
-        self.busy(False)
-        self.createImage()
-        # Don't call evt.Skip() here because it causes a crash
-
-    def createImage(self):
-        assert self.dprint("using image, size=%s" % len(self.preview.getvalue()))
-        if len(self.preview.getvalue())==0:
-            self.mode.setStatusText("Error running graphviz!")
-            return
-        
-##        fh = open("test.png",'wb')
-##        fh.write(self.preview.getvalue())
-##        fh.close()
-        fh = StringIO(self.preview.getvalue())
-        img = wx.EmptyImage()
-        if img.LoadStream(fh):
-            self.bmp = wx.BitmapFromImage(img)
-            self.mode.setStatusText("Graphviz completed.")
-        else:
-            self.bmp = None
-            self.mode.setStatusText("Invalid image")
-        self.drawing.setBitmap(self.bmp)
-
-    def OnSize(self, evt):
-        self.Refresh()
-        evt.Skip()
-        
-
+        del self.process
+        # FIXME: this doesn't seem to work -- the output consists of only a few
+        # return characters, not the binary bytes of the image.  If the same
+        # command line is used (e.g.  /usr/bin/dot -v -Tpng -Kdot sample.dot >
+        # sample.png) the file is created correctly.  There's something about
+        # the interaction of the new threads-based processmanager that fails.
+#        fh = vfs.open_write(self.dot_output)
+#        fh.write(self.preview.getvalue())
+#        fh.close()
+        self.frame.findTabOrOpen(self.dot_output)
 
 
 class GraphvizPlugin(IPeppyPlugin):
@@ -191,9 +155,13 @@ class GraphvizPlugin(IPeppyPlugin):
     
     def getMajorModes(self):
         yield GraphvizMode
-
-    def getMinorModes(self):
-        yield GraphvizViewMinorMode
     
     def getActions(self):
         yield SampleDot
+
+    def getCompatibleActions(self, modecls):
+        if issubclass(modecls, GraphvizMode):
+            return [
+                GraphvizLayout, GraphvizOutputFormat,
+                
+                ]
