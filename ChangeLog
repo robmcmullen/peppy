@@ -1,11 +1,12 @@
 2010-11-04  Rob McMullen  <robm@users.sourceforge.net>
 
 	* Released peppy-0.16.0 "Haystack"
-	* added search mode (bug #866)
+	* added search mode including text and numeric search (bug #866)
 	* added 'Remove Blank Lines' command
 	* fixed bug scanning files with non ascii encoding
 	* converted euclidean distance/spectral angle mapper to threads
 	* added busy indicator (throbber) to tab
+	* improved formatting for TextMode printing
 
 2010-08-18  Rob McMullen  <robm@users.sourceforge.net>
 
