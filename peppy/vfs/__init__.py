@@ -66,4 +66,5 @@ __all__ = [
     'get_dirname',
     'get_filename',
     'get_file_reference',
+    'reference_with_new_extension',
     ]

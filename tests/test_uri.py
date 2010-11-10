@@ -25,7 +25,7 @@ from peppy.vfs.itools.uri import get_reference, Path, Reference
 from peppy.vfs.itools.uri.generic import normalize_path, GenericDataType
 from peppy.vfs.itools.uri.mailto import Mailto, MailtoDataType
 
-
+import peppy.vfs as vfs
 
 class PathNormalizeTestCase(unittest.TestCase):
     """These tests come from the uri.generic.normalize_path docstring."""
@@ -588,6 +588,22 @@ class UsernamePasswordCase(unittest.TestCase):
         self.assertEqual(ref.authority.userinfo, 'username:passwd')
         self.assertEqual(ref.authority.host, 'example.org')
 
+
+class ExtensionTestCase(TestCase):
+    """
+    Tests to verify the correct parsing of extensions in references
+    """
+
+    def test_file_extension(self):
+        ref = 'file:///path/to/a/b/c.ext'
+        ref = GenericDataType.decode(ref)
+        self.assertEqual(ref.scheme, 'file')
+        self.assertEqual(ref.authority, '')
+        self.assertEqual(ref.path, '/path/to/a/b/c.ext')
+        ref2 = vfs.reference_with_new_extension(ref, ".out")
+        self.assertEqual(ref2.path, '/path/to/a/b/c.out')
+        ref2 = vfs.reference_with_new_extension(ref, "out")
+        self.assertEqual(ref2.path, '/path/to/a/b/c.out')
 
 
 if __name__ == '__main__':

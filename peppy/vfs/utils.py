@@ -110,6 +110,30 @@ def get_file_reference(path):
     import urllib
     return get_reference(urllib.quote(path))
 
+def reference_with_new_extension(ref, ext):
+    """Returns copy of reference with new extension
+    
+    If the URL has a extension, it is replaced by the new extension.  If
+    it doesn't have an extension, the new extension is appended.  The new
+    extension may be specified with or without the leading "." character.
+    """
+    if not isinstance(ref, Reference):
+        ref = get_reference(ref)
+    path = pycopy.copy(ref.path)
+    last = path.pop()
+    if "." in last:
+        prefix, oldext = os.path.splitext(last)
+    else:
+        prefix = last
+    while ext.startswith("."):
+        ext = ext[1:]
+    last = "%s.%s" % (prefix, ext)
+    return Reference(ref.scheme,
+                     pycopy.copy(ref.authority),
+                     ref.path.resolve2('../%s' % last),
+                     pycopy.copy(ref.query),
+                     pycopy.copy(ref.fragment))
+
 
 # Simple cache of wrappers around local filesystem objects.
 cache = {}
