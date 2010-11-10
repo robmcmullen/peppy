@@ -253,11 +253,14 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         """Attempt to create a process using the command line"""
         if expand:
             cmd = self.expandCommandLine(cmd)
+        output = self.getJobOutput()
+        ProcessManager().run(cmd, self.buffer.cwd(), output)
+    
+    def getJobOutput(self):
         if self.classprefs.output_log == 0:
             output = self
         else:
             output = JobOutputSidebarController(self.frame, self.registerProcess, self.deregisterProcess)
-        ProcessManager().run(cmd, self.buffer.cwd(), output)
 
     def registerProcess(self, job):
         self.process = job
