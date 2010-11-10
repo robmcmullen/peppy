@@ -533,10 +533,13 @@ class MajorModeMatcherDriver(debugmixin):
             header = encodedBytesToUnicode(header, encoding, bom)
         for mode in modes:
             if hasattr(mode, 'verifyLanguage'):
-                how_likely = mode.verifyLanguage(header)
-                cls.dprint("%s: %d" % (mode, how_likely))
-                if how_likely > 0:
-                    likely.append((how_likely, mode))
+                try:
+                    how_likely = mode.verifyLanguage(header)
+                    cls.dprint("%s: %d" % (mode, how_likely))
+                    if how_likely > 0:
+                        likely.append((how_likely, mode))
+                except UnicodeDecodeError:
+                    eprint("Encoding error: file likely not marked with the correct encoding.  File type may be incorrectly idendified.")
         if likely:
             cls.dprint("Found multiple likely modes: %s" % str(likely))
             likely.sort()
