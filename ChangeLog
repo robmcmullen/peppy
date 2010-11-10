@@ -7,6 +7,8 @@
 	* converted euclidean distance/spectral angle mapper to threads
 	* added busy indicator (throbber) to tab
 	* improved formatting for TextMode printing
+	* fixed load error on files without encoding (bug #865)
+	* refactored Graphviz major mode
 
 2010-08-18  Rob McMullen  <robm@users.sourceforge.net>
 
