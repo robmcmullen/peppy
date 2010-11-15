@@ -200,9 +200,17 @@ class BufferListMode(ListMode):
         index = self.list.GetFirstSelected()
         if index == -1:
             return None
-        key = self.list.GetItem(index, 4).GetText()
+        key = self.getKeyFromIndex(index)
         buffer = BufferList.findBufferByURL(key)
         return buffer
+    
+    def getKeyFromIndex(self, index):
+        """Determine the key given the index in the list
+        
+        Note that in the current implementation, the key is the URL.
+        """
+        key = self.list.GetItem(index, 4).GetText()
+        return key
 
     def getFlags(self, key):
         """Get the flags for the given key.
@@ -221,7 +229,7 @@ class BufferListMode(ListMode):
         """
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.list.GetItem(index, 4).GetText()
+            key = self.getKeyFromIndex(index)
             dprint("index=%d key=%s" % (index, key))
             flags = self.getFlags(key)
             if flag not in flags:
@@ -240,7 +248,7 @@ class BufferListMode(ListMode):
         """Clear all flags for the selected items."""
         indexes = self.getSelectedIndexes()
         for index in indexes:
-            key = self.list.GetItem(index, 4).GetText()
+            key = self.getKeyFromIndex(index)
             self.flags[key] = ""
             self.list.SetStringItem(index, 0, self.flags[key])
             self.list.itemDataMap[index][0] = self.flags[key]
@@ -254,7 +262,7 @@ class BufferListMode(ListMode):
         try:
             list_count = self.list.GetItemCount()
             for index in range(list_count):
-                key = self.list.GetItem(index, 4).GetText()
+                key = self.getKeyFromIndex(index)
                 flags = self.flags[key]
                 dprint("flags %s for %s" % (flags, key))
                 if not flags:
@@ -298,6 +306,13 @@ class BufferListMode(ListMode):
         flags = self.getFlags(key)
         # Must return a list instead of a tuple because flags gets changed
         return [flags, buf.getTabName(), buf.stc.GetLength(), buf.defaultmode.keyword, key]
+    
+    def OnItemActivated(self, evt):
+        index = evt.GetIndex()
+        key = self.getKeyFromIndex(index)
+        buffer = BufferList.findBufferByURL(key)
+        if buffer is not None:
+            self.frame.newBuffer(buffer)
 
 
 class BufferListModePlugin(IPeppyPlugin):
