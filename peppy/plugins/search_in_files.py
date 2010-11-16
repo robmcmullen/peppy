@@ -508,6 +508,15 @@ class SearchMode(ListMode):
         hbox.Add(label, 0, wx.ALIGN_CENTER)
         self.search_text = wx.TextCtrl(panel, -1,)
         hbox.Add(self.search_text, 5, wx.EXPAND)
+        
+        self.search_button_running = {
+            False: _("Start"),
+            True: _("Stop"),
+            }
+        self.search_button = wx.Button(panel, -1, self.search_button_running[False])
+        self.Bind(wx.EVT_BUTTON, self.OnToggleSearch, self.search_button)
+        hbox.Add(self.search_button, 0, wx.EXPAND)
+        
         vbox.Add(hbox, 0, wx.EXPAND)
         
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -540,14 +549,6 @@ class SearchMode(ListMode):
         self.ignore_filenames = wx.TextCtrl(panel, -1,)
         self.ignore_filenames.SetValue(".git;.svn;.bzr;*.o;*.a;*.so;*.dll;*~;*.bak;*.exe;*.pyc")
         hbox.Add(self.ignore_filenames, 5, wx.EXPAND)
-        
-        self.search_button_running = {
-            False: _("Start"),
-            True: _("Stop"),
-            }
-        self.search_button = wx.Button(panel, -1, self.search_button_running[False])
-        self.Bind(wx.EVT_BUTTON, self.OnToggleSearch, self.search_button)
-        hbox.Add(self.search_button, 0, wx.EXPAND)
         
         vbox.Add(hbox, 0, wx.EXPAND)
         
