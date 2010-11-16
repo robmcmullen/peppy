@@ -214,7 +214,12 @@ def guessSpacesPerIndent(text):
 # the stuff ion webhelpers, instead of writting this all from scratch:
 # http://webhelpers.groovie.org/
 
-def text2HtmlPlain(text):
+def wrapFont(text, font_size=None):
+    if font_size is not None:
+        text = "<font size=%d>%s</font>" % (font_size, text)
+    return text
+
+def text2HtmlPlain(text, font_size=None):
     """
     Takes raw text, and returns html with newlines converted, etc.
     
@@ -223,13 +228,11 @@ def text2HtmlPlain(text):
     # double returns are a new paragraph
     text = text.split("\n\n")
     text = [p.strip().replace("\n","<br>") for p in text]
-    text = ("<html>\n<body>\n<p>\n" +
-            "\n</p>\n<p>\n".join(text) +
-            "\n</p>\n</body>\n</html> "
-            )
+    body = wrapFont("<p>\n" + "\n</p>\n<p>\n".join(text) + "\n</p>\n", font_size)
+    text = "<html>\n<body>\n" + body + "</body>\n</html>"
     return text
 
-def text2HtmlFixed(text):
+def text2HtmlFixed(text, font_size=None):
     """
     Takes raw text, and returns html with newlines converted, etc., using a fixed width font.
     It should also preserve text lined up with spaces.
@@ -237,13 +240,11 @@ def text2HtmlFixed(text):
     text = text.replace("\n","<br>")
     # this preserves multiple spaces: it does mess up breaking on a two space gap
     text = text.replace("  ","&nbsp;&nbsp;")
-    text = ("<html>\n<body>\n<tt><p>\n" +
-            text +
-            "\n</p>\n</tt></body>\n</html> "
-            )
+    body = wrapFont("<p>\n" + text + "\n</p>\n", font_size)
+    text = "<html>\n<body>\n<tt>\n" + body + "</tt></body>\n</html>"
     return text
 
-def text2HtmlParagraph(text):
+def text2HtmlParagraph(text, font_size=None):
     """
     Takes raw text, and returns html with consecutive non-blank lines
     converted to paragraphs.
@@ -253,10 +254,8 @@ def text2HtmlParagraph(text):
     # double returns are a new paragraph
     text = text.split("\n\n")
     text = [p.strip().replace("\n","") for p in text]
-    text = ("<html>\n<body>\n<p>\n" +
-            "\n</p>\n<p>\n".join(text) +
-            "\n</p>\n</body>\n</html> "
-            )
+    body = wrapFont("<p>\n" + "\n</p>\n<p>\n".join(text) + "\n</p>\n", font_size)
+    text = "<html>\n<body>\n" + body + "</body>\n</html>"
     return text
 
 if __name__ == "__main__":

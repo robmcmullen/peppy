@@ -53,6 +53,9 @@ html_converters = [
     ]
 html_converter_descriptions = [item[1] for item in html_converters]
 
+font_size_values = [0, 1, 3, 5, 7]
+font_size_descriptions = ['tiny', 'small', 'medium', 'large', 'extra large',]
+
 
 class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     """Major mode for editing text files.
@@ -71,6 +74,8 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         BoolParam('word_wrap', True),
         IndexChoiceParam('print_style', html_converter_descriptions,
                          0, 'How lines are displayed when printed'),
+        IndexChoiceParam('font_size', font_size_descriptions,
+                         2, 'Size of font when printing'),
         )
     
     autoindent = BasicAutoindent()
@@ -105,7 +110,8 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         Uses one of the HTML conversion utilities from textutil.py
         """
         converter = html_converters[self.classprefs.print_style][0]
-        html = converter(self.buffer.stc.GetText())
+        font_size = font_size_values[self.classprefs.font_size]
+        html = converter(self.buffer.stc.GetText(), font_size)
         return html
 
 
@@ -129,6 +135,26 @@ class PrintStyleSelect(RadioAction):
     def action(self, index=-1, multiplier=1):
         self.mode.classprefs.print_style = index
 
+class FontSizeSelect(RadioAction):
+    """Select font size for printing 
+    
+    Instead of going through the preferences dialog, this action allows
+    selecting of the print font size on the menu.
+    """
+    name = "Font Size"
+    inline = False
+    localize_items = True
+    default_menu = (("File/Print Options", 995.6), 100)
+
+    def getIndex(self):
+        return self.mode.classprefs.font_size
+                                           
+    def getItems(self):
+        return font_size_descriptions
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.font_size = index
+
 
 class TextModePlugin(IPeppyPlugin):
     """Yapsy plugin to register TextMode.
@@ -139,7 +165,7 @@ class TextModePlugin(IPeppyPlugin):
     def getCompatibleActions(self, modecls):
         actions = []
         if issubclass(modecls, TextMode):
-            actions.append(PrintStyleSelect)
+            actions.extend([PrintStyleSelect, FontSizeSelect])
         return actions
     
     def getMajorModes(self):
