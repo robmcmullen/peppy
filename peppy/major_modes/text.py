@@ -55,6 +55,10 @@ html_converter_descriptions = [item[1] for item in html_converters]
 
 font_size_values = [0, 1, 3, 5, 7]
 font_size_descriptions = ['tiny', 'small', 'medium', 'large', 'extra large',]
+if wx.Platform == "__WXMAC__":
+    default_font_index = 0
+else:
+    default_font_index = 2
 
 
 class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
@@ -67,6 +71,7 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
     end_line_comment = ''
     icon='icons/page_white_text.png'
 
+        
     default_classprefs = (
         StrParam('extensions', 'txt', fullwidth=True),
         StrParam('filename_regex', '[Rr][Ee][Aa][Dd][Mm][Ee].*', fullwidth=True),
@@ -75,7 +80,7 @@ class TextMode(NonFoldCapableCodeExplorerMixin, FundamentalMode):
         IndexChoiceParam('print_style', html_converter_descriptions,
                          0, 'How lines are displayed when printed'),
         IndexChoiceParam('font_size', font_size_descriptions,
-                         2, 'Size of font when printing'),
+                         default_font_index, 'Size of font when printing'),
         )
     
     autoindent = BasicAutoindent()
@@ -144,7 +149,7 @@ class FontSizeSelect(RadioAction):
     name = "Font Size"
     inline = False
     localize_items = True
-    default_menu = (("File/Print Options", 995.6), 100)
+    default_menu = (("File/Print Options", 995.5), 200)
 
     def getIndex(self):
         return self.mode.classprefs.font_size
