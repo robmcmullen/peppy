@@ -88,6 +88,12 @@ def getSTC(init=None, stcclass=FundamentalMode, count=1, lexer="Python", tab_siz
     stc.Colourise(0, stc.GetTextLength())
     return stc
 
+def clearSTC(stc):
+    stc.SetText("")
+    stc.SetEOLMode(wx.stc.STC_EOL_LF)
+    stc.SetProperty("fold", "1")
+    stc.Colourise(0, stc.GetTextLength())
+
 def prepareSTC(stc, before):
     print "*** before *** repr=%s\n%s" % (repr(before), before)
     cursor = before.find("|")

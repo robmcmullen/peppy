@@ -200,6 +200,8 @@ class Fortran77Autoindent(RegexAutoindent):
         text = stc.GetTextRange(fc, lc)
         #dprint("1234567")
         #dprint(text)
+        #col = stc.GetColumn(cursor)
+        #dprint(" "*col + "_")
         if len(text) > 5:
             numbers = text[0:5]
             continuation = text[5]
@@ -210,6 +212,9 @@ class Fortran77Autoindent(RegexAutoindent):
             remainder = ""
         
         newind = self.findIndent(stc, ln) - 6
+        if newind < 0:
+            newind = 0
+        #dprint("newind: %d" % newind)
         
         col = stc.GetColumn(cursor)
         if col < 5:
@@ -217,8 +222,12 @@ class Fortran77Autoindent(RegexAutoindent):
         elif col > 5:
             before = len(remainder)
             remainder = remainder.lstrip()
-            if before > len(remainder):
-                cursor += newind - (before - len(remainder))
+            leading_blanks = before - len(remainder)
+            #dprint("leading blanks: %d" % leading_blanks)
+            if leading_blanks > newind:
+                cursor -= leading_blanks - newind
+            elif col - 6 <= newind:
+                cursor = fc + 6 + newind
         remainder = remainder.lstrip()
         remainder = " "*newind + remainder
         
@@ -226,6 +235,8 @@ class Fortran77Autoindent(RegexAutoindent):
         line = "%-5s%s%s" % (numbers, continuation, remainder)
         #dprint("1234567")
         #dprint(line)
+        #col = stc.GetColumn(cursor)
+        #dprint(" "*col + "_")
         stc.SetTargetStart(fc)
         stc.SetTargetEnd(lc)
         stc.ReplaceTarget(line)
