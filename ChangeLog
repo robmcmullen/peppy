@@ -1,6 +1,6 @@
-2010-11-04  Rob McMullen  <robm@users.sourceforge.net>
+2011-02-24  Rob McMullen  <robm@users.sourceforge.net>
 
-	* Released peppy-0.16.0 "Haystack"
+	* Released peppy-0.16.0 "Big Smile"
 	* added search mode including text and numeric search (bug #866)
 	* added 'Remove Blank Lines' command
 	* fixed bug scanning files with non ascii encoding
@@ -9,6 +9,7 @@
 	* improved formatting for TextMode printing
 	* fixed load error on files without encoding (bug #865)
 	* refactored Graphviz major mode
+	* fixed fill paragraph for Fortran 77 comments
 
 2010-08-18  Rob McMullen  <robm@users.sourceforge.net>
 
