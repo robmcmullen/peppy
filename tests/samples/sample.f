@@ -15,6 +15,12 @@ c234567
     
 ! Comment 1
 ! Comment 2
+      
+*      Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean nec
+c      lacus. Maecenas eu nunc. Curabitur at arcu sed dui rutrum
+C      bibendum.  Donec neque odio, hendrerit vitae, tincidunt at, mollis vel,
+!      tortor.
+          
 20    CALL SOMEFUNC(B)
 12    CONTINUE
       

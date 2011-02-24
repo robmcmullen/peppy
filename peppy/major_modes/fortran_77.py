@@ -17,6 +17,7 @@ from peppy.yapsy.plugins import *
 from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
+from peppy.paragraph import *
 
 
 class F77ContinuationLine(LineOrRegionMutateAction):
@@ -243,6 +244,41 @@ class Fortran77Autoindent(RegexAutoindent):
         return cursor
 
 
+class F77CommentParagraph(ParagraphInfo):
+    def findParagraph(self, start, end):
+        style = self.s.GetStyleAt(start)
+        if style in self.s.getCommentStyles():
+            start, end = self.s.findSameStyle(start)
+#            dprint((start, self.s.GetCharAt(start), end, self.s.GetCharAt(end)))
+#            dprint("'%s'" % self.s.GetTextRange(start, end))
+            linenum = self.s.LineFromPosition(start)
+            self.initParagraph(linenum)
+            self.addCommentLinesToParagraph(linenum, start, end)
+            return
+        raise BadParagraphError
+
+    def addCommentLinesToParagraph(self, linenum, start, end):
+        # First line is already in info.  Need to add subsequent lines
+        linenum += 1
+        start = self.s.PositionFromLine(linenum)
+        while start < end:
+            line = self.s.GetLine(linenum)
+#            dprint("%d,%d,%d: '%s'" % (linenum, start, end, line))
+            leader, line, trailer = self.s.splitCommentLine(line)
+            line = line.strip()
+            self.addEndLine(linenum, line)
+            linenum += 1
+            start = self.s.PositionFromLine(linenum)
+
+    def addStartLine(self, linenum, line):
+        """Add the line to the list and update the starting position"""
+        nonblank = line.lstrip()
+        if len(nonblank) < len(line):
+            self.leader_pattern += " " * (len(line) - len(nonblank))
+        self._startlines.append(nonblank)
+        self.start = self.s.PositionFromLine(linenum)
+
+
 class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     """Major mode for editing Fortran 77 (fixed format) files.
     """
@@ -250,6 +286,7 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
     editra_synonym = 'Fortran 77'
     stc_lexer_id = wx.stc.STC_LEX_F77
     start_line_comment = '*'
+    start_line_comment_list = ['*', 'c', 'C', '!']
     end_line_comment = ''
     
     icon = 'icons/page_white_f77.png'
@@ -277,6 +314,26 @@ class Fortran77Mode(SimpleFoldFunctionMatchMixin, FundamentalMode):
             self.__class__.autoindent = Fortran77Autoindent(
                 self.classprefs.indent_after, self.classprefs.indent,
                 self.classprefs.unindent, '', re.IGNORECASE)
+
+    ##### Comment handling
+    def findParagraph(self, start, end=-1):
+        """Override the standard findParagraph to properly handle Fortran
+        comment blocks.  Comment blocks start with c, C, or ! in column 1.
+        """
+        # See if cursor is inside a comment block
+        try:
+            info = F77CommentParagraph(self, start)
+        except BadParagraphError:
+            # Check if cursor is on the last line of a comment block, possibly
+            # after the comment.
+            linenum = self.LineFromPosition(start)
+            start = self.PositionFromLine(linenum)
+            try:
+                info = F77CommentParagraph(self, start)
+            except BadParagraphError:
+                # Nope, treat it as a regular paragraph
+                info = FundamentalMode.findParagraph(self, start, end)
+        return info
 
 
 class FortranModePlugin(IPeppyPlugin):
