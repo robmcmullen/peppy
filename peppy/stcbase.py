@@ -955,12 +955,13 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         if pos is None:
             pos = self.GetCurrentPos()
         
-        style = self.GetStyleAt(pos)
+        mask = (2**self.GetStyleBits()) - 1
+        style = self.GetStyleAt(pos) & mask
 
         i = pos
         last = self.GetLength()
         while i < last:
-            s = self.GetStyleAt(i)
+            s = self.GetStyleAt(i) & mask
             if s != style:
                 break
             i += 1
@@ -968,7 +969,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
         
         i = pos
         while i > 0:
-            s = self.GetStyleAt(i - 1)
+            s = self.GetStyleAt(i - 1) & mask
             if s != style:
                 break
             i -= 1
