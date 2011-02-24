@@ -109,6 +109,9 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
     #: Default comment characters in case the Editra styling database doesn't have any information about the mode
     start_line_comment = ''
     end_line_comment = ''
+
+    #: If the language allows multiple sets of characters to start comments, the entire list of allowed comment-start characters is defined here.  start_line_comment then becomes the preferred comment start type
+    start_line_comment_list = ''
     
     #: STC Marker number used for bookmarks
     bookmark_marker_number = 1
@@ -644,14 +647,19 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
             start = self.start_line_comment
             end = self.end_line_comment
             if start:
-                if end:
-                    regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % ("\\" + "\\".join(start), "\\" + "\\".join(end))
-                    self.dprint(regex)
-                    self.comment_regex = re.compile(regex)
+                #if isinstance(start, list) or isinstance(start, tuple):
+                if self.start_line_comment_list:
+                    # multiple comment start characters are permitted
+                    part1 = "\\" + "|\\".join(["\\".join(a) for a in self.start_line_comment_list])
                 else:
-                    regex = r"^(\s*(?:%s)*)(.*)($)" % ("\\" + "\\".join(start))
-                    self.dprint(regex)
-                    self.comment_regex = re.compile(regex)
+                    part1 = "\\" + "\\".join(start)
+                if end:
+                    part2 = "\\" + "\\".join(end)
+                    regex = r"^(\s*(?:%s)*)(.*?)((?:%s)*\s*$)" % (part1, part2)
+                else:
+                    regex = r"^(\s*(?:%s)*)(.*)($)" % part1
+                self.dprint(regex)
+                self.comment_regex = re.compile(regex)
             else:
                 regex = r"^(\s*)(.*)($)"
                 self.dprint(regex)
