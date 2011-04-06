@@ -603,7 +603,7 @@ And some Russian: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u043
     if '-w' in sys.argv:
         word_wrap = True
     if filename:
-        frame.loadFile(filenae, word_wrap)
+        frame.loadFile(filename, word_wrap)
     else:
         frame.loadSample(word_wrap=word_wrap)
     frame.Show()
