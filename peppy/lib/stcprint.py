@@ -38,6 +38,12 @@ import os
 import wx
 import wx.stc
 
+# The i18n function _ may already be defined as a builtin (as in peppy), so
+# don't fall back to wx.GetTranslation unless necessary
+try:
+    _('test')
+except:
+    _ = wx.GetTranslation
 
 class STCPrintout(wx.Printout):
     """Specific printing support of the wx.StyledTextCtrl for the wxPython
@@ -59,7 +65,9 @@ class STCPrintout(wx.Printout):
     """
     debuglevel = 0
     
-    def __init__(self, stc, page_setup_data=None, print_mode=None, title=None, border=False, lines_per_page=None, output_point_size=None):
+    def __init__(self, stc, page_setup_data=None, print_mode=None, title=None, 
+                 border=False, lines_per_page=None, output_point_size=None,
+                 job_title=None):
         """Constructor.
         
         @param stc: wx.StyledTextCtrl to print
@@ -89,7 +97,9 @@ class STCPrintout(wx.Printout):
         C{output_point_size} and C{lines_per_page} fully specifies the page,
         so if both are specified, C{lines_per_page} will be used.
         """
-        wx.Printout.__init__(self)
+        if not job_title:
+            job_title = wx.PrintoutTitleStr
+        wx.Printout.__init__(self, job_title)
         self.stc = stc
         if print_mode:
             self.print_mode = print_mode
@@ -445,8 +455,6 @@ class STCPrintout(wx.Printout):
 
 if __name__ == "__main__":
     import sys
-    import __builtin__
-    __builtin__._ = unicode
     
     # Set up sample print data
     top_left_margin = wx.Point(15,15)
