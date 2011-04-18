@@ -43,6 +43,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         """
         return style in self._string_styles
     
+    def isEditraStyleNameString(self, name):
+        return name in ['string_style', 'char_style', 'stringeol_style']
+    
     def getStringStyles(self):
         return self._string_styles
     
@@ -60,6 +63,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @return: True/False if style is a comment
         """
         return style in self._comment_styles
+    
+    def isEditraStyleNameComment(self, name):
+        return name in ['comment_style', 'dockey_style', 'error_style']
 
     def getCommentStyles(self):
         return self._comment_styles
@@ -76,6 +82,9 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         @return: True/False if style is a comment
         """
         return style in self._keyword_styles
+    
+    def isEditraStyleNameKeyword(self, name):
+        return name in ['keyword_style']
 
     def FindLexer(self, keyword):
         """Sets Text Controls Lexer Based on File Extension
@@ -283,11 +292,11 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
                 self.LOG("setting %s to %s" % (syn[0], self.GetStyleByName(syn[1])))
                 self.StyleSetSpec(syn[0], self.GetStyleByName(syn[1]))
                 valid_settings.append(syn)
-                if syn[1] in ['string_style', 'char_style', 'stringeol_style']:
+                if self.isEditraStyleNameString(syn[1]):
                     self._string_styles.append(syn[0])
-                elif syn[1] in ['comment_style', 'dockey_style', 'error_style']:
+                elif self.isEditraStyleNameComment(syn[1]):
                     self._comment_styles.append(syn[0])
-                elif syn[1] in ['keyword_style']:
+                elif self.isEditraStyleNameKeyword(syn[1]):
                     self._keyword_styles.append(syn[0])
         self.syntax_set = valid_settings
         return True

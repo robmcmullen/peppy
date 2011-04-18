@@ -40,6 +40,12 @@ class LaTeXMode(FundamentalMode):
         StrParam('extensions', 'aux sty tex', fullwidth=True),
         StrParam('keyword_set_0', unique_keywords[1], hidden=False, fullwidth=True),
        )
+    
+    # LaTeX mode doesn't follow the usual rules about strings using
+    # "string_style" etc, so have to override this routine from EditraSTCMixin
+    # to let the spell checker know which styles to flag as checkable
+    def isEditraStyleNameString(self, name):
+        return name in ['default_style', 'keyword_style']
 
 
 class LaTeXModePlugin(IPeppyPlugin):
