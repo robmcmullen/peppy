@@ -279,8 +279,7 @@ class PeppyBaseSTC(wx.stc.StyledTextCtrl, STCInterface, debugmixin):
             elif self.refstc.encoding:
                 if self.refstc.bom:
                     bytes = self.refstc.bom
-                if self.refstc.encoding != 'utf-8':
-                    bytes += txt.encode(self.refstc.encoding)
+                bytes += txt.encode(self.refstc.encoding)
             else:
                 # Have to use GetStyledText because GetText will truncate the
                 # string at the first zero character.
