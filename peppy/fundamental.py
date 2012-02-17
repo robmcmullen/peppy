@@ -526,7 +526,7 @@ class FundamentalMode(FoldExplorerMixin, EditraSTCMixin,
         for setting in settings:
             if setting in self.stc_to_local_mapping:
                 value = getattr(self, "Get%s" % setting)()
-                #dprint("Setting %s to %s" % (mapping[setting], value))
+                #dprint("Setting %s to %s" % (self.stc_to_local_mapping[setting], value))
                 setattr(self.locals, self.stc_to_local_mapping[setting], value)
 
     def scanFileLocalComments(self):
