@@ -13,13 +13,14 @@ lastfake = False
 
 def entry(filename, out=None, copythese=None, fake=False, pyc=False, remove_prefix=None):
     print "Processing filename %s" % filename
-    if filename.endswith(".py") and 'EGG-INFO' not in filename:
+    file_root, ext = os.path.splitext(filename)
+    if ext in [".py", ".so", ".pyd"] and 'EGG-INFO' not in filename:
         if copythese is not None and not fake:
             copythese.append(filename)
         if not filename.endswith("__init__.py"):
-            if remove_prefix and filename.startswith(remove_prefix):
-                filename = filename[len(remove_prefix):]
-            module = filename[:-3].replace('/', '.').replace('\\', '.')
+            if remove_prefix and file_root.startswith(remove_prefix):
+                file_root = file_root[len(remove_prefix):]
+            module = file_root.replace('/', '.').replace('\\', '.')
             if out:
                 if fake:
                     global lastfake
