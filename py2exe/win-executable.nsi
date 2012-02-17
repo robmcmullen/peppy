@@ -6,7 +6,7 @@
 ; will be a little slower but the executable will be
 ; quite a bit smaller
 ;SetCompress Off
-SetCompressor lzma
+SetCompressor /SOLID zlib
 
 Name 'Peppy'
 OutFile ${exe}
