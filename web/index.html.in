@@ -4,6 +4,12 @@
 
 <P>Latest version: $version "$codename".  <a href="download.html">Download here</a>
 
+<h2>Development Moved to GitHub</h2>
+
+<P>Not that I'm doing much development any more, but for what it's worth the
+code is now hosted at <a href="https://github.com/robmcmullen/peppy">github</a>.
+The old Trac site and corresponding subversion repository have been removed.
+
 <h3>Why Another Editor?</h3>
 
 <P>Peppy is not just another editor.  While it does emphasize source code
