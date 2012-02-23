@@ -22,14 +22,13 @@ http://svn.wxwidgets.org/viewvc/wx/wxPython/3rdParty/Editra/src/eclib/outbuff.py
 """
 
 import os, sys, types, errno, time, threading, signal, subprocess, weakref
+from Queue import Queue, Empty
 # Platform specific modules needed for killing processes
 if subprocess.mswindows:
     import msvcrt
     import ctypes
 else:
     import shlex
-    import select
-    import fcntl
 
 import wx
 import wx.stc
@@ -125,9 +124,98 @@ class JobOutputSaver(object):
         self.callback(self)
 
 
+def mslex(cmdline):
+       """Build an argv list from a Microsoft shell style cmdline str
+        following the MS C runtime rules.
+       
+       Licensed under the Python license from: 
+       https://fisheye3.atlassian.com/browse/jython/trunk/jython/Lib/subprocess.py?hb=true
+        """
+       whitespace = ' \t'
+       # count of preceding '\'
+       bs_count = 0
+       in_quotes = False
+       arg = []
+       argv = []
+
+       for ch in cmdline:
+           if ch in whitespace and not in_quotes:
+               if arg:
+                   # finalize arg and reset
+                   argv.append(''.join(arg))
+                   arg = []
+               bs_count = 0
+           elif ch == '\\':
+               arg.append(ch)
+               bs_count += 1
+           elif ch == '"':
+               if not bs_count % 2:
+                   # Even number of '\' followed by a '"'. Place one
+                   # '\' for every pair and treat '"' as a delimiter
+                   if bs_count:
+                       del arg[-(bs_count / 2):]
+                   in_quotes = not in_quotes
+               else:
+                   # Odd number of '\' followed by a '"'. Place one '\'
+                   # for every pair and treat '"' as an escape sequence
+                   # by the remaining '\'
+                   del arg[-(bs_count / 2 + 1):]
+                   arg.append(ch)
+               bs_count = 0
+           else:
+               # regular char
+               arg.append(ch)
+               bs_count = 0
+ 
+       # A single trailing '"' delimiter yields an empty arg
+       if arg or in_quotes:
+           argv.append(''.join(arg))
+ 
+       return argv
+   
+   
+class ReadThread(threading.Thread):
+    def __init__(self, name, fh, job, callback):
+        threading.Thread.__init__(self)
+        
+        self._name = name
+        self._fh = fh
+        self._job = job
+        self._callback = callback
+        self._queue = Queue()
+    
+    def _do_callback(self, result):
+        # Ignore encoding errors and return an empty line instead
+        try:
+            result = result.decode(sys.getfilesystemencoding())
+        except UnicodeDecodeError:
+            result = os.linesep
+
+        #print("sending %s to %s" % (result, callback))
+        wx.CallAfter(self._callback, self._job, result)
+    
+    #---- Public Member Functions ----#
+    def run(self):
+        for line in iter(self._fh.readline, ''):
+            self._queue.put(line)
+        self._fh.close()
+    
+    def read_queue(self):
+        """Called from parent thread to get any data queued up.
+        
+        """
+        try:
+            while True:
+                line = self._queue.get_nowait()
+                #dprint("%s-->%s<--" % (self._name, line.rstrip()))
+                self._do_callback(line)
+        except Empty:
+            #dprint("%s empty" % self._name)
+            pass
+
+
 class JobThread(threading.Thread):
-    def __init__(self, job, cmd, stdin=None, cwd=None, env=None,
-                 use_shell=True):
+    def __init__(self, job, cmd, stdin=None, cwd=None, env=None):
         """Initialize the ProcessThread object
         Example:
           >>> myproc = ProcessThread(myframe, '/usr/local/bin/python',
@@ -139,9 +227,6 @@ class JobThread(threading.Thread):
         @keyword cwd: Directory to execute process from or None to use current
         @keyword env: Environment to run the process in (dictionary) or None to
                       use default.
-        @keyword use_shell: Specify whether a shell should be used to launch 
-                            program or run directly
-
         """
         threading.Thread.__init__(self)
 
@@ -151,7 +236,6 @@ class JobThread(threading.Thread):
         self._abort = False          # Abort Process
         self._proc = None           # Process handle
         self._cwd = cwd             # Path at which to run from
-        self._use_shell = use_shell
         self._sig_abort = signal.SIGTERM    # default signal to kill process
 
         # Make sure the environment is sane it must be all strings
@@ -169,97 +253,6 @@ class JobThread(threading.Thread):
         # Setup
         self.setDaemon(True)
 
-    def _read_win(self, fh, callback):
-        try:
-            handle = msvcrt.get_osfhandle(fh.fileno())
-            avail = ctypes.c_long()
-            ctypes.windll.kernel32.PeekNamedPipe(handle, None, 0, 0,
-                                                 ctypes.byref(avail), None)
-            if avail.value > 0:
-                result = fh.read(avail.value)
-                if result.endswith(os.linesep):
-                    result = result[:-1 * len(os.linesep)]
-                self._do_callback(result, callback)
-        except ValueError:
-            return False
-        except (subprocess.pywintypes.error, Exception), msg:
-            if msg[0] in (109, errno.ESHUTDOWN):
-                return False
-        return True
-
-    def _read_unix(self, fh, callback, timeout):
-        """OSX and Unix nonblocking pipe read implementation
-        
-        """
-        if fh is None:
-            return False
-
-        flags = fcntl.fcntl(fh, fcntl.F_GETFL)
-        if not fh.closed:
-            fcntl.fcntl(fh, fcntl.F_SETFL, flags|os.O_NONBLOCK)
-
-        try:
-            try:
-                if not select.select([fh], [], [], timeout)[0]:
-                    return True
-
-                result = fh.read(4096)
-                if result == '':
-                    return False
-                else:
-                    self._do_callback(result, callback)
-            except IOError, msg:
-                return False
-        finally:
-            if not fh.closed:
-                fcntl.fcntl(fh, fcntl.F_SETFL, flags)
-        return True
-
-    def _read_process_output(self):
-        """Read a block of output from the subprocess
-        
-        @return: bool (True if more), (False if not)
-        """
-        stdout = None
-        stderr = None
-        more = False
-        if subprocess.mswindows:
-            more = self._read_win(self._proc.stdout, self._job.jobout.stdoutCallback)
-            if not more:
-                return False
-            more = self._read_win(self._proc.stderr, self._job.jobout.stderrCallback)
-            if not more:
-                return False
-            if stdout is None and stderr is None:
-                if self._proc.poll() is None:
-                    time.sleep(1)
-                    return True
-                else:
-                    # Process has Exited
-                    return False
-        else:
-            # OSX and Unix nonblocking pipe read implementation
-            if self._proc.stdout is None and self._proc.stderr is None:
-                return False
-
-            more = self._read_unix(self._proc.stdout, self._job.jobout.stdoutCallback, 1)
-            if not more:
-                return False
-            more = self._read_unix(self._proc.stderr, self._job.jobout.stderrCallback, 0)
-            if not more:
-                return False
-        return True
-    
-    def _do_callback(self, result, callback):
-        # Ignore encoding errors and return an empty line instead
-        try:
-            result = result.decode(sys.getfilesystemencoding())
-        except UnicodeDecodeError:
-            result = os.linesep
-
-        #print("sending %s to %s" % (result, callback))
-        wx.CallAfter(callback, self._job, result)
-
     def _kill_process(self):
         """Kill the subprocess
         """
@@ -270,17 +263,6 @@ class JobThread(threading.Thread):
             return
 
         if wx.Platform != '__WXMSW__':
-            # Close output pipe(s)
-            try:
-                try:
-                    self._proc.stdout.close()
-                    self._proc.stderr.close()
-                except Exception, msg:
-                    pass
-            finally:
-                self._proc.stdout = None
-                self._proc.stderr = None
-
             # Try to kill the group
             try:
                 os.kill(pid, self._sig_abort)
@@ -319,21 +301,22 @@ class JobThread(threading.Thread):
         @note: overridden from Thread
 
         """
-        # using shell, Popen will need a string, else it must be a sequence
-        # use shlex for complex command line tokenization/parsing
+        # Popen needs a sequence instead of a command line argument string, so
+        # it must be parsed.  shlex is used on unix, mslex (function above)
+        # used on windows.  Other platform specific code is processed here
+        # as well.
         command = self._cmd.strip()
-        if not self._use_shell and not subprocess.mswindows:
-            # shlex does not support unicode
-            command = shlex.split(command.encode(sys.getfilesystemencoding()))
-
-        if sys.platform.lower().startswith('win'):
+        if subprocess.mswindows:
+            command = mslex(command.encode(sys.getfilesystemencoding()))
+            
+            # these flags are needed to tell MSW not to open up another window
+            # for the process.
             suinfo = subprocess.STARTUPINFO()
             suinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            command = "\"%s\"" % command
-            #print("Windows command: %s" % command)
         else:
+            # shlex does not support unicode
+            command = shlex.split(command.encode(sys.getfilesystemencoding()))
             suinfo = None
-            #print("Unix command: %s" % command)
         
         err = None
         try:
@@ -345,7 +328,7 @@ class JobThread(threading.Thread):
                                           stdin=subprocess.PIPE,
                                           stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE,
-                                          shell=self._use_shell,
+                                          shell=False,
                                           cwd=self._cwd,
                                           env=self._env,
                                           startupinfo=suinfo)
@@ -366,29 +349,35 @@ class JobThread(threading.Thread):
             wx.CallAfter(self._job.jobout.startupCallback, self._job)
 
             # Read from stdout while there is output from process
-            while True:
-                if self._abort:
-                    self._kill_process()
-                    self._read_process_output()
-                    more = False
-                    break
-                else:
-                    more = False
-                    try:
-                        more = self._read_process_output()
-                    except wx.PyDeadObjectError:
-                        # Our parent window is dead so kill process and return
+            out_q = ReadThread("stdout", self._proc.stdout, self._job, self._job.jobout.stdoutCallback)
+            out_q.start()
+            err_q = ReadThread("stderr", self._proc.stderr, self._job, self._job.jobout.stderrCallback)
+            err_q.start()
+            try:
+                while self._proc.poll() is None:
+                    out_q.read_queue()
+                    err_q.read_queue()
+                    if self._abort:
                         self._kill_process()
-                        return
-
-                    if not more:
-                        break
-
+                    time.sleep(.2)
+                    #dprint("Poll: %s" % str(self._proc.poll()))
+            except wx.PyDeadObjectError:
+                # Our parent window is dead so kill process and return
+                self._kill_process()
+                return
+            #dprint("Waiting for process to finish...")
             # Notify of error in running the process
             try:
                 self._job.exit_code = self._proc.wait()
             except OSError:
                 self._job.exit_code = -1
+            #dprint("Reading any final output...")
+            err_q.read_queue()
+            #dprint("Waiting for stderr thread join...")
+            err_q.join()
+            #dprint("Waiting for stdout thread join...")
+            out_q.read_queue()
+            out_q.join()
 
             # Notify that process has exited
             # Pack the exit code as the events value
@@ -700,8 +689,14 @@ if __name__ == '__main__':
             dprint()
             self.out.AppendText("stderr! job=%s text=%s" % (job.pid, text))
     
+        def startupFailureCallback(self, job, text):
+            dprint()
+            self.out.AppendText("Couldn't run '%s':\n error: %s" % (job.cmd, text))
+    
         def OnStartCmd(self, evt):
-            p = ProcessManager().run(self.cmd.GetValue(), self.cwd.GetValue(), self)
+            cmd = self.cmd.GetValue()
+            dprint("User command: %s" % cmd)
+            p = ProcessManager().run(cmd, self.cwd.GetValue(), self)
             dprint("OnStart: %s" % p)
         
         sample_loop = """\
@@ -719,7 +714,7 @@ for x in range(100):
             dprint("OnStart: %s" % p)
             
         def OnStartWin(self, evt):
-            p = ProcessManager().run("C:/Python25/python -u", os.getcwd(), self, self.sample_loop)
+            p = ProcessManager().run("C:/Python25/python.exe -u", os.getcwd(), self, self.sample_loop)
             dprint("OnStartWin: %s" % p)
             
         def OnKill(self, evt):
