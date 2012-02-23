@@ -171,7 +171,10 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
         msg = None
         path = self.getInterpreterExe()
         if bangpath is None:
-            if not path:
+            # "." seems to be the default value for a PathParam.  Seems that
+            # the FileBrowseButton behind the PathParam UI won't allow a blank
+            # field, so it substitutes a "." instead.
+            if not path or path.strip() == ".":
                 self.interpreterNotSpecifiedError()
                 return
             elif self.full_path_required:
