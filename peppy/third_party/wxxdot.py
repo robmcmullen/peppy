@@ -94,8 +94,8 @@ from xdot import *
 __all__ = ['WxDotWindow', 'WxDotFrame']
 
 # We need to get the wx version with built-in cairo support
-import wxversion
-wxversion.select("2.8")
+#import wxversion
+#wxversion.select("2.8")
 import wx
 import wx.lib.wxcairo as wxcairo
 import cairo

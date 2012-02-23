@@ -26,6 +26,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
+from peppy.third_party.wxxdot import WxDotWindow
 
 _sample_file = """// Sample graphviz source file
 digraph G {
@@ -69,7 +70,7 @@ class GraphvizOutputFormat(RadioAction):
     name = "Image Format"
     default_menu = ("Graphviz", 500)
 
-    items = ['eps', 'gif', 'jpg' ,'pdf', 'png', 'ps', 'svg']
+    items = ['xdot', 'eps', 'gif', 'jpg' ,'pdf', 'png', 'ps', 'svg']
 
     def getIndex(self):
         format = self.mode.classprefs.layout
@@ -105,7 +106,7 @@ class GraphvizMode(FundamentalMode):
         StrParam('keyword_set_1', unique_keywords[127], hidden=False, fullwidth=True),
         StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
-        StrParam('graphic_format', 'png'),
+        StrParam('graphic_format', 'xdot'),
         StrParam('layout', 'dot'),
         SupersededParam('output_log')
         )
@@ -147,6 +148,32 @@ class GraphvizMode(FundamentalMode):
         self.frame.findTabOrOpen(self.dot_output)
 
 
+class XDotMode(WxDotWindow, STCInterface, MajorMode):
+    """
+    Major mode for viewing images.  Eventually this may contain more
+    image manipulation commands like rotation, reflection, zooming,
+    etc., but not pixel editing features.  Pixel editing features will
+    mean that the image will have to be decompressed into raw pixels.
+    This mode leaves the image in its native format.
+    """
+    keyword="XDot"
+    icon='icons/graphviz.png'
+
+    default_classprefs = (
+        StrParam('extensions', 'xdot', fullwidth=True),
+        )
+
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        WxDotWindow.__init__(self, parent, -1)
+        self.update()
+        
+    def update(self):
+        bytes = self.buffer.stc.GetBinaryData()
+        #dprint(repr(bytes))
+        self.set_xdotcode(bytes)
+
+
 class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
     """
@@ -155,6 +182,7 @@ class GraphvizPlugin(IPeppyPlugin):
     
     def getMajorModes(self):
         yield GraphvizMode
+        yield XDotMode
     
     def getActions(self):
         yield SampleDot
