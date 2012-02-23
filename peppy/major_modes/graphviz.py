@@ -104,7 +104,6 @@ class GraphvizMode(FundamentalMode):
         StrParam('extensions', 'dot', fullwidth=True),
         StrParam('keyword_set_0', unique_keywords[126], hidden=False, fullwidth=True),
         StrParam('keyword_set_1', unique_keywords[127], hidden=False, fullwidth=True),
-        StrParam('path', '/usr/local/bin', 'Path to the graphviz binary programs\nlike dot, neato, and etc.'),
 
         StrParam('graphic_format', 'xdot'),
         StrParam('layout', 'dot'),
@@ -113,9 +112,7 @@ class GraphvizMode(FundamentalMode):
 
     def getInterpreterArgs(self):
         self.dot_output = vfs.reference_with_new_extension(self.buffer.url, self.classprefs.graphic_format)
-        # FIXME: if the stdoutCallback worked, the -o flag would not be
-        # necessary.
-        args = "%s -v -T%s -K%s -o%s" % (self.classprefs.interpreter_args, self.classprefs.graphic_format, self.classprefs.layout, str(self.dot_output.path))
+        args = "%s -T%s -K%s" % (self.classprefs.interpreter_args, self.classprefs.graphic_format, self.classprefs.layout)
         return args
 
     def getJobOutput(self):
@@ -126,25 +123,17 @@ class GraphvizMode(FundamentalMode):
         self.preview = StringIO()
 
     def stdoutCallback(self, job, text):
-        dprint("got stdout: %d bytes" % len(text))
         self.preview.write(text)
 
     def stderrCallback(self, job, text):
         dprint("got stderr: %d bytes" % len(text))
-        dprint(text)
 
     def finishedCallback(self, job):
         """Callback from the JobOutputMixin when the job terminates."""
-        assert self.dprint()
         del self.process
-        # FIXME: this doesn't seem to work -- the output consists of only a few
-        # return characters, not the binary bytes of the image.  If the same
-        # command line is used (e.g.  /usr/bin/dot -v -Tpng -Kdot sample.dot >
-        # sample.png) the file is created correctly.  There's something about
-        # the interaction of the new threads-based processmanager that fails.
-#        fh = vfs.open_write(self.dot_output)
-#        fh.write(self.preview.getvalue())
-#        fh.close()
+        fh = vfs.open_write(self.dot_output)
+        fh.write(self.preview.getvalue())
+        fh.close()
         self.frame.findTabOrOpen(self.dot_output)
 
 
