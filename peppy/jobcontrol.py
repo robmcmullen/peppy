@@ -207,7 +207,7 @@ class JobControlMixin(JobOutputMixin, ClassPrefs):
     
     def interpreterShowError(self, msg, title):
         self.frame.showErrorDialog(msg, title)
-        Publisher().sendMessage('peppy.preferences.show')
+        Publisher().sendMessage('peppy.preferences.show', "interpreter_exe")
 
     def prepareOutputHook(self):
         """Hook for subclass to do something to initialize the output log

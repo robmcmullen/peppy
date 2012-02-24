@@ -2696,6 +2696,12 @@ class PrefPanel(ScrolledPanel, debugmixin):
         if len(grid.grid.GetChildren()) > 0:
             items.append(grid)
         return items
+    
+    def ensureParamVisible(self, param_name):
+        for param, ctrl in self.ctrls.iteritems():
+            if param.keyword == param_name:
+                wx.CallAfter(self.ScrollChildIntoView, ctrl)
+                break
 
     def create(self):
         """Create the list of classprefs, organized by MRO.
@@ -2919,7 +2925,7 @@ class PrefPage(wx.SplitterWindow):
             self.pref_panels[cls.__name__] = pref
         return pref
     
-    def changePanel(self, cls=None):
+    def changePanel(self, cls=None, scroll_to=None):
         """Change the currently shown pref panel to the requested"""
         old = self.GetWindow2()
         if cls is None:
@@ -2930,6 +2936,7 @@ class PrefPage(wx.SplitterWindow):
         old.Hide()
         pref.Show()
         pref.Layout()
+        pref.ensureParamVisible(scroll_to)
 
     def applyPreferences(self):
         """On an OK from the dialog, process any updates to the plugins"""
@@ -2949,7 +2956,7 @@ class PrefDialog(wx.Dialog):
     dialog_title = "Preferences"
     static_title = "This is a placeholder for the Preferences dialog"
     
-    def __init__(self, parent, obj, title=None):
+    def __init__(self, parent, obj, title=None, scroll_to=None):
         if title is None:
             title = self.dialog_title
         wx.Dialog.__init__(self, parent, -1, title,
@@ -3003,11 +3010,11 @@ class PrefDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.Fit(self)
 
-        self.showRequestedPreferences()
+        self.showRequestedPreferences(scroll_to)
 
         self.Layout()
     
-    def showRequestedPreferences(self):
+    def showRequestedPreferences(self, scroll_to):
         """Sets the notebook page and initial panel to the preferences of the
         initial object passed to the constructor.
         """
@@ -3021,7 +3028,7 @@ class PrefDialog(wx.Dialog):
             cls = None
         self.notebook.SetSelection(index)
         page = self.notebook.GetPage(index)
-        page.changePanel(cls)
+        page.changePanel(cls, scroll_to)
     
     def OnTabChanged(self, evt):
         #dprint()

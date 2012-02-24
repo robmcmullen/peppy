@@ -32,7 +32,11 @@ class Preferences(SelectAction):
     def showDialog(self, msg=None):
         frame = wx.GetApp().GetTopWindow()
         mode = frame.getActiveMajorMode()
-        dlg = PeppyPrefDialog(frame, mode)
+        if msg is not None:
+            classpref_name = msg.data
+        else:
+            classpref_name = None
+        dlg = PeppyPrefDialog(frame, mode, scroll_to=classpref_name)
         retval = dlg.ShowModal()
         if retval == wx.ID_OK:
             locals = dlg.applyPreferences()
