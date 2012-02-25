@@ -26,7 +26,7 @@ from peppy.actions import *
 from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
-from peppy.third_party.wxxdot import WxDotWindow
+from peppy.lib.wxgc_xdot import WxDotWindow
 
 _sample_file = """// Sample graphviz source file
 digraph G {

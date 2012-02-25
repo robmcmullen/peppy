@@ -118,7 +118,6 @@ class Shape:
 
     def select_pen(self, highlight):
         if highlight:
-            print "Highlighted"
             if not hasattr(self, 'highlight_pen'):
                 self.highlight_pen = self.pen.highlighted()
             return self.highlight_pen
@@ -149,7 +148,7 @@ class TextShape(Shape):
         self.t = t
 
     def draw(self, gc, highlight=False):
-        if True:
+        if False:
             print "Rendering text %s at (%d,%d), w=%d, j=%d" % (self.t, self.x, self.y, self.w, self.j)
             path = gc.CreatePath()
             # show where dot thinks the text should appear
@@ -193,7 +192,7 @@ class TextShape(Shape):
             gc.Scale(f, f)
             gc.DrawText(self.t, 0, 0)
             gc.PopState()
-            print "Rendering scaled text (%f) %s at (%f,%f) w,h=%f,%f j=%d" % (f, self.t, x, y, width, height, self.j)
+            #print "Rendering scaled text (%f) %s at (%f,%f) w,h=%f,%f j=%d" % (f, self.t, x, y, width, height, self.j)
         else:
             if self.j == self.LEFT:
                 x = self.x
