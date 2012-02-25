@@ -37,6 +37,7 @@ class PenInfo:
     """Store pen attributes."""
     stored_pens = {}
     stored_brushes = {}
+    stored_fonts = {}
 
     def __init__(self):
         # set default attributes
@@ -46,11 +47,18 @@ class PenInfo:
         self.fontsize = 14.0
         self.fontname = "Times-Roman"
         self.dash = wx.SOLID
+        
+        self.font = None
+        self.pen = None
+        self.brush = None
 
     def copy(self):
         """Create wx.Pen from the info."""
         pen = PenInfo()
         pen.__dict__ = self.__dict__.copy()
+        pen.font = None
+        pen.pen = None
+        pen.brush = None
         return pen
 
     def highlighted(self):
@@ -60,22 +68,42 @@ class PenInfo:
         return pen
     
     def set_pen(self, gc):
-        key = (self.color, self.linewidth, self.dash)
-        if key not in self.stored_pens:
-            wxpen = wx.Pen(self.color, self.linewidth, self.dash)
-            wxpen.SetCap(wx.CAP_BUTT)
-            wxpen.SetJoin(wx.JOIN_MITER)
-            gc_pen = gc.CreatePen(wxpen)
-            self.stored_pens[key] = gc_pen
-        gc.SetPen(self.stored_pens[key])
+        if self.pen is None:
+            key = (self.color, self.linewidth, self.dash)
+            if key not in self.stored_pens:
+                wxpen = wx.Pen(self.color, self.linewidth, self.dash)
+                wxpen.SetCap(wx.CAP_BUTT)
+                wxpen.SetJoin(wx.JOIN_MITER)
+                gc_pen = gc.CreatePen(wxpen)
+                self.stored_pens[key] = gc_pen
+            self.pen = self.stored_pens[key]
+        gc.SetPen(self.pen)
     
     def set_brush(self, gc):
-        key = self.color
-        if key not in self.stored_brushes:
-            wxbrush = wx.Brush(self.color)
-            gc_brush = gc.CreateBrush(wxbrush)
-            self.stored_brushes[key] = gc_brush
-        gc.SetBrush(self.stored_brushes[key])
+        if self.brush is None:
+            key = self.color
+            if key not in self.stored_brushes:
+                wxbrush = wx.Brush(self.color)
+                gc_brush = gc.CreateBrush(wxbrush)
+                self.stored_brushes[key] = gc_brush
+            self.brush = self.stored_brushes[key]
+        gc.SetBrush(self.brush)
+    
+    def get_font_face_name(self):
+        if self.fontname == "Times-Roman":
+            return "Times New Roman"
+        return self.fontname
+    
+    def set_font(self, gc):
+        if self.font is None:
+            key = (self.color, self.fontsize, self.fontname)
+            if key not in self.stored_fonts:
+                wxfont = wx.Font(self.fontsize, wx.DEFAULT, wx.NORMAL, wx.NORMAL,
+                                 False, self.get_font_face_name())
+                gc_font = gc.CreateFont(wxfont, self.color)
+                self.stored_fonts[key] = gc_font
+            self.font = self.stored_fonts[key]
+        gc.SetFont(self.font)
 
 
 class Shape:
@@ -107,10 +135,8 @@ class Shape:
             gc.StrokePath(path)
 
 class TextShape(Shape):
-    #fontmap = pangocairo.CairoFontMap()
-    #fontmap.set_resolution(72)
-    #context = fontmap.create_context()
-
+    experimental_font_scaling = False
+    
     LEFT, CENTER, RIGHT = -1, 0, 1
 
     def __init__(self, pen, x, y, j, w, t):
@@ -136,74 +162,47 @@ class TextShape(Shape):
             path.MoveToPoint(x, self.y)
             path.AddLineToPoint(x+self.w, self.y)
             self.render(gc, path, highlight)
-            return
-        try:
-            layout = self.layout
-        except AttributeError:
-            layout = cr.create_layout()
-
-            # set font options
-            # see http://lists.freedesktop.org/archives/cairo/2007-February/009688.html
-            context = layout.get_context()
-            fo = cairo.FontOptions()
-            fo.set_antialias(cairo.ANTIALIAS_DEFAULT)
-            fo.set_hint_style(cairo.HINT_STYLE_NONE)
-            fo.set_hint_metrics(cairo.HINT_METRICS_OFF)
-            try:
-                pangocairo.context_set_font_options(context, fo)
-            except TypeError:
-                # XXX: Some broken pangocairo bindings show the error
-                # 'TypeError: font_options must be a cairo.FontOptions or None'
-                pass
-
-            # set font
-            font = pango.FontDescription()
-            font.set_family(self.pen.fontname)
-            font.set_absolute_size(self.pen.fontsize*pango.SCALE)
-            layout.set_font_description(font)
-
-            # set text
-            layout.set_text(self.t)
-
-            # cache it
-            self.layout = layout
+        
+        pen = self.select_pen(highlight)
+        pen.set_font(gc)
+        width, height, descent, _ = gc.GetFullTextExtent(self.t)
+        
+        if self.experimental_font_scaling:
+            # we know the width that dot thinks this text should have
+            # we do not necessarily have a font with the same metrics
+            # scale it so that the text fits inside its box
+            if width != self.w:
+                f = self.w / width
+                width = self.w # equivalent to width *= f
+                height *= f
+                descent *= f
+            else:
+                f = 1.0
+                
+            if self.j == self.LEFT:
+                x = self.x
+            elif self.j == self.CENTER:
+                x = self.x - 0.5*width
+            elif self.j == self.RIGHT:
+                x = self.x - width
+            
+            y = self.y - height + descent
+            
+            gc.PushState()
+            gc.Translate(x, y)
+            gc.Scale(f, f)
+            gc.DrawText(self.t, 0, 0)
+            gc.PopState()
+            print "Rendering scaled text (%f) %s at (%f,%f) w,h=%f,%f j=%d" % (f, self.t, x, y, width, height, self.j)
         else:
-            cr.update_layout(layout)
-
-        descent = 2 # XXX get descender from font metrics
-
-        width, height = layout.get_size()
-        width = float(width)/pango.SCALE
-        height = float(height)/pango.SCALE
-        # we know the width that dot thinks this text should have
-        # we do not necessarily have a font with the same metrics
-        # scale it so that the text fits inside its box
-        if width > self.w:
-            f = self.w / width
-            width = self.w # equivalent to width *= f
-            height *= f
-            descent *= f
-        else:
-            f = 1.0
-
-        if self.j == self.LEFT:
-            x = self.x
-        elif self.j == self.CENTER:
-            x = self.x - 0.5*width
-        elif self.j == self.RIGHT:
-            x = self.x - width
-        else:
-            assert 0
-
-        y = self.y - height + descent
-
-        path.MoveToPoint(x, y)
-
-        cr.save()
-        cr.scale(f, f)
-        cr.set_source_rgba(*self.select_pen(highlight).color)
-        cr.show_layout(layout)
-        cr.restore()
+            if self.j == self.LEFT:
+                x = self.x
+            elif self.j == self.CENTER:
+                x = self.x - 0.5*width
+            elif self.j == self.RIGHT:
+                x = self.x - width
+            y = self.y - height + descent
+            gc.DrawText(self.t, x, y)
 
 
 class ImageShape(Shape):
