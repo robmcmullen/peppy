@@ -1,6 +1,6 @@
 # peppy Copyright (c) 2006-2010 Rob McMullen
 # Licenced under the GPLv2; see http://peppy.flipturn.org for more info
-import os, re
+import os, re, fnmatch
 import cPickle as pickle
 
 from wx.lib.pubsub import Publisher
@@ -12,6 +12,7 @@ from peppy.sidebar import *
 from peppy.lib.userparams import *
 from peppy.lib.pluginmanager import *
 from peppy.lib.processmanager import *
+from peppy.lib.fortran_static import FortranStaticAnalysis
 
 
 
@@ -235,6 +236,49 @@ class ProjectInfo(CTAGS):
     def getTopRelativeURL(self, name):
         return self.project_top_dir.resolve2(name)
     
+    def walkProjectDir(self, allowed_wildcards=None):
+        """Generator that recursively walks the entire project dir for all
+        files contained beneath it.  Skips source control directories and
+        other excluded files and directories by default.
+        """
+        topdir = str(self.getTopURL().path)
+        dprint("topdir=%s" % topdir)
+        exclude_wildcards = self.ctags_exclude.split()
+        if allowed_wildcards is None:
+            allowed_wildcards = []
+        ignored_dirs = ProjectPlugin.getIgnoredDirs()
+        dprint("ignored=%s" % str(ignored_dirs))
+        skip_children = set()
+        for root, dirs, files in os.walk(topdir):
+            skip = False
+            dprint("root=%s" % root)
+            base_root = os.path.basename(root)
+            if base_root in ignored_dirs:
+                dprint("SKIPPED: root=%s, dirs=%s" % (root, str(dirs)))
+                # Skip all dirs below this by deleting them from the returned
+                # subdir list
+                del dirs[:]
+                continue
+            if not skip:
+                for basename in files:
+                    skip = False
+                    for pattern in exclude_wildcards:
+                        if fnmatch.fnmatch(basename, pattern):
+                            skip = True
+                            break
+                    if not skip:
+                        if allowed_wildcards:
+                            allowed = False
+                            for pattern in allowed_wildcards:
+                                if fnmatch.fnmatch(basename, pattern):
+                                    allowed = True
+                                    break
+                        else:
+                            allowed = True
+                        if allowed:
+                            filename = os.path.join(root, basename)
+                            yield filename
+    
     def loadPrefs(self):
         self.project_config = self.project_settings_dir.resolve2(ProjectPlugin.classprefs.project_file)
         try:
@@ -279,6 +323,26 @@ class ProjectInfo(CTAGS):
         if self.process:
             self.process.kill()
 
+    def staticAnalysis(self, lang="fortran", regenerate=False):
+        url = self.getSettingsRelativeURL("%s.static_analysis" % lang)
+        dprint(url)
+        filename = str(url.path)
+        dprint(filename)
+        if lang == "fortran":
+            stats = FortranStaticAnalysis(serialized_filename=filename, regenerate=regenerate)
+            if not regenerate and not stats.isEmpty():
+                return url
+            for source in self.walkProjectDir(["*.f", "*.f90"]):
+                print source
+                stats.scan(source)
+            stats.analyze()
+            stats.summary()
+            dprint(filename)
+            stats.saveStateToFile()
+            return url
+        else:
+            dprint("%s not supported for static analysis")
+            return None
 
 if __name__== "__main__":
     app = wx.PySimpleApp()

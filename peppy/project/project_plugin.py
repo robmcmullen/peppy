@@ -49,6 +49,7 @@ class ProjectPlugin(IPeppyPlugin):
         PathParam('ctags_command', 'ctags', 'Path to ctags command', fullwidth=True),
         StrParam('ctags_tag_file_name', 'tags', 'name of the generated tags file', fullwidth=True),
         StrParam('ctags_args', '-R -n', 'extra arguments for the ctags command', fullwidth=True),
+        StrParam('ignored_dirs', 'CVS .svn .git .hg .bzr', 'Directories that will be ignored when scanning for project files', fullwidth=True),
         )
     
     # mapping of projects we know about but haven't loaded ProjectInfo objects
@@ -145,6 +146,12 @@ class ProjectPlugin(IPeppyPlugin):
         Publisher().unsubscribe(self.getFundamentalMenu)
         Publisher().unsubscribe(self.applyProjectSettings)
         pub.unsubscribe(self.getTabMenu, 'tabs.context_menu')
+    
+    @classmethod
+    def getIgnoredDirs(cls):
+        dirlist = list(cls.classprefs.ignored_dirs.split())
+        dirlist.append(cls.classprefs.project_directory)
+        return dirlist
     
     @classmethod
     def getTemplateFilename(cls, template_name):
@@ -502,6 +509,7 @@ class ProjectPlugin(IPeppyPlugin):
                             BuildProject, RunProject, StopProject,
                             
                             RebuildCtags, LookupCtag,
+                            StaticAnalysis, RebuildFortran,
                             
                             SaveProjectSettingsMode, SaveProjectSettingsAll])
         actions.extend([CreateProject, CreateProjectFromExisting, ShowProjectSettings])

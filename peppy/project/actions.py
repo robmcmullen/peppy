@@ -100,6 +100,35 @@ class RebuildCtags(SelectAction):
             info.regenerateTags()
 
 
+class StaticAnalysis(SelectAction):
+    """Open static analysis mode"""
+    name = "Static Analysis"
+    default_menu = ("Project", -500)
+    
+    def isEnabled(self):
+        return bool(self.mode.project_info)
+
+    def action(self, index=-1, multiplier=1):
+        if self.mode.project_info:
+            info = self.mode.project_info
+            url = info.staticAnalysis(regenerate=False)
+            if url is not None:
+                self.frame.findTabOrOpen(url)
+
+class RebuildFortran(SelectAction):
+    """Rebuild Fortran static analysis"""
+    name = "Rebuild Fortran Static Analysis"
+    default_menu = ("Project", 510)
+    
+    def isEnabled(self):
+        return bool(self.mode.project_info)
+
+    def action(self, index=-1, multiplier=1):
+        if self.mode.project_info:
+            info = self.mode.project_info
+            info.staticAnalysis(regenerate=True)
+
+
 class SaveGlobalTemplate(OnDemandActionNameMixin, SelectAction):
     """Save as the default (application-wide) template for this major mode.
     """

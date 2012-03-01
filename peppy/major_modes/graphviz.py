@@ -27,6 +27,7 @@ from peppy.major import *
 from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 from peppy.lib.wxgc_xdot import WxDotWindow
+from peppy.lib.fortran_static import FortranStaticAnalysis
 
 _sample_file = """// Sample graphviz source file
 digraph G {
@@ -163,6 +164,43 @@ class XDotMode(WxDotWindow, STCInterface, MajorMode):
         self.set_xdotcode(bytes)
 
 
+class StaticAnalysisMode(XDotMode):
+    """
+    Major mode for static analysis.  Uses the WxDotWindow as the root window,
+    interfacing with the static analysis through the Dot rendering.
+    """
+    keyword="StaticAnalysis"
+    icon='icons/graphviz.png'
+
+    default_classprefs = (
+        StrParam('extensions', 'static_analysis', fullwidth=True),
+        StrParam('layout', 'dot'),
+        )
+
+    def __init__(self, parent, wrapper, buffer, frame):
+        MajorMode.__init__(self, parent, wrapper, buffer, frame)
+        WxDotWindow.__init__(self, parent, -1)
+        self.update()
+        
+    def update(self):
+        bytes = self.buffer.stc.GetBinaryData()
+        self.sa = FortranStaticAnalysis(pickledata=bytes)
+        self.sa.summary()
+        fh = StringIO()
+        self.sa.makeDot(fh=fh)
+        stdin = fh.getvalue()
+        output = JobOutputSaver(self.regenerateFinished)
+        cmd = "%s %s -Txdot -K%s" % (GraphvizMode.classprefs.interpreter_exe, GraphvizMode.classprefs.interpreter_args, self.classprefs.layout)
+        ProcessManager().run(cmd, self.buffer.cwd(), output, stdin=stdin)
+    
+    def regenerateFinished(self, output):
+        if output.exit_code == 0:
+            self.set_xdotcode(output.getOutputText())
+            self.zoom_to_fit()
+        else:
+            Publisher().sendMessage('peppy.log.error', output.getErrorText())
+
+
 class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
     """
@@ -172,6 +210,7 @@ class GraphvizPlugin(IPeppyPlugin):
     def getMajorModes(self):
         yield GraphvizMode
         yield XDotMode
+        yield StaticAnalysisMode
     
     def getActions(self):
         yield SampleDot
