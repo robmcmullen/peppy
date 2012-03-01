@@ -5,6 +5,7 @@
 """
 
 import os
+import cPickle as pickle
 
 
 class PickleSerializerMixin(object):
@@ -78,28 +79,30 @@ class PickleSerializerMixin(object):
             bytes = fh.read()
             fh.close()
             if bytes:
-                version, data = pickle.loads(bytes)
-                unpack_method = "unpackVersion%s" % version
-                if hasattr(self, unpack_method):
-                    unpacker = getattr(self, unpack_method)
-                    unpacker(data)
-                else:
-                    raise RuntimeError("Unknown version %s found when trying to restore from %s" % (version, filename))
-                self._ps_restored = True
-                
-                while version < self._ps_default_version:
-                    convert_method = "convertVersion%sToVersion%s" % (version, version+1)
-                    if hasattr(self, convert_method):
-                        convert = getattr(self, convert_method)
-                        convert()
-                        version += 1
-                    else:
-                        raise RuntimeError("Missing converter from version %s to version %s when trying to restore from %s" % (version, version+1, filename))
-                        
+                self.loadStateFromBytes(bytes)
         else:
             create_method = "createVersion%s" % self._ps_default_version
             create = getattr(self, create_method)
             create()
+    
+    def loadStateFromBytes(self, bytes):
+        version, data = pickle.loads(bytes)
+        unpack_method = "unpackVersion%s" % version
+        if hasattr(self, unpack_method):
+            unpacker = getattr(self, unpack_method)
+            unpacker(data)
+        else:
+            raise RuntimeError("Unknown version %s found when trying to restore from %s" % (version, filename))
+        self._ps_restored = True
+        
+        while version < self._ps_default_version:
+            convert_method = "convertVersion%sToVersion%s" % (version, version+1)
+            if hasattr(self, convert_method):
+                convert = getattr(self, convert_method)
+                convert()
+                version += 1
+            else:
+                raise RuntimeError("Missing converter from version %s to version %s when trying to restore from %s" % (version, version+1, filename))
     
     def saveStateToFile(self, filename=None, version=None):
         """Save the instance attributes in a pickle file
