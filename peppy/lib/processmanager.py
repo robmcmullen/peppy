@@ -94,17 +94,20 @@ class JobOutputSaver(object):
             lines.append("Started %s" % (time.asctime(time.localtime(self.start))))
         if self.stdout:
             lines.append("stdout:")
-            lines.extend(self.stdout)
+            lines.append(self.getOutputText())
         if self.stderr:
             lines.append("stderr:")
-            lines.extend(self.stderr)
+            lines.append(self.getErrorText())
         if self.finish:
             lines.append("Finished %s" % (time.asctime(time.localtime(self.finish))))
         lines.append("Exit code = %s" % self.exit_code)
         return os.linesep.join(lines)
     
+    def getOutputText(self):
+        return "".join(self.stdout)
+    
     def getErrorText(self):
-        return os.linesep.join(self.stderr)
+        return "".join(self.stderr)
     
     def startupFailureCallback(self, p, text):
         self.callback(self)
