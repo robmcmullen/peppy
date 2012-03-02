@@ -180,6 +180,7 @@ class StaticAnalysisMode(XDotMode):
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         WxDotWindow.__init__(self, parent, -1)
+        self.register_select_callback(self.nodeSelectCallback)
         self.update()
         
     def update(self):
@@ -199,6 +200,9 @@ class StaticAnalysisMode(XDotMode):
             self.zoom_to_fit()
         else:
             Publisher().sendMessage('peppy.log.error', output.getErrorText())
+    
+    def nodeSelectCallback(self, item, event):
+        dprint(item.item)
 
 
 class GraphvizPlugin(IPeppyPlugin):
