@@ -1907,9 +1907,9 @@ class WxDotWindow(wx.Panel):
             self.zoom_to_fit()
         elif key == ord('R'):
             self.reload()
-        elif key == ord('Q'):
-            self.reload()
-            exit(0)
+#        elif key == ord('Q'):
+#            self.reload()
+#            exit(0)
 
     ### Helper functions
     def get_current_pos(self):
