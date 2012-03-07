@@ -111,7 +111,17 @@ class Shape:
 
     def __init__(self):
         pass
+    
+    def set_override_pen(self, pen):
+        self.override_pen = pen
 
+    def clear_override_pen(self, pen):
+        if hasattr(self, 'override_pen'):
+            del self.override_pen
+
+    def contains_text_in(self, names):
+        return False
+    
     def draw(self, gc, highlight=False):
         """Draw this shape with the given cairo context"""
         raise NotImplementedError
@@ -121,6 +131,8 @@ class Shape:
             if not hasattr(self, 'highlight_pen'):
                 self.highlight_pen = self.pen.highlighted()
             return self.highlight_pen
+        elif hasattr(self, 'override_pen'):
+            return self.override_pen
         else:
             return self.pen
 
@@ -146,6 +158,9 @@ class TextShape(Shape):
         self.j = j
         self.w = w
         self.t = t
+
+    def contains_text_in(self, names):
+        return self.t in names
 
     def draw(self, gc, highlight=False):
         if False:
@@ -298,6 +313,22 @@ class CompoundShape(Shape):
     def __init__(self, shapes):
         Shape.__init__(self)
         self.shapes = shapes
+        
+    def set_override_pen(self, override_pen):
+        for shape in self.shapes:
+            shape.set_override_pen(override_pen)
+
+    def clear_override_pen(self):
+        for shape in self.shapes:
+            shape.clear_override_pen(override_pen)
+
+    def contains_text_in(self, names):
+        found = False
+        for shape in self.shapes:
+            if shape.contains_text_in(names):
+                found = True
+                break
+        return found
 
     def draw(self, cr, highlight=False):
         for shape in self.shapes:
@@ -402,6 +433,19 @@ class Graph(Shape):
         self.shapes = shapes
         self.nodes = nodes
         self.edges = edges
+
+    def override_pen_by_name(self, names, override_pen):
+        """Set the override color for items if they contain text in the given
+        list.
+        """
+        overridden = set()
+        for node in self.nodes:
+            if node.contains_text_in(names):
+                node.set_override_pen(override_pen)
+                overridden.add(node)
+        for edge in self.edges:
+            if edge.src in overridden:
+                edge.set_override_pen(override_pen)
 
     def get_size(self):
         return self.width, self.height
@@ -1927,6 +1971,16 @@ class WxDotWindow(wx.Panel):
         if self.highlight != items:
             self.highlight = items
             self.Refresh()
+    
+    def override_pen_by_name(self, names):
+        """Set the override color for items if they contain text in the given
+        list.
+        """
+        override_pen = PenInfo()
+        override_pen.color = (225, 225, 225, 255)
+        override_pen.fill_color = (225, 225, 225, 255)
+        overridden = set()
+        self.graph.override_pen_by_name(names, override_pen)
 
     ### Cursor manipulation
     def set_cursor(self, cursor_type):
