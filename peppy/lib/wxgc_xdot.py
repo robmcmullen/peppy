@@ -434,7 +434,7 @@ class Graph(Shape):
         self.nodes = nodes
         self.edges = edges
 
-    def override_pen_by_name(self, names, override_pen):
+    def override_pen_by_name(self, names, override_pen, dst_edge=False):
         """Set the override color for items if they contain text in the given
         list.
         """
@@ -445,6 +445,8 @@ class Graph(Shape):
                 overridden.add(node)
         for edge in self.edges:
             if edge.src in overridden:
+                edge.set_override_pen(override_pen)
+            if dst_edge and edge.dst in overridden:
                 edge.set_override_pen(override_pen)
 
     def get_size(self):
@@ -1853,15 +1855,19 @@ class WxDotWindow(wx.Panel):
             self.highlight = items
             self.Refresh()
     
-    def override_pen_by_name(self, names):
+    def override_pen_by_name(self, names, color=None, fill=None, dst_edge=False):
         """Set the override color for items if they contain text in the given
         list.
         """
         override_pen = PenInfo()
-        override_pen.color = (225, 225, 225, 255)
-        override_pen.fill_color = (225, 225, 225, 255)
+        if color is None:
+            color = (225, 225, 225, 255)
+        override_pen.color = color
+        if fill is None:
+            fill = (225, 225, 225, 255)
+        override_pen.fill_color = fill
         overridden = set()
-        self.graph.override_pen_by_name(names, override_pen)
+        self.graph.override_pen_by_name(names, override_pen, dst_edge)
 
     ### Cursor manipulation
     def set_cursor(self, cursor_type):
