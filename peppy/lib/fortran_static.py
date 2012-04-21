@@ -8,7 +8,7 @@ from optparse import OptionParser
 from StringIO import StringIO
 from logging import debug, info, warning
 
-import gprof2dot
+import peppy.third_party.gprof2dot as gprof2dot
 
 from peppy.lib.serializer import PickleSerializerMixin
 
