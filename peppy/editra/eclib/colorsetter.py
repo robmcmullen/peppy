@@ -60,7 +60,7 @@ class ColorSetter(wx.Panel):
     Color Dialog.
 
     """
-    def __init__(self, parent, id_, color=wx.NullColor):
+    def __init__(self, parent, id_, color=wx.NullColour):
         """Create the control, it is a composite of a colourSelect and
         and a text control.
         @keyword label: the hex string value to go in the text portion
