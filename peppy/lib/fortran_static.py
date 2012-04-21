@@ -251,6 +251,7 @@ class Callable(object):
                     self.callees.add(possible)
     
     def writeDot(self, fh, callee_map, exclude, no_callees=False):
+        self.displayed_edges = set()
         names = list(self.callees)
         names.sort()
         for callee in names:

@@ -122,6 +122,9 @@ class Shape:
     def contains_text_in(self, names):
         return False
     
+    def get_text(self):
+        return ""
+    
     def draw(self, gc, highlight=False):
         """Draw this shape with the given cairo context"""
         raise NotImplementedError
@@ -161,6 +164,9 @@ class TextShape(Shape):
 
     def contains_text_in(self, names):
         return self.t in names
+
+    def get_text(self):
+        return self.t
 
     def draw(self, gc, highlight=False):
         if False:
@@ -329,6 +335,14 @@ class CompoundShape(Shape):
                 found = True
                 break
         return found
+
+    def get_text(self):
+        found = []
+        for shape in self.shapes:
+            text = shape.get_text()
+            if text:
+                found.append(text)
+        return "\n".join(found)
 
     def draw(self, cr, highlight=False):
         for shape in self.shapes:

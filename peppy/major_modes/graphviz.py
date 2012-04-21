@@ -28,6 +28,7 @@ from peppy.editra.style_specs import unique_keywords
 from peppy.fundamental import FundamentalMode
 from peppy.lib.wxgc_xdot import WxDotWindow
 from peppy.lib.fortran_static import FortranStaticAnalysis
+import peppy.third_party.gprof2dot as gprof2dot
 
 _sample_file = """// Sample graphviz source file
 digraph G {
@@ -164,6 +165,56 @@ class XDotMode(WxDotWindow, STCInterface, MajorMode):
         self.set_xdotcode(bytes)
 
 
+class WxgcGprofColorTheme(gprof2dot.Theme):
+    def hsl_to_rgb(self, h, s, l):
+        """Convert a color from HSL color-model to RGB.
+
+        See also:
+        - http://www.w3.org/TR/css3-color/#hsl-color
+        """
+
+        h = h % 1.0
+        s = min(max(s, 0.0), 1.0)
+        l = min(max(l, 0.0), 1.0)
+
+        if l <= 0.5:
+            m2 = l*(s + 1.0)
+        else:
+            m2 = l + s - l*s
+        m1 = l*2.0 - m2
+        r = self._hue_to_rgb(m1, m2, h + 1.0/3.0)
+        g = self._hue_to_rgb(m1, m2, h)
+        b = self._hue_to_rgb(m1, m2, h - 1.0/3.0)
+
+        return (int(r * 255), int(g * 255), int(b * 255), 255)
+
+TEMPERATURE_COLORMAP = WxgcGprofColorTheme(
+    mincolor = (2.0/3.0, 0.80, 0.25), # dark blue
+    maxcolor = (0.0, 1.0, 0.5), # satured red
+)
+
+class StaticAnalysisRankDir(RadioAction):
+    """Direction of directed graphs """ 
+    name = "Graph Layout Direction"
+    default_menu = ("Graphviz", 500)
+
+    items = ['TB', 'LR', 'BT', 'RL']
+
+    def getIndex(self):
+        format = self.mode.classprefs.rankdir
+        try:
+            return self.items.index(format)
+        except:
+            return 0
+
+    def getItems(self):
+        return self.__class__.items
+
+    def action(self, index=-1, multiplier=1):
+        self.mode.classprefs.rankdir = self.items[index]
+        self.mode.updateGraph()
+
+
 class StaticAnalysisMode(XDotMode):
     """
     Major mode for static analysis.  Uses the WxDotWindow as the root window,
@@ -175,11 +226,17 @@ class StaticAnalysisMode(XDotMode):
     default_classprefs = (
         StrParam('extensions', 'static_analysis', fullwidth=True),
         StrParam('layout', 'dot'),
+        StrParam('rankdir', 'TB'),
+        FloatParam('gprof_node_thresh', 0.0, help="Ignore gprof functions with total time below this threshold (percentage)"),
+        FloatParam('gprof_edge_thresh', 0.0, help="Ignore gprof calls with total time below this threshold (percentage)"),
         )
 
     def __init__(self, parent, wrapper, buffer, frame):
         MajorMode.__init__(self, parent, wrapper, buffer, frame)
         WxDotWindow.__init__(self, parent, -1)
+        self.gprof_file = None
+        self.gprof = None
+        self.tipitem = None
         self.register_select_callback(self.nodeSelectCallback)
         self.update()
         
@@ -187,8 +244,11 @@ class StaticAnalysisMode(XDotMode):
         bytes = self.buffer.stc.GetBinaryData()
         self.sa = FortranStaticAnalysis(pickledata=bytes)
         self.sa.summary()
+        self.updateGraph()
+    
+    def updateGraph(self):
         fh = StringIO()
-        self.sa.makeDot(fh=fh)
+        self.sa.makeDot(fh=fh, rankdir=self.classprefs.rankdir)
         stdin = fh.getvalue()
         output = JobOutputSaver(self.regenerateFinished)
         cmd = "%s %s -Txdot -K%s" % (GraphvizMode.classprefs.interpreter_exe, GraphvizMode.classprefs.interpreter_args, self.classprefs.layout)
@@ -198,12 +258,78 @@ class StaticAnalysisMode(XDotMode):
         if output.exit_code == 0:
             self.set_xdotcode(output.getOutputText())
             self.zoom_to_fit()
+            self.showGprof("/data3/mod6/historical/5.2.1-svn/build-gprof/Eldridge_tape5_Modtran5-original.gprof")
+            
         else:
             Publisher().sendMessage('peppy.log.error', output.getErrorText())
     
     def nodeSelectCallback(self, item, event):
         dprint(item.item)
+        if self.tipitem != item.item:
+            self.tipitem = item.item
+            name = self.tipitem.get_text()
+            try:
+                text = self.getGprofLabel(name)
+            except KeyError:
+                text = name
+            self.setStatusText(text)
 
+    def showGprof(self, filename):
+        theme = TEMPERATURE_COLORMAP
+        fh = open(filename, 'rb')
+        parser = gprof2dot.GprofParser(fh)
+        self.gprof = parser.parse()
+        self.gprof.prune(self.classprefs.gprof_node_thresh/100.0, self.classprefs.gprof_edge_thresh/100.0)
+        self.gprof.by_name = {}
+        
+        #self.override_pen_by_name(['mdtrn5', 'driver', 'fnames'])
+        active = set()
+        for function in self.gprof.functions.itervalues():
+            if function.name.endswith("_"):
+                function.name = function.name[:-1]
+                self.gprof.by_name[function.name] = function
+                if function.name == "MAIN_":
+                    function.name = self.sa.name
+                    function.display_time = self.gprof[gprof2dot.TIME]
+                    function.events = {}
+                if function.weight is not None:
+                    weight = function.weight
+                else:
+                    weight = 0.0
+                color = theme.node_bgcolor(weight)
+                fontcolor = theme.node_fgcolor(weight)
+                    
+                #print function.name
+                self.override_pen_by_name([function.name], color)
+                active.add(function.name)
+                
+                try:
+                    callee = self.sa.callables[function.name]
+                    callee.gprof = function
+                    #print function.name, callee
+                except KeyError:
+                    pass
+        
+        disabled = set(self.sa.getCallableNames()) - active
+        self.override_pen_by_name(disabled, dst_edge=True)
+    
+    def getGprofLabel(self, function_name):
+        function = self.gprof.by_name[function_name]
+        labels = []
+        if function.process is not None:
+            labels.append(function.process)
+        if function.module is not None:
+            labels.append(function.module)
+        labels.append(function.name)
+        for title, event in ("Cumulative Time", gprof2dot.TOTAL_TIME_RATIO), ("Self Time", gprof2dot.TIME_RATIO):
+            if event in function.events:
+                label = event.format(function[event])
+                labels.append("%s: %s" % (title, label))
+        if hasattr(function, "display_time"):
+            labels.append(u"Display time: %s" % (function.display_time,))
+        elif function.called is not None:
+            labels.append(u"Called %u\xd7" % (function.called,))
+        return ", ".join(labels)
 
 class GraphvizPlugin(IPeppyPlugin):
     """Graphviz plugin to register modes and user interface.
@@ -221,7 +347,7 @@ class GraphvizPlugin(IPeppyPlugin):
 
     def getCompatibleActions(self, modecls):
         if issubclass(modecls, GraphvizMode):
-            return [
-                GraphvizLayout, GraphvizOutputFormat,
-                
-                ]
+            yield GraphvizLayout
+            yield GraphvizOutputFormat
+        if issubclass(modecls, StaticAnalysisMode):
+            yield StaticAnalysisRankDir
