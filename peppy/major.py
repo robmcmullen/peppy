@@ -843,6 +843,8 @@ class MajorMode(ContextMenuMixin, ClassPrefs, debugmixin):
             match=re.search(cls.regex, filename)
             if match:
                 return True
+        if filename.endswith(".in") and filename.count(".") > 1:
+            filename = filename[0:-3]
         if cls.classprefs.filename_regex:
             match=re.search(cls.classprefs.filename_regex, filename)
             if match:
