@@ -8,6 +8,7 @@ import os, sys, imp, platform, random, string, time
 import __builtin__
 
 import wx
+from wx.lib.pubsub import setupv1
 from wx.lib.pubsub import Publisher
 from peppy.third_party.pubsub import pub
 
