@@ -339,7 +339,7 @@ class EditraSTCMixin(ed_style.StyleMgr, debugmixin):
         """
         self.StyleResetDefault()
         self.StyleClearAll()
-        self.SetCaretForeground(wx.NamedColor("black"))
+        self.SetCaretForeground(wx.BLACK)
         self.Colourise(0, -1)
 
     def UpdateBaseStyles(self):
