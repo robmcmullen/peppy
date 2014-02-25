@@ -52,6 +52,8 @@ class MacHiddenFrame(BufferFrame):
     
     def titleBuffer(self):
         BufferFrame.open(self, "about:osx_menu")
+        # Mac menu bar will remain visible after being hidden
+        wx.CallAfter(self.Show, False)
     
     def open(self, *args, **kwargs):
         """Convenience function overriding BufferFrame.open to open URLs in

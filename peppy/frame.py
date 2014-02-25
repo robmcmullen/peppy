@@ -69,6 +69,14 @@ class WindowList(OnDemandGlobalListAction):
             # make sure that the user didn't cancel the quit
             return wx.GetApp().quit()
         return True
+    
+    @classmethod
+    def resetMacMinimalMenu(cls):
+        if cls.hidden:
+            if len(WindowList.storage) > 1:
+                return
+            cls.hidden.Show(True)
+            cls.hidden.Show(False)
 
     def getItems(self):
         return [frame.getTitle() for frame in WindowList.storage]
@@ -456,6 +464,7 @@ class BufferFrame(wx.Frame, ClassPrefs, debugmixin):
         assert self.dprint(evt)
         if WindowList.canCloseWindow(self):
             self.closeWindow()
+        WindowList.resetMacMinimalMenu()
 
     def Raise(self):
         wx.Frame.Raise(self)
