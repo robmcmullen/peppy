@@ -245,6 +245,7 @@ class ErrorDialog(wx.Dialog):
 
         """
         ErrorDialog.REPORTER_ACTIVE = False
+        self.EndModal(1)
         self.Destroy()
         evt.Skip()
 
@@ -276,9 +277,9 @@ class ErrorPanel(wx.Panel):
 
         abort_b = wx.Button(self, wx.ID_ABORT, _("Abort"))
         abort_b.SetToolTipString(_("Exit the application"))
-        send_b = wx.Button(self, ID_SEND, _("Send Error Report"))
-        send_b.SetDefault()
         close_b = wx.Button(self, wx.ID_CLOSE, ("Attempt to Continue"))
+        send_b = wx.Button(self, ID_SEND, _("... and Send Error Report"))
+        send_b.SetDefault()
         ignore_b = wx.Button(self, wx.ID_IGNORE, ("Ignore Reoccurrences"))
 
         # Layout
@@ -293,7 +294,7 @@ class ErrorPanel(wx.Panel):
 
         bsizer = wx.BoxSizer(wx.HORIZONTAL)
         bsizer.AddMany([((5, 5), 0), (abort_b, 0), ((-1, -1), 1, wx.EXPAND),
-                        (send_b, 0), ((5, 5), 0), (close_b, 0), ((5, 5), 0),
+                        (close_b, 0), ((5, 5), 0), (send_b, 0), ((5, 5), 0),
                         (ignore_b, 0), ((5, 5), 0)])
 
         vsizer.AddMany([((5, 5), 0),
